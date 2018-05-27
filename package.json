@@ -1,0 +1,254 @@
+{
+	"name": "z80-debug",
+	"displayName": "Z80 Debugger",
+	"version": "0.1.0",
+	"publisher": "maziac",
+	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
+	"author": {
+		"name": "Thomas Busse"
+	},
+	"license": "MIT",
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.18.0",
+		"node": "^7.9.0"
+	},
+	"icon": "images/z80-debug-icon.png",
+	"categories": [
+		"Debuggers"
+	],
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/xxx"
+	},
+	"scripts": {
+		"prepublish": "tsc -p ./src",
+		"compile": "tsc -p ./src",
+		"tslint": "tslint ./src/**/*.ts",
+		"watch": "tsc -w -p ./src",
+		"test": "mocha -u tdd ./out/tests/",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"package": "vsce package",
+		"publish": "vsce publish"
+	},
+	"files": [
+		"./data/*",
+		"./data/rom48.labels"
+	],
+	"dependencies": {
+		"await-notify": "1.0.1",
+		"ts-node": "^6.0.0",
+		"vscode-debugadapter": "1.27.0",
+		"vscode-debugprotocol": "1.27.0"
+	},
+	"devDependencies": {
+		"@types/node": "7.0.55",
+		"@types/mocha": "2.2.48",
+		"typescript": "2.6.2",
+		"mocha": "5.0.1",
+		"vscode": "1.1.10",
+		"vscode-debugadapter-testsupport": "1.27.0",
+		"tslint": "5.9.1",
+		"vsce": "1.37.5"
+	},
+	"main": "./out/extension",
+	"activationEvents": [
+		"onDebug"
+	],
+	"contributes": {
+		"languages": [
+			{
+				"id": "asm-collection",
+				"extensions": [
+					".list",
+					".a80",
+					".asm",
+					".inc",
+					".s"
+				],
+				"aliases": [
+					"Assembler file"
+				]
+			}
+		],
+		"breakpoints": [
+			{
+				"language": "asm-collection"
+			}
+		],
+		"commands": [],
+		"debuggers": [
+			{
+				"type": "z80-debug",
+				"label": "Z80 Debugger",
+				"program": "./out/emuldebugadapter.js",
+				"runtime": "node",
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"zport",
+							"zhostname"
+						],
+						"properties": {
+							"zhostname": {
+								"type": "string",
+								"description": "The hostname/IP address of the Zesarux Debugger."
+							},
+							"zport": {
+								"type": "number",
+								"description": "The port of the Zesarux Debugger."
+							},
+							"rootFolder": {
+								"type": "string",
+								"description": "The path of the root folder. All other paths are relative to this. Ususally set to ${workspaceFolder}."
+							},
+							"disassemblies": {
+								"type": "array",
+								"description": "(Optional) Enter here the areas (address, size) of all areas that should be disassembled on startup. E.g. this can be used for ROM areas.",
+								"items": {
+									"type": "array",
+									"items": {
+										"type": "number",
+										"description": "Address/size tupels."
+									}
+								}
+							},
+							"listFiles": {
+								"type": "array",
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "(Optional) Path to the assembler .labels file. If this is available addresseed can be mapped to labels."
+										},
+										"useFiles": {
+											"type": "boolean",
+											"description": "If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
+										}
+									}
+								}
+							},
+							"labelsFiles": {
+								"type": "array",
+								"description": "All labels files. (Typically only one.)",
+								"items": {
+									"type": "string",
+									"description": "(Optional) Path to the assembler .labels file. If this is available addresseed can be mapped to labels."
+								}
+							},
+							"useFilenamesFromListFile": {
+								"type": "boolean",
+								"description": "(Optional) If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
+							},
+							"disableLabelResolutionBelow": {
+								"tape": "number",
+								"description": "Disables the number to label conversion if number is below the given value. E.g. if you choose 256 (the typical value)labels below 256 are not resolved."
+							},
+							"tmpDir": {
+								"type": "string",
+								"description": "NOT USED!!! A directory for temporary files created by this debug adapter. E.g. '.tmp'"
+							},
+							"topOfStack": {
+								"type": "string",
+								"description": "(Optional) You should set this to the label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack."
+							},
+							"loadSnap": {
+								"type": "string",
+								"description": "(Optional) If set the snapshot file will be loaded into the emulator on startup of the debug session."
+							},
+							"startAutomatically": {
+								"type": "boolean",
+								"description": "Start automatically after launch."
+							},
+							"skipInterrupt": {
+								"type": "boolean",
+								"description": "Skips the interrupt during stepping."
+							},
+							"trace": {
+								"type": "boolean",
+								"description": "Enable logging of the Debug Adapter Protocol."
+							},
+							"registerVarFormat": {
+								"type": "array",
+								"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at leat 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
+								"items": {
+									"type": "string"
+								}
+							},
+							"registerHoverFormat": {
+								"type": "array",
+								"description": "see registerVarFormat. Format when hovering over a register",
+								"items": {
+									"type": "string"
+								}
+							},
+							"labelWatchesByteFormat": {
+								"type": "string",
+								"description": "see registerVarFormat. Format for BYTEs in the WATCHES area."
+							},
+							"labelHoverByteFormat": {
+								"type": "string",
+								"description": "see registerVarFormat. Format for BYTEs when hovering."
+							},
+							"labelWatchesWordFormat": {
+								"type": "string",
+								"description": "see registerVarFormat. Format for WORDs in the WATCHES area."
+							},
+							"labelHoverWordFormat": {
+								"type": "string",
+								"description": "see registerVarFormat. Format for WORDs when hovering."
+							},
+							"stackVarFormat": {
+								"type": "string",
+								"description": "see registerVarFormat. Format for the pushed values in the STACK area."
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "z80-debug",
+						"request": "launch",
+						"name": "Z80 Debugger",
+						"zhostname": "localhost",
+						"zport": 10000,
+						"listFiles": [
+							"path_to_your_assembler_file.list"
+						],
+						"labelsFiles": [
+							"path_to_your_assembler_file.labels"
+						],
+						"startAutomatically": true,
+						"skipInterrupt": true
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "Z80 Debug: Launch",
+						"description": "A new configuration for 'debugging' a user selected markdown file.",
+						"body": {
+							"type": "z80-debug",
+							"request": "launch",
+							"name": "Z80 Debugger",
+							"zhostname": "localhost",
+							"zport": 10000,
+							"listFiles": [
+								"path_to_your_assembler_file.list"
+							],
+							"labelsFiles": [
+								"path_to_your_assembler_file.labels"
+							],
+							"startAutomatically": true,
+							"skipInterrupt": true
+						}
+					}
+				]
+			}
+		]
+	}
+}
