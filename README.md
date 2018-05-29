@@ -199,3 +199,8 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 
 
+## License
+
+z80-debug is licensed under the [MIT license](https://github.com/maziac/z80-debug/blob/master/LICENSE.txt).
+
+The source code is available on [github](https://github.com/maziac/z80-sample-program).

@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"publisher": "maziac",
 	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -75,6 +75,21 @@
 		"breakpoints": [
 			{
 				"language": "asm-collection"
+			},
+			{
+				"language": "z80-macroasm"
+			},
+			{
+				"language": "z80-asm"
+			},
+			{
+				"language": "zeus-asm"
+			},
+			{
+				"language": "gbz80"
+			},
+			{
+				"language": "pasmo"
 			}
 		],
 		"commands": [],
