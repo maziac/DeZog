@@ -13,10 +13,14 @@ import { Log } from './log';
 import { Frame } from './frame';
 import { EventEmitter } from 'events';
 import { MachineBreakpoint } from './machine';
+import { GenericWatchpoint } from './genericwatchpoint';
 
 
-// Max number of Zesarux breakpoints.
-const MAX_ZESARUX_BREAKPOINTS = 100;
+// Some Zesarux constants.
+class Zesarux {
+	static MAX_ZESARUX_BREAKPOINTS = 100;	///< max count of breakpoints
+	static MAX_BREAKPOINT_CONDITION_LENGTH = 256; ///< breakpoint condition string length
+}
 
 
 // Set to true to disable breakpoints.
@@ -102,8 +106,6 @@ enum MachineState{
  */
 export class Machine extends EventEmitter {
 
-
-
 	/// The machine type, e.g. 48k or 128k etc.
 	public machineType = MachineType.UNKNOWN;
 
@@ -115,6 +117,9 @@ export class Machine extends EventEmitter {
 
 	/// Mirror of the machine's breakpoints.
 	private breakpoints = new Array<MachineBreakpoint>();
+
+	/// Array that contains free breakpoint IDs.
+	private freeBreakpointIds = new Array<number>();
 
 	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
 	//private serializer = new CallSerializer("Main", true);
@@ -164,16 +169,23 @@ export class Machine extends EventEmitter {
 	 */
 	protected setupSocket() {
 		zSocket.init();
+		zSocket.on('warning', msg => {
+			// Error message from Zesarux
+			msg = "ZEsarUX: " + msg;
+			this.emit('warning', msg);
+		});
+
 		zSocket.on('error', err => {
 			// and terminate
-			err.message += " (Could not connect ZEsarUX!)";
+			err.message += " (Error in connection to ZEsarUX!)";
 			this.emit('error', err);
 		});
-		zSocket.on('close', err => {
+		zSocket.on('close', () => {
 			this.listFrames.length = 0;
 			this.breakpoints.length = 0;
 			// and terminate
-			this.emit('error', err);	// TODO: Ist das richtig hier einen Error zu returnen?
+			const err = new Error('ZEsarUX terminated the connection!');
+			this.emit('error', err);
 		});
 		zSocket.on('end', () => {
 			// and terminate
@@ -217,8 +229,12 @@ export class Machine extends EventEmitter {
 			// Clear all breakpoints
 			if(!DBG_DISABLE_BREAKPOINTS) {
 				zSocket.send('enable-breakpoints');
-				//this.clearAllZesaruxBreakpoints(); //TODO: enable
+				this.clearAllZesaruxBreakpoints();
 			}
+			// Init breakpoint array
+			this.freeBreakpointIds.length = 0;
+			for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++)
+				this.freeBreakpointIds.push(i);
 
 			// Send 'initialize' to Machine.
 			zSocket.executeWhenQueueIsEmpty( () => {
@@ -470,7 +486,7 @@ export class Machine extends EventEmitter {
 							// Check if this was a "CALL something" or "CALL n/z,something"
 							if(opcode == "CALL") {
 								// found, set breakpoint: when SP gets bigger than the current value
-								const freeBps = this.getFreeBreakpointIds(1);
+								const freeBps = this.freeBreakpointIds;
 								if(freeBps.length < 1) {
 									// No breakpoint available
 									handler();
@@ -479,7 +495,7 @@ export class Machine extends EventEmitter {
 
 								// set action first (no action)
 								const bpId = freeBps[0];
-								zSocket.send('set-breakpointaction ' + bpId + ' pause', data => {
+								zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', data => {
 									// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
 									const condition = 'SP>' + sp;
 									zSocket.send('set-breakpoint ' + bpId + ' ' + condition, data => {
@@ -540,47 +556,129 @@ export class Machine extends EventEmitter {
 
 
 	/**
-	 * Returns the first free breakpoint indexes of zesarux.
-	 * Breakpoint indices start at 1 (Zesarux).
-	 * @param count The number of free breakpoint indices to return.
-	 * @return An array with free brakpoint IDs or an empty array.
+	 * Sets the watchpoints in the given list.
+	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * It does so by accumulating watches into a single breakpoint.
+	 * I.e. if the watch is of length 1 as many as possible watches are put in one breakpoint.
+	 * If the length is > 1 then a single breakpoint is used.
+	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param handler Is called after the last watchpoint is set.
 	 */
-	private getFreeBreakpointIds(count: number): Array<number> {
-		const freeIndices = new Array<number>();
-		// Check all IDs
-		for( var index=1; index<=MAX_ZESARUX_BREAKPOINTS; index++ ) {
-			var filteredBps = this.breakpoints.filter(bp => bp.bpId == index);
-			if(filteredBps.length == 0) {
-				freeIndices.push(index);
-				count--;
-				if(count <= 0)
+	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
+		// Set watchpoints (memory guards)
+		var conditions = '';
+		var notEnoughBreakpoints = false;
+		for(let watchpoint of watchPoints) {
+			if(watchpoint.length == 0)
+				continue;
+			// create condition
+			var cond = '';
+			const access = watchpoint.access;
+			if(watchpoint.length == 1) {
+				cond = 'MWA=' + watchpoint.address;
+				// Check access type
+				if(access == 'w') {
+					// no change
+				}
+				else if(access == 'r') {
+					cond = cond.replace(/MWA/g, 'MRA');
+				}
+				else if(access == 'rw') {
+					cond = ' or ' + cond.replace(/MWA/g, 'MRA');
+				}
+				// Check if size too big
+				if(conditions.length + 4 + cond.length > Zesarux.MAX_BREAKPOINT_CONDITION_LENGTH) {
+					// (enough watches) set breakpoint
+					const bp = { bpId: 0, filePath: '', lineNr: 0, condition: conditions };
+					if(this.setBreakpoint(bp) == 0) {
+						notEnoughBreakpoints = true;
+						break;
+					}
+					// Prepare for next
+					conditions = cond;
+				}
+				else {
+					// collect watchpoint
+					if(conditions.length != 0)	// Check if first
+						conditions += ' or ';
+					conditions += cond;
+				}
+			}
+			else {
+				// a complete area of addresses has been chosen use an own breakpoint for this.
+				// Set one or 2 new breakpoints
+				const bp1 = { bpId: 0, filePath: '', lineNr: 0, condition: '' };
+				var bp2 = { bpId: 0, filePath: '', lineNr: 0, condition: '' };;
+				cond = 'MWA>' + (watchpoint.address-1) + ' and MWA<' + (watchpoint.address+watchpoint.length);
+				if(access == 'w') {
+					// no change
+					bp1.condition = cond;
+				}
+				else if(access == 'r') {
+					bp1.condition = cond.replace(/MWA/g, 'MRA');
+				}
+				else if(access == 'rw') {
+					bp1.condition = cond;
+					bp2.condition = cond.replace(/MWA/g, 'MRA');
+				}
+				// Set breakpoint(s)
+				if(this.setBreakpoint(bp1) == 0) {
+					notEnoughBreakpoints = true;
 					break;
+				}
+				if(bp2.condition.length > 0) {
+					if(this.setBreakpoint(bp2) == 0) {
+						notEnoughBreakpoints = true;
+						break;
+					}
+				}
 			}
 		}
-		return freeIndices;
+
+		// Check if something remains to be sent
+		if(conditions.length > 0 ) {
+			// Yes, send the remaining watchpoints
+			const bp = { bpId: 0, filePath: '', lineNr: 0, condition: conditions };
+			if(this.setBreakpoint(bp) == 0) {
+				notEnoughBreakpoints = true;
+			}
+		}
+
+		// Call handler
+		zSocket.executeWhenQueueIsEmpty( () => {
+			if(notEnoughBreakpoints) {
+				// Send warning
+				this.emit('warning', 'Not enough breakpoints available for all watchpoints (WPMEM). Would require ' + watchPoints.length + ' breakpoints.');
+			}
+			handler();
+		});
 	}
 
 
 	/*
 	 * Sets breakpoint in the zesarux debugger.
-	 * Sets the breakpoint ID.
+	 * Sets the breakpoint ID (bpId) in bp.
 	 * @param bp The breakpoint.
+	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	protected setBreakpoint(bp: MachineBreakpoint) {
+	protected setBreakpoint(bp: MachineBreakpoint): number {
 		// get free id
-		const freeBps = this.getFreeBreakpointIds(1);
-		if(freeBps.length < 1)
-			return;	// no free ID
-		bp.bpId = freeBps[0];
+		if(this.freeBreakpointIds.length == 0)
+			return 0;	// no free ID
+		bp.bpId = this.freeBreakpointIds[0];
+		this.freeBreakpointIds.shift();
 
 		// set action first (no action)
-		zSocket.send('set-breakpointaction ' + bp.bpId + ' pause', (data) => {
+		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit.', (data) => {
 			// set the breakpoint
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + bp.condition);
 		});
 
 		// Add to list
 		this.breakpoints.push(bp);
+
+		// return
+		return bp.bpId;
 	}
 
 
@@ -596,6 +694,17 @@ export class Machine extends EventEmitter {
 		var assert = require('assert');
 		assert(index !== -1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
+		this.freeBreakpointIds.push(index);
+	}
+
+
+	/**
+	 * Clears all breakpoints set in zesarux on startup.
+	 */
+	protected clearAllZesaruxBreakpoints() {
+		for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
+			zSocket.send('set-breakpoint ' + i);
+		}
 	}
 
 

@@ -18,6 +18,7 @@ import { Log } from './log';
 import { /*ShallowVar,*/ DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar } from './shallowvar';
 //import { Frame } from './frame';
 import { Machine, MachineBreakpoint } from './machine';
+import { GenericWatchpoint } from './genericwatchpoint';
 import * as vscode from 'vscode';
 
 //import { AssertionError } from 'assert';
@@ -89,6 +90,16 @@ export class EmulDebugAdapter extends DebugSession {
 			this.sendEvent(new TerminatedEvent());
 		});
 		*/
+	}
+
+
+	/**
+	 * Used to show a warning to the user.
+	 * @param message The message to show.
+	 */
+	private showWarning(message: string) {
+		Log.log(message)
+		vscode.window.showWarningMessage(message);
 	}
 
 
@@ -223,12 +234,23 @@ export class EmulDebugAdapter extends DebugSession {
 		this.machine = Machine.getMachine();
 
 		this.machine.once('initialized', () => {
+			//Array for found watchpoints: WPMEM
+			const watchPointLines = new Array<{address: number, line: string}>();
+			// Load files
 			try {
 				// Load user list and labels files
-			for(var listFile of Settings.launch.listFiles)
-				Labels.loadAsmListFile(listFile.path, listFile.useFiles);
-			for(var labelsFile of Settings.launch.labelsFiles)
-				Labels.loadAsmLabelsFile(labelsFile);
+				for(var listFile of Settings.launch.listFiles) {
+					Labels.loadAsmListFile(listFile.path, listFile.useFiles, (address, line) => {
+						// quick search for WPMEM
+						if(line.indexOf('WPMEM') >= 0) {
+							// Add watchpoint at this address
+//TODO: ENABLE
+//							watchPointLines.push({address: address, line: line});
+						}
+					});
+				}
+				for(var labelsFile of Settings.launch.labelsFiles)
+					Labels.loadAsmLabelsFile(labelsFile);
 			}
 			catch(err) {
 				// Some error occurred during loading, e.g. file not found.
@@ -237,7 +259,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// Load list and labels file according machine
 			//const dir = __dirname;
-
 
 
 			// Now get all disassemblies
@@ -257,8 +278,60 @@ export class EmulDebugAdapter extends DebugSession {
 			};
 
 			this.serializer.exec(() => {
-				// Finishes off the laoding of the list and labels files
+				// Finishes off the loading of the list and labels files
 				Labels.finish();
+				// convert labels in watchpoints.
+				const watchpoints = new Array<GenericWatchpoint>();
+				for(let entry of watchPointLines){
+					// WPMEM:
+					// Syntax:
+					// WPMEM [addr [, length [, access]]]
+					// with:
+					//	addr = address (or label) to observe (optional). Defaults to current address.
+					//	length = the count of bytes to observe (optional). Default = 1.
+					//	access = Read/write access. Possible values: r, w or rw. Defaults to w.
+					// e.g. WPMEM LBL_TEXT, 1, w
+
+					// now check more thoroughly: group1=address, group3=length, group5=access
+					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(,\s*([^\s,]*)(,\s*(\S*))?)?/.exec(entry.line);
+					if(match) {
+						// get arguments
+						var addressString = match[1];
+						var lengthString = match[3];
+						var access = match[5];
+						// defaults
+						var address = entry.address;
+						if(addressString && addressString.length > 0)
+							address = Labels.getNumberFromString(addressString);
+						if(isNaN(address))
+							continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
+						var length = 1;
+						if(lengthString && lengthString.length > 0) {
+							length = Labels.getNumberFromString(lengthString);
+							if(isNaN(length))
+								continue;
+						}
+						if(access && access.length > 0) {
+							if( access != 'r' && access != 'w' && access != 'rw') {
+								this.showWarning("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'");
+								continue;
+							}
+						}
+						else
+							access = 'w';
+						// set watchpoint
+						watchpoints.push({address: address, length: length, access: access});
+					}
+				}
+
+				// Set watchpoints (memory guards)
+				this.machine.setWatchpoints(watchpoints, () => {
+				// "Return"
+				this.serializer.endExec();
+				});
+			});
+
+			this.serializer.exec(() => {
 				// Send stop
 				this.sendEvent(new StoppedEvent('entry', EmulDebugAdapter.THREAD_ID));
 				// socket is connected, allow setting breakpoints
@@ -268,6 +341,11 @@ export class EmulDebugAdapter extends DebugSession {
 				// Respond
 				this.sendResponse(response);
 			});
+		});
+
+		this.machine.on('warning', message => {
+			// Some problem occurred
+			this.showWarning(message);
 		});
 
 		this.machine.once('error', err => {
@@ -718,6 +796,7 @@ Notes:
 		// Serialize
 		this.serializer.exec(() => {
 
+			// TODO: here still zsocket is used. It would be beneficial to capsulate this to Machine only. I.e. remove it here.
 			Log.log('evaluate.expression: ' + args.expression);
 			Log.log('evaluate.context: ' + args.context);
 			Log.log('evaluate.format: ' + args.format);

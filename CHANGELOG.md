@@ -1,3 +1,6 @@
+## 0.1.1
+- Register parsing corrected.
+
 ## 0.1.0
 Initial version.
 Functionality:

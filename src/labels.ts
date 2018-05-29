@@ -56,7 +56,7 @@ class LabelsClass {
 	/// Map with all labels (from labels file) and corresponding values.
 	private numberForLabel = new Map();
 
-	// The top of the stack. Used to limit the call stack.
+	/// The top of the stack. Used to limit the call stack.
 	public topOfStack : number;
 
 	// Constructor.
@@ -99,8 +99,9 @@ class LabelsClass {
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
 	 * @param useIndirectFile Use the filenames in fileName.
+	 * @param lineHandler Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, useIndirectFile:boolean) {
+	public loadAsmListFile(fileName: string, useIndirectFile: boolean, lineHandler = (address: number, line: string) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -111,16 +112,21 @@ class LabelsClass {
 		var prev = -1;
 		for( var line of listLines) {
 			// extract pc
-			var pc = parseInt(line.substr(0,4), 16) + base;
+			var address = parseInt(line.substr(0,4), 16) + base;
 			// compare with previous to find wrap around (if any)
-			if(pc < prev) {
+			if(address < prev) {
 				base += 0x10000;
-				pc += 0x10000;
+				address += 0x10000;
 			}
 			// store
-			var entry = {fileName: '', lineNr: -1, addr: pc, line: line};
+			var entry = {fileName: '', lineNr: -1, addr: address, line: line};
 			listFile.push(entry)
-			prev = pc
+
+			// Call line handler (if any)
+			lineHandler(address, line);
+
+			// next
+			prev = address
 		}
 
 		/**
@@ -295,13 +301,7 @@ class LabelsClass {
 				this.labelsForNumber[number] = labelsArray;
 			}
 			// Add new label
-			// REMOVE: TRY/CATCH
-			try {
-				labelsArray.push(label);
-			}
-			catch(err) {
-				console.log( "Error: " + err);
-			}
+			labelsArray.push(label);
 		}
 	}
 
@@ -372,6 +372,23 @@ class LabelsClass {
 	 */
 	public getNumberforLabel(label: string): number {
 		return this.numberForLabel[label];
+	}
+
+
+/**
+	 * Returns a number. If text is a label than the corresponding number for the label is returned.
+	 * If text is not a label it is tried to convert text as string to a number.
+	 * @param text The label name or a number in hex or decimal as string.
+	 * @returns The correspondent number. May be undefined.
+	 */
+	public getNumberFromString(text: string): number {
+		var result = this.getNumberforLabel(text);
+		if(isNaN(result)) {
+			// Try convert as string
+			if(!text.startsWith('_'))
+				result = Utility.parseValue(text);
+		}
+		return result;
 	}
 
 

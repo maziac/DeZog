@@ -6,8 +6,8 @@ import { Settings } from './settings';
 
 /// Timeouts.
 const CONNECTION_TIMEOUT = 1000;	///< 1 sec
-const MSG_DEFAULT_TIMEOUT = 1000;	///< 1 sec
-export const NO_TIMEOUT = 0;	///< Don't use any timeout
+const MSG_DEFAULT_TIMEOUT = 5000;	///< 5 sec (socket communication and internal delays may sometimes take longer than a second)
+export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the special meaning: Don't use any timeout
 
 
 /**
@@ -54,8 +54,6 @@ export class ZesaruxSocket extends Socket {
 
 	// Holds the incomplete received message.
 	private receivedDataChunk: string;
-
-	//public bpHitHandler: {(data)} = (data) => {};
 
 	/**
 	 * Initialize the socket in the launchRequest.
@@ -265,6 +263,15 @@ export class ZesaruxSocket extends Socket {
 			this.zesaruxState = lastLine.substr(8);
 			// Send next entry (if any)
 			this.sendSocket();
+			// Check on error from zesarux
+			if(concData.startsWith('Error')) {
+				// send message through to UI
+				var msg = '';
+				if(cEntry)
+					msg = cEntry.command + ' => ';
+				msg += concData;
+				this.emit('warning', msg);
+			}
 			// Execute handler
 			if( cEntry != undefined)
 				cEntry.handler(concData);

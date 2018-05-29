@@ -6,12 +6,12 @@
  * Represents a frame, i.e. an entry on the callstack/a subroutine.
  */
 export class Frame {
-	public addr: number;	/// The corresponding address
-	public name: string;	/// The shown name, e.g. "CALL clear_screen"
-	public fileName: string;	/// The corresponding filename
-	public lineNr: number;	/// The corresponding line number in the file
-	public stack = new Array<number>();	/// The objects currently pushed on the stack
-	public stackStartAddress = -1;	/// The start address of the stack
+	public addr: number;	///< The corresponding address
+	public name: string;	///< The shown name, e.g. "CALL clear_screen"
+	public fileName: string;	///< The corresponding filename
+	public lineNr: number;	///< The corresponding line number in the file
+	public stack = new Array<number>();	///< The objects currently pushed on the stack
+	public stackStartAddress = -1;	///< The start address of the stack
 
 	/**
 	 * Constructor

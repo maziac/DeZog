@@ -128,16 +128,9 @@ export class Z80Registers {
 	}
 
 	public static parseAF(data: string): number {
-		// A
-		const res = parseInt(data.substr(26,2),16);
-		// Flags
-		const f = data.substr(107,8);
-		var result=0;
-		for( var i=0; i<8; ++i) {
-			result |= (f[i] == ' ') ? 0 : (1<<(7-i));
-		}
-
-		return (res<<8) | result;
+		// AF
+		const res = parseInt(data.substr(27,4),16);
+		return res;
 	}
 
 	public static parseBC(data: string): number {
@@ -146,60 +139,53 @@ export class Z80Registers {
 	}
 
 	public static parseHL(data: string): number {
-		const res = parseInt(data.substr(32,4),16);
+		const res = parseInt(data.substr(35,4),16);
 		return res;
 	}
 
 	public static parseDE(data: string): number {
-		const res = parseInt(data.substr(40,4),16);
+		const res = parseInt(data.substr(43,4),16);
 		return res;
 	}
 
 	public static parseIX(data: string): number {
-		const res = parseInt(data.substr(48,4),16);
+		const res = parseInt(data.substr(51,4),16);
 		return res;
 	}
 
 	public static parseIY(data: string): number {
-		const res = parseInt(data.substr(56,4),16);
+		const res = parseInt(data.substr(59,4),16);
 		return res;
 	}
 
 	public static parseAF2(data: string): number {
-		// A
-		const res = parseInt(data.substr(64,2),16);
-		// Flags
-		const f = data.substr(119,8);
-		var result=0;
-		for( var i=0; i<8; ++i) {
-			result |= (f[i] == ' ') ? 0 : (1<<(7-i));
-		}
-
-		return (res<<8) | result;
+		// AF'
+		const res = parseInt(data.substr(68,4),16);
+		return res;
 	}
 
 	public static parseBC2(data: string): number {
-		const res = parseInt(data.substr(71,4),16);
+		const res = parseInt(data.substr(77,4),16);
 		return res;
 	}
 
 	public static parseHL2(data: string): number {
-		const res = parseInt(data.substr(80,4),16);
+		const res = parseInt(data.substr(86,4),16);
 		return res;
 	}
 
 	public static parseDE2(data: string): number {
-		const res = parseInt(data.substr(89,4),16);
+		const res = parseInt(data.substr(95,4),16);
 		return res;
 	}
 
 	public static parseI(data: string): number {
-		const res = parseInt(data.substr(96,2),16);
+		const res = parseInt(data.substr(102,2),16);
 		return res;
 	}
 
 	public static parseR(data: string): number {
-		const res = parseInt(data.substr(101,2),16);
+		const res = parseInt(data.substr(107,2),16);
 		return res;
 	}
 

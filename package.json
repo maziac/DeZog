@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"publisher": "maziac",
 	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -35,12 +35,10 @@
 		"publish": "vsce publish"
 	},
 	"files": [
-		"./data/*",
-		"./data/rom48.labels"
 	],
 	"dependencies": {
 		"await-notify": "1.0.1",
-		"ts-node": "^6.0.0",
+		"ts-node": "^6.0.5",
 		"vscode-debugadapter": "1.27.0",
 		"vscode-debugprotocol": "1.27.0"
 	},
