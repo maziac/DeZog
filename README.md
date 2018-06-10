@@ -5,7 +5,7 @@
 The Z80-Debug-Adapter (z80-debug) lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
 With this extension it is possible to debug assembler programs built for the ZX Spectrum.
 It's primary intention is to support building new programs, i.e. programs with existent assembler source code.
-(It may also be used without source code to debug binaries but in that case the support is very limited and you could probably directly debug at ZEsarUX.)
+(It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug at ZEsarUX.)
 The biggest help it offers is that you are able to step through your sources and that  z80-debug is aware of all labels and can give hints to what label a number resolves.
 
 The z80-debug connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called ZRCP (Zesarux Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
@@ -34,13 +34,15 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - formatting registers
 	- customizable formatting for registers, e.g. format as hex and/or decimal and/or label etc.
 	- different formatting for registers while hovering
+- memory viewer / editor
+- automatic display of memory that is pointed to by HL, DE, etc.
 
 ## Constraints
 
 - supports only ZEsarUX emulator
 - build output must
 	- create a .list file (format as of Z80 Assembler: http://savannah.nongnu.org/projects/z80asm/)
-	- a .sna file containing the binary
+	- create a .sna file containing the binary
 
 
 ## Using Z80 Debug Adapter
@@ -124,7 +126,8 @@ You can also completely omit the label files but in that case the z80-debug supp
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
-- topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information z80.debug does not know when the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this can look:
+- topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information z80-debug does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
+
 ~~~
 Your assembler file:
 stack_bottom:
@@ -134,8 +137,9 @@ stack_top:
 In your launch.json:
 "topOfStack": "stack_top"
 ~~~
+
 Note: instead of a label you can also use a fixed number.
-- loadSnap": The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file.
+- loadSnap: The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file.
 - disableLabelResolutionBelow: z80-debug will try to resolve numbers into labels. This is fine most of the time, but for very low numbers this can also be annoying because z80-debug will normally find a load of matching labels whcih are all shown. You can disable it here if the label is below a certain value. Disabling it for all values 0-512 seems to be a good choice.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create files for the disassemblies given in 'disassemblies'.
 
@@ -147,7 +151,9 @@ But before you start z80-debug in vscode make sure that you started ZEsarUX.
 In ZEsarUX enable the socket ZRCP protocol either by commandline ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
-Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode. Sometimes it works but sometimes ZEsarUX will not connect. You might get an error like "ZEsarUX did not communicate!" in vscode.
+Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode.
+Sometimes it works but sometimes ZEsarUX will not connect.
+You might get an error like "ZEsarUX did not communicate!" in vscode.
 
 Now start z80-debug by pressing the green arrow in the debug pane (make sure that you chose the right debugger, i.e. "Z80 Debug").
 
@@ -157,7 +163,7 @@ z80-debug will now
 - set breakpoints (if there are breakpoints set in vscode)
 - put ZEsarUX into step mode ('enter-cpu-step') and stop/break the jst started assembler program
 
-z80-debug/vscode will now show you the opcode of the current PC (program counter) in the right position in your .asm file.
+z80-debug/vscode will now display the opcode of the current PC (program counter) in the right position in your .asm file.
 At the left side you see the disassembly and the registers in the VARIABLES section and the
 call stack in the CALL STACK section.
 
@@ -232,7 +238,11 @@ Enter '-help' in the debug console to see all available commands.
 
 ### Memory Dumps
 
-If you enter "-md \<address> \<size>" in the debug console you open a memory viewer.
+If you enter
+~~~~
+-md <address> <size>
+~~~~
+in the debug console you open a memory viewer.
 
 Here an example:
 ![](images/readme.pics/memdumpview.jpg)
@@ -260,7 +270,8 @@ z80-debug opens a special memory viewer by itself on startup: it shows the locat
 In the memory viewer you can edit indivdual memory values with a double-click on the value.
 You can now enter the new value as hex, decimal, bin or even as a math formula.
 
-Any changed value wil be updated automatically in all memory views but not in the WATCH area. There you need to 'step' once to get the updated values.
+Any changed value wil be updated automatically in all memory views.
+Note: The changed value is not updated immediately in the WATCH area. There you need to 'step' once to get the updated values.
 
 
 #### Configuration
