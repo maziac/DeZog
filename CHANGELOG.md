@@ -1,3 +1,6 @@
+## 0.3.0
+- First release to market place.
+
 ## 0.2.0
 - WPMEM: Persistent memory watchpoints added.
 - Watches: now the size and type can be manually added.

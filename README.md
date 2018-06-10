@@ -245,9 +245,10 @@ If you enter
 in the debug console you open a memory viewer.
 
 Here an example:
+
 ![](images/readme.pics/memdumpview.jpg)
 
-The memory viewer will offer a few extra info:
+The memory viewer will offer a few extra infos:
 - The address is printed on the left side.
 - The selected area (address, size) is emphasized, the other area is grayed out.
 - Any address for which a label exists is underlined.
@@ -316,6 +317,7 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 ## Notes
 
+- The VARIABLES section sometimes gets mixed up. I.e. the registers and the disassembly might show the wrong data.
 - "startAutomatically" is ignored at the moment. ZEsarUX should be started manually before debugging
 - vscode breakpoint conditions: those are directly passed to ZEsarUX. Conditions have not been tested at all.
 - Don't use "-exec run" in the debug console. It will lead to a disconnection of ZEsarUX. Instead use the continue button (the green arrow).

@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"publisher": "maziac",
 	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -91,13 +91,7 @@
 				"language": "pasmo"
 			}
 		],
-		"commands": [
-			{
-				"command": "catCoding.start",
-				"title": "Start new cat coding session",
-				"category": "Cat Coding"
-			}
-		],
+		"commands": [],
 		"debuggers": [
 			{
 				"type": "z80-debug",
