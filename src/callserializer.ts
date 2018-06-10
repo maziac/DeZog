@@ -114,9 +114,8 @@ export class CallSerializer {
 	private log(...args) {
 		if(!this.logEnabled)
 			return;
-		// REMOVE:
-		console.log(this.name + '.CallSerializer: ', ...args);
-		console.log(this.name + '.CallSerializer: ', ...this.queue);
+		Log.log(this.name + '.CallSerializer: ', ...args);
+		Log.log(this.name + '.CallSerializer: ', ...this.queue);
 	}
 
 

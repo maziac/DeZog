@@ -3,11 +3,32 @@ import { Labels } from './labels';
 import { zSocket } from './zesaruxSocket';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
+import { Z80Registers } from './z80Registers';
+import { Machine } from './machine';
 import * as fs from 'fs';
 import * as path from 'path';
 
+var assert = require('assert');
+
 
 export class Utility {
+	/**
+	 * Returns a value shrinked to a boundary.
+	 * Used to calculate address boundaries.
+	 * E.g. the boundary of 19 to a 16 boundary is 16.
+	 * @param value The value to bound.
+	 * @param boundary The boundary, usually 16.
+	 * @returns The bounded value.
+	 */
+	public static getBoundary(value: number, boundary: number): number {
+		// Boundary check
+		if(value < 0)	// Always return 0 for negative values
+			return 0;
+		const boundValue = value - (value % boundary);
+		return boundValue;
+	}
+
+
 	/**
 	 * Returns a hex string from a number with leading zeroes.
 	 * @param value The number to convert
@@ -15,7 +36,11 @@ export class Utility {
 	 */
 	public static getHexString(value: number, size: number) {
 		var s = value.toString(16);
-		return "0".repeat(size - s.length) + s.toUpperCase();
+		const r = size - s.length;
+		if(r < 0)
+			return s.substr(-r);	// remove leading digits
+		else
+			return "0".repeat(r) + s.toUpperCase();
 	}
 
 
@@ -125,6 +150,32 @@ export class Utility {
 
 
 	/**
+	 * Evaluates the given expression.
+	 * Also checks if there are elements to convert first, e.g. labels are converted
+	 * to numbers first.
+	 * Examples:
+	 * 2-5*3 => -13, -Dh
+	 * LBL_TEST+1 => 32769, 8001h
+	 * @param expr The expression to evaluate. May contain math expressions and labels.
+	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b.
+	 * @returns The evaluated number.
+	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
+	 */
+	public static evalExpression(expr: string):number {
+		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9_]*)/g, (match, p1) => {
+			const res = Labels.getNumberFromString(p1);
+			if(isNaN(res))
+				throw SyntaxError(p1 + ' is unknown.');
+			return res.toString();
+		});
+		// Evaluate
+		const result = eval(exprLabelled);
+		// return
+		return result;
+	}
+
+
+	/**
 	 * Calculates the (minimum) tabsize from the format string.
 	 * For all formats the max. string length is assumed and then
 	 * the tab size is calculated.
@@ -202,13 +253,27 @@ export class Utility {
 	 * It is required because it might be that for formatting it is required to
 	 * get more data from the socket.
 	 */
-	public static numberFormattedBy(name: string, value: number, size: number, format: string, tabSizeArr?: Array<string>, handler: {(formattedString: string)} = (data) => {}) {
+	public static numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, handler: (formattedString: string) => void) {
 		// Variables
-		var memByte = 0;
 		var memWord = 0;
+		var regsString = '';	// default: don't return registers.
 
 		// Serialize calls
 		CallSerializer.execAll(
+
+			// Check if registers might be returned as well. In that
+			(cs) => {
+				// case asynchronously retrieve the register values.
+				// Return registers only if 'name' itself is not a register.
+				if(!Z80Registers.isRegister(name)) {
+					Machine.getRegisters(data => {
+						regsString = data;
+						cs.endExec();
+					});
+				}
+				else
+					cs.endExec();
+			},
 
 			// Memory dump retrieving
 			(cs) => {
@@ -219,7 +284,7 @@ export class Utility {
 					zSocket.send( 'read-memory ' + value + ' 2', data => {
 						const b1 = data.substr(0,2);
 						const b2 = data.substr(2,2);
-						memByte = parseInt(b1,16);
+						const memByte = parseInt(b1,16);
 						memWord = memByte + (parseInt(b2,16)<<8);
 						cs.endExec();
 					});
@@ -232,125 +297,198 @@ export class Utility {
 
 			// Formatting
 			(cs) => {
-				// Search for format string '${...}'
-				// Note: [\s\S] is the same as . but also includes newlines.
-				var valString = format.replace(/\${([\s\S]*?)}/g, (match, p1) => {
-					// '${...}' found now check content
-					const innerMatch = /^([^\|]*?:)?([^\|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
-					if(innerMatch == undefined)
-						return '${'+p1+'???}';
-					// Modifier
-					var usedValue;
-					var usedSize;
-					var modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
-					modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length-1);
-					switch(modifier) {
-						case 'b@':
-							usedValue = memByte;	// use byte at address
-							usedSize = 1;
-							break;
-						case 'w@':
-							usedValue = memWord;	// use word at address
-							usedSize = 2;
-							break;
-						case '':	// no modifier found
-						default:	// in case of 'labels'
-							usedValue = value;	// normal case
-							usedSize = size;
-							break;
-					}
-					// Continue formatting
-					const formatting = innerMatch[2];	// e.g. 'hex' or 'name' or the pre-strign for labels
-					var innerLabelSeparator = innerMatch[3];	// e.g. ', '
-					innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substr(1);
-					var endLabelSeparator = innerMatch[4];	// e.g. ', '
-					endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substr(1);
-					switch(formatting) {
-						case 'name':
-							return name;
-						case 'hex':
-							return Utility.getHexString(usedValue,2*usedSize);
-						case 'bits':
-							return Utility.getBitsString(usedValue,usedSize*8);
-						case 'unsigned':
-							return usedValue.toString();
-						case 'signed':
-							const maxValue = Math.pow(256,usedSize);
-							const halfMaxValue = maxValue/2;
-							return ((usedValue >=  halfMaxValue) ? usedValue-maxValue : usedValue).toString();
-						case 'char':
-							return (usedValue >= 32 && usedValue < 127) ? String.fromCharCode(usedValue) : '';
-						case 'flags':
-							// interprete byte as Z80 flags:
-							// Zesarux: (e.g. "SZ5H3PNC")
-							// S Z X H X P/V N C
-							var res = (usedValue&0x80)? 'S' : '';	// S=sign
-							res += (usedValue&0x40)? 'Z' : '';	// Z=zero
-							res += (usedValue&0x10)? 'H' : '';	// H=Half Carry
-							res += (usedValue&0x04)? 'P' : '';	// P/V=Parity/Overflow
-							res += (usedValue&0x02)? 'N' : '';	// N=Add/Subtract
-							res += (usedValue&0x01)? 'C' : '';	// C=carry
-							return res;
-
-						case 'labels':
-						{
-							// calculate labels
-							const labels = Labels.getLabelsForNumber(value);
-							// format
-							if(labels && labels.length > 0)
-								return modifier + labels.join(innerLabelSeparator) + endLabelSeparator;
-							// No label
-							return '';
-						}
-
-						case 'labelsplus':
-						{
-							// calculate labels
-							const labels = Labels.getLabelsPlusIndexForNumber(value);
-							// format
-							if(labels && labels.length > 0)
-								return modifier + labels.join(innerLabelSeparator) + endLabelSeparator;
-							// No label
-							return '';
-						}
-
-						default:
-							// unknown formatting
-							return '${'+1+'???}';
-					}
-				});
-
-				// Format on tabs
-				if(!tabSizeArr)
-					tabSizeArr = Utility.calculateTabSizes(format, size);
-				if(tabSizeArr)
-					if(tabSizeArr.length == valString.split('\t').length) {
-						var index = 0;
-						valString += '\t';	// to replace also the last string
-						valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
-							if(!tabSizeArr) return p1;	// should not happen, only here to calm the compiler
-							var tabSize = tabSizeArr[index].length;
-							//if(index == 0)
-							//	--tabSize;	// First line missing the space in front
-							++index;
-							var result = p1 + " ";
-							// right adjusted
-							const repeatLen = tabSize-p1.length;
-							if(repeatLen > 0)
-								result = " ".repeat(repeatLen) + result;
-							return result;
-						});
-				}
+				// Format
+				var valString = this.numberFormattedSync(value, size, format, regsString, name, memWord, tabSizeArr);
 
 				// Call handler with the result string
 				handler(valString);
+
 				// End
 				cs.endExec();
 			}
 		);
-
 	}
 
+
+	/**
+	 * Returns a formatted number.
+	 * Formatting is done according to size and especially the format string.
+	 * This function works synchronously, if wordAtAddress or register values should be used
+	 * they have to be retrieved beforehand or use 'numberFormatted', the asynchrous version.
+	 * @param value The value to convert.
+	 * @param size The size of the value, e.g. 1 for a byte and 2 for a word.
+	 * @param format The format string:
+	 * ${name} = the name of the register, e.g. HL
+	 * ${hex} = value as hex, e.g. A9F5
+	 * ${unsigned} = value as unsigned, e.g. 1234
+	 * $(signed) = value as signed, e.g. -59
+	 * $(bits) = value as bits , e.g. 10011011
+	 * $(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC
+	 * ${labels} = value as label (or several labels)"
+	 * @param paramRegsString The register string retrieved from zesarux. Can be omitted or undefined or ''.
+	 * @param paramName The name, e.g. a register name "A" etc. or a label name. Can be omitted or undefined or ''.
+	 * @param paramWordAtAddress If value is an address and formatting should print that the value is given here.
+	 * The same value (the low byte) is also used for displaying the byte at address. Can be omitted or 0 if unused.
+	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
+	 * @returns The formatted string.
+	 */
+	public static numberFormattedSync(value: number, size: number, format: string, paramRegsString?: string, paramName?: string, paramWordAtAddress?: number, tabSizeArr?: Array<string>): string {
+		// Check for defaults
+		const regsString = paramRegsString || '';
+		const name = paramName || '';
+		const wordAtAddress = paramWordAtAddress || 0;
+		// Search for format string '${...}'
+		// Note: [\s\S] is the same as . but also includes newlines.
+		// First search for '${'
+		var valString = format.replace(/\${([\s\S]*?)(?=\${|$)/g, (match, p) => {
+			// '${...' found now check for } from the left side.
+			// This assures that } can also be used inside a ${...}
+			const k = p.lastIndexOf('}');
+			if(k < 0) {
+				// Not a ${...} -> continue
+				return p;
+			}
+			const p1 = p.substr(0,k);
+			const restP = p.substr(k+1);
+			// Complete '${...}' found. now check content
+			const innerMatch = /^([^\|]*?:)?([^\|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
+			if(innerMatch == undefined)
+				return '${'+p1+'???}' + restP;
+			// Modifier
+			var usedValue;
+			var usedSize;
+			var modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
+			modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length-1);
+			switch(modifier) {
+				case 'b@':
+					usedValue = wordAtAddress & 0xFF;	// use byte at address
+					usedSize = 1;
+					break;
+				case 'w@':
+					usedValue = wordAtAddress;	// use word at address
+					usedSize = 2;
+					break;
+				case '':	// no modifier found
+				default:	// in case of 'labels'
+					usedValue = value;	// normal case
+					usedSize = size;
+					break;
+			}
+			// Continue formatting
+			const formatting = innerMatch[2];	// e.g. 'hex' or 'name' or the pre-strign for labels
+			var innerLabelSeparator = innerMatch[3];	// e.g. ', '
+			innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substr(1);
+			var endLabelSeparator = innerMatch[4];	// e.g. ', '
+			endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substr(1);
+			switch(formatting) {
+				case 'name':
+					return name + restP;
+				case 'hex':
+					return Utility.getHexString(usedValue,2*usedSize) + restP;
+				case 'bits':
+					return Utility.getBitsString(usedValue,usedSize*8) + restP;
+				case 'unsigned':
+					return usedValue.toString() + restP;
+				case 'signed':
+					const maxValue = Math.pow(256,usedSize);
+					const halfMaxValue = maxValue/2;
+					return ((usedValue >=  halfMaxValue) ? usedValue-maxValue : usedValue).toString() + restP;
+				case 'char':
+					const s = (usedValue == 0) ? '0\u0332' : ((usedValue >= 32 && usedValue < 127) ? String.fromCharCode(usedValue) : '�');
+					return s + restP
+				case 'flags':
+					// interprete byte as Z80 flags:
+					// Zesarux: (e.g. "SZ5H3PNC")
+					// S Z X H X P/V N C
+					var res = (usedValue&0x80)? 'S' : '';	// S=sign
+					res += (usedValue&0x40)? 'Z' : '';	// Z=zero
+					res += (usedValue&0x10)? 'H' : '';	// H=Half Carry
+					res += (usedValue&0x04)? 'P' : '';	// P/V=Parity/Overflow
+					res += (usedValue&0x02)? 'N' : '';	// N=Add/Subtract
+					res += (usedValue&0x01)? 'C' : '';	// C=carry
+					return res + restP;
+
+				case 'labels':
+				{
+					// calculate labels
+					const labels = Labels.getLabelsForNumber(value, regsString);
+					// format
+					if(labels && labels.length > 0)
+						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
+					// No label
+					return '' + restP;
+				}
+
+				case 'labelsplus':
+				{
+					// calculate labels
+					const labels = Labels.getLabelsPlusIndexForNumber(value, regsString);
+					// format
+					if(labels && labels.length > 0)
+						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
+					// No label
+					return '' + restP;
+				}
+
+				default:
+					// unknown formatting
+					return '${'+1+'???}' + restP;
+			}
+		});
+
+		// Format on tabs
+		if(!tabSizeArr)
+			tabSizeArr = Utility.calculateTabSizes(format, size);
+		if(tabSizeArr)
+			if(tabSizeArr.length == valString.split('\t').length) {
+				var index = 0;
+				valString += '\t';	// to replace also the last string
+				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
+					if(!tabSizeArr) return p1;	// should not happen, only here to calm the compiler
+					var tabSize = tabSizeArr[index].length;
+					//if(index == 0)
+					//	--tabSize;	// First line missing the space in front
+					++index;
+					var result = p1 + " ";
+					// right adjusted
+					const repeatLen = tabSize-p1.length;
+					if(repeatLen > 0)
+						result = " ".repeat(repeatLen) + result;
+					return result;
+				});
+		}
+
+
+		// return
+		return valString;
+	}
+
+
+	/**
+	 * Returns the formatted register value. Does a request to zesarux to obtain the register value.
+	 * @param regIn The name of the register, e.g. "A" or "BC"
+	 * @param formatMap The map with the formattings (hover map or variables map)
+	 * @param handler A function that is called with the formatted string as argument.
+	 * It is required because it might be that for formatting it is required to
+	 * get more data from the socket.
+	 */
+	public static getFormattedRegister(regIn: string, formatMap: any, handler: {(formattedString: string)} = (data) => {}) {
+		// Every register has a formatting otherwise it's not a valid register name
+		const reg = regIn.toUpperCase();
+		const format = formatMap[reg];
+		assert(format != undefined, 'Register ' + reg + ' does not exist.');
+
+		Machine.getRegisters(data => {
+			// Get value of register
+			const value = Z80Registers.getRegValueByName(reg, data);
+
+			// do the formatting
+			var rLen = reg.length;
+			if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
+
+			Utility.numberFormatted(reg, value, rLen, format, undefined, handler);
+		});
+	}
 
 	/**
 	 * If absFilePath starts with Settings.launchRootFolder

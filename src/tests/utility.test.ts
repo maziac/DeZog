@@ -2,6 +2,10 @@
 import assert = require('assert');
 import { Utility } from '../utility';
 import { Labels } from '../labels';
+import { Z80Registers } from '../z80Registers';
+import { MachineClass, Machine } from '../machine';
+import { Settings, SettingsParameters } from '../settings';
+
 
 suite('Utility', () => {
 
@@ -82,11 +86,47 @@ suite('Utility', () => {
 
 	suite('numberFormattedBy', () => {
 
+		setup(() => {
+			const launchCfg: SettingsParameters = {
+				zhostname: "",
+				zport: 10000,
+				rootFolder: "",
+				disassemblies: [],
+				listFiles: [ {path: "", useFiles: true} ],
+				labelsFiles: [""],
+				disableLabelResolutionBelow: 256,
+				tmpDir: "",
+				topOfStack: "0x10000",
+				loadSnap: "",
+				startAutomatically: false,
+				skipInterrupt: true,
+				registerVarFormat: [ "" ],
+				registerHoverFormat: [ "" ],
+				labelWatchesGeneralFormat: "",
+				labelWatchesByteFormat: "",
+				labelWatchesWordFormat: "",
+				stackVarFormat: "",
+				memoryViewer: {
+					addressBckgColor: "",
+					addressHoverFormat: "",
+					valueHoverFormat: "",
+					registerPointerColors: [],
+					registersMemoryView: []
+				},
+				tabSize: 4,
+				trace: false,
+			}
+			Settings.Init(launchCfg);
+			MachineClass.create();
+			Z80Registers.init();
+			Machine.ZesaruxRegisterCache = "PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
+		});
+
 		suite('formats', () => {
 
 			test('formats, size 1', (done) => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
-				Utility.numberFormattedBy('myname', 255, 1, format, undefined, (res) => {
+				Utility.numberFormatted('myname', 255, 1, format, undefined, (res) => {
 					assert.equal( res, 'myname,FF,-1,255,11111111,,SZHPNC', "Unexpected formatting");
 					done();
 				});
@@ -94,7 +134,7 @@ suite('Utility', () => {
 
 			test('formats, size 2', (done) => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
-				Utility.numberFormattedBy('myname', 9999, 2, format, undefined, (res) => {
+				Utility.numberFormatted('myname', 9999, 2, format, undefined, (res) => {
 					// Note: value of flags doesn't matter
 					var b = res.startsWith('myname,270F,9999,9999,0010011100001111,,');
 					assert.ok( b, "Unexpected formatting");
@@ -104,7 +144,7 @@ suite('Utility', () => {
 
 			test('formats, size 2 negative', (done) => {
 				const format = '${signed},${unsigned}';
-				Utility.numberFormattedBy('myname', 32768, 2, format, undefined, (res) => {
+				Utility.numberFormatted('myname', 32768, 2, format, undefined, (res) => {
 					assert.equal( res, '-32768,32768', "Unexpected formatting");
 					done();
 				});
@@ -115,7 +155,7 @@ suite('Utility', () => {
 
 			test('general', (done) => {
 				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
-				Utility.numberFormattedBy('myname', 65, 1, format, undefined, (res) => {
+				Utility.numberFormatted('myname', 65, 1, format, undefined, (res) => {
 					assert.equal( res, 'myname 41   65  65 01000001 A     ZC ', "Unexpected tab formatting");
 					done();
 				});
@@ -125,7 +165,7 @@ suite('Utility', () => {
 				const format = '${name},\t${hex},\t${signed},\t${unsigned},\t${bits},\t${char},\t${flags}';
 				const predefined = '1234567\t12345678\t123456789\t1234567890\t12345678901\t123456789012\t1234567890123'
 				const predefArr = predefined.split('\t');
-				Utility.numberFormattedBy('myname', 65, 1, format, predefArr, (res) => {
+				Utility.numberFormatted('myname', 65, 1, format, predefArr, (res) => {
 					const arr = res.split(',');
 					assert.equal( arr[0].length+1, 'myname,'.length, "Unexpected formatting");
 					var i;
@@ -141,7 +181,7 @@ suite('Utility', () => {
 				const format = '${name},\t${hex},\t${signed}';
 				const predefined = '1234567\t12345678';
 				const predefArr = predefined.split('\t');
-				Utility.numberFormattedBy('myname', 65, 1, format, predefArr, (res) => {
+				Utility.numberFormatted('myname', 65, 1, format, predefArr, (res) => {
 					// Test simply that it returns
 					done();
 				});
@@ -149,7 +189,7 @@ suite('Utility', () => {
 
 			test('special test 1', (done) => {
 				const format = "${b#:hex}h\t${b#:unsigned}u\t${b#:signed}i\t'${char}'\t${b#:bits}b";
-				Utility.numberFormattedBy('', 65, 1, format, undefined, (res) => {
+				Utility.numberFormatted('', 65, 1, format, undefined, (res) => {
 					assert.equal( res, "41h  65u   65i 'A' 01000001b ", "Unexpected tab formatting");
 					done();
 				});
@@ -157,7 +197,7 @@ suite('Utility', () => {
 
 			test('special test 2', (done) => {
 				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
-				Utility.numberFormattedBy('', 255, 1, format, undefined, (res) => {
+				Utility.numberFormatted('', 255, 1, format, undefined, (res) => {
 					assert.equal( res, "  -1i  '' 11111111b ", "Unexpected tab formatting");
 					done();
 				});
@@ -170,7 +210,7 @@ suite('Utility', () => {
 			test('single', (done) => {
 				const format = "${labels}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 1024, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 1024, 2, format, undefined, (res) => {
 					assert.equal(res, "LABEL_1024", "Wrong label");
 					done();
 				});
@@ -179,7 +219,7 @@ suite('Utility', () => {
 			test('two same labels', (done) => {
 				const format = "${labels}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 2048, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
 					assert.equal(res, "LABEL_2048_ALABEL_2048_B", "Wrong label");
 					done();
 				});
@@ -188,7 +228,7 @@ suite('Utility', () => {
 			test('two same labels with pre and inner', (done) => {
 				const format = "${#:labels|§}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 2048, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
 					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B", "Wrong label");
 					done();
 				});
@@ -197,7 +237,7 @@ suite('Utility', () => {
 			test('two same labels with pre, inner and post', (done) => {
 				const format = "${#:labels|§|%}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 2048, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
 					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B%", "Wrong label");
 					done();
 				});
@@ -206,7 +246,7 @@ suite('Utility', () => {
 			test('two same labels with newlines', (done) => {
 				const format = "${labels|:\n|:\n}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 2048, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
 					assert.equal(res, "LABEL_2048_A:\nLABEL_2048_B:\n", "Wrong label");
 					done();
 				});
@@ -215,7 +255,7 @@ suite('Utility', () => {
 			test('two same labelsplus with pre, inner and post', (done) => {
 				const format = "${#:labelsplus|§|%}";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 2048, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
 					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B%", "Wrong label");
 					done();
 				});
@@ -224,7 +264,7 @@ suite('Utility', () => {
 			test('special 1', (done) => {
 				const format = "${hex}h${, :labelsplus|, }";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormattedBy('', 512, 2, format, undefined, (res) => {
+				Utility.numberFormatted('', 512, 2, format, undefined, (res) => {
 					assert.equal(res, "0200h, LABEL_512", "Wrong label");
 					done();
 				});

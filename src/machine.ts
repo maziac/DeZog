@@ -104,7 +104,7 @@ enum MachineState{
  * It receives the requests from the EmulDebugAdapter and commincates with
  * the EmulConnector.
  */
-export class Machine extends EventEmitter {
+export class MachineClass extends EventEmitter {
 
 	/// The machine type, e.g. 48k or 128k etc.
 	public machineType = MachineType.UNKNOWN;
@@ -121,15 +121,20 @@ export class Machine extends EventEmitter {
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
 
-	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
-	//private serializer = new CallSerializer("Main", true);
+	/// Array with the zesarux breakpoint IDs used for the WPMEM in the sources.
+	/// Note: size can be smaller than the number of WPMEM as some WPMEM might
+	/// be combined into one zesarux breakpoint.
+	private wpmemBpIds = new Array<number>();
 
-	/**
-	 * Creates a new Z80 machine.
-	 */
-	public constructor() {
-		super();
+	/// The WPMEM watchpoints can only be enabled/disable alltogether.
+	public wpmemEnabled = false;
 
+	/// The register cache for values retrieved from zesarux. Public for unit tests only.
+	public ZesaruxRegisterCache: string|undefined = undefined;
+
+
+	/// Initializes the machine.
+	public init() {
 		// Init the registers
 		Z80Registers.init();
 
@@ -145,12 +150,28 @@ export class Machine extends EventEmitter {
 	 * Stops a machine/the debugger.
 	 * This will disconnect the socket to zesarux and un-use all data.
 	 */
-	public stop() {
+	public stop(handler: () => void) {
 		zSocket.removeAllListeners();
-		zSocket.end();
-		zSocket.destroy();
-		//var sleep = require('sleep');
-		//sleep.sleep(3);	// 3 secs
+
+		// inform caller
+		const func = () => {
+			zSocket.removeAllListeners();
+			handler();
+		}
+		zSocket.once('error', () =>
+			func() );
+		zSocket.once('timeout', () =>
+			func() );
+		zSocket.once('close', () =>
+			func() );
+		zSocket.once('end', () =>
+			func() );
+
+		// disable breakpoints
+//		zSocket.send('disable breakpoints', () => {
+			// and quit
+			zSocket.quit();
+//		});
 	}
 
 
@@ -158,8 +179,8 @@ export class Machine extends EventEmitter {
 	 * Factory: At the moment this static method just creates a new Machine.
 	 * Later it may create different machines depending on the type (48K 128).
 	 */
-	public static getMachine() {
-		return new Machine();
+	public static create() {
+		Machine = new MachineClass();
 	}
 
 
@@ -246,6 +267,54 @@ export class Machine extends EventEmitter {
 
 
 	/**
+	 * If registers have not been received yet from zesarux they are
+	 * requested now.
+	 * If they are already cached, the cached value is returned.
+	 * The cached value is cleared whenever a step or run is done.
+	 * @param handler(registersString) Passes 'registersString' to the handler.
+	 */
+	public getRegisters(handler: (registersString: string) => void) {
+		if(this.ZesaruxRegisterCache) {
+			// Already exists, return immediately
+			handler(this.ZesaruxRegisterCache);
+		}
+		else {
+			// get new data
+			zSocket.send('get-registers', data => {
+				// Store received data
+				this.ZesaruxRegisterCache = data;
+				const regs = data || '';	// Just to remove warning
+				handler(regs);
+			});
+		}
+	}
+
+
+	/**
+	 * Returns a specific register value.
+	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
+	 * @returns The register value.
+	 */
+	public getRegisterValue(register: string, handler: (value: number) => void) {
+		this.getRegisters((regsString) => {
+			const value = Z80Registers.getRegValueByName(register, regsString);
+			handler(value);
+		});
+	}
+
+	/**
+	 * Returns a specific register value as a fromatted string.
+	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
+	 * @param handler(formattedString) The 'formattedString' is passed to handler.
+	 */
+	public getVarFormattedRegister(register: string, handler: (formattedString: string) => void) {
+		this.getRegisters((regsString) => {
+			Z80Registers.getVarFormattedReg(register, regsString,  handler);
+		});
+	}
+
+
+	/**
 	 * Helper function to prepare the callstack for vscode.
 	 * What makes it complicated is the fact that for every word on the stack the zesarux
 	 * has to be called to get the disassembly to check if it was a CALL.
@@ -289,7 +358,7 @@ export class Machine extends EventEmitter {
 				const callAddr = parseInt(callAddrString,16);
 				// Now find label for this address
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr) ? labelCallAddrArr[0] : callAddrString+'h';
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : callAddrString+'h';
 				const file = Labels.getFileAndLineForAddress(addr_3);
 				// Save
 				lastCallFrameIndex = frames.addObject(new Frame(addr_3, zStackAddress+2*index, 'CALL ' + labelCallAddr, file.fileName, file.lineNr));
@@ -314,7 +383,7 @@ export class Machine extends EventEmitter {
 		const frames = new RefList();
 
 		// Get current pc
-		zSocket.send('get-registers', data => {
+		this.getRegisters( data => {
 			// Parse the PC value
 			const pc = Z80Registers.parsePC(data);
 			const file = Labels.getFileAndLineForAddress(pc);
@@ -323,7 +392,7 @@ export class Machine extends EventEmitter {
 			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC',file.fileName, file.lineNr));
 
 			// calculate the depth of the call stack
-			var depth = Labels.topOfStack - sp;
+			var depth = (Labels.topOfStack - sp)/2;	// 2 bytes per word
 			if(depth>20)	depth = 20;
 
 			// Check if callstack need to be called
@@ -366,6 +435,9 @@ export class Machine extends EventEmitter {
 	  */
 	 public continue(handler:()=>void): void {
 		this.state = MachineState.RUNNING;
+		// Clear register cache
+		this.ZesaruxRegisterCache = undefined;
+		// Run
 		zSocket.send('run', (data) => {
 			this.state = MachineState.IDLE;
 			// Call handler (could take some time, e.g. until a breakpoint is hit)
@@ -391,6 +463,8 @@ export class Machine extends EventEmitter {
 		this.state = MachineState.RUNNING;
 		this.state = MachineState.IDLE;
 		// TODO: needs implementation
+		// Clear register cache
+		this.ZesaruxRegisterCache = undefined;
 		handler();
 	}
 
@@ -408,13 +482,15 @@ export class Machine extends EventEmitter {
 		// 'step-into' is not the desired behaviour for a CALL.
 		// So we first check if the instruction is a CALL and
 		// then either excute a 'step-over' or a step-into'.
-		zSocket.send('get-registers', data => {
+		this.getRegisters( data => {
 			const pc = Z80Registers.parsePC(data);
 			zSocket.send('disassemble ' + pc, data => {
 				const opcode = data.substr(7,4);
 				// Check if this was a "CALL something" or "CALL n/z,something"
 				const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
 
+				// Clear register cache
+				this.ZesaruxRegisterCache = undefined;
 				// Step
 				zSocket.send(cmd, data => {
 					// Call handler
@@ -430,6 +506,8 @@ export class Machine extends EventEmitter {
 	  * @param handler The handler that is called after the step is performed.
 	  */
 	 public stepInto(handler:()=>void): void {
+		// Clear register cache
+		this.ZesaruxRegisterCache = undefined;
 		// Step into
 		zSocket.send('cpu-step', data => {
 			// Call handler
@@ -449,7 +527,7 @@ export class Machine extends EventEmitter {
 		// I.e. when the RET (or (RET cc) gets executed.
 
 		// get current stackpointer
-		zSocket.send('get-registers', data => {
+		this.getRegisters( data => {
 			// Get SP
 			const sp = Z80Registers.parseSP(data);
 
@@ -495,23 +573,28 @@ export class Machine extends EventEmitter {
 
 								// set action first (no action)
 								const bpId = freeBps[0];
-								zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', data => {
+								zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
 									// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
 									const condition = 'SP>' + sp;
-									zSocket.send('set-breakpoint ' + bpId + ' ' + condition, data => {
+									zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+										// enable breakpoint
+										zSocket.send('enable-breakpoint ' + bpId, () => {
 
-										// Run
-										this.state = MachineState.RUNNING;
-										zSocket.send('run', data => {
-											// takes a little while, then step-over RET
-											// Remove breakpoint
-											zSocket.send('set-breakpoint ' + bpId, data => {
-												this.state = MachineState.IDLE;
-												handler();
-												return;
+											// Clear register cache
+											this.ZesaruxRegisterCache = undefined;
+											// Run
+											this.state = MachineState.RUNNING;
+											zSocket.send('run', () => {
+												// takes a little while, then step-over RET
+												// Disable breakpoint
+												zSocket.send('disable-breakpoint ' + bpId, () => {
+													this.state = MachineState.IDLE;
+													handler();
+													return;
+												});
 											});
-										});
 
+										});
 									});
 
 								});
@@ -538,6 +621,8 @@ export class Machine extends EventEmitter {
 	  */
 	 public stepBack(handler:()=>void): void {
 		// TODO: implement step-back
+		// Clear register cache
+		this.ZesaruxRegisterCache = undefined;
 		// Call handler
 		handler();
 	}
@@ -562,12 +647,14 @@ export class Machine extends EventEmitter {
 	 * I.e. if the watch is of length 1 as many as possible watches are put in one breakpoint.
 	 * If the length is > 1 then a single breakpoint is used.
 	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler Is called after the last watchpoint is set.
+	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 * Passes 'bpIds' with the used zesarux breakpoint IDs.
 	 */
-	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
+	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler: (bpIds:Array<number>) => void) {
 		// Set watchpoints (memory guards)
 		var conditions = '';
 		var notEnoughBreakpoints = false;
+		const bpIds = new Array<number>();
 		for(let watchpoint of watchPoints) {
 			if(watchpoint.length == 0)
 				continue;
@@ -584,7 +671,7 @@ export class Machine extends EventEmitter {
 					cond = cond.replace(/MWA/g, 'MRA');
 				}
 				else if(access == 'rw') {
-					cond = ' or ' + cond.replace(/MWA/g, 'MRA');
+					cond += ' or ' + cond.replace(/MWA/g, 'MRA');
 				}
 				// Check if size too big
 				if(conditions.length + 4 + cond.length > Zesarux.MAX_BREAKPOINT_CONDITION_LENGTH) {
@@ -594,6 +681,8 @@ export class Machine extends EventEmitter {
 						notEnoughBreakpoints = true;
 						break;
 					}
+					// Collect breakpoint
+					bpIds.push(bp.bpId);
 					// Prepare for next
 					conditions = cond;
 				}
@@ -626,11 +715,16 @@ export class Machine extends EventEmitter {
 					notEnoughBreakpoints = true;
 					break;
 				}
+				// Collect breakpoint
+				bpIds.push(bp1.bpId);
+				// 2nd breakpoint
 				if(bp2.condition.length > 0) {
 					if(this.setBreakpoint(bp2) == 0) {
 						notEnoughBreakpoints = true;
 						break;
 					}
+					// Collect breakpoint
+					bpIds.push(bp2.bpId);
 				}
 			}
 		}
@@ -642,6 +736,10 @@ export class Machine extends EventEmitter {
 			if(this.setBreakpoint(bp) == 0) {
 				notEnoughBreakpoints = true;
 			}
+			else {
+				// Collect breakpoint
+				bpIds.push(bp.bpId);
+			}
 		}
 
 		// Call handler
@@ -650,8 +748,41 @@ export class Machine extends EventEmitter {
 				// Send warning
 				this.emit('warning', 'Not enough breakpoints available for all watchpoints (WPMEM). Would require ' + watchPoints.length + ' breakpoints.');
 			}
+			handler(bpIds);
+		});
+	}
+
+
+	/**
+	 * Thin wrapper around setWatchpoints just to catch and store
+	 * the used breakpoint IDs.
+	 * Called only once.
+	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param handler() Is called after the last watchpoint is set.
+	 */
+	public setWPMEM(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
+		this.setWatchpoints(watchPoints, (bpIds) => {
+			this.wpmemBpIds = bpIds;
 			handler();
 		});
+		this.wpmemEnabled = true;
+	}
+
+
+	/**
+	 * Enables/disables all WPMEM watchpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableWPMEM(enable: boolean, handler: () => void) {
+		for(let bpId of this.wpmemBpIds) {
+			if(enable)
+				zSocket.send('enable-breakpoint ' + bpId);
+			else
+				zSocket.send('disable-breakpoint ' + bpId);
+		}
+		this.wpmemEnabled = enable;
+		zSocket.executeWhenQueueIsEmpty(handler);
 	}
 
 
@@ -669,9 +800,12 @@ export class Machine extends EventEmitter {
 		this.freeBreakpointIds.shift();
 
 		// set action first (no action)
-		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit.', (data) => {
+		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + bp.condition + ')', () => {
 			// set the breakpoint
-			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + bp.condition);
+			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + bp.condition, () => {
+				// enable the breakpoint
+				zSocket.send('enable-breakpoint ' + bp.bpId);
+			});
 		});
 
 		// Add to list
@@ -687,7 +821,10 @@ export class Machine extends EventEmitter {
 	 */
 	protected removeBreakpoint(bp: MachineBreakpoint) {
 		// set breakpoint with no condition = disable/remove
-		zSocket.send('set-breakpoint ' + bp.bpId);
+		//zSocket.send('set-breakpoint ' + bp.bpId);
+
+		// disable breakpoint
+		zSocket.send('disable-breakpoint ' + bp.bpId);
 
 		// Remove from list
 		var index = this.breakpoints.indexOf(bp);
@@ -699,11 +836,11 @@ export class Machine extends EventEmitter {
 
 
 	/**
-	 * Clears all breakpoints set in zesarux on startup.
+	 * Disables all breakpoints set in zesarux on startup.
 	 */
 	protected clearAllZesaruxBreakpoints() {
 		for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
-			zSocket.send('set-breakpoint ' + i);
+			zSocket.send('disable-breakpoint ' + i);
 		}
 	}
 
@@ -785,7 +922,7 @@ export class Machine extends EventEmitter {
 		// get disassembly, get more than is required (because zesarux lacks a disassembly with size)
 		const lines = size;	// number of lines is < size
 		if(isNaN(start))
-			console.log("ERROR");
+			Log.log("ERROR");
 		zSocket.send('disassemble ' + start + ' ' + lines, (data) => {
 			// Remove the superfluous lines
 			const lineArr = data.split('\n');
@@ -825,4 +962,49 @@ export class Machine extends EventEmitter {
 		});
 	}
 
+
+	/**
+	 * Reads a memory dump from zesarux and converts it to a number array.
+	 * @param address The memory start address.
+	 * @param size The memory size.
+	 * @param handler(data) The handler that receives the data.
+	 */
+	public getMemoryDump(address: number, size: number, handler:(data: Array<number>)=>void) {
+		// Retrieve memory values
+		zSocket.send( 'read-memory ' + address + ' ' + size, data => {
+			const values = new Array<number>();
+			const len = data.length;
+			for(var i=0; i<len; i+=2) {
+				const valueString = data.substr(i,2);
+				const value = parseInt(valueString,16);
+				values.push(value);
+			}
+			// send data to handler
+			handler(values);
+		});
+	}
+
+
+	/**
+	 * Writes one memory value to zesarux.
+	 * The write is followed by a read and the read value is returned
+	 * in the handler.
+	 * @param address The address to change.
+	 * @param value The new value.
+	 */
+	public writeMemory(address, value, handler:(realValue: number) => void) {
+		// Write byte
+		zSocket.send( 'write-memory ' + address + ' ' + value, data => {
+			// read byte
+			zSocket.send( 'read-memory ' + address + ' 1', data => {
+				// call handler
+				const readValue = parseInt(data,16);
+				handler(readValue);
+			});
+		});
+	}
+
 }
+
+
+export var Machine;

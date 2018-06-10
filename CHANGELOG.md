@@ -1,3 +1,9 @@
+## 0.2.0
+- WPMEM: Persistent memory watchpoints added.
+- Watches: now the size and type can be manually added.
+- A memory viewer/editory has been added.
+- console command to evaluate expressions/labels.
+
 ## 0.1.2
 - Setting of breakpoints now also works even if mborik.z80-macroasm (or other Z80 extensions) are installed as well.
 

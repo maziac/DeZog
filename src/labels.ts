@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { Settings } from './settings';
+import { Z80Registers } from './z80Registers';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
 //import { start } from 'repl';
@@ -333,11 +334,16 @@ class LabelsClass {
 	 * Returns all labels with the exact same address
 	 * to the given address.
 	 * @param number The address value to find
-	 * @returns An array of strings with labels or undefined
+	 * @param regsString If defined it also returns registers (from the regsString)which match the number. Can be omitted. Then no registers are returned.
+	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
-	public getLabelsForNumber(number: number): Array<string> {
+	public getLabelsForNumber(number: number, regsString: string = ''): Array<string> {
+		var names = Z80Registers.getRegistersEqualTo(number, regsString);
 		var labels = this.labelsForNumber[number];
-		return (typeof labels === 'number') ? undefined : labels;
+		if(labels && typeof labels !== 'number') {
+			names.push(...labels);
+		}
+		return names;
 	}
 
 
@@ -347,21 +353,27 @@ class LabelsClass {
 	 * If label is equal to given addr the label itself is returned.
 	 * If label is not equal to given addr the label+offset is returned.
 	 * @param number The address value to find
-	 * @returns An array of strings with labels + offset
+	 * @param regsString If defined it also returns registers (from the regsString) which match the number exactly. Can be omitted. Then no registers are returned.
+	 * @returns An array of strings with (registers and) labels + offset
 	 */
-	public getLabelsPlusIndexForNumber(number: number): Array<string> {
+	public getLabelsPlusIndexForNumber(number: number, regsString: string = ''): Array<string> {
+		var names = Z80Registers.getRegistersEqualTo(number, regsString);
 		var labels = this.labelsForNumber[number];
-		if(labels === undefined)
-			return new Array<string>();	// Return empty string
-		if(typeof labels === 'number') {
-			const offs = labels;
-			number -= offs;
-			const baseLabels = this.labelsForNumber[number];	// this is an array
-			if(baseLabels === undefined)
-				return new Array<string>();	// Return empty string
-			labels = baseLabels.map(label => label+'+'+offs);
+		if(labels) {
+			if(typeof labels !== 'number') {
+				names.push(...labels);
+			}
+			else {
+				const offs = labels;	// number
+				number -= offs;
+				const baseLabels = this.labelsForNumber[number];	// this is an array
+				if(baseLabels !== undefined) {
+					const labelsPlus = baseLabels.map(label => label+'+'+offs);
+					names.push(...labelsPlus);
+				}
+			}
 		}
-		return labels;
+		return names;
 	}
 
 

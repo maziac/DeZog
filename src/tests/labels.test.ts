@@ -5,10 +5,9 @@ import { Labels } from '../labels';
 import { Settings, SettingsParameters } from '../settings';
 
 suite('Labels', () => {
-	var launchCfg: SettingsParameters;
 
 	setup( () => {
-		launchCfg = {
+		const launchCfg: SettingsParameters = {
 			zhostname: "",
 			zport: 10000,
 			rootFolder: "",
@@ -27,6 +26,13 @@ suite('Labels', () => {
 			labelWatchesByteFormat: "",
 			labelWatchesWordFormat: "",
 			stackVarFormat: "",
+			memoryViewer: {
+				addressBckgColor: "",
+				addressHoverFormat: "",
+				valueHoverFormat: "",
+				registerPointerColors: [],
+				registersMemoryView: []
+			},
 			tabSize: 4,
 			trace: false,
 		}

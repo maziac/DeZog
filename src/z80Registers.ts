@@ -6,11 +6,11 @@ var assert = require('assert');
 
 
 
-/// The formating (for VARIABLES) for each register is provided through a map.
-var regVarFormat: Map<string, string>;
+/// The formatting (for VARIABLES) for each register is provided through a map.
+export var Z80RegisterVarFormat: Map<string, string>;
 
-/// The formating (for hovering) for each register is provided through a map.
-var regHoverFormat: Map<string, string>;
+/// The formatting (for hovering) for each register is provided through a map.
+export var Z80RegisterHoverFormat: Map<string, string>;
 
 /// All values of the registers are provided in a map.
 /// Together with a function to retrieve the value from the data string.
@@ -24,9 +24,7 @@ export class Z80Registers {
 
 	/**
 	 * Eg.
-	 * PC=a65e SP=9f0a BC=0808 A=01 HL=5c78 DE=0014 IX=0300 IY=5c3a
-	 * A'=1f BC'=0200 HL'=a9b3 DE'=56b5 I=fe R=47  F=S    HNC F'=    3HN
-	 * MEMPTR=a656 EI IM2 VPS: 0 TSTATES: 577
+	 * PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 	 * A65E RETI
 	 */
 
@@ -62,8 +60,8 @@ export class Z80Registers {
 		regMap["A'"] = Z80Registers.parseA2;
 		regMap["F'"] = Z80Registers.parseF2;
 
-		regVarFormat = Z80Registers.createFormattingMap(Settings.launch.registerVarFormat);
-		regHoverFormat = Z80Registers.createFormattingMap(Settings.launch.registerHoverFormat);
+		Z80RegisterVarFormat = Z80Registers.createFormattingMap(Settings.launch.registerVarFormat);
+		Z80RegisterHoverFormat = Z80Registers.createFormattingMap(Settings.launch.registerHoverFormat);
 	}
 
 	/**
@@ -277,8 +275,9 @@ export class Z80Registers {
 		var rLen = reg.length;
 		if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
 
-		Utility.numberFormattedBy(reg, value, rLen, format, undefined, handler);
+		Utility.numberFormatted(reg, value, rLen, format, undefined, handler);
 	}
+
 
 	/**
 	 * Returns the 'variable' formatted register value.
@@ -289,7 +288,7 @@ export class Z80Registers {
 	 * get more data from the socket.
 	 */
 	public static getVarFormattedReg(reg: string, data: string, handler: {(formattedString: string)} = (data) => {}) {
-		Z80Registers.getFormattedReg(reg, data, regVarFormat, handler);
+		Z80Registers.getFormattedReg(reg, data, Z80RegisterVarFormat, handler);
 	}
 
 	/**
@@ -301,20 +300,37 @@ export class Z80Registers {
 	 * get more data from the socket.
 	 */
 	public static getHoverFormattedReg(reg: string, data: string, handler: {(formattedString: string)} = (data) => {}) {
-		Z80Registers.getFormattedReg(reg, data, regHoverFormat, handler);
+		Z80Registers.getFormattedReg(reg, data, Z80RegisterHoverFormat, handler);
 	}
 
 
 	/**
 	 * Returns the register value as a number.
 	 * @param regName The register value.
-	 * @param data The data string returned by zesarux.
+	 * @param regsString The data string returned by zesarux.
+	 * @returns The value of the register.
 	 */
-	public static getRegValueByName(regName: string, data:string): number {
+	public static getRegValueByName(regName: string, regsString:string): number {
 		var handler = regMap[regName];
 		assert(handler != undefined, 'Register ' + regName + ' does not exist.');
-		var value = handler(data);
+		var value = handler(regsString);
 		return value;
 	}
 
+
+	/**
+	 * Returns all registers with the given value.
+	 * Is used to find registers that match a certain address.
+	 * @param value The value to find.
+	 * @param regsString The string zesarux returns if asked for register values. Returns an empty array if omitted.
+	 * @returns An array of strings with register names that match. If no matching register is found returns an empty array.
+	 */
+	public static getRegistersEqualTo(value: number, regsString: string): Array<string> {
+		var resRegs:Array<string> = [];
+		if(regsString && regsString.length > 0) {
+			const regs = [ "HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'" ];
+			resRegs = regs.filter(reg => value == this.getRegValueByName(reg, regsString));
+		}
+		return resRegs;
+	}
 }

@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"publisher": "maziac",
 	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -12,7 +12,7 @@
 		"multi-root ready"
 	],
 	"engines": {
-		"vscode": "^1.18.0",
+		"vscode": "^1.23.0",
 		"node": "^7.9.0"
 	},
 	"icon": "images/z80-debug-icon.png",
@@ -22,7 +22,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/xxx"
+		"url": "https://github.com/maziac/z80-debug"
 	},
 	"scripts": {
 		"prepublish": "tsc -p ./src",
@@ -39,8 +39,8 @@
 	"dependencies": {
 		"await-notify": "1.0.1",
 		"ts-node": "^6.0.5",
-		"vscode-debugadapter": "1.27.0",
-		"vscode-debugprotocol": "1.27.0"
+		"vscode-debugadapter": "1.29.0",
+		"vscode-debugprotocol": "1.29.0"
 	},
 	"devDependencies": {
 		"@types/node": "7.0.55",
@@ -92,7 +92,13 @@
 				"language": "pasmo"
 			}
 		],
-		"commands": [],
+		"commands": [
+      		{
+				"command": "catCoding.start",
+				"title": "Start new cat coding session",
+				"category": "Cat Coding"
+      		}
+		],
 		"debuggers": [
 			{
 				"type": "z80-debug",
@@ -159,7 +165,7 @@
 								"description": "(Optional) If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
 							},
 							"disableLabelResolutionBelow": {
-								"tape": "number",
+								"type": "number",
 								"description": "Disables the number to label conversion if number is below the given value. E.g. if you choose 256 (the typical value)labels below 256 are not resolved."
 							},
 							"tmpDir": {
@@ -219,7 +225,37 @@
 							"stackVarFormat": {
 								"type": "string",
 								"description": "see registerVarFormat. Format for the pushed values in the STACK area."
+							},
+
+							"memoryViewer": {
+								"addressBckgcolor": {
+									"type": "string",
+									"description": "The background color of the address field."
+								},
+								"addressHoverFormat": {
+									"type": "string",
+									"description": "see registerVarFormat. Format for the address when hovering."
+								},
+								"valueHoverFormat": {
+									"type": "string",
+									"description": "see registerVarFormat. Format for the value when hovering."
+								},
+								"registerPointersToShow": {
+									"type": "array",
+									"description": "You can select here which register should appear in the memory view if their value is in range of the memory view. Additionally you select also the background color for the register. E.g. select [ 'HL', 'green', 'DE', 'blue', 'IX', 'red' ].",
+									"items": [
+										{ "type": "string" }, { "type": "string" }
+									]
+								},
+								"registersMemoryView": {
+									"type": "array",
+									"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. Together with the register you also select the color. E.g. select [ 'HL', 'DE', 'IX' ].",
+									"items": {
+										"type": "string"
+									}
+								}
 							}
+
 						}
 					}
 				},

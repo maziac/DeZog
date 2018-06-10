@@ -59,7 +59,7 @@ export class Log {
 	 */
 	private static write(format: string, ...args) {
 		// write to console
-		console.log(...args);
+//		console.log(...args);
 		// Append to file
 		var text = util.format(format, ...args);
 		try {
@@ -72,7 +72,7 @@ export class Log {
 
 	/**
 	 * Returns the caller name.
-	 * @returns 'class.method'. E.g. "ZesaruxDebugSeesion.initializeRequest"
+	 * @returns 'class.method'. E.g. "ZesaruxDebugSession.initializeRequest"
 	 */
 	private static callerName(): string {
 		// Throw error to get call stack

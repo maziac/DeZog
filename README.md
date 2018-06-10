@@ -178,6 +178,121 @@ To stop debugging press the orange square button in vscode. This will stop the z
 After disconnecting ZEsarUX, ZEsarUX will also leave cpu-step mode and therefore continue running the program.
 
 
+### WPMEM
+
+WPMEM offers a way to put watch points persistently into your sources.
+
+WPMEM is put into a comment in your assembler source files. As the comments also appear in the .list file these comments will be parsed when the .list file is read.
+
+Here are some examples how this looks like in code:
+~~~
+fill_colors:    ; WPMEM, 5, w
+    defb RED, YELLOW, BLUE, GREEN, MAGENTA
+fill_colors_end:
+~~~
+~~~
+; WPMEM 0x0000, 0x4000
+~~~
+~~~
+; WPMEM fill_colors, 5, r
+~~~
+
+Syntax:
+~~~~
+WPMEM [addr [, length [, access]]]
+~~~~
+with:
+- addr = address (or label) to observe (optional). Defaults to current address.
+- length = the count of bytes to observe (optional). Default = 1.
+- access = Read/write access (optional). Possible values: r, w or rw. Defaults to rw.
+
+I.e. if you omit all values a watch-point will be created for the current address.
+E.g. in the first example a watchpoint is created that checks that the array (fill_colors) is not overwritten with something else.
+
+The most often used form of WPMEM is to put a WPMEM simply after an byte area that is used for reading/writing. E.g. like this:
+~~~~
+scratch_area:
+    defs 10
+    defb 1      ; WPMEM
+~~~~
+In this example it is assumed that your algorithm uses the 'scratch_area' to write some data. You defined that this area is 10 bytes in size. Thus if someone would write after
+these 10 bytes it would mean that the algorithm is wrong.
+Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
+
+Caveats:
+- The parser of the list file is very simple. I.e. it cannot distinguish if
+the comment is in an area that is conditionally not assembled. So even if the code is not assembled it would honor the WPMEM comment and assign a watch point.
+
+### Debug Console
+
+You can add commands directly at the debug console. E.g. you can pass commands directly to ZEsarUX or you can enable/disable WPMEM.
+
+Enter '-help' in the debug console to see all available commands.
+
+
+### Memory Dumps
+
+If you enter "-md \<address> \<size>" in the debug console you open a memory viewer.
+
+Here an example:
+![](images/readme.pics/memdumpview.jpg)
+
+The memory viewer will offer a few extra info:
+- The address is printed on the left side.
+- The selected area (address, size) is emphasized, the other area is grayed out.
+- Any address for which a label exists is underlined.
+- Addresses that are pointed to by registers (e.g HL, DE, IX) are displayed with a colored background (here HL got green).
+- Any changed value is highlighted in red.
+- Hovering over values reveals more information. In the picture above the move was hovering over the red "42". You can see the associated address, label(s) and (since the value was changed) also the previous value.
+
+You can also open multiple memory dumps at once by adding more address/size ranges to the command, e.g.:
+~~~~
+-md 0 0x100 0x8000 0x40 0x8340 0x10
+~~~~
+This opens a memory dump view 3 memory blocks.
+Please note that if ou enter overlapping blocks the dump will merge them in the display.
+
+z80-debug opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
+
+
+#### Memory Editor
+
+In the memory viewer you can edit indivdual memory values with a double-click on the value.
+You can now enter the new value as hex, decimal, bin or even as a math formula.
+
+Any changed value wil be updated automatically in all memory views but not in the WATCH area. There you need to 'step' once to get the updated values.
+
+
+#### Configuration
+
+The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registers-memory-viewer, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
+
+
+### WATCHES
+
+If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
+The dump is updated on each step.
+z80-debug cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
+a byte array and a word array, on default.
+However you have a few options if you add more parameters to the label.
+
+If you double-click on the label in the WATCHES area you can edit it. You can tell z80-debug the number of elements to show and if it should show bytes, words or both.
+The format is:
+~~~~
+label,size,types
+~~~~
+with
+- label: The label, e.g. LBL_TEXT or just a number e.g. 0x4000
+- size: The number of elements to show. Defaults to 100 if omitted.
+- types: Determines if a byte array ('b'), a word array ('w') or both ('bw') should be shown. Defaults to 'bw'.
+
+Here is an example:
+~~~~
+fill_colors,5,b
+~~~~
+It shows an array of 5 bytes beginning at label fill_colors.
+
+
 ## Differences to ZEsarUX
 
 Stepping works slightly different to stepping in ZEsarUX.
@@ -185,9 +300,6 @@ Stepping works slightly different to stepping in ZEsarUX.
 - step-over: A step-over always returns. step-over should work like you would intuitively expect it to work (at least for me :-) ). You can step-over a 'jp' opcode and it will break on the next opcode, the jump address. z80-debug does so by looking at the current opcode: If a 'call' or a 'ldir/lddr' is found a ZEsarUX 'cpu-step-over' is done, in all other case a 'cpu-step' (into) is done.
 
 - step-out: This is not available in ZEsarUX, but in z80-debug you can make use of a step-out. z80 debug examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
-
-
-
 
 
 

@@ -1,28 +1,21 @@
 
 
-import {
-	DebugSession,
-	InitializedEvent, TerminatedEvent, StoppedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/
-	Thread, StackFrame, Scope, Source, /*Handles,*/ Breakpoint /*, OutputEvent*/
-} from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
-import { zSocket } from './zesaruxSocket';
-import { Z80Registers } from './z80Registers';
-import { Utility } from './utility';
-import { Labels } from './labels';
-import { Settings, SettingsParameters } from './settings';
-import { CallSerializer } from './callserializer';
-import { RefList } from './reflist';
-import { Log } from './log';
-import { /*ShallowVar,*/ DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar } from './shallowvar';
-//import { Frame } from './frame';
-import { Machine, MachineBreakpoint } from './machine';
-import { GenericWatchpoint } from './genericwatchpoint';
 import * as vscode from 'vscode';
-
-//import { AssertionError } from 'assert';
-//const { Subject } = require('await-notify');
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread } from 'vscode-debugadapter';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { CallSerializer } from './callserializer';
+import { GenericWatchpoint } from './genericwatchpoint';
+import { Labels } from './labels';
+import { Log } from './log';
+import { Machine, MachineBreakpoint, MachineClass } from './machine';
+import { MemoryDumpView } from './memorydumpview';
+import { MemoryRegisterView } from './memoryregisterview';
+import { RefList } from './reflist';
+import { Settings, SettingsParameters } from './settings';
+import { /*ShallowVar,*/ DisassemblyVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './shallowvar';
+import { Utility } from './utility';
+import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
 
 
 
@@ -32,24 +25,20 @@ import * as vscode from 'vscode';
  */
 export class EmulDebugAdapter extends DebugSession {
 
-	/// A list for the frames (call stack items)
-	//private listFrames = new RefList();
-
 	/// A list for the variables (references)
-	private listVariables = new RefList();
-
-	/// Holds the Z80 machine.
-	private machine: Machine;
+	protected listVariables = new RefList();
 
 	/// Only one thread is supported.
-	private static THREAD_ID = 1;
+	protected static THREAD_ID = 1;
 
 	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
-	private serializer = new CallSerializer("Main", true);
+	protected serializer = new CallSerializer("Main", true);
 
 	/// Counts the number of stackTraceRequests.
-	private stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
+	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
 
+	/// Used to display the memory at the register locations.
+	protected registerMemoryView: MemoryRegisterView;
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -169,8 +158,12 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Debugadapter disconnects.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		this.machine.stop();
-		this.sendResponse(response);
+		// Close register memory view
+		this.registerMemoryView.close();
+		// Stop machine
+		Machine.stop(() => {
+			this.sendResponse(response);
+		});
 	}
 
 	/**
@@ -192,7 +185,6 @@ export class EmulDebugAdapter extends DebugSession {
 		response.body.supportTerminateDebuggee = true;
 
 		// The PC value might be changed.
-		// REMOVE: seems to have no effect.
 		response.body.supportsGotoTargetsRequest = true;
 
 		// Support hovering over values (registers)
@@ -231,9 +223,10 @@ export class EmulDebugAdapter extends DebugSession {
 		//await this._configurationDone.wait(1000);	//funktioniert eh nicht, kann ich auch disablen
 
 		// Create the machine
-		this.machine = Machine.getMachine();
+		MachineClass.create();
+		Machine.init();
 
-		this.machine.once('initialized', () => {
+		Machine.once('initialized', () => {
 			//Array for found watchpoints: WPMEM
 			const watchPointLines = new Array<{address: number, line: string}>();
 			// Load files
@@ -244,8 +237,7 @@ export class EmulDebugAdapter extends DebugSession {
 						// quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address
-//TODO: ENABLE
-//							watchPointLines.push({address: address, line: line});
+							watchPointLines.push({address: address, line: line});
 						}
 					});
 				}
@@ -265,7 +257,7 @@ export class EmulDebugAdapter extends DebugSession {
 			for(var area of Settings.launch.disassemblies) {
 				this.serializer.exec(() => {
 					// get disassembly
-					this.machine.getDisassembly(area[0] /*address*/, area[1] /*size*/, (text) => {
+					Machine.getDisassembly(area[0] /*address*/, area[1] /*size*/, (text) => {
 						// save as temporary file
 						const fileName = 'TMP_DISASSEMBLY_' + area[0] + '(' + area[1] + ').asm';
 						const absFileName = Utility.writeTmpFile(fileName, text);
@@ -289,7 +281,7 @@ export class EmulDebugAdapter extends DebugSession {
 					// with:
 					//	addr = address (or label) to observe (optional). Defaults to current address.
 					//	length = the count of bytes to observe (optional). Default = 1.
-					//	access = Read/write access. Possible values: r, w or rw. Defaults to w.
+					//	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
 					// e.g. WPMEM LBL_TEXT, 1, w
 
 					// now check more thoroughly: group1=address, group3=length, group5=access
@@ -318,20 +310,25 @@ export class EmulDebugAdapter extends DebugSession {
 							}
 						}
 						else
-							access = 'w';
+							access = 'rw';
 						// set watchpoint
 						watchpoints.push({address: address, length: length, access: access});
 					}
 				}
 
 				// Set watchpoints (memory guards)
-				this.machine.setWatchpoints(watchpoints, () => {
+				Machine.setWPMEM(watchpoints, () => {
 				// "Return"
 				this.serializer.endExec();
 				});
 			});
 
 			this.serializer.exec(() => {
+				// Create memory/register dump view
+				this.registerMemoryView = new MemoryRegisterView(this);
+				const regs = Settings.launch.memoryViewer.registersMemoryView;
+				this.registerMemoryView.addRegisters(regs);
+				this.registerMemoryView.update();
 				// Send stop
 				this.sendEvent(new StoppedEvent('entry', EmulDebugAdapter.THREAD_ID));
 				// socket is connected, allow setting breakpoints
@@ -343,14 +340,14 @@ export class EmulDebugAdapter extends DebugSession {
 			});
 		});
 
-		this.machine.on('warning', message => {
+		Machine.on('warning', message => {
 			// Some problem occurred
 			this.showWarning(message);
 		});
 
-		this.machine.once('error', err => {
+		Machine.once('error', err => {
 			// Some error occurred
-			this.machine.stop();
+			Machine.stop((()=>{}));
 			this.exit(err.message);
 		});
 
@@ -385,7 +382,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 			// Set breakpoints for the file.
-			this.machine.setBreakpoints(path, bps, (currentBreakpoints) => {
+			Machine.setBreakpoints(path, bps, (currentBreakpoints) => {
 				// Convert breakpoints for vscode
 				const vscodeBreakpoints = new Array<Breakpoint>();
 				currentBreakpoints.forEach( bp => {
@@ -452,7 +449,7 @@ export class EmulDebugAdapter extends DebugSession {
 			this.listVariables.length = 0;
 
 			// Get the call stack trace
-			this.machine.stackTraceRequest( (frames) => {
+			Machine.stackTraceRequest( (frames) => {
 
 				// Create new array but only upto end of stack (name == null)
 				const sfrs = new Array<StackFrame>();
@@ -493,7 +490,7 @@ export class EmulDebugAdapter extends DebugSession {
 			const scopes = new Array<Scope>();
 			const frameId = args.frameId;
 			//const frame = this.listFrames.getObject(frameId);
-			const frame = this.machine.getFrame(frameId);
+			const frame = Machine.getFrame(frameId);
 			if(!frame) {
 				// No frame found, send empty response
 				response.body = {scopes: scopes};
@@ -601,8 +598,12 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			this.machine.continue( () => {
+			Machine.continue( () => {
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
+
+				// Update memory dump etc.
+				this.update();
+
 				this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
 			});
 
@@ -622,7 +623,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Pause the debugger
-			this.machine.pause();
+			Machine.pause();
 			// Response is sent immediately
 			this.sendResponse(response);
 			this.serializer.endExec();
@@ -639,7 +640,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			this.machine.reverseContinue( () => {
+			Machine.reverseContinue( () => {
+				// Update memory dump etc.
+				this.update();
+
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 				this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
 			});
@@ -660,7 +664,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Over
-			this.machine.stepOver( () => {
+			Machine.stepOver( () => {
+				// Update memory dump etc.
+				this.update();
+
 				// Response
 				this.sendResponse(response);
 				this.serializer.endExec();
@@ -681,7 +688,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			this.machine.stepInto( () => {
+			Machine.stepInto( () => {
+				// Update memory dump etc.
+				this.update();
+
 				// Response
 				this.sendResponse(response);
 				this.serializer.endExec();
@@ -703,7 +713,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			this.machine.stepOut( () => {
+			Machine.stepOut( () => {
+				// Update memory dump etc.
+				this.update();
+
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
 			});
@@ -724,7 +737,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			this.machine.stepBack( () => {
+			Machine.stepBack( () => {
+				// Update memory dump etc.
+				this.update();
+
 				// Response
 				this.sendResponse(response);
 				this.serializer.endExec();
@@ -753,17 +769,49 @@ export class EmulDebugAdapter extends DebugSession {
 					//this.sendEvent(output);
 					const output =
 `Allowed commands are:
-  "-exec cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
-  "-e": short for "-exec"
-  "-help|-h": This command. Do "-e help" to get all possible ZEsarUX commands.
-Examples:
-  "-ex h 0 100": Does a hexdump of 100 bytes at address 0.
+  "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels.
+  "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
+  "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
+  "-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
+  "-WPMEM enable|disable": Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
+  "-WPMEM show": Shows enable status of WPMEM watchpoints.
+  Examples:
+  "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
   "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
   "-e gr": Shows all registers.
+  "-eval 2+3*5": Results to "17".
+  "-md 0 10": Shows the memory at address 0 to address 9.
 Notes:
   "-exec run" will not work at the moment and leads to a disconnect.
 `;
 					response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+					this.sendResponse(response);
+				}
+				else if (cmd == '-eval') {
+					const expr = tokens.join(' ').trim();	// restore expression
+					if(expr.length == 0) {
+						// Error Handling: No arguments
+						const output = "Expression expected.\n\n";
+						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+						return;
+					}
+					// Evaluate expression
+					var result;
+					try {
+						// Evaluate
+						const value = Utility.evalExpression(expr);
+						// convert to decimal
+						result = value.toString();
+						// convert also to hex
+						result += ', ' + result.toString(16).toUpperCase() + 'h';
+						// convert also to bin
+						result += ', ' + result.toString(2) + 'b';
+					}
+					catch(e) {
+						result = e.message;
+					}
+					response.body = { result: result, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
 					this.sendResponse(response);
 				}
 				else if (cmd == '-exec' || cmd == '-e') {
@@ -774,11 +822,94 @@ Notes:
 						this.sendResponse(response);
 					}
 					else {
-						this.machine.dbgExec(machineCmd, (data) => {
+						Machine.dbgExec(machineCmd, (data) => {
 							// Print to console
 							response.body = { result: data+'\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
 							this.sendResponse(response);
 						});
+					}
+				}
+				else if (cmd == '-md') {
+					// check count of arguments
+					if(tokens.length == 0) {
+						// Error Handling: No arguments
+						const output = "Address and size expected.\n\n";
+						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+						return;
+					}
+
+					if(tokens.length % 2 != 0) {
+						// Error Handling: No size given
+						const output = "No size given for address '" + tokens[tokens.length-1] + "'.\n\n";
+						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+						return;
+					}
+
+					// Get all addresses/sizes.
+					const addrSizes = new Array<number>();
+					for(let k=0; k<tokens.length; k+=2) {
+						// address
+						const addressString = tokens[k];
+						const address = Labels.getNumberFromString(addressString);
+						if(isNaN(address)) {
+							// Error Handling: Unknown argument
+							const output = "Expected address but got: '" + addressString + "'\n\n";
+							response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+							this.sendResponse(response);
+							return;
+						}
+						addrSizes.push(address);
+
+						// size
+						const sizeString = tokens[k+1];
+						const size = Labels.getNumberFromString(sizeString);
+						if(isNaN(size)) {
+							// Error Handling: Unknown argument
+							const output = "Expected size but got: '" + sizeString + "'\n\n";
+							response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+							this.sendResponse(response);
+							return;
+						}
+						addrSizes.push(size);
+					}
+
+					// Create new view
+					const panel = new MemoryDumpView(this);
+					for(let k=0; k<tokens.length; k+=2)
+						panel.addBlock(addrSizes[k], addrSizes[k+1]);
+					panel.mergeBlocks();
+					panel.update();
+
+					// Send response
+					response.body = { result: 'OK\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+				}
+				else if (cmd == '-WPMEM' || cmd == '-wpmem') {
+					const param = tokens[0] || '';
+					if(param == 'enable' || param == 'disable') {
+						// enable or disable all WPMEM watchpoints
+						const enable = (param == 'enable');
+						Machine.enableWPMEM(enable, () => {
+							// Print to console
+							const enableString = (enable) ? 'enabled' : 'disabled';
+							response.body = { result: 'WPMEM watchpoints ' + enableString + '\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+							this.sendResponse(response);
+						});
+					}
+					else if(param == 'show') {
+						// show enable status of all WPMEM watchpoints
+						const enable = Machine.wpmemEnabled;
+						const enableString = (enable) ? 'enabled' : 'disabled';
+							response.body = { result: 'WPMEM watchpoints are ' + enableString + '.\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+					}
+					else {
+						// Unknown argument
+						const output = "Unknown argument: '" + param + "'\n\n";
+						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
 					}
 				}
 				else {
@@ -795,8 +926,6 @@ Notes:
 
 		// Serialize
 		this.serializer.exec(() => {
-
-			// TODO: here still zsocket is used. It would be beneficial to capsulate this to Machine only. I.e. remove it here.
 			Log.log('evaluate.expression: ' + args.expression);
 			Log.log('evaluate.context: ' + args.context);
 			Log.log('evaluate.format: ' + args.format);
@@ -805,42 +934,60 @@ Notes:
 			const name = expression;
 			// Check if it is a register
 			if(Z80Registers.isRegister(name)) {
-				zSocket.send('get-registers', data => {
-					Z80Registers.getHoverFormattedReg(name, data,(formattedValue) => {
-						response.body = {
-							result: formattedValue,
-							variablesReference: 0
-						};
-						this.sendResponse(response);
-						this.serializer.endExec();
-					});
+				const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
+				Utility.getFormattedRegister(name, formatMap, (formattedValue) => {
+					response.body = {
+						result: formattedValue,
+						variablesReference: 0
+					};
+					this.sendResponse(response);
+					this.serializer.endExec();
 				});
 				return;
 			}
 
-			// Check if it is a label
-			var labelValue = Labels.getNumberforLabel(name);
-			if(labelValue) {
-				// It's a label
-				Utility.numberFormattedBy(name, labelValue, 2,
-					Settings.launch.labelWatchesGeneralFormat, undefined,(formattedValue) => {
-						// Create a label variable
-						const labelVar = new LabelVar(labelValue, 100, this.listVariables);
-						// Add to list
-						const ref = this.listVariables.addObject(labelVar);
-						// Response
-						response.body = {
-							result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
-							variablesReference: ref,
-							type: "data",
-							//presentationHint: ,
-							namedVariables: 2,
-							//indexedVariables: 100
-						};
-						this.sendResponse(response);
-						this.serializer.endExec();
-					});
-				return;
+			// Check if it is a label. A label may have a special formatting:
+			// Example: LBL_TEXT 10, b
+			// = Addresse LBL_TEXT, 10 bytes
+			const match = /^([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
+			if(match) {
+				const labelString = match[1];
+				var sizeString = match[3];
+				var byteWord = match[5];
+				// Defaults
+				if(labelString) {
+					var labelValue = Labels.getNumberFromString(labelString);
+					if(!isNaN(labelValue)) {
+						var size = 100;
+						if(sizeString) {
+							const readSize = Labels.getNumberFromString(sizeString);
+							if(!isNaN(readSize))
+								size = readSize;
+						}
+						if(!byteWord || byteWord.length == 0)
+							byteWord = "bw";	// both byte and word
+						// Now create a "variable" for the label
+						Utility.numberFormatted(name, labelValue, 2,
+							Settings.launch.labelWatchesGeneralFormat, undefined, (formattedValue) => {
+								// Create a label variable
+								const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+								// Add to list
+								const ref = this.listVariables.addObject(labelVar);
+								// Response
+								response.body = {
+									result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
+									variablesReference: ref,
+									type: "data",
+									//presentationHint: ,
+									namedVariables: 2,
+									//indexedVariables: 100
+								};
+								this.sendResponse(response);
+								this.serializer.endExec();
+							});
+						return;
+					}
+				}
 			}
 
 			// Default: return nothing
@@ -916,6 +1063,17 @@ Notes:
 		}
 		// send response
 		//this.sendResponse(response);
+	}
+
+
+	/**
+	 * Called after a step, step-into, run, hit breakpoint, etc.
+	 * Is used to update anything that need to updated after some Z80 instructions have been executed.
+	 * E.g. the memory dump view.
+	 */
+	protected update() {
+	//	this.memoryDumpView.update();
+		this.emit('update');
 	}
 }
 

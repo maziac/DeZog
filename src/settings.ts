@@ -51,6 +51,16 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Format for the pushed values in the STACK area.
 	stackVarFormat: string;
 
+	/// Values for the memory viewer.
+	memoryViewer: {
+		addressBckgColor: string;	// The background color of the address field.
+		addressHoverFormat: string;	// Format for the address when hovering.
+		valueHoverFormat: string;	// Format for the value when hovering.
+		registerPointerColors: Array<string>;	// The register/colors to show as colors in the memory view.
+
+		registersMemoryView: Array<string>;	// An array of register to show in the register memory view.
+	}
+
 	/// Tab size used in formatting.
 	tabSize: number;
 
@@ -141,15 +151,32 @@ export class Settings {
 		if(!Settings.launch.labelWatchesGeneralFormat)
 			Settings.launch.labelWatchesGeneralFormat = "(${hex}h)b=${b@:unsigned}/'${b@:char}', (${hex}h)w=${w@:unsigned}";
 		if(!Settings.launch.labelWatchesByteFormat)
-			Settings.launch.labelWatchesByteFormat = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${char}'\t${b@:bits}b\t${(:labels|, |)}";
+			Settings.launch.labelWatchesByteFormat = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${char}'\t${b@:bits}b\t${{:labels|, |}}";
 		if(!Settings.launch.labelWatchesWordFormat)
-			Settings.launch.labelWatchesWordFormat = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i\t${(:labels|, |)}";
+			Settings.launch.labelWatchesWordFormat = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.stackVarFormat)
-			Settings.launch.stackVarFormat = "${hex}h\t${unsigned}u\t${signed}i\t${(:labels|, |)}";
+			Settings.launch.stackVarFormat = "${hex}h\t${unsigned}u\t${signed}i\t${{{:labels|, |}}";
 		if(!Settings.launch.tabSize)
 			Settings.launch.tabSize = 6;
 
-	}
+		// Memory viewer
+		if(!Settings.launch.memoryViewer) {
+			Settings.launch.memoryViewer = {
+				addressBckgColor: "gray",
+				addressHoverFormat: "${hex}h${\n:labelsplus|\n}",
+				valueHoverFormat: "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}",
+				registerPointerColors: [
+					"HL", "darkgreen",
+					"DE", "blue",
+					"IX", "green",
+					"IY", "red"
+				],
+				registersMemoryView: [
+					"HL", "DE", "IX", "IY"
+				]
+			};
+		}
 
+	}
 }
 

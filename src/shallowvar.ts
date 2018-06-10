@@ -8,6 +8,8 @@ import { CallSerializer } from './callserializer';
 import { Settings } from './settings'
 import { Utility } from './utility';
 import { RefList } from './reflist';
+import { Machine } from './machine';
+
 //import { Variable } from 'vscode-debugadapter/lib/main';
 
 /**
@@ -98,7 +100,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}) {
-		zSocket.send('get-registers', data => {
+		Machine.getRegisters( data => {
 			const registers = new Array<DebugProtocol.Variable>();
 			const regNames = this.registerNames();
 
@@ -106,7 +108,7 @@ export class RegistersMainVar extends ShallowVar {
 			const innerSerializer = new CallSerializer("Inner");
 			for(let regName of regNames) {
 				innerSerializer.exec(() => {
-					Z80Registers.getVarFormattedReg(regName, data,  (formattedValue) => {
+					Z80Registers.getVarFormattedReg(regName, data, (formattedValue) => {
 						registers.push({
 							name: regName,
 							type: formattedValue,
@@ -137,7 +139,7 @@ export class RegistersMainVar extends ShallowVar {
 		// Check if value is valid
 		if(isNaN(value)) {
 			// Get old value and send it back
-			zSocket.send('get-registers', data => {
+			Machine.getRegisters(data => {
 				Z80Registers.getVarFormattedReg(name, data, formatted => {
 					handler(formatted);
 				});
@@ -235,7 +237,7 @@ export class StackVar extends ShallowVar {
 			if(index < this.stack.length) {
 				// Next
 				value = this.stack[index];
-				Utility.numberFormattedBy('', value, 2, format, tabSizes, recursiveFunction);
+				Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction);
 			}
 			else {
 				// end, call handler
@@ -244,7 +246,7 @@ export class StackVar extends ShallowVar {
 		};
 
 		// Call recursively
-		Utility.numberFormattedBy('', value, 2, format, tabSizes, recursiveFunction);
+		Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction);
 	}
 
 
@@ -278,7 +280,7 @@ export class StackVar extends ShallowVar {
 							const memByte = parseInt(b1,16);
 							const memWord = memByte + (parseInt(b2,16)<<8);
 							// Pass formatted string to vscode
-							Utility.numberFormattedBy(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
+							Utility.numberFormatted(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
 						});
 					});
 				});
@@ -293,7 +295,7 @@ export class StackVar extends ShallowVar {
 				const memByte = parseInt(b1,16);
 				const memWord = memByte + (parseInt(b2,16)<<8);
 				// Pass formatted string to vscode
-				Utility.numberFormattedBy(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
+				Utility.numberFormatted(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
 				// End
 				serializer.endExec();
 			});
@@ -303,7 +305,7 @@ export class StackVar extends ShallowVar {
 
 
 /**
- * The LabelVar class is a container class which holds to pseudo properties to open
+ * The LabelVar class is a container class which holds two pseudo properties to open
  * a byte or a word array. The user has the possibility to open it from the UI.
  */
 export class LabelVar extends ShallowVar {
@@ -314,28 +316,35 @@ export class LabelVar extends ShallowVar {
 	 * Constructor.
 	 * @param addr The address of the memory dump
 	 * @param count The count of elements to display.
+	 * @param types 'b'=byte, 'w'=word or 'bw' for byte and word
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 */
-	public constructor(addr: number, count: number, list: RefList) {
+	public constructor(addr: number, count: number, types: string, list: RefList) {
 		super();
-		// Create 2 pseudo variables
-		//const count = 100;
-		this.memArray = [
+		// Create up to 2 pseudo variables
+		this.memArray = [];
+
+		// Byte array
+		if(types.indexOf('b') >= 0)
+			this.memArray.push(
 			{
 				name: "byte",
 				type: "data",
 				value: "[0.."+(count-1)+"]",
 				variablesReference: list.addObject(new MemDumpByteVar(addr)),
 				indexedVariables: count
-			},
+			});
+
+		// Word array
+		if(types.indexOf('w') >= 0)
+			this.memArray.push(
 			{
 				name: "word",
 				type: "data",
 				value: "[0.."+(count-1)+"]",
 				variablesReference: list.addObject(new MemDumpWordVar(addr)),
 				indexedVariables: count
-			}
-		];
+			});
 	}
 
 
@@ -372,7 +381,7 @@ export class MemDumpByteVar extends ShallowVar {
 	 * Communicates with zesarux to retrieve the memory dump.
 	 * @param handler This handler is called when the memory dump is available.
 	 * @param start The start index of the array. E.g. only the range [100..199] should be displayed.
-	 * @param count The count of elements to display.
+	 * @param count The number of bytes to display.
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}, start: number, count: number) {
 		var addr = this.addr + start;
@@ -383,11 +392,11 @@ export class MemDumpByteVar extends ShallowVar {
 		// Calculate tabsizing array
 		const tabSizes = Utility.calculateTabSizes(format, size);
 		// Format all array elements
-		for(var i=0; i<count;i++) {
+		for(var i=0; i<count/size;i++) {
 			// format
 			const addr_i = addr+i*size;
 			innerSerializer.exec((cs) => {
-				Utility.numberFormattedBy('', addr_i, size, format, tabSizes, (formatted) => {
+				Utility.numberFormatted('', addr_i, size, format, tabSizes, (formatted) => {
 					// check for label
 					var types = [ Utility.getHexString(addr_i,4) ];
 					const labels = Labels.getLabelsPlusIndexForNumber(addr_i);
@@ -396,7 +405,7 @@ export class MemDumpByteVar extends ShallowVar {
 					const descr = types.join(',\n');
 					// add to array
 					memArray.push({
-						name: "["+memArray.length+"]",
+						name: "["+memArray.length*size+"]",
 						type:  descr,  //type,
 						value: formatted,
 						variablesReference: 0

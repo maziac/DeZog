@@ -6,6 +6,7 @@ import { Settings } from './settings';
 
 /// Timeouts.
 const CONNECTION_TIMEOUT = 1000;	///< 1 sec
+const QUIT_TIMEOUT = 1000;	///< 1 sec
 const MSG_DEFAULT_TIMEOUT = 5000;	///< 5 sec (socket communication and internal delays may sometimes take longer than a second)
 export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the special meaning: Don't use any timeout
 
@@ -280,6 +281,20 @@ export class ZesaruxSocket extends Socket {
 		}
 	}
 
+
+	/**
+	 * Sends a "quit" to zesarux. In response zesarux will close the connection.
+	 * This sends "quit" immediately. I.e. it does not wait on the queue.
+	 * In fact it clears the queue.
+	 */
+	public quit() {
+		// Clear queue
+		this.queue.length = 0;
+		// Quit
+		this.setTimeout(QUIT_TIMEOUT);
+		this.write('quit\n');
+		this.end();
+	}
 }
 
 /// zSocket is the singleton object that should be accessed.
