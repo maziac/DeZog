@@ -443,7 +443,7 @@ class LabelsClass {
 
 	/**
 	 * Returns the memory address associated with a certain file and line number.
-	 * @param fileName The path to the file.
+	 * @param fileName The path to the file. Can be an absolute path.
 	 * @param lineNr The line number inside the file.
 	 * @returns The associated address. -1 if file or line does not exist.
 	 */

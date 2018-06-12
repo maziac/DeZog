@@ -12,10 +12,20 @@ import * as Net from 'net';
  */
 export function activate(context: vscode.ExtensionContext) {
 
-	/* Nothing used at the moment:
-	// Command to send an arbitrary command through the socket to
-	// zesarux and print the output to the console.
-	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.exec-cmd', config => {
+	// Command to change the progrma counter via menu.
+	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.movePCtoCursor', config => {
+		// Get focussed editor/file and line
+		const editor = vscode.window.activeTextEditor;
+		if(!editor)
+			return;
+		const position = editor.selection.active;
+		const filename = editor.document.fileName;
+		// Send to debug adapter
+		if(vscode.debug.activeDebugSession)
+			vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line] );
+
+
+		/*
 		return vscode.window.showInputBox({
 			placeHolder: "e.g. get-breakpoints",
 			prompt: 'Enter a command that is send to ZEsarUX',
@@ -26,8 +36,8 @@ export function activate(context: vscode.ExtensionContext) {
 					vscode.debug.activeDebugSession.customRequest('exec-cmd', text);
 			}
 		});
+		*/
 	}));
-	*/
 
 	// register a configuration provider for 'zesarux' debug type
 	const provider = new ZesaruxConfigurationProvider()

@@ -285,7 +285,7 @@ export class EmulDebugAdapter extends DebugSession {
 					// e.g. WPMEM LBL_TEXT, 1, w
 
 					// now check more thoroughly: group1=address, group3=length, group5=access
-					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(,\s*([^\s,]*)(,\s*(\S*))?)?/.exec(entry.line);
+					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*))?)?/.exec(entry.line);
 					if(match) {
 						// get arguments
 						var addressString = match[1];
@@ -449,12 +449,12 @@ export class EmulDebugAdapter extends DebugSession {
 			this.listVariables.length = 0;
 
 			// Get the call stack trace
-			Machine.stackTraceRequest( (frames) => {
+			Machine.stackTraceRequest((frames) => {
 
 				// Create new array but only upto end of stack (name == null)
 				const sfrs = new Array<StackFrame>();
 				var index = 1;
-				for( const frame of frames) {
+				for(const frame of frames) {
 					const src = this.createSource(frame.fileName);
 					const lineNr = (src) ? this.convertDebuggerLineToClient(frame.lineNr) : 0;
 					const sf = new StackFrame(index, frame.name, src, lineNr);
@@ -804,9 +804,9 @@ Notes:
 						// convert to decimal
 						result = value.toString();
 						// convert also to hex
-						result += ', ' + result.toString(16).toUpperCase() + 'h';
+						result += ', ' + value.toString(16).toUpperCase() + 'h';
 						// convert also to bin
-						result += ', ' + result.toString(2) + 'b';
+						result += ', ' + value.toString(2) + 'b';
 					}
 					catch(e) {
 						result = e.message;
@@ -1037,6 +1037,25 @@ Notes:
 		});
 	}
 
+	/**
+	 * Change the Program Counter such that it points to the given file/line.
+	 * @param filename The absolute file path.
+	 * @param lineNr The lineNr. Starts at 0.
+	 */
+	protected setPcToline(filename: string, lineNr: number) {
+		// Get address of file/line
+		const realLineNr = lineNr; //this.convertClientLineToDebugger(lineNr);
+		const addr = Labels.getAddrForFileAndLine(filename, realLineNr);
+		if( addr < 0 )
+			return;
+		// Now change Program Counter
+		Machine.setProgramCounter(addr, () => {
+			// TODO: This just causes an update of the callstack. The source code
+			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
+			this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+		});
+	}
+
 
 	/**
 	 * Not used at the moment.
@@ -1049,6 +1068,12 @@ Notes:
 	 */
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
 		switch(command) {
+			case 'setPcToline':
+				const filename = args[0];
+				const lineNr = args[1];
+				this.setPcToline(filename, lineNr);
+				break;
+
 			/*
 			case 'exec-cmd':
 				this.cmdExec(args);

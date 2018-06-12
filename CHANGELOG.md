@@ -1,3 +1,6 @@
+## 0.3.1
+- Program Counter can be changed via menu.
+
 ## 0.3.0
 - First release to market place.
 

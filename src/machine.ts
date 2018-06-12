@@ -257,6 +257,10 @@ export class MachineClass extends EventEmitter {
 			for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++)
 				this.freeBreakpointIds.push(i);
 
+			// WORKAROUND for zesarux: the first step does nothing
+			zSocket.send('cpu-step');
+			//
+
 			// Send 'initialize' to Machine.
 			zSocket.executeWhenQueueIsEmpty( () => {
 				this.state = MachineState.IDLE;
@@ -800,7 +804,8 @@ export class MachineClass extends EventEmitter {
 		this.freeBreakpointIds.shift();
 
 		// set action first (no action)
-		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + bp.condition + ')', () => {
+		const shortCond = (bp.condition.length < 50) ? bp.condition : bp.condition.substr(0,50) + '...';
+		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
 			// set the breakpoint
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + bp.condition, () => {
 				// enable the breakpoint
@@ -1004,6 +1009,18 @@ export class MachineClass extends EventEmitter {
 		});
 	}
 
+
+	/**
+	 * Change the program counter.
+	 * @param address The new address for the program counter.
+	 * @param handler that is called when the PC has been set.
+	 */
+	public setProgramCounter(address: number, handler:() => void) {
+		this.ZesaruxRegisterCache = undefined;
+		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
+			handler();
+		});
+	}
 }
 
 

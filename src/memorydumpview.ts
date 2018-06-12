@@ -195,7 +195,7 @@ export class MemoryDumpView {
 				// Check for last value
 				for(let mb of this.memDump.metaBlocks) {
 					const index = address - mb.address;
-					if(index < 0 || index >= mb.size)
+					if(index < 0 || index >= mb.prevData.length)
 						continue;
 					// get previous value
 					const prevValue = mb.prevData[index];

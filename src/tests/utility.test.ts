@@ -127,7 +127,7 @@ suite('Utility', () => {
 			test('formats, size 1', (done) => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				Utility.numberFormatted('myname', 255, 1, format, undefined, (res) => {
-					assert.equal( res, 'myname,FF,-1,255,11111111,,SZHPNC', "Unexpected formatting");
+					assert.equal( res, 'myname,FF,-1,255,11111111,�,SZHPNC', "Unexpected formatting");
 					done();
 				});
 			});
@@ -136,7 +136,7 @@ suite('Utility', () => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				Utility.numberFormatted('myname', 9999, 2, format, undefined, (res) => {
 					// Note: value of flags doesn't matter
-					var b = res.startsWith('myname,270F,9999,9999,0010011100001111,,');
+					var b = res.startsWith('myname,270F,9999,9999,0010011100001111,�,');
 					assert.ok( b, "Unexpected formatting");
 					done();
 				});
@@ -198,7 +198,7 @@ suite('Utility', () => {
 			test('special test 2', (done) => {
 				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
 				Utility.numberFormatted('', 255, 1, format, undefined, (res) => {
-					assert.equal( res, "  -1i  '' 11111111b ", "Unexpected tab formatting");
+					assert.equal( res, "  -1i '�' 11111111b ", "Unexpected tab formatting");
 					done();
 				});
 			});
