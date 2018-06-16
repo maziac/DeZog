@@ -2,7 +2,7 @@
 
 import { basename } from 'path';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread } from 'vscode-debugadapter';
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { CallSerializer } from './callserializer';
 import { GenericWatchpoint } from './genericwatchpoint';
@@ -210,17 +210,36 @@ export class EmulDebugAdapter extends DebugSession {
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 
-		// Save args
-		Settings.Init(args);
+		try {
+			// Save args
+			const rootFolder = (vscode.workspace.workspaceFolders) ?vscode.workspace.workspaceFolders[0].uri.path : '';
+			Settings.Init(args, rootFolder);
+		}
+		catch(e) {
+			// Some error occurred
+			this.exit('Settings: ' + e.message);
+			return;
+		}
 
-		// Clear all temporary files
-		Utility.removeAllTmpFiles();
+		try {
+			// Clear all temporary files
+			Utility.removeAllTmpFiles();
+		}
+		catch(e) {
+			// Some error occurred
+			this.exit('Removing temporary files: ' + e.message);
+			return;
+		}
 
-		// init labels
-		Labels.init();
-
-		// wait until configuration has finished (and configurationDoneRequest has been called)
-		//await this._configurationDone.wait(1000);	//funktioniert eh nicht, kann ich auch disablen
+		try {
+			// init labels
+			Labels.init();
+		}
+		catch(e) {
+			// Some error occurred
+			this.exit('Labels: ' + e.message);
+			return;
+		}
 
 		// Create the machine
 		MachineClass.create();
@@ -233,7 +252,7 @@ export class EmulDebugAdapter extends DebugSession {
 			try {
 				// Load user list and labels files
 				for(var listFile of Settings.launch.listFiles) {
-					Labels.loadAsmListFile(listFile.path, listFile.useFiles, (address, line) => {
+					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.addOffset, listFile.useLabels, (address, line) => {
 						// quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address
@@ -262,7 +281,7 @@ export class EmulDebugAdapter extends DebugSession {
 						const fileName = 'TMP_DISASSEMBLY_' + area[0] + '(' + area[1] + ').asm';
 						const absFileName = Utility.writeTmpFile(fileName, text);
 						// add disassembly file without labels
-						Labels.loadAsmListFile(absFileName, false);
+						Labels.loadAsmListFile(absFileName, false, undefined, 0, listFile.useLabels);
 						// "Return"
 						this.serializer.endExec();
 					});
@@ -288,18 +307,18 @@ export class EmulDebugAdapter extends DebugSession {
 					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*))?)?/.exec(entry.line);
 					if(match) {
 						// get arguments
-						var addressString = match[1];
-						var lengthString = match[3];
-						var access = match[5];
+						let addressString = match[1];
+						let lengthString = match[3];
+						let access = match[5];
 						// defaults
-						var address = entry.address;
+						let address = entry.address;
 						if(addressString && addressString.length > 0)
-							address = Labels.getNumberFromString(addressString);
+							address = Labels.getNumberFromString(addressString) || NaN;
 						if(isNaN(address))
 							continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
-						var length = 1;
+						let length = 1;
 						if(lengthString && lengthString.length > 0) {
-							length = Labels.getNumberFromString(lengthString);
+							length = Labels.getNumberFromString(lengthString) || NaN;
 							if(isNaN(length))
 								continue;
 						}
@@ -347,7 +366,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 		Machine.once('error', err => {
 			// Some error occurred
-			Machine.stop((()=>{}));
+			Machine.stop(()=>{});
 			this.exit(err.message);
 		});
 
@@ -754,6 +773,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Is called when hovering or when an expression is added to the watches.
+	 * Or if commands are input in the debug console.
 	 */
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		// Check if its a debugger command
@@ -772,6 +792,7 @@ export class EmulDebugAdapter extends DebugSession {
   "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels.
   "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
   "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
+  "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
   "-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
   "-WPMEM enable|disable": Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
   "-WPMEM show": Shows enable status of WPMEM watchpoints.
@@ -797,7 +818,7 @@ Notes:
 						return;
 					}
 					// Evaluate expression
-					var result;
+					let result;
 					try {
 						// Evaluate
 						const value = Utility.evalExpression(expr);
@@ -829,6 +850,34 @@ Notes:
 						});
 					}
 				}
+				else if (cmd == '-label' || cmd == '-l') {
+					const expr = tokens.join(' ').trim();	// restore expression
+					if(expr.length == 0) {
+						// Error Handling: No arguments
+						const output = "Label expected.\n\n";
+						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+						this.sendResponse(response);
+						return;
+					}
+					// Find labelwith regex, every star is translated into ".*"
+					const rString = '^' + Utility.replaceAll(expr, '*', '.*?') + '$';
+					// Now search all labels
+					const labels = Labels.getLabelsForRegEx(rString);
+					let result = '';
+					if(labels.length > 0) {
+						labels.map(label => {
+							const value = Labels.getNumberForLabel(label);
+							result += label +': ' + Utility.getHexString(value, 4) + 'h\n';
+						})
+					}
+					else {
+						// No label found
+						result = 'No label matches.';
+					}
+					// return result
+					response.body = { result: result, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+					this.sendResponse(response);
+				}
 				else if (cmd == '-md') {
 					// check count of arguments
 					if(tokens.length == 0) {
@@ -852,7 +901,7 @@ Notes:
 					for(let k=0; k<tokens.length; k+=2) {
 						// address
 						const addressString = tokens[k];
-						const address = Labels.getNumberFromString(addressString);
+						const address = Labels.getNumberFromString(addressString) || NaN;
 						if(isNaN(address)) {
 							// Error Handling: Unknown argument
 							const output = "Expected address but got: '" + addressString + "'\n\n";
@@ -864,7 +913,7 @@ Notes:
 
 						// size
 						const sizeString = tokens[k+1];
-						const size = Labels.getNumberFromString(sizeString);
+						const size = Labels.getNumberFromString(sizeString) || NaN;
 						if(isNaN(size)) {
 							// Error Handling: Unknown argument
 							const output = "Expected size but got: '" + sizeString + "'\n\n";
@@ -956,31 +1005,45 @@ Notes:
 				var byteWord = match[5];
 				// Defaults
 				if(labelString) {
-					var labelValue = Labels.getNumberFromString(labelString);
+					var labelValue = Labels.getNumberFromString(labelString) || NaN;
 					if(!isNaN(labelValue)) {
 						var size = 100;
 						if(sizeString) {
-							const readSize = Labels.getNumberFromString(sizeString);
+							const readSize = Labels.getNumberFromString(sizeString) || NaN;
 							if(!isNaN(readSize))
 								size = readSize;
 						}
 						if(!byteWord || byteWord.length == 0)
 							byteWord = "bw";	// both byte and word
-						// Now create a "variable" for the label
+						// Now create a "variable" for the bigValues or small values
+						const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
 						Utility.numberFormatted(name, labelValue, 2,
-							Settings.launch.labelWatchesGeneralFormat, undefined, (formattedValue) => {
-								// Create a label variable
-								const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
-								// Add to list
-								const ref = this.listVariables.addObject(labelVar);
-								// Response
-								response.body = {
-									result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
-									variablesReference: ref,
-									type: "data",
-									//presentationHint: ,
-									namedVariables: 2,
-									//indexedVariables: 100
+							format, undefined, (formattedValue) => {
+								if(labelValue <= Settings.launch.smallValuesMaximum) {
+									// small value
+									// Response
+									response.body = {
+										result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
+										variablesReference: 0,
+										//type: "data",
+										//amedVariables: 0
+									}
+								}
+								else {
+									// big value
+									// Create a label variable
+									const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+									// Add to list
+									const ref = this.listVariables.addObject(labelVar);
+									// Response
+									response.body = {
+										result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
+										variablesReference: ref,
+										type: "data",
+										//presentationHint: ,
+										namedVariables: 2,
+										//indexedVariables: 100
+									}
 								};
 								this.sendResponse(response);
 								this.serializer.endExec();
@@ -1050,9 +1113,9 @@ Notes:
 			return;
 		// Now change Program Counter
 		Machine.setProgramCounter(addr, () => {
-			// TODO: This just causes an update of the callstack. The source code
 			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
-			this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+			this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
+			this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
 		});
 	}
 

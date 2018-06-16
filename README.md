@@ -1,5 +1,7 @@
 # VS Code Z80 Debug Adapter
 
+![](documentation/images/main.gif)
+
 **Note: the current implementation is still experimental. Most of the features have not been thoroughly tested. It may or may not work for you.**
 
 The Z80-Debug-Adapter (z80-debug) lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
@@ -43,7 +45,8 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 - supports only ZEsarUX emulator
 - build output must
-	- create a .list file (format as of Z80 Assembler: http://savannah.nongnu.org/projects/z80asm/)
+	- create a .list file (format as of Savannah's Z80 Assembler: http://savannah.nongnu.org/projects/z80asm/)
+	- _alternatively you can use other list files (like z88dk) with limited functionality, please consult the documentation._
 	- create a .sna file containing the binary
 
 
@@ -58,7 +61,7 @@ In order to use z80-debug you need
 
 ### z80-debug
 
-Simply install from market place.
+In Visual Studio Code simply install "Z80 Debugger" (maziac.z80-debug) from the Marketplace.
 
 
 ## Usage

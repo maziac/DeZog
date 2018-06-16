@@ -15,6 +15,8 @@ It includes the sources and the binaries (.list, .labels, .sna files). So, if yo
 
 ## Configuration
 
+### launch.json
+
 After installing you need to add the configuration for "z80-debug".
 
 A typical configuration looks like this:
@@ -30,7 +32,7 @@ A typical configuration looks like this:
               //  [ 0, 16384 ]    // Spectrum ROM disassembly
             ],
             "listFiles": [
-                //{ "path": "rom48.list", "useFiles": false },
+                // "../rom48.list",
                 { "path": "z80-sample-program.list", "useFiles": true }
             ],
             "labelsFiles": [
@@ -53,11 +55,7 @@ A typical configuration looks like this:
 - disassemblies: You can add address/length tuples here that are disassmbled before startup. Can be used e.g. to disassemble ROM areas. Don't expect too much as the disassembly is not aware of data areas and will disassemble them as they were code.
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
-    - path: the path to the list file (relative to the 'rootFolder').
-    - useFiles:
-        - false = Use .list file directly for stepping and setting of breakpoints.
-        - true = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files.
-        - If you build your .list files from .asm files then use 'true'. If you just own the .list file and not the corresponding .asm files use 'false'.
+Please have a look at the (Listfile)[#Listfile] section.
 - labelsFiles: The paths (relative to the 'rootFolder') of the labels files. Typically
 this is only one file created during building. But you could add multiple files here.
 You can also completely omit the label files but in that case the z80-debug support is very limited because it cannot help in resolving any labels to numbers and vice versa.
@@ -79,19 +77,95 @@ In your launch.json:
 
 Note: instead of a label you can also use a fixed number.
 - loadSnap: The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file.
-- disableLabelResolutionBelow: z80-debug will try to resolve numbers into labels. This is fine most of the time, but for very low numbers this can also be annoying because z80-debug will normally find a load of matching labels whcih are all shown. You can disable it here if the label is below a certain value. Disabling it for all values 0-512 seems to be a good choice.
+- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depedning on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
+Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create files for the disassemblies given in 'disassemblies'.
 - "memoryViewer: The following proprties configure the memory viewer (used to show memory dumps).
-	- addressBckgcolor: The first column shows the address. You can change the color here.
+	- addressColor: The first column shows the address. You can change the color here.
+	- asciiColor: You can change the color of the ascii field here.
 	- addressHoverFormat: Format for the address when hovering.
 	- valueHoverFormat: Format for the value when hovering.
 	- registerPointersToShow: You can select here which registers should appear in the memory view if their value is in range of the memory view. Additionally you select also the background color for the register. E.g. select [ 'HL', 'green', 'DE', 'blue', 'IX', 'red' ].
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
 
 
+### Listfile
+
+#### z80asm vs. z80asm
+
+z80asm was and is still a very popular name for a Z80 assembler. There are especially 2 of them that I have used in the past and despite the name doesn't share very much.
+To distinguish them I will call them
+a) the **Savannah-z80asm** from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
+b) the **z88dk-z80asm** hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
+
+Both assemblers can produce list file but in my z80-debug project I'm targeting the Savannah's format because the z88dk's format lacks a few information which makes it hard/impossible to parse for some information. I.e. in z88dk format it is not always possible to distinguish the originating source file 100%.
+Therefore the z88dk format can still be used (see below) but with some drawbacks only.
+
+
+#### The list file
+
+The most important configuration to do is the *.list file. The list file contains
+all the information required by z80-debug. While reading this file z80-debug
+- associates addresses with line numbers
+- associates addresses with files
+- reads in labels and constants
+
+An example how this works:
+When you do a 'step-over' in the debugger, z80-debug request the new PC (program counter) value from ZEsarUX.
+The address of the PC is looked up to find the line in the list file.
+Now depending on the value of 'useFiles'
+- (false): the corresponding line in the list file is shown or
+- (true): the originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
+
+Configuration (**Savannah-z80asm**):
+You have 2 alternative forms to enter list files. The full form is e.g.:
+{ "path": "z80-sample-program.list", "useFiles": true }
+    - path: the path to the list file (relative to the 'rootFolder').
+    - useFiles (default=false):
+        - false = Use .list file directly for stepping and setting of breakpoints.
+        - true = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files.
+        - If you build your .list files from .asm files then use 'true'. If you just own the .list file and not the corresponding .asm files use 'false'.
+    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, e.g. z88dk. Default: undefined. If you use Savannah-z80asm you should omit this field.
+    - useLabels: (default=true): If true the list file is also parsed for labels.
+    - addOffset: (defulat=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
+
+The short form is simply a path, e.g.:
+"z80-sample-program.list"
+In this case the defaults for 'useFiles', 'filter' etc. are used.
+
+
+Here is an example to use for the **z88dk-z80asm**:
+{ "path": "currah_uspeech_tests.lis", "filter": "/^[0-9]+\\s+//", "useFiles": false, "addOffset": 32768 }
+Explanation:
+- "path": is the path to the list file. z88dk list file use the extension .lis.
+- "filter": "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines. In z88dk format the first number is the line number.
+- "useFiles": false: This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
+- "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
+
+
+Other assemblers:
+I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm but you should be able to step through the list file at least during debugging.
+The required format for z80-debug is that
+- each line starts with the address
+- labels are terminated by an ':' and
+- constants look like: 'some_constant: EQU value'
+
+Lower or uppercase does not matter.
+
+The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
+The pattern "/^[0-9]+\\s+//" e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
+
+
+### Labelsfile
+
+Because nowadays (>=0.4.0) the labels and constants are extracted directly from the list file there should normally no need to include a labels file anymore.
+However, if you see strange results or missing labels/constants than you could add a label file.
+You can further decide to turn label parsing off (useLabels=false) for the list file.
+
+
 ### Usage
 
-Bbefore you start z80-debug in vscode make sure that you have started ZEsarUX.
+Before you start z80-debug in vscode make sure that you have started ZEsarUX.
 In ZEsarUX enable the socket ZRCP protocol either by commandline ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
@@ -190,7 +264,7 @@ in the debug console you open a memory viewer.
 
 Here an example:
 
-![](images/readme.pics/memdumpview.jpg)
+![](images/memoryviewer1.gif)
 
 The memory viewer will offer a few extra infos:
 - The address is printed on the left side.
@@ -208,6 +282,10 @@ This opens a memory dump view 3 memory blocks.
 Please note that if ou enter overlapping blocks the dump will merge them in the display.
 
 z80-debug opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
+
+The register memory view:
+
+![](images/memoryviewer2.jpg)
 
 
 #### Memory Editor
@@ -267,11 +345,13 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 
 
-## Notes
+## Known Issues
 
 - The VARIABLES section sometimes gets mixed up. I.e. the registers and the disassembly might show the wrong data.
 - "startAutomatically" is ignored at the moment. ZEsarUX should be started manually before debugging
+
+
+## Notes
+
 - vscode breakpoint conditions: those are directly passed to ZEsarUX. Conditions have not been tested at all.
 - Don't use "-exec run" in the debug console. It will lead to a disconnection of ZEsarUX. Instead use the continue button (the green arrow).
-- If you change the Program Counter it is **not immediately** reflected in the Disassembly and in the source code line. But on the next step everything is fine again.
-

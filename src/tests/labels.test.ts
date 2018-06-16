@@ -2,41 +2,12 @@
 import assert = require('assert');
 //import { Utility } from '../utility';
 import { Labels } from '../labels';
-import { Settings, SettingsParameters } from '../settings';
+import { Settings } from '../settings';
 
 suite('Labels', () => {
 
 	setup( () => {
-		const launchCfg: SettingsParameters = {
-			zhostname: "",
-			zport: 10000,
-			rootFolder: "",
-			disassemblies: [],
-			listFiles: [ {path: "", useFiles: true} ],
-			labelsFiles: [""],
-			disableLabelResolutionBelow: 256,
-			tmpDir: "",
-			topOfStack: "0x10000",
-			loadSnap: "",
-			startAutomatically: false,
-			skipInterrupt: true,
-			registerVarFormat: [ "" ],
-			registerHoverFormat: [ "" ],
-			labelWatchesGeneralFormat: "",
-			labelWatchesByteFormat: "",
-			labelWatchesWordFormat: "",
-			stackVarFormat: "",
-			memoryViewer: {
-				addressBckgColor: "",
-				addressHoverFormat: "",
-				valueHoverFormat: "",
-				registerPointerColors: [],
-				registersMemoryView: []
-			},
-			tabSize: 4,
-			trace: false,
-		}
-		Settings.Init(launchCfg);
+		Settings.Init(<any>undefined, '');
 	});
 
 /*
@@ -46,7 +17,8 @@ suite('Labels', () => {
 	suite('Files/lines vs list file', () => {
 
 		test('getFileAndLineForAddress', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', true);
+			Labels.loadAsmListFile('./src/tests/data/test1.list', true, undefined, 0, false);
+			Labels.finish();
 
 			// Checks
 			var res = Labels.getFileAndLineForAddress(0x7700);
@@ -106,7 +78,8 @@ suite('Labels', () => {
 
 
 		test('getAddrForFileAndLine', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', true);
+			Labels.loadAsmListFile('./src/tests/data/test1.list', true, undefined, 0, false);
+			Labels.finish();
 
 			// main.asm
 			var addr = Labels.getAddrForFileAndLine('main.asm', 0);
@@ -140,10 +113,59 @@ suite('Labels', () => {
 		});
 
 
-		test('misc getFileAndLineFromListLine', () => {
-			Labels.loadAsmListFile('./src/tests/data/starwarrior.list', true);
+		test('get label values from list file', () => {
+			Labels.loadAsmListFile('./src/tests/data/test2.list', true, undefined, 0, true);
+			Labels.finish();
+
+			let value = Labels.getNumberForLabel('screen_top');
+			assert.equal( value, 0x6000, "Expected address wrong.");
+
+			value = Labels.getNumberForLabel('PAUSE_TIME');
+			assert.equal( value, 5000, "Expected value wrong.");
+
+			value = Labels.getNumberForLabel('pause_loop_l2');
+			assert.equal( value, 0x6004, "Expected address wrong.");
+
+			value = Labels.getNumberForLabel('pause_loop_l1');
+			assert.equal( value, 0x6006, "Expected address wrong.");
+
+			value = Labels.getNumberForLabel('BCKG_LINE_SIZE');
+			assert.equal( value, 32, "Expected value wrong.");
+
+			value = Labels.getNumberForLabel('BLACK');
+			assert.equal( value, 0, "Expected value wrong.");
+
+			value = Labels.getNumberForLabel('MAGENTA');
+			assert.equal( value, 3<<3, "Expected address wrong.");
+
+		});
 
 
+		test('get labels for a value from list file', () => {
+			Labels.loadAsmListFile('./src/tests/data/test2.list', true, undefined, 0, true);
+			Labels.finish();
+
+			let labels = Labels.getLabelsForNumber(0x6000);
+			assert.equal( labels[0], 'screen_top', "Expected label wrong.");
+
+			labels = Labels.getLabelsForNumber(0x6004);
+			assert.equal( labels[0], 'pause_loop_l2', "Expected label wrong.");
+
+			labels = Labels.getLabelsPlusIndexForNumber(0x6008);
+			assert.equal( labels[0], 'pause_loop_l1+2', "Expected label+index wrong.");
+
+		});
+
+
+		test('address offset', () => {
+			Labels.loadAsmListFile('./src/tests/data/test2.list', true, undefined, 0x1000, true);
+			Labels.finish();
+
+			let value = Labels.getNumberForLabel('pause_loop_l1');
+			assert.equal( value, 0x7006, "Expected address wrong.");
+
+			let labels = Labels.getLabelsPlusIndexForNumber(0x7008);
+			assert.equal( labels[0], 'pause_loop_l1+2', "Expected label+index wrong.");
 		});
 
 	});

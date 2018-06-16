@@ -33,35 +33,35 @@ export class Z80Registers {
 	 * Called during the launchRequest.
 	 */
 	public static init() {
-		regMap["AF"] = Z80Registers.parseAF;
-		regMap["BC"] = Z80Registers.parseBC;
-		regMap["DE"] = Z80Registers.parseDE;
-		regMap["HL"] = Z80Registers.parseHL;
-		regMap["IX"] = Z80Registers.parseIX;
-		regMap["IY"] = Z80Registers.parseIY;
-		regMap["SP"] = Z80Registers.parseSP;
-		regMap["PC"] = Z80Registers.parsePC;
+		regMap.set("AF", Z80Registers.parseAF);
+		regMap.set("BC", Z80Registers.parseBC);
+		regMap.set("DE", Z80Registers.parseDE);
+		regMap.set("HL", Z80Registers.parseHL);
+		regMap.set("IX", Z80Registers.parseIX);
+		regMap.set("IY", Z80Registers.parseIY);
+		regMap.set("SP", Z80Registers.parseSP);
+		regMap.set("PC", Z80Registers.parsePC);
 
-		regMap["AF'"] = Z80Registers.parseAF2;
-		regMap["BC'"] = Z80Registers.parseBC2;
-		regMap["DE'"] = Z80Registers.parseDE2;
-		regMap["HL'"] = Z80Registers.parseHL2;
+		regMap.set("AF'", Z80Registers.parseAF2);
+		regMap.set("BC'", Z80Registers.parseBC2);
+		regMap.set("DE'", Z80Registers.parseDE2);
+		regMap.set("HL'", Z80Registers.parseHL2);
 
-		regMap["A"] = Z80Registers.parseA;
-		regMap["F"] = Z80Registers.parseF;
-		regMap["B"] = Z80Registers.parseB;
-		regMap["C"] = Z80Registers.parseC;
-		regMap["D"] = Z80Registers.parseD;
-		regMap["E"] = Z80Registers.parseE;
-		regMap["H"] = Z80Registers.parseH;
-		regMap["L"] = Z80Registers.parseL;
-		regMap["I"] = Z80Registers.parseI;
-		regMap["R"] = Z80Registers.parseR;
-		regMap["A'"] = Z80Registers.parseA2;
-		regMap["F'"] = Z80Registers.parseF2;
+		regMap.set("A", Z80Registers.parseA);
+		regMap.set("F", Z80Registers.parseF);
+		regMap.set("B", Z80Registers.parseB);
+		regMap.set("C", Z80Registers.parseC);
+		regMap.set("D", Z80Registers.parseD);
+		regMap.set("E", Z80Registers.parseE);
+		regMap.set("H", Z80Registers.parseH);
+		regMap.set("L", Z80Registers.parseL);
+		regMap.set("I", Z80Registers.parseI);
+		regMap.set("R", Z80Registers.parseR);
+		regMap.set("A'", Z80Registers.parseA2);
+		regMap.set("F'", Z80Registers.parseF2);
 
-		Z80RegisterVarFormat = Z80Registers.createFormattingMap(Settings.launch.registerVarFormat);
-		Z80RegisterHoverFormat = Z80Registers.createFormattingMap(Settings.launch.registerHoverFormat);
+		Z80RegisterVarFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerVar);
+		Z80RegisterHoverFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerHover);
 	}
 
 	/**
@@ -77,9 +77,9 @@ export class Z80Registers {
 			var regRegex = new RegExp('^' + settingsMap[i] + '$');
 			var regFormat = settingsMap[i+1];
 			// check for which registers the format should be used
-			for(const key in regMap) {
+			for(let [key,] of regMap) {
 				// get format
-				const format = formattingMap[key];
+				const format = formattingMap.get(key);
 				if(format != undefined)
 					continue;	// has already a format string
 				// now check if register is met
@@ -91,18 +91,18 @@ export class Z80Registers {
 				if(match == undefined)
 					continue;	// no match
 				// use the format string  for this register
-				formattingMap[key] = regFormat;
+				formattingMap.set(key, regFormat);
 			}
 		}
 
 		// All unset registers get a default formatting
-		for(const key in regMap) {
+		for(let [key,] of regMap) {
 			// get format
-			const format = formattingMap[key];
+			const format = formattingMap.get(key);
 			if(format != undefined)
 				continue;	// has already a format string
 			// set default format
-			formattingMap[key] = '${hex}';
+			formattingMap.set(key, '${hex}');
 		}
 
 		// return
@@ -249,7 +249,7 @@ export class Z80Registers {
 				return false;
 		}
 		const regUpper = reg.toUpperCase();
-		return regMap[regUpper] != undefined;
+		return regMap.get(regUpper) != undefined;
 	}
 
 
@@ -265,7 +265,7 @@ export class Z80Registers {
 	private static getFormattedReg(regIn: string, data: string, formatMap: any, handler: {(formattedString: string)} = (data) => {}) {
 		// Every register has a formatting otherwise it's not a valid register name
 		const reg = regIn.toUpperCase();
-		const format = formatMap[reg];
+		const format = formatMap.get(reg);
 		assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
 		// Get value of register
@@ -311,7 +311,8 @@ export class Z80Registers {
 	 * @returns The value of the register.
 	 */
 	public static getRegValueByName(regName: string, regsString:string): number {
-		var handler = regMap[regName];
+		//var handler = (data) => {};
+		var handler = regMap.get(regName) || (data => 0);
 		assert(handler != undefined, 'Register ' + regName + ' does not exist.');
 		var value = handler(regsString);
 		return value;

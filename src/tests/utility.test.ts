@@ -4,7 +4,7 @@ import { Utility } from '../utility';
 import { Labels } from '../labels';
 import { Z80Registers } from '../z80Registers';
 import { MachineClass, Machine } from '../machine';
-import { Settings, SettingsParameters } from '../settings';
+import { Settings } from '../settings';
 
 
 suite('Utility', () => {
@@ -87,36 +87,7 @@ suite('Utility', () => {
 	suite('numberFormattedBy', () => {
 
 		setup(() => {
-			const launchCfg: SettingsParameters = {
-				zhostname: "",
-				zport: 10000,
-				rootFolder: "",
-				disassemblies: [],
-				listFiles: [ {path: "", useFiles: true} ],
-				labelsFiles: [""],
-				disableLabelResolutionBelow: 256,
-				tmpDir: "",
-				topOfStack: "0x10000",
-				loadSnap: "",
-				startAutomatically: false,
-				skipInterrupt: true,
-				registerVarFormat: [ "" ],
-				registerHoverFormat: [ "" ],
-				labelWatchesGeneralFormat: "",
-				labelWatchesByteFormat: "",
-				labelWatchesWordFormat: "",
-				stackVarFormat: "",
-				memoryViewer: {
-					addressBckgColor: "",
-					addressHoverFormat: "",
-					valueHoverFormat: "",
-					registerPointerColors: [],
-					registersMemoryView: []
-				},
-				tabSize: 4,
-				trace: false,
-			}
-			Settings.Init(launchCfg);
+			Settings.Init(<any>undefined, '');
 			MachineClass.create();
 			Z80Registers.init();
 			Machine.ZesaruxRegisterCache = "PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
@@ -127,7 +98,7 @@ suite('Utility', () => {
 			test('formats, size 1', (done) => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				Utility.numberFormatted('myname', 255, 1, format, undefined, (res) => {
-					assert.equal( res, 'myname,FF,-1,255,11111111,�,SZHPNC', "Unexpected formatting");
+					assert.equal( res, 'myname,FF,-1,255,11111111,.,SZHPNC', "Unexpected formatting");
 					done();
 				});
 			});
@@ -136,7 +107,7 @@ suite('Utility', () => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				Utility.numberFormatted('myname', 9999, 2, format, undefined, (res) => {
 					// Note: value of flags doesn't matter
-					var b = res.startsWith('myname,270F,9999,9999,0010011100001111,�,');
+					var b = res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
 					assert.ok( b, "Unexpected formatting");
 					done();
 				});
@@ -198,7 +169,7 @@ suite('Utility', () => {
 			test('special test 2', (done) => {
 				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
 				Utility.numberFormatted('', 255, 1, format, undefined, (res) => {
-					assert.equal( res, "  -1i '�' 11111111b ", "Unexpected tab formatting");
+					assert.equal( res, "  -1i '.' 11111111b ", "Unexpected tab formatting");
 					done();
 				});
 			});
@@ -264,8 +235,8 @@ suite('Utility', () => {
 			test('special 1', (done) => {
 				const format = "${hex}h${, :labelsplus|, }";
 				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 512, 2, format, undefined, (res) => {
-					assert.equal(res, "0200h, LABEL_512", "Wrong label");
+				Utility.numberFormatted('', 0x0300, 2, format, undefined, (res) => {
+					assert.equal(res, "0300h, LABEL_0300", "Wrong label");
 					done();
 				});
 			});

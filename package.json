@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.3.1",
+	"version": "0.4.0",
 	"publisher": "maziac",
 	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -61,6 +61,7 @@
 				"id": "asm-collection",
 				"extensions": [
 					".list",
+					".lis",
 					".a80",
 					".asm",
 					".inc",
@@ -147,17 +148,41 @@
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
-									"type": "object",
-									"properties": {
-										"path": {
+									"anyOf": [
+										{
 											"type": "string",
-											"description": "(Optional) Path to the assembler .labels file. If this is available addresseed can be mapped to labels."
+											"description": "Path to the assembler .list file."
 										},
-										"useFiles": {
-											"type": "boolean",
-											"description": "If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
+										{
+											"type": "object",
+											"properties": {
+												"path": {
+													"type": "string",
+													"description": "Path to the assembler .list file."
+												},
+												"useFiles": {
+													"type": "boolean",
+													"description": "If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file.",
+													"default": false
+												},
+												"filter": {
+													"type": "string",
+													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn the z88dk .lis file into a forma that is understood by z80-debug. Can be omitted.\nExample for z88dk: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.",
+													"default": null
+												},
+												"useLabels": {
+													"type": "boolean",
+													"description": "If true the list file is also parsed for labels.",
+													"default": true
+												},
+												"addOffset": {
+													"type": "number",
+													"description": "To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).",
+													"default": 0
+												}
+											}
 										}
-									}
+									]
 								}
 							},
 							"labelsFiles": {
@@ -172,13 +197,14 @@
 								"type": "boolean",
 								"description": "(Optional) If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
 							},
-							"disableLabelResolutionBelow": {
+							"'smallValuesMaximum'": {
 								"type": "number",
-								"description": "Disables the number to label conversion if number is below the given value. E.g. if you choose 256 (the typical value)labels below 256 are not resolved."
+								"description": "Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",
+								"default": 512
 							},
 							"tmpDir": {
 								"type": "string",
-								"description": "NOT USED!!! A directory for temporary files created by this debug adapter. E.g. '.tmp'"
+								"description": "A directory for temporary files created by this debug adapter. Used e.g. for disassemblies. E.g. '.tmp'"
 							},
 							"topOfStack": {
 								"type": "string",
@@ -200,44 +226,42 @@
 								"type": "boolean",
 								"description": "Enable logging of the Debug Adapter Protocol."
 							},
-							"registerVarFormat": {
-								"type": "array",
-								"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at leat 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
-								"items": {
-									"type": "string"
+							"formatting": {
+								"registerVarFormat": {
+									"type": "array",
+									"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at leat 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
+									"items": {
+										"type": "string"
+									}
+								},
+								"registerHoverFormat": {
+									"type": "array",
+									"description": "see registerVarFormat. Format when hovering over a register",
+									"items": {
+										"type": "string"
+									}
+								},
+								"arrayByteFormat": {
+									"type": "string",
+									"description": "see registerVarFormat. Format for BYTEs in the WATCHES area and when hovering."
+								},
+								"arrayWordFormat": {
+									"type": "string",
+									"description": "see registerVarFormat. Format for WORDs in the WATCHES area and when hovering."
+								},
+								"stackVarFormat": {
+									"type": "string",
+									"description": "see registerVarFormat. Format for the pushed values in the STACK area."
 								}
-							},
-							"registerHoverFormat": {
-								"type": "array",
-								"description": "see registerVarFormat. Format when hovering over a register",
-								"items": {
-									"type": "string"
-								}
-							},
-							"labelWatchesByteFormat": {
-								"type": "string",
-								"description": "see registerVarFormat. Format for BYTEs in the WATCHES area."
-							},
-							"labelHoverByteFormat": {
-								"type": "string",
-								"description": "see registerVarFormat. Format for BYTEs when hovering."
-							},
-							"labelWatchesWordFormat": {
-								"type": "string",
-								"description": "see registerVarFormat. Format for WORDs in the WATCHES area."
-							},
-							"labelHoverWordFormat": {
-								"type": "string",
-								"description": "see registerVarFormat. Format for WORDs when hovering."
-							},
-							"stackVarFormat": {
-								"type": "string",
-								"description": "see registerVarFormat. Format for the pushed values in the STACK area."
 							},
 							"memoryViewer": {
-								"addressBckgcolor": {
+								"addressColor": {
 									"type": "string",
-									"description": "The background color of the address field."
+									"description": "The text color of the address field."
+								},
+								"asciiColor": {
+									"type": "string",
+									"descdescription": "The text color of the ascii field."
 								},
 								"addressHoverFormat": {
 									"type": "string",
@@ -270,40 +294,27 @@
 						}
 					}
 				},
-				"initialConfigurations": [
-					{
-						"type": "z80-debug",
-						"request": "launch",
-						"name": "Z80 Debugger",
-						"zhostname": "localhost",
-						"zport": 10000,
-						"listFiles": [
-							"path_to_your_assembler_file.list"
-						],
-						"labelsFiles": [
-							"path_to_your_assembler_file.labels"
-						],
-						"startAutomatically": true,
-						"skipInterrupt": true
-					}
-				],
 				"configurationSnippets": [
 					{
-						"label": "Z80 Debug: Launch",
-						"description": "A new configuration for 'debugging' a user selected markdown file.",
+						"label": "Z80 Debugger: Launch",
+						"description": "Configuration for the Z80 Debugger.",
 						"body": {
 							"type": "z80-debug",
 							"request": "launch",
 							"name": "Z80 Debugger",
 							"zhostname": "localhost",
 							"zport": 10000,
+							"topOfStack": "stack_top",
 							"listFiles": [
-								"path_to_your_assembler_file.list"
+								{
+									"path": "path_to_your_assembler_file.list",
+									"useFiles": true
+								}
 							],
 							"labelsFiles": [
 								"path_to_your_assembler_file.labels"
 							],
-							"startAutomatically": true,
+							"loadSnap": "path_to_your_sna_file.sna",
 							"skipInterrupt": true
 						}
 					}

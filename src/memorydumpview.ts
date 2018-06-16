@@ -71,7 +71,7 @@ export class MemoryDumpView {
 			const arr = MemoryDumpView.MemoryViews;
 			const index = arr.indexOf(this);
 			var assert = require('assert');
-			assert(index < 0 );
+			assert(index >= 0 );
 			arr.splice(index, 1);
 		});
 
@@ -92,8 +92,6 @@ export class MemoryDumpView {
 						const address = parseInt(message.address);
 						const value = Utility.evalExpression(message.value);
 						this.changeMemory(address, value);
-						// Update hover text
-						this.getValueInfoText(address, value);
 					}
 					catch(e) {
 						vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
@@ -103,8 +101,7 @@ export class MemoryDumpView {
 				case 'getValueInfoText':
 				{
 					const address = parseInt(message.address);
-					const value = parseInt(message.value, 16);
-					this.getValueInfoText(address, value);
+					this.getValueInfoText(address);
 				}	break;
 
 				case 'getAddressInfoText':
@@ -156,11 +153,13 @@ export class MemoryDumpView {
 	 * Posts the given message to all webviews.
 	 * @params The message to post.
 	 */
-	protected postToAllWebviews(message: any) {
+	/*
+		protected postToAllWebviews(message: any) {
 		for(let mdv of MemoryDumpView.MemoryViews) {
 			mdv.vscodePanel.webview.postMessage(message);
 		};
 	}
+	*/
 
 
 	/**
@@ -170,12 +169,23 @@ export class MemoryDumpView {
 	 */
 	protected changeMemory(address: number, value: number) {
 		Machine.writeMemory(address, value, (realValue) => {
-			// Now send the read value to the webviews for display.
-			this.postToAllWebviews({
-				command: 'changeValue',
-				address: address.toString(),
-				value: Utility.getHexString(realValue, 2)
-			});
+			// Also update the value and the hovertext in all webviews
+			for(let mdv of MemoryDumpView.MemoryViews) {
+				// check first if address included at all
+				if(!isNaN(mdv.memDump.getValueFor(address))) {
+					// Update value
+					mdv.memDump.setValueFor(address, realValue);
+					// Create message
+					const message = {
+						command: 'changeValue',
+						address: address.toString(),
+						value: Utility.getHexString(realValue, 2),
+						asciiValue: Utility.getASCIIChar(realValue)
+					};
+					mdv.vscodePanel.webview.postMessage(message);
+					mdv.getValueInfoText(address);
+				}
+			};
 		});
 	}
 
@@ -183,26 +193,21 @@ export class MemoryDumpView {
 	/**
 	 * Retrieves the value info text (that is the hover text).
 	 * @param address The address for which the info should be shown.
-	 * @param value The value.
 	 */
-	protected getValueInfoText(address: number, value: number) {
+	protected getValueInfoText(address: number) {
 		// Value
+		const value = this.memDump.getValueFor(address);
 		Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined, (formattedString) => {
 			var text = formattedString + '\n';
 			// Address
 			Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined, (formattedString) => {
 				text += formattedString;
 				// Check for last value
-				for(let mb of this.memDump.metaBlocks) {
-					const index = address - mb.address;
-					if(index < 0 || index >= mb.prevData.length)
-						continue;
-					// get previous value
-					const prevValue = mb.prevData[index];
+				const prevValue = this.memDump.getValueFor(address, true /*previous*/);
+				if(!isNaN(prevValue)) {
 					if(prevValue != value) {
 						// has changed so add the last value to the hover text
 						text += '\nPrevious value: ' + prevValue.toString(16) + 'h';
-						break;
 					}
 				}
 				// Now send the formatted text to the web view for display.
@@ -275,13 +280,11 @@ export class MemoryDumpView {
 
 		//---- Handle Mouse Over, Calculation of hover text -------
 		function mouseOverValue(obj) {
-			const value = obj.innerText;
 			const address = obj.getAttribute("address");
 			// Send request to vscode to calculate the hover text
 			vscode.postMessage({
 				command: 'getValueInfoText',
-				address: address,
-				value: value
+				address: address
 			});
 		}
 
@@ -361,16 +364,28 @@ export class MemoryDumpView {
 				{
 					prevValue = '';
 					curObj = null;
-					const objs = document.querySelectorAll("td[address='"+message.address+"']");
-					for(let obj of objs) {
+					// HEX numbers
+					const tdObjs = document.querySelectorAll("td[address='"+message.address+"']");
+					for(let obj of tdObjs) {
 						obj.innerText = message.value;
+					}
+					// ASCII
+					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
+					for(let obj of spanObjs) {
+						obj.innerText = message.asciiValue;
 					}
 				}   break;
 
 				case 'valueInfoText':
 				{
+					// HEX numbers
 					const objs = document.querySelectorAll("td[address='"+message.address+"']");
 					for(let obj of objs) {
+						obj.title = message.text;
+					}
+					// ASCII
+					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
+					for(let obj of spanObjs) {
 						obj.title = message.text;
 					}
                 }   break;
@@ -385,12 +400,20 @@ export class MemoryDumpView {
 
 				case 'setAddressColor':
 				{
+					// HEX
 					const objs = document.querySelectorAll("td[address='"+message.address+"']");
 					for(let obj of objs) {
 						obj.style.backgroundColor = message.color;
 						obj.style.borderRadius = '3px';
 					}
-				}   break;
+					// ASCII
+					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
+					for(let obj of spanObjs) {
+						obj.style.color = "white";
+						obj.style.backgroundColor = message.color;
+						obj.style.borderRadius = '3px';
+					}
+ 				}   break;
 
            }
         });
@@ -400,9 +423,13 @@ export class MemoryDumpView {
 
 		%s
 		<table style="">
-			<col>
-			<col width="10em">
-			<colgroup span="%d" width="20em">
+			<colgroup>
+				<col>
+				<col width="10em">
+				<col span="%d" width="20em">
+				<col width="10em">
+			</colgroup>
+
 		%s
 		</table>
 		`;
@@ -416,16 +443,19 @@ export class MemoryDumpView {
 		const data = metaBlock.data;
 		const len = data.length;
 
-		const addressBckgColor = Settings.launch.memoryViewer.addressBckgColor;
+		const addressColor = Settings.launch.memoryViewer.addressColor;
+		const asciiColor = Settings.launch.memoryViewer.asciiColor;
+
+		let ascii = '';
 
 		for(var k=0; k<len; k++) {
 			// Check start of line
 			if(i == 0) {
 				// start of a new line
 				var addrText = Utility.getHexString(address,4) + ':';
-			//	addrText = this.addHoverText(addrText, hoverText);
-				table += '<tr>\n<td addressLine="' + address + '" style="background-color:' + addressBckgColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				table += '<tr>\n<td addressLine="' + address + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
+				ascii = '';
 			}
 
 			// Print value
@@ -454,8 +484,16 @@ export class MemoryDumpView {
 
 			// Create html cell
 			table += '<td address="' + address + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
+
+
+			// Convert to ASCII (->html)
+			ascii += '<span address="' + address + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
+
 			// Check end of line
 			if(i == clmns-1) {
+				// print ASCII characters.
+				table += '<td> </td>\n';
+				table += '<td style="color:' + asciiColor + '">' + ascii +'</td>\n';
 				// end of a new line
 				table += '</tr>\n';
 			}

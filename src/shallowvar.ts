@@ -219,7 +219,7 @@ export class StackVar extends ShallowVar {
 		}
 
 		// Calculate tabsizing array
-		const format = Settings.launch.stackVarFormat;
+		const format = Settings.launch.formatting.stackVar;
 		const tabSizes = Utility.calculateTabSizes(format, 2);
 
 		// Loop list as recursive function
@@ -280,7 +280,7 @@ export class StackVar extends ShallowVar {
 							const memByte = parseInt(b1,16);
 							const memWord = memByte + (parseInt(b2,16)<<8);
 							// Pass formatted string to vscode
-							Utility.numberFormatted(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
+							Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
 						});
 					});
 				});
@@ -295,7 +295,7 @@ export class StackVar extends ShallowVar {
 				const memByte = parseInt(b1,16);
 				const memWord = memByte + (parseInt(b2,16)<<8);
 				// Pass formatted string to vscode
-				Utility.numberFormatted(name, memWord, 2, Settings.launch.stackVarFormat, undefined, handler);
+				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
 				// End
 				serializer.endExec();
 			});
@@ -427,7 +427,7 @@ export class MemDumpByteVar extends ShallowVar {
 	 * The format to use.
 	 */
 	protected formatString(): string {
-		return Settings.launch.labelWatchesByteFormat;	// byte
+		return Settings.launch.formatting.arrayByte;	// byte
 	}
 
 	/**
@@ -448,7 +448,7 @@ export class MemDumpWordVar extends MemDumpByteVar {
 	 * The format to use.
 	 */
 	protected formatString(): string {
-		return Settings.launch.labelWatchesWordFormat;	// word
+		return Settings.launch.formatting.arrayWord;	// word
 	}
 
 	/**

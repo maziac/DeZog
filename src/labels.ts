@@ -52,10 +52,10 @@ class LabelsClass {
 
 	/// An element contains either the offset from the last
 	/// entry with labels or an array of labels for that number.
-	private labelsForNumber = new Array();
+	private labelsForNumber = new Array<any>();
 
 	/// Map with all labels (from labels file) and corresponding values.
-	private numberForLabel = new Map();
+	private numberForLabel = new Map<string,number>();
 
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack : number;
@@ -85,8 +85,8 @@ class LabelsClass {
 		// Calculate the label offsets
 		this.calculateLabelOffsets();
 		// calculate top of stack in case it is a label
-		this.topOfStack = Labels.getNumberforLabel(Settings.launch.topOfStack);
-		if(!this.topOfStack)
+		const topOfStack = Labels.getNumberForLabel(Settings.launch.topOfStack);
+		if(!topOfStack)
 			this.topOfStack = Utility.parseValue(Settings.launch.topOfStack);
 		if(isNaN(this.topOfStack))
 			this.topOfStack = 0x10000;
@@ -99,28 +99,85 @@ class LabelsClass {
 	 * PC value.
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
-	 * @param useIndirectFile Use the filenames in fileName.
+	 * @param useFiles Use the filenames in fileName.
+	 * @param filter A regular expression string which is applied to each line. USed e.g. to filter the z88dk lines. The filter string is setup
+	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
+	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
+	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
 	 * @param lineHandler Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, useIndirectFile: boolean, lineHandler = (address: number, line: string) => {}) {
+	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
 
-		// Read all lines and extract the PC value
-		var listLines = readFileSync(fileName).toString().split('\n');
-		var base = 0;
-		var prev = -1;
-		for( var line of listLines) {
-			// extract pc
-			var address = parseInt(line.substr(0,4), 16) + base;
-			// compare with previous to find wrap around (if any)
-			if(address < prev) {
-				base += 0x10000;
-				address += 0x10000;
+		// Create regex
+		let filterRegEx;
+		let replace;
+		if(filter) {
+			// The filter is parsed for search and substitution string.
+			const filterArr = filter.split('/');
+			if(filterArr.length != 4) {
+				throw SyntaxError('List file "filter" string is wrong: "' + filter + '"');
 			}
-			// store
-			var entry = {fileName: '', lineNr: -1, addr: address, line: line};
+			const search = filterArr[1];
+			replace = filterArr[2];
+			filterRegEx = new RegExp(search);
+		}
+
+		// Read all lines and extract the PC value
+		let listLines = readFileSync(fileName).toString().split('\n');
+		let base = 0;
+		let prev = -1;
+		let line;
+		for( let origLine of listLines) {
+			// Filter line
+			if(filterRegEx)
+				line = origLine.replace(filterRegEx, replace);
+			else
+				line = origLine;
+			// extract pc
+			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
+			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
+				// compare with previous to find wrap around (if any)
+				if(address < prev) {
+					base += 0x10000;
+					address += 0x10000;
+				}
+
+				// Check for labels/equ
+				if(useLabels) {
+					// check for labels and "equ"
+					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^\.\s]+):\s*(equ\s)?\s*([^;\n]*)/i.exec(line);
+					if(match) {
+						const equ = match[2];
+						if(equ) {
+							// EQU: add to label array
+							const valueString = match[3];
+							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+							try {
+								// Evaluate
+								const value = Utility.evalExpression(valueString);
+								const label = match[1];
+								this.numberForLabel.set(label, value);
+								// Add label
+								this.addLabelForNumber(value, label);
+							}
+							catch {};	// do nothing in case of an error
+						}
+						else {
+							// Label: add to label array
+							const label = match[1];
+							this.numberForLabel.set(label, address);
+							// Add label
+							this.addLabelForNumber(address, label);
+						}
+					}
+				}
+			}
+
+			// Store
+			const entry = {fileName: '', lineNr: -1, addr: address, line: origLine};
 			listFile.push(entry)
 
 			// Call line handler (if any)
@@ -135,19 +192,17 @@ class LabelsClass {
 		 * a) get file name and file line number from list-file line number
 		 * b) get list-file line number from file name and file line number
 		 */
-		var index = -1;
-		const stack = new Array<any>();
 
-		if(!useIndirectFile) {
+		 if(!useFiles) {
 			// Use list file directly instead of real filenames
 			const relFileName = Utility.getRelFilePath(fileName);
 			const lineArray = new Array<number>();
-			this.lineArrays[relFileName] = lineArray;
+			this.lineArrays.set(relFileName, lineArray);
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const entry = listFile[lineNr];
 				entry.fileName = relFileName;
 				entry.lineNr = lineNr;
-				this.fileLineNrs[entry.addr] = { fileName: relFileName, lineNr: lineNr };
+				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: lineNr });
 
 				// Set address
 				if(!lineArray[lineNr])	// without the check macros would lead to the last addr being stored.
@@ -157,6 +212,9 @@ class LabelsClass {
 		}
 
 		// loop the list array reverse
+		let index = -1;
+		const stack = new Array<any>();
+
 		for(var lineNr=listFile.length-1; lineNr>0; lineNr--) {
 			const line = listFile[lineNr].line;
 			// check for end macro
@@ -189,13 +247,15 @@ class LabelsClass {
 			var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(line);
 			if(matchInclStart) {
 				// Note: Normally filenames match, but if they don't match then
-				// it might be because the file hasn't been icluded. Maybe it was
+				// it might be because the file hasn't been included. Maybe it was
 				// #if-def'ed.
-				const fileName = matchInclStart[1];
-				if(fileName.valueOf() == stack[index].fileName.valueOf()) {
-					// Remove from top of stack
-					stack.splice(index,1);
-					--index;
+				if(index >= 0) {	// This could be < 0 if the 'end of file' was not found
+					const fileName = matchInclStart[1];
+					if(fileName.valueOf() == stack[index].fileName.valueOf()) {
+						// Remove from top of stack
+						stack.splice(index,1);
+						--index;
+					}
 				}
 			}
 
@@ -215,10 +275,10 @@ class LabelsClass {
 		}
 
 		// Now correct all line numbers (so far the numbers are negative. All numbers need to be added with the max number of lines for that file.)
-		var lastFileName = '';
-		var lastFileLength = 0;
+		let lastFileName = '';
+		let lastFileLength = 0;
 		const fileLength = new Map<string, number>();
-		for(var i=0; i<listFile.length; ++i) {
+		for(let i=0; i<listFile.length; ++i) {
 			const entry = listFile[i];
 			if(lastFileName.valueOf() != entry.fileName.valueOf()) {
 				lastFileName = entry.fileName;
@@ -238,20 +298,20 @@ class LabelsClass {
 		// Create 2 maps.
 		// a) fileLineNrs: a map with all addresses and the associated filename/lineNr
 		// b) lineArrays: a map of arrays with key=filename+lineNr and value=address
-		for(var entry of listFile) {
+		for(const entry of listFile) {
 			if(entry.fileName.length == 0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
 
 			// last address entry wins:
-			this.fileLineNrs[entry.addr] = { fileName: entry.fileName, lineNr: entry.lineNr };
+			this.fileLineNrs.set(entry.addr, { fileName: entry.fileName, lineNr: entry.lineNr });
 
 			// Check if a new array need to be created
-			if(!this.lineArrays[entry.fileName]) {
-				this.lineArrays[entry.fileName] = new Array<number>();
+			if(!this.lineArrays.get(entry.fileName)) {
+				this.lineArrays.set(entry.fileName, new Array<number>());
 			}
 
 			// Get array
-			const lineArray = this.lineArrays[entry.fileName];
+			const lineArray = this.lineArrays.get(entry.fileName) || [];
 
 			// Set address
 			if(!lineArray[entry.lineNr])	// without the check macros would lead to the last addr being stored.
@@ -286,26 +346,34 @@ class LabelsClass {
 				continue;
 			// Pattern found
 			const number = parseInt(match[2],16);
-			if(number < Settings.launch.disableLabelResolutionBelow || number > 0xFFFF) {
-				continue;	// E.g. ignore numbers/labels < 256 or > 65535
-			}
 			const label = match[1];
 
 			// add to label array
-			this.numberForLabel[label] = number;
+			this.numberForLabel.set(label, number);
 
 			// Add label
-			var labelsArray = this.labelsForNumber[number];
-			if(labelsArray === undefined) {
-				// create a new array
-				labelsArray = new Array<string>();
-				this.labelsForNumber[number] = labelsArray;
-			}
-			// Add new label
-			labelsArray.push(label);
+			this.addLabelForNumber(number, label);
 		}
 	}
 
+
+	/**
+	 * Adds a new label to the LabelsForNumber array.
+	 * Creates a new array if required.
+	 * @param value The value for which a new label is to be set.
+	 * @param label The label to add.
+	 */
+	protected addLabelForNumber(value: number, label: string) {
+		// Add label
+		let labelsArray = this.labelsForNumber[value];
+		if(labelsArray === undefined) {
+			// create a new array
+			labelsArray = new Array<string>();
+			this.labelsForNumber[value] = labelsArray;
+		}
+		// Add new label
+		labelsArray.push(label);
+	}
 
 	/**
 	 * Calculates the offsets for all labels.
@@ -333,13 +401,17 @@ class LabelsClass {
 	/**
 	 * Returns all labels with the exact same address
 	 * to the given address.
-	 * @param number The address value to find
+	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
 	 * @param regsString If defined it also returns registers (from the regsString)which match the number. Can be omitted. Then no registers are returned.
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
 	public getLabelsForNumber(number: number, regsString: string = ''): Array<string> {
+		if(number <= Settings.launch.smallValuesMaximum || number > 0xFFFF) {
+			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
+		}
 		var names = Z80Registers.getRegistersEqualTo(number, regsString);
 		var labels = this.labelsForNumber[number];
+
 		if(labels && typeof labels !== 'number') {
 			names.push(...labels);
 		}
@@ -352,11 +424,14 @@ class LabelsClass {
 	 * to the given address.
 	 * If label is equal to given addr the label itself is returned.
 	 * If label is not equal to given addr the label+offset is returned.
-	 * @param number The address value to find
+	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
 	 * @param regsString If defined it also returns registers (from the regsString) which match the number exactly. Can be omitted. Then no registers are returned.
 	 * @returns An array of strings with (registers and) labels + offset
 	 */
 	public getLabelsPlusIndexForNumber(number: number, regsString: string = ''): Array<string> {
+		if(number <= Settings.launch.smallValuesMaximum || number > 0xFFFF) {
+			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
+		}
 		var names = Z80Registers.getRegistersEqualTo(number, regsString);
 		var labels = this.labelsForNumber[number];
 		if(labels) {
@@ -382,20 +457,37 @@ class LabelsClass {
 	 * @param label The label name.
 	 * @returns It's value. undefined if label does not exist.
 	 */
-	public getNumberforLabel(label: string): number {
-		return this.numberForLabel[label];
+	public getNumberForLabel(label: string): number|undefined {
+		return this.numberForLabel.get(label);
 	}
 
 
-/**
+	/**
+	 * Returns all labels that match the regular expression string.
+	 * @param labelRegEx Regular expression string.
+	 * @returns An array with matching labels. If nothing found an empty array is returned.
+	 */
+	public getLabelsForRegEx(labelRegEx: string): Array<string> {
+		const regex = new RegExp(labelRegEx, 'i');	// Ignore case
+		const foundLabels = new Array<string>();
+		for( let [k,] of this.numberForLabel) {
+			const match = regex.exec(k);
+			if(match)
+				foundLabels.push(k);
+		}
+		// return array with labels
+		return foundLabels;
+	}
+
+	/**
 	 * Returns a number. If text is a label than the corresponding number for the label is returned.
 	 * If text is not a label it is tried to convert text as string to a number.
 	 * @param text The label name or a number in hex or decimal as string.
 	 * @returns The correspondent number. May be undefined.
 	 */
-	public getNumberFromString(text: string): number {
-		var result = this.getNumberforLabel(text);
-		if(isNaN(result)) {
+	public getNumberFromString(text: string): number|undefined {
+		var result = this.getNumberForLabel(text);
+		if(!result) {
 			// Try convert as string
 			if(!text.startsWith('_'))
 				result = Utility.parseValue(text);
@@ -432,7 +524,7 @@ class LabelsClass {
 	 * @returns {fileName: string, lineNr: number} The associated filename and line number.
 	 */
 	public getFileAndLineForAddress(address: number): {fileName: string, lineNr: number} {
-		const entry = this.fileLineNrs[address];
+		const entry = this.fileLineNrs.get(address);
 		if(!entry)
 			return {fileName: '', lineNr: 0};
 
@@ -450,7 +542,7 @@ class LabelsClass {
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
 		var filePath = Utility.getRelFilePath(fileName);
 		var addr = -1;
-		const lineArray = this.lineArrays[filePath];
+		const lineArray = this.lineArrays.get(filePath);
 		if(lineArray) {
 			addr = lineArray[lineNr];
 			if(!addr)

@@ -34,13 +34,16 @@ export class Utility {
 	 * @param value The number to convert
 	 * @param size The number of digits for the resulting string.
 	 */
-	public static getHexString(value: number, size: number) {
-		var s = value.toString(16);
-		const r = size - s.length;
-		if(r < 0)
-			return s.substr(-r);	// remove leading digits
-		else
+	public static getHexString(value: number|undefined, size: number) {
+		if(value != undefined) {
+			var s = value.toString(16);
+			const r = size - s.length;
+			if(r < 0)
+				return s.substr(-r);	// remove leading digits
 			return "0".repeat(r) + s.toUpperCase();
+		}
+		// Undefined
+		return "?".repeat(size);
 	}
 
 
@@ -71,6 +74,19 @@ export class Utility {
 
 
 	/**
+	 * Replaces all occurences of a substring in a string.
+	 * @param src The source string.
+	 * @param search The substring that should be replaced.
+	 * @param replacement The replacement for the substring.
+	 * @return A new string with all occurrences of 'search' replaced with 'replacement'.
+	 */
+	public static replaceAll(src: string, search:string, replacement: string): string {
+		const target =  src.split(search).join(replacement);
+		return target;
+	}
+
+
+	/**
 	 * Parses a string and converts it to a number.
 	 * The string might be decimal or in an hex format.
 	 * If the string begins with '0x' or '$' or ends with 'h' or 'H'
@@ -84,9 +100,8 @@ export class Utility {
 	 * @returns The value of valueString. Can also return NaN in error cases.
 	 */
 	public static parseValue(valueString: string): number {
-		const lowerString = valueString.toLowerCase();
-		//const match = /\s*(0x|\$|_)?([\-0-9a-fszhpnc]+)(h?)/.exec(lowerString);
-		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?[0-9]+)([^0-9]*))?/.exec(lowerString);
+
+		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?[0-9]+)([^0-9]*))?('([\S ]+)')?/i.exec(valueString);
 		if(!match)
 			return NaN;	// Error during parsing
 
@@ -99,18 +114,20 @@ export class Utility {
 		const gbit = match[9];	// b
 		const gbit_empty = match[10];	// should be empty
 
-		const gflags = match[12];	// _
+		var gflags = match[12];	// _
 		const gflags_empty = match[13];	// should be empty
 
 		const gdec = match[15];	// decimal
 		const gdec_empty = match[16];	// should be empty
 
+		var gchar = match[18];	// ASCII character
+
 		// Hex
 		if(ghex) {
 			if(ghex_empty)
 				return NaN;
-				return parseInt(ghex, 16);
-			}
+			return parseInt(ghex, 16);
+		}
 		if(ghexh) {
 			if(ghexh_empty)
 				return NaN;
@@ -134,6 +151,7 @@ export class Utility {
 		if(gflags) {
 			if(gflags_empty)
 				return NaN;
+			gflags = gflags.toLowerCase()
 			var flags = 0;
 			if(gflags.includes('s')) flags |= 0x80;
 			if(gflags.includes('z')) flags |= 0x40;
@@ -142,6 +160,13 @@ export class Utility {
 			if(gflags.includes('n')) flags |= 0x02;
 			if(gflags.includes('c')) flags |= 0x01;
 			return flags;
+		}
+
+		// ASCII character
+		if(gchar) {
+			if(gchar.length < 1)
+				return NaN;
+			return gchar.charCodeAt(0);
 		}
 
 		// Unknown
@@ -157,13 +182,13 @@ export class Utility {
 	 * 2-5*3 => -13, -Dh
 	 * LBL_TEST+1 => 32769, 8001h
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
-	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b.
+	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * @returns The evaluated number.
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
 	public static evalExpression(expr: string):number {
-		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9_]*)/g, (match, p1) => {
-			const res = Labels.getNumberFromString(p1);
+		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9_]*|'[\S ]+')/g, (match, p1) => {
+			const res = Labels.getNumberFromString(p1) || NaN;
 			if(isNaN(res))
 				throw SyntaxError(p1 + ' is unknown.');
 			return res.toString();
@@ -231,6 +256,27 @@ export class Utility {
 		// Now get max. length
 		const arr = result.split('\t');
 		return arr;
+	}
+
+
+	/**
+	 * Returns the ASCII character for a given value.
+	 * @param value The value to convert
+	 * @returns An ASCII character. Some special values for not printable characters.
+	 */
+	public static getASCIIChar(value: number): string {
+		const res = (value == 0) ? '0\u0332' : ((value >= 32 && value < 127) ? String.fromCharCode(value) : '.');
+		return res;
+	}
+
+	/**
+	 * Same as getASCIIChar but returns &nbsp; instead of a space.
+	 * @param value The value to convert
+	 * @returns An ASCII/HTML character. Some special values for not printable characters.
+	 */
+	public static getHTMLChar(value: number): string {
+		const res = (value == ' '.charCodeAt(0)) ? '&nbsp;' : Utility.getASCIIChar(value);
+		return res;
 	}
 
 
@@ -394,7 +440,7 @@ export class Utility {
 					const halfMaxValue = maxValue/2;
 					return ((usedValue >=  halfMaxValue) ? usedValue-maxValue : usedValue).toString() + restP;
 				case 'char':
-					const s = (usedValue == 0) ? '0\u0332' : ((usedValue >= 32 && usedValue < 127) ? String.fromCharCode(usedValue) : '�');
+					const s = Utility.getASCIIChar(usedValue);
 					return s + restP
 				case 'flags':
 					// interprete byte as Z80 flags:
@@ -475,7 +521,7 @@ export class Utility {
 	public static getFormattedRegister(regIn: string, formatMap: any, handler: {(formattedString: string)} = (data) => {}) {
 		// Every register has a formatting otherwise it's not a valid register name
 		const reg = regIn.toUpperCase();
-		const format = formatMap[reg];
+		const format = formatMap.get(reg);
 		assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
 		Machine.getRegisters(data => {

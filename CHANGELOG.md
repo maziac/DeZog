@@ -1,3 +1,13 @@
+## 0.4.0
+- Settings cleaned up.
+- Changing the program counter is now directly reflected in the UI.
+- Memory viewer got an additional ASCII field.
+- New debug command "-label" to output the number for a label.
+- labels and constants are now also extracted from the asm files. I.e. in most cases it shouldn't be required to add a labels file anymore.
+- Formatting distinguishes now between 'small values' and 'big values'.
+- Basic support for z88dk z80asm.
+- Improved documentation of the list files.
+
 ## 0.3.1
 - Program Counter can be changed via menu.
 

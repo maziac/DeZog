@@ -109,6 +109,41 @@ export class MemoryDump {
 		this.metaBlocks.push(bigBlock);
 	}
 
+
+	/**
+	 * Returns the value of an address.
+	 * Searches all meta blocks and returns the value of the first matching one.
+	 * @param address The address to look up.
+	 * @param previous Can be omitted. If given and set to true the previous value is returned.
+	 * @return The value at address or NaN if nothing could be found.
+	 */
+	public getValueFor(address: number, previous = false): number {
+		for(let mb of this.metaBlocks) {
+			const index = address - mb.address;
+			const data = (previous) ? mb.prevData : mb.data;
+			if(index >= 0 && index < data.length)
+				return data[index];
+		}
+		// Nothing found
+		return NaN;
+	}
+
+
+	/**
+	 * Sets the value for all matching addresses in the metablocks.
+	 * @param address The address which value should be changed.
+	 * @param value The new value.
+	 */
+	public setValueFor(address: number, value: number) {
+		for(let mb of this.metaBlocks) {
+			const index = address - mb.address;
+			const data = mb.data;
+			if(index >= 0 && index < data.length)
+				data[index] = value;
+		}
+	}
+
+
 	/**
 	 * Merges the address ranges if they are near to each other.
 ranges.
