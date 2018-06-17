@@ -46,7 +46,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - supports only ZEsarUX emulator
 - build output must
 	- create a .list file (format as of Savannah's Z80 Assembler: http://savannah.nongnu.org/projects/z80asm/)
-	- _alternatively you can use other list files (like z88dk) with limited functionality, please consult the documentation._
+	- _alternatively you can use other list files (like z88dk)with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
 	- create a .sna file containing the binary
 
 

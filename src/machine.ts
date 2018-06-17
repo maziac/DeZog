@@ -32,10 +32,10 @@ const DBG_DISABLE_BREAKPOINTS = false;
  * The breakpoint representation.
  */
 export interface MachineBreakpoint {
-	bpId: number;	/// The breakpoint ID/number
+	bpId: number;	/// The breakpoint ID/number (>0)
 	filePath: string;	/// The file to which the breakpoint belongs
 	lineNr: number;	/// The line number in the file starting at 0
-	condition: string;	/// Usually the pc value (e.g. "PC=0A7f")
+	condition: string;	/// Usually the pc value (e.g. "PC=0A7f"). If empty, the breakpoint is not set.
 }
 
 
@@ -883,11 +883,17 @@ export class MachineClass extends EventEmitter {
 					currentBps.push(ebp);
 				}
 			}
+			else {
+				// Breakpoint position invalid
+				const ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, condition: '' };
+				// add to array
+				currentBps.push(ebp);
+			}
 		});
 
 		// Now check which breakpoints are new or removed (this includes 'changed').
-		const newBps = currentBps.filter(bp => oldBps.filter(obp => obp.condition == bp.condition).length == 0);
-		const removedBps = oldBps.filter(bp => currentBps.filter(obp => obp.condition == bp.condition).length == 0);
+		const newBps = currentBps.filter(bp => bp.condition != '' && oldBps.filter(obp => obp.condition == bp.condition).length == 0);
+		const removedBps = oldBps.filter(bp => bp.condition != '' && currentBps.filter(obp => obp.condition == bp.condition).length == 0);
 
 		// remove old breakpoints
 		removedBps.forEach(bp => {
@@ -902,11 +908,11 @@ export class MachineClass extends EventEmitter {
 		});
 
 		// get all breakpoints for the path
-		const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
+		//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
 
 		// Return the real breakpoints for the file and sync with the socket.
 		zSocket.executeWhenQueueIsEmpty( () => {
-			handler(resultingBps);
+			handler(currentBps);
 		});
 
 	}

@@ -1,3 +1,7 @@
+## 0.4.1
+- Corrected setting of unverified breakpoints.
+- Fixed error when fetching disassemblies.
+
 ## 0.4.0
 - Settings cleaned up.
 - Changing the program counter is now directly reflected in the UI.

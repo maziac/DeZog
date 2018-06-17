@@ -156,6 +156,23 @@ The key to use other assemblers is the 'filter' property. Here you can define a 
 The pattern "/^[0-9]+\\s+//" e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
 
 
+#### Without a listfile
+
+If you don't setup any list file then you can still start z80-debug and it will work.
+However, since vscode doesn't find any related sources, the variables view (which displays the disassembly) will vanish for every 'step'. To show it again click on the call stack.
+
+To overcome this problem setup at least a disassembly that is retrieved from
+ZEsarUX, so you have a disassembled teext that you can step through.
+Of course, non of the goodies (i.e. label resolution etc.) will work. You just have the plain disassembly that you can step through. But still you can examine register values and memory content etc.
+
+Configuration:
+~~~~
+           "disassemblies": [
+               [ 0, 65356 ]     // Fetch the complete RAM/ROM disassembly
+            ],
+~~~~
+
+
 ### Labelsfile
 
 Because nowadays (>=0.4.0) the labels and constants are extracted directly from the list file there should normally no need to include a labels file anymore.
@@ -263,7 +280,7 @@ If you enter
 in the debug console you open a memory viewer.
 
 Here an example:
-
+z80
 ![](images/memoryviewer1.gif)
 
 The memory viewer will offer a few extra infos:

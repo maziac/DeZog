@@ -1,9 +1,9 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"publisher": "maziac",
-	"description": "Especially for the ZEsarUX ZX Spectrum Emulator.",
+	"description": "A debug adapter especially for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
 		"name": "Thomas Busse"
 	},

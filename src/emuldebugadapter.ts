@@ -251,7 +251,7 @@ export class EmulDebugAdapter extends DebugSession {
 			// Load files
 			try {
 				// Load user list and labels files
-				for(var listFile of Settings.launch.listFiles) {
+				for(let listFile of Settings.launch.listFiles) {
 					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.addOffset, listFile.useLabels, (address, line) => {
 						// quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
@@ -260,7 +260,7 @@ export class EmulDebugAdapter extends DebugSession {
 						}
 					});
 				}
-				for(var labelsFile of Settings.launch.labelsFiles)
+				for(let labelsFile of Settings.launch.labelsFiles)
 					Labels.loadAsmLabelsFile(labelsFile);
 			}
 			catch(err) {
@@ -281,7 +281,7 @@ export class EmulDebugAdapter extends DebugSession {
 						const fileName = 'TMP_DISASSEMBLY_' + area[0] + '(' + area[1] + ').asm';
 						const absFileName = Utility.writeTmpFile(fileName, text);
 						// add disassembly file without labels
-						Labels.loadAsmListFile(absFileName, false, undefined, 0, listFile.useLabels);
+						Labels.loadAsmListFile(absFileName, false, undefined, 0, false);
 						// "Return"
 						this.serializer.endExec();
 					});
@@ -402,12 +402,33 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// Set breakpoints for the file.
 			Machine.setBreakpoints(path, bps, (currentBreakpoints) => {
-				// Convert breakpoints for vscode
-				const vscodeBreakpoints = new Array<Breakpoint>();
-				currentBreakpoints.forEach( bp => {
-					var vscBp = new Breakpoint(true, this.convertDebuggerLineToClient(bp.lineNr));
-					vscodeBreakpoints.push(vscBp);
+				/*
+				// Go through original list of vscode breakpoints and check if they are verified or not
+				let source = this.createSource(path);
+				const vscodeBreakpoints = givenBps.map(gbp => {
+					let verified = false;
+					// Check if breakpoint is present in currentBreakpoints
+					const lineNr = this.convertClientLineToDebugger(gbp.line);
+					for(let cbp of currentBreakpoints) {
+						if(cbp.lineNr == lineNr && cbp.filePath == path) {
+							verified = true;
+							break;
+						}
+					}
+					// Create new breakpoint
+					let bp = new Breakpoint(verified, gbp.line, gbp.column, source);
+					return bp;
 				});
+				*/
+
+				const source = this.createSource(path);
+				const vscodeBreakpoints = currentBreakpoints.map(cbp => {
+					const lineNr = this.convertDebuggerLineToClient(cbp.lineNr);
+					const verified = (cbp.condition != '');	// Is not verified if no condition is set
+					let bp = new Breakpoint(verified, lineNr, 0, source);
+					return bp;
+				});
+
 
 				// send back the actual breakpoint positions
 				response.body = {
