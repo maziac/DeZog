@@ -263,6 +263,11 @@ Please note that we waste 1 byte (defb 1) for this safety check. This byte is no
 Caveats:
 - The parser of the list file is very simple. I.e. it cannot distinguish if
 the comment is in an area that is conditionally not assembled. So even if the code is not assembled it would honor the WPMEM comment and assign a watch point.
+- The 'memory breakpoints' used in ZEsarUX have a specific limiting behaviour:
+Imagine you have set a watchpoint WPMEM at address 4000h.
+If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
+But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
+
 
 ### Debug Console
 
@@ -270,8 +275,44 @@ You can add commands directly at the debug console. E.g. you can pass commands d
 
 Enter '-help' in the debug console to see all available commands.
 
+The debug console can normally be found in the bottom of vscode after successfu kaunch of the debugger:
+![](images/debug_console.jpg)
 
-### Memory Dumps
+
+#### Execute emulator commands
+
+Withe "-exec" you can directly pass emulator commands to the emulator.
+The response is send to the debug console.
+If you add the argument "-view" the output is redirected into a view.
+E.g. for ZEsarUX you can use
+~~~
+-exec -view help
+~~~
+to put the ZEsarUX zrcp help documetation in a view in vscode.
+You see the result here:
+![](images/exec_view_help.jpg)
+
+
+#### State Save/Restore
+
+It is possible to save/restore the current machine state (mainly RAM, Z80 registers) during a debug session.
+I.e. you can save the state before an errors happens then run the code to see what caused the error. If you then notice that you have gone too far you can restore the previous state and debug again from that point.
+
+Use
+~~~
+-state save
+~~~
+to save the current state.
+And
+~~~
+-state restore
+~~~
+to restore the state.
+
+Note: Status is only experimental. I.e. it just save/restores the memory contents and max. the 48K RAM. ZX NExt support will be added as soon it is available in ZEsarUX.
+
+
+#### Memory Dumps
 
 If you enter
 ~~~~
@@ -296,7 +337,7 @@ You can also open multiple memory dumps at once by adding more address/size rang
 -md 0 0x100 0x8000 0x40 0x8340 0x10
 ~~~~
 This opens a memory dump view 3 memory blocks.
-Please note that if ou enter overlapping blocks the dump will merge them in the display.
+Please note that if you enter overlapping blocks the dump will merge them in the display.
 
 z80-debug opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
 
@@ -305,7 +346,7 @@ The register memory view:
 ![](images/memoryviewer2.jpg)
 
 
-#### Memory Editor
+##### Memory Editor
 
 In the memory viewer you can edit indivdual memory values with a double-click on the value.
 You can now enter the new value as hex, decimal, bin or even as a math formula.
@@ -314,9 +355,47 @@ Any changed value wil be updated automatically in all memory views.
 Note: The changed value is not updated immediately in the WATCH area. There you need to 'step' once to get the updated values.
 
 
-#### Configuration
+##### Configuration
 
 The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registers-memory-viewer, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
+
+
+#### Sprites & Patterns
+
+You can open a view which displays the current sprite slots by entering
+~~~
+-sprites
+~~~
+
+This will display all 'visible' sprites in a table with all associated attributes like mirroring, rotation, palette offset and pattern id.
+
+Furthermore it also offers a simplified screen view which displays the border, the screen area and the sprites clipping rectangle (in red if enabled).
+
+![](images/zxnextspritesviewer1.jpg)
+
+Each sprite is shown by a rectangle and it's image. Additional you see it's slot number at the right bottom.
+
+If you only want to watch specific sprites you can add the slot numbers as arguments.
+
+Example: "-sprite 10-15 20+3 33" will observe sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33 only.
+
+The view will update the sprite's position and attributes on every 'step' in the debugger.
+If a new sprite appears the corresponding  sprite pattern will be loaded as well. But for performance reasons: On a 'step' the sprite patterns for already existing sprites are not updated. On a 'break' the sprite patterns will always be updated.
+So in most of the cases the sprite patterns will show correctly.
+However for special situations it is also possible to reload the patterns with a button.
+
+If the background color does not offer enough contrast for the sprite pattern it is possible to change the background color with the dropdown menu.
+
+To see just the sprite patterns you can use
+~~~
+-patterns
+~~~
+with the same syntax.
+
+It will display the sprite patterns.
+It is also possible to change the palette if the current palette is not suitable.
+
+![](images/zxnextspritepatternsviewer1.jpg)
 
 
 ### WATCHES

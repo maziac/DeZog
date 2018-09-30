@@ -45,7 +45,7 @@ enum SocketState {
 export class ZesaruxSocket extends Socket {
 
 
-	private state: SocketState;	///< connected, etc.
+	protected state: SocketState;	///< connected, etc.
 
 	private queue: Array<CommandEntry>;
 
@@ -56,10 +56,20 @@ export class ZesaruxSocket extends Socket {
 	// Holds the incomplete received message.
 	private receivedDataChunk: string;
 
+
 	/**
-	 * Initialize the socket in the launchRequest.
+	 * Static init method. Creates a new socket object.
+	 * Used in the launchRequest.
 	 */
-	public init() {
+	public static Init() {
+		zSocket = new ZesaruxSocket();
+		zSocket.init();
+	}
+
+	/**
+	 * Initialize the socket.
+	 */
+	protected init() {
 		// Remove all previous listeners (in case of a restart)
 		this.removeAllListeners();
 		// Init
@@ -156,13 +166,15 @@ export class ZesaruxSocket extends Socket {
 	 * Calls the lastCallQueue handlers.
 	 */
 	private checkLastCommandCompleted() {
-		if(this.queue.length != 0)
-			return; // Still commands in the queue
 		// Call the handler(s)
-		for(var handler of this.lastCallQueue)
+		while(true) {
+			if(this.queue.length != 0)
+				return; // Still commands in the queue (need to be here as the queue can be filled during the for-loop)
+			const handler = this.lastCallQueue.shift();
+			if(!handler)
+				break;
 			handler();
-		// Empty queue
-		this.lastCallQueue.length = 0;
+		}
 	}
 
 
@@ -286,17 +298,68 @@ export class ZesaruxSocket extends Socket {
 	 * Sends a "quit" to zesarux. In response zesarux will close the connection.
 	 * This sends "quit" immediately. I.e. it does not wait on the queue.
 	 * In fact it clears the queue.
+	 * @param handler is called after the connection is disconnected. Can be omitted.
 	 */
-	public quit() {
-		// Clear queue
+	public async quit(handler = ()=>{}) {
+		// Clear queues
 		this.queue.length = 0;
-		// Quit
+		this.lastCallQueue.length = 0;
+
+		// Exchange listeners
+		zSocket.removeAllListeners()
+
+		// Keep the data listener
+		this.on('data', data => {
+			this.receiveSocket(data);
+		});
+
+		// inform caller
+		const func = () => {
+			zSocket.removeAllListeners();
+			handler();
+		}
+		// The new listeners
+		zSocket.once('error', () => {
+			Log.log('Socket error (should be close).');
+			func()
+			zSocket.end();
+		});
+		zSocket.once('timeout', () => {
+			Log.log('Socket timeout (should be close).');
+			func()
+			zSocket.end();
+		});
+		zSocket.once('close', () => {
+			Log.log('Socket closed. OK.');
+			func();
+		});
+		zSocket.once('end', () => {
+			Log.log('Socket end. OK.');
+			func();
+		});
+
+		// Check state
+		if(this.state == SocketState.UNCONNECTED
+			|| this.state != SocketState.CONNECTED) {
+			// Already disconnected or not really connected.
+			zSocket.end();
+			return;
+		}
+
+		// Terminate connection
+		Log.log('Quitting:');
 		this.setTimeout(QUIT_TIMEOUT);
-		this.write('quit\n');
-		this.end();
+		this.send('\n');	// Just for the case that we are waiting on a breakpoint.
+		this.send('clear-membreakpoints');
+		this.send('disable-breakpoints');
+		this.send('quit', data => {
+			// Close connection (ZEsarUX also closes the connection)
+			zSocket.end();
+			handler();
+		});
 	}
 }
 
 /// zSocket is the singleton object that should be accessed.
-export const zSocket = new ZesaruxSocket();
+export let zSocket;
 

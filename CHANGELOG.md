@@ -1,3 +1,14 @@
+# Changelog
+
+## 0.5.0
+- Uses new (ZEsarUX 7.1) and fast memory breakpoints for WPMEM eatchpoints, see https://github.com/maziac/z80-debug/blob/master/documentation/Usage.md#wpmem
+- Use of z80dismblr for disassembly.
+- Improved disconnection handling.
+- New command "-sprites" displays the sprites in a new window.
+- New command "-patterns" displays the sprite patterns in a new window.
+- New option for "-exec": "-view" redirects the output from console to a new view.
+- Experimental implementation for "-state save|restore".
+
 ## 0.4.1
 - Corrected setting of unverified breakpoints.
 - Fixed error when fetching disassemblies.

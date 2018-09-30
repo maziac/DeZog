@@ -1,15 +1,16 @@
 'use strict';
 
+import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { Machine } from './machine';
+import { Emulator } from './emulatorfactory';
 import * as util from 'util';
 import { Utility } from './utility';
 import { Labels } from './labels';
-import { CallSerializer } from './callserializer';
 import { MetaBlock, MemoryDump } from './memorydump';
 import { EventEmitter } from 'events';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';
+import { BaseView } from './baseview';
 
 
 /// The boundary at which the memory dumps should be shown.
@@ -22,7 +23,7 @@ const MEM_DUMP_BOUNDARY = 16;
  * There is a rather complex messaging between the webview's html javascript (the webview
  * panel) and the extension (the typescript code):
  * - Display:
- * 		- Register coloring: If the address of a value is the same as a regiser value it is colored
+ * 		- Register coloring: If the address of a value is the same as a register value it is colored
  * differently. 'setColorsForRegisterPointers' calls 'setAddressColor' in the webview. This is done
  * when the panel is created or updated (each step) or when the webview becomes visible (e.g. if
  * it was hidden).
@@ -37,88 +38,77 @@ const MEM_DUMP_BOUNDARY = 16;
  * 		are 2 same cells both are updated.
  * 		- If there are several memory views all are informed about the new value to update their display.
  *
+ * See design.md for a sequence chart.
  */
-export class MemoryDumpView {
+export class MemoryDumpView extends BaseView {
 
-	protected static MemoryViews = Array<MemoryDumpView>();	///< Array that contains all of the created memory views.
+	/// Array that contains all of the created memory views.
+	protected static MemoryViews = Array<MemoryDumpView>();
 
-	protected vscodePanel: vscode.WebviewPanel;	///< The panel to show the memory dump in vscode.
+	/// The memory dump to show.
+	protected memDump = new MemoryDump();
 
-	protected memDump = new MemoryDump();	///< The memory dump to show.
-
-	protected parent: EventEmitter;	///< We listen for 'update' on this emitter to update the html.
-
-	protected serializer = new CallSerializer('MemoryDumpUpdate');
-
+	/// Used to store the previous register addresses, e.g. HL, DE etc.
+	protected prevRegAddr = new Map<string,number>();
 
 	/**
 	 * Creates the basic panel.
 	 */
 	constructor(parent: EventEmitter) {
-		this.parent = parent;
-	 	var updateFunc = () => {
-			 this.update();};
-		this.parent.on('update', updateFunc);
-		// create vscode panel view
-		this.vscodePanel = vscode.window.createWebviewPanel('memDump', '', vscode.ViewColumn.Two, {enableScripts: true});
+		super(parent);
 		MemoryDumpView.MemoryViews.push(this);
-
-		// Handle closing of the view
-		this.vscodePanel.onDidDispose(() => {
-            // The panel is closed. Remove listening for updates.
-			this.parent.removeListener('update', updateFunc);
-			// Remove from list
-			const arr = MemoryDumpView.MemoryViews;
-			const index = arr.indexOf(this);
-			var assert = require('assert');
-			assert(index >= 0 );
-			arr.splice(index, 1);
-		});
 
 		// Handle hide/unhide -> update the register pointers.
         this.vscodePanel.onDidChangeViewState(e => {
 			// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
 			this.setColorsForRegisterPointers();
         });
-
-
-		// Handle messages from the webview
-		this.vscodePanel.webview.onDidReceiveMessage(message => {
-			console.log("webView command '"+message.command+"':", message);
-			switch (message.command) {
-				case 'valueChanged':
-					try {
-						// Change memory
-						const address = parseInt(message.address);
-						const value = Utility.evalExpression(message.value);
-						this.changeMemory(address, value);
-					}
-					catch(e) {
-						vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
-					}
-					break;
-
-				case 'getValueInfoText':
-				{
-					const address = parseInt(message.address);
-					this.getValueInfoText(address);
-				}	break;
-
-				case 'getAddressInfoText':
-				{	const address = parseInt(message.address);
-					this.getAddressInfoText(address);
-				}	break;
-			}
-		});
-
 	}
 
 
 	/**
-	 * Closes the view.
+	 * Dispose the view (called e.g. on close).
+	 * Removes it from the static list.
 	 */
-	public close() {
-		this.vscodePanel.dispose();
+	public disposeView() {
+		// Remove from list
+		const arr = MemoryDumpView.MemoryViews;
+		const index = arr.indexOf(this);
+		assert(index >= 0);
+		arr.splice(index, 1);
+	}
+
+
+	/**
+	 * The web view posted a message to this view.
+	 * @param message The message. message.command contains the command as a string.
+	 * This needs to be created inside the web view.
+	 */
+	protected webViewMessageReceived(message: any) {
+		switch (message.command) {
+			case 'valueChanged':
+				try {
+					// Change memory
+					const address = parseInt(message.address);
+					const value = Utility.evalExpression(message.value);
+					this.changeMemory(address, value);
+				}
+				catch(e) {
+					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
+				}
+				break;
+
+			case 'getValueInfoText':
+			{
+				const address = parseInt(message.address);
+				this.getValueInfoText(address);
+			}	break;
+
+			case 'getAddressInfoText':
+			{	const address = parseInt(message.address);
+				this.getAddressInfoText(address);
+			}	break;
+		}
 	}
 
 
@@ -150,25 +140,12 @@ export class MemoryDumpView {
 
 
 	/**
-	 * Posts the given message to all webviews.
-	 * @params The message to post.
-	 */
-	/*
-		protected postToAllWebviews(message: any) {
-		for(let mdv of MemoryDumpView.MemoryViews) {
-			mdv.vscodePanel.webview.postMessage(message);
-		};
-	}
-	*/
-
-
-	/**
 	 * The user just changed a cell in the dump view table.
 	 * @param address The address  to change.
 	 * @param value The new value.
 	 */
 	protected changeMemory(address: number, value: number) {
-		Machine.writeMemory(address, value, (realValue) => {
+		Emulator.writeMemory(address, value, (realValue) => {
 			// Also update the value and the hovertext in all webviews
 			for(let mdv of MemoryDumpView.MemoryViews) {
 				// check first if address included at all
@@ -182,7 +159,8 @@ export class MemoryDumpView {
 						value: Utility.getHexString(realValue, 2),
 						asciiValue: Utility.getASCIIChar(realValue)
 					};
-					mdv.vscodePanel.webview.postMessage(message);
+					this.sendMessageToWebView(message, mdv);
+					//mdv.vscodePanel.webview.postMessage(message);
 					mdv.getValueInfoText(address);
 				}
 			};
@@ -216,7 +194,8 @@ export class MemoryDumpView {
 					address: address.toString(),
 					text: text
 				};
-				this.vscodePanel.webview.postMessage(msg);
+				this.sendMessageToWebView(msg);
+				//this.vscodePanel.webview.postMessage(msg);
 			});
 		});
 	}
@@ -235,20 +214,22 @@ export class MemoryDumpView {
 				address: address.toString(),
 				text: formattedString
 			};
-			this.vscodePanel.webview.postMessage(msg);
+			this.sendMessageToWebView(msg);
+			//this.vscodePanel.webview.postMessage(msg);
 		});
 	}
 
 
 	/**
 	 * Retrieves the memory content and displays it.
+	 * @param reason Not used.
 	 */
-	public update() {
+	public update(reason?: any) {
 		// Loop all memory blocks
 		for(let metaBlock of this.memDump.metaBlocks) {
 			this.serializer.exec(() => {
 				// Updates the shown memory dump.
-				Machine.getMemoryDump(metaBlock.address, metaBlock.size, (data) => {
+				Emulator.getMemoryDump(metaBlock.address, metaBlock.size, (data) => {
 					// Store data
 					metaBlock.prevData = metaBlock.data;
 					metaBlock.data = data;
@@ -445,6 +426,7 @@ export class MemoryDumpView {
 
 		const addressColor = Settings.launch.memoryViewer.addressColor;
 		const asciiColor = Settings.launch.memoryViewer.asciiColor;
+		const bytesColor = Settings.launch.memoryViewer.bytesColor;
 
 		let ascii = '';
 
@@ -483,7 +465,7 @@ export class MemoryDumpView {
 			}
 
 			// Create html cell
-			table += '<td address="' + address + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)">' + valueText +'</td>\n';
+			table += '<td address="' + address + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
 
 			// Convert to ASCII (->html)
@@ -536,7 +518,7 @@ export class MemoryDumpView {
 		</html>`;
 
 		// Get register values
-		Machine.getRegisters((regsString) => {
+		Emulator.getRegisters((regsString) => {
 			// Loop through all metablocks
 			var tables;
 			const vertBreak = this.getHtmlVertBreak();
@@ -556,11 +538,11 @@ export class MemoryDumpView {
 
 	/**
 	 * Set colors for register pointers.
-	 * Colors are only set if the wenview is visible.
+	 * Colors are only set if the webview is visible.
 	 */
 	protected setColorsForRegisterPointers() {
 		// Get register values
-		Machine.getRegisters((regsString) => {
+		Emulator.getRegisters((regsString) => {
 			// Set colors for register pointers
 			const arr = Settings.launch.memoryViewer.registerPointerColors;
 			for(let i=0; i<arr.length-1; i+=2) {
@@ -570,6 +552,14 @@ export class MemoryDumpView {
 				// get address = value of reg
 				const address = Z80Registers.getRegValueByName(reg, regsString);
 				console.log( reg + ': ' + address.toString(16));
+				// Clear old color
+				const prevAddr = this.prevRegAddr.get(reg) || -1;	// To calm the transpiler
+				const msgPrev = {
+					command: 'setAddressColor',
+					address: prevAddr.toString(),
+					color: "transparent"
+				};
+				this.sendMessageToWebView(msgPrev);
 				// Send the address/color to the web view for display.
 				const color = arr[i+1];
 				const msg = {
@@ -577,7 +567,9 @@ export class MemoryDumpView {
 					address: address.toString(),
 					color: color
 				};
-				this.vscodePanel.webview.postMessage(msg);
+				this.sendMessageToWebView(msg);
+				// Store
+				this.prevRegAddr.set(reg, address);
 			}
 		});
 	}

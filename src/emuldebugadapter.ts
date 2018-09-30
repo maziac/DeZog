@@ -1,14 +1,14 @@
 
-
+//import * as assert from 'assert';
 import { basename } from 'path';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ OutputEvent, Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
+import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { Labels } from './labels';
 import { Log } from './log';
-import { Machine, MachineBreakpoint, MachineClass } from './machine';
+import { EmulatorBreakpoint, MachineType, /*EmulatorClass,*/ } from './emulator';
 import { MemoryDumpView } from './memorydumpview';
 import { MemoryRegisterView } from './memoryregisterview';
 import { RefList } from './reflist';
@@ -16,7 +16,12 @@ import { Settings, SettingsParameters } from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './shallowvar';
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
-
+import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
+import { StateZ80 } from './statez80';
+import { ZxNextSpritesView } from './zxnextspritesview';
+import { TextView } from './textview';
+import { BaseView } from './baseview';
+import { ZxNextSpritePatternsView } from './zxnextspritepatternsview';
 
 
 /**
@@ -38,7 +43,11 @@ export class EmulDebugAdapter extends DebugSession {
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
 
 	/// Used to display the memory at the register locations.
-	protected registerMemoryView: MemoryRegisterView;
+	//protected registerMemoryView: MemoryRegisterView;
+
+	/// Used to hold saved state data.
+	protected stateData: StateZ80;
+
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -54,6 +63,8 @@ export class EmulDebugAdapter extends DebugSession {
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
 
+		// Make sure the views listen on 'update' messages.
+		this.on('update', BaseView.staticCallUpdateFunctions);
 
 		/*
 		this._runtime.on('stopOnStep', () => {
@@ -159,9 +170,10 @@ export class EmulDebugAdapter extends DebugSession {
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		// Close register memory view
-		this.registerMemoryView.close();
+		BaseView.staticCloseAll();
+		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
-		Machine.stop(() => {
+		Emulator.stop(() => {
 			this.sendResponse(response);
 		});
 	}
@@ -192,6 +204,9 @@ export class EmulDebugAdapter extends DebugSession {
 
 		// Support changing of variables (e.g. registers)
 		response.body.supportsSetVariable = true;
+
+		// Supports conditional breakpoints
+		response.body.supportsConditionalBreakpoints = true;
 
 		this.sendResponse(response);
 
@@ -242,10 +257,10 @@ export class EmulDebugAdapter extends DebugSession {
 		}
 
 		// Create the machine
-		MachineClass.create();
-		Machine.init();
+		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+		Emulator.init();
 
-		Machine.once('initialized', () => {
+		Emulator.once('initialized', () => {
 			//Array for found watchpoints: WPMEM
 			const watchPointLines = new Array<{address: number, line: string}>();
 			// Load files
@@ -276,7 +291,7 @@ export class EmulDebugAdapter extends DebugSession {
 			for(var area of Settings.launch.disassemblies) {
 				this.serializer.exec(() => {
 					// get disassembly
-					Machine.getDisassembly(area[0] /*address*/, area[1] /*size*/, (text) => {
+					Emulator.getDisassembly(area[0] /*address*/, area[1] /*size*/, (text) => {
 						// save as temporary file
 						const fileName = 'TMP_DISASSEMBLY_' + area[0] + '(' + area[1] + ').asm';
 						const absFileName = Utility.writeTmpFile(fileName, text);
@@ -302,19 +317,22 @@ export class EmulDebugAdapter extends DebugSession {
 					//	length = the count of bytes to observe (optional). Default = 1.
 					//	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
 					// e.g. WPMEM LBL_TEXT, 1, w
+					// or
+					// WPMEM ,1,w, MWV&B8h/0
 
-					// now check more thoroughly: group1=address, group3=length, group5=access
-					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*))?)?/.exec(entry.line);
+					// now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
+					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 					if(match) {
 						// get arguments
 						let addressString = match[1];
 						let lengthString = match[3];
 						let access = match[5];
+						let cond = match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
 						// defaults
-						let address = entry.address;
+						let entryAddress: number|undefined = entry.address;
 						if(addressString && addressString.length > 0)
-							address = Labels.getNumberFromString(addressString) || NaN;
-						if(isNaN(address))
+							entryAddress = Labels.getNumberFromString(addressString);
+						if(isNaN(entryAddress))
 							continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
 						let length = 1;
 						if(lengthString && lengthString.length > 0) {
@@ -331,23 +349,23 @@ export class EmulDebugAdapter extends DebugSession {
 						else
 							access = 'rw';
 						// set watchpoint
-						watchpoints.push({address: address, length: length, access: access});
+						watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
 					}
 				}
 
 				// Set watchpoints (memory guards)
-				Machine.setWPMEM(watchpoints, () => {
-				// "Return"
-				this.serializer.endExec();
+				Emulator.setWPMEM(watchpoints, () => {
+					// "Return"
+					this.serializer.endExec();
 				});
 			});
 
 			this.serializer.exec(() => {
 				// Create memory/register dump view
-				this.registerMemoryView = new MemoryRegisterView(this);
+				let registerMemoryView = new MemoryRegisterView(this);
 				const regs = Settings.launch.memoryViewer.registersMemoryView;
-				this.registerMemoryView.addRegisters(regs);
-				this.registerMemoryView.update();
+				registerMemoryView.addRegisters(regs);
+				registerMemoryView.update();
 				// Send stop
 				this.sendEvent(new StoppedEvent('entry', EmulDebugAdapter.THREAD_ID));
 				// socket is connected, allow setting breakpoints
@@ -359,19 +377,18 @@ export class EmulDebugAdapter extends DebugSession {
 			});
 		});
 
-		Machine.on('warning', message => {
+		Emulator.on('warning', message => {
 			// Some problem occurred
 			this.showWarning(message);
 		});
 
-		Machine.once('error', err => {
+		Emulator.once('error', err => {
 			// Some error occurred
-			Machine.stop(()=>{});
+			Emulator.stop(()=>{});
 			this.exit(err.message);
 		});
 
 	}
-
 
 
 	/**
@@ -389,11 +406,12 @@ export class EmulDebugAdapter extends DebugSession {
 			// convert breakpoints
 			const givenBps = args.breakpoints || [];
 			const bps = givenBps.map(bp => {
-				var mbp: MachineBreakpoint;
+				var mbp: EmulatorBreakpoint;
 				mbp = {
 					bpId: 0,
 					filePath: path,
 					lineNr: this.convertClientLineToDebugger(bp.line),
+					address: -1,	// not known yet
 					condition: (bp.condition) ? bp.condition : ''
 				};
 				return mbp;
@@ -401,7 +419,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 			// Set breakpoints for the file.
-			Machine.setBreakpoints(path, bps, (currentBreakpoints) => {
+			Emulator.setBreakpoints(path, bps, (currentBreakpoints) => {
 				/*
 				// Go through original list of vscode breakpoints and check if they are verified or not
 				let source = this.createSource(path);
@@ -424,7 +442,7 @@ export class EmulDebugAdapter extends DebugSession {
 				const source = this.createSource(path);
 				const vscodeBreakpoints = currentBreakpoints.map(cbp => {
 					const lineNr = this.convertDebuggerLineToClient(cbp.lineNr);
-					const verified = (cbp.condition != '');	// Is not verified if no condition is set
+					const verified = (cbp.address >= 0);	// Is not verified if no address is set
 					let bp = new Breakpoint(verified, lineNr, 0, source);
 					return bp;
 				});
@@ -489,7 +507,7 @@ export class EmulDebugAdapter extends DebugSession {
 			this.listVariables.length = 0;
 
 			// Get the call stack trace
-			Machine.stackTraceRequest((frames) => {
+			Emulator.stackTraceRequest((frames) => {
 
 				// Create new array but only upto end of stack (name == null)
 				const sfrs = new Array<StackFrame>();
@@ -530,7 +548,7 @@ export class EmulDebugAdapter extends DebugSession {
 			const scopes = new Array<Scope>();
 			const frameId = args.frameId;
 			//const frame = this.listFrames.getObject(frameId);
-			const frame = Machine.getFrame(frameId);
+			const frame = Emulator.getFrame(frameId);
 			if(!frame) {
 				// No frame found, send empty response
 				response.body = {scopes: scopes};
@@ -540,22 +558,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// More serialization
 			const innerSerializer = new CallSerializer("innerScopesRequest");
-
-			// Serialize Disassembly
-			innerSerializer.exec(() => {
-				// get address
-				if(frame) {
-					// use address
-					const addr = frame.addr;
-					// Create variable object for Disassembly
-					const varDisassembly = new DisassemblyVar(addr, 8);
-					// Add to list and get reference ID
-					const ref = this.listVariables.addObject(varDisassembly);
-					scopes.push(new Scope("Disassembly", ref));
-				}
-				// Return
-				innerSerializer.endExec();
-			});
 
 			// Serialize main Registers
 			innerSerializer.exec(() => {
@@ -573,6 +575,22 @@ export class EmulDebugAdapter extends DebugSession {
 				const ref2 = this.listVariables.addObject(varRegisters2);
 				scopes.push(new Scope("Registers 2", ref2));
 
+				// Return
+				innerSerializer.endExec();
+			});
+
+			// Serialize Disassembly
+			innerSerializer.exec(() => {
+				// get address
+				if(frame) {
+					// use address
+					const addr = frame.addr;
+					// Create variable object for Disassembly
+					const varDisassembly = new DisassemblyVar(addr, 8);
+					// Add to list and get reference ID
+					const ref = this.listVariables.addObject(varDisassembly);
+					scopes.push(new Scope("Disassembly", ref));
+				}
 				// Return
 				innerSerializer.endExec();
 			});
@@ -638,8 +656,12 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			Machine.continue( () => {
+			Emulator.continue(data => {
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
+
+				// Send output event to inform the user about the reason
+				const e: DebugProtocol.OutputEvent = new OutputEvent(data + '\n', 'console');
+				this.sendEvent(e);
 
 				// Update memory dump etc.
 				this.update();
@@ -663,7 +685,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Pause the debugger
-			Machine.pause();
+			Emulator.pause();
 			// Response is sent immediately
 			this.sendResponse(response);
 			this.serializer.endExec();
@@ -680,7 +702,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			Machine.reverseContinue( () => {
+			Emulator.reverseContinue( () => {
 				// Update memory dump etc.
 				this.update();
 
@@ -704,9 +726,9 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Over
-			Machine.stepOver( () => {
+			Emulator.stepOver( () => {
 				// Update memory dump etc.
-				this.update();
+				this.update({step: true});
 
 				// Response
 				this.sendResponse(response);
@@ -728,9 +750,9 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Machine.stepInto( () => {
+			Emulator.stepInto( () => {
 				// Update memory dump etc.
-				this.update();
+				this.update({step: true});
 
 				// Response
 				this.sendResponse(response);
@@ -753,7 +775,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Machine.stepOut( () => {
+			Emulator.stepOut( () => {
 				// Update memory dump etc.
 				this.update();
 
@@ -777,9 +799,9 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Machine.stepBack( () => {
+			Emulator.stepBack( () => {
 				// Update memory dump etc.
-				this.update();
+				this.update({step: true});
 
 				// Response
 				this.sendResponse(response);
@@ -802,197 +824,52 @@ export class EmulDebugAdapter extends DebugSession {
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
 		if(cmd) {
-			if(cmd.startsWith('-')) {
-				// All commands start with "-"
-				if(cmd == '-help' || cmd == '-h') {
-					// print help
-					//const output = new OutputEvent('Allowed commands are:', 'console');
-					//this.sendEvent(output);
-					const output =
-`Allowed commands are:
-  "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels.
-  "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
-  "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
-  "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
-  "-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
-  "-WPMEM enable|disable": Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
-  "-WPMEM show": Shows enable status of WPMEM watchpoints.
-  Examples:
-  "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
-  "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
-  "-e gr": Shows all registers.
-  "-eval 2+3*5": Results to "17".
-  "-md 0 10": Shows the memory at address 0 to address 9.
-Notes:
-  "-exec run" will not work at the moment and leads to a disconnect.
-`;
-					response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-					this.sendResponse(response);
-				}
-				else if (cmd == '-eval') {
-					const expr = tokens.join(' ').trim();	// restore expression
-					if(expr.length == 0) {
-						// Error Handling: No arguments
-						const output = "Expression expected.\n\n";
-						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-						return;
+			try {
+				if(cmd.startsWith('-')) {
+					// All commands start with "-"
+					if(cmd == '-help' || cmd == '-h') {
+						this.evalHelp(tokens, response);
 					}
-					// Evaluate expression
-					let result;
-					try {
-						// Evaluate
-						const value = Utility.evalExpression(expr);
-						// convert to decimal
-						result = value.toString();
-						// convert also to hex
-						result += ', ' + value.toString(16).toUpperCase() + 'h';
-						// convert also to bin
-						result += ', ' + value.toString(2) + 'b';
+					else if (cmd == '-eval') {
+						this.evalEval(tokens, response);
 					}
-					catch(e) {
-						result = e.message;
+					else if (cmd == '-exec' || cmd == '-e') {
+						this.evalExec(tokens, response);
 					}
-					response.body = { result: result, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-					this.sendResponse(response);
-				}
-				else if (cmd == '-exec' || cmd == '-e') {
-					const machineCmd = tokens.join(' ');
-					if(machineCmd.length == 0) {
-						// No command given
-						response.body = { result: 'No command given.\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
+					else if (cmd == '-label' || cmd == '-l') {
+						this.evalLabel(tokens, response);
+					}
+					else if (cmd == '-md') {
+						this.evalMemDump(tokens, response);
+					}
+					else if (cmd == '-patterns') {
+						this.evalSpritePatterns(tokens, response);
+					}
+					else if (cmd == '-WPMEM' || cmd == '-wpmem') {
+						this.evalWPMEM(tokens, response);
+					}
+					else if (cmd == '-sprites') {
+						this.evalSprites(tokens, response);
+					}
+					else if (cmd == '-state') {
+						this.evalStateSaveRestore(tokens, response);
 					}
 					else {
-						Machine.dbgExec(machineCmd, (data) => {
-							// Print to console
-							response.body = { result: data+'\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-							this.sendResponse(response);
-						});
+						// Unknown command
+						throw new Error("Unknown command: '" + expression + "'");
 					}
+
+					// End
+					return;
 				}
-				else if (cmd == '-label' || cmd == '-l') {
-					const expr = tokens.join(' ').trim();	// restore expression
-					if(expr.length == 0) {
-						// Error Handling: No arguments
-						const output = "Label expected.\n\n";
-						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-						return;
-					}
-					// Find labelwith regex, every star is translated into ".*"
-					const rString = '^' + Utility.replaceAll(expr, '*', '.*?') + '$';
-					// Now search all labels
-					const labels = Labels.getLabelsForRegEx(rString);
-					let result = '';
-					if(labels.length > 0) {
-						labels.map(label => {
-							const value = Labels.getNumberForLabel(label);
-							result += label +': ' + Utility.getHexString(value, 4) + 'h\n';
-						})
-					}
-					else {
-						// No label found
-						result = 'No label matches.';
-					}
-					// return result
-					response.body = { result: result, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-					this.sendResponse(response);
-				}
-				else if (cmd == '-md') {
-					// check count of arguments
-					if(tokens.length == 0) {
-						// Error Handling: No arguments
-						const output = "Address and size expected.\n\n";
-						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-						return;
-					}
-
-					if(tokens.length % 2 != 0) {
-						// Error Handling: No size given
-						const output = "No size given for address '" + tokens[tokens.length-1] + "'.\n\n";
-						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-						return;
-					}
-
-					// Get all addresses/sizes.
-					const addrSizes = new Array<number>();
-					for(let k=0; k<tokens.length; k+=2) {
-						// address
-						const addressString = tokens[k];
-						const address = Labels.getNumberFromString(addressString) || NaN;
-						if(isNaN(address)) {
-							// Error Handling: Unknown argument
-							const output = "Expected address but got: '" + addressString + "'\n\n";
-							response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-							this.sendResponse(response);
-							return;
-						}
-						addrSizes.push(address);
-
-						// size
-						const sizeString = tokens[k+1];
-						const size = Labels.getNumberFromString(sizeString) || NaN;
-						if(isNaN(size)) {
-							// Error Handling: Unknown argument
-							const output = "Expected size but got: '" + sizeString + "'\n\n";
-							response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-							this.sendResponse(response);
-							return;
-						}
-						addrSizes.push(size);
-					}
-
-					// Create new view
-					const panel = new MemoryDumpView(this);
-					for(let k=0; k<tokens.length; k+=2)
-						panel.addBlock(addrSizes[k], addrSizes[k+1]);
-					panel.mergeBlocks();
-					panel.update();
-
-					// Send response
-					response.body = { result: 'OK\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-				}
-				else if (cmd == '-WPMEM' || cmd == '-wpmem') {
-					const param = tokens[0] || '';
-					if(param == 'enable' || param == 'disable') {
-						// enable or disable all WPMEM watchpoints
-						const enable = (param == 'enable');
-						Machine.enableWPMEM(enable, () => {
-							// Print to console
-							const enableString = (enable) ? 'enabled' : 'disabled';
-							response.body = { result: 'WPMEM watchpoints ' + enableString + '\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-							this.sendResponse(response);
-						});
-					}
-					else if(param == 'show') {
-						// show enable status of all WPMEM watchpoints
-						const enable = Machine.wpmemEnabled;
-						const enableString = (enable) ? 'enabled' : 'disabled';
-							response.body = { result: 'WPMEM watchpoints are ' + enableString + '.\n\n', type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-					}
-					else {
-						// Unknown argument
-						const output = "Unknown argument: '" + param + "'\n\n";
-						response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-						this.sendResponse(response);
-					}
-				}
-				else {
-					// Unknown command
-					const output = "Unknown command: '" + expression + "'\n\n";
-					response.body = { result: output, type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
-					this.sendResponse(response);
-				}
-
-				// End
+			}
+			catch(err) {
+				const output = "Error: " + err.message;
+				this.sendEvalResponse(output, response);
 				return;
 			}
 		}
+
 
 		// Serialize
 		this.serializer.exec(() => {
@@ -1082,6 +959,411 @@ Notes:
 	}
 
 
+	/**
+	 * Prints a help text for the debug console commands.
+	 * @param tokens The arguments. Unused.
+	 * @param response The response to send on success.
+	 */
+	protected evalHelp(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		const output =
+`Allowed commands are:
+"-eval expr": Evaluates an expression. The expression might contain
+mathematical expressions and also labels. It will also return the label if
+the value correspondends to a label.
+"-exec|e [-view] cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers". If you add "-view" the output will go into a new view instead of the console.
+"-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
+"-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
+"-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
+"-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
+Without any parameter it will show all sprite patterns.
+You can concat several ranges with a ",".
+Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
+"-WPMEM enable|disable": Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
+"-WPMEM show": Shows enable status of WPMEM watchpoints.
+"-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges with a ",".
+Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
+Without any parameter it will show all visible sprites automatically.
+"-state save|restore": Saves/restores the current state. I.e. the complete RAM + the registers.
+Examples:
+"-exec h 0 100": Does a hexdump of 100 bytes at address 0.
+"-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
+"-e gr": Shows all registers.
+"-eval 2+3*5": Results to "17".
+"-md 0 10": Shows the memory at address 0 to address 9.
+"-sprites": Shows all visible sprites.
+Notes:
+"-exec run" will not work at the moment and leads to a disconnect.
+`;
+		this.sendEvalResponse(output, response);
+	}
+
+
+	/**
+	 * Evaluates a given expression.
+	 * @param tokens The arguments. I.e. the expression to eveluate.
+	 * @param response The response to send on success.
+	 */
+	protected evalEval(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		const expr = tokens.join(' ').trim();	// restore expression
+		if(expr.length == 0) {
+			// Error Handling: No arguments
+			throw new Error("Expression expected.");
+		}
+		// Evaluate expression
+		let result;
+		// Evaluate
+		const value = Utility.evalExpression(expr);
+		// convert to decimal
+		result = value.toString();
+		// convert also to hex
+		result += ', ' + value.toString(16).toUpperCase() + 'h';
+		// convert also to bin
+		result += ', ' + value.toString(2) + 'b';
+		// check for label
+		const labels = Labels.getLabelsPlusIndexForNumber(value);
+		if(labels.length > 0) {
+			result += ', ' + labels.join(', ');
+		}
+
+		this.sendEvalResponse(result, response);
+	}
+
+
+	/**
+	 * Executes a command in the emulator.
+	 * @param tokens The arguments. I.e. the command for the emulator.
+	 * @param response The response to send on success.
+	 */
+	protected evalExec(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		// Check for "-view"
+		let redirectToView = false;
+		if(tokens[0] == '-view') {
+			redirectToView = true;
+			tokens.shift();
+		}
+		// Execute
+		const machineCmd = tokens.join(' ');
+		if(machineCmd.length == 0) {
+			// No command given
+			throw new Error('No command given.');
+		}
+		else {
+			Emulator.dbgExec(machineCmd, (data) => {
+				if(redirectToView) {
+					// Create new view
+					const panel = new TextView(this, "exec: "+machineCmd, data);
+					panel.update();
+					// Send response
+					this.sendEvalResponse('OK', response);
+				}
+				else {
+					// Print to console
+					this.sendEvalResponse(data, response);
+				}
+			});
+		}
+	}
+
+
+	/**
+	 * Evaluates a label.
+	 * @param tokens The arguments. I.e. the label.
+	 * @param response The response to send on success.
+	 */
+	protected evalLabel(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		const expr = tokens.join(' ').trim();	// restore expression
+		if(expr.length == 0) {
+			// Error Handling: No arguments
+			const output = "Label expected.";
+			this.sendEvalResponse(output, response);
+			return;
+		}
+		// Find labelwith regex, every star is translated into ".*"
+		const rString = '^' + Utility.replaceAll(expr, '*', '.*?') + '$';
+		// Now search all labels
+		const labels = Labels.getLabelsForRegEx(rString);
+		let result = '';
+		if(labels.length > 0) {
+			labels.map(label => {
+				const value = Labels.getNumberForLabel(label);
+				result += label +': ' + Utility.getHexString(value, 4) + 'h\n';
+			})
+		}
+		else {
+			// No label found
+			result = 'No label matches.';
+		}
+		// return result
+		this.sendEvalResponse(result, response);
+	}
+
+
+	/**
+	 * Shows a view with a memory dump.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @param response The response to send on success.
+	 */
+	protected evalMemDump(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		// check count of arguments
+		if(tokens.length == 0) {
+			// Error Handling: No arguments
+			const output = "Address and size expected.";
+			this.sendEvalResponse(output, response);
+			return;
+		}
+
+		if(tokens.length % 2 != 0) {
+			// Error Handling: No size given
+			const output = "No size given for address '" + tokens[tokens.length-1] + "'.";
+			this.sendEvalResponse(output, response);
+			return;
+		}
+
+		// Get all addresses/sizes.
+		const addrSizes = new Array<number>();
+		for(let k=0; k<tokens.length; k+=2) {
+			// address
+			const addressString = tokens[k];
+			const address = Utility.evalExpression(addressString);
+			addrSizes.push(address);
+
+			// size
+			const sizeString = tokens[k+1];
+			const size = Utility.evalExpression(sizeString);
+			addrSizes.push(size);
+		}
+
+		// Create new view
+		const panel = new MemoryDumpView(this);
+		for(let k=0; k<tokens.length; k+=2)
+			panel.addBlock(addrSizes[k], addrSizes[k+1]);
+		panel.mergeBlocks();
+		panel.update();
+
+		// Send response
+		this.sendEvalResponse('OK', response);
+	}
+
+
+	/**
+	 * WPMEM. Enable/disable/show.
+	 * @param tokens The arguments.
+	 * @param response The response to send on success.
+	 */
+	protected evalWPMEM(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		const param = tokens[0] || '';
+		if(param == 'enable' || param == 'disable') {
+			// enable or disable all WPMEM watchpoints
+			const enable = (param == 'enable');
+			Emulator.enableWPMEM(enable, () => {
+				// Print to console
+				const enableString = (enable) ? 'enabled' : 'disabled';
+				this.sendEvalResponse('WPMEM watchpoints ' + enableString, response);
+			});
+		}
+		else if(param == 'show') {
+			// show enable status of all WPMEM watchpoints
+			const enable = Emulator.wpmemEnabled;
+			const enableString = (enable) ? 'enabled' : 'disabled';
+			this.sendEvalResponse('WPMEM watchpoints are ' + enableString + '.', response);
+		}
+		else {
+			// Unknown argument
+			throw new Error("Unknown argument: '" + param + "'");
+		}
+	}
+
+
+	/**
+	 * Show the sprite patterns in a view.
+	 * @param tokens The arguments.
+	 * @param response The response to send on success.
+	 */
+	protected evalSpritePatterns(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		// First check for tbblue
+		if(Emulator.machineType != MachineType.TBBLUE)
+			throw new Error("Command is available only on tbblue (ZX Next).");
+		// Evaluate arguments
+		let title;
+		let params: Array<number>|undefined = [];
+		if(tokens.length == 0) {
+			// The view should choose the visible sprites automatically
+			title = 'Sprite Patterns: 0-63';
+			params.push(0);
+			params.push(64);
+		}
+		else {
+			// Create title
+			title = 'Sprite Patterns: ' + tokens.join(' ');
+			// Get slot and count/endslot
+			while(true) {
+				// Get parameter
+				const param = tokens.shift();
+				if(!param)
+					break;
+				// Evaluate
+				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
+				if(!match) // Error Handling
+					throw new Error("Can't parse: '" + param + "'");
+				// start slot
+				const start = Utility.parseValue(match[1]);
+				if(isNaN(start))	// Error Handling
+					throw new Error("Expected slot but got: '" + match[1] + "'");
+				// count
+				let count = 1;
+				if(match[3]) {
+					count = Utility.parseValue(match[4]);
+					if(isNaN(start))	// Error Handling
+						throw new Error("Can't parse: '" + match[4] + "'");
+					if(match[3] == "-")	// turn range into count
+						count += 1 - start;
+				}
+				// Check
+				if(count <= 0)	// Error Handling
+					throw new Error("Not allowed count: '" + match[0] + "'");
+				// Add
+				params.push(start);
+				params.push(count);
+			}
+
+			const slotString = tokens[0] || '0';
+			const slot = Utility.parseValue(slotString);
+			if(isNaN(slot)) {
+				// Error Handling: Unknown argument
+				throw new Error("Expected slot but got: '" + slotString + "'");
+			}
+			const countString = tokens[1] || '1';
+			const count = Utility.parseValue(countString);
+			if(isNaN(count)) {
+				// Error Handling: Unknown argument
+				throw new Error("Expected count but got: '" + countString + "'");
+			}
+		}
+
+		// Create new view
+		const panel = new ZxNextSpritePatternsView(this, title, params);
+		panel.update();
+
+		// Send response
+		this.sendEvalResponse('OK', response);
+	}
+
+
+	/**
+	 * Show the sprites in a view.
+	 * @param tokens The arguments.
+	 * @param response The response to send on success.
+	 */
+	protected evalSprites(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		// First check for tbblue
+		if(Emulator.machineType != MachineType.TBBLUE)
+			throw new Error("Command is available only on tbblue (ZX Next).");
+		// Evaluate arguments
+		let title;
+		let params: Array<number>|undefined;
+		if(tokens.length == 0) {
+			// The view should choose the visible sprites automatically
+			title = 'Visible Sprites';
+		}
+		else {
+			// Create title
+			title = 'Sprites: ' + tokens.join(' ');
+			// Get slot and count/endslot
+			params = [];
+			while(true) {
+				// Get parameter
+				const param = tokens.shift();
+				if(!param)
+					break;
+				// Evaluate
+				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
+				if(!match) // Error Handling
+					throw new Error("Can't parse: '" + param + "'");
+				// start slot
+				const start = Utility.parseValue(match[1]);
+				if(isNaN(start))	// Error Handling
+					throw new Error("Expected slot but got: '" + match[1] + "'");
+				// count
+				let count = 1;
+				if(match[3]) {
+					count = Utility.parseValue(match[4]);
+					if(isNaN(start))	// Error Handling
+						throw new Error("Can't parse: '" + match[4] + "'");
+					if(match[3] == "-")	// turn range into count
+						count += 1 - start;
+				}
+				// Check
+				if(count <= 0)	// Error Handling
+					throw new Error("Not allowed count: '" + match[0] + "'");
+				// Add
+				params.push(start);
+				params.push(count);
+			}
+
+			const slotString = tokens[0] || '0';
+			const slot = Utility.parseValue(slotString);
+			if(isNaN(slot)) {
+				// Error Handling: Unknown argument
+				throw new Error("Expected slot but got: '" + slotString + "'");
+			}
+			const countString = tokens[1] || '1';
+			const count = Utility.parseValue(countString);
+			if(isNaN(count)) {
+				// Error Handling: Unknown argument
+				throw new Error("Expected count but got: '" + countString + "'");
+			}
+		}
+
+		// Create new view
+		const panel = new ZxNextSpritesView(this, title, params);
+		panel.update();
+
+		// Send response
+		this.sendEvalResponse('OK', response);
+	}
+
+
+	/**
+	 * Save/restore the state.
+	 * @param tokens The arguments. 'save'/'restore'
+	 * @param response The response to send on success.
+	 */
+	protected evalStateSaveRestore(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+		const param = tokens[0] || '';
+		if(param == 'save') {
+			// Save current state
+			this.stateSave(() => {
+				// Send response
+				this.sendEvalResponse('OK', response);
+			});
+		}
+		else if(param == 'restore') {
+			// Restores the state
+			this.stateRestore(() => {
+				// Send response
+				this.sendEvalResponse('OK', response);
+				// Reload register values etc.
+				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
+			});
+		}
+		else {
+			// Unknown argument
+			throw new Error("Unknown argument: '" + param + "'");
+		}
+	}
+
+
+	/**
+	 * Convenience method to send a response for the eval command.
+	 * @param text The text to display in the debug console.
+	 * @param response The response object.
+	 */
+	protected sendEvalResponse(text: string, response:DebugProtocol.EvaluateResponse) {
+		response.body = { result: text + "\n\n", type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+		this.sendResponse(response);
+	}
+
 
 	// TODO: Don't know yet how to deal with this.
 	protected gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments): void {
@@ -1133,10 +1415,11 @@ Notes:
 		if( addr < 0 )
 			return;
 		// Now change Program Counter
-		Machine.setProgramCounter(addr, () => {
+		Emulator.setProgramCounter(addr, () => {
 			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
-			this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
+			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 			this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+			this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 		});
 	}
 
@@ -1179,10 +1462,40 @@ Notes:
 	 * Called after a step, step-into, run, hit breakpoint, etc.
 	 * Is used to update anything that need to updated after some Z80 instructions have been executed.
 	 * E.g. the memory dump view.
+	 * @param reason The reason is a data object that contains additional information.
+	 * E.g. for 'step' it contains { step: true };
 	 */
-	protected update() {
-	//	this.memoryDumpView.update();
-		this.emit('update');
+	protected update(reason?: any) {
+		this.emit('update', reason);
+	}
+
+
+	/**
+	 * Called from "-state save" command.
+	 * Stores all RAM + the registers.
+	 * @param handler Is called when data was saved.
+	 */
+	protected stateSave(handler:() => void) {
+		// Save state
+		Emulator.stateSave(stateData => {
+			this.stateData = stateData;
+			handler();
+		});
+	}
+
+
+	/**
+	 * Called from "-state load" command.
+	 * Restores all RAM + the registers from a former "-state save".
+	 * @param handler Is called when data was restored.
+	 */
+	protected stateRestore(handler:() => void) {
+		// Check
+		if(!this.stateData)
+			throw Error('You need to save a state first, see "-state save".');
+
+		// Restore state
+		Emulator.stateRestore(this.stateData, handler);
 	}
 }
 

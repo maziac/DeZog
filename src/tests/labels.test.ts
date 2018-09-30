@@ -1,6 +1,5 @@
 
-import assert = require('assert');
-//import { Utility } from '../utility';
+import * as assert from 'assert';
 import { Labels } from '../labels';
 import { Settings } from '../settings';
 

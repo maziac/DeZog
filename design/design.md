@@ -1,16 +1,35 @@
 # Design
 
+## Overview
+
+~~~
+                                                          ┌───┐
+                                                          │   │
+┌───────────────────┐              ┌─────────────────┐    │ S │   ┌────────────────────┐
+│                   │   Request    │                 │    │ o │   │Emulator            │
+│                   │─────────────▶│       z80       │────┼─c─┼──▶│   ┌────────────────┴───┐
+│      vscode       │              │      debug      │    │ k │   │   │MAME                │
+│                   │◀─────────────│     adapter     │◀───┼─e─┼───│   │   ┌────────────────┴──┐
+│                   │  Response    │                 │    │ t │   │   │   │ZEsarUX            │
+└───────────────────┘              └─────────────────┘    │   │   └───┤   │                   │
+                                                          └───┘       │   │                   │
+                                                                      └───┤                   │
+                                                                          │                   │
+                                                                          └───────────────────┘
+~~~~
+
 ## Main Classes
 
 
-- DebugAdapter: Just runs ZesaruxDebug.
-- Extension: The extension class. Acitvatees teh extension and registers commands.
+- DebugAdapter: Just runs Z80Debug.
+- Extension: The extension class. Activates the extension and registers commands.
 - Frame: Represents a Z80 StackObject, i.e. caller address and objects on stack.
 - Labels: Singleton which reads the .list and .labels file and associates addresses, labels, filenames and line numbers.
 - Settings: Singleton to hold the extension's settings.
 - ShallowVar: DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar. Representations of variables. They know how to retrieve the data from zesarux.
 - Z80Registers: Static class to parse (from zesarux) and format registers.
-- ZesaruxDebug: Gets requests from vscode and passes them to zesarux (via ZesaruxSocket).
+- StateZ80: Class to get and set the complete machine state.
+- Emulator: Gets requests from vscode and passes them to zesarux (via ZesaruxSocket).
 - ZesaruxSocket: Socket connection and communication to zesarux emulator. Knows about the basic communication, but not the commands.
 
 
@@ -19,24 +38,55 @@ Helper classes:
 - Log: Used for logging. Adds the caller and break time to the logs.
 - RefList: List to associate variable references to objects.
 
+~~~
+┌─────────┐      ┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
+│         │      │                                                                                                     │     │Helper           │
+│         │      │                                            DebugAdapter                                             │     │                 │
+│         │      │                                                                                                     │     │                 │
+│         │      └─────────────────────────────────────────────────────────────────────────────────────────────────────┘     │┌─────────┐      │
+│         │         ▲                         ▲                          ▲                                 ▲                 ││Utility  │      │
+│         │         │                         │                          │                                 │                 │└─────────┘      │
+│Settings │         ▼                         │                          ▼                                 ▼                 │                 │
+│         │    ┌───────────────┐              ▼               ┌────────────────────┐             ┌──────────────────────┐    │┌──────────────┐ │
+│         │    │TextView       │         ┌─────────┐          │Emulator            │             │Variables             │    ││CallSerializer│ │
+│         │    │ ┌─────────────┴─┐       │         │          │  ┌─────────────────┴──┐          │┌───────────┐         │    │└──────────────┘ │
+│         │    │ │MemoryDumpView │       │ Labels  │◀────────▶│  │ZesaruxEmulator     │          ││ShallowVar │         │    │                 │
+│         │    │ │ ┌─────────────┴─┐     │         │  ┌──────▶│  │  ┌─────────────────┴──┐       │└───────────┘         │    │┌─────────┐      │
+│         │    │ │ │MemoryReg.View │     └─────────┘  │       │  │  │ZesaruxExtEmulator  │       │┌────────────────┐    │    ││RefList  │      │
+└─────────┘    │ │ │ ┌─────────────┴─┐        ▲       │       │  │  │  ┌─────────────────┴──┐    ││DisassemblyVar  │    │    │└─────────┘      │
+               └─┤ │ │ZxN.SpritesView│        │       │       └──┤  │  │MameEmulator        │    │└────────────────┘    │    │                 │
+                 │ │ │               │        ▼       │          │  │  │                    │    │┌────────────────┐    │    │┌────┐           │
+                 └─┤ │               │  ┌ ─ ─ ─ ─ ─ ┐ │          └──┤  │                    │    ││RegisterMainVar │    │    ││Log │           │
+                   │ │               │      Files     │             │  │                    │    │└────────────────┘    │    │└────┘           │
+                   └─┤               │  └ ─ ─ ─ ─ ─ ┘ │             └──┤                    │    │┌────────────────────┐│    │                 │
+                     │               │                │            ▲   │                    │    ││RegisterSecondaryVar││    │                 │
+                     └───────────────┘                │            │   └────────────────────┘    │└────────────────────┘│    │                 │
+                        ▲                             │            ▼            ▲        ▲       │┌──────────┐          │    │                 │
+                        │                             │  ┌──────────────┐       │        │       ││StackVar  │          │    │                 │
+                        └─────────────────────────────┘  │              │       ▼        │       │└──────────┘          │    │                 │
+                                                         │ Z80Registers │  ┌──────────┐  │       │┌──────────┐          │    │                 │
+                                                         │              │  │ StateZ80 │  │       ││LabelVar  │          │    │                 │
+                                                         └──────────────┘  └──────────┘  │       │└──────────┘          │    │                 │
+                                                                   ▲            ▲        │       └──────────────────────┘    └─────────────────┘
+                                                                   │            │        │                  ▲
+                                                                   │            │        │                  │
+                                                                   ▼            ▼        ▼                  ▼
+                                                              ┌─────────────────────────────────────────────────────────┐
+                                                              │Sockets ┌──────────────┐       ┌───────────────┐         │
+                                                              │        │  MameSocket  │       │ ZesaruxSocket │         │
+                                                              │        └──────────────┘       └───────────────┘         │
+                                                              └─────────────────────────────────────────────────────────┘
+~~~~
 
-DebugAdapter <-> Machine <-> Connector
-					^
-					|
-				  Labels
-
-DebugAdapter: Generalized commands to Machine.
-Machine: Z80 + special behaviour, e.g. Spectrum48K or Spectrum128.
-Connector: Emulator specifics.
 
 Communication:
 
-DebugAdapter <-> Machine:
+DebugAdapter <-> Emulator:
 DebugAdapter takes care of association of vscode references and objects.
 - Commands: step-over, step-into, step-out
 - Data: Frames (call stack), Registers/Frame, expressions, breakpoints, Labels.
 
-Machine <-> Connector:
+Emulator <-> Socket:
 - Commands: run, step-over, step-into, step-out, breakpoints
 - Data: registers, memory dump, call stack
 
@@ -172,4 +222,91 @@ for that call stack item) need to be retrieved from the emulator in advance.
 Even if the data in the vscode UI is collapsed.
 
 This doesn't seem the rigth way. Let's see how the discussion with vscode guys will turn out.
+
+
+# Other Components
+
+## MemoryDumpView Sequence Diagrams
+
+```puml
+hide footbox
+title Step
+actor User
+User -> vscode: Step
+vscode -> EmulDebugAdapter: stepXxxRequest
+EmulDebugAdapter -> MemoryDumpView: update
+MemoryDumpView -> Emulator: getMemoryDump(s)
+MemoryDumpView <-- Emulator: Data
+note over MemoryDumpView: create html+js
+MemoryDumpView -> webView: Set webview.html
+```
+
+```puml
+hide footbox
+title Hover
+actor User
+User -> webView: Hover
+webView -> MemoryDumpView: getValueInfoText/getAddressInfoText
+webView <- MemoryDumpView: valueInfoText/addressInfoText
+```
+
+```puml
+hide footbox
+title Change Memory Value
+actor User
+User -> webView: DoubleClick
+webView -> MemoryDumpView: valueChanged
+MemoryDumpView -> MemoryDumpView: changeMemory
+MemoryDumpView -> Emulator: writeMemory
+webView <- MemoryDumpView: changeValue
+```
+
+
+## ZXNextSpritesView Sequence Diagrams
+
+```puml
+hide footbox
+title Step
+actor User
+User -> vscode: Step
+vscode -> EmulDebugAdapter: stepXxxRequest
+EmulDebugAdapter -> ZXNextSpritesView: update
+ZXNextSpritesView -> ZXNextSpritesView: getSprites
+ZXNextSpritesView -> Emulator: getTbblueSprite(s)
+ZXNextSpritesView <-- Emulator: Data
+alt palette empty
+    ZXNextSpritesView -> ZXNextSpritesView: getSpritePalette
+    ZXNextSpritesView -> Emulator: getTbblueRegister(whichPaletteXXX)
+    ZXNextSpritesView <-- Emulator: Used palette
+    ZXNextSpritesView -> Emulator: getTbbluePalette
+    ZXNextSpritesView <-- Emulator: Data
+end
+alt patterns empty
+    ZXNextSpritesView -> ZXNextSpritesView: getSpritePatterns
+    ZXNextSpritesView -> Emulator: getTbbluePattern(s)
+    ZXNextSpritesView <-- Emulator: Data
+end
+note over ZXNextSpritesView: create html+js
+ZXNextSpritesView -> webView: Set webview.html
+```
+
+```puml
+hide footbox
+title Reload Patterns
+actor User
+User -> webView: Click "Reload"
+
+webView -> ZXNextSpritesView: getSpritePalette
+    ZXNextSpritesView -> Emulator: getTbblueRegister(whichPaletteXXX)
+    ZXNextSpritesView <-- Emulator: Used palette
+    ZXNextSpritesView -> Emulator: getTbbluePalette
+    ZXNextSpritesView <-- Emulator: Data
+
+webView -> ZXNextSpritesView: getSpritePatterns
+    ZXNextSpritesView -> Emulator: getTbbluePattern(s)
+    ZXNextSpritesView <-- Emulator: Data
+
+note over ZXNextSpritesView: create html+js
+ZXNextSpritesView -> webView: Set webview.html
+```
 

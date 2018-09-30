@@ -1,9 +1,7 @@
+import * as assert from 'assert';
 import { Utility } from './utility';
 //import { Labels } from './labels';
 import { Settings } from './settings';
-
-var assert = require('assert');
-
 
 
 /// The formatting (for VARIABLES) for each register is provided through a map.
@@ -59,6 +57,11 @@ export class Z80Registers {
 		regMap.set("R", Z80Registers.parseR);
 		regMap.set("A'", Z80Registers.parseA2);
 		regMap.set("F'", Z80Registers.parseF2);
+
+		regMap.set("IXL", Z80Registers.parseIXL);
+		regMap.set("IXH", Z80Registers.parseIXH);
+		regMap.set("IYL", Z80Registers.parseIYL);
+		regMap.set("IYH", Z80Registers.parseIYH);
 
 		Z80RegisterVarFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerVar);
 		Z80RegisterHoverFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerHover);
@@ -237,17 +240,39 @@ export class Z80Registers {
 		return res;
 	}
 
+	public static parseIXL(data: string): number {
+		const res = Z80Registers.parseIX(data) & 0xFF;
+		return res;
+	}
+
+	public static parseIXH(data: string): number {
+		const res = Z80Registers.parseIX(data)>>8;
+		return res;
+	}
+
+	public static parseIYL(data: string): number {
+		const res = Z80Registers.parseIY(data) & 0xFF;
+		return res;
+	}
+
+	public static parseIYH(data: string): number {
+		const res = Z80Registers.parseIY(data)>>8;
+		return res;
+	}
+
 
 	/**
 	 * Returns true if the string contains a register.
 	 * @param reg To check for a register name.
 	 */
 	public static isRegister(reg: string): boolean {
+		/*
 		if(reg.length == 2) {
 			// Check if both are upper case or both are lower case
 			if( (reg[0] == reg[0].toUpperCase()) != (reg[1] == reg[1].toUpperCase()))
 				return false;
 		}
+		*/
 		const regUpper = reg.toUpperCase();
 		return regMap.get(regUpper) != undefined;
 	}
@@ -312,7 +337,7 @@ export class Z80Registers {
 	 */
 	public static getRegValueByName(regName: string, regsString:string): number {
 		//var handler = (data) => {};
-		var handler = regMap.get(regName) || (data => 0);
+		var handler = regMap.get(regName.toUpperCase()) || (data => 0);
 		assert(handler != undefined, 'Register ' + regName + ' does not exist.');
 		var value = handler(regsString);
 		return value;

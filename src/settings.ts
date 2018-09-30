@@ -1,4 +1,4 @@
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './utility';
 
 
@@ -54,27 +54,44 @@ export interface Formatting {
  * The configuration parameters for the zesarux debugger.
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments  {
-	zhostname: string;	/// The Zesarux ZRCP telnet host name
-	zport: number;	/// The Zesarux ZRCP telnet port
+	/// The Zesarux ZRCP telnet host name
+	zhostname: string;
 
-	rootFolder: string;	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
+	/// The Zesarux ZRCP telnet port
+	zport: number;
 
-	disassemblies: Array<Array<number>>;	/// Contains start/size tuples for all memory areas that should be disassembled
+	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
+	rootFolder: string;
 
-	listFiles: Array<ListFile>;	/// The paths to the .list files.
-	labelsFiles: Array<string>;	/// The paths to the .labels files.
+	/// Contains start/size tuples for all memory areas that should be disassembled
+	disassemblies: Array<Array<number>>;
 
-	smallValuesMaximum: number;	/// Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
+	/// The paths to the .list files.
+	listFiles: Array<ListFile>;
 
-	tmpDir: string;	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
+	/// The paths to the .labels files.
+	labelsFiles: Array<string>;
 
-	topOfStack: string;	/// label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack.
+	/// Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
+	smallValuesMaximum: number;
 
-	loadSnap: string;	/// If defined the path to a snapshot file to load at startup
+	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
+	tmpDir: string;
 
-	startAutomatically: boolean;	/// Start automatically after launch.
+	/// label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack.
+	topOfStack: string;
 
-	skipInterrupt: boolean;		/// ZEsarUX setting. If enabled steps over the interrupt.
+	/// If defined the path to a snapshot file to load at startup
+	loadSnap: string;
+
+	/// Start automatically after launch.
+	startAutomatically: boolean;
+
+	/// Resets the cpu (on emulator) after starting the debugger.
+	resetOnStart: boolean;
+
+	/// ZEsarUX setting. If enabled steps over the interrupt.
+	skipInterrupt: boolean;
 
 	/// Holds the formatting vor all values.
 	formatting: Formatting;
@@ -82,6 +99,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Values for the memory viewer.
 	memoryViewer: {
 		addressColor: string;	// The text color of the address field.
+		bytesColor: string;	// The color of the bytes (hex values).
 		asciiColor: string;	// The text color of the ascii field.
 		addressHoverFormat: string;	// Format for the address when hovering.
 		valueHoverFormat: string;	// Format for the value when hovering.
@@ -129,6 +147,7 @@ export class Settings {
 				topOfStack: <any>undefined,
 				loadSnap: <any>undefined,
 				startAutomatically: <any>undefined,
+				resetOnStart: <any>undefined,
 				skipInterrupt: <any>undefined,
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
@@ -185,6 +204,8 @@ export class Settings {
 			Settings.launch.smallValuesMaximum = 512;
 		if(Settings.launch.startAutomatically == undefined)
 			Settings.launch.startAutomatically = true;
+		if(Settings.launch.resetOnStart == undefined)
+			Settings.launch.resetOnStart = true;
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
 		if(Settings.launch.trace == undefined)
@@ -240,6 +261,7 @@ export class Settings {
 		if(!Settings.launch.memoryViewer) {
 			Settings.launch.memoryViewer = {
 				addressColor: "CornflowerBlue",
+				bytesColor: "white",
 				asciiColor: "OliveDrab",
 				addressHoverFormat: "${hex}h${\n:labelsplus|\n}",
 				valueHoverFormat: "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}",

@@ -1,23 +1,24 @@
 
 //import { Log } from './log';
-import { zSocket } from './zesaruxSocket';
 import { Labels } from './labels';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Z80Registers } from './z80Registers';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings'
 import { Utility } from './utility';
 import { RefList } from './reflist';
-import { Machine } from './machine';
+import { Emulator } from './emulatorfactory';
+import { BaseMemory } from './disassembler/basememory';
+import { Opcode } from './disassembler/opcode';
+import { Format } from './disassembler/format';
 
-//import { Variable } from 'vscode-debugadapter/lib/main';
 
 /**
  * Represents a variable.
  * Variables know how to retrieve the data from Zesarux.
  */
 export class ShallowVar {
-	/// Override this. It should retrieve the contents of the variable. E.g. bei commnuicating with zesarux.
+	/// Override this. It should retrieve the contents of the variable. E.g. bei communicating with zesarux.
 	public getContent(handler: (varList: Array<DebugProtocol.Variable>) => {}, ...args) {
 		handler([]);
 	}
@@ -37,15 +38,20 @@ export class ShallowVar {
 
 
 /**
- * The DisassemblyVar class knows how to retrieve the disassembly from zeasrux.
+ * The DisassemblyVar class knows how to retrieve the disassembly from zesarux.
  */
 export class DisassemblyVar extends ShallowVar {
 
-	private addr: number;	/// The address the disassembly should start
-	private count: number;	/// The number of lines for the disassembly
+	/// The address the disassembly should start
+	private addr: number;
 
+	/// The number of lines for the disassembly
+	private count: number;
 
-	/**
+	/// Pointer to the disassembly history.
+	protected disassemblyHistory: Array<{address: number, text: string}>;
+
+/**
 	 * Constructor.
 	 * @param addr The address the disassembly should start
 	 * @param count The number of lines for the disassembly
@@ -63,24 +69,38 @@ export class DisassemblyVar extends ShallowVar {
 	 * A list with all disassembled lines is passed (as variables).
 	 */
 	public getContent(handler: (varlist: Array<DebugProtocol.Variable>) => {}) {
-		// get disassembly lines
-		zSocket.send('disassemble ' + this.addr + ' ' + this.count, data => {
-			// split text output into array
+		// Get code memory
+		const size = 4*this.count;	// 4 is the max size of an opcode
+		Emulator.getMemoryDump(this.addr, size, data => {
+			// convert hex values to bytes
+			const buffer = new BaseMemory(this.addr, size);
+			for(let i=0; i<size; i++) {
+				const value = data[i];
+				buffer.setValueAtIndex(i, value);
+			}
+			// disassemble all lines
+			let address = this.addr;
 			const list = new Array<DebugProtocol.Variable>();
-			var disLines = data.split('\n');
-			for( let line of disLines) {
-				const addrString = line.substr(2, 4);
-				const addr = parseInt(addrString, 16);
-				const labels = Labels.getLabelsForNumber(addr);
+			for(let i=0; i<this.count; i++) {
+				// Get opcode
+				const opcode = Opcode.getOpcodeAt(buffer, address);
+				// disassemble
+				const opCodeDescription = opcode.disassemble();
+				const line = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic);
+				// Add to list
+				const addrString = Format.getHexString(address).toUpperCase();
+				const labels = Labels.getLabelsForNumber(address);
 				var addrLabel = addrString;
 				if(labels)
 					addrLabel = labels.join(',\n');
 				list.push({
 					name: addrString,
 					type: addrLabel,
-					value: line.substr(7),
+					value: line,
 					variablesReference: 0
 				});
+				// Next address
+				address += opcode.length;
 			}
 			// Pass data to callback
 			handler(list);
@@ -100,7 +120,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}) {
-		Machine.getRegisters( data => {
+		Emulator.getRegisters( data => {
 			const registers = new Array<DebugProtocol.Variable>();
 			const regNames = this.registerNames();
 
@@ -139,7 +159,7 @@ export class RegistersMainVar extends ShallowVar {
 		// Check if value is valid
 		if(isNaN(value)) {
 			// Get old value and send it back
-			Machine.getRegisters(data => {
+			Emulator.getRegisters(data => {
 				Z80Registers.getVarFormattedReg(name, data, formatted => {
 					handler(formatted);
 				});
@@ -148,12 +168,7 @@ export class RegistersMainVar extends ShallowVar {
 		}
 
 		// set value
-		zSocket.send('set-register ' + name + '=' + value, data => {
-			// Get real value (should be the same as the set value)
-			Z80Registers.getVarFormattedReg(name, data, formatted => {
-				handler(formatted);
-			});
-		});
+		Emulator.setRegisterValue(name, value, handler);
 	}
 
 
@@ -161,7 +176,8 @@ export class RegistersMainVar extends ShallowVar {
 	 * Returns the register names to show. The 1rst half of the registers.
 	 */
 	protected registerNames(): Array<string> {
-		return ["PC", "SP", "A", "F", "HL", "DE", "BC", "IX", "IY"];
+		return ["PC", "SP", "A", "F", "HL", "DE", "BC", "IX", "IY",
+				"B", "C", "D", "E", "H", "L"];
 	}
 
 }
@@ -261,42 +277,30 @@ export class StackVar extends ShallowVar {
 		const serializer = new CallSerializer("StackVar");
 
 		// Check if address and value are valid
-		const address = Utility.parseValue(name);
+		const address = Utility.parseValue(name+'h');
 		if(!isNaN(address) && !isNaN(value)) {
 			// Change neg to pos
-			if(value<0)
+			if(value < 0)
 				value += 0x10000;
-			var hexValue = value.toString(16);
-			if(hexValue.length == 4) {
-				hexValue = '0'.repeat(4-hexValue.length) + hexValue;
-				const cmd = 'write-memory-raw ' + address + ' ' + hexValue.substr(2,2) + hexValue.substr(0,2);
+			const data = new Uint8Array(2);
+			data[0] = value & 0xFF;
+			data[1] = value >> 8;
 
-				serializer.exec(() => {
-					zSocket.send(cmd, data => {
-						// Retrieve memory values, to see if they really have been set.
-						zSocket.send( 'read-memory ' + address + ' 2', data => {
-							const b1 = data.substr(0,2);
-							const b2 = data.substr(2,2);
-							const memByte = parseInt(b1,16);
-							const memWord = memByte + (parseInt(b2,16)<<8);
-							// Pass formatted string to vscode
-							Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
-						});
-					});
+			serializer.exec(() => {
+				Emulator.writeMemoryDump(address, data, () => {
+					serializer.endExec();
 				});
-			}
+			});
 		}
 
 		serializer.exec(() => {
 			// Retrieve memory values, to see if they really have been set.
-			zSocket.send( 'read-memory ' + address + ' 2', data => {
-				const b1 = data.substr(0,2);
-				const b2 = data.substr(2,2);
-				const memByte = parseInt(b1,16);
-				const memWord = memByte + (parseInt(b2,16)<<8);
+			Emulator.getMemoryDump(address, 2, data => {
+				const memWord = data[0] + (data[1]<<8);
 				// Pass formatted string to vscode
 				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
-				// End
+				// Pass formatted string to vscode
+				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
 				serializer.endExec();
 			});
 		});

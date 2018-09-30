@@ -35,9 +35,9 @@ export class MetaBlock {
 
 	/// The (current) memory data.
 	/// The data is stored as one continuous hex string.
-	public data: Array<number>;
+	public data: Uint8Array;
 	/// The previous memory data (used to check which values have changed).
-	public prevData: Array<number>;
+	public prevData: Uint8Array;
 
 	/// Title shown as table caption, can be omitted.
 	public title: string|undefined;
@@ -47,8 +47,8 @@ export class MetaBlock {
 		this.address = address;
 		this.size = size;
 		this.memBlocks = memBlocks;
-		this.data = [];
-		this.prevData = [];
+		this.data = new Uint8Array(size);
+		this.prevData = new Uint8Array(size);
 		this.title = title;
 	}
 

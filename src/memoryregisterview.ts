@@ -1,6 +1,6 @@
 'use strict';
 
-import { Machine } from './machine';
+import { Emulator  } from './emulatorfactory';
 import { Z80Registers } from './z80Registers';
 //import { EventEmitter } from 'events';
 import { MemoryDumpView } from './memorydumpview';
@@ -45,10 +45,10 @@ export class MemoryRegisterView extends MemoryDumpView {
 
 	/**
 	 * Retrieves the memory content and displays it.
-	 */
-	public update() {
+	 * @param reason Not used.	 */
+	public update(reason?: any) {
 		// Get register values
-		Machine.getRegisters(regsString => {
+		Emulator.getRegisters(regsString => {
 			// recalculate the memory addresses
 			this.memDump.clearBlocks();
 			this.vscodePanel.title = '';
@@ -60,7 +60,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 			}
 
 			// update
-			super.update();
+			super.update(reason);
 		});
 	}
 

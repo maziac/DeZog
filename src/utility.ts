@@ -1,14 +1,12 @@
-//import { Settings } from './settings';
+import * as assert from 'assert';
 import { Labels } from './labels';
 import { zSocket } from './zesaruxSocket';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';
-import { Machine } from './machine';
+import { Emulator } from './emulatorfactory';
 import * as fs from 'fs';
 import * as path from 'path';
-
-var assert = require('assert');
 
 
 export class Utility {
@@ -188,9 +186,22 @@ export class Utility {
 	 */
 	public static evalExpression(expr: string):number {
 		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9_]*|'[\S ]+')/g, (match, p1) => {
-			const res = Labels.getNumberFromString(p1) || NaN;
-			if(isNaN(res))
-				throw SyntaxError(p1 + ' is unknown.');
+			let res;
+			// Check if it might be a register name.
+			if(Z80Registers.isRegister(p1)) {
+				// Note: this is called synchronously because the cached register is available.
+				// If (it should not but if) it would be called asynchronously the
+				// addressString would simply be not decoded.
+				Emulator.getRegisterValue(p1, value => {
+					res = value;
+				});
+			}
+			if(isNaN(res)) {
+				// Check for label
+				res = Labels.getNumberFromString(p1);
+				if(isNaN(res))
+					throw SyntaxError(p1 + ' is unknown.');
+			}
 			return res.toString();
 		});
 		// Evaluate
@@ -312,7 +323,7 @@ export class Utility {
 				// case asynchronously retrieve the register values.
 				// Return registers only if 'name' itself is not a register.
 				if(!Z80Registers.isRegister(name)) {
-					Machine.getRegisters(data => {
+					Emulator.getRegisters(data => {
 						regsString = data;
 						cs.endExec();
 					});
@@ -524,7 +535,7 @@ export class Utility {
 		const format = formatMap.get(reg);
 		assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
-		Machine.getRegisters(data => {
+		Emulator.getRegisters(data => {
 			// Get value of register
 			const value = Z80Registers.getRegValueByName(reg, data);
 
@@ -602,6 +613,6 @@ export class Utility {
 				fs.unlink(absFName);
 			}
 		}
-
 	}
+
 }

@@ -148,7 +148,7 @@ class LabelsClass {
 				// Check for labels/equ
 				if(useLabels) {
 					// check for labels and "equ"
-					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^\.\s]+):\s*(equ\s)?\s*([^;\n]*)/i.exec(line);
+					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s)?\s*([^;\n]*)/i.exec(line);
 					if(match) {
 						const equ = match[2];
 						if(equ) {
@@ -371,6 +371,11 @@ class LabelsClass {
 			labelsArray = new Array<string>();
 			this.labelsForNumber[value] = labelsArray;
 		}
+		// Check if label already exists
+		for(let item of labelsArray) {
+			if(item == label)
+				return;	// already exists.
+		}
 		// Add new label
 		labelsArray.push(label);
 	}
@@ -483,14 +488,15 @@ class LabelsClass {
 	 * Returns a number. If text is a label than the corresponding number for the label is returned.
 	 * If text is not a label it is tried to convert text as string to a number.
 	 * @param text The label name or a number in hex or decimal as string.
-	 * @returns The correspondent number. May be undefined.
+	 * @returns The correspondent number. May return NaN.
 	 */
-	public getNumberFromString(text: string): number|undefined {
+	public getNumberFromString(text: string): number {
 		var result = this.getNumberForLabel(text);
-		if(!result) {
+		if(result == undefined) {
 			// Try convert as string
-			if(!text.startsWith('_'))
-				result = Utility.parseValue(text);
+			if(text.startsWith('_'))
+				return NaN;
+			result = Utility.parseValue(text);
 		}
 		return result;
 	}

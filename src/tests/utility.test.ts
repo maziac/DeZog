@@ -1,9 +1,10 @@
 
-import assert = require('assert');
+import * as assert from 'assert';
 import { Utility } from '../utility';
 import { Labels } from '../labels';
 import { Z80Registers } from '../z80Registers';
-import { MachineClass, Machine } from '../machine';
+import { Emulator, EmulatorType, EmulatorFactory } from '../emulatorfactory';
+//import { EmulatorClass } from '../emulator';
 import { Settings } from '../settings';
 
 
@@ -88,9 +89,9 @@ suite('Utility', () => {
 
 		setup(() => {
 			Settings.Init(<any>undefined, '');
-			MachineClass.create();
+			EmulatorFactory.createEmulator(EmulatorType.ZESARUX);
 			Z80Registers.init();
-			Machine.ZesaruxRegisterCache = "PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
+			Emulator.RegisterCache = "PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
 		});
 
 		suite('formats', () => {
@@ -261,6 +262,11 @@ suite('Utility', () => {
 		test('0x, hex value', () => {
             const res = Utility.parseValue('0x1abf');
             assert.equal(res, 0x1ABF, "Wrong parsing result");
+		});
+
+		test('0x0000, hex value', () => {
+            const res = Utility.parseValue('0x0000');
+            assert.equal(res, 0, "Wrong parsing result");
 		});
 
 		test('0x, invalid negative input 1', () => {

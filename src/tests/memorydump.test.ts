@@ -1,5 +1,5 @@
 
-import assert = require('assert');
+import * as assert from 'assert';
 import { MemoryDump } from '../memorydump';
 
 suite('MetaBlocks', () => {
