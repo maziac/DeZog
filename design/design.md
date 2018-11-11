@@ -117,7 +117,7 @@ In this adapter they are used for
 - The Z80 registers (divided in main and secondary registers).
 - The stack, i.e. the stack that is currently used for push/pop.
 
-For each scope a variables request is done. Here the a variable is returned for each shown line. E.g. one line/variable for each register or one line/variable for each disassembly line.
+For each scope a variables request is done. Here a variable is returned for each shown line. E.g. one line/variable for each register or one line/variable for each disassembly line.
 
 
 vscode works with IDs/numbers only. Unfortunately it is not possible

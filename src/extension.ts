@@ -12,6 +12,16 @@ import * as Net from 'net';
  */
 export function activate(context: vscode.ExtensionContext) {
 
+	context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(s => {
+
+		console.log(`terminated: ${s.type} ${s.name}`);
+
+		//setTimeout(() => {
+		//	process.exit(0);
+		//}, 100);
+
+	}));
+
 	// Command to change the program counter via menu.
 	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.movePCtoCursor', config => {
 		// Get focussed editor/file and line
@@ -91,3 +101,4 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 		}
 	}
 }
+

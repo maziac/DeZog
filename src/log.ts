@@ -2,10 +2,17 @@
 //import * as fs from 'fs';
 import { writeFileSync, appendFileSync } from 'fs';
 import * as util from 'util';
+import * as vscode from 'vscode';
 
 
 /// All log output goes additionally here.
-const outFilePath = "/Volumes/Macintosh HD 2/Projects/zesarux/vscode/z80-debug-adapter/logs/main.log";
+let outFilePath: string;	// Disable
+//const outFilePath = "/Volumes/Macintosh HD 2/Projects/zesarux/vscode/z80-debug-adapter/logs/main.log";
+
+/// Output logging to the "OUTPUT" tab in vscode.
+let logOutput: vscode.OutputChannel;	// Disable
+//let logOutput = vscode.window.createOutputChannel("Z80 Debugger");
+
 
 /**
  * Class for logging.
@@ -20,11 +27,13 @@ export class Log {
 	 * Clears a former log file.
 	 */
 	public static clear() {
-		try {
-			writeFileSync(outFilePath, (new Date()).toString() + ': log started.\n');
-		}
-		catch(e) {
-			console.log('Error: '+e);
+		if(outFilePath) {
+			try {
+				writeFileSync(outFilePath, (new Date()).toString() + ': log started.\n');
+			}
+			catch(e) {
+				console.log('Error: '+e);
+			}
 		}
 		Log.lastLogTime = Date.now();
 	}
@@ -58,11 +67,12 @@ export class Log {
 	 * @param args the values to write.
 	 */
 	private static write(format: string, ...args) {
-		// write to console
-//		console.log(...args);
-		// Append to file
 		var text = util.format(format, ...args);
 		try {
+			// write to console
+			if(logOutput)
+				logOutput.appendLine(text);
+			// Append to file
 			appendFileSync(outFilePath, text + '\n');
 		}
 		catch(e) {
@@ -89,5 +99,5 @@ export class Log {
 			}
 		}
 	}
-
 }
+

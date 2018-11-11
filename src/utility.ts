@@ -9,6 +9,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
+/// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
+const tmpDasmFileName = 'disasm.asm';
+
+
 export class Utility {
 	/**
 	 * Returns a value shrinked to a boundary.
@@ -540,8 +544,15 @@ export class Utility {
 			const value = Z80Registers.getRegValueByName(reg, data);
 
 			// do the formatting
-			var rLen = reg.length;
-			if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
+			let rLen;
+			if(reg == "IXH" || reg == "IXL" || reg == "IYH" || reg == "IYL") {
+				// Value length = 1 byte
+				rLen = 1;
+			}
+			else {
+				rLen = reg.length;
+				if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
+			}
 
 			Utility.numberFormatted(reg, value, rLen, format, undefined, handler);
 		});
@@ -576,22 +587,12 @@ export class Utility {
 
 
 	/**
-	 * Writes data to a temporary file. E.g. used to write a disassembly to a file
-	 * that vscode can display.
-	 * The tmp directory is created if it does not exist.
-	 * @param fileName The file name (in the tmp directory)
-	 * @param data The data to write.
-	 * @returns The used file path.
+	 * Returns the file path of the temporary disassembly file.
+	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
 	 */
-	public static writeTmpFile(fileName: string, data: any): string {
-		// Create dir if not existing
-		if(!fs.existsSync(Settings.launch.tmpDir))
-			fs.mkdirSync(Settings.launch.tmpDir);
-		// write data to file
-		const absFilePath = Utility.getAbsFilePath(fileName, Settings.launch.tmpDir);
-		fs.writeFileSync(absFilePath, data);
-		// return the file path
-		return absFilePath;
+	public static getRelTmpDisasmFileName(): string {
+		const relFilePath = path.join(Settings.launch.tmpDir, tmpDasmFileName);
+		return relFilePath;
 	}
 
 

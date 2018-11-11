@@ -20,7 +20,7 @@ It includes the sources and the binaries (.list, .labels, .sna files). So, if yo
 After installing you need to add the configuration for "z80-debug".
 
 A typical configuration looks like this:
-~~~~
+~~~
     "configurations": [
         {
             "type": "z80-debug",
@@ -28,9 +28,6 @@ A typical configuration looks like this:
             "name": "Z80 Debugger",
             "zhostname": "localhost",
             "zport": 10000,
-            "disassemblies": [
-              //  [ 0, 16384 ]    // Spectrum ROM disassembly
-            ],
             "listFiles": [
                 // "../rom48.list",
                 { "path": "z80-sample-program.list", "useFiles": true }
@@ -41,31 +38,39 @@ A typical configuration looks like this:
              ],
             "startAutomatically": true,
             "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                //"-sprites",
+                //"-patterns"
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
             "loadSnap": "z80-sample-program.sna",
-            "disableLabelResolutionBelow": 513,
+            "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
        }
-~~~~
+~~~
 
 - name: The (human readable) name of the Z80-Debug-Adapter as it appears in vscode.
 - zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the.sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- disassemblies: You can add address/length tuples here that are disassmbled before startup. Can be used e.g. to disassemble ROM areas. Don't expect too much as the disassembly is not aware of data areas and will disassemble them as they were code.
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
-Please have a look at the (Listfile)[#Listfile] section.
+Please have a look at the (Listfile)[#listfile] section.
 - labelsFiles: The paths (relative to the 'rootFolder') of the labels files. Typically
 this is only one file created during building. But you could add multiple files here.
 You can also completely omit the label files but in that case the z80-debug support is very limited because it cannot help in resolving any labels to numbers and vice versa.
-- startAutomatically: see [Notes](#Notes)
+- startAutomatically: see [Notes](#notes)
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
+- commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
+- disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information z80-debug does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 
-~~~
+~~~assembly
 Your assembler file:
 stack_bottom:
     defs    STACK_SIZE*2, 0
@@ -76,10 +81,10 @@ In your launch.json:
 ~~~
 
 Note: instead of a label you can also use a fixed number.
-- loadSnap: The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file.
+- loadSnap: The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file. Note: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 - smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depedning on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
-- tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create files for the disassemblies given in 'disassemblies'.
+- tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
 - "memoryViewer: The following proprties configure the memory viewer (used to show memory dumps).
 	- addressColor: The first column shows the address. You can change the color here.
 	- asciiColor: You can change the color of the ascii field here.
@@ -159,18 +164,12 @@ The pattern "/^[0-9]+\\s+//" e.g. replaces all numbers at the start of the line 
 #### Without a listfile
 
 If you don't setup any list file then you can still start z80-debug and it will work.
-However, since vscode doesn't find any related sources, the variables view (which displays the disassembly) will vanish for every 'step'. To show it again click on the call stack.
-
-To overcome this problem setup at least a disassembly that is retrieved from
-ZEsarUX, so you have a disassembled teext that you can step through.
-Of course, non of the goodies (i.e. label resolution etc.) will work. You just have the plain disassembly that you can step through. But still you can examine register values and memory content etc.
-
-Configuration:
-~~~~
-           "disassemblies": [
-               [ 0, 65356 ]     // Fetch the complete RAM/ROM disassembly
-            ],
-~~~~
+The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for immediately disassembly.
+Whenever the progrma is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
+If not a short amount of memory is added to the disassembly.
+Hence the disassembly will grow the more you step through the code.
+For performance reasons a new disassembly is only done if the memory at the PC is unknown or if a few bytes that follow the PC value have changed.
+I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
 
 
 ### Labelsfile
@@ -213,6 +212,33 @@ Enter "-help" in the debug console to see all available commands.
 Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 
+#### Useful ZEsarUX commandline options.
+
+To ease the usage of ZEsarUX and the Z80 Debug Adapter you can use several ZEsarUX command line options.
+I have collected a few that I found useful:
+
+~~~bash
+# Start a "normal" ZX Spectrum (48k) and listen for connection from the Z80 Debug Adapter.
+./zesarux --enable-remoteprotocol &
+~~~
+
+~~~bash
+# Start in ZX Next configuration. ZEsarUX skips the booting and emulates the esxdos rst routines.
+# The file system is mounted via "--esxdos-root-dir".
+# With this configuration ZX Next programs can be very easily developed and debugged.
+# The Z80 program is passes as SNA file. "--sna-no-change-machine" disables the ZEsarUX automatic change to a 48k Spectrum machine.
+#./zesarux --noconfigfile --machine tbblue --realvideo --enabletimexvideo --tbblue-fast-boot-mode --sna-no-change-machine --enable-esxdos-handler --esxdos-root-dir "\<path-to-your-z0-programs-dir\>" --enable-remoteprotocol &
+~~~
+
+~~~bash
+# ZX Next: Start from MMC.
+# To change an mmc file (e.g. on Mac) take the original tbblue.mmc, change the extension
+# to .iso (tbblue.iso). Mount the iso image. Add your files. Unmount the image.
+# Rename back to .mmc (optional).
+./zesarux --machine tbblue --sna-no-change-machine --enable-mmc --enable-divmmc-ports --mmc-file "<your-mmc-image>"  --enable-remoteprotocol &
+~~~
+
+
 ### Stop Debugging
 
 To stop debugging press the orange square button in vscode. This will stop the z80-debug adapter and disconnect from ZEsarUX.
@@ -226,22 +252,23 @@ WPMEM offers a way to put watch points persistently into your sources.
 WPMEM is put into a comment in your assembler source files. As the comments also appear in the .list file these comments will be parsed when the .list file is read.
 
 Here are some examples how this looks like in code:
-~~~
+
+~~~assembly
 fill_colors:    ; WPMEM, 5, w
     defb RED, YELLOW, BLUE, GREEN, MAGENTA
 fill_colors_end:
 ~~~
-~~~
+~~~assembly
 ; WPMEM 0x0000, 0x4000
 ~~~
-~~~
+~~~assembly
 ; WPMEM fill_colors, 5, r
 ~~~
 
 Syntax:
-~~~~
+~~~
 WPMEM [addr [, length [, access]]]
-~~~~
+~~~
 with:
 - addr = address (or label) to observe (optional). Defaults to current address.
 - length = the count of bytes to observe (optional). Default = 1.
@@ -251,11 +278,11 @@ I.e. if you omit all values a watch-point will be created for the current addres
 E.g. in the first example a watchpoint is created that checks that the array (fill_colors) is not overwritten with something else.
 
 The most often used form of WPMEM is to put a WPMEM simply after an byte area that is used for reading/writing. E.g. like this:
-~~~~
+~~~assembly
 scratch_area:
     defs 10
     defb 1      ; WPMEM
-~~~~
+~~~
 In this example it is assumed that your algorithm uses the 'scratch_area' to write some data. You defined that this area is 10 bytes in size. Thus if someone would write after
 these 10 bytes it would mean that the algorithm is wrong.
 Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
@@ -315,9 +342,9 @@ Note: Status is only experimental. I.e. it just save/restores the memory content
 #### Memory Dumps
 
 If you enter
-~~~~
+~~~
 -md <address> <size>
-~~~~
+~~~
 in the debug console you open a memory viewer.
 
 Here an example:
@@ -333,9 +360,9 @@ The memory viewer will offer a few extra infos:
 - Hovering over values reveals more information. In the picture above the move was hovering over the red "42". You can see the associated address, label(s) and (since the value was changed) also the previous value.
 
 You can also open multiple memory dumps at once by adding more address/size ranges to the command, e.g.:
-~~~~
+~~~
 -md 0 0x100 0x8000 0x40 0x8340 0x10
-~~~~
+~~~
 This opens a memory dump view 3 memory blocks.
 Please note that if you enter overlapping blocks the dump will merge them in the display.
 
@@ -408,18 +435,18 @@ However you have a few options if you add more parameters to the label.
 
 If you double-click on the label in the WATCHES area you can edit it. You can tell z80-debug the number of elements to show and if it should show bytes, words or both.
 The format is:
-~~~~
+~~~
 label,size,types
-~~~~
+~~~
 with
 - label: The label, e.g. LBL_TEXT or just a number e.g. 0x4000
 - size: The number of elements to show. Defaults to 100 if omitted.
 - types: Determines if a byte array ('b'), a word array ('w') or both ('bw') should be shown. Defaults to 'bw'.
 
 Here is an example:
-~~~~
+~~~
 fill_colors,5,b
-~~~~
+~~~
 It shows an array of 5 bytes beginning at label fill_colors.
 
 
@@ -443,7 +470,6 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 ## Known Issues
 
-- The VARIABLES section sometimes gets mixed up. I.e. the registers and the disassembly might show the wrong data.
 - "startAutomatically" is ignored at the moment. ZEsarUX should be started manually before debugging
 
 

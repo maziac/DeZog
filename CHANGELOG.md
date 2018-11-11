@@ -1,7 +1,21 @@
 # Changelog
 
+## 0.6.0
+- Changed handling of code areas without sources. These areas are now automatically disassembled.
+- Disassembly done with z80dismblr.
+- Disassembly option to deal with special 'rst 8' esxdos convention ("esxdosRst":true)
+- Settings for "disassemblies" removed, superfluous.
+- Internal logging disabled.
+- RST improvements: call stack, step-over, step-out.
+
+## 0.5.1
+- Fixed hovering on IXL, IXH, IYL and IYH
+- Renamed "resetOnStart" to "resetOnLaunch"
+- New launch.json option "commandsAfterLaunch" to execute certain emulator commands right after the program-to-debug has been loaded.
+- Changed 'Restart' behaviour to overcome hang on restart.
+
 ## 0.5.0
-- Uses new (ZEsarUX 7.1) and fast memory breakpoints for WPMEM eatchpoints, see https://github.com/maziac/z80-debug/blob/master/documentation/Usage.md#wpmem
+- Uses new (ZEsarUX 7.1) and fast memory breakpoints for WPMEM watchpoints, see https://github.com/maziac/z80-debug/blob/master/documentation/Usage.md#wpmem
 - Use of z80dismblr for disassembly.
 - Improved disconnection handling.
 - New command "-sprites" displays the sprites in a new window.

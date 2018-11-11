@@ -8,7 +8,7 @@
  * Then after a certain section is ready one may output the
  * log. This is done by using a 'key'. If key is in the
  * hardcoded 'keyList' then the whole stored logging is printed.
- * Otherwise nothign is printed.
+ * Otherwise nothing is printed.
  */
 export class DelayedLog {
 

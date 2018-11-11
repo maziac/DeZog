@@ -35,7 +35,7 @@ export class CallSerializer {
 		this.name = name;
 		this.timeout = (timeout == undefined) ? 5*1000: timeout*1000;
 		this.logEnabled = (enableLog == undefined) ? false : enableLog;
-		this.timeout = 0;
+//		this.timeout = 0;
 	}
 
 
@@ -56,8 +56,15 @@ export class CallSerializer {
 			clearTimeout(this.timer);
 			// Restart timer
 			this.timer = setTimeout(() => {
-				if(this.queue.length > 0)
+				if(this.queue.length > 0) {
+					this.log('\n==================================================');
 					this.log('Error: queue is not empty, still ' + this.queue.length + ' elements.');
+					// First entry
+					const entry = this.queue[0];
+					this.log('First entry: name=' + entry.funcName);
+					Log.log('' + entry.func);
+					this.log('\n==================================================\n');
+				}
 				clearTimeout(this.timer);
 			}, this.timeout);
 			this.timer.unref();

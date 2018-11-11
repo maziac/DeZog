@@ -100,7 +100,7 @@ class LabelsClass {
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
 	 * @param useFiles Use the filenames in fileName.
-	 * @param filter A regular expression string which is applied to each line. USed e.g. to filter the z88dk lines. The filter string is setup
+	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
@@ -148,22 +148,24 @@ class LabelsClass {
 				// Check for labels/equ
 				if(useLabels) {
 					// check for labels and "equ"
-					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s)?\s*([^;\n]*)/i.exec(line);
+					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 					if(match) {
 						const equ = match[2];
 						if(equ) {
-							// EQU: add to label array
-							const valueString = match[3];
-							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
-							try {
-								// Evaluate
-								const value = Utility.evalExpression(valueString);
-								const label = match[1];
-								this.numberForLabel.set(label, value);
-								// Add label
-								this.addLabelForNumber(value, label);
+							if(equ.toLowerCase().startsWith('equ')) {
+								// EQU: add to label array
+								const valueString = match[3];
+								// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+								try {
+									// Evaluate
+									const value = Utility.evalExpression(valueString);
+									const label = match[1];
+									this.numberForLabel.set(label, value);
+									// Add label
+									this.addLabelForNumber(value, label);
+								}
+								catch {};	// do nothing in case of an error
 							}
-							catch {};	// do nothing in case of an error
 						}
 						else {
 							// Label: add to label array

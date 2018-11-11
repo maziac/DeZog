@@ -83,7 +83,7 @@ export class Memory extends BaseMemory {
 
 
 	/**
-	 * Adds (ORs) a memory attribute for an address.
+	 * Adds (ORs) a memory attribute for an address range.
 	 * @param address The memory address
 	 * @param length The size of the memory area to change.
 	 * @param attr The attribute to set (e.g. CODE or DATA)
@@ -91,6 +91,34 @@ export class Memory extends BaseMemory {
 	public addAttributeAt(address: number, length: number, attr: MemAttribute) {
 		for(let i=0; i<length; i++)
 			this.memoryAttr[address++] |= attr;
+	}
+
+	/**
+	 * Sets a memory attribute for an address range.
+	 * @param address The memory address
+	 * @param length The size of the memory area to change.
+	 * @param attr The attribute to set (e.g. CODE or DATA)
+	 */
+	public setAttributesAt(address: number, length: number, attr: MemAttribute) {
+		for(let i=0; i<length; i++)
+			this.memoryAttr[address++] = attr;
+	}
+
+
+	/**
+	 * Sets all attributes in the given address range to ASSIGNED if they
+	 * are not UNUSED. I.e. all attributes like CODE or DATA are removed
+	 * but UNUSED areas are kept UNUSED.
+	 * @param address The memory address
+	 * @param length The size of the memory area to change.
+	 * @param attr The attribute to set (e.g. CODE or DATA)
+	 */
+	public clrAssignedAttributesAt(address: number, length: number) {
+		for(let i=0; i<length; i++) {
+			if(this.memoryAttr[address] != MemAttribute.UNUSED)
+				this.memoryAttr[address] = MemAttribute.ASSIGNED;
+			address	++;
+		}
 	}
 }
 

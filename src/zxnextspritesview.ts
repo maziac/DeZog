@@ -206,7 +206,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			const func = (k) => {
 				// Get slot
 				const slot = this.slotIndices[k];
-				if(!slot) {
+				if(slot == undefined) {
 					// end
 					this.serializer.endExec();
 					return;
@@ -282,10 +282,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Set the sprite bitmaps according to pattern, palette offset, mirroring and rotation.
 		this.serializer.exec(() => {
-			let palette = ZxNextSpritePatternsView.spritePalettes.get(this.usedPalette);
+			const palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 			assert(palette);
-			if(!palette)	palette = [];	// Calm the transpiler
-				for(const sprite of this.sprites) {
+			for(const sprite of this.sprites) {
 				if(!sprite)
 					continue;
 				const pattern = ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex);

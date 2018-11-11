@@ -39,7 +39,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;
 
 	/// The breakpoint used for step-out.
-	static STEPOUT_BREAKPOINT_ID = 100;
+	static STEP_BREAKPOINT_ID = 100;
 
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
@@ -71,7 +71,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public stop(handler: () => void) {
-		// Terminate the sockett
+		// Terminate the socket
 		zSocket.quit(handler);
 	}
 
@@ -147,7 +147,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				zSocket.send('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.
-				if(Settings.launch.resetOnStart)
+				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
 				// Load snapshot file
@@ -233,6 +233,58 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 * This is a very specialized function to find a CALL, CALL cc or RST opcode
+	 * at the 3 bytes before the given address.
+	 * Idea is that the 'addr' is a return address from the stack and we want to find
+	 * the caller.
+	 * @param addr The address.
+	 * @param handler(k,caddr) The handler is called at the end of the function.
+	 * k=3, addr: If a CALL was found, caddr contains the call address.
+	 * k=2/1, addr: If a RST was found, caddr contains the RST address (p). k is the position,
+	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
+	 * k=0, addr=0: Neither CALL nor RST found.
+	 */
+	protected findCallOrRst(addr: number, handler:(k: number, addr: number)=>void) {
+		// Get the 3 bytes before address.
+		zSocket.send( 'read-memory ' + (addr-3) + ' ' + 3, data => { // subtract opcode + address (last 3 bytes)
+			// Check for Call
+			const opc3 = parseInt(data.substr(0,2),16);	// get first of the 3 bytes
+			if(opc3 == 0xCD	// CALL nn
+				|| (opc3 & 0b11000111) == 0b11000100) 	// CALL cc,nn
+			{
+				// It was a CALL, get address.
+				let callAddr = parseInt(data.substr(2,4),16)
+				callAddr = (callAddr>>8) + ((callAddr & 0xFF)<<8);	// Exchange high and low byte
+				handler(3, callAddr);
+				return;
+			}
+
+			// Check if one of the 2 last bytes was a RST.
+			// Note: Not only the last byte is checkd bt also the byte before. This is
+			// a small "hack" to allow correct return addresses even for esxdos.
+			let opc12 = parseInt(data.substr(2,4),16);	// convert both opcodes at once
+			let k = 1;
+			while(opc12 != 0) {
+				if((opc12 & 0b11000111) == 0b11000111)
+					break;
+				// Next
+				opc12 >>= 8;
+				k++;
+			}
+			if(opc12 != 0) {
+				// It was a RST, get p
+				const p = opc12 & 0b00111000;
+				handler(k, p);
+				return;
+			}
+
+			// Nothing found = -1
+			handler(0, 0);
+		});
+	}
+
+
+	/**
 	 * Helper function to prepare the callstack for vscode.
 	 * What makes it complicated is the fact that for every word on the stack the zesarux
 	 * has to be called to get the disassembly to check if it was a CALL.
@@ -266,26 +318,30 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Get caller address with opcode (e.g. "call sub1")
 		const addr = parseInt(addrString,16);
-		const addr_3 = addr-3;	// subtract opcode + address
-		zSocket.send('disassemble ' + addr_3, data => {
-			const opcode = data.substr(7,4);
-			// Check if this was a "CALL something" or "CALL n/z,something"
-			if(opcode == "CALL") {
-				// get address of call: last 4 bytes
-				const callAddrString = data.substr(data.length-4);
-				const callAddr = parseInt(callAddrString,16);
+		// Check for CALL or RST
+		this.findCallOrRst(addr, (k, callAddr) => {
+			if(k == 3) {
+				// CALL.
 				// Now find label for this address
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : callAddrString+'h';
-				const file = Labels.getFileAndLineForAddress(addr_3);
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 				// Save
-				lastCallFrameIndex = frames.addObject(new Frame(addr_3, zStackAddress+2*index, 'CALL ' + labelCallAddr, file.fileName, file.lineNr));
+				lastCallFrameIndex = frames.addObject(new Frame(addr-3, zStackAddress+2*index, 'CALL ' + labelCallAddr));
+			}
+			else if(k==1 || k == 2) {
+				// RST.
+				const pString = Utility.getHexString(callAddr,2)+'h'
+				// Save
+				lastCallFrameIndex = frames.addObject(new Frame(addr-k, zStackAddress+2*index, 'RST ' + pString));
 			}
 			else {
-				// Get last call frame
-				const frame = frames.getObject(lastCallFrameIndex);
-				frame.stack.push(addr);
+				// Neither CALL nor RST.
+					// Get last call frame
+					const frame = frames.getObject(lastCallFrameIndex);
+					frame.stack.push(addr);
 			}
+
+
 			// Call recursively
 			this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
 		});
@@ -301,13 +357,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const frames = new RefList();
 
 		// Get current pc
-		this.getRegisters( data => {
+		this.getRegisters(data => {
 			// Parse the PC value
 			const pc = Z80Registers.parsePC(data);
-			const file = Labels.getFileAndLineForAddress(pc);
-
 			const sp = Z80Registers.parseSP(data);
-			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC',file.fileName, file.lineNr));
+			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC'));
 
 			// calculate the depth of the call stack
 			var depth = (Labels.topOfStack - sp)/2;	// 2 bytes per word
@@ -395,17 +449,48 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.getRegisters( data => {
 			const pc = Z80Registers.parsePC(data);
 			zSocket.send('disassemble ' + pc, data => {
-				const opcode = data.substr(7,4);
-				// Check if this was a "CALL something" or "CALL n/z,something"
-				const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
-
 				// Clear register cache
 				this.RegisterCache = undefined;
-				// Step
-				zSocket.send(cmd, data => {
-					// Call handler
-					handler();
-				});
+				// Check if this was a "CALL something" or "CALL n/z,something"
+				const opcode = data.substr(7,4);
+
+				if(opcode == "RST ") {
+					// Use a special handling for RST required for esxdos.
+					// Zesarux internally just sets a breakpoint after the current opcode. In esxdos this
+					// address is used as parameter. I.e. the return address is tweaked after that address.
+					// Therefore we set an additional breakpoint 1 after the current address.
+
+					// Set action first (no action).
+					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+					zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
+						// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
+						const condition = 'PC=' + (pc+2);	// PC+1 would be the normal return address.
+						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+							// enable breakpoint
+							zSocket.send('enable-breakpoint ' + bpId, () => {
+								// Run
+								this.state = EmulatorState.RUNNING;
+								zSocket.send('cpu-step-over', data => {
+									// takes a little while, then step-over RET
+									// Disable breakpoint
+									zSocket.send('disable-breakpoint ' + bpId, () => {
+										this.state = EmulatorState.IDLE;
+										handler();
+									});
+								});
+							});
+						});
+					});
+				}
+				else {
+					// No special handling for the other opcodes.
+					const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
+					// Step
+					zSocket.send(cmd, data => {
+						// Call handler
+						handler();
+					});
+				}
 			});
 		});
 	}
@@ -468,18 +553,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 					}
 					else {
 						const addr = parseInt(addrString,16);
-						const addr_3 = addr-3;	// subtract opcode + address
-						zSocket.send('disassemble ' + addr_3, data => {
-							const opcode = data.substr(7,4);
-							// Check if this was a "CALL something" or "CALL n/z,something"
-							if(opcode == "CALL") {
-								// found, set breakpoint: when SP gets bigger than the current value
-
-								// set action first (no action)
-								const bpId = ZesaruxEmulator.STEPOUT_BREAKPOINT_ID;
+						this.findCallOrRst(addr, (k) => {
+							if(k != 0) {
+								// CALL or RST found, set breakpoint: when SP gets bigger than the current value.
+								// Set action first (no action).
+								const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
 								zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
 									// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
-									const condition = 'SP>' + sp;
+									const condition = 'SP=' + (sp+2);
 									zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
 										// enable breakpoint
 										zSocket.send('enable-breakpoint ' + bpId, () => {
@@ -500,7 +581,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 										});
 									});
-
 								});
 								return;
 							}
@@ -691,16 +771,25 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * But, because the run-handler is not known here, the 'run' is not continued afterwards.
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
+	 * @param handler(bps) On return the handler is called with all breakpoints.
+	 * @param tmpDisasmFileHandler(bpr) If a line cannot e determined then this handler
+	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
+	 * an EmulatorBreakpoint.
 	 */
-	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>, handler:(bps: Array<EmulatorBreakpoint>)=>void) {
+	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
+		handler:(bps: Array<EmulatorBreakpoint>)=>void,
+		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
 		this.breakIfRunning();
 		// Do most of the work
-		super.setBreakpoints(path, givenBps, bps => {
-			// But wait for the socket.
-			zSocket.executeWhenQueueIsEmpty( () => {
-				handler(bps);
-			});
-		});
+		super.setBreakpoints(path, givenBps,
+			bps => {
+				// But wait for the socket.
+				zSocket.executeWhenQueueIsEmpty( () => {
+					handler(bps);
+				});
+			},
+			tmpDisasmFileHandler
+		);
 	}
 
 
@@ -727,9 +816,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Reads a memory dump from zesarux and converts it to a number array.
 	 * @param address The memory start address.
 	 * @param size The memory size.
-	 * @param handler(data) The handler that receives the data.
+	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array)=>void) {
+	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array, addr: number)=>void) {
 		// Use chunks
 		const chunkSize = 0x10000;// 0x1000;
 		// Retrieve memory values
@@ -751,7 +840,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 		// send data to handler
 		zSocket.executeWhenQueueIsEmpty(() => {
-			handler(values);
+			handler(values, address);
 		});
 	}
 

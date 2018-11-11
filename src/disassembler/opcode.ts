@@ -70,10 +70,7 @@ export class Opcode {
 		if(Opcode.convertToLabelHandler)
 			valueString = Opcode.convertToLabelHandler(value);
 		if(!valueString) {
-			valueString = value.toString(16).toUpperCase();
-			const len = valueString.length;
-			if(len < 4)
-				valueString = "0".repeat(4-len) + valueString;
+			valueString = Format.getHexString(value) + 'h';
 		}
 		return valueString;
 	}
@@ -360,7 +357,7 @@ export class Opcode {
 	 * is one).
 	 * @returns A string that contains the disassembly, e.g. "LD A,(DATA_LBL1)"
 	 * or "JR Z,.sub1_lbl3".
- 	 * @param memory The memory area. Use to distinguish if the access is maybe wrong.
+ 	 * @param memory The memory area. Used to distinguish if the access is maybe wrong.
 	 * If this is not required (comment) the parameter can be omitted.
 	 */
 	public disassemble(memory?: Memory): {mnemonic: string, comment: string} {

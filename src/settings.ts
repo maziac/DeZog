@@ -63,9 +63,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
 	rootFolder: string;
 
-	/// Contains start/size tuples for all memory areas that should be disassembled
-	disassemblies: Array<Array<number>>;
-
 	/// The paths to the .list files.
 	listFiles: Array<ListFile>;
 
@@ -74,6 +71,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
 	smallValuesMaximum: number;
+
+	/// These arguments are passed to the disassembler (z80dismblr arguments).
+	disassemblerArgs: {esxdosRst: boolean};
 
 	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
 	tmpDir: string;
@@ -88,7 +88,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	startAutomatically: boolean;
 
 	/// Resets the cpu (on emulator) after starting the debugger.
-	resetOnStart: boolean;
+	resetOnLaunch: boolean;
+
+	/// An array with commands that are executed after the program-to-debug is loaded.
+	commandsAfterLaunch: Array<string>;
 
 	/// ZEsarUX setting. If enabled steps over the interrupt.
 	skipInterrupt: boolean;
@@ -139,15 +142,16 @@ export class Settings {
 				zhostname: <any>undefined,
 				zport: <any>undefined,
 				rootFolder: <any>undefined,
-				disassemblies: <any>undefined,
 				listFiles: <any>undefined,
 				labelsFiles: <any>undefined,
 				smallValuesMaximum: <any>undefined,
+				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
 				topOfStack: <any>undefined,
 				loadSnap: <any>undefined,
 				startAutomatically: <any>undefined,
-				resetOnStart: <any>undefined,
+				resetOnLaunch: <any>undefined,
+				commandsAfterLaunch: <any>undefined,
 				skipInterrupt: <any>undefined,
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
@@ -163,8 +167,6 @@ export class Settings {
 			Settings.launch.zport = 10000;
 		if(!Settings.launch.rootFolder)
 			Settings.launch.rootFolder = rootFolder;
-		if(!Settings.launch.disassemblies)
-			Settings.launch.disassemblies = [];
 		if(Settings.launch.listFiles)
 			Settings.launch.listFiles = Settings.launch.listFiles.map(fp => {
 				let file: ListFile;
@@ -202,10 +204,16 @@ export class Settings {
 		(Settings.launch.tmpDir);
 		if(isNaN(Settings.launch.smallValuesMaximum))
 			Settings.launch.smallValuesMaximum = 512;
+		if(Settings.launch.disassemblerArgs == undefined)
+			Settings.launch.disassemblerArgs = {esxdosRst: false};
+		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
+			Settings.launch.disassemblerArgs.esxdosRst = false;
 		if(Settings.launch.startAutomatically == undefined)
 			Settings.launch.startAutomatically = true;
-		if(Settings.launch.resetOnStart == undefined)
-			Settings.launch.resetOnStart = true;
+		if(Settings.launch.resetOnLaunch == undefined)
+			Settings.launch.resetOnLaunch = true;
+		if(Settings.launch.commandsAfterLaunch == undefined)
+			Settings.launch.commandsAfterLaunch = [];
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
 		if(Settings.launch.trace == undefined)
@@ -249,7 +257,7 @@ export class Settings {
 		if(!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
 		if(!Settings.launch.formatting.arrayByte)
-			Settings.launch.formatting.arrayByte = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${char}'\t${b@:bits}b\t${{:labels|, |}}";
+			Settings.launch.formatting.arrayByte = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${b@:char}'\t${b@:bits}b\t${{:labels|, |}}";
 		if(!Settings.launch.formatting.arrayWord)
 			Settings.launch.formatting.arrayWord = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.formatting.stackVar)

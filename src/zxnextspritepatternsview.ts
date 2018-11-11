@@ -57,8 +57,8 @@ export class PatternGif implements gw.IOutputStream {
  */
 enum PaletteSelection {
 	CURRENT,	///< The palette used in tbblue
-	FIRST,		///< The first sprite palette
-	SECOND,		///< The second sprite palette
+	PALETTE_0,		///< The first sprite palette
+	PALETTE_1,		///< The second sprite palette
 	DEFAULT,	///< The default palette. The index is the color value.
 	GRAYSCALE,	///< A grayscale palette
 };
@@ -90,6 +90,10 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected static spritePalettes = new Map<number, Array<number>>();
 
 
+	/// The currently selected sprite palette.
+	protected static currentPaletteNumber = -1;
+
+
 	/**
 	 * Static update function. This is called once per update and takes care of the
 	 * pattern update. I.e. it removes the patterns if not 'step' update.
@@ -97,11 +101,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @param reason
 	 */
 	protected static staticUpdate(reason?: any) {
+		// Reload current palette number and transparent index on every update.
+		ZxNextSpritePatternsView.currentPaletteNumber = -1;
+		// Reload patterns and palettes only if not 'step'
 		if(!reason || reason.step != true) {
 			// Mark 'dirty'
 			ZxNextSpritePatternsView.spritePatterns.clear();
 			ZxNextSpritePatternsView.spritePalettes.clear();
-			//(ZxNextSpritePatternsView.spritesPalette as any) = undefined;
 		}
 	}
 
@@ -116,6 +122,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 	/// The used palette. User selection in drop down menu.
 	protected usedPalette = PaletteSelection.CURRENT;
+
+	/// Is true if data is not valie, i.e. if data has not been updated for a 'step'.
+	protected patternDataValid = false;
 
 
 	/**
@@ -184,13 +193,94 @@ export class ZxNextSpritePatternsView extends BaseView {
 			case 'palette':
 				// Save palette
 				this.usedPalette = message.value;
-				// Reload only current view
+				// Reload only current view, keep already loaded palettes
+				ZxNextSpritePatternsView.currentPaletteNumber = -1;
 				this.update();
 				break;
 			default:
 				assert(false);
 				break;
 		}
+	}
+
+
+	/**
+	 * Returns the real palette number (0 or 1) from the
+	 * current selected index.
+	 * @param selectedIndex The index, e.g. PaletteSelection.PALETTE_1
+	 * @returns 0 or 1
+	 */
+	protected static staticGetPaletteNumberFromSelectedIndex(selectedIndex: PaletteSelection): number {
+		let paletteNumber;
+		switch(selectedIndex) {
+			case PaletteSelection.PALETTE_0:
+				paletteNumber = 0;
+				break;
+			case PaletteSelection.PALETTE_1:
+				paletteNumber = 1;
+				break;
+			case PaletteSelection.CURRENT:
+				// Use current palette
+				paletteNumber = ZxNextSpritePatternsView.currentPaletteNumber;
+				break;
+			default:
+				assert(false);
+				break;
+		}
+		return paletteNumber;
+	}
+
+
+	/**
+	 * Returns the selected index from the real palette number (0 or 1).
+	 * @param paletteNumber 0 or 1.
+	 * @returns PaletteSelection.PALETTE_0 or PaletteSelection.PALETTE_1
+	 */
+	protected static staticGetSelectedIndexFromPaletteNumber(paletteNumber: number): PaletteSelection {
+		if(paletteNumber == 0)
+			return PaletteSelection.PALETTE_0;
+		else {
+			assert(paletteNumber == 1);
+			return PaletteSelection.PALETTE_1;
+		}
+	}
+
+
+	/**
+	 * Returns the palette for a given selected index.
+	 * @param selectedIndex The selected ID, e.g. PaletteSelection.PALETTE_1.
+	 * @return A palette array. May return undefined ifno palette is found.
+	 */
+	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
+		let paletteSelection = selectedIndex;
+		if(selectedIndex == PaletteSelection.CURRENT) {
+			switch(ZxNextSpritePatternsView.currentPaletteNumber) {
+				case 0:
+					paletteSelection = PaletteSelection.PALETTE_0;
+					break;
+				case 1:
+					paletteSelection = PaletteSelection.PALETTE_1;
+					break;
+				default:
+					assert(false);
+					break;
+			}
+		}
+
+		const palette = ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		return palette;
+	}
+
+
+	/**
+	 * Sets the palette for a given palette number. Converts the palette number
+	 * to the selected index.
+	 * @param paletteNumber 0 or 1.
+	 * @param palette The palette to store.
+	 */
+	protected static staticSetPaletteForPaletteNumber(paletteNumber: number, palette: Array<number>) {
+		let selectedIndex = ZxNextSpritePatternsView.staticGetSelectedIndexFromPaletteNumber(paletteNumber);
+		ZxNextSpritePatternsView.spritePalettes.set(selectedIndex, palette);
 	}
 
 
@@ -237,20 +327,33 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected getSpritesPalette() {
 		// Retrieve from emulator
 		this.serializer.exec(() => {
-			// Check if already existing
-			if(ZxNextSpritePatternsView.spritePalettes.get(this.usedPalette)) {
+			if(ZxNextSpritePatternsView.currentPaletteNumber >= 0) {
+				// End
 				this.serializer.endExec();
 				return;
 			}
-
 			// Get the transparent index
 			Emulator.getTbblueRegister(75, value => {
 				ZxNextSpritePatternsView.spritesPaletteTransparentIndex = value;
 			});
+			// Get in use palette number
+			Emulator.getTbblueRegister(0x43, value => {	// ULANextControlRegister
+				ZxNextSpritePatternsView.currentPaletteNumber = (value>>3) & 0x01;
+				// End
+				this.serializer.endExec();
+			});
+		});
+
+		this.serializer.exec(() => {
+			// Check if already existing
+			if(ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
+				this.serializer.endExec();
+				return;
+			}
 
 			// Get in use palette number
 			Emulator.getTbblueRegister(0x43, value => {	// ULANextControlRegister
-				let paletteNumber = (value>>3) & 0x01;
+				let paletteNumber;
 				// Check palette selection and maybe override this number
 				const usedPal = this.usedPalette;
 				switch(usedPal) {
@@ -264,17 +367,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 						ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createGrayscalePalette());
 						this.serializer.endExec();
 						return;
-					case PaletteSelection.FIRST:
-					case PaletteSelection.SECOND:
-						// Get 1rst or 2nd palette
-						paletteNumber = usedPal - PaletteSelection.FIRST;
-						break;
-					case PaletteSelection.CURRENT:
-						// Use current palette
-						paletteNumber = (value>>3) & 0x01;
-						break;
 					default:
-						assert(false);
+						paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);
 						break;
 				}
 				// Get palette
@@ -292,7 +386,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 						loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >> 3) & 0b00100000);
 					}
 					// Store
-					ZxNextSpritePatternsView.spritePalettes.set(usedPal, loadedPalette);
+					ZxNextSpritePatternsView.staticSetPaletteForPaletteNumber(paletteNumber, loadedPalette);
 					// End
 					this.serializer.endExec();
 				});
@@ -351,6 +445,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * emulator. I.e. if you do a "break" after letting the program run.
 	 */
 	public update(reason?: any) {
+		// Mark as invalid until pattern have been loaded.
+		this.patternDataValid = (!reason || reason.step != true);
+
 		// Load palette if not available
 		this.getSpritesPalette();
 
@@ -410,6 +507,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		</script>
 
+		%s
+
 		<button onclick="reload()">Reload Patterns</button>
 
 		<!-- To change the background color of the sprite pattern -->
@@ -421,9 +520,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		<!-- To change the used palette -->
 		<select id="paletteSelector" onchange="paletteSelected(this);">
-			<option>Current Palette</option>
-			<option>1rst Sprite Palette</option>
-			<option>2nd Sprite Palette</option>
+			<option>Current Palette (%d)</option>
+			<option>Sprite Palette 0</option>
+			<option>Sprite Palette 1</option>
 			<option>Default Palette</option>
 			<option>Grayscale Palette</option>
 		</select>
@@ -440,7 +539,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 		</script>
 		`;
 
-		const html = util.format(format, this.usedBckgColor, this.usedPalette);
+		const invalid = (this.patternDataValid) ? "" : "*";
+		const html = util.format(format, invalid, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
 		return html;
 	}
 
@@ -464,7 +564,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected createHtmlTable(): string {
 		// Create a string with the table itself.
-		let palette = ZxNextSpritePatternsView.spritePalettes.get(this.usedPalette);
+		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		assert(palette);
 		if(!palette)	palette = [];	// Calm the transpiler
 		let table = '';

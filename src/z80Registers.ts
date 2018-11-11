@@ -99,13 +99,25 @@ export class Z80Registers {
 		}
 
 		// All unset registers get a default formatting
-		for(let [key,] of regMap) {
+		for(let [reg,] of regMap) {
 			// get format
-			const format = formattingMap.get(key);
+			const format = formattingMap.get(reg);
 			if(format != undefined)
 				continue;	// has already a format string
 			// set default format
-			formattingMap.set(key, '${hex}');
+			let rLen;
+			if(reg == "IXH" || reg == "IXL" || reg == "IYH" || reg == "IYL") {
+				// Value length = 1 byte
+				rLen = 1;
+			}
+			else {
+				rLen = reg.length;
+				if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
+			}
+			if(rLen == 1)
+				formattingMap.set(reg, '${hex}h, ${unsigned}u');
+			else
+				formattingMap.set(reg, '${hex}h, ${unsigned}u${, :labelsplus|, }');
 		}
 
 		// return

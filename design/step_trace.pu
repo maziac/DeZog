@@ -28,7 +28,7 @@
 
 ## Activation
 
-z80-debug is activated in the 'activate' function in extenson.ts
+z80-debug is activated in the 'activate' function in extension.ts
 by registering the ZesaruxConfigurationProvider.
 This happens e.g. when the Debugger is started.
 Short after 'ZesaruxConfigurationProvider::resolveDebugConfiguration' is called.

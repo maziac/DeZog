@@ -6,9 +6,9 @@ import { Frame } from './frame';
 import { EventEmitter } from 'events';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { Labels } from './labels';
-import { Opcode } from './disassembler/opcode';
-import { Memory } from './disassembler/memory';
-import { Format } from './disassembler/format';
+//import { Opcode } from './disassembler/opcode';
+//import { Memory } from './disassembler/memory';
+//import { Format } from './disassembler/format';
 
 
 /**
@@ -331,9 +331,14 @@ export class EmulatorClass extends EventEmitter {
 	 * But, because the run-handler is not known here, the 'run' is not continued afterwards.
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
+	 * @param handler(bps) On return the handler is called with all breakpoints.
+	 * @param tmpDisasmFileHandler(bp) If a line cannot e determined then this handler
+	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
+	 * an EmulatorBreakpoint.
 	 */
-	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>, handler:(bps: Array<EmulatorBreakpoint>)=>void) {
-
+	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
+		handler:(bps: Array<EmulatorBreakpoint>)=>void,
+		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
 
 		// get all old breakpoints for the path
 		const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
@@ -341,8 +346,9 @@ export class EmulatorClass extends EventEmitter {
 		// Create new breakpoints
 		const currentBps = new Array<EmulatorBreakpoint>();
 		givenBps.forEach( bp => {
+			let ebp;
 			// get PC value of that line
-			const addr = Labels.getAddrForFileAndLine(path, bp.lineNr);
+			let addr = Labels.getAddrForFileAndLine(path, bp.lineNr);
 			// Check if valid line
 			if(addr >= 0) {
 				// Now search last line with that pc
@@ -350,17 +356,20 @@ export class EmulatorClass extends EventEmitter {
 				// Check if right file
 				if(path.valueOf() == file.fileName.valueOf()) {
 					// create breakpoint object
-					const ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition };
-					// add to array
-					currentBps.push(ebp);
+					ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition };
 				}
 			}
 			else {
-				// Breakpoint position invalid
-				const ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '' };
-				// add to array
-				currentBps.push(ebp);
+				// Check if there is a routine for the temporary disassembly file
+				ebp = tmpDisasmFileHandler(bp);
 			}
+
+			// add to array
+			if(!ebp) {
+				// Breakpoint position invalid
+				ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '' };
+			}
+			currentBps.push(ebp);
 		});
 
 		// Now check which breakpoints are new or removed (this includes 'changed').
@@ -406,6 +415,7 @@ export class EmulatorClass extends EventEmitter {
 	 *   0067 PUSH HL
 	 *   0068 LD HL,(5CB0)
 	 */
+/*
 	public getDisassembly(start: number, size: number, handler:(text)=>void) {
 		this.getMemoryDump(start, size, (data) => {
 			// data contains an array of bytes.
@@ -434,7 +444,7 @@ export class EmulatorClass extends EventEmitter {
 			handler(text);
 		});
 	}
-
+*/
 
 	/**
 	 * Sends a command to the emulator.
@@ -450,9 +460,9 @@ export class EmulatorClass extends EventEmitter {
 	 * Reads a memory dump and converts it to a number array.
 	 * @param address The memory start address.
 	 * @param size The memory size.
-	 * @param handler(data) The handler that receives the data.
+	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array)=>void) {
+	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array, addr: number)=>void) {
 		assert(false);	// override this
 	}
 

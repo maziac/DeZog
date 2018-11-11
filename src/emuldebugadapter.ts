@@ -22,6 +22,15 @@ import { ZxNextSpritesView } from './zxnextspritesview';
 import { TextView } from './textview';
 import { BaseView } from './baseview';
 import { ZxNextSpritePatternsView } from './zxnextspritepatternsview';
+//import * as del from 'del';
+import { Disassembler } from './disassembler/disasm';
+//import { Format } from './disassembler/format';
+import { MemAttribute } from './disassembler/memory';
+import { Opcode, Opcodes } from './disassembler/opcode';
+//import * as assert from 'assert';
+//import * as diff from 'diff';
+
+
 
 
 /**
@@ -29,6 +38,15 @@ import { ZxNextSpritePatternsView } from './zxnextspritepatternsview';
  * It receives the requests from vscode and sends events to it.
  */
 export class EmulDebugAdapter extends DebugSession {
+
+    /// The disassembler instance.
+    protected dasm: Disassembler;
+
+	/// The address queue for the disassembler. This contains all stepped addresses.
+	protected dasmAddressQueue = new Array<number>();
+
+	/// The text document used for the temporary disassembly.
+	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the variables (references)
 	protected listVariables = new RefList();
@@ -41,9 +59,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
-
-	/// Used to display the memory at the register locations.
-	//protected registerMemoryView: MemoryRegisterView;
 
 	/// Used to hold saved state data.
 	protected stateData: StateZ80;
@@ -94,6 +109,28 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
+	 * Creates a new disassembler and coonfigures it.
+	 * Called on start of connection.
+	 */
+	public setupDisassembler() {
+		// Create new disassembler.
+		this.dasm = new Disassembler();
+		// Configure disassembler.
+		this.dasm.funcAssignLabels = (addr) => {
+			return 'L' + Utility.getHexString(addr,4);
+		};
+		// Restore 'rst 8' opcode
+		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+		// Setup configuration.
+		if(Settings.launch.disassemblerArgs.esxdosRst)
+		{
+			//Extend 'rst 8' opcode for esxdos
+			Opcodes[0xCF].appendToOpcode(",#n");
+		}
+	}
+
+
+	/**
 	 * Used to show a warning to the user.
 	 * @param message The message to show.
 	 */
@@ -117,7 +154,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Exit from the debugger.
 	 * @param message If defined the message is shown to the user as error.
 	 */
-	private exit(message: string|undefined) {
+	private exit(message?: string) {
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
@@ -167,6 +204,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Debugadapter disconnects.
+	 * End forcefully.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		// Close register memory view
@@ -175,6 +213,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Stop machine
 		Emulator.stop(() => {
 			this.sendResponse(response);
+			this.exit();
 		});
 	}
 
@@ -208,9 +247,31 @@ export class EmulDebugAdapter extends DebugSession {
 		// Supports conditional breakpoints
 		response.body.supportsConditionalBreakpoints = true;
 
+		// Handles debug 'Restart'
+		response.body.supportsRestartRequest = true;
+
 		this.sendResponse(response);
 
 		// Note: The InitializedEvent will be send when the socket connection has been successfull. Afterwards the breakpoints are set.
+	}
+
+
+	/**
+	 * Called when 'Restart' is pressed.
+	 * Disconnects and destroys the old emulator connection and sets up a new one.
+	 * @param response
+	 * @param args
+	 */
+	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
+		// Stop machine
+		Emulator.stop(() => {
+			// And setup a new one
+			this.startEmulator(msg => {
+				response.message = msg;
+				response.success = (msg == undefined);
+				this.sendResponse(response);
+			});
+		});
 	}
 
 
@@ -224,7 +285,6 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param args
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
-
 		try {
 			// Save args
 			const rootFolder = (vscode.workspace.workspaceFolders) ?vscode.workspace.workspaceFolders[0].uri.path : '';
@@ -233,9 +293,28 @@ export class EmulDebugAdapter extends DebugSession {
 		catch(e) {
 			// Some error occurred
 			this.exit('Settings: ' + e.message);
+			response.success = false;
+			this.sendResponse(response);
 			return;
 		}
 
+		// Setup the disassembler
+		this.setupDisassembler();
+
+		// Start the emulator and the connection.
+		this.startEmulator(msg => {
+			response.message = msg;
+			response.success = (msg == undefined);
+			this.sendResponse(response);
+		});
+	}
+
+
+	/**
+	 * Starts the emulator and sets up everything for setup after
+	 * connection is up and running.
+	 */
+	protected startEmulator(handler: (msg?: string)=>void) {
 		try {
 			// Clear all temporary files
 			Utility.removeAllTmpFiles();
@@ -243,6 +322,7 @@ export class EmulDebugAdapter extends DebugSession {
 		catch(e) {
 			// Some error occurred
 			this.exit('Removing temporary files: ' + e.message);
+			handler("Error while removing temp files.");
 			return;
 		}
 
@@ -253,6 +333,7 @@ export class EmulDebugAdapter extends DebugSession {
 		catch(e) {
 			// Some error occurred
 			this.exit('Labels: ' + e.message);
+			handler("Error while initializeing labels.");
 			return;
 		}
 
@@ -283,25 +364,6 @@ export class EmulDebugAdapter extends DebugSession {
 				this.exit(err.message);
 			}
 
-			// Load list and labels file according machine
-			//const dir = __dirname;
-
-
-			// Now get all disassemblies
-			for(var area of Settings.launch.disassemblies) {
-				this.serializer.exec(() => {
-					// get disassembly
-					Emulator.getDisassembly(area[0] /*address*/, area[1] /*size*/, (text) => {
-						// save as temporary file
-						const fileName = 'TMP_DISASSEMBLY_' + area[0] + '(' + area[1] + ').asm';
-						const absFileName = Utility.writeTmpFile(fileName, text);
-						// add disassembly file without labels
-						Labels.loadAsmListFile(absFileName, false, undefined, 0, false);
-						// "Return"
-						this.serializer.endExec();
-					});
-				});
-			};
 
 			this.serializer.exec(() => {
 				// Finishes off the loading of the list and labels files
@@ -340,6 +402,19 @@ export class EmulDebugAdapter extends DebugSession {
 							if(isNaN(length))
 								continue;
 						}
+						else {
+							if(!addressString || addressString.length == 0) {
+								// If both, address and length are not defined it is checked
+								// if there exists bytes in the list file (i.e.
+								// numbers after the address field.
+								// If not the "WPMEM" is assumed to be inside a
+								// macro and omitted.
+								const match = /^[0-9a-f]+ [0-9a-f]+/.exec(entry.line);
+								if(!match)
+									continue;
+							}
+
+						}
 						if(access && access.length > 0) {
 							if( access != 'r' && access != 'w' && access != 'rw') {
 								this.showWarning("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'");
@@ -373,8 +448,20 @@ export class EmulDebugAdapter extends DebugSession {
 				// "Return"
 				this.serializer.endExec();
 				// Respond
-				this.sendResponse(response);
+				handler();
 			});
+
+			// Run user commands after load.
+			for(const cmd of Settings.launch.commandsAfterLaunch) {
+				this.serializer.exec(() => {
+				vscode.debug.activeDebugConsole.appendLine(cmd);
+					this.evaluateCommand(cmd, text => {
+						vscode.debug.activeDebugConsole.appendLine(text);
+						// "Return"
+						this.serializer.endExec();
+					});
+				});
+			}
 		});
 
 		Emulator.on('warning', message => {
@@ -419,42 +506,69 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 			// Set breakpoints for the file.
-			Emulator.setBreakpoints(path, bps, (currentBreakpoints) => {
-				/*
-				// Go through original list of vscode breakpoints and check if they are verified or not
-				let source = this.createSource(path);
-				const vscodeBreakpoints = givenBps.map(gbp => {
-					let verified = false;
-					// Check if breakpoint is present in currentBreakpoints
-					const lineNr = this.convertClientLineToDebugger(gbp.line);
-					for(let cbp of currentBreakpoints) {
-						if(cbp.lineNr == lineNr && cbp.filePath == path) {
-							verified = true;
-							break;
+			Emulator.setBreakpoints(path, bps,
+				currentBreakpoints => {
+					/*
+					// Go through original list of vscode breakpoints and check if they are verified or not
+					let source = this.createSource(path);
+					const vscodeBreakpoints = givenBps.map(gbp => {
+						let verified = false;
+						// Check if breakpoint is present in currentBreakpoints
+						const lineNr = this.convertClientLineToDebugger(gbp.line);
+						for(let cbp of currentBreakpoints) {
+							if(cbp.lineNr == lineNr && cbp.filePath == path) {
+								verified = true;
+								break;
+							}
+						}
+						// Create new breakpoint
+						let bp = new Breakpoint(verified, gbp.line, gbp.column, source);
+						return bp;
+					});
+					*/
+
+					const source = this.createSource(path);
+					const vscodeBreakpoints = currentBreakpoints.map(cbp => {
+						const lineNr = this.convertDebuggerLineToClient(cbp.lineNr);
+						const verified = (cbp.address >= 0);	// Is not verified if no address is set
+						let bp = new Breakpoint(verified, lineNr, 0, source);
+						return bp;
+					});
+
+
+					// send back the actual breakpoint positions
+					response.body = {
+						breakpoints: vscodeBreakpoints
+					};
+					this.sendResponse(response);
+					this.serializer.endExec();
+				},
+
+				// Handle temporary disasembler breakpoints
+				(bp: EmulatorBreakpoint) => {
+					// Check if it is the right path
+					const relFilePath = Utility.getRelTmpDisasmFileName();
+					const absFilePath = Utility.getAbsFilePath(relFilePath);
+					if(bp.filePath == absFilePath) {
+						// Get address from line number
+						const lines = this.dasm.getDisassemblyLines();
+						const lineCount = lines.length;
+						let lineNr = bp.lineNr;
+						while(lineNr < lineCount) {
+							const line = lines[lineNr];
+							const addr = parseInt(line, 16);
+							if(!isNaN(addr)) {
+								// create breakpoint object
+								const ebp = { bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition };
+								return ebp;
+							}
+							lineNr++;
 						}
 					}
-					// Create new breakpoint
-					let bp = new Breakpoint(verified, gbp.line, gbp.column, source);
-					return bp;
-				});
-				*/
+					return undefined;
+				}
 
-				const source = this.createSource(path);
-				const vscodeBreakpoints = currentBreakpoints.map(cbp => {
-					const lineNr = this.convertDebuggerLineToClient(cbp.lineNr);
-					const verified = (cbp.address >= 0);	// Is not verified if no address is set
-					let bp = new Breakpoint(verified, lineNr, 0, source);
-					return bp;
-				});
-
-
-				// send back the actual breakpoint positions
-				response.body = {
-					breakpoints: vscodeBreakpoints
-				};
-				this.sendResponse(response);
-				this.serializer.endExec();
-			});
+			);
 		});
 
 	}
@@ -492,6 +606,7 @@ export class EmulDebugAdapter extends DebugSession {
 		return new Source(fname, debPath, undefined, undefined, undefined);
 	}
 
+
 	/**
 	 * Returns the stack frames.
 	 */
@@ -501,39 +616,277 @@ export class EmulDebugAdapter extends DebugSession {
 		if(this.stackTraceResponses.length > 1)
 			return;
 
+		// Stack frames
+		const sfrs = new Array<StackFrame>();
+
+		// Need to check if disassembly is required.
+		let doDisassembly = false;
+		const fetchAddresses = new Array<number>();
+		const fetchData = new Array<Uint8Array>();
+		let frameCount = 0;
+
+
 		// Serialize
 		this.serializer.exec(() => {
 			// Clear all variables
 			this.listVariables.length = 0;
 
-			// Get the call stack trace
-			Emulator.stackTraceRequest((frames) => {
+			// Get the call stack trace.
+			Emulator.stackTraceRequest(frames => {
 
-				// Create new array but only upto end of stack (name == null)
-				const sfrs = new Array<StackFrame>();
-				var index = 1;
-				for(const frame of frames) {
-					const src = this.createSource(frame.fileName);
-					const lineNr = (src) ? this.convertDebuggerLineToClient(frame.lineNr) : 0;
-					const sf = new StackFrame(index, frame.name, src, lineNr);
+				// Check frames for end
+				const frameRealCount = frames.length;
+				for(; frameCount<frameRealCount; frameCount++) {
+					const frame = frames[frameCount];
+					// Check if end
+					if(frame.name === null) {
+						// rest of stack trace is garbage
+						break;
+					}
+				}
+
+				// Go through complete call stack and get the sources.
+				// If no source exists than get a hexdump and disassembly later.
+				for(let index=0; index<frameCount; index++) {
+					const frame = frames[index];
+					// Get file for address
+					const addr = frame.addr;
+					const file = Labels.getFileAndLineForAddress(addr);
+					// Store file, if it does not exist the name is empty
+					const src = this.createSource(file.fileName);
+					const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
+					const sf = new StackFrame(index+1, frame.name, src, lineNr);
 					sfrs.push(sf);
-					if(frame.name === null)
-						break;	// rest of stack trace is garbage
-					index++;
 				}
 
-				// Send as often as there have been requests
-				while(this.stackTraceResponses.length > 0) {
-					const resp = this.stackTraceResponses[0];
-					this.stackTraceResponses.shift();
-					resp.body = {stackFrames: sfrs,	totalFrames: 1};
-					this.sendResponse(resp);
+				// Create array with addresses that need to be feteched for disassembly
+				for(let index=0; index<frameCount; index++) {
+					const sf = sfrs[index];
+					if(!sf.source)
+						fetchAddresses.push(frames[index].addr);
 				}
 
-				// end the serialized call:
-				this.serializer.endExec();
+				// Check if we need to fetch any dump.
+				const fetchAddressesCount = fetchAddresses.length;
+				if(fetchAddressesCount == 0) {
+					// No dumps to fetch
+					this.serializer.endExec();
+					return;
+				}
+
+				// Now get hexdumps for all non existing sources.
+				let fetchCount = 0;
+				for(let index=0; index<fetchAddressesCount; index++) {
+					// So fetch a memory dump
+					const fetchAddress = fetchAddresses[index];
+					const fetchSize = 100;	// N bytes
+					Emulator.getMemoryDump(fetchAddress, fetchSize, data => {
+						// Save data for later writing
+						fetchData.push(data);
+						// Note: because of self-modifying code it may have changed
+						// since it was fetched at the beginning.
+						// Check if memory changed.
+						if(!doDisassembly) {
+							const checkSize = 40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+							for(let k=0; k<checkSize; k++) {
+								const val = this.dasm.memory.getValueAt(fetchAddress+k);
+								const memAttr = this.dasm.memory.getAttributeAt(fetchAddress+k);
+								if((val != data[k]) || (memAttr == MemAttribute.UNUSED)) {
+									doDisassembly = true;
+									break;
+								}
+							}
+						}
+						// Check for end
+						fetchCount ++;
+						if(fetchCount >= fetchAddressesCount) {
+							// All dumps fetched
+							this.serializer.endExec();
+						}
+					});
+				}
 			});
 		});
+
+
+		// Create the temporary disassembly file if necessary.
+		if(!this.disasmTextDoc) {
+			this.serializer.exec(() => {
+				if(!doDisassembly) {
+					// No disassembly required.
+					this.serializer.endExec();
+					return;
+				}
+				// Create text document
+				const relFilePath = Utility.getRelTmpDisasmFileName();
+				const absFilePath = Utility.getAbsFilePath(relFilePath);
+				const uri = vscode.Uri.file(absFilePath);
+				const editCreate = new vscode.WorkspaceEdit();
+				editCreate.createFile(uri, {overwrite: true});
+				vscode.workspace.applyEdit(editCreate).then(() => {
+					vscode.workspace.openTextDocument(absFilePath).then(textDoc => {
+						// Store uri
+						this.disasmTextDoc = textDoc;
+						// End
+						this.serializer.endExec();
+					});
+				});
+			});
+		}
+
+
+		// Check if disassembly is required.
+		this.serializer.exec(() => {
+			// Check if a new address was used.
+			const fetchAddressesCount = fetchAddresses.length;
+			for(let i=0; i<fetchAddressesCount; i++) {
+				// The current PC is for sure a code label.
+				const addr = fetchAddresses[i];
+				if(this.dasmAddressQueue.indexOf(addr) < 0)
+					this.dasmAddressQueue.unshift(addr);
+				// Check if this requires a  disassembly
+				if(!doDisassembly) {
+					const memAttr = this.dasm.memory.getAttributeAt(addr);
+					if(!(memAttr & MemAttribute.CODE_FIRST))
+						doDisassembly = true;	// If memory was not the start of an opcode.
+				}
+			}
+
+			// Check if disassembly is required.
+			if(!doDisassembly) {
+				// End
+				this.serializer.endExec();
+				return;
+			}
+
+			// Do disassembly.
+			// Write new fetched memory
+			const count = fetchAddresses.length;
+			for(let i=0; i<count; i++) {
+				this.dasm.setMemory(fetchAddresses[i], fetchData[i]);
+			}
+			this.dasm.setAddressQueue(this.dasmAddressQueue);
+			// Disassemble
+			this.dasm.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory attributes before next disassembly.
+			this.dasm.initLabels();	// Clear all labels.
+			this.dasm.disassemble();
+			// Read data
+			const text = this.dasm.getDisassemblyText();
+			// Get all source breakpoints of the disassembly file.
+			const bps = vscode.debug.breakpoints;
+			const disSrc = this.disasmTextDoc.uri.toString();
+			const sbps = bps.filter(bp => {
+				if(bp.hasOwnProperty('location')) {
+					const sbp = bp as vscode.SourceBreakpoint;
+					const sbpSrc = sbp.location.uri.toString();
+					if(sbpSrc == disSrc)
+						return true;
+				}
+				return false;
+			}) as vscode.SourceBreakpoint[];
+
+			// Check if any breakpoint
+			const changedBps = new Array<vscode.SourceBreakpoint>();
+			if(sbps.length > 0) {
+				// Previous text
+				const prevTextLines = this.disasmTextDoc.getText().split('\n');
+
+				// Loop all source breakpoints to compute changed BPs
+				for(const sbp of sbps) {
+					const lineNr = sbp.location.range.start.line;
+					const line = prevTextLines[lineNr];
+					const addr = parseInt(line, 16);
+					if(!isNaN(addr)) {
+						// Get new line
+						const lines = this.dasm.getDisassemblyLines();
+						const nLineNr = this.searchLines(lines, addr);
+						// Create breakpoint
+						const nLoc = new vscode.Location(this.disasmTextDoc.uri, new vscode.Position(nLineNr, 0));
+						const cbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
+						// Store
+						changedBps.push(cbp);
+					}
+				}
+			}
+
+			// Remove all old breakpoints.
+			vscode.debug.removeBreakpoints(sbps);
+
+			// Create and apply one replace edit
+			const editReplace = new vscode.WorkspaceEdit();
+			editReplace.replace(this.disasmTextDoc.uri, new vscode.Range(0, 0, this.disasmTextDoc.lineCount, 0), text);
+			vscode.workspace.applyEdit(editReplace).then(() => {
+				// Save after edit (to be able to set breakpoints)
+				this.disasmTextDoc.save().then(() => {
+					// Add all new breakpoints.
+					vscode.debug.addBreakpoints(changedBps);
+					// End
+					this.serializer.endExec();
+				});
+			});
+		});
+
+
+		// Get lines for addresses and send response.
+		this.serializer.exec(() => {
+			// Determine line numbers (binary search)
+			if(frameCount > 0) {
+				const relFilePath = Utility.getRelTmpDisasmFileName();
+				const absFilePath = Utility.getAbsFilePath(relFilePath);
+				const src = this.createSource(absFilePath) as Source;
+				const lines = this.dasm.getDisassemblyLines();
+				let indexDump = 0;
+				for(let i=0; i<frameCount; i++) {
+					const sf = sfrs[i];
+					if(sf.source)
+						continue;
+					// Get line number for stack address
+					const addr = fetchAddresses[indexDump];
+					const foundLine = this.searchLines(lines, addr);
+					const lineNr = this.convertDebuggerLineToClient(foundLine);
+					// Store
+					sf.source = src;
+					sf.line = lineNr;
+					// Next
+					indexDump ++;
+				}
+			}
+
+			// Send as often as there have been requests
+			while(this.stackTraceResponses.length > 0) {
+				const resp = this.stackTraceResponses[0];
+				this.stackTraceResponses.shift();
+				resp.body = {stackFrames: sfrs,	totalFrames: 1};
+				this.sendResponse(resp);
+			}
+			// end the serialized call:
+			this.serializer.endExec();
+		});
+	}
+
+
+	/**
+	 * Does a search to find the (last) line that correspondents to the
+	 * given address.
+	 * The array usually contains lines with a starting address.
+	 * But it may also contain empty lines or lines not starting with a number.
+	 * Those lines are skipped.
+	 * @param allLines An array to be searched. Can contain lines without address.
+	 * @param addr The address to find.
+	 * @return -1 if not found, otherwise the line number.
+	 */
+	protected searchLines(allLines: Array<string>, addr: number) {
+		// find each new line and count the lines
+		let i = allLines.length;
+		while(i > 0) {
+			i --;
+			const line = allLines[i];
+			const la = parseInt(line, 16);
+			if(la == addr)
+				return  i;
+		}
+		// Not found
+		return -1;
 	}
 
 
@@ -553,6 +906,7 @@ export class EmulDebugAdapter extends DebugSession {
 				// No frame found, send empty response
 				response.body = {scopes: scopes};
 				this.sendResponse(response);
+				this.serializer.endExec();
 				return;
 			}
 
@@ -815,6 +1169,51 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
+	 * Evaluates the command and executes it.
+	 * The method might throw an exception if it cannot parse the command.
+	 * @param command E.g. "-exec tbblue-get-register 57" or "-wpmem disable".
+	 * @param handler A handler that is called after the execution. Can be omitted.
+	 */
+	protected evaluateCommand(command: string, handler = (text)=>{}) {
+		const expression = command.trim();
+		const tokens = expression.split(' ');
+		const cmd = tokens.shift();
+		// All commands start with "-"
+		if(cmd == '-help' || cmd == '-h') {
+			this.evalHelp(tokens, handler);
+		}
+		else if (cmd == '-eval') {
+			this.evalEval(tokens, handler);
+		}
+		else if (cmd == '-exec' || cmd == '-e') {
+			this.evalExec(tokens, handler);
+		}
+		else if (cmd == '-label' || cmd == '-l') {
+			this.evalLabel(tokens, handler);
+		}
+		else if (cmd == '-md') {
+			this.evalMemDump(tokens, handler);
+		}
+		else if (cmd == '-patterns') {
+			this.evalSpritePatterns(tokens, handler);
+		}
+		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
+			this.evalWPMEM(tokens, handler);
+		}
+		else if (cmd == '-sprites') {
+			this.evalSprites(tokens, handler);
+		}
+		else if (cmd == '-state') {
+			this.evalStateSaveRestore(tokens, handler);
+		}
+		else {
+			// Unknown command
+			throw new Error("Unknown command: '" + expression + "'");
+		}
+	}
+
+
+	/**
 	 * Is called when hovering or when an expression is added to the watches.
 	 * Or if commands are input in the debug console.
 	 */
@@ -825,40 +1224,10 @@ export class EmulDebugAdapter extends DebugSession {
 		const cmd = tokens.shift();
 		if(cmd) {
 			try {
-				if(cmd.startsWith('-')) {
-					// All commands start with "-"
-					if(cmd == '-help' || cmd == '-h') {
-						this.evalHelp(tokens, response);
-					}
-					else if (cmd == '-eval') {
-						this.evalEval(tokens, response);
-					}
-					else if (cmd == '-exec' || cmd == '-e') {
-						this.evalExec(tokens, response);
-					}
-					else if (cmd == '-label' || cmd == '-l') {
-						this.evalLabel(tokens, response);
-					}
-					else if (cmd == '-md') {
-						this.evalMemDump(tokens, response);
-					}
-					else if (cmd == '-patterns') {
-						this.evalSpritePatterns(tokens, response);
-					}
-					else if (cmd == '-WPMEM' || cmd == '-wpmem') {
-						this.evalWPMEM(tokens, response);
-					}
-					else if (cmd == '-sprites') {
-						this.evalSprites(tokens, response);
-					}
-					else if (cmd == '-state') {
-						this.evalStateSaveRestore(tokens, response);
-					}
-					else {
-						// Unknown command
-						throw new Error("Unknown command: '" + expression + "'");
-					}
-
+				if(expression.startsWith('-')) {
+					this.evaluateCommand(expression, text => {
+						this.sendEvalResponse(text, response);
+					});
 					// End
 					return;
 				}
@@ -962,9 +1331,9 @@ export class EmulDebugAdapter extends DebugSession {
 	/**
 	 * Prints a help text for the debug console commands.
 	 * @param tokens The arguments. Unused.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalHelp(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalHelp(tokens: Array<string>, handler: (text:string)=>void) {
 		const output =
 `Allowed commands are:
 "-eval expr": Evaluates an expression. The expression might contain
@@ -994,16 +1363,16 @@ Examples:
 Notes:
 "-exec run" will not work at the moment and leads to a disconnect.
 `;
-		this.sendEvalResponse(output, response);
+		handler(output);
 	}
 
 
 	/**
 	 * Evaluates a given expression.
 	 * @param tokens The arguments. I.e. the expression to eveluate.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalEval(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalEval(tokens: Array<string>, handler: (text:string)=>void) {
 		const expr = tokens.join(' ').trim();	// restore expression
 		if(expr.length == 0) {
 			// Error Handling: No arguments
@@ -1025,16 +1394,16 @@ Notes:
 			result += ', ' + labels.join(', ');
 		}
 
-		this.sendEvalResponse(result, response);
+		handler(result);
 	}
 
 
 	/**
 	 * Executes a command in the emulator.
 	 * @param tokens The arguments. I.e. the command for the emulator.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalExec(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalExec(tokens: Array<string>, handler: (text:string)=>void) {
 		// Check for "-view"
 		let redirectToView = false;
 		if(tokens[0] == '-view') {
@@ -1054,11 +1423,11 @@ Notes:
 					const panel = new TextView(this, "exec: "+machineCmd, data);
 					panel.update();
 					// Send response
-					this.sendEvalResponse('OK', response);
+					handler('OK');
 				}
 				else {
 					// Print to console
-					this.sendEvalResponse(data, response);
+					handler(data);
 				}
 			});
 		}
@@ -1068,14 +1437,14 @@ Notes:
 	/**
 	 * Evaluates a label.
 	 * @param tokens The arguments. I.e. the label.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalLabel(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalLabel(tokens: Array<string>, handler: (text:string)=>void) {
 		const expr = tokens.join(' ').trim();	// restore expression
 		if(expr.length == 0) {
 			// Error Handling: No arguments
 			const output = "Label expected.";
-			this.sendEvalResponse(output, response);
+			handler(output);
 			return;
 		}
 		// Find labelwith regex, every star is translated into ".*"
@@ -1094,29 +1463,25 @@ Notes:
 			result = 'No label matches.';
 		}
 		// return result
-		this.sendEvalResponse(result, response);
+		handler(result);
 	}
 
 
 	/**
 	 * Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalMemDump(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalMemDump(tokens: Array<string>, handler: (text:string)=>void) {
 		// check count of arguments
 		if(tokens.length == 0) {
 			// Error Handling: No arguments
-			const output = "Address and size expected.";
-			this.sendEvalResponse(output, response);
-			return;
+			throw new Error("Address and size expected.");
 		}
 
 		if(tokens.length % 2 != 0) {
 			// Error Handling: No size given
-			const output = "No size given for address '" + tokens[tokens.length-1] + "'.";
-			this.sendEvalResponse(output, response);
-			return;
+			throw new Error("No size given for address '" + tokens[tokens.length-1] + "'.");
 		}
 
 		// Get all addresses/sizes.
@@ -1141,16 +1506,16 @@ Notes:
 		panel.update();
 
 		// Send response
-		this.sendEvalResponse('OK', response);
+		handler('OK');
 	}
 
 
 	/**
 	 * WPMEM. Enable/disable/show.
 	 * @param tokens The arguments.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalWPMEM(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalWPMEM(tokens: Array<string>, handler: (text:string)=>void) {
 		const param = tokens[0] || '';
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all WPMEM watchpoints
@@ -1158,14 +1523,14 @@ Notes:
 			Emulator.enableWPMEM(enable, () => {
 				// Print to console
 				const enableString = (enable) ? 'enabled' : 'disabled';
-				this.sendEvalResponse('WPMEM watchpoints ' + enableString, response);
+				handler('WPMEM watchpoints ' + enableString);
 			});
 		}
 		else if(param == 'show') {
 			// show enable status of all WPMEM watchpoints
 			const enable = Emulator.wpmemEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
-			this.sendEvalResponse('WPMEM watchpoints are ' + enableString + '.', response);
+			handler('WPMEM watchpoints are ' + enableString + '.');
 		}
 		else {
 			// Unknown argument
@@ -1177,9 +1542,9 @@ Notes:
 	/**
 	 * Show the sprite patterns in a view.
 	 * @param tokens The arguments.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalSpritePatterns(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalSpritePatterns(tokens: Array<string>, handler: (text:string)=>void) {
 		// First check for tbblue
 		if(Emulator.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
@@ -1245,16 +1610,16 @@ Notes:
 		panel.update();
 
 		// Send response
-		this.sendEvalResponse('OK', response);
+		handler('OK');
 	}
 
 
 	/**
 	 * Show the sprites in a view.
 	 * @param tokens The arguments.
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalSprites(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalSprites(tokens: Array<string>, handler: (text:string)=>void) {
 		// First check for tbblue
 		if(Emulator.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
@@ -1319,29 +1684,29 @@ Notes:
 		panel.update();
 
 		// Send response
-		this.sendEvalResponse('OK', response);
+		handler('OK');
 	}
 
 
 	/**
 	 * Save/restore the state.
 	 * @param tokens The arguments. 'save'/'restore'
-	 * @param response The response to send on success.
+ 	 * @param handler(text) A handler that is called after the execution.
 	 */
-	protected evalStateSaveRestore(tokens: Array<string>, response: DebugProtocol.EvaluateResponse) {
+	protected evalStateSaveRestore(tokens: Array<string>, handler: (text:string)=>void) {
 		const param = tokens[0] || '';
 		if(param == 'save') {
 			// Save current state
 			this.stateSave(() => {
 				// Send response
-				this.sendEvalResponse('OK', response);
+				handler('OK');
 			});
 		}
 		else if(param == 'restore') {
 			// Restores the state
 			this.stateRestore(() => {
 				// Send response
-				this.sendEvalResponse('OK', response);
+				handler('OK');
 				// Reload register values etc.
 				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
 				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
@@ -1498,4 +1863,3 @@ Notes:
 		Emulator.stateRestore(this.stateData, handler);
 	}
 }
-
