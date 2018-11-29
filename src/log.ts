@@ -47,7 +47,7 @@ export class Log {
 	 */
 	public static log(...args) {
 		// check time
-		var diffTime = (Date.now() - Log.lastLogTime)/1000;
+		const diffTime = (Date.now() - Log.lastLogTime)/1000;
 		if(diffTime > 2) {
 			// > 2 secs
 			Log.write('...');
@@ -55,7 +55,7 @@ export class Log {
 			Log.write('...');
 		}
 		// write log
-		var who = Log.callerName() + ": ";
+		const who = Log.callerName() + ": ";
 		Log.write(who, ...args);
 		// get new time
 		Log.lastLogTime = Date.now();

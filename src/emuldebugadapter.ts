@@ -17,7 +17,8 @@ import { /*ShallowVar,*/ DisassemblyVar, LabelVar, RegistersMainVar, RegistersSe
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
-import { StateZ80 } from './statez80';
+//import { StateZ80 } from './statez80';
+import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './zxnextspritesview';
 import { TextView } from './textview';
 import { BaseView } from './baseview';
@@ -28,8 +29,11 @@ import { Disassembler } from './disassembler/disasm';
 import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 //import * as assert from 'assert';
+//import { fstat } from 'fs';
 //import * as diff from 'diff';
-
+//import * as fs from 'fs';
+import * as BinaryFile from 'binary-file';
+//import { writeFileSync } from 'fs';
 
 
 
@@ -61,8 +65,14 @@ export class EmulDebugAdapter extends DebugSession {
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
 
 	/// Used to hold saved state data.
-	protected stateData: StateZ80;
+	//protected stateData: StateZ80;
 
+	/// Determines if source code ASSERTs are passed as breakpoints to the emulator.
+	protected ASSERTenabled = false;
+
+	/// The array of all source code asserts. Used to enable disable the ASSERT breakpoints
+	/// in the emulator.
+	protected ASSERTs: Array<vscode.SourceBreakpoint>;
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -217,12 +227,14 @@ export class EmulDebugAdapter extends DebugSession {
 		});
 	}
 
+
 	/**
 	 * 'initialize'request.
 	 * Respond with supported features.
 	 */
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 
+		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body || {};
 
@@ -317,7 +329,8 @@ export class EmulDebugAdapter extends DebugSession {
 	protected startEmulator(handler: (msg?: string)=>void) {
 		try {
 			// Clear all temporary files
-			Utility.removeAllTmpFiles();
+			//Utility.removeAllTmpFiles();
+			// Do not clear otherwise the states might be cleared.
 		}
 		catch(e) {
 			// Some error occurred
@@ -344,15 +357,21 @@ export class EmulDebugAdapter extends DebugSession {
 		Emulator.once('initialized', () => {
 			//Array for found watchpoints: WPMEM
 			const watchPointLines = new Array<{address: number, line: string}>();
+			const assertLines = new Array<{address: number, line: string}>();
 			// Load files
 			try {
 				// Load user list and labels files
 				for(let listFile of Settings.launch.listFiles) {
 					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.addOffset, listFile.useLabels, (address, line) => {
-						// quick search for WPMEM
+						// Quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address
 							watchPointLines.push({address: address, line: line});
+						}
+						// Quick search for ASSERT
+						if(line.indexOf('ASSERT') >= 0) {
+							// Add assert line at this address
+							assertLines.push({address: address, line: line});
 						}
 					});
 				}
@@ -366,11 +385,12 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 			this.serializer.exec(() => {
+				// WPMEM
 				// Finishes off the loading of the list and labels files
 				Labels.finish();
 				// convert labels in watchpoints.
 				const watchpoints = new Array<GenericWatchpoint>();
-				for(let entry of watchPointLines){
+				for(let entry of watchPointLines) {
 					// WPMEM:
 					// Syntax:
 					// WPMEM [addr [, length [, access]]]
@@ -382,7 +402,7 @@ export class EmulDebugAdapter extends DebugSession {
 					// or
 					// WPMEM ,1,w, MWV&B8h/0
 
-					// now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
+					// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
 					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 					if(match) {
 						// get arguments
@@ -427,13 +447,157 @@ export class EmulDebugAdapter extends DebugSession {
 						watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
 					}
 				}
-
 				// Set watchpoints (memory guards)
 				Emulator.setWPMEM(watchpoints, () => {
 					// "Return"
 					this.serializer.endExec();
 				});
 			});
+
+
+			this.serializer.exec(() => {
+				// ASSERTs
+				const ASSERTmap = new Map<number,vscode.SourceBreakpoint>();
+				// Convert ASSERTS to watchpoints
+				for(let entry of assertLines) {
+					// ASSERT:
+					// Syntax:
+					// ASSERT var comparison expr [&&|| var comparison expr]
+					// with:
+					//  var: a variable, i.e. a register like A or HL
+					//  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
+					//	expr: a mathematical expression that resolves into a constant
+					// Examples:
+					// - ASSERT A < 5
+					// - ASSERT HL <= LBL_END+2
+					// - ASSERT B > (MAX_COUNT+1)/2
+
+					// ASSERTs are breakpoints with "inverted" condition.
+					// Now check more thoroughly: group1=var, group2=comparison, group3=expression
+					try {
+						const matchAssert = /;.*\bASSERT\b/.exec(entry.line);
+						if(!matchAssert) {
+							// Eg. could be that "ASSERTx" was found.
+							continue;
+						}
+
+						// Get part of the string after the "ASSERT"
+						const part = entry.line.substr(matchAssert.index);
+
+						const regex = /\s*([a-z]+)\s*([<>=!]+)\s*([^;|&]*)(\|\||&&*)?/gi;
+						let match = regex.exec(part);
+						if(!match)	// At least one match should be found
+							throw Error("Expecting 'ASSERT var comparison expr'.");
+						let conds = '';
+						let concatString;
+						while (match) {
+							// Get arguments
+							let varString = match[1] || "";
+							varString = varString.trim();
+							let compString = match[2] || "";
+							compString = compString.trim();
+							let exprString = match[3] || "";
+							exprString = exprString.trim();
+							concatString = match[4] || "";
+							concatString = concatString.trim();
+
+							// Check and "invert" the assert condition.
+							// Check register / variable
+							if(!Z80Registers.isRegister(varString))
+								throw Error("Don't know '" + varString + "'");
+
+							// Convert to a number
+							const exprValue = Utility.evalExpression(exprString, false); // don't evaluate registers
+
+							// Check comparison
+							let resComp;
+							if(compString.length > 0) {
+								// The ASSERT condition needs to be negated for the breakpoint.
+								switch(compString) {
+									// >= :
+									case '<':	resComp = '>='; break;
+									// <= :
+									case '>':	resComp = '<='; break;
+									// > :
+									case '<=':	resComp = '>'; break;
+									// < :
+									case '>=':	resComp = '<'; break;
+									// != :
+									case '==':	resComp = '!='; break;
+									// == :
+									case '!=':	resComp = '=='; break;
+								}
+							}
+							if(!resComp)
+								throw Error("Don't know comparison '" + compString + "'");
+
+							// Check concatenation
+							let resConcat = '';
+							if(concatString.length > 0) {
+								// Invert
+								if(concatString == "&&")
+									resConcat = "||";
+								else if(concatString == "||")
+									resConcat = "&&";
+								else
+									throw Error("Cannot handle concatenation with '" + concatString + "'. Use '&&' or '||' instead.");
+								resConcat = ' ' + resConcat;
+							}
+
+							// Now create condition for zesarux.
+							const condPart = varString + ' ' + resComp + ' ' + exprValue.toString();
+							if(conds.length > 0)
+								conds += ' ';
+							conds += condPart + resConcat;
+							// Next
+							match = regex.exec(part);
+						}
+						// Check
+						if(concatString.length > 0)	// has to end without concatenation symbol
+							throw Error("Expected condition after contatenation symbol '" + concatString + "'");
+
+						// Check if ASSERT for that address already exists.
+						let bp = ASSERTmap.get(entry.address);
+						if(bp) {
+							// Already exists: just add condition.
+							// Check that 2nd condition is not too complicated.
+							if(conds.indexOf("&&") >= 0)
+								throw Error("Condition too complicated. 2 ASSERTs at the same address are combined and the 2nd condition must not include a '||' condition.");
+							// Concatenate conditions. bp.condition is readonly so we need to create a new breakpoint.
+							const newCond = bp.condition + ' || ' + conds;
+							const newBp = new vscode.SourceBreakpoint(bp.location, bp.enabled, newCond, bp.hitCondition, bp.logMessage);
+							// Exchange new breakpoint
+							ASSERTmap.set(entry.address, newBp);
+						}
+						else {
+							// Breakpoint for address does not yet exist. Create a new one.
+							// Get file and line from address
+							const file = Labels.getFileAndLineForAddress(entry.address);
+							const filePath = file.fileName;
+							const lineNr = file.lineNr;
+							const uri = vscode.Uri.file(filePath);
+							// Location
+							const loc = new vscode.Location(uri, new vscode.Position(lineNr, 0));
+							bp = new vscode.SourceBreakpoint(loc, true, conds);
+							// Store
+							ASSERTmap.set(entry.address, bp);
+						}
+					}
+					catch(e) {
+						vscode.window.showWarningMessage("Problem with ASSERT. Could not evaluate: '" + entry.line + "': " + e + "");
+					}
+				}
+
+				// Convert map to array.
+				this.ASSERTs = Array.from(ASSERTmap.values());
+
+				// Enable all ASSERTs.
+				this.enableASSERTs(true);
+
+				// "Return"
+				this.serializer.endExec();
+			});
+
 
 			this.serializer.exec(() => {
 				// Create memory/register dump view
@@ -475,6 +639,46 @@ export class EmulDebugAdapter extends DebugSession {
 			this.exit(err.message);
 		});
 
+	}
+
+
+	/**
+	 * Enables or disables the ASSERT breakpoints.
+	 * @param enable true/false.
+	 */
+	protected enableASSERTs(enable: boolean) {
+		if(enable) {
+			// Get all breakpoints that already exist at certain addresses.
+			const bps = vscode.debug.breakpoints;
+			const removeBps = bps.filter(bp => {
+				// Check if SourceBreakpoint
+				if(!bp.hasOwnProperty('location'))
+					return false;
+				// Test if a breakpoint already exists at that line.
+				const sbp = bp as vscode.SourceBreakpoint;
+				const sbpSrc = sbp.location.uri.fsPath;
+				const sbpLineNr = sbp.location.range.start.line;
+				for(const abp of this.ASSERTs) {
+					if(sbpLineNr == abp.location.range.start.line
+						&& sbpSrc == abp.location.uri.fsPath) {
+						// Found same breakpoint. Remove it.
+						return true;
+					}
+				}
+			});
+
+			// Remove them
+			vscode.debug.removeBreakpoints(removeBps);
+
+			// Add ASSERT breakpoints
+			vscode.debug.addBreakpoints(this.ASSERTs);
+		}
+		else {
+			// Just remove any already set breakpoints
+			vscode.debug.removeBreakpoints(this.ASSERTs);
+		}
+
+		this.ASSERTenabled = enable;
 	}
 
 
@@ -544,10 +748,10 @@ export class EmulDebugAdapter extends DebugSession {
 					this.serializer.endExec();
 				},
 
-				// Handle temporary disasembler breakpoints
+				// Handle temporary disassembler breakpoints
 				(bp: EmulatorBreakpoint) => {
 					// Check if it is the right path
-					const relFilePath = Utility.getRelTmpDisasmFileName();
+					const relFilePath = Utility.getRelTmpDisasmFilePath();
 					const absFilePath = Utility.getAbsFilePath(relFilePath);
 					if(bp.filePath == absFilePath) {
 						// Get address from line number
@@ -718,7 +922,7 @@ export class EmulDebugAdapter extends DebugSession {
 					return;
 				}
 				// Create text document
-				const relFilePath = Utility.getRelTmpDisasmFileName();
+				const relFilePath = Utility.getRelTmpDisasmFilePath();
 				const absFilePath = Utility.getAbsFilePath(relFilePath);
 				const uri = vscode.Uri.file(absFilePath);
 				const editCreate = new vscode.WorkspaceEdit();
@@ -759,6 +963,7 @@ export class EmulDebugAdapter extends DebugSession {
 				return;
 			}
 
+			this.serializer.setProgress("Do disassembly");
 			// Do disassembly.
 			// Write new fetched memory
 			const count = fetchAddresses.length;
@@ -785,6 +990,7 @@ export class EmulDebugAdapter extends DebugSession {
 				return false;
 			}) as vscode.SourceBreakpoint[];
 
+			this.serializer.setProgress("Check if any breakpoint");
 			// Check if any breakpoint
 			const changedBps = new Array<vscode.SourceBreakpoint>();
 			if(sbps.length > 0) {
@@ -809,15 +1015,19 @@ export class EmulDebugAdapter extends DebugSession {
 				}
 			}
 
+			this.serializer.setProgress("Remove all old breakpoints");
 			// Remove all old breakpoints.
 			vscode.debug.removeBreakpoints(sbps);
 
 			// Create and apply one replace edit
 			const editReplace = new vscode.WorkspaceEdit();
 			editReplace.replace(this.disasmTextDoc.uri, new vscode.Range(0, 0, this.disasmTextDoc.lineCount, 0), text);
+			this.serializer.setProgress("applyEdit");
 			vscode.workspace.applyEdit(editReplace).then(() => {
 				// Save after edit (to be able to set breakpoints)
+				this.serializer.setProgress("disasmTextDoc.save");
 				this.disasmTextDoc.save().then(() => {
+					this.serializer.setProgress("debug.addBreakpoints");
 					// Add all new breakpoints.
 					vscode.debug.addBreakpoints(changedBps);
 					// End
@@ -831,7 +1041,7 @@ export class EmulDebugAdapter extends DebugSession {
 		this.serializer.exec(() => {
 			// Determine line numbers (binary search)
 			if(frameCount > 0) {
-				const relFilePath = Utility.getRelTmpDisasmFileName();
+				const relFilePath = Utility.getRelTmpDisasmFilePath();
 				const absFilePath = Utility.getAbsFilePath(relFilePath);
 				const src = this.createSource(absFilePath) as Source;
 				const lines = this.dasm.getDisassemblyLines();
@@ -1182,6 +1392,9 @@ export class EmulDebugAdapter extends DebugSession {
 		if(cmd == '-help' || cmd == '-h') {
 			this.evalHelp(tokens, handler);
 		}
+		else if (cmd == '-ASSERT' || cmd == '-assert') {
+			this.evalASSERT(tokens, handler);
+		}
 		else if (cmd == '-eval') {
 			this.evalEval(tokens, handler);
 		}
@@ -1206,6 +1419,11 @@ export class EmulDebugAdapter extends DebugSession {
 		else if (cmd == '-state') {
 			this.evalStateSaveRestore(tokens, handler);
 		}
+		// Debug commands
+		else if (cmd == '-dbg') {
+			this.evalDebug(tokens, handler);
+		}
+		//
 		else {
 			// Unknown command
 			throw new Error("Unknown command: '" + expression + "'");
@@ -1336,6 +1554,9 @@ export class EmulDebugAdapter extends DebugSession {
 	protected evalHelp(tokens: Array<string>, handler: (text:string)=>void) {
 		const output =
 `Allowed commands are:
+"-ASSERT enable|disable|status":
+	- enable|disable: Enables/disables all breakpoints caused by ASSERTs set in the sources. All ASSERTs are by default enabled after startup of the debugger.
+	- status: Shows enable status of WPMEM watchpoints.
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
@@ -1347,8 +1568,9 @@ the value correspondends to a label.
 Without any parameter it will show all sprite patterns.
 You can concat several ranges with a ",".
 Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
-"-WPMEM enable|disable": Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
-"-WPMEM show": Shows enable status of WPMEM watchpoints.
+"-WPMEM enable|disable|status":
+	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
+	- status: Shows enable status of WPMEM watchpoints.
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges with a ",".
 Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 Without any parameter it will show all visible sprites automatically.
@@ -1363,6 +1585,12 @@ Examples:
 Notes:
 "-exec run" will not work at the moment and leads to a disconnect.
 `;
+/*
+For debugging purposes there are a few more:
+-dbg serializer clear: Clears the call serializer queue.
+-dbg serializer print: Prints the current function. Use this to see where
+it hangs if it hangs. (Use 'setProgress' to debug.)
+*/
 		handler(output);
 	}
 
@@ -1511,31 +1739,62 @@ Notes:
 
 
 	/**
-	 * WPMEM. Enable/disable/show.
+	 * ASSERT. Enable/disable/status.
+	 * @param tokens The arguments.
+ 	 * @param handler(text) A handler that is called after the execution.
+	 */
+	protected evalASSERT(tokens: Array<string>, handler: (text:string)=>void) {
+		const param = tokens[0] || '';
+		if(param == 'enable' || param == 'disable') {
+			// enable or disable all ASSERT breakpoints
+			const enable = (param == 'enable');
+			this.enableASSERTs(enable);
+		}
+		else if(param == 'status') {
+			// just show
+		}
+		else {
+			// Unknown argument
+			throw new Error("Unknown argument: '" + param + "'");
+		}
+
+		// Always show enable status of all ASSERT
+		const enableString = (this.ASSERTenabled) ? 'enabled' : 'disabled';
+		handler('ASSERT breakpoints are ' + enableString + '.');
+	}
+
+
+	/**
+	 * WPMEM. Enable/disable/status.
 	 * @param tokens The arguments.
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalWPMEM(tokens: Array<string>, handler: (text:string)=>void) {
+		const show = () => {
+			// Always show enable status of all WPMEM watchpoints
+			const enable = Emulator.wpmemEnabled;
+			const enableString = (enable) ? 'enabled' : 'disabled';
+			handler('WPMEM watchpoints are ' + enableString + '.');
+		}
+
 		const param = tokens[0] || '';
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all WPMEM watchpoints
 			const enable = (param == 'enable');
 			Emulator.enableWPMEM(enable, () => {
 				// Print to console
-				const enableString = (enable) ? 'enabled' : 'disabled';
-				handler('WPMEM watchpoints ' + enableString);
+				show();
 			});
 		}
-		else if(param == 'show') {
-			// show enable status of all WPMEM watchpoints
-			const enable = Emulator.wpmemEnabled;
-			const enableString = (enable) ? 'enabled' : 'disabled';
-			handler('WPMEM watchpoints are ' + enableString + '.');
+		else if(param == 'status') {
+			// just show
+			show();
 		}
 		else {
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
 		}
+
 	}
 
 
@@ -1694,19 +1953,27 @@ Notes:
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalStateSaveRestore(tokens: Array<string>, handler: (text:string)=>void) {
+		const stateName = tokens[1];
+		if(!stateName)
+			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
+
 		const param = tokens[0] || '';
 		if(param == 'save') {
 			// Save current state
-			this.stateSave(() => {
+			this.stateSave(stateName, text => {
+				if(!text)	// Error text ?
+					text = 'OK';
 				// Send response
 				handler('OK');
 			});
 		}
 		else if(param == 'restore') {
 			// Restores the state
-			this.stateRestore(() => {
+			this.stateRestore(stateName, text => {
+				if(!text)	// Error text ?
+					text = 'OK';
 				// Send response
-				handler('OK');
+				handler(text);
 				// Reload register values etc.
 				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
 				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
@@ -1716,6 +1983,37 @@ Notes:
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
 		}
+	}
+
+
+	/**
+	 * Debug commands. Not shown publicly.
+	 * @param tokens The arguments. 'serializer clear'|'serializer print'
+ 	 * @param handler(text) A handler that is called after the execution.
+	 */
+	protected evalDebug(tokens: Array<string>, handler: (text:string)=>void) {
+		const param1 = tokens[0] || '';
+		let unknownArg = param1;
+		if(param1 == 'serializer') {
+			const param2 = tokens[1] || '';
+			unknownArg = param2;
+			if(param2 == 'clear') {
+				// Clear the call serializer queue
+				this.serializer.clrQueue();
+				handler('OK');
+				return;
+			}
+			else if(param2 == 'print') {
+				// Print the current function.
+				const current = this.serializer.getCurrentFunction();
+				const text = 'Progress: ' + current.progress +'\n' +
+				'Func: ' + current.func;
+				handler(text);
+				return;
+			}
+		}
+		// Unknown argument
+		throw new Error("Unknown argument: '" + unknownArg + "'");
 	}
 
 
@@ -1836,30 +2134,64 @@ Notes:
 
 
 	/**
-	 * Called from "-state save" command.
+	 * Called from "-state save N" command.
 	 * Stores all RAM + the registers.
-	 * @param handler Is called when data was saved.
+	 * @param stateName A state name (or number) can be appended, so that different states might be saved.
+	 * @param handler(errorText?) Is called when data was saved. errorText is undefined if
+	 * successful, otherwise it contains the error description.
 	 */
-	protected stateSave(handler:() => void) {
+	protected stateSave(stateName: string, handler:(errorText?: string) => void) {
 		// Save state
 		Emulator.stateSave(stateData => {
-			this.stateData = stateData;
-			handler();
+			let filePath;
+			try {
+				// Save data to temp directory
+				filePath = Utility.getAbsStateFileName(stateName);
+				const binFile = new BinaryFile(filePath, "w");
+				(async function () {
+					await binFile.open();
+					await stateData.write(binFile);
+					await binFile.close();
+					handler();
+				}) ();
+			}
+			catch(e) {
+				const errTxt = "Can't save '" + filePath + "': " + e.message;
+				handler(errTxt);
+			}
 		});
 	}
 
 
 	/**
-	 * Called from "-state load" command.
+	 * Called from "-state restore N" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param handler Is called when data was restored.
+	 * @param stateName A state name (or number) can be appended, so that different states might be saved.
+	 * @param handler(errorText?) Is called when data was saved. errorText is undefined if
+	 * successful, otherwise it contains the error description.
 	 */
-	protected stateRestore(handler:() => void) {
-		// Check
-		if(!this.stateData)
-			throw Error('You need to save a state first, see "-state save".');
-
-		// Restore state
-		Emulator.stateRestore(this.stateData, handler);
+	protected stateRestore(stateName: string, handler:(errorText?: string) => void) {
+		// Load data from temp directory
+		let filePath;
+		let errTxt;
+		try {
+			// Read data
+			filePath = Utility.getAbsStateFileName(stateName);
+			const binFile = new BinaryFile(filePath, "r");
+			const stateData = new StateZX16K();
+			(async function () {
+				await binFile.open();
+				await stateData.read(binFile);
+				await binFile.close();
+				// Restore state
+				Emulator.stateRestore(stateData, () => {
+					handler();
+				});
+			}) ();
+		}
+		catch(e) {
+			errTxt = "Can't load '" + filePath + "': " + e.message;
+			handler(errTxt);
+		}
 	}
 }

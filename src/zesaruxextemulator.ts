@@ -120,7 +120,8 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 */
 	protected setBreakpointExt(bp: EmulatorBreakpoint): number {
 		// set the breakpoint
-		zSocket.send('set-fast-breakpoint ' + bp.address + ' ' + bp.condition);
+		const zesaruxCondition = this.convertCondition(bp.condition) || '';
+		zSocket.send('set-fast-breakpoint ' + bp.address + ' ' + zesaruxCondition);
 		// Add to list
 		this.breakpoints.push(bp);
 		bp.bpId = this.breakpoints.length;	// use index as breakpoint ID

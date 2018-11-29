@@ -1,14 +1,21 @@
 import { Log } from './log';
 import { Socket } from 'net';
 import { Settings } from './settings';
+import * as vscode from 'vscode';
 
 //import { setKeepAliveInterval } from 'net-keepalive';
+
+
+/// Output send and received data to the "OUTPUT" tab in vscode.
+//let logSocket vscode.OutputChannel;	// Disable
+let logSocket = vscode.window.createOutputChannel("Z80 Debugger Socket");
+
 
 /// Timeouts.
 const CONNECTION_TIMEOUT = 1000;	///< 1 sec
 const QUIT_TIMEOUT = 1000;	///< 1 sec
 // TODO: CHANGE back:
-const MSG_DEFAULT_TIMEOUT = 50000; //5000;	///< 5 sec (socket communication and internal delays may sometimes take longer than a second)
+const MSG_DEFAULT_TIMEOUT = 5000; //5000;	///< 5 sec (socket communication and internal delays may sometimes take longer than a second)
 export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the special meaning: Don't use any timeout
 
 
@@ -57,6 +64,8 @@ export class ZesaruxSocket extends Socket {
 	// Holds the incomplete received message.
 	private receivedDataChunk: string;
 
+	/// Last time a log has been written.
+	private lastLogTime: number;
 
 	/**
 	 * Static init method. Creates a new socket object.
@@ -228,6 +237,7 @@ export class ZesaruxSocket extends Socket {
 			return;
 		// normal processing
 		var command = cEntry.command + '\n';
+		this.logSocket('=>', cEntry.command);
 		Log.log('=> ' + cEntry.command);
 		this.write(command);
 		// Set timeout
@@ -242,6 +252,7 @@ export class ZesaruxSocket extends Socket {
 		if(this.state != SocketState.CONNECTED)
 			return;
 		// Send just a newline
+		this.logSocket('=>', '\n');
 		this.write('\n');
 	}
 
@@ -255,6 +266,7 @@ export class ZesaruxSocket extends Socket {
 			Log.log('Error: Received ' + data.length + ' bytes of undefined data!');
 			return;
 		}
+		this.logSocket('<=', sData);
 		Log.log('<= ' + sData);
 
 		// Check if last line asks for a new command
@@ -358,6 +370,42 @@ export class ZesaruxSocket extends Socket {
 			zSocket.end();
 			handler();
 		});
+	}
+
+
+	/**
+	 * Prints out a formatted log.
+	 * @param prefix Use either '=>' for sending or '<=' for receiving.
+	 * @param text The text to log. Can contain newlines.
+	 */
+	protected logSocket(prefix: string, text: string|undefined) {
+		if(!logSocket)
+			return;
+		// Log time
+		if(this.lastLogTime) {
+			const diffTime = (Date.now() - this.lastLogTime)/1000;
+			if(diffTime > 2) {
+				// > 2 secs
+				logSocket.appendLine('...');
+				logSocket.appendLine('Pause for ' + diffTime + ' secs.');
+				logSocket.appendLine('...');
+			}
+		}
+		this.lastLogTime = Date.now();
+
+		// Prefixes
+		prefix += ' ';
+		const prefixLen = prefix.length;
+		const nextPrefix = ' '.repeat(prefixLen);
+
+		// Log
+		if(!text)
+			text = "(undefined)";
+		const arr = text.split('\n');
+		for(const line of arr) {
+			logSocket.appendLine(prefix + line);
+			prefix = nextPrefix;
+		}
 	}
 }
 

@@ -295,6 +295,74 @@ Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
 
+Note: IF you use WPMEM in your sources z80-debug will generate watchpoints after launch. If you don't want that (temporarily) you can add "-WPMEM disabled" in the "commandsAfterLaunch" settings.
+
+### Asserts
+
+Similar to WPMEM you can use ASSERTs in comments in the assembler sources.
+An ASSERT is translated by z80-debug into a breakpoints with an "inverted" condition.
+For all ASSERTs in your source code z80-debug will set the correspondent breakpoints automatically at startup.
+
+The ASSERT syntax is:
+~~~
+; [.*] ASSERT var comparison expr [concat var comparison expr] [;.*]
+~~~
+with:
+- var: a variable, i.e. a register like A or HL
+- comparison: one of '<', '>', '==', '!=', '<=', '=>'.
+- expr: a mathematical expression that resolves into a constant
+- concat: one of '&&' or '||'
+
+Examples:
+~~~
+; ASSERT HL <= LBL_END+2
+ld a,b  ; Check that index is not too big ASSERT B < (MAX_COUNT+1)/2
+ld de,hl    ; ASSERT A < 5 && hl != 0 ; Check that pointer is alright
+~~~
+
+As an ASSERT converts to a breakpoint it is always evaluated **before** the instruction.
+I.e. the following check will most probably not work as expected.
+~~~
+ld a,c  ; ASSERT a < 7
+~~~
+A is not loaded yet when the ASSERT is checked. So use
+~~~
+ld a,c
+; ASSERT a < 7
+~~~
+instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction abd thus A is checked correctly.
+
+Note: The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
+
+Note: IF you use ASSERTs in your sources z80-debug will generate breakpoints after launch. If you don't want that (temporarily) you can add "-ASSERT disabled" in the "commandsAfterLaunch" settings.
+
+
+### Breakpoint conditions
+
+Along with breakpoints you can also use breakpoint conditions. The breakpoint condition is checked additionally whenever a breakpoint is fired at a certain address.
+Only if also the breakpoint condition is met the program execution will stop.
+The breakpoint conditions are for example used for the ASSERTs.
+
+Breakpoint conditions use a special syntax
+~~~
+var comparison expr [concat var comparison expr]
+~~~
+with:
+- var: a variable, i.e. a register like A or HL
+- comparison: one of '<', '>', '==', '!=', '<=', '=>'.
+- expr: a mathematical expression that resolves into a constant
+- concat: one of '&&' or '||'
+
+Examples:
+- HL > LBL_END
+- B >= (MAX_COUNT+1)/2
+- A >= 6 || hl == 0
+
+So on the left side you have to use a register and of the left side an expression that evaluates to a number, you can use labels and maths in the expression, but you can't put registers there.
+Several var-comparison-expr might be combined with a "&&" or "||". But you can't use any complex combinations that would require parenthesis.
+
+The breakpoint conditions are translated into conditions that are understood by ZEsarUX automatically.
+
 
 ### Debug Console
 
@@ -336,7 +404,8 @@ And
 ~~~
 to restore the state.
 
-Note: Status is only experimental. I.e. it just save/restores the memory contents and max. the 48K RAM. ZX NExt support will be added as soon it is available in ZEsarUX.
+Note: Status is only experimental. I.e. it just save/restores the memory contents and max. the 48K RAM. ZX Next support will be added as soon it is available in ZEsarUX.
+Note: The state is stored to RAM only. I.e. it will not persist a relaunch of the debug session.
 
 
 #### Memory Dumps
@@ -475,5 +544,4 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 ## Notes
 
-- vscode breakpoint conditions: those are directly passed to ZEsarUX. Conditions have not been tested at all.
 - Don't use "-exec run" in the debug console. It will lead to a disconnection of ZEsarUX. Instead use the continue button (the green arrow).

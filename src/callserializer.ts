@@ -24,6 +24,10 @@ export class CallSerializer {
 	/// Enable/disable logging
 	private logEnabled: boolean;
 
+	/// A progress indicator for debugging. Set this in your function to check
+	/// later how far it got.
+	protected dbgProgressIndicator: string;
+
 
 	/**
 	 * Constructor.
@@ -104,9 +108,21 @@ export class CallSerializer {
 
 
 	/**
+	 * Sets the debug progress indicator to some text.
+	 * Can be used to check how far we got inside the function.
+	 * @param text Some text.
+	 */
+	public setProgress(text: string) {
+		this.dbgProgressIndicator = text;
+	}
+
+
+	/**
 	 * If there is an method in the queue than it is executed.
 	 */
 	private runQueueFunction() {
+		// Clear progress indicator
+		this.dbgProgressIndicator = "Start";
 		// execute directly
 		this.log('runQueueFunction ' + this.queue[0].name);
 		const method = this.queue[0].func;
@@ -123,6 +139,27 @@ export class CallSerializer {
 			return;
 		Log.log(this.name + '.CallSerializer: ', ...args);
 		Log.log(this.name + '.CallSerializer: ', ...this.queue);
+	}
+
+
+	/**
+	 * Use for debugging.
+	 * @returns{progress, func} the current and progress function. Use to debug where it hangs.
+	 * progress contains the current value of the this.dbgProgressIndicator variable.
+	 */
+	public getCurrentFunction(): {progress: string, func: any} {
+		const method = {progress: this.dbgProgressIndicator, func: undefined};
+		if(this.queue.length > 0)
+			method.func = this.queue[0].func;
+		return method;
+	}
+
+
+	/**
+	 * Use for debugging. Clears the complete selrializer queue.
+	 */
+	public clrQueue() {
+		this.queue.length = 0;
 	}
 
 

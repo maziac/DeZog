@@ -85,8 +85,10 @@ class LabelsClass {
 		// Calculate the label offsets
 		this.calculateLabelOffsets();
 		// calculate top of stack in case it is a label
-		const topOfStack = Labels.getNumberForLabel(Settings.launch.topOfStack);
-		if(!topOfStack)
+		const tos = Labels.getNumberForLabel(Settings.launch.topOfStack);
+		if(tos)
+			this.topOfStack = tos;
+		else
 			this.topOfStack = Utility.parseValue(Settings.launch.topOfStack);
 		if(isNaN(this.topOfStack))
 			this.topOfStack = 0x10000;
@@ -104,9 +106,9 @@ class LabelsClass {
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
-	 * @param lineHandler Every line of the list file is passed to this handler. Can be omitted.
+	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string) => {}) {
+	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -130,6 +132,7 @@ class LabelsClass {
 		let base = 0;
 		let prev = -1;
 		let line;
+		let lineNumber = 0;
 		for( let origLine of listLines) {
 			// Filter line
 			if(filterRegEx)
@@ -183,10 +186,11 @@ class LabelsClass {
 			listFile.push(entry)
 
 			// Call line handler (if any)
-			lineHandler(address, line);
+			lineHandler(address, line, lineNumber);
 
 			// next
 			prev = address
+			lineNumber ++;
 		}
 
 		/**

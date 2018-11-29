@@ -4,12 +4,14 @@ import { Emulator } from './emulatorfactory';
 //import { EmulDebugAdapter } from './emuldebugadapter';
 
 /// For saving/restoring the state.
-
+//import * as fs from 'fs';
+import * as BinaryFile from 'binary-file';
+//var BinaryFile = require('binary-file');
 
 
 export class StateZ80 {
 	/// Stores all registers.
-	public registers = new Array<number>();
+	public registers: Uint16Array;
 
 	/// All registers to save/restore.
 	protected allRegs = [
@@ -21,6 +23,7 @@ export class StateZ80 {
 
 	/// Constructor:
 	constructor() {
+		this.registers = new Uint16Array(this.allRegs.length);
 	}
 
 	/// Factory.
@@ -34,24 +37,24 @@ export class StateZ80 {
 		}
 	}
 
+
 	/**
-	 * Called from "-state save" command.
 	 * Stores all registers.
 	 * @param handler(stateData) The handler that is called after restoring.
 	 */
 	public stateSave(handler?: (stateData) => void) {
 		// Save all registers
-		this.registers = new Array<number>();
+		let i = 0;
 		for( const regName of this.allRegs) {
 			Emulator.getRegisterValue( regName, value => {
-				this.registers.push(value);
+				this.registers[i] = value;
+				i ++;
 			});
 		}
 	}
 
 
 	/**
-	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * @param handler The handler that is called after restoring.
 	 */
@@ -66,18 +69,17 @@ export class StateZ80 {
 };
 
 
-class StateZX16K extends StateZ80 {
-	/// Stores all registers.
-	public registers = new Array<number>();
-
+export class StateZX16K extends StateZ80 {
 	/// Stores the RAM memory banks.
-	public banks = new Map<number, Uint8Array>();
+	protected banks = new Array<Uint8Array>();
+	protected bankNrs = new Array<number>();
 
 	/// Constructor:
 	constructor() {
 		super();
 		// Default = 16K
-		this.banks.set(5, new Uint8Array(0x4000));
+		this.bankNrs.push(5);
+		this.banks.push(new Uint8Array(1));
 	}
 
 
@@ -96,6 +98,57 @@ class StateZX16K extends StateZ80 {
 
 
 	/**
+	 * Writes all data to the binary file.
+	 * @param binFile The opened file descriptor.
+	 */
+	public async write(binFile: BinaryFile) {
+		// Write registers
+		const bufRegs = new Buffer(this.registers.buffer);
+		await binFile.write(bufRegs);
+
+		//for(const reg of this.registers)
+		//	await binFile.writeUInt16(reg);
+		// Write count of banks and bank numbers
+		await binFile.writeUInt16(this.bankNrs.length);
+		for(const bankNr of this.bankNrs)
+			await binFile.writeUInt16(bankNr);
+		// Write all mem banks with size
+		for(const bank of this.banks) {
+			// size
+			await binFile.writeUInt16(bank.length);
+			// data
+			await binFile.write(new Buffer(bank.buffer));
+		}
+	}
+
+
+	/**
+	 * Loads all data from a binary file.
+	 * @param binFile The opened file descriptor.
+	 */
+	public async read(binFile: BinaryFile) {
+		// Read registers
+		const bufRegs = await binFile.read(this.allRegs.length*2);
+		this.registers = new Uint16Array(bufRegs.buffer);
+
+		// Read count of banks and bank numbers
+		const count = await binFile.readUInt16();
+		this.bankNrs =  new Array<number>(count);
+		for(let i=0; i<count; i++)
+			this.bankNrs[i] = await binFile.readUInt16();
+		// Write all mem banks with size
+		this.banks =  new Array<Uint8Array>(count);
+		for(let i=0; i<count; i++) {
+			// size
+			const length = await binFile.readUInt16();
+			// data
+			const bufBank = await binFile.read(length);
+			this.banks[i] = new Uint8Array(bufBank.buffer);
+		}
+	}
+
+
+	/**
 	 * Called from "-state save" command.
 	 * Stores all RAM + the registers.
 	 * @param handler(stateData) The handler that is called after restoring.
@@ -104,18 +157,17 @@ class StateZX16K extends StateZ80 {
 		// Save all registers
 		super.stateSave();
 		// Save all RAM, all memory banks (exclude ROM)
-		const count = this.banks.size;
+		const count = this.banks.length;
 		let i = 0;
-		const bankNrs = new Array<number>();
-		for(const [bankNr,] of this.banks) {
+		const bankNrs = this.bankNrs.slice(0);	// clone
+		for(const bankNr of this.bankNrs) {
 			// Get address
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
-			bankNrs.push(bankNr);
 			Emulator.getMemoryDump(address, 0x4000, data => {
 				const bnr = bankNrs.shift();
 				if(bnr != undefined)	// calm the transpiler
-					this.banks.set(bnr, data);
+					this.banks[i] = data;
 				// Call handler
 				i ++;
 				if(i >= count && handler)
@@ -136,12 +188,14 @@ class StateZX16K extends StateZ80 {
 //return; // REMOVE
 
 		// Restore all RAM (exclude ROM)
-		const count = this.banks.size;
+		const count = this.banks.length;
 		let i = 0;
-		for(const [bankNr,bankData] of this.banks) {
+		let k = 0;
+		for(const bankNr of this.bankNrs) {
 			// Get address
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
+			const bankData = this.banks[k++];
 			Emulator.writeMemoryDump(address, bankData, () => {
 				// Call handler
 				i ++;
@@ -157,8 +211,10 @@ class StateZX48K extends StateZX16K {
 	constructor() {
 		super();
 		// Add 2 more banks
-		this.banks.set(2, new Uint8Array(0x4000));
-		this.banks.set(0, new Uint8Array(0x4000));
+		this.bankNrs.push(2);
+		this.banks.push(new Uint8Array(1));
+		this.bankNrs.push(0);
+		this.banks.push(new Uint8Array(1));
 	}
 };
 
@@ -292,7 +348,7 @@ class StateTBBlue extends StateZX128K {
 		// Save sprites
 
 /*
-Nee, ich muss alle NExt Register über die Emulator Klasse verfügbar machen für andere Funktionalität sowieso.
+Nee, ich muss alle Next Register über die Emulator Klasse verfügbar machen für andere Funktionalität sowieso.
 Die State save Funktionen sollte ich aber vom spezifischen Emulator machen lassen.
 Dann wird zxstate eigentlich nicht mehr gebraucht.
 */

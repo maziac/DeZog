@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1
+- Fixed Event-Stream vulnerability.
+- Added breakpoint conditions that are translated into the ZEsarUX condition syntax.
+- Added parsing for ASSERTs.
+- New commands: "ASSERT enable|disable|status" (still experimental)
+- "state save" now persistent.
+
 ## 0.6.0
 - Changed handling of code areas without sources. These areas are now automatically disassembled.
 - Disassembly done with z80dismblr.

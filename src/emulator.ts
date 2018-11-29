@@ -317,6 +317,22 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
+	 * Set all ASSERT breakpoints.
+	 * Called only once.
+	 * @param asserts A list of addresses with asserts (conditions). If the condition is not true the
+	 * breakpoint will fire.
+	 * Note: the emulator will change the generic condition format into a proprietary one
+	 * on its own.
+	 * @param handler() Is called after the last asssert is set.
+	 * @param errorHandler(errText) Is called if an error occurs. E.g.
+	 * if a condition cannot be parsed.
+	 */
+	public setASSERTs(asserts: Array<EmulatorBreakpoint>, finalHandler: () => void, errorHandler: (errText: string) => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
 	 * Clears one breakpoint.
 	 */
 	protected removeBreakpoint(bp: EmulatorBreakpoint) {

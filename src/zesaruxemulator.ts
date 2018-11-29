@@ -364,7 +364,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC'));
 
 			// calculate the depth of the call stack
-			var depth = (Labels.topOfStack - sp)/2;	// 2 bytes per word
+			const tos = Labels.topOfStack
+			var depth = (tos - sp)/2;	// 2 bytes per word
 			if(depth>20)	depth = 20;
 
 			// Check if callstack need to be called
@@ -696,6 +697,74 @@ export class ZesaruxEmulator extends EmulatorClass {
 	}
 
 
+	/**
+	 * Converts a condifion into the special format that ZEsarUX uses.
+	 * Please ntoe that longer complex forms are not possible with zesarux
+	 * becasue it does not support parenthesis and just evaluates one
+	 * after the other.
+	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
+	 * Format "variable comparison value" (variable=register)
+	 * @returns The zesarux format
+	 */
+	protected convertCondition(condition: string): string|undefined {
+		if(!condition || condition.length == 0)
+			return undefined;	// No condition
+
+		const regex = /([a-z]+)\s*([<>=!]+)\s*([0-9]*)\s*(\|\||&&*)?/gi;
+		let conds = '';
+		let match;
+		while((match = regex.exec(condition))) {
+			// Get arguments
+			let varString = match[1] || "";
+			varString = varString.trim();
+			let compString = match[2] || "";
+			compString = compString.trim();
+			let valueString = match[3] || "";
+			valueString = valueString.trim();
+			let concatString = match[4] || "";
+			concatString = concatString.trim();
+
+			// Convert comparison
+			// ZEsarUX can recognize <,>,=,/ (/ means not equal).
+			assert(compString.length>0);
+			let resComp;
+			switch(compString) {
+				// > :
+				case '<=':	resComp = '<'; valueString = '('+valueString+')'+'+1'; break;
+				// < :
+				case '>=':	resComp = '>'; valueString = '('+valueString+')'+'-1'; break;
+				// != :
+				case '==':	resComp = '='; break;
+				// == :
+				case '!=':	resComp = '/'; break;
+				default:	resComp = compString; break;
+			}
+			assert(resComp);	// Otherwise unknown comparison
+			assert(resComp.length == 1);
+
+			// Convert value
+			const value = eval(valueString);
+
+			// Create zesarux condition
+			const zesaruxCondition = varString + resComp + value.toString();
+
+			// Handle concatenation
+			let resConcat = '';
+			if(concatString.length > 0) {
+				if(concatString == "&&")
+					resConcat = " and ";
+				else if(concatString == "||")
+					resConcat = " or ";
+				assert(resConcat.length > 0);
+			}
+			conds += zesaruxCondition + resConcat;
+		}
+
+		assert(conds.length > 0);
+		return conds;
+	}
+
+
 	/*
 	 * Sets breakpoint in the zesarux debugger.
 	 * Sets the breakpoint ID (bpId) in bp.
@@ -711,13 +780,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Create condition from address and bp.condition
 		let condition = '';
+		let zesaruxCondition = this.convertCondition(bp.condition);
 		if(bp.address >= 0) {
 			condition = 'PC=0'+Utility.getHexString(bp.address, 4)+'h';
-			if(bp.condition && bp.condition.length > 0)
+			if(zesaruxCondition)
 				condition += ' and ';
 		}
-		if(bp.condition && bp.condition.length > 0)
-			condition += bp.condition;
+		if(zesaruxCondition)
+			condition += zesaruxCondition;
 
 		// set action first (no action)
 		const shortCond = (condition.length < 50) ? condition : condition.substr(0,50) + '...';
@@ -927,14 +997,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param stateDate Pointer to the data to restore.
+	 * @param stateData Pointer to the data to restore.
 	 * @param handler The handler that is called after restoring.
 	 */
-	public stateRestore(stateDate: StateZ80, handler?: ()=>void) {
+	public stateRestore(stateData: StateZ80, handler?: ()=>void) {
 		// Clear register cache
 		this.RegisterCache = undefined;
 		// Restore state
-		stateDate.stateRestore(handler);
+		stateData.stateRestore(handler);
 	}
 
 

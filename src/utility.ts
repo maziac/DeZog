@@ -7,10 +7,15 @@ import { Z80Registers } from './z80Registers';
 import { Emulator } from './emulatorfactory';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as util from 'util';
 
 
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
-const tmpDasmFileName = 'disasm.asm';
+const TmpDasmFileName = 'disasm.asm';
+
+
+/// The filename(s) used for saving the state.
+const StateFileName = 'state_%s.bin';
 
 
 export class Utility {
@@ -185,20 +190,23 @@ export class Utility {
 	 * LBL_TEST+1 => 32769, 8001h
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
+	 * @param evalRegisters If true then register names will also be evaluate.
 	 * @returns The evaluated number.
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
-	public static evalExpression(expr: string):number {
+	public static evalExpression(expr: string, evalRegisters = true): number {
 		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9_]*|'[\S ]+')/g, (match, p1) => {
 			let res;
-			// Check if it might be a register name.
-			if(Z80Registers.isRegister(p1)) {
-				// Note: this is called synchronously because the cached register is available.
-				// If (it should not but if) it would be called asynchronously the
-				// addressString would simply be not decoded.
-				Emulator.getRegisterValue(p1, value => {
-					res = value;
-				});
+			if(evalRegisters) {
+				// Check if it might be a register name.
+				if(Z80Registers.isRegister(p1)) {
+					// Note: this is called synchronously because the cached register is available.
+					// If (it should not but if) it would be called asynchronously the
+					// addressString would simply be not decoded.
+					Emulator.getRegisterValue(p1, value => {
+						res = value;
+					});
+				}
 			}
 			if(isNaN(res)) {
 				// Check for label
@@ -587,12 +595,35 @@ export class Utility {
 
 
 	/**
+	 * Returns the file path of a file in the tmp dir.
+	 * @param fileName E.g. "state0.bin"
+	 * @returns The relative file path, e.g. ".tmp/state0.bin".
+	 */
+	public static getRelTmpFilePath(fileName: string): string {
+		const relFilePath = path.join(Settings.launch.tmpDir, fileName);
+		return relFilePath;
+	}
+
+
+	/**
 	 * Returns the file path of the temporary disassembly file.
 	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
 	 */
-	public static getRelTmpDisasmFileName(): string {
-		const relFilePath = path.join(Settings.launch.tmpDir, tmpDasmFileName);
-		return relFilePath;
+	public static getRelTmpDisasmFilePath(): string {
+		return this.getRelTmpFilePath(TmpDasmFileName);
+	}
+
+
+	/**
+	 * Returns the file path of a state filename. Used for
+	 * saving/loading the state.
+	 * @param stateName A state name that is appended, e.g. "0"
+	 * @returns The relative file path, e.g. ".tmp/state_0.bin".
+	 */
+	public static getAbsStateFileName(stateName: string): string {
+		const fName = util.format(StateFileName, stateName);
+		const relPath = this.getRelTmpFilePath(fName);
+		return this.getAbsFilePath(relPath);
 	}
 
 
