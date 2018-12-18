@@ -31,8 +31,11 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 				// Enable additional features
 				ZesaruxExtEmulator.prototype.initBreakpoints = ZesaruxExtEmulator.prototype.initBreakpointsExt;
 
-				ZesaruxExtEmulator.prototype.setWPMEM = ZesaruxExtEmulator.prototype.setWPMEMExt;
+				ZesaruxExtEmulator.prototype.setWatchpoints = ZesaruxExtEmulator.prototype.setWatchpointsExt;
 				ZesaruxExtEmulator.prototype.enableWPMEM = ZesaruxExtEmulator.prototype.enableWPMEMExt;
+
+				ZesaruxExtEmulator.prototype.setAssertBreakpoints = ZesaruxExtEmulator.prototype.setAssertBreakpointsExt;
+				ZesaruxExtEmulator.prototype.enableAssertBreakpoints = ZesaruxExtEmulator.prototype.enableAssertBreakpointsExt;
 
 				ZesaruxExtEmulator.prototype.setBreakpoint = ZesaruxExtEmulator.prototype.setBreakpointExt;
 				ZesaruxExtEmulator.prototype.removeBreakpoint = ZesaruxExtEmulator.prototype.removeBreakpointExt;
@@ -80,22 +83,6 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 
 
 	/**
-	 * Thin wrapper around setWatchpoints just to catch and store
-	 * the used breakpoint IDs.
-	 * Called only once.
-	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler() Is called after the last watchpoint is set.
-	 */
-	public setWPMEMExt(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
-		this.setWatchpointsExt(watchPoints, wps => {
-			this.watchpoints = wps;
-			handler();
-		});
-		this.wpmemEnabled = true;
-	}
-
-
-	/**
 	 * Enables/disables all WPMEM watchpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
@@ -108,6 +95,51 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 				zSocket.send('clear-fast-breakpoint ' + wp.address + ' ' + + wp.size); // 'clear-fast-breakpoint' is correct
 
 		this.wpmemEnabled = enable;
+		zSocket.executeWhenQueueIsEmpty(handler);
+	}
+
+
+		/**
+	 * Sets the watchpoints in the given list.
+	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 */
+	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericWatchpoint>, handler?: (assertBreakpoints:Array<GenericWatchpoint>) => void) {
+		// Set breakpoints
+		for(let abp of assertBreakpoints) {
+			// Create breakpoint
+			zSocket.send('set-fast-breakpoint ' + abp.address + ' ' + abp.size + ' ' + abp.conditions  );
+		}
+		this.assertBreakpoints = assertBreakpoints;
+
+		// Call handler
+		if(handler) {
+			zSocket.executeWhenQueueIsEmpty(() => {
+				// Copy array
+				const abps = assertBreakpoints.slice(0);
+				handler(abps);
+			});
+		}
+	}
+
+
+	/**
+	 * Enables/disables all assert breakpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableAssertBreakpointsExt(enable: boolean, handler: () => void) {
+		if(enable) {
+			this.setAssertBreakpointsExt(this.assertBreakpoints, ()=>{});
+		}
+		else {
+			// Remove breakpoints
+			for(let wp of this.assertBreakpoints) {
+				zSocket.send('clear-fast-breakpoint ' + wp.address + ' ' + + wp.size);
+			}
+		}
+		this.assertBreakpointsEnabled = enable;
 		zSocket.executeWhenQueueIsEmpty(handler);
 	}
 

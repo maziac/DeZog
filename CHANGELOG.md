@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.2
+- Debugging can now start immediately after loading the snapshot file. Requires ZEsarUX 7.2.
+- Setting breakpoints from vscode without interrupting a running program.
+- "startAutomatically" launch option working now.
+- Option "loadSnap" replaced by "load". "load" allows for loading .sna and .tap files.
+- "wpmem"/"assert" now disabled by default. It can be turned on manually or in the launch.json.
+- ASSERTs now work similar to WPMEM. They are not combined with vscode breakpoints anymore.
+- log configuration moved to the launch settings.
+- socketTimeout configurable.
+
 ## 0.6.1
 - Fixed Event-Stream vulnerability.
 - Added breakpoint conditions that are translated into the ZEsarUX condition syntax.

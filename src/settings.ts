@@ -45,9 +45,18 @@ export interface Formatting {
 
 	/// Format for the pushed values in the STACK area.
 	stackVar: string;
-
-
 }
+
+
+/// Used to configure the logging.
+export interface LogDestinations {
+	/// Determines if the output should go to vscode.
+	channelOutputEnabled: boolean;
+
+	/// If given, the log is additionally put to the givn file.
+	filePath: string|undefined;
+}
+
 
 /**
  * See also package.json.
@@ -81,8 +90,8 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack.
 	topOfStack: string;
 
-	/// If defined the path to a snapshot file to load at startup
-	loadSnap: string;
+	/// If defined the path to a snapshot (or tap) file to load at startup
+	load: string;
 
 	/// Start automatically after launch.
 	startAutomatically: boolean;
@@ -114,7 +123,14 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Tab size used in formatting.
 	tabSize: number;
 
-	trace: boolean;		/// Enable logging of the DAP
+	/// The socket timeout in seconds.
+	socketTimeout: number;
+
+	/// General logs.
+	log: LogDestinations;
+
+	// Logging of the socket.
+	logSocket: LogDestinations;
 }
 
 
@@ -148,7 +164,7 @@ export class Settings {
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
 				topOfStack: <any>undefined,
-				loadSnap: <any>undefined,
+				load: <any>undefined,
 				startAutomatically: <any>undefined,
 				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
@@ -156,7 +172,9 @@ export class Settings {
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
-				trace: <any>undefined
+				socketTimeout: <any>undefined,
+				log: <any>undefined,
+				logSocket: <any>undefined
 			}
 		}
 
@@ -194,10 +212,10 @@ export class Settings {
 			Settings.launch.labelsFiles = [];
 		if(!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = '0x10000';
-		if(Settings.launch.loadSnap)
-			Settings.launch.loadSnap = Utility.getAbsFilePath(Settings.launch.loadSnap);
+		if(Settings.launch.load)
+			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
 		else
-			Settings.launch.loadSnap = '';
+			Settings.launch.load = '';
 		if(Settings.launch.tmpDir == undefined)
 			Settings.launch.tmpDir = '.tmp';
 		Settings.launch.tmpDir = Utility.getAbsFilePath
@@ -209,15 +227,13 @@ export class Settings {
 		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
 			Settings.launch.disassemblerArgs.esxdosRst = false;
 		if(Settings.launch.startAutomatically == undefined)
-			Settings.launch.startAutomatically = true;
+			Settings.launch.startAutomatically = false;
 		if(Settings.launch.resetOnLaunch == undefined)
 			Settings.launch.resetOnLaunch = true;
 		if(Settings.launch.commandsAfterLaunch == undefined)
 			Settings.launch.commandsAfterLaunch = [];
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
-		if(Settings.launch.trace == undefined)
-			Settings.launch.trace = false;
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
 				registerVar: <any>undefined,
@@ -264,6 +280,8 @@ export class Settings {
 			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{{:labels|, |}}";
 		if(!Settings.launch.tabSize)
 			Settings.launch.tabSize = 6;
+		if(!Settings.launch.socketTimeout)
+			Settings.launch.socketTimeout = 5;	///< 5 secs
 
 		// Memory viewer
 		if(!Settings.launch.memoryViewer) {
@@ -285,6 +303,10 @@ export class Settings {
 			};
 		}
 
+		if(!Settings.launch.log)
+			Settings.launch.log = {channelOutputEnabled: false, filePath: undefined};
+		if(!Settings.launch.logSocket)
+			Settings.launch.logSocket = {channelOutputEnabled: false, filePath: undefined};
 	}
 }
 

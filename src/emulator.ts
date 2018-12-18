@@ -211,10 +211,11 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * 'continue' debugger program execution.
-	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	 */
-	public continue(handler:()=>void): void {
+	  * 'continue' debugger program execution.
+	  * @param contExecHandler The handler that is called when the run command is executed.
+	  * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	  */
+	 public continue(contExecHandler: ()=>void, contStoppedHandler: (data)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -284,12 +285,10 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * Set all WPMEM watchpoints.
-	 * Called only once.
+	 * Sets the watchpoint array.
 	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler() Is called after the last watchpoint is set.
 	 */
-	public setWPMEM(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
+	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
 		assert(false);	// override this
 	}
 
@@ -302,6 +301,37 @@ export class EmulatorClass extends EventEmitter {
 	public enableWPMEM(enable: boolean, handler: () => void) {
 		assert(false);	// override this
 	}
+
+
+	/**
+	 * Sets the ASSERTs array.
+	 * @param assertBreakpoints A list of addresses to put a guard on.
+	 */
+	public setASSERT(assertBreakpoints: Array<GenericWatchpoint>) {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * Set all assert breakpoints.
+	 * Called only once.
+	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
+	 * @param handler() Is called after the last watchpoint is set.
+	 */
+	public setAssertBreakpoints(assertBreakpoints: Array<GenericWatchpoint>, handler: () => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * Enables/disables all assert breakpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+		assert(false);	// override this
+	}
+
 
 	/*
 	 * Sets breakpoint in the zesarux debugger.
@@ -348,7 +378,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
 	 * @param handler(bps) On return the handler is called with all breakpoints.
-	 * @param tmpDisasmFileHandler(bp) If a line cannot e determined then this handler
+	 * @param tmpDisasmFileHandler(bp) If a line cannot be determined then this handler
 	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
 	 * an EmulatorBreakpoint.
 	 */
@@ -356,59 +386,64 @@ export class EmulatorClass extends EventEmitter {
 		handler:(bps: Array<EmulatorBreakpoint>)=>void,
 		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
 
-		// get all old breakpoints for the path
-		const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
+		try {
+			// get all old breakpoints for the path
+			const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
 
-		// Create new breakpoints
-		const currentBps = new Array<EmulatorBreakpoint>();
-		givenBps.forEach( bp => {
-			let ebp;
-			// get PC value of that line
-			let addr = Labels.getAddrForFileAndLine(path, bp.lineNr);
-			// Check if valid line
-			if(addr >= 0) {
-				// Now search last line with that pc
-				const file = Labels.getFileAndLineForAddress(addr);
-				// Check if right file
-				if(path.valueOf() == file.fileName.valueOf()) {
-					// create breakpoint object
-					ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition };
+			// Create new breakpoints
+			const currentBps = new Array<EmulatorBreakpoint>();
+			givenBps.forEach( bp => {
+				let ebp;
+				// get PC value of that line
+				let addr = Labels.getAddrForFileAndLine(path, bp.lineNr);
+				// Check if valid line
+				if(addr >= 0) {
+					// Now search last line with that pc
+					const file = Labels.getFileAndLineForAddress(addr);
+					// Check if right file
+					if(path.valueOf() == file.fileName.valueOf()) {
+						// create breakpoint object
+						ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition };
+					}
 				}
-			}
-			else {
-				// Check if there is a routine for the temporary disassembly file
-				ebp = tmpDisasmFileHandler(bp);
-			}
+				else {
+					// Check if there is a routine for the temporary disassembly file
+					ebp = tmpDisasmFileHandler(bp);
+				}
 
-			// add to array
-			if(!ebp) {
-				// Breakpoint position invalid
-				ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '' };
-			}
-			currentBps.push(ebp);
-		});
+				// add to array
+				if(!ebp) {
+					// Breakpoint position invalid
+					ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '' };
+				}
+				currentBps.push(ebp);
+			});
 
-		// Now check which breakpoints are new or removed (this includes 'changed').
-		const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
-		const removedBps = oldBps.filter(bp => bp.address >= 0  && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
+			// Now check which breakpoints are new or removed (this includes 'changed').
+			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
+			const removedBps = oldBps.filter(bp => bp.address >= 0  && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
 
-		// remove old breakpoints
-		removedBps.forEach(bp => {
-			// from zesarux
-			this.removeBreakpoint(bp);
-		});
+			// remove old breakpoints
+			removedBps.forEach(bp => {
+				// from zesarux
+				this.removeBreakpoint(bp);
+			});
 
-		// Add new breakpoints and find free breakpoint ids
-		newBps.forEach(bp => {
-			// set breakpoint
-			this.setBreakpoint(bp);
-		});
+			// Add new breakpoints and find free breakpoint ids
+			newBps.forEach(bp => {
+				// set breakpoint
+				this.setBreakpoint(bp);
+			});
 
-		// get all breakpoints for the path
-		//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
+			// get all breakpoints for the path
+			//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
 
-		// call handler
-		handler(currentBps);
+			// call handler
+			handler(currentBps);
+		}
+		catch(e) {
+			console.log("Error: ", e);
+		}
 	}
 
 

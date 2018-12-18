@@ -74,6 +74,7 @@ export class BaseView {
 	protected parent: EventEmitter;	///< We listen for 'update' on this emitter to update the html.
 
 	protected serializer = new CallSerializer('ViewUpdate');
+
 	/**
 	 * Creates the basic view.
 	 * @param parent The parent which may send 'update' notifications.

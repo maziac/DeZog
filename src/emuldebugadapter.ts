@@ -64,15 +64,6 @@ export class EmulDebugAdapter extends DebugSession {
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
 
-	/// Used to hold saved state data.
-	//protected stateData: StateZ80;
-
-	/// Determines if source code ASSERTs are passed as breakpoints to the emulator.
-	protected ASSERTenabled = false;
-
-	/// The array of all source code asserts. Used to enable disable the ASSERT breakpoints
-	/// in the emulator.
-	protected ASSERTs: Array<vscode.SourceBreakpoint>;
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -119,7 +110,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
-	 * Creates a new disassembler and coonfigures it.
+	 * Creates a new disassembler and configures it.
 	 * Called on start of connection.
 	 */
 	public setupDisassembler() {
@@ -278,11 +269,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Stop machine
 		Emulator.stop(() => {
 			// And setup a new one
-			this.startEmulator(msg => {
-				response.message = msg;
-				response.success = (msg == undefined);
-				this.sendResponse(response);
-			});
+			this.launch(response);
 		});
 	}
 
@@ -301,6 +288,8 @@ export class EmulDebugAdapter extends DebugSession {
 			// Save args
 			const rootFolder = (vscode.workspace.workspaceFolders) ?vscode.workspace.workspaceFolders[0].uri.path : '';
 			Settings.Init(args, rootFolder);
+			const channelOut = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
+			Log.init(channelOut, Settings.launch.log.filePath);
 		}
 		catch(e) {
 			// Some error occurred
@@ -310,6 +299,16 @@ export class EmulDebugAdapter extends DebugSession {
 			return;
 		}
 
+		// Launch emulator
+		this.launch(response);
+	}
+
+
+	/**
+	 * Launches the emulator. Can be called from launchRequest and restartRequest.
+	 * @param response
+	 */
+	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		this.setupDisassembler();
 
@@ -327,6 +326,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * connection is up and running.
 	 */
 	protected startEmulator(handler: (msg?: string)=>void) {
+		/*
 		try {
 			// Clear all temporary files
 			//Utility.removeAllTmpFiles();
@@ -338,6 +338,7 @@ export class EmulDebugAdapter extends DebugSession {
 			handler("Error while removing temp files.");
 			return;
 		}
+		*/
 
 		try {
 			// init labels
@@ -346,7 +347,7 @@ export class EmulDebugAdapter extends DebugSession {
 		catch(e) {
 			// Some error occurred
 			this.exit('Labels: ' + e.message);
-			handler("Error while initializeing labels.");
+			handler("Error while initializing labels.");
 			return;
 		}
 
@@ -355,7 +356,7 @@ export class EmulDebugAdapter extends DebugSession {
 		Emulator.init();
 
 		Emulator.once('initialized', () => {
-			//Array for found watchpoints: WPMEM
+			// Array for found watchpoints: WPMEM
 			const watchPointLines = new Array<{address: number, line: string}>();
 			const assertLines = new Array<{address: number, line: string}>();
 			// Load files
@@ -448,16 +449,15 @@ export class EmulDebugAdapter extends DebugSession {
 					}
 				}
 				// Set watchpoints (memory guards)
-				Emulator.setWPMEM(watchpoints, () => {
-					// "Return"
-					this.serializer.endExec();
-				});
+				Emulator.setWPMEM(watchpoints);
+				// "Return"
+				this.serializer.endExec();
 			});
 
 
 			this.serializer.exec(() => {
 				// ASSERTs
-				const ASSERTmap = new Map<number,vscode.SourceBreakpoint>();
+				const assertMap = new Map<number,GenericWatchpoint>();
 				// Convert ASSERTS to watchpoints
 				for(let entry of assertLines) {
 					// ASSERT:
@@ -554,33 +554,22 @@ export class EmulDebugAdapter extends DebugSession {
 						}
 						// Check
 						if(concatString.length > 0)	// has to end without concatenation symbol
-							throw Error("Expected condition after contatenation symbol '" + concatString + "'");
+							throw Error("Expected condition after concatenation symbol '" + concatString + "'");
 
 						// Check if ASSERT for that address already exists.
-						let bp = ASSERTmap.get(entry.address);
+						let bp = assertMap.get(entry.address);
 						if(bp) {
 							// Already exists: just add condition.
 							// Check that 2nd condition is not too complicated.
 							if(conds.indexOf("&&") >= 0)
 								throw Error("Condition too complicated. 2 ASSERTs at the same address are combined and the 2nd condition must not include a '||' condition.");
-							// Concatenate conditions. bp.condition is readonly so we need to create a new breakpoint.
-							const newCond = bp.condition + ' || ' + conds;
-							const newBp = new vscode.SourceBreakpoint(bp.location, bp.enabled, newCond, bp.hitCondition, bp.logMessage);
-							// Exchange new breakpoint
-							ASSERTmap.set(entry.address, newBp);
+							// Concatenate conditions.
+							bp.conditions += ' || ' + conds;
 						}
 						else {
 							// Breakpoint for address does not yet exist. Create a new one.
-							// Get file and line from address
-							const file = Labels.getFileAndLineForAddress(entry.address);
-							const filePath = file.fileName;
-							const lineNr = file.lineNr;
-							const uri = vscode.Uri.file(filePath);
-							// Location
-							const loc = new vscode.Location(uri, new vscode.Position(lineNr, 0));
-							bp = new vscode.SourceBreakpoint(loc, true, conds);
-							// Store
-							ASSERTmap.set(entry.address, bp);
+							const assertBp = {address: entry.address, size: 1, access: "p", conditions: conds || ''};
+							assertMap.set(entry.address, assertBp);
 						}
 					}
 					catch(e) {
@@ -589,11 +578,9 @@ export class EmulDebugAdapter extends DebugSession {
 				}
 
 				// Convert map to array.
-				this.ASSERTs = Array.from(ASSERTmap.values());
-
-				// Enable all ASSERTs.
-				this.enableASSERTs(true);
-
+				const assertsArray = Array.from(assertMap.values());
+				// Set assert breakpoints
+				Emulator.setASSERT(assertsArray);
 				// "Return"
 				this.serializer.endExec();
 			});
@@ -605,14 +592,8 @@ export class EmulDebugAdapter extends DebugSession {
 				const regs = Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
 				registerMemoryView.update();
-				// Send stop
-				this.sendEvent(new StoppedEvent('entry', EmulDebugAdapter.THREAD_ID));
-				// socket is connected, allow setting breakpoints
-				this.sendEvent(new InitializedEvent());
 				// "Return"
 				this.serializer.endExec();
-				// Respond
-				handler();
 			});
 
 			// Run user commands after load.
@@ -626,6 +607,27 @@ export class EmulDebugAdapter extends DebugSession {
 					});
 				});
 			}
+
+			this.serializer.exec(() => {
+				// Socket is connected, allow setting breakpoints
+				this.sendEvent(new InitializedEvent());
+				this.serializer.endExec();
+				// Respond
+				handler();
+			});
+
+			this.serializer.exec(() => {
+				// Check if program should be automatically started
+				if(Settings.launch.startAutomatically) {
+					this.emulatorContinue();
+					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without vscode would stay stopped.
+					this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+				}
+				else {
+					this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));
+				}
+				this.serializer.endExec();
+			});
 		});
 
 		Emulator.on('warning', message => {
@@ -639,46 +641,6 @@ export class EmulDebugAdapter extends DebugSession {
 			this.exit(err.message);
 		});
 
-	}
-
-
-	/**
-	 * Enables or disables the ASSERT breakpoints.
-	 * @param enable true/false.
-	 */
-	protected enableASSERTs(enable: boolean) {
-		if(enable) {
-			// Get all breakpoints that already exist at certain addresses.
-			const bps = vscode.debug.breakpoints;
-			const removeBps = bps.filter(bp => {
-				// Check if SourceBreakpoint
-				if(!bp.hasOwnProperty('location'))
-					return false;
-				// Test if a breakpoint already exists at that line.
-				const sbp = bp as vscode.SourceBreakpoint;
-				const sbpSrc = sbp.location.uri.fsPath;
-				const sbpLineNr = sbp.location.range.start.line;
-				for(const abp of this.ASSERTs) {
-					if(sbpLineNr == abp.location.range.start.line
-						&& sbpSrc == abp.location.uri.fsPath) {
-						// Found same breakpoint. Remove it.
-						return true;
-					}
-				}
-			});
-
-			// Remove them
-			vscode.debug.removeBreakpoints(removeBps);
-
-			// Add ASSERT breakpoints
-			vscode.debug.addBreakpoints(this.ASSERTs);
-		}
-		else {
-			// Just remove any already set breakpoints
-			vscode.debug.removeBreakpoints(this.ASSERTs);
-		}
-
-		this.ASSERTenabled = enable;
 	}
 
 
@@ -863,7 +825,7 @@ export class EmulDebugAdapter extends DebugSession {
 					sfrs.push(sf);
 				}
 
-				// Create array with addresses that need to be feteched for disassembly
+				// Create array with addresses that need to be fetched for disassembly
 				for(let index=0; index<frameCount; index++) {
 					const sf = sfrs[index];
 					if(!sf.source)
@@ -1220,22 +1182,38 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			Emulator.continue(data => {
-				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
-
-				// Send output event to inform the user about the reason
-				const e: DebugProtocol.OutputEvent = new OutputEvent(data + '\n', 'console');
-				this.sendEvent(e);
-
-				// Update memory dump etc.
-				this.update();
-
-				this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
-			});
-
-			// Response is sent immediately
+			this.emulatorContinue(data => {
+					// Send output event to inform the user about the reason
+					const e: DebugProtocol.OutputEvent = new OutputEvent(data + '\n', 'console');
+					this.sendEvent(e);
+				}
+			);
 			this.sendResponse(response);
 			this.serializer.endExec();
+		});
+	}
+
+
+	/**
+	 * Calls 'continue' (run) on the emulator.
+	 * Called at the beginning (startAutomatically) and from the
+	 * vscode UI (continueRequest).
+	 * @param stopHandler(string) Is called when continue has been stopped,
+	 * e.g. by a breakpoint. Can be omitted.
+	 */
+	protected emulatorContinue(stopHandler:(data: string)=>void = ()=>{}) {
+		Emulator.continue(data => {
+			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
+
+			// Update memory dump etc.
+			this.update();
+
+			// call handler
+			stopHandler(data);
+
+			// Send break
+			this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
+
 		});
 	}
 
@@ -1744,23 +1722,30 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalASSERT(tokens: Array<string>, handler: (text:string)=>void) {
+		const show = () => {
+			// Always show enable status of all WPMEM watchpoints
+			const enable = Emulator.assertBreakpointsEnabled;
+			const enableString = (enable) ? 'enabled' : 'disabled';
+			handler('ASSERT breakpoints are ' + enableString + '.');
+		}
+
 		const param = tokens[0] || '';
 		if(param == 'enable' || param == 'disable') {
-			// enable or disable all ASSERT breakpoints
+			// enable or disable all assert breakpoints
 			const enable = (param == 'enable');
-			this.enableASSERTs(enable);
+			Emulator.enableAssertBreakpoints(enable, () => {
+				// Print to console
+				show();
+			});
 		}
 		else if(param == 'status') {
 			// just show
+			show();
 		}
 		else {
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
 		}
-
-		// Always show enable status of all ASSERT
-		const enableString = (this.ASSERTenabled) ? 'enabled' : 'disabled';
-		handler('ASSERT breakpoints are ' + enableString + '.');
 	}
 
 
@@ -1794,7 +1779,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
 		}
-
 	}
 
 

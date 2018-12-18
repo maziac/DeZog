@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { zSocket, NO_TIMEOUT, ZesaruxSocket } from './zesaruxSocket';
+import { zSocket, ZesaruxSocket } from './zesaruxSocket';
 import { Z80Registers } from './z80Registers';
 import { Utility } from './utility';
 import { Labels } from './labels';
@@ -11,11 +11,12 @@ import { Frame } from './frame';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState } from './emulator';
 import { StateZ80 } from './statez80';
+import { CallSerializer } from './callserializer';
 
 
 
 /// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = 7.1;
+const MIN_ZESARUX_VERSION = 7.2;
 
 
 // Some Zesarux constants.
@@ -44,14 +45,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
 
-	/// Stores the wpmemWatchpoints
+	/// Stores the wpmem watchpoints
 	protected watchpoints = new Array<GenericWatchpoint>();
 
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled = false;
 
+	/// Stores the assert watchpoints
+	protected assertBreakpoints = new Array<GenericWatchpoint>();
+
+	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
+	public assertBreakpointsEnabled = false;
+
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
+
+	/// We need a serializer for some tasks.
+	protected serializer = new CallSerializer('ZesaruxEmulator');
+
 
 	/// Initializes the machine.
 	public init() {
@@ -150,18 +161,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
-				// Load snapshot file
-				if(Settings.launch.loadSnap)
-					zSocket.send('snapshot-load ' + Settings.launch.loadSnap);
-
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
 
+				// Load sna or tap file
+				if(Settings.launch.load)
+					zSocket.send('smartload ' + Settings.launch.load);
+
 				// Initialize breakpoints
 				this.initBreakpoints();
-
-				// WORKAROUND for zesarux: the first step does nothing
-				zSocket.send('cpu-step');
 			});
 
 			// Send 'initialize' to Machine.
@@ -394,20 +402,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	  * 'continue' debugger program execution.
-	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	  * @param contExecHandler The handler that is called when the run command is executed.
+	  * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	  */
-	 public continue(handler:(data)=>void): void {
+	 public continue(contStoppedHandler: (data)=>void): void {
+		// Change state
 		this.state = EmulatorState.RUNNING;
-		// Clear register cache
-		this.RegisterCache = undefined;
 		// Run
-		zSocket.send('run', data => {
+		//this.continueHandler = contStoppedHandler;
+		zSocket.sendInterruptable('run', data => {
+			//  (could take some time, e.g. until a breakpoint is hit)
 			this.state = EmulatorState.IDLE;
 			// Log reason
 			console.log(data);
-			// Call handler (could take some time, e.g. until a breakpoint is hit)
-			handler(data);
-		}, NO_TIMEOUT);
+			// Clear register cache
+			this.RegisterCache = undefined;
+			// Call handler
+			contStoppedHandler(data);
+		});
 	}
 
 
@@ -463,7 +475,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 					// Set action first (no action).
 					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
-					zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
+					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
 						// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
 						const condition = 'PC=' + (pc+2);	// PC+1 would be the normal return address.
 						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
@@ -658,18 +670,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Thin wrapper around setWatchpoints just to catch and store
-	 * the used breakpoint IDs.
-	 * Called only once.
+	 * Sets the watchpoint array.
 	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler() Is called after the last watchpoint is set.
 	 */
-	public setWPMEM(watchPoints: Array<GenericWatchpoint>, handler: () => void) {
-		this.setWatchpoints(watchPoints, wps => {
-			this.watchpoints = wps;
-			handler();
-		});
-		this.wpmemEnabled = true;
+	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
+		this.watchpoints = [...watchPoints];
 	}
 
 
@@ -694,6 +699,36 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 		this.wpmemEnabled = enable;
 		zSocket.executeWhenQueueIsEmpty(handler);
+	}
+
+
+	/**
+	 * Sets the ASSERTs array.
+	 * @param assertBreakpoints A list of addresses to put a guard on.
+	 */
+	public setASSERT(assertBreakpoints: Array<GenericWatchpoint>) {
+		this.assertBreakpoints = [...assertBreakpoints];
+	}
+
+
+	/**
+	 * Set all assert breakpoints.
+	 * Called only once.
+	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
+	 * @param handler() Is called after the last watchpoint is set.
+	 */
+	public setAssertBreakpoints(assertBreakpoints: Array<GenericWatchpoint>, handler: () => void) {
+		// not supported.
+	}
+
+
+	/**
+	 * Enables/disables all assert breakpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+		// not supported.
 	}
 
 
@@ -829,7 +864,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Disables all breakpoints set in zesarux on startup.
 	 */
 	protected clearAllZesaruxBreakpoints() {
-		for(var i=1; i<=ZesaruxEmulator.MAX_USED_BREAKPOINTS; i++) {
+		for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
 			zSocket.send('disable-breakpoint ' + i);
 		}
 	}
@@ -842,24 +877,28 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
 	 * @param handler(bps) On return the handler is called with all breakpoints.
-	 * @param tmpDisasmFileHandler(bpr) If a line cannot e determined then this handler
+	 * @param tmpDisasmFileHandler(bpr) If a line cannot be determined then this handler
 	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
 	 * an EmulatorBreakpoint.
 	 */
 	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
 		handler:(bps: Array<EmulatorBreakpoint>)=>void,
 		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
-		this.breakIfRunning();
-		// Do most of the work
-		super.setBreakpoints(path, givenBps,
-			bps => {
-				// But wait for the socket.
-				zSocket.executeWhenQueueIsEmpty( () => {
-					handler(bps);
-				});
-			},
-			tmpDisasmFileHandler
-		);
+
+		this.serializer.exec(() => {
+			// Do most of the work
+			super.setBreakpoints(path, givenBps,
+				bps => {
+					// But wait for the socket.
+					zSocket.executeWhenQueueIsEmpty(() => {
+						handler(bps);
+						// End
+						this.serializer.endExec();
+					});
+				},
+				tmpDisasmFileHandler
+			);
+		});
 	}
 
 

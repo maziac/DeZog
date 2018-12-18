@@ -5,37 +5,47 @@ import * as util from 'util';
 import * as vscode from 'vscode';
 
 
-/// All log output goes additionally here.
-let outFilePath: string;	// Disable
-//const outFilePath = "/Volumes/Macintosh HD 2/Projects/zesarux/vscode/z80-debug-adapter/logs/main.log";
-
-/// Output logging to the "OUTPUT" tab in vscode.
-let logOutput: vscode.OutputChannel;	// Disable
-//let logOutput = vscode.window.createOutputChannel("Z80 Debugger");
+// If there is a pause of 2 seconds between logs then an additional indication is logged.
+const PAUSE_LOG_TIME = 2;
 
 
 /**
  * Class for logging.
+ * This allows to instantiate a new class and log there into an own channel and own file.
+ * Or, you can use static methods to log globally.
  */
 export class Log {
 
+	/// All log output goes additionally here.
+	protected outFilePath: string|undefined;
+
+	/// Output logging to the "OUTPUT" tab in vscode.
+	protected logOutput: vscode.OutputChannel|undefined;
+
 	/// Last time a log has been written.
-	private static lastLogTime = Date.now();
+	protected lastLogTime = Date.now();
+
+	/// The index of the call stack that is used for the function name.
+	/// -1 = caller name disabled.
+	protected callerNameIndex = -1;
+
+	/**
+	 * Initializes the loggine. I.e. enables/disables logging to
+	 * vscode channel and file.
+	 * @param channelOutput If defined the name of the channel output.
+	 * @param filePath If set: log additionally to a file. Relative file path.
+	 */
+	public static init(channelOutput: string|undefined, filePath: string|undefined) {
+		LogGlobal.init(channelOutput, filePath);
+		LogGlobal.callerNameIndex++;
+	}
 
 
 	/**
 	 * Clears a former log file.
 	 */
 	public static clear() {
-		if(outFilePath) {
-			try {
-				writeFileSync(outFilePath, (new Date()).toString() + ': log started.\n');
-			}
-			catch(e) {
-				console.log('Error: '+e);
-			}
-		}
-		Log.lastLogTime = Date.now();
+		LogGlobal.clear();
 	}
 
 
@@ -46,34 +56,94 @@ export class Log {
 	 * @param args The log arguments
 	 */
 	public static log(...args) {
+		LogGlobal.log(...args);
+	}
+
+
+	/**
+	 * @return true if either logging to file or to channel is enabled (global logging).
+	 */
+	public static isEnabled(): boolean {
+		return LogGlobal.isEnabled();
+	}
+
+
+	/**
+	 * Initializes the logging. I.e. enables/disables logging to
+	 * vscode channel and file.
+	 * @param channelOutput If defined the name of the channel output.
+	 * @param filePath If set: log additionally to a file. Relative file path.
+	 * @param callerName If true the name of the calling method is shown.
+	 */
+	public init(channelOutput: string|undefined, filePath: string|undefined, callerName = true) {
+		this.outFilePath = filePath;
+		this.logOutput = (channelOutput) ? vscode.window.createOutputChannel(channelOutput) : undefined;
+		if(callerName)
+			this.callerNameIndex = 3;
+	}
+
+
+	/**
+	 * Clears a former log file.
+	 */
+	public clear() {
+		if(this.outFilePath) {
+			try {
+				writeFileSync(this.outFilePath, (new Date()).toString() + ': log started.\n');
+			}
+			catch(e) {
+				console.log('Error: '+e);
+			}
+		}
+		this.lastLogTime = Date.now();
+	}
+
+
+	/**
+	 * Logs to console.
+	 * Puts the caller name ('class.method'. E.g. "ZesaruxDebugSession.initializeRequest")
+	 * in front of each log.
+	 * @param args The log arguments
+	 */
+	public log(...args) {
 		// check time
-		const diffTime = (Date.now() - Log.lastLogTime)/1000;
-		if(diffTime > 2) {
+		const diffTime = (Date.now() - this.lastLogTime)/1000;
+		if(diffTime > PAUSE_LOG_TIME) {
 			// > 2 secs
-			Log.write('...');
-			Log.write('Pause for ' + diffTime + ' secs.');
-			Log.write('...');
+			this.write('...');
+			this.write('Pause for ' + diffTime + ' secs.');
+			this.write('...');
 		}
 		// write log
-		const who = Log.callerName() + ": ";
-		Log.write(who, ...args);
+		const who = this.callerName();
+		this.write(who, ...args);
 		// get new time
-		Log.lastLogTime = Date.now();
+		this.lastLogTime = Date.now();
+	}
+
+
+	/**
+	 * @return true if either logging to file or to channel is enabled.
+	 */
+	public isEnabled(): boolean {
+		return (this.logOutput != undefined) || (this.outFilePath != undefined);
 	}
 
 
 	/**
 	 * Writes to console and file.
+	 * @param format A format string for the args.
 	 * @param args the values to write.
 	 */
-	private static write(format: string, ...args) {
+	protected write(format: string, ...args) {
 		var text = util.format(format, ...args);
 		try {
 			// write to console
-			if(logOutput)
-				logOutput.appendLine(text);
+			if(this.logOutput)
+				this.logOutput.appendLine(text);
 			// Append to file
-			appendFileSync(outFilePath, text + '\n');
+			if(this.outFilePath)
+				appendFileSync(this.outFilePath, text + '\n');
 		}
 		catch(e) {
 		}
@@ -82,9 +152,12 @@ export class Log {
 
 	/**
 	 * Returns the caller name.
-	 * @returns 'class.method'. E.g. "ZesaruxDebugSession.initializeRequest"
+	 * @returns 'class.method'. E.g. "ZesaruxDebugSession.initializeRequest:"
 	 */
-	private static callerName(): string {
+	protected callerName(): string {
+		// Check if caller name is configured
+		if(this.callerNameIndex < 0)
+			return '';
 		// Throw error to get call stack
 		try {
 			throw new Error();
@@ -92,12 +165,17 @@ export class Log {
 		catch(e) {
 			try {
 				// Find caller name
-				return e.stack.split('at ')[3].split(' ')[0];
+				return e.stack.split('at ')[this.callerNameIndex].split(' ')[0] + ': ';
 			}
 			catch (e) {
 				return 'Unknown';
 			}
 		}
 	}
+
 }
+
+
+/// Global logging is instantiated.
+export let LogGlobal = new Log();
 

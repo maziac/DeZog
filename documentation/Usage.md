@@ -47,7 +47,7 @@ A typical configuration looks like this:
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
-            "loadSnap": "z80-sample-program.sna",
+            "load": "z80-sample-program.sna",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
        }
@@ -62,7 +62,7 @@ Please have a look at the (Listfile)[#listfile] section.
 - labelsFiles: The paths (relative to the 'rootFolder') of the labels files. Typically
 this is only one file created during building. But you could add multiple files here.
 You can also completely omit the label files but in that case the z80-debug support is very limited because it cannot help in resolving any labels to numbers and vice versa.
-- startAutomatically: see [Notes](#notes)
+- startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false)
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
@@ -81,7 +81,9 @@ In your launch.json:
 ~~~
 
 Note: instead of a label you can also use a fixed number.
-- loadSnap: The snaphsot file to load. On start of the debug session ZEsarUX is instructed to load this file. Note: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
+- load: The snapshot (or tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
+Note 1: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
+Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
 - smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depedning on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
@@ -193,7 +195,7 @@ Now start z80-debug by pressing the green arrow in the debug pane (make sure tha
 
 z80-debug will now
 - open the socket connection to ZEsarUX
-- instruct ZEsarUX to load the snapshot file
+- instruct ZEsarUX to load the snapshot file (or tap file)
 - set breakpoints (if there are breakpoints set in vscode)
 - put ZEsarUX into step mode ('enter-cpu-step') and stop/break the jst started assembler program
 
@@ -295,7 +297,8 @@ Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
 
-Note: IF you use WPMEM in your sources z80-debug will generate watchpoints after launch. If you don't want that (temporarily) you can add "-WPMEM disabled" in the "commandsAfterLaunch" settings.
+Note: WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enabled" in the "commandsAfterLaunch" settings.
+
 
 ### Asserts
 
@@ -334,7 +337,7 @@ instead: The ASSERT is on the next line i.e. at the address after the "LD" instr
 
 Note: The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 
-Note: IF you use ASSERTs in your sources z80-debug will generate breakpoints after launch. If you don't want that (temporarily) you can add "-ASSERT disabled" in the "commandsAfterLaunch" settings.
+Note: ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enabled" in the "commandsAfterLaunch" settings.
 
 
 ### Breakpoint conditions
@@ -539,7 +542,7 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 ## Known Issues
 
-- "startAutomatically" is ignored at the moment. ZEsarUX should be started manually before debugging
+- "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
 
 
 ## Notes
