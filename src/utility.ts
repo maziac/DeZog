@@ -642,7 +642,7 @@ export class Utility {
 			if(fName.startsWith("TMP_")) {
 				// Remove file
 				const absFName = Utility.getAbsFilePath(fName,dir);
-				fs.unlink(absFName);
+				fs.unlinkSync(absFName);
 			}
 		}
 	}

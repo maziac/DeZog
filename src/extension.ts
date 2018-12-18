@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { EmulDebugAdapter } from './emuldebugadapter';
 import * as Net from 'net';
+import * as assert from 'assert';
 
 
 /**
@@ -87,7 +88,9 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 		}
 
 		// make VS Code connect to debug server instead of launching debug adapter
-		config.debugServer = this._server.address().port;
+		const addrInfo = this._server.address() as Net.AddressInfo;
+		assert(typeof addrInfo != 'string');
+		config.debugServer = addrInfo.port;
 
 		return config;
 	}
