@@ -309,13 +309,13 @@
 								"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value."
 							},
 							"log": {
-									"description": "(Optional) Configuration of the general logging.",
+								"description": "(Optional) Configuration of the general logging.",
 								"properties": {
 									"channelOutputEnabled": {
 										"type": "boolean",
 										"description": "If true loging is done to channel 'Z80 Debugger'."
 									},
-									"filePath":  {
+									"filePath": {
 										"type": "string",
 										"description": "The relative filepath for the logs. If undefined no logging to a file is done."
 									}
@@ -328,7 +328,7 @@
 										"type": "boolean",
 										"description": "If true loging is done to channel 'Z80 Debugger Socket'."
 									},
-									"filePath":  {
+									"filePath": {
 										"type": "string",
 										"description": "The relative filepath for the logs. If undefined no logging to a file is done."
 									}
