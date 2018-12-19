@@ -16,7 +16,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 ## Features
 
-- supports ZEsarUX emulator (>= v7.1)
+- supports ZEsarUX emulator (>= v7.2)
 - reads .list and .labels files
 	- supports stepping through source code
 	- either in .list file or in .asm files
