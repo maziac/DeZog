@@ -61,7 +61,25 @@
 		"onDebug"
 	],
 	"contributes": {
+		"languages": [
+			{
+				"id": "asm-collection",
+				"extensions": [
+					".list",
+					".a80",
+					".asm",
+					".inc",
+					".s"
+				],
+				"aliases": [
+					"Assembler file"
+				]
+			}
+		],
 		"breakpoints": [
+			{
+				"language": "asm-collection"
+			},
 			{
 				"language": "z80-macroasm"
 			},
