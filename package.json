@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.6.2",
+	"version": "0.6.3",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -61,25 +61,7 @@
 		"onDebug"
 	],
 	"contributes": {
-		"languages": [
-			{
-				"id": "asm-collection",
-				"extensions": [
-					".list",
-					".a80",
-					".asm",
-					".inc",
-					".s"
-				],
-				"aliases": [
-					"Assembler file"
-				]
-			}
-		],
 		"breakpoints": [
-			{
-				"language": "asm-collection"
-			},
 			{
 				"language": "z80-macroasm"
 			},
@@ -167,6 +149,11 @@
 													"type": "boolean",
 													"description": "If true the list file is also parsed for labels.",
 													"default": true
+												},
+												"asm": {
+													"type": "string",
+													"description": "The used assembler. 'z80asm' (default) or 'sjasm'.",
+													"default": "z80asm"
 												},
 												"addOffset": {
 													"type": "number",

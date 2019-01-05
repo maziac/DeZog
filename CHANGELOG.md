@@ -2,6 +2,7 @@
 
 ## 0.6.3
 - eval now evaluates also label names with a starting "_".
+- "sjasm" listing mode.
 
 ## 0.6.2
 - Debugging can now start immediately after loading the snapshot file. Requires ZEsarUX 7.2.

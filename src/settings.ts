@@ -8,12 +8,16 @@ import { Utility } from './utility';
 export interface ListFile {
 	/// The path to the file.
 	path: string;
-	// If true  the referenced files should be used for stepping (not the list file itself)
+	/// If true  the referenced files should be used for stepping (not the list file itself)
 	useFiles: boolean;
-	// An optional filter stringthat is applied to the list file when it is read. Used to support z88dk list files.
+	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
 	/// If true labels are also read from the list file.
 	useLabels: boolean;
+
+	/// Used assembler: "z80asm" (default) or "sjasm".
+	/// The list file is read differently. Especially the includes are handled differently.
+	asm: string;
 
 	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	addOffset: number;
@@ -190,7 +194,7 @@ export class Settings {
 				let file: ListFile;
 				if(typeof fp === 'string') {
 					// simple string
-					file = {path: Utility.getAbsFilePath(fp), useFiles: false, filter: undefined, useLabels: true, addOffset: 0};
+					file = {path: Utility.getAbsFilePath(fp), useFiles: false, filter: undefined, useLabels: true, asm: "z80asm", addOffset: 0};
 				}
 				else {
 					// ListFile structure
@@ -198,7 +202,7 @@ export class Settings {
 						path: Utility.getAbsFilePath(fp.path),
 						useFiles: (fp.useFiles) ? fp.useFiles : false,
 						filter: fp.filter,
-						useLabels: (fp.useLabels) ? fp.useLabels : true,
+						useLabels: (fp.useLabels) ? fp.useLabels : true,asm: (fp.asm) ? fp.asm : "z80asm",
 						addOffset: (fp.addOffset) ? fp.addOffset : 0
 					};
 				}

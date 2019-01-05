@@ -104,11 +104,12 @@ class LabelsClass {
 	 * @param useFiles Use the filenames in fileName.
 	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
+	 * @param asm The used compiler. "z80asm" (default) or "sjasm". Handles the way the include files ar decoded differently.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
+	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, asm: string, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -127,6 +128,15 @@ class LabelsClass {
 			filterRegEx = new RegExp(search);
 		}
 
+		// Check for sjasm.
+		let sjasmRegex;
+		if(asm == "sjasm") {
+			// The format is line-number++ address opcode.
+			// The "+" indicate the include level, max 3 "+"s.
+			// I.e. [0-9]+[\s+]+
+			sjasmRegex = new RegExp(/[0-9]+[\s+]+/);
+		}
+
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
 		let base = 0;
@@ -134,11 +144,15 @@ class LabelsClass {
 		let line;
 		let lineNumber = 0;
 		for( let origLine of listLines) {
+			line = origLine;
+			// sjasm ?
+			if(sjasmRegex) {
+				// Replace line number with empty string.
+				line = line.replace(sjasmRegex, '');
+			}
 			// Filter line
 			if(filterRegEx)
-				line = origLine.replace(filterRegEx, replace);
-			else
-				line = origLine;
+				line = line.replace(filterRegEx, replace);
 			// extract pc
 			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
@@ -217,88 +231,146 @@ class LabelsClass {
 			return;
 		}
 
-		// loop the list array reverse
-		let index = -1;
-		const stack = new Array<any>();
+		// z80asm
+		if(asm == "z80asm") {
+			// loop the list array reverse
+			let index = -1;
+			const stack = new Array<any>();
 
-		for(var lineNr=listFile.length-1; lineNr>0; lineNr--) {
-			const line = listFile[lineNr].line;
-			// check for end macro
-			const matchMacroEnd = /^# End of macro\s+(.*)/.exec(line);
-			if(matchMacroEnd) {
-				const macroName = matchMacroEnd[1];
-				const startLine = this.searchStartOfMacro(macroName, lineNr, listFile);
-				// skip all lines, i.e. all lines get same line number
-				for(var i=startLine; i<lineNr; ++i) {
-					listFile[i].fileName = stack[index].fileName;
-					listFile[i].lineNr = stack[index].lineNr;
+			for(var lineNr=listFile.length-1; lineNr>0; lineNr--) {
+				const line = listFile[lineNr].line;
+				// check for end macro
+				const matchMacroEnd = /^# End of macro\s+(.*)/.exec(line);
+				if(matchMacroEnd) {
+					const macroName = matchMacroEnd[1];
+					const startLine = this.searchStartOfMacro(macroName, lineNr, listFile);
+					// skip all lines, i.e. all lines get same line number
+					for(var i=startLine; i<lineNr; ++i) {
+						listFile[i].fileName = stack[index].fileName;
+						listFile[i].lineNr = stack[index].lineNr;
+					}
+					// skip
+					lineNr = startLine;
+					// next line
+					stack[index].lineNr--;
+					continue;
 				}
-				// skip
-				lineNr = startLine;
-				// next line
-				stack[index].lineNr--;
-				continue;
-			}
 
-			// check for end of file
-			const matchFileEnd = /^# End of file\s+(.*)/.exec(line);
-			if(matchFileEnd) {
-				const fileName = matchFileEnd[1];
-				// put on top of stack
-				++index;
-				stack.push({fileName: fileName, lineNr: 0});
-			}
+				// check for end of file
+				const matchFileEnd = /^# End of file\s+(.*)/.exec(line);
+				if(matchFileEnd) {
+					const fileName = matchFileEnd[1];
+					// put on top of stack
+					++index;
+					stack.push({fileName: fileName, lineNr: 0});
+				}
 
-			// check for start of include file
-			var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(line);
-			if(matchInclStart) {
-				// Note: Normally filenames match, but if they don't match then
-				// it might be because the file hasn't been included. Maybe it was
-				// #if-def'ed.
-				if(index >= 0) {	// This could be < 0 if the 'end of file' was not found
-					const fileName = matchInclStart[1];
-					if(fileName.valueOf() == stack[index].fileName.valueOf()) {
-						// Remove from top of stack
-						stack.splice(index,1);
-						--index;
+				// check for start of include file
+				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(line);
+				if(matchInclStart) {
+					// Note: Normally filenames match, but if they don't match then
+					// it might be because the file hasn't been included. Maybe it was
+					// #if-def'ed.
+					if(index >= 0) {	// This could be < 0 if the 'end of file' was not found
+						const fileName = matchInclStart[1];
+						if(fileName.valueOf() == stack[index].fileName.valueOf()) {
+							// Remove from top of stack
+							stack.splice(index,1);
+							--index;
+						}
 					}
 				}
+
+				// associate line
+				if(index >= 0) {
+					// Associate with right file
+					listFile[lineNr].fileName = stack[index].fileName;
+					listFile[lineNr].lineNr = stack[index].lineNr;
+					// next line
+					stack[index].lineNr--;
+				}
+				else {
+					// no association
+					listFile[lineNr].fileName = '';
+					listFile[lineNr].lineNr = 0;
+				}
 			}
 
-			// associate line
-			if(index >= 0) {
+			// Now correct all line numbers (so far the numbers are negative. All numbers need to be added with the max number of lines for that file.)
+			let lastFileName = '';
+			let lastFileLength = 0;
+			const fileLength = new Map<string, number>();
+			for(let i=0; i<listFile.length; ++i) {
+				const entry = listFile[i];
+				if(lastFileName.valueOf() != entry.fileName.valueOf()) {
+					lastFileName = entry.fileName;
+					// change in file name, check if it has been used already
+					if(!fileLength[lastFileName]) {
+						fileLength[lastFileName] = -entry.lineNr;
+					}
+					// use length
+					lastFileLength = fileLength[lastFileName];
+				}
+				// change line number
+				listFile[i].lineNr += lastFileLength;
+			}
+		}
+
+
+		// sjasm
+		if(asm == "sjasm") {
+			// sjasm starts with the line numbers of the include file.
+			// 06++ 8000
+			// 07++ 8000                 include "zxnext.inc"
+			// 01+++8000
+			// 02+++8000
+			// 03+++8000                 include "z2.asm"
+			// 01+++8000
+
+			let index = 0;
+			const stack = new Array<any>();
+			stack.push({fileName: fileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
+			let expectedLine;
+			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
+				const line = listFile[lineNr].line;
+				if(line.length == 0)
+					continue;
+
+				// get line number with pluses
+				var matchLineNumber = /^([0-9]+)([\s+]+)(.*)/.exec(line);
+				if(!matchLineNumber)
+					throw SyntaxError('sjasm list file: Line does not contain line number: ' + line);
+				const lineNumber = parseInt(matchLineNumber[1]);
+				const pluses =  matchLineNumber[2];
+				const lineNumberWithPluses = lineNumber + pluses;
+				const remainingLine = matchLineNumber[3];
+
+				// check for start of include file
+				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(remainingLine);
+				if(matchInclStart) {
+					const fName = matchInclStart[1];
+					stack.push({fileName: fName, lineNr: 0});
+					index = stack.length-1;
+				}
+
+				// Check for end of include file
+				if(expectedLine && lineNumberWithPluses != expectedLine) {
+					// End of include found
+					// Note: this is note 100% error proof. sjasm is not showing more than 3 include levels (3 pluses). If there is a higher include level AND line numbers of different files would match then this fails.
+					if(index == 0)
+						throw SyntaxError('sjasm list file: Line number problem with include files: ' + line);
+					stack.pop();
+					index = stack.length-1;
+				}
+
 				// Associate with right file
 				listFile[lineNr].fileName = stack[index].fileName;
-				listFile[lineNr].lineNr = stack[index].lineNr;
-				// next line
-				stack[index].lineNr--;
-			}
-			else {
-				// no association
-				listFile[lineNr].fileName = '';
-				listFile[lineNr].lineNr = 0;
+				listFile[lineNr].lineNr = (index == 0) ? lineNr : lineNumber-1;
+
+				// Expected line
+				expectedLine = (matchInclStart) ? undefined : (lineNumber+1) + pluses;
 			}
 		}
-
-		// Now correct all line numbers (so far the numbers are negative. All numbers need to be added with the max number of lines for that file.)
-		let lastFileName = '';
-		let lastFileLength = 0;
-		const fileLength = new Map<string, number>();
-		for(let i=0; i<listFile.length; ++i) {
-			const entry = listFile[i];
-			if(lastFileName.valueOf() != entry.fileName.valueOf()) {
-				lastFileName = entry.fileName;
-				// change in file name, check if it has been used already
-				if(!fileLength[lastFileName]) {
-					fileLength[lastFileName] = -entry.lineNr;
-				}
-				// use length
-				lastFileLength = fileLength[lastFileName];
-			}
-			// change line number
-			listFile[i].lineNr += lastFileLength;
-		}
-
 
 
 		// Create 2 maps.

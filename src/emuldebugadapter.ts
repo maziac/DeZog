@@ -363,7 +363,7 @@ export class EmulDebugAdapter extends DebugSession {
 			try {
 				// Load user list and labels files
 				for(let listFile of Settings.launch.listFiles) {
-					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.addOffset, listFile.useLabels, (address, line) => {
+					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.asm, listFile.addOffset, listFile.useLabels, (address, line) => {
 						// Quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address
@@ -1575,7 +1575,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 	/**
 	 * Evaluates a given expression.
-	 * @param tokens The arguments. I.e. the expression to eveluate.
+	 * @param tokens The arguments. I.e. the expression to evaluate.
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalEval(tokens: Array<string>, handler: (text:string)=>void) {
