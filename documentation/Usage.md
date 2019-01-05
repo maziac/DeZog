@@ -30,7 +30,7 @@ A typical configuration looks like this:
             "zport": 10000,
             "listFiles": [
                 // "../rom48.list",
-                { "path": "z80-sample-program.list", "useFiles": true }
+                { "path": "z80-sample-program.list", "sources": "." }
             ],
             "labelsFiles": [
                 //"rom48.labels",
@@ -120,33 +120,34 @@ all the information required by z80-debug. While reading this file z80-debug
 An example how this works:
 When you do a 'step-over' in the debugger, z80-debug request the new PC (program counter) value from ZEsarUX.
 The address of the PC is looked up to find the line in the list file.
-Now depending on the value of 'useFiles'
+Now depending on the value of 'sources'
 - (false): the corresponding line in the list file is shown or
 - (true): the originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
 Configuration (**Savannah-z80asm**):
 You have 2 alternative forms to enter list files. The full form is e.g.:
-{ "path": "z80-sample-program.list", "useFiles": true }
+{ "path": "z80-sample-program.list", "sources": "" }
     - path: the path to the list file (relative to the 'rootFolder').
-    - useFiles (default=false):
-        - false = Use .list file directly for stepping and setting of breakpoints.
-        - true = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files.
-        - If you build your .list files from .asm files then use 'true'. If you just own the .list file and not the corresponding .asm files use 'false'.
+    - sources (default=undefined):
+        - undefined = Use .list file directly for stepping and setting of breakpoints.
+        - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
+        - array of strings = several sources directories can be given here. All are tried.
+        - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
     - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, e.g. z88dk. Default: undefined. If you use Savannah-z80asm you should omit this field.
     - useLabels: (default=true): If true the list file is also parsed for labels.
     - addOffset: (defulat=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
 
 The short form is simply a path, e.g.:
 "z80-sample-program.list"
-In this case the defaults for 'useFiles', 'filter' etc. are used.
+In this case the defaults for 'sources', 'filter' etc. are used.
 
 
 Here is an example to use for the **z88dk-z80asm**:
-{ "path": "currah_uspeech_tests.lis", "filter": "/^[0-9]+\\s+//", "useFiles": false, "addOffset": 32768 }
+{ "path": "currah_uspeech_tests.lis", "filter": "/^[0-9]+\\s+//", "addOffset": 32768 }
 Explanation:
 - "path": is the path to the list file. z88dk list file use the extension .lis.
 - "filter": "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines. In z88dk format the first number is the line number.
-- "useFiles": false: This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
+- "sources": not given: This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
 - "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
 
 

@@ -135,10 +135,10 @@
 													"type": "string",
 													"description": "Path to the assembler .list file."
 												},
-												"useFiles": {
-													"type": "boolean",
-													"description": "If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file.",
-													"default": false
+												"sources": {
+													"type": "array",
+													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as one path (string) or an array of strings.",
+													"default": null
 												},
 												"filter": {
 													"type": "string",
@@ -338,7 +338,7 @@
 							"listFiles": [
 								{
 									"path": "path_to_your_assembler_file.list",
-									"useFiles": true
+									"sources": ""
 								}
 							],
 							"disassemblerArgs": {

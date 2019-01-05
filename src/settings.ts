@@ -1,6 +1,6 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './utility';
-
+import * as path from 'path';
 
 /**
  * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow alternative list files. If 'useLabels' is true the labels are also taken from this file.
@@ -8,8 +8,12 @@ import { Utility } from './utility';
 export interface ListFile {
 	/// The path to the file.
 	path: string;
-	/// If true  the referenced files should be used for stepping (not the list file itself)
-	useFiles: boolean;
+
+	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
+	/// The path(s) here are relative to the 'rootFolder'.
+	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
+	sources: Array<string>|string|undefined;
+
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
 	/// If true labels are also read from the list file.
@@ -194,17 +198,25 @@ export class Settings {
 				let file: ListFile;
 				if(typeof fp === 'string') {
 					// simple string
-					file = {path: Utility.getAbsFilePath(fp), useFiles: false, filter: undefined, useLabels: true, asm: "z80asm", addOffset: 0};
+					file = {path: Utility.getAbsFilePath(fp), sources: undefined, filter: undefined, useLabels: true, asm: "z80asm", addOffset: 0};
 				}
 				else {
 					// ListFile structure
 					file = {
 						path: Utility.getAbsFilePath(fp.path),
-						useFiles: (fp.useFiles) ? fp.useFiles : false,
+						sources: fp.sources,
 						filter: fp.filter,
-						useLabels: (fp.useLabels) ? fp.useLabels : true,asm: (fp.asm) ? fp.asm : "z80asm",
+						useLabels: (fp.useLabels) ? fp.useLabels : true, asm: (fp.asm) ? fp.asm : "z80asm",
 						addOffset: (fp.addOffset) ? fp.addOffset : 0
 					};
+					if(fp.sources) {
+						if(typeof fp.sources == 'string')
+							fp.sources = [ fp.sources ];	// Make sure it is an array.
+					}
+					else
+						fp.sources = [];
+					// Add the root folder path to each.
+					fp.sources = fp.sources.map(srcPath => path.join(srcPath, Settings.launch.rootFolder));
 				}
 				return file;
 			});

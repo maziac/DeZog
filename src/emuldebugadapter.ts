@@ -363,7 +363,8 @@ export class EmulDebugAdapter extends DebugSession {
 			try {
 				// Load user list and labels files
 				for(let listFile of Settings.launch.listFiles) {
-					Labels.loadAsmListFile(listFile.path, listFile.useFiles, listFile.filter, listFile.asm, listFile.addOffset, listFile.useLabels, (address, line) => {
+					const sources = listFile.sources as Array<string>;
+					Labels.loadAsmListFile(listFile.path, sources, listFile.filter, listFile.asm, listFile.addOffset, listFile.useLabels, (address, line) => {
 						// Quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address

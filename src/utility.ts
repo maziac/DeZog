@@ -595,6 +595,27 @@ export class Utility {
 
 
 	/**
+	 * Looks for a file in the given directories.
+	 * I found returns it's absolute file path.
+	 * @param srcPath The file to search.
+	 * @param srcDirs The (relative) directories to search in.
+	 */
+	public static getAbsSourceFilePath(srcPath: string, srcDirs: Array<string>) {
+		if(path.isAbsolute(srcPath))
+			return srcPath;
+		// Check all sources directories and try to locate the srcPath file.
+		for(let srcDir of srcDirs) {
+			const fPath = path.join(srcDir, srcPath);
+			const absFPath = Utility.getAbsFilePath(fPath);
+			if(!fs.existsSync(absFPath))
+				return absFPath;
+		}
+		// Not found, return given path
+		return srcPath;
+	}
+
+
+	/**
 	 * Returns the file path of a file in the tmp dir.
 	 * @param fileName E.g. "state0.bin"
 	 * @returns The relative file path, e.g. ".tmp/state0.bin".

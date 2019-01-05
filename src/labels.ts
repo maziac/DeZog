@@ -101,7 +101,7 @@ class LabelsClass {
 	 * PC value.
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
-	 * @param useFiles Use the filenames in fileName.
+	 * @param sources The directories to search for the sources. (If include file names are used.)
 	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
 	 * @param asm The used compiler. "z80asm" (default) or "sjasm". Handles the way the include files ar decoded differently.
@@ -109,7 +109,7 @@ class LabelsClass {
 	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, useFiles: boolean, filter: string|undefined, asm: string, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
+	public loadAsmListFile(fileName: string, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -213,7 +213,7 @@ class LabelsClass {
 		 * b) get list-file line number from file name and file line number
 		 */
 
-		 if(!useFiles) {
+		 if(sources.length == 0) {
 			// Use list file directly instead of real filenames
 			const relFileName = Utility.getRelFilePath(fileName);
 			const lineArray = new Array<number>();
@@ -260,9 +260,10 @@ class LabelsClass {
 				const matchFileEnd = /^# End of file\s+(.*)/.exec(line);
 				if(matchFileEnd) {
 					const fileName = matchFileEnd[1];
+					const absFName = Utility.getAbsSourceFilePath(fileName, sources);
 					// put on top of stack
 					++index;
-					stack.push({fileName: fileName, lineNr: 0});
+					stack.push({fileName: fileName, absFileName: absFName, lineNr: 0});
 				}
 
 				// check for start of include file
@@ -275,7 +276,8 @@ class LabelsClass {
 						const fileName = matchInclStart[1];
 						if(fileName.valueOf() == stack[index].fileName.valueOf()) {
 							// Remove from top of stack
-							stack.splice(index,1);
+							//stack.splice(index,1);
+							stack.pop();
 							--index;
 						}
 					}
@@ -284,7 +286,7 @@ class LabelsClass {
 				// associate line
 				if(index >= 0) {
 					// Associate with right file
-					listFile[lineNr].fileName = stack[index].fileName;
+					listFile[lineNr].fileName = stack[index].absFileName;
 					listFile[lineNr].lineNr = stack[index].lineNr;
 					// next line
 					stack[index].lineNr--;
@@ -349,7 +351,8 @@ class LabelsClass {
 				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(remainingLine);
 				if(matchInclStart) {
 					const fName = matchInclStart[1];
-					stack.push({fileName: fName, lineNr: 0});
+					const absFName = Utility.getAbsSourceFilePath(fName, sources);
+					stack.push({fileName: absFName, lineNr: 0});
 					index = stack.length-1;
 				}
 
