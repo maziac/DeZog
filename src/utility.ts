@@ -607,7 +607,7 @@ export class Utility {
 		for(let srcDir of srcDirs) {
 			const fPath = path.join(srcDir, srcPath);
 			const absFPath = Utility.getAbsFilePath(fPath);
-			if(!fs.existsSync(absFPath))
+			if(fs.existsSync(absFPath))
 				return absFPath;
 		}
 		// Not found, return given path

@@ -12,7 +12,7 @@ export interface ListFile {
 	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
 	/// The path(s) here are relative to the 'rootFolder'.
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
-	sources: Array<string>|string|undefined;
+	srcdirs: Array<string>;
 
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
@@ -195,29 +195,18 @@ export class Settings {
 			Settings.launch.rootFolder = rootFolder;
 		if(Settings.launch.listFiles)
 			Settings.launch.listFiles = Settings.launch.listFiles.map(fp => {
-				let file: ListFile;
-				if(typeof fp === 'string') {
-					// simple string
-					file = {path: Utility.getAbsFilePath(fp), sources: undefined, filter: undefined, useLabels: true, asm: "z80asm", addOffset: 0};
-				}
-				else {
-					// ListFile structure
-					file = {
-						path: Utility.getAbsFilePath(fp.path),
-						sources: fp.sources,
-						filter: fp.filter,
-						useLabels: (fp.useLabels) ? fp.useLabels : true, asm: (fp.asm) ? fp.asm : "z80asm",
-						addOffset: (fp.addOffset) ? fp.addOffset : 0
-					};
-					if(fp.sources) {
-						if(typeof fp.sources == 'string')
-							fp.sources = [ fp.sources ];	// Make sure it is an array.
-					}
-					else
-						fp.sources = [];
-					// Add the root folder path to each.
-					fp.sources = fp.sources.map(srcPath => path.join(srcPath, Settings.launch.rootFolder));
-				}
+				// ListFile structure
+				const file = {
+					path: Utility.getAbsFilePath(fp.path),
+					srcdirs: fp.srcdirs || [],
+					filter: fp.filter,
+					asm: fp.asm || "z80asm",
+					useLabels: fp.useLabels || true,
+					addOffset: fp.addOffset || 0
+				};
+				// Add the root folder path to each.
+				const srcds = file.srcdirs.map(srcPath => path.join(Settings.launch.rootFolder, srcPath));
+				file.srcdirs = srcds;
 				return file;
 			});
 		else

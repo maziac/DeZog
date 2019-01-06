@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.6.3",
+	"version": "0.7.0",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -135,14 +135,14 @@
 													"type": "string",
 													"description": "Path to the assembler .list file."
 												},
-												"sources": {
+												"srcdirs": {
 													"type": "array",
-													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as one path (string) or an array of strings.",
-													"default": null
+													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
+													"default": [""]
 												},
 												"filter": {
 													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn the z88dk .lis file into a forma that is understood by z80-debug. Can be omitted.\nExample for z88dk: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.",
+													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn the z88dk .lis file into a format that is understood by z80-debug. Can be omitted.\nExample for z88dk: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.",
 													"default": null
 												},
 												"useLabels": {

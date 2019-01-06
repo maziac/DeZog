@@ -135,7 +135,7 @@ You have 2 alternative forms to enter list files. The full form is e.g.:
         - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
     - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, e.g. z88dk. Default: undefined. If you use Savannah-z80asm you should omit this field.
     - useLabels: (default=true): If true the list file is also parsed for labels.
-    - addOffset: (defulat=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
+    - addOffset: (defualt=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
 
 The short form is simply a path, e.g.:
 "z80-sample-program.list"
