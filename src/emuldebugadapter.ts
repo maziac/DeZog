@@ -364,7 +364,7 @@ export class EmulDebugAdapter extends DebugSession {
 				// Load user list and labels files
 				for(let listFile of Settings.launch.listFiles) {
 					const sources = listFile.srcdirs as Array<string>;
-					Labels.loadAsmListFile(listFile.path, sources, listFile.filter, listFile.asm, listFile.addOffset, listFile.useLabels, (address, line) => {
+					Labels.loadAsmListFile(listFile.path, sources, listFile.filter, listFile.asm, listFile.addOffset, (address, line) => {
 						// Quick search for WPMEM
 						if(line.indexOf('WPMEM') >= 0) {
 							// Add watchpoint at this address
@@ -377,8 +377,6 @@ export class EmulDebugAdapter extends DebugSession {
 						}
 					});
 				}
-				for(let labelsFile of Settings.launch.labelsFiles)
-					Labels.loadAsmLabelsFile(labelsFile);
 			}
 			catch(err) {
 				// Some error occurred during loading, e.g. file not found.

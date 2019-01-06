@@ -3,8 +3,9 @@
 ## 0.7.0
 - New assembler listings supported: "sjasm".
 - Better support for z88dk-z80asm.
-- new parameters "asm" and "srcdirs".
-- eval now evaluates also label names with a starting "_".
+- New parameters "asm" and "srcdirs".
+- '-eval' now evaluates also label names with a starting "_".
+- Dropped support for label files. The labels are extracted anyway from the list file.
 
 ## 0.6.2
 - Debugging can now start immediately after loading the snapshot file. Requires ZEsarUX 7.2.

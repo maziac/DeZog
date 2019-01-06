@@ -3,7 +3,8 @@ import { Utility } from './utility';
 import * as path from 'path';
 
 /**
- * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow alternative list files. If 'useLabels' is true the labels are also taken from this file.
+ * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow
+ * list files from not supported assemblers.
  */
 export interface ListFile {
 	/// The path to the file.
@@ -16,8 +17,6 @@ export interface ListFile {
 
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
-	/// If true labels are also read from the list file.
-	useLabels: boolean;
 
 	/// Used assembler: "z80asm" (default) or "sjasm".
 	/// The list file is read differently. Especially the includes are handled differently.
@@ -201,7 +200,6 @@ export class Settings {
 					srcdirs: fp.srcdirs || [""],
 					filter: fp.filter,
 					asm: fp.asm || "z80asm",
-					useLabels: fp.useLabels || true,
 					addOffset: fp.addOffset || 0
 				};
 				// Add the root folder path to each.

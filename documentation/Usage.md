@@ -134,7 +134,6 @@ You have 2 alternative forms to enter list files. The full form is e.g.:
         - array of strings = several sources directories can be given here. All are tried.
         - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
     - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, e.g. z88dk. Default: undefined. If you use Savannah-z80asm you should omit this field.
-    - useLabels: (default=true): If true the list file is also parsed for labels.
     - addOffset: (defualt=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
 
 The short form is simply a path, e.g.:
@@ -173,13 +172,6 @@ If not a short amount of memory is added to the disassembly.
 Hence the disassembly will grow the more you step through the code.
 For performance reasons a new disassembly is only done if the memory at the PC is unknown or if a few bytes that follow the PC value have changed.
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
-
-
-### Labelsfile
-
-Because nowadays (>=0.4.0) the labels and constants are extracted directly from the list file there should normally no need to include a labels file anymore.
-However, if you see strange results or missing labels/constants than you could add a label file.
-You can further decide to turn label parsing off (useLabels=false) for the list file.
 
 
 ### Usage

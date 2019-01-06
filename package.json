@@ -145,11 +145,6 @@
 													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by z80-debug. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasm' or 'z88dk'.",
 													"default": null
 												},
-												"useLabels": {
-													"type": "boolean",
-													"description": "If true the list file is also parsed for labels.",
-													"default": true
-												},
 												"asm": {
 													"type": "string",
 													"description": "The used assembler. 'z80asm' (default), 'sjasm' or 'z88dk'.",
@@ -164,18 +159,6 @@
 										}
 									]
 								}
-							},
-							"labelsFiles": {
-								"type": "array",
-								"description": "All labels files. (Typically only one.)",
-								"items": {
-									"type": "string",
-									"description": "(Optional) Path to the assembler .labels file. If this is available addresseed can be mapped to labels."
-								}
-							},
-							"useFilenamesFromListFile": {
-								"type": "boolean",
-								"description": "(Optional) If false the list file is used for breakpoints and stepping. If true the real source files are used. The filenames are collected from the list file."
 							},
 							"smallValuesMaximum": {
 								"type": "number",

@@ -106,10 +106,9 @@ class LabelsClass {
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
 	 * @param asm The used compiler. "z80asm" (default) or "sjasm". Handles the way the include files ar decoded differently.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
-	 * @param useLabels If true the list file is searched for labels and equ as well. This often makes the loading of a separate labels file unnecessary. Anyhow, both can be used together. The labels file will then overwrite the values found here. (They should be equal anyway.)
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, useLabels: boolean, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
+	public loadAsmListFile(fileName: string, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -163,35 +162,32 @@ class LabelsClass {
 					address += 0x10000;
 				}
 
-				// Check for labels/equ
-				if(useLabels) {
-					// check for labels and "equ"
-					const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
-					if(match) {
-						const equ = match[2];
-						if(equ) {
-							if(equ.toLowerCase().startsWith('equ')) {
-								// EQU: add to label array
-								const valueString = match[3];
-								// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
-								try {
-									// Evaluate
-									const value = Utility.evalExpression(valueString);
-									const label = match[1];
-									this.numberForLabel.set(label, value);
-									// Add label
-									this.addLabelForNumber(value, label);
-								}
-								catch {};	// do nothing in case of an error
+				// Check for labels and "equ"
+				const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
+				if(match) {
+					const equ = match[2];
+					if(equ) {
+						if(equ.toLowerCase().startsWith('equ')) {
+							// EQU: add to label array
+							const valueString = match[3];
+							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+							try {
+								// Evaluate
+								const value = Utility.evalExpression(valueString);
+								const label = match[1];
+								this.numberForLabel.set(label, value);
+								// Add label
+								this.addLabelForNumber(value, label);
 							}
+							catch {};	// do nothing in case of an error
 						}
-						else {
-							// Label: add to label array
-							const label = match[1];
-							this.numberForLabel.set(label, address);
-							// Add label
-							this.addLabelForNumber(address, label);
-						}
+					}
+					else {
+						// Label: add to label array
+						const label = match[1];
+						this.numberForLabel.set(label, address);
+						// Add label
+						this.addLabelForNumber(address, label);
 					}
 				}
 			}
@@ -419,43 +415,6 @@ class LabelsClass {
 			// Set address
 			if(!lineArray[entry.lineNr])	// without the check macros would lead to the last addr being stored.
 				lineArray[entry.lineNr] = entry.addr;
-		}
-	}
-
-
-	/**
-	 * Reads the given file (an assembler .labels file) and creates a
-	 * map with label <-> number associations.
-	 * Created lists:
-	 * - usedNumbers: sorted array with used addresses.
-	 * - labelsForNumber: addr -> array of labels. Stores an array of labels for a given addr.
-	 * - numberForLabel: label -> addr
-	 * Note: addresses below 256 are not parsed. These are most likely mixed up with
-	 * constants (equ), so they are simply skipped. I.e. single register values are not
-	 * converted to labels.
-	 * @param fileName The complete path of the file name.
-	 */
-	public loadAsmLabelsFile(fileName: string) {
-		// Preset values
-		//this.labelsForNumber.fill(-1,0,0x10000);
-
-		// Read all labels
-		const labels = readFileSync(fileName).toString().split('\n');
-		for( let line of labels) {
-			// extract label and number. E.g.
-			// LBL_SAT_SPRITE_MASK_ARRAY:	equ $ce27
-			const match = /^(.*):\s+equ\s+\$([0-9a-fA-F]+)/.exec(line);
-			if(match == null || match.length != 3)
-				continue;
-			// Pattern found
-			const number = parseInt(match[2],16);
-			const label = match[1];
-
-			// add to label array
-			this.numberForLabel.set(label, number);
-
-			// Add label
-			this.addLabelForNumber(number, label);
 		}
 	}
 
