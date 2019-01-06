@@ -101,6 +101,9 @@ class LabelsClass {
 	 * PC value.
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
+	 * @param mainFileName The name of the main file that was used to produce the list file.
+	 * For 'z80asm' the name is extracted automatically, for 'sjasm' and 'z88dk' you can provide the source file here.
+	 * If undefined (and not z80asm) the list 'fileName' is used instead.
 	 * @param sources The directories to search for the sources. (If include file names are used.)
 	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
@@ -108,7 +111,7 @@ class LabelsClass {
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
-	public loadAsmListFile(fileName: string, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
+	public loadAsmListFile(fileName: string, mainFileName: string|undefined, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers.
 		const listFile = new Array<ListFileLine>();
@@ -344,7 +347,9 @@ class LabelsClass {
 
 			let index = 0;
 			const stack = new Array<any>();
-			const relFileName = Utility.getRelFilePath(fileName);
+			const fName = mainFileName || fileName;
+			const absFName = Utility.getAbsSourceFilePath(fName, sources);
+			const relFileName = Utility.getRelFilePath(absFName);
 			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
 			let expectedLine;
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
@@ -389,7 +394,7 @@ class LabelsClass {
 
 				// Associate with right file
 				listFile[lineNr].fileName = stack[index].fileName;
-				listFile[lineNr].lineNr = (index == 0) ? lineNr : lineNumber-1;
+				listFile[lineNr].lineNr = (index == 0 && !mainFileName) ? lineNr : lineNumber-1;
 			}
 		}
 

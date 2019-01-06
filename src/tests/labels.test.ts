@@ -16,7 +16,7 @@ suite('Labels', () => {
 	suite('Files/lines vs list file', () => {
 
 		test('getFileAndLineForAddress', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/test1.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// Checks
@@ -77,7 +77,7 @@ suite('Labels', () => {
 
 
 		test('getAddrForFileAndLine', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/test1.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// main.asm
@@ -113,7 +113,7 @@ suite('Labels', () => {
 
 
 		test('get label values from list file', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			let value = Labels.getNumberForLabel('screen_top');
@@ -141,7 +141,7 @@ suite('Labels', () => {
 
 
 		test('get labels for a value from list file', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			let labels = Labels.getLabelsForNumber(0x6000);
@@ -157,7 +157,7 @@ suite('Labels', () => {
 
 
 		test('address offset', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', [""], undefined, "z80asm", 0x1000);
+			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0x1000);
 			Labels.finish();
 
 			let value = Labels.getNumberForLabel('pause_loop_l1');

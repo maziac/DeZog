@@ -10,10 +10,15 @@ export interface ListFile {
 	/// The path to the file.
 	path: string;
 
+	/// Path to the main assembler source file that was used to produce the .list file.
+	/// For 'z80asm' the name can be extracted automatically, for 'sjasm' and 'z88dk'
+	/// you can provide the source file here.
+	mainFile: string;
+
 	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
 	/// The path(s) here are relative to the 'rootFolder'.
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
-	srcdirs: Array<string>;
+	srcDirs: Array<string>;
 
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
@@ -197,14 +202,15 @@ export class Settings {
 				// ListFile structure
 				const file = {
 					path: Utility.getAbsFilePath(fp.path),
-					srcdirs: fp.srcdirs || [""],
+					mainFile: fp.mainFile,
+					srcDirs: fp.srcDirs || [""],
 					filter: fp.filter,
 					asm: fp.asm || "z80asm",
 					addOffset: fp.addOffset || 0
 				};
 				// Add the root folder path to each.
-				const srcds = file.srcdirs.map(srcPath => path.join(Settings.launch.rootFolder, srcPath));
-				file.srcdirs = srcds;
+				const srcds = file.srcDirs.map(srcPath => path.join(Settings.launch.rootFolder, srcPath));
+				file.srcDirs = srcds;
 				return file;
 			});
 		else

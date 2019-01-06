@@ -3,7 +3,7 @@
 ## 0.7.0
 - New assembler listings supported: "sjasm".
 - Better support for z88dk-z80asm.
-- New parameters "asm" and "srcdirs".
+- New parameters "asm" and "srcDirs".
 - '-eval' now evaluates also label names with a starting "_".
 - Dropped support for label files. The labels are extracted anyway from the list file.
 

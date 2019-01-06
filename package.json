@@ -135,7 +135,12 @@
 													"type": "string",
 													"description": "Path to the assembler .list file."
 												},
-												"srcdirs": {
+												"mainFile": {
+													"type": "string",
+													"description": "Path to the main assembler source file that was used to produce the .list file. For 'z80asm' the name is extracted automatically (i.e. not needed), for 'sjasm' and 'z88dk' you can provide the source file name here.",
+													"default": null
+												},
+												"srcDirs": {
 													"type": "array",
 													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
 													"default": [

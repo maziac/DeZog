@@ -102,11 +102,10 @@ Big values are typically addresses. Here you can give the boundary between these
 
 z80asm was and is still a very popular name for a Z80 assembler. There are especially 2 of them that I have used in the past and despite the name doesn't share very much.
 To distinguish them I will call them
-a) the **Savannah-z80asm** from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
-b) the **z88dk-z80asm** hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
+a) the **Savannah-z80asm** (or z80asm) from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
+b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
 
-Both assemblers can produce list file but in my z80-debug project I'm targeting the Savannah's format because the z88dk's format lacks a few information which makes it hard/impossible to parse for some information. I.e. in z88dk format it is not always possible to distinguish the originating source file 100%.
-Therefore the z88dk format can still be used (see below) but with some drawbacks only.
+The z80-debug supports the list file formats of both of them and additionally the sjasm+ (https://github.com/z00m128/sjasmplus).
 
 
 #### The list file
@@ -125,39 +124,42 @@ Now depending on the value of 'sources'
 - (true): the originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
 Configuration (**Savannah-z80asm**):
-You have 2 alternative forms to enter list files. The full form is e.g.:
+You need to enter the list files under "listFiles":
 { "path": "z80-sample-program.list", "sources": "" }
     - path: the path to the list file (relative to the 'rootFolder').
-    - sources (default=undefined):
-        - undefined = Use .list file directly for stepping and setting of breakpoints.
+    - srcDirs (default=[""]):
+        - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
         - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
-        - array of strings = several sources directories can be given here. All are tried.
+        - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
         - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
-    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, e.g. z88dk. Default: undefined. If you use Savannah-z80asm you should omit this field.
+    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasm.
+    E.g. "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines.
+    Default: undefined. If you use Savannah-z80asm, z88dk or sjasm you should omit this field.
     - addOffset: (defualt=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
-
-The short form is simply a path, e.g.:
-"z80-sample-program.list"
-In this case the defaults for 'sources', 'filter' etc. are used.
 
 
 Here is an example to use for the **z88dk-z80asm**:
-{ "path": "currah_uspeech_tests.lis", "filter": "/^[0-9]+\\s+//", "addOffset": 32768 }
+{ "path": "currah_uspeech_tests.lis", "srcDirs": [], "asm": "z88dk", "addOffset": 32768 }
 Explanation:
 - "path": is the path to the list file. z88dk list file use the extension .lis.
-- "filter": "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines. In z88dk format the first number is the line number.
-- "sources": not given: This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
+- "srcDirs": set to an empty array. This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
 - "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
+
+And here an example to use for the **sjasm+**:
+{ "path": "zxngfw.list", "mainFile": "main.asm", "srcDirs": ["src"], "asm": "sjasm" }
+Explanation:
+- "path": is the path to the list file.
+- "mainFile": the name of the file used to create the list file.
+- "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
 
 
 Other assemblers:
-I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm but you should be able to step through the list file at least during debugging.
+I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasm but you should be able to step through the list file at least during debugging.
 The required format for z80-debug is that
 - each line starts with the address
 - labels are terminated by an ':' and
 - constants look like: 'some_constant: EQU value'
-
-Lower or uppercase does not matter.
+- Lower or uppercase does not matter.
 
 The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
 The pattern "/^[0-9]+\\s+//" e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
