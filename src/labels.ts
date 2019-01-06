@@ -129,12 +129,13 @@ class LabelsClass {
 		}
 
 		// Check for sjasm.
-		let sjasmRegex;
-		if(asm == "sjasm") {
-			// The format is line-number++ address opcode.
-			// The "+" indicate the include level, max 3 "+"s.
+		let sjasmZ88dkRegex;
+		if(asm == "sjasm" || asm == "z88dk") {
+			// z88dk: The format is line-number address opcode.
+			// sjasm: The format is line-number++ address opcode.
+			// sjasm: The "+" indicate the include level, max 3 "+"s.
 			// I.e. [0-9]+[\s+]+
-			sjasmRegex = new RegExp(/[0-9]+[\s+]+/);
+			sjasmZ88dkRegex = new RegExp(/[0-9]+[\s+]+/);
 		}
 
 		// Read all lines and extract the PC value
@@ -146,9 +147,9 @@ class LabelsClass {
 		for( let origLine of listLines) {
 			line = origLine;
 			// sjasm ?
-			if(sjasmRegex) {
+			if(sjasmZ88dkRegex) {
 				// Replace line number with empty string.
-				line = line.replace(sjasmRegex, '');
+				line = line.replace(sjasmZ88dkRegex, '');
 			}
 			// Filter line
 			if(filterRegEx)
@@ -320,15 +321,30 @@ class LabelsClass {
 		}
 
 
-		// sjasm
-		if(asm == "sjasm") {
-			// sjasm starts with the line numbers of the include file.
+		// sjasm or z88dk
+		if(asm == "sjasm" || asm == "z88dk") {
+			// sjasm:
+			// Starts with the line numbers (plus pluses) of the include file.
 			// 06++ 8000
 			// 07++ 8000                 include "zxnext.inc"
 			// 01+++8000
 			// 02+++8000
 			// 03+++8000                 include "z2.asm"
 			// 01+++8000
+			//
+			// z88dk:
+			// Starts with the line numbers of the include file.
+			// 3     0000
+			// 4     0000              include "constants.inc"
+			// 1     0000              ; Constant definitions.
+			// 2     0000
+			// 3     0000              ; Printing text
+			//
+			// Note:
+			// a) the text "include" is used as indication that a new include
+			// file started.
+			// b) the change of the line number is used as indicator that the
+			// include file ended.
 
 			let index = 0;
 			const stack = new Array<any>();

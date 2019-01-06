@@ -142,7 +142,7 @@
 												},
 												"filter": {
 													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn the z88dk .lis file into a format that is understood by z80-debug. Can be omitted.\nExample for z88dk: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.",
+													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by z80-debug. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasm' or 'z88dk'.",
 													"default": null
 												},
 												"useLabels": {
@@ -152,7 +152,7 @@
 												},
 												"asm": {
 													"type": "string",
-													"description": "The used assembler. 'z80asm' (default) or 'sjasm'.",
+													"description": "The used assembler. 'z80asm' (default), 'sjasm' or 'z88dk'.",
 													"default": "z80asm"
 												},
 												"addOffset": {
