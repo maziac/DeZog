@@ -165,8 +165,9 @@ class LabelsClass {
 					address += 0x10000;
 				}
 
-				// Check for labels and "equ"
-				const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
+				// Check for labels and "equ". It allows also for @/dot notation as used in sjasm.
+				const match = /^[0-9a-f]+[\s0-9a-f]*\s@?([^;\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
+				//const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				if(match) {
 					const equ = match[2];
 					if(equ) {
@@ -268,7 +269,7 @@ class LabelsClass {
 				}
 
 				// check for start of include file
-				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(line);
+				var matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(line);
 				if(matchInclStart) {
 					// Note: Normally filenames match, but if they don't match then
 					// it might be because the file hasn't been included. Maybe it was
@@ -321,7 +322,8 @@ class LabelsClass {
 
 
 		// sjasm or z88dk
-		if(asm == "sjasm" || asm == "z88dk") {
+		const sjasm = (asm == "sjasm");
+		if(sjasm || asm == "z88dk") {
 			// sjasm:
 			// Starts with the line numbers (plus pluses) of the include file.
 			// 06++ 8000
@@ -351,7 +353,9 @@ class LabelsClass {
 			const absFName = Utility.getAbsSourceFilePath(fName, sources);
 			const relFileName = Utility.getRelFilePath(absFName);
 			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
-			let expectedLine;
+			let expectedLine1;
+			let expectedLine2;	// The current line and the next lines are tested. for macros the line number does not increase.
+			let labelPrefix = '';
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
 				if(line.length == 0)
@@ -368,7 +372,9 @@ class LabelsClass {
 				const remainingLine = matchLineNumber[3];
 
 				// Check for end of include file
-				if(expectedLine && lineNumberWithPluses != expectedLine) {
+				if(expectedLine1
+					&& lineNumberWithPluses != expectedLine1
+					&& lineNumberWithPluses != expectedLine2) {
 					// End of include found
 					// Note: this is note 100% error proof. sjasm is not showing more than 3 include levels (3 pluses). If there is a higher include level AND line numbers of different files would match then this fails.
 					if(index == 0)
@@ -377,19 +383,43 @@ class LabelsClass {
 					index = stack.length-1;
 				}
 
-				// check for start of include file
-				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(remainingLine);
+				// Check for MODULE (sjasm)
+				if(sjasm) {
+					// Start
+					var matchModuleStart = /^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(remainingLine);
+					if(matchModuleStart) {
+						const moduleName = matchModuleStart[1];
+						labelPrefix += moduleName + '.';
+					}
+					else {
+						// End
+						var matchModuleEnd = /^[0-9a-f]+\s+endmodule\b/i.exec(remainingLine);
+						if(matchModuleEnd) {
+							// Remove last prefix
+							const k = labelPrefix.lastIndexOf('.', labelPrefix.length-2);
+							if(k >= 0)
+								labelPrefix = labelPrefix.substr(0,k+1);
+							else
+								labelPrefix = '';
+							}
+					}
+				}
+
+				// Check for start of include file
+				var matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
 					const fName = matchInclStart[1];
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);
 					const relFName = Utility.getRelFilePath(absFName);
 					stack.push({fileName: relFName, lineNr: 0});
 					index = stack.length-1;
-					expectedLine = undefined;
+					expectedLine1 = undefined;
+					expectedLine2 = undefined;
 				}
 				else {
-					expectedLine = (lineNumber+1) + pluses;
-					expectedLine = expectedLine.trim();
+					expectedLine1 = lineNumberWithPluses;
+					expectedLine2 = (lineNumber+1) + pluses;
+					expectedLine2 = expectedLine2.trim();
 				}
 
 				// Associate with right file

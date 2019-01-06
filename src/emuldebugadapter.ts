@@ -1460,7 +1460,7 @@ export class EmulDebugAdapter extends DebugSession {
 			// Check if it is a label. A label may have a special formatting:
 			// Example: LBL_TEXT 10, b
 			// = Addresse LBL_TEXT, 10 bytes
-			const match = /^([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
+			const match = /^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 			if(match) {
 				const labelString = match[1];
 				var sizeString = match[3];
