@@ -198,7 +198,7 @@ export class Settings {
 				// ListFile structure
 				const file = {
 					path: Utility.getAbsFilePath(fp.path),
-					srcdirs: fp.srcdirs || [],
+					srcdirs: fp.srcdirs || [""],
 					filter: fp.filter,
 					asm: fp.asm || "z80asm",
 					useLabels: fp.useLabels || true,

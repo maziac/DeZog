@@ -261,9 +261,10 @@ class LabelsClass {
 				if(matchFileEnd) {
 					const fileName = matchFileEnd[1];
 					const absFName = Utility.getAbsSourceFilePath(fileName, sources);
+					const relFName = Utility.getRelFilePath(absFName);
 					// put on top of stack
 					++index;
-					stack.push({fileName: fileName, absFileName: absFName, lineNr: 0});
+					stack.push({fileName: fileName, relFileName: relFName, lineNr: 0});
 				}
 
 				// check for start of include file
@@ -286,7 +287,7 @@ class LabelsClass {
 				// associate line
 				if(index >= 0) {
 					// Associate with right file
-					listFile[lineNr].fileName = stack[index].absFileName;
+					listFile[lineNr].fileName = stack[index].relFileName;
 					listFile[lineNr].lineNr = stack[index].lineNr;
 					// next line
 					stack[index].lineNr--;
@@ -331,7 +332,8 @@ class LabelsClass {
 
 			let index = 0;
 			const stack = new Array<any>();
-			stack.push({fileName: fileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
+			const relFileName = Utility.getRelFilePath(fileName);
+			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
 			let expectedLine;
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
@@ -341,20 +343,12 @@ class LabelsClass {
 				// get line number with pluses
 				var matchLineNumber = /^([0-9]+)([\s+]+)(.*)/.exec(line);
 				if(!matchLineNumber)
-					throw SyntaxError('sjasm list file: Line does not contain line number: ' + line);
+					continue;	// Not for sjasm, but z88dk contains lines without line number.
 				const lineNumber = parseInt(matchLineNumber[1]);
 				const pluses =  matchLineNumber[2];
-				const lineNumberWithPluses = lineNumber + pluses;
+				let lineNumberWithPluses = lineNumber + pluses;
+				lineNumberWithPluses = lineNumberWithPluses.trim();
 				const remainingLine = matchLineNumber[3];
-
-				// check for start of include file
-				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(remainingLine);
-				if(matchInclStart) {
-					const fName = matchInclStart[1];
-					const absFName = Utility.getAbsSourceFilePath(fName, sources);
-					stack.push({fileName: absFName, lineNr: 0});
-					index = stack.length-1;
-				}
 
 				// Check for end of include file
 				if(expectedLine && lineNumberWithPluses != expectedLine) {
@@ -366,12 +360,24 @@ class LabelsClass {
 					index = stack.length-1;
 				}
 
+				// check for start of include file
+				var matchInclStart = /^[0-9a-fA-F]+\s+include\s+\"([^\s]*)\"/.exec(remainingLine);
+				if(matchInclStart) {
+					const fName = matchInclStart[1];
+					const absFName = Utility.getAbsSourceFilePath(fName, sources);
+					const relFName = Utility.getRelFilePath(absFName);
+					stack.push({fileName: relFName, lineNr: 0});
+					index = stack.length-1;
+					expectedLine = undefined;
+				}
+				else {
+					expectedLine = (lineNumber+1) + pluses;
+					expectedLine = expectedLine.trim();
+				}
+
 				// Associate with right file
 				listFile[lineNr].fileName = stack[index].fileName;
 				listFile[lineNr].lineNr = (index == 0) ? lineNr : lineNumber-1;
-
-				// Expected line
-				expectedLine = (matchInclStart) ? undefined : (lineNumber+1) + pluses;
 			}
 		}
 
