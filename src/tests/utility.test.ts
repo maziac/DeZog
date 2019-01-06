@@ -1,7 +1,6 @@
 
 import * as assert from 'assert';
 import { Utility } from '../utility';
-import { Labels } from '../labels';
 import { Z80Registers } from '../z80Registers';
 import { Emulator, EmulatorType, EmulatorFactory } from '../emulatorfactory';
 //import { EmulatorClass } from '../emulator';
@@ -176,76 +175,8 @@ suite('Utility', () => {
 			});
 
 		});
-
-		suite('labels', () => {
-
-			test('single', (done) => {
-				const format = "${labels}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 1024, 2, format, undefined, (res) => {
-					assert.equal(res, "LABEL_1024", "Wrong label");
-					done();
-				});
-			});
-
-			test('two same labels', (done) => {
-				const format = "${labels}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
-					assert.equal(res, "LABEL_2048_ALABEL_2048_B", "Wrong label");
-					done();
-				});
-			});
-
-			test('two same labels with pre and inner', (done) => {
-				const format = "${#:labels|§}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
-					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B", "Wrong label");
-					done();
-				});
-			});
-
-			test('two same labels with pre, inner and post', (done) => {
-				const format = "${#:labels|§|%}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
-					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B%", "Wrong label");
-					done();
-				});
-			});
-
-			test('two same labels with newlines', (done) => {
-				const format = "${labels|:\n|:\n}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
-					assert.equal(res, "LABEL_2048_A:\nLABEL_2048_B:\n", "Wrong label");
-					done();
-				});
-			});
-
-			test('two same labelsplus with pre, inner and post', (done) => {
-				const format = "${#:labelsplus|§|%}";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 2048, 2, format, undefined, (res) => {
-					assert.equal(res, "#LABEL_2048_A§LABEL_2048_B%", "Wrong label");
-					done();
-				});
-			});
-
-			test('special 1', (done) => {
-				const format = "${hex}h${, :labelsplus|, }";
-				Labels.loadAsmLabelsFile('./src/tests/data/test1.labels')
-				Utility.numberFormatted('', 0x0300, 2, format, undefined, (res) => {
-					assert.equal(res, "0300h, LABEL_0300", "Wrong label");
-					done();
-				});
-			});
-
-        });
-
-
 	});
+
 
 	suite('parseValue', () => {
 
