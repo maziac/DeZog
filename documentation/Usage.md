@@ -172,28 +172,30 @@ I.e. the disassembly at the current PC is always correct while an older disassem
 
 #### Assemblers And Labels
 
-Savannah/z80asm:
-    - No local labels.
-    - Needs a ":" after the label.
-    - dots allowed
-    - dots allowed as start of a label.
+The dollowing table lists the diferences of the different assemblers in respect to the labels:
 
-
-z88dk/z80asm:
-    - No local labels.
-    - Needs a ":" after the label.
-    - No dots allowed
-    - No dots allowed also as start of a label.
+| Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
+|-|-|-|-|
+| Local lables | no | no | yes |
+| Needs a ':' | yes | yes | no
+| Dots (.) are allowed (also at start of label) | no | no | yes |
+| Misc | | | @ for global labels, numbers for labels |
 
 sjasmplus:
-    - local labels: .local (until next non local label)
-    - dot notation
-    - "global" labels: @label
-    - modules, submodules: dot notation.
-    - Labels may end with or wothout ":"
+    - local labels: start with a dot. Are prefixed by the previous non-local label.
+    - "global" labels, e.g. @label
+    - dot notation, e.g. main.sub.label1
+    - "global" labels: @label or @label.sublabel
+    - modules definition: automatically prefixes the labels with the modules name.
+    - Labels may end with or without ":"
+    - temporary labels, e.g. labels that are just called "1" or "2".
 
-
-| Assembler | Savannah/z80asm | z88dk/z80asm | sjasmplus |
+z80-debug supports most of them but with some restrictions:
+- local labels: when hovering above a (local) label vscode doesn't offer enough context to exactly determine to what main label the local label belongs.
+E.g. vscode just offers ".local_label" but no information from which file this comes. With this little information it is not 100% sure to tell which label it is. There could be several local labels called ".local_label".
+Therefore z80-debug doesn't lookup local labels at all.
+- temporary (number) labels: are not supported.
+- modules: z80-debug will prefix the labels with the right module name. However, because of the hovering problem, when a label is used without the module name e.g. in a jump it is not possible to decode it. In fact if the same label name exists also without prefix a wrong decoding could happen.
 
 
 
