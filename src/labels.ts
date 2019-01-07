@@ -102,12 +102,12 @@ class LabelsClass {
 	 * Fills listLines and listPCs.
 	 * @param fileName The complete path of the file name.
 	 * @param mainFileName The name of the main file that was used to produce the list file.
-	 * For 'z80asm' the name is extracted automatically, for 'sjasm' and 'z88dk' you can provide the source file here.
+	 * For 'z80asm' the name is extracted automatically, for 'sjasmplus' and 'z88dk' you can provide the source file here.
 	 * If undefined (and not z80asm) the list 'fileName' is used instead.
 	 * @param sources The directories to search for the sources. (If include file names are used.)
 	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
-	 * @param asm The used compiler. "z80asm" (default) or "sjasm". Handles the way the include files ar decoded differently.
+	 * @param asm The used compiler. "z80asm" (default) or "sjasmplus". Handles the way the include files ar decoded differently.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
@@ -130,12 +130,12 @@ class LabelsClass {
 			filterRegEx = new RegExp(search);
 		}
 
-		// Check for sjasm.
+		// Check for sjasmplus.
 		let sjasmZ88dkRegex;
-		if(asm == "sjasm" || asm == "z88dk") {
+		if(asm == "sjasmplus" || asm == "z88dk") {
 			// z88dk: The format is line-number address opcode.
-			// sjasm: The format is line-number++ address opcode.
-			// sjasm: The "+" indicate the include level, max 3 "+"s.
+			// sjasmplus: The format is line-number++ address opcode.
+			// sjasmplus: The "+" indicate the include level, max 3 "+"s.
 			// I.e. [0-9]+[\s+]+
 			sjasmZ88dkRegex = new RegExp(/[0-9]+[\s+]+/);
 		}
@@ -148,7 +148,7 @@ class LabelsClass {
 		let lineNumber = 0;
 		for( let origLine of listLines) {
 			line = origLine;
-			// sjasm ?
+			// sjasmplus ?
 			if(sjasmZ88dkRegex) {
 				// Replace line number with empty string.
 				line = line.replace(sjasmZ88dkRegex, '');
@@ -165,7 +165,7 @@ class LabelsClass {
 					address += 0x10000;
 				}
 
-				// Check for labels and "equ". It allows also for @/dot notation as used in sjasm.
+				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
 				const match = /^[0-9a-f]+[\s0-9a-f]*\s@?([^;\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				//const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				if(match) {
@@ -321,10 +321,10 @@ class LabelsClass {
 		}
 
 
-		// sjasm or z88dk
-		const sjasm = (asm == "sjasm");
-		if(sjasm || asm == "z88dk") {
-			// sjasm:
+		// sjasmplus or z88dk
+		const sjasmplus = (asm == "sjasmplus");
+		if(sjasmplus || asm == "z88dk") {
+			// sjasmplus:
 			// Starts with the line numbers (plus pluses) of the include file.
 			// 06++ 8000
 			// 07++ 8000                 include "zxnext.inc"
@@ -364,7 +364,7 @@ class LabelsClass {
 				// get line number with pluses
 				var matchLineNumber = /^([0-9]+)([\s+]+)(.*)/.exec(line);
 				if(!matchLineNumber)
-					continue;	// Not for sjasm, but z88dk contains lines without line number.
+					continue;	// Not for sjasmplus, but z88dk contains lines without line number.
 				const lineNumber = parseInt(matchLineNumber[1]);
 				const pluses =  matchLineNumber[2];
 				let lineNumberWithPluses = lineNumber + pluses;
@@ -376,15 +376,15 @@ class LabelsClass {
 					&& lineNumberWithPluses != expectedLine1
 					&& lineNumberWithPluses != expectedLine2) {
 					// End of include found
-					// Note: this is note 100% error proof. sjasm is not showing more than 3 include levels (3 pluses). If there is a higher include level AND line numbers of different files would match then this fails.
+					// Note: this is note 100% error proof. sjasmplus is not showing more than 3 include levels (3 pluses). If there is a higher include level AND line numbers of different files would match then this fails.
 					if(index == 0)
-						throw SyntaxError('sjasm list file: Line number problem with include files: ' + line);
+						throw SyntaxError('sjasmplus list file: Line number problem with include files: ' + line);
 					stack.pop();
 					index = stack.length-1;
 				}
 
-				// Check for MODULE (sjasm)
-				if(sjasm) {
+				// Check for MODULE (sjasmplus)
+				if(sjasmplus) {
 					// Start
 					var matchModuleStart = /^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(remainingLine);
 					if(matchModuleStart) {

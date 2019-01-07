@@ -11,7 +11,7 @@ export interface ListFile {
 	path: string;
 
 	/// Path to the main assembler source file that was used to produce the .list file.
-	/// For 'z80asm' the name can be extracted automatically, for 'sjasm' and 'z88dk'
+	/// For 'z80asm' the name can be extracted automatically, for 'sjasmplus' and 'z88dk'
 	/// you can provide the source file here.
 	mainFile: string;
 
@@ -23,7 +23,7 @@ export interface ListFile {
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
 	filter:string|undefined;
 
-	/// Used assembler: "z80asm" (default) or "sjasm".
+	/// Used assembler: "z80asm" (default), "z88dk" or "sjasmplus".
 	/// The list file is read differently. Especially the includes are handled differently.
 	asm: string;
 

@@ -10,7 +10,7 @@ I provide a simple sample assembler program to demonstrate the features of z80-d
 You can find it here:
 https://github.com/maziac/z80-sample-program
 
-It includes the sources and the binaries (.list, .labels, .sna files). So, if you don't want to change the sources, you can try debugging even without building from the sources.
+It includes the sources and the binaries (.list, .sna files). So, if you don't want to change the sources, you can try debugging even without building from the sources.
 
 
 ## Configuration
@@ -32,10 +32,6 @@ A typical configuration looks like this:
                 // "../rom48.list",
                 { "path": "z80-sample-program.list", "sources": "." }
             ],
-            "labelsFiles": [
-                //"rom48.labels",
-                "z80-sample-program.labels"
-             ],
             "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
@@ -59,9 +55,6 @@ A typical configuration looks like this:
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the (Listfile)[#listfile] section.
-- labelsFiles: The paths (relative to the 'rootFolder') of the labels files. Typically
-this is only one file created during building. But you could add multiple files here.
-You can also completely omit the label files but in that case the z80-debug support is very limited because it cannot help in resolving any labels to numbers and vice versa.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false)
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
@@ -105,7 +98,7 @@ To distinguish them I will call them
 a) the **Savannah-z80asm** (or z80asm) from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
 b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
 
-The z80-debug supports the list file formats of both of them and additionally the sjasm+ (https://github.com/z00m128/sjasmplus).
+The z80-debug supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
 
 
 #### The list file
@@ -132,9 +125,9 @@ You need to enter the list files under "listFiles":
         - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
         - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
         - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
-    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasm.
+    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
     E.g. "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines.
-    Default: undefined. If you use Savannah-z80asm, z88dk or sjasm you should omit this field.
+    Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
     - addOffset: (defualt=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
 
 
@@ -145,8 +138,8 @@ Explanation:
 - "srcDirs": set to an empty array. This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
 - "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
 
-And here an example to use for the **sjasm+**:
-{ "path": "zxngfw.list", "mainFile": "main.asm", "srcDirs": ["src"], "asm": "sjasm" }
+And here an example to use for the **sjasmplus**:
+{ "path": "zxngfw.list", "mainFile": "main.asm", "srcDirs": ["src"], "asm": "sjasmplus" }
 Explanation:
 - "path": is the path to the list file.
 - "mainFile": the name of the file used to create the list file.
@@ -154,7 +147,7 @@ Explanation:
 
 
 Other assemblers:
-I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasm but you should be able to step through the list file at least during debugging.
+I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
 The required format for z80-debug is that
 - each line starts with the address
 - labels are terminated by an ':' and
@@ -174,6 +167,34 @@ If not a short amount of memory is added to the disassembly.
 Hence the disassembly will grow the more you step through the code.
 For performance reasons a new disassembly is only done if the memory at the PC is unknown or if a few bytes that follow the PC value have changed.
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
+
+
+
+#### Assemblers And Labels
+
+Savannah/z80asm:
+    - No local labels.
+    - Needs a ":" after the label.
+    - dots allowed
+    - dots allowed as start of a label.
+
+
+z88dk/z80asm:
+    - No local labels.
+    - Needs a ":" after the label.
+    - No dots allowed
+    - No dots allowed also as start of a label.
+
+sjasmplus:
+    - local labels: .local (until next non local label)
+    - dot notation
+    - "global" labels: @label
+    - modules, submodules: dot notation.
+    - Labels may end with or wothout ":"
+
+
+| Assembler | Savannah/z80asm | z88dk/z80asm | sjasmplus |
+
 
 
 ### Usage

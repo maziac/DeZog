@@ -137,7 +137,7 @@
 												},
 												"mainFile": {
 													"type": "string",
-													"description": "Path to the main assembler source file that was used to produce the .list file. For 'z80asm' the name is extracted automatically (i.e. not needed), for 'sjasm' and 'z88dk' you can provide the source file name here.",
+													"description": "Path to the main assembler source file that was used to produce the .list file. For 'z80asm' the name is extracted automatically (i.e. not needed), for 'sjasmplus' and 'z88dk' you can provide the source file name here.",
 													"default": null
 												},
 												"srcDirs": {
@@ -149,12 +149,12 @@
 												},
 												"filter": {
 													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by z80-debug. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasm' or 'z88dk'.",
+													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by z80-debug. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasmplus' or 'z88dk'.",
 													"default": null
 												},
 												"asm": {
 													"type": "string",
-													"description": "The used assembler. 'z80asm' (default), 'sjasm' or 'z88dk'.",
+													"description": "The used assembler. 'z80asm' (default), 'sjasmplus' or 'z88dk'.",
 													"default": "z80asm"
 												},
 												"addOffset": {
