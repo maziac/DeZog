@@ -1462,12 +1462,34 @@ export class EmulDebugAdapter extends DebugSession {
 			// = Addresse LBL_TEXT, 10 bytes
 			const match = /^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 			if(match) {
-				const labelString = match[1];
-				var sizeString = match[3];
-				var byteWord = match[5];
+				let labelString = match[1];
+				let sizeString = match[3];
+				let byteWord = match[5];
 				// Defaults
 				if(labelString) {
-					var labelValue = Labels.getNumberFromString(labelString) || NaN;
+					let labelValue = NaN;
+					// First check for module name and local label prefix (sjasmplus).
+					if(Emulator.RegisterCache) {
+						// Get current pc
+						const pc = Z80Registers.parsePC(Emulator.RegisterCache);
+						const entry = Labels.getFileAndLineForAddress(pc);
+						// Local label:
+						const lastLabel = entry.lastLabel;
+						if(lastLabel && labelString.startsWith('.')) {
+							labelString = lastLabel + labelString;
+						}
+						// Get module
+						const modulePrefix = entry.modulePrefix;
+						if(modulePrefix)
+							labelValue = Labels.getNumberFromString(modulePrefix+labelString) || NaN;
+					}
+
+					// If not found try the label itself.
+					if(isNaN(labelValue)) {
+						// Try the name itself
+						labelValue = Labels.getNumberFromString(labelString) || NaN;
+					}
+
 					if(!isNaN(labelValue)) {
 						var size = 100;
 						if(sizeString) {

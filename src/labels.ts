@@ -8,11 +8,20 @@ import { Z80Registers } from './z80Registers';
 
 
 /**
- * The representation of the list file.
+ * For the association of the addresses to the files.
  */
-interface ListFileLine {
+interface SourceFileEntry {
 	fileName: string;	/// The associated source filename
 	lineNr: number;		/// The line number of the associated source file
+	modulePrefix: string|undefined;	/// For sjasmplus: module is an optional module prefix that is added to all labels (e.g. "sprites.sw.").
+	lastLabel: string|undefined;	/// For sjasmplus: lastLabel is the last non-local label that is used as prefix for local labels. modulePrefix and lastLabel are used for hovering.
+}
+
+
+/**
+ * The representation of the list file.
+ */
+interface ListFileLine extends SourceFileEntry {
 	addr: number;		/// The corresponding address from the list file
 	line: string;		/// The text of the line of the list file
 }
@@ -44,7 +53,7 @@ class LabelsClass {
 
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
-	private fileLineNrs = new Map<number,{fileName: string, lineNr: number}>();
+	private fileLineNrs = new Map<number,SourceFileEntry>();
 
 	/// Map of arrays of line numbers. The key of the map is the filename.
 	/// The array contains the correspondent memory address for the line number.
@@ -113,7 +122,7 @@ class LabelsClass {
 	 */
 	public loadAsmListFile(fileName: string, mainFileName: string|undefined, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
-		/// for each line and the associated real filenames/line numbers.
+		/// for each line and the associated real filenames/line numbers, module and lastLAbel prefixes.
 		const listFile = new Array<ListFileLine>();
 
 		// Create regex
@@ -130,9 +139,10 @@ class LabelsClass {
 			filterRegEx = new RegExp(search);
 		}
 
-		// Check for sjasmplus.
+		// Check for sjasmplus or z88dk.
+		const sjasmplus = (asm == "sjasmplus");
 		let sjasmZ88dkRegex;
-		if(asm == "sjasmplus" || asm == "z88dk") {
+		if(sjasmplus || asm == "z88dk") {
 			// z88dk: The format is line-number address opcode.
 			// sjasmplus: The format is line-number++ address opcode.
 			// sjasmplus: The "+" indicate the include level, max 3 "+"s.
@@ -146,9 +156,11 @@ class LabelsClass {
 		let prev = -1;
 		let line;
 		let lineNumber = 0;
+		let labelPrefix;	// Only used for sjasmplus
+		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		for( let origLine of listLines) {
 			line = origLine;
-			// sjasmplus ?
+			// sjasmplus or z88dk
 			if(sjasmZ88dkRegex) {
 				// Replace line number with empty string.
 				line = line.replace(sjasmZ88dkRegex, '');
@@ -165,20 +177,60 @@ class LabelsClass {
 					address += 0x10000;
 				}
 
+
+				// Check for MODULE (sjasmplus)
+				if(sjasmplus) {
+					// Start
+					var matchModuleStart = /^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(line);
+					if(matchModuleStart) {
+						const moduleName = matchModuleStart[1];
+						//if(!labelPrefix)	labelPrefix = '';
+						labelPrefix = (labelPrefix || '') + moduleName + '.';
+						// Init last label
+						lastLabel = undefined;
+					}
+					else {
+						// End
+						var matchModuleEnd = /^[0-9a-f]+\s+endmodule\b/i.exec(line);
+						if(matchModuleEnd) {
+							// Remove last prefix
+							const k = labelPrefix.lastIndexOf('.', labelPrefix.length-2);
+							if(k >= 0)
+								labelPrefix = labelPrefix.substr(0,k+1);
+							else
+								labelPrefix = undefined;
+							// Forget last label
+							lastLabel = undefined;
+						}
+					}
+				}
+
 				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
-				const match = /^[0-9a-f]+[\s0-9a-f]*\s@?([^;\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
+				const match = /^[0-9a-f]+[\s0-9a-f]*\s(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				//const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				if(match) {
-					const equ = match[2];
+					let label = match[2];
+					if(label.startsWith('.')) {
+						// local label
+						if(lastLabel) // Add Last label
+							label = lastLabel + label;
+					}
+					else {
+						// Remember last label (for local labels)
+						lastLabel = label;
+					}
+					const global = match[1];
+					if(global == '' && labelPrefix)
+						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
+					const equ = match[3];
 					if(equ) {
 						if(equ.toLowerCase().startsWith('equ')) {
 							// EQU: add to label array
-							const valueString = match[3];
+							const valueString = match[4];
 							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 							try {
 								// Evaluate
 								const value = Utility.evalExpression(valueString);
-								const label = match[1];
 								this.numberForLabel.set(label, value);
 								// Add label
 								this.addLabelForNumber(value, label);
@@ -188,7 +240,6 @@ class LabelsClass {
 					}
 					else {
 						// Label: add to label array
-						const label = match[1];
 						this.numberForLabel.set(label, address);
 						// Add label
 						this.addLabelForNumber(address, label);
@@ -197,7 +248,7 @@ class LabelsClass {
 			}
 
 			// Store
-			const entry = {fileName: '', lineNr: -1, addr: address, line: origLine};
+			const entry = {fileName: '', lineNr: -1, addr: address, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
 			listFile.push(entry)
 
 			// Call line handler (if any)
@@ -223,7 +274,7 @@ class LabelsClass {
 				const entry = listFile[lineNr];
 				entry.fileName = relFileName;
 				entry.lineNr = lineNr;
-				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: lineNr });
+				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: lineNr, modulePrefix: undefined, lastLabel: undefined });
 
 				// Set address
 				if(!lineArray[lineNr])	// without the check macros would lead to the last addr being stored.
@@ -322,7 +373,6 @@ class LabelsClass {
 
 
 		// sjasmplus or z88dk
-		const sjasmplus = (asm == "sjasmplus");
 		if(sjasmplus || asm == "z88dk") {
 			// sjasmplus:
 			// Starts with the line numbers (plus pluses) of the include file.
@@ -355,7 +405,6 @@ class LabelsClass {
 			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
 			let expectedLine1;
 			let expectedLine2;	// The current line and the next lines are tested. for macros the line number does not increase.
-			let labelPrefix = '';
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
 				if(line.length == 0)
@@ -381,28 +430,6 @@ class LabelsClass {
 						throw SyntaxError('sjasmplus list file: Line number problem with include files: ' + line);
 					stack.pop();
 					index = stack.length-1;
-				}
-
-				// Check for MODULE (sjasmplus)
-				if(sjasmplus) {
-					// Start
-					var matchModuleStart = /^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(remainingLine);
-					if(matchModuleStart) {
-						const moduleName = matchModuleStart[1];
-						labelPrefix += moduleName + '.';
-					}
-					else {
-						// End
-						var matchModuleEnd = /^[0-9a-f]+\s+endmodule\b/i.exec(remainingLine);
-						if(matchModuleEnd) {
-							// Remove last prefix
-							const k = labelPrefix.lastIndexOf('.', labelPrefix.length-2);
-							if(k >= 0)
-								labelPrefix = labelPrefix.substr(0,k+1);
-							else
-								labelPrefix = '';
-							}
-					}
 				}
 
 				// Check for start of include file
@@ -437,7 +464,7 @@ class LabelsClass {
 				continue;	// Skip lines with no filename (e.g. '# End of file')
 
 			// last address entry wins:
-			this.fileLineNrs.set(entry.addr, { fileName: entry.fileName, lineNr: entry.lineNr });
+			this.fileLineNrs.set(entry.addr, { fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel });
 
 			// Check if a new array need to be created
 			if(!this.lineArrays.get(entry.fileName)) {
@@ -624,15 +651,15 @@ class LabelsClass {
 	 * Returns file name and line number associated with a certain memory address.
 	 * Used e.g. for the call stack.
 	 * @param address The memory address to search for.
-	 * @returns {fileName: string, lineNr: number} The associated filename and line number.
+	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
-	public getFileAndLineForAddress(address: number): {fileName: string, lineNr: number} {
+	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		const entry = this.fileLineNrs.get(address);
 		if(!entry)
-			return {fileName: '', lineNr: 0};
+			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
 
 		var filePath = Utility.getAbsFilePath(entry.fileName);
-		return {fileName: filePath, lineNr: entry.lineNr};
+		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel};
 	}
 
 

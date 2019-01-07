@@ -105,7 +105,6 @@ export class EmulatorClass extends EventEmitter {
 
 	/// The register cache for values retrieved from emulator.
 	/// Is a simple string that needs to get parsed.
-	/// Is public for unit tests only.
 	public RegisterCache: string|undefined = undefined;
 
 
