@@ -108,8 +108,11 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericWatchpoint>, handler?: (assertBreakpoints:Array<GenericWatchpoint>) => void) {
 		// Set breakpoints
 		for(let abp of assertBreakpoints) {
-			// Create breakpoint
-			zSocket.send('set-fast-breakpoint ' + abp.address + ' ' + abp.size + ' ' + abp.conditions  );
+			// Create breakpoint (normally just one)
+			const zesaruxCondition = this.convertCondition(abp.conditions);
+			for(let k=0; k<abp.size; k++) {
+				zSocket.send('set-fast-breakpoint ' + (abp.address+k) + ' ' + zesaruxCondition  );
+			}
 		}
 		this.assertBreakpoints = assertBreakpoints;
 

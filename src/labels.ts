@@ -248,11 +248,6 @@ class LabelsClass {
 					}
 				}
 
-				const matchBbreak = /ld de,hl/i.exec(line);
-				if(matchBbreak) {
-					console.log("BReak");
-				}
-
 				// Search for bytes after the address:
 				const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
 				// Count how many bytes are included in the line.

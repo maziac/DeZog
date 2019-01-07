@@ -733,9 +733,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Converts a condifion into the special format that ZEsarUX uses.
+	 * Converts a condition into the special format that ZEsarUX uses.
 	 * Please ntoe that longer complex forms are not possible with zesarux
-	 * becasue it does not support parenthesis and just evaluates one
+	 * because it does not support parenthesis and just evaluates one
 	 * after the other.
 	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
 	 * Format "variable comparison value" (variable=register)
