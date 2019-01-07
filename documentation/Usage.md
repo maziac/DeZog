@@ -169,10 +169,9 @@ For performance reasons a new disassembly is only done if the memory at the PC i
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
 
 
-
 #### Assemblers And Labels
 
-The dollowing table lists the diferences of the different assemblers in respect to the labels:
+The following table lists the diferences of the different assemblers in respect to the labels:
 
 | Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
 |-|-|-|-|
@@ -191,12 +190,10 @@ sjasmplus:
     - temporary labels, e.g. labels that are just called "1" or "2".
 
 z80-debug supports most of them but with some restrictions:
-- local labels: when hovering above a (local) label vscode doesn't offer enough context to exactly determine to what main label the local label belongs.
-E.g. vscode just offers ".local_label" but no information from which file this comes. With this little information it is not 100% sure to tell which label it is. There could be several local labels called ".local_label".
-Therefore z80-debug doesn't lookup local labels at all.
+- local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
+- dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
+- labels with out a trailing ":" are not supported.
 - temporary (number) labels: are not supported.
-- modules: z80-debug will prefix the labels with the right module name. However, because of the hovering problem, when a label is used without the module name e.g. in a jump it is not possible to decode it. In fact if the same label name exists also without prefix a wrong decoding could happen.
-
 
 
 ### Usage

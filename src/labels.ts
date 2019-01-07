@@ -150,6 +150,9 @@ class LabelsClass {
 			sjasmZ88dkRegex = new RegExp(/[0-9]+[\s+]+/);
 		}
 
+		// Regex to find labels
+		let labelRegex = new RegExp(/^[0-9a-f]+[\s0-9a-f]*\s(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
 		let base = 0;
@@ -206,7 +209,7 @@ class LabelsClass {
 				}
 
 				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
-				const match = /^[0-9a-f]+[\s0-9a-f]*\s(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
+				const match = labelRegex.exec(line);
 				//const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				if(match) {
 					let label = match[2];
