@@ -151,7 +151,7 @@ class LabelsClass {
 		}
 
 		// Regex to find labels
-		let labelRegex = new RegExp(/^[0-9a-f]+[\s0-9a-f]*\s(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		let labelRegex = new RegExp(/^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
@@ -162,6 +162,7 @@ class LabelsClass {
 		let labelPrefix;	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		for( let origLine of listLines) {
+			let countBytes = 1;
 			line = origLine;
 			// sjasmplus or z88dk
 			if(sjasmZ88dkRegex) {
@@ -171,7 +172,7 @@ class LabelsClass {
 			// Filter line
 			if(filterRegEx)
 				line = line.replace(filterRegEx, replace);
-			// extract pc
+			// extract address
 			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
@@ -179,7 +180,6 @@ class LabelsClass {
 					base += 0x10000;
 					address += 0x10000;
 				}
-
 
 				// Check for MODULE (sjasmplus)
 				if(sjasmplus) {
@@ -210,9 +210,8 @@ class LabelsClass {
 
 				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
 				const match = labelRegex.exec(line);
-				//const match = /^[0-9a-f]+[\s0-9a-f]*\s([^;\.\s]+):\s*(equ\s|macro\s)?\s*([^;\n]*)/i.exec(line);
 				if(match) {
-					let label = match[2];
+					let label = match[3];
 					if(label.startsWith('.')) {
 						// local label
 						if(lastLabel) // Add Last label
@@ -222,14 +221,14 @@ class LabelsClass {
 						// Remember last label (for local labels)
 						lastLabel = label;
 					}
-					const global = match[1];
+					const global = match[2];
 					if(global == '' && labelPrefix)
 						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
-					const equ = match[3];
+					const equ = match[4];
 					if(equ) {
 						if(equ.toLowerCase().startsWith('equ')) {
 							// EQU: add to label array
-							const valueString = match[4];
+							const valueString = match[5];
 							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 							try {
 								// Evaluate
@@ -248,11 +247,32 @@ class LabelsClass {
 						this.addLabelForNumber(address, label);
 					}
 				}
-			}
 
-			// Store
-			const entry = {fileName: '', lineNr: -1, addr: address, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
-			listFile.push(entry)
+				const matchBbreak = /ld de,hl/i.exec(line);
+				if(matchBbreak) {
+					console.log("BReak");
+				}
+
+				// Search for bytes after the address:
+				const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
+				// Count how many bytes are included in the line.
+				if(matchBytes) {
+					const bytes = matchBytes[1];
+					const lenBytes = bytes.length-1;
+					countBytes = 0;
+					for(let k=0; k<lenBytes;k++) {
+						// Find border between character and whitespace:
+						if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
+							countBytes ++;
+					}
+				}
+
+				// Store address (or several addresses for one line)
+				for(let k=0; k<countBytes; k++) {
+					const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
+					listFile.push(entry)
+				}
+			}
 
 			// Call line handler (if any)
 			lineHandler(address, line, lineNumber);

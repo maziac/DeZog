@@ -563,3 +563,6 @@ Stepping works slightly different to stepping in ZEsarUX.
 ## Notes
 
 - Don't use "-exec run" in the debug console. It will lead to a disconnection of ZEsarUX. Instead use the continue button (the green arrow).
+
+
+
