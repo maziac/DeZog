@@ -305,8 +305,7 @@ these 10 bytes it would mean that the algorithm is wrong.
 Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
 
 Caveats:
-- The parser of the list file is very simple. I.e. it cannot distinguish if
-the comment is in an area that is conditionally not assembled. So even if the code is not assembled it would honor the WPMEM comment and assign a watch point.
+- Other than for sjasmplus WPMEMs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - The 'memory breakpoints' used in ZEsarUX have a specific limiting behaviour:
 Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
@@ -350,9 +349,10 @@ ld a,c
 ~~~
 instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction abd thus A is checked correctly.
 
-Note: The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
-
-Note: ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enabled" in the "commandsAfterLaunch" settings.
+Notes:
+- The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
+- ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enabled" in the "commandsAfterLaunch" settings.
+- Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 
 
 ### Breakpoint conditions

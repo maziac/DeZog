@@ -173,7 +173,7 @@ class LabelsClass {
 			// Filter line
 			if(filterRegEx)
 				line = line.replace(filterRegEx, replace);
-			// extract address
+			// Extract address.
 			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
@@ -207,71 +207,74 @@ class LabelsClass {
 							lastLabel = undefined;
 						}
 					}
-				}
 
-				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
-				const match = labelRegex.exec(line);
-				if(match) {
-					let label = match[3];
-					if(label.startsWith('.')) {
-						// local label
-						if(lastLabel) // Add Last label
-							label = lastLabel + label;
-					}
-					else {
-						// Remember last label (for local labels)
-						lastLabel = label;
-					}
-					const global = match[2];
-					if(global == '' && labelPrefix)
-						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
-					const equ = match[4];
-					if(equ) {
-						if(equ.toLowerCase().startsWith('equ')) {
-							// EQU: add to label array
-							const valueString = match[5];
-							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
-							try {
-								// Evaluate
-								const value = Utility.evalExpression(valueString);
-								this.numberForLabel.set(label, value);
-								// Add label
-								this.addLabelForNumber(value, label);
+					// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+					const match = labelRegex.exec(line);
+					if(match) {
+						let label = match[3];
+						if(label.startsWith('.')) {
+							// local label
+							if(lastLabel) // Add Last label
+								label = lastLabel + label;
+						}
+						else {
+							// Remember last label (for local labels)
+							lastLabel = label;
+						}
+						const global = match[2];
+						if(global == '' && labelPrefix)
+							label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
+						const equ = match[4];
+						if(equ) {
+							if(equ.toLowerCase().startsWith('equ')) {
+								// EQU: add to label array
+								const valueString = match[5];
+								// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+								try {
+									// Evaluate
+									const value = Utility.evalExpression(valueString);
+									this.numberForLabel.set(label, value);
+									// Add label
+									this.addLabelForNumber(value, label);
+								}
+								catch {};	// do nothing in case of an error
 							}
-							catch {};	// do nothing in case of an error
+						}
+						else {
+							// Label: add to label array
+							this.numberForLabel.set(label, address);
+							// Add label
+							this.addLabelForNumber(address, label);
 						}
 					}
-					else {
-						// Label: add to label array
-						this.numberForLabel.set(label, address);
-						// Add label
-						this.addLabelForNumber(address, label);
-					}
-				}
 
-				// Search for bytes after the address:
-				const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
-				// Count how many bytes are included in the line.
-				if(matchBytes) {
-					const bytes = matchBytes[1];
-					const lenBytes = bytes.length-1;
-					countBytes = 0;
-					for(let k=0; k<lenBytes;k++) {
-						// Find border between character and whitespace:
-						if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
-							countBytes ++;
+					// Search for bytes after the address:
+					const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
+					// Count how many bytes are included in the line.
+					if(matchBytes) {
+						const bytes = matchBytes[1];
+						const lenBytes = bytes.length-1;
+						countBytes = 0;
+						for(let k=0; k<lenBytes;k++) {
+							// Find border between character and whitespace:
+							if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
+								countBytes ++;
+						}
 					}
-				}
 
-				// Store address (or several addresses for one line)
-				for(let k=0; k<countBytes; k++) {
-					const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
-					listFile.push(entry)
+					// Store address (or several addresses for one line)
+					for(let k=0; k<countBytes; k++) {
+						const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
+						listFile.push(entry)
+					}
 				}
 			}
 
-			// Call line handler (if any)
-			lineHandler(address, line, lineNumber);
+			// Check if line is "OK":
+			if(line.substr(4,1) != '~') {
+				// Call line handler (if any)
+				lineHandler(address, line, lineNumber);
+			}
 
 			// next
 			prev = address

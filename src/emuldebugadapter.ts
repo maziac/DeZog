@@ -403,7 +403,7 @@ export class EmulDebugAdapter extends DebugSession {
 					// WPMEM ,1,w, MWV&B8h/0
 
 					// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-					const match = /;.*WPMEM(?=[,\s])\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+					const match = /;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 					if(match) {
 						// get arguments
 						let addressString = match[1];
@@ -429,7 +429,7 @@ export class EmulDebugAdapter extends DebugSession {
 								// numbers after the address field.
 								// If not the "WPMEM" is assumed to be inside a
 								// macro and omitted.
-								const match = /^[0-9a-f]+ [0-9a-f]+/.exec(entry.line);
+								const match = /^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
 								if(!match)
 									continue;
 							}
