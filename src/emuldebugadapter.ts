@@ -618,9 +618,12 @@ export class EmulDebugAdapter extends DebugSession {
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
 				if(Settings.launch.startAutomatically) {
-					this.emulatorContinue();
-					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without vscode would stay stopped.
+					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
 					this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+					setTimeout(() => {
+						// Delay call because the breakpoints are set afterwards.
+						this.emulatorContinue();
+					}, 500);
 				}
 				else {
 					this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));

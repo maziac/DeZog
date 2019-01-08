@@ -55,7 +55,7 @@ A typical configuration looks like this:
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the (Listfile)[#listfile] section.
-- startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false)
+- startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false).
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
