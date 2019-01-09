@@ -152,7 +152,7 @@ class LabelsClass {
 
 		// Regex to find labels
 		//let labelRegex = new RegExp(/^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
-		let labelRegex = new RegExp(/^[0-9a-f]+\s+([\s0-9a-f]*)(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		let labelRegex = new RegExp(/^[0-9a-f]+\s+([\s0-9a-f]*)\s+(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
@@ -162,7 +162,9 @@ class LabelsClass {
 		let lineNumber = 0;
 		let labelPrefix;	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
+		let dbgLineNr = 0;
 		for( let origLine of listLines) {
+			dbgLineNr ++;
 			let countBytes = 1;
 			line = origLine;
 			// sjasmplus or z88dk

@@ -1471,27 +1471,22 @@ export class EmulDebugAdapter extends DebugSession {
 				// Defaults
 				if(labelString) {
 					let labelValue = NaN;
+					let lastLabel;
+					let modulePrefix;
 					// First check for module name and local label prefix (sjasmplus).
 					if(Emulator.RegisterCache) {
 						// Get current pc
 						const pc = Z80Registers.parsePC(Emulator.RegisterCache);
 						const entry = Labels.getFileAndLineForAddress(pc);
-						// Local label:
-						const lastLabel = entry.lastLabel;
-						if(lastLabel && labelString.startsWith('.')) {
-							labelString = lastLabel + labelString;
-						}
-						// Get module
-						const modulePrefix = entry.modulePrefix;
-						if(modulePrefix)
-							labelValue = Labels.getNumberFromString(modulePrefix+labelString) || NaN;
+						// Local label and prefix
+						lastLabel = entry.lastLabel;
+						modulePrefix = entry.modulePrefix;
 					}
 
-					// If not found try the label itself.
-					if(isNaN(labelValue)) {
-						// Try the name itself
-						labelValue = Labels.getNumberFromString(labelString) || NaN;
-					}
+					// Convert label
+					try {
+						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+					} catch {}
 
 					if(!isNaN(labelValue)) {
 						var size = 100;

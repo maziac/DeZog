@@ -6,6 +6,8 @@
 - New parameters "asm" and "srcDirs".
 - '-eval' now evaluates also label names with a starting "_".
 - Dropped support for label files. The labels are extracted anyway from the list file.
+- Watches allow now more complex expressions not only labels. Now e.g. "dlistw+3" is supported.
+
 
 ## 0.6.2
 - Debugging can now start immediately after loading the snapshot file. Requires ZEsarUX 7.2.

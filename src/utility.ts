@@ -191,10 +191,12 @@ export class Utility {
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * @param evalRegisters If true then register names will also be evaluate.
+	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
+	 * @param lastLAbel An optional last label to use for local lasbels label. (sjasmplus)
 	 * @returns The evaluated number.
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
-	public static evalExpression(expr: string, evalRegisters = true): number {
+	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?:string, lastLabel?: string): number {
 		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[01]+b|[a-fA-F0-9]+h|0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*|'[\S ]+')/g, (match, p1) => {
 			let res;
 			if(evalRegisters) {
@@ -209,10 +211,22 @@ export class Utility {
 				}
 			}
 			if(isNaN(res)) {
-				// Check for label
-				res = Labels.getNumberFromString(p1);
-				if(isNaN(res))
-					throw SyntaxError(p1 + ' is unknown.');
+				let lbl = p1;
+				// Local label?
+				if(lastLabel && lbl.startsWith('.')) {
+					lbl = lastLabel + lbl;
+				}
+				// module prefix?
+				if(modulePrefix) {
+					res = Labels.getNumberFromString(modulePrefix+lbl) || NaN;
+				}
+
+				if(isNaN(res)) {
+					// Check for "normal" label
+					res = Labels.getNumberFromString(lbl);
+					if(isNaN(res))
+						throw SyntaxError(p1 + ' is unknown.');
+				}
 			}
 			return res.toString();
 		});
