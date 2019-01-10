@@ -162,9 +162,9 @@ class LabelsClass {
 		let lineNumber = 0;
 		let labelPrefix;	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
-		let dbgLineNr = 0;
+		//let dbgLineNr = 0;
 		for( let origLine of listLines) {
-			dbgLineNr ++;
+		//	dbgLineNr ++;
 			let countBytes = 1;
 			line = origLine;
 			// sjasmplus or z88dk
@@ -209,66 +209,66 @@ class LabelsClass {
 							lastLabel = undefined;
 						}
 					}
+				}
 
-					// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
-					const match = labelRegex.exec(line);
-					if(match) {
-						let label = match[3];
-						if(label.startsWith('.')) {
-							// local label
-							if(lastLabel) // Add Last label
-								label = lastLabel + label;
-						}
-						else {
-							// Remember last label (for local labels)
-							lastLabel = label;
-						}
-						const global = match[2];
-						if(global == '' && labelPrefix)
-							label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
-						const equ = match[4];
-						if(equ) {
-							if(equ.toLowerCase().startsWith('equ')) {
-								// EQU: add to label array
-								const valueString = match[5];
-								// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
-								try {
-									// Evaluate
-									const value = Utility.evalExpression(valueString);
-									this.numberForLabel.set(label, value);
-									// Add label
-									this.addLabelForNumber(value, label);
-								}
-								catch {};	// do nothing in case of an error
+				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+				const match = labelRegex.exec(line);
+				if(match) {
+					let label = match[3];
+					if(label.startsWith('.')) {
+						// local label
+						if(lastLabel) // Add Last label
+							label = lastLabel + label;
+					}
+					else {
+						// Remember last label (for local labels)
+						lastLabel = label;
+					}
+					const global = match[2];
+					if(global == '' && labelPrefix)
+						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
+					const equ = match[4];
+					if(equ) {
+						if(equ.toLowerCase().startsWith('equ')) {
+							// EQU: add to label array
+							const valueString = match[5];
+							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+							try {
+								// Evaluate
+								const value = Utility.evalExpression(valueString);
+								this.numberForLabel.set(label, value);
+								// Add label
+								this.addLabelForNumber(value, label);
 							}
-						}
-						else {
-							// Label: add to label array
-							this.numberForLabel.set(label, address);
-							// Add label
-							this.addLabelForNumber(address, label);
+							catch {};	// do nothing in case of an error
 						}
 					}
+					else {
+						// Label: add to label array
+						this.numberForLabel.set(label, address);
+						// Add label
+						this.addLabelForNumber(address, label);
+					}
+				}
 
-					// Search for bytes after the address:
-					const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
-					// Count how many bytes are included in the line.
-					if(matchBytes) {
-						const bytes = matchBytes[1];
-						const lenBytes = bytes.length-1;
-						countBytes = 0;
-						for(let k=0; k<lenBytes;k++) {
-							// Find border between character and whitespace:
-							if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
-								countBytes ++;
-						}
+				// Search for bytes after the address:
+				const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
+				// Count how many bytes are included in the line.
+				if(matchBytes) {
+					const bytes = matchBytes[1];
+					const lenBytes = bytes.length-1;
+					countBytes = 0;
+					for(let k=0; k<lenBytes;k++) {
+						// Find border between character and whitespace:
+						if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
+							countBytes ++;
 					}
+				}
 
-					// Store address (or several addresses for one line)
-					for(let k=0; k<countBytes; k++) {
-						const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
-						listFile.push(entry)
-					}
+				// Store address (or several addresses for one line)
+				for(let k=0; k<countBytes; k++) {
+					const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
+					listFile.push(entry)
 				}
 			}
 
@@ -427,15 +427,14 @@ class LabelsClass {
 			const absFName = Utility.getAbsSourceFilePath(fName, sources);
 			const relFileName = Utility.getRelFilePath(absFName);
 			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
-			let expectedLine1;
-			let expectedLine2;	// The current line and the next lines are tested. for macros the line number does not increase.
+			let expectedPluses = '';	// Used to test if the include file ended
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
 				if(line.length == 0)
 					continue;
 
 				// get line number with pluses
-				var matchLineNumber = /^([0-9]+)([\s+]+)(.*)/.exec(line);
+				var matchLineNumber = /^([0-9]+)(\+*)\s+(.*)/.exec(line);
 				if(!matchLineNumber)
 					continue;	// Not for sjasmplus, but z88dk contains lines without line number.
 				const lineNumber = parseInt(matchLineNumber[1]);
@@ -445,13 +444,9 @@ class LabelsClass {
 				const remainingLine = matchLineNumber[3];
 
 				// Check for end of include file
-				if(expectedLine1
-					&& lineNumberWithPluses != expectedLine1
-					&& lineNumberWithPluses != expectedLine2) {
+				if(pluses.length < expectedPluses.length) {
 					// End of include found
-					// Note: this is note 100% error proof. sjasmplus is not showing more than 3 include levels (3 pluses). If there is a higher include level AND line numbers of different files would match then this fails.
-					if(index == 0)
-						throw SyntaxError('sjasmplus list file: Line number problem with include files: ' + line);
+					// Note: this is not 100% error proof. sjasmplus is not showing more than 3 include levels (3 pluses). If there is a higher include level a warning is thrown.
 					stack.pop();
 					index = stack.length-1;
 				}
@@ -459,23 +454,24 @@ class LabelsClass {
 				// Check for start of include file
 				var matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
+					if(pluses.length >= 3) {
+						// sjasmplus doesn't show more than 3 include levels.
+						// So show a warning that the include file here is not taken into account.
+						throw "Include nesting level too high. The sjasmplus list file output format does not indicate a nesting level higher than 3 'includes'. In order to use source level debugging you need to decrease the nesting level or you need to change to .list file debugging.";
+					}
 					const fName = matchInclStart[1];
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);
 					const relFName = Utility.getRelFilePath(absFName);
 					stack.push({fileName: relFName, lineNr: 0});
 					index = stack.length-1;
-					expectedLine1 = undefined;
-					expectedLine2 = undefined;
-				}
-				else {
-					expectedLine1 = lineNumberWithPluses;
-					expectedLine2 = (lineNumber+1) + pluses;
-					expectedLine2 = expectedLine2.trim();
 				}
 
 				// Associate with right file
 				listFile[lineNr].fileName = stack[index].fileName;
 				listFile[lineNr].lineNr = (index == 0 && !mainFileName) ? lineNr : lineNumber-1;
+
+				// Next
+				expectedPluses = pluses;
 			}
 		}
 
