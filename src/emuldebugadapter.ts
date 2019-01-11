@@ -481,83 +481,87 @@ export class EmulDebugAdapter extends DebugSession {
 						}
 
 						// Get part of the string after the "ASSERT"
-						const part = entry.line.substr(matchAssert.index);
+						const part = entry.line.substr(matchAssert.index + matchAssert[0].length).trim();
 
-						const regex = /\s*([a-z]+)\s*([<>=!]+)\s*([^;|&]*)(\|\||&&*)?/gi;
-						let match = regex.exec(part);
-						if(!match)	// At least one match should be found
-							throw Error("Expecting 'ASSERT var comparison expr'.");
+						// Check if no condition was set = ASSERT false = Always break
 						let conds = '';
-						let concatString;
-						while (match) {
-							// Get arguments
-							let varString = match[1] || "";
-							varString = varString.trim();
-							let compString = match[2] || "";
-							compString = compString.trim();
-							let exprString = match[3] || "";
-							exprString = exprString.trim();
-							concatString = match[4] || "";
-							concatString = concatString.trim();
+						if(part.length > 0) {
+							// Some condition is set
+							const regex = /\s*([a-z]+)\s*([<>=!]+)\s*([^;|&]*)(\|\||&&*)?/gi;
+							let match = regex.exec(part);
+							if(!match)	// At least one match should be found
+								throw Error("Expecting 'ASSERT var comparison expr'.");
+							let concatString;
+							while (match) {
+								// Get arguments
+								let varString = match[1] || "";
+								varString = varString.trim();
+								let compString = match[2] || "";
+								compString = compString.trim();
+								let exprString = match[3] || "";
+								exprString = exprString.trim();
+								concatString = match[4] || "";
+								concatString = concatString.trim();
 
-							// Check and "invert" the assert condition.
-							// Check register / variable
-							if(!Z80Registers.isRegister(varString))
-								throw Error("Don't know '" + varString + "'");
+								// Check and "invert" the assert condition.
+								// Check register / variable
+								if(!Z80Registers.isRegister(varString))
+									throw Error("Don't know '" + varString + "'");
 
-							// Convert to a number
-							const exprValue = Utility.evalExpression(exprString, false); // don't evaluate registers
+								// Convert to a number
+								const exprValue = Utility.evalExpression(exprString, false); // don't evaluate registers
 
-							// Check comparison
-							let resComp;
-							if(compString.length > 0) {
-								// The ASSERT condition needs to be negated for the breakpoint.
-								switch(compString) {
-									// >= :
-									case '<':	resComp = '>='; break;
-									// <= :
-									case '>':	resComp = '<='; break;
-									// > :
-									case '<=':	resComp = '>'; break;
-									// < :
-									case '>=':	resComp = '<'; break;
-									// != :
-									case '==':	resComp = '!='; break;
-									// == :
-									case '!=':	resComp = '=='; break;
+								// Check comparison
+								let resComp;
+								if(compString.length > 0) {
+									// The ASSERT condition needs to be negated for the breakpoint.
+									switch(compString) {
+										// >= :
+										case '<':	resComp = '>='; break;
+										// <= :
+										case '>':	resComp = '<='; break;
+										// > :
+										case '<=':	resComp = '>'; break;
+										// < :
+										case '>=':	resComp = '<'; break;
+										// != :
+										case '==':	resComp = '!='; break;
+										// == :
+										case '!=':	resComp = '=='; break;
+									}
 								}
-							}
-							if(!resComp)
-								throw Error("Don't know comparison '" + compString + "'");
+								if(!resComp)
+									throw Error("Don't know comparison '" + compString + "'");
 
-							// Check concatenation
-							let resConcat = '';
-							if(concatString.length > 0) {
-								// Invert
-								if(concatString == "&&")
-									resConcat = "||";
-								else if(concatString == "||")
-									resConcat = "&&";
-								else
-									throw Error("Cannot handle concatenation with '" + concatString + "'. Use '&&' or '||' instead.");
-								resConcat = ' ' + resConcat;
-							}
+								// Check concatenation
+								let resConcat = '';
+								if(concatString.length > 0) {
+									// Invert
+									if(concatString == "&&")
+										resConcat = "||";
+									else if(concatString == "||")
+										resConcat = "&&";
+									else
+										throw Error("Cannot handle concatenation with '" + concatString + "'. Use '&&' or '||' instead.");
+									resConcat = ' ' + resConcat;
+								}
 
-							// Now create condition for zesarux.
-							const condPart = varString + ' ' + resComp + ' ' + exprValue.toString();
-							if(conds.length > 0)
-								conds += ' ';
-							conds += condPart + resConcat;
-							// Next
-							match = regex.exec(part);
+								// Now create condition for zesarux.
+								const condPart = varString + ' ' + resComp + ' ' + exprValue.toString();
+								if(conds.length > 0)
+									conds += ' ';
+								conds += condPart + resConcat;
+								// Next
+								match = regex.exec(part);
+							}
+							// Check
+							if(concatString.length > 0)	// has to end without concatenation symbol
+								throw Error("Expected condition after concatenation symbol '" + concatString + "'");
 						}
-						// Check
-						if(concatString.length > 0)	// has to end without concatenation symbol
-							throw Error("Expected condition after concatenation symbol '" + concatString + "'");
 
 						// Check if ASSERT for that address already exists.
 						let bp = assertMap.get(entry.address);
-						if(bp) {
+						if(bp && conds.length > 0) {
 							// Already exists: just add condition.
 							// Check that 2nd condition is not too complicated.
 							if(conds.indexOf("&&") >= 0)

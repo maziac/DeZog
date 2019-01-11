@@ -743,7 +743,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected convertCondition(condition: string): string|undefined {
 		if(!condition || condition.length == 0)
-			return undefined;	// No condition
+			return '';	// No condition
 
 		const regex = /([a-z]+)\s*([<>=!]+)\s*([0-9]*)\s*(\|\||&&*)?/gi;
 		let conds = '';
