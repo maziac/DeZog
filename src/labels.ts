@@ -252,17 +252,19 @@ class LabelsClass {
 				}
 
 				// Search for bytes after the address:
-				const matchBytes = /^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)/i.exec(line);
+				const matchBytes = /^[0-9a-f]+\s+(([0-9a-f][0-9a-f]\s)+|([0-9a-f][0-9a-f])+)/i.exec(line);
 				// Count how many bytes are included in the line.
 				if(matchBytes) {
-					const bytes = matchBytes[1];
-					const lenBytes = bytes.length-1;
+					const bytes = matchBytes[1].trim();
+					const lenBytes = bytes.length;
 					countBytes = 0;
 					for(let k=0; k<lenBytes;k++) {
-						// Find border between character and whitespace:
-						if(bytes.charCodeAt(k) > 32 && bytes.charCodeAt(k+1) <= 32)
+						// Count all characters (chars are hex, so 2 characters equal to 1 byte)
+						if(bytes.charCodeAt(k) > 32)
 							countBytes ++;
 					}
+					// 2 characters = 1 byte
+					countBytes /= 2;
 				}
 
 				// Store address (or several addresses for one line)
