@@ -560,6 +560,20 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
 
+- sjasmplus: Stepping through instructions separated by a colon:
+The following code
+~~~
+  inc hl : inc hl
+~~~
+might appear in the list file as
+~~~
+376+  814A
+376+  814A 23              inc hl
+377+  814B 23            inc hl
+~~~
+The first column is the line number. Please note that the line number of the 2 inc hl instructions is not the same. Therefore z80-debug might sometimes not display the right line during stepping.
+This seems to happen only seldomly.
+
 
 ## Notes
 
