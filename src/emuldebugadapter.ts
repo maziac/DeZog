@@ -602,12 +602,21 @@ export class EmulDebugAdapter extends DebugSession {
 			// Run user commands after load.
 			for(const cmd of Settings.launch.commandsAfterLaunch) {
 				this.serializer.exec(() => {
-				vscode.debug.activeDebugConsole.appendLine(cmd);
-					this.evaluateCommand(cmd, text => {
-						vscode.debug.activeDebugConsole.appendLine(text);
+					vscode.debug.activeDebugConsole.appendLine(cmd);
+					try {
+						this.evaluateCommand(cmd, text => {
+							vscode.debug.activeDebugConsole.appendLine(text);
+							// "Return"
+							this.serializer.endExec();
+						});
+					}
+					catch(err) {
+						// Some problem occurred
+						const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
+						this.showWarning(output);
 						// "Return"
 						this.serializer.endExec();
-					});
+					}
 				});
 			}
 
