@@ -254,7 +254,7 @@ export class MemoryDumpView extends BaseView {
 	 * @param regsString The register string from zesarux.
 	 */
 	protected createHtmlTable(metaBlock: MetaBlock, regsString: string): string {
-		let format = `
+		const format = `
 		<script>
 		const vscode = acquireVsCodeApi();
 
@@ -415,20 +415,6 @@ export class MemoryDumpView extends BaseView {
 		</table>
 		`;
 
-		// Add a legend to the table with registers and colors.
-		let legend = `
-
-		Legend:<br>
-		`;
-		const regColors = Settings.launch.memoryViewer.registerPointerColors;
-		const regColorsLen = regColors.length;
-		for(let k=0; k<regColorsLen; k+=2) {
-			const color = regColors[k+1];
-			//legend += '<span style="background-color: ' + color + ';borderRadius: 3px">' + regColors[k] + ' = ' + color + '</span><br>';
-			legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
-		}
-		format += legend + '\n<br><br>\n\n';
-
 		// Create a string with the table itself.
 		let table = '';
 		let address = metaBlock.address;
@@ -536,8 +522,24 @@ export class MemoryDumpView extends BaseView {
 
 		%s
 
+		%s
+
 		</body>
 		</html>`;
+
+
+		// Add a legend to the table with registers and colors.
+		let legend = `
+		<br>
+		Legend:<br>
+		`;
+		const regColors = Settings.launch.memoryViewer.registerPointerColors;
+		const regColorsLen = regColors.length;
+		for(let k=0; k<regColorsLen; k+=2) {
+			const color = regColors[k+1];
+			//legend += '<span style="background-color: ' + color + ';borderRadius: 3px">' + regColors[k] + ' = ' + color + '</span><br>';
+			legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
+		}
 
 		// Get register values
 		Emulator.getRegisters((regsString) => {
@@ -550,7 +552,7 @@ export class MemoryDumpView extends BaseView {
 			}
 
 			// Add html body
-			const html = util.format(format, tables);
+			const html = util.format(format, tables, legend);
 			this.vscodePanel.webview.html = html;
 
 			// Set colors for register pointers
