@@ -302,12 +302,13 @@ export class Settings {
 				valueHoverFormat: "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}",
 				registerPointerColors: [
 					"HL", "darkgreen",
-					"DE", "blue",
-					"IX", "green",
-					"IY", "red"
+					"DE", "darkcyan",
+					"BC", "dimgray",
+					"IX", "darkorange",
+					"IY", "darkviolet"
 				],
 				registersMemoryView: [
-					"HL", "DE", "IX", "IY"
+					"HL", "DE", "BC", "IX", "IY"
 				]
 			};
 		}

@@ -261,9 +261,9 @@
 									"type": "string",
 									"description": "see registerVarFormat. Format for the value when hovering."
 								},
-								"registerPointersToShow": {
+								"registerPointerColors": {
 									"type": "array",
-									"description": "You can select here which registers should appear in the memory view if their value is in range of the memory view. Additionally you select also the background color for the register. E.g. select [ 'HL', 'green', 'DE', 'blue', 'IX', 'red' ].",
+									"description": "An array with register/color pairs. All selected register will appear with the corresponden color in the memory view. Registers not chosen will not appear.",
 									"items": [
 										{
 											"type": "string"
@@ -271,14 +271,22 @@
 										{
 											"type": "string"
 										}
+									],
+									"default":  [
+										"HL", "darkgreen",
+										"DE", "darkcyan",
+										"BC", "dimgray",
+										"IX", "darkorange",
+										"IY", "darkviolet"
 									]
 								},
 								"registersMemoryView": {
 									"type": "array",
-									"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. [ 'HL', 'DE', 'IX' ].",
+									"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. [ 'HL', 'DE', 'IX' ].",
 									"items": {
 										"type": "string"
-									}
+									},
+									"default": [ "HL", "DE", "BC", "IX", "IY" ]
 								}
 							},
 							"socketTimeout": {
