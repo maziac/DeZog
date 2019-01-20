@@ -161,6 +161,7 @@ class LabelsClass {
 		let line;
 		let lineNumber = 0;
 		let labelPrefix;	// Only used for sjasmplus
+		let labelPrefixStack = new Array<string>();	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		//let dbgLineNr = 0;
 		for( let origLine of listLines) {
@@ -190,8 +191,8 @@ class LabelsClass {
 					var matchModuleStart = /^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(line);
 					if(matchModuleStart) {
 						const moduleName = matchModuleStart[1];
-						//if(!labelPrefix)	labelPrefix = '';
-						labelPrefix = (labelPrefix || '') + moduleName + '.';
+						labelPrefixStack.push(moduleName);
+						labelPrefix = labelPrefixStack.join('.') + '.';
 						// Init last label
 						lastLabel = undefined;
 					}
@@ -200,9 +201,9 @@ class LabelsClass {
 						var matchModuleEnd = /^[0-9a-f]+\s+endmodule\b/i.exec(line);
 						if(matchModuleEnd) {
 							// Remove last prefix
-							const k = labelPrefix.lastIndexOf('.', labelPrefix.length-2);
-							if(k >= 0)
-								labelPrefix = labelPrefix.substr(0,k+1);
+							labelPrefixStack.pop();
+							if(labelPrefixStack.length > 0)
+								labelPrefix = labelPrefixStack.join('.') + '.';
 							else
 								labelPrefix = undefined;
 							// Forget last label
