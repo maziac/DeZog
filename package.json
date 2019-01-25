@@ -61,7 +61,25 @@
 		"onDebug"
 	],
 	"contributes": {
+		"languages": [
+			{
+				"id": "asm-collection",
+				"extensions": [
+					".list",
+					".a80",
+					".asm",
+					".inc",
+					".s"
+				],
+				"aliases": [
+					"Assembler file"
+				]
+			}
+		],
 		"breakpoints": [
+			{
+				"language": "asm-collection"
+			},
 			{
 				"language": "z80-macroasm"
 			},
@@ -272,12 +290,17 @@
 											"type": "string"
 										}
 									],
-									"default":  [
-										"HL", "darkgreen",
-										"DE", "darkcyan",
-										"BC", "dimgray",
-										"IX", "darkorange",
-										"IY", "darkviolet"
+									"default": [
+										"HL",
+										"darkgreen",
+										"DE",
+										"darkcyan",
+										"BC",
+										"dimgray",
+										"IX",
+										"darkorange",
+										"IY",
+										"darkviolet"
 									]
 								},
 								"registersMemoryView": {
@@ -286,7 +309,13 @@
 									"items": {
 										"type": "string"
 									},
-									"default": [ "HL", "DE", "BC", "IX", "IY" ]
+									"default": [
+										"HL",
+										"DE",
+										"BC",
+										"IX",
+										"IY"
+									]
 								}
 							},
 							"socketTimeout": {
