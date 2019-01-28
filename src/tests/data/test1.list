@@ -1,0 +1,38 @@
+# File main.asm
+7700 4f                  ld c,a ; main.asm: line 0
+7710 c9                  ret 	; line 1
+7720                MAC_B 	; line 2
+7721 cb 7f               bit 7,a
+7722 28 02               defb 028h, 2 ; jr z,2 simulate a local label
+7723 ed 44               neg
+7724                endm
+# End of macro MAC_B
+7730                ld l,a  ; line 3
+7740           include "zxspectrum.asm"     ; line 4
+7740            			; zxspectrum: line 0
+8810           sub_67b1h: 	; line 1
+8820                ld l,a  ; line 2
+8830                ABS_A 	; line 3
+8831 cb 7f               bit 7,a
+8832 28 02               defb 028h, 2 ; jr z,2 simulate a local label
+8833 ed 44               neg
+8834                endm
+# End of macro ABS_A
+8834 5f                  ld e,a 	; line 4
+8835                ;call SUB_ABS_A          ;67b2     cd 75 70  . u p  ; line 5
+8836                ABS_A 	; line 6
+8837 cb 7f               bit 7,a
+8838 28 02               defb 028h, 2 ; jr z,2 simulate a local label
+8840 ed 44               neg
+8841                endm
+# End of macro ABS_A
+8841            	; line 7
+8841           include "b.asm"     ; line 8
+8841            	; line 0
+# End of file b.asm
+8841 fe 03               cp 003h        ;67b5     fe 03     . . ; line 9
+# End of file zxspectrum.asm
+8843 3e 00               ld a,000h      ;67b7     3e 00     > .  ; main.asm: line 5
+8845 f8                  ret m               ;67b9     f8   . ; main.asm: line 6
+# End of file main.asm
+0000
