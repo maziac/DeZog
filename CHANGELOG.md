@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+- Disassembler:
+	- Corrected opcode "SUB A,s" to "SUB s".
+	- Added new Z80N barrel shift and "JP (C)" opcodes.
+
+
 ## 0.7.0
 - New assembler listings supported: "sjasmplus".
 - Better support for z88dk-z80asm.

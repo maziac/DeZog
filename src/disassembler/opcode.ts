@@ -1132,14 +1132,14 @@ export const Opcodes: Array<Opcode> = [
 	new Opcode(0x8D, "ADC A,L"),
 	new Opcode(0x8E, "ADC A,(HL)"),
 	new Opcode(0x8F, "ADC A,A"),
-	new Opcode(0x90, "SUB A,B"),
-	new Opcode(0x91, "SUB A,C"),
-	new Opcode(0x92, "SUB A,D"),
-	new Opcode(0x93, "SUB A,E"),
-	new Opcode(0x94, "SUB A,H"),
-	new Opcode(0x95, "SUB A,L"),
-	new Opcode(0x96, "SUB A,(HL)"),
-	new Opcode(0x97, "SUB A,A"),
+	new Opcode(0x90, "SUB B"),
+	new Opcode(0x91, "SUB C"),
+	new Opcode(0x92, "SUB D"),
+	new Opcode(0x93, "SUB E"),
+	new Opcode(0x94, "SUB H"),
+	new Opcode(0x95, "SUB L"),
+	new Opcode(0x96, "SUB (HL)"),
+	new Opcode(0x97, "SUB A"),
 	new Opcode(0x98, "SBC A,B"),
 	new Opcode(0x99, "SBC A,C"),
 	new Opcode(0x9A, "SBC A,D"),
@@ -1202,7 +1202,7 @@ export const Opcodes: Array<Opcode> = [
 	new Opcode(0xD3, "OUT (#n),A"),
 	new Opcode(0xD4, "CALL NC,#nn"),
 	new Opcode(0xD5, "PUSH DE"),
-	new Opcode(0xD6, "SUB A,#n"),
+	new Opcode(0xD6, "SUB #n"),
 	new Opcode(0xD7, "RST %s"),
 	new Opcode(0xD8, "RET C"),
 	new Opcode(0xD9, "EXX"),
@@ -1255,7 +1255,13 @@ export const OpcodesED: Array<Opcode> = [
 	...Array<number>(0x02).fill(0).map((value, index) => new OpcodeInvalid(0x25+index)),
 
 	new OpcodeNext(0x27, "TEST #n"),     // ZX Spectrum Next
-	...Array<number>(0x08).fill(0).map((value, index) => new OpcodeInvalid(0x28+index)),
+
+	new OpcodeNext(0x28, "BSLA DE,B"),     // ZX Spectrum Next
+	new OpcodeNext(0x29, "BSRA DE,B"),     // ZX Spectrum Next
+	new OpcodeNext(0x2A, "BSRL DE,B"),     // ZX Spectrum Next
+	new OpcodeNext(0x2B, "BSRF DE,B"),     // ZX Spectrum Next
+	new OpcodeNext(0x2C, "BRLC DE,B"),     // ZX Spectrum Next
+	...Array<number>(0x03).fill(0).map((value, index) => new OpcodeInvalid(0x2D+index)),
 
 	new OpcodeNext(0x30, "MUL D,E"),     // ZX Spectrum Next
 	new OpcodeNext(0x31, "ADD HL,A"),     // ZX Spectrum Next
@@ -1340,7 +1346,10 @@ export const OpcodesED: Array<Opcode> = [
 	new OpcodeNext(0x93, "PIXELDN"),     // ZX Spectrum Next
 	new OpcodeNext(0x94, "PIXELAD"),     // ZX Spectrum Next
 	new OpcodeNext(0x95, "SETAE"),     // ZX Spectrum Next
-	...Array<number>(0x0A).fill(0).map((value, index) => new OpcodeInvalid(0x96+index)),
+	...Array<number>(0x02).fill(0).map((value, index) => new OpcodeInvalid(0x96+index)),
+	new OpcodeNext(0x98, "JP (C)"),     // ZX Spectrum Next
+
+	...Array<number>(0x07).fill(0).map((value, index) => new OpcodeInvalid(0x99+index)),
 
 	new Opcode(0xA0, "LDI"),
 	new Opcode(0xA1, "CPI"),
