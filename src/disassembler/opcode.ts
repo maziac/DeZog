@@ -197,6 +197,11 @@ export class Opcode {
 			const jumpAddress = this.code & 0b00111000;
 			this.value = jumpAddress;
 		}
+		else if(name.startsWith("JP")) {	// "JP (HL)", "JP (IXY)" or "JP (C)"
+			// Note: we don't set a branch address because we don't know where it jumps to: this.flags |= OpcodeFlag.BRANCH_ADDRESS;
+			// But it is a stop code.
+			this.flags |= OpcodeFlag.STOP;
+		}
 
 		// Store
 		this.name = name;
@@ -1671,9 +1676,13 @@ export const OpcodesDD = Opcodes.map((opcode, index) => {
 	if(nameArray.length > 1) {
 		const last = nameArray.length-1;
 		let name2 = nameArray[last];
-		const match = /\(HL\)/.exec(name2);
+		const nameFirst = nameArray[0];
+		let match;
+		if(nameFirst != "JP")
+			match = /\(HL\)/.exec(name2);
 		if(match) {
-			// something like "LD A,(HL)" becomes "LD A,(IX+n)"
+			// something like "LD A,(HL)" becomes "LD A,(IX+n)",
+			// But not "JP (HL)"
 			name2 = name2.replace('HL', 'IX%s');
 			opcodeDD.valueType = NumberType.RELATIVE_INDEX;
 			opcodeDD.length ++;

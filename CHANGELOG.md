@@ -4,6 +4,7 @@
 - Disassembler:
 	- Corrected opcode "SUB A,s" to "SUB s".
 	- Added new Z80N barrel shift and "JP (C)" opcodes.
+	- Corrected "JP (IXY)".
 
 
 ## 0.7.0
