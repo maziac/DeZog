@@ -401,24 +401,34 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	  * 'continue' debugger program execution.
-	  * @param contExecHandler The handler that is called when the run command is executed.
-	  * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	  */
-	 public continue(contStoppedHandler: (data)=>void): void {
+	 * 'continue' debugger program execution.
+	 * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+ 	 */
+	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number)=>void): void {
 		// Change state
 		this.state = EmulatorState.RUNNING;
-		// Run
-		//this.continueHandler = contStoppedHandler;
-		zSocket.sendInterruptable('run', data => {
-			//  (could take some time, e.g. until a breakpoint is hit)
-			this.state = EmulatorState.IDLE;
-			// Log reason
-			console.log(data);
-			// Clear register cache
-			this.RegisterCache = undefined;
-			// Call handler
-			contStoppedHandler(data);
+		// Reset T-state counter.
+		zSocket.send('reset-tstates-partial', data => {
+			// Run
+			zSocket.sendInterruptable('run', data => {
+				// (could take some time, e.g. until a breakpoint is hit)
+				// get T-State counter
+				zSocket.send('get-tstates-partial', data => {
+					const tStates = parseInt(data);
+					// get clock frequency
+					zSocket.send('get-cpu-frequency', data => {
+						const cpuFreq = parseInt(data);
+						const time = tStates/cpuFreq;
+						this.state = EmulatorState.IDLE;
+						// Clear register cache
+						this.RegisterCache = undefined;
+						// Call handler
+						contStoppedHandler(data, tStates, time);
+					});
+				});
+			});
 		});
 	}
 
@@ -445,11 +455,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 		handler();
 	}
 
-	 /**
-	  * 'step over' an instruction in the debugger.
-	  * @param handler The handler that is called after the step is performed.
-	  */
-	 public stepOver(handler:()=>void): void {
+	/**
+	 * 'step over' an instruction in the debugger.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	 public stepOver(handler:(tStates: number, time: number)=>void): void {
 		// Zesarux is very special in the 'step-over' behaviour.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
@@ -459,7 +471,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// 'step-into' is not the desired behaviour for a CALL.
 		// So we first check if the instruction is a CALL and
 		// then either excute a 'step-over' or a step-into'.
-		this.getRegisters( data => {
+		this.getRegisters(data => {
 			const pc = Z80Registers.parsePC(data);
 			zSocket.send('disassemble ' + pc, data => {
 				// Clear register cache
@@ -483,12 +495,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 							zSocket.send('enable-breakpoint ' + bpId, () => {
 								// Run
 								this.state = EmulatorState.RUNNING;
-								zSocket.send('cpu-step-over', data => {
+								this.cpuStepGetTime('cpu-step-over', (tStates, time) => {
 									// takes a little while, then step-over RET
 									// Disable breakpoint
 									zSocket.send('disable-breakpoint ' + bpId, () => {
 										this.state = EmulatorState.IDLE;
-										handler();
+										handler(tStates, time);
 									});
 								});
 							});
@@ -499,9 +511,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// No special handling for the other opcodes.
 					const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
 					// Step
-					zSocket.send(cmd, data => {
+					this.cpuStepGetTime(cmd, (tStates, time) => {
 						// Call handler
-						handler();
+						handler(tStates, time);
 					});
 				}
 			});
@@ -509,26 +521,54 @@ export class ZesaruxEmulator extends EmulatorClass {
 	}
 
 
-	 /**
-	  * 'step into' an instruction in the debugger.
-	  * @param handler The handler that is called after the step is performed.
-	  */
-	 public stepInto(handler:()=>void): void {
+	/**
+	 * 'step into' an instruction in the debugger.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	public stepInto(handler:(tStates: number, time: number)=>void): void {
 		// Clear register cache
 		this.RegisterCache = undefined;
-		// Step into
-		zSocket.send('cpu-step', data => {
-			// Call handler
-			handler();
+		this.cpuStepGetTime('cpu-step', handler);
+	}
+
+
+	/**
+	 * Executes a step and also returns the T-states and time needed.
+	 * @param cmd Either 'cpu-step' or 'cpu-step-over'.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	protected cpuStepGetTime(cmd: string, handler:(tStates: number, time: number)=>void): void {
+		// Reset T-state counter.
+		zSocket.send('reset-tstates-partial', data => {
+			// Step into
+			zSocket.send(cmd, data => {
+				// get T-State counter
+				zSocket.send('get-tstates-partial', data => {
+					const tStates = parseInt(data);
+					// get clock frequency
+					zSocket.send('get-cpu-frequency', data => {
+						const cpuFreq = parseInt(data);
+						const time = tStates/cpuFreq;
+						// Call handler
+						handler(tStates, time);
+					});
+				});
+			});
 		});
 	}
 
 
-	 /**
-	  * 'step out' of current call.
-	  * @param handler The handler that is called after the step out is performed.
-	  */
-	 public stepOut(handler:()=>void): void {
+	/**
+	 * 'step out' of current call.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	public stepOut(handler:(tStates?: number, time?: number)=>void): void {
 		// zesarux does not implement a step-out. Therefore we analyze the call stack to
 		// find the first return address.
 		// Then a breakpoint is created that triggers when the SP changes to  that address.
@@ -582,16 +622,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 											this.RegisterCache = undefined;
 											// Run
 											this.state = EmulatorState.RUNNING;
-											zSocket.send('run', () => {
-												// takes a little while, then step-over RET
-												// Disable breakpoint
-												zSocket.send('disable-breakpoint ' + bpId, () => {
-													this.state = EmulatorState.IDLE;
-													handler();
-													return;
+											// Reset T-state counter.
+											zSocket.send('reset-tstates-partial', data => {
+												zSocket.send('run', () => {
+													// takes a little while, then step-over RET
+													// get T-State counter
+													zSocket.send('get-tstates-partial', data => {
+														const tStates = parseInt(data);
+														// get clock frequency
+														zSocket.send('get-cpu-frequency', data => {
+															const cpuFreq = parseInt(data);
+															const time = tStates/cpuFreq;
+															// Disable breakpoint
+															zSocket.send('disable-breakpoint ' + bpId, () => {
+																this.state = EmulatorState.IDLE;
+																handler(tStates, time);
+																return;
+															});
+														});
+													});
 												});
 											});
-
 										});
 									});
 								});
@@ -608,7 +659,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			});
 		});
-
 	}
 
 

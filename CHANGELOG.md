@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.1
+- Display of T-states while execuing instructions or sub routine calls.
 - Disassembler:
 	- Corrected opcode "SUB A,s" to "SUB s".
 	- Added new Z80N barrel shift and "JP (C)" opcodes.

@@ -1217,8 +1217,14 @@ export class EmulDebugAdapter extends DebugSession {
 	 * e.g. by a breakpoint. Can be omitted.
 	 */
 	protected emulatorContinue(stopHandler:(data: string)=>void = ()=>{}) {
-		Emulator.continue(data => {
+		Emulator.continue((data, tStates, time) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
+
+			// Display T-states and time
+			this.showUsedTStates(tStates, time);
+
+			// Log reason
+			console.log(data);
 
 			// Update memory dump etc.
 			this.update();
@@ -1228,7 +1234,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// Send break
 			this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
-
 		});
 	}
 
@@ -1283,7 +1288,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Over
-			Emulator.stepOver( () => {
+			Emulator.stepOver((tStates, time) => {
+				// Display T-states and time
+				this.showUsedTStates(tStates, time);
+
 				// Update memory dump etc.
 				this.update({step: true});
 
@@ -1299,6 +1307,32 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
+	 * Prints the used T-states and time to the debug console.
+	 * @param tStates The used T-States.
+	 * @param time The used time.
+	 */
+	protected showUsedTStates(tStates?: number, time?: number) {
+		// Display T-states and time
+		if(tStates) {
+			let tStatesString = 'T-States: ' + tStates;
+			if(time) {
+				let unit = 's';
+				if(time < 1e-3) {
+					time *= 1e+6;
+					unit = 'us';
+				}
+				else if(time < 1) {
+					time *= 1e+3;
+					unit = 'ms';
+				}
+				tStatesString += ', time: ' + time.toPrecision(3) + ' ' + unit;
+			}
+			vscode.debug.activeDebugConsole.appendLine(tStatesString);
+		}
+	}
+
+
+	/**
 	  * vscode requested 'step into'.
 	  * @param response
 	  * @param args
@@ -1307,7 +1341,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Emulator.stepInto( () => {
+			Emulator.stepInto((tStates, time) => {
+				// Display T-states and time
+				this.showUsedTStates(tStates, time);
+
 				// Update memory dump etc.
 				this.update({step: true});
 
@@ -1332,7 +1369,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Emulator.stepOut( () => {
+			Emulator.stepOut((tStates, time) => {
+				// Display T-states and time
+				this.showUsedTStates(tStates, time);
+
 				// Update memory dump etc.
 				this.update();
 

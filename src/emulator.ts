@@ -210,11 +210,13 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	  * 'continue' debugger program execution.
-	  * @param contExecHandler The handler that is called when the run command is executed.
-	  * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	  */
-	 public continue(contExecHandler: ()=>void, contStoppedHandler: (data)=>void): void {
+	 * 'continue' debugger program execution.
+	 * @param contExecHandler The handler that is called when the run command is executed.
+	 * @param contStoppedHandler(data, tStates, time) The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	public continue(contExecHandler: (data: string, tStates?: number, time?: number)=>void, contStoppedHandler: (data)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -235,29 +237,35 @@ export class EmulatorClass extends EventEmitter {
 		assert(false);	// override this
 	}
 
-	 /**
-	  * 'step over' an instruction in the debugger.
-	  * @param handler The handler that is called after the step is performed.
-	  */
-	 public stepOver(handler:()=>void): void {
-		assert(false);	// override this
-	}
-
-
-	 /**
-	  * 'step into' an instruction in the debugger.
-	  * @param handler The handler that is called after the step is performed.
-	  */
-	 public stepInto(handler:()=>void): void {
-		assert(false);	// override this
-	}
-
-
-	 /**
-	 * 'step out' of current call.
-	 * @param handler The handler that is called after the step out is performed.
+	/**
+	 * 'step over' an instruction in the debugger.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
 	 */
-	public stepOut(handler:()=>void): void {
+	public stepOver(handler:(tStates?: number, time?: number)=>void): void {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * 'step into' an instruction in the debugger.
+	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	public stepInto(handler:(tStates?: number, time?: number)=>void): void {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * 'step out' of current call.
+	 * @param handler(tStates, time) The handler that is called after the step out is performed.
+	 * tStates contains the number of tStates executed and time is the time it took for execution,
+	 * i.e. tStates multiplied with current CPU frequency.
+	 */
+	public stepOut(handler:(tStates?: number, time?: number)=>void): void {
 		assert(false);	// override this
 	}
 
