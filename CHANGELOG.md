@@ -6,6 +6,7 @@
 	- Corrected opcode "SUB A,s" to "SUB s".
 	- Added new Z80N barrel shift and "JP (C)" opcodes.
 	- Corrected "JP (IXY)".
+- Fixed a bug in "startAutomatically".
 
 
 ## 0.7.0

@@ -373,6 +373,9 @@ export class ZesaruxSocket extends Socket {
 			// Send next entry (if any)
 			this.sendSocket();
 
+			// Save old interruptable (could be that a new one is set in the handlers)
+			const interCmd = this.interruptableCmd;
+
 			// Execute handler
 			if( cEntry != undefined)
 				cEntry.handler(concData);
@@ -382,9 +385,9 @@ export class ZesaruxSocket extends Socket {
 
 			// Check if interruptable command needs to be restarted.
 			if(this.queue.length == 0
-				&& this.interruptableCmd) {
+				&& interCmd) {
 					// Restart
-					this.sendSocketCmd(this.interruptableCmd);
+					this.sendSocketCmd(interCmd);
 				}
 
 		}
