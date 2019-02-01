@@ -230,7 +230,7 @@ export class Settings {
 		Settings.launch.tmpDir = Utility.getAbsFilePath
 		(Settings.launch.tmpDir);
 		if(isNaN(Settings.launch.smallValuesMaximum))
-			Settings.launch.smallValuesMaximum = 512;
+			Settings.launch.smallValuesMaximum = -1;
 		if(Settings.launch.disassemblerArgs == undefined)
 			Settings.launch.disassemblerArgs = {esxdosRst: false};
 		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
