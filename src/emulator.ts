@@ -239,11 +239,12 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * @param handler(disasm, tStates, time) The handler that is called after the step is performed.
+	 * 'disasm' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
 	 */
-	public stepOver(handler:(tStates?: number, time?: number)=>void): void {
+	public stepOver(handler:(disasm: string, tStates: number, time: number)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -251,10 +252,11 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * 'step into' an instruction in the debugger.
 	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * 'disasm' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
 	 */
-	public stepInto(handler:(tStates?: number, time?: number)=>void): void {
+	public stepInto(handler:(disasm: string, tStates: number, time: number)=>void): void {
 		assert(false);	// override this
 	}
 

@@ -412,7 +412,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Reset T-state counter.
 		zSocket.send('reset-tstates-partial', data => {
 			// Run
-			zSocket.sendInterruptable('run', data => {
+			zSocket.sendInterruptable('run', reason => {
 				// (could take some time, e.g. until a breakpoint is hit)
 				// get T-State counter
 				zSocket.send('get-tstates-partial', data => {
@@ -425,7 +425,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						// Clear register cache
 						this.RegisterCache = undefined;
 						// Call handler
-						contStoppedHandler(data, tStates, time);
+						contStoppedHandler(reason, tStates, time);
 					});
 				});
 			});
@@ -457,11 +457,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * @param handler(disasm, tStates, time) The handler that is called after the step is performed.
+	 * 'disasm' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
 	 */
-	 public stepOver(handler:(tStates: number, time: number)=>void): void {
+	 public stepOver(handler:(disasm: string, tStates: number, time: number)=>void): void {
 		// Zesarux is very special in the 'step-over' behaviour.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
@@ -473,11 +474,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// then either excute a 'step-over' or a step-into'.
 		this.getRegisters(data => {
 			const pc = Z80Registers.parsePC(data);
-			zSocket.send('disassemble ' + pc, data => {
+			zSocket.send('disassemble ' + pc, disasm => {
 				// Clear register cache
 				this.RegisterCache = undefined;
 				// Check if this was a "CALL something" or "CALL n/z,something"
-				const opcode = data.substr(7,4);
+				const opcode = disasm.substr(7,4);
 
 				if(opcode == "RST ") {
 					// Use a special handling for RST required for esxdos.
@@ -500,7 +501,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 									// Disable breakpoint
 									zSocket.send('disable-breakpoint ' + bpId, () => {
 										this.state = EmulatorState.IDLE;
-										handler(tStates, time);
+										handler(disasm, tStates, time);
 									});
 								});
 							});
@@ -513,7 +514,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Step
 					this.cpuStepGetTime(cmd, (tStates, time) => {
 						// Call handler
-						handler(tStates, time);
+						handler(disasm, tStates, time);
 					});
 				}
 			});
@@ -524,13 +525,21 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * 'step into' an instruction in the debugger.
 	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * 'disasm' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
 	 */
-	public stepInto(handler:(tStates: number, time: number)=>void): void {
-		// Clear register cache
-		this.RegisterCache = undefined;
-		this.cpuStepGetTime('cpu-step', handler);
+	public stepInto(handler:(disasm: string, tStates: number, time: number)=>void): void {
+		this.getRegisters(data => {
+			const pc = Z80Registers.parsePC(data);
+			zSocket.send('disassemble ' + pc, disasm => {
+				// Clear register cache
+				this.RegisterCache = undefined;
+				this.cpuStepGetTime('cpu-step', (tStates, time) => {
+					handler(disasm, tStates, time);
+				});
+			});
+		});
 	}
 
 
