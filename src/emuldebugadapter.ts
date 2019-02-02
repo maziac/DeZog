@@ -1217,11 +1217,11 @@ export class EmulDebugAdapter extends DebugSession {
 	 * e.g. by a breakpoint. Can be omitted.
 	 */
 	protected emulatorContinue(stopHandler:(data: string)=>void = ()=>{}) {
-		Emulator.continue((data, tStates, time) => {
+		Emulator.continue((data, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 			// Display T-states and time
-			this.showUsedTStates('Continue: Used ', tStates, time);
+			this.showUsedTStates('Continue: Used ', tStates, cpuFreq);
 
 			// Log reason
 			console.log(data);
@@ -1288,10 +1288,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Over
-			Emulator.stepOver((disasm, tStates, time) => {
+			Emulator.stepOver((disasm, tStates, cpuFreq) => {
 				// Display T-states and time
 				const text = disasm ? disasm+' \t; ' : '';
-				this.showUsedTStates('StepOver: '+text, tStates, time);
+				this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
 
 				// Update memory dump etc.
 				this.update({step: true});
@@ -1311,14 +1311,16 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Prints the used T-states and time to the debug console.
 	 * @param disasm The ocrresponding disassembly.
 	 * @param tStates The used T-States.
-	 * @param time The used time.
+	 * @param cpuFreq The CPU clock frequency in Hz.
 	 */
-	protected showUsedTStates(disasm: string, tStates?: number, time?: number) {
+	protected showUsedTStates(disasm: string, tStates?: number, cpuFreq?: number) {
 		// Display T-states and time
 		let output = disasm;
 		if(tStates) {
 			output += 'T-States: ' + tStates;
-			if(time) {
+			if(cpuFreq) {
+				// Time
+				let time = tStates/cpuFreq;
 				let unit = 's';
 				if(time < 1e-3) {
 					time *= 1e+6;
@@ -1328,7 +1330,11 @@ export class EmulDebugAdapter extends DebugSession {
 					time *= 1e+3;
 					unit = 'ms';
 				}
-				output += ', time: ' + time.toPrecision(3) + unit;
+				// CPU clock
+				let clockStr = (cpuFreq * 1E-6).toPrecision(2);
+				if(clockStr.endsWith('.0'))
+					clockStr = clockStr.substr(0, clockStr.length-2);
+					output += ', time: ' + time.toPrecision(3) + unit + '@' + clockStr + 'MHz';
 			}
 			vscode.debug.activeDebugConsole.appendLine(output);
 		}
@@ -1344,10 +1350,10 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Emulator.stepInto((disasm, tStates, time) => {
+			Emulator.stepInto((disasm, tStates, cpuFreq) => {
 				// Display T-states and time
 				const text = disasm ? disasm+' \t; ' : '';
-				this.showUsedTStates('StepInto: '+text, tStates, time);
+				this.showUsedTStates('StepInto: '+text, tStates, cpuFreq);
 
 				// Update memory dump etc.
 				this.update({step: true});
@@ -1373,9 +1379,9 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Emulator.stepOut((tStates, time) => {
+			Emulator.stepOut((tStates, cpuFreq) => {
 				// Display T-states and time
-				this.showUsedTStates('StepOut: Used ', tStates, time);
+				this.showUsedTStates('StepOut: Used ', tStates, cpuFreq);
 
 				// Update memory dump etc.
 				this.update();

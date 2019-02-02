@@ -212,11 +212,11 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * 'continue' debugger program execution.
 	 * @param contExecHandler The handler that is called when the run command is executed.
-	 * @param contStoppedHandler(data, tStates, time) The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * @param contStoppedHandler(data, tStates, cpuFreq) The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public continue(contExecHandler: (data: string, tStates?: number, time?: number)=>void, contStoppedHandler: (data)=>void): void {
+	public continue(contExecHandler: (data: string, tStates?: number, cpuFreq?: number)=>void, contStoppedHandler: (data)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -239,22 +239,22 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(disasm, tStates, time) The handler that is called after the step is performed.
+	 * @param handler(disasm, tStates, cpuFreq) The handler that is called after the step is performed.
 	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOver(handler:(disasm: string, tStates: number, time: number)=>void): void {
+	public stepOver(handler:(disasm: string, tStates: number, cpuFreq: number)=>void): void {
 		assert(false);	// override this
 	}
 
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
 	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	public stepInto(handler:(disasm: string, tStates: number, time: number)=>void): void {
 		assert(false);	// override this
@@ -263,11 +263,11 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * 'step out' of current call.
-	 * @param handler(tStates, time) The handler that is called after the step out is performed.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step out is performed.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOut(handler:(tStates?: number, time?: number)=>void): void {
+	public stepOut(handler:(tStates?: number, cpuFreq?: number)=>void): void {
 		assert(false);	// override this
 	}
 

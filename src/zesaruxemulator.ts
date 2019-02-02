@@ -420,12 +420,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// get clock frequency
 					zSocket.send('get-cpu-frequency', data => {
 						const cpuFreq = parseInt(data);
-						const time = tStates/cpuFreq;
 						this.state = EmulatorState.IDLE;
 						// Clear register cache
 						this.RegisterCache = undefined;
 						// Call handler
-						contStoppedHandler(reason, tStates, time);
+						contStoppedHandler(reason, tStates, cpuFreq);
 					});
 				});
 			});
@@ -457,12 +456,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(disasm, tStates, time) The handler that is called after the step is performed.
+	 * @param handler(disasm, tStates, cpuFreq) The handler that is called after the step is performed.
 	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	 public stepOver(handler:(disasm: string, tStates: number, time: number)=>void): void {
+	 public stepOver(handler:(disasm: string, tStates: number, cpuFreq: number)=>void): void {
 		// Zesarux is very special in the 'step-over' behaviour.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
@@ -496,12 +495,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 							zSocket.send('enable-breakpoint ' + bpId, () => {
 								// Run
 								this.state = EmulatorState.RUNNING;
-								this.cpuStepGetTime('cpu-step-over', (tStates, time) => {
+								this.cpuStepGetTime('cpu-step-over', (tStates, cpuFreq) => {
 									// takes a little while, then step-over RET
 									// Disable breakpoint
 									zSocket.send('disable-breakpoint ' + bpId, () => {
 										this.state = EmulatorState.IDLE;
-										handler(disasm, tStates, time);
+										handler(disasm, tStates, cpuFreq);
 									});
 								});
 							});
@@ -512,9 +511,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// No special handling for the other opcodes.
 					const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
 					// Step
-					this.cpuStepGetTime(cmd, (tStates, time) => {
+					this.cpuStepGetTime(cmd, (tStates, cpuFreq) => {
 						// Call handler
-						handler(disasm, tStates, time);
+						handler(disasm, tStates, cpuFreq);
 					});
 				}
 			});
@@ -524,10 +523,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
 	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	public stepInto(handler:(disasm: string, tStates: number, time: number)=>void): void {
 		this.getRegisters(data => {
@@ -535,8 +534,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			zSocket.send('disassemble ' + pc, disasm => {
 				// Clear register cache
 				this.RegisterCache = undefined;
-				this.cpuStepGetTime('cpu-step', (tStates, time) => {
-					handler(disasm, tStates, time);
+				this.cpuStepGetTime('cpu-step', (tStates, cpuFreq) => {
+					handler(disasm, tStates, cpuFreq);
 				});
 			});
 		});
@@ -546,9 +545,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * Executes a step and also returns the T-states and time needed.
 	 * @param cmd Either 'cpu-step' or 'cpu-step-over'.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	protected cpuStepGetTime(cmd: string, handler:(tStates: number, time: number)=>void): void {
 		// Reset T-state counter.
@@ -561,9 +560,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// get clock frequency
 					zSocket.send('get-cpu-frequency', data => {
 						const cpuFreq = parseInt(data);
-						const time = tStates/cpuFreq;
 						// Call handler
-						handler(tStates, time);
+						handler(tStates, cpuFreq);
 					});
 				});
 			});
@@ -573,11 +571,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * 'step out' of current call.
-	 * @param handler(tStates, time) The handler that is called after the step is performed.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOut(handler:(tStates?: number, time?: number)=>void): void {
+	public stepOut(handler:(tStates?: number, cpuFreq?: number)=>void): void {
 		// zesarux does not implement a step-out. Therefore we analyze the call stack to
 		// find the first return address.
 		// Then a breakpoint is created that triggers when the SP changes to  that address.
@@ -641,11 +639,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 														// get clock frequency
 														zSocket.send('get-cpu-frequency', data => {
 															const cpuFreq = parseInt(data);
-															const time = tStates/cpuFreq;
 															// Disable breakpoint
 															zSocket.send('disable-breakpoint ' + bpId, () => {
 																this.state = EmulatorState.IDLE;
-																handler(tStates, time);
+																handler(tStates, cpuFreq);
 																return;
 															});
 														});
