@@ -40,8 +40,9 @@ export class Utility {
 	 * Returns a hex string from a number with leading zeroes.
 	 * @param value The number to convert
 	 * @param size The number of digits for the resulting string.
+	 * @returns E.g. "AF" or "0BC8"
 	 */
-	public static getHexString(value: number|undefined, size: number) {
+	public static getHexString(value: number|undefined, size: number): string {
 		if(value != undefined) {
 			var s = value.toString(16);
 			const r = size - s.length;
@@ -272,6 +273,13 @@ export class Utility {
 					return "nn";
 				case 'hex':
 					return "h".repeat(2*usedSize);
+				case 'dhex':
+					if(usedSize == 2)
+						return "hhhhh";
+					// Otherwise just like 'hex'.
+					// Flow through.
+				case 'hex':
+					return "h".repeat(2*usedSize);
 				case 'bits':
 					return "b".repeat(8*usedSize);
 				case 'unsigned':
@@ -326,6 +334,7 @@ export class Utility {
 	 * @param format The format string:
 	 * ${name} = the name of the register, e.g. HL
 	 * ${hex} = value as hex, e.g. A9F5
+	 * ${dhex} = value as hex but (for words) with a space in between, useful for double registers, e.g. "A9 F5"
 	 * ${unsigned} = value as unsigned, e.g. 1234
 	 * $(signed) = value as signed, e.g. -59
 	 * $(bits) = value as bits , e.g. 10011011
@@ -403,6 +412,7 @@ export class Utility {
 	 * @param format The format string:
 	 * ${name} = the name of the register, e.g. HL
 	 * ${hex} = value as hex, e.g. A9F5
+	 * ${dhex} = value as hex but (for words) with a space in between, useful for double registers, e.g. "A9 F5"
 	 * ${unsigned} = value as unsigned, e.g. 1234
 	 * $(signed) = value as signed, e.g. -59
 	 * $(bits) = value as bits , e.g. 10011011
@@ -466,6 +476,12 @@ export class Utility {
 			switch(formatting) {
 				case 'name':
 					return name + restP;
+				case 'dhex':
+					if(usedSize == 2) {
+						return Utility.getHexString(usedValue>>8,2) + ' ' + Utility.getHexString(usedValue&0xFF,2) + restP;
+					}
+					// Otherwise just like 'hex'.
+					// Flow through.
 				case 'hex':
 					return Utility.getHexString(usedValue,2*usedSize) + restP;
 				case 'bits':

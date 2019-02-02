@@ -255,8 +255,8 @@ export class Settings {
 			};
 		if(!Settings.launch.formatting.registerVar)
 			Settings.launch.formatting.registerVar = [
-				"AF", "A: ${hex}h, F: ${flags}",
-				"AF'", "A': ${hex}h, F': ${flags}",
+				"AF", "AF: ${hex}h, F: ${flags}",
+				"AF'", "AF': ${hex}h, F': ${flags}",
 				"PC", "${hex}h, ${unsigned}u${, :labelsplus|, }",
 				"SP", "${hex}h, ${unsigned}u${, :labelsplus|, }",
 				"HL", "(${hex}h)b=${b@:unsigned}, ${unsigned}u, ${signed}i${, :labelsplus|, }",
@@ -268,8 +268,8 @@ export class Settings {
 			];
 		if(!Settings.launch.formatting.registerHover)
 			Settings.launch.formatting.registerHover = [
-				"AF", "A: ${hex}h, F: ${flags}",
-				"AF'", "A': ${hex}h, F': ${flags}",
+				"AF", "AF: ${hex}h, F: ${flags}",
+				"AF'", "AF': ${hex}h, F': ${flags}",
 				"PC", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"SP", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:unsigned}, (${hex}h)w=${w@:unsigned}",
