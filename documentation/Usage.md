@@ -20,6 +20,7 @@ It includes the sources and the binaries (.list, .sna files). So, if you don't w
 After installing you need to add the configuration for "z80-debug".
 
 A typical configuration looks like this:
+
 ~~~
     "configurations": [
         {
@@ -117,29 +118,55 @@ Now depending on the value of 'sources'
 - (true): the originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
 Configuration (**Savannah-z80asm**):
-You need to enter the list files under "listFiles":
-{ "path": "z80-sample-program.list", "sources": "" }
-    - path: the path to the list file (relative to the 'rootFolder').
-    - srcDirs (default=[""]):
-        - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
-        - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
-        - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
-        - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
-    - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
-    E.g. "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines.
-    Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
-    - addOffset: (defualt=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
+You need to enter the list files under
+
+~~~
+"listFiles": {
+    "path": "z80-sample-program.list",
+    "asm": "sjasmplus",
+    "mainFile": "main.asm",
+    "srcDirs": ""
+    }
+~~~
+
+- path: the path to the list file (relative to the 'rootFolder').
+- srcDirs (default=[""]):
+    - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
+    - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
+    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
+    - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
+- asm: Choose you assembler here. "sjasmplus", "z80asm" or "z88dk". You don't need 'filter' if you specify 'asm'.
+- filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
+E.g. ```"/^[0-9]+\\s+//"```: This is a sed-like regular expression that removes the first number from all lines.
+Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
+- addOffset: (default=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
 
 
 Here is an example to use for the **z88dk-z80asm**:
-{ "path": "currah_uspeech_tests.lis", "srcDirs": [], "asm": "z88dk", "addOffset": 32768 }
+
+~~~
+{
+    "path": "currah_uspeech_tests.lis",
+    "srcDirs": [],
+    "asm": "z88dk",
+    "addOffset": 32768
+}
+~~~
 Explanation:
 - "path": is the path to the list file. z88dk list file use the extension .lis.
 - "srcDirs": set to an empty array. This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
 - "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
 
 And here an example to use for the **sjasmplus**:
-{ "path": "zxngfw.list", "mainFile": "main.asm", "srcDirs": ["src"], "asm": "sjasmplus" }
+
+~~~
+{
+    "path": "zxngfw.list",
+    "mainFile": "main.asm",
+    "srcDirs": ["src"],
+    "asm": "sjasmplus"
+}
+~~~
 Explanation:
 - "path": is the path to the list file.
 - "mainFile": the name of the file used to create the list file.
@@ -155,7 +182,7 @@ The required format for z80-debug is that
 - Lower or uppercase does not matter.
 
 The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
-The pattern "/^[0-9]+\\s+//" e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
+The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
 
 
 #### Without a listfile
@@ -181,15 +208,17 @@ The following table lists the diferences of the different assemblers in respect 
 | Misc | | | @ for global labels, numbers for labels |
 
 sjasmplus:
-    - local labels: start with a dot. Are prefixed by the previous non-local label.
-    - "global" labels, e.g. @label
-    - dot notation, e.g. main.sub.label1
-    - "global" labels: @label or @label.sublabel
-    - modules definition: automatically prefixes the labels with the modules name.
-    - Labels may end with or without ":"
-    - temporary labels, e.g. labels that are just called "1" or "2".
+
+- local labels: start with a dot. Are prefixed by the previous non-local label.
+- "global" labels, e.g. @label
+- dot notation, e.g. main.sub.label1
+- "global" labels: @label or @label.sublabel
+- modules definition: automatically prefixes the labels with the modules name.
+- Labels may end with or without ":"
+- temporary labels, e.g. labels that are just called "1" or "2".
 
 z80-debug supports most of them but with some restrictions:
+
 - local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
 - labels with out a trailing ":" are not supported.
@@ -210,6 +239,7 @@ You might get an error like "ZEsarUX did not communicate!" in vscode.
 Now start z80-debug by pressing the green arrow in the debug pane (make sure that you chose the right debugger, i.e. "Z80 Debug").
 
 z80-debug will now
+
 - open the socket connection to ZEsarUX
 - instruct ZEsarUX to load the snapshot file (or tap file)
 - set breakpoints (if there are breakpoints set in vscode)
@@ -220,6 +250,7 @@ At the left side you see the disassembly and the registers in the VARIABLES sect
 call stack in the CALL STACK section.
 
 You can now try the following:
+
 - hover over registers in your source code -> should display the value of the register
 - step-over, step-in etc.
 - click in the call stack -> will navigate you directly to the file
@@ -235,26 +266,26 @@ Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 To ease the usage of ZEsarUX and the Z80 Debug Adapter you can use several ZEsarUX command line options.
 I have collected a few that I found useful:
 
-~~~bash
+```bash
 # Start a "normal" ZX Spectrum (48k) and listen for connection from the Z80 Debug Adapter.
 ./zesarux --enable-remoteprotocol &
-~~~
+```
 
-~~~bash
+```bash
 # Start in ZX Next configuration. ZEsarUX skips the booting and emulates the esxdos rst routines.
 # The file system is mounted via "--esxdos-root-dir".
 # With this configuration ZX Next programs can be very easily developed and debugged.
 # The Z80 program is passes as SNA file. "--sna-no-change-machine" disables the ZEsarUX automatic change to a 48k Spectrum machine.
 #./zesarux --noconfigfile --machine tbblue --realvideo --enabletimexvideo --tbblue-fast-boot-mode --sna-no-change-machine --enable-esxdos-handler --esxdos-root-dir "\<path-to-your-z0-programs-dir\>" --enable-remoteprotocol &
-~~~
+```
 
-~~~bash
+```bash
 # ZX Next: Start from MMC.
 # To change an mmc file (e.g. on Mac) take the original tbblue.mmc, change the extension
 # to .iso (tbblue.iso). Mount the iso image. Add your files. Unmount the image.
 # Rename back to .mmc (optional).
 ./zesarux --machine tbblue --sna-no-change-machine --enable-mmc --enable-divmmc-ports --mmc-file "<your-mmc-image>"  --enable-remoteprotocol &
-~~~
+```
 
 
 ### Stop Debugging
@@ -284,6 +315,7 @@ fill_colors_end:
 ~~~
 
 Syntax:
+
 ~~~
 WPMEM [addr [, length [, access]]]
 ~~~
@@ -296,6 +328,7 @@ I.e. if you omit all values a watch-point will be created for the current addres
 E.g. in the first example a watchpoint is created that checks that the array (fill_colors) is not overwritten with something else.
 
 The most often used form of WPMEM is to put a WPMEM simply after an byte area that is used for reading/writing. E.g. like this:
+
 ~~~assembly
 scratch_area:
     defs 10
@@ -306,6 +339,7 @@ these 10 bytes it would mean that the algorithm is wrong.
 Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
 
 Caveats:
+
 - Other than for sjasmplus WPMEMs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - The 'memory breakpoints' used in ZEsarUX have a specific limiting behaviour:
 Imagine you have set a watchpoint WPMEM at address 4000h.
@@ -322,6 +356,7 @@ An ASSERT is translated by z80-debug into a breakpoints with an "inverted" condi
 For all ASSERTs in your source code z80-debug will set the correspondent breakpoints automatically at startup.
 
 The ASSERT syntax is:
+
 ~~~
 ; [.*] ASSERT var comparison expr [concat var comparison expr] [;.*]
 ~~~
@@ -332,6 +367,7 @@ with:
 - concat: one of '&&' or '||'
 
 Examples:
+
 ~~~
 ; ASSERT HL <= LBL_END+2
 ld a,b  ; Check that index is not too big ASSERT B < (MAX_COUNT+1)/2
@@ -340,10 +376,12 @@ ld de,hl    ; ASSERT A < 5 && hl != 0 ; Check that pointer is alright
 
 As an ASSERT converts to a breakpoint it is always evaluated **before** the instruction.
 I.e. the following check will most probably not work as expected.
+
 ~~~
 ld a,c  ; ASSERT a < 7
 ~~~
 A is not loaded yet when the ASSERT is checked. So use
+
 ~~~
 ld a,c
 ; ASSERT a < 7
@@ -351,6 +389,7 @@ ld a,c
 instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction abd thus A is checked correctly.
 
 Notes:
+
 - The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enabled" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
@@ -364,16 +403,19 @@ Only if also the breakpoint condition is met the program execution will stop.
 The breakpoint conditions are for example used for the ASSERTs.
 
 Breakpoint conditions use a special syntax
+
 ~~~
 var comparison expr [concat var comparison expr]
 ~~~
 with:
+
 - var: a variable, i.e. a register like A or HL
 - comparison: one of '<', '>', '==', '!=', '<=', '=>'.
 - expr: a mathematical expression that resolves into a constant
 - concat: one of '&&' or '||'
 
 Examples:
+
 - HL > LBL_END
 - B >= (MAX_COUNT+1)/2
 - A >= 6 || hl == 0
@@ -400,6 +442,7 @@ Withe "-exec" you can directly pass emulator commands to the emulator.
 The response is send to the debug console.
 If you add the argument "-view" the output is redirected into a view.
 E.g. for ZEsarUX you can use
+
 ~~~
 -exec -view help
 ~~~
@@ -414,11 +457,13 @@ It is possible to save/restore the current machine state (mainly RAM, Z80 regist
 I.e. you can save the state before an errors happens then run the code to see what caused the error. If you then notice that you have gone too far you can restore the previous state and debug again from that point.
 
 Use
+
 ~~~
 -state save
 ~~~
 to save the current state.
 And
+
 ~~~
 -state restore
 ~~~
@@ -431,6 +476,7 @@ Note: The state is stored to RAM only. I.e. it will not persist a relaunch of th
 #### Memory Dumps
 
 If you enter
+
 ~~~
 -md <address> <size>
 ~~~
@@ -441,6 +487,7 @@ z80
 ![](images/memoryviewer1.gif)
 
 The memory viewer will offer a few extra infos:
+
 - The address is printed on the left side.
 - The selected area (address, size) is emphasized, the other area is grayed out.
 - Any address for which a label exists is underlined.
@@ -449,6 +496,7 @@ The memory viewer will offer a few extra infos:
 - Hovering over values reveals more information. In the picture above the move was hovering over the red "42". You can see the associated address, label(s) and (since the value was changed) also the previous value.
 
 You can also open multiple memory dumps at once by adding more address/size ranges to the command, e.g.:
+
 ~~~
 -md 0 0x100 0x8000 0x40 0x8340 0x10
 ~~~
@@ -479,6 +527,7 @@ The visualization of the memory viewer can be configured. All values are collect
 #### Sprites & Patterns
 
 You can open a view which displays the current sprite slots by entering
+
 ~~~
 -sprites
 ~~~
@@ -503,6 +552,7 @@ However for special situations it is also possible to reload the patterns with a
 If the background color does not offer enough contrast for the sprite pattern it is possible to change the background color with the dropdown menu.
 
 To see just the sprite patterns you can use
+
 ~~~
 -patterns
 ~~~
@@ -524,15 +574,18 @@ However you have a few options if you add more parameters to the label.
 
 If you double-click on the label in the WATCHES area you can edit it. You can tell z80-debug the number of elements to show and if it should show bytes, words or both.
 The format is:
+
 ~~~
 label,size,types
 ~~~
 with
+
 - label: The label, e.g. LBL_TEXT or just a number e.g. 0x4000
 - size: The number of elements to show. Defaults to 100 if omitted.
 - types: Determines if a byte array ('b'), a word array ('w') or both ('bw') should be shown. Defaults to 'bw'.
 
 Here is an example:
+
 ~~~
 fill_colors,5,b
 ~~~
@@ -561,19 +614,6 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
 
-- sjasmplus: Stepping through instructions separated by a colon:
-The following code
-~~~
-  inc hl : inc hl
-~~~
-might appear in the list file as
-~~~
-376+  814A
-376+  814A 23              inc hl
-377+  814B 23            inc hl
-~~~
-The first column is the line number. Please note that the line number of the 2 inc hl instructions is not the same. Therefore z80-debug might sometimes not display the right line during stepping.
-This seems to happen only seldomly.
 
 
 ## Notes
