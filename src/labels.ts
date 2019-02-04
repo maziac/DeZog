@@ -270,9 +270,14 @@ class LabelsClass {
 
 				// Store address (or several addresses for one line)
 				for(let k=0; k<countBytes; k++) {
-					const entry = {fileName: '', lineNr: -1, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
+					const entry = {fileName: '', lineNr: -1-k, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
 					listFile.push(entry)
 				}
+			}
+			else {
+				// Store
+				const entry = {fileName: '', lineNr: -1, addr: address, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
+				listFile.push(entry)
 			}
 
 			// Check if line is "OK":
@@ -356,7 +361,6 @@ class LabelsClass {
 						const fileName = matchInclStart[1];
 						if(fileName.valueOf() == stack[index].fileName.valueOf()) {
 							// Remove from top of stack
-							//stack.splice(index,1);
 							stack.pop();
 							--index;
 						}
@@ -366,10 +370,12 @@ class LabelsClass {
 				// associate line
 				if(index >= 0) {
 					// Associate with right file
+					const oldLineNr = listFile[lineNr].lineNr;
 					listFile[lineNr].fileName = stack[index].relFileName;
 					listFile[lineNr].lineNr = stack[index].lineNr;
 					// next line
-					stack[index].lineNr--;
+					if(oldLineNr == -1)
+						stack[index].lineNr--;
 				}
 				else {
 					// no association

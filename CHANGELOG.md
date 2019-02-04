@@ -7,6 +7,7 @@
 	- Added new Z80N barrel shift and "JP (C)" opcodes.
 	- Corrected "JP (IXY)".
 - Fixed a bug in "startAutomatically".
+- Corrected file association for z80asm.
 
 
 ## 0.7.0
