@@ -8,6 +8,7 @@
 	- Corrected "JP (IXY)".
 - Fixed a bug in "startAutomatically".
 - Corrected file association for z80asm.
+- Default assembler changed to sjasmplus.
 
 
 ## 0.7.0

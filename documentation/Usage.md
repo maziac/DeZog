@@ -182,7 +182,7 @@ The required format for z80-debug is that
 - Lower or uppercase does not matter.
 
 The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
-The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the line with an empty string, i.e. it deltes the numbers from the line.
+The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the line with an empty string, i.e. it deletes the numbers from the line.
 
 
 #### Without a listfile

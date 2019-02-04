@@ -205,7 +205,7 @@ export class Settings {
 					mainFile: fp.mainFile,
 					srcDirs: fp.srcDirs || [""],
 					filter: fp.filter,
-					asm: fp.asm || "z80asm",
+					asm: fp.asm || "sjasmplus",
 					addOffset: fp.addOffset || 0
 				};
 				// Add the root folder path to each.
