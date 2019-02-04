@@ -2,7 +2,7 @@
 //import * as assert from 'assert';
 import { basename } from 'path';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ OutputEvent, Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { GenericWatchpoint } from './genericwatchpoint';
@@ -1197,12 +1197,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			this.emulatorContinue(data => {
-					// Send output event to inform the user about the reason
-					const e: DebugProtocol.OutputEvent = new OutputEvent(data + '\n', 'console');
-					this.sendEvent(e);
-				}
-			);
+			this.emulatorContinue();
 			this.sendResponse(response);
 			this.serializer.endExec();
 		});
@@ -1213,24 +1208,22 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Calls 'continue' (run) on the emulator.
 	 * Called at the beginning (startAutomatically) and from the
 	 * vscode UI (continueRequest).
-	 * @param stopHandler(string) Is called when continue has been stopped,
-	 * e.g. by a breakpoint. Can be omitted.
 	 */
-	protected emulatorContinue(stopHandler:(data: string)=>void = ()=>{}) {
+	protected emulatorContinue() {
 		Emulator.continue((data, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
-
-			// Display T-states and time
-			this.showUsedTStates('Continue: Used ', tStates, cpuFreq);
 
 			// Log reason
 			console.log(data);
 
+			// Display T-states and time
+			this.showUsedTStates('Continue: Used ', tStates, cpuFreq);
+
+			// Send output event to inform the user about the reason
+			vscode.debug.activeDebugConsole.appendLine(data);
+
 			// Update memory dump etc.
 			this.update();
-
-			// call handler
-			stopHandler(data);
 
 			// Send break
 			this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
