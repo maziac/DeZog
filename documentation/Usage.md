@@ -188,8 +188,8 @@ The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the
 #### Without a listfile
 
 If you don't setup any list file then you can still start z80-debug and it will work.
-The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for immediately disassembly.
-Whenever the progrma is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
+The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for an on-the-fly disassembly.
+Whenever the program is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
 If not a short amount of memory is added to the disassembly.
 Hence the disassembly will grow the more you step through the code.
 For performance reasons a new disassembly is only done if the memory at the PC is unknown or if a few bytes that follow the PC value have changed.
