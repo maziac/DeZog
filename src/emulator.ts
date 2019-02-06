@@ -15,11 +15,12 @@ import { Labels } from './labels';
  * The breakpoint representation.
  */
 export interface EmulatorBreakpoint {
-	bpId: number;	/// The breakpoint ID/number (>0)
-	filePath: string;	/// The file to which the breakpoint belongs
-	lineNr: number;	/// The line number in the file starting at 0
-	address: number;	/// Usually the pc value  to stop at (e.g. 0A7f)
-	condition: string;	/// An additional condition.
+	bpId: number;	///< The breakpoint ID/number (>0)
+	filePath: string;	///< The file to which the breakpoint belongs
+	lineNr: number;	///< The line number in the file starting at 0
+	address: number;	///< Usually the pc value  to stop at (e.g. 0A7f)
+	condition: string;	///< An additional condition.
+	log: string|undefined;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is weitten instead.
 }
 
 
@@ -412,7 +413,7 @@ export class EmulatorClass extends EventEmitter {
 					// Check if right file
 					if(path.valueOf() == file.fileName.valueOf()) {
 						// create breakpoint object
-						ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition };
+						ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log };
 					}
 				}
 				else {
@@ -423,14 +424,14 @@ export class EmulatorClass extends EventEmitter {
 				// add to array
 				if(!ebp) {
 					// Breakpoint position invalid
-					ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '' };
+					ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined };
 				}
 				currentBps.push(ebp);
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
-			const removedBps = oldBps.filter(bp => bp.address >= 0  && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.address == bp.address)).length == 0);
+			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
+			const removedBps = oldBps.filter(bp => bp.address >= 0  && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
 
 			// remove old breakpoints
 			removedBps.forEach(bp => {

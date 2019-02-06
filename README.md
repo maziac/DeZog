@@ -51,9 +51,6 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 	- create a .sna file containing the binary
 
 
-## Known Issues
-
-
 ## Installation
 
 ### Prerequisites

@@ -680,7 +680,8 @@ export class EmulDebugAdapter extends DebugSession {
 					filePath: path,
 					lineNr: this.convertClientLineToDebugger(bp.line),
 					address: -1,	// not known yet
-					condition: (bp.condition) ? bp.condition : ''
+					condition: (bp.condition) ? bp.condition : '',
+					log: bp.logMessage
 				};
 				return mbp;
 			});
@@ -740,7 +741,7 @@ export class EmulDebugAdapter extends DebugSession {
 							const addr = parseInt(line, 16);
 							if(!isNaN(addr)) {
 								// create breakpoint object
-								const ebp = { bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition };
+								const ebp = { bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log };
 								return ebp;
 							}
 							lineNr++;
