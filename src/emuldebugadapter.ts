@@ -650,6 +650,12 @@ export class EmulDebugAdapter extends DebugSession {
 			this.showWarning(message);
 		});
 
+		Emulator.on('log', message => {
+			// Show the log (from the socket/ZEsarUX) in the debug console
+			vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+
+		});
+
 		Emulator.once('error', err => {
 			// Some error occurred
 			Emulator.stop(()=>{});

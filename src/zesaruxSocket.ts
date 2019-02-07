@@ -330,7 +330,33 @@ export class ZesaruxSocket extends Socket {
 
 		// Check if last line asks for a new command
 		this.receivedDataChunk += sData;
-		var splitData = this.receivedDataChunk.split('\n');
+		// Check for log message.
+		let p = 0;
+		let k;
+		const lenLog = 5;	// 5 chars: 'log> '
+		while((k = this.receivedDataChunk.indexOf('log> ', p)) >= 0) {
+			p = k;
+			if(k > 0 && this.receivedDataChunk.charAt(k-1) != '\n') {
+				p += lenLog;
+				continue;
+			}
+			// Now search for the end
+			k = this.receivedDataChunk.indexOf('\n', p)
+			if(k < 0) {
+				p += lenLog;
+				continue;
+			}
+			// Log found -> forward log
+			const log = this.receivedDataChunk.substr(p+lenLog, k-p-lenLog);	// Without '\n'
+			this.emit('log', log);
+			// Remove log from string
+			this.receivedDataChunk = this.receivedDataChunk.substr(0,p) + this.receivedDataChunk.substr(k+1);	// With '\n'
+			// Next
+			p += lenLog;
+		}
+
+		// Check for last line
+		const splitData = this.receivedDataChunk.split('\n');
 		const lastLine = splitData[splitData.length-1];
 		const bCommand1 = lastLine.startsWith('command');
 		const bCommand2 = lastLine.endsWith('> ');
@@ -341,7 +367,7 @@ export class ZesaruxSocket extends Socket {
 			this.receivedDataChunk = '';
 			// remove last line
 			splitData.splice(splitData.length-1,1);
-			var concData = splitData.join('\n');
+			let concData = splitData.join('\n');
 			// Remember state
 			this.zesaruxState = lastLine.substr(8);
 

@@ -94,6 +94,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 	protected setupSocket() {
 		ZesaruxSocket.Init();
 
+		zSocket.on('log', msg => {
+			// A (breakpoint) log message from Zesarux was received
+			this.emit('log', msg);
+		});
+
 		zSocket.on('warning', msg => {
 			// Error message from Zesarux
 			msg = "ZEsarUX: " + msg;
