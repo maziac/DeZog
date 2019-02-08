@@ -159,7 +159,13 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 		let logMsg = '';
 		if(bp.log)
 			logMsg = ',' + bp.log;
-		zSocket.send('set-fast-breakpoint ' + bp.address + ' ' + zesaruxCondition + logMsg);
+		zSocket.send('set-fast-breakpoint ' + bp.address + ' ' + zesaruxCondition + logMsg, data => {
+			// Check for error:
+			if(data.startsWith('Error')) {
+				// Error (in logpoint message)
+				bp.address = -1;	// Not verified.
+			}
+		});
 		// Add to list
 		this.breakpoints.push(bp);
 		bp.bpId = this.breakpoints.length;	// use index as breakpoint ID

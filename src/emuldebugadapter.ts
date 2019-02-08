@@ -665,6 +665,33 @@ export class EmulDebugAdapter extends DebugSession {
 	}
 
 
+
+	/**
+	 * Evaluates a log message, i.e. a message that was given for a logpoint.
+	 * The format is checked and also the labels are changed into numbers.
+	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
+	 */
+	protected evalLogMessage(logMsg: string|undefined): string|undefined {
+		if(!logMsg)
+			return undefined
+
+		// Search all "${...}""
+		const result = logMsg.replace(/\${([bw]@)?\((.*)(\).*})/g, (match, access, variable, end) => {
+			// Check variable for label
+			try {
+				const converted = Utility.evalExpression(variable, false);
+				return "${" + (access||"")+ "(" + converted.toString() + end;
+			}
+			catch {
+				// If it cannot be converted (e.g. a register name) an exception will be thrown.
+				return match;
+			}
+		});
+
+		return result;
+	}
+
+
 	/**
 	 * The breakpoints are set for a path (file).
 	 * @param response
@@ -687,7 +714,7 @@ export class EmulDebugAdapter extends DebugSession {
 					lineNr: this.convertClientLineToDebugger(bp.line),
 					address: -1,	// not known yet
 					condition: (bp.condition) ? bp.condition : '',
-					log: bp.logMessage
+					log: this.evalLogMessage(bp.logMessage)
 				};
 				return mbp;
 			});

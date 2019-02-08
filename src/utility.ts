@@ -191,9 +191,9 @@ export class Utility {
 	 * LBL_TEST+1 => 32769, 8001h
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
-	 * @param evalRegisters If true then register names will also be evaluate.
+	 * @param evalRegisters If true then register names will also be evaluated.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
-	 * @param lastLAbel An optional last label to use for local lasbels label. (sjasmplus)
+	 * @param lastLabel An optional last label to use for local lasbels label. (sjasmplus)
 	 * @returns The evaluated number.
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
