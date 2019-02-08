@@ -8,7 +8,7 @@ import { Settings } from './settings';
 import { RefList } from './reflist';
 import { Log } from './log';
 import { Frame } from './frame';
-import { GenericWatchpoint } from './genericwatchpoint';
+import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState } from './emulator';
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
@@ -51,11 +51,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled = false;
 
-	/// Stores the assert watchpoints
-	protected assertBreakpoints = new Array<GenericWatchpoint>();
+	/// Stores the assert breakpoints
+	protected assertBreakpoints = new Array<GenericBreakpoint>();
 
-	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
+	/// The assert breakpoints can only be enabled/disabled alltogether.
 	public assertBreakpointsEnabled = false;
+
+	/// Stores the log points
+	protected logpoints = new Array<GenericBreakpoint>();
 
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
@@ -767,7 +770,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Sets the ASSERTs array.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
-	public setASSERT(assertBreakpoints: Array<GenericWatchpoint>) {
+	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
 		this.assertBreakpoints = [...assertBreakpoints];
 	}
 
@@ -778,7 +781,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
 	 * @param handler() Is called after the last watchpoint is set.
 	 */
-	public setAssertBreakpoints(assertBreakpoints: Array<GenericWatchpoint>, handler: () => void) {
+	public setAssertBreakpoints(assertBreakpoints: Array<GenericBreakpoint>, handler: () => void) {
+		// not supported.
+	}
+
+
+	/**
+	 * Sets the LOGPOINTs array.
+	 * @param logpoints A list of addresses with messages to put a logpoint on.
+	 */
+	public setLOGPOINT(logpoints: Array<GenericBreakpoint>) {
+		this.logpoints = [...logpoints];
+	}
+
+
+	/**
+	 * Set all log points.
+	 * Called only once.
+	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param handler() Is called after the last logpoint is set.
+	 */
+	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
 		// not supported.
 	}
 

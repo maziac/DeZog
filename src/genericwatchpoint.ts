@@ -10,3 +10,14 @@ export interface GenericWatchpoint {
 	conditions: string;	///< The additional conditions (emulator specific). '' if no condition set.
 }
 
+
+/**
+ * Represents a breakpoint used by EmulDebugAdapter in a very generic form,
+ * i.e. not machine specific.
+ */
+export interface GenericBreakpoint {
+	address: number; ///< The PC address to break on
+	conditions: string;	///< The additional conditions (emulator specific). '' if no condition set.
+	log: string|undefined;	///< If set the log will be printed instead of stopping execution.
+}
+

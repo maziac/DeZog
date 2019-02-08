@@ -4,7 +4,7 @@ import { Z80Registers } from './z80Registers';
 import { RefList } from './reflist';
 import { Frame } from './frame';
 import { EventEmitter } from 'events';
-import { GenericWatchpoint } from './genericwatchpoint';
+import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { Labels } from './labels';
 //import { Opcode } from './disassembler/opcode';
 //import { Memory } from './disassembler/memory';
@@ -317,7 +317,7 @@ export class EmulatorClass extends EventEmitter {
 	 * Sets the ASSERTs array.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
-	public setASSERT(assertBreakpoints: Array<GenericWatchpoint>) {
+	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
 		assert(false);	// override this
 	}
 
@@ -328,7 +328,27 @@ export class EmulatorClass extends EventEmitter {
 	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
 	 * @param handler() Is called after the last watchpoint is set.
 	 */
-	public setAssertBreakpoints(assertBreakpoints: Array<GenericWatchpoint>, handler: () => void) {
+	public setAssertBreakpoints(assertBreakpoints: Array<GenericBreakpoint>, handler: () => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * Sets the LOGPOINTs array.
+	 * @param logpoints A list of addresses with messages to put a logpoint on.
+	 */
+	public setLOGPOINT(logpoints: Array<GenericBreakpoint>) {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * Set all log points.
+	 * Called only once.
+	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param handler() Is called after the last logpoint is set.
+	 */
+	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
 		assert(false);	// override this
 	}
 
@@ -367,10 +387,11 @@ export class EmulatorClass extends EventEmitter {
 	 * @param errorHandler(errText) Is called if an error occurs. E.g.
 	 * if a condition cannot be parsed.
 	 */
+	/*
 	public setASSERTs(asserts: Array<EmulatorBreakpoint>, finalHandler: () => void, errorHandler: (errText: string) => void) {
 		assert(false);	// override this
 	}
-
+	*/
 
 	/**
 	 * Clears one breakpoint.

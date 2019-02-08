@@ -1,7 +1,7 @@
 
 //import * as assert from 'assert';
 import { EmulatorBreakpoint } from './emulator';
-import { GenericWatchpoint } from './genericwatchpoint';
+import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { ZesaruxEmulator } from './zesaruxemulator';
 import { zSocket } from './zesaruxSocket';
 //import { Labels } from './labels';
@@ -36,6 +36,8 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 
 				ZesaruxExtEmulator.prototype.setAssertBreakpoints = ZesaruxExtEmulator.prototype.setAssertBreakpointsExt;
 				ZesaruxExtEmulator.prototype.enableAssertBreakpoints = ZesaruxExtEmulator.prototype.enableAssertBreakpointsExt;
+
+				ZesaruxExtEmulator.prototype.setLogpoints = ZesaruxExtEmulator.prototype.setLogpointsExt;
 
 				ZesaruxExtEmulator.prototype.setBreakpoint = ZesaruxExtEmulator.prototype.setBreakpointExt;
 				ZesaruxExtEmulator.prototype.removeBreakpoint = ZesaruxExtEmulator.prototype.removeBreakpointExt;
@@ -99,20 +101,19 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	}
 
 
-		/**
-	 * Sets the watchpoints in the given list.
-	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
-	 * @param watchPoints A list of addresses to put a guard on.
+	/**
+	 * Sets the assert breakpoints in the given list.
+	 * Asserts result in a break in the program run if the PC is hit and
+	 * the consition is met.
+	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericWatchpoint>, handler?: (assertBreakpoints:Array<GenericWatchpoint>) => void) {
+	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericBreakpoint>, handler?: (assertBreakpoints:Array<GenericBreakpoint>) => void) {
 		// Set breakpoints
 		for(let abp of assertBreakpoints) {
 			// Create breakpoint (normally just one)
 			const zesaruxCondition = this.convertCondition(abp.conditions);
-			for(let k=0; k<abp.size; k++) {
-				zSocket.send('set-fast-breakpoint ' + (abp.address+k) + ' ' + zesaruxCondition  );
-			}
+			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
 		}
 		this.assertBreakpoints = assertBreakpoints;
 
@@ -128,6 +129,17 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 
 
 	/**
+	 * Set all log points.
+	 * Called only once.
+	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param handler() Is called after the last logpoint is set.
+	 */
+	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
+
+	}
+
+
+	/**
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
@@ -139,11 +151,37 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 		else {
 			// Remove breakpoints
 			for(let wp of this.assertBreakpoints) {
-				zSocket.send('clear-fast-breakpoint ' + wp.address + ' ' + + wp.size);
+				zSocket.send('clear-fast-breakpoint ' + wp.address + ' 1');
 			}
 		}
 		this.assertBreakpointsEnabled = enable;
 		zSocket.executeWhenQueueIsEmpty(handler);
+	}
+
+
+	/**
+	 * Sets the log points in the given list.
+	 * Logpoints print a log instead of stopping the execution.
+	 * @param logpoints A list of addresses to put a guard on.
+	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 */
+	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints:Array<GenericBreakpoint>) => void) {
+		// Set breakpoints
+		for(let abp of logpoints) {
+			// Create breakpoint (normally just one)
+			const zesaruxCondition = this.convertCondition(abp.conditions);
+			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
+		}
+		this.logpoints = logpoints;
+
+		// Call handler
+		if(handler) {
+			zSocket.executeWhenQueueIsEmpty(() => {
+				// Copy array
+				const abps = logpoints.slice(0);
+				handler(abps);
+			});
+		}
 	}
 
 
