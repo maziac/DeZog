@@ -337,7 +337,7 @@ export class EmulatorClass extends EventEmitter {
 	 * Sets the LOGPOINTs array.
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
-	public setLOGPOINT(logpoints: Array<GenericBreakpoint>) {
+	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
 		assert(false);	// override this
 	}
 
@@ -348,7 +348,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param handler() Is called after the last logpoint is set.
 	 */
-	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
+	public setLogpoints(logpoints: Map<string, Array<GenericBreakpoint>>, handler: (logpoints: Map<string, Array<GenericBreakpoint>>) => void) {
 		assert(false);	// override this
 	}
 

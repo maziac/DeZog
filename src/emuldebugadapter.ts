@@ -531,9 +531,9 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param watchPointLines An array with address and line (text) pairs.
 	 * @return An array with log points (GenericWatchpoints).
 	 */
-	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>) {
+	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
 		// convert labels in watchpoints.
-		const logpoints = new Array<GenericBreakpoint>();
+		const logpoints = new Map<string, Array<GenericBreakpoint>>();
 		for(let entry of watchPointLines) {
 			// LOGPOINT:
 			// Syntax:
@@ -541,14 +541,21 @@ export class EmulDebugAdapter extends DebugSession {
 			// e.g. LOGPOINT Status=${A}, Counter=${(sprite.counter):unsigned}
 
 			// Now check more thoroughly i.e. for comma
-			const match = /;.*LOGPOINT\s(.*)$/.exec(entry.line);
+			const match = /;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
 			if(match) {
 				// get arguments
-				let logMsg = match[1];
+				const group = match[2] || "DEFAULT";
+				const logMsg = match[3];
+				// Create group if not existent
+				let array = logpoints.get(group);
+				if(!array)
+					array = new Array<GenericBreakpoint>();
 				// set watchpoint
-				logpoints.push({address: entry.address, conditions: '', log: logMsg});
+				array.push({address: entry.address, conditions: '', log: logMsg});
 			}
 		}
+
+		return logpoints;
 	}
 
 
@@ -647,8 +654,8 @@ export class EmulDebugAdapter extends DebugSession {
 			this.serializer.exec(() => {
 				// LOGPOINTs
 				// Set assert breakpoints
-				const logPointsArray = this.createLogPoints(logPointLines);
-				Emulator.setLOGPOINT(logPointsArray);
+				const logPointsMap = this.createLogPoints(logPointLines);
+				Emulator.setLOGPOINT(logPointsMap);
 				// "Return"
 				this.serializer.endExec();
 			});

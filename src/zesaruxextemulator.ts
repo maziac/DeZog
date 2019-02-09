@@ -165,7 +165,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param logpoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints:Array<GenericBreakpoint>) => void) {
+	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints: Array<GenericBreakpoint>) => void) {
 		// Set breakpoints
 		for(let abp of logpoints) {
 			// Create breakpoint (normally just one)

@@ -58,7 +58,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public assertBreakpointsEnabled = false;
 
 	/// Stores the log points
-	protected logpoints = new Array<GenericBreakpoint>();
+	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
 
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
@@ -790,8 +790,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Sets the LOGPOINTs array.
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
-	public setLOGPOINT(logpoints: Array<GenericBreakpoint>) {
-		this.logpoints = [...logpoints];
+	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
+		this.logpoints = logpoints;
 	}
 
 
@@ -801,7 +801,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param handler() Is called after the last logpoint is set.
 	 */
-	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
+	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: (logpoints: Array<GenericBreakpoint>) => void) {
 		// not supported.
 	}
 
