@@ -136,7 +136,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 */
 	public enableAssertBreakpointsExt(enable: boolean, handler: () => void) {
 		if(enable) {
-			this.setAssertBreakpointsExt(this.assertBreakpoints, ()=>{});
+			this.setAssertBreakpointsExt(this.assertBreakpoints);
 		}
 		else {
 			// Remove breakpoints

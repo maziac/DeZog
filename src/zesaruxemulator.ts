@@ -774,9 +774,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Set all assert breakpoints.
 	 * Called only once.
 	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
-	 * @param handler() Is called after the last watchpoint is set.
 	 */
-	public setAssertBreakpoints(assertBreakpoints: Array<GenericBreakpoint>, handler: () => void) {
+	public setAssertBreakpoints(assertBreakpoints: Array<GenericBreakpoint>) {
 		// not supported.
 	}
 

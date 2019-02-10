@@ -31,9 +31,14 @@ A typical configuration looks like this:
             "zport": 10000,
             "listFiles": [
                 // "../rom48.list",
-                { "path": "z80-sample-program.list", "sources": "." }
+                {
+                    "path": "z80-sample-program.list",
+                    "useFiles": true,
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm"
+                }
             ],
-            "startAutomatically": true,
+            "startAutomatically": false,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-sprites",
@@ -76,9 +81,9 @@ In your launch.json:
 
 Note: instead of a label you can also use a fixed number.
 - load: The snapshot (or tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
-Note 1: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
+Note 1: you can also omit this. In that case the z80-deassebug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
-- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depedning on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
+- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
 - "memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
@@ -346,10 +351,10 @@ Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
 
-Note: WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enabled" in the "commandsAfterLaunch" settings.
+Note: WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enable" in the "commandsAfterLaunch" settings.
 
 
-### Asserts
+### ASSERT
 
 Similar to WPMEM you can use ASSERTs in comments in the assembler sources.
 An ASSERT is translated by z80-debug into a breakpoints with an "inverted" condition.
@@ -391,12 +396,37 @@ instead: The ASSERT is on the next line i.e. at the address after the "LD" instr
 Notes:
 
 - The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
-- ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enabled" in the "commandsAfterLaunch" settings.
+- ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - As a special form you can also define an ASSERT without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
+- ASSERT is not available in ZEsarUX.
 
 
-### Breakpoint conditions
+### LOGPOINT
+
+Another special keyword is LOGPOINT in comments in the assembler sources.
+A LOGPOINT is translated by z80-debug into a breakpointthat does not stop execution but instead prints a lo message.
+
+The LOGPOINT syntax is:
+
+~~~
+; [.*] LOGPOINT LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
+~~~
+with:
+
+- [group]: (Note: the [ are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
+- text: A simple text that may include variables. Here are a few examples for variables:
+    - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
+    - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
+Note: ${(DE)} is equal to ${b@(DE)} and prints the byte value at DE.
+
+Notes:
+
+- The LOGPOINTs are checked in the list file. I.e. whenever you change a LOGPOINT it is not immediately used. You have to assemble a new list file and start the debugger anew.
+- LOGPOINTs are disabled by default. If you want to have logpoints enabled after launch then put "-LOGPOINT enable" in the "commandsAfterLaunch" settings. Note: you can also turn on only specific groups.
+- LOGPOINTs are not available in ZEsarUX.
+
+### vscode breakpoint conditions
 
 Along with breakpoints you can also use breakpoint conditions. The breakpoint condition is checked additionally whenever a breakpoint is fired at a certain address.
 Only if also the breakpoint condition is met the program execution will stop.
@@ -424,6 +454,17 @@ So on the left side you have to use a register and of the left side an expressio
 Several var-comparison-expr might be combined with a "&&" or "||". But you can't use any complex combinations that would require parenthesis.
 
 The breakpoint conditions are translated into conditions that are understood by ZEsarUX automatically.
+
+
+### vscode logpoints
+
+You can set vscode logpoints on the fly during debugging with the vscode logpoint feature.
+
+The log message that you enter will appear in the "Debug Console" if the logpoint is hit.
+You can also use variables similar to the description in chapter [LOGPOINT].
+E.g. use "Counter=${(sprite.counter)}" as a log message.
+
+Note: logpoints are not available in ZEsarUX.
 
 
 ### Debug Console

@@ -540,8 +540,8 @@ export class EmulDebugAdapter extends DebugSession {
 		for(let entry of watchPointLines) {
 			// LOGPOINT:
 			// Syntax:
-			// LOGPOINT text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
-			// e.g. LOGPOINT Status=${A}, Counter=${(sprite.counter):unsigned}
+			// LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
+			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
 
 			// Now check more thoroughly i.e. for comma
 			const match = /;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
