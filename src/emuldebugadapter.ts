@@ -33,6 +33,7 @@ import { Opcode, Opcodes } from './disassembler/opcode';
 //import * as diff from 'diff';
 //import * as fs from 'fs';
 import * as BinaryFile from 'binary-file';
+import { watch } from 'fs';
 //import { writeFileSync } from 'fs';
 
 
@@ -326,7 +327,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param watchPointLines An array with address and line (text) pairs.
 	 * @return An array with watch points (GenericWatchpoints).
 	 */
-	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>) {
+	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>): Array<GenericWatchpoint> {
 		// convert labels in watchpoints.
 		const watchpoints = new Array<GenericWatchpoint>();
 		for(let entry of watchPointLines) {
@@ -386,6 +387,8 @@ export class EmulDebugAdapter extends DebugSession {
 				watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
 			}
 		}
+
+		return watchpoints;
 	}
 
 
@@ -548,8 +551,10 @@ export class EmulDebugAdapter extends DebugSession {
 				const logMsg = match[3];
 				// Create group if not existent
 				let array = logpoints.get(group);
-				if(!array)
+				if(!array) {
 					array = new Array<GenericBreakpoint>();
+					logpoints.set(group, array);
+				}
 				// set watchpoint
 				array.push({address: entry.address, conditions: '', log: logMsg});
 			}
@@ -1534,6 +1539,9 @@ export class EmulDebugAdapter extends DebugSession {
 		if(cmd == '-help' || cmd == '-h') {
 			this.evalHelp(tokens, handler);
 		}
+		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
+			this.evalLOGPOINT(tokens, handler);
+		}
 		else if (cmd == '-ASSERT' || cmd == '-assert') {
 			this.evalASSERT(tokens, handler);
 		}
@@ -1715,13 +1723,16 @@ export class EmulDebugAdapter extends DebugSession {
 `Allowed commands are:
 "-ASSERT enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTs set in the sources. All ASSERTs are by default enabled after startup of the debugger.
-	- status: Shows enable status of WPMEM watchpoints.
+	- status: Shows enable status of ASSERT breakpoints.
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
 "-exec|e [-view] cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers". If you add "-view" the output will go into a new view instead of the console.
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
+"-LOGPOINT enable|disable|status [group]":
+	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
+	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 Without any parameter it will show all sprite patterns.
@@ -1898,13 +1909,51 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 
 	/**
+	 * LOGPOINTS. Enable/disable/status.
+	 * @param tokens The arguments.
+ 	 * @param handler(text) A handler that is called after the execution.
+	 */
+	protected evalLOGPOINT(tokens: Array<string>, handler: (text:string)=>void) {
+		const show = () => {
+			// Always show enable status of all Logpoints
+			const enableMap = Emulator.logpointsEnabled;
+			// All groups:
+			let text = 'LOGPOINT groups:\n';
+			for (const [group, enable] of enableMap) {
+				text += '  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled') + '\n';
+			}
+			handler(text);
+		}
+
+		const param = tokens[0] || '';
+		const group = tokens[1];
+		if(param == 'enable' || param == 'disable') {
+			// enable or disable all logpoints
+			const enable = (param == 'enable');
+			Emulator.enableLogpoints(group, enable, () => {
+				// Print to console
+				show();
+			});
+		}
+		else if(param == 'status') {
+			// just show
+			show();
+		}
+		else {
+			// Unknown argument
+			throw new Error("Unknown argument: '" + param + "'");
+		}
+	}
+
+
+	/**
 	 * ASSERT. Enable/disable/status.
 	 * @param tokens The arguments.
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalASSERT(tokens: Array<string>, handler: (text:string)=>void) {
 		const show = () => {
-			// Always show enable status of all WPMEM watchpoints
+			// Always show enable status of all ASSERT breakpoints
 			const enable = Emulator.assertBreakpointsEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
 			handler('ASSERT breakpoints are ' + enableString + '.');

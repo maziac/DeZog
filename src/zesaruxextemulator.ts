@@ -115,7 +115,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 			const zesaruxCondition = this.convertCondition(abp.conditions);
 			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
 		}
-		this.assertBreakpoints = assertBreakpoints;
+		//this.assertBreakpoints = assertBreakpoints;	// superfluous?
 
 		// Call handler
 		if(handler) {
@@ -125,17 +125,6 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 				handler(abps);
 			});
 		}
-	}
-
-
-	/**
-	 * Set all log points.
-	 * Called only once.
-	 * @param logpoints A list of addresses to put a log breakpoint on.
-	 * @param handler() Is called after the last logpoint is set.
-	 */
-	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: () => void) {
-
 	}
 
 
@@ -157,33 +146,6 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 		this.assertBreakpointsEnabled = enable;
 		zSocket.executeWhenQueueIsEmpty(handler);
 	}
-
-
-	/**
-	 * Sets the log points in the given list.
-	 * Logpoints print a log instead of stopping the execution.
-	 * @param logpoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
-	 */
-	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints: Array<GenericBreakpoint>) => void) {
-		// Set breakpoints
-		for(let abp of logpoints) {
-			// Create breakpoint (normally just one)
-			const zesaruxCondition = this.convertCondition(abp.conditions);
-			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
-		}
-		this.logpoints = logpoints;
-
-		// Call handler
-		if(handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
-				// Copy array
-				const abps = logpoints.slice(0);
-				handler(abps);
-			});
-		}
-	}
-
 
 	/*
 	 * Sets breakpoint in the zesarux debugger.
@@ -221,6 +183,77 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 		// Remove from list
 		var index = bp.bpId-1;
 		this.breakpoints.splice(index, 1);
+	}
+
+
+	/**
+	 * Sets the log points in the given list.
+	 * Logpoints print a log instead of stopping the execution.
+	 * @param logpoints A list of addresses to put a guard on.
+	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 */
+	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints: Array<GenericBreakpoint>) => void) {
+		// Set breakpoints
+		for(let abp of logpoints) {
+			// Create breakpoint (normally just one)
+			const zesaruxCondition = this.convertCondition(abp.conditions);
+			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
+		}
+		// Call handler
+		if(handler) {
+			zSocket.executeWhenQueueIsEmpty(() => {
+				// Copy array
+				const abps = logpoints.slice(0);
+				handler(abps);
+			});
+		}
+	}
+
+
+	/**
+	 * Enables/disables all logpoints for a given group.
+	 * @param group The group to enable/disable. If undefined: all groups.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
+		// Function execute for one group or for all groups:
+		const f = (grp, arr) => {
+			if(enable) {
+				// Add logpoints
+				this.setLogpointsExt(arr);
+			}
+			else {
+				// Remove breakpoints
+				for(let lp of arr) {
+					zSocket.send('clear-fast-breakpoint ' + lp.address + ' 1');
+				}
+			}
+			// Set group state
+			this.logpointsEnabled.set(grp, enable);
+		};
+
+		// Check if one group or all
+		if(group) {
+			// 1 group:
+			const array = this.logpoints.get(group);
+			if(!array)
+				throw "Group '" + group + "' unknown.";
+			//assert(array);
+			f(group, array);
+		}
+		else {
+			// All groups:
+			for (const [group, array] of this.logpoints) {
+				f(group, array);
+			}
+		}
+		// Call handler
+		if(handler) {
+			zSocket.executeWhenQueueIsEmpty(() => {
+				handler();
+			});
+		}
 	}
 
 }

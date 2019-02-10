@@ -48,14 +48,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// Stores the wpmem watchpoints
 	protected watchpoints = new Array<GenericWatchpoint>();
 
-	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
-	public wpmemEnabled = false;
 
 	/// Stores the assert breakpoints
 	protected assertBreakpoints = new Array<GenericBreakpoint>();
-
-	/// The assert breakpoints can only be enabled/disabled alltogether.
-	public assertBreakpointsEnabled = false;
 
 	/// Stores the log points
 	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
@@ -787,11 +782,26 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 * Enables/disables all assert breakpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+		// not supported.
+	}
+
+
+	/**
 	 * Sets the LOGPOINTs array.
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
 	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
 		this.logpoints = logpoints;
+		this.logpointsEnabled = new Map<string, boolean>();
+		// All groups:
+		for (const [group] of this.logpoints) {
+			this.logpointsEnabled.set(group, false);
+		}
 	}
 
 
@@ -807,11 +817,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all logpoints for a given group.
+	 * @param group The group to enable/disable. If undefined: all groups.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
 		// not supported.
 	}
 

@@ -108,6 +108,15 @@ export class EmulatorClass extends EventEmitter {
 	/// Is a simple string that needs to get parsed.
 	public RegisterCache: string|undefined = undefined;
 
+	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
+	public wpmemEnabled = false;
+
+	/// The assert breakpoints can only be enabled/disabled alltogether.
+	public assertBreakpointsEnabled = false;
+
+	/// The logpoints can be enabled/disabled per group.
+	public logpointsEnabled = new Map<string, boolean>();
+
 
 	/// Initializes the machine.
 	public init() {
@@ -334,6 +343,16 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
+	 * Enables/disables all assert breakpoints set from the sources.
+	 * @param enable true=enable, false=disable.
+	 * @param handler Is called when ready.
+	 */
+	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
 	 * Sets the LOGPOINTs array.
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
@@ -348,17 +367,18 @@ export class EmulatorClass extends EventEmitter {
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param handler() Is called after the last logpoint is set.
 	 */
-	public setLogpoints(logpoints: Map<string, Array<GenericBreakpoint>>, handler: (logpoints: Map<string, Array<GenericBreakpoint>>) => void) {
+	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: (logpoints: Array<GenericBreakpoint>) => void) {
 		assert(false);	// override this
 	}
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all logpoints for a given group.
+	 * @param group The group to enable/disable. If undefined: all groups.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
 		assert(false);	// override this
 	}
 
