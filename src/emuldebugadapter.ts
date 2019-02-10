@@ -33,7 +33,7 @@ import { Opcode, Opcodes } from './disassembler/opcode';
 //import * as diff from 'diff';
 //import * as fs from 'fs';
 import * as BinaryFile from 'binary-file';
-import { watch } from 'fs';
+//import { watch } from 'fs';
 //import { writeFileSync } from 'fs';
 
 
@@ -548,7 +548,7 @@ export class EmulDebugAdapter extends DebugSession {
 			if(match) {
 				// get arguments
 				const group = match[2] || "DEFAULT";
-				const logMsg = match[3];
+				const logMsg = '[' + group + '] ' + match[3];
 				// Create group if not existent
 				let array = logpoints.get(group);
 				if(!array) {

@@ -38,6 +38,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 				ZesaruxExtEmulator.prototype.enableAssertBreakpoints = ZesaruxExtEmulator.prototype.enableAssertBreakpointsExt;
 
 				ZesaruxExtEmulator.prototype.setLogpoints = ZesaruxExtEmulator.prototype.setLogpointsExt;
+				ZesaruxExtEmulator.prototype.enableLogpoints = ZesaruxExtEmulator.prototype.enableLogpointsExt;
 
 				ZesaruxExtEmulator.prototype.setBreakpoint = ZesaruxExtEmulator.prototype.setBreakpointExt;
 				ZesaruxExtEmulator.prototype.removeBreakpoint = ZesaruxExtEmulator.prototype.removeBreakpointExt;
@@ -193,11 +194,14 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
 	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints: Array<GenericBreakpoint>) => void) {
-		// Set breakpoints
-		for(let abp of logpoints) {
-			// Create breakpoint (normally just one)
-			const zesaruxCondition = this.convertCondition(abp.conditions);
-			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
+		// Set logpoints
+		for(let lp of logpoints) {
+			// Create logpoint (normally there is no condition)
+			const zesaruxCondition = this.convertCondition(lp.conditions);
+			let logMsg = '';
+			if(lp.log)
+				logMsg = ',' + lp.log;
+			zSocket.send('set-fast-breakpoint ' + (lp.address) + ' ' + zesaruxCondition + logMsg);
 		}
 		// Call handler
 		if(handler) {
@@ -216,7 +220,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
+	public enableLogpointsExt(group: string, enable: boolean, handler: () => void) {
 		// Function execute for one group or for all groups:
 		const f = (grp, arr) => {
 			if(enable) {
