@@ -112,8 +112,8 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericBreakpoint>, handler?: (assertBreakpoints:Array<GenericBreakpoint>) => void) {
 		// Set breakpoints
 		for(let abp of assertBreakpoints) {
-			// Create breakpoint (normally just one)
-			const zesaruxCondition = this.convertCondition(abp.conditions);
+			// Create breakpoint
+			const zesaruxCondition = this.convertCondition(abp.conditions) || '';
 			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
 		}
 		//this.assertBreakpoints = assertBreakpoints;	// superfluous?
@@ -155,8 +155,16 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @returns The internal breakpoint ID. (Just the index to the array).
 	 */
 	protected setBreakpointExt(bp: EmulatorBreakpoint): number {
+		// Get condition
+		const zesaruxCondition = this.convertCondition(bp.condition);
+		if(zesaruxCondition == undefined) {
+			this.emit('warning', "Breakpoint: Can't set condition: " + (bp.condition || ''));
+			// set to unverified
+			bp.address = -1;
+			return 0;
+		}
+
 		// set the breakpoint
-		const zesaruxCondition = this.convertCondition(bp.condition) || '';
 		let logMsg = '';
 		if(bp.log)
 			logMsg = ',' + bp.log;
@@ -197,7 +205,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 		// Set logpoints
 		for(let lp of logpoints) {
 			// Create logpoint (normally there is no condition)
-			const zesaruxCondition = this.convertCondition(lp.conditions);
+			const zesaruxCondition = this.convertCondition(lp.conditions) || '';
 			let logMsg = '';
 			if(lp.log)
 				logMsg = ',' + lp.log;

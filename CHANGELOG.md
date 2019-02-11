@@ -10,6 +10,7 @@
 - Corrected file association for z80asm.
 - Default assembler changed to sjasmplus.
 - Break reason now also shown at first breakpoint after launch.
+- Logpoints added.
 
 
 ## 0.7.0

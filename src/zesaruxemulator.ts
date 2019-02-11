@@ -787,6 +787,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
 		// not supported.
+		if(this.assertBreakpoints.length > 0)
+			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
+		handler();
 	}
 
 
@@ -823,12 +826,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
 		// not supported.
+		if(this.logpoints.size > 0)
+			this.emit('warning', 'ZEsarUX does not support LOGPOINTs in the sources.');
+		handler();
 	}
 
 
 	/**
 	 * Converts a condition into the special format that ZEsarUX uses.
-	 * Please ntoe that longer complex forms are not possible with zesarux
+	 * Please note that longer complex forms are not possible with zesarux
 	 * because it does not support parenthesis and just evaluates one
 	 * after the other.
 	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
@@ -889,7 +895,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 			conds += zesaruxCondition + resConcat;
 		}
 
-		assert(conds.length > 0);
+		if(conds.length == 0)
+			return undefined;
+
 		return conds;
 	}
 
@@ -901,6 +909,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	protected setBreakpoint(bp: EmulatorBreakpoint): number {
+		// Check for logpoint (not supported)
+		if(bp.log) {
+			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '"). Instead a normal breakpoint is set.');
+			// set to unverified
+			bp.address = -1;
+			return 0;
+		}
+
+		// Get condition
+		const zesaruxCondition = this.convertCondition(bp.condition);
+		if(zesaruxCondition == undefined) {
+			this.emit('warning', "Breakpoint: Can't set condition: " + (bp.condition || ''));
+			// set to unverified
+			bp.address = -1;
+			return 0;
+		}
+
 		// get free id
 		if(this.freeBreakpointIds.length == 0)
 			return 0;	// no free ID
@@ -909,13 +934,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Create condition from address and bp.condition
 		let condition = '';
-		let zesaruxCondition = this.convertCondition(bp.condition);
 		if(bp.address >= 0) {
 			condition = 'PC=0'+Utility.getHexString(bp.address, 4)+'h';
-			if(zesaruxCondition)
+			if(zesaruxCondition.length > 0)
 				condition += ' and ';
 		}
-		if(zesaruxCondition)
+		if(zesaruxCondition.length > 0)
 			condition += zesaruxCondition;
 
 		// set action first (no action)

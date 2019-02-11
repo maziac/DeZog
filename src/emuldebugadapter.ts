@@ -1918,9 +1918,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Always show enable status of all Logpoints
 			const enableMap = Emulator.logpointsEnabled;
 			// All groups:
-			let text = 'LOGPOINT groups:\n';
+			let text = 'LOGPOINT groups:';
 			for (const [group, enable] of enableMap) {
-				text += '  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled') + '\n';
+				text += '\n  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled');
 			}
 			handler(text);
 		}
