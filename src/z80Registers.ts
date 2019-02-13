@@ -278,6 +278,8 @@ export class Z80Registers {
 	 * @param reg To check for a register name.
 	 */
 	public static isRegister(reg: string): boolean {
+		if(!reg)
+			return false;
 		/*
 		if(reg.length == 2) {
 			// Check if both are upper case or both are lower case

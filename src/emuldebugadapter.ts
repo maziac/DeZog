@@ -563,7 +563,7 @@ export class EmulDebugAdapter extends DebugSession {
 				}
 				catch(e) {
 					// Show error
-					this.showWarning(e);
+					this.showWarning(e.message);
 				}
 			}
 		}
@@ -763,28 +763,28 @@ export class EmulDebugAdapter extends DebugSession {
 			return undefined
 
 		// Search all "${...}""
-		const result = logMsg.replace(/\${\s*(.*)\s*})/g, (match, inner) => {
+		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
 			// Check syntax
-			const matchInner = /(([bw]@)?\s*(\(.*\))|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
+			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
 			if(!matchInner)
 				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
-				const end = (match[6]) ? ':' + match[6] : '';
-				const addr = match[3];
-				if(addr) {
+			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
+			const addr = matchInner[3];
+			if(addr) {
 				// Check variable for label
-				const access = match[2] || '';
+				const access = matchInner[2] || '';
 				try {
 					const converted = Utility.evalExpression(addr, false);
 					return "${" + access + "(" + converted.toString() + ")" + end + "}";
 				}
-				catch {
+				catch (e) {
 					// If it cannot be converted (e.g. a register name) an exception will be thrown.
-					throw Error("Log message format error: '" + addr + "' in '" + logMsg + "'");
+					throw Error("Log message format error: " + e.message + " In '" + logMsg + "'");
 				}
 			}
 			else {
 				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
-				const reg = match[2];
+				const reg = matchInner[4];
 				if(!Z80Registers.isRegister(reg))
 					throw Error("Log message format error: Unsupported register '" + reg + "' in '" + logMsg + "'");
 				return "${" + reg + end + "}";
