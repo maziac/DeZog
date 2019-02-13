@@ -466,7 +466,7 @@ class LabelsClass {
 					if(pluses.length >= 3) {
 						// sjasmplus doesn't show more than 3 include levels.
 						// So show a warning that the include file here is not taken into account.
-						throw "Include nesting level too high. The sjasmplus list file output format does not indicate a nesting level higher than 3 'includes'. In order to use source level debugging you need to decrease the nesting level or you need to change to .list file debugging.";
+						throw Error("Include nesting level too high. The sjasmplus list file output format does not indicate a nesting level higher than 3 'includes'. In order to use source level debugging you need to decrease the nesting level or you need to change to .list file debugging.");
 					}
 					const fName = matchInclStart[1];
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);

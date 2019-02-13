@@ -250,7 +250,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 			// 1 group:
 			const array = this.logpoints.get(group);
 			if(!array)
-				throw "Group '" + group + "' unknown.";
+				throw Error("Group '" + group + "' unknown.");
 			//assert(array);
 			f(group, array);
 		}

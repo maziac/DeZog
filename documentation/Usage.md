@@ -351,7 +351,10 @@ Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
 
-Note: WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enable" in the "commandsAfterLaunch" settings.
+Notes:
+
+- WPMEMs are disabled by default. If you want to have WPMEMs enabled after launch then put "-WPMEM enable" in the "commandsAfterLaunch" settings.
+- (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 
 
 ### ASSERT
@@ -400,6 +403,7 @@ Notes:
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - As a special form you can also define an ASSERT without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
 - ASSERT is not available in ZEsarUX.
+- (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 
 
 ### LOGPOINT
@@ -414,7 +418,7 @@ The LOGPOINT syntax is:
 ~~~
 with:
 
-- [group]: (Note: the [ are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
+- [group]: (Note: the [ ] are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
 - text: A simple text that may include variables. Here are a few examples for variables:
     - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
     - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
@@ -425,6 +429,8 @@ Notes:
 - The LOGPOINTs are checked in the list file. I.e. whenever you change a LOGPOINT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - LOGPOINTs are disabled by default. If you want to have logpoints enabled after launch then put "-LOGPOINT enable" in the "commandsAfterLaunch" settings. Note: you can also turn on only specific groups.
 - LOGPOINTs are not available in ZEsarUX.
+- (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
+
 
 ### vscode breakpoint conditions
 

@@ -555,8 +555,16 @@ export class EmulDebugAdapter extends DebugSession {
 					array = new Array<GenericBreakpoint>();
 					logpoints.set(group, array);
 				}
-				// set watchpoint
-				array.push({address: entry.address, conditions: '', log: logMsg});
+				// Convert labels
+				try {
+					const log = this.evalLogMessage(logMsg);
+					// set watchpoint
+					array.push({address: entry.address, conditions: '', log: log});
+				}
+				catch(e) {
+					// Show error
+					this.showWarning(e);
+				}
 			}
 		}
 
@@ -746,22 +754,40 @@ export class EmulDebugAdapter extends DebugSession {
 	/**
 	 * Evaluates a log message, i.e. a message that was given for a logpoint.
 	 * The format is checked and also the labels are changed into numbers.
+	 * Throws an exception in case of an formatting error.
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
+	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
 	protected evalLogMessage(logMsg: string|undefined): string|undefined {
 		if(!logMsg)
 			return undefined
 
 		// Search all "${...}""
-		const result = logMsg.replace(/\${([bw]@)?\((.*)(\).*})/g, (match, access, variable, end) => {
-			// Check variable for label
-			try {
-				const converted = Utility.evalExpression(variable, false);
-				return "${" + (access||"")+ "(" + converted.toString() + end;
+		const result = logMsg.replace(/\${\s*(.*)\s*})/g, (match, inner) => {
+			// Check syntax
+			const matchInner = /(([bw]@)?\s*(\(.*\))|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
+			if(!matchInner)
+				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
+				const end = (match[6]) ? ':' + match[6] : '';
+				const addr = match[3];
+				if(addr) {
+				// Check variable for label
+				const access = match[2] || '';
+				try {
+					const converted = Utility.evalExpression(addr, false);
+					return "${" + access + "(" + converted.toString() + ")" + end + "}";
+				}
+				catch {
+					// If it cannot be converted (e.g. a register name) an exception will be thrown.
+					throw Error("Log message format error: '" + addr + "' in '" + logMsg + "'");
+				}
 			}
-			catch {
-				// If it cannot be converted (e.g. a register name) an exception will be thrown.
-				return match;
+			else {
+				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
+				const reg = match[2];
+				if(!Z80Registers.isRegister(reg))
+					throw Error("Log message format error: Unsupported register '" + reg + "' in '" + logMsg + "'");
+				return "${" + reg + end + "}";
 			}
 		});
 
@@ -783,18 +809,26 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// convert breakpoints
 			const givenBps = args.breakpoints || [];
-			const bps = givenBps.map(bp => {
-				var mbp: EmulatorBreakpoint;
-				mbp = {
-					bpId: 0,
-					filePath: path,
-					lineNr: this.convertClientLineToDebugger(bp.line),
-					address: -1,	// not known yet
-					condition: (bp.condition) ? bp.condition : '',
-					log: this.evalLogMessage(bp.logMessage)
-				};
-				return mbp;
-			});
+			const bps = new Array<EmulatorBreakpoint>();
+			for(const bp of givenBps) {
+				try {
+					const log = this.evalLogMessage(bp.logMessage);
+					var mbp: EmulatorBreakpoint;
+					mbp = {
+						bpId: 0,
+						filePath: path,
+						lineNr: this.convertClientLineToDebugger(bp.line),
+						address: -1,	// not known yet
+						condition: (bp.condition) ? bp.condition : '',
+						log: log
+					};
+					bps.push(mbp);
+					}
+				catch(e) {
+					// Show error
+					this.showWarning(e);
+				}
+			};
 
 
 			// Set breakpoints for the file.
