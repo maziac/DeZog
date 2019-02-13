@@ -83,7 +83,7 @@ export class ZesaruxSocket extends Socket {
 	 */
 	protected init() {
 		// Remove all previous listeners (in case of a restart)
-		this.removeAllListeners();
+		this.myRemoveAllListeners();
 
 		// Init
 		this.MSG_TIMEOUT = Settings.launch.socketTimeout*1000;
@@ -352,7 +352,6 @@ export class ZesaruxSocket extends Socket {
 			// Remove log from string
 			this.receivedDataChunk = this.receivedDataChunk.substr(0,p) + this.receivedDataChunk.substr(k+1);	// With '\n'
 			// Next
-			p += lenLog;
 		}
 
 		// Check for last line
@@ -452,7 +451,7 @@ export class ZesaruxSocket extends Socket {
 
 		// inform caller
 		const func = () => {
-			zSocket.removeAllListeners();
+			zSocket.myRemoveAllListeners();
 			handler();
 		}
 		// The new listeners
