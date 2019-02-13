@@ -421,6 +421,17 @@ export class ZesaruxSocket extends Socket {
 
 
 	/**
+	 * removeAllListeners is broken in vscode 1.31.1 (Feb/2019).
+	 * Here is the correct call to remove all listeners if no argument is given.
+	 * Note: this is not a full replacement.
+	 */
+	protected myRemoveAllListeners() {
+		const Stream = require('stream');
+		Stream.prototype.removeAllListeners.apply(this);
+	}
+
+
+	/**
 	 * Sends a "quit" to zesarux. In response zesarux will close the connection.
 	 * This sends "quit" immediately. I.e. it does not wait on the queue.
 	 * In fact it clears the queue.
@@ -432,7 +443,7 @@ export class ZesaruxSocket extends Socket {
 		this.lastCallQueue.length = 0;
 
 		// Exchange listeners
-		zSocket.removeAllListeners()
+		zSocket.myRemoveAllListeners();
 
 		// Keep the data listener
 		this.on('data', data => {

@@ -137,7 +137,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param message The message to show.
 	 */
 	private showWarning(message: string) {
-		Log.log(message)
+		Log.log(message);
 		vscode.window.showWarningMessage(message);
 	}
 
@@ -147,7 +147,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param message The message to show.
 	 */
 	private showError(message: string) {
-		Log.log(message)
+		Log.log(message);
 		vscode.window.showErrorMessage(message);
 	}
 
