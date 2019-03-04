@@ -409,12 +409,12 @@ Notes:
 ### LOGPOINT
 
 Another special keyword is LOGPOINT in comments in the assembler sources.
-A LOGPOINT is translated by z80-debug into a breakpointthat does not stop execution but instead prints a lo message.
+A LOGPOINT is translated by z80-debug into a breakpoint that does not stop execution but instead prints a lo message.
 
 The LOGPOINT syntax is:
 
 ~~~
-; [.*] LOGPOINT LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
+; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
 ~~~
 with:
 
@@ -456,7 +456,7 @@ Examples:
 - B >= (MAX_COUNT+1)/2
 - A >= 6 || hl == 0
 
-So on the left side you have to use a register and of the left side an expression that evaluates to a number, you can use labels and maths in the expression, but you can't put registers there.
+So on the left side you have to use a register and on the right side an expression that evaluates to a number, you can use labels and maths in the expression, but you can't put registers there.
 Several var-comparison-expr might be combined with a "&&" or "||". But you can't use any complex combinations that would require parenthesis.
 
 The breakpoint conditions are translated into conditions that are understood by ZEsarUX automatically.
