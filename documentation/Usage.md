@@ -409,16 +409,18 @@ Notes:
 ### LOGPOINT
 
 Another special keyword is LOGPOINT in comments in the assembler sources.
-A LOGPOINT is translated by z80-debug into a breakpoint that does not stop execution but instead prints a lo message.
+A LOGPOINT is translated by z80-debug into a breakpoint that does not stop execution but instead prints a log message.
 
 The LOGPOINT syntax is:
 
 ~~~
-; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
+; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ${b@(reg):unsigned}
 ~~~
 with:
 
 - [group]: (Note: the [ ] are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
+- reg: a register name, e.g. A, BC, HL, IX, H, IXL.
+- var: a label.
 - text: A simple text that may include variables. Here are a few examples for variables:
     - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
     - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```
