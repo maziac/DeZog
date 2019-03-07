@@ -330,7 +330,10 @@ export class EmulDebugAdapter extends DebugSession {
 	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>): Array<GenericWatchpoint> {
 		// convert labels in watchpoints.
 		const watchpoints = new Array<GenericWatchpoint>();
+
+		let i =-1;
 		for(let entry of watchPointLines) {
+			i = i+1;
 			// WPMEM:
 			// Syntax:
 			// WPMEM [addr [, length [, access]]]
@@ -342,49 +345,51 @@ export class EmulDebugAdapter extends DebugSession {
 			// or
 			// WPMEM ,1,w, MWV&B8h/0
 
-			// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-			const match = /;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
-			if(match) {
-				// get arguments
-				let addressString = match[1];
-				let lengthString = match[3];
-				let access = match[5];
-				let cond = match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
-				// defaults
-				let entryAddress: number|undefined = entry.address;
-				if(addressString && addressString.length > 0)
-					entryAddress = Labels.getNumberFromString(addressString);
-				if(isNaN(entryAddress))
-					continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
-				let length = 1;
-				if(lengthString && lengthString.length > 0) {
-					length = Labels.getNumberFromString(lengthString) || NaN;
-					if(isNaN(length))
-						continue;
-				}
-				else {
-					if(!addressString || addressString.length == 0) {
-						// If both, address and length are not defined it is checked
-						// if there exists bytes in the list file (i.e.
-						// numbers after the address field.
-						// If not the "WPMEM" is assumed to be inside a
-						// macro and omitted.
-						const match = /^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
-						if(!match)
+			try {
+				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
+				const match = /;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+				if(match) {
+					// get arguments
+					let addressString = match[1];
+					let lengthString = match[3];
+					let access = match[5];
+					let cond = match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
+					// defaults
+					let entryAddress: number|undefined = entry.address;
+					if(addressString && addressString.length > 0)
+						entryAddress = Utility.evalExpression(addressString, false); // don't evaluate registers
+					if(isNaN(entryAddress))
+						continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
+					let length = 1;
+					if(lengthString && lengthString.length > 0) {
+						length = Utility.evalExpression(lengthString, false); // don't evaluate registers
+					}
+					else {
+						if(!addressString || addressString.length == 0) {
+							// If both, address and length are not defined it is checked
+							// if there exists bytes in the list file (i.e.
+							// numbers after the address field).
+							// If not the "WPMEM" is assumed to be inside a
+							// macro and omitted.
+							const match = /^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
+							if(!match)
+								continue;
+						}
+					}
+					if(access && access.length > 0) {
+						if( access != 'r' && access != 'w' && access != 'rw') {
+							this.showWarning("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'");
 							continue;
+						}
 					}
-
+					else
+						access = 'rw';
+					// set watchpoint
+					watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
 				}
-				if(access && access.length > 0) {
-					if( access != 'r' && access != 'w' && access != 'rw') {
-						this.showWarning("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'");
-						continue;
-					}
-				}
-				else
-					access = 'rw';
-				// set watchpoint
-				watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
+			}
+			catch(e) {
+				vscode.window.showWarningMessage("Problem with ASSERT. Could not evaluate: '" + entry.line + "': " + e + "");
 			}
 		}
 

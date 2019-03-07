@@ -11,6 +11,7 @@
 - Default assembler changed to sjasmplus.
 - Break reason now also shown at first breakpoint after launch.
 - Logpoints added.
+- WPMEM now evaluates expression not just labels.
 
 
 ## 0.7.0

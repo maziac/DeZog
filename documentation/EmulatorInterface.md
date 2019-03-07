@@ -31,7 +31,7 @@ The Machine interface to vscode via the 'EmulDebugAdapter'. The main interfaces 
 - setProgramCounter: Change the program counter. Used when the program counter is changed from the menu.
 - stackTraceRequest: Retrieves the call stack. Called on every step.
 - setBreakpoints: Called on startup and on every user change to the breakpoints.
-- setWPMEM, enableWPMEM: setWPMEM is called at startup to set all memory watchpoints ("WPMEM") in the assmbly sources. enableWPMEM is a debug console command to enable/disable these watchpoints.
+- setWPMEM, enableWPMEM: setWPMEM is called at startup to set all memory watchpoints ("WPMEM") in the assembly sources. enableWPMEM is a debug console command to enable/disable these watchpoints.
 - getDisassembly: Returns a disassembly of the code.
 - dbgExec: Executes a command on the emulator.
 - getMemoryDump: Retrieves a memory dump.
