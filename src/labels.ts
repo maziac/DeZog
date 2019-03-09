@@ -174,8 +174,11 @@ class LabelsClass {
 		let labelPrefixStack = new Array<string>();	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		//let dbgLineNr = 0;
+		let ii = -1;
 		for( let origLine of listLines) {
 		//	dbgLineNr ++;
+			ii = ii+1
+
 			let countBytes = 1;
 			line = origLine;
 			// sjasmplus or z88dk
@@ -309,19 +312,23 @@ class LabelsClass {
 		 */
 
 		 if(sources.length == 0) {
-			// Use list file directly instead of real filenames
+			// Use list file directly instead of real filenames.
 			const relFileName = Utility.getRelFilePath(fileName);
 			const lineArray = new Array<number>();
 			this.lineArrays.set(relFileName, lineArray);
-			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
+			const listLength = listFile.length;
+			let realLineNr = -1;
+			for(var lineNr=0; lineNr<listLength; lineNr++) {
 				const entry = listFile[lineNr];
+				if(entry.lineNr == -1 )
+					realLineNr ++;
 				entry.fileName = relFileName;
-				entry.lineNr = lineNr;
-				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: lineNr, modulePrefix: undefined, lastLabel: undefined });
+				entry.lineNr = realLineNr;
+				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: realLineNr, modulePrefix: undefined, lastLabel: undefined });
 
 				// Set address
-				if(!lineArray[lineNr])	// without the check macros would lead to the last addr being stored.
-					lineArray[lineNr] = entry.addr;
+				if(!lineArray[realLineNr])	// without the check macros would lead to the last addr being stored.
+					lineArray[realLineNr] = entry.addr;
 			}
 			return;
 		}
@@ -698,7 +705,7 @@ class LabelsClass {
 		if(!entry)
 			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
 
-		var filePath = Utility.getAbsFilePath(entry.fileName);
+		const filePath = Utility.getAbsFilePath(entry.fileName);
 		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel};
 	}
 

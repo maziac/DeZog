@@ -13,7 +13,7 @@
 - Logpoints added.
 - WPMEM now evaluates expression not just labels.
 - Adjusted to changed sjasmplus list file format.
-
+- Corrected association of list file line numbers with addresses.
 
 ## 0.7.0
 - New assembler listings supported: "sjasmplus".

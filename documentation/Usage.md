@@ -118,9 +118,9 @@ all the information required by z80-debug. While reading this file z80-debug
 An example how this works:
 When you do a 'step-over' in the debugger, z80-debug request the new PC (program counter) value from ZEsarUX.
 The address of the PC is looked up to find the line in the list file.
-Now depending on the value of 'sources'
-- (false): the corresponding line in the list file is shown or
-- (true): the originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
+Now depending on the value of 'srcDirs'
+- []: Empty array. The corresponding line in the list file is shown or
+- Otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
 Configuration (**Savannah-z80asm**):
 You need to enter the list files under
@@ -139,7 +139,7 @@ You need to enter the list files under
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
     - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
-    - If you build your .list files from .asm files then use 'sources' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
+    - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
 - asm: Choose you assembler here. "sjasmplus", "z80asm" or "z88dk". You don't need 'filter' if you specify 'asm'.
 - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
 E.g. ```"/^[0-9]+\\s+//"```: This is a sed-like regular expression that removes the first number from all lines.
