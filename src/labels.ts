@@ -142,12 +142,22 @@ class LabelsClass {
 		// Check for sjasmplus or z88dk.
 		const sjasmplus = (asm == "sjasmplus");
 		let sjasmZ88dkRegex;
-		if(sjasmplus || asm == "z88dk") {
+		if(asm == "z88dk") {
 			// z88dk: The format is line-number address opcode.
+			// I.e. [0-9]+[\s+]+	Note: the + is not required, but I leave it in so I don't have to test it.
+			sjasmZ88dkRegex = new RegExp(/^[0-9]+[\s+]+/);
+		}
+		else if(sjasmplus) {
 			// sjasmplus: The format is line-number++ address opcode.
 			// sjasmplus: The "+" indicate the include level, max 3 "+"s.
 			// I.e. [0-9]+[\s+]+
-			sjasmZ88dkRegex = new RegExp(/[0-9]+[\s+]+/);
+			// E.g.
+			//    5+ 0001                include "i2.inc"
+   			//	  1++0001
+            //    2++0001              i2:
+			//    3++0001 00               nop
+			// sjasmplus changed the format. Note the spaces in front of the line numbers.
+			sjasmZ88dkRegex = new RegExp(/^ *[0-9]+[\s+]+/);
 		}
 
 		// Regex to find labels
@@ -281,7 +291,8 @@ class LabelsClass {
 			}
 
 			// Check if line is "OK":
-			if(line.substr(4,1) != '~') {
+			const matchSjasmplusMacro = /^[0-9a-f]+\s*~/i.exec(line);
+			if(!matchSjasmplusMacro) {
 				// Call line handler (if any)
 				lineHandler(address, line, lineNumber);
 			}
@@ -289,7 +300,7 @@ class LabelsClass {
 			// next
 			prev = address
 			lineNumber ++;
-		}
+		}  // for listLines
 
 		/**
 		 * Creates the list structures to reference files and lines in both directions:
@@ -408,13 +419,13 @@ class LabelsClass {
 		// sjasmplus or z88dk
 		if(sjasmplus || asm == "z88dk") {
 			// sjasmplus:
-			// Starts with the line numbers (plus pluses) of the include file.
-			// 06++ 8000
-			// 07++ 8000                 include "zxnext.inc"
-			// 01+++8000
-			// 02+++8000
-			// 03+++8000                 include "z2.asm"
-			// 01+++8000
+			// Starts with spaces and the line numbers (plus pluses) of the include file.
+			//    9+ 8000
+			//   10+ 8000                 include "zxnext.inc"
+			//    1++8000
+			//    2++8000
+			//    3++8000                 include "z2.asm"
+			//    1++8000
 			//
 			// z88dk:
 			// Starts with the line numbers of the include file.
@@ -442,8 +453,8 @@ class LabelsClass {
 				if(line.length == 0)
 					continue;
 
-				// get line number with pluses
-				var matchLineNumber = /^([0-9]+)(\+*)\s+(.*)/.exec(line);
+				// Get line number with pluses
+				var matchLineNumber = /^ *([0-9]+)(\+*)\s*(.*)/.exec(line);
 				if(!matchLineNumber)
 					continue;	// Not for sjasmplus, but z88dk contains lines without line number.
 				const lineNumber = parseInt(matchLineNumber[1]);
@@ -455,15 +466,15 @@ class LabelsClass {
 				// Check for end of include file
 				if(pluses.length < expectedPluses.length) {
 					// End of include found
-					// Note: this is not 100% error proof. sjasmplus is not showing more than 3 include levels (3 pluses). If there is a higher include level a warning is thrown.
+					// Note: this is not 100% error proof. sjasmplus is not showing more than 2 include levels (2 pluses). If there is a higher include level a warning is thrown.
 					stack.pop();
 					index = stack.length-1;
 				}
 
 				// Check for start of include file
-				var matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
+				var matchInclStart = /^ *[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
-					if(pluses.length >= 3) {
+					if(pluses.length >= 2) {
 						// sjasmplus doesn't show more than 3 include levels.
 						// So show a warning that the include file here is not taken into account.
 						throw Error("Include nesting level too high. The sjasmplus list file output format does not indicate a nesting level higher than 3 'includes'. In order to use source level debugging you need to decrease the nesting level or you need to change to .list file debugging.");

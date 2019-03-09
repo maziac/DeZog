@@ -12,6 +12,7 @@
 - Break reason now also shown at first breakpoint after launch.
 - Logpoints added.
 - WPMEM now evaluates expression not just labels.
+- Adjusted to changed sjasmplus list file format.
 
 
 ## 0.7.0
