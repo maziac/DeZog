@@ -10,7 +10,7 @@
 - Corrected file association for z80asm.
 - Default assembler changed to sjasmplus.
 - Break reason now also shown at first breakpoint after launch.
-- Logpoints added.
+- LOGPOINTs added.
 - WPMEM now evaluates expression not just labels.
 - Adjusted to changed sjasmplus list file format.
 - Corrected association of list file line numbers with addresses.
