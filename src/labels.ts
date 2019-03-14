@@ -320,6 +320,10 @@ class LabelsClass {
 			let realLineNr = -1;
 			for(var lineNr=0; lineNr<listLength; lineNr++) {
 				const entry = listFile[lineNr];
+				if(isNaN(entry.addr)) {
+					realLineNr ++;
+					continue;
+				}
 				if(entry.lineNr == -1 )
 					realLineNr ++;
 				entry.fileName = relFileName;
@@ -465,7 +469,7 @@ class LabelsClass {
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
 
-				if(line.indexOf('CS_ROM_VALUE_ADDRESS')>= 0)
+				if(line.indexOf('include')>= 0)  //CS_ROM_VALUE_ADDRESS
 					console.log("kll");
 
 				if(line.length == 0)
@@ -478,18 +482,22 @@ class LabelsClass {
 						// Include ended.
 						stack.pop();
 						index = stack.length-1;
+						// Check for end of file
+						if(index < 0)
+							break;
 						// This line doesn't need to be associated with an address
 						continue;
 					}
 				}
-				else {
-					// z88dk: Check for end of include file
-					// get line number
-					var matchLineNumber = /^([0-9]+)[\s]/.exec(line);
-					if(!matchLineNumber)
-						continue;	// Not for sjasmplus, but z88dk contains lines without line number.
-					lineNumber = parseInt(matchLineNumber[1]);
 
+				// Get line number
+				const matchLineNumber = /^\s*([0-9]+)[\s\+]+(.*)/.exec(line);
+				if(!matchLineNumber)
+					continue;	// z88dk contains lines without line number.
+				lineNumber = parseInt(matchLineNumber[1]);
+
+				// z88dk: Check for end of include file
+				if(!sjasmplus) {
 					// z88dk: Check for end of include file
 					if(expectedLine
 						&& lineNumber != expectedLine
@@ -502,7 +510,8 @@ class LabelsClass {
 				}
 
 				// Check for start of include file (sjasmplus and z88dk)
-				var matchInclStart = /^[0-9]+\s+[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(line);
+				const remainingLine = matchLineNumber[2];
+				const matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
 					const fName = matchInclStart[1];
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);

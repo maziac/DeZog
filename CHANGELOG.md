@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0
+- Support for sjasmplus v1.11.0 list file format.
+- Fix of 'include' parsing for z88dk.
+
 ## 0.7.1
 - Debug Console: Display of T-states while executing instructions or sub routine calls.
 - Disassembler:
