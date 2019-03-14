@@ -425,14 +425,19 @@ class LabelsClass {
 
 		// sjasmplus or z88dk
 		if(sjasmplus || asm == "z88dk") {
-			// sjasmplus:
+			// sjasmplus (since v1.11.0):
 			// Starts with spaces and the line numbers (plus pluses) of the include file.
-			//    9+ 8000
-			//   10+ 8000                 include "zxnext.inc"
-			//    1++8000
-			//    2++8000
-			//    3++8000                 include "z2.asm"
-			//    1++8000
+			// Indicates start and end of include.
+			//   38  004B
+			//   39  004B                  include "zxnext/zxnext_regs.inc"
+		    // # file opened: src//zxnext/zxnext_regs.inc
+			//    1+ 004B              ;=================
+			//  ...
+			//  331+ 004B              DMA_LOAD:       equ 11001111b
+			//  332+ 004B              ZXN_DMA_PORT:   equ 0x6b
+			//  333+ 004B
+			//  # file closed: src//zxnext/zxnext_regs.inc
+			//   40  004B
 			//
 			// z88dk:
 			// Starts with the line numbers of the include file.
@@ -444,8 +449,10 @@ class LabelsClass {
 			//
 			// Note:
 			// a) the text "include" is used as indication that a new include
-			// file started.
-			// b) the change of the line number is used as indicator that the
+			// file started (can be used for both sjasmplus and z88dk).
+			// b1) z88dk: the change of the line number is used as indicator that the
+			// include file ended.
+			// b2) sjasmplus: the text '# file closed' is used as indication that the
 			// include file ended.
 
 			let index = 0;
@@ -454,54 +461,65 @@ class LabelsClass {
 			const absFName = Utility.getAbsSourceFilePath(fName, sources);
 			const relFileName = Utility.getRelFilePath(absFName);
 			stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
-			let expectedPluses = '';	// Used to test if the include file ended
+			let expectedLine;	// The current line and the next lines are tested. for macros the line number does not increase.
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
+
+				if(line.indexOf('CS_ROM_VALUE_ADDRESS')>= 0)
+					console.log("kll");
+
 				if(line.length == 0)
 					continue;
 
-				// Get line number with pluses
-				var matchLineNumber = /^ *([0-9]+)(\+*)\s*(.*)/.exec(line);
-				if(!matchLineNumber)
-					continue;	// Not for sjasmplus, but z88dk contains lines without line number.
-				const lineNumber = parseInt(matchLineNumber[1]);
-				const pluses =  matchLineNumber[2];
-				let lineNumberWithPluses = lineNumber + pluses;
-				lineNumberWithPluses = lineNumberWithPluses.trim();
-				const remainingLine = matchLineNumber[3];
+				// sjasmplus: check for text '# file closed'
+				if(sjasmplus) {
+					// sjasmplus: Check for end of include file
+					if(line.startsWith('# file closed:')) {
+						// Include ended.
+						stack.pop();
+						index = stack.length-1;
+						// This line doesn't need to be associated with an address
+						continue;
+					}
+				}
+				else {
+					// z88dk: Check for end of include file
+					// get line number
+					var matchLineNumber = /^([0-9]+)[\s]/.exec(line);
+					if(!matchLineNumber)
+						continue;	// Not for sjasmplus, but z88dk contains lines without line number.
+					lineNumber = parseInt(matchLineNumber[1]);
 
-				// Check for end of include file
-				if(pluses.length < expectedPluses.length) {
-					// End of include found
-					// Note: this is not 100% error proof. sjasmplus is not showing more than 2 include levels (2 pluses). If there is a higher include level a warning is thrown.
-					stack.pop();
-					index = stack.length-1;
+					// z88dk: Check for end of include file
+					if(expectedLine
+						&& lineNumber != expectedLine
+						&& lineNumber != expectedLine+1) {
+						// End of include found
+						// Note: this is not 100% error proof.
+						stack.pop();
+						index = stack.length-1;
+					}
 				}
 
-				// Check for start of include file
-				var matchInclStart = /^ *[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
+				// Check for start of include file (sjasmplus and z88dk)
+				var matchInclStart = /^[0-9]+\s+[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(line);
 				if(matchInclStart) {
-					if(pluses.length >= 2) {
-						// sjasmplus doesn't show more than 3 include levels.
-						// So show a warning that the include file here is not taken into account.
-						throw Error("Include nesting level too high. The sjasmplus list file output format does not indicate a nesting level higher than 3 'includes'. In order to use source level debugging you need to decrease the nesting level or you need to change to .list file debugging.");
-					}
 					const fName = matchInclStart[1];
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);
 					const relFName = Utility.getRelFilePath(absFName);
 					stack.push({fileName: relFName, lineNr: 0});
 					index = stack.length-1;
+					expectedLine = undefined;
+				}
+				else {
+					expectedLine = lineNumber;	// Is only of interest for z88dk
 				}
 
 				// Associate with right file
 				listFile[lineNr].fileName = stack[index].fileName;
 				listFile[lineNr].lineNr = (index == 0 && !mainFileName) ? lineNr : lineNumber-1;
-
-				// Next
-				expectedPluses = pluses;
 			}
 		}
-
 
 		// Create 2 maps.
 		// a) fileLineNrs: a map with all addresses and the associated filename/lineNr
