@@ -13,7 +13,7 @@ import { MemoryDumpView } from './memorydumpview';
 import { MemoryRegisterView } from './memoryregisterview';
 import { RefList } from './reflist';
 import { Settings, SettingsParameters } from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './shallowvar';
+import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './shallowvar';
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
@@ -1286,6 +1286,17 @@ export class EmulDebugAdapter extends DebugSession {
 				innerSerializer.endExec();
 			});
 
+			// Serialize MemoryPages
+			innerSerializer.exec(() => {
+				// Create variable object for MemoryPages
+				const varMemoryPages = new MemoryPagesVar();
+				// Add to list and get reference ID
+				const ref = this.listVariables.addObject(varMemoryPages);
+				scopes.push(new Scope("Memory Pages", ref));
+				// Return
+				innerSerializer.endExec();
+			});
+
 			// Serialize the Stack
 			innerSerializer.exec(() => {
 				// Create variable object for the stack
@@ -2300,14 +2311,18 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 		// Serialize
 		this.serializer.exec( () => {
-			// get variable object
+			// Get variable object
 			const varObj = this.listVariables.getObject(ref);
-			// safety check
+			response.success = false;	// will be changed if successful.
+			// Safety check
 			if(varObj) {
 				// Set value
 				varObj.setValue(name, value, (formattedString) => {
 					// Send response
-					response.body = {value: formattedString};
+					if(formattedString) {
+						response.body = {value: formattedString};
+						response.success = true;
+					}
 					this.sendResponse(response);
 				});
 			}

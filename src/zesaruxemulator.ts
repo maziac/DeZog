@@ -9,7 +9,7 @@ import { RefList } from './reflist';
 import { Log } from './log';
 import { Frame } from './frame';
 import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
-import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState } from './emulator';
+import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from './emulator';
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
 
@@ -1119,6 +1119,58 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const readValue = parseInt(data,16);
 				handler(readValue);
 			});
+		});
+	}
+
+
+	/**
+	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
+	 * and converts it to an arry of MemeoryPages.
+	 * @param handler(memoryPages) The handler that receives the memory pages list.
+	 */
+	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {
+		/* Read data from zesarux has the following format:
+		Segment 1
+		Long name: ROM 0
+		Short name: O0
+		Start: 0H
+		End: 1FFFH
+
+		Segment 2
+		Long name: ROM 1
+		Short name: O1
+		Start: 2000H
+		End: 3FFFH
+
+		Segment 3
+		Long name: RAM 10
+		Short name: A10
+		Start: 4000H
+		End: 5FFFH
+		...
+		*/
+
+		zSocket.send( 'get-memory-pages verbose', data => {
+			const pages: Array<MemoryPage> = [];
+			const lines = data.split('\n');
+			const len = lines.length;
+			let i = 0;
+			while(i+4 < len) {
+				// Read data
+				let name = lines[i+2].substr(12);
+				name += ' (' + lines[i+1].substr(11) + ')';
+				const startStr = lines[i+3].substr(7);
+				const start = Utility.parseValue(startStr);
+				const endStr = lines[i+4].substr(5);
+				const end = Utility.parseValue(endStr);
+				// Save in array
+				pages.push({start, end, name});
+				// Next
+				i += 6;
+			}
+
+			// send data to handler
+			handler(pages);
 		});
 	}
 

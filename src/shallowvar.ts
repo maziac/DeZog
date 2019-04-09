@@ -26,12 +26,14 @@ export class ShallowVar {
 	/**
 	 * Override if the variable or its properties can be set.
 	 * Sets the value of the variable.
-	 * @param name The name of the register, e.g. "HL" or "A"
+	 * @param name The name of the variable, e.g. for registers "HL" or "A"
 	 * @param value The value to set.
 	 * @param handler The handler gets the resulting (formatted) string with the value.
+	 * If the variable is readonly or for soem other reason could not be set
+	 * then an 'undefined' is passed instead of a string.
 	 */
-	public setValue(name: string, value: number, handler: (formattedString: string) => {}) {
-		handler('');
+	public setValue(name: string, value: number, handler: (formattedString: string|undefined) => {}) {
+		handler(undefined);
 	};
 
 }
@@ -110,6 +112,45 @@ export class DisassemblyVar extends ShallowVar {
 
 
 /**
+ * The MemoryPagesVar class knows how to retrieve the mapping of
+ * memory slots and banks from zesarux.
+ */
+export class MemoryPagesVar extends ShallowVar {
+	/**
+	 * Constructor.
+	 */
+	public constructor() {
+		super();
+	}
+
+
+	/**
+	 * Communicates with zesarux to retrieve the memory pages.
+	 * @param handler This handler is called when the memory page data is available.
+	 * A list with start/end address and name (bank name) is passed.
+	 */
+	public getContent(handler: (varlist: Array<DebugProtocol.Variable>) => {}) {
+		// Get code memory
+		Emulator.getMemoryPages(memoryPages => {
+			// Convert array
+			const segments = memoryPages.map(page => {
+				const name = Utility.getHexString(page.start,4) + '-' + Utility.getHexString(page.end,4);
+				return {
+					name: name,
+					type: page.name,
+					value: page.name,
+					variablesReference: 0
+				};
+			});
+
+			// Pass data to callback
+			handler(segments);
+		});
+	}
+}
+
+
+/**
  * The RegistersMainVar class knows how to retrieve the register values from zeasrux.
  */
 export class RegistersMainVar extends ShallowVar {
@@ -120,7 +161,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}) {
-		Emulator.getRegisters( data => {
+		Emulator.getRegisters(data => {
 			const registers = new Array<DebugProtocol.Variable>();
 			const regNames = this.registerNames();
 

@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.8.0
+- Memory pages are shown in VARIABLES section.
+
+## 0.8.0
 - Support for sjasmplus v1.11.0 list file format.
 - Fix of 'include' parsing for z88dk.
 

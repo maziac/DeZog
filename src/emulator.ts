@@ -85,6 +85,19 @@ export enum EmulatorState {
 };
 
 
+/// Definition of one memory page, i.e. memory slot/bank relationship.
+export interface MemoryPage {
+	/// Z80 start address of page.
+	start: number;
+
+	/// Z80 end address of page.
+	end: number;
+
+	/// The name of the mapped memory area.
+	name: string;
+};
+
+
 /**
  * The representation of the Z80 emulator (e.g. Zesarux or MAME).
  * It receives the requests from the EmulDebugAdapter and communicates with
@@ -587,6 +600,16 @@ export class EmulatorClass extends EventEmitter {
 	 * @param value The new value.
 	 */
 	public writeMemory(address, value, handler:(realValue: number) => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
+	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
+	 * and converts it to an arry of MemeoryPages.
+	 * @param handler(memoryPages) The handler that receives the memory pages list.
+	 */
+	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {
 		assert(false);	// override this
 	}
 
