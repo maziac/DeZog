@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.8.1",
+	"version": "0.9.0",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -102,12 +102,23 @@
 				"command": "extension.z80-debug.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
 				"category": "z80-debug"
+			},
+			{
+				"command": "extension.z80-debug.execUnitTests",
+				"title": "Execute Unit Tests",
+				"category": "z80-debug"
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"when": "false",
+					"command": "extension.z80-debug.movePCtoCursor"
+				}
+			],
 			"editor/context": [
 				{
-					"when": "resourceLangId == asm-collection",
+					"when": "resourceLangId == asm-collection && inDebugMode",
 					"command": "extension.z80-debug.movePCtoCursor",
 					"group": "debug"
 				}
