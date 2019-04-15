@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { EmulDebugAdapter } from './emuldebugadapter';
+import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
 
@@ -29,6 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Command to change the program counter via menu.
 	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.movePCtoCursor', config => {
+		// Only allowed in debug context
+		if(!vscode.debug.activeDebugSession)
+			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
 		if(!editor)
@@ -36,22 +40,17 @@ export function activate(context: vscode.ExtensionContext) {
 		const position = editor.selection.active;
 		const filename = editor.document.fileName;
 		// Send to debug adapter
-		if(vscode.debug.activeDebugSession)
-			vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line] );
+		vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line]);
+	}));
 
 
-		/*
-		return vscode.window.showInputBox({
-			placeHolder: "e.g. get-breakpoints",
-			prompt: 'Enter a command that is send to ZEsarUX',
-			validateInput: () => null
-		}).then(text => {
-			if(text && text.length > 0) {
-				if(vscode.debug.activeDebugSession)
-					vscode.debug.activeDebugSession.customRequest('exec-cmd', text);
-			}
-		});
-		*/
+	// Command to change the program counter via menu.
+	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.execUnitTests', config => {
+		// Not allowed if a debug session is crurently active.
+		//if(vscode.debug.activeDebugSession)
+		//	return;
+		// Send to debug adapter
+		Z80UnitTests.execute();
 	}));
 
 	// register a configuration provider for 'zesarux' debug type
@@ -60,11 +59,13 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(provider);
 }
 
+
 /**
  * Called to deactivate the debug session.
  */
 export function deactivate() {
 }
+
 
 /**
  * Instantiates the ZesaruxDebugAdapter and sets up the

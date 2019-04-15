@@ -58,7 +58,8 @@
 	},
 	"main": "./out/extension",
 	"activationEvents": [
-		"onDebug"
+		"onDebug",
+		"onCommand:extension.z80-debug.execUnitTests"
 	],
 	"contributes": {
 		"languages": [

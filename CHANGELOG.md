@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.8.0
+## 0.9.0
+- Unit Tests!
+
+## 0.8.1
 - Memory pages are shown in VARIABLES section.
 
 ## 0.8.0

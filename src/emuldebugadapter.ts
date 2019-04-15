@@ -1,5 +1,5 @@
 
-//import * as assert from 'assert';
+import * as assert from 'assert';
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
@@ -35,6 +35,7 @@ import { Opcode, Opcodes } from './disassembler/opcode';
 import * as BinaryFile from 'binary-file';
 //import { watch } from 'fs';
 //import { writeFileSync } from 'fs';
+//import { EventEmitter } from 'events';
 
 
 
@@ -44,8 +45,8 @@ import * as BinaryFile from 'binary-file';
  */
 export class EmulDebugAdapter extends DebugSession {
 
-    /// The disassembler instance.
-    protected dasm: Disassembler;
+	/// The disassembler instance.
+	protected dasm: Disassembler;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
 	protected dasmAddressQueue = new Array<number>();
@@ -64,6 +65,10 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
+
+	/// Will be set by startUnitTests to indicate that
+	/// unit tests are running and to emit events to the caller.
+	protected static unitTestHandler: (da: EmulDebugAdapter) => void;
 
 
 	/**
@@ -111,6 +116,40 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
+	 * Start the unit tests.
+	 * @returns If it was not possible to start unit test: false.
+	 */
+	public static startUnitTests(handler: (da: EmulDebugAdapter) => void) {
+		assert(handler);
+
+		// Return if currently a debug session is running
+		if(vscode.debug.activeDebugSession)
+			return false;
+
+		// Return if no event emitter is there.
+		this.unitTestHandler = handler;
+
+		// Start debugger
+		let wsFolder;
+		if(vscode.workspace.workspaceFolders)
+			wsFolder = vscode.workspace.workspaceFolders[0];
+		vscode.debug.startDebugging(wsFolder, 'Z80 Debugger - Unit Tests Debug');
+
+		return true;
+	}
+
+
+	/**
+	 * Create a unit test event.
+	 */
+	/*protected static unitTestEvent(eventString: string) {
+		if(this.unitTest)
+			this.unitTest.emit(eventString);
+			this.unitTest = undefined as unknown as EventEmitter;
+	}
+*/
+
+	/**
 	 * Creates a new disassembler and configures it.
 	 * Called on start of connection.
 	 */
@@ -156,27 +195,29 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Exit from the debugger.
 	 * @param message If defined the message is shown to the user as error.
 	 */
-	private exit(message?: string) {
+	public exit(message?: string) {
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
 		this.sendEvent(new TerminatedEvent());
 		//this.sendEvent(new ExitedEvent());
+		// Remove all listeners
+		this.removeAllListeners();
 	}
 
 
 	/**
-     * Overload sendEvent to logger.
-     */
-    public sendEvent(event: DebugProtocol.Event): void {
+	 * Overload sendEvent to logger.
+	 */
+	public sendEvent(event: DebugProtocol.Event): void {
 		Log.log(`<-: ${event.event}(${JSON.stringify(event.body)})`);
 		super.sendEvent(event);
 	}
 
-    /**
-     * Overload sendRequest to logger.
-     */
-    public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void {
+	/**
+	 * Overload sendRequest to logger.
+	 */
+	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void {
 		Log.log(`<-: ${command}(${JSON.stringify(args)})`);
 		super.sendRequest(command, args, timeout, (resp) => {
 			// Response
@@ -187,8 +228,8 @@ export class EmulDebugAdapter extends DebugSession {
 	}
 
 	/**
-     * Overload sendResponse to logger.
-     */
+	 * Overload sendResponse to logger.
+	 */
 	public sendResponse(response: DebugProtocol.Response): void {
 		Log.log(`<-: ${response.command}(${JSON.stringify(response.body)})`);
 		super.sendResponse(response);
@@ -207,6 +248,11 @@ export class EmulDebugAdapter extends DebugSession {
 	/**
 	 * Debugadapter disconnects.
 	 * End forcefully.
+	 * Is called
+	 * - when user presses red square
+	 * - when the ZEsarUX socket connection is terminated
+	 * Not called:
+	 * - If user presses cirled arrow/restart.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		// Close register memory view
@@ -287,7 +333,7 @@ export class EmulDebugAdapter extends DebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			// Save args
-			const rootFolder = (vscode.workspace.workspaceFolders) ?vscode.workspace.workspaceFolders[0].uri.path : '';
+			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			Settings.Init(args, rootFolder);
 			const channelOut = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
 			Log.init(channelOut, Settings.launch.log.filePath);
@@ -607,6 +653,11 @@ export class EmulDebugAdapter extends DebugSession {
 			return;
 		}
 
+		// Call the unit test handler. It will subscribe on events.
+		if(EmulDebugAdapter.unitTestHandler) {
+			EmulDebugAdapter.unitTestHandler(this);
+		}
+
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 		Emulator.init();
@@ -720,7 +771,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
-				if(Settings.launch.startAutomatically) {
+				if(Settings.launch.startAutomatically && !EmulDebugAdapter.unitTestHandler) {
 					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
 					this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
 					setTimeout(() => {
@@ -1370,7 +1421,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Called at the beginning (startAutomatically) and from the
 	 * vscode UI (continueRequest).
 	 */
-	protected emulatorContinue() {
+	public emulatorContinue() {
 		Emulator.continue((data, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
@@ -1619,6 +1670,9 @@ export class EmulDebugAdapter extends DebugSession {
 		else if (cmd == '-state') {
 			this.evalStateSaveRestore(tokens, handler);
 		}
+		else if (cmd == '-unittests') {
+			this.evalStateSaveRestore(tokens, handler);
+		}
 		// Debug commands
 		else if (cmd == '-dbg') {
 			this.evalDebug(tokens, handler);
@@ -1795,6 +1849,9 @@ Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12
 Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 Without any parameter it will show all visible sprites automatically.
 "-state save|restore": Saves/restores the current state. I.e. the complete RAM + the registers.
+"-unittests": Will start to run all unit tests. For each unit test the sucess/failure is shown.
+Unit tests need to be configures in the settings.
+
 Examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
 "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
@@ -2217,6 +2274,47 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalStateSaveRestore(tokens: Array<string>, handler: (text:string)=>void) {
+		const stateName = tokens[1];
+		if(!stateName)
+			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
+
+		const param = tokens[0] || '';
+		if(param == 'save') {
+			// Save current state
+			this.stateSave(stateName, text => {
+				if(!text)	// Error text ?
+					text = 'OK';
+				// Send response
+				handler('OK');
+			});
+		}
+		else if(param == 'restore') {
+			// Restores the state
+			this.stateRestore(stateName, text => {
+				if(!text)	// Error text ?
+					text = 'OK';
+				// Send response
+				handler(text);
+				// Reload register values etc.
+				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
+			});
+		}
+		else {
+			// Unknown argument
+			throw new Error("Unknown argument: '" + param + "'");
+		}
+	}
+
+
+	// REMOVE:
+	/**
+	 * Executes unit tests.
+	 * Unit tests need to be configured in the settings.
+	 * @param tokens The arguments.
+ 	 * @param handler(text) A handler that is called after the execution.
+	 */
+	protected evalUnitTests(tokens: Array<string>, handler: (text:string)=>void) {
 		const stateName = tokens[1];
 		if(!stateName)
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
