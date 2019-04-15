@@ -781,6 +781,8 @@ export class EmulDebugAdapter extends DebugSession {
 				}
 				else {
 					this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));
+					// For the unit tests
+					this.emit("initialized");
 				}
 				this.serializer.endExec();
 			});
@@ -1439,6 +1441,8 @@ export class EmulDebugAdapter extends DebugSession {
 
 			// Send break
 			this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
+			// For the unit tests
+			this.emit("break");
 		});
 	}
 
