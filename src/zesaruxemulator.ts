@@ -413,7 +413,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Change state
 		this.state = EmulatorState.RUNNING;
 		// Reset T-state counter.
-		zSocket.send('reset-tstates-partial', data => {
+		zSocket.send('reset-tstates-partial', () => {
 			// Run
 			zSocket.sendInterruptable('run', reason => {
 				// (could take some time, e.g. until a breakpoint is hit)

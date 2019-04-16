@@ -2,14 +2,18 @@ import * as vscode from 'vscode';
 import * as assert from 'assert';
 //import { EmulatorBreakpoint } from './emulator';
 //import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
-import { ZesaruxEmulator } from './zesaruxemulator';
-import { zSocket } from './zesaruxSocket';
+//import { ZesaruxEmulator } from './zesaruxemulator';
+//import { zSocket } from './zesaruxSocket';
 //import { Labels } from './labels';
 //import { Utility } from './utility';
 import { EmulDebugAdapter} from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
+//import { EmulatorBreakpoint } from './emulator';
+import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
+import { zSocket } from './zesaruxSocket'; // TODO: remove
+
 
 
 /**
@@ -25,18 +29,25 @@ export class Z80UnitTests {
 	/// This array will containt the names of all UT testcases.
 	protected static utLabels: Array<string>;
 
+	/// The unt test initialization routine. The user has to provide
+	/// it and the label.
+	protected static addrInit: number;
+
 	/// The start address of the unit test wrapper.
-	/// This is called to strt the unit test.
+	/// This is called to start the unit test.
 	protected static addrTestWrapper: number;
 
 	/// Here is the address of the unit test written.
-	protected static addrCall: number;;
+	protected static addrCall: number;
 
 	/// At the end of the test this address is reached on success.
-	protected static addrTestReadySuccess: number;;
+	protected static addrTestReadySuccess: number;
 
 	/// At the end of the test this address is reached on failure.
-	protected static addrTestReadyFailure: number;;
+	protected static addrTestReadyFailure: number;
+
+	/// Is filled with the summary of tests and results.
+	protected static outputSummary: string;
 
 
 	/**
@@ -61,11 +72,18 @@ export class Z80UnitTests {
 			// The Z80 binary has been loaded.
 			// The debugger stopped before starting the program.
 			// Now read all the unit tests.
+			Z80UnitTests.outputSummary = '';
 
 			// Get the unit test code
+			Z80UnitTests.addrInit = Labels.getNumberForLabel("UNITTEST_INIT") as number;
+			if(!Z80UnitTests.addrInit) {
+				Z80UnitTests.stopUnitTests(debugAdapter, "Couldn't find label UNITTEST_INIT. Did you forget to define the initialization routine?");
+				return;
+			}
 			Z80UnitTests.addrTestWrapper = Labels.getNumberForLabel("UNITTEST_TEST_WRAPPER") as number;
 			if(!Z80UnitTests.addrTestWrapper) {
 				Z80UnitTests.stopUnitTests(debugAdapter, "Couldn't find the unit test wrapper. Did you forget to use the macro?");
+				return;
 			}
 			Z80UnitTests.addrCall = Labels.getNumberForLabel("UNITTEST_CALL_ADDR") as number;
 			assert(Z80UnitTests.addrCall);
@@ -75,16 +93,24 @@ export class Z80UnitTests {
 			Z80UnitTests.addrTestReadyFailure = Labels.getNumberForLabel("UNITTEST_TEST_READY_FAILURE") as number;
 			assert(Z80UnitTests.addrTestReadyFailure);
 
-			// Get all labels that look like: 'UT_xxx'
-			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('/.*\\bUT_\\w*$/');
-			// Error check
-			if(Z80UnitTests.utLabels.length == 0) {
-				// No unit tests found -> disconnect
-				Z80UnitTests.stopUnitTests(debugAdapter, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
-				return;
+			// Labels not yet known.
+			Z80UnitTests.utLabels = undefined as unknown as Array<string>;
+
+			// Success and failure breakpoints
+			const successBp: GenericBreakpoint = {
+				address: Z80UnitTests.addrTestReadySuccess,
+				conditions: '',
+				log: undefined
 			}
-			// Loop all UT_ labels
-			Z80UnitTests.nextUnitTest(debugAdapter);
+			const failureBp: GenericBreakpoint = {
+				address: Z80UnitTests.addrTestReadyFailure,
+				conditions: '',
+				log: undefined
+			}
+			Emulator.setAssertBreakpoints([successBp, failureBp]);
+
+			// Start unit tests after a short while
+			Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
 		});
 
 		debugAdapter.on('break', () => {
@@ -99,9 +125,46 @@ export class Z80UnitTests {
 				//const sp = Z80Registers.parseSP(data);
 				// Check if testcase was successfull
 				Z80UnitTests.checkUnitTest(debugAdapter, pc);
-
-
 				// Otherwise another break- or watchpoint was hit or the user stepped manually.
+			});
+		});
+	}
+
+
+	protected static startUnitTestsWhenQuiet(da: EmulDebugAdapter) {
+		let timerId;
+		const timer = () => {
+			clearTimeout(timerId);
+			timerId = setTimeout(() => {
+				// Now there is at least 100ms quietness:
+				// Stop listening
+				zSocket.removeListener('queueChanged', timer);
+				// Load the initial unit test routine (provided by the user)
+				Z80UnitTests.execAddr(Z80UnitTests.addrInit, da);
+			}, 300);	// 300 ms: maybe not always right
+		};
+
+		// 2 triggers
+		zSocket.on('queueChanged', timer());
+		Emulator.executeWhenQueueIsEmpty(timer());
+	}
+
+
+	/**
+	 * Executes the sub routine at 'addr'.
+	 * Used to call the unit test initialization subroutine and the unit
+	 * tests.
+	 * @param da The debug adapter.
+	 */
+	protected static execAddr(address: number, da: EmulDebugAdapter) {
+		// Set memory values to test case address.
+		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
+		Emulator.writeMemoryDump(this.addrCall, callAddr, () => {
+			// Set PC
+			Emulator.setProgramCounter(this.addrTestWrapper, () => {
+				// Run
+				Z80UnitTests.dbgOutput('UnitTest: da.emulatorContinue()');
+				da.emulatorContinue();
 			});
 		});
 	}
@@ -112,21 +175,15 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 */
 	protected static nextUnitTest(da: EmulDebugAdapter) {
-		// Get first unit test
-		const next = this.utLabels[0];
+		// Get Unit Test label
+		const label = Z80UnitTests.utLabels[0];
 		// Calculate address
-		const address = Labels.getNumberForLabel(next) as number;
+		const address = Labels.getNumberForLabel(label) as number;
 		assert(address);
 
-		// Set memory values to test case address.
-		const testCaseAddr = new Uint8Array([ address & 0xFF, address >> 8]);
-		Emulator.writeMemoryDump(this.addrCall, testCaseAddr, () => {
-			// Set PC
-			Emulator.setProgramCounter(this.addrTestWrapper, () => {
-				// Run
-				da.emulatorContinue();
-			});
-		});
+		// Start at test case address.
+		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ' started.');
+		Z80UnitTests.execAddr(address, da);
 	}
 
 
@@ -141,17 +198,47 @@ export class Z80UnitTests {
 		if(pc != this.addrTestReadySuccess
 			&& pc != this.addrTestReadyFailure) {
 			// Undetermined. Testcase not ended yet.
+			//Z80UnitTests.dbgOutput('UnitTest: checkUnitTest: user break');
 			return;
 		}
 
-		// Check if test case ended successfully
-		if(pc == this.addrTestReadySuccess) {
-
+		// Check if this was the init routine that is started
+		// before any test case:
+		if(!Z80UnitTests.utLabels) {
+			// Get all labels that look like: 'UT_xxx'
+			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case-sensitive
+			// Error check
+			if(Z80UnitTests.utLabels.length == 0) {
+				// No unit tests found -> disconnect
+				Z80UnitTests.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
+				return;
+			}
+			// Start unit tests
+			Z80UnitTests.nextUnitTest(da);
+			return;
 		}
 
-		// Remove test case
-		Z80UnitTests.utLabels.unshift();
+		// Was a real test case.
+
+		// OK or failure
+		const tcResult = (pc == this.addrTestReadySuccess)? 'OK' : 'Fail';
+
+		// Print test case name, address and result.
+		const label = Z80UnitTests.utLabels[0];
+		const addr = Labels.getNumberForLabel(label) || 0;
+		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResult;
+		Z80UnitTests.dbgOutput(outTxt);
+		Z80UnitTests.outputSummary += outTxt + '\n';
+
 		// Next unit test
+		Z80UnitTests.utLabels.shift();
+		if(Z80UnitTests.utLabels.length == 0) {
+			// End the unit tests
+			Z80UnitTests.dbgOutput("All tests ready.");
+			Z80UnitTests.printSummary();
+			Z80UnitTests.stopUnitTests(da);
+			return;
+		}
 		Z80UnitTests.nextUnitTest(da);
 	}
 
@@ -164,9 +251,40 @@ export class Z80UnitTests {
 		// Unsubscribe on events
 		//debugAdapter.removeListener()
 		// Exit
-		debugAdapter.exit(errMessage);
+		//debugAdapter.exit(errMessage);
 	}
 
+
+	/**
+	 * Prints out text to the clients debug console.
+	 * @param txt The text to print.
+	 */
+	protected static dbgOutput(txt: string) {
+		// Savety check
+		if(!vscode.debug.activeDebugConsole)
+			return;
+
+		// Only newline?
+		if(!txt)
+			txt = '';
+		vscode.debug.activeDebugConsole.appendLine('UNITTEST: ' + txt);
+		zSocket.logSocket.log('UNITTEST: ' + txt);
+
+	}
+
+
+	/**
+	 * Prints out a test case and result summary.
+	 */
+	protected static printSummary() {
+		// Savety check
+		if(!vscode.debug.activeDebugConsole)
+			return;
+
+		// Print summary
+		vscode.debug.activeDebugConsole.appendLine('\nUNITTEST SUMMARY:\n\n');
+		vscode.debug.activeDebugConsole.appendLine(Z80UnitTests.outputSummary);
+	}
 
 }
 

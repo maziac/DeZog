@@ -468,10 +468,6 @@ class LabelsClass {
 			let expectedLine;	// The current line and the next lines are tested. for macros the line number does not increase.
 			for(var lineNr=0; lineNr<listFile.length; lineNr++) {
 				const line = listFile[lineNr].line;
-
-				if(line.indexOf('include')>= 0)  //CS_ROM_VALUE_ADDRESS
-					console.log("kll");
-
 				if(line.length == 0)
 					continue;
 
@@ -668,10 +664,11 @@ class LabelsClass {
 	/**
 	 * Returns all labels that match the regular expression string.
 	 * @param labelRegEx Regular expression string.
+	 * @param options E.g. 'g'
 	 * @returns An array with matching labels. If nothing found an empty array is returned.
 	 */
-	public getLabelsForRegEx(labelRegEx: string): Array<string> {
-		const regex = new RegExp(labelRegEx, 'i');	// Ignore case
+	public getLabelsForRegEx(labelRegEx: string, options = 'i'): Array<string> {
+		const regex = new RegExp(labelRegEx, options);
 		const foundLabels = new Array<string>();
 		for( let [k,] of this.numberForLabel) {
 			const match = regex.exec(k);
