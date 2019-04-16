@@ -744,7 +744,7 @@ export class EmulDebugAdapter extends DebugSession {
 			for(const cmd of Settings.launch.commandsAfterLaunch) {
 				this.serializer.exec(() => {
 					vscode.debug.activeDebugConsole.appendLine(cmd);
-					try {
+					try	{
 						this.evaluateCommand(cmd, text => {
 							vscode.debug.activeDebugConsole.appendLine(text);
 							// "Return"
@@ -2564,4 +2564,18 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			handler(errTxt);
 		}
 	}
+
+
+	/**
+	 * This is a hack:
+	 * After starting the vscode sends the source file breakpoints.
+	 * But there is no signal to tell when all are sent.
+	 * So this function waits as long as there is still traffic to the emulator.
+	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
+	 * @param handler This handler is called after being quiet for the given timeout.
+	 */
+	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
+		Emulator.executeAfterBeingQuietFor(timeout, handler);
+	}
+
 }

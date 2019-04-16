@@ -675,5 +675,18 @@ export class EmulatorClass extends EventEmitter {
 		assert(false);	// override this
 	}
 
+
+	/**
+	 * This is a hack:
+	 * After starting the vscode sends the source file breakpoints.
+	 * But there is no signal to tell when all are sent.
+	 * So this function waits as long as there is still traffic to the emulator.
+	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
+	 * @param handler This handler is called after being quiet for the given timeout.
+	 */
+	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
+		assert(false);	// override this
+	}
+
 }
 

@@ -12,7 +12,7 @@ import { Emulator } from './emulatorfactory';
 import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
-import { zSocket } from './zesaruxSocket'; // TODO: remove
+//import { zSocket } from './zesaruxSocket'; // TODO: remove
 
 
 
@@ -131,22 +131,19 @@ export class Z80UnitTests {
 	}
 
 
+	/**
+	 * Waits a few 100ms until traffic is quiet on the zSocket interface.
+	 * The problem that is solved here:
+	 * After starting the vscode sends the source file breakpoints.
+	 * But there is no signal to tell when all are sent.
+	 * If we don't wait we would miss a few and we wouldn't break.
+	 * @param da The debug emulator.
+	 */
 	protected static startUnitTestsWhenQuiet(da: EmulDebugAdapter) {
-		let timerId;
-		const timer = () => {
-			clearTimeout(timerId);
-			timerId = setTimeout(() => {
-				// Now there is at least 100ms quietness:
-				// Stop listening
-				zSocket.removeListener('queueChanged', timer);
-				// Load the initial unit test routine (provided by the user)
-				Z80UnitTests.execAddr(Z80UnitTests.addrInit, da);
-			}, 300);	// 300 ms: maybe not always right
-		};
-
-		// 2 triggers
-		zSocket.on('queueChanged', timer());
-		Emulator.executeWhenQueueIsEmpty(timer());
+		da.executeAfterBeingQuietFor(300, () => {
+			// Load the initial unit test routine (provided by the user)
+			Z80UnitTests.execAddr(Z80UnitTests.addrInit, da);
+		});
 	}
 
 
@@ -268,8 +265,7 @@ export class Z80UnitTests {
 		if(!txt)
 			txt = '';
 		vscode.debug.activeDebugConsole.appendLine('UNITTEST: ' + txt);
-		zSocket.logSocket.log('UNITTEST: ' + txt);
-
+		//zSocket.logSocket.log('UNITTEST: ' + txt);
 	}
 
 

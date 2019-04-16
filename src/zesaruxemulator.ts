@@ -1333,5 +1333,32 @@ export class ZesaruxEmulator extends EmulatorClass {
 		});
 	}
 
+
+
+	/**
+	 * This is a hack:
+	 * After starting the vscode sends the source file breakpoints.
+	 * But there is no signal to tell when all are sent.
+	 * So this function waits as long as there is still traffic to the emulator.
+	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
+	 * @param handler This handler is called after being quiet for the given timeout.
+	 */
+	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
+		let timerId;
+		const timer = () => {
+			clearTimeout(timerId);
+			timerId = setTimeout(() => {
+				// Now there is at least 100ms quietness:
+				// Stop listening
+				zSocket.removeListener('queueChanged', timer);
+				// Load the initial unit test routine (provided by the user)
+				handler();
+			}, timeout);
+		};
+
+		// 2 triggers
+		zSocket.on('queueChanged', timer);
+		zSocket.executeWhenQueueIsEmpty(timer);
+	}
 }
 

@@ -61,7 +61,7 @@ export class ZesaruxSocket extends Socket {
 	private interruptableCmd: CommandEntry|undefined;
 
 	/// Output send and received data to the "OUTPUT" tab in vscode.
-	protected logSocket: Log;
+	protected  logSocket: Log;
 
 	/// This value is set during intialization. It is the time that is
 	/// waited on an answer before the connection is disconnected.
@@ -104,6 +104,7 @@ export class ZesaruxSocket extends Socket {
 			this.emit('connected');	// data transmission may start now.
 		}, 0);
 		this.queue.push(cEntry);
+		this.emitQueueChanged();
 	}
 
 	/**
@@ -230,6 +231,7 @@ export class ZesaruxSocket extends Socket {
 		// Create command entry
 		var cEntry = new CommandEntry(command, handler, timeout);
 		this.queue.push(cEntry);
+		this.emitQueueChanged();
 		// check if command can be sent right away
 		if(this.queue.length == 1) {
 			if(this.interruptableCmd) {
@@ -237,6 +239,7 @@ export class ZesaruxSocket extends Socket {
 				const cBreak = new CommandEntry('', ()=>{},this.MSG_TIMEOUT);
 				// Insert as first command
 				this.queue.unshift(cBreak);
+				this.emitQueueChanged();
 			}
 			// Send command
 			this.sendSocket();
@@ -372,6 +375,7 @@ export class ZesaruxSocket extends Socket {
 
 			// remove corresponding command
 			let cEntry = this.queue.shift();
+			this.emitQueueChanged();
 
 			// Check if we waited for the interruptable command
 			if(this.interruptableCmd && cEntry == undefined) {
@@ -493,6 +497,16 @@ export class ZesaruxSocket extends Socket {
 			zSocket.end();
 			handler();
 		});
+	}
+
+
+	/**
+	 * Signals that the queue has changed.
+	 * Used by the Unit Tests to find out when to start the
+	 * unit tests.
+	 */
+	protected emitQueueChanged() {
+		this.emit('queueChanged', this.queue.length);
 	}
 
 
