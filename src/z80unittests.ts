@@ -248,7 +248,7 @@ export class Z80UnitTests {
 		// Unsubscribe on events
 		//debugAdapter.removeListener()
 		// Exit
-		//debugAdapter.exit(errMessage);
+		debugAdapter.exit(errMessage);
 	}
 
 
@@ -278,8 +278,12 @@ export class Z80UnitTests {
 			return;
 
 		// Print summary
-		vscode.debug.activeDebugConsole.appendLine('\nUNITTEST SUMMARY:\n\n');
+		const emphasize = '+-------------------------------------------------';
+		vscode.debug.activeDebugConsole.appendLine('');
+		vscode.debug.activeDebugConsole.appendLine(emphasize);
+		vscode.debug.activeDebugConsole.appendLine('UNITTEST SUMMARY:\n\n');
 		vscode.debug.activeDebugConsole.appendLine(Z80UnitTests.outputSummary);
+		vscode.debug.activeDebugConsole.appendLine(emphasize);
 	}
 
 }
