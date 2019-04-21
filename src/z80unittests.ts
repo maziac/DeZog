@@ -19,7 +19,7 @@ import { Labels } from './labels';
 /**
  * This class takes care of executing the unit tests.
  * It basically
- * 1. Reads the labels file to find the unit test labels.
+ * 1. Reads the list file to find the unit test labels.
  * 2. Loads the binary into the emulator.
  * 3. Manipulates memory and PC register to call a specific unit test.
  * 4. Loops over all found unit tests.
@@ -179,7 +179,7 @@ export class Z80UnitTests {
 		assert(address);
 
 		// Start at test case address.
-		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ' started.');
+		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
 		Z80UnitTests.execAddr(address, da);
 	}
 
