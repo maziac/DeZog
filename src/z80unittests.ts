@@ -50,6 +50,8 @@ export class Z80UnitTests {
 	protected static outputSummary: string;
 
 
+	protected static debug = true;
+
 	/**
 	 * Execute all unit tests.
 	 */
@@ -115,9 +117,6 @@ export class Z80UnitTests {
 
 		debugAdapter.on('break', () => {
 			// The program was run and a break occured.
-			// Now check the PC.
-			Emulator.getRegistersFromEmulator
-
 			// Get current pc
 			Emulator.getRegisters(data => {
 				// Parse the PC value
@@ -160,7 +159,7 @@ export class Z80UnitTests {
 			// Set PC
 			Emulator.setProgramCounter(this.addrTestWrapper, () => {
 				// Run
-				Z80UnitTests.dbgOutput('UnitTest: da.emulatorContinue()');
+				Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
 				da.emulatorContinue();
 			});
 		});
@@ -203,7 +202,7 @@ export class Z80UnitTests {
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
 			// Get all labels that look like: 'UT_xxx'
-			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case-sensitive
+			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUTT_\\w*$', '');	// case-sensitive
 			// Error check
 			if(Z80UnitTests.utLabels.length == 0) {
 				// No unit tests found -> disconnect
@@ -218,12 +217,21 @@ export class Z80UnitTests {
 		// Was a real test case.
 
 		// OK or failure
-		const tcResult = (pc == this.addrTestReadySuccess)? 'OK' : 'Fail';
+		const tcSuccess = (pc == Z80UnitTests.addrTestReadySuccess);
+
+		// In debug mode do break after one step. The step is required to put the PC at the right place.
+		const label = Z80UnitTests.utLabels[0];
+		if(Z80UnitTests.debug && !tcSuccess) {
+			// Do a step
+			Z80UnitTests.dbgOutput('UnitTest: ' + label + '  da.emulatorStepOver()');
+			da.emulatorStepOver();
+			return;
+		}
 
 		// Print test case name, address and result.
-		const label = Z80UnitTests.utLabels[0];
+		const tcResultStr = (tcSuccess) ? 'OK' : 'Fail';
 		const addr = Labels.getNumberForLabel(label) || 0;
-		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResult;
+		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
 		Z80UnitTests.dbgOutput(outTxt);
 		Z80UnitTests.outputSummary += outTxt + '\n';
 

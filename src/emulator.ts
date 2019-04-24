@@ -157,25 +157,25 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	* Override this to retrieve the registers from the emulator.
-	*
+	* Gets the registers from cache. If cache is empty retrieves teh registers from
+	* the emulator.
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
-   public getRegisters(handler: (registersString: string) => void) {
-	   if(this.RegisterCache) {
-		   // Already exists, return immediately
-		   handler(this.RegisterCache);
-	   }
-	   else {
-		   // get new data
-		   this.getRegistersFromEmulator( regs => {
-			   // Store received data
-			   this.RegisterCache = regs;
-			   //const regs = data || '';	// Just to remove warning
-			   handler(regs);
-		   });
-	   }
-   }
+	public getRegisters(handler: (registersString: string) => void) {
+		if(this.RegisterCache) {
+			// Already exists, return immediately
+			handler(this.RegisterCache);
+		}
+		else {
+			// get new data
+			this.getRegistersFromEmulator( regs => {
+				// Store received data
+				this.RegisterCache = regs;
+				//const regs = data || '';	// Just to remove warning
+				handler(regs);
+			});
+		}
+	}
 
 
 	/**

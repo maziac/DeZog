@@ -18,9 +18,9 @@ export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the speci
  */
 class CommandEntry {
 	public command: string|undefined;	///< The command string
-	public handler: {(data)};	///< The handler being executed after receiving data.
+	public handler: (data: string) => void;	///< The handler being executed after receiving data.
 	public timeout: number;		///< The timeout until a response is expected.
-	constructor(command: string|undefined, handler: {(data: string)} = (data) => {}, timeout: number) {
+	constructor(command: string|undefined, handler: (data: string) => void, timeout: number) {
 		this.command = command;
 		this.handler = handler;
 		this.timeout = timeout;
@@ -58,7 +58,7 @@ export class ZesaruxSocket extends Socket {
 	private receivedDataChunk: string;
 
 	/// A sepcial long lasting command like 'run' that can be interrupted by other commands.
-	private interruptableCmd: CommandEntry|undefined;
+	private interruptableRunCmd: CommandEntry|undefined;
 
 	/// Output send and received data to the "OUTPUT" tab in vscode.
 	protected  logSocket: Log;
@@ -95,7 +95,7 @@ export class ZesaruxSocket extends Socket {
 		this.queue = new Array<CommandEntry>();
 		this.lastCallQueue = new Array<()=>void>();
 		this.zesaruxState = 'unknown';
-		this.interruptableCmd = undefined;
+		this.interruptableRunCmd = undefined;
 
 		// Wait on first text from zesarux after connection
 		var cEntry = new CommandEntry('connected', data => {
@@ -234,7 +234,7 @@ export class ZesaruxSocket extends Socket {
 		this.emitQueueChanged();
 		// check if command can be sent right away
 		if(this.queue.length == 1) {
-			if(this.interruptableCmd) {
+			if(this.interruptableRunCmd) {
 				// Interrupt the command: create an interrupt cmd
 				const cBreak = new CommandEntry('', ()=>{},this.MSG_TIMEOUT);
 				// Insert as first command
@@ -248,24 +248,22 @@ export class ZesaruxSocket extends Socket {
 
 
 	/**
-	 * Sends an interruptable command. I.e. an command that does not immmediately return
-	 * such as 'run' (continue).
+	 * Sends an interruptable 'run' command. I.e. the 'run' command does not immmediately return.
 	 * The interruptable command is not executed as long as there are other commands in the queue
 	 * and it is interrupted by any following command.
 	 * Interruption means: The current execution is stopped (a blank is sent),
-	 * the handler is re-directed to cathc the result.
+	 * the handler is re-directed to catch the result.
 	 * The commands in the queue are executed and in the end the command is
 	 * executed once again.
-	 * @param command Usualle 'run'
-	 * @param handler
+	 * @param handler Called with the response of the 'run' command.
 	 */
-	public sendInterruptable(command: string, handler: {(data)} = (data) => {}) {
-		assert(this.interruptableCmd == undefined);	// Only one interruptable
+	public sendInterruptableRunCmd(handler: (data) => void) {
+		assert(this.interruptableRunCmd == undefined);	// Only one interruptable
 		// Create command entry
-		this.interruptableCmd = new CommandEntry(command, handler, NO_TIMEOUT);
+		this.interruptableRunCmd = new CommandEntry('run', handler, NO_TIMEOUT);
 		// check if command can be sent right away
 		if(this.queue.length == 0) {
-			this.sendSocketCmd(this.interruptableCmd);
+			this.sendSocketCmd(this.interruptableRunCmd);
 		}
 	}
 
@@ -373,23 +371,27 @@ export class ZesaruxSocket extends Socket {
 			// Remember state
 			this.zesaruxState = lastLine.substr(8);
 
-			// remove corresponding command
+			// Remove corresponding command
 			let cEntry = this.queue.shift();
 			this.emitQueueChanged();
 
 			// Check if we waited for the interruptable command
-			if(this.interruptableCmd && cEntry == undefined) {
-				// It was not interrupted by another command.
-				// It returned by itself (e.g. 'run' hit a breakpoint).
-				assert(this.interruptableCmd);
-				const iCmd = this.interruptableCmd;
-				this.interruptableCmd = undefined;
-				if(iCmd)	// calm the transpiler
+			const iCmd = this.interruptableRunCmd;
+			if(iCmd) {
+				if(cEntry == undefined || sData.indexOf('Breakpoint hit at') >= 0) {
+					// It was not interrupted by another command.
+					// It returned by itself (e.g. 'run' hit a breakpoint).
+					this.interruptableRunCmd = undefined;
 					iCmd.handler(concData);
-				return;
+					// If cEntry is defined either there is no other command
+					// in the queue (user pressed "Break") or there is another
+					// command waiting.
+					this.sendSocket();	// Does nothing if no command is waiting.
+					return;
+				}
 			}
 
-			// Check on error from zesarux
+				// Check on error from zesarux
 			if(concData.startsWith('Error')) {
 				// send message through to UI
 				let msg = '';
@@ -403,7 +405,7 @@ export class ZesaruxSocket extends Socket {
 			this.sendSocket();
 
 			// Save old interruptable (could be that a new one is set in the handlers)
-			const interCmd = this.interruptableCmd;
+			const interCmd = this.interruptableRunCmd;
 
 			// Execute handler
 			if( cEntry != undefined)

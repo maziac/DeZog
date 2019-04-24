@@ -432,6 +432,7 @@ Notes:
 - LOGPOINTs are disabled by default. If you want to have logpoints enabled after launch then put "-LOGPOINT enable" in the "commandsAfterLaunch" settings. Note: you can also turn on only specific groups.
 - LOGPOINTs are not available in ZEsarUX.
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
+- LOGPOINTs can do math with fixed labels but not with registers. I.e. "${b@(my_data+5)}" will work. It will statically calculate my_data+5 and lookup the memory value. But "${b@(IX+1)}" will not work as it would have to dynamically calculate "IX+1" at runtime.
 
 
 ### vscode breakpoint conditions

@@ -193,7 +193,7 @@ export class Utility {
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * @param evalRegisters If true then register names will also be evaluated.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
-	 * @param lastLabel An optional last label to use for local lasbels label. (sjasmplus)
+	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
 	 * @returns The evaluated number.
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
@@ -212,6 +212,7 @@ export class Utility {
 				}
 			}
 			if(isNaN(res)) {
+				// Assume it is a label or number
 				let lbl = p1;
 				// Local label?
 				if(lastLabel && lbl.startsWith('.')) {

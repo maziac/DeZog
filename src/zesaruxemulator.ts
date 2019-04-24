@@ -213,7 +213,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Retrieve the registers from zesarux.
+	 * Retrieve the registers from zesarux directly.
+	 * From outside better use 'getRegisters' (the cached version).
 	 * @param handler(registersString) Passes 'registersString' to the handler.
 	 */
 	public getRegistersFromEmulator(handler: (registersString: string) => void) {
@@ -415,7 +416,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Reset T-state counter.
 		zSocket.send('reset-tstates-partial', () => {
 			// Run
-			zSocket.sendInterruptable('run', reason => {
+			zSocket.sendInterruptableRunCmd(reason => {
 				// (could take some time, e.g. until a breakpoint is hit)
 				// get T-State counter
 				zSocket.send('get-tstates-partial', data => {

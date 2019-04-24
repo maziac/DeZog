@@ -812,7 +812,7 @@ export class EmulDebugAdapter extends DebugSession {
 	/**
 	 * Evaluates a log message, i.e. a message that was given for a logpoint.
 	 * The format is checked and also the labels are changed into numbers.
-	 * Throws an exception in case of an formatting error.
+	 * Throws an exception in case of a formatting error.
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
@@ -827,17 +827,25 @@ export class EmulDebugAdapter extends DebugSession {
 			if(!matchInner)
 				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
 			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
-			const addr = matchInner[3];
-			if(addr) {
-				// Check variable for label
+			let addr = matchInner[3] || '';
+			if(addr.length) {
 				const access = matchInner[2] || '';
-				try {
-					const converted = Utility.evalExpression(addr, false);
-					return "${" + access + "(" + converted.toString() + ")" + end + "}";
+				// Check if it is a register
+				if(Z80Registers.isRegister(addr)) {
+					// e.g. addr == "HL" in "(HL)"
+					return "${" + access + "(" + addr + ")" + end + "}";
 				}
-				catch (e) {
-					// If it cannot be converted (e.g. a register name) an exception will be thrown.
-					throw Error("Log message format error: " + e.message + " In '" + logMsg + "'");
+				else {
+					// Check variable for label
+					try {
+						//console.log('evalLogMessage: ' + logMsg + ': ' + addr);
+						const converted = Utility.evalExpression(addr, false);
+						return "${" + access + "(" + converted.toString() + ")" + end + "}";
+					}
+					catch (e) {
+						// If it cannot be converted (e.g. a register name) an exception will be thrown.
+						throw Error("Log message format error: " + e.message + " in '" + logMsg + "'");
+					}
 				}
 			}
 			else {
@@ -849,6 +857,8 @@ export class EmulDebugAdapter extends DebugSession {
 			}
 		});
 
+
+		console.log('evalLogMessage: ' + result);
 		return result;
 	}
 
@@ -1488,14 +1498,13 @@ export class EmulDebugAdapter extends DebugSession {
 
 	}
 
-	 /**
-	  * vscode requested 'step over'.
-	  * @param response
-	  * @param args
+
+	/**
+		* Step over.
+		* Called from UI (vscode) and from the unit tests.
+		* @param handler Is called after successfull step-over.
 	  */
-	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
-		// Serialize
-		this.serializer.exec(() => {
+	 public emulatorStepOver(handler?: () => void): void {
 			// Step-Over
 			Emulator.stepOver((disasm, tStates, cpuFreq) => {
 				// Display T-states and time
@@ -1506,12 +1515,28 @@ export class EmulDebugAdapter extends DebugSession {
 				this.update({step: true});
 
 				// Response
-				this.sendResponse(response);
-				this.serializer.endExec();
+				if(handler)
+					handler();
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
 			});
+	}
+
+
+	/**
+	  * vscode requested 'step over'.
+	  * @param response	Sends the response. If undefined nothingis sent. USed by Unit Tests.
+	  * @param args
+	  */
+	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
+		// Serialize
+		this.serializer.exec(() => {
+			// Step-Over
+			this.emulatorStepOver(() => {
+				this.sendResponse(response);
+				this.serializer.endExec();
+			})
 		});
 	}
 
