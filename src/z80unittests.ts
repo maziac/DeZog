@@ -92,7 +92,7 @@ export class Z80UnitTests {
 			Z80UnitTests.addrCall ++;
 			Z80UnitTests.addrTestReadySuccess = Labels.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS") as number;
 			assert(Z80UnitTests.addrTestReadySuccess);
-			Z80UnitTests.addrTestReadyFailure = Labels.getNumberForLabel("UNITTEST_TEST_READY_FAILURE") as number;
+			Z80UnitTests.addrTestReadyFailure = Labels.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT") as number;
 			assert(Z80UnitTests.addrTestReadyFailure);
 
 			// Labels not yet known.
@@ -202,7 +202,7 @@ export class Z80UnitTests {
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
 			// Get all labels that look like: 'UT_xxx'
-			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUTT_\\w*$', '');	// case-sensitive
+			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case-sensitive
 			// Error check
 			if(Z80UnitTests.utLabels.length == 0) {
 				// No unit tests found -> disconnect
