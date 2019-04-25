@@ -39,11 +39,22 @@ import * as BinaryFile from 'binary-file';
 
 
 
+/// State of the debug adapter.
+export enum DbgAdaperState {
+	NORMAL,	// Normal debugging
+	UNITTEST_DEBUG,	// Debugging unit tests (stops on testcase failures)
+
+	UNITTEST_RUN,	// Running unit tests (no stop on errors)
+}
+
+
 /**
  * The Emulator Debug Adapter.
  * It receives the requests from vscode and sends events to it.
  */
 export class EmulDebugAdapter extends DebugSession {
+	/// The state of the debug adapter (unit tests or not)
+	protected static state = DbgAdaperState.NORMAL;
 
 	/// The disassembler instance.
 	protected dasm: Disassembler;
@@ -117,22 +128,23 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Start the unit tests.
+	 * @param state Either UNITTEST_DEBUG or UNITTEST_RUN.
+	 * @param da
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static startUnitTests(handler: (da: EmulDebugAdapter) => void) {
+	public static startUnitTests(state: DbgAdaperState, handler: (da: EmulDebugAdapter) => void) {
 		assert(handler);
 
 		// Return if currently a debug session is running
 		if(vscode.debug.activeDebugSession)
 			return false;
 
-		// Return if no event emitter is there.
-		this.unitTestHandler = handler;
-
 		// Start debugger
+		this.unitTestHandler = handler;
 		let wsFolder;
 		if(vscode.workspace.workspaceFolders)
 			wsFolder = vscode.workspace.workspaceFolders[0];
+		this.state = state;
 		vscode.debug.startDebugging(wsFolder, 'Z80 Debugger - Unit Tests Debug');
 
 		return true;
@@ -628,20 +640,6 @@ export class EmulDebugAdapter extends DebugSession {
 	 * connection is up and running.
 	 */
 	protected startEmulator(handler: (msg?: string)=>void) {
-		/*
-		try {
-			// Clear all temporary files
-			//Utility.removeAllTmpFiles();
-			// Do not clear otherwise the states might be cleared.
-		}
-		catch(e) {
-			// Some error occurred
-			this.exit('Removing temporary files: ' + e.message);
-			handler("Error while removing temp files.");
-			return;
-		}
-		*/
-
 		try {
 			// init labels
 			Labels.init();
@@ -1449,11 +1447,24 @@ export class EmulDebugAdapter extends DebugSession {
 			// Update memory dump etc.
 			this.update();
 
-			// Send break
-			this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
-			// For the unit tests
-			this.emit("break");
+			// React depending on internal state.
+			if(EmulDebugAdapter.state == DbgAdaperState.NORMAL) {
+				// Send break
+				this.sendEventBreak();
+			}
+			else {
+				// For the unit tests
+				this.emit("break");
+			}
 		});
+	}
+
+
+	/**
+	 * Is called by unit tests to simulate a 'break'.
+	 */
+	public sendEventBreak() {
+		this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
 	}
 
 

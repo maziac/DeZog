@@ -6,13 +6,55 @@ import * as assert from 'assert';
 //import { zSocket } from './zesaruxSocket';
 //import { Labels } from './labels';
 //import { Utility } from './utility';
-import { EmulDebugAdapter} from './emuldebugadapter';
+import { EmulDebugAdapter, DbgAdaperState } from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
 //import { EmulatorBreakpoint } from './emulator';
 import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 //import { zSocket } from './zesaruxSocket'; // TODO: remove
+
+
+
+
+
+/// Some definitions for colors.
+enum Color {
+	Reset = "\x1b[0m",
+	Bright = "\x1b[1m",
+	Dim = "\x1b[2m",
+	Underscore = "\x1b[4m",
+	Blink = "\x1b[5m",
+	Reverse = "\x1b[7m",
+	Hidden = "\x1b[8m",
+
+	FgBlack = "\x1b[30m",
+	FgRed = "\x1b[31m",
+	FgGreen = "\x1b[32m",
+	FgYellow = "\x1b[33m",
+	FgBlue = "\x1b[34m",
+	FgMagenta = "\x1b[35m",
+	FgCyan = "\x1b[36m",
+	FgWhite = "\x1b[37m",
+
+	BgBlack = "\x1b[40m",
+	BgRed = "\x1b[41m",
+	BgGreen = "\x1b[42m",
+	BgYellow = "\x1b[43m",
+	BgBlue = "\x1b[44m",
+	BgMagenta = "\x1b[45m",
+	BgCyan = "\x1b[46m",
+	BgWhite = "\x1b[47m",
+}
+
+/**
+ * Colorize a string
+ * @param color The color, e.g. '\x1b[36m' for cyan, see https://coderwall.com/p/yphywg/printing-colorful-text-in-terminal-when-run-node-js-script.
+ * @param text The strign to colorize.
+ */
+function colorize(color: string, text: string): string {
+	return color + text + '\x1b[0m';
+}
 
 
 
@@ -49,6 +91,12 @@ export class Z80UnitTests {
 	/// Is filled with the summary of tests and results.
 	protected static outputSummary: string;
 
+	/// Counts number of failed and total testcases.
+	protected static countFailed: number;
+	protected static countExecuted: number;
+
+	/// Is set if the current  testcase fails.
+	protected static currentFail: boolean;
 
 	protected static debug = true;
 
@@ -57,7 +105,7 @@ export class Z80UnitTests {
 	 */
 	public static execute() {
 		// Start
-		const success = EmulDebugAdapter.startUnitTests(this.handleDebugAdapter);
+		const success = EmulDebugAdapter.startUnitTests(DbgAdaperState.UNITTEST_DEBUG, this.handleDebugAdapter);
 		if(!success) {
 			vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			return;
@@ -75,6 +123,8 @@ export class Z80UnitTests {
 			// The debugger stopped before starting the program.
 			// Now read all the unit tests.
 			Z80UnitTests.outputSummary = '';
+			Z80UnitTests.countFailed = 0;
+			Z80UnitTests.countExecuted = 0;
 
 			// Get the unit test code
 			Z80UnitTests.addrInit = Labels.getNumberForLabel("UNITTEST_INIT") as number;
@@ -159,7 +209,8 @@ export class Z80UnitTests {
 			// Set PC
 			Emulator.setProgramCounter(this.addrTestWrapper, () => {
 				// Run
-				Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
+				if(Z80UnitTests.utLabels)
+					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
 				da.emulatorContinue();
 			});
 		});
@@ -171,6 +222,9 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 */
 	protected static nextUnitTest(da: EmulDebugAdapter) {
+		// Increase count
+		Z80UnitTests.countExecuted ++;
+		Z80UnitTests.currentFail = false;
 		// Get Unit Test label
 		const label = Z80UnitTests.utLabels[0];
 		// Calculate address
@@ -195,6 +249,17 @@ export class Z80UnitTests {
 			&& pc != this.addrTestReadyFailure) {
 			// Undetermined. Testcase not ended yet.
 			//Z80UnitTests.dbgOutput('UnitTest: checkUnitTest: user break');
+			// Count failure
+			if(!Z80UnitTests.currentFail) {
+				// Count only once
+				Z80UnitTests.currentFail = true;
+				Z80UnitTests.countFailed ++;
+			}
+			// Check if in debug or run mode.
+			if(Z80UnitTests.debug) {
+				// In debug mode: Send break to give vscode control
+				da.sendEventBreak();
+			}
 			return;
 		}
 
@@ -219,6 +284,15 @@ export class Z80UnitTests {
 		// OK or failure
 		const tcSuccess = (pc == Z80UnitTests.addrTestReadySuccess);
 
+		// Count failure
+		if(!tcSuccess) {
+			if(!Z80UnitTests.currentFail) {
+				// Count only once
+				Z80UnitTests.currentFail = true;
+				Z80UnitTests.countFailed ++;
+			}
+		}
+
 		// In debug mode do break after one step. The step is required to put the PC at the right place.
 		const label = Z80UnitTests.utLabels[0];
 		if(Z80UnitTests.debug && !tcSuccess) {
@@ -229,7 +303,7 @@ export class Z80UnitTests {
 		}
 
 		// Print test case name, address and result.
-		const tcResultStr = (tcSuccess) ? 'OK' : 'Fail';
+		const tcResultStr = (Z80UnitTests.currentFail) ? colorize(Color.FgRed, 'Fail') : colorize(Color.FgGreen, 'OK');
 		const addr = Labels.getNumberForLabel(label) || 0;
 		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
 		Z80UnitTests.dbgOutput(outTxt);
@@ -291,49 +365,18 @@ export class Z80UnitTests {
 		vscode.debug.activeDebugConsole.appendLine(emphasize);
 		vscode.debug.activeDebugConsole.appendLine('UNITTEST SUMMARY:\n\n');
 		vscode.debug.activeDebugConsole.appendLine(Z80UnitTests.outputSummary);
+
+		const color = (Z80UnitTests.countFailed>0) ? Color.FgRed : Color.FgGreen;
+		const countPassed = Z80UnitTests.countExecuted - Z80UnitTests.countFailed;
+		vscode.debug.activeDebugConsole.appendLine('');
+		vscode.debug.activeDebugConsole.appendLine('Total testcases: ' + Z80UnitTests.countExecuted);
+		vscode.debug.activeDebugConsole.appendLine('Passed testcases: ' + countPassed);
+		vscode.debug.activeDebugConsole.appendLine(colorize(color, 'Failed testcases: ' + Z80UnitTests.countFailed));
+		vscode.debug.activeDebugConsole.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
+		vscode.debug.activeDebugConsole.appendLine('');
+
 		vscode.debug.activeDebugConsole.appendLine(emphasize);
 	}
 
 }
 
-
-/*
-       {
-            "type": "z80-debug",
-            "request": "launch",
-            "name": "Z80 Debugger - Unit Tests Debug",
-            "zhostname": "localhost",
-            "zport": 10000,
-            "topOfStack": "stack_top",
-            "resetOnLaunch": true,
-            "skipInterrupt": true,
-            "startAutomatically": true,
-            "rootFolder": "${workspaceFolder}",
-            "commandsAfterLaunch": [
-                "-wpmem enable",
-                "-assert enable"
-            ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
-            "listFiles": [
-                {
-                    "path": "out/ut_dbg.list",
-                    "asm": "sjasmplus",
-                    "mainFile": "unit_tests.asm",
-                    "srcDirs": [ "src" ]
-                    //"srcDirs": []  // Use list file
-                }
-            ],
-
-            "load": "out/ut_dbg.sna",
-
-            "log": {
-                "channelOutputEnabled": true
-            },
-            "logSocket": {
-                "channelOutputEnabled": true
-            },
-			"socketTimeout": 50,    // 50 secs for debugging
-		}
-		*/
