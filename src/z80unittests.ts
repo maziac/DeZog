@@ -223,7 +223,11 @@ export class Z80UnitTests {
 				// Run
 				if(Z80UnitTests.utLabels)
 					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
+				// Continue
 				da.emulatorContinue();
+				// With vscode UI
+				if(Z80UnitTests.debug)
+					da.sendEventContinued()
 			});
 		});
 	}

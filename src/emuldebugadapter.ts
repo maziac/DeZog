@@ -764,7 +764,7 @@ export class EmulDebugAdapter extends DebugSession {
 				// Check if program should be automatically started
 				if(Settings.launch.startAutomatically && !EmulDebugAdapter.unitTestHandler) {
 					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-					this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+					this.sendEventContinued();
 					setTimeout(() => {
 						// Delay call because the breakpoints are set afterwards.
 						this.emulatorContinue();
@@ -1408,7 +1408,7 @@ export class EmulDebugAdapter extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	 protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
+	 public continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
@@ -1458,6 +1458,15 @@ export class EmulDebugAdapter extends DebugSession {
 		this.update();
 		// Send event
 		this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
+	}
+
+
+	/**
+	 * Sends a continued event to update the UI.
+	 */
+	public sendEventContinued() {
+		// Send event
+		this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
 	}
 
 
@@ -2329,7 +2338,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				// Send response
 				handler(text);
 				// Reload register values etc.
-				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+				this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
 			});
 		}
@@ -2370,7 +2379,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				// Send response
 				handler(text);
 				// Reload register values etc.
-				this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+				this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
 			});
 		}
@@ -2480,7 +2489,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		Emulator.setProgramCounter(addr, () => {
 			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
 			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
-			this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+			this.sendEventContinued();
 			this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 		});
 	}
