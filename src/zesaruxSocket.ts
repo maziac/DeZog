@@ -61,7 +61,7 @@ export class ZesaruxSocket extends Socket {
 	private interruptableRunCmd: CommandEntry|undefined;
 
 	/// Output send and received data to the "OUTPUT" tab in vscode.
-	protected  logSocket: Log;
+	public  logSocket: Log;
 
 	/// This value is set during intialization. It is the time that is
 	/// waited on an answer before the connection is disconnected.
@@ -383,11 +383,15 @@ export class ZesaruxSocket extends Socket {
 					// It was not interrupted by another command.
 					// It returned by itself (e.g. 'run' hit a breakpoint).
 					this.interruptableRunCmd = undefined;
-					iCmd.handler(concData);
+
 					// If cEntry is defined either there is no other command
 					// in the queue (user pressed "Break") or there is another
 					// command waiting.
+					// Sending needs to be done before the 'handler' is called to prevent sending twice if handler also sends something.
 					this.sendSocket();	// Does nothing if no command is waiting.
+
+					// Call the handler
+					iCmd.handler(concData);
 					return;
 				}
 			}

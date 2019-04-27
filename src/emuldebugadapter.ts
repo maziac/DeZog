@@ -138,6 +138,8 @@ export class EmulDebugAdapter extends DebugSession {
 		// Return if currently a debug session is running
 		if(vscode.debug.activeDebugSession)
 			return false;
+		if(this.state != DbgAdaperState.NORMAL)
+			return;
 
 		// Start debugger
 		this.unitTestHandler = handler;
@@ -150,16 +152,6 @@ export class EmulDebugAdapter extends DebugSession {
 		return true;
 	}
 
-
-	/**
-	 * Create a unit test event.
-	 */
-	/*protected static unitTestEvent(eventString: string) {
-		if(this.unitTest)
-			this.unitTest.emit(eventString);
-			this.unitTest = undefined as unknown as EventEmitter;
-	}
-*/
 
 	/**
 	 * Creates a new disassembler and configures it.
@@ -208,6 +200,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public exit(message?: string) {
+		EmulDebugAdapter.state = DbgAdaperState.NORMAL;
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
