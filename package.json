@@ -360,6 +360,10 @@
 										"description": "The relative filepath for the logs. If undefined no logging to a file is done."
 									}
 								}
+							},
+							"unittestTimeOut": {
+								"type": "number",
+								"description": "(Optional) The timeout for unit tests. If a test lasts longer it is assumed as failed. In secs. Default = 5s."
 							}
 						}
 					}

@@ -83,7 +83,7 @@ Note: instead of a label you can also use a fixed number.
 - load: The snapshot (or tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
 Note 1: you can also omit this. In that case the z80-deassebug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
-- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of somethign you defined in your asm file.
+- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
 - "memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
@@ -93,6 +93,7 @@ Big values are typically addresses. Here you can give the boundary between these
 	- valueHoverFormat: Format for the value when hovering.
 	- registerPointerColors: An array with register/color pairs. All selected register will appear with the corresponden color in the memory view. Registers not chosen will not appear. E.g. ["HL", "darkgreen", "DE", "darkcyan", "BC", "darkgray" ]
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
+- unittestTimeOut: the timeout for each unit test. Default is 0.5s. Change this only if one of your unit test lasts longer.
 
 
 ### Listfile
@@ -654,6 +655,10 @@ The PC can be changed via the menu. Click in the source line. Do a right-click
 and choose "Move Program Counter to Cursor".
 
 See [Notes](#Notes).
+
+
+## Unittests
+
 
 
 ## Differences to ZEsarUX

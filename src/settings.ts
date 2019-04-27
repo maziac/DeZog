@@ -143,6 +143,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	// Logging of the socket.
 	logSocket: LogDestinations;
+
+	/// The timeout for any unit test in seconds.
+	unittestTimeOut: number;
 }
 
 
@@ -186,7 +189,8 @@ export class Settings {
 				tabSize: <any>undefined,
 				socketTimeout: <any>undefined,
 				log: <any>undefined,
-				logSocket: <any>undefined
+				logSocket: <any>undefined,
+				unittestTimeOut: <any>undefined,
 			}
 		}
 
@@ -317,6 +321,9 @@ export class Settings {
 			Settings.launch.log = {channelOutputEnabled: false, filePath: undefined};
 		if(!Settings.launch.logSocket)
 			Settings.launch.logSocket = {channelOutputEnabled: false, filePath: undefined};
+
+		if(!Settings.launch.unittestTimeOut)
+			Settings.launch.unittestTimeOut = 5;	///< 5000 ms
 	}
 }
 

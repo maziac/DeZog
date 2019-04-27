@@ -9,12 +9,12 @@ import * as assert from 'assert';
 import { EmulDebugAdapter, DbgAdaperState } from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
 //import { EmulatorBreakpoint } from './emulator';
-//import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
 //import { zSocket } from './zesaruxSocket'; // TODO: remove
 import { GenericWatchpoint } from './genericwatchpoint';
+import { Settings } from './settings';
 
 
 
@@ -100,8 +100,11 @@ export class Z80UnitTests {
 	/// Is set if the current  testcase fails.
 	protected static currentFail: boolean;
 
+	/// The handle for the timeout.
+	protected static timeoutHandle;
+
 	/// Debug mode or run mode.
-	protected static debug = true;
+	protected static debug = false;
 
 	/**
 	 * Execute all unit tests.
@@ -129,6 +132,7 @@ export class Z80UnitTests {
 				Z80UnitTests.outputSummary = '';
 				Z80UnitTests.countFailed = 0;
 				Z80UnitTests.countExecuted = 0;
+				Z80UnitTests.timeoutHandle = undefined;
 
 				// Get the unit test code
 				Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
@@ -153,7 +157,6 @@ export class Z80UnitTests {
 				const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
 				const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
 				Emulator.setWatchpoints([stackMinWp, stackMaxWp]);
-
 
 				// Start unit tests after a short while
 				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
@@ -247,6 +250,18 @@ export class Z80UnitTests {
 		const address = Labels.getNumberForLabel(label) as number;
 		assert(address);
 
+		// Set timeout
+		if(!Z80UnitTests.debug) {
+			clearTimeout(Z80UnitTests.timeoutHandle);
+			Z80UnitTests.timeoutHandle = setTimeout(() => {
+				// Clear timeout
+				clearTimeout(Z80UnitTests.timeoutHandle);
+				Z80UnitTests.timeoutHandle = undefined;
+				// Failure: Timeout. Send a break.
+				Emulator.pause();
+			}, 1000*Settings.launch.unittestTimeOut);
+		}
+
 		// Start at test case address.
 		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
 		Z80UnitTests.execAddr(address, da);
@@ -260,6 +275,14 @@ export class Z80UnitTests {
 	 * @param pc The program counter to check.
 	 */
 	protected static checkUnitTest(da: EmulDebugAdapter, pc: number) {
+		// Check if it was a timeout
+		const timeoutFailure = (Z80UnitTests.timeoutHandle == undefined);
+		if(Z80UnitTests.timeoutHandle) {
+			// Clear timeout
+			clearTimeout(Z80UnitTests.timeoutHandle);
+			Z80UnitTests.timeoutHandle = undefined;
+		}
+
 		// Check if test case ended successfully or not
 		if(pc != this.addrTestReadySuccess
 			&& pc != this.addrTestReadyFailure) {
@@ -319,7 +342,15 @@ export class Z80UnitTests {
 		}
 
 		// Print test case name, address and result.
-		const tcResultStr = (Z80UnitTests.currentFail) ? colorize(Color.FgRed, 'Fail') : colorize(Color.FgGreen, 'OK');
+		let tcResultStr;
+		if(timeoutFailure) {
+			// Timeout
+			tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unittestTimeOut + 's)');
+		}
+		else {
+			// Normal failure
+			tcResultStr = (Z80UnitTests.currentFail) ? colorize(Color.FgRed, 'Fail') : colorize(Color.FgGreen, 'OK');
+		}
 		const addr = Labels.getNumberForLabel(label) || 0;
 		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
 		Z80UnitTests.dbgOutput(outTxt);
@@ -343,8 +374,9 @@ export class Z80UnitTests {
 	 * @param errMessage If set an optional error message is shown.
 	 */
 	protected static stopUnitTests(debugAdapter: EmulDebugAdapter, errMessage?: string) {
-		// Unsubscribe on events
-		//debugAdapter.removeListener()
+		// Clear timeout
+		clearTimeout(Z80UnitTests.timeoutHandle);
+		Z80UnitTests.timeoutHandle = undefined;
 		// Exit
 		debugAdapter.exit(errMessage);
 	}
