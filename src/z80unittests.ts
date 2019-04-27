@@ -12,6 +12,7 @@ import { Emulator } from './emulatorfactory';
 import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
+import { EmulatorBreakpoint } from './emulator';
 //import { zSocket } from './zesaruxSocket'; // TODO: remove
 
 
@@ -119,50 +120,67 @@ export class Z80UnitTests {
 	 */
 	protected static handleDebugAdapter(debugAdapter: EmulDebugAdapter) {
 		debugAdapter.on('initialized', () => {
-			// The Z80 binary has been loaded.
-			// The debugger stopped before starting the program.
-			// Now read all the unit tests.
-			Z80UnitTests.outputSummary = '';
-			Z80UnitTests.countFailed = 0;
-			Z80UnitTests.countExecuted = 0;
+			try {
+				// The Z80 binary has been loaded.
+				// The debugger stopped before starting the program.
+				// Now read all the unit tests.
+				Z80UnitTests.outputSummary = '';
+				Z80UnitTests.countFailed = 0;
+				Z80UnitTests.countExecuted = 0;
 
-			// Get the unit test code
-			Z80UnitTests.addrInit = Labels.getNumberForLabel("UNITTEST_INIT") as number;
-			if(!Z80UnitTests.addrInit) {
-				Z80UnitTests.stopUnitTests(debugAdapter, "Couldn't find label UNITTEST_INIT. Did you forget to define the initialization routine?");
-				return;
-			}
-			Z80UnitTests.addrTestWrapper = Labels.getNumberForLabel("UNITTEST_TEST_WRAPPER") as number;
-			if(!Z80UnitTests.addrTestWrapper) {
-				Z80UnitTests.stopUnitTests(debugAdapter, "Couldn't find the unit test wrapper. Did you forget to use the macro?");
-				return;
-			}
-			Z80UnitTests.addrCall = Labels.getNumberForLabel("UNITTEST_CALL_ADDR") as number;
-			assert(Z80UnitTests.addrCall);
-			Z80UnitTests.addrCall ++;
-			Z80UnitTests.addrTestReadySuccess = Labels.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS") as number;
-			assert(Z80UnitTests.addrTestReadySuccess);
-			Z80UnitTests.addrTestReadyFailure = Labels.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT") as number;
-			assert(Z80UnitTests.addrTestReadyFailure);
+				// Get the unit test code
+				Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
+				Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
+				Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
+				Z80UnitTests.addrCall ++;
+				Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
+				Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+				const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
+				const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
 
-			// Labels not yet known.
-			Z80UnitTests.utLabels = undefined as unknown as Array<string>;
+				// Labels not yet known.
+				Z80UnitTests.utLabels = undefined as unknown as Array<string>;
 
-			// Success and failure breakpoints
-			const successBp: GenericBreakpoint = {
-				address: Z80UnitTests.addrTestReadySuccess,
-				conditions: '',
-				log: undefined
-			}
-			const failureBp: GenericBreakpoint = {
-				address: Z80UnitTests.addrTestReadyFailure,
-				conditions: '',
-				log: undefined
-			}
-			Emulator.setAssertBreakpoints([successBp, failureBp]);
+				// Success and failure breakpoints
+/*
+				const successBp: GenericBreakpoint = {
+					address: Z80UnitTests.addrTestReadySuccess,
+					conditions: '',
+					log: undefined
+				}
+				const failureBp: GenericBreakpoint = {
+					address: Z80UnitTests.addrTestReadyFailure,
+					conditions: '',
+					log: undefined
+				}
+				Emulator.setAssertBreakpoints([successBp, failureBp]);
+*/
 
-			// Start unit tests after a short while
-			Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
+				const successBp: EmulatorBreakpoint = {
+					bpId: 0,
+					filePath: '',
+					lineNr: -1,
+					address: Z80UnitTests.addrTestReadySuccess,
+					condition: '',
+					log: undefined
+				}
+				Emulator.setBreakpoint(successBp);
+				const failureBp: EmulatorBreakpoint = {
+					bpId: 0,
+					filePath: '',
+					lineNr: -1,
+					address: Z80UnitTests.addrTestReadyFailure,
+					condition: '',
+					log: undefined
+				}
+				Emulator.setBreakpoint(failureBp);
+
+				// Start unit tests after a short while
+				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
+			}
+			catch(e) {
+				Z80UnitTests.stopUnitTests(debugAdapter, e.message);
+			}
 		});
 
 		debugAdapter.on('break', () => {
@@ -177,6 +195,20 @@ export class Z80UnitTests {
 				// Otherwise another break- or watchpoint was hit or the user stepped manually.
 			});
 		});
+	}
+
+
+	/**
+	 * Returns the address for a label. Checks it and throws an error if it does not exist.
+	 * @param label The label eg. "UNITTEST_TEST_WRAPPER"
+	 * @returns An address.
+	 */
+	protected static getNumberForLabel(label: string): number {
+		const addr = Labels.getNumberForLabel(label) as number;
+		if(!addr) {
+			throw Error("Couldn't find the unit test wrapper (" + label + "). Did you forget to use the macro?");
+		}
+		return addr;
 	}
 
 
