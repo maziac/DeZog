@@ -100,7 +100,8 @@ export class Z80UnitTests {
 	/// Is set if the current  testcase fails.
 	protected static currentFail: boolean;
 
-	protected static debug = false;
+	/// Debug mode or run mode.
+	protected static debug = true;
 
 	/**
 	 * Execute all unit tests.
@@ -269,7 +270,7 @@ export class Z80UnitTests {
 			// Check if in debug or run mode.
 			if(Z80UnitTests.debug) {
 				// In debug mode: Send break to give vscode control
-				da.sendEventBreak();
+				da.sendEventBreakAndUpdate();
 				return;
 			}
 		}

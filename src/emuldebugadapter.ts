@@ -1444,13 +1444,10 @@ export class EmulDebugAdapter extends DebugSession {
 			// Send output event to inform the user about the reason
 			vscode.debug.activeDebugConsole.appendLine(data);
 
-			// Update memory dump etc.
-			this.update();
-
 			// React depending on internal state.
 			if(EmulDebugAdapter.state == DbgAdaperState.NORMAL) {
 				// Send break
-				this.sendEventBreak();
+				this.sendEventBreakAndUpdate();
 			}
 			else {
 				// For the unit tests
@@ -1463,7 +1460,10 @@ export class EmulDebugAdapter extends DebugSession {
 	/**
 	 * Is called by unit tests to simulate a 'break'.
 	 */
-	public sendEventBreak() {
+	public sendEventBreakAndUpdate() {
+		// Update memory dump etc.
+		this.update();
+		// Send event
 		this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
 	}
 
