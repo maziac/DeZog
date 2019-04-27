@@ -378,7 +378,8 @@ export class ZesaruxSocket extends Socket {
 			// Check if we waited for the interruptable command
 			const iCmd = this.interruptableRunCmd;
 			if(iCmd) {
-				if(cEntry == undefined || sData.indexOf('Breakpoint hit at') >= 0) {
+				if(cEntry == undefined || sData.indexOf('point hit at') >= 0) {
+					// Watchpoint or breakpoint hit.
 					// It was not interrupted by another command.
 					// It returned by itself (e.g. 'run' hit a breakpoint).
 					this.interruptableRunCmd = undefined;

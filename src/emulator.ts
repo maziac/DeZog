@@ -336,6 +336,17 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
+	 * Sets the watchpoints in the given list.
+	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 */
+	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
+		assert(false);	// override this
+	}
+
+
+	/**
 	 * Sets the ASSERTs array.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
@@ -401,7 +412,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	protected setBreakpoint(bp: EmulatorBreakpoint): number {
+	public setBreakpoint(bp: EmulatorBreakpoint): number {
 		assert(false);	// override this
 		// return
 		return 0;

@@ -67,7 +67,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	protected setWatchpointsExt(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
+	public setWatchpointsExt(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
 		// Set watchpoints (memory guards)
 		for(let wp of watchPoints) {
 			// Create watchpoint
@@ -105,7 +105,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	/**
 	 * Sets the assert breakpoints in the given list.
 	 * Asserts result in a break in the program run if the PC is hit and
-	 * the consition is met.
+	 * the condition is met.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
@@ -154,7 +154,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param bp The breakpoint.
 	 * @returns The internal breakpoint ID. (Just the index to the array).
 	 */
-	protected setBreakpointExt(bp: EmulatorBreakpoint): number {
+	public setBreakpointExt(bp: EmulatorBreakpoint): number {
 		// Get condition
 		const zesaruxCondition = this.convertCondition(bp.condition);
 		if(zesaruxCondition == undefined) {

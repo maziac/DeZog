@@ -693,7 +693,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	protected setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
+	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
 		// Set watchpoints (memory guards)
 		for(let wp of watchPoints) {
 			// Check if condition is used
@@ -909,7 +909,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param bp The breakpoint. If bp.address is >= 0 then it adds the condition "PC=address".
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	protected setBreakpoint(bp: EmulatorBreakpoint): number {
+	public setBreakpoint(bp: EmulatorBreakpoint): number {
 		// Check for logpoint (not supported)
 		if(bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '"). Instead a normal breakpoint is set.');

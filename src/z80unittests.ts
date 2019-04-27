@@ -9,11 +9,12 @@ import * as assert from 'assert';
 import { EmulDebugAdapter, DbgAdaperState } from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
 //import { EmulatorBreakpoint } from './emulator';
-import { GenericBreakpoint } from './genericwatchpoint';
+//import { GenericBreakpoint } from './genericwatchpoint';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
 //import { zSocket } from './zesaruxSocket'; // TODO: remove
+import { GenericWatchpoint } from './genericwatchpoint';
 
 
 
@@ -99,7 +100,7 @@ export class Z80UnitTests {
 	/// Is set if the current  testcase fails.
 	protected static currentFail: boolean;
 
-	protected static debug = true;
+	protected static debug = false;
 
 	/**
 	 * Execute all unit tests.
@@ -142,38 +143,16 @@ export class Z80UnitTests {
 				Z80UnitTests.utLabels = undefined as unknown as Array<string>;
 
 				// Success and failure breakpoints
-/*
-				const successBp: GenericBreakpoint = {
-					address: Z80UnitTests.addrTestReadySuccess,
-					conditions: '',
-					log: undefined
-				}
-				const failureBp: GenericBreakpoint = {
-					address: Z80UnitTests.addrTestReadyFailure,
-					conditions: '',
-					log: undefined
-				}
-				Emulator.setAssertBreakpoints([successBp, failureBp]);
-*/
-
-				const successBp: EmulatorBreakpoint = {
-					bpId: 0,
-					filePath: '',
-					lineNr: -1,
-					address: Z80UnitTests.addrTestReadySuccess,
-					condition: '',
-					log: undefined
-				}
+				const successBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
 				Emulator.setBreakpoint(successBp);
-				const failureBp: EmulatorBreakpoint = {
-					bpId: 0,
-					filePath: '',
-					lineNr: -1,
-					address: Z80UnitTests.addrTestReadyFailure,
-					condition: '',
-					log: undefined
-				}
+				const failureBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
 				Emulator.setBreakpoint(failureBp);
+
+				// Stack watchpoints
+				const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
+				const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
+				Emulator.setWatchpoints([stackMinWp, stackMaxWp]);
+
 
 				// Start unit tests after a short while
 				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
@@ -291,8 +270,8 @@ export class Z80UnitTests {
 			if(Z80UnitTests.debug) {
 				// In debug mode: Send break to give vscode control
 				da.sendEventBreak();
+				return;
 			}
-			return;
 		}
 
 		// Check if this was the init routine that is started
