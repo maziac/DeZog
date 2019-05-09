@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { Labels } from './labels';
 import { zSocket } from './zesaruxSocket';
@@ -598,19 +599,19 @@ export class Utility {
 	}
 
 	/**
-	 * If absFilePath starts with Settings.launchRootFolder
+	 * If absFilePath starts with vscode.workspace.rootPath
 	 * this part is removed.
 	 * @param absFilePath An absolute path
 	 * @returns A relative path
 	 */
 	public static getRelFilePath(absFilePath: string): string {
-		const filePath = path.relative(Settings.launch.rootFolder, absFilePath);
+		const filePath = path.relative(vscode.workspace.rootPath || '', absFilePath);
 		return filePath;
 	}
 
 
 	/**
-	 * If relFilePath is a relative path the Settings.launchRootFolder
+	 * If relFilePath is a relative path the vscode.workspace.rootPathr
 	 * path is added.
 	 * @param relFilePath A relative path
 	 * @returns An absolute path
@@ -619,7 +620,7 @@ export class Utility {
 		if(path.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
-		const usedRootPath = (rootPath) ? rootPath : Settings.launch.rootFolder;
+		const usedRootPath = (rootPath) ? rootPath : vscode.workspace.rootPath || '';
 		const filePath = path.join(usedRootPath, relFilePath);
 		return filePath;
 	}
@@ -627,7 +628,7 @@ export class Utility {
 
 	/**
 	 * Looks for a file in the given directories.
-	 * I found returns it's absolute file path.
+	 * If found returns it's absolute file path.
 	 * @param srcPath The file to search.
 	 * @param srcDirs The (relative) directories to search in.
 	 */

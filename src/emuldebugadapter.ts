@@ -40,12 +40,10 @@ import * as BinaryFile from 'binary-file';
 
 
 /// State of the debug adapter.
-export enum DbgAdaperState {
+enum DbgAdaperState {
 	NORMAL,	// Normal debugging
-	UNITTEST_DEBUG,	// Debugging unit tests (stops on testcase failures)
-
-	UNITTEST_RUN,	// Running unit tests (no stop on errors)
-}
+	UNITTEST,	// Debugging or running unit tests
+	}
 
 
 /**
@@ -128,25 +126,24 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Start the unit tests.
-	 * @param state Either UNITTEST_DEBUG or UNITTEST_RUN.
 	 * @param da
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static startUnitTests(state: DbgAdaperState, handler: (da: EmulDebugAdapter) => void) {
+	public static unitTests(handler: (da: EmulDebugAdapter) => void): boolean {
 		assert(handler);
 
 		// Return if currently a debug session is running
 		if(vscode.debug.activeDebugSession)
 			return false;
 		if(this.state != DbgAdaperState.NORMAL)
-			return;
+			return false;
 
 		// Start debugger
 		this.unitTestHandler = handler;
 		let wsFolder;
 		if(vscode.workspace.workspaceFolders)
 			wsFolder = vscode.workspace.workspaceFolders[0];
-		this.state = state;
+		this.state = DbgAdaperState.UNITTEST;
 		vscode.debug.startDebugging(wsFolder, 'Z80 Debugger - Unit Tests Debug');
 
 		return true;
@@ -661,7 +658,7 @@ export class EmulDebugAdapter extends DebugSession {
 			// Load files
 			try {
 				// Load user list and labels files
-				for(let listFile of Settings.launch.listFiles) {
+				for(const listFile of Settings.launch.listFiles) {
 					const sources = listFile.srcDirs as Array<string>;
 					Labels.loadAsmListFile(listFile.path, listFile.mainFile, sources, listFile.filter, listFile.asm, listFile.addOffset, (address, line) => {
 						// Quick search for WPMEM

@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.9.0",
+	"version": "0.9.1",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -42,6 +42,7 @@
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.1",
 		"gif-writer": "^0.9.3",
+		"jsonc-parser": "^2.1.0",
 		"mocha": "^5.2.0",
 		"ts-node": "^7.0.1",
 		"vscode-debugadapter": "1.33.0",
@@ -59,7 +60,8 @@
 	"main": "./out/extension",
 	"activationEvents": [
 		"onDebug",
-		"onCommand:extension.z80-debug.execUnitTests"
+		"onCommand:z80-debug.execUnitTests",
+		"onCommand:z80-debug.getAllUnitTests"
 	],
 	"contributes": {
 		"languages": [
@@ -100,27 +102,38 @@
 		],
 		"commands": [
 			{
-				"command": "extension.z80-debug.movePCtoCursor",
+				"command": "z80-debug.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
 				"category": "z80-debug"
 			},
 			{
-				"command": "extension.z80-debug.execUnitTests",
+				"command": "z80-debug.execUnitTests",
 				"title": "Execute Unit Tests",
+				"category": "z80-debug"
+			},
+			{
+				"command": "z80-debug.getAllUnitTests",
+				"title": "Get all unit test case labels.",
 				"category": "z80-debug"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
-					"when": "false",
-					"command": "extension.z80-debug.movePCtoCursor"
+					"command": "z80-debug.movePCtoCursor",
+					"when": "false"
+				},
+				{
+					"command": "z80-debug.execUnitTests"
+				},
+				{
+					"command": "z80-debug.getAllUnitTests"
 				}
 			],
 			"editor/context": [
 				{
 					"when": "resourceLangId == asm-collection && inDebugMode",
-					"command": "extension.z80-debug.movePCtoCursor",
+					"command": "z80-debug.movePCtoCursor",
 					"group": "debug"
 				}
 			]

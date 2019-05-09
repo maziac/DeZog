@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to change the program counter via menu.
-	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.movePCtoCursor', config => {
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.movePCtoCursor', config => {
 		// Only allowed in debug context
 		if(!vscode.debug.activeDebugSession)
 			return;
@@ -43,17 +43,19 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line]);
 	}));
 
-
-	// Command to change the program counter via menu.
-	context.subscriptions.push(vscode.commands.registerCommand('extension.z80-debug.execUnitTests', config => {
-		// Not allowed if a debug session is crurently active.
-		//if(vscode.debug.activeDebugSession)
-		//	return;
+	// Command to execute all unit tests
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.execUnitTests', config => {
 		// Send to debug adapter
 		Z80UnitTests.execute();
 	}));
 
-	// register a configuration provider for 'zesarux' debug type
+	// Command to get a list of all unit tests
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.getAllUnitTests', config => {
+		// Send to debug adapter
+		return Z80UnitTests.getAllUnitTests();
+	}));
+
+	// Register a configuration provider for 'zesarux' debug type
 	const provider = new ZesaruxConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('z80-debug', provider));
 	context.subscriptions.push(provider);

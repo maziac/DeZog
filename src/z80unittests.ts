@@ -6,7 +6,7 @@ import * as assert from 'assert';
 //import { zSocket } from './zesaruxSocket';
 //import { Labels } from './labels';
 //import { Utility } from './utility';
-import { EmulDebugAdapter, DbgAdaperState } from './emuldebugadapter';
+import { EmulDebugAdapter } from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
 //import { EmulatorBreakpoint } from './emulator';
 import { Z80Registers } from './z80registers';
@@ -14,8 +14,11 @@ import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
 //import { zSocket } from './zesaruxSocket'; // TODO: remove
 import { GenericWatchpoint } from './genericwatchpoint';
+import { LabelsClass } from './labels';
 import { Settings } from './settings';
-
+import * as jsonc from 'jsonc-parser';
+import { readFileSync } from 'fs';
+import { Utility } from './utility';
 
 
 
@@ -111,11 +114,82 @@ export class Z80UnitTests {
 	 */
 	public static execute() {
 		// Start
-		const success = EmulDebugAdapter.startUnitTests(DbgAdaperState.UNITTEST_DEBUG, this.handleDebugAdapter);
+		const success = EmulDebugAdapter.unitTests(this.handleDebugAdapter);
 		if(!success) {
 			vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			return;
 		}
+	}
+
+
+	/**
+	 * Retrieves a list of strings with the labels of all unit tests.
+	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
+	 */
+	public static getAllUnitTests(): Promise<string[]> {
+		return new Promise<string[]>((resolve, reject) => {
+			try {
+				const unitTestconfig = "Unit Tests";
+				const launchJsonFile = ".vscode/launch.json";
+				const launchPath = Utility.getAbsFilePath(launchJsonFile);
+				const launchData = readFileSync(launchPath, 'utf8');
+				const parseErrors: jsonc.ParseError[] = [];
+				const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
+
+				// Check for error
+				if(parseErrors.length > 0) {
+					// Error
+					reject("Parse error while reading " + launchJsonFile + ".");
+					return;
+				}
+
+				// Find the right configuration
+				let configuration;
+				for(const config of launch.configurations) {
+					if (config.name == unitTestconfig) {
+						configuration = config;
+						break;
+					}
+				}
+
+				if(!configuration) {
+					// Launch configuration not found
+					// Error
+					reject('No configs found in ' + launchJsonFile + '.');
+					return;
+				}
+
+				// Load user list and labels files
+				const listFiles = configuration.listFiles;
+				if(!listFiles) {
+					// No list file given
+					// Error
+					reject('No unit test configuration found ("' + unitTestconfig + '") in ' + launchJsonFile + '.');
+					return;
+				}
+
+				const labels = new LabelsClass();
+				for(const listFile of listFiles) {
+					const file = {
+						path: Utility.getAbsFilePath(listFile.path),
+						mainFile: listFile.mainFile,
+						srcDirs: listFile.srcDirs || [""],
+						filter: listFile.filter,
+						asm: listFile.asm || "sjasmplus",
+						addOffset: listFile.addOffset || 0
+					};
+					labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
+				}
+
+				// Get the unit test labels
+				const utLabels = Z80UnitTests.getAllUtLabels(labels);
+				resolve(utLabels);
+			}
+			catch(e) {
+				// Error
+				reject(e.message || "Unknown error.");
+			}
+		});
 	}
 
 
@@ -126,6 +200,7 @@ export class Z80UnitTests {
 	protected static handleDebugAdapter(debugAdapter: EmulDebugAdapter) {
 		debugAdapter.on('initialized', () => {
 			try {
+				//assert(EmulDebugAdapter.state == DbgAdaperState.UNITTEST);
 				// The Z80 binary has been loaded.
 				// The debugger stopped before starting the program.
 				// Now read all the unit tests.
@@ -306,7 +381,7 @@ export class Z80UnitTests {
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
 			// Get all labels that look like: 'UT_xxx'
-			Z80UnitTests.utLabels = Labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case-sensitive
+			Z80UnitTests.utLabels = Z80UnitTests.getAllUtLabels(Labels);
 			// Error check
 			if(Z80UnitTests.utLabels.length == 0) {
 				// No unit tests found -> disconnect
@@ -366,6 +441,16 @@ export class Z80UnitTests {
 			return;
 		}
 		Z80UnitTests.nextUnitTest(da);
+	}
+
+
+	/**
+	 * Returns all labels that start with "UT_".
+	 * @returns An array with label names.
+	 */
+	protected static getAllUtLabels(labels: LabelsClass): string[] {
+		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
+		return utLabels;
 	}
 
 

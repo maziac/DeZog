@@ -49,7 +49,7 @@ interface ListFileLine extends SourceFileEntry {
  *
  *
  */
-class LabelsClass {
+export class LabelsClass {
 
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
@@ -756,4 +756,4 @@ class LabelsClass {
 
 
 /// Labels is the singleton object that should be accessed.
-export var Labels = new LabelsClass();
+export const Labels = new LabelsClass();
