@@ -56,6 +56,7 @@ A typical configuration looks like this:
 ~~~
 
 - name: The (human readable) name of the Z80-Debug-Adapter as it appears in vscode.
+- unitTests: Only required if the configuration conatinas unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the.sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a

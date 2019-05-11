@@ -151,6 +151,10 @@
 							"zhostname"
 						],
 						"properties": {
+							"unitTests": {
+								"type": "boolean",
+								"description": "Whether the configuration contains the unit tests or not. Default: false."
+							},
 							"zhostname": {
 								"type": "string",
 								"description": "The hostname/IP address of the Zesarux Debugger."

@@ -109,6 +109,7 @@ export class Z80UnitTests {
 	/// Debug mode or run mode.
 	protected static debug = false;
 
+
 	/**
 	 * Execute all unit tests.
 	 */
@@ -123,52 +124,64 @@ export class Z80UnitTests {
 
 
 	/**
+	 * Returns the unit tests launch configuration. I.e. the configuration
+	 * from .vscode/launch.json with property unitTests set to true.
+	 */
+	protected static getUnitTestsLaunchConfig() {
+		const launchJsonFile = ".vscode/launch.json";
+		const launchPath = Utility.getAbsFilePath(launchJsonFile);
+		const launchData = readFileSync(launchPath, 'utf8');
+		const parseErrors: jsonc.ParseError[] = [];
+		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
+
+		// Check for error
+		if(parseErrors.length > 0) {
+			// Error
+			throw Error("Parse error while reading " + launchJsonFile + ".");
+		}
+
+		// Find the right configuration
+		let configuration;
+		for(const config of launch.configurations) {
+			if (config.unitTests) {
+				// Check if there is already unit test configuration:
+				// Only one is allowed.
+				if(configuration)
+					throw Error("More than one unit test launch configuration found. Only one is allowed.");
+				configuration = config;
+			}
+		}
+
+
+		// Load user list and labels files
+		if(!configuration) {
+			// No configuration found, Error
+			throw Error('No unit test configuration found in ' + launchJsonFile + '.');
+		}
+
+		// Load user list and labels files
+		const listFiles = configuration.listFiles;
+		if(!listFiles) {
+			// No list file given
+			// Error
+			Error('no list file given in unit test configuration.');
+		}
+
+		return configuration;
+	}
+
+
+	/**
 	 * Retrieves a list of strings with the labels of all unit tests.
 	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
 	 */
 	public static getAllUnitTests(): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			try {
-				const unitTestconfig = "Unit Tests";
-				const launchJsonFile = ".vscode/launch.json";
-				const launchPath = Utility.getAbsFilePath(launchJsonFile);
-				const launchData = readFileSync(launchPath, 'utf8');
-				const parseErrors: jsonc.ParseError[] = [];
-				const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
-
-				// Check for error
-				if(parseErrors.length > 0) {
-					// Error
-					reject("Parse error while reading " + launchJsonFile + ".");
-					return;
-				}
-
-				// Find the right configuration
-				let configuration;
-				for(const config of launch.configurations) {
-					if (config.name == unitTestconfig) {
-						configuration = config;
-						break;
-					}
-				}
-
-				if(!configuration) {
-					// Launch configuration not found
-					// Error
-					reject('No configs found in ' + launchJsonFile + '.');
-					return;
-				}
-
-				// Load user list and labels files
-				const listFiles = configuration.listFiles;
-				if(!listFiles) {
-					// No list file given
-					// Error
-					reject('No unit test configuration found ("' + unitTestconfig + '") in ' + launchJsonFile + '.');
-					return;
-				}
+				const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
 				const labels = new LabelsClass();
+				const listFiles = configuration.listFiles;
 				for(const listFile of listFiles) {
 					const file = {
 						path: Utility.getAbsFilePath(listFile.path),

@@ -75,6 +75,9 @@ export interface LogDestinations {
  * The configuration parameters for the zesarux debugger.
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments  {
+	/// true if the configuration is for unit tests.
+	unitTests: false;
+
 	/// The Zesarux ZRCP telnet host name
 	zhostname: string;
 
@@ -170,6 +173,7 @@ export class Settings {
 		Settings.launch = launchCfg;
 		if(!Settings.launch) {
 			Settings.launch = {
+				unitTests: <any>undefined,
 				zhostname: <any>undefined,
 				zport: <any>undefined,
 				rootFolder: <any>undefined,
@@ -195,6 +199,8 @@ export class Settings {
 		}
 
 		// Check for default values (for some reasons the default values from the package.json are not used)
+		if(Settings.launch.unitTests == undefined)
+			Settings.launch.unitTests = false;
 		if(!Settings.launch.zhostname)
 			Settings.launch.zhostname = 'localhost';
 		if(!Settings.launch.zport)
