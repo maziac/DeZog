@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to change the program counter via menu.
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.movePCtoCursor', config => {
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.movePCtoCursor', () => {
 		// Only allowed in debug context
 		if(!vscode.debug.activeDebugSession)
 			return;
@@ -44,15 +44,40 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.execUnitTests', config => {
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runAllUnitTests', () => {
 		// Send to debug adapter
-		Z80UnitTests.execute();
+		Z80UnitTests.runAllUnitTests();
 	}));
 
+
+	/*
+	 The follwing commands are for the test adapter extension.
+	 A typical sequence is:
+	 1. getAllUnitTests: The test-adapter retrieves the list of available unit test cases.
+	 2. initUnitTests: Initializes a unit test case run.
+	 3. execUnitTestCase: Executes a unit test case and returns a TestCaseResult.
+	 Note: This command just adds the test case to a list. The real execution is delayed until startUnitTests.
+	 4. runUnitTests: Runs the unit tests.
+	*/
+
 	// Command to get a list of all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.getAllUnitTests', config => {
-		// Send to debug adapter
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.getAllUnitTests', () => {
 		return Z80UnitTests.getAllUnitTests();
+	}));
+
+	// Command to initialize partial unit testing
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.initUnitTests', () => {
+		Z80UnitTests.clearTestCaseList();
+	}));
+
+	// Command to (delayed) execute a single unit test case
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.execUnitTestCase', (tcLabel: string) => {
+		return Z80UnitTests.execUnitTestCase(tcLabel);
+	}));
+
+	// Command to run (some) unit tests
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runUnitTests', () => {
+		Z80UnitTests.runUnitTests();
 	}));
 
 	// Register a configuration provider for 'zesarux' debug type

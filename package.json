@@ -60,8 +60,7 @@
 	"main": "./out/extension",
 	"activationEvents": [
 		"onDebug",
-		"onCommand:z80-debug.execUnitTests",
-		"onCommand:z80-debug.getAllUnitTests"
+		"onCommand"
 	],
 	"contributes": {
 		"languages": [
@@ -107,27 +106,51 @@
 				"category": "z80-debug"
 			},
 			{
-				"command": "z80-debug.execUnitTests",
-				"title": "Execute Unit Tests",
+				"command": "z80-debug.runAllUnitTests",
+				"title": "Runs all unit tests",
 				"category": "z80-debug"
 			},
 			{
 				"command": "z80-debug.getAllUnitTests",
 				"title": "Get all unit test case labels.",
-				"category": "z80-debug"
+				"category": "z80-debug-partial-unit-testing"
+			},
+			{
+				"command": "z80-debug.initUnitTests",
+				"title": "Initializes partial unit testing.",
+				"category": "z80-debug-partial-unit-testing"
+			},
+			{
+				"command": "z80-debug.execUnitTestCase",
+				"title": "(Delayed) execution of one unit test case.",
+				"category": "z80-debug-partial-unit-testing"
+			},
+			{
+				"command": "z80-debug.runUnitTests",
+				"title": "Runs all unit testcases (from execUnitTestCase).",
+				"category": "z80-debug-partial-unit-testing"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
+					"command": "z80-debug.runAllUnitTests"
+				},
+				{
 					"command": "z80-debug.movePCtoCursor",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.execUnitTests"
+					"command": "z80-debug.getAllUnitTests",
+					"when": "false"
 				},
 				{
-					"command": "z80-debug.getAllUnitTests"
+					"command": "z80-debug.execUnitTestCase",
+					"when": "false"
+				},
+				{
+					"command": "z80-debug.runUnitTests",
+					"when": "false"
 				}
 			],
 			"editor/context": [

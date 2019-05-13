@@ -126,10 +126,11 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Start the unit tests.
-	 * @param da
+	 * @param configName The debug launch configuration name.
+	 * @param handler
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static unitTests(handler: (da: EmulDebugAdapter) => void): boolean {
+	public static unitTests(configName: string, handler: (da: EmulDebugAdapter) => void): boolean {
 		assert(handler);
 
 		// Return if currently a debug session is running
@@ -144,7 +145,7 @@ export class EmulDebugAdapter extends DebugSession {
 		if(vscode.workspace.workspaceFolders)
 			wsFolder = vscode.workspace.workspaceFolders[0];
 		this.state = DbgAdaperState.UNITTEST;
-		vscode.debug.startDebugging(wsFolder, 'Z80 Debugger - Unit Tests Debug');
+		vscode.debug.startDebugging(wsFolder, configName);
 
 		return true;
 	}

@@ -1,14 +1,7 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-//import { EmulatorBreakpoint } from './emulator';
-//import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
-//import { ZesaruxEmulator } from './zesaruxemulator';
-//import { zSocket } from './zesaruxSocket';
-//import { Labels } from './labels';
-//import { Utility } from './utility';
 import { EmulDebugAdapter } from './emuldebugadapter';
 import { Emulator } from './emulatorfactory';
-//import { EmulatorBreakpoint } from './emulator';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
@@ -62,6 +55,15 @@ function colorize(color: string, text: string): string {
 }
 
 
+/**
+ * Enumeration for the returned test case pass or failure.
+ */
+enum TestCaseResult {
+	OK = 0,
+	FAILED = 1,
+	TIMEOUT = 2,
+	CANCELLED = 3,	// Testcases have been cancelled, e.g. manually or the connection might have been lost or whatever.
+}
 
 /**
  * This class takes care of executing the unit tests.
@@ -73,10 +75,21 @@ function colorize(color: string, text: string): string {
  */
 export class Z80UnitTests {
 
-	/// This array will containt the names of all UT testcases.
+	/// This array will contain the names of all UT testcases.
 	protected static utLabels: Array<string>;
 
-	/// The unt test initialization routine. The user has to provide
+	/// This array will contain the names of the test cases that should be run.
+	protected static partialUtLabels: Array<string>|undefined;
+
+	/// A map for the test case labels and their resolve functions. The resolve
+	/// function is called when the test cases has been executed.
+	/// result:
+	///   0 = passed
+	///   1 = failed
+	///   2 = timeout
+	protected static testCaseMap = new Map<string, (result: number) => void>();
+
+	/// The unit test initialization routine. The user has to provide
 	/// it and the label.
 	protected static addrInit: number;
 
@@ -113,13 +126,72 @@ export class Z80UnitTests {
 	/**
 	 * Execute all unit tests.
 	 */
-	public static execute() {
+	public static runAllUnitTests() {
+		// All testcases
+		Z80UnitTests.partialUtLabels = undefined;
 		// Start
-		const success = EmulDebugAdapter.unitTests(this.handleDebugAdapter);
-		if(!success) {
-			vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
-			return;
+		Z80UnitTests.runTests();
+	}
+
+
+	/**
+	 * Execute some unit tests.
+	 */
+	public static runUnitTests() {
+		// Get list of test case labels
+		Z80UnitTests.partialUtLabels = [];
+		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
+			Z80UnitTests.partialUtLabels.push(tcLabel);
+		// Start
+		Z80UnitTests.runTests();
+	}
+
+
+	/**
+	 * Start the unit tests, either partial or full.
+	 */
+	protected static runTests() {
+		try {
+			// Get unit test launch config
+			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+			const configName: string = configuration.name;
+
+			// Start debugger
+			const success = EmulDebugAdapter.unitTests(configName, this.handleDebugAdapter);
+			if(!success) {
+				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
+			}
 		}
+		catch(e) {
+			vscode.window.showErrorMessage(e.message);
+		}
+	}
+
+
+	/**
+	 * Clears the map of testcases.
+	 * Is called at first when starting (partial) unit testcases.
+	 */
+	public static clearTestCaseList(){
+		// Clear map
+		Z80UnitTests.testCaseMap.clear();
+	}
+
+
+	/**
+	 * "Executes" one unit test case.
+	 * The test case is just remembered and executed later.
+	 * Whenever the test case is executed the result is passed in the promise.
+	 * @param tcLabels An array with the unit test case labels.
+	 */
+	public static execUnitTestCase(tcLabel: string): Promise<number> {
+		// Create promise.
+		const promise = new Promise<number>((resolve) => {
+			// Remember its resolve function.
+			Z80UnitTests.testCaseMap.set(tcLabel, resolve);
+		});
+		// Return promise.
+		return promise;
 	}
 
 
@@ -127,7 +199,7 @@ export class Z80UnitTests {
 	 * Returns the unit tests launch configuration. I.e. the configuration
 	 * from .vscode/launch.json with property unitTests set to true.
 	 */
-	protected static getUnitTestsLaunchConfig() {
+	protected static getUnitTestsLaunchConfig(): any {
 		const launchJsonFile = ".vscode/launch.json";
 		const launchPath = Utility.getAbsFilePath(launchJsonFile);
 		const launchData = readFileSync(launchPath, 'utf8');
@@ -164,7 +236,7 @@ export class Z80UnitTests {
 		if(!listFiles) {
 			// No list file given
 			// Error
-			Error('no list file given in unit test configuration.');
+			throw Error('no list file given in unit test configuration.');
 		}
 
 		return configuration;
@@ -393,8 +465,14 @@ export class Z80UnitTests {
 		// Check if this was the init routine that is started
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
-			// Get all labels that look like: 'UT_xxx'
-			Z80UnitTests.utLabels = Z80UnitTests.getAllUtLabels(Labels);
+			if(Z80UnitTests.partialUtLabels) {
+				// Use the passed list
+				Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels;
+			}
+			else {
+				// Get all labels that look like: 'UT_xxx'
+				Z80UnitTests.utLabels = Z80UnitTests.getAllUtLabels(Labels);
+			}
 			// Error check
 			if(Z80UnitTests.utLabels.length == 0) {
 				// No unit tests found -> disconnect
@@ -429,16 +507,30 @@ export class Z80UnitTests {
 			return;
 		}
 
+		// Determine test case result.
+		let tcResult: TestCaseResult = TestCaseResult.TIMEOUT;
+		if(!timeoutFailure) {
+			// No timeout
+			tcResult = (Z80UnitTests.currentFail) ? TestCaseResult.FAILED : TestCaseResult.OK;
+		}
+
+		// Send result to calling extension (i.e. test adapter)
+		const resolveFunction = Z80UnitTests.testCaseMap.get(label);
+		if(resolveFunction) {
+			// Inform calling party
+			resolveFunction(tcResult);
+			// Delete from map
+			Z80UnitTests.testCaseMap.delete(label);
+		}
+
 		// Print test case name, address and result.
 		let tcResultStr;
-		if(timeoutFailure) {
-			// Timeout
-			tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unittestTimeOut + 's)');
+		switch(tcResult) {
+			case TestCaseResult.OK: tcResultStr = colorize(Color.FgGreen, 'OK'); break;
+			case TestCaseResult.FAILED: tcResultStr = colorize(Color.FgRed, 'Fail'); break;
+			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unittestTimeOut + 's)'); break;
 		}
-		else {
-			// Normal failure
-			tcResultStr = (Z80UnitTests.currentFail) ? colorize(Color.FgRed, 'Fail') : colorize(Color.FgGreen, 'OK');
-		}
+
 		const addr = Labels.getNumberForLabel(label) || 0;
 		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
 		Z80UnitTests.dbgOutput(outTxt);
@@ -468,6 +560,19 @@ export class Z80UnitTests {
 
 
 	/**
+	 * Sends a CANCELLED for all still open running testcases
+	 * to the caller (i.e. the test case adapter).
+	 */
+	protected static CancelAllRemaingResults() {
+		for(const [, resolveFunc] of Z80UnitTests.testCaseMap) {
+			// Return an error code
+			resolveFunc(TestCaseResult.CANCELLED);
+		}
+		Z80UnitTests.testCaseMap.clear();
+	}
+
+
+	/**
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
@@ -475,6 +580,8 @@ export class Z80UnitTests {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
+		// Clear remianing testcases
+		Z80UnitTests.CancelAllRemaingResults();
 		// Exit
 		debugAdapter.exit(errMessage);
 	}
