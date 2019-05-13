@@ -407,15 +407,11 @@ export class EmulDebugAdapter extends DebugSession {
 				this.exit(err);
 			}
 
-			this.serializer.exec(() => {
-				// Create memory/register dump view
-				let registerMemoryView = new MemoryRegisterView(this);
-				const regs = Settings.launch.memoryViewer.registersMemoryView;
-				registerMemoryView.addRegisters(regs);
-				registerMemoryView.update();
-				// "Return"
-				this.serializer.endExec();
-			});
+			// Create memory/register dump view
+			let registerMemoryView = new MemoryRegisterView(this);
+			const regs = Settings.launch.memoryViewer.registersMemoryView;
+			registerMemoryView.addRegisters(regs);
+			registerMemoryView.update();
 
 			// Run user commands after load.
 			for(const cmd of Settings.launch.commandsAfterLaunch) {
