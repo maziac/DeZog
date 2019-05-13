@@ -106,7 +106,7 @@
 				"category": "z80-debug"
 			},
 			{
-				"command": "z80-debug.runAllUnitTests",
+				"command": "z80-debug.debugAllUnitTests",
 				"title": "Runs all unit tests",
 				"category": "z80-debug"
 			},
@@ -126,7 +126,7 @@
 				"category": "z80-debug-partial-unit-testing"
 			},
 			{
-				"command": "z80-debug.runUnitTests",
+				"command": "z80-debug.debugUnitTests",
 				"title": "Runs all unit testcases (from execUnitTestCase).",
 				"category": "z80-debug-partial-unit-testing"
 			}
@@ -134,7 +134,7 @@
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "z80-debug.runAllUnitTests"
+					"command": "z80-debug.debugAllUnitTests"
 				},
 				{
 					"command": "z80-debug.movePCtoCursor",
@@ -149,7 +149,7 @@
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.runUnitTests",
+					"command": "z80-debug.debugUnitTests",
 					"when": "false"
 				}
 			],

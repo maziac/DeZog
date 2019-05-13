@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Command to execute all unit tests
 	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runAllUnitTests', () => {
 		// Send to debug adapter
-		Z80UnitTests.runAllUnitTests();
+		Z80UnitTests.debugAllUnitTests();
 	}));
 
 
@@ -77,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Command to run (some) unit tests
 	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runUnitTests', () => {
-		Z80UnitTests.runUnitTests();
+		Z80UnitTests.debugUnitTests();
 	}));
 
 	// Register a configuration provider for 'zesarux' debug type

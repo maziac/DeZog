@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { EmulDebugAdapter } from './emuldebugadapter';
-import { Emulator } from './emulatorfactory';
+import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
@@ -12,6 +12,7 @@ import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
+import { CallSerializer } from './callserializer';
 
 
 
@@ -119,12 +120,15 @@ export class Z80UnitTests {
 	/// The handle for the timeout.
 	protected static timeoutHandle;
 
+	/// The call serializer to call the emulator.
+	protected static serializer: CallSerializer;
+
 	/// Debug mode or run mode.
 	protected static debug = false;
 
 
 	/**
-	 * Execute all unit tests.
+	 * Execute all unit tests in debug mode.
 	 */
 	public static runAllUnitTests() {
 		// All testcases
@@ -135,7 +139,7 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Execute some unit tests.
+	 * Execute some unit tests in debug mode.
 	 */
 	public static runUnitTests() {
 		// Get list of test case labels
@@ -148,9 +152,145 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Start the unit tests, either partial or full.
+	 * Start the unit tests, either partial or full, in debug mode.
+	 * I unit test cases are run (opposed to debugged) the vscode UI is not used
+	 * and communication takes place directly with the emulator.
 	 */
 	protected static runTests() {
+		try {
+			// Get unit test launch config
+			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+			const configName: string = configuration.name;
+
+			// Start emulator.
+			Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
+			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+			Emulator.init();
+
+			Emulator.once('initialized', () => {
+
+				try {
+					// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
+					Emulator.readListFiles();
+				}
+				catch(e) {
+					vscode.window.showErrorMessage(e);
+				}
+/*
+				this.serializer.exec(() => {
+					// Create memory/register dump view
+					let registerMemoryView = new MemoryRegisterView(this);
+					const regs = Settings.launch.memoryViewer.registersMemoryView;
+					registerMemoryView.addRegisters(regs);
+					registerMemoryView.update();
+					// "Return"
+					this.serializer.endExec();
+				});
+
+				// Run user commands after load.
+				for(const cmd of Settings.launch.commandsAfterLaunch) {
+					this.serializer.exec(() => {
+						vscode.debug.activeDebugConsole.appendLine(cmd);
+						try	{
+							this.evaluateCommand(cmd, text => {
+								vscode.debug.activeDebugConsole.appendLine(text);
+								// "Return"
+								this.serializer.endExec();
+							});
+						}
+						catch(err) {
+							// Some problem occurred
+							const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
+							this.showWarning(output);
+							// "Return"
+							this.serializer.endExec();
+						}
+					});
+				}
+
+				this.serializer.exec(() => {
+					// Socket is connected, allow setting breakpoints
+					this.sendEvent(new InitializedEvent());
+					this.serializer.endExec();
+					// Respond
+					handler();
+				});
+
+				this.serializer.exec(() => {
+					// Check if program should be automatically started
+					if(Settings.launch.startAutomatically && !EmulDebugAdapter.unitTestHandler) {
+						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
+						this.sendEventContinued();
+						setTimeout(() => {
+							// Delay call because the breakpoints are set afterwards.
+							this.emulatorContinue();
+						}, 500);
+					}
+					else {
+						this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));
+						// For the unit tests
+						this.emit("initialized");
+					}
+					this.serializer.endExec();
+				});
+			});
+
+			Emulator.on('warning', message => {
+				// Some problem occurred
+				this.showWarning(message);
+			});
+
+			Emulator.on('log', message => {
+				// Show the log (from the socket/ZEsarUX) in the debug console
+				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+
+			});
+
+			Emulator.once('error', err => {
+				// Some error occurred
+				Emulator.stop(()=>{});
+				this.exit(err.message);
+			});
+*/
+			});
+		}
+		catch(e) {
+			vscode.window.showErrorMessage(e.message);
+		}
+
+	}
+
+
+	/**
+	 * Execute all unit tests in debug mode.
+	 */
+	public static debugAllUnitTests() {
+		// All testcases
+		Z80UnitTests.partialUtLabels = undefined;
+		// Start
+		Z80UnitTests.debugTests();
+	}
+
+
+	/**
+	 * Execute some unit tests in debug mode.
+	 */
+	public static debugUnitTests() {
+		// Get list of test case labels
+		Z80UnitTests.partialUtLabels = [];
+		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
+			Z80UnitTests.partialUtLabels.push(tcLabel);
+		// Start
+		Z80UnitTests.debugTests();
+	}
+
+
+	/**
+	 * Start the unit tests, either partial or full, in debug mode.
+	 * Debug mode simulates the vscode UI to start debugging and to press continue
+	 * after each unit test case.
+	 */
+	protected static debugTests() {
 		try {
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();

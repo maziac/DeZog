@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
-import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
+//import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { Labels } from './labels';
 import { Log } from './log';
 import { EmulatorBreakpoint, MachineType, /*EmulatorClass,*/ } from './emulator';
@@ -372,261 +372,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 	/**
-	 * Creates an array of watch points from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
-	 * @return An array with watch points (GenericWatchpoints).
-	 */
-	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>): Array<GenericWatchpoint> {
-		// convert labels in watchpoints.
-		const watchpoints = new Array<GenericWatchpoint>();
-
-		let i =-1;
-		for(let entry of watchPointLines) {
-			i = i+1;
-			// WPMEM:
-			// Syntax:
-			// WPMEM [addr [, length [, access]]]
-			// with:
-			//	addr = address (or label) to observe (optional). Defaults to current address.
-			//	length = the count of bytes to observe (optional). Default = 1.
-			//	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
-			// e.g. WPMEM LBL_TEXT, 1, w
-			// or
-			// WPMEM ,1,w, MWV&B8h/0
-
-			try {
-				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-				const match = /;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
-				if(match) {
-					// get arguments
-					let addressString = match[1];
-					let lengthString = match[3];
-					let access = match[5];
-					let cond = match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
-					// defaults
-					let entryAddress: number|undefined = entry.address;
-					if(addressString && addressString.length > 0)
-						entryAddress = Utility.evalExpression(addressString, false); // don't evaluate registers
-					if(isNaN(entryAddress))
-						continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
-					let length = 1;
-					if(lengthString && lengthString.length > 0) {
-						length = Utility.evalExpression(lengthString, false); // don't evaluate registers
-					}
-					else {
-						if(!addressString || addressString.length == 0) {
-							// If both, address and length are not defined it is checked
-							// if there exists bytes in the list file (i.e.
-							// numbers after the address field).
-							// If not the "WPMEM" is assumed to be inside a
-							// macro and omitted.
-							const match = /^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
-							if(!match)
-								continue;
-						}
-					}
-					if(access && access.length > 0) {
-						if( access != 'r' && access != 'w' && access != 'rw') {
-							this.showWarning("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'");
-							continue;
-						}
-					}
-					else
-						access = 'rw';
-					// set watchpoint
-					watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond || ''});
-				}
-			}
-			catch(e) {
-				vscode.window.showWarningMessage("Problem with ASSERT. Could not evaluate: '" + entry.line + "': " + e + "");
-			}
-		}
-
-		return watchpoints;
-	}
-
-
-	/**
-	 * Creates an array of asserts from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
-	 * @return An array with asserts (GenericWatchpoints).
-	 */
-	protected createAsserts(assertLines: Array<{address: number, line: string}>) {
-		const assertMap = new Map<number,GenericBreakpoint>();
-		// Convert ASSERTS to watchpoints
-		for(let entry of assertLines) {
-			// ASSERT:
-			// Syntax:
-			// ASSERT var comparison expr [&&|| var comparison expr]
-			// with:
-			//  var: a variable, i.e. a register like A or HL
-			//  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
-			//	expr: a mathematical expression that resolves into a constant
-			// Examples:
-			// - ASSERT A < 5
-			// - ASSERT HL <= LBL_END+2
-			// - ASSERT B > (MAX_COUNT+1)/2
-
-			// ASSERTs are breakpoints with "inverted" condition.
-			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
-			try {
-				const matchAssert = /;.*\bASSERT\b/.exec(entry.line);
-				if(!matchAssert) {
-					// Eg. could be that "ASSERTx" was found.
-					continue;
-				}
-
-				// Get part of the string after the "ASSERT"
-				const part = entry.line.substr(matchAssert.index + matchAssert[0].length).trim();
-
-				// Check if no condition was set = ASSERT false = Always break
-				let conds = '';
-				if(part.length > 0) {
-					// Some condition is set
-					const regex = /\s*([a-z]+)\s*([<>=!]+)\s*([^;|&]*)(\|\||&&*)?/gi;
-					let match = regex.exec(part);
-					if(!match)	// At least one match should be found
-						throw Error("Expecting 'ASSERT var comparison expr'.");
-					let concatString;
-					while (match) {
-						// Get arguments
-						let varString = match[1] || "";
-						varString = varString.trim();
-						let compString = match[2] || "";
-						compString = compString.trim();
-						let exprString = match[3] || "";
-						exprString = exprString.trim();
-						concatString = match[4] || "";
-						concatString = concatString.trim();
-
-						// Check and "invert" the assert condition.
-						// Check register / variable
-						if(!Z80Registers.isRegister(varString))
-							throw Error("Don't know '" + varString + "'");
-
-						// Convert to a number
-						const exprValue = Utility.evalExpression(exprString, false); // don't evaluate registers
-
-						// Check comparison
-						let resComp;
-						if(compString.length > 0) {
-							// The ASSERT condition needs to be negated for the breakpoint.
-							switch(compString) {
-								// >= :
-								case '<':	resComp = '>='; break;
-								// <= :
-								case '>':	resComp = '<='; break;
-								// > :
-								case '<=':	resComp = '>'; break;
-								// < :
-								case '>=':	resComp = '<'; break;
-								// != :
-								case '==':	resComp = '!='; break;
-								// == :
-								case '!=':	resComp = '=='; break;
-							}
-						}
-						if(!resComp)
-							throw Error("Don't know comparison '" + compString + "'");
-
-						// Check concatenation
-						let resConcat = '';
-						if(concatString.length > 0) {
-							// Invert
-							if(concatString == "&&")
-								resConcat = "||";
-							else if(concatString == "||")
-								resConcat = "&&";
-							else
-								throw Error("Cannot handle concatenation with '" + concatString + "'. Use '&&' or '||' instead.");
-							resConcat = ' ' + resConcat;
-						}
-
-						// Now create condition for zesarux.
-						const condPart = varString + ' ' + resComp + ' ' + exprValue.toString();
-						if(conds.length > 0)
-							conds += ' ';
-						conds += condPart + resConcat;
-						// Next
-						match = regex.exec(part);
-					}
-					// Check
-					if(concatString.length > 0)	// has to end without concatenation symbol
-						throw Error("Expected condition after concatenation symbol '" + concatString + "'");
-				}
-
-				// Check if ASSERT for that address already exists.
-				let bp = assertMap.get(entry.address);
-				if(bp && conds.length > 0) {
-					// Already exists: just add condition.
-					// Check that 2nd condition is not too complicated.
-					if(conds.indexOf("&&") >= 0)
-						throw Error("Condition too complicated. 2 ASSERTs at the same address are combined and the 2nd condition must not include a '||' condition.");
-					// Concatenate conditions.
-					bp.conditions += ' || ' + conds;
-				}
-				else {
-					// Breakpoint for address does not yet exist. Create a new one.
-					const assertBp = {address: entry.address, conditions: conds || '', log: undefined};
-					assertMap.set(entry.address, assertBp);
-				}
-			}
-			catch(e) {
-				vscode.window.showWarningMessage("Problem with ASSERT. Could not evaluate: '" + entry.line + "': " + e + "");
-			}
-		}
-
-		// Convert map to array.
-		const assertsArray = Array.from(assertMap.values());
-
-		return assertsArray;
-	}
-
-
-	/**
-	 * Creates an array of log points from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
-	 * @return An array with log points (GenericWatchpoints).
-	 */
-	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
-		// convert labels in watchpoints.
-		const logpoints = new Map<string, Array<GenericBreakpoint>>();
-		for(let entry of watchPointLines) {
-			// LOGPOINT:
-			// Syntax:
-			// LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
-			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
-
-			// Now check more thoroughly i.e. for comma
-			const match = /;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
-			if(match) {
-				// get arguments
-				const group = match[2] || "DEFAULT";
-				const logMsg = '[' + group + '] ' + match[3];
-				// Create group if not existent
-				let array = logpoints.get(group);
-				if(!array) {
-					array = new Array<GenericBreakpoint>();
-					logpoints.set(group, array);
-				}
-				// Convert labels
-				try {
-					const log = this.evalLogMessage(logMsg);
-					// set watchpoint
-					array.push({address: entry.address, conditions: '', log: log});
-				}
-				catch(e) {
-					// Show error
-					this.showWarning(e.message);
-				}
-			}
-		}
-
-		return logpoints;
-	}
-
-
-	/**
 	 * Starts the emulator and sets up everything for setup after
 	 * connection is up and running.
 	 */
@@ -652,72 +397,15 @@ export class EmulDebugAdapter extends DebugSession {
 		Emulator.init();
 
 		Emulator.once('initialized', () => {
-			// Array for found watchpoints: WPMEM
-			const watchPointLines = new Array<{address: number, line: string}>();
-			const assertLines = new Array<{address: number, line: string}>();
-			const logPointLines = new Array<{address: number, line: string}>();
 			// Load files
 			try {
-				// Load user list and labels files
-				for(const listFile of Settings.launch.listFiles) {
-					const sources = listFile.srcDirs as Array<string>;
-					Labels.loadAsmListFile(listFile.path, listFile.mainFile, sources, listFile.filter, listFile.asm, listFile.addOffset, (address, line) => {
-						// Quick search for WPMEM
-						if(line.indexOf('WPMEM') >= 0) {
-							// Add watchpoint at this address
-							watchPointLines.push({address: address, line: line});
-						}
-						// Quick search for ASSERT
-						if(line.indexOf('ASSERT') >= 0) {
-							// Add assert line at this address
-							assertLines.push({address: address, line: line});
-						}
-						// Quick search for LOGPOINT
-						if(line.indexOf('LOGPOINT') >= 0) {
-							// Add assert line at this address
-							logPointLines.push({address: address, line: line});
-						}
-					});
-				}
+				// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
+				Emulator.readListFiles(Settings.launch.listFiles);
 			}
 			catch(err) {
 				// Some error occurred during loading, e.g. file not found.
-				this.exit(err.message);
+				this.exit(err);
 			}
-
-
-			this.serializer.exec(() => {
-				// WPMEM
-				// Finishes off the loading of the list and labels files
-				Labels.finish();
-
-				// Set watchpoints (memory guards)
-				const watchpoints = this.createWatchPoints(watchPointLines);
-				Emulator.setWPMEM(watchpoints);
-				// "Return"
-				this.serializer.endExec();
-			});
-
-
-			this.serializer.exec(() => {
-				// ASSERTs
-				// Set assert breakpoints
-				const assertsArray = this.createAsserts(assertLines);
-				Emulator.setASSERT(assertsArray);
-				// "Return"
-				this.serializer.endExec();
-			});
-
-
-			this.serializer.exec(() => {
-				// LOGPOINTs
-				// Set assert breakpoints
-				const logPointsMap = this.createLogPoints(logPointLines);
-				Emulator.setLOGPOINT(logPointsMap);
-				// "Return"
-				this.serializer.endExec();
-			});
-
 
 			this.serializer.exec(() => {
 				// Create memory/register dump view
@@ -798,59 +486,6 @@ export class EmulDebugAdapter extends DebugSession {
 
 
 
-	/**
-	 * Evaluates a log message, i.e. a message that was given for a logpoint.
-	 * The format is checked and also the labels are changed into numbers.
-	 * Throws an exception in case of a formatting error.
-	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
-	 * @returns The converted string. I.e. label names are converted to numbers.
-	 */
-	protected evalLogMessage(logMsg: string|undefined): string|undefined {
-		if(!logMsg)
-			return undefined
-
-		// Search all "${...}""
-		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
-			// Check syntax
-			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
-			if(!matchInner)
-				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
-			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
-			let addr = matchInner[3] || '';
-			if(addr.length) {
-				const access = matchInner[2] || '';
-				// Check if it is a register
-				if(Z80Registers.isRegister(addr)) {
-					// e.g. addr == "HL" in "(HL)"
-					return "${" + access + "(" + addr + ")" + end + "}";
-				}
-				else {
-					// Check variable for label
-					try {
-						//console.log('evalLogMessage: ' + logMsg + ': ' + addr);
-						const converted = Utility.evalExpression(addr, false);
-						return "${" + access + "(" + converted.toString() + ")" + end + "}";
-					}
-					catch (e) {
-						// If it cannot be converted (e.g. a register name) an exception will be thrown.
-						throw Error("Log message format error: " + e.message + " in '" + logMsg + "'");
-					}
-				}
-			}
-			else {
-				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
-				const reg = matchInner[4];
-				if(!Z80Registers.isRegister(reg))
-					throw Error("Log message format error: Unsupported register '" + reg + "' in '" + logMsg + "'");
-				return "${" + reg + end + "}";
-			}
-		});
-
-
-		console.log('evalLogMessage: ' + result);
-		return result;
-	}
-
 
 	/**
 	 * The breakpoints are set for a path (file).
@@ -869,7 +504,7 @@ export class EmulDebugAdapter extends DebugSession {
 			const bps = new Array<EmulatorBreakpoint>();
 			for(const bp of givenBps) {
 				try {
-					const log = this.evalLogMessage(bp.logMessage);
+					const log = Emulator.evalLogMessage(bp.logMessage);
 					var mbp: EmulatorBreakpoint;
 					mbp = {
 						bpId: 0,
