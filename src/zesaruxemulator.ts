@@ -1084,6 +1084,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const chunkSize = 0x10000; //0x1000;
 		let k = 0;
 		let size = dataArray.length;
+		let chunkCount = 0;
 		while(size > 0) {
 			const sendSize = (size > chunkSize) ? chunkSize : size;
 			// Convert array to long hex string.
@@ -1092,14 +1093,19 @@ export class ZesaruxEmulator extends EmulatorClass {
 				bytes += Utility.getHexString(dataArray[k++], 2);
 			}
 			// Send
-			zSocket.send( 'write-memory-raw ' + address + ' ' + bytes);
+			chunkCount ++;
+			zSocket.send( 'write-memory-raw ' + address + ' ' + bytes, () => {
+				chunkCount --;
+				if(chunkCount == 0)
+					handler();
+			});
 			// Next chunk
 			size -= chunkSize;
 		}
 		// call when ready
-		zSocket.executeWhenQueueIsEmpty(() => {
-			handler();
-		});
+		//zSocket.executeWhenQueueIsEmpty(() => {
+		//	handler();
+		//});
 
 	}
 

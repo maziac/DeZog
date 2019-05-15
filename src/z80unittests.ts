@@ -191,6 +191,9 @@ export class Z80UnitTests {
 					Emulator.enableLogpoints('UNITTEST');
 
 					Z80UnitTests.initUnitTests();
+
+					// Load the initial unit test routine (provided by the user)
+					Z80UnitTests.execAddr(Z80UnitTests.addrInit);
 				}
 				catch(e) {
 					// Some error occurred
