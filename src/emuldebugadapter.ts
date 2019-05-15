@@ -336,7 +336,8 @@ export class EmulDebugAdapter extends DebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			// Save args
-			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
+			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
+			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(args, rootFolder);
 			const channelOut = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
 			Log.init(channelOut, Settings.launch.log.filePath);

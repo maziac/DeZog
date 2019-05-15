@@ -464,8 +464,15 @@ export class EmulatorClass extends EventEmitter {
 		const logPointLines = new Array<{address: number, line: string}>();
 		// Load user list and labels files
 		for(const listFile of listFiles) {
-			const sources = listFile.srcDirs as Array<string>;
-			Labels.loadAsmListFile(listFile.path, listFile.mainFile, sources, listFile.filter, listFile.asm, listFile.addOffset, (address, line) => {
+			const file = {
+				path: Utility.getAbsFilePath(listFile.path),
+				mainFile: listFile.mainFile,
+				srcDirs: listFile.srcDirs || [""],
+				filter: listFile.filter,
+				asm: listFile.asm || "sjasmplus",
+				addOffset: listFile.addOffset || 0
+			};
+			Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
 				// Quick search for WPMEM
 				if(line.indexOf('WPMEM') >= 0) {
 					// Add watchpoint at this address
@@ -761,7 +768,7 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * Enables/disables all logpoints for a given group.
-	 * @param group The group to enable/disable. If undefined: all groups.
+	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */

@@ -141,7 +141,7 @@ export class Z80UnitTests {
 	/**
 	 * Execute some unit tests in debug mode.
 	 */
-	public static runUnitTests() {
+	public static runPartialUnitTests() {
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
@@ -158,86 +158,49 @@ export class Z80UnitTests {
 	 */
 	protected static runTests() {
 		try {
+			// Mode
+			this.debug = false;
+
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
-			const configName: string = configuration.name;
+			//const configName: string = configuration.name;
+			const listFiles = configuration.listFiles;
+
+			// Setup settings
+			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
+			const rootFolder = vscode.workspace.rootPath || '';
+			Settings.Init(configuration, rootFolder);
+
+			// Stop any previous running emulator
+			if(Emulator)
+				Emulator.stop();
 
 			// Start emulator.
-			Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
+			//Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
 			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
-			Emulator.init();
 
+			// Events
 			Emulator.once('initialized', () => {
-
 				try {
 					// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
-					Emulator.readListFiles();
+					Emulator.readListFiles(listFiles);
+
+					// Enable ASSERTs etc.
+					Emulator.enableAssertBreakpoints(true);
+					Emulator.enableWPMEM(true);
+					Emulator.enableLogpoints('UNITTEST');
+
+					Z80UnitTests.initUnitTests();
 				}
 				catch(e) {
-					vscode.window.showErrorMessage(e);
+					// Some error occurred
+					Z80UnitTests.stopUnitTests(undefined, e);
 				}
-/*
-				this.serializer.exec(() => {
-					// Create memory/register dump view
-					let registerMemoryView = new MemoryRegisterView(this);
-					const regs = Settings.launch.memoryViewer.registersMemoryView;
-					registerMemoryView.addRegisters(regs);
-					registerMemoryView.update();
-					// "Return"
-					this.serializer.endExec();
-				});
-
-				// Run user commands after load.
-				for(const cmd of Settings.launch.commandsAfterLaunch) {
-					this.serializer.exec(() => {
-						vscode.debug.activeDebugConsole.appendLine(cmd);
-						try	{
-							this.evaluateCommand(cmd, text => {
-								vscode.debug.activeDebugConsole.appendLine(text);
-								// "Return"
-								this.serializer.endExec();
-							});
-						}
-						catch(err) {
-							// Some problem occurred
-							const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
-							this.showWarning(output);
-							// "Return"
-							this.serializer.endExec();
-						}
-					});
-				}
-
-				this.serializer.exec(() => {
-					// Socket is connected, allow setting breakpoints
-					this.sendEvent(new InitializedEvent());
-					this.serializer.endExec();
-					// Respond
-					handler();
-				});
-
-				this.serializer.exec(() => {
-					// Check if program should be automatically started
-					if(Settings.launch.startAutomatically && !EmulDebugAdapter.unitTestHandler) {
-						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-						this.sendEventContinued();
-						setTimeout(() => {
-							// Delay call because the breakpoints are set afterwards.
-							this.emulatorContinue();
-						}, 500);
-					}
-					else {
-						this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));
-						// For the unit tests
-						this.emit("initialized");
-					}
-					this.serializer.endExec();
-				});
 			});
 
 			Emulator.on('warning', message => {
 				// Some problem occurred
-				this.showWarning(message);
+				vscode.window.showWarningMessage(message);
 			});
 
 			Emulator.on('log', message => {
@@ -248,16 +211,17 @@ export class Z80UnitTests {
 
 			Emulator.once('error', err => {
 				// Some error occurred
-				Emulator.stop(()=>{});
-				this.exit(err.message);
+				Z80UnitTests.stopUnitTests(undefined, err);
 			});
-*/
-			});
+
+
+			// Connect to debugger.
+			Emulator.init();
 		}
 		catch(e) {
-			vscode.window.showErrorMessage(e.message);
+			// Some error occurred
+			Z80UnitTests.stopUnitTests(undefined, e);
 		}
-
 	}
 
 
@@ -275,7 +239,9 @@ export class Z80UnitTests {
 	/**
 	 * Execute some unit tests in debug mode.
 	 */
-	public static debugUnitTests() {
+	public static debugPartialUnitTests() {
+		// Mode
+		this.debug = true;
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
@@ -383,6 +349,33 @@ export class Z80UnitTests {
 	}
 
 
+
+	/**
+	 * Loads all labels from the launch.json unit test configuration and
+	 * returns a new labels object.
+	 * Reads in all labels files.
+	 * @returns A labels object.
+	 */
+	protected static loadLabelsFromConfiguration(): LabelsClass {
+		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+
+		const labels = new LabelsClass();
+		const listFiles = configuration.listFiles;
+		for(const listFile of listFiles) {
+			const file = {
+				path: Utility.getAbsFilePath(listFile.path),
+				mainFile: listFile.mainFile,
+				srcDirs: listFile.srcDirs || [""],
+				filter: listFile.filter,
+				asm: listFile.asm || "sjasmplus",
+				addOffset: listFile.addOffset || 0
+			};
+			labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
+		}
+		return labels;
+	}
+
+
 	/**
 	 * Retrieves a list of strings with the labels of all unit tests.
 	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
@@ -390,22 +383,8 @@ export class Z80UnitTests {
 	public static getAllUnitTests(): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			try {
-				const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
-
-				const labels = new LabelsClass();
-				const listFiles = configuration.listFiles;
-				for(const listFile of listFiles) {
-					const file = {
-						path: Utility.getAbsFilePath(listFile.path),
-						mainFile: listFile.mainFile,
-						srcDirs: listFile.srcDirs || [""],
-						filter: listFile.filter,
-						asm: listFile.asm || "sjasmplus",
-						addOffset: listFile.addOffset || 0
-					};
-					labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
-				}
-
+				// Read all listfiles.
+				const labels = Z80UnitTests.loadLabelsFromConfiguration();
 				// Get the unit test labels
 				const utLabels = Z80UnitTests.getAllUtLabels(labels);
 				resolve(utLabels);
@@ -419,45 +398,51 @@ export class Z80UnitTests {
 
 
 	/**
+	 * Initializes the unit tests. Is called after the emulator has been setup.
+	 */
+	protected static initUnitTests() {
+		// The Z80 binary has been loaded.
+		// The debugger stopped before starting the program.
+		// Now read all the unit tests.
+		Z80UnitTests.outputSummary = '';
+		Z80UnitTests.countFailed = 0;
+		Z80UnitTests.countExecuted = 0;
+		Z80UnitTests.timeoutHandle = undefined;
+
+		// Get the unit test code
+		Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
+		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
+		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
+		Z80UnitTests.addrCall ++;
+		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
+		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
+		const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
+
+		// Labels not yet known.
+		Z80UnitTests.utLabels = undefined as unknown as Array<string>;
+
+		// Success and failure breakpoints
+		const successBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
+		Emulator.setBreakpoint(successBp);
+		const failureBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
+		Emulator.setBreakpoint(failureBp);
+
+		// Stack watchpoints
+		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
+		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
+		Emulator.setWatchpoints([stackMinWp, stackMaxWp]);
+	}
+
+
+	/**
 	 * Handles the states of the debug adapter. Will be called after setup
 	 * @param debugAdapter The debug adpater.
 	 */
 	protected static handleDebugAdapter(debugAdapter: EmulDebugAdapter) {
 		debugAdapter.on('initialized', () => {
 			try {
-				//assert(EmulDebugAdapter.state == DbgAdaperState.UNITTEST);
-				// The Z80 binary has been loaded.
-				// The debugger stopped before starting the program.
-				// Now read all the unit tests.
-				Z80UnitTests.outputSummary = '';
-				Z80UnitTests.countFailed = 0;
-				Z80UnitTests.countExecuted = 0;
-				Z80UnitTests.timeoutHandle = undefined;
-
-				// Get the unit test code
-				Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
-				Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
-				Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
-				Z80UnitTests.addrCall ++;
-				Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
-				Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
-				const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
-				const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
-
-				// Labels not yet known.
-				Z80UnitTests.utLabels = undefined as unknown as Array<string>;
-
-				// Success and failure breakpoints
-				const successBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
-				Emulator.setBreakpoint(successBp);
-				const failureBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
-				Emulator.setBreakpoint(failureBp);
-
-				// Stack watchpoints
-				const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
-				const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
-				Emulator.setWatchpoints([stackMinWp, stackMaxWp]);
-
+				Z80UnitTests.initUnitTests();
 				// Start unit tests after a short while
 				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
 			}
@@ -467,16 +452,26 @@ export class Z80UnitTests {
 		});
 
 		debugAdapter.on('break', () => {
-			// The program was run and a break occured.
-			// Get current pc
-			Emulator.getRegisters(data => {
-				// Parse the PC value
-				const pc = Z80Registers.parsePC(data);
-				//const sp = Z80Registers.parseSP(data);
-				// Check if testcase was successfull
-				Z80UnitTests.checkUnitTest(debugAdapter, pc);
-				// Otherwise another break- or watchpoint was hit or the user stepped manually.
-			});
+			Z80UnitTests.onBreak(debugAdapter);
+		});
+	}
+
+
+	/**
+	 * A break occured. E.g. the tet case stopped because it is finished
+	 * or because of an error (ASSERT).
+	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
+	 */
+	protected static onBreak(debugAdapter?: EmulDebugAdapter) {
+		// The program was run and a break occured.
+		// Get current pc
+		Emulator.getRegisters(data => {
+			// Parse the PC value
+			const pc = Z80Registers.parsePC(data);
+			//const sp = Z80Registers.parseSP(data);
+			// Check if testcase was successfull
+			Z80UnitTests.checkUnitTest(pc, debugAdapter);
+			// Otherwise another break- or watchpoint was hit or the user stepped manually.
 		});
 	}
 
@@ -517,7 +512,7 @@ export class Z80UnitTests {
 	 * tests.
 	 * @param da The debug adapter.
 	 */
-	protected static execAddr(address: number, da: EmulDebugAdapter) {
+	protected static execAddr(address: number, da?: EmulDebugAdapter) {
 		// Set memory values to test case address.
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
 		Emulator.writeMemoryDump(this.addrCall, callAddr, () => {
@@ -526,11 +521,19 @@ export class Z80UnitTests {
 				// Run
 				if(Z80UnitTests.utLabels)
 					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
-				// Continue
-				da.emulatorContinue();
-				// With vscode UI
-				if(Z80UnitTests.debug)
-					da.sendEventContinued()
+				// Run or Debug
+				if(da) {
+					// Debug: Continue
+					da.emulatorContinue();
+					// With vscode UI
+					da.sendEventContinued();
+				}
+				else {
+					// Run: Continue
+					Emulator.continue((data, tStates, cpuFreq) => {
+						Z80UnitTests.onBreak();
+					});
+				}
 			});
 		});
 	}
@@ -540,7 +543,7 @@ export class Z80UnitTests {
 	 * Executes the next test case.
 	 * @param da The debug adapter.
 	 */
-	protected static nextUnitTest(da: EmulDebugAdapter) {
+	protected static nextUnitTest(da?: EmulDebugAdapter) {
 		// Increase count
 		Z80UnitTests.countExecuted ++;
 		Z80UnitTests.currentFail = false;
@@ -574,7 +577,7 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
 	 */
-	protected static checkUnitTest(da: EmulDebugAdapter, pc: number) {
+	protected static checkUnitTest(pc: number, da?: EmulDebugAdapter) {
 		// Check if it was a timeout
 		const timeoutFailure = (Z80UnitTests.timeoutHandle == undefined);
 		if(Z80UnitTests.timeoutHandle) {
@@ -595,7 +598,7 @@ export class Z80UnitTests {
 				Z80UnitTests.countFailed ++;
 			}
 			// Check if in debug or run mode.
-			if(Z80UnitTests.debug) {
+			if(da) {
 				// In debug mode: Send break to give vscode control
 				da.sendEventBreakAndUpdate();
 				return;
@@ -640,7 +643,7 @@ export class Z80UnitTests {
 
 		// In debug mode do break after one step. The step is required to put the PC at the right place.
 		const label = Z80UnitTests.utLabels[0];
-		if(Z80UnitTests.debug && !tcSuccess) {
+		if(da && !tcSuccess) {
 			// Do a step
 			Z80UnitTests.dbgOutput('UnitTest: ' + label + '  da.emulatorStepOver()');
 			da.emulatorStepOver();
@@ -716,14 +719,20 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: EmulDebugAdapter, errMessage?: string) {
+	protected static stopUnitTests(debugAdapter: EmulDebugAdapter|undefined, errMessage?: string) {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
-		// Clear remianing testcases
+		// Clear remaining testcases
 		Z80UnitTests.CancelAllRemaingResults();
 		// Exit
-		debugAdapter.exit(errMessage);
+		if(debugAdapter)
+			debugAdapter.exit(errMessage);
+		else {
+			// Stop emulator
+			if(Emulator)
+				Emulator.stop();
+		}
 	}
 
 
