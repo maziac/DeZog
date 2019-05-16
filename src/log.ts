@@ -30,7 +30,7 @@ export class Log {
 	protected callerNameIndex = -1;
 
 	/**
-	 * Initializes the loggine. I.e. enables/disables logging to
+	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
 	 * @param channelOutput If defined the name of the channel output.
 	 * @param filePath If set: log additionally to a file. Relative file path.

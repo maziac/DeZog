@@ -52,7 +52,8 @@ enum Color {
  * @param text The strign to colorize.
  */
 function colorize(color: string, text: string): string {
-	return color + text + '\x1b[0m';
+	//return color + text + '\x1b[0m';
+	return text;	// No easy colrizibg possible in output channel.
 }
 
 
@@ -126,6 +127,7 @@ export class Z80UnitTests {
 	/// Debug mode or run mode.
 	protected static debug = false;
 
+	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
 
 	/**
 	 * Execute all unit tests in debug mode.
@@ -565,7 +567,7 @@ export class Z80UnitTests {
 				Z80UnitTests.timeoutHandle = undefined;
 				// Failure: Timeout. Send a break.
 				Emulator.pause();
-			}, 1000*Settings.launch.unittestTimeOut);
+			}, 1000*Settings.launch.unitTestTimeOut);
 		}
 
 		// Start at test case address.
@@ -674,7 +676,7 @@ export class Z80UnitTests {
 		switch(tcResult) {
 			case TestCaseResult.OK: tcResultStr = colorize(Color.FgGreen, 'OK'); break;
 			case TestCaseResult.FAILED: tcResultStr = colorize(Color.FgRed, 'Fail'); break;
-			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unittestTimeOut + 's)'); break;
+			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unitTestTimeOut + 's)'); break;
 		}
 
 		const addr = Labels.getNumberForLabel(label) || 0;
@@ -760,27 +762,27 @@ export class Z80UnitTests {
 	 * Prints out a test case and result summary.
 	 */
 	protected static printSummary() {
-		// Savety check
-		if(!vscode.debug.activeDebugConsole)
-			return;
+
 
 		// Print summary
 		const emphasize = '+-------------------------------------------------';
-		vscode.debug.activeDebugConsole.appendLine('');
-		vscode.debug.activeDebugConsole.appendLine(emphasize);
-		vscode.debug.activeDebugConsole.appendLine('UNITTEST SUMMARY:\n\n');
-		vscode.debug.activeDebugConsole.appendLine(Z80UnitTests.outputSummary);
+		this.unitTestOutput.show();
+		this.unitTestOutput.appendLine('');
+		this.unitTestOutput.appendLine(emphasize);
+		this.unitTestOutput.appendLine('UNITTEST SUMMARY:');
+		this.unitTestOutput.appendLine('Date: ' + new Date().toString() + '\n\n');
+		this.unitTestOutput.appendLine(Z80UnitTests.outputSummary);
 
 		const color = (Z80UnitTests.countFailed>0) ? Color.FgRed : Color.FgGreen;
 		const countPassed = Z80UnitTests.countExecuted - Z80UnitTests.countFailed;
-		vscode.debug.activeDebugConsole.appendLine('');
-		vscode.debug.activeDebugConsole.appendLine('Total testcases: ' + Z80UnitTests.countExecuted);
-		vscode.debug.activeDebugConsole.appendLine('Passed testcases: ' + countPassed);
-		vscode.debug.activeDebugConsole.appendLine(colorize(color, 'Failed testcases: ' + Z80UnitTests.countFailed));
-		vscode.debug.activeDebugConsole.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
-		vscode.debug.activeDebugConsole.appendLine('');
+		this.unitTestOutput.appendLine('');
+		this.unitTestOutput.appendLine('Total testcases: ' + Z80UnitTests.countExecuted);
+		this.unitTestOutput.appendLine('Passed testcases: ' + countPassed);
+		this.unitTestOutput.appendLine(colorize(color, 'Failed testcases: ' + Z80UnitTests.countFailed));
+		this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
+		this.unitTestOutput.appendLine('');
 
-		vscode.debug.activeDebugConsole.appendLine(emphasize);
+		this.unitTestOutput.appendLine(emphasize);
 	}
 
 }
