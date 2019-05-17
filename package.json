@@ -1,7 +1,7 @@
 {
 	"name": "z80-debug",
 	"displayName": "Z80 Debugger",
-	"version": "0.9.1",
+	"version": "0.9.0",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -11,6 +11,7 @@
 	"keywords": [
 		"debugger",
 		"z80",
+		"z80-debug",
 		"zesarux",
 		"zx spectrum"
 	],
@@ -162,7 +163,11 @@
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.debugUnitTests",
+					"command": "z80-debug.debugPartialUnitTests",
+					"when": "false"
+				},
+				{
+					"command": "z80-debug.runPartialUnitTests",
 					"when": "false"
 				}
 			],

@@ -95,6 +95,16 @@ export class Z80UnitTests {
 	/// it and the label.
 	protected static addrInit: number;
 
+	/// The start address of the unit init wrapper.
+	/// This is called to start the UNIT_TEST_INIT user routine.
+	protected static addrInitWrapper: number;
+
+	/// Here is the address of the unit int routine written.
+	protected static addrInitCall: number;
+
+	// At the end of the init routine this address is reached.
+	protected static addrInitComplete: number;
+
 	/// The start address of the unit test wrapper.
 	/// This is called to start the unit test.
 	protected static addrTestWrapper: number;
@@ -416,6 +426,9 @@ export class Z80UnitTests {
 
 		// Get the unit test code
 		Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
+		Z80UnitTests.addrInitWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_WRAPPER");
+		Z80UnitTests.addrInitCall = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_CALL_ADDR");
+		Z80UnitTests.addrInitComplete = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_COMPLETE");
 		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
@@ -584,29 +597,29 @@ export class Z80UnitTests {
 	 */
 	protected static checkUnitTest(pc: number, da?: EmulDebugAdapter) {
 		// Check if it was a timeout
-		const timeoutFailure = (Z80UnitTests.timeoutHandle == undefined);
+		let timeoutFailure = !Z80UnitTests.debug;
 		if(Z80UnitTests.timeoutHandle) {
 			// Clear timeout
 			clearTimeout(Z80UnitTests.timeoutHandle);
 			Z80UnitTests.timeoutHandle = undefined;
+			timeoutFailure = false;
 		}
 
 		// Check if test case ended successfully or not
 		if(pc != this.addrTestReadySuccess
 			&& pc != this.addrTestReadyFailure) {
 			// Undetermined. Testcase not ended yet.
-			//Z80UnitTests.dbgOutput('UnitTest: checkUnitTest: user break');
-			// Count failure
-			if(!Z80UnitTests.currentFail) {
-				// Count only once
-				Z80UnitTests.currentFail = true;
-				Z80UnitTests.countFailed ++;
-			}
 			// Check if in debug or run mode.
 			if(da) {
 				// In debug mode: Send break to give vscode control
 				da.sendEventBreakAndUpdate();
 				return;
+			}
+			// Count failure
+			if(!Z80UnitTests.currentFail) {
+				// Count only once
+				Z80UnitTests.currentFail = true;
+				Z80UnitTests.countFailed ++;
 			}
 		}
 
