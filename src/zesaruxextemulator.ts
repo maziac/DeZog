@@ -224,6 +224,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 
 	/**
 	 * Enables/disables all logpoints for a given group.
+	 * Throws an exception if the group is unknown.
 	 * @param group The group to enable/disable. If undefined: all groups.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.

@@ -95,16 +95,6 @@ export class Z80UnitTests {
 	/// it and the label.
 	protected static addrInit: number;
 
-	/// The start address of the unit init wrapper.
-	/// This is called to start the UNIT_TEST_INIT user routine.
-	protected static addrInitWrapper: number;
-
-	/// Here is the address of the unit int routine written.
-	protected static addrInitCall: number;
-
-	// At the end of the init routine this address is reached.
-	protected static addrInitComplete: number;
-
 	/// The start address of the unit test wrapper.
 	/// This is called to start the unit test.
 	protected static addrTestWrapper: number;
@@ -200,7 +190,10 @@ export class Z80UnitTests {
 					// Enable ASSERTs etc.
 					Emulator.enableAssertBreakpoints(true);
 					Emulator.enableWPMEM(true);
-					Emulator.enableLogpoints('UNITTEST');
+					try {
+						Emulator.enableLogpoints('UNITTEST', true);
+					}
+					catch {}	// Just in case the group is undefined
 
 					Z80UnitTests.initUnitTests();
 
@@ -426,9 +419,6 @@ export class Z80UnitTests {
 
 		// Get the unit test code
 		Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
-		Z80UnitTests.addrInitWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_WRAPPER");
-		Z80UnitTests.addrInitCall = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_CALL_ADDR");
-		Z80UnitTests.addrInitComplete = Z80UnitTests.getNumberForLabel("UNITTEST_INIT_COMPLETE");
 		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
@@ -626,6 +616,7 @@ export class Z80UnitTests {
 		// Check if this was the init routine that is started
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
+			// Choose list
 			if(Z80UnitTests.partialUtLabels) {
 				// Use the passed list
 				Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels;
@@ -659,11 +650,20 @@ export class Z80UnitTests {
 			}
 		}
 
-		// In debug mode do break after one step. The step is required to put the PC at the right place.
+		// Get the testcase label.
 		const label = Z80UnitTests.utLabels[0];
+
+		// In debug mode do break after one step. The step is required to put the PC at the right place.
 		if(da && !tcSuccess) {
+			// Do some additional output.
+			if(Z80UnitTests.utLabels) {
+				if(pc == this.addrTestReadySuccess)
+					Z80UnitTests.dbgOutput(label + ' PASSED.');
+				if(pc == this.addrTestReadyFailure)
+					Z80UnitTests.dbgOutput(label + ' FAILED.');
+			}
 			// Do a step
-			Z80UnitTests.dbgOutput('UnitTest: ' + label + '  da.emulatorStepOver()');
+			Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
 			da.emulatorStepOver();
 			return;
 		}
