@@ -67,6 +67,17 @@ enum TestCaseResult {
 	CANCELLED = 3,	// Testcases have been cancelled, e.g. manually or the connection might have been lost or whatever.
 }
 
+
+/**
+ * This structure is returned by getAllUnitTests.
+ */
+export interface UnitTestCase {
+	label: string;	// The full label of the test case, e.g. "test.UT_test1"
+	file: string;	// The full path of the file
+	line: number;	// The line number of the label
+}
+
+
 /**
  * This class takes care of executing the unit tests.
  * It basically
@@ -388,8 +399,8 @@ export class Z80UnitTests {
 	 * Retrieves a list of strings with the labels of all unit tests.
 	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
 	 */
-	public static getAllUnitTests(): Promise<string[]> {
-		return new Promise<string[]>((resolve, reject) => {
+	public static getAllUnitTests(): Promise<UnitTestCase[]> {
+		return new Promise<UnitTestCase[]>((resolve, reject) => {
 			try {
 				// Read all listfiles.
 				const labels = Z80UnitTests.loadLabelsFromConfiguration();
@@ -623,7 +634,8 @@ export class Z80UnitTests {
 			}
 			else {
 				// Get all labels that look like: 'UT_xxx'
-				Z80UnitTests.utLabels = Z80UnitTests.getAllUtLabels(Labels);
+				const lblFileLines = Z80UnitTests.getAllUtLabels(Labels);
+				Z80UnitTests.utLabels = lblFileLines.map(lfl => lfl.label);
 			}
 			// Error check
 			if(Z80UnitTests.utLabels.length == 0) {
@@ -714,9 +726,15 @@ export class Z80UnitTests {
 	 * Returns all labels that start with "UT_".
 	 * @returns An array with label names.
 	 */
-	protected static getAllUtLabels(labels: LabelsClass): string[] {
+	protected static getAllUtLabels(labels: LabelsClass): UnitTestCase[] {
 		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
-		return utLabels;
+		// Convert to filenames and line numbers.
+		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
+			const addr = labels.getNumberForLabel(label) as number;
+			const fileLine = labels.getFileAndLineForAddress(addr);
+			return {label, file: fileLine.fileName, line:fileLine.lineNr};
+		});
+		return labelFilesLines;
 	}
 
 
