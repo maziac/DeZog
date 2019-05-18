@@ -26,6 +26,18 @@ interface ListFileLine extends SourceFileEntry {
 	line: string;		/// The text of the line of the list file
 }
 
+
+/**
+ * The address, filename and line number of the label.
+ */
+/*
+interface ValueLocation {
+	value: number;	/// The value of the label (most of the time the address).
+	file: string;	/// The filename.
+	lineNr: number;	/// The line number in the file.
+}
+*/
+
 /**
  * Calculation of the labels from the input list and labels file.
  *
@@ -64,7 +76,10 @@ export class LabelsClass {
 	private labelsForNumber = new Array<any>();
 
 	/// Map with all labels (from labels file) and corresponding values.
-	private numberForLabel = new Map<string,number>();
+	private numberForLabel = new Map<string,number>();//ValueLocation>();
+
+	/// Map with label / file location association.
+	private labelLocations = new Map<string,{file: string, lineNr: number}>()
 
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack : number;
@@ -122,7 +137,7 @@ export class LabelsClass {
 	 */
 	public loadAsmListFile(fileName: string, mainFileName: string|undefined, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
 		/// Array that contains the list file, the associated memory addresses
-		/// for each line and the associated real filenames/line numbers, module and lastLAbel prefixes.
+		/// for each line and the associated real filenames/line numbers, module and lastLabel prefixes.
 		const listFile = new Array<ListFileLine>();
 
 		// Create regex
@@ -250,6 +265,7 @@ export class LabelsClass {
 							try {
 								// Evaluate
 								const value = Utility.evalExpression(valueString);
+								//const entry = { value, file: fileName, line: lineNr};
 								this.numberForLabel.set(label, value);
 								// Add label
 								this.addLabelForNumber(value, label);
@@ -529,9 +545,22 @@ export class LabelsClass {
 		// Create 2 maps.
 		// a) fileLineNrs: a map with all addresses and the associated filename/lineNr
 		// b) lineArrays: a map of arrays with key=filename+lineNr and value=address
+		// c) labelLocations: A map with key=full label and value=filename/line number.
 		for(const entry of listFile) {
 			if(entry.fileName.length == 0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
+
+			// Create label -> file location association
+			const lastLabel = entry.lastLabel;
+			if(lastLabel) {
+				const fullLabel =  this.getFullLabel(entry.modulePrefix, lastLabel);
+				let fileLoc = this.labelLocations.get(fullLabel);
+				if(!fileLoc) {
+					// Add new file location
+					fileLoc = {file: entry.fileName, lineNr: entry.lineNr};
+					this.labelLocations.set(fullLabel, fileLoc);
+				}
+			}
 
 			// last address entry wins:
 			this.fileLineNrs.set(entry.addr, { fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel });
@@ -548,6 +577,21 @@ export class LabelsClass {
 			if(!lineArray[entry.lineNr])	// without the check macros would lead to the last addr being stored.
 				lineArray[entry.lineNr] = entry.addr;
 		}
+
+	}
+
+
+	/**
+	 * Create complete label from module prefix and relative label
+	 * @param modulePrefix The first part of the label, e.g. "math."
+	 * @param label The last part of the label, e.g. "udiv_c_d"
+	 */
+	protected getFullLabel(modulePrefix: string|undefined, label: string) {
+		let result = modulePrefix || '';
+		if(result.length == 0)
+			return label;
+		result += label;
+		return result;
 	}
 
 
@@ -658,6 +702,17 @@ export class LabelsClass {
 	 */
 	public getNumberForLabel(label: string): number|undefined {
 		return this.numberForLabel.get(label);
+	}
+
+
+	/**
+	 * Returns the location (file/line number) of a label.
+	 * @param label The label. E.g. "math.div_c_d"
+	 * @returns {file, lineNr}: The absolute filepath and the line number.
+	 * undefined if label does not exist.
+	 */
+	public getLocationOfLabel(label:string): {file: string, lineNr: number}|undefined {
+		return this.labelLocations.get(label);
 	}
 
 

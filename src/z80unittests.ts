@@ -730,9 +730,9 @@ export class Z80UnitTests {
 		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
 		// Convert to filenames and line numbers.
 		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
-			const addr = labels.getNumberForLabel(label) as number;
-			const fileLine = labels.getFileAndLineForAddress(addr);
-			return {label, file: fileLine.fileName, line:fileLine.lineNr};
+			const location = labels.getLocationOfLabel(label) as {file: string, lineNr: number};
+			assert(location);
+			return {label, file:Utility.getAbsFilePath(location.file), line:location.lineNr};
 		});
 		return labelFilesLines;
 	}
