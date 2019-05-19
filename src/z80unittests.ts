@@ -138,7 +138,36 @@ export class Z80UnitTests {
 	/// Debug mode or run mode.
 	protected static debug = false;
 
+	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
+
+	/// Coverage:
+	/// The decoration type for covered lines.
+	protected static coverageDecoType = vscode.window.createTextEditorDecorationType({
+		/*
+		borderWidth: '1px',
+		borderStyle: 'solid',
+		overviewRulerColor: 'blue',
+		overviewRulerLane: vscode.OverviewRulerLane.Right,
+		light: {
+			// this color will be used in light color themes
+			borderColor: 'darkblue'
+		},
+		dark: {
+			// this color will be used in dark color themes
+			borderColor: 'lightblue'
+		}
+		*/
+		light: {
+			// this color will be used in light color themes
+			backgroundColor: 'darkgreen'
+		},
+		dark: {
+			// this color will be used in dark color themes
+			backgroundColor: 'lightgreen'
+		}
+	});
+
 
 	/**
 	 * Execute all unit tests in debug mode.
@@ -714,11 +743,57 @@ export class Z80UnitTests {
 		if(Z80UnitTests.utLabels.length == 0) {
 			// End the unit tests
 			Z80UnitTests.dbgOutput("All tests ready.");
-			Z80UnitTests.printSummary();
 			Z80UnitTests.stopUnitTests(da);
+			Z80UnitTests.unitTestsFinished();
 			return;
 		}
 		Z80UnitTests.nextUnitTest(da);
+	}
+
+
+	/**
+	 * Called when all unit tests have finished.
+	 * Will print the summary and display the decorations for the line coverage.
+	 */
+	protected static unitTestsFinished() {
+		// Summary
+		Z80UnitTests.printSummary();
+		// Line coverage
+		Z80UnitTests.lineCoverage();
+	}
+
+
+	/**
+	 * Display the line coverage. I.e. decorate the text editor to show all
+	 * lines that are covered.
+	 */
+	protected static lineCoverage() {
+
+		/*
+		TODO: Need to wait until zesarux supports the cpu transaction log through zrcp.
+		// Clear
+		Z80UnitTests.clearLineCoverage();	// TODO: Move to start of unit tests
+
+		// Loop through all open editors.
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			// Check if editor is in covered lines
+			const range = new vscode.Range(1,0, 1,1000);
+			const decoration = {range: range};
+			editor.setDecorations(Z80UnitTests.coverageDecoType, [decoration]);
+		}
+		*/
+	}
+
+
+	/**
+	 * Loops through all active editors and clear the coverage decorations.
+	 */
+	protected static clearLineCoverage() {
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			editor.setDecorations(Z80UnitTests.coverageDecoType, []);
+		}
 	}
 
 
