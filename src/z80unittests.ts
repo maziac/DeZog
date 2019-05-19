@@ -836,6 +836,8 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 		// Clear remaining testcases
 		Z80UnitTests.CancelAllRemaingResults();
+		// Remove event handling for the emulator
+		Emulator.removeAllListeners();
 		// Exit
 		if(debugAdapter)
 			debugAdapter.exit(errMessage);

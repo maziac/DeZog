@@ -77,7 +77,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
-	protected static unitTestHandler: (da: EmulDebugAdapter) => void;
+	protected static unitTestHandler: ((da: EmulDebugAdapter) => void)|undefined;
 
 
 	/**
@@ -458,6 +458,7 @@ export class EmulDebugAdapter extends DebugSession {
 					// For the unit tests
 					this.emit("initialized");
 				}
+				EmulDebugAdapter.unitTestHandler = undefined;
 				this.serializer.endExec();
 			});
 		});
