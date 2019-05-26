@@ -138,17 +138,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 			zSocket.send('get-current-machine', data => {
 				const machine = data.toLowerCase();
 				// Determine which ZX Spectrum it is, e.g. 48K, 128K
-				if(machine == 'zx-80')
+				if(machine.indexOf('80') >= 0)
 					this.machineType = MachineType.ZX80;
-				else if(machine == 'zx-81')
+				else if(machine.indexOf('81') >= 0)
 					this.machineType = MachineType.ZX81;
-				else if(machine == 'spectrum 16k')
+				else if(machine.indexOf('16k') >= 0)
 					this.machineType = MachineType.SPECTRUM16K;
-				else if(machine == 'spectrum 48k')
+				else if(machine.indexOf('48k') >= 0)
 					this.machineType = MachineType.SPECTRUM48K;
-				else if(machine == 'spectrum 128k')
+				else if(machine.indexOf('128k') >= 0)
 					this.machineType = MachineType.SPECTRUM128K;
-				else if(machine == 'tbblue')
+				else if(machine.indexOf('tbblue') >= 0)
 					this.machineType = MachineType.TBBLUE;
 			});
 

@@ -5,7 +5,6 @@ import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
-//import { zSocket } from './zesaruxSocket'; // TODO: remove
 import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels';
 import { Settings } from './settings';
@@ -200,6 +199,12 @@ export class Z80UnitTests {
 	 */
 	protected static runTests() {
 		try {
+			// Check first that nothing is running
+			if(vscode.debug.activeDebugSession) {
+				vscode.window.showErrorMessage("Couldn't start unit tests. A debug session is active. Stop it first.");
+				return;
+			}
+
 			// Mode
 			this.debug = false;
 

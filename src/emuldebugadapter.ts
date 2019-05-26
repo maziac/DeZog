@@ -1522,8 +1522,6 @@ Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12
 Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 Without any parameter it will show all visible sprites automatically.
 "-state save|restore": Saves/restores the current state. I.e. the complete RAM + the registers.
-"-unittests": Will start to run all unit tests. For each unit test the sucess/failure is shown.
-Unit tests need to be configures in the settings.
 
 Examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -1947,47 +1945,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @param handler(text) A handler that is called after the execution.
 	 */
 	protected evalStateSaveRestore(tokens: Array<string>, handler: (text:string)=>void) {
-		const stateName = tokens[1];
-		if(!stateName)
-			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
-
-		const param = tokens[0] || '';
-		if(param == 'save') {
-			// Save current state
-			this.stateSave(stateName, text => {
-				if(!text)	// Error text ?
-					text = 'OK';
-				// Send response
-				handler('OK');
-			});
-		}
-		else if(param == 'restore') {
-			// Restores the state
-			this.stateRestore(stateName, text => {
-				if(!text)	// Error text ?
-					text = 'OK';
-				// Send response
-				handler(text);
-				// Reload register values etc.
-				this.sendEventContinued();
-				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
-			});
-		}
-		else {
-			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
-		}
-	}
-
-
-	// REMOVE:
-	/**
-	 * Executes unit tests.
-	 * Unit tests need to be configured in the settings.
-	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
-	 */
-	protected evalUnitTests(tokens: Array<string>, handler: (text:string)=>void) {
 		const stateName = tokens[1];
 		if(!stateName)
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
