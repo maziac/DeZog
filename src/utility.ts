@@ -19,6 +19,10 @@ const TmpDasmFileName = 'disasm.asm';
 const StateFileName = 'state_%s.bin';
 
 
+/// The file name used to store the cpu log.
+const CpuLogFileName = 'cpu.log';
+
+
 export class Utility {
 	/**
 	 * Returns a value shrinked to a boundary.
@@ -671,11 +675,22 @@ export class Utility {
 	 * Returns the file path of a state filename. Used for
 	 * saving/loading the state.
 	 * @param stateName A state name that is appended, e.g. "0"
-	 * @returns The relative file path, e.g. ".tmp/state_0.bin".
+	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/state_0.bin".
 	 */
 	public static getAbsStateFileName(stateName: string): string {
 		const fName = util.format(StateFileName, stateName);
 		const relPath = this.getRelTmpFilePath(fName);
+		return this.getAbsFilePath(relPath);
+	}
+
+
+	/**
+	 * Returns the file path of the cpu transaction log filename. Used for
+	 * unit test coverage.
+	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/cpu.log".
+	 */
+	public static getAbsCpuLogFileName(): string {
+		const relPath = this.getRelTmpFilePath(CpuLogFileName);
 		return this.getAbsFilePath(relPath);
 	}
 

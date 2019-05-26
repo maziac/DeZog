@@ -12,7 +12,7 @@ import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { CallSerializer } from './callserializer';
-
+import * as lineRead from 'n-readlines';
 
 
 
@@ -133,6 +133,9 @@ export class Z80UnitTests {
 
 	/// The call serializer to call the emulator.
 	protected static serializer: CallSerializer;
+
+	/// Associates the files with the line numbers that have been covered.
+	protected static coverageFileMap: Map<string, Set<number>>;
 
 	/// Debug mode or run mode.
 	protected static debug = false;
@@ -618,12 +621,30 @@ export class Z80UnitTests {
 			}, 1000*Settings.launch.unitTestTimeOut);
 		}
 
+		// Set cpu transaction log
+		Emulator.initCpuTransactionLog('fafa', false, false, true, false, true);
+		Emulator.startCpuTransactionLog();
+		Emulator.stopCpuTransactionLog();
+
+
 		// Start at test case address.
 		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
 		Z80UnitTests.execAddr(address, da);
 	}
 
+	/*
+	Syntax: cpu-transaction-log parameter value
 
+	Description
+	Sets cpu transaction log parameters. Parameters and values are the following:
+	logfile name: File to store the log
+	enabled yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
+	datetime yes|no: Enable datetime logging
+	tstates yes|no: Enable tstates logging
+	address yes|no: Enable address logging. Enabled by default
+	opcode yes|no: Enable opcode logging. Enabled by default
+	registers yes|no: Enable registers logging
+	*/
 	/**
 	 * Checks if the testcase was OK or a fail.
 	 * Or undetermined.
@@ -773,21 +794,62 @@ export class Z80UnitTests {
 	 * lines that are covered.
 	 */
 	protected static lineCoverage() {
-
-		/*
-		TODO: Need to wait until zesarux supports the cpu transaction log through zrcp.
 		// Clear
 		Z80UnitTests.clearLineCoverage();	// TODO: Move to start of unit tests
+
+		// Go through coverage file and associate a filename with an array of covered lines.
+		const logFilename = Utility.getAbsCpuLogFileName();
+		Z80UnitTests.coverageFileMap = new Map<string, Set<number>>(); // All lines in a file.
+		//const linesx = readFileSync(logFilename).toString().split('\n');
+		const cpuLog = new lineRead(logFilename);
+		let data;
+		while (data = cpuLog.next()) {
+			// Get line
+			const line = data.toString();
+			// Parse address
+			const addr = parseInt(line, 16);
+			// Get file location for address
+			const location = Labels.getFileAndLineForAddress(addr);
+			const filename = location.fileName;
+			// Get filename set
+			let lines = Z80UnitTests.coverageFileMap.get(filename);
+			if(!lines) {
+				// Create a new
+				lines = new Set<number>();
+				Z80UnitTests.coverageFileMap.set(filename, lines);
+			}
+			// Add address to set
+			lines.add(location.lineNr);
+		}
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			// Check if editor is in covered lines
-			const range = new vscode.Range(1,0, 1,1000);
-			const decoration = {range: range};
-			editor.setDecorations(Z80UnitTests.coverageDecoType, [decoration]);
+			Z80UnitTests.setCoveredLines(editor);
 		}
-		*/
+	}
+
+
+	/**
+	 * Sets coverage decoration for the given editor.
+	 * USes the coverage infromation in Z80UnitTests.coverageFileMap.
+	 * @param editor The editor to decorate.
+	 */
+	protected static setCoveredLines(editor: vscode.TextEditor) {
+		// Get filename
+		const edFilename = editor.document.fileName;
+		// Get lines
+		const lines = Z80UnitTests.coverageFileMap.get(edFilename);
+		if(!lines)
+			return;
+		// Decorate all lines (coverage)
+		const decorations = new Array<vscode.Range>();
+		for(const line of lines) {
+			const range = new vscode.Range(line,0, line,1000);
+			decorations.push(range);
+		}
+		// Set all decorations
+		editor.setDecorations(Z80UnitTests.coverageDecoType, decorations);
 	}
 
 

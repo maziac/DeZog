@@ -45,6 +45,7 @@
 		"gif-writer": "^0.9.3",
 		"jsonc-parser": "^2.1.0",
 		"mocha": "^5.2.0",
+		"n-readlines": "^1.0.0",
 		"ts-node": "^7.0.1",
 		"vscode-debugadapter": "1.33.0",
 		"vscode-debugprotocol": "1.33.0"

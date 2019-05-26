@@ -164,6 +164,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
+				// Set the cpu transaction log before entering step mode.
+				if(Settings.launch.unitTests) {
+					// Only for unit tests
+					const logFilename = Utility.getAbsCpuLogFileName();
+					this.initCpuTransactionLog(logFilename, ["address"]);
+					this.startCpuTransactionLog();
+				}
+
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
 
@@ -1341,7 +1349,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 	}
 
 
-
 	/**
 	 * This is a hack:
 	 * After starting the vscode sends the source file breakpoints.
@@ -1366,6 +1373,64 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// 2 triggers
 		zSocket.on('queueChanged', timer);
 		zSocket.executeWhenQueueIsEmpty(timer);
+	}
+
+
+	/**
+	 * Inititalizes the zesarux cpu transaction log.
+	 * I.e. each executed opcode is stored in the transition log file.
+	 * This is used for unit test coverage and for reverse debugging.
+	 * Disables the log. You need to enable it with startCpuTransactionLog.
+	 * @param filename The (absolute) filename to store the transaction log.
+	 * @param enabled An array of string which contain information which data to store.
+	 * Possible values: ["time", "tstates", "address", "opcode", "registers"]
+	 * E.g. for unit tests onmly the following is required: ["address"]
+	 */
+	public initCpuTransactionLog(filename: string, enabled: Array<string>) {
+		// Disable
+		zSocket.send('cpu-transaction-log enabled no', data => {
+			// Set filename
+			zSocket.send('cpu-transaction-log logfile "' + filename + '"', data => {
+				// Set datetime information
+				const dateTimeEnabled = (enabled.indexOf('time') >= 0);
+				zSocket.send('cpu-transaction-log datetime ' + (dateTimeEnabled? 'yes':'no'), data => {
+					// Set tstates information
+					const tStatesEnabled = (enabled.indexOf('tstates') >= 0);
+					zSocket.send('cpu-transaction-log tstates ' + (tStatesEnabled? 'yes':'no'), data => {
+						// Set address information
+						const addressEnabled = (enabled.indexOf('address') >= 0);
+						zSocket.send('cpu-transaction-log address ' + (addressEnabled? 'yes':'no'), data => {
+							// Set opcode information
+							const opcodeEnabled = (enabled.indexOf('opcode') >= 0);
+							zSocket.send('cpu-transaction-log opcode ' + (opcodeEnabled? 'yes':'no'), data => {
+								// Set registers information
+								const registersEnabled = (enabled.indexOf('registers') >= 0);
+								zSocket.send('cpu-transaction-log registers ' + (registersEnabled? 'yes':'no'), data => {
+								});
+							});
+						});
+					});
+				});
+			});
+		});
+	}
+
+
+	/**
+	 * Starts (enables) the cpu transaction log.
+	 * Use initCpuTransactionLog beforehand.
+	 */
+	public startCpuTransactionLog() {
+		// Enable
+		zSocket.send('cpu-transaction-log enabled yes');
+	}
+
+	/**
+	 * Stops (disables) the cpu transaction log.
+	 */
+	public stopCpuTransactionLog() {
+		// Disable
+		zSocket.send('cpu-transaction-log enabled no');
 	}
 }
 
