@@ -160,13 +160,17 @@ export class Z80UnitTests {
 			borderColor: 'lightblue'
 		}
 		*/
+		isWholeLine: true,
+		gutterIconSize: 'auto',
 		light: {
 			// this color will be used in light color themes
-			backgroundColor: 'darkgreen'
+			backgroundColor: '#B0E090',
+			gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-light.svg',
 		},
 		dark: {
 			// this color will be used in dark color themes
-			backgroundColor: 'lightgreen'
+			backgroundColor: '#105005',
+			gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-dark.svg',
 		}
 	});
 
@@ -244,6 +248,9 @@ export class Z80UnitTests {
 					catch {}	// Just in case the group is undefined
 
 					Z80UnitTests.initUnitTests();
+
+					Z80UnitTests.lineCoverage();
+					return;
 
 					// Load the initial unit test routine (provided by the user)
 					Z80UnitTests.execAddr(Z80UnitTests.addrInit);
@@ -799,6 +806,7 @@ export class Z80UnitTests {
 
 		// Go through coverage file and associate a filename with an array of covered lines.
 		const logFilename = Utility.getAbsCpuLogFileName();
+		//const logFilename = "/Volumes/SDDPCIE2TB/Projects/zxspectrum/asm/zxnext_game_framework/.tmp/cpu.log";
 		Z80UnitTests.coverageFileMap = new Map<string, Set<number>>(); // All lines in a file.
 		//const linesx = readFileSync(logFilename).toString().split('\n');
 		const cpuLog = new lineRead(logFilename);
@@ -811,6 +819,8 @@ export class Z80UnitTests {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
 			const filename = location.fileName;
+			if(filename.length == 0)
+				continue;
 			// Get filename set
 			let lines = Z80UnitTests.coverageFileMap.get(filename);
 			if(!lines) {

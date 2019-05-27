@@ -8,5 +8,5 @@ logs/
 data/
 .vscode/
 notes.md
-coverage/
+/coverage/
 
