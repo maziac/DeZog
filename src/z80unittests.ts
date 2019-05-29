@@ -249,8 +249,8 @@ export class Z80UnitTests {
 
 					Z80UnitTests.initUnitTests();
 
-					Z80UnitTests.lineCoverage();
-					return;
+					//Z80UnitTests.lineCoverage();
+					//return;
 
 					// Load the initial unit test routine (provided by the user)
 					Z80UnitTests.execAddr(Z80UnitTests.addrInit);
@@ -628,12 +628,6 @@ export class Z80UnitTests {
 			}, 1000*Settings.launch.unitTestTimeOut);
 		}
 
-		// Set cpu transaction log
-		Emulator.initCpuTransactionLog('fafa', false, false, true, false, true);
-		Emulator.startCpuTransactionLog();
-		Emulator.stopCpuTransactionLog();
-
-
 		// Start at test case address.
 		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
 		Z80UnitTests.execAddr(address, da);
@@ -803,7 +797,6 @@ export class Z80UnitTests {
 	protected static lineCoverage() {
 		// Clear
 		Z80UnitTests.clearLineCoverage();	// TODO: Move to start of unit tests
-
 		// Go through coverage file and associate a filename with an array of covered lines.
 		const logFilename = Utility.getAbsCpuLogFileName();
 		//const logFilename = "/Volumes/SDDPCIE2TB/Projects/zxspectrum/asm/zxnext_game_framework/.tmp/cpu.log";
@@ -837,6 +830,15 @@ export class Z80UnitTests {
 		for(const editor of editors) {
 			Z80UnitTests.setCoveredLines(editor);
 		}
+
+		// Watch the text editors to decorate them.
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			// This is called for the editor that is going to hide and for the editor
+			// that is shown.
+			// Unfortunately there is no way to differentiate so both are handled.
+			if(editor)
+				Z80UnitTests.setCoveredLines(editor);
+		});
 	}
 
 
@@ -908,21 +910,23 @@ export class Z80UnitTests {
 	 * @param errMessage If set an optional error message is shown.
 	 */
 	protected static stopUnitTests(debugAdapter: EmulDebugAdapter|undefined, errMessage?: string) {
-		// Clear timeout
-		clearTimeout(Z80UnitTests.timeoutHandle);
-		Z80UnitTests.timeoutHandle = undefined;
-		// Clear remaining testcases
-		Z80UnitTests.CancelAllRemaingResults();
-		// Remove event handling for the emulator
-		Emulator.removeAllListeners();
-		// Exit
-		if(debugAdapter)
-			debugAdapter.exit(errMessage);
-		else {
-			// Stop emulator
-			if(Emulator)
+		// Stop line coverage transaction log
+		Emulator.stopCpuTransactionLog(() => {
+			// Clear timeout
+			clearTimeout(Z80UnitTests.timeoutHandle);
+			Z80UnitTests.timeoutHandle = undefined;
+			// Clear remaining testcases
+			Z80UnitTests.CancelAllRemaingResults();
+			// Remove event handling for the emulator
+			Emulator.removeAllListeners();
+			// Exit
+			if(debugAdapter)
+				debugAdapter.exit(errMessage);
+			else {
+				// Stop emulator
 				Emulator.stop();
-		}
+			}
+		});
 	}
 
 

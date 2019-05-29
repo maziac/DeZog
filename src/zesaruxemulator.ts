@@ -1388,31 +1388,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public initCpuTransactionLog(filename: string, enabled: Array<string>) {
 		// Disable
-		zSocket.send('cpu-transaction-log enabled no', data => {
-			// Set filename
-			zSocket.send('cpu-transaction-log logfile "' + filename + '"', data => {
-				// Set datetime information
-				const dateTimeEnabled = (enabled.indexOf('time') >= 0);
-				zSocket.send('cpu-transaction-log datetime ' + (dateTimeEnabled? 'yes':'no'), data => {
-					// Set tstates information
-					const tStatesEnabled = (enabled.indexOf('tstates') >= 0);
-					zSocket.send('cpu-transaction-log tstates ' + (tStatesEnabled? 'yes':'no'), data => {
-						// Set address information
-						const addressEnabled = (enabled.indexOf('address') >= 0);
-						zSocket.send('cpu-transaction-log address ' + (addressEnabled? 'yes':'no'), data => {
-							// Set opcode information
-							const opcodeEnabled = (enabled.indexOf('opcode') >= 0);
-							zSocket.send('cpu-transaction-log opcode ' + (opcodeEnabled? 'yes':'no'), data => {
-								// Set registers information
-								const registersEnabled = (enabled.indexOf('registers') >= 0);
-								zSocket.send('cpu-transaction-log registers ' + (registersEnabled? 'yes':'no'), data => {
-								});
-							});
-						});
-					});
-				});
-			});
-		});
+		zSocket.send('cpu-transaction-log enabled no');
+		// Set filename
+		zSocket.send('cpu-transaction-log logfile ' + filename + '');
+		// Set datetime information
+		const dateTimeEnabled = (enabled.indexOf('time') >= 0);
+		zSocket.send('cpu-transaction-log datetime ' + (dateTimeEnabled? 'yes':'no'));
+		// Set tstates information
+		const tStatesEnabled = (enabled.indexOf('tstates') >= 0);
+		zSocket.send('cpu-transaction-log tstates ' + (tStatesEnabled? 'yes':'no'));
+		// Set address information
+		const addressEnabled = (enabled.indexOf('address') >= 0);
+		zSocket.send('cpu-transaction-log address ' + (addressEnabled? 'yes':'no'));
+		// Set opcode information
+		const opcodeEnabled = (enabled.indexOf('opcode') >= 0);
+		zSocket.send('cpu-transaction-log opcode ' + (opcodeEnabled? 'yes':'no'));
+		// Set registers information
+		const registersEnabled = (enabled.indexOf('registers') >= 0);
+		zSocket.send('cpu-transaction-log registers ' + (registersEnabled? 'yes':'no'));
 	}
 
 
@@ -1422,15 +1415,18 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public startCpuTransactionLog() {
 		// Enable
+		zSocket.send('cpu-transaction-log truncate yes');
 		zSocket.send('cpu-transaction-log enabled yes');
 	}
 
 	/**
 	 * Stops (disables) the cpu transaction log.
 	 */
-	public stopCpuTransactionLog() {
+	public stopCpuTransactionLog(handler: () => void) {
 		// Disable
-		zSocket.send('cpu-transaction-log enabled no');
+		zSocket.send('cpu-transaction-log enabled no', data => {
+			handler();
+		});
 	}
 }
 
