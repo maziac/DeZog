@@ -1070,38 +1070,5 @@ export class EmulatorClass extends EventEmitter {
 		assert(false);	// override this
 	}
 
-
-
-	/**
-	 * Inititalizes the (zesarux) cpu transaction log.
-	 * I.e. each executed opcode is stored in the transition log file.
-	 * This is used for unit test coverage and for reverse debugging.
-	 * Disables the log. You need to enable it with startCpuTransactionLog.
-	 * @param filename The (absolute) filename to store the transaction log.
-	 * @param enabled An array of string which contain information which data to store.
-	 * Possible values: ["time", "tstates", "address", "opcode", "registers"]
-	 * E.g. for unit tests onmly the following is required: ["address"]
-	 */
-	public initCpuTransactionLog(filename: string, enabled: Array<string>) {
-		assert(false);
-	}
-
-
-	/**
-	 * Starts (enables) the cpu transaction log.
-	 * Use initCpuTransactionLog beforehand.
-	 */
-	public startCpuTransactionLog() {
-		assert(false);
-	}
-
-	/**
-	 * Stops (disables) the cpu transaction log.
-	 * Should also flush the transaction log file.
-	 */
-	public stopCpuTransactionLog(handler: () => void) {
-		assert(false);
-	}
-
 }
 

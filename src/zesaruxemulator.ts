@@ -1439,58 +1439,5 @@ export class ZesaruxEmulator extends EmulatorClass {
 		zSocket.executeWhenQueueIsEmpty(timer);
 	}
 
-
-	/**
-	 * Inititalizes the zesarux cpu transaction log.
-	 * I.e. each executed opcode is stored in the transition log file.
-	 * This is used for unit test coverage and for reverse debugging.
-	 * Disables the log. You need to enable it with startCpuTransactionLog.
-	 * @param filename The (absolute) filename to store the transaction log.
-	 * @param enabled An array of string which contain information which data to store.
-	 * Possible values: ["time", "tstates", "address", "opcode", "registers"]
-	 * E.g. for unit tests onmly the following is required: ["address"]
-	 */
-	public initCpuTransactionLog(filename: string, enabled: Array<string>) {
-		// Set filename
-		zSocket.send('cpu-transaction-log logfile ' + filename + '');
-		// Disable
-		zSocket.send('cpu-transaction-log enabled no');
-		// Set datetime information
-		const dateTimeEnabled = (enabled.indexOf('time') >= 0);
-		zSocket.send('cpu-transaction-log datetime ' + (dateTimeEnabled? 'yes':'no'));
-		// Set tstates information
-		const tStatesEnabled = (enabled.indexOf('tstates') >= 0);
-		zSocket.send('cpu-transaction-log tstates ' + (tStatesEnabled? 'yes':'no'));
-		// Set address information
-		const addressEnabled = (enabled.indexOf('address') >= 0);
-		zSocket.send('cpu-transaction-log address ' + (addressEnabled? 'yes':'no'));
-		// Set opcode information
-		const opcodeEnabled = (enabled.indexOf('opcode') >= 0);
-		zSocket.send('cpu-transaction-log opcode ' + (opcodeEnabled? 'yes':'no'));
-		// Set registers information
-		const registersEnabled = (enabled.indexOf('registers') >= 0);
-		zSocket.send('cpu-transaction-log registers ' + (registersEnabled? 'yes':'no'));
-	}
-
-
-	/**
-	 * Starts (enables) the cpu transaction log.
-	 * Use initCpuTransactionLog beforehand.
-	 */
-	public startCpuTransactionLog() {
-		// Enable
-		zSocket.send('cpu-transaction-log truncate yes');
-		zSocket.send('cpu-transaction-log enabled yes');
-	}
-
-	/**
-	 * Stops (disables) the cpu transaction log.
-	 */
-	public stopCpuTransactionLog(handler: () => void) {
-		// Disable
-		zSocket.send('cpu-transaction-log enabled no', data => {
-			handler();
-		});
-	}
 }
 

@@ -214,9 +214,6 @@ export class Z80UnitTests {
 
 					Z80UnitTests.initUnitTests();
 
-					//Z80UnitTests.lineCoverage();
-					//return;
-
 					// Load the initial unit test routine (provided by the user)
 					Z80UnitTests.execAddr(Z80UnitTests.addrInit);
 				}
@@ -603,19 +600,7 @@ export class Z80UnitTests {
 		Z80UnitTests.execAddr(address, da);
 	}
 
-	/*
-	Syntax: cpu-transaction-log parameter value
 
-	Description
-	Sets cpu transaction log parameters. Parameters and values are the following:
-	logfile name: File to store the log
-	enabled yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
-	datetime yes|no: Enable datetime logging
-	tstates yes|no: Enable tstates logging
-	address yes|no: Enable address logging. Enabled by default
-	opcode yes|no: Enable opcode logging. Enabled by default
-	registers yes|no: Enable registers logging
-	*/
 	/**
 	 * Checks if the testcase was OK or a fail.
 	 * Or undetermined.
@@ -740,11 +725,8 @@ export class Z80UnitTests {
 		if(Z80UnitTests.utLabels.length == 0) {
 			// End the unit tests
 			Z80UnitTests.dbgOutput("All tests ready.");
-			// Flush the transaction log
-			Emulator.stopCpuTransactionLog(() => {
-				Z80UnitTests.stopUnitTests(da);
-				Z80UnitTests.unitTestsFinished();
-			});
+			Z80UnitTests.stopUnitTests(da);
+			Z80UnitTests.unitTestsFinished();
 			return;
 		}
 		Z80UnitTests.nextUnitTest(da);
@@ -795,8 +777,6 @@ export class Z80UnitTests {
 	 * @param errMessage If set an optional error message is shown.
 	 */
 	protected static stopUnitTests(debugAdapter: EmulDebugAdapter|undefined, errMessage?: string) {
-		// Stop line coverage transaction log
-		Emulator.stopCpuTransactionLog();
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
