@@ -47,7 +47,7 @@ export class CoverageClass {
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#105005',
+				backgroundColor: '#0C4004',
 				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
 			}
 		});

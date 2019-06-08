@@ -763,7 +763,7 @@ export class Z80UnitTests {
 	 * Sends a CANCELLED for all still open running testcases
 	 * to the caller (i.e. the test case adapter).
 	 */
-	protected static CancelAllRemaingResults() {
+	protected static CancelAllRemainingResults() {
 		for(const [, resolveFunc] of Z80UnitTests.testCaseMap) {
 			// Return an error code
 			resolveFunc(TestCaseResult.CANCELLED);
@@ -781,7 +781,7 @@ export class Z80UnitTests {
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
 		// Clear remaining testcases
-		Z80UnitTests.CancelAllRemaingResults();
+		Z80UnitTests.CancelAllRemainingResults();
 		// Delay this:
 		const f = () => {
 			// Remove event handling for the emulator
