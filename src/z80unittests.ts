@@ -782,15 +782,23 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 		// Clear remaining testcases
 		Z80UnitTests.CancelAllRemaingResults();
-		// Remove event handling for the emulator
-		Emulator.removeAllListeners();
-		// Exit
+		// Delay this:
+		const f = () => {
+			// Remove event handling for the emulator
+			Emulator.removeAllListeners();
+			// Exit
+			if(debugAdapter)
+				debugAdapter.exit(errMessage);
+			else {
+				// Stop emulator
+				Emulator.stop();
+			}
+		};
+		// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 		if(debugAdapter)
-			debugAdapter.exit(errMessage);
-		else {
-			// Stop emulator
-			Emulator.stop();
-		}
+			debugAdapter.executeAfterBeingQuietFor(300, f);
+		else
+			f();
 	}
 
 
