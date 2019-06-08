@@ -336,7 +336,8 @@ Emulator -> ZEsarUX: cpu-step/run
 note over ZEsarUX: stopped
 Emulator <-- ZEsarUX:
 Emulator -> ZEsarUX: cpu-transaction-log enabled no\n(flush the log file)
-note over Emulator: Parse the log file.\nConvert addresses to\nsource file locations.
+note over Emulator: Parse the log file.\nCollect all addresses.
 xxx <-- Emulator: Event: 'coverage'
+note over xxx: Convert addresses to\nsource file locations.
 ```
 

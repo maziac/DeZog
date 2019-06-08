@@ -847,7 +847,7 @@ export class Z80UnitTests {
 
 	/**
 	 * Sets coverage decoration for the given editor.
-	 * USes the coverage infromation in Z80UnitTests.coverageFileMap.
+	 * Uses the coverage infromation in Z80UnitTests.coverageFileMap.
 	 * @param editor The editor to decorate.
 	 */
 	protected static setCoveredLines(editor: vscode.TextEditor) {

@@ -12,6 +12,8 @@ import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from './emulator';
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
+import * as lineRead from 'n-readlines';
+
 
 
 
@@ -167,12 +169,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
 
-				// Set the cpu transaction log before entering step mode.
-				if(Settings.launch.unitTests) {
-					// Only for unit tests
-					const logFilename = Utility.getAbsCpuLogFileName();
-					this.initCpuTransactionLog(logFilename, ["address"]);
-					this.startCpuTransactionLog();
+				// Set the cpu transaction log (for coverage)
+				const logFilename = Utility.getAbsCpuLogFileName();
+				// Set filename
+				zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
+				// Disable for now
+				zSocket.send('cpu-transaction-log enabled no');
+				// Coverage settings
+				if(Settings.launch.codeCoverage) {
+					// Set datetime information
+					zSocket.send('cpu-transaction-log datetime no');
+					// Set tstates information
+					zSocket.send('cpu-transaction-log tstates no');
+					// Set address information
+					zSocket.send('cpu-transaction-log address yes');
+					// Set opcode information
+					zSocket.send('cpu-transaction-log opcode no');
+					// Set registers information
+					zSocket.send('cpu-transaction-log registers no');
 				}
 
 				// Load sna or tap file
@@ -421,22 +435,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number)=>void): void {
 		// Change state
 		this.state = EmulatorState.RUNNING;
-		// Reset T-state counter.
-		zSocket.send('reset-tstates-partial', () => {
-			// Run
-			zSocket.sendInterruptableRunCmd(reason => {
-				// (could take some time, e.g. until a breakpoint is hit)
-				// get T-State counter
-				zSocket.send('get-tstates-partial', data => {
-					const tStates = parseInt(data);
-					// get clock frequency
-					zSocket.send('get-cpu-frequency', data => {
-						const cpuFreq = parseInt(data);
-						this.state = EmulatorState.IDLE;
-						// Clear register cache
-						this.RegisterCache = undefined;
-						// Call handler
-						contStoppedHandler(reason, tStates, cpuFreq);
+		// Handle code coverage
+		this.cpuCodeCoverage(() => {
+			// Reset T-state counter.
+			zSocket.send('reset-tstates-partial', () => {
+				// Run
+				zSocket.sendInterruptableRunCmd(reason => {
+					// (could take some time, e.g. until a breakpoint is hit)
+					// get T-State counter
+					zSocket.send('get-tstates-partial', data => {
+						const tStates = parseInt(data);
+						// get clock frequency
+						zSocket.send('get-cpu-frequency', data => {
+							const cpuFreq = parseInt(data);
+							this.state = EmulatorState.IDLE;
+							// Clear register cache
+							this.RegisterCache = undefined;
+							// Call handler
+							contStoppedHandler(reason, tStates, cpuFreq);
+							// Handle code coverage
+							this.calculateCodeCoverage();
+						});
 					});
 				});
 			});
@@ -561,22 +580,79 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	protected cpuStepGetTime(cmd: string, handler:(tStates: number, time: number)=>void): void {
-		// Reset T-state counter.
-		zSocket.send('reset-tstates-partial', data => {
-			// Step into
-			zSocket.send(cmd, data => {
-				// get T-State counter
-				zSocket.send('get-tstates-partial', data => {
-					const tStates = parseInt(data);
-					// get clock frequency
-					zSocket.send('get-cpu-frequency', data => {
-						const cpuFreq = parseInt(data);
-						// Call handler
-						handler(tStates, cpuFreq);
+	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number)=>void): void {
+		// Handle code coverage
+		this.cpuCodeCoverage(() => {
+			// Reset T-state counter etc.
+			zSocket.send('reset-tstates-partial', data => {
+				// Step into
+				zSocket.send(cmd, data => {
+					// get T-State counter
+					zSocket.send('get-tstates-partial', data => {
+						const tStates = parseInt(data);
+						// get clock frequency
+						zSocket.send('get-cpu-frequency', data => {
+							const cpuFreq = parseInt(data);
+							// Call handler
+							handler(tStates, cpuFreq);
+							// Handle code coverage
+							this.calculateCodeCoverage();
+						});
 					});
 				});
 			});
+		});
+	}
+
+
+	/**
+	 * If code coverage is enabled the ZEsarUX cpu-transaction-log is truncated and enabled
+	 * before the 'handler' is called.
+	 * If code coverage is not enabled 'handler is called immediately.
+	 * @param handler Is called after the coverage commands have been sent.
+	 */
+	protected cpuCodeCoverage(handler:()=>void): void {
+		// Code coverage
+		if(Settings.launch.codeCoverage) {
+			// Clear the log file
+			zSocket.send('cpu-transaction-log truncate yes', data => {
+				// Enable logging
+				zSocket.send('cpu-transaction-log enabled yes', data => {
+					// Call handler
+					handler();
+				});
+			});
+		}
+		else {
+			// Call handler (without coverage)
+			handler();
+		}
+	}
+
+
+	/**
+	 * Stops the cpu-transaction-log file to flush it.
+	 * Then reads it and collects all passed addresses.
+	 */
+	protected calculateCodeCoverage() {
+		// Disable logging to cclose/flush the file.
+		zSocket.send('cpu-transaction-log enabled no', () => {
+			// Go through coverage file and collect all addresses
+			const logFilename = Utility.getAbsCpuLogFileName();
+			const addresses = new Set<number>();
+			const cpuLog = new lineRead(logFilename);
+			let data;
+			while (data = cpuLog.next()) {
+				// Get line
+				const line = data.toString();
+				// Parse address
+				const addr = parseInt(line, 16);
+				// Add to set
+				addresses.add(addr);
+			}
+
+			// Emit code coverage event
+			this.emit('coverage', addresses);
 		});
 	}
 
@@ -641,26 +717,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 											this.RegisterCache = undefined;
 											// Run
 											this.state = EmulatorState.RUNNING;
-											// Reset T-state counter.
-											zSocket.send('reset-tstates-partial', data => {
-												zSocket.send('run', () => {
-													// takes a little while, then step-over RET
-													// get T-State counter
-													zSocket.send('get-tstates-partial', data => {
-														const tStates = parseInt(data);
-														// get clock frequency
-														zSocket.send('get-cpu-frequency', data => {
-															const cpuFreq = parseInt(data);
-															// Disable breakpoint
-															zSocket.send('disable-breakpoint ' + bpId, () => {
-																this.state = EmulatorState.IDLE;
-																handler(tStates, cpuFreq);
-																return;
-															});
-														});
-													});
+											this.cpuStepGetTime('run', (tStates, cpuFreq) => {
+												// Disable breakpoint
+												zSocket.send('disable-breakpoint ' + bpId, () => {
+													this.state = EmulatorState.IDLE;
+													handler(tStates, cpuFreq);
 												});
 											});
+
 										});
 									});
 								});
