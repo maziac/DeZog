@@ -40,6 +40,7 @@ A typical configuration looks like this:
             ],
             "startAutomatically": false,
             "skipInterrupt": true,
+            "codeCoverage": false,
             "commandsAfterLaunch": [
                 //"-sprites",
                 //"-patterns"
@@ -65,6 +66,7 @@ Please have a look at the (Listfile)[#listfile] section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false).
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
+- codeCoverage: If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.

@@ -120,6 +120,11 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// ZEsarUX setting. If enabled steps over the interrupt.
 	skipInterrupt: boolean;
 
+	/// If enabled code coverage information is analyzed and displayed.
+	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
+	codeCoverage: boolean;
+
+
 	/// Holds the formatting vor all values.
 	formatting: Formatting;
 
@@ -188,6 +193,7 @@ export class Settings {
 				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
 				skipInterrupt: <any>undefined,
+				codeCoverage: <any>undefined,
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
@@ -253,6 +259,8 @@ export class Settings {
 			Settings.launch.commandsAfterLaunch = [];
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
+		if(Settings.launch.codeCoverage == undefined)
+			Settings.launch.codeCoverage = false;
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
 				registerVar: <any>undefined,

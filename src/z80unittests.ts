@@ -521,7 +521,7 @@ export class Z80UnitTests {
 
 
 	/**
-	 * A break occured. E.g. the tet case stopped because it is finished
+	 * A break occured. E.g. the test case stopped because it is finished
 	 * or because of an error (ASSERT).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
@@ -770,8 +770,11 @@ export class Z80UnitTests {
 		if(Z80UnitTests.utLabels.length == 0) {
 			// End the unit tests
 			Z80UnitTests.dbgOutput("All tests ready.");
-			Z80UnitTests.stopUnitTests(da);
-			Z80UnitTests.unitTestsFinished();
+			// Flush the transaction log
+			Emulator.stopCpuTransactionLog(() => {
+				Z80UnitTests.stopUnitTests(da);
+				Z80UnitTests.unitTestsFinished();
+			});
 			return;
 		}
 		Z80UnitTests.nextUnitTest(da);
@@ -911,22 +914,21 @@ export class Z80UnitTests {
 	 */
 	protected static stopUnitTests(debugAdapter: EmulDebugAdapter|undefined, errMessage?: string) {
 		// Stop line coverage transaction log
-		Emulator.stopCpuTransactionLog(() => {
-			// Clear timeout
-			clearTimeout(Z80UnitTests.timeoutHandle);
-			Z80UnitTests.timeoutHandle = undefined;
-			// Clear remaining testcases
-			Z80UnitTests.CancelAllRemaingResults();
-			// Remove event handling for the emulator
-			Emulator.removeAllListeners();
-			// Exit
-			if(debugAdapter)
-				debugAdapter.exit(errMessage);
-			else {
-				// Stop emulator
-				Emulator.stop();
-			}
-		});
+		Emulator.stopCpuTransactionLog();
+		// Clear timeout
+		clearTimeout(Z80UnitTests.timeoutHandle);
+		Z80UnitTests.timeoutHandle = undefined;
+		// Clear remaining testcases
+		Z80UnitTests.CancelAllRemaingResults();
+		// Remove event handling for the emulator
+		Emulator.removeAllListeners();
+		// Exit
+		if(debugAdapter)
+			debugAdapter.exit(errMessage);
+		else {
+			// Stop emulator
+			Emulator.stop();
+		}
 	}
 
 

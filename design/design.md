@@ -316,3 +316,27 @@ note over ZXNextSpritesView: create html+js
 ZXNextSpritesView -> webView: Set webview.html
 ```
 
+
+## Code Coverage
+
+Code coverage can be enabled in the launch settings.
+Everytime the progrma is stopped the "Emulator" will send information about the executed addresses.
+The z80-debug adatper will then highlight the covered lines.
+This is available everywhere (e.g. during debugging or during execution of unit tests).
+
+xxx is either the EmulDebugAdapter or the Z80UnitTests.
+
+```puml
+hide footbox
+title Coverage
+xxx -> Emulator: Step/Continue
+Emulator -> ZEsarUX: cpu-transaction-log truncate yes\n(clear the log file)
+Emulator -> ZEsarUX: cpu-transaction-log enabled yes\n(start logging)
+Emulator -> ZEsarUX: cpu-step/run
+note over ZEsarUX: stopped
+Emulator <-- ZEsarUX:
+Emulator -> ZEsarUX: cpu-transaction-log enabled no\n(flush the log file)
+note over Emulator: Parse the log file.\nConvert addresses to\nsource file locations.
+xxx <-- Emulator: Event: 'coverage'
+```
+

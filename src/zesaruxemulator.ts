@@ -164,6 +164,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
+				// Enter step-mode (stop)
+				zSocket.send('enter-cpu-step');
+
 				// Set the cpu transaction log before entering step mode.
 				if(Settings.launch.unitTests) {
 					// Only for unit tests
@@ -171,9 +174,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.initCpuTransactionLog(logFilename, ["address"]);
 					this.startCpuTransactionLog();
 				}
-
-				// Enter step-mode (stop)
-				zSocket.send('enter-cpu-step');
 
 				// Load sna or tap file
 				if(Settings.launch.load)
@@ -1387,10 +1387,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * E.g. for unit tests onmly the following is required: ["address"]
 	 */
 	public initCpuTransactionLog(filename: string, enabled: Array<string>) {
-		// Disable
-		zSocket.send('cpu-transaction-log enabled no');
 		// Set filename
 		zSocket.send('cpu-transaction-log logfile ' + filename + '');
+		// Disable
+		zSocket.send('cpu-transaction-log enabled no');
 		// Set datetime information
 		const dateTimeEnabled = (enabled.indexOf('time') >= 0);
 		zSocket.send('cpu-transaction-log datetime ' + (dateTimeEnabled? 'yes':'no'));
