@@ -382,6 +382,9 @@ export class EmulDebugAdapter extends DebugSession {
 			EmulDebugAdapter.unitTestHandler(this);
 		}
 
+		// Reset the code coverage
+		Coverage.clearLineCoverage();
+
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 		Emulator.init();

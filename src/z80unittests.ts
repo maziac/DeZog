@@ -156,7 +156,7 @@ export class Z80UnitTests {
 			borderColor: 'darkblue'
 		},
 		dark: {
-			// this color will be used in dark color themes
+			// this color will be used in dark color themescleare
 			borderColor: 'lightblue'
 		}
 		*/
@@ -834,14 +834,6 @@ export class Z80UnitTests {
 			Z80UnitTests.setCoveredLines(editor);
 		}
 
-		// Watch the text editors to decorate them.
-		vscode.window.onDidChangeActiveTextEditor(editor => {
-			// This is called for the editor that is going to hide and for the editor
-			// that is shown.
-			// Unfortunately there is no way to differentiate so both are handled.
-			if(editor)
-				Z80UnitTests.setCoveredLines(editor);
-		});
 	}
 
 

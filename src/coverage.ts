@@ -40,6 +40,34 @@ export class CoverageClass {
 	/// Holds a map with filenames associated with the addresses.
 	protected coverageFileMap = new Map<string, Set<number>>();
 
+
+	/**
+	 * Register for a change of the text editor to decorate it with the
+	 * covered lines.
+	 */
+	constructor() {
+		// Watch the text editors to decorate them.
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			// This is called for the editor that is going to hide and for the editor
+			// that is shown.
+			// Unfortunately there is no way to differentiate so both are handled.
+			if(this.coverageFileMap.size > 0 &&  editor)
+				this.setCoveredLines(editor);
+		});
+	}
+
+	/**
+	 * Loops through all active editors and clear the coverage decorations.
+	 */
+	public clearLineCoverage() {
+		this.coverageFileMap = new Map<string, Set<number>>();
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			editor.setDecorations(coverageDecoType, []);
+		}
+	}
+
+
 	/**
 	 * Shows (adds) the code coverage of the passed addresses.
 	 * The active editors are decorator.
