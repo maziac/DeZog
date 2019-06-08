@@ -1,11 +1,9 @@
-
 import * as assert from 'assert';
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
-//import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { Labels } from './labels';
 import { Log } from './log';
 import { EmulatorBreakpoint, MachineType, /*EmulatorClass,*/ } from './emulator';
@@ -17,25 +15,16 @@ import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMain
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
-//import { StateZ80 } from './statez80';
 import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './zxnextspritesview';
 import { TextView } from './textview';
 import { BaseView } from './baseview';
 import { ZxNextSpritePatternsView } from './zxnextspritepatternsview';
-//import * as del from 'del';
 import { Disassembler } from './disassembler/disasm';
-//import { Format } from './disassembler/format';
 import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
-//import * as assert from 'assert';
-//import { fstat } from 'fs';
-//import * as diff from 'diff';
-//import * as fs from 'fs';
 import * as BinaryFile from 'binary-file';
-//import { watch } from 'fs';
-//import { writeFileSync } from 'fs';
-//import { EventEmitter } from 'events';
+import { Coverage } from './coverage';
 
 
 
@@ -465,7 +454,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 		Emulator.on('coverage', coveredAddresses => {
 			// Covered addresses (since last break) have been sent
-			this.showCodeCoverage(coveredAddresses);
+			Coverage.showCodeCoverage(coveredAddresses);
 		});
 
 		Emulator.on('warning', message => {
@@ -2207,96 +2196,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
 		Emulator.executeAfterBeingQuietFor(timeout, handler);
-	}
-
-
-	/**
-	 * Shows (adds) the code coverage of the passed addresses.
-	 * The active editors are decorator.
-	 * The set is added to the existing ones to decorate another editor when the focus changes.
-	 * Is called when the event 'covered' has been emitted by teh Emulator.
-	 * @param coveredAddresses All addresses to add (all covered addresses)
-	 */
-	protected showCodeCoverage(coveredAddresses: Set<number>) {
-		const coverageFileMap = new Map<string, Set<number>>(); // All lines in a file.
-		// Loop over all addresses
-		coveredAddresses.forEach(addr => {
-			// Get file location for address
-			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
-			if(filename.length == 0)
-				return;
-			// Get filename set
-			let lines = coverageFileMap.get(filename);
-			if(!lines) {
-				// Create a new
-				lines = new Set<number>();
-				coverageFileMap.set(filename, lines);
-			}
-			// Add address to set
-			lines.add(location.lineNr);
-		});
-
-
-		// Loop through all open editors.
-		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
-			this.setCoveredLines(coverageFileMap, editor);
-		}
-	}
-
-
-	/**
-	 * Sets coverage decoration for the given editor.
-	 * Uses the coverage infromation in Z80UnitTests.coverageFileMap.
-	 * @param coverageFileMap Association of a filename to a map of addresses.
-	 * @param editor The editor to decorate.
-	 */
-	protected setCoveredLines(coverageFileMap: Map<string, Set<number>>, editor: vscode.TextEditor) {
-			/// The decoration type for covered lines.
-		const coverageDecoType = vscode.window.createTextEditorDecorationType({
-			/*
-			borderWidth: '1px',
-			borderStyle: 'solid',
-			overviewRulerColor: 'blue',
-			overviewRulerLane: vscode.OverviewRulerLane.Right,
-			light: {
-				// this color will be used in light color themes
-				borderColor: 'darkblue'
-			},
-			dark: {
-				// this color will be used in dark color themes
-				borderColor: 'lightblue'
-			}
-			*/
-			isWholeLine: true,
-			gutterIconSize: 'auto',
-			light: {
-				// this color will be used in light color themes
-				backgroundColor: '#B0E090',
-				gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-light.svg',
-			},
-			dark: {
-				// this color will be used in dark color themes
-				backgroundColor: '#105005',
-				gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-dark.svg',
-			}
-		});
-
-		// Get filename
-		const edFilename = editor.document.fileName;
-		// Get lines
-		const lines = coverageFileMap.get(edFilename);
-		if(!lines)
-			return;
-		// Decorate all lines (coverage)
-		const decorations = new Array<vscode.Range>();
-		for(const line of lines) {
-			const range = new vscode.Range(line,0, line,1000);
-			decorations.push(range);
-		}
-		// Set all decorations
-		editor.setDecorations(coverageDecoType, decorations);
 	}
 
 }
