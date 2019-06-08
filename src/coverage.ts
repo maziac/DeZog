@@ -43,12 +43,12 @@ export class CoverageClass {
 			light: {
 				// this color will be used in light color themes
 				backgroundColor: '#B0E090',
-				gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-light.svg'),
+				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-light.svg'),
 			},
 			dark: {
 				// this color will be used in dark color themes
 				backgroundColor: '#105005',
-				gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
+				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
 			}
 		});
 	}
