@@ -12,7 +12,7 @@ import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { CallSerializer } from './callserializer';
-import * as lineRead from 'n-readlines';
+import { Coverage } from './coverage';
 
 
 
@@ -134,46 +134,11 @@ export class Z80UnitTests {
 	/// The call serializer to call the emulator.
 	protected static serializer: CallSerializer;
 
-	/// Associates the files with the line numbers that have been covered.
-	protected static coverageFileMap: Map<string, Set<number>>;
-
 	/// Debug mode or run mode.
 	protected static debug = false;
 
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
-
-	/// Coverage:
-	/// The decoration type for covered lines.
-	protected static coverageDecoType = vscode.window.createTextEditorDecorationType({
-		/*
-		borderWidth: '1px',
-		borderStyle: 'solid',
-		overviewRulerColor: 'blue',
-		overviewRulerLane: vscode.OverviewRulerLane.Right,
-		light: {
-			// this color will be used in light color themes
-			borderColor: 'darkblue'
-		},
-		dark: {
-			// this color will be used in dark color themescleare
-			borderColor: 'lightblue'
-		}
-		*/
-		isWholeLine: true,
-		gutterIconSize: 'auto',
-		light: {
-			// this color will be used in light color themes
-			backgroundColor: '#B0E090',
-			gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-light.svg',
-		},
-		dark: {
-			// this color will be used in dark color themes
-			backgroundColor: '#105005',
-			gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-dark.svg',
-		}
-	});
-
 
 	/**
 	 * Execute all unit tests in debug mode.
@@ -259,6 +224,11 @@ export class Z80UnitTests {
 					// Some error occurred
 					Z80UnitTests.stopUnitTests(undefined, e);
 				}
+			});
+
+			Emulator.on('coverage', coveredAddresses => {
+				// Covered addresses (since last break) have been sent
+				Coverage.showCodeCoverage(coveredAddresses);
 			});
 
 			Emulator.on('warning', message => {
@@ -788,86 +758,6 @@ export class Z80UnitTests {
 	protected static unitTestsFinished() {
 		// Summary
 		Z80UnitTests.printSummary();
-		// Line coverage
-		Z80UnitTests.lineCoverage();
-	}
-
-
-	/**
-	 * Display the line coverage. I.e. decorate the text editor to show all
-	 * lines that are covered.
-	 */
-	protected static lineCoverage() {
-		// Clear
-		Z80UnitTests.clearLineCoverage();	// TODO: Move to start of unit tests
-		// Go through coverage file and associate a filename with an array of covered lines.
-		const logFilename = Utility.getAbsCpuLogFileName();
-		//const logFilename = "/Volumes/SDDPCIE2TB/Projects/zxspectrum/asm/zxnext_game_framework/.tmp/cpu.log";
-		Z80UnitTests.coverageFileMap = new Map<string, Set<number>>(); // All lines in a file.
-		//const linesx = readFileSync(logFilename).toString().split('\n');
-		const cpuLog = new lineRead(logFilename);
-		let data;
-		while (data = cpuLog.next()) {
-			// Get line
-			const line = data.toString();
-			// Parse address
-			const addr = parseInt(line, 16);
-			// Get file location for address
-			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
-			if(filename.length == 0)
-				continue;
-			// Get filename set
-			let lines = Z80UnitTests.coverageFileMap.get(filename);
-			if(!lines) {
-				// Create a new
-				lines = new Set<number>();
-				Z80UnitTests.coverageFileMap.set(filename, lines);
-			}
-			// Add address to set
-			lines.add(location.lineNr);
-		}
-
-		// Loop through all open editors.
-		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
-			Z80UnitTests.setCoveredLines(editor);
-		}
-
-	}
-
-
-	/**
-	 * Sets coverage decoration for the given editor.
-	 * Uses the coverage infromation in Z80UnitTests.coverageFileMap.
-	 * @param editor The editor to decorate.
-	 */
-	protected static setCoveredLines(editor: vscode.TextEditor) {
-		// Get filename
-		const edFilename = editor.document.fileName;
-		// Get lines
-		const lines = Z80UnitTests.coverageFileMap.get(edFilename);
-		if(!lines)
-			return;
-		// Decorate all lines (coverage)
-		const decorations = new Array<vscode.Range>();
-		for(const line of lines) {
-			const range = new vscode.Range(line,0, line,1000);
-			decorations.push(range);
-		}
-		// Set all decorations
-		editor.setDecorations(Z80UnitTests.coverageDecoType, decorations);
-	}
-
-
-	/**
-	 * Loops through all active editors and clear the coverage decorations.
-	 */
-	protected static clearLineCoverage() {
-		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
-			editor.setDecorations(Z80UnitTests.coverageDecoType, []);
-		}
 	}
 
 

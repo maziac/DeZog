@@ -2,43 +2,56 @@ import * as vscode from 'vscode';
 import { Labels } from './labels';
 
 
-/// The decoration type for covered lines.
-const coverageDecoType = vscode.window.createTextEditorDecorationType({
-	/*
-	borderWidth: '1px',
-	borderStyle: 'solid',
-	overviewRulerColor: 'blue',
-	overviewRulerLane: vscode.OverviewRulerLane.Right,
-	light: {
-		// this color will be used in light color themes
-		borderColor: 'darkblue'
-	},
-	dark: {
-		// this color will be used in dark color themes
-		borderColor: 'lightblue'
-	}
-	*/
-	isWholeLine: true,
-	gutterIconSize: 'auto',
-	light: {
-		// this color will be used in light color themes
-		backgroundColor: '#B0E090',
-		gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-light.svg',
-	},
-	dark: {
-		// this color will be used in dark color themes
-		backgroundColor: '#105005',
-		gutterIconPath: '/Volumes/SDDPCIE2TB/Projects/zxspectrum/vscode/z80-debug-adapter/images/coverage/gutter-icon-dark.svg', // TODO: relative path
-	}
-});
+
+/// Is a singleton. Initilaize in 'activate'.
+export let Coverage;
 
 
 /**
  * A singleton that holds the code coverage.
  */
 export class CoverageClass {
+	/// The decoration type for covered lines.
+	protected coverageDecoType: vscode.TextEditorDecorationType;
+
 	/// Holds a map with filenames associated with the addresses.
 	protected coverageFileMap = new Map<string, Set<number>>();
+
+
+	/// Initialize. Call from 'activate' to set the icon paths.
+	public static Initialize(context: vscode.ExtensionContext) {
+		// Create new singleton
+		Coverage = new CoverageClass();
+		// Set the absoute paths.
+		Coverage.coverageDecoType = vscode.window.createTextEditorDecorationType({
+			/*
+			borderWidth: '1px',
+			borderStyle: 'solid',
+			overviewRulerColor: 'blue',
+			overviewRulerLane: vscode.OverviewRulerLane.Right,
+			light: {
+				// this color will be used in light color themes
+				borderColor: 'darkblue'
+			},
+			dark: {
+				// this color will be used in dark color themes
+				borderColor: 'lightblue'
+			}
+			*/
+			isWholeLine: true,
+			gutterIconSize: 'auto',
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#B0E090',
+				gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-light.svg'),
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#105005',
+				gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
+			}
+		});
+	}
 
 
 	/**
@@ -63,7 +76,7 @@ export class CoverageClass {
 		this.coverageFileMap = new Map<string, Set<number>>();
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			editor.setDecorations(coverageDecoType, []);
+			editor.setDecorations(this.coverageDecoType, []);
 		}
 	}
 
@@ -122,10 +135,8 @@ export class CoverageClass {
 			decorations.push(range);
 		}
 		// Set all decorations
-		editor.setDecorations(coverageDecoType, decorations);
+		editor.setDecorations(this.coverageDecoType, decorations);
 	}
 
 }
 
-/// Labels is the singleton object that should be accessed.
-export const Coverage = new CoverageClass();

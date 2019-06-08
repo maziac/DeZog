@@ -6,6 +6,7 @@ import { EmulDebugAdapter } from './emuldebugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
+import { CoverageClass } from './coverage';
 
 
 /**
@@ -95,6 +96,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new ZesaruxConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('z80-debug', provider));
 	context.subscriptions.push(provider);
+
+	// Initialize the Coverage singleton.
+	CoverageClass.Initialize(context);
 }
 
 
