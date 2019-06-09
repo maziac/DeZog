@@ -602,6 +602,10 @@ export class LabelsClass {
 	 * @param label The label to add.
 	 */
 	protected addLabelForNumber(value: number, label: string) {
+		// Safety check
+		if(value < 0 || value >= 0x10000)
+			return;
+
 		// Add label
 		let labelsArray = this.labelsForNumber[value];
 		if(labelsArray === undefined) {
@@ -614,6 +618,7 @@ export class LabelsClass {
 			if(item == label)
 				return;	// already exists.
 		}
+
 		// Add new label
 		labelsArray.push(label);
 	}

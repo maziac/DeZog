@@ -449,10 +449,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 							this.state = EmulatorState.IDLE;
 							// Clear register cache
 							this.RegisterCache = undefined;
-							// Call handler
-							contStoppedHandler(reason, tStates, cpuFreq);
 							// Handle code coverage
 							this.calculateCodeCoverage();
+							// Call handler
+							contStoppedHandler(reason, tStates, cpuFreq);
 						});
 					});
 				});
@@ -654,8 +654,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Emit code coverage event
 				this.emit('coverage', addresses);
 			}
-			// Anyhow clear the file
-			zSocket.send('cpu-transaction-log truncate yes');
 		});
 	}
 

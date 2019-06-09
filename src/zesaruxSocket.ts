@@ -478,18 +478,22 @@ export class ZesaruxSocket extends Socket {
 		});
 		zSocket.once('close', () => {
 			this.logSocket.log('Socket closed. OK.');
+			this.state = SocketState.UNCONNECTED;
 			func();
 		});
 		zSocket.once('end', () => {
 			this.logSocket.log('Socket end. OK.');
+			this.state = SocketState.UNCONNECTED;
 			func();
 		});
 
 		// Check state
-		if(this.state == SocketState.UNCONNECTED
-			|| this.state != SocketState.CONNECTED) {
+		if(this.state != SocketState.CONNECTED) {
 			// Already disconnected or not really connected.
-			zSocket.end();
+			if(zSocket.connected)
+				zSocket.end();
+			else
+				func();
 			return;
 		}
 
@@ -497,12 +501,12 @@ export class ZesaruxSocket extends Socket {
 		this.logSocket.log('Quitting:');
 		this.setTimeout(QUIT_TIMEOUT);
 		this.send('\n');	// Just for the case that we are waiting on a breakpoint.
+		this.send('cpu-transaction-log truncate yes');
 		this.send('clear-membreakpoints');
 		this.send('disable-breakpoints');
 		this.send('quit', data => {
 			// Close connection (ZEsarUX also closes the connection)
 			zSocket.end();
-			handler();
 		});
 	}
 

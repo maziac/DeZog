@@ -190,63 +190,68 @@ export class Z80UnitTests {
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(configuration, rootFolder);
 
+			const f = () => {
+				// Start emulator.
+				//Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
+				EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+
+				// Events
+				Emulator.once('initialized', () => {
+					try {
+						// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
+						Labels.init();
+						Emulator.readListFiles(listFiles);
+
+						// Enable ASSERTs etc.
+						Emulator.enableAssertBreakpoints(true);
+						Emulator.enableWPMEM(true);
+						try {
+							Emulator.enableLogpoints('UNITTEST', true);
+						}
+						catch {}	// Just in case the group is undefined
+
+						Z80UnitTests.initUnitTests();
+
+						// Load the initial unit test routine (provided by the user)
+						Z80UnitTests.execAddr(Z80UnitTests.addrInit);
+					}
+					catch(e) {
+						// Some error occurred
+						Z80UnitTests.stopUnitTests(undefined, e);
+					}
+				});
+
+				Emulator.on('coverage', coveredAddresses => {
+					// Covered addresses (since last break) have been sent
+					Coverage.showCodeCoverage(coveredAddresses);
+				});
+
+				Emulator.on('warning', message => {
+					// Some problem occurred
+					vscode.window.showWarningMessage(message);
+				});
+
+				Emulator.on('log', message => {
+					// Show the log (from the socket/ZEsarUX) in the debug console
+					vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+
+				});
+
+				Emulator.once('error', err => {
+					// Some error occurred
+					Z80UnitTests.stopUnitTests(undefined, err);
+				});
+
+
+				// Connect to debugger.
+				Emulator.init();
+			}
+
 			// Stop any previous running emulator
 			if(Emulator)
-				Emulator.stop();
-
-			// Start emulator.
-			//Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
-			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
-
-			// Events
-			Emulator.once('initialized', () => {
-				try {
-					// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
-					Emulator.readListFiles(listFiles);
-
-					// Enable ASSERTs etc.
-					Emulator.enableAssertBreakpoints(true);
-					Emulator.enableWPMEM(true);
-					try {
-						Emulator.enableLogpoints('UNITTEST', true);
-					}
-					catch {}	// Just in case the group is undefined
-
-					Z80UnitTests.initUnitTests();
-
-					// Load the initial unit test routine (provided by the user)
-					Z80UnitTests.execAddr(Z80UnitTests.addrInit);
-				}
-				catch(e) {
-					// Some error occurred
-					Z80UnitTests.stopUnitTests(undefined, e);
-				}
-			});
-
-			Emulator.on('coverage', coveredAddresses => {
-				// Covered addresses (since last break) have been sent
-				Coverage.showCodeCoverage(coveredAddresses);
-			});
-
-			Emulator.on('warning', message => {
-				// Some problem occurred
-				vscode.window.showWarningMessage(message);
-			});
-
-			Emulator.on('log', message => {
-				// Show the log (from the socket/ZEsarUX) in the debug console
-				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
-
-			});
-
-			Emulator.once('error', err => {
-				// Some error occurred
-				Z80UnitTests.stopUnitTests(undefined, err);
-			});
-
-
-			// Connect to debugger.
-			Emulator.init();
+				Emulator.stop(f);
+			else
+				f();
 		}
 		catch(e) {
 			// Some error occurred

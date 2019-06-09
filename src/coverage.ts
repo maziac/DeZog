@@ -75,9 +75,6 @@ export class CoverageClass {
 	 */
 	public clearLineCoverage() {
 		this.coverageFileMap = new Map<string, Set<number>>();
-		let v = vscode;
-		let vw = vscode.window;
-		let vwt = vscode.window.visibleTextEditors;
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
 			editor.setDecorations(this.coverageDecoType, []);
