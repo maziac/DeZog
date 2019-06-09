@@ -6,7 +6,7 @@ import { EmulDebugAdapter } from './emuldebugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
-import { CoverageClass } from './coverage';
+import { CoverageClass, Coverage } from './coverage';
 
 
 /**
@@ -44,9 +44,19 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line]);
 	}));
 
+	// Command to enable code coverage display and analyzes.
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.enableCodeCoverage', () => {
+		if(Coverage)
+			Coverage.enableCodeCoverage();
+	}));
+	// Command to disable code coverage display and analyzes.
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.disableCodeCoverage', () => {
+		if(Coverage)
+			Coverage.disableCodeCoverage();
+	}));
+
 	// Command to execute all unit tests
 	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runAllUnitTests', () => {
-		// Send to debug adapter
 		Z80UnitTests.runAllUnitTests();
 	}));
 
@@ -57,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	/*
-	 The follwing commands are for the test adapter extension.
+	 The following commands are for the test adapter extension.
 	 A typical sequence is:
 	 1. getAllUnitTests: The test-adapter retrieves the list of available unit test cases.
 	 2. initUnitTests: Initializes a unit test case run.

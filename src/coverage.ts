@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Labels } from './labels';
+import { Settings } from './settings';
 
 
 
@@ -74,10 +75,38 @@ export class CoverageClass {
 	 */
 	public clearLineCoverage() {
 		this.coverageFileMap = new Map<string, Set<number>>();
+		let v = vscode;
+		let vw = vscode.window;
+		let vwt = vscode.window.visibleTextEditors;
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
 			editor.setDecorations(this.coverageDecoType, []);
 		}
+	}
+
+
+	/**
+	 * Enables the code coverage.
+	 * If no emulator is running (no debug session) nothing happens.
+	 * The next time the emulator is started this is overwritten by the
+	 * launch settings for 'codeCoverage'.
+	 */
+	public enableCodeCoverage() {
+		if(Settings && Settings.launch && (Settings.launch.codeCoverage != undefined))
+			Settings.launch.codeCoverage = true;
+	}
+
+
+	/**
+	 * Disables the code coverage.
+	 * If the emulator is running (debug session) it is told to stopcollecting
+	 * the executed addresses.
+	 * Anyhow all displayed covered lines are reset.
+	 */
+	public disableCodeCoverage() {
+		if(Settings && Settings.launch && (Settings.launch.codeCoverage != undefined))
+			Settings.launch.codeCoverage = false;
+		this.clearLineCoverage();
 	}
 
 

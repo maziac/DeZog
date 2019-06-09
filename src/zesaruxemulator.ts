@@ -176,18 +176,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Disable for now
 				zSocket.send('cpu-transaction-log enabled no');
 				// Coverage settings
-				if(Settings.launch.codeCoverage) {
-					// Set datetime information
-					zSocket.send('cpu-transaction-log datetime no');
-					// Set tstates information
-					zSocket.send('cpu-transaction-log tstates no');
-					// Set address information
-					zSocket.send('cpu-transaction-log address yes');
-					// Set opcode information
-					zSocket.send('cpu-transaction-log opcode no');
-					// Set registers information
-					zSocket.send('cpu-transaction-log registers no');
-				}
+				// Set datetime information
+				zSocket.send('cpu-transaction-log datetime no');
+				// Set tstates information
+				zSocket.send('cpu-transaction-log tstates no');
+				// Set address information
+				zSocket.send('cpu-transaction-log address yes');
+				// Set opcode information
+				zSocket.send('cpu-transaction-log opcode no');
+				// Set registers information
+				zSocket.send('cpu-transaction-log registers no');
 
 				// Load sna or tap file
 				if(Settings.launch.load)
@@ -635,24 +633,29 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Then reads it and collects all passed addresses.
 	 */
 	protected calculateCodeCoverage() {
-		// Disable logging to cclose/flush the file.
+		// Disable logging to close/flush the file.
 		zSocket.send('cpu-transaction-log enabled no', () => {
-			// Go through coverage file and collect all addresses
-			const logFilename = Utility.getAbsCpuLogFileName();
-			const addresses = new Set<number>();
-			const cpuLog = new lineRead(logFilename);
-			let data;
-			while (data = cpuLog.next()) {
-				// Get line
-				const line = data.toString();
-				// Parse address
-				const addr = parseInt(line, 16);
-				// Add to set
-				addresses.add(addr);
-			}
+			// Check if code coverage is enabled
+			if(Settings.launch.codeCoverage) {
+				// Go through coverage file and collect all addresses
+				const logFilename = Utility.getAbsCpuLogFileName();
+				const addresses = new Set<number>();
+				const cpuLog = new lineRead(logFilename);
+				let data;
+				while (data = cpuLog.next()) {
+					// Get line
+					const line = data.toString();
+					// Parse address
+					const addr = parseInt(line, 16);
+					// Add to set
+					addresses.add(addr);
+				}
 
-			// Emit code coverage event
-			this.emit('coverage', addresses);
+				// Emit code coverage event
+				this.emit('coverage', addresses);
+			}
+			// Anyhow clear the file
+			zSocket.send('cpu-transaction-log truncate yes');
 		});
 	}
 

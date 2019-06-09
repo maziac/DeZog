@@ -108,6 +108,16 @@
 				"category": "z80-debug"
 			},
 			{
+				"command": "z80-debug.enableCodeCoverage",
+				"title": "Enable code coverage",
+				"category": "z80-debug"
+			},
+			{
+				"command": "z80-debug.disableCodeCoverage",
+				"title": "Disable code coverage",
+				"category": "z80-debug"
+			},
+			{
 				"command": "z80-debug.runAllUnitTests",
 				"title": "Run all unit tests",
 				"category": "z80-debug"
@@ -154,6 +164,13 @@
 				{
 					"command": "z80-debug.movePCtoCursor",
 					"when": "false"
+				},
+				{
+					"command": "z80-debug.enableCodeCoverage",
+					"when": "inDebugMode"
+				},
+				{
+					"command": "z80-debug.disableCodeCoverage"
 				},
 				{
 					"command": "z80-debug.getAllUnitTests",
