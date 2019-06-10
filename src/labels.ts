@@ -176,8 +176,7 @@ export class LabelsClass {
 		}
 
 		// Regex to find labels
-		//let labelRegex = new RegExp(/^[0-9a-f]+\s+([0-9a-f]+[\s0-9a-f]*\s)(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
-		let labelRegex = new RegExp(/^[0-9a-f]+\s+([\s0-9a-f]*)\s+(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		let labelRegex = new RegExp(/^[0-9a-f]+\s+([\s0-9a-f]*)\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');

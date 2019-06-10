@@ -2,6 +2,7 @@
 
 ## 0.9.0
 - Unit Tests!
+- Requires ZEsarUX 7.3.
 
 ## 0.8.1
 - Memory pages are shown in VARIABLES section.

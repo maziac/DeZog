@@ -103,7 +103,7 @@ export class Z80UnitTests {
 
 	/// The unit test initialization routine. The user has to provide
 	/// it and the label.
-	protected static addrInit: number;
+	protected static addrStart: number;
 
 	/// The start address of the unit test wrapper.
 	/// This is called to start the unit test.
@@ -213,7 +213,7 @@ export class Z80UnitTests {
 						Z80UnitTests.initUnitTests();
 
 						// Load the initial unit test routine (provided by the user)
-						Z80UnitTests.execAddr(Z80UnitTests.addrInit);
+						Z80UnitTests.execAddr(Z80UnitTests.addrStart);
 					}
 					catch(e) {
 						// Some error occurred
@@ -445,7 +445,7 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 
 		// Get the unit test code
-		Z80UnitTests.addrInit = Z80UnitTests.getNumberForLabel("UNITTEST_INIT");
+		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel("UNITTEST_START");
 		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
@@ -536,7 +536,7 @@ export class Z80UnitTests {
 	protected static startUnitTestsWhenQuiet(da: EmulDebugAdapter) {
 		da.executeAfterBeingQuietFor(300, () => {
 			// Load the initial unit test routine (provided by the user)
-			Z80UnitTests.execAddr(Z80UnitTests.addrInit, da);
+			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
 		});
 	}
 

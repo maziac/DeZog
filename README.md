@@ -24,7 +24,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 ![](documentation/images/gallery_sprites.jpg)
 
 
-### Execution time.
+### Execution time:
 
 ![](documentation/images/gallery_tstates.gif)
 
@@ -35,9 +35,9 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 
 
-### Features
+## Features
 
-- supports ZEsarUX emulator (>= v7.2)
+- supports ZEsarUX emulator (>= v7.3)
 - reads .list and .labels files
 	- supports stepping through source code
 	- either in .list file or in .asm files

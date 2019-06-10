@@ -18,7 +18,7 @@ import * as lineRead from 'n-readlines';
 
 
 /// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = 7.2;
+const MIN_ZESARUX_VERSION = 7.3;
 
 
 // Some Zesarux constants.
