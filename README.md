@@ -2,7 +2,7 @@
 
 ![](documentation/images/main.gif)
 
-**Note: you need to install at least ZEsarUX version 7.2**
+**Note: you need to install at least ZEsarUX version 7.3**
 
 The Z80-Debug-Adapter (z80-debug) lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
 With this extension it is possible to debug assembler programs built for the ZX Spectrum.
@@ -14,7 +14,28 @@ The z80-debug connects to ZEsarUX via a socket connection. ZEsarUX offers quite 
 
 Note: The Z80-Debug-Adapter does not include any support for building from assembler sources. For this you need to create a build task yourself. For an example look here: https://github.com/maziac/z80-sample-program
 
-## Features
+
+## Gallery
+
+### Sprites:
+- Display of sprites with register indices and position
+- Display of all patterns with indices
+
+![](documentation/images/gallery_sprites.jpg)
+
+
+### Execution time.
+
+![](documentation/images/gallery_tstates.gif)
+
+
+### Code Coverage:
+
+![](documentation/images/gallery_coverage.gif)
+
+
+
+### Features
 
 - supports ZEsarUX emulator (>= v7.2)
 - reads .list and .labels files
@@ -40,14 +61,17 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - memory viewer / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - change of program counter through menu
+- execution if assembler unit tests
+- display of code coverage
+
 
 
 ## Constraints
 
 - supports only ZEsarUX emulator
 - build output must
-	- create a .list file (format as of Savannah's Z80 Assembler: http://savannah.nongnu.org/projects/z80asm/)
-	- _alternatively you can use other list files (like z88dk) with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
+	- create a .list file (support for sjasmplus, Savannah's z80asm, z88dk).
+	- _alternatively you can use other list files with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
 	- create a .sna file containing the binary
 
 
@@ -57,12 +81,21 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 In order to use z80-debug you need
 - vscode (of course)
-- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 7.1 is required.
+- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 7.3 is required.
 
 
 ### z80-debug
 
 In Visual Studio Code simply install "Z80 Debugger" (maziac.z80-debug) from the Marketplace.
+
+There are 2 other extensions that are not required to work with z80-debug but may help:
+- [asm-code-lens](https://github.com/maziac/asm-code-lens):
+	- Z80 assembler syntax highlighting
+	- completions, references, jump to label, renaming
+- [z80-unit-tests](https://github.com/maziac/z80-unit-tests):
+	- an extension to start/debug unit tests from a graphical UI
+
+Both can be isntalled from the market place.
 
 
 ## Usage
