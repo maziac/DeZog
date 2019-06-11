@@ -87,6 +87,9 @@ export interface UnitTestCase {
  */
 export class Z80UnitTests {
 
+	/// The label used for the stack.
+	public static utStackLabel = "UNITTEST_START";
+
 	/// This array will contain the names of all UT testcases.
 	protected static utLabels: Array<string>;
 
@@ -190,9 +193,11 @@ export class Z80UnitTests {
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(configuration, rootFolder);
 
+			// Overwrite top-of-stack.
+			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
+
+			// Start emulator.
 			const f = () => {
-				// Start emulator.
-				//Z80UnitTests.serializer = new CallSerializer("Z80UnitTests", true);
 				EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 
 				// Events
@@ -445,7 +450,7 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 
 		// Get the unit test code
-		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel("UNITTEST_START");
+		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel(Z80UnitTests.utStackLabel);
 		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;

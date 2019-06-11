@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log } from './log';
-import { EmulatorBreakpoint, MachineType, /*EmulatorClass,*/ } from './emulator';
+import { EmulatorBreakpoint, MachineType } from './emulator';
 import { MemoryDumpView } from './memorydumpview';
 import { MemoryRegisterView } from './memoryregisterview';
 import { RefList } from './reflist';
@@ -25,6 +25,7 @@ import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import * as BinaryFile from 'binary-file';
 import { Coverage } from './coverage';
+import { Z80UnitTests } from './z80unittests';
 
 
 
@@ -328,6 +329,9 @@ export class EmulDebugAdapter extends DebugSession {
 			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(args, rootFolder);
+			// Overwrite top-of-stack.
+			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
+
 			const channelOut = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
 			Log.init(channelOut, Settings.launch.log.filePath);
 		}
