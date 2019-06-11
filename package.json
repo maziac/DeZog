@@ -319,6 +319,10 @@
 								"type": "boolean",
 								"description": "Skips the interrupt during stepping."
 							},
+							"codeCoverage": {
+								"type": "boolean",
+								"description": "If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations."
+							},
 							"formatting": {
 								"registerVarFormat": {
 									"type": "array",
@@ -468,7 +472,8 @@
 								"path_to_your_assembler_file.labels"
 							],
 							"load": "path_to_your_sna_file.sna",
-							"skipInterrupt": true
+							"skipInterrupt": true,
+							"codeCoverage": false
 						}
 					}
 				]
