@@ -15,7 +15,11 @@ The unit_tests.inc file provides macros in sjasmplus syntax but also in a format
 In order to use unit tests you must:
 1. include the unit_tests.inc file to your sources
 2. create the unit tests
-3. Provide an initialization routine
+3. provide an initialization routine
+4. assemble the binary
+5. setup the launch.json
+6. start the unit tests
+
 
 ## Include unit_tests.inc
 
@@ -146,16 +150,100 @@ Furthermore the macro USE_ALL_REGS fills all registers with predefined values A,
 THis macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
 
+## Provide Initialization Routine
+
+You provide the initialization routine via the macro UNITTEST_INITIALIZE.
+Directly after the macro write your initialization code.
+Note that you don't need to provide a stack for the unit tests it is setup automatically inside the UNITTEST_INITIALIZE macro.
+Furthermore during execution of all unit test cases the interrupts are disabled. If, for some reason, you need interrupts active then you have to enable them ('ei') at the start of each unit test case.
+
+Your initialization code may look like.
+~~~
+    UNITTEST_INITIALIZE
+    ; Start of unit test initialization.
+    ; E.g. maybe you need to initialize some memoray area or you need to load some code...
+    ...
+    ret
+~~~
+
+You need to end your initialization with a 'ret'.
+
+Please note that the code is executed only once for each unit test run. I.e. not before each unit test case.
+If you need to initialize something at the start of your unit test then please add the code to the unit test.
 
 
-# Misc
+## Setup the launch.json
+
+You need to create a special launch.json configuration for the unit tests.
+It works mainly like the normal launch configuration but has some specialities:
+- the property 'unittest' need to be set to true. Note that only one configuration is allowed to have that property set to true.
+- the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
+- the property 'codeCoverage' might be set to true. If true the code coverage is displayed inside the sources. Each covered line gets a green backgound.
 
 
+## Start the Unit Tests
+
+Make sure ZEsarUX is running and has remote control enabled (just like in a normal debugging session).
+Make sure that no debug session is currently running.
+
+Press F1 for the command palette to appear.
+Enter "z80-debug: Run all unit tests".
+
+The z80-debug adapter will connect ZEsarUX and execute the unit tests.
+At the end you get a summary like this:
+~~~
++-------------------------------------------------
+UNITTEST SUMMARY:
+Date: Wed Jun 12 2019 19:10:43 GMT+0200 (CEST)
+
+ut_sprites.UT_get_hl_from_a (0x8182):	Fail
+ut_sprites.UT_get_ix_from_a (0x822a):	OK
+ut_sprites.UT_get_x_from_ix (0x82df):	OK
+ut_sprites.UT_get_y_from_ix (0x833c):	OK
+ut_sprites.UT_add_3_sprites (0x83e1):	OK
+ut_sprites.UT_add_sprite_index_255 (0x8508):	OK
+...
+ut_audio.ut_sound.UT_get_and_allocate_tone_register_block3 (0xadb0):	OK
+ut_audio.ut_sound.UT_get_and_allocate_tone_register_block_two (0xae9f):	OK
+ut_audio.ut_sound.UT_get_and_allocate_tone_register_all_blocked (0xaf17):	OK
+ut_audio.ut_sound.UT_free_tone_register1 (0xaf54):	OK
+ut_audio.ut_sound.UT_free_tone_register2 (0xafa8):	OK
+ut_audio.ut_sound.UT_free_tone_register3 (0xb00e):	OK
+ut_audio.ut_sound.UT_choose_tone_register (0xb08b):	OK
+
+Total testcases: 65
+Passed testcases: 64
+Failed testcases: 1
+98% passed.
+
++-------------------------------------------------
+~~~
+
+If code coverage was set to true you will notice that the executed lines in the sources have turned to a green background.
+![](images/unittest_coverage.jpg)
 
 
-# Notes
-- launch.json:
-	- topOfStack doesn't need to be set. Is overwritten by internal stack for unit tests.
-	- codeCoverage: can be set otherwise false.
-- Command palette: Enable/disable code coverage during debugging.
-- Erklären, dass auch bei WPMEM gestoppt wird, oder wenn ein Test zu lange dauert. Timeout Value erklären.
+If you find that a test case has failed you can also start the unit tests in debug mode:
+Press F1 and enter "z80-debug: Run all unit tests in debug mode".
+
+The debugger is started and will stop at the failing test. E.g.
+![](images/unittest_coverage_failed_test.jpg)
+The PC stops at the test because A is obviously not 0.
+
+
+# When Does a Test Case Fail
+
+Obviously a unti test case fails if the checked condition (the TEST_... macros) fails.
+But there are a few other cases when a test case fails:
+- unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can chage the value (for all test cases) in the launch configuration.
+- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memoray area. This can also happen if you an ASSERT fails somewhere. If in debug mode the test case will also be counted as failed but the code exceution also stops at the particular line of code. So you can directly investigate what happened.
+
+
+# What Else
+
+Use antoher extension, [z80-unit-tests](https://github.com/maziac/z80-unit-tests), to execute the unit tests not via the command palette but via the Test Explorer UI.
+
+From that UI it is also possible to execute specific unit tests without executing the rest.
+
+Example:
+![](images/unittest_test_explorer.jpg)

@@ -96,7 +96,7 @@ Big values are typically addresses. Here you can give the boundary between these
 	- valueHoverFormat: Format for the value when hovering.
 	- registerPointerColors: An array with register/color pairs. All selected register will appear with the corresponden color in the memory view. Registers not chosen will not appear. E.g. ["HL", "darkgreen", "DE", "darkcyan", "BC", "darkgray" ]
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
-- unitTestTimeOut: the timeout for each unit test. Default is 0.5s. Change this only if one of your unit test lasts longer.
+- unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
 
 
 ### Listfile
