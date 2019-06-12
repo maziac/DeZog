@@ -441,7 +441,7 @@
 									}
 								}
 							},
-							"unitTestTimeOut": {
+							"unitTestTimeout": {
 								"type": "number",
 								"description": "(Optional) The timeout for unit tests. If a test lasts longer it is assumed as failed. In secs. Default = 5s."
 							}

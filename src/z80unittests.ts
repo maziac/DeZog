@@ -602,7 +602,7 @@ export class Z80UnitTests {
 				Z80UnitTests.timeoutHandle = undefined;
 				// Failure: Timeout. Send a break.
 				Emulator.pause();
-			}, 1000*Settings.launch.unitTestTimeOut);
+			}, 1000*Settings.launch.unitTestTimeout);
 		}
 
 		// Start at test case address.
@@ -722,7 +722,7 @@ export class Z80UnitTests {
 		switch(tcResult) {
 			case TestCaseResult.OK: tcResultStr = colorize(Color.FgGreen, 'OK'); break;
 			case TestCaseResult.FAILED: tcResultStr = colorize(Color.FgRed, 'Fail'); break;
-			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unitTestTimeOut + 's)'); break;
+			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unitTestTimeout + 's)'); break;
 		}
 
 		const addr = Labels.getNumberForLabel(label) || 0;
