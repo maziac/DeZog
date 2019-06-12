@@ -196,6 +196,9 @@ export class Z80UnitTests {
 			// Overwrite top-of-stack.
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 
+			// Reset the code coverage
+			Coverage.clearLineCoverage();
+
 			// Start emulator.
 			const f = () => {
 				EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);

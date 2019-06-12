@@ -84,9 +84,9 @@ Here is the complete list:
 - TEST_A_UNEQUAL value: A != value
 - TEST_REG reg, value: reg == value, with reg = B|C|D|E|H|L
 - TEST_REG_UNEQUAL reg, value: reg != value, with reg = B|C|D|E|H|L
- - TEST_DREG dreg, value: dreg == value, with dreg = BC|DE|HL|IX|IY
- - TEST_DREG_UNEQUAL dreg, value: dreg != value, with dreg = BC|DE|HL|IX|IY
- - TEST_DREGS_EQUAL dreg1, dreg2: dreg1 == dreg2, with dreg1/2 = BC|DE|HL|IX|IY
+- TEST_DREG dreg, value: dreg == value, with dreg = BC|DE|HL|IX|IY
+- TEST_DREG_UNEQUAL dreg, value: dreg != value, with dreg = BC|DE|HL|IX|IY
+- TEST_DREGS dreg1, dreg2: dreg1 == dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_DREGS_UNEQUAL dreg1, dreg2: dreg1 != dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
 - TEST_FLAG_Z: Z flag is set
