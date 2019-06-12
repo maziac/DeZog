@@ -3,6 +3,8 @@
 The z80-debug adapter offers the possibility to  execute unit tests.
 You can directly run the unit tests or use the [z80-unit-tests](https://github.com/maziac/z80-unit-tests) extension to execute the tests from a test explorer UI.
 
+A good example for the use of unit tests can be found in the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+
 
 # Prerequisites
 
