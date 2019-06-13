@@ -10,7 +10,7 @@ It's primary intention is to support building new programs, i.e. programs with e
 (It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug at ZEsarUX.)
 The biggest help it offers is that you are able to step through your sources and that  z80-debug is aware of all labels and can give hints to what label a number resolves.
 
-The z80-debug connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called ZRCP (Zesarux Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
+The z80-debug connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called zrcp (ZEsarUX Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
 
 Note: The Z80-Debug-Adapter does not include any support for building from assembler sources. For this you need to create a build task yourself. For an example look here: https://github.com/maziac/z80-sample-program
 
@@ -95,7 +95,7 @@ There are 2 other extensions that are not required to work with z80-debug but ma
 - [z80-unit-tests](https://github.com/maziac/z80-unit-tests):
 	- an extension to start/debug unit tests from a graphical UI
 
-Both can be isntalled from the market place.
+Both can be installed from the market place.
 
 
 ## Usage

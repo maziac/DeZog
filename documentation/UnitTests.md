@@ -109,7 +109,7 @@ UT_mytest2:
 ~~~
 This simple example test the subroutine 'multiply_a_by_3' which hypothetically takes A, multiplies it by 3 and returns the result in C. If A is 5 it should result in 15 and if A is 0 it should be 0.
 
-Please note that if you run a unit test case in debug mode the debugger will stol execution at exactly the macro that failed.
+Please note that if you run a unit test case in debug mode the debugger will stop execution at exactly the macro that failed.
 
 
 ### Special Test Macros
@@ -118,7 +118,7 @@ There exist a few more macros for special usage.
 
 The macro DEFAULT_REGS stores some predefined values into all main registers (A, BC, DE, HL).
 In conjunction with the TEST_UNCHANGED_... macro this can be used to check if a certain register has not changed its value.
-I.e. you can test that the tested subroutine has no sideeffect and doesn't change some register by accident.
+I.e. you can test that the tested subroutine has no side-effect and doesn't change some register by accident.
 
 Here is an example:
 ~~~
@@ -147,7 +147,6 @@ There are a few macros defined for testing:
 - TEST_UNCHANGED_H
 - TEST_UNCHANGED_L
 
-
 Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers.
 THis macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
@@ -163,7 +162,7 @@ Your initialization code may look like.
 ~~~
     UNITTEST_INITIALIZE
     ; Start of unit test initialization.
-    ; E.g. maybe you need to initialize some memoray area or you need to load some code...
+    ; E.g. maybe you need to initialize some memory area or you need to load some code...
     ...
     ret
 ~~~
@@ -177,7 +176,7 @@ If you need to initialize something at the start of your unit test then please a
 ## Setup the launch.json
 
 You need to create a special launch.json configuration for the unit tests.
-It works mainly like the normal launch configuration but has some specialities:
+It works mainly like the normal launch configuration but has some specialties:
 - the property 'unittest' need to be set to true. Note that only one configuration is allowed to have that property set to true.
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
 - the property 'codeCoverage' might be set to true. If true the code coverage is displayed inside the sources. Each covered line gets a green backgound.
@@ -237,13 +236,13 @@ The PC stops at the test because A is obviously not 0.
 
 Obviously a unti test case fails if the checked condition (the TEST_... macros) fails.
 But there are a few other cases when a test case fails:
-- unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can chage the value (for all test cases) in the launch configuration.
-- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memoray area. This can also happen if you an ASSERT fails somewhere. If in debug mode the test case will also be counted as failed but the code exceution also stops at the particular line of code. So you can directly investigate what happened.
+- unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration.
+- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERT fails somewhere. If in debug mode the test case will also be counted as failed but the code execution also stops at the particular line of code. So you can directly investigate what happened.
 
 
 # What Else
 
-Use antoher extension, [z80-unit-tests](https://github.com/maziac/z80-unit-tests), to execute the unit tests not via the command palette but via the Test Explorer UI.
+Use another extension, [z80-unit-tests](https://github.com/maziac/z80-unit-tests), to execute the unit tests not via the command palette but via the Test Explorer UI.
 
 From that UI it is also possible to execute specific unit tests without executing the rest.
 

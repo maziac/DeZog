@@ -57,12 +57,12 @@ A typical configuration looks like this:
 ~~~
 
 - name: The (human readable) name of the Z80-Debug-Adapter as it appears in vscode.
-- unitTests: Only required if the configuration conatinas unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
+- unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the.sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
-Please have a look at the (Listfile)[#listfile] section.
+Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false).
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
@@ -84,9 +84,9 @@ In your launch.json:
 
 Note: instead of a label you can also use a fixed number.
 - load: The snapshot (or tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
-Note 1: you can also omit this. In that case the z80-deassebug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
+Note 1: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
-- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically consants like the maximum number of something you defined in your asm file.
+- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
 - "memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
@@ -94,7 +94,7 @@ Big values are typically addresses. Here you can give the boundary between these
 	- asciiColor: You can change the color of the ascii field here.
 	- addressHoverFormat: Format for the address when hovering.
 	- valueHoverFormat: Format for the value when hovering.
-	- registerPointerColors: An array with register/color pairs. All selected register will appear with the corresponden color in the memory view. Registers not chosen will not appear. E.g. ["HL", "darkgreen", "DE", "darkcyan", "BC", "darkgray" ]
+	- registerPointerColors: An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear. E.g. ["HL", "darkgreen", "DE", "darkcyan", "BC", "darkgray" ]
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
 - unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
 
@@ -207,7 +207,7 @@ I.e. the disassembly at the current PC is always correct while an older disassem
 
 #### Assemblers And Labels
 
-The following table lists the diferences of the different assemblers in respect to the labels:
+The following table lists the differences of the different assemblers in respect to the labels:
 
 | Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
 |-|-|-|-|
@@ -238,7 +238,7 @@ z80-debug supports most of them but with some restrictions:
 ### Usage
 
 Before you start z80-debug in vscode make sure that you have started ZEsarUX.
-In ZEsarUX enable the socket ZRCP protocol either by commandline ("--enable-remoteprotocol")
+In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
 Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode.
@@ -265,12 +265,12 @@ You can now try the following:
 - click in the call stack -> will navigate you directly to the file
 - set breakpoints, press continue to run to the breakpoints
 
-If that is not enough you also have full access to the ZEsarUX ZRCP through vscode's debug console.
+If that is not enough you also have full access to the ZEsarUX zrcp through vscode's debug console.
 Enter "-help" in the debug console to see all available commands.
 Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 
-#### Useful ZEsarUX commandline options.
+#### Useful ZEsarUX command-line options.
 
 To ease the usage of ZEsarUX and the Z80 Debug Adapter you can use several ZEsarUX command line options.
 I have collected a few that I found useful:
@@ -350,7 +350,7 @@ Please note that we waste 1 byte (defb 1) for this safety check. This byte is no
 Caveats:
 
 - Other than for sjasmplus WPMEMs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
-- The 'memory breakpoints' used in ZEsarUX have a specific limiting behaviour:
+- The 'memory breakpoints' used in ZEsarUX have a specific limiting behavior:
 Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
@@ -492,7 +492,7 @@ You can add commands directly at the debug console. E.g. you can pass commands d
 
 Enter '-help' in the debug console to see all available commands.
 
-The debug console can normally be found in the bottom of vscode after successfu kaunch of the debugger:
+The debug console can normally be found in the bottom of vscode after successful launch of the debugger:
 ![](images/debug_console.jpg)
 
 
@@ -506,7 +506,7 @@ E.g. for ZEsarUX you can use
 ~~~
 -exec -view help
 ~~~
-to put the ZEsarUX zrcp help documetation in a view in vscode.
+to put the ZEsarUX zrcp help documentation in a view in vscode.
 You see the result here:
 ![](images/exec_view_help.jpg)
 
@@ -572,7 +572,7 @@ The register memory view:
 
 ##### Memory Editor
 
-In the memory viewer you can edit indivdual memory values with a double-click on the value.
+In the memory viewer you can edit individual memory values with a double-click on the value.
 You can now enter the new value as hex, decimal, bin or even as a math formula.
 
 Any changed value wil be updated automatically in all memory views.
@@ -662,7 +662,8 @@ See [Notes](#Notes).
 
 ## Unittests
 
-
+You can use the z80 debug adapter to execute unit tests.
+Please see [here](UnitTests.md).
 
 ## Differences to ZEsarUX
 
