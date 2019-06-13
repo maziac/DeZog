@@ -10,7 +10,7 @@ A good example for the use of unit tests can be found in the [z80-sample-program
 
 It is recommend to use the sjasmplus assembler but you can also use other assemblers that support macros.
 
-The unit_tests.inc file provides macros in sjasmplus syntax but also in a format that e.g. Savannah's z80asm would understand.
+The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax but also in a format that e.g. Savannah's z80asm would understand.
 
 
 # Usage
