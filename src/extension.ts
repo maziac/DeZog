@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
-import { EmulDebugAdapter } from './emuldebugadapter';
+import { EmulDebugSessionClass } from './emuldebugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
@@ -138,7 +138,7 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 
 			// start listening on a random port
 			this._server = Net.createServer(socket => {
-				const session = new EmulDebugAdapter();
+				const session = new EmulDebugSessionClass();
 				session.setRunAsServer(true);
 				session.start(<NodeJS.ReadableStream>socket, socket);
 			}).listen(0);

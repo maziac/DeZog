@@ -9,7 +9,7 @@ suite('CallSerializer', () => {
 		return dc.start();
 	});
 
-	teardown( () => dc.stop() );
+	teardown( () => dc.disconnect() );
 */
 
 	suite('execAll', () => {

@@ -1,4 +1,4 @@
 
- import { EmulDebugAdapter } from './emuldebugadapter';
+ import { EmulDebugSessionClass } from './emuldebugadapter';
 
- EmulDebugAdapter.run(EmulDebugAdapter);
+ EmulDebugSessionClass.run(EmulDebugSessionClass);

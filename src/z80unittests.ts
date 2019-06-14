@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-import { EmulDebugAdapter } from './emuldebugadapter';
+import { EmulDebugSession, EmulDebugSessionClass } from './emuldebugadapter';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
@@ -174,15 +174,35 @@ export class Z80UnitTests {
 	protected static runTestsCheck() {
 		// Check first that nothing is running
 		if(vscode.debug.activeDebugSession) {
-			//vscode.window.showErrorMessage("Couldn't start unit tests. A debug session is active. Stop it first.");
-			//return;
-			//Emulator.stop(Z80UnitTests.runTests);
-			Emulator.once('disconnected', () => {
-				this.runTests();
-			});
+			if(EmulDebugSession) { // should always be active
+				// Terminate vscode debugger
+				//EmulDebugSession.terminate();
+				Emulator.disconnect();
+				// Wait until vscode debugger has stopped.
+				// (Unfortunately there is no event for this, so we need to wait)
+				let count = 50;
+				const f = () => {
+					if(!vscode.debug.activeDebugSession) {
+						// Debugger not acitve anymore, start tests
+						this.runTests();
+						return;
+					}
+					// Debugger still active, wait some more
+					count --;
+					if(count == 0) {
+						// Give up
+						vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+						return;
+					}
+					// Set timeout to wait for next try
+					setTimeout(() => {
+						f();
+					}, 100);
+				};
 
-			vscode.debug.activeDebugSession.customRequest('disconnect');
-
+				// Start waiting
+				f();
+			}
 		}
 		else {
 			// Immediately start
@@ -276,7 +296,7 @@ export class Z80UnitTests {
 
 			// Stop any previous running emulator
 			if(Emulator)
-				Emulator.stop(f);
+				Emulator.disconnect(f);
 			else
 				f();
 		}
@@ -325,7 +345,7 @@ export class Z80UnitTests {
 			const configName: string = configuration.name;
 
 			// Start debugger
-			const success = EmulDebugAdapter.unitTests(configName, this.handleDebugAdapter);
+			const success = EmulDebugSessionClass.unitTests(configName, this.handleDebugAdapter);
 			if(!success) {
 				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			}
@@ -501,7 +521,7 @@ export class Z80UnitTests {
 	 * Handles the states of the debug adapter. Will be called after setup
 	 * @param debugAdapter The debug adapter.
 	 */
-	protected static handleDebugAdapter(debugAdapter: EmulDebugAdapter) {
+	protected static handleDebugAdapter(debugAdapter: EmulDebugSessionClass) {
 		debugAdapter.on('initialized', () => {
 			try {
 				Z80UnitTests.initUnitTests();
@@ -524,7 +544,7 @@ export class Z80UnitTests {
 	 * or because of an error (ASSERT).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
-	protected static onBreak(debugAdapter?: EmulDebugAdapter) {
+	protected static onBreak(debugAdapter?: EmulDebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
 		Emulator.getRegisters(data => {
@@ -560,7 +580,7 @@ export class Z80UnitTests {
 	 * If we don't wait we would miss a few and we wouldn't break.
 	 * @param da The debug emulator.
 	 */
-	protected static startUnitTestsWhenQuiet(da: EmulDebugAdapter) {
+	protected static startUnitTestsWhenQuiet(da: EmulDebugSessionClass) {
 		da.executeAfterBeingQuietFor(300, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
@@ -574,7 +594,7 @@ export class Z80UnitTests {
 	 * tests.
 	 * @param da The debug adapter.
 	 */
-	protected static execAddr(address: number, da?: EmulDebugAdapter) {
+	protected static execAddr(address: number, da?: EmulDebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
 		Emulator.writeMemoryDump(this.addrCall, callAddr, () => {
@@ -605,7 +625,7 @@ export class Z80UnitTests {
 	 * Executes the next test case.
 	 * @param da The debug adapter.
 	 */
-	protected static nextUnitTest(da?: EmulDebugAdapter) {
+	protected static nextUnitTest(da?: EmulDebugSessionClass) {
 		// Increase count
 		Z80UnitTests.countExecuted ++;
 		Z80UnitTests.currentFail = false;
@@ -639,7 +659,7 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
 	 */
-	protected static checkUnitTest(pc: number, da?: EmulDebugAdapter) {
+	protected static checkUnitTest(pc: number, da?: EmulDebugSessionClass) {
 		// Check if it was a timeout
 		let timeoutFailure = !Z80UnitTests.debug;
 		if(Z80UnitTests.timeoutHandle) {
@@ -808,7 +828,7 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: EmulDebugAdapter|undefined, errMessage?: string) {
+	protected static stopUnitTests(debugAdapter: EmulDebugSessionClass|undefined, errMessage?: string) {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
@@ -823,7 +843,7 @@ export class Z80UnitTests {
 				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
-				Emulator.stop();
+				Emulator.disconnect();
 			}
 		};
 		// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)

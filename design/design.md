@@ -330,14 +330,14 @@ hide footbox
 title User initiated
 actor user
 participant vscode
-participant "Debug Adapter" as adapter
+participant "Emul\nDebug\nSession" as session
 participant "Emulator" as emul
 participant "Socket" as socket
 participant "ZEsarUX" as zesarux
 
 user -> vscode: Pressed stop button
-vscode -> adapter: disconnectRequest
-adapter -> emul: stop
+vscode -> session: disconnectRequest
+session -> emul: disconnect
 emul -> socket: quit
 note over socket: removeAllListeners
 note over socket: install new listeners\n(close, end, ...)
@@ -354,12 +354,9 @@ note over socket: close socket
 note over socket: removeAllListeners
 emul <-- socket
 
-adapter <-- emul
-note over adapter: removeAllListeners
-vscode <-- adapter: response
-
-'adapter -> adapter: exit
-'vscode <-- adapter: TerminatedEvent (superfluous)
+session <-- emul
+note over session: removeAllListeners
+vscode <-- session: response
 ```
 
 
@@ -368,30 +365,27 @@ hide footbox
 title Error
 'actor user
 participant vscode
-participant "Debug Adapter" as adapter
+participant "Emul\nDebug\nSession" as session
 participant "Emulator" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
 
 emul <-- socket: 'error'/'close'/'end'
-adapter <-- emul: 'error'
+session <-- emul: 'error'
 
-'adapter <-- emul
-'vscode <-- adapter: response
+session -> session: terminate
+note over session: removeAllListeners
+vscode <-- session: TerminatedEvent
 
-adapter -> adapter: exit
-note over adapter: removeAllListeners
-vscode <-- adapter: TerminatedEvent
-
-vscode -> adapter: disconnectRequest
-adapter -> emul: stop
+vscode -> session: disconnectRequest
+session -> emul: disconnect
 emul -> socket: quit
 note over socket: ...
 emul <-- socket
 
-adapter <-- emul
-note over adapter: removeAllListeners
-vscode <-- adapter: response
+session <-- emul
+note over session: removeAllListeners
+vscode <-- session: response
 ```
 
 
@@ -401,26 +395,37 @@ title User Started unit tests
 actor user
 participant Z80UnitTests as unittest
 participant vscode
-participant "Debug Adapter" as adapter
+participant "Emul\nDebug\nSession" as session
 participant "Emulator" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
 
 user -> unittest: start unit tests
-unittest -> emul: stop
+unittest -> emul: terminate
 
+session <-- emul: 'terminated'
+session -> session: terminate
+
+note over session: removeAllListeners
+vscode <-- session: TerminatedEvent
+
+alt If debug session active
+
+vscode -> session: disconnectRequest
+session -> emul: disconnect
 emul -> socket: quit
-note over socket: ...
-note over socket: close socket
 note over socket: ...
 emul <-- socket
 
-'adapter <-- emul
-'vscode <-- adapter: response
+session <-- emul
+note over session: removeAllListeners
+vscode <-- session: response
 
-adapter -> adapter: exit
-vscode <-- adapter: TerminatedEvent
-'note over adapter: removeAllListeners
+end
+
+note over unittest: Wait until debug session\nnot active anymore
+note over unittest: Start unit tests
+
 ```
 
 

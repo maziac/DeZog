@@ -9,7 +9,7 @@ suite('MetaBlocks', () => {
 		return dc.start();
 	});
 
-	teardown( () => dc.stop() );
+	teardown( () => dc.disconnect() );
 */
 
 	suite('1 block', () => {

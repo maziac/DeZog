@@ -10,7 +10,7 @@ suite('Labels', () => {
 	});
 
 /*
-	teardown( () => dc.stop() );
+	teardown( () => dc.disconnect() );
 */
 
 	suite('Files/lines vs list file', () => {

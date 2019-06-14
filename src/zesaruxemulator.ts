@@ -79,9 +79,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * Stops a machine/the debugger.
 	 * This will disconnect the socket to zesarux and un-use all data.
+	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
 	 */
-	public stop(handler: () => void) {
+	public disconnect(handler: () => void) {
+		// Terminate the socket
+		zSocket.quit(handler);
+	}
+
+
+	/**
+	 * Terminates the machine/the debugger.
+	 * This will disconnect the socket to zesarux and un-use all data.
+	 * Called e.g. when the unit tests want to terminate the emulator.
+	 * This will also send a TerminatedEvent. I.e. the vscode debugger
+	 * will also be terminated.
+	 * @param handler is called after the connection is disconnected.
+	 */
+	public terminate(handler: () => void) {
 		// Terminate the socket
 		zSocket.quit(handler);
 	}

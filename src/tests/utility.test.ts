@@ -14,7 +14,7 @@ suite('Utility', () => {
 		return dc.start();
 	});
 
-	teardown( () => dc.stop() );
+	teardown( () => dc.disconnect() );
 */
 
 	suite('calculateTabSize', () => {

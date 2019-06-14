@@ -40,7 +40,7 @@ enum DbgAdaperState {
  * The Emulator Debug Adapter.
  * It receives the requests from vscode and sends events to it.
  */
-export class EmulDebugAdapter extends DebugSession {
+export class EmulDebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
 	protected static state = DbgAdaperState.NORMAL;
 
@@ -67,7 +67,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
-	protected static unitTestHandler: ((da: EmulDebugAdapter) => void)|undefined;
+	protected static unitTestHandler: ((da: EmulDebugSessionClass) => void)|undefined;
 
 
 	/**
@@ -76,6 +76,9 @@ export class EmulDebugAdapter extends DebugSession {
 	 */
 	public constructor() {
 		super();
+
+		// Set globally
+		EmulDebugSession = this;
 
 		// Start logging
 		Log.clear();
@@ -120,7 +123,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param handler
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static unitTests(configName: string, handler: (da: EmulDebugAdapter) => void): boolean {
+	public static unitTests(configName: string, handler: (da: EmulDebugSessionClass) => void): boolean {
 		assert(handler);
 
 		// Return if currently a debug session is running
@@ -188,7 +191,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public terminate(message?: string) {
-		EmulDebugAdapter.state = DbgAdaperState.NORMAL;
+		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
@@ -253,9 +256,12 @@ export class EmulDebugAdapter extends DebugSession {
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
-		Emulator.stop(() => {
+		Emulator.disconnect(() => {
 			this.removeAllListeners();
 			this.sendResponse(response);
+			// Remove globally
+			//(EmulDebugSession as any) = undefined;
+			EmulDebugSession = undefined as any;
 			//this.exit();
 			//this.emit('disconnected');
 		});
@@ -385,8 +391,8 @@ export class EmulDebugAdapter extends DebugSession {
 		}
 
 		// Call the unit test handler. It will subscribe on events.
-		if(EmulDebugAdapter.unitTestHandler) {
-			EmulDebugAdapter.unitTestHandler(this);
+		if(EmulDebugSessionClass.unitTestHandler) {
+			EmulDebugSessionClass.unitTestHandler(this);
 		}
 
 		// Reset the code coverage
@@ -444,7 +450,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
-				if(Settings.launch.startAutomatically && !EmulDebugAdapter.unitTestHandler) {
+				if(Settings.launch.startAutomatically && !EmulDebugSessionClass.unitTestHandler) {
 					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
 					this.sendEventContinued();
 					setTimeout(() => {
@@ -453,11 +459,11 @@ export class EmulDebugAdapter extends DebugSession {
 					}, 500);
 				}
 				else {
-					this.sendEvent(new StoppedEvent('stop on start', EmulDebugAdapter.THREAD_ID));
+					this.sendEvent(new StoppedEvent('stop on start', EmulDebugSessionClass.THREAD_ID));
 					// For the unit tests
 					this.emit("initialized");
 				}
-				EmulDebugAdapter.unitTestHandler = undefined;
+				EmulDebugSessionClass.unitTestHandler = undefined;
 				this.serializer.endExec();
 			});
 		});
@@ -481,6 +487,11 @@ export class EmulDebugAdapter extends DebugSession {
 		Emulator.once('error', err => {
 			// Some error occurred
 			this.terminate(err.message);
+		});
+
+		Emulator.once('terminated', () => {
+			// Emulator has been terminated (e.g. by unit tests)
+			this.terminate();
 		});
 
 	}
@@ -602,7 +613,7 @@ export class EmulDebugAdapter extends DebugSession {
 			// Just return a default thread.
 			response.body = {
 				threads: [
-					new Thread(EmulDebugAdapter.THREAD_ID, "thread_default")
+					new Thread(EmulDebugSessionClass.THREAD_ID, "thread_default")
 				]
 			};
 			this.sendResponse(response);
@@ -1072,7 +1083,7 @@ export class EmulDebugAdapter extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine(data);
 
 			// React depending on internal state.
-			if(EmulDebugAdapter.state == DbgAdaperState.NORMAL) {
+			if(EmulDebugSessionClass.state == DbgAdaperState.NORMAL) {
 				// Send break
 				this.sendEventBreakAndUpdate();
 			}
@@ -1091,7 +1102,7 @@ export class EmulDebugAdapter extends DebugSession {
 		// Update memory dump etc.
 		this.update();
 		// Send event
-		this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
+		this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
 	}
 
 
@@ -1100,7 +1111,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 */
 	public sendEventContinued() {
 		// Send event
-		this.sendEvent(new ContinuedEvent(EmulDebugAdapter.THREAD_ID));
+		this.sendEvent(new ContinuedEvent(EmulDebugSessionClass.THREAD_ID));
 	}
 
 
@@ -1135,7 +1146,7 @@ export class EmulDebugAdapter extends DebugSession {
 				this.update();
 
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
-				this.sendEvent(new StoppedEvent('break', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
 			});
 
 			// Response is sent immediately
@@ -1166,7 +1177,7 @@ export class EmulDebugAdapter extends DebugSession {
 					handler();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 			});
 	}
 
@@ -1244,7 +1255,7 @@ export class EmulDebugAdapter extends DebugSession {
 				this.serializer.endExec();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 			});
 
 		});
@@ -1268,7 +1279,7 @@ export class EmulDebugAdapter extends DebugSession {
 				this.update();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 			});
 
 			// Response is sent immediately
@@ -1296,7 +1307,7 @@ export class EmulDebugAdapter extends DebugSession {
 				this.serializer.endExec();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 			});
 		});
 	}
@@ -1971,7 +1982,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				handler(text);
 				// Reload register values etc.
 				this.sendEventContinued();
-				this.sendEvent(new StoppedEvent('Restore', EmulDebugAdapter.THREAD_ID));
+				this.sendEvent(new StoppedEvent('Restore', EmulDebugSessionClass.THREAD_ID));
 			});
 		}
 		else {
@@ -2081,7 +2092,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
 			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 			this.sendEventContinued();
-			this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
+			this.sendEvent(new StoppedEvent('PC-change', EmulDebugSessionClass.THREAD_ID));
 		});
 	}
 
@@ -2216,4 +2227,4 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 
 /// Global debug adapter object.
-//export EmulDebugSession: EmulDebugAdapter;
+export let EmulDebugSession: EmulDebugSessionClass;  // TODO: REMOVE
