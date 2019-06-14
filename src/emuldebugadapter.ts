@@ -187,15 +187,16 @@ export class EmulDebugAdapter extends DebugSession {
 	 * Exit from the debugger.
 	 * @param message If defined the message is shown to the user as error.
 	 */
-	public exit(message?: string) {
+	public terminate(message?: string) {
 		EmulDebugAdapter.state = DbgAdaperState.NORMAL;
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
-		this.sendEvent(new TerminatedEvent());
-		//this.sendEvent(new ExitedEvent());
 		// Remove all listeners
 		this.removeAllListeners();
+		// Terminate
+		this.sendEvent(new TerminatedEvent());
+		//this.sendEvent(new ExitedEvent());
 	}
 
 
@@ -245,7 +246,7 @@ export class EmulDebugAdapter extends DebugSession {
 	 * - when user presses red square
 	 * - when the ZEsarUX socket connection is terminated
 	 * Not called:
-	 * - If user presses cirled arrow/restart.
+	 * - If user presses circled arrow/restart.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		// Close register memory view
@@ -253,8 +254,10 @@ export class EmulDebugAdapter extends DebugSession {
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
 		Emulator.stop(() => {
+			this.removeAllListeners();
 			this.sendResponse(response);
-			this.exit();
+			//this.exit();
+			//this.emit('disconnected');
 		});
 	}
 
@@ -337,7 +340,7 @@ export class EmulDebugAdapter extends DebugSession {
 		}
 		catch(e) {
 			// Some error occurred
-			this.exit('Settings: ' + e.message);
+			this.terminate('Settings: ' + e.message);
 			response.success = false;
 			this.sendResponse(response);
 			return;
@@ -376,7 +379,7 @@ export class EmulDebugAdapter extends DebugSession {
 		}
 		catch(e) {
 			// Some error occurred
-			this.exit('Labels: ' + e.message);
+			this.terminate('Labels: ' + e.message);
 			handler("Error while initializing labels.");
 			return;
 		}
@@ -396,12 +399,12 @@ export class EmulDebugAdapter extends DebugSession {
 		Emulator.once('initialized', () => {
 			// Load files
 			try {
-				// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
+				// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 				Emulator.readListFiles(Settings.launch.listFiles);
 			}
 			catch(err) {
 				// Some error occurred during loading, e.g. file not found.
-				this.exit(err);
+				this.terminate(err);
 			}
 
 			// Create memory/register dump view
@@ -477,8 +480,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 		Emulator.once('error', err => {
 			// Some error occurred
-			Emulator.stop(()=>{});
-			this.exit(err.message);
+			this.terminate(err.message);
 		});
 
 	}
@@ -1188,7 +1190,7 @@ export class EmulDebugAdapter extends DebugSession {
 
 	/**
 	 * Prints the used T-states and time to the debug console.
-	 * @param disasm The ocrresponding disassembly.
+	 * @param disasm The corresponding disassembly.
 	 * @param tStates The used T-States.
 	 * @param cpuFreq The CPU clock frequency in Hz.
 	 */
@@ -2205,4 +2207,13 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		Emulator.executeAfterBeingQuietFor(timeout, handler);
 	}
 
+
+
+    protected terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
+
+	}
 }
+
+
+/// Global debug adapter object.
+//export EmulDebugSession: EmulDebugAdapter;

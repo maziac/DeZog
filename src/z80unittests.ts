@@ -48,7 +48,7 @@ enum Color {
 /**
  * Colorize a string
  * @param color The color, e.g. '\x1b[36m' for cyan, see https://coderwall.com/p/yphywg/printing-colorful-text-in-terminal-when-run-node-js-script.
- * @param text The strign to colorize.
+ * @param text The string to colorize.
  */
 function colorize(color: string, text: string): string {
 	//return color + text + '\x1b[0m';
@@ -150,7 +150,7 @@ export class Z80UnitTests {
 		// All testcases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
-		Z80UnitTests.runTests();
+		Z80UnitTests.runTestsCheck();
 	}
 
 
@@ -163,7 +163,31 @@ export class Z80UnitTests {
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
 		// Start
-		Z80UnitTests.runTests();
+		Z80UnitTests.runTestsCheck();
+	}
+
+
+	/**
+	 * Checks first if a debug session is active, terminates it
+	 * and then starts the unit tests.
+	 */
+	protected static runTestsCheck() {
+		// Check first that nothing is running
+		if(vscode.debug.activeDebugSession) {
+			//vscode.window.showErrorMessage("Couldn't start unit tests. A debug session is active. Stop it first.");
+			//return;
+			//Emulator.stop(Z80UnitTests.runTests);
+			Emulator.once('disconnected', () => {
+				this.runTests();
+			});
+
+			vscode.debug.activeDebugSession.customRequest('disconnect');
+
+		}
+		else {
+			// Immediately start
+			this.runTests();
+		}
 	}
 
 
@@ -174,11 +198,6 @@ export class Z80UnitTests {
 	 */
 	protected static runTests() {
 		try {
-			// Check first that nothing is running
-			if(vscode.debug.activeDebugSession) {
-				vscode.window.showErrorMessage("Couldn't start unit tests. A debug session is active. Stop it first.");
-				return;
-			}
 
 			// Mode
 			this.debug = false;
@@ -206,7 +225,7 @@ export class Z80UnitTests {
 				// Events
 				Emulator.once('initialized', () => {
 					try {
-						// Reads the list file and also retrieves all occurences of WPMEM, ASSERT and LOGPOINT.
+						// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 						Labels.init();
 						Emulator.readListFiles(listFiles);
 
@@ -272,7 +291,7 @@ export class Z80UnitTests {
 	 * Execute all unit tests in debug mode.
 	 */
 	public static debugAllUnitTests() {
-		// All testcases
+		// All test cases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
 		Z80UnitTests.debugTests();
@@ -318,7 +337,7 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Clears the map of testcases.
+	 * Clears the map of test cases.
 	 * Is called at first when starting (partial) unit testcases.
 	 */
 	public static clearTestCaseList(){
@@ -480,7 +499,7 @@ export class Z80UnitTests {
 
 	/**
 	 * Handles the states of the debug adapter. Will be called after setup
-	 * @param debugAdapter The debug adpater.
+	 * @param debugAdapter The debug adapter.
 	 */
 	protected static handleDebugAdapter(debugAdapter: EmulDebugAdapter) {
 		debugAdapter.on('initialized', () => {
@@ -501,18 +520,18 @@ export class Z80UnitTests {
 
 
 	/**
-	 * A break occured. E.g. the test case stopped because it is finished
+	 * A break occurred. E.g. the test case stopped because it is finished
 	 * or because of an error (ASSERT).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
 	protected static onBreak(debugAdapter?: EmulDebugAdapter) {
-		// The program was run and a break occured.
+		// The program was run and a break occurred.
 		// Get current pc
 		Emulator.getRegisters(data => {
 			// Parse the PC value
 			const pc = Z80Registers.parsePC(data);
 			//const sp = Z80Registers.parseSP(data);
-			// Check if testcase was successfull
+			// Check if test case was successful
 			Z80UnitTests.checkUnitTest(pc, debugAdapter);
 			// Otherwise another break- or watchpoint was hit or the user stepped manually.
 		});
@@ -615,7 +634,7 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Checks if the testcase was OK or a fail.
+	 * Checks if the test case was OK or a fail.
 	 * Or undetermined.
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
@@ -633,7 +652,7 @@ export class Z80UnitTests {
 		// Check if test case ended successfully or not
 		if(pc != this.addrTestReadySuccess
 			&& pc != this.addrTestReadyFailure) {
-			// Undetermined. Testcase not ended yet.
+			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {
 				// In debug mode: Send break to give vscode control
@@ -686,7 +705,7 @@ export class Z80UnitTests {
 			}
 		}
 
-		// Get the testcase label.
+		// Get the test case label.
 		const label = Z80UnitTests.utLabels[0];
 
 		// In debug mode do break after one step. The step is required to put the PC at the right place.
@@ -801,7 +820,7 @@ export class Z80UnitTests {
 			Emulator.removeAllListeners();
 			// Exit
 			if(debugAdapter)
-				debugAdapter.exit(errMessage);
+				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
 				Emulator.stop();
@@ -820,7 +839,7 @@ export class Z80UnitTests {
 	 * @param txt The text to print.
 	 */
 	protected static dbgOutput(txt: string) {
-		// Savety check
+		// Safety check
 		if(!vscode.debug.activeDebugConsole)
 			return;
 

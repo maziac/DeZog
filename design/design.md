@@ -317,10 +317,118 @@ ZXNextSpritesView -> webView: Set webview.html
 ```
 
 
+## Stopping the Emulator Debug Session
+
+There are several reasons to stop the Emulator Debug Session.
+- User pressed 'stop' button
+- Connection error/connection closed by emulator (zesarux)
+- Unit tests stop the emulator
+
+
+```puml
+hide footbox
+title User initiated
+actor user
+participant vscode
+participant "Debug Adapter" as adapter
+participant "Emulator" as emul
+participant "Socket" as socket
+participant "ZEsarUX" as zesarux
+
+user -> vscode: Pressed stop button
+vscode -> adapter: disconnectRequest
+adapter -> emul: stop
+emul -> socket: quit
+note over socket: removeAllListeners
+note over socket: install new listeners\n(close, end, ...)
+
+socket -> zesarux: pu-transaction-log truncate yes
+socket <-- zesarux
+socket -> zesarux: clear-membreakpoints
+socket <-- zesarux
+socket -> zesarux: disable-breakpoints
+socket <-- zesarux
+socket -> zesarux: quit
+socket <-- zesarux
+note over socket: close socket
+note over socket: removeAllListeners
+emul <-- socket
+
+adapter <-- emul
+note over adapter: removeAllListeners
+vscode <-- adapter: response
+
+'adapter -> adapter: exit
+'vscode <-- adapter: TerminatedEvent (superfluous)
+```
+
+
+```puml
+hide footbox
+title Error
+'actor user
+participant vscode
+participant "Debug Adapter" as adapter
+participant "Emulator" as emul
+participant "Socket" as socket
+'participant "ZEsarUX" as zesarux
+
+emul <-- socket: 'error'/'close'/'end'
+adapter <-- emul: 'error'
+
+'adapter <-- emul
+'vscode <-- adapter: response
+
+adapter -> adapter: exit
+note over adapter: removeAllListeners
+vscode <-- adapter: TerminatedEvent
+
+vscode -> adapter: disconnectRequest
+adapter -> emul: stop
+emul -> socket: quit
+note over socket: ...
+emul <-- socket
+
+adapter <-- emul
+note over adapter: removeAllListeners
+vscode <-- adapter: response
+```
+
+
+```puml
+hide footbox
+title User Started unit tests
+actor user
+participant Z80UnitTests as unittest
+participant vscode
+participant "Debug Adapter" as adapter
+participant "Emulator" as emul
+participant "Socket" as socket
+'participant "ZEsarUX" as zesarux
+
+user -> unittest: start unit tests
+unittest -> emul: stop
+
+emul -> socket: quit
+note over socket: ...
+note over socket: close socket
+note over socket: ...
+emul <-- socket
+
+'adapter <-- emul
+'vscode <-- adapter: response
+
+adapter -> adapter: exit
+vscode <-- adapter: TerminatedEvent
+'note over adapter: removeAllListeners
+```
+
+
+
 ## Code Coverage
 
 Code coverage can be enabled in the launch settings.
-Everytime the progrma is stopped the "Emulator" will send information about the executed addresses.
+Everytime the program is stopped the "Emulator" will send information about the executed addresses.
 The z80-debug adatper will then highlight the covered lines.
 This is available everywhere (e.g. during debugging or during execution of unit tests).
 
