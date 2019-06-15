@@ -882,7 +882,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// not supported.
 		if(this.assertBreakpoints.length > 0)
 			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
-		handler();
+		if(handler)
+			handler();
 	}
 
 
@@ -921,7 +922,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// not supported.
 		if(this.logpoints.size > 0)
 			this.emit('warning', 'ZEsarUX does not support LOGPOINTs in the sources.');
-		handler();
+		if(handler)
+			handler();
 	}
 
 
