@@ -191,7 +191,7 @@ Press F1 for the command palette to appear.
 Enter "z80-debug: Run all unit tests".
 
 The z80-debug adapter will connect ZEsarUX and execute the unit tests.
-At the end you get a summary like this:
+At the end you get a summary like this (in the vscode "OUTPUT" panel channel "Z80 Debugger Unit Tests"):
 ~~~
 +-------------------------------------------------
 UNITTEST SUMMARY:
