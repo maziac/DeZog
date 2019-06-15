@@ -406,6 +406,10 @@ unittest -> emul: terminate
 session <-- emul: 'terminated'
 session -> session: terminate
 
+emul -> socket: quit
+note over socket: ...
+emul <-- socket
+
 note over session: removeAllListeners
 vscode <-- session: TerminatedEvent
 
@@ -414,7 +418,7 @@ alt If debug session active
 vscode -> session: disconnectRequest
 session -> emul: disconnect
 emul -> socket: quit
-note over socket: ...
+'note over socket: ...
 emul <-- socket
 
 session <-- emul

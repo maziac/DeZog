@@ -97,8 +97,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public terminate(handler: () => void) {
-		// Terminate the socket
-		zSocket.quit(handler);
+		// The socket connection must be closed as well.
+		zSocket.quit(() => {
+			// Send terminate event (to Debug Session which will send a TerminatEvent to vscode. That in turn will create a 'disconnect')
+			this.emit('terminated');
+			handler();
+		});
 	}
 
 

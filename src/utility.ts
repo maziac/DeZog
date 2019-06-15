@@ -715,4 +715,35 @@ export class Utility {
 		}
 	}
 
+
+	/**
+	 * Call the 'handler' in an interval until 'handler' returns true.
+	 * This can be used to wait on an event to happen, e.g. to poll
+	 * a variable.
+	 * @param handler(time) The handler. I t normally checks a value
+	 * and acts accordingly. E.g. it polls a variable and does
+	 * some action when it changes.
+	 * When the handler should not be called anymore it need to return true.
+	 * The handler gets parameter time in secs. So it#s possible
+	 * to check how long this function already tries.
+	 * @param interval Interval in secs
+	 */
+	public static delayedCall(handler: (time: number) => boolean, interval = 0.1) {
+		let count = 0;
+		const f = () => {
+			const time = count*interval;
+			const result = handler(time);
+			if(result)
+				return;
+			// Set timeout to wait for next try
+			count ++;
+			setTimeout(() => {
+				f();
+			}, interval*1000);
+		};
+
+		// Start waiting
+		f();
+	}
+
 }

@@ -172,42 +172,31 @@ export class Z80UnitTests {
 	 * and then starts the unit tests.
 	 */
 	protected static runTestsCheck() {
-		// Check first that nothing is running
-		if(vscode.debug.activeDebugSession) {
-			if(EmulDebugSession) { // should always be active
-				// Terminate vscode debugger
-				//EmulDebugSession.terminate();
-				Emulator.disconnect();
-				// Wait until vscode debugger has stopped.
-				// (Unfortunately there is no event for this, so we need to wait)
-				let count = 50;
-				const f = () => {
-					if(!vscode.debug.activeDebugSession) {
-						// Debugger not acitve anymore, start tests
-						this.runTests();
-						return;
-					}
-					// Debugger still active, wait some more
-					count --;
-					if(count == 0) {
-						// Give up
-						vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
-						return;
-					}
-					// Set timeout to wait for next try
-					setTimeout(() => {
-						f();
-					}, 100);
-				};
+		// Wait until vscode debugger has stopped.
+		// (Unfortunately there is no event for this, so we need to wait)
+		const f = () => {
+			Utility.delayedCall(time => {
+				// After 5 secs give up
+				if(time >= 5.0) {
+					// Give up
+					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+					return true;
+				}
+				// Check for active debug session
+				if(vscode.debug.activeDebugSession)
+					return false;  // Try again
+				// Debugger not active anymore, start tests
+				this.runTests();
+				return true;  // Stop
+			});
+		}
 
-				// Start waiting
-				f();
-			}
+		if(Emulator) {
+			// Terminate emulator
+			Emulator.terminate(f);
 		}
-		else {
-			// Immediately start
-			this.runTests();
-		}
+		else
+			f();
 	}
 
 
@@ -239,66 +228,58 @@ export class Z80UnitTests {
 			Coverage.clearLineCoverage();
 
 			// Start emulator.
-			const f = () => {
-				EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 
-				// Events
-				Emulator.once('initialized', () => {
+			// Events
+			Emulator.once('initialized', () => {
+				try {
+					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
+					Labels.init();
+					Emulator.readListFiles(listFiles);
+
+					// Enable ASSERTs etc.
+					Emulator.enableAssertBreakpoints(true);
+					Emulator.enableWPMEM(true);
 					try {
-						// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-						Labels.init();
-						Emulator.readListFiles(listFiles);
-
-						// Enable ASSERTs etc.
-						Emulator.enableAssertBreakpoints(true);
-						Emulator.enableWPMEM(true);
-						try {
-							Emulator.enableLogpoints('UNITTEST', true);
-						}
-						catch {}	// Just in case the group is undefined
-
-						Z80UnitTests.initUnitTests();
-
-						// Load the initial unit test routine (provided by the user)
-						Z80UnitTests.execAddr(Z80UnitTests.addrStart);
+						Emulator.enableLogpoints('UNITTEST', true);
 					}
-					catch(e) {
-						// Some error occurred
-						Z80UnitTests.stopUnitTests(undefined, e);
-					}
-				});
+					catch {}	// Just in case the group is undefined
 
-				Emulator.on('coverage', coveredAddresses => {
-					// Covered addresses (since last break) have been sent
-					Coverage.showCodeCoverage(coveredAddresses);
-				});
+					Z80UnitTests.initUnitTests();
 
-				Emulator.on('warning', message => {
-					// Some problem occurred
-					vscode.window.showWarningMessage(message);
-				});
-
-				Emulator.on('log', message => {
-					// Show the log (from the socket/ZEsarUX) in the debug console
-					vscode.debug.activeDebugConsole.appendLine("Log: " + message);
-
-				});
-
-				Emulator.once('error', err => {
+					// Load the initial unit test routine (provided by the user)
+					Z80UnitTests.execAddr(Z80UnitTests.addrStart);
+				}
+				catch(e) {
 					// Some error occurred
-					Z80UnitTests.stopUnitTests(undefined, err);
-				});
+					Z80UnitTests.stopUnitTests(undefined, e);
+				}
+			});
+
+			Emulator.on('coverage', coveredAddresses => {
+				// Covered addresses (since last break) have been sent
+				Coverage.showCodeCoverage(coveredAddresses);
+			});
+
+			Emulator.on('warning', message => {
+				// Some problem occurred
+				vscode.window.showWarningMessage(message);
+			});
+
+			Emulator.on('log', message => {
+				// Show the log (from the socket/ZEsarUX) in the debug console
+				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+
+			});
+
+			Emulator.once('error', err => {
+				// Some error occurred
+				Z80UnitTests.stopUnitTests(undefined, err);
+			});
 
 
-				// Connect to debugger.
-				Emulator.init();
-			}
-
-			// Stop any previous running emulator
-			if(Emulator)
-				Emulator.disconnect(f);
-			else
-				f();
+			// Connect to debugger.
+			Emulator.init();
 		}
 		catch(e) {
 			// Some error occurred

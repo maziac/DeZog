@@ -490,26 +490,36 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		// Check state
-		if(this.state != SocketState.CONNECTED) {
+		//if(this.state != SocketState.CONNECTED)
+		/*
+		{
 			// Already disconnected or not really connected.
-			if(zSocket.connected)
+			if(!zSocket.connected || this.state == SocketState.CONNECTING)
 				zSocket.end();
 			else
 				func();
 			return;
 		}
+		*/
 
-		// Terminate connection
-		this.logSocket.log('Quitting:');
-		this.setTimeout(QUIT_TIMEOUT);
-		this.send('\n');	// Just for the case that we are waiting on a breakpoint.
-		this.send('cpu-transaction-log truncate yes');
-		this.send('clear-membreakpoints');
-		this.send('disable-breakpoints');
-		this.send('quit', data => {
-			// Close connection (ZEsarUX also closes the connection)
-			zSocket.end();
-		});
+		// Terminate if connected
+		if(this.state == SocketState.CONNECTED) {
+			// Terminate connection
+			this.logSocket.log('Quitting:');
+			this.setTimeout(QUIT_TIMEOUT);
+			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
+			this.send('cpu-transaction-log truncate yes');
+			this.send('clear-membreakpoints');
+			this.send('disable-breakpoints');
+			this.send('quit', data => {
+				// Close connection (ZEsarUX also closes the connection)
+				zSocket.end();
+			});
+			return;
+		}
+
+		// Otherwise just end (and call func)
+		zSocket.end();
 	}
 
 
