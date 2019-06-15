@@ -940,6 +940,18 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(!condition || condition.length == 0)
 			return '';	// No condition
 
+		/*
+		Für das neue Format muss ich etwas umbauen:
+		- Im Moment ist Regsiter nur vorne und value nur hinter erlaubt, muss ich überall erlauben
+		- Labels werden in der regex nicht erkannt (obwohl sie mit evalausgewertet werden würden)
+		Da zesarux jetzt eigentlich flexibel genug ist reicht
+		es vielleicht einfach nur nach Label zu suchen und die zu ersetzen durch Addressen.
+		Dann muss aber erst noch geklärt werden, wie zwischen Klammern für
+		math. Berechnungen und "memory contents at" unterschieden wird.
+		Vielleicht mal nachfragen, ob er auch noch ">=" und "<=" implementieren wird.
+		*/
+
+
 		const regex = /([a-z]+)\s*([<>=!]+)\s*([0-9]*)\s*(\|\||&&*)?/gi;
 		let conds = '';
 		let match;
@@ -966,11 +978,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// != :
 				case '==':	resComp = '='; break;
 				// == :
-				case '!=':	resComp = '/'; break;
+				case '!=':	resComp = '<>'; break;
 				default:	resComp = compString; break;
 			}
 			assert(resComp);	// Otherwise unknown comparison
-			assert(resComp.length == 1);
 
 			// Convert value
 			const value = eval(valueString);
@@ -982,9 +993,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let resConcat = '';
 			if(concatString.length > 0) {
 				if(concatString == "&&")
-					resConcat = " and ";
+					resConcat = " AND ";
 				else if(concatString == "||")
-					resConcat = " or ";
+					resConcat = " OR ";
 				assert(resConcat.length > 0);
 			}
 			conds += zesaruxCondition + resConcat;
@@ -993,6 +1004,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(conds.length == 0)
 			return undefined;
 
+		console.log('Converted condition "' + condition + '" to "' + conds);
 		return conds;
 	}
 
