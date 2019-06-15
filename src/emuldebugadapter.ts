@@ -77,9 +77,6 @@ export class EmulDebugSessionClass extends DebugSession {
 	public constructor() {
 		super();
 
-		// Set globally
-		EmulDebugSession = this;
-
 		// Start logging
 		Log.clear();
 
@@ -259,11 +256,6 @@ export class EmulDebugSessionClass extends DebugSession {
 		Emulator.disconnect(() => {
 			this.removeAllListeners();
 			this.sendResponse(response);
-			// Remove globally
-			//(EmulDebugSession as any) = undefined;
-			EmulDebugSession = undefined as any;
-			//this.exit();
-			//this.emit('disconnected');
 		});
 	}
 
@@ -2226,5 +2218,3 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 }
 
 
-/// Global debug adapter object.
-export let EmulDebugSession: EmulDebugSessionClass;  // TODO: REMOVE

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-import { EmulDebugSession, EmulDebugSessionClass } from './emuldebugadapter';
+import { EmulDebugSessionClass } from './emuldebugadapter';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
 import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
@@ -168,10 +168,12 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Checks first if a debug session is active, terminates it
-	 * and then starts the unit tests.
+	 * Checks if the debugger is active. If yes terminates it and
+	 * executes the unit tests.
+	 * @param debug false: unit tests are run without debugger,
+	 * true: unit tests are run with debugger.
 	 */
-	protected static runTestsCheck() {
+	protected static terminateEmulatorAndStartTests(debug: boolean) {
 		// Wait until vscode debugger has stopped.
 		// (Unfortunately there is no event for this, so we need to wait)
 		const f = () => {
@@ -186,7 +188,10 @@ export class Z80UnitTests {
 				if(vscode.debug.activeDebugSession)
 					return false;  // Try again
 				// Debugger not active anymore, start tests
-				this.runTests();
+				if(debug)
+					this.debugTests();
+				else
+					this.runTests();
 				return true;  // Stop
 			});
 		}
@@ -197,6 +202,14 @@ export class Z80UnitTests {
 		}
 		else
 			f();
+}
+
+	/**
+	 * Checks first if a debug session is active, terminates it
+	 * and then starts the unit tests.
+	 */
+	protected static runTestsCheck() {
+		this.terminateEmulatorAndStartTests(false);
 	}
 
 
@@ -295,7 +308,7 @@ export class Z80UnitTests {
 		// All test cases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
-		Z80UnitTests.debugTests();
+		Z80UnitTests.debugTestsCheck();
 	}
 
 
@@ -310,7 +323,16 @@ export class Z80UnitTests {
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
 		// Start
-		Z80UnitTests.debugTests();
+		Z80UnitTests.debugTestsCheck();
+	}
+
+
+	/**
+	 * Start the unit tests but checks first if the debugger is active and
+	 * terminates it.
+	 */
+	protected static debugTestsCheck() {
+		this.terminateEmulatorAndStartTests(true);
 	}
 
 
