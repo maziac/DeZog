@@ -16,7 +16,7 @@
 		"zx spectrum"
 	],
 	"engines": {
-		"vscode": "^1.30.0",
+		"vscode": "^1.35.1",
 		"node": "^7.9.0"
 	},
 	"icon": "images/z80-debug-icon.png",
@@ -44,20 +44,20 @@
 		"binary-file": "^0.2.1",
 		"gif-writer": "^0.9.3",
 		"jsonc-parser": "^2.1.0",
-		"mocha": "^5.2.0",
+		"mocha": "^6.1.4",
 		"n-readlines": "^1.0.0",
-		"ts-node": "^7.0.1",
-		"vscode-debugadapter": "1.33.0",
-		"vscode-debugprotocol": "1.33.0"
+		"ts-node": "^8.3.0",
+		"vscode-debugadapter": "1.35.0",
+		"vscode-debugprotocol": "1.35.0"
 	},
 	"devDependencies": {
-		"@types/mocha": "5.2.5",
-		"@types/node": "10.12.18",
-		"tslint": "5.12.0",
-		"typescript": "3.2.2",
-		"vsce": "1.54.0",
-		"vscode": "^1.1.33",
-		"vscode-debugadapter-testsupport": "1.33.0"
+		"@types/mocha": "5.2.7",
+		"@types/node": "12.0.8",
+		"tslint": "5.17.0",
+		"typescript": "3.5.2",
+		"vsce": "1.63.0",
+		"vscode": "^1.1.34",
+		"vscode-debugadapter-testsupport": "1.35.0"
 	},
 	"main": "./out/extension",
 	"activationEvents": [

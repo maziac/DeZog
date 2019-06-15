@@ -436,8 +436,12 @@ export class ZesaruxSocket extends Socket {
 	 * removeAllListeners is broken in vscode 1.31.1 (Feb/2019).
 	 * Here is the correct call to remove all listeners if no argument is given.
 	 * Note: this is not a full replacement.
+	 * Reproducability:
+	 * Start emulator, stop it. If you get a warning "ZEsarUX terminated
+	 * the connection" the error is still there.
 	 */
 	protected myRemoveAllListeners() {
+		//this.removeAllListeners(); // Still does not work in vscode 1.35.0. Can be seen if quitting the socket will generate in double answers from zesarux.
 		const Stream = require('stream');
 		Stream.prototype.removeAllListeners.apply(this);
 	}
