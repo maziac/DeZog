@@ -12,7 +12,11 @@ import * as fs from 'fs';
  *
  * The transaction log may become very big, e.g. a few GB of textual data.
  * The format of each line is:
- * XXXX TODO.
+ * 2019/06/16 14:19:34.098127 00000 8193 CALL 8000 PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+ *
+ * I will not use date time and tstates which reduces it to:
+ * 8005 PUSH HL PC=8005 SP=ff2b BC=8000 AF=1e54 HL=8080 DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=03  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+
  *
  * This class adds functions to easily work with the file.
  * E.g. to
@@ -33,12 +37,18 @@ export class ZesaruxTransactionLog {
 	/// The size of the file.
 	protected fileSize: number;
 
+	/// Counter of the line numbers that are already stepped back.
+	/// O if no step back.
+	protected stepBackCounter: number;
+
+
 	/**
 	 * Creates the object.
 	 * @param filepath The file to use.
 	 */
 	constructor(filepath: string) {
 		this.filepath = filepath;
+		this.stepBackCounter = 0;
 	}
 
 
@@ -68,13 +78,14 @@ export class ZesaruxTransactionLog {
 			offset -= chunkSize;
 			if(offset < 0)
 				offset = 0;
-			fs.readSync(this.file, buffer, offset, chunkSize, 1);
+			fs.readSync(this.file, buffer, 0, chunkSize, offset);
 			// Find '\n'
-			const s = buffer.toString();
+			const s = String.fromCharCode.apply(null, buffer);
 			let k = s.lastIndexOf('\n');
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
+				this.stepBackCounter ++;
 				return;
 			}
 		}
@@ -94,13 +105,14 @@ export class ZesaruxTransactionLog {
 		let offset = this.fileOffset;
 		while(offset < this.fileSize) {
 			// Read chunk
-			fs.readSync(this.file, buffer, offset, chunkSize, 1);
+			fs.readSync(this.file, buffer, 0, chunkSize, offset);
 			// Find '\n'
-			const s = buffer.toString();
+			const s = String.fromCharCode.apply(null, buffer);
 			let k = s.indexOf('\n');
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
+				this.stepBackCounter --;
 				return;
 			}
 			// Next chunk
@@ -115,7 +127,7 @@ export class ZesaruxTransactionLog {
 	/**
 	 * Reads the line at the current offset.
 	 */
-	protected readLine() {
+	public getLine() { // TODO: should be protected
 		// Reads in a few bytes from the end and searches for '\n'
 		let total = '';
 		const chunkSize = 100;
@@ -123,9 +135,9 @@ export class ZesaruxTransactionLog {
 		let offset = this.fileOffset;
 		while(offset < this.fileSize) {
 			// Read chunk
-			fs.readSync(this.file, buffer, offset, chunkSize, 1);
+			fs.readSync(this.file, buffer, 0, chunkSize, offset);
 			// Find '\n'
-			const s = buffer.toString();
+			const s = String.fromCharCode.apply(null, buffer);
 			let k = s.indexOf('\n');
 			if(k >= 0) {
 				// Found
@@ -139,6 +151,14 @@ export class ZesaruxTransactionLog {
 
 		// Return
 		return total;
+	}
+
+
+	/**
+	 * @returns Returns true if in step back mode.
+	 */
+	public isInStepBackMode() {
+		return (this.stepBackCounter != 0);
 	}
 
 }
