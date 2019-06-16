@@ -1152,7 +1152,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	/**
 		* Step over.
 		* Called from UI (vscode) and from the unit tests.
-		* @param handler Is called after successfull step-over.
+		* @param handler Is called after successful step-over.
 	  */
 	 public emulatorStepOver(handler?: () => void): void {
 			// Step-Over

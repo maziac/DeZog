@@ -942,7 +942,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		/*
 		Für das neue Format muss ich etwas umbauen:
-		- Im Moment ist Regsiter nur vorne und value nur hinter erlaubt, muss ich überall erlauben
+		- Im Moment ist Register nur vorne und value nur hinter erlaubt, muss ich überall erlauben
 		- Labels werden in der regex nicht erkannt (obwohl sie mit evalausgewertet werden würden)
 		Da zesarux jetzt eigentlich flexibel genug ist reicht
 		es vielleicht einfach nur nach Label zu suchen und die zu ersetzen durch Addressen.
