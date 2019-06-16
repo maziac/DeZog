@@ -1,6 +1,11 @@
-@startuml
+# Startup
 
-title startup
+Traced startup sequence.
+Is here just for reference.
+
+
+```puml
+title Startup
 
 hide footbox
 
@@ -57,8 +62,5 @@ vscode <- ZXDebug: <font color=red><b>sendResponse, evaluate</b></font>({"result
 vscode <- ZXDebug: <font color=red><b>sendResponse, evaluate</b></font>({"result":"(5C00h)b=0/'', (5C00h)w=3584",\n"variablesReference":285696,"type":"data","namedVariables":2})
 vscode <- ZXDebug: <font color=red><b>sendResponse, variables</b></font>({"variables":[{"name":"00","type":"string",\n"value":"","variablesReference":0},{"name":"mman","type":"string",\n"value":"> PC=fdfd SP=9f0a BC=0007 A=00 HL=5c78 DE=6323 IX=6f00 IY=a926\nA'=1e BC'=0200 HL'=a97a DE'=4e41 I=fe R=58  F=S    HNC F'=    3HN  \nMEMPTR=0000 IM2         VPS: 0 ","variablesReference":0}]})
 
-
-@enduml
-
-
+```
 

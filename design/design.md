@@ -98,6 +98,20 @@ Emulator <-> Socket:
 
 
 
+## Activation
+
+z80-debug is activated in the 'activate' function in extension.ts
+by registering the ZesaruxConfigurationProvider.
+This happens e.g. when the Debugger is started.
+Short after 'ZesaruxConfigurationProvider::resolveDebugConfiguration' is called.
+As the debug adapter is entirely implemented in Typescript it lives in the same process as the extension which simplifies debugging the debug-adapter.
+So in 'resolveDebugConfiguration' the 'ZesaruxDebugSession' is instantiated
+and started as server (socket). In the same function the server (socket) is also connected by the extension.
+
+Although the same process is used and therefore it is technically possible to directly call methods of the 'ZesaruxDebugSession' it is not done.
+Instead the intended way (through 'customRequest' which uses sockets) is chosen.
+
+
 ## Asynchronicity
 
 vscode is highly asynchronous. All requests start with the 'request' and end with a 'response'. The 'response' would be typically generated in another function e.g. as a response from the zesarux socket answer.
@@ -391,7 +405,7 @@ vscode <-- session: response
 
 ```puml
 hide footbox
-title User Started unit tests
+title User started unit tests
 actor user
 participant Z80UnitTests as unittest
 participant vscode

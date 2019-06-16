@@ -1,6 +1,7 @@
-@startuml
+# Requests
 
-title step
+```puml
+title Different requests
 
 hide footbox
 
@@ -51,8 +52,5 @@ note over vscode, ZXDebug: If the expression/variable is opened in the WATCH are
 
 vscode -> ZXDebug: variablesRequest(varID)
 vscode <-- ZXDebug: response(variables)
+````
 
-
-
-
-@enduml

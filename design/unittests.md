@@ -48,3 +48,10 @@ If all testcases are run (not debugged) a summary is written afterwards with all
 It will also list how many lines of the file are "uncovered": as source code lines and also as percentage.
 
 If a specific (or several) testcases are debugged no summary is written but the covered lines are shown in the gutter.
+
+
+# Coverage
+
+While the unit tests are executed the ZEsarUX cpu-transaction-log is enabled.
+This log records all executed addresses.
+When the unit tests are passed (or on every break) the transaction  log is read, the addresses are converted to source code locations and the vscode is told to mark (decorate) the covered lines.
