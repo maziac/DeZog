@@ -87,6 +87,9 @@ vscode <-- session: response
 - Soll ich tstates Information anzeigen?
 - müsste ich ja auch aufsummieren bei "reverseContinue" bis zum BreakPoint.
 
+- init() vom ZesaruxTransactionLog ist in CodeCoverage Funktion. Das muss ich umdesignen.
+
+- Wenn sowieso immer alle Register gebracht werden in dem CPU transaction log, dann ist die address Information redundant, da sie auch in den Registern vorhanden ist. Ich kann also 5 byte sparen, wenn ich die Adress Info nicht mehr explizit anfordere sondern aus "PC=xxxx" extrahiere.
 
 
 ## Pseudocode (ZEsarUX):

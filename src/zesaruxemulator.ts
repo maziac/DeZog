@@ -12,6 +12,7 @@ import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from './emulator';
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
+import { ZesaruxTransactionLog } from './zesaruxtransactionlog';
 import * as lineRead from 'n-readlines';
 
 
@@ -60,6 +61,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
 
+	/// Handles the transaction log (coverage and reverse debugging)
+	protected cpuTransactionLog: ZesaruxTransactionLog;
+
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
 
@@ -73,6 +77,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Connect zesarux debugger
 		zSocket.connectDebugger();
+
+		// Transaction log
+		const cpuLog = Utility.getAbsCpuLogFileName();
+		this.cpuTransactionLog = new ZesaruxTransactionLog(cpuLog);
 	}
 
 
@@ -185,6 +193,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
+
+	// TOOD: REMOVE. Enable for now always
+	Settings.launch.codeCoverage = true;
+
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
 
@@ -194,7 +206,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
 				// Disable for now
 				zSocket.send('cpu-transaction-log enabled no');
-				// Coverage settings
+
+				// Coverage + reverse debugging settings
+
 				// Set datetime information
 				zSocket.send('cpu-transaction-log datetime no');
 				// Set tstates information
@@ -202,9 +216,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Set address information
 				zSocket.send('cpu-transaction-log address yes');
 				// Set opcode information
-				zSocket.send('cpu-transaction-log opcode no');
+				zSocket.send('cpu-transaction-log opcode yes');
 				// Set registers information
-				zSocket.send('cpu-transaction-log registers no');
+				zSocket.send('cpu-transaction-log registers yes');
 
 				// Load sna or tap file
 				if(Settings.launch.load)
@@ -257,9 +271,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler(registersString) Passes 'registersString' to the handler.
 	 */
 	public getRegistersFromEmulator(handler: (registersString: string) => void) {
+		// Check if in reverse debugging mode
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Read registers from file
+			let line = this.cpuTransactionLog.getLine();
+			// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+			// Turn into same format as for 'get-registers'
+			const k = line.indexOf('PC=');
+			assert(k >= 0);
+			const data = line.substr(k);
+			handler(data);
+			return;
+		}
+
 		// get new data
 		zSocket.send('get-registers', data => {
 			// convert received data to right format ...
+			// data is e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
 			handler(data);
 		});
 	}
@@ -632,13 +660,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Code coverage
 		if(Settings.launch.codeCoverage) {
 			// Clear the log file
-			zSocket.send('cpu-transaction-log truncate yes', data => {
+	// TODO: REMOVE. truncate disabled to test reverse debugging.
+	//		zSocket.send('cpu-transaction-log truncate yes', data => {
 				// Enable logging
 				zSocket.send('cpu-transaction-log enabled yes', data => {
 					// Call handler
 					handler();
 				});
-			});
+	//		});
 		}
 		else {
 			// Call handler (without coverage)
@@ -651,9 +680,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Stops the cpu-transaction-log file to flush it.
 	 * Then reads it and collects all passed addresses.
 	 */
-	protected calculateCodeCoverage() {
+	protected calculateCodeCoverage() {  // TODO: must rename this, as it is also used for reverse debugging.
 		// Disable logging to close/flush the file.
 		zSocket.send('cpu-transaction-log enabled no', () => {
+			// Reverse debugging
+			this.cpuTransactionLog.init();
 			// Check if code coverage is enabled
 			if(Settings.launch.codeCoverage) {
 				// Go through coverage file and collect all addresses
@@ -769,9 +800,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 	  * @param handler The handler that is called after the step is performed.
 	  */
 	 public stepBack(handler:()=>void): void {
-		// TODO: implement step-back
 		// Clear register cache
 		this.RegisterCache = undefined;
+		// Move backwards in file
+		this.cpuTransactionLog.prevLine();
+		const s = this.cpuTransactionLog.getLine();
+		console.log('stepBack: ' + s);  // TODO: REMOVE
+
 		// Call handler
 		handler();
 	}
