@@ -547,35 +547,49 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number)=>void): void {
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Step over should skip all CALLs and RST.
+			// This is more difficult as it seems. It could also happen that an
+			// interrupt kicks in.
+			// The algorithm does work by checking the SP:
+			// 1. SP is read
+			// 2. switch to next line
+			// 3. SP is read
+			// 4. If SP has not changed stop
+			// 5. Otherwise switch to next line until SP is reached.
+			// Note: does not work for PUSH/POP or "LD SP". Therefore these are
+			// handled in a special way. However, if an interrupt would kick in when
+			// e.g. a push is done, then the "stepOver" sould work just like a
+			// "stepInto".
+
 			// Clear register cache
 			this.RegisterCache = undefined;
 			// Get current instruction
 			const instruction = this.cpuTransactionLog.getInstruction();
-			// Check for RET
-			if(instruction.toUpperCase().startsWith('RET')) {
+			const instrUpper = instruction.toUpperCase();
+			// Check for changing SP
+			if(instrUpper.startsWith('PUSH') || instrUpper.startsWith('POP') || instrUpper.startsWith('LD SP')) {
 				// Get next instruction
 				this.cpuTransactionLog.nextLine();
 			}
 			else {
-				// No RET.
-				// Get current address
-				const currentAddr = this.cpuTransactionLog.getAddress();
-				// Step until the address after this address is found:
-				// For CALL it is address+3.
-				// For RST it is address+1.
-				// For esxdos RST it is address+2
-				let addr;
-				do {
-					// Get next instruction
+				// Read SP
+				const regs = this.cpuTransactionLog.getRegisters();
+				const currentSP = Z80Registers.parseSP(regs);
+				// Find next line with same SP
+				while(true) {
+					// Next line
 					if(!this.cpuTransactionLog.nextLine()) {
 						break;	// End of file reached
 					};
-					addr = this.cpuTransactionLog.getAddress();
-					if(isNaN(addr)) {
-						addr = this.cpuTransactionLog.getAddress();
-					}
-				} while(addr <= currentAddr || addr > currentAddr+3)
+					// Read SP
+					const regs = this.cpuTransactionLog.getRegisters();
+					const sp = Z80Registers.parseSP(regs);
+					// Check SP
+					if(currentSP == sp)
+						break;
+				}
 			}
+
 			// Call handler
 			handler(instruction);
 			return;
