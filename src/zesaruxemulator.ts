@@ -558,23 +558,48 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// 5. Otherwise switch to next line until SP is reached.
 			// Note: does not work for PUSH/POP or "LD SP". Therefore these are
 			// handled in a special way. However, if an interrupt would kick in when
-			// e.g. a push is done, then the "stepOver" sould work just like a
-			// "stepInto".
+			// e.g. a "LD SP,(nnnn)" is done, then the "stepOver" would incorrectly
+			// work just like a "stepInto". However this should happen very seldomly.
 
 			// Clear register cache
 			this.RegisterCache = undefined;
 			// Get current instruction
 			const instruction = this.cpuTransactionLog.getInstruction();
 			const instrUpper = instruction.toUpperCase();
+			// Read SP
+			const regs = this.cpuTransactionLog.getRegisters();
+			let expectedSP = Z80Registers.parseSP(regs);
+			let dontCheckSP = false;
+
+
+			Das hier testen:
 			// Check for changing SP
-			if(instrUpper.startsWith('PUSH') || instrUpper.startsWith('POP') || instrUpper.startsWith('LD SP')) {
+			if(instrUpper.startsWith('PUSH'))
+				expectedSP -= 2;
+			else if(instrUpper.startsWith('POP'))
+				expectedSP -= 2;
+			else if(instrUpper.startsWith('DEC SP'))
+				expectedSP --;
+			else if(instrUpper.startsWith('INC SP'))
+				expectedSP ++;
+			else if(instrUpper.startsWith('LD SP,')) {
+				const src = instruction.substr(6);
+				if(src.startsWith('HL'))
+					expectedSP = Z80Registers.parseHL(regs);	// LD SP,HL
+				else if(src.startsWith('IX'))
+					expectedSP = Z80Registers.parseIX(regs);	// LD SP,IX
+				else if(src.startsWith('IY'))
+					expectedSP = Z80Registers.parseIY(regs);	// LD SP,IY
+				else if(src.startsWith('('))
+					dontCheckSP = true;	// LD SP,(nnnn)	-> no way to determine memory contents
+				else
+					expectedSP = parseInt(src, 16);		// LD SP,nnnn
+			}
+			if(dontCheckSP) {
 				// Get next instruction
 				this.cpuTransactionLog.nextLine();
 			}
 			else {
-				// Read SP
-				const regs = this.cpuTransactionLog.getRegisters();
-				const currentSP = Z80Registers.parseSP(regs);
 				// Find next line with same SP
 				while(true) {
 					// Next line
@@ -585,7 +610,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					const regs = this.cpuTransactionLog.getRegisters();
 					const sp = Z80Registers.parseSP(regs);
 					// Check SP
-					if(currentSP == sp)
+					if(expectedSP == sp)
 						break;
 				}
 			}
