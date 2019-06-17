@@ -650,7 +650,7 @@ export class EmulatorClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepInto(handler:(disasm: string, tStates: number, time: number)=>void): void {
+	public stepInto(handler:(disasm: string, tStates?: number, time?: number)=>void): void {
 		assert(false);	// override this
 	}
 
