@@ -1220,8 +1220,8 @@ export class EmulDebugSessionClass extends DebugSession {
 					clockStr = clockStr.substr(0, clockStr.length-2);
 					output += ', time: ' + time.toPrecision(3) + unit + '@' + clockStr + 'MHz';
 			}
-			vscode.debug.activeDebugConsole.appendLine(output);
 		}
+		vscode.debug.activeDebugConsole.appendLine(output);
 	}
 
 

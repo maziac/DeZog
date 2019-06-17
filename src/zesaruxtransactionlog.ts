@@ -1,4 +1,5 @@
-
+import * as assert from 'assert';
+//import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 
@@ -69,6 +70,14 @@ export class ZesaruxTransactionLog {
 	 * Sets the file offset to the previous line.
 	 */
 	public prevLine() {
+		// Check if already at the beginning
+		if(this.fileOffset == 0)
+			return;
+
+		// One more line
+		this.stepBackCounter ++;
+		//vscode.debug.activeDebugConsole.appendLine('stepBackCounter = ' + this.stepBackCounter);
+
 		// Reads in a few bytes from the end and searches for '\n'
 		const chunkSize = 100;
 		const buffer = new Uint8Array(chunkSize);
@@ -85,7 +94,6 @@ export class ZesaruxTransactionLog {
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
-				this.stepBackCounter ++;
 				return;
 			}
 		}
@@ -99,6 +107,14 @@ export class ZesaruxTransactionLog {
 	 * Sets the file offset to the next line.
 	 */
 	public nextLine() {
+		// Check if already at the end
+		if(this.fileOffset >= this.fileSize)
+			return;
+
+		// One line less
+		this.stepBackCounter --;
+		//vscode.debug.activeDebugConsole.appendLine('stepBackCounter = ' + this.stepBackCounter);
+
 		// Reads in a few bytes and searches for next '\n'
 		const chunkSize = 100;
 		const buffer = new Uint8Array(chunkSize);
@@ -112,7 +128,6 @@ export class ZesaruxTransactionLog {
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
-				this.stepBackCounter --;
 				return;
 			}
 			// Next chunk
@@ -150,7 +165,50 @@ export class ZesaruxTransactionLog {
 		}
 
 		// Return
+		//vscode.debug.activeDebugConsole.appendLine('transaction(' + this.stepBackCounter + ', ' + this.fileOffset + ', ' + this.fileSize + ') = ' + total);
 		return total;
+	}
+
+
+	/**
+	 * @returns The address of the current line. Uses the first 4 digits simply.
+	 */
+	public getRegisters(): string {
+		// Get current line
+		const line = this.getLine();
+		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+		// Turn into same format as for 'get-registers'
+		const k = line.indexOf('PC=');
+		assert(k >= 0);
+		const regs = line.substr(k);
+		return regs;
+	}
+
+
+	/**
+	 * @returns The instruction, e.g. "LD A,1E".
+	 */
+	public getInstruction(): string {
+		// Get current line
+		const line = this.getLine();
+		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+		// Extract the instruction
+		const k = line.indexOf('PC=');
+		assert(k >= 0);
+		const instr = line.substr(5, k-5-1);
+		return instr;
+	}
+
+
+	/**
+	 * @returns The address of the current line. Uses the first 4 digits simply.
+	 */
+	public getAddress(): number {
+		// Get current line
+		const line = this.getLine();
+		// Convert address
+		const addr = parseInt(line, 16);
+		return addr;
 	}
 
 

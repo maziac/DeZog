@@ -1,4 +1,3 @@
-
 import * as assert from 'assert';
 import { zSocket, ZesaruxSocket } from './zesaruxSocket';
 import { Z80Registers } from './z80Registers';
@@ -274,17 +273,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check if in reverse debugging mode
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			// Read registers from file
-			let line = this.cpuTransactionLog.getLine();
-			// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
-			// Turn into same format as for 'get-registers'
-			const k = line.indexOf('PC=');
-			assert(k >= 0);
-			const data = line.substr(k);
+			const data = this.cpuTransactionLog.getRegisters();
 			handler(data);
 			return;
 		}
 
-		// get new data
+		// Get new (real emulator) data
 		zSocket.send('get-registers', data => {
 			// convert received data to right format ...
 			// data is e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
@@ -537,7 +531,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	 public stepOver(handler:(disasm: string, tStates: number, cpuFreq: number)=>void): void {
+	 public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number)=>void): void {
+		// Check for reverse debugging.
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Clear register cache
+			this.RegisterCache = undefined;
+			// Move backwards in file
+			this.cpuTransactionLog.nextLine();
+			// Get disassembly of instruction
+			const instr = this.cpuTransactionLog.getInstruction();
+			// Call handler
+			handler(instr);
+			return;
+		}
+
 		// Zesarux is very special in the 'step-over' behaviour.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
@@ -804,8 +811,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.RegisterCache = undefined;
 		// Move backwards in file
 		this.cpuTransactionLog.prevLine();
-		const s = this.cpuTransactionLog.getLine();
-		console.log('stepBack: ' + s);  // TODO: REMOVE
 
 		// Call handler
 		handler();
