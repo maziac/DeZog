@@ -537,54 +537,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 	}
 
 
-	protected moveOver() {
-		// Get current instruction
-		let instr = this.cpuTransactionLog.getInstruction().toUpperCase();
-		// Get address
-		let lastAddr = this.cpuTransactionLog.getAddress();
-		// Move forward in file
-		this.cpuTransactionLog.nextLine();
-		// Check if CALL/RST
-		const isCall = instr.startsWith('CALL');
-		if(!isCall && !instr.startsWith('RST')) {
-			// Neither CALL nor RST, simply return
-			return;
-		}
-
-		// Check if conditional call maybe is not executed
-		if(isCall) {
-			// Get next address
-			const addr = this.cpuTransactionLog.getAddress();
-			// Check if CALL was not executed
-			if(addr == addr+3) {
-				// Call was not executed, return immediately
-				return;
-			}
-		}
-
-		// Here it is either an executed CALL or an executed RST (RST are always executed)
-
-		// Get instruction
-		instr = this.cpuTransactionLog.getInstruction().toUpperCase();
-		// Loop to the next CALL/RST or RET
-		while(!instr.startsWith('RET')) {
-			// Check for CALL/RST
-			if(instr.startsWith('CALL') || instr.startsWith('RST'))
-				this.moveOver();
-			else
-				this.cpuTransactionLog.nextLine();
-			// Get next instruction
-			instr = this.cpuTransactionLog.getInstruction().toUpperCase();
-		}
-
-			// Get disassembly of instruction
-			instr = this.cpuTransactionLog.getInstruction().toUpperCase();
-			// Check for CALL or RET
-			if(instr.startsWith('CALL')) {
-		} while(depth == 0);
-	}
-
-
 	/**
 	 * 'step over' an instruction in the debugger.
 	 * @param handler(disasm, tStates, cpuFreq) The handler that is called after the step is performed.
@@ -597,22 +549,35 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			// Clear register cache
 			this.RegisterCache = undefined;
-			// Get disassembly of instruction
-			let instr = this.cpuTransactionLog.getInstruction().toUpperCase();
-			if(instr.startsWith('CALL') || instr.startsWith('RST')) {
-				// Get current SP (stack pointer)
-				const regs = this.cpuTransactionLog.getRegisters();
-				const k = regs.indexOf('SP=');
-				assert(k >= 0);
-				const spString = regs.substr(k+3,4);
-				const sp = parseInt(spString, 16);
-				this.moveUntilSP(spString);
+			// Get current instruction
+			const instruction = this.cpuTransactionLog.getInstruction();
+			// Check for RET
+			if(instruction.toUpperCase().startsWith('RET')) {
+				// Get next instruction
+				this.cpuTransactionLog.nextLine();
 			}
-
-			// Get instruction again
-			instr = this.cpuTransactionLog.getInstruction().toUpperCase();
+			else {
+				// No RET.
+				// Get current address
+				const currentAddr = this.cpuTransactionLog.getAddress();
+				// Step until the address after this address is found:
+				// For CALL it is address+3.
+				// For RST it is address+1.
+				// For esxdos RST it is address+2
+				let addr;
+				do {
+					// Get next instruction
+					if(!this.cpuTransactionLog.nextLine()) {
+						break;	// End of file reached
+					};
+					addr = this.cpuTransactionLog.getAddress();
+					if(isNaN(addr)) {
+						addr = this.cpuTransactionLog.getAddress();
+					}
+				} while(addr <= currentAddr || addr > currentAddr+3)
+			}
 			// Call handler
-			handler(instr);
+			handler(instruction);
 			return;
 		}
 

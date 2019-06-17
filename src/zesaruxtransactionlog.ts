@@ -122,6 +122,7 @@ export class ZesaruxTransactionLog {
 		const chunkSize = 100;
 		const buffer = new Uint8Array(chunkSize);
 		let offset = this.fileOffset;
+		this.fileOffset = this.fileSize;
 		while(offset < this.fileSize) {
 			// Read chunk
 			fs.readSync(this.file, buffer, 0, chunkSize, offset);
@@ -131,15 +132,14 @@ export class ZesaruxTransactionLog {
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
-				return true;
+				break;
 			}
 			// Next chunk
 			offset += chunkSize;
 		}
 
-		// Beginnning of file reached
-		this.fileOffset = this.fileSize;
-		return true;
+		// End of file reached
+		return (this.fileOffset < this.fileSize);
 	}
 
 
