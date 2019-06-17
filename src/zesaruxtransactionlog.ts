@@ -68,11 +68,12 @@ export class ZesaruxTransactionLog {
 
 	/**
 	 * Sets the file offset to the previous line.
+	 * @returns false if already at the start of the file.
 	 */
-	public prevLine() {
+	public prevLine(): boolean {
 		// Check if already at the beginning
 		if(this.fileOffset == 0)
-			return;
+			return false;
 
 		// One more line
 		this.stepBackCounter ++;
@@ -94,22 +95,24 @@ export class ZesaruxTransactionLog {
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
-				return;
+				return true;
 			}
 		}
 
 		// Beginnning of file reached
 		this.fileOffset = 0;
+		return true;
 	}
 
 
 	/**
 	 * Sets the file offset to the next line.
+	 * @returns false if already at the end of the file.
 	 */
-	public nextLine() {
+	public nextLine(): boolean {
 		// Check if already at the end
 		if(this.fileOffset >= this.fileSize)
-			return;
+			return false;
 
 		// One line less
 		this.stepBackCounter --;
@@ -128,7 +131,7 @@ export class ZesaruxTransactionLog {
 			if(k >= 0) {
 				// Found, use next position
 				this.fileOffset = offset + k + 1;
-				return;
+				return true;
 			}
 			// Next chunk
 			offset += chunkSize;
@@ -136,6 +139,7 @@ export class ZesaruxTransactionLog {
 
 		// Beginnning of file reached
 		this.fileOffset = this.fileSize;
+		return true;
 	}
 
 

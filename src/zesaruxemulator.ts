@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import * as vscode from 'vscode';
 import { zSocket, ZesaruxSocket } from './zesaruxSocket';
 import { Z80Registers } from './z80Registers';
 import { Utility } from './utility';
@@ -516,9 +517,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	  */
 	 public reverseContinue(handler:()=>void) : void {
-		this.state = EmulatorState.RUNNING;
-		this.state = EmulatorState.IDLE;
-		// TODO: needs implementation
+		//this.state = EmulatorState.RUNNING;
+		//this.state = EmulatorState.IDLE;
+		// Output
+		vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
+		// Loop over all lines, reverse
+		let s = 'Break: Reached end of transaction log.';
+		while(this.cpuTransactionLog.prevLine()) {
+			const addr = this.cpuTransactionLog.getAddress();
+			// Check for breakpoint
+			// TODO: ...
+		}
+
+		// Output reason
+		vscode.debug.activeDebugConsole.appendLine(s);
 		// Clear register cache
 		this.RegisterCache = undefined;
 		handler();
