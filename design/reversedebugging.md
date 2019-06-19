@@ -1,13 +1,16 @@
 # Reverse Debugging
 
-MArkdown paraemeters: markdown-raw_tex+tex_math_single_backslash
+Markdown paraemeters: markdown-raw_tex+tex_math_single_backslash
+List:
+- a
+- b
+- c
 
 The main idea is to support not only the (normal) forward stepping but also stepping backwards in time.
 
 Due to emulator restrictions a lightweight approach is chosen.
 Fortunately ZEsarUx supports a cpu-transaction-log.
 This can record for each executed opcode
-
 - the address
 - the opcode
 - the registers contents
@@ -81,7 +84,6 @@ vscode <-- session: response
 # Stepping in Reverse Debugging Mode
 
 Not only "StepBack" need to be considered in reverse debug mode the other (forward) stepping procedures should work as well:
-
 - ContinueReverse
 - Continue
 - StepOver
@@ -94,14 +96,13 @@ Not only "StepBack" need to be considered in reverse debug mode the other (forwa
 ### StepBack
 
 The MSC is shown above.
-"StepBack" simply moves up the transaction log.
+"StepBack" simply moves up the transaction log by one.
 
 
 ### ContinueReverse
 
 "ContinueReverse" moves up the transaction log until
-
-- a breakpoint is found or
+- a breakpoint is hit or
 - the file ends
 
 
@@ -111,24 +112,111 @@ The forward procedures all work basically in 2 modes.
 - the normal mode: stepping/runnning in the emulator, ZEsarUX)
 - the reverse mode: stepping/runnning through the transaction log
 
-Here are only the reverse procedures described.
+Below are only the reverse procedures described.
 
 
 ### Continue
 
+"Continue" moves down in the transaction log until
+- a breakpoint is hit or
+- the file ends
+
+Note: When the file ends "Continue" stops. It does not automatically move over into "normal" continue mode.
+
 
 ### StepOver
+
+"StepOver" needs to step over "CALL"s and "RST"s. This is not so simple as it seems.
+
+**Approach A: Using PC**
+
+If a "CALLxxx" (conditional or unconditional) is found the next expected step-over address is current_PC+3 (PC=program counter).
+
+If a "RST" is found the next expected address is PC+1. With ESXDOS RST implementation it is PC+2.
+
+If a "JR"/"JP"/"DJNZ" is found it is either the next address or the jump-to-address.
+
+If a "RETx" (conditional or unconditional) is found it is either the next address or some address from the stack.
+
+I.e. with all this it is not possible to clarify if the next address(es) should be skipped because it is an interrupt or if "StepOver" should stop.
+
+Example:
+A "RET" is found. So there is no hint what address to expect next. If the same time the interrupt kicks in with some address "StepOver" would stop here and not skip it.
+
+
+**Approach B: Using SP**
+
+The idea is that if a subroutine is "CALL"ed then the SP (stack pointeR) will decrease by 2.
+I.e. if no subroutine is called the SP will not change.
+
+I.e. the algorithm simply searches the transaction log downwards until a line with the same SP is found.
+
+If an interrupt would kick in the SP changes and the interrupt would be skipped.
+
+Some instructions change the SP intentionally. This instructions need special care:
+- "PUSH": the expected_SP is SP-2
+- "POP": the expected_SP is SP+2
+- "DEC SP": the expected_SP is SP-1
+- "INC SP": the expected_SP is SP+1
+- "LD SP,nnnn": the expected_SP is nnnn
+- "LD SP,HL": the expected_SP is HL
+- "LD SP,IX": the expected_SP is IX
+- "LD SP,IY": the expected_SP is IY
+- "LD SP,(nnnn)": the expected_SP is unknown. In this case simply the next line is executed. This would be wrong only if an interrupt kicks in. As this command is used very rarely and it shouldn't be used while an interrupt is active this should almost never happen.
+- "RETx": the expected_SP is either SP+2 or it could also be SP in case of a conditional RET. So both are checked. Note: for ease of implementation conditional and unconditonal RET is not distinguished.
+
+
+Note: If during moving through the transaction log a breakpoint is hit "StepOver" stops.
 
 
 ### StepInto
 
+"StepInto" simply moves down the transaction log by one.
+
 
 ### StepOut
 
+"StepOut" moves down the transaction log until
+- a breakpoint is hit or
+- a "RETx" (conditional or unconditional) is found
 
-## Breakpoints
+**Approach A:**
+The current SP is is stored and the transaction log is analyzed until a "RET" is found and the next line contains an SP that is smaller than the original SP.
+
+Problems:
+- as POP etc. can also modify the SP
+
+Noch nicht zu Ende gedacht.
 
 
+**Approach B:**
+If a "RETx" is found the SP value is stored and the next line is analysed.
+if SP has been decremented by 2 the RET was executed. If so "StepOut" stops otherwise it continues.
+
+Note:
+If an interrupts happens right after the "RETx" it should be skipped because then the next SP wouldn't be decremented by 2.
+
+Problems:
+- If an interrupt kicks in anywhere else and returns then this "RETI" is found and "StepOut" stops.
+One could ignore the "RETI" but then "StepOut" of an interrupt would not work.
+
+
+### Interrupts
+
+The transaction log simply records the executed addressed. This also means that the interrupts are inserted when they occur.
+
+
+### Breakpoints
+
+During forward or reverse stepping/running the breakpoint addresses are evaluated.
+If a breakpoint address is reached "execution" is stopped.
+
+The breakpoint condition is **not** evaluated.
+This has 2 reasons:
+- effort for doing so would be quite high but the use case scenarios are limited
+- even if implemented it could lead to false positives in case memory conditions are checked. The memory is not changed during reverse debugging, i.e. it may contain false value for the current PC address.
+
+Of course, one could evaluate at lest the conditions without memory, i.e. the register related only, maybe this is done in the future.
 
 
 
