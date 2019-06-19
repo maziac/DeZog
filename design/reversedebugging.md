@@ -144,7 +144,7 @@ Example:
 A "RET" is found. So there is no hint what address to expect next. If the same time the interrupt kicks in with some address "StepOver" would stop here and not skip it.
 
 
-**Approach B: Using SP**
+**Approach B: Using SP (better)**
 
 The idea is that if a subroutine is "CALL"ed then the SP (stack pointeR) will decrease by 2.
 I.e. if no subroutine is called the SP will not change.
@@ -173,6 +173,8 @@ Note: If during moving through the transaction log a breakpoint is hit "StepOver
 
 "StepInto" simply moves down the transaction log by one.
 
+If an interrupt kicks-in it steps into the interrupt.
+
 
 ### StepOut
 
@@ -181,15 +183,6 @@ Note: If during moving through the transaction log a breakpoint is hit "StepOver
 - a "RETx" (conditional or unconditional) is found
 
 **Approach A:**
-The current SP is is stored and the transaction log is analyzed until a "RET" is found and the next line contains an SP that is smaller than the original SP.
-
-Problems:
-- as POP etc. can also modify the SP
-
-Noch nicht zu Ende gedacht.
-
-
-**Approach B:**
 If a "RETx" is found the SP value is stored and the next line is analysed.
 if SP has been decremented by 2 the RET was executed. If so "StepOut" stops otherwise it continues.
 
@@ -199,6 +192,14 @@ If an interrupts happens right after the "RETx" it should be skipped because the
 Problems:
 - If an interrupt kicks in anywhere else and returns then this "RETI" is found and "StepOut" stops.
 One could ignore the "RETI" but then "StepOut" of an interrupt would not work.
+
+
+**Approach B: (better)**
+The current SP is is stored and the transaction log is analyzed until a "RET" is found and the next line contains an SP that is bigger than the original SP.
+
+Notes:
+- as POP etc. can also modify the SP, it is searched for a "RET" and the SP of the following line. This could go wrong if the SP changes w.g. because of a POP and then a "RET cc" (conditional) is not executed. In that case the algorthm will stop although we have not really stepped out.
+- it is searched for an SP bigger than and not for an SP that is equal to the old SP+2 because it may happen that the stack is manipulated. In general manipulation could happen in both directions but in order to skip an kicking in interrupt it is only checked that it is bigger.
 
 
 ### Interrupts
