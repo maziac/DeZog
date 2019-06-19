@@ -1,10 +1,13 @@
 # Reverse Debugging
 
+MArkdown paraemeters: markdown-raw_tex+tex_math_single_backslash
+
 The main idea is to support not only the (normal) forward stepping but also stepping backwards in time.
 
 Due to emulator restrictions a lightweight approach is chosen.
 Fortunately ZEsarUx supports a cpu-transaction-log.
 This can record for each executed opcode
+
 - the address
 - the opcode
 - the registers contents
@@ -73,6 +76,60 @@ vscode <-- session: response
 
 
 ```
+
+
+# Stepping in Reverse Debugging Mode
+
+Not only "StepBack" need to be considered in reverse debug mode the other (forward) stepping procedures should work as well:
+
+- ContinueReverse
+- Continue
+- StepOver
+- StepInto
+- StepOut
+
+
+## Backward
+
+### StepBack
+
+The MSC is shown above.
+"StepBack" simply moves up the transaction log.
+
+
+### ContinueReverse
+
+"ContinueReverse" moves up the transaction log until
+
+- a breakpoint is found or
+- the file ends
+
+
+## Forward
+
+The forward procedures all work basically in 2 modes.
+- the normal mode: stepping/runnning in the emulator, ZEsarUX)
+- the reverse mode: stepping/runnning through the transaction log
+
+Here are only the reverse procedures described.
+
+
+### Continue
+
+
+### StepOver
+
+
+### StepInto
+
+
+### StepOut
+
+
+## Breakpoints
+
+
+
 
 
 # Other Requests
