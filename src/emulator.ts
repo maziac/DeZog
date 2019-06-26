@@ -22,7 +22,7 @@ export interface EmulatorBreakpoint {
 	lineNr: number;	///< The line number in the file starting at 0
 	address: number;	///< Usually the pc value  to stop at (e.g. 0A7f)
 	condition: string;	///< An additional condition.
-	log: string|undefined;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is weitten instead.
+	log: string|undefined;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
 }
 
 
@@ -82,7 +82,7 @@ export enum MachineType {
 export enum EmulatorState {
 	UNINITIALIZED = 0,	///< before connection to ZEsarUX.
 	IDLE,				///< The normal state. Waiting for a new command.
-	RUNNING,			///< When a 'continue' or 'stepOut' has benn requested. Until the next break.
+	RUNNING,			///< When a 'continue' or 'stepOut' has been requested. Until the next break.
 	RUNNING_REVERSE,	///< Not yet used. Same as 'RUNNING' but in reverse direction.
 };
 
@@ -386,12 +386,12 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * Reads the list file and also retrieves all occurences of
+	 * Reads the list file and also retrieves all occurrences of
 	 * WPMEM, ASSERT and LOGPOINT.
 	 * Also sets WPMEM, ASSERT and LOGPOINT break/watchpoints.
 	 * May throw an error.
 	 * @param listFiles An array with all list files.
-	 * @param sources An array with directories where the sourece files are located.
+	 * @param sources An array with directories where the source files are located.
 	 */
 	public readListFiles(listFiles: Array<ListFile>) {
 		// Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
@@ -509,7 +509,7 @@ export class EmulatorClass extends EventEmitter {
 	}
 
 	/**
-	 * Returns a specific register value as a fromatted string.
+	 * Returns a specific register value as a formatted string.
 	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param handler(formattedString) The 'formattedString' is passed to handler.
 	 */
@@ -612,7 +612,7 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * If sytem state is running, a break is done.
+	 * If system state is running, a break is done.
 	 */
 	protected breakIfRunning() {
 		// Break if currently running
@@ -924,7 +924,7 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemeoryPages.
+	 * and converts it to an arry of MemoryPages.
 	 * @param handler(memoryPages) The handler that receives the memory pages list.
 	 */
 	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {

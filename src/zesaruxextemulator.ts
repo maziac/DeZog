@@ -10,9 +10,9 @@ import { zSocket } from './zesaruxSocket';
 /**
  * The representation of the Z80 Zesarux machine with extensions (fast breakpoints).
  * It automatically detects if extension are available.
- * If not behaviour is exactly like ZesaruxEmulator.
+ * If not behavior is exactly like ZesaruxEmulator.
  * If yes a few function from ZesaruxEmulator are exchanged.
- * The new functions use the fast bbreakpoints and watchpoints.
+ * The new functions use the fast breakpoints and watchpoints.
  */
 export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	/// Will be set on initialization if extensions are available.

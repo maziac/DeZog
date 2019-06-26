@@ -34,7 +34,7 @@ class Zesarux {
 
 /**
  * The representation of the Z80 machine.
- * It receives the requests from the EmulDebugAdapter and commincates with
+ * It receives the requests from the EmulDebugAdapter and communicates with
  * the EmulConnector.
  */
 export class ZesaruxEmulator extends EmulatorClass {
@@ -107,7 +107,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public terminate(handler: () => void) {
 		// The socket connection must be closed as well.
 		zSocket.quit(() => {
-			// Send terminate event (to Debug Session which will send a TerminatEvent to vscode. That in turn will create a 'disconnect')
+			// Send terminate event (to Debug Session which will send a TerminateEvent to vscode. That in turn will create a 'disconnect')
 			this.emit('terminated');
 			handler();
 		});
@@ -631,15 +631,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 			return;
 		}
 
-		// Zesarux is very special in the 'step-over' behaviour.
+		// Zesarux is very special in the 'step-over' behavior.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
 		// it simply seems to wait until the PC reaches the next
 		// instruction what, for a jp-instruction, obviously never happens.
 		// Therefore a 'step-into' is executed instead. The only problem is that a
-		// 'step-into' is not the desired behaviour for a CALL.
+		// 'step-into' is not the desired behavior for a CALL.
 		// So we first check if the instruction is a CALL and
-		// then either excute a 'step-over' or a step-into'.
+		// then either execute a 'step-over' or a step-into'.
 		this.getRegisters(data => {
 			const pc = Z80Registers.parsePC(data);
 			zSocket.send('disassemble ' + pc, disasm => {
@@ -1093,7 +1093,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				return label;
 			// Convert label to number.
 			const addr = Labels.getNumberForLabel(label);
-			// If undefined, do't touch it.
+			// If undefined, don't touch it.
 			if(addr == undefined)
 				return label;
 			return addr.toString();;
@@ -1349,7 +1349,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemeoryPages.
+	 * and converts it to an arry of MemoryPages.
 	 * @param handler(memoryPages) The handler that receives the memory pages list.
 	 */
 	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {

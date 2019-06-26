@@ -365,21 +365,16 @@ Notes:
 
 Similar to WPMEM you can use ASSERTs in comments in the assembler sources.
 An ASSERT is translated by z80-debug into a breakpoints with an "inverted" condition.
-For all ASSERTs in your source code z80-debug will set the correspondent breakpoints automatically at startup.
+For all ASSERTs in your source code z80-debug can set the correspondent breakpoints automatically at startup.
 
 The ASSERT syntax is:
 
 ~~~
-; [.*] ASSERT var comparison expr [concat var comparison expr] [;.*]
+; [.*] ASSERT expr [;.*]
 ~~~
-with:
-- var: a variable, i.e. a register like A or HL
-- comparison: one of '<', '>', '==', '!=', '<=', '=>'.
-- expr: a mathematical expression that resolves into a constant
-- concat: one of '&&' or '||'
+'expr' is just like the expressions in [breakpoints](#vscode-breakpoint-conditions).
 
 Examples:
-
 ~~~
 ; ASSERT HL <= LBL_END+2
 ld a,b  ; Check that index is not too big ASSERT B < (MAX_COUNT+1)/2
@@ -398,7 +393,7 @@ A is not loaded yet when the ASSERT is checked. So use
 ld a,c
 ; ASSERT a < 7
 ~~~
-instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction abd thus A is checked correctly.
+instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction and thus A is checked correctly.
 
 Notes:
 
@@ -407,7 +402,7 @@ Notes:
 - ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - As a special form you can also define an ASSERT without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
-- (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
+- sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 
 
 ### LOGPOINT
@@ -435,7 +430,7 @@ Notes:
 - The LOGPOINTs are checked in the list file. I.e. whenever you change a LOGPOINT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - LOGPOINTs are disabled by default. If you want to have logpoints enabled after launch then put "-LOGPOINT enable" in the "commandsAfterLaunch" settings. Note: you can also turn on only specific groups.
 - LOGPOINTs are not available in ZEsarUX.
-- (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
+- sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 - LOGPOINTs can do math with fixed labels but not with registers. I.e. "${b@(my_data+5)}" will work. It will statically calculate my_data+5 and lookup the memory value. But "${b@(IX+1)}" will not work as it would have to dynamically calculate "IX+1" at runtime.
 
 
@@ -461,7 +456,7 @@ b@(HL) > 10
 
 Note 1: "&&" has higher priority than "||".
 
-Note 2: Brackets, "()", are used only for priorization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
+Note 2: Brackets, "()", are used only for prioritization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
 
 Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)") but you can also use the ZEsarUX style directly.
 
