@@ -1105,6 +1105,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		conds = conds.replace(/&&/g, ' AND ');
 		conds = conds.replace(/\|\|/g, ' OR ');
 		conds = conds.replace(/==/g, '=');
+		conds = conds.replace(/!/g, 'NOT');
 
 		// Convert hex numbers ("0x12BF" -> "12BFH")
 		conds = conds.replace(/0x[0-9a-f]+/gi, value => {

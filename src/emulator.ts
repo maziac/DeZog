@@ -226,7 +226,7 @@ export class EmulatorClass extends EventEmitter {
 		for(let entry of assertLines) {
 			// ASSERT:
 			// Syntax:
-			// ASSERT var comparison expr [&&|| var comparison expr]
+			// ASSERT var comparison expr [&&|| expr]
 			// with:
 			//  var: a variable, i.e. a register like A or HL
 			//  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
@@ -252,92 +252,28 @@ export class EmulatorClass extends EventEmitter {
 				let conds = '';
 				if(part.length > 0) {
 					// Some condition is set
-					const regex = /\s*([a-z]+)\s*([<>=!]+)\s*([^;|&]*)(\|\||&&*)?/gi;
+					const regex = /\s*([^;]*)/i;
 					let match = regex.exec(part);
 					if(!match)	// At least one match should be found
-						throw "Expecting 'ASSERT var comparison expr'.";
-					let concatString;
-					while (match) {
-						// Get arguments
-						let varString = match[1] || "";
-						varString = varString.trim();
-						let compString = match[2] || "";
-						compString = compString.trim();
-						let exprString = match[3] || "";
-						exprString = exprString.trim();
-						concatString = match[4] || "";
-						concatString = concatString.trim();
-
-						// Check and "invert" the assert condition.
-						// Check register / variable
-						if(!Z80Registers.isRegister(varString))
-							throw "Don't know '" + varString + "'";
-
-						// Convert to a number
-						const exprValue = Utility.evalExpression(exprString, false); // don't evaluate registers
-
-						// Check comparison
-						let resComp;
-						if(compString.length > 0) {
-							// The ASSERT condition needs to be negated for the breakpoint.
-							switch(compString) {
-								// >= :
-								case '<':	resComp = '>='; break;
-								// <= :
-								case '>':	resComp = '<='; break;
-								// > :
-								case '<=':	resComp = '>'; break;
-								// < :
-								case '>=':	resComp = '<'; break;
-								// != :
-								case '==':	resComp = '!='; break;
-								// == :
-								case '!=':	resComp = '=='; break;
-							}
-						}
-						if(!resComp)
-							throw "Don't know comparison '" + compString + "'";
-
-						// Check concatenation
-						let resConcat = '';
-						if(concatString.length > 0) {
-							// Invert
-							if(concatString == "&&")
-								resConcat = "||";
-							else if(concatString == "||")
-								resConcat = "&&";
-							else
-								throw "Cannot handle concatenation with '" + concatString + "'. Use '&&' or '||' instead.";
-							resConcat = ' ' + resConcat;
-						}
-
-						// Now create condition for zesarux.
-						const condPart = varString + ' ' + resComp + ' ' + exprValue.toString();
-						if(conds.length > 0)
-							conds += ' ';
-						conds += condPart + resConcat;
-						// Next
-						match = regex.exec(part);
-					}
-					// Check
-					if(concatString.length > 0)	// has to end without concatenation symbol
-						throw "Expected condition after concatenation symbol '" + concatString + "'";
+						throw "Expecting 'ASSERT expr'.";
+					conds = match[1];
 				}
+
+				// Negate the expression
+				conds = '!(' + conds + ')';
 
 				// Check if ASSERT for that address already exists.
-				let bp = assertMap.get(entry.address);
-				if(bp && conds.length > 0) {
-					// Already exists: just add condition.
-					// Check that 2nd condition is not too complicated.
-					if(conds.indexOf("&&") >= 0)
-						throw Error("Condition too complicated. 2 ASSERTs at the same address are combined and the 2nd condition must not include a '||' condition.");
-					// Concatenate conditions.
-					bp.conditions += ' || ' + conds;
-				}
-				else {
-					// Breakpoint for address does not yet exist. Create a new one.
-					const assertBp = {address: entry.address, conditions: conds || '', log: undefined};
-					assertMap.set(entry.address, assertBp);
+				if(conds.length > 0) {
+					let bp = assertMap.get(entry.address);
+					if(bp) {
+						// Already exists: just add condition.
+						bp.conditions = '(' + bp.conditions + ') || (' + conds + ')';
+					}
+					else {
+						// Breakpoint for address does not yet exist. Create a new one.
+						const assertBp = {address: entry.address, conditions: conds, log: undefined};
+						assertMap.set(entry.address, assertBp);
+					}
 				}
 			}
 			catch(e) {

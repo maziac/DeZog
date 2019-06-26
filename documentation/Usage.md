@@ -402,11 +402,11 @@ instead: The ASSERT is on the next line i.e. at the address after the "LD" instr
 
 Notes:
 
+- ASSERT is not available in ZEsarUX.
 - The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
 - As a special form you can also define an ASSERT without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
-- ASSERT is not available in ZEsarUX.
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 
 
@@ -458,9 +458,12 @@ b@(mylabel+5) == 50
 b@(mylabel+A) == 50
 b@(HL) > 10
 ~~~
+
 Note 1: "&&" has higher priority than "||".
+
 Note 2: Brackets, "()", are used only for priorization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
-Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)" but you can also use the ZEsarUX style directly.
+
+Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)") but you can also use the ZEsarUX style directly.
 
 
 ### vscode logpoints
