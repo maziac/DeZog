@@ -571,13 +571,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let expectedSP = Z80Registers.parseSP(regs);
 			let dontCheckSP = false;
 
+			/* TODO:
+		Das war das letzte. Implementiert. Etwas getestet. Scheint zu funktionieren.
+		"Continue"(forward) aus dem transaction log heraus geht noch nicht.
+*/
 
-			Das hier testen:
 			// Check for changing SP
 			if(instrUpper.startsWith('PUSH'))
 				expectedSP -= 2;
 			else if(instrUpper.startsWith('POP'))
-				expectedSP -= 2;
+				expectedSP += 2;
 			else if(instrUpper.startsWith('DEC SP'))
 				expectedSP --;
 			else if(instrUpper.startsWith('INC SP'))
@@ -595,6 +598,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 				else
 					expectedSP = parseInt(src, 16);		// LD SP,nnnn
 			}
+
+			// Check for RET. There are 2 possibilities if RET was conditional.
+			let expectedSP2 = expectedSP;
+			if(instrUpper.startsWith('RET'))
+				expectedSP2 += 2;
+
 			if(dontCheckSP) {
 				// Get next instruction
 				this.cpuTransactionLog.nextLine();
@@ -609,8 +618,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Read SP
 					const regs = this.cpuTransactionLog.getRegisters();
 					const sp = Z80Registers.parseSP(regs);
-					// Check SP
+					// Check expected SPs
 					if(expectedSP == sp)
+						break;
+					if(expectedSP2 == sp)
 						break;
 				}
 			}
@@ -1057,81 +1068,49 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Converts a condition into the special format that ZEsarUX uses.
-	 * Please note that longer complex forms are not possible with zesarux
-	 * because it does not support parenthesis and just evaluates one
-	 * after the other.
+	 * Converts a condition into the format that ZEsarUX uses.
+	 * With version 7.3 ZEsarUX got a new parser which is very flexible,
+	 * so the condition is not changed very much.
+	 * Only the C-style operators like "&&", "||", "==", "!=" are added.
+	 * Furthermore "b@(...)" and "w@(...)" are converted to "peek(...)" and "peekw(...)".
+	 * And "!(...)" is converted to "not(...)" (only with brackets).
+	 * Note: The original ZEsarUX operators are not forbidden. E.g. "A=1" is allowed as well as "A==1".
+	 * Labels: ZESarUX does not not the labels only addresses. Therefore all
+	 * labels need to be evaluated first and converted to addresses.
 	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
-	 * Format "variable comparison value" (variable=register)
+	 * Even complex parenthesis forms are supported, e.g. "(A & 0x7F) == 127".
 	 * @returns The zesarux format
 	 */
 	protected convertCondition(condition: string): string|undefined {
 		if(!condition || condition.length == 0)
 			return '';	// No condition
 
-		/*
-		Für das neue Format muss ich etwas umbauen:
-		- Im Moment ist Register nur vorne und value nur hinter erlaubt, muss ich überall erlauben
-		- Labels werden in der regex nicht erkannt (obwohl sie mit evalausgewertet werden würden)
-		Da zesarux jetzt eigentlich flexibel genug ist reicht
-		es vielleicht einfach nur nach Label zu suchen und die zu ersetzen durch Addressen.
-		Dann muss aber erst noch geklärt werden, wie zwischen Klammern für
-		math. Berechnungen und "memory contents at" unterschieden wird.
-		Vielleicht mal nachfragen, ob er auch noch ">=" und "<=" implementieren wird.
-		*/
+		// Convert labels
+		let regex = /\b[_a-z][0-9a-z_]*\b/gi;
+		let conds = condition.replace(regex, label => {
+			// Check if register
+			if(Z80Registers.isRegister(label))
+				return label;
+			// Convert label to number.
+			const addr = Labels.getNumberForLabel(label);
+			// If undefined, do't touch it.
+			if(addr == undefined)
+				return label;
+			return addr.toString();;
+		});
 
+		// Convert operators
+		conds = conds.replace(/==/g, '=');
+		conds = conds.replace(/!=/g, '<>');
+		conds = conds.replace(/&&/g, ' AND ');
+		conds = conds.replace(/\|\|/g, ' OR ');
+		conds = conds.replace(/==/g, '=');
 
-		const regex = /([a-z]+)\s*([<>=!]+)\s*([0-9]*)\s*(\|\||&&*)?/gi;
-		let conds = '';
-		let match;
-		while((match = regex.exec(condition))) {
-			// Get arguments
-			let varString = match[1] || "";
-			varString = varString.trim();
-			let compString = match[2] || "";
-			compString = compString.trim();
-			let valueString = match[3] || "";
-			valueString = valueString.trim();
-			let concatString = match[4] || "";
-			concatString = concatString.trim();
-
-			// Convert comparison
-			// ZEsarUX can recognize <,>,=,/ (/ means not equal).
-			assert(compString.length>0);
-			let resComp;
-			switch(compString) {
-				// > :
-				case '<=':	resComp = '<'; valueString = '('+valueString+')'+'+1'; break;
-				// < :
-				case '>=':	resComp = '>'; valueString = '('+valueString+')'+'-1'; break;
-				// != :
-				case '==':	resComp = '='; break;
-				// == :
-				case '!=':	resComp = '<>'; break;
-				default:	resComp = compString; break;
-			}
-			assert(resComp);	// Otherwise unknown comparison
-
-			// Convert value
-			const value = eval(valueString);
-
-			// Create zesarux condition
-			const zesaruxCondition = varString + resComp + value.toString();
-
-			// Handle concatenation
-			let resConcat = '';
-			if(concatString.length > 0) {
-				if(concatString == "&&")
-					resConcat = " AND ";
-				else if(concatString == "||")
-					resConcat = " OR ";
-				assert(resConcat.length > 0);
-			}
-			conds += zesaruxCondition + resConcat;
-		}
-
-		if(conds.length == 0)
-			return undefined;
+		// Convert hex numbers ("0x12BF" -> "12BFH")
+		conds = conds.replace(/0x[0-9a-f]+/gi, value => {
+			const valh = value.substr(2) + 'H';
+			return valh;
+		});
 
 		console.log('Converted condition "' + condition + '" to "' + conds);
 		return conds;
@@ -1154,7 +1133,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 
 		// Get condition
-		const zesaruxCondition = this.convertCondition(bp.condition);
+		let zesaruxCondition = this.convertCondition(bp.condition);
 		if(zesaruxCondition == undefined) {
 			this.emit('warning', "Breakpoint: Can't set condition: " + (bp.condition || ''));
 			// set to unverified
@@ -1172,8 +1151,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 		let condition = '';
 		if(bp.address >= 0) {
 			condition = 'PC=0'+Utility.getHexString(bp.address, 4)+'h';
-			if(zesaruxCondition.length > 0)
+			if(zesaruxCondition.length > 0) {
 				condition += ' and ';
+				zesaruxCondition = '(' + zesaruxCondition + ')';
+			}
 		}
 		if(zesaruxCondition.length > 0)
 			condition += zesaruxCondition;

@@ -443,30 +443,24 @@ Notes:
 
 Along with breakpoints you can also use breakpoint conditions. The breakpoint condition is checked additionally whenever a breakpoint is fired at a certain address.
 Only if also the breakpoint condition is met the program execution will stop.
-The breakpoint conditions are for example used for the ASSERTs.
 
-Breakpoint conditions use a special syntax
-
-~~~
-var comparison expr [concat var comparison expr]
-~~~
-with:
-
-- var: a variable, i.e. a register like A or HL
-- comparison: one of '<', '>', '==', '!=', '<=', '=>'.
-- expr: a mathematical expression that resolves into a constant
-- concat: one of '&&' or '||'
-
+Breakpoint conditions can be any valid expression including labels, registers and parenthesis.
 Examples:
-
-- HL > LBL_END
-- B >= (MAX_COUNT+1)/2
-- A >= 6 || hl == 0
-
-So on the left side you have to use a register and on the right side an expression that evaluates to a number, you can use labels and maths in the expression, but you can't put registers there.
-Several var-comparison-expr might be combined with a "&&" or "||". But you can't use any complex combinations that would require parenthesis.
-
-The breakpoint conditions are translated into conditions that are understood by ZEsarUX automatically.
+~~~
+BC==0x12FA
+DE==HL+1
+(A&7Fh) >= 10
+D==5 || B==0 && C==1
+B >= (MAX_COUNT+1)/2
+b@(mylabel) == 50
+w@(mylabel) == 0x34BC
+b@(mylabel+5) == 50
+b@(mylabel+A) == 50
+b@(HL) > 10
+~~~
+Note 1: "&&" has higher priority than "||".
+Note 2: Brackets, "()", are used only for priorization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
+Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)" but you can also use the ZEsarUX style directly.
 
 
 ### vscode logpoints
