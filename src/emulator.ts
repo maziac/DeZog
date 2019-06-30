@@ -446,10 +446,25 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * Stops an emulator/the debugger.
-	 * E.g. disconnect the socket to the emulator here.
+	 * Stops a machine/the debugger.
+	 * This will e.g. disconnect the socket and un-use all data.
+	 * Called e.g. when vscode sends a disconnectRequest
+	 * Very much like 'terminate' but does not send the 'terminated' event.
+	 * @param handler is called after the connection is disconnected.
 	 */
-	public stop(handler: () => void) {
+	public disconnect(handler: () => void) {
+		// please override.
+	}
+
+
+	/**
+	 * Terminates the machine/the debugger.
+	 * This should disconnect the socket and un-use all data.
+	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
+	 * Has to emit the "this.emit('terminated')".
+	 * @param handler is called after the connection is terminated.
+	 */
+	public terminate(handler: () => void) {
 		// please override.
 	}
 

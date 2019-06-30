@@ -308,7 +308,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 */
 	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
 		// Stop machine
-		Emulator.stop(() => {
+		Emulator.disconnect(() => {
 			// And setup a new one
 			this.launch(response);
 		});

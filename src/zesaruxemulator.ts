@@ -100,9 +100,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Terminates the machine/the debugger.
 	 * This will disconnect the socket to zesarux and un-use all data.
 	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a TerminatedEvent. I.e. the vscode debugger
+	 * This will also send a 'terminated' event. I.e. the vscode debugger
 	 * will also be terminated.
-	 * @param handler is called after the connection is disconnected.
+	 * @param handler is called after the connection is terminated.
 	 */
 	public terminate(handler: () => void) {
 		// The socket connection must be closed as well.
@@ -196,6 +196,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	// TOOD: REMOVE. Enable for now always
 	Settings.launch.codeCoverage = true;
+	Settings.launch.codeCoverage = false;
 
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
