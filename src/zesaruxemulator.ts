@@ -1087,7 +1087,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			return '';	// No condition
 
 		// Convert labels
-		let regex = /\b[_a-z][0-9a-z_]*\b/gi;
+		let regex = /\b[_a-z][\.0-9a-z_]*\b/gi;
 		let conds = condition.replace(regex, label => {
 			// Check if register
 			if(Z80Registers.isRegister(label))
