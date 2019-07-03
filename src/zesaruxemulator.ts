@@ -13,7 +13,7 @@ import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPa
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
 import { ZesaruxTransactionLog } from './zesaruxtransactionlog';
-import * as lineRead from 'n-readlines';
+//import * as lineRead from 'n-readlines';
 
 
 
@@ -196,8 +196,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	// TOOD: REMOVE. Enable for now always
 	Settings.launch.codeCoverage = true;
-	Settings.launch.codeCoverage = false;
-
+	//Settings.launch.codeCoverage = false;
+/*
+logfile     name:   File to store the log
+enabled     yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
+autorotate  yes|no: Enables automatic rotation of the log file
+rotatefiles number: Number of files to keep in rotation (1-999)
+rotatesize  number: Size in MB to rotate log file (1-9999)
+truncate    yes|no: Truncate the log file. Requires value set to yes
+datetime    yes|no: Enable datetime logging
+tstates     yes|no: Enable tstates logging
+address     yes|no: Enable address logging. Enabled by default
+opcode      yes|no: Enable opcode logging. Enabled by default
+registers   yes|no: Enable registers logging
+*/
 				// Enter step-mode (stop)
 				zSocket.send('enter-cpu-step');
 
@@ -207,6 +219,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 				zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
 				// Disable for now
 				zSocket.send('cpu-transaction-log enabled no');
+
+				// Set autorotation
+				zSocket.send('cpu-transaction-log autorotate yes');
+				zSocket.send('cpu-transaction-log rotatefiles 1');
+				zSocket.send('cpu-transaction-log rotatesize 1');	// 1MB
 
 				// Coverage + reverse debugging settings
 
@@ -796,19 +813,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Check if code coverage is enabled
 			if(Settings.launch.codeCoverage) {
 				// Go through coverage file and collect all addresses
-				const logFilename = Utility.getAbsCpuLogFileName();
 				const addresses = new Set<number>();
-				const cpuLog = new lineRead(logFilename);
-				let data;
-				while (data = cpuLog.next()) {
-					// Get line
-					const line = data.toString();
-					// Parse address
-					const addr = parseInt(line, 16);
-					// Add to set
-					addresses.add(addr);
-				}
-
+				this.cpuTransactionLog.getPrevAddresses([10], [addresses]);
 				// Emit code coverage event
 				this.emit('coverage', addresses);
 			}

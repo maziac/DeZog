@@ -252,7 +252,7 @@ z80-debug will now
 - open the socket connection to ZEsarUX
 - instruct ZEsarUX to load the snapshot file (or tap file)
 - set breakpoints (if there are breakpoints set in vscode)
-- put ZEsarUX into step mode ('enter-cpu-step') and stop/break the jst started assembler program
+- put ZEsarUX into step mode ('enter-cpu-step') and stop/break the just started assembler program
 
 z80-debug/vscode will now display the opcode of the current PC (program counter) in the right position in your .asm file.
 At the left side you see the disassembly and the registers in the VARIABLES section and the

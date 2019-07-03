@@ -42,6 +42,9 @@ export class ZesaruxTransactionLog {
 	/// O if no step back.
 	protected stepBackCounter: number;
 
+	/// The file rotation currently in use.
+	protected fileRotation: number;
+
 
 	/**
 	 * Creates the object.
@@ -50,6 +53,7 @@ export class ZesaruxTransactionLog {
 	constructor(filepath: string) {
 		this.filepath = filepath;
 		this.stepBackCounter = 0;
+		this.fileRotation = 0;
 	}
 
 
@@ -57,23 +61,62 @@ export class ZesaruxTransactionLog {
 	 * Resets the file offset to the end of the file.
 	 */
 	public init() {
-		// TODO: error handling if file could not be opened.
-		this.file = fs.openSync(this.filepath, 'r');
-		// Set file offset to the end of the file.
-		const fstats = fs.statSync(this.filepath);
-		this.fileSize = fstats.size;
-		this.fileOffset = this.fileSize;
+		// This will lead to opening the file.
+		//this.fileSize = 0;
+		//this.fileOffset = this.fileSize;
+		this.stepBackCounter = 0;
+		this.fileRotation = 0;
+		this.openRotatedFile();
 	}
 
 
 	/**
+	 * Creates the filename from filepath and fileRotation and opens the file.
+	 * @param fileRotation The file rotation to use.
+	 * @returns The file handle.
+	 */
+	protected openCurrentRotatedFile(fileRotation: number): number {
+		// Create suffix
+		let filepath = this.filepath;
+		if(fileRotation > 0)
+			filepath += '.' + fileRotation.toString();
+		// Open file
+		const file = fs.openSync(filepath, 'r');
+		return file;
+	}
+
+
+	/**
+	 * Opens a file. Closes the previous file.
+	 * Used to open the different roatated files.
+	 */
+	protected openRotatedFile() {
+		// Close old file
+		if(this.file)
+			fs.closeSync(this.file);
+		this.fileSize = 0;
+		// Open file
+		this.file = this.openCurrentRotatedFile(this.fileRotation);
+		// Set file offset to the end of the file.
+		if(this.file) {
+			const fstats = fs.statSync(this.filepath);
+			this.fileSize = fstats.size;
+		}
+		this.fileOffset = this.fileSize;
+	}
+
+	/**
 	 * Sets the file offset to the previous line.
-	 * @returns false if already at the start of the file.
+	 * @returns false if there is no previous line.
 	 */
 	public prevLine(): boolean {
 		// Check if already at the beginning
-		if(this.fileOffset == 0)
-			return false;
+		if(this.fileOffset == 0) {
+			// Open next rotated file
+			this.fileRotation ++;
+			this.openRotatedFile();
+			return (this.file != 0);	// false if no file could be opened
+		}
 
 		// One more line
 		this.stepBackCounter ++;
@@ -111,8 +154,12 @@ export class ZesaruxTransactionLog {
 	 */
 	public nextLine(): boolean {
 		// Check if already at the end
-		if(this.fileOffset >= this.fileSize)
-			return false;
+		if(this.fileOffset >= this.fileSize) {
+			// Open previous rotated file
+			this.fileRotation --;
+			this.openRotatedFile();
+			return (this.file != 0);	// false if no file could be opened
+		}
 
 		// One line less
 		this.stepBackCounter --;
@@ -221,6 +268,111 @@ export class ZesaruxTransactionLog {
 	 */
 	public isInStepBackMode() {
 		return (this.stepBackCounter != 0);
+	}
+
+
+	/**
+	 * Returns the number o addresses from the current position and returns them.
+	 * Is used to return 2 sets of addresses:
+	 * First the e.g. last 10 used addresses,
+	 * second the e.g. 200 previous addresses.
+	 * The lines get different colors. So it's easier to distinguish what just happend and what
+	 * happened longer ago.
+	 * @param counts An array with the number of lines to search for addresses.
+	 * @param addrsArray Array with set of addresses. Correspondents to 'counts'.
+	 * The Sets are filled.
+	 */
+	public getPrevAddresses(counts: Array<number>, addrsArray: Array<Set<number>>) {
+		const len = counts.length;
+		assert(len == addrsArray.length)
+
+		// Open a parallel file, use the current file pointer
+		// and load as much as is required to get the addresses.
+		const chunkSize = 100; //TODO change to 10000;	// 10kB chunks
+		const buffer = new Uint8Array(chunkSize+4);
+		const nlCode = '\n'.charCodeAt(0);
+		let l = -1;
+		let count;
+		let fileRotation = this.fileRotation;
+
+		// Skip possible zero counts
+		do {
+			l ++;
+			if(l >= len)
+				return;	// End
+			count = counts[l];
+		} while(count == 0);
+		let addrs = addrsArray[l];
+
+		let file;
+		while(true) {
+			// Open file (in parallel)
+			file = this.openCurrentRotatedFile(fileRotation);
+			if(!file)
+				return;
+			let offset = this.fileOffset-1;  // Skip first '\n'
+
+			// Read in a big chunk of data and searche for '\n'
+			let searchIndex = chunkSize;
+			let readChunkSize = chunkSize;
+			let last4Bytes = new Uint8Array(0);
+			while(offset > 0) {
+				// Read chunk
+				offset -= chunkSize;
+				if(offset < 0) {
+					readChunkSize += offset;	// Reduce last size to read
+					offset = 0;
+				}
+				fs.readSync(file, buffer, 0, readChunkSize, offset);
+
+				// Append at least 4 bytes from last buffer
+				let m = readChunkSize;
+				for(let b of last4Bytes)
+					buffer[m++] += b;
+
+				// Find '\n'
+				do {
+					let k = buffer.lastIndexOf(nlCode, searchIndex);
+					if(k < 0) {
+						if(offset != 0)
+							break;
+						k = 0;
+					}
+
+					// Found
+					// Get address
+					const addrBuf = new Uint8Array(buffer, k+1, 4);
+					const addrString = String.fromCharCode.apply(null, addrBuf);
+					const addr = parseInt(addrString, 16);
+					// Add to set
+					addrs.add(addr);
+					// Use next position
+					offset -= searchIndex-k;
+					searchIndex = k;
+					// Reduce count
+					count --;
+					if(count == 0) {
+						// Proceed to next array
+						do {
+							l ++;
+							if(l >= len)
+								return;	// End
+							count = counts[l];
+						} while(count == 0);
+						// Read new values
+						addrs = addrsArray[l];
+					}
+				} while(offset != 0);
+
+				// Copy first 4 bytes
+				last4Bytes = new Uint8Array(4);
+				for(let j=0; j<4; j++)
+					last4Bytes[j] = buffer[j];
+			}
+
+			// Next rotated file
+			fileRotation ++;
+		}
 	}
 
 }
