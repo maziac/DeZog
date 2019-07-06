@@ -315,7 +315,6 @@ export class ZesaruxTransactionLog {
 			// Read in a big chunk of data and searche for '\n'
 			let searchIndex = chunkSize;
 			let readChunkSize = chunkSize;
-			let last4Bytes = new Uint8Array(0);
 			while(offset > 0) {
 				// Read chunk
 				offset -= chunkSize;
@@ -323,12 +322,7 @@ export class ZesaruxTransactionLog {
 					readChunkSize += offset;	// Reduce last size to read
 					offset = 0;
 				}
-				fs.readSync(file, buffer, 0, readChunkSize, offset);
-
-				// Append at least 4 bytes from last buffer
-				let m = readChunkSize;
-				for(let b of last4Bytes)
-					buffer[m++] += b;
+				fs.readSync(file, buffer, 0, readChunkSize+4, offset);
 
 				// Find '\n'
 				do {
@@ -363,11 +357,6 @@ export class ZesaruxTransactionLog {
 						addrs = addrsArray[l];
 					}
 				} while(offset != 0);
-
-				// Copy first 4 bytes
-				last4Bytes = new Uint8Array(4);
-				for(let j=0; j<4; j++)
-					last4Bytes[j] = buffer[j];
 			}
 
 			// Next rotated file
