@@ -7,6 +7,7 @@ suite('Labels', () => {
 
 	setup( () => {
 		Settings.Init(<any>undefined, '');
+		Labels.init();
 	});
 
 /*
@@ -161,9 +162,9 @@ suite('Labels', () => {
 			Labels.finish();
 
 			let value = Labels.getNumberForLabel('pause_loop_l1');
-			assert.equal( value, 0x6006, "Expected address wrong.");
+			assert.equal( value, 0x7006, "Expected address wrong.");
 
-			let labels = Labels.getLabelsPlusIndexForNumber(0x6008);
+			let labels = Labels.getLabelsPlusIndexForNumber(0x7008);
 			assert.equal( labels[0], 'pause_loop_l1+2', "Expected label+index wrong.");
 		});
 
