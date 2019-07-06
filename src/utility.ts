@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { Labels } from './labels';
 import { zSocket } from './zesaruxSocket';
@@ -24,6 +23,11 @@ const CpuLogFileName = 'cpu.log';
 
 
 export class Utility {
+
+	/// The rootpath to the project. Used in abs and relative filename functions.
+	protected static rootPath: string;
+
+
 	/**
 	 * Returns a value shrinked to a boundary.
 	 * Used to calculate address boundaries.
@@ -609,8 +613,18 @@ export class Utility {
 	 * @returns A relative path
 	 */
 	public static getRelFilePath(absFilePath: string): string {
-		const filePath = path.relative(vscode.workspace.rootPath || '', absFilePath);
+		const filePath = path.relative(this.rootPath || '', absFilePath);
 		return filePath;
+	}
+
+
+	/**
+	 * Sets the root path or absolute and relative file functions.
+	 * @param rootPath What e.g. vscode.workspace.rootPath would return
+	 */
+	public static setRootPath(rootPath: string|undefined) {
+		assert(rootPath);
+		(this.rootPath as any) = rootPath;
 	}
 
 
@@ -624,7 +638,7 @@ export class Utility {
 		if(path.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
-		const usedRootPath = (rootPath) ? rootPath : vscode.workspace.rootPath || '';
+		const usedRootPath = (rootPath) ? rootPath : this.rootPath || '';
 		const filePath = path.join(usedRootPath, relFilePath);
 		return filePath;
 	}

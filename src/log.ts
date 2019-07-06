@@ -2,7 +2,6 @@
 //import * as fs from 'fs';
 import { writeFileSync, appendFileSync } from 'fs';
 import * as util from 'util';
-import * as vscode from 'vscode';
 
 
 // If there is a pause of 2 seconds between logs then an additional indication is logged.
@@ -20,7 +19,9 @@ export class Log {
 	protected outFilePath: string|undefined;
 
 	/// Output logging to the "OUTPUT" tab in vscode.
-	protected logOutput: vscode.OutputChannel|undefined;
+	/// This is of type vscode.OutputChannel. But it can be used as it would imply a
+	/// dependency to vscode. And with a dependency to vscode mocha unit tests are not possible.
+	protected logOutput;
 
 	/// Last time a log has been written.
 	protected lastLogTime = Date.now();
@@ -32,10 +33,10 @@ export class Log {
 	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
-	 * @param channelOutput If defined the name of the channel output.
+	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
 	 * @param filePath If set: log additionally to a file. Relative file path.
 	 */
-	public static init(channelOutput: string|undefined, filePath: string|undefined) {
+	public static init(channelOutput: any, filePath: string|undefined) {
 		LogGlobal.init(channelOutput, filePath);
 		LogGlobal.callerNameIndex++;
 	}
@@ -71,13 +72,13 @@ export class Log {
 	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
-	 * @param channelOutput If defined the name of the channel output.
+	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
 	 * @param filePath If set: log additionally to a file. Relative file path.
 	 * @param callerName If true the name of the calling method is shown.
 	 */
-	public init(channelOutput: string|undefined, filePath: string|undefined, callerName = true) {
+	public init(channelOutput: any, filePath: string|undefined, callerName = true) {
 		this.outFilePath = filePath;
-		this.logOutput = (channelOutput) ? vscode.window.createOutputChannel(channelOutput) : undefined;
+		this.logOutput = channelOutput;
 		if(callerName)
 			this.callerNameIndex = 3;
 	}

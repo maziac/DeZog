@@ -326,6 +326,9 @@ export class EmulDebugSessionClass extends DebugSession {
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
+			// Set root path
+			Utility.setRootPath(vscode.workspace.rootPath);
+
 			// Save args
 			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			const rootFolder = vscode.workspace.rootPath || '';
@@ -333,7 +336,8 @@ export class EmulDebugSessionClass extends DebugSession {
 			// Overwrite top-of-stack.
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 
-			const channelOut = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
+			const channelName = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
+			const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 			Log.init(channelOut, Settings.launch.log.filePath);
 		}
 		catch(e) {
@@ -1132,11 +1136,15 @@ export class EmulDebugSessionClass extends DebugSession {
 	 protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments) : void {
 		// Serialize
 		this.serializer.exec(() => {
+			// Output
+			vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
+
 			// Continue debugger
-			Emulator.reverseContinue( () => {
+			Emulator.reverseContinue(reason => {
+				// Output stop reason.
+				vscode.debug.activeDebugConsole.appendLine(reason);
 				// Update memory dump etc.
 				this.update();
-
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 				this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
 			});

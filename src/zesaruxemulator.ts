@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 import { zSocket, ZesaruxSocket } from './zesaruxSocket';
 import { Z80Registers } from './z80Registers';
 import { Utility } from './utility';
@@ -534,24 +533,20 @@ registers   yes|no: Enable registers logging
 	  * 'reverse continue' debugger program execution.
 	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	  */
-	 public reverseContinue(handler:()=>void) : void {
+	 public reverseContinue(handler:(reason: string)=>void) : void {
 		//this.state = EmulatorState.RUNNING;
 		//this.state = EmulatorState.IDLE;
-		// Output
-		vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
 		// Loop over all lines, reverse
-		let s = 'Break: Reached end of transaction log.';
+		let reason = 'Break: Reached end of transaction log.';
 		while(this.cpuTransactionLog.prevLine()) {
 			const addr = this.cpuTransactionLog.getAddress();
 			// Check for breakpoint
 			// TODO: ...
 		}
 
-		// Output reason
-		vscode.debug.activeDebugConsole.appendLine(s);
 		// Clear register cache
 		this.RegisterCache = undefined;
-		handler();
+		handler(reason);
 	}
 
 

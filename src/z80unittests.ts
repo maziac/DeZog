@@ -220,6 +220,8 @@ export class Z80UnitTests {
 	 */
 	protected static runTests() {
 		try {
+			// Set root path
+			Utility.setRootPath(vscode.workspace.rootPath);
 
 			// Mode
 			this.debug = false;
@@ -343,6 +345,9 @@ export class Z80UnitTests {
 	 */
 	protected static debugTests() {
 		try {
+			// Set root path
+			Utility.setRootPath(vscode.workspace.rootPath);
+
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 			const configName: string = configuration.name;
