@@ -63,118 +63,16 @@ export class ZesaruxTransactionLog {
 		//this.fileSize = 0;
 		//this.fileOffset = this.fileSize;
 		this.stepBackCounter = 0;
-		this.openRotatedFile();
 	}
 
 
-	/**
-	 * Sets the file offset to the previous line.
-	 * @returns false if there is no previous line.
-	 */
-	public prevLine(): boolean {
-		const nlCode = '\n'.charCodeAt(0);
-		const chunkSize = 150;
-
-		// Reads in a few bytes from the end and searches for '\n'
-		let buffer;
-		let k;
-		do {
-			// Get data
-			buffer = this.file.readReverseData(chunkSize, 0);
-			const count = buffer.size;
-			// Check for end
-			if(count == 0) {
-				// No previous line
-				return false;
-			}
-			// Find '\n'
-			k = buffer.lastIndexOf(nlCode, count-1);	// Skip last '\n'
-		} while( k < 0);
-
-		// Correct the file pointer
-		this.file.addOffset(k+1);	// Now points right after the '\n'
-
-
-		// One more line
-		this.stepBackCounter ++;
-
-		return true;
-	}
-
 
 	/**
-	 * Sets the file offset to the next line.
-	 * @returns false if already at the end of the file.
-	 */
-	public nextLine(): boolean {
-		const nlCode = '\n'.charCodeAt(0);
-		const chunkSize = 150;
-
-		// Reads in a few bytes and searches for '\n'
-		let buffer;
-		let k;
-		do {
-			// Get data
-			buffer = this.file.readForwardData(chunkSize);
-			// Check for end
-			if(buffer.size == 0) {
-				// No next line
-				return false;
-			}
-			// Find '\n'
-			k = buffer.indexOf(nlCode);
-		} while(k < 0);
-
-		// '\n' found
-		const offset = k+1 - buffer.size;	// Negativ. Now points right after the '\n'
-
-		// Correct the file pointer
-		this.file.addOffset(offset);
-
-		// One less line
-		this.stepBackCounter --;
-
-		return true;
-	}
-
-
-	/**
-	 * Reads the line at the current offset.
-	 */
-	public getLine(): string { // TODO: should be protected
-		const nlCode = '\n'.charCodeAt(0);
-		let k;
-		let total = '';
-		const chunkSize = 150;
-
-		// Search for next '\n'
-		let buffer;
-		do {
-			buffer = this.file.readForwardData(chunkSize);
-			const s = String.fromCharCode.apply(null, buffer);
-			k = s.indexOf(nlCode);
-			if(k < 0) {
-				total += s;
-				break;
-			}
-			else
-				total = s.substr(k);
-		} while(buffer.length > 0);
-
-		// Move offset after last found '\n'
-		this.file.addOffset(k+1 -buffer.length);
-
-		// Return
-		return total;
-	}
-
-
-	/**
-	 * @returns The address of the current line. Uses the first 4 digits simply.
+	 * @returns The registers of the current line.
 	 */
 	public getRegisters(): string {
 		// Get current line
-		const line = this.getLine();
+		const line = this.file.getLine();
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Turn into same format as for 'get-registers'
 		const k = line.indexOf('PC=');
@@ -189,7 +87,7 @@ export class ZesaruxTransactionLog {
 	 */
 	public getInstruction(): string {
 		// Get current line
-		const line = this.getLine();
+		const line = this.file.getLine();
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction
 		const k = line.indexOf('PC=');
@@ -202,9 +100,10 @@ export class ZesaruxTransactionLog {
 	/**
 	 * @returns The address of the current line. Uses the first 4 digits simply.
 	 */
+	// TODO: Brauch ich die?
 	public getAddress(): number {
 		// Get current line
-		const line = this.getLine();
+		const line = this.file.getLine(4);
 		// Convert address
 		const addr = parseInt(line, 16);
 		return addr;
@@ -236,52 +135,9 @@ export class ZesaruxTransactionLog {
 
 		// Open a parallel file
 		// and load as much as is required to get the addresses.
-		const chunkSize = 100; //TODO change to 10000;	// 10kB chunks
-		const nlCode = '\n'.charCodeAt(0);
 		let l = -1;
 		let count;
-		const file = new RotationFile(this.filepath);
-		file.addOffset(-1);  // Skip first '\n'
-
-		while(true) {
-			const buffer = file.readReverseData(chunkSize, 4);
-			let searchIndex = buffer.chunkLength;
-			if(searchIndex == 0)
-				return;	// No more data
-
-			while(searchIndex >= 0) {
-				searchIndex = buffer.lastIndexOf(nlCode, searchIndex);
-				if(searchIndex < 0)
-					break;	// Load next data chunk
-				// Get address
-				const addrBuf = new Uint8Array(buffer, searchIndex+1, 4);
-				const addrString = String.fromCharCode.apply(null, addrBuf);
-				const addr = parseInt(addrString, 16);
-				// Add to set
-				addrs.add(addr);
-				// Reduce count
-				count --;
-				if(count == 0) {
-					// Proceed to next array
-					do {
-						l ++;
-						if(l >= len)
-							return;	// End
-						count = counts[l];
-					} while(count == 0);
-					// Read new values
-					addrs = addrsArray[l];
-				}
-			}
-
-			Das hier oben testen
-
-		}
-
-
-
-
-
+		const file = new RotationFile(this.filepath, 10000);
 
 		// Skip possible zero counts
 		do {
@@ -292,63 +148,26 @@ export class ZesaruxTransactionLog {
 		} while(count == 0);
 		let addrs = addrsArray[l];
 
-		let file;
-		while(true) {
-			// Open file (in parallel)
-			file = this.openCurrentRotatedFile(fileRotation);
-			if(!file)
-				return;
-			let offset = this.fileOffset-1;  // Skip first '\n'
-
-			// Read in a big chunk of data and search for '\n'
-			let searchIndex = chunkSize;
-			let readChunkSize = chunkSize;
-			while(offset > 0) {
-				// Read chunk
-				offset -= chunkSize;
-				if(offset < 0) {
-					readChunkSize += offset;	// Reduce last size to read
-					offset = 0;
-				}
-				fs.readSync(file, buffer, 0, readChunkSize+4, offset);
-
-				// Find '\n'
+		while(file.prevLine()) { // Previous line
+			// Get current line
+			const line = this.file.getLine(4);
+			// Convert address
+			const addr = parseInt(line, 16);
+			// Add to set
+			addrs.add(addr);
+			// Reduce count
+			count --;
+			if(count == 0) {
+				// Proceed to next array
 				do {
-					let k = buffer.lastIndexOf(nlCode, searchIndex);
-					if(k < 0) {
-						if(offset != 0)
-							break;
-						k = 0;
-					}
-
-					// Found
-					// Get address
-					const addrBuf = new Uint8Array(buffer, k+1, 4);
-					const addrString = String.fromCharCode.apply(null, addrBuf);
-					const addr = parseInt(addrString, 16);
-					// Add to set
-					addrs.add(addr);
-					// Use next position
-					offset -= searchIndex-k;
-					searchIndex = k;
-					// Reduce count
-					count --;
-					if(count == 0) {
-						// Proceed to next array
-						do {
-							l ++;
-							if(l >= len)
-								return;	// End
-							count = counts[l];
-						} while(count == 0);
-						// Read new values
-						addrs = addrsArray[l];
-					}
-				} while(offset != 0);
+					l ++;
+					if(l >= len)
+						return;	// End
+					count = counts[l];
+				} while(count == 0);
+				// Read new values
+				addrs = addrsArray[l];
 			}
-
-			// Next rotated file
-			fileRotation ++;
 		}
 	}
 

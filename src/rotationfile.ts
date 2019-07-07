@@ -5,6 +5,7 @@ import * as fs from 'fs';
 /**
  * Helper class to work with the data from the rotation files.
  */
+// TODO: brauch ich nicht.
 export class ByteArray extends Uint8Array {
 	/// The length without the overlap.
 	public chunkLength: number;
@@ -19,7 +20,7 @@ export class ByteArray extends Uint8Array {
 
 /**
  * This class handles rotation files.
- * The ZEsarUX cputransaction-log is written as rotated file.
+ * The ZEsarUX cpu-transaction-log is written as rotated file.
  * I.e. the file with 'fname.log' is written until a certain size is reached.
  * Then the name of the file is changed to 'fname.log.1'. Any file with a name
  * 'fname.log.1' is renamed to 'fname.log.2 and so on.
@@ -53,14 +54,30 @@ export class RotationFile {
 	/// The file rotation currently in use.
 	protected fileRotation: number;
 
+	/// The data array containing the cache.
+	protected cacheBuffer: Uint8Array|undefined;
+
+	/// The normal size of the cache.
+	protected cacheChunkSize: number;
+
+	/// The pointer into the cache.
+	protected cacheOffset: number;
+
+	/// Code of the newline character.
+	protected nlCode: number;
+
 
 	/**
 	 * Creates the object.
 	 * @param filepath The file to use.
+	 * @param The nominal cache size to use.
 	 */
-	constructor(filepath: string) {
+	constructor(filepath: string, cacheSize = 4000) {
 		this.filepath = filepath;
 		this.fileRotation = 0;
+		this.cacheBuffer = undefined;
+		this.cacheChunkSize = cacheSize;
+		this.nlCode = '\n'.charCodeAt(0);
 	}
 
 
@@ -111,11 +128,9 @@ export class RotationFile {
 	 * rotated file there is not enough data. I.e. a returned data array is never constructed
 	 * out of data of 2 files.
 	 * @param chunkSize The requested data size.
-	 * @param overlap An additional overlap data size. This is used to make sure that in the returned
-	 * data there is at least an address included (takes up 4 characters).
+	 * @param overlap An additional overlap data size.
 	 */
-	// TODO: overlap raus
-	public readReverseData(chunkSize: number, overlap: number): ByteArray {
+	protected readCacheReverse(overlap = 0) {
 		// Make sure that file is open
 		if(!this.file)
 			this.openRotatedFile();
@@ -129,28 +144,33 @@ export class RotationFile {
 
 		// Check if at the end.
 		if(!this.file) {
-			return new ByteArray(0);
+			this.cacheBuffer = undefined;
+			this.cacheOffset = 0;
+			return;
 		}
 
-		// Determine reading size
+		// Determine reading size.
 		const remainingSizeInFile = this.fileOffset;
-		const readSize = (remainingSizeInFile < chunkSize) ? remainingSizeInFile : chunkSize;
-		// Correct buffer size to not be bigger than the file itself
-		if(readSize+overlap >= remainingSizeInFile)
-			overlap = remainingSizeInFile - readSize;
+		let readSize = this.cacheChunkSize;
+		if(readSize >= remainingSizeInFile) {
+			readSize = remainingSizeInFile;
+		}
+
 		// Alloc bytes
-		const buffer = new ByteArray(readSize, overlap);
+		this.cacheBuffer = new ByteArray(readSize+overlap);
+		this.cacheOffset = readSize;
 
 		// Read data
 		this.fileOffset -= readSize;
-		fs.readSync(this.file, buffer, 0, readSize+overlap, this.fileOffset);
-
-		// Return
-		return buffer;
+		fs.readSync(this.file, this.cacheBuffer, 0, readSize+overlap, this.fileOffset);
 	}
 
 
-	public readForwardData(chunkSize: number): ByteArray {
+	/**
+	 * Reads in data.
+	 * @param overlap An additional overlap data size (at the beginning).
+	 */
+	protected readCacheForward(overlap = 0) {
 		// Make sure that file is open
 		if(!this.file)
 			this.openRotatedFile();
@@ -164,22 +184,107 @@ export class RotationFile {
 
 		// Check if at the end.
 		if(!this.file) {
-			return new ByteArray(0);
+			this.cacheBuffer = undefined;
+			this.cacheOffset = 0;
+			return;
 		}
 
-		// Determine reading size
+		// Determine reading size.
 		const remainingSizeInFile = this.fileSize - this.fileOffset;
-		const readSize = (remainingSizeInFile < chunkSize) ? remainingSizeInFile : chunkSize;
+		let readSize = this.cacheChunkSize;
+		if(readSize >= remainingSizeInFile) {
+			readSize = remainingSizeInFile;
+		}
 
 		// Alloc bytes
-		const buffer = new ByteArray(readSize);
+		this.cacheBuffer = new ByteArray(readSize+overlap);
+		this.cacheOffset = overlap;
 
 		// Read data
-		fs.readSync(this.file, buffer, 0, readSize, this.fileOffset);
+		fs.readSync(this.file, this.cacheBuffer, 0, readSize+overlap, this.fileOffset-overlap);
 		this.fileOffset += readSize;
+	}
 
-		// Return
-		return buffer;
+
+	/**
+	 * Moves the (cache) file pointer to the previous line.
+	 * Note: this function assumes that the current offset already points at
+	 * a character after a newline. This newline is skipped and the previous one
+	 * is searched for.
+	 * @returns false if there is no previous line.
+	 */
+	public prevLine(): boolean {
+		let k;
+		do {
+			// Check if cache exists
+			if(!this.cacheBuffer)
+				this.readCacheReverse(this.cacheOffset);
+			if(!this.cacheBuffer)
+				return false;
+			// Find '\n'
+			k = this.cacheBuffer.lastIndexOf(this.nlCode, this.cacheOffset-1);	// Skip last '\n'
+			if(k < 0) {
+				// No newline found, get next cache with overlap
+				this.cacheBuffer = undefined;
+			}
+		} while(k < 0);
+		return true;
+	}
+
+
+	/**
+	 * Moves the (cache) file pointer to the next line.
+	 * Note: this function assumes that the current offset already points at
+	 * a character after a newline.
+	 * @returns false if there is no next line.
+	 */
+	public nextLine(): boolean {
+		let k;
+		let overlap = 0;
+		do {
+			// Check if cache exists
+			if(!this.cacheBuffer)
+				this.readCacheForward(overlap);
+			if(!this.cacheBuffer)
+				return false;
+			// Find '\n'
+			k = this.cacheBuffer.indexOf(this.nlCode, this.cacheOffset);
+			if(k < 0) {
+				// No newline found, get next cache with overlap
+				overlap = this.cacheBuffer.length-this.cacheOffset;
+				this.cacheBuffer = undefined;
+			}
+		} while(k < 0);
+		return true;
+	}
+
+
+	/**
+	 * Returns the line at the current (cache) offset.
+	 * If cache does not exists it return undefined.
+	 * @param count If 0 the whole stirng is returned. If not 0 only the count number of
+	 * characters are returned.
+	 * @returns A string or '' if cache is undefined.
+	 */
+	public getLine(count = 0): string {
+		// cache should exist
+		if(!this.cacheBuffer)
+			return '';
+
+		// Whole line?
+		if(count == 0) {
+			// Return data until next newline
+			const end = this.cacheBuffer.indexOf(this.nlCode, this.cacheOffset);
+			assert(end >= 0);	// Would fail if the cache buffer would not end with a newline
+			const buffer = this.cacheBuffer.subarray(this.cacheOffset, end);
+			const s = String.fromCharCode.apply(null, buffer);
+			return s;
+		}
+
+		// Only part of the line
+		const buffer = this.cacheBuffer.subarray(this.cacheOffset, this.cacheOffset+count);
+		const s = String.fromCharCode.apply(null, buffer);
+		return s;
 	}
 
 
