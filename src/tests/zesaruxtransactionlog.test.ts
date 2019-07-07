@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { RotationFile } from '../rotationfile';
+import { ZesaruxTransactionLog } from '../zesaruxtransactionlog';
 
 suite('RotationFile', () => {
 
@@ -13,7 +13,7 @@ suite('RotationFile', () => {
 */
 
 	test('constructor', () => {
-		const rf = new RotationFile('xxxx.log') as any;
+		const rf = new ZesaruxTransactionLog('xxxx.log') as any;
 		assert.ok(!rf.file, "File pointer should be undefined.");
 	});
 
@@ -142,6 +142,10 @@ suite('RotationFile', () => {
 			// Read next non existing file
 			const data3 = rf.readReverseData(100000, 4);
 			assert.equal(data3.length, 0, "Shouldn't contain data.");
+
+			// Read next non existing file once more
+			const data3b = rf.readReverseData(100000, 4);
+			assert.equal(data3b.length, 0, "Shouldn't contain data.");
 		});
 
 	});

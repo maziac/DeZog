@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 //import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { RotationFile } from './rotationfile';
 
 
 /**
@@ -29,8 +30,8 @@ export class ZesaruxTransactionLog {
 	/// The file path to use.
 	protected filepath: string;
 
-	/// The file handle.
-	protected file: number;
+	/// The rotation file handle.
+	protected file: RotationFile;
 
 	/// The file offset of the current line.
 	protected fileOffset: number;
@@ -42,9 +43,6 @@ export class ZesaruxTransactionLog {
 	/// O if no step back.
 	protected stepBackCounter: number;
 
-	/// The file rotation currently in use.
-	protected fileRotation: number;
-
 
 	/**
 	 * Creates the object.
@@ -53,7 +51,7 @@ export class ZesaruxTransactionLog {
 	constructor(filepath: string) {
 		this.filepath = filepath;
 		this.stepBackCounter = 0;
-		this.fileRotation = 0;
+		this.file = new RotationFile(filepath);
 	}
 
 
@@ -65,85 +63,41 @@ export class ZesaruxTransactionLog {
 		//this.fileSize = 0;
 		//this.fileOffset = this.fileSize;
 		this.stepBackCounter = 0;
-		this.fileRotation = 0;
 		this.openRotatedFile();
 	}
 
-
-	/**
-	 * Creates the filename from filepath and fileRotation and opens the file.
-	 * @param fileRotation The file rotation to use.
-	 * @returns The file handle.
-	 */
-	protected openCurrentRotatedFile(fileRotation: number): number {
-		// Create suffix
-		let filepath = this.filepath;
-		if(fileRotation > 0)
-			filepath += '.' + fileRotation.toString();
-		// Open file
-		const file = fs.openSync(filepath, 'r');
-		return file;
-	}
-
-
-	/**
-	 * Opens a file. Closes the previous file.
-	 * Used to open the different roatated files.
-	 */
-	protected openRotatedFile() {
-		// Close old file
-		if(this.file)
-			fs.closeSync(this.file);
-		this.fileSize = 0;
-		// Open file
-		this.file = this.openCurrentRotatedFile(this.fileRotation);
-		// Set file offset to the end of the file.
-		if(this.file) {
-			const fstats = fs.statSync(this.filepath);
-			this.fileSize = fstats.size;
-		}
-		this.fileOffset = this.fileSize;
-	}
 
 	/**
 	 * Sets the file offset to the previous line.
 	 * @returns false if there is no previous line.
 	 */
 	public prevLine(): boolean {
-		// Check if already at the beginning
-		if(this.fileOffset == 0) {
-			// Open next rotated file
-			this.fileRotation ++;
-			this.openRotatedFile();
-			return (this.file != 0);	// false if no file could be opened
-		}
+		const nlCode = '\n'.charCodeAt(0);
+		const chunkSize = 150;
+
+		// Reads in a few bytes from the end and searches for '\n'
+		let buffer;
+		let k;
+		do {
+			// Get data
+			buffer = this.file.readReverseData(chunkSize, 0);
+			const count = buffer.size;
+			// Check for end
+			if(count == 0) {
+				// No previous line
+				return false;
+			}
+			// Find '\n'
+			k = buffer.lastIndexOf(nlCode, count-1);	// Skip last '\n'
+		} while( k < 0);
+
+		// Correct the file pointer
+		this.file.addOffset(k+1);	// Now points right after the '\n'
+
 
 		// One more line
 		this.stepBackCounter ++;
-		//vscode.debug.activeDebugConsole.appendLine('stepBackCounter = ' + this.stepBackCounter);
 
-		// Reads in a few bytes from the end and searches for '\n'
-		const chunkSize = 100;
-		const buffer = new Uint8Array(chunkSize);
-		let offset = this.fileOffset-1;  // Skip first '\n'
-		while(offset > 0) {
-			// Read chunk
-			offset -= chunkSize;
-			if(offset < 0)
-				offset = 0;
-			fs.readSync(this.file, buffer, 0, chunkSize, offset);
-			// Find '\n'
-			const s = String.fromCharCode.apply(null, buffer);
-			let k = s.lastIndexOf('\n');
-			if(k >= 0) {
-				// Found, use next position
-				this.fileOffset = offset + k + 1;
-				return true;
-			}
-		}
-
-		// Beginnning of file reached
-		this.fileOffset = 0;
 		return true;
 	}
 
@@ -153,70 +107,64 @@ export class ZesaruxTransactionLog {
 	 * @returns false if already at the end of the file.
 	 */
 	public nextLine(): boolean {
-		// Check if already at the end
-		if(this.fileOffset >= this.fileSize) {
-			// Open previous rotated file
-			this.fileRotation --;
-			this.openRotatedFile();
-			return (this.file != 0);	// false if no file could be opened
-		}
+		const nlCode = '\n'.charCodeAt(0);
+		const chunkSize = 150;
 
-		// One line less
-		this.stepBackCounter --;
-		//vscode.debug.activeDebugConsole.appendLine('stepBackCounter = ' + this.stepBackCounter);
-
-		// Reads in a few bytes and searches for next '\n'
-		const chunkSize = 100;
-		const buffer = new Uint8Array(chunkSize);
-		let offset = this.fileOffset;
-		this.fileOffset = this.fileSize;
-		while(offset < this.fileSize) {
-			// Read chunk
-			fs.readSync(this.file, buffer, 0, chunkSize, offset);
-			// Find '\n'
-			const s = String.fromCharCode.apply(null, buffer);
-			let k = s.indexOf('\n');
-			if(k >= 0) {
-				// Found, use next position
-				this.fileOffset = offset + k + 1;
-				break;
+		// Reads in a few bytes and searches for '\n'
+		let buffer;
+		let k;
+		do {
+			// Get data
+			buffer = this.file.readForwardData(chunkSize);
+			// Check for end
+			if(buffer.size == 0) {
+				// No next line
+				return false;
 			}
-			// Next chunk
-			offset += chunkSize;
-		}
+			// Find '\n'
+			k = buffer.indexOf(nlCode);
+		} while(k < 0);
 
-		// End of file reached
-		return (this.fileOffset < this.fileSize);
+		// '\n' found
+		const offset = k+1 - buffer.size;	// Negativ. Now points right after the '\n'
+
+		// Correct the file pointer
+		this.file.addOffset(offset);
+
+		// One less line
+		this.stepBackCounter --;
+
+		return true;
 	}
 
 
 	/**
 	 * Reads the line at the current offset.
 	 */
-	public getLine() { // TODO: should be protected
-		// Reads in a few bytes from the end and searches for '\n'
+	public getLine(): string { // TODO: should be protected
+		const nlCode = '\n'.charCodeAt(0);
+		let k;
 		let total = '';
-		const chunkSize = 100;
-		const buffer = new Uint8Array(chunkSize);
-		let offset = this.fileOffset;
-		while(offset < this.fileSize) {
-			// Read chunk
-			fs.readSync(this.file, buffer, 0, chunkSize, offset);
-			// Find '\n'
+		const chunkSize = 150;
+
+		// Search for next '\n'
+		let buffer;
+		do {
+			buffer = this.file.readForwardData(chunkSize);
 			const s = String.fromCharCode.apply(null, buffer);
-			let k = s.indexOf('\n');
-			if(k >= 0) {
-				// Found
-				total += s.substr(0, k);
+			k = s.indexOf(nlCode);
+			if(k < 0) {
+				total += s;
 				break;
 			}
-			// Next chunk
-			offset += chunkSize;
-			total += s;
-		}
+			else
+				total = s.substr(k);
+		} while(buffer.length > 0);
+
+		// Move offset after last found '\n'
+		this.file.addOffset(k+1 -buffer.length);
 
 		// Return
-		//vscode.debug.activeDebugConsole.appendLine('transaction(' + this.stepBackCounter + ', ' + this.fileOffset + ', ' + this.fileSize + ') = ' + total);
 		return total;
 	}
 
@@ -286,14 +234,54 @@ export class ZesaruxTransactionLog {
 		const len = counts.length;
 		assert(len == addrsArray.length)
 
-		// Open a parallel file, use the current file pointer
+		// Open a parallel file
 		// and load as much as is required to get the addresses.
 		const chunkSize = 100; //TODO change to 10000;	// 10kB chunks
-		const buffer = new Uint8Array(chunkSize+4);
 		const nlCode = '\n'.charCodeAt(0);
 		let l = -1;
 		let count;
-		let fileRotation = this.fileRotation;
+		const file = new RotationFile(this.filepath);
+		file.addOffset(-1);  // Skip first '\n'
+
+		while(true) {
+			const buffer = file.readReverseData(chunkSize, 4);
+			let searchIndex = buffer.chunkLength;
+			if(searchIndex == 0)
+				return;	// No more data
+
+			while(searchIndex >= 0) {
+				searchIndex = buffer.lastIndexOf(nlCode, searchIndex);
+				if(searchIndex < 0)
+					break;	// Load next data chunk
+				// Get address
+				const addrBuf = new Uint8Array(buffer, searchIndex+1, 4);
+				const addrString = String.fromCharCode.apply(null, addrBuf);
+				const addr = parseInt(addrString, 16);
+				// Add to set
+				addrs.add(addr);
+				// Reduce count
+				count --;
+				if(count == 0) {
+					// Proceed to next array
+					do {
+						l ++;
+						if(l >= len)
+							return;	// End
+						count = counts[l];
+					} while(count == 0);
+					// Read new values
+					addrs = addrsArray[l];
+				}
+			}
+
+			Das hier oben testen
+
+		}
+
+
+
+
+
 
 		// Skip possible zero counts
 		do {
@@ -312,7 +300,7 @@ export class ZesaruxTransactionLog {
 				return;
 			let offset = this.fileOffset-1;  // Skip first '\n'
 
-			// Read in a big chunk of data and searche for '\n'
+			// Read in a big chunk of data and search for '\n'
 			let searchIndex = chunkSize;
 			let readChunkSize = chunkSize;
 			while(offset > 0) {

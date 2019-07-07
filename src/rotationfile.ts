@@ -1,7 +1,20 @@
-//import * as assert from 'assert';
+import * as assert from 'assert';
 import * as fs from 'fs';
 
 
+/**
+ * Helper class to work with the data from the rotation files.
+ */
+export class ByteArray extends Uint8Array {
+	/// The length without the overlap.
+	public chunkLength: number;
+
+	// Constructor
+	constructor(size: number, overlap = 0) {
+		super(size);
+		this.chunkLength = size-overlap;
+	}
+}
 
 
 /**
@@ -101,39 +114,111 @@ export class RotationFile {
 	 * @param overlap An additional overlap data size. This is used to make sure that in the returned
 	 * data there is at least an address included (takes up 4 characters).
 	 */
-	public readReverseData(chunkSize: number, overlap: number): Uint8Array {
+	// TODO: overlap raus
+	public readReverseData(chunkSize: number, overlap: number): ByteArray {
 		// Make sure that file is open
 		if(!this.file)
 			this.openRotatedFile();
 
 		// Check if next file need to be opened.
-		if(this.fileOffset == 0) {
+		if(this.fileOffset == 0 && this.file) {
 			// Already at the start of the file, we need to open the previous one.
 			this.fileRotation ++;
 			this.openRotatedFile();
 		}
 
-
-		//const chunkSize = 100; //TODO change to 10000;	// 10kB chunks
+		// Check if at the end.
+		if(!this.file) {
+			return new ByteArray(0);
+		}
 
 		// Determine reading size
 		const remainingSizeInFile = this.fileOffset;
 		const readSize = (remainingSizeInFile < chunkSize) ? remainingSizeInFile : chunkSize;
-		let readSizeOverlap = readSize + overlap;
 		// Correct buffer size to not be bigger than the file itself
-		const tooManyBytes = this.fileOffset - readSize + readSizeOverlap - this.fileSize;
-		if(tooManyBytes > 0)
-			readSizeOverlap -= tooManyBytes;
+		if(readSize+overlap >= remainingSizeInFile)
+			overlap = remainingSizeInFile - readSize;
 		// Alloc bytes
-		const buffer = new Uint8Array(readSizeOverlap);
+		const buffer = new ByteArray(readSize, overlap);
 
 		// Read data
 		this.fileOffset -= readSize;
-		fs.readSync(this.file, buffer, 0, readSizeOverlap, this.fileOffset);
+		fs.readSync(this.file, buffer, 0, readSize+overlap, this.fileOffset);
 
 		// Return
 		return buffer;
 	}
 
+
+	public readForwardData(chunkSize: number): ByteArray {
+		// Make sure that file is open
+		if(!this.file)
+			this.openRotatedFile();
+
+		// Check if next file need to be opened.
+		if(this.fileOffset >= this.fileSize && this.file) {
+			// Already at the end of the file, we need to open the previous one.
+			this.fileRotation --;
+			this.openRotatedFile();
+		}
+
+		// Check if at the end.
+		if(!this.file) {
+			return new ByteArray(0);
+		}
+
+		// Determine reading size
+		const remainingSizeInFile = this.fileSize - this.fileOffset;
+		const readSize = (remainingSizeInFile < chunkSize) ? remainingSizeInFile : chunkSize;
+
+		// Alloc bytes
+		const buffer = new ByteArray(readSize);
+
+		// Read data
+		fs.readSync(this.file, buffer, 0, readSize, this.fileOffset);
+		this.fileOffset += readSize;
+
+		// Return
+		return buffer;
+	}
+
+
+	/**
+	 * Adds an offset to the current filepointer.
+	 * This works also across rotated files.
+	 * @param offset The offset to add. Positive or negative.
+	 */
+	public addOffset(offset: number) {
+		let fileOffset = this.fileOffset + offset;
+		assert(fileOffset >= 0);
+		assert(fileOffset <= this.fileSize);
+
+		// Check if too big
+		while(fileOffset >= this.fileSize) {
+			// Correct file pointer
+			fileOffset -= this.fileSize;
+			// Next rotated file
+			this.fileRotation --;
+			this.openRotatedFile();
+			// Return if file does not exist
+			if(!this.file)
+				return;
+		}
+
+		// Check if too small
+		while(fileOffset < 0) {
+			// Next rotated file
+			this.fileRotation ++;
+			this.openRotatedFile();
+			// Return if file does not exist
+			if(!this.file)
+				return;
+			// Correct file pointer
+			fileOffset += this.fileSize;
+		}
+
+		// Use
+		this.fileOffset = fileOffset;
+	}
 }
 
