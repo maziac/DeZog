@@ -30,8 +30,8 @@ suite('ZesaruxTransactionLog', () => {
 
 	suite('prevLine', () => {
 
-		test('1 file', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+		function prevOneFile(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log', cacheSize) as any;
 			rf.init();
 
 			let line = rf.getLine();
@@ -67,11 +67,11 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
-		});
+		}
 
 
-		test('2 files', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+		function prevTwoFiles(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log', cacheSize) as any;
 			rf.init();
 
 			rf.prevLine();
@@ -99,11 +99,11 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
-		});
+		}
 
 
-		test('3 files', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log') as any;
+		function prevThreeFiles(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log', cacheSize) as any;
 			rf.init();
 
 			// 1rst file
@@ -139,6 +139,63 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
+		}
+
+
+		suite('Big cache', () => {
+			test('1 file', () => {
+				prevOneFile(10000);
+			});
+
+			test('2 files', () => {
+				prevTwoFiles(10000);
+			});
+
+			test('3 files', () => {
+				prevThreeFiles(10000);
+			});
+		});
+
+		suite('Medium cache', () => {
+			test('1 file', () => {
+				prevOneFile(200);
+			});
+
+			test('2 files', () => {
+				prevTwoFiles(200);
+			});
+
+			test('3 files', () => {
+				prevThreeFiles(200);
+			});
+		});
+
+		suite('Small cache', () => {
+			test('1 file', () => {
+				prevOneFile(100);
+			});
+
+			test('2 files', () => {
+				prevTwoFiles(100);
+			});
+
+			test('3 files', () => {
+				prevThreeFiles(100);
+			});
+		});
+
+		suite('Pathological small cache (3)', () => {
+			test('1 file', () => {
+				prevOneFile(3);
+			});
+
+			test('2 files', () => {
+				prevTwoFiles(3);
+			});
+
+			test('3 files', () => {
+				prevThreeFiles(3);
+			});
 		});
 
 	});
@@ -146,38 +203,54 @@ suite('ZesaruxTransactionLog', () => {
 
 	suite('nextLine', () => {
 
-		test('1 file', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+		function nextOneFile(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log', cacheSize) as any;
 			rf.init();
 
+			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			let line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.nextLine();
+			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.nextLine();
+			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 2, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8012'), "Line wrong.");
 
 			rf.nextLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 2, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8012'), "Line wrong.");
 
@@ -190,34 +263,53 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			rf.prevLine();
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 			rf.nextLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 10, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8002'), "Line wrong.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
+
+			rf.prevLine();
+			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+
 
 			rf.nextLine();
+			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 			rf.prevLine();
+			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
+			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
-		});
+		}
 
 
-		test('2 files', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+		function nextTwoFiles(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log', cacheSize) as any;
 			rf.init();
 
 			rf.prevLine();
@@ -245,11 +337,11 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
-		});
+		}
 
 
-		test('3 files', () => {
-			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log') as any;
+		function nextThreeFiles(cacheSize: number) {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log', cacheSize) as any;
 			rf.init();
 
 			// 1rst file
@@ -285,7 +377,65 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
+		}
+
+
+		suite('Big cache', () => {
+			test('1 file', () => {
+				nextOneFile(10000);
+			});
+
+			test('2 files', () => {
+				nextTwoFiles(10000);
+			});
+
+			test('3 files', () => {
+				nextThreeFiles(10000);
+			});
 		});
+
+		suite('Medium cache', () => {
+			test('1 file', () => {
+				nextOneFile(200);
+			});
+
+			test('2 files', () => {
+				nextTwoFiles(200);
+			});
+
+			test('3 files', () => {
+				nextThreeFiles(200);
+			});
+		});
+
+		suite('Small cache', () => {
+			test('1 file', () => {
+				nextOneFile(100);
+			});
+
+			test('2 files', () => {
+				nextTwoFiles(100);
+			});
+
+			test('3 files', () => {
+				nextThreeFiles(100);
+			});
+		});
+
+		suite('Pathological small cache (3)', () => {
+			test('1 file', () => {
+				nextOneFile(3);
+			});
+
+			test('2 files', () => {
+				nextTwoFiles(3);
+			});
+
+			test('3 files', () => {
+				nextThreeFiles(3);
+			});
+		});
+
 	});
 
 
@@ -426,7 +576,7 @@ suite('ZesaruxTransactionLog', () => {
 			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
 			rf.init();
 
-			let addrsArray = rf.getPrevAddresses([1, 4);
+			let addrsArray = rf.getPrevAddresses([1, 4]);
 			assert.equal(addrsArray.length, 2, "Wrong length.");
 			assert.equal(addrsArray[0].size, 1, "Wrong number of addresses.");
 			assert.equal(addrsArray[1].size, 4, "Wrong number of addresses.");

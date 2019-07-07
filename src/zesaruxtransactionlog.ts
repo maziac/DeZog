@@ -47,9 +47,6 @@ export class ZesaruxTransactionLog {
 	/// The normal size of the cache.
 	protected cacheChunkSize: number;
 
-	/// The size of the cache without overlap.
-	protected cacheSize: number;
-
 	/// The pointer into the cache.
 	protected cacheOffset: number;
 
@@ -83,7 +80,6 @@ export class ZesaruxTransactionLog {
 		this.stepBackCounter = 0;
 		this.cacheBuffer = new Uint8Array(0);
 		this.cacheOffset = 0;
-		this.cacheSize = 0;
 	}
 
 
@@ -132,7 +128,8 @@ export class ZesaruxTransactionLog {
 		// Check if next file need to be opened.
 		if(this.fileOffset == 0) {
 			// Already at the start of the file, we need to open the previous one.
-			this.fileRotation ++;
+			if(this.fileSize != 0 || this.fileRotation == -1)
+				 this.fileRotation ++;
 			if(this.file)
 				fs.closeSync(this.file);
 			this.file = 0;
@@ -172,7 +169,10 @@ export class ZesaruxTransactionLog {
 	 * Reads in data.
 	 * @param overlap An additional overlap data size (at the beginning).
 	 */
-	protected readCacheForward(overlap = 0) {
+	protected readCacheForward(overlap = 0, cacheSize = 0) {
+		// Check to use default cace size
+		if(cacheSize == 0)
+			cacheSize = this.cacheChunkSize;
 		// Check if next file need to be opened.
 		let lastBufferLength = this.cacheBuffer.length;
 		if(this.fileOffset+lastBufferLength >= this.fileSize) {
@@ -198,7 +198,7 @@ export class ZesaruxTransactionLog {
 		// Determine reading size.
 		lastBufferLength = this.cacheBuffer.length;
 		const remainingSizeInFile = this.fileSize - this.fileOffset;
-		let readSize = this.cacheChunkSize;
+		let readSize = cacheSize;
 		if(readSize >= remainingSizeInFile) {
 			readSize = remainingSizeInFile;
 		}
@@ -222,27 +222,41 @@ export class ZesaruxTransactionLog {
 	 * @returns false if there is no previous line.
 	 */
 	public prevLine(): boolean {
+		let k = this.cacheOffset;
+		let overlap = 0;
+		let skip = 1;	// Skip last '\n'
 		do {
 			// Check if cache exists or if at start of cache
-			if(this.cacheBuffer.length == 0 || this.cacheOffset == 0)
-				this.readCacheReverse(this.cacheOffset);
-			if(this.cacheBuffer.length == 0)
-				return false;
+			const prevBufferLength = this.cacheBuffer.length;
+			if(prevBufferLength == 0 || k == 0) {
+				this.readCacheReverse(overlap);
+				if(this.cacheBuffer.length == 0) {
+					if(prevBufferLength != 0)	// Check if previous cache buffer was also empty
+						this.stepBackCounter ++;
+					return false;
+				}
+			}
 			// Find '\n'
-			this.cacheOffset = this.cacheBuffer.lastIndexOf(this.nlCode, this.cacheOffset-2);	// Skip last '\n'
-			if(this.cacheOffset < 0) {
+			const prevOffset = this.cacheOffset-1;
+			if(prevOffset-skip < 0)
+				k = -1;
+			else
+				k = this.cacheBuffer.lastIndexOf(this.nlCode, prevOffset-skip);
+			if(k < 0) {
 				// No newline found.
 				if(this.fileOffset == 0) {
 					// At start of one rotated file, stop here
-					this.cacheOffset = -1;
+					k = -1;
 					break;
 				}
 				// Get next cache with overlap
 				this.cacheBuffer = new Uint8Array(0);
+				overlap += prevOffset+1;
+				skip = 0;
 			}
-		} while(this.cacheOffset < 0);
+		} while(k < 0);
 
-		this.cacheOffset ++;
+		this.cacheOffset = k+1;
 		this.stepBackCounter ++;
 		return true;
 	}
@@ -263,23 +277,41 @@ export class ZesaruxTransactionLog {
 				this.readCacheForward(overlap);
 				if(this.cacheBuffer.length == 0)
 					return false;
-				return true;
+				k = -1;
+				break;
 			}
 			// Find '\n'
 			const prevOffset = k;
 			k = this.cacheBuffer.indexOf(this.nlCode, prevOffset);
 			if(k < 0) {
 				// No newline found, get next cache with overlap
-				overlap = this.cacheBuffer.length-prevOffset;
+				overlap += this.cacheBuffer.length-prevOffset;
 				this.cacheBuffer = new Uint8Array(0);
 			}
 		} while(k < 0);
 
-		this.cacheOffset = k+1;
+		// Read up to next newline
+		k++;
+		this.cacheOffset = k;
+		let cacheSize = this.cacheChunkSize;
+		let fileOffset = this.fileOffset + this.cacheOffset;
+		let startIndex = k;
+		while(true) {
+			if(this.cacheBuffer.length == 0)
+				break;
+			if(startIndex == this.cacheBuffer.length)
+				k = -1;
+			else
+				k = this.cacheBuffer.indexOf(this.nlCode, startIndex);
+			if(k >= 0)
+				break;	// A newline was found inside the buffer
 
-		// Check if it is required to obtain a new cache
-		if(this.cacheOffset >= this.cacheBuffer.length)
-			this.readCacheForward(0);
+			// The new cache needs to contain at least one newline
+			this.fileOffset = fileOffset;
+			cacheSize *= 2;
+			this.readCacheForward(0, cacheSize);
+			startIndex = 0;	// Could be optimized
+		}
 
 		this.stepBackCounter --;
 		assert(this.stepBackCounter >= 0);

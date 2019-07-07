@@ -808,8 +808,7 @@ registers   yes|no: Enable registers logging
 			// Check if code coverage is enabled
 			if(Settings.launch.codeCoverage) {
 				// Go through coverage file and collect all addresses
-				const addresses = new Set<number>();
-				this.cpuTransactionLog.getPrevAddresses([10], [addresses]);
+				const addresses = this.cpuTransactionLog.getPrevAddresses([10]);
 				// Emit code coverage event
 				this.emit('coverage', addresses);
 			}
