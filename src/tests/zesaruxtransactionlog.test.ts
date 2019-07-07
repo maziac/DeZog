@@ -2,7 +2,8 @@
 import * as assert from 'assert';
 import { ZesaruxTransactionLog } from '../zesaruxtransactionlog';
 
-suite('RotationFile', () => {
+
+suite('ZesaruxTransactionLog', () => {
 
 /*
 	setup( () => {
@@ -18,134 +19,431 @@ suite('RotationFile', () => {
 	});
 
 	test('init', () => {
-		const rf = new RotationFile('./src/tests/data/rot1/rot.log') as any;
+		const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
 		rf.init();
-		assert.ok(rf.file, "File should have been opened.");
-		assert.equal(rf.fileRotation, 0, "File rotation should have been initialized.");
+		assert.ok(!rf.file, "File should not be opened.");
+		assert.equal(rf.fileRotation, -1, "File rotation should have been initialized.");
+		assert.equal(rf.stepBackCounter, 0, "stepBackCounter should have been initialized.");
+		assert.equal(rf.cacheBuffer.length, 0, "cache should not be initialized.");
 	});
 
 
-	suite('readReverseData', () => {
+	suite('prevLine', () => {
 
-		test('readReverseData 1 file', () => {
-			const rf = new RotationFile('./src/tests/data/rot1/rot.log') as any;
-
-			// Read all
-			let data = rf.readReverseData(100000, 4);
-			let dataStr = String.fromCharCode.apply(null, data);
-			let lines = dataStr.split('\n');
-			assert.equal(lines.length, 12, "Number of lines wrong.");
-
-			// Read last lines, check that not 4 more bytes are read
+		test('1 file', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
 			rf.init();
-			data = rf.readReverseData(100, 4);
-			let count = data.length;
-			dataStr = String.fromCharCode.apply(null, data);
-			lines = dataStr.split('\n');
-			assert.equal(count, 100, "Number of read bytes wrong.");
 
-			// Read previous lines, check that 4 more bytes are read
-			const prevLine = lines[0];
-			data = rf.readReverseData(100, 4);
-			count = data.length;
-			dataStr = String.fromCharCode.apply(null, data);
-			lines = dataStr.split('\n');
-			const lastLine = lines[lines.length-1];
-			assert.equal(count, 104, "Number of read bytes wrong.");
-			assert.ok(lastLine.substr(lastLine.length-4) == prevLine.substr(0,4), "Read overlap is wrong.");
+			let line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 
-			// Read rest of the lines
-			data = rf.readReverseData(10000, 4);
-			dataStr = String.fromCharCode.apply(null, data);
-			lines = dataStr.split('\n');
-			assert.ok(lines[0].startsWith('8000'), "Read overlap is wrong.");
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8012'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8002'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8000'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 		});
 
 
-		test('readReverseData 2 files - big chunks', () => {
-			const rf = new RotationFile('./src/tests/data/rot2/rot.log') as any;
+		test('2 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+			rf.init();
 
-			// Read all
-			let data = rf.readReverseData(100000, 4);
-			let dataStr = String.fromCharCode.apply(null, data);
-			let lines = dataStr.split('\n');
-			assert.equal(lines.length, 4, "Number of lines wrong.");
-			assert.ok(lines[0].startsWith('8010'), "Wrong data read.");
+			rf.prevLine();
+			let line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8010'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800E'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8002'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 		});
 
 
-		test('readReverseData 2 files - small chunk', () => {
-			const rf = new RotationFile('./src/tests/data/rot2/rot.log') as any;
-
-			// Read almost all
+		test('3 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log') as any;
 			rf.init();
-			const size = rf.fileSize;
-			let data = rf.readReverseData(size-2, 4);
-			let dataStr = String.fromCharCode.apply(null, data);
-			let lines = dataStr.split('\n');
-			assert.equal(lines.length, 4, "Number of lines wrong.");
-			assert.ok(lines[0].startsWith('10'), "Wrong data read.");
 
-			// Read area between file and first rotation
-			data = rf.readReverseData(50, 4);
-			assert.equal(data.length, 2+4, "Number of read data wrong.");
-			dataStr = String.fromCharCode.apply(null, data);
-			assert.equal(dataStr, "8010 I", "Wrong data read.");
+			// 1rst file
+			rf.prevLine();
+			let line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
 
-			// Read area between file and first rotation - part of the 2nd file
-			data = rf.readReverseData(10, 4);
-			assert.equal(data.length, 10, "Number of read data wrong.");
-			dataStr = String.fromCharCode.apply(null, data);
-			assert.equal(dataStr, "-- VPS: 0\n", "Wrong data read.");
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8012'), "Line wrong.");
+
+			// 2nd file
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8010'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800C'), "Line wrong.");
+
+			// 3rd file
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800A'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8005'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 		});
 
-		test('readReverseData 3 files - big chunks', () => {
-			const rf = new RotationFile('./src/tests/data/rot3/rot.log') as any;
+	});
 
-			// Read all
+
+	suite('nextLine', () => {
+
+		test('1 file', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
 			rf.init();
-			const data = rf.readReverseData(100000, 4);
-			const dataStr = String.fromCharCode.apply(null, data);
-			const lines = dataStr.split('\n');
-			assert.equal(lines.length, 2+1, "Number of lines wrong.");
 
-			// Read first rotated file
-			const data1 = rf.readReverseData(100000, 4);
-			const dataStr1 = String.fromCharCode.apply(null, data1);
-			const lines1 = dataStr1.split('\n');
-			assert.equal(lines1.length, 3+1, "Number of lines wrong.");
+			let line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 
-			// Read 2nd rotated file
-			const data2 = rf.readReverseData(100000, 4);
-			const dataStr2 = String.fromCharCode.apply(null, data2);
-			const lines2 = dataStr2.split('\n');
-			assert.equal(lines2.length, 4+1, "Number of lines wrong.");
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
 
-			// Check all files altogether
-			lines2.push(...lines1);
-			lines2.push(...lines);
-			assert.ok(lines2[0].startsWith('8005'), "Wrong data read.");
-			assert.ok(lines2[1].startsWith('8006'), "Wrong data read.");
-			assert.ok(lines2[2].startsWith('8007'), "Wrong data read.");
-			assert.ok(lines2[3].startsWith('800A'), "Wrong data read.");
-			assert.ok(lines2[4] == '', "Wrong data read.");
+			rf.nextLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 
-			assert.ok(lines2[5].startsWith('800C'), "Wrong data read.");
-			assert.ok(lines2[6].startsWith('800E'), "Wrong data read.");
-			assert.ok(lines2[7].startsWith('8010'), "Wrong data read.");
-			assert.ok(lines2[8] == '', "Wrong data read.");
+			rf.nextLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
 
-			assert.ok(lines2[9].startsWith('8012'), "Wrong data read.");
-			assert.ok(lines2[10].startsWith('8015'), "Wrong data read.");
-			assert.ok(lines2[11] == '', "Wrong data read.");
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
 
-			// Read next non existing file
-			const data3 = rf.readReverseData(100000, 4);
-			assert.equal(data3.length, 0, "Shouldn't contain data.");
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8012'), "Line wrong.");
 
-			// Read next non existing file once more
-			const data3b = rf.readReverseData(100000, 4);
-			assert.equal(data3b.length, 0, "Shouldn't contain data.");
+			rf.nextLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8012'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8000'), "Line wrong.");
+
+			rf.nextLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8002'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8000'), "Line wrong.");
+
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+
+			rf.nextLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8000'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+		});
+
+
+		test('2 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+			rf.init();
+
+			rf.prevLine();
+			let line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8010'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800E'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8002'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+		});
+
+
+		test('3 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot3/rot.log') as any;
+			rf.init();
+
+			// 1rst file
+			rf.prevLine();
+			let line = rf.getLine();
+			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8012'), "Line wrong.");
+
+			// 2nd file
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8010'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800C'), "Line wrong.");
+
+			// 3rd file
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('800A'), "Line wrong.");
+
+			rf.prevLine();
+			rf.prevLine();
+			rf.prevLine();
+			line = rf.getLine();
+			assert.ok(line.startsWith('8005'), "Line wrong.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+		});
+	});
+
+
+	suite('getters', () => {
+
+		test('getLine', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			rf.prevLine();
+			let line = rf.getLine();
+			assert.equal(line, "8015 LD A,FF PC=8015 SP=ff27 BC=253b AF=0044 HL=8080 DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=0d  F=-Z---P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0", "Line wrong.");
+		});
+
+		test('getRegisters', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			rf.prevLine();
+			let line = rf.getRegisters();
+			assert.equal(line, "PC=8015 SP=ff27 BC=253b AF=0044 HL=8080 DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=0d  F=-Z---P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0", "Registers wrong.");
+		});
+
+		test('getInstruction', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			rf.prevLine();
+			let line = rf.getInstruction();
+			assert.equal(line, "LD A,FF", "Instruction wrong.");
+		});
+
+		test('getAddress', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			rf.prevLine();
+			let addr = rf.getAddress();
+			assert.equal(addr, 0x8015, "Address wrong.");
+		});
+
+	});
+
+
+	test('isInStepBackMode', () => {
+		const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+		rf.init();
+
+		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+		rf.prevLine();
+		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
+		rf.prevLine();
+		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
+		rf.nextLine();
+		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
+		rf.nextLine();
+		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+		rf.nextLine();
+		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+	});
+
+
+	suite('getPrevAddresses', () => {
+
+		test('1 file', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			let addrsArray = rf.getPrevAddresses([]);
+			assert.equal(addrsArray.length, 0, "Wrong length.");
+
+			addrsArray = rf.getPrevAddresses([0]);
+			assert.equal(addrsArray.length, 1, "Wrong length.");
+			assert.equal(addrsArray[0].size, 0, "Wrong number of addresses.");
+
+			addrsArray = rf.getPrevAddresses([1]);
+			assert.equal(addrsArray.length, 1, "Wrong length.");
+			assert.equal(addrsArray[0].size, 1, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([2]);
+			assert.equal(addrsArray.length, 1, "Wrong length.");
+			assert.equal(addrsArray[0].size, 2, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8012), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([1000]);
+			assert.equal(addrsArray.length, 1, "Wrong length.");
+			assert.equal(addrsArray[0].size, 11, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8012), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8010), "Address not included.");
+			assert.ok(addrsArray[0].has(0x800E), "Address not included.");
+			assert.ok(addrsArray[0].has(0x800C), "Address not included.");
+			assert.ok(addrsArray[0].has(0x800A), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8007), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8006), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8005), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8002), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8000), "Address not included.");
+		});
+
+		test('1 file - 2 sets', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			rf.init();
+
+			let addrsArray = rf.getPrevAddresses([0, 1]);
+			assert.equal(addrsArray.length, 2, "Wrong length.");
+			assert.equal(addrsArray[0].size, 0, "Wrong number of addresses.");
+			assert.equal(addrsArray[1].size, 1, "Wrong number of addresses.");
+			assert.ok(addrsArray[1].has(0x8015), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([2, 3]);
+			assert.equal(addrsArray.length, 2, "Wrong length.");
+			assert.equal(addrsArray[0].size, 2, "Wrong number of addresses.");
+			assert.equal(addrsArray[1].size, 3, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8012), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8010), "Address not included.");
+			assert.ok(addrsArray[1].has(0x800E), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([2, 1000]);
+			assert.equal(addrsArray.length, 2, "Wrong length.");
+			assert.equal(addrsArray[0].size, 2, "Wrong number of addresses.");
+			assert.equal(addrsArray[1].size, 9, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[0].has(0x8012), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8010), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8000), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([1000]);
+			assert.equal(addrsArray.length, 1, "Wrong length.");
+			assert.equal(addrsArray[0].size, 11, "Wrong number of addresses.");
+		});
+
+
+		test('2 files - 2 sets', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+			rf.init();
+
+			let addrsArray = rf.getPrevAddresses([1, 4);
+			assert.equal(addrsArray.length, 2, "Wrong length.");
+			assert.equal(addrsArray[0].size, 1, "Wrong number of addresses.");
+			assert.equal(addrsArray[1].size, 4, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8012), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8010), "Address not included.");
+			assert.ok(addrsArray[1].has(0x800E), "Address not included.");
+			assert.ok(addrsArray[1].has(0x800C), "Address not included.");
+
+			addrsArray = rf.getPrevAddresses([4, 10]);
+			assert.equal(addrsArray.length, 2, "Wrong length.");
+			assert.equal(addrsArray[0].size, 4, "Wrong number of addresses.");
+			assert.equal(addrsArray[1].size, 6, "Wrong number of addresses.");
+			assert.ok(addrsArray[0].has(0x8015), "Address not included.");
+			assert.ok(addrsArray[0].has(0x800E), "Address not included.");
+			assert.ok(addrsArray[1].has(0x800C), "Address not included.");
+			assert.ok(addrsArray[1].has(0x8002), "Address not included.");
 		});
 
 	});

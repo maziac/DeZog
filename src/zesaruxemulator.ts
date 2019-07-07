@@ -509,7 +509,7 @@ registers   yes|no: Enable registers logging
 							// Clear register cache
 							this.RegisterCache = undefined;
 							// Handle code coverage
-							this.calculateCodeCoverage();
+							this.handleTransactionLog();
 							// Call handler
 							contStoppedHandler(reason, tStates, cpuFreq);
 						});
@@ -761,7 +761,7 @@ registers   yes|no: Enable registers logging
 							// Call handler
 							handler(tStates, cpuFreq);
 							// Handle code coverage
-							this.calculateCodeCoverage();
+							this.handleTransactionLog();
 						});
 					});
 				});
@@ -800,7 +800,7 @@ registers   yes|no: Enable registers logging
 	 * Stops the cpu-transaction-log file to flush it.
 	 * Then reads it and collects all passed addresses.
 	 */
-	protected calculateCodeCoverage() {  // TODO: must rename this, as it is also used for reverse debugging.
+	protected handleTransactionLog() {
 		// Disable logging to close/flush the file.
 		zSocket.send('cpu-transaction-log enabled no', () => {
 			// Reverse debugging
