@@ -447,6 +447,119 @@ suite('ZesaruxTransactionLog', () => {
 	});
 
 
+	test('Empty log file', () => {
+		// ZEsarUX writes, then checks the size and if too big it rotates the file.
+		// Then a new log file is created which is completely empty.
+		// We need to test that we can deal with it.
+
+		const rf = new ZesaruxTransactionLog('./src/tests/data/rotempty/rot.log') as any;
+		rf.init();
+
+		assert.ok(rf.isAtStart(), "Should be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
+
+		let line = rf.getLine();
+		assert.equal(line, '', "Line should be empty.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8010'), "Line wrong.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('800E'), "Line wrong.");
+
+		rf.prevLine();
+		rf.prevLine();
+		rf.prevLine();
+		rf.prevLine();
+		rf.prevLine();
+		rf.prevLine();
+		rf.prevLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8000'), "Line wrong.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8193'), "Line wrong.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.equal(line, '', "Line should be empty.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(rf.isAtEnd(), "Should be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.equal(line, '', "Line should be empty.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(rf.isAtEnd(), "Should be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+
+		// Now forward.
+		rf.nextLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8193'), "Line wrong.");
+
+		rf.nextLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8000'), "Line wrong.");
+
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		rf.nextLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8010'), "Line wrong.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+
+		rf.nextLine();
+		line = rf.getLine();
+		assert.equal(line, '', "Line should be empty.");
+
+		assert.ok(rf.isAtStart(), "Should be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
+
+		rf.nextLine();
+		line = rf.getLine();
+		assert.equal(line, '', "Line should be empty.");
+
+		assert.ok(rf.isAtStart(), "Should be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
+
+		rf.prevLine();
+		line = rf.getLine();
+		assert.ok(line.startsWith('8010'), "Line wrong.");
+
+		assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+		assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+	});
+
+
 	suite('getters', () => {
 
 		test('getLine', () => {

@@ -225,7 +225,17 @@ registers   yes|no: Enable registers logging
 				// Set autorotation
 				zSocket.send('cpu-transaction-log autorotate yes');
 				zSocket.send('cpu-transaction-log rotatefiles 1');
-				zSocket.send('cpu-transaction-log rotatesize 1');	// 1MB
+				zSocket.send('cpu-transaction-log rotatesize 0');	// No rotation on size
+				// Number of rotations
+				let rotateLines;
+				if(Settings.launch.codeCoverage.lines == -1 || Settings.launch.codeCoverage.linesElder == -1) {
+					rotateLines = 0;	// infinite
+				}
+				else {
+					rotateLines = Settings.launch.codeCoverage.lines + Settings.launch.codeCoverage.linesElder;
+				}
+				rotateLines = 10;
+				zSocket.send('cpu-transaction-log rotatelines ' + rotateLines);
 
 				// Coverage + reverse debugging settings
 

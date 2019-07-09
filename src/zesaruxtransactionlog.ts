@@ -133,6 +133,36 @@ export class ZesaruxTransactionLog {
 
 
 	/**
+	 * Increases 'fileRotation' and opens the previous rotation file.
+	 * Skips any file with file size = 0.
+	 */
+	protected prevRotatedFile() {
+		// ZEsarUX writes, then checks the size and if too big it rotates the file.
+		// Then a new log file is created which is completely empty.
+		// So z80-debug has to deal with empty log files.
+		do {
+			this.fileRotation ++;
+			this.openRotatedFile();
+		} while(this.fileSize == 0 && this.file);	// As long a s file with size 0 is loaded.
+	}
+
+
+	/**
+	 * Decreases 'fileRotation' and opens the next rotation file.
+	 * Skips any file with file size = 0.
+	 */
+	protected nextRotatedFile() {
+		// ZEsarUX writes, then checks the size and if too big it rotates the file.
+		// Then a new log file is created which is completely empty.
+		// So z80-debug has to deal with empty log files.
+		do {
+			this.fileRotation --;
+			this.openRotatedFile();
+		} while(this.fileSize == 0 && this.file);	// As long a s file with size 0 is loaded.
+	}
+
+
+	/**
 	 * Reads data from the rotation files in reverse.
 	 * Reads cacheSize of data. If no newline is contained in the data the cacheSize is doubled.
 	 * Searches for the first newline and sets byteOffset to the character after the newline.
@@ -151,8 +181,7 @@ export class ZesaruxTransactionLog {
 
 		// Check if we need to read the next file.
 		if(this.fileOffset == 0) {
-			this.fileRotation ++;
-			this.openRotatedFile();
+			this.prevRotatedFile();
 			this.fileOffset = this.fileSize;
 			// If at end then return
 			if(!this.file)
@@ -223,14 +252,12 @@ export class ZesaruxTransactionLog {
 			// Check if we need to read the next file.
 			this.fileOffset += this.cacheBuffer.length-this.cacheClip;
 			if(this.fileOffset >= this.fileSize) {
-				this.fileRotation --;
-				this.openRotatedFile();
+				this.nextRotatedFile();
 			}
 		}
 		else {
 			assert(this.fileRotation >= 0);
-			this.fileRotation --;
-			this.openRotatedFile();
+			this.nextRotatedFile();
 		}
 
 		// Get cache size
