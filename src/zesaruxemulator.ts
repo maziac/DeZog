@@ -218,6 +218,9 @@ registers   yes|no: Enable registers logging
 				zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
 				// Disable for now
 				zSocket.send('cpu-transaction-log enabled no');
+				// Delete/clear it
+				zSocket.send('cpu-transaction-log truncate yes');
+
 
 				// Set autorotation
 				zSocket.send('cpu-transaction-log autorotate yes');
@@ -771,7 +774,7 @@ registers   yes|no: Enable registers logging
 
 
 	/**
-	 * If code coverage is enabled the ZEsarUX cpu-transaction-log is truncated and enabled
+	 * If code coverage is enabled the ZEsarUX cpu-transaction-log is enabled
 	 * before the 'handler' is called.
 	 * If code coverage is not enabled 'handler is called immediately.
 	 * @param handler Is called after the coverage commands have been sent.
@@ -780,7 +783,6 @@ registers   yes|no: Enable registers logging
 		// Code coverage
 		if(Settings.launch.codeCoverage.enabled) {
 			// Clear the log file
-	// TODO: REMOVE. truncate disabled to test reverse debugging.
 	//		zSocket.send('cpu-transaction-log truncate yes', data => {
 				// Enable logging
 				zSocket.send('cpu-transaction-log enabled yes', data => {

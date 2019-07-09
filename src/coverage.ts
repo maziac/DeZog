@@ -17,6 +17,8 @@ export class CoverageClass {
 
 	/// Holds a map with filenames associated with the addresses.
 	protected coverageFileMap = new Map<string, Set<number>>();
+	/// The same but for the elder addresses.
+	protected coverageFileMapElder = new Map<string, Set<number>>();
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
@@ -89,8 +91,8 @@ export class CoverageClass {
 	 * launch settings for 'codeCoverage'.
 	 */
 	public enableCodeCoverage() {
-		if(Settings && Settings.launch && (Settings.launch.codeCoverage != undefined))
-			Settings.launch.codeCoverage = true;
+		if(Settings && Settings.launch && (Settings.launch.codeCoverage.enabled != undefined))
+			Settings.launch.codeCoverage.enabled = true;
 	}
 
 
@@ -102,7 +104,7 @@ export class CoverageClass {
 	 */
 	public disableCodeCoverage() {
 		if(Settings && Settings.launch && (Settings.launch.codeCoverage != undefined))
-			Settings.launch.codeCoverage = false;
+			Settings.launch.codeCoverage.enabled = false;
 		this.clearLineCoverage();
 	}
 
@@ -114,9 +116,9 @@ export class CoverageClass {
 	 * Is called when the event 'covered' has been emitted by the Emulator.
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
-	public showCodeCoverage(coveredAddresses: Set<number>) {
+	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
 		// Loop over all addresses
-		coveredAddresses.forEach(addr => {
+		coveredAddresses[0].forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
 			const filename = location.fileName;
@@ -133,6 +135,7 @@ export class CoverageClass {
 			lines.add(location.lineNr);
 		});
 
+		// TODO: do the same for the elder addresses
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;

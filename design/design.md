@@ -461,7 +461,6 @@ xxx is either the EmulDebugAdapter or the Z80UnitTests.
 hide footbox
 title Coverage
 xxx -> Emulator: Step/Continue
-Emulator -> ZEsarUX: cpu-transaction-log truncate yes\n(clear the log file)
 Emulator -> ZEsarUX: cpu-transaction-log enabled yes\n(start logging)
 Emulator -> ZEsarUX: cpu-step/run
 note over ZEsarUX: stopped
