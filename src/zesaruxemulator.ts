@@ -194,7 +194,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	// TOOD: REMOVE. Enable for now always
-	Settings.launch.codeCoverage = true;
+	Settings.launch.codeCoverage.enabled = true;
 	//Settings.launch.codeCoverage = false;
 /*
 logfile     name:   File to store the log
@@ -778,7 +778,7 @@ registers   yes|no: Enable registers logging
 	 */
 	protected cpuCodeCoverage(handler:()=>void): void {
 		// Code coverage
-		if(Settings.launch.codeCoverage) {
+		if(Settings.launch.codeCoverage.enabled) {
 			// Clear the log file
 	// TODO: REMOVE. truncate disabled to test reverse debugging.
 	//		zSocket.send('cpu-transaction-log truncate yes', data => {
@@ -806,7 +806,7 @@ registers   yes|no: Enable registers logging
 			// Reverse debugging
 			this.cpuTransactionLog.init();
 			// Check if code coverage is enabled
-			if(Settings.launch.codeCoverage) {
+			if(Settings.launch.codeCoverage.enabled) {
 				// Go through coverage file and collect all addresses
 				const addresses = this.cpuTransactionLog.getPrevAddresses([10]);
 				// Emit code coverage event

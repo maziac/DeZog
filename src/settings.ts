@@ -122,8 +122,11 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// If enabled code coverage information is analyzed and displayed.
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
-	codeCoverage: boolean;
-
+	codeCoverage: {
+		enabled: boolean;	// If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations.
+		lines: number;		// The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).
+		linesElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
+	}
 
 	/// Holds the formatting vor all values.
 	formatting: Formatting;
@@ -207,6 +210,8 @@ export class Settings {
 		// Check for default values (for some reasons the default values from the package.json are not used)
 		if(Settings.launch.unitTests == undefined)
 			Settings.launch.unitTests = false;
+		const unitTests = Settings.launch.unitTests;
+
 		if(!Settings.launch.zhostname)
 			Settings.launch.zhostname = 'localhost';
 		if(!Settings.launch.zport)
@@ -259,8 +264,17 @@ export class Settings {
 			Settings.launch.commandsAfterLaunch = [];
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
+
+		// Code coverage
 		if(Settings.launch.codeCoverage == undefined)
-			Settings.launch.codeCoverage = false;
+			Settings.launch.codeCoverage = {} as any;
+		if(Settings.launch.codeCoverage.enabled == undefined)
+			Settings.launch.codeCoverage.enabled = true;
+		if(Settings.launch.codeCoverage.lines == undefined)
+			Settings.launch.codeCoverage.lines = 10;
+		if(Settings.launch.codeCoverage.linesElder == undefined)
+			Settings.launch.codeCoverage.linesElder = (unitTests) ? -1 : 100; 	// -1 = Infinite lines for unit test
+
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
 				registerVar: <any>undefined,

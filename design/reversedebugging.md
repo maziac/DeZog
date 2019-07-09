@@ -1,11 +1,5 @@
 # Reverse Debugging
 
-Markdown paraemeters: markdown-raw_tex+tex_math_single_backslash
-List:
-- a
-- b
-- c
-
 The main idea is to support not only the (normal) forward stepping but also stepping backwards in time.
 
 Due to emulator restrictions a lightweight approach is chosen.
@@ -32,8 +26,7 @@ I.e. it is hidden from the Emulator class.
 The Emulator/ZesaruxEmulator class has to provide methods for step back and running reverse.
 
 
-When the ZesaruxEmulator class receives a stepBack for the first time it will increment a stepBackCounter.
-If this stepBackCounter is not 0 this means the system is in reverse debugging mode.
+When the ZesaruxEmulator class receives a stepBack for the first time it will open the transaction log. and the system is in reverse debugging mode.
 It now reads the last line of the cpu-transaction-log file and retrieve
 - the address
 - the registers
@@ -46,16 +39,13 @@ actor user
 participant vscode
 participant "Emul\nDebug\nSession" as session
 participant "Emulator" as emul
-participant "ZEsarUX\nEmulator" as zemul
+participant "ZEsarUX" as zesarux
 
 user -> vscode: "Step Back"
 vscode -> session: stepBackRequest
 
-session -> zemul: stepBack
-
-note over zemul: - stepBackCounter++\n- move file pointer to prev line\nin transaction-log
-
-session <-- zemul
+session -> emul: stepBack
+session <-- emul
 
 vscode <-- session: response
 vscode <-- session: StoppedEvent('step')
@@ -63,22 +53,20 @@ vscode <-- session: StoppedEvent('step')
 vscode -> session: ...
 
 vscode -> session: variablesRequest
-note over session: ...
+
 session -> emul: getRegisters
+session <-- emul
 
-emul -> zemul: getRegistersFromEmulator
-
-alt stepBackCounter != 0
-note over zemul: - read line of transaction-log\n- read PC and registers and \nreturn values
-end
-
-emul <-- zemul
+session -> emul: getMemoryDump
+emul -> zesarux: read-memory
+emul <-- zesarux
 session <-- emul
 
 vscode <-- session: response
-
-
 ```
+Note: The registers are caught by the Emulator instance and returned from the cpu-transcation-log.
+All other requests (like memory dump requests) will still go to the real emulator (ZEsarUX).
+I.e. these values will not change during reverse debugging and may be potentially wrong, or better, they contain the value at the last executed machine cycle.
 
 
 # Stepping in Reverse Debugging Mode
@@ -224,7 +212,7 @@ Of course, one could evaluate at lest the conditions without memory, i.e. the re
 # Other Requests
 
 - scopesRequest: No special behavior.
-- stackTraceRequest: No special behavior. As the memory contents changes are not known this will simply return the current memory state at stepBackCounter=0.
+- stackTraceRequest: No special behavior. As the memory contents changes are not known this will simply return the current memory state at the time the reverse debugging was entered.
 - variablesRequest: No special behavior. The only special variables that change are the registers. These are special treated in the Emulator.
 
 
@@ -252,16 +240,16 @@ Of course, one could evaluate at lest the conditions without memory, i.e. the re
 2. "get-registers" is received: ... same as above
 
 ### Step (forward)
-1. "cpu-step" is received while in "reverse-debug-made". The rl_index is increased.
+1. "cpu-step" is received while in "reverse-debug-mode". The rl_index is increased.
 ~~~
-	If rl_index > record_list then: leave "reverse-debug-made".
+	If rl_index > record_list then: leave "reverse-debug-mode".
 ~~~
 2. "get-registers" is received: ... same as above
 
 
 ### Continue (forward)
-1. "run" is received while in "reverse-debug-made". The rl_index is increased in a loop until (this is done very fast)
-	a) the list end is reached: leave "reverse-debug-made". Run normal "run" (i.e. continue seemingless with normal run mode).
+1. "run" is received while in "reverse-debug-mode". The rl_index is increased in a loop until (this is done very fast)
+	a) the list end is reached: leave "reverse-debug-mode". Run normal "run" (i.e. continue seemingless with normal run mode).
 	b) a breakpoint condition is met
 2. "get-registers" is received: ... same as above
 

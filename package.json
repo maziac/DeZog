@@ -319,8 +319,18 @@
 								"description": "Skips the interrupt during stepping."
 							},
 							"codeCoverage": {
-								"type": "boolean",
-								"description": "If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations."
+								"enabled": {
+									"type": "boolean",
+									"description": "If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations."
+								},
+								"lines": {
+									"type": "number",
+									"description": "The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter)."
+								},
+								"linesElder": {
+									"type": "number",
+									"description": "More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time."
+								}
 							},
 							"formatting": {
 								"registerVarFormat": {
