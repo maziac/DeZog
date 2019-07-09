@@ -2,7 +2,7 @@
 
 ![](documentation/images/main.gif)
 
-**Note: you need to install at least ZEsarUX version 7.3**
+**Note: you need to install at least ZEsarUX version 8.0**
 
 The Z80-Debug-Adapter (z80-debug) lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
 With this extension it is possible to debug assembler programs built for the ZX Spectrum.
@@ -37,7 +37,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 ## Features
 
-- supports ZEsarUX emulator (>= v7.3)
+- supports ZEsarUX emulator (>= v8.0)
 - reads .list and .labels files
 	- supports stepping through source code
 	- either in .list file or in .asm files
@@ -81,7 +81,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 In order to use z80-debug you need
 - vscode (of course)
-- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 7.3 is required.
+- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.0 is required.
 
 
 ### z80-debug

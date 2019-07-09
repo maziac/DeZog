@@ -18,7 +18,7 @@ import { ZesaruxTransactionLog } from './zesaruxtransactionlog';
 
 
 /// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = 7.3;
+const MIN_ZESARUX_VERSION = 8.0;
 
 
 // Some Zesarux constants.
@@ -1072,7 +1072,7 @@ registers   yes|no: Enable registers logging
 
 	/**
 	 * Converts a condition into the format that ZEsarUX uses.
-	 * With version 7.3 ZEsarUX got a new parser which is very flexible,
+	 * With version 8.0 ZEsarUX got a new parser which is very flexible,
 	 * so the condition is not changed very much.
 	 * Only the C-style operators like "&&", "||", "==", "!=" are added.
 	 * Furthermore "b@(...)" and "w@(...)" are converted to "peek(...)" and "peekw(...)".

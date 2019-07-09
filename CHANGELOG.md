@@ -2,8 +2,8 @@
 
 ## 0.9.0
 - Unit Tests!
-- Requires ZEsarUX 7.3.
-- Supports new breakpoint condition format of ZEsarUX v7.3.
+- Requires ZEsarUX 8.0.
+- Supports new breakpoint condition format of ZEsarUX.
 
 ## 0.8.1
 - Memory pages are shown in VARIABLES section.
