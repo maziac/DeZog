@@ -23,8 +23,11 @@ suite('ZesaruxTransactionLog', () => {
 		rf.init();
 		assert.ok(!rf.file, "File should not be opened.");
 		assert.equal(rf.fileRotation, -1, "File rotation should have been initialized.");
-		assert.equal(rf.stepBackCounter, 0, "stepBackCounter should have been initialized.");
-		assert.equal(rf.cacheBuffer.length, 0, "cache should not be initialized.");
+		assert.equal(rf.cacheBuffer, undefined, "Cache should be cleared.");
+		assert.equal(rf.cacheSizes.length, 0, "Array not initialized.");
+		assert.equal(rf.fileOffset, 0, "File offset not initialized.");
+		assert.equal(rf.cacheOffset, 0, "cacheOffset not initialized.");
+		assert.equal(rf.cacheClip, 0, "cacheClip not initialized.");
 	});
 
 
@@ -34,12 +37,20 @@ suite('ZesaruxTransactionLog', () => {
 			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log', cacheSize) as any;
 			rf.init();
 
+			assert.ok(rf.isAtStart(), "Should be at start of file(s).");
+			assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+			assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
+
 			let line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
+
+			assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+			assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+			assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
 
 			rf.prevLine();
 			line = rf.getLine();
@@ -60,13 +71,25 @@ suite('ZesaruxTransactionLog', () => {
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
-			rf.prevLine();
-			line = rf.getLine();
-			assert.equal(line, '', "Line should be empty.");
+			assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+			assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
+			assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
 
 			rf.prevLine();
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
+
+			assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+			assert.ok(rf.isAtEnd(), "Should be at end of file(s).");
+			assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
+
+			rf.prevLine();
+			line = rf.getLine();
+			assert.equal(line, '', "Line should be empty.");
+
+			assert.ok(!rf.isAtStart(), "Should not be at start of file(s).");
+			assert.ok(rf.isAtEnd(), "Should be at end of file(s).");
+			assert.ok(rf.isInStepBackMode(), "Should be in Step Back Mode.");
 		}
 
 
@@ -208,49 +231,41 @@ suite('ZesaruxTransactionLog', () => {
 			rf.init();
 
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			let line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 0, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 2, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8012'), "Line wrong.");
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 1, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8015'), "Line wrong.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 2, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8012'), "Line wrong.");
 
@@ -264,45 +279,38 @@ suite('ZesaruxTransactionLog', () => {
 			rf.prevLine();
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 10, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8002'), "Line wrong.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 11, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.ok(line.startsWith('8000'), "Line wrong.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 1, "Internal counter wrong.");
-			assert.equal(rf.stepBackCounter, 12, "Internal counter wrong.");
 			line = rf.getLine();
 			assert.equal(line, '', "Line should be empty.");
 		}
@@ -480,21 +488,48 @@ suite('ZesaruxTransactionLog', () => {
 	});
 
 
-	test('isInStepBackMode', () => {
-		const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
-		rf.init();
+	suite('isInStepBackMode', () => {
 
-		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
-		rf.prevLine();
-		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
-		rf.prevLine();
-		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
-		rf.nextLine();
-		assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
-		rf.nextLine();
-		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
-		rf.nextLine();
-		assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+		function isInStepBackMode(rf: any) {
+			rf.init();
+
+			assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+
+			// Previous line
+			let counter;
+			let end = -1;
+			for(counter = 0; counter < 1000; counter++) {
+				rf.prevLine();
+				assert.ok(rf.isInStepBackMode(), "Should be in step-back-mode.");
+				if(end < 0 && rf.isAtEnd())
+					end = counter;
+			}
+
+			// Next line
+			for(counter = 0; counter < 1000; counter++) {
+				rf.nextLine();
+				if(!rf.isInStepBackMode())
+					break;
+			}
+			assert.ok(!rf.isInStepBackMode(), "Should not be in step-back-mode.");
+			assert.equal(counter, end, "Different number of prevLines and nextLines.");
+		}
+
+
+		test('1 file', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot1/rot.log') as any;
+			isInStepBackMode(rf);
+		});
+
+		test('2 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot2/rot.log') as any;
+			isInStepBackMode(rf);
+		});
+
+		test('3 files', () => {
+			const rf = new ZesaruxTransactionLog('./src/tests/data/rot 3/rot.log') as any;
+			isInStepBackMode(rf);
+		});
 	});
 
 

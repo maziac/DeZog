@@ -424,7 +424,7 @@ export class Z80UnitTests {
 		// Load user list and labels files
 		if(!configuration) {
 			// No configuration found, Error
-			throw Error('No unit test configuration found in ' + launchJsonFile + '.');
+			throw Error('No unit test configuration found in ' + launchPath + '.');
 		}
 
 		// Load user list and labels files
@@ -447,6 +447,9 @@ export class Z80UnitTests {
 	 * @returns A labels object.
 	 */
 	protected static loadLabelsFromConfiguration(): LabelsClass {
+		// Set root path
+		Utility.setRootPath(vscode.workspace.rootPath);
+
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
 		const labels = new LabelsClass();
