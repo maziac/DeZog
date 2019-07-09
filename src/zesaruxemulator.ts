@@ -229,6 +229,9 @@ registers   yes|no: Enable registers logging
 
 				// Coverage + reverse debugging settings
 
+				// Ignore repetition of 'HALT'
+				zSocket.send('cpu-transaction-log ignrephalt yes');
+
 				// Set datetime information
 				zSocket.send('cpu-transaction-log datetime no');
 				// Set tstates information

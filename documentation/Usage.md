@@ -652,10 +652,17 @@ and choose "Move Program Counter to Cursor".
 See [Notes](#Notes).
 
 
+## Reverse Debugging
+
+Notes:
+- The HALT instruction: If a 'HALT' instruction is used it is normally repeated a big amount of time. For your convenience z80-debug will skip over it on stepping backwards or forward in reverse debugging mode as if it were only a single instruction.
+
+
 ## Unittests
 
 You can use the z80 debug adapter to execute unit tests.
 Please see [here](UnitTests.md).
+
 
 ## Differences to ZEsarUX
 
