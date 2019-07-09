@@ -13,6 +13,7 @@ import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { CallSerializer } from './callserializer';
 import { Coverage } from './coverage';
+import { zSocket } from './zesaruxSocket';
 
 
 
@@ -623,6 +624,10 @@ export class Z80UnitTests {
 				}
 				else {
 					// Run: Continue
+
+ // TODO: this needs to be emulator independent
+ zSocket.send('cpu-transaction-log truncate yes');
+
 					Emulator.continue((data, tStates, cpuFreq) => {
 						Z80UnitTests.onBreak();
 					});

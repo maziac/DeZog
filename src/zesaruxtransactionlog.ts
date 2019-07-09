@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-//import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 
@@ -453,7 +452,7 @@ export class ZesaruxTransactionLog {
 
 		// Open a parallel file
 		// and load as much as is required to get the addresses.
-		const file = new ZesaruxTransactionLog(this.filepath, 10000);
+		const file = new ZesaruxTransactionLog(this.filepath, 100000);
 
 		while(file.prevLine()) { // Previous line
 			// Get current line

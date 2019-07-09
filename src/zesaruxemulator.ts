@@ -234,7 +234,6 @@ registers   yes|no: Enable registers logging
 				else {
 					rotateLines = Settings.launch.codeCoverage.lines + Settings.launch.codeCoverage.linesElder;
 				}
-				rotateLines = 10;
 				zSocket.send('cpu-transaction-log rotatelines ' + rotateLines);
 
 				// Coverage + reverse debugging settings
@@ -823,7 +822,15 @@ registers   yes|no: Enable registers logging
 			// Check if code coverage is enabled
 			if(Settings.launch.codeCoverage.enabled) {
 				// Go through coverage file and collect all addresses
-				const addresses = this.cpuTransactionLog.getPrevAddresses([10]);
+				let count0 = Settings.launch.codeCoverage.lines;
+				let count1 = Settings.launch.codeCoverage.linesElder;
+				if(count0 == -1) {
+					count0 = 0xFFFFFFFF;
+					count1 = 0;
+				}
+				else if(count1 == -1)
+					count1 = 0xFFFFFFFF;
+				const addresses = this.cpuTransactionLog.getPrevAddresses([count0, count1]);
 				// Emit code coverage event
 				this.emit('coverage', addresses);
 			}

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Labels } from './labels';
 import { Settings } from './settings';
-
+import * as assert from 'assert';
 
 
 /// Is a singleton. Initilaize in 'activate'.
@@ -15,10 +15,13 @@ export class CoverageClass {
 	/// The decoration type for covered lines.
 	protected coverageDecoType: vscode.TextEditorDecorationType;
 
+	/// The decoration type for elderly covered lines.
+	protected coverageElderDecoType: vscode.TextEditorDecorationType;
+
 	/// Holds a map with filenames associated with the addresses.
-	protected coverageFileMap = new Map<string, Set<number>>();
+	protected coverageFileMap: Map<string, Set<number>>;
 	/// The same but for the elder addresses.
-	protected coverageFileMapElder = new Map<string, Set<number>>();
+	protected coverageFileMapElder: Map<string, Set<number>>;
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
@@ -54,6 +57,19 @@ export class CoverageClass {
 				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
 			}
 		});
+		// For the elder lines a little lighter
+		Coverage.coverageElderDecoType = vscode.window.createTextEditorDecorationType({
+			isWholeLine: true,
+			gutterIconSize: 'auto',
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#d5efc3',
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#093003',
+			}
+		});
 	}
 
 
@@ -80,6 +96,7 @@ export class CoverageClass {
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
 			editor.setDecorations(this.coverageDecoType, []);
+			editor.setDecorations(this.coverageElderDecoType, []);
 		}
 	}
 
@@ -117,7 +134,9 @@ export class CoverageClass {
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
 	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
-		// Loop over all addresses
+		assert(coveredAddresses.length == 2);
+		// Loop over all immediate addresses
+		this.coverageFileMap = new Map<string, Set<number>>();
 		coveredAddresses[0].forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
@@ -135,7 +154,24 @@ export class CoverageClass {
 			lines.add(location.lineNr);
 		});
 
-		// TODO: do the same for the elder addresses
+		// Loop over all elder addresses
+		this.coverageFileMapElder = new Map<string, Set<number>>();
+		coveredAddresses[1].forEach(addr => {
+			// Get file location for address
+			const location = Labels.getFileAndLineForAddress(addr);
+			const filename = location.fileName;
+			if(filename.length == 0)
+				return;
+			// Get filename set
+			let lines = this.coverageFileMapElder.get(filename);
+			if(!lines) {
+				// Create a new
+				lines = new Set<number>();
+				this.coverageFileMapElder.set(filename, lines);
+			}
+			// Add address to set
+			lines.add(location.lineNr);
+		});
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
@@ -153,18 +189,34 @@ export class CoverageClass {
 	protected setCoveredLines(editor: vscode.TextEditor) {
 		// Get filename
 		const edFilename = editor.document.fileName;
+
+		// Immediate lines
 		// Get lines
-		const lines = this.coverageFileMap.get(edFilename);
-		if(!lines)
-			return;
-		// Decorate all lines (coverage)
-		const decorations = new Array<vscode.Range>();
-		for(const line of lines) {
-			const range = new vscode.Range(line,0, line,1000);
-			decorations.push(range);
+		let lines = this.coverageFileMap.get(edFilename);
+		if(lines) {
+			// Decorate all immediate lines (coverage)
+			const decorations = new Array<vscode.Range>();
+			for(const line of lines) {
+				const range = new vscode.Range(line,0, line,1000);
+				decorations.push(range);
+			}
+			// Set all decorations
+			editor.setDecorations(this.coverageDecoType, decorations);
 		}
-		// Set all decorations
-		editor.setDecorations(this.coverageDecoType, decorations);
+
+		// Elder lines
+		// Get lines
+		lines = this.coverageFileMapElder.get(edFilename);
+		if(lines) {
+			// Decorate all immediate lines (coverage)
+			const decorations = new Array<vscode.Range>();
+			for(const line of lines) {
+				const range = new vscode.Range(line,0, line,1000);
+				decorations.push(range);
+			}
+			// Set all decorations
+			editor.setDecorations(this.coverageElderDecoType, decorations);
+		}
 	}
 
 }
