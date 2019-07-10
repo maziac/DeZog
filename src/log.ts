@@ -77,6 +77,8 @@ export class Log {
 	 * @param callerName If true the name of the calling method is shown.
 	 */
 	public init(channelOutput: any, filePath: string|undefined, callerName = true) {
+		if(this.logOutput)
+			this.logOutput.dispose();
 		this.outFilePath = filePath;
 		this.logOutput = channelOutput;
 		if(callerName)

@@ -23,9 +23,11 @@ export function activate(context: vscode.ExtensionContext) {
 	// Enable logging.
 	configureLogging();
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel') ||
-			event.affectsConfiguration(CONFIG_SECTION + '.logfile')) {
-				configureLogging();
+		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
+			|| event.affectsConfiguration(CONFIG_SECTION + '.logfile')
+			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logpanel')
+			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logfile')) {
+					configureLogging();
 		}
 	}));
 
@@ -189,7 +191,6 @@ function configureLogging() {
 		const filepath = configuration.get<string>('logfile');
 		const channelName = (logToPanel) ? "Z80 Debugger" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-		//LogGlobal = new Log();
 		Log.init(channelOut, filepath);
 	}
 
@@ -197,9 +198,8 @@ function configureLogging() {
 	{
 		const logToPanel = configuration.get<boolean>('socket.logpanel');
 		const filepath = configuration.get<string>('socket.logfile');
-		const channelName = (logToPanel) ? "ZZ80 Debugger Socket" : undefined;
+		const channelName = (logToPanel) ? "Z80 Debugger Socket" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-		//LogSocket = new Log();
 		LogSocket.init(channelOut, filepath);
 	}
 
