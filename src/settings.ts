@@ -345,11 +345,6 @@ export class Settings {
 			};
 		}
 
-		if(!Settings.launch.log)
-			Settings.launch.log = {channelOutputEnabled: false, filePath: undefined};
-		if(!Settings.launch.logSocket)
-			Settings.launch.logSocket = {channelOutputEnabled: false, filePath: undefined};
-
 		if(!Settings.launch.unitTestTimeout)
 			Settings.launch.unitTestTimeout = 1;	///< 1000 ms
 	}
