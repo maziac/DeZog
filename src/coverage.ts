@@ -128,7 +128,7 @@ export class CoverageClass {
 
 	/**
 	 * Shows (adds) the code coverage of the passed addresses.
-	 * The active editors are decorator.
+	 * The active editors are decorated.
 	 * The set is added to the existing ones to decorate another editor when the focus changes.
 	 * Is called when the event 'covered' has been emitted by the Emulator.
 	 * @param coveredAddresses All addresses to add (all covered addresses)
@@ -203,6 +203,10 @@ export class CoverageClass {
 			// Set all decorations
 			editor.setDecorations(this.coverageDecoType, decorations);
 		}
+		else {
+			// Clear old decorations
+			editor.setDecorations(this.coverageDecoType, []);
+		}
 
 		// Elder lines
 		// Get lines
@@ -216,6 +220,10 @@ export class CoverageClass {
 			}
 			// Set all decorations
 			editor.setDecorations(this.coverageElderDecoType, decorations);
+		}
+		else {
+			// Clear old decorations
+			editor.setDecorations(this.coverageElderDecoType, []);
 		}
 	}
 

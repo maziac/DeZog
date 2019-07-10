@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as glob from 'glob';
 
 
-const MAX_CACHE_SIZE = 10000000;		// 10 MB
 
 /**
  * This class takes care of the ZEsarUX cpu transaction log.
@@ -27,6 +26,10 @@ const MAX_CACHE_SIZE = 10000000;		// 10 MB
  * - read the content of a line (the PC and registers, instruction)
  */
 export class ZesaruxTransactionLog {
+
+	/// The maximum cache size. If a file with no useful data (no newlines) of this size
+	/// is found an exception is thrown.
+	protected MAX_CACHE_SIZE = 10000000;		// 10 MB
 
 	/// The file path to use.
 	protected filepath: string;
@@ -235,7 +238,7 @@ export class ZesaruxTransactionLog {
 			// Try next size
 			cacheSize *= 2;
 			// Safety check
-			if(cacheSize > MAX_CACHE_SIZE)
+			if(cacheSize > this.MAX_CACHE_SIZE)
 				throw new Error('File contains no useful data.')
 		}
 

@@ -1,6 +1,7 @@
 
 import * as assert from 'assert';
 import { ZesaruxTransactionLog } from '../zesaruxtransactionlog';
+import * as fs from 'fs';
 
 
 suite('ZesaruxTransactionLog', () => {
@@ -745,5 +746,27 @@ suite('ZesaruxTransactionLog', () => {
 		});
 
 	});
+
+
+	test('Exception - no useful file', () => {
+		const rf = new ZesaruxTransactionLog('./src/tests/data/rotnotuseful/rot.log') as any;
+		rf.init();
+
+		// Create a file with no useful data
+		const filepath = rf.filepath;
+		const file = fs.openSync(filepath, 'w');
+		const bufferSize = 1000;
+		const data = 'A'.repeat(bufferSize);
+		const blocks = rf.MAX_CACHE_SIZE/bufferSize + 1;
+		for(let i=0; i<blocks; i++)
+			fs.writeSync(file, data);
+
+		// Should throw an exception.
+		assert.throws(() => { rf.prevLine(); }, 'No exception thrown.');
+
+		// Delete file
+		fs.unlinkSync(filepath);
+	});
+
 
 });
