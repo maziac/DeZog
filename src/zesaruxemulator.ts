@@ -554,7 +554,7 @@ registers   yes|no: Enable registers logging
 		// Loop over all lines, reverse
 		let reason = 'Break: Reached end of transaction log.';
 		while(this.cpuTransactionLog.prevLine()) {
-			const addr = this.cpuTransactionLog.getAddress();
+			//const addr = this.cpuTransactionLog.getAddress();
 			// Check for breakpoint
 			// TODO: ...
 		}
@@ -1615,8 +1615,7 @@ registers   yes|no: Enable registers logging
 	 * And it will delete the rotated files (As zesarux is not doing this).
 	 */
 	public clearInstructionHistory() {
-		return;
-		//zSocket.send('cpu-transaction-log truncate yes');
+		zSocket.send('cpu-transaction-log truncate yes');
 		if(this.cpuTransactionLog)
 			this.cpuTransactionLog.deleteRotatedFiles();
 	}

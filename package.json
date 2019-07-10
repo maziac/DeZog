@@ -43,6 +43,7 @@
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.1",
 		"gif-writer": "^0.9.3",
+		"glob": "^7.1.4",
 		"jsonc-parser": "^2.1.0",
 		"mocha": "^6.1.4",
 		"ts-node": "^8.3.0",
@@ -68,29 +69,29 @@
 			"type": "object",
 			"title": "Z80 Debugger configuration",
 			"properties": {
-			  "z80-debug.logpanel": {
-				  "description": "Write global logs to an output panel.",
-				  "type": "boolean",
-				  "scope": "resource"
+				"z80-debug.logpanel": {
+					"description": "Write global logs to an output panel.",
+					"type": "boolean",
+					"scope": "resource"
 				},
 				"z80-debug.logfile": {
-				  "description": "Write global logs to the given file.",
-				  "type": "string",
-				  "scope": "resource"
+					"description": "Write global logs to the given file.",
+					"type": "string",
+					"scope": "resource"
 				},
 				"z80-debug.socket.logpanel": {
-				  "description": "Write socket logs to an output panel.",
-				  "type": "boolean",
-				  "scope": "resource"
+					"description": "Write socket logs to an output panel.",
+					"type": "boolean",
+					"scope": "resource"
 				},
 				"z80-debug.socket.logfile": {
-				  "description": "Write soccket logs to the given file.",
-				  "type": "string",
-				  "scope": "resource"
+					"description": "Write soccket logs to the given file.",
+					"type": "string",
+					"scope": "resource"
 				}
-			  }
-		  },
-	  "languages": [
+			}
+		},
+		"languages": [
 			{
 				"id": "asm-collection",
 				"extensions": [

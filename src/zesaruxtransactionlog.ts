@@ -103,7 +103,7 @@ export class ZesaruxTransactionLog {
 	 */
 	public deleteRotatedFiles() {
 		const filepath = this.filepath + '.*';
-		const files = glob.globSync(filepath);
+		const files = glob.sync(filepath);
 		for(const file of files) {
 			fs.unlinkSync(file);
 		}
