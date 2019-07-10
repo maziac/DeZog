@@ -504,7 +504,7 @@ registers   yes|no: Enable registers logging
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
  	 */
-	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number)=>void): void {
+	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number, error?: string)=>void): void {
 		// Change state
 		this.state = EmulatorState.RUNNING;
 		// Handle code coverage
@@ -548,20 +548,30 @@ registers   yes|no: Enable registers logging
 	  * 'reverse continue' debugger program execution.
 	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	  */
-	 public reverseContinue(handler:(reason: string)=>void) : void {
-		//this.state = EmulatorState.RUNNING;
-		//this.state = EmulatorState.IDLE;
-		// Loop over all lines, reverse
-		let reason = 'Break: Reached end of transaction log.';
-		while(this.cpuTransactionLog.prevLine()) {
-			//const addr = this.cpuTransactionLog.getAddress();
-			// Check for breakpoint
-			// TODO: ...
+	 public reverseContinue(handler:(reason: string, error?: string)=>void) : void {
+		let errorText: string|undefined;
+		let reason;
+		try {
+			//this.state = EmulatorState.RUNNING;
+			//this.state = EmulatorState.IDLE;
+			// Loop over all lines, reverse
+			reason = 'Break: Reached end of transaction log.';
+			while(this.cpuTransactionLog.prevLine()) {
+				//const addr = this.cpuTransactionLog.getAddress();
+				// Check for breakpoint
+				// TODO: ...
+			}
+
+			// Clear register cache
+			this.RegisterCache = undefined;
+		}
+		catch(e) {
+			errorText = e;
+			reason = 'Break: Error occurred: ' + errorText;
 		}
 
-		// Clear register cache
-		this.RegisterCache = undefined;
-		handler(reason);
+		// Call handler
+		handler(reason, errorText);
 	}
 
 
@@ -572,7 +582,7 @@ registers   yes|no: Enable registers logging
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	 public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number)=>void): void {
+	 public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void): void {
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			// Step over should skip all CALLs and RST.
@@ -725,7 +735,7 @@ registers   yes|no: Enable registers logging
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepInto(handler:(disasm: string, tStates?: number, time?: number)=>void): void {
+	public stepInto(handler:(disasm: string, tStates?: number, time?: number, error?: string)=>void): void {
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			// Clear register cache
@@ -760,7 +770,7 @@ registers   yes|no: Enable registers logging
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number)=>void): void {
+	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, error?: string)=>void): void {
 		// Handle code coverage
 		this.cpuCodeCoverage(() => {
 			// Reset T-state counter etc.
@@ -844,7 +854,7 @@ registers   yes|no: Enable registers logging
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOut(handler:(tStates?: number, cpuFreq?: number)=>void): void {
+	public stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void): void {
 		// zesarux does not implement a step-out. Therefore we analyze the call stack to
 		// find the first return address.
 		// Then a breakpoint is created that triggers when the SP changes to  that address.
@@ -929,7 +939,7 @@ registers   yes|no: Enable registers logging
 	  * 'step backwards' the program execution in the debugger.
 	  * @param handler The handler that is called after the step is performed.
 	  */
-	 public stepBack(handler:()=>void): void {
+	 public stepBack(handler:(error?: string)=>void): void {
 		// Clear register cache
 		this.RegisterCache = undefined;
 		// Move backwards in file

@@ -561,7 +561,7 @@ export class EmulatorClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public continue(contExecHandler: (data: string, tStates?: number, cpuFreq?: number)=>void, contStoppedHandler: (data)=>void): void {
+	public continue(contExecHandler: (data: string, tStates?: number, cpuFreq?: number, error?: string)=>void, contStoppedHandler: (data)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -578,7 +578,7 @@ export class EmulatorClass extends EventEmitter {
 	  * 'reverse continue' debugger program execution.
 	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	  */
-	 public reverseContinue(handler:()=>void) : void {
+	 public reverseContinue(handler:(error?: string)=>void) : void {
 		assert(false);	// override this
 	}
 
@@ -589,7 +589,7 @@ export class EmulatorClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number)=>void): void {
+	public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -601,7 +601,7 @@ export class EmulatorClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepInto(handler:(disasm: string, tStates?: number, time?: number)=>void): void {
+	public stepInto(handler:(disasm: string, tStates?: number, time?: number, error?: string)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -612,7 +612,7 @@ export class EmulatorClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOut(handler:(tStates?: number, cpuFreq?: number)=>void): void {
+	public stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void): void {
 		assert(false);	// override this
 	}
 
@@ -621,7 +621,7 @@ export class EmulatorClass extends EventEmitter {
 	 * 'step backwards' the program execution in the debugger.
 	 * @param handler The handler that is called after the step is performed.
 	 */
-	public stepBack(handler:()=>void): void {
+	public stepBack(handler:(error?: string)=>void): void {
 		assert(false);	// override this
 	}
 

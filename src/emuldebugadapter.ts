@@ -1138,13 +1138,17 @@ export class EmulDebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
 
 			// Continue debugger
-			Emulator.reverseContinue(reason => {
+			Emulator.reverseContinue((reason, error) => {
 				// Output stop reason.
 				vscode.debug.activeDebugConsole.appendLine(reason);
 				// Update memory dump etc.
 				this.update();
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 				this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
+
+				// Show a possible error
+				if(error)
+					this.showError(error);
 			});
 
 			// Response is sent immediately
@@ -1162,7 +1166,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	  */
 	 public emulatorStepOver(handler?: () => void): void {
 			// Step-Over
-			Emulator.stepOver((disasm, tStates, cpuFreq) => {
+			Emulator.stepOver((disasm, tStates, cpuFreq, error) => {
 				// Display T-states and time
 				const text = disasm ? disasm+' \t; ' : '';
 				this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
@@ -1176,6 +1180,10 @@ export class EmulDebugSessionClass extends DebugSession {
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+
+				// Show a possible error
+				if(error)
+					this.showError(error);
 			});
 	}
 
@@ -1240,7 +1248,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Emulator.stepInto((disasm, tStates, cpuFreq) => {
+			Emulator.stepInto((disasm, tStates, cpuFreq, error) => {
 				// Display T-states and time
 				const text = disasm ? disasm+' \t; ' : '';
 				this.showUsedTStates('StepInto: '+text, tStates, cpuFreq);
@@ -1254,6 +1262,10 @@ export class EmulDebugSessionClass extends DebugSession {
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+
+				// Show a possible error
+				if(error)
+					this.showError(error);
 			});
 
 		});
@@ -1269,7 +1281,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Emulator.stepOut((tStates, cpuFreq) => {
+			Emulator.stepOut((tStates, cpuFreq, error) => {
 				// Display T-states and time
 				this.showUsedTStates('StepOut: Used ', tStates, cpuFreq);
 
@@ -1278,6 +1290,10 @@ export class EmulDebugSessionClass extends DebugSession {
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+
+				// Show a possible error
+				if(error)
+					this.showError(error);
 			});
 
 			// Response is sent immediately
@@ -1296,7 +1312,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack( () => {
+			Emulator.stepBack((error) => {
 				// Update memory dump etc.
 				this.update({step: true});
 
@@ -1306,6 +1322,10 @@ export class EmulDebugSessionClass extends DebugSession {
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+
+				// Show a possible error
+				if(error)
+					this.showError(error);
 			});
 		});
 	}
