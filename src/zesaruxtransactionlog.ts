@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
+import * as glob from 'glob';
 
 
 const MAX_CACHE_SIZE = 10000000;		// 10 MB
@@ -93,6 +94,21 @@ export class ZesaruxTransactionLog {
 		this.cacheOffset = 0;
 		this.cacheClip = 0;
 	}
+
+
+	/**
+	 * Deletes all rotated files, e.g. cpu.log.1, cpu.log.2, ...
+	 * In fact all cpu.log.*
+	 * It does not delete the log file e.g. cpu.log, itself.
+	 */
+	public deleteRotatedFiles() {
+		const filepath = this.filepath + '.*';
+		const files = glob.globSync(filepath);
+		for(const file of files) {
+			fs.unlinkSync(file);
+		}
+	}
+
 
 	/**
 	 * Opens a file. Closes the previous file.

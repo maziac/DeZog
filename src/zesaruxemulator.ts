@@ -1607,5 +1607,18 @@ registers   yes|no: Enable registers logging
 		zSocket.executeWhenQueueIsEmpty(timer);
 	}
 
+
+	/**
+	 * Clears the instruction history.
+	 * For reverse debugging and code coverage.
+	 * This will call 'cpu-transaction-log truncate yes' to clear the log in Zesarux.
+	 * And it will delete the rotated files (As zesarux is not doing this).
+	 */
+	public clearInstructionHistory() {
+		return;
+		//zSocket.send('cpu-transaction-log truncate yes');
+		if(this.cpuTransactionLog)
+			this.cpuTransactionLog.deleteRotatedFiles();
+	}
 }
 

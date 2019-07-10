@@ -5,7 +5,7 @@ import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEve
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
-import { Log } from './log';
+import { Log, LogSocket } from './log';
 import { EmulatorBreakpoint, MachineType } from './emulator';
 import { MemoryDumpView } from './memorydumpview';
 import { MemoryRegisterView } from './memoryregisterview';
@@ -79,6 +79,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Start logging
 		Log.clear();
+		LogSocket.clear();
 
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
@@ -335,10 +336,6 @@ export class EmulDebugSessionClass extends DebugSession {
 			Settings.Init(args, rootFolder);
 			// Overwrite top-of-stack.
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
-
-			const channelName = (Settings.launch.log.channelOutputEnabled) ? "Z80 Debugger" : undefined;
-			const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-			Log.init(channelOut, Settings.launch.log.filePath);
 		}
 		catch(e) {
 			// Some error occurred
@@ -446,6 +443,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
+				Emulator.clearInstructionHistory();
 				if(Settings.launch.startAutomatically && !EmulDebugSessionClass.unitTestHandler) {
 					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
 					this.sendEventContinued();

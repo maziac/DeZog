@@ -7,13 +7,27 @@ import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
 import { CoverageClass, Coverage } from './coverage';
+import { LogSocket, Log } from './log';
 
+
+
+/// Config section in the settings.
+const CONFIG_SECTION = 'z80-debug';
 
 /**
  * Register configuration provider and command palette commands.
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
+
+	// Enable logging.
+	configureLogging();
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel') ||
+			event.affectsConfiguration(CONFIG_SECTION + '.logfile')) {
+				configureLogging();
+		}
+	}));
 
 	// Note: Weinand: "VS Code runs extensions on the node version that is built into electron (on which VS Code is based). This cannot be changed."
 	const version = process.version;
@@ -162,3 +176,31 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 	}
 }
 
+
+/**
+ * Configures teh logging from the settings.
+ */
+function configureLogging() {
+	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, null);
+
+	// Global log
+	{
+		const logToPanel = configuration.get<boolean>('logpanel');
+		const filepath = configuration.get<string>('logfile');
+		const channelName = (logToPanel) ? "Z80 Debugger" : undefined;
+		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
+		//LogGlobal = new Log();
+		Log.init(channelOut, filepath);
+	}
+
+	// Socket log
+	{
+		const logToPanel = configuration.get<boolean>('socket.logpanel');
+		const filepath = configuration.get<string>('socket.logfile');
+		const channelName = (logToPanel) ? "ZZ80 Debugger Socket" : undefined;
+		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
+		//LogSocket = new Log();
+		LogSocket.init(channelOut, filepath);
+	}
+
+}

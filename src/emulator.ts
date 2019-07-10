@@ -1021,5 +1021,13 @@ export class EmulatorClass extends EventEmitter {
 		assert(false);	// override this
 	}
 
+
+	/**
+	 * Clears the instruction history.
+	 * For reverse debugging and code coverage.
+	 */
+	public clearInstructionHistory() {
+		assert(false);	// override this
+	}
 }
 

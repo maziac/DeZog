@@ -64,7 +64,33 @@
 		"onCommand"
 	],
 	"contributes": {
-		"languages": [
+		"configuration": {
+			"type": "object",
+			"title": "Z80 Debugger configuration",
+			"properties": {
+			  "z80-debug.logpanel": {
+				  "description": "Write global logs to an output panel.",
+				  "type": "boolean",
+				  "scope": "resource"
+				},
+				"z80-debug.logfile": {
+				  "description": "Write global logs to the given file.",
+				  "type": "string",
+				  "scope": "resource"
+				},
+				"z80-debug.socket.logpanel": {
+				  "description": "Write socket logs to an output panel.",
+				  "type": "boolean",
+				  "scope": "resource"
+				},
+				"z80-debug.socket.logfile": {
+				  "description": "Write soccket logs to the given file.",
+				  "type": "string",
+				  "scope": "resource"
+				}
+			  }
+		  },
+	  "languages": [
 			{
 				"id": "asm-collection",
 				"extensions": [

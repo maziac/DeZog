@@ -180,3 +180,6 @@ export class Log {
 /// Global logging is instantiated.
 export let LogGlobal = new Log();
 
+/// Socket logging.
+export let LogSocket = new Log();
+
