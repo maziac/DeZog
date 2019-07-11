@@ -1032,7 +1032,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				return;
 			}
 			// Get contents
-			varObj.getContent((varList) => {
+			varObj.getContent(varList => {
 				response.body = {variables: varList};
 				this.sendResponse(response);
 				// end the serialized call:
@@ -1312,7 +1312,11 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack(error => {
+			Emulator.stepBack((instr, error) => {
+				// Print
+				if(instr.length > 0 )
+					vscode.debug.activeDebugConsole.appendLine(instr);
+
 				// Update memory dump etc.
 				this.update({step: true});
 

@@ -46,6 +46,9 @@ export class ZesaruxTransactionLog {
 	/// The file rotation currently in use.
 	protected fileRotation: number;
 
+	/// The number of rotated files.
+	protected countRotations: number;
+
 	/// The data array containing the cache.
 	protected cacheBuffer: Uint8Array;
 
@@ -73,6 +76,8 @@ export class ZesaruxTransactionLog {
 	constructor(filepath: string, cacheSize = 4000) {
 		this.filepath = filepath;
 		this.cacheChunkSize = cacheSize;
+		const files = this.getRotatedFiles();
+		this.countRotations = files.length;
 		this.nlCode = '\n'.charCodeAt(0);
 		this.init();
 	}
@@ -105,11 +110,20 @@ export class ZesaruxTransactionLog {
 	 * It does not delete the log file e.g. cpu.log, itself.
 	 */
 	public deleteRotatedFiles() {
-		const filepath = this.filepath + '.*';
-		const files = glob.sync(filepath);
+		const files = this.getRotatedFiles();
 		for(const file of files) {
 			fs.unlinkSync(file);
 		}
+	}
+
+
+	/**
+	 * @returns A list of all rotated files.
+	 */
+	protected getRotatedFiles() {
+		const filepath = this.filepath + '.*';
+		const files = glob.sync(filepath);
+		return files;
 	}
 
 
@@ -300,13 +314,13 @@ export class ZesaruxTransactionLog {
 	 * @returns false if there is no previous line.
 	 */
 	public prevLine(): boolean {
-		// Check if we need to load a new cache
-		if(this.cacheOffset == this.cacheClip)
-			this.readCacheReverse();
-
 		// Safety check
 		if(this.isAtEnd())
 			return false;
+
+		// Check if we need to load a new cache
+		if(this.cacheOffset == this.cacheClip)
+			this.readCacheReverse();
 
 		// Find last newline.
 		const k = this.cacheBuffer.lastIndexOf(this.nlCode, this.cacheOffset-2);	// Skip last newline
@@ -326,6 +340,9 @@ export class ZesaruxTransactionLog {
 		// Safety check
 		if(this.isAtStart())
 			return false;
+
+		// Do read 2 lines if we are at the end.
+
 
 		// Read buffer if at the end
 		if(!this.cacheBuffer) {
@@ -437,7 +454,8 @@ export class ZesaruxTransactionLog {
 	 * @returns true if at the very end of the file(s).
 	 */
 	protected isAtEnd() {
-		return (this.fileRotation >= 0) && (!this.file);
+	//return (this.fileRotation >= 0) && (!this.file);
+		return (this.fileRotation == this.countRotations) && (this.fileOffset == 0) && (this.cacheOffset == 0);	// this.cacheClip should be 0 in this case.
 	}
 
 

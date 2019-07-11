@@ -555,7 +555,7 @@ registers   yes|no: Enable registers logging
 			//this.state = EmulatorState.RUNNING;
 			//this.state = EmulatorState.IDLE;
 			// Loop over all lines, reverse
-			reason = 'Break: Reached end of transaction log.';
+			reason = 'Break: Reached end of instruction history.';
 			while(this.cpuTransactionLog.prevLine()) {
 				//const addr = this.cpuTransactionLog.getAddress();
 				// Check for breakpoint
@@ -599,8 +599,6 @@ registers   yes|no: Enable registers logging
 			// e.g. a "LD SP,(nnnn)" is done, then the "stepOver" would incorrectly
 			// work just like a "stepInto". However this should happen very seldomly.
 
-			// Clear register cache
-			this.RegisterCache = undefined;
 			// Get current instruction
 			const instruction = this.cpuTransactionLog.getInstruction();
 			const instrUpper = instruction.toUpperCase();
@@ -609,10 +607,6 @@ registers   yes|no: Enable registers logging
 			let expectedSP = Z80Registers.parseSP(regs);
 			let dontCheckSP = false;
 
-			/* TODO:
-		Das war das letzte. Implementiert. Etwas getestet. Scheint zu funktionieren.
-		"Continue"(forward) aus dem transaction log heraus geht noch nicht.
-*/
 
 			// Check for changing SP
 			if(instrUpper.startsWith('PUSH'))
@@ -670,6 +664,8 @@ registers   yes|no: Enable registers logging
 				errorText = e;
 			}
 
+			// Clear register cache
+			this.RegisterCache = undefined;
 
 			// Call handler
 			handler(instruction, undefined, undefined, errorText);
@@ -746,12 +742,12 @@ registers   yes|no: Enable registers logging
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			let errorText;
-			let instr;
+			let instr = '';
 			try {
-				// Move forward in file
-				this.cpuTransactionLog.nextLine();
 				// Get disassembly of instruction
 				instr = this.cpuTransactionLog.getInstruction();
+				// Move forward in file
+				this.cpuTransactionLog.nextLine();
 				// Clear register cache
 				this.RegisterCache = undefined;
 			}
@@ -870,9 +866,55 @@ registers   yes|no: Enable registers logging
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	public stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void): void {
-		// zesarux does not implement a step-out. Therefore we analyze the call stack to
+		// Check for reverse debugging.
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Step out will run until the start of the transaction log
+			// or until a "RETx" is found (one behind).
+			// To make it more complicated: this would falsely find a RETI event
+			// if stepout was not started form the ISR.
+			// To overcome this also the SP is observed. And we break only if
+			// also the SP is lower/equal to when we started.
+
+			// Read SP
+			let regs = this.cpuTransactionLog.getRegisters();
+			const startSP = Z80Registers.parseSP(regs);
+
+			// Do as long as necessary
+			let errorText;
+			try {
+				do {
+					// Get current instruction
+					const instruction = this.cpuTransactionLog.getInstruction();
+					const instrUpper = instruction.toUpperCase();
+					// Check for RET
+					if(!instrUpper.startsWith('RET'))
+						continue;
+					// Read SP
+					const regs = this.cpuTransactionLog.getRegisters();
+					const sp = Z80Registers.parseSP(regs);
+					// Check SP
+					if(sp >= startSP) {
+						this.cpuTransactionLog.nextLine();
+						break;
+					}
+				} while(this.cpuTransactionLog.nextLine());
+			}
+			catch(e) {
+				errorText = e;
+			}
+
+			// Clear register cache
+			this.RegisterCache = undefined;
+
+			// Call handler
+			handler(undefined, undefined, errorText);
+			return;
+		}
+
+
+		// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 		// find the first return address.
-		// Then a breakpoint is created that triggers when the SP changes to  that address.
+		// Then a breakpoint is created that triggers when the SP changes to that address.
 		// I.e. when the RET (or (RET cc) gets executed.
 
 		// get current stackpointer
@@ -888,6 +930,10 @@ registers   yes|no: Enable registers logging
 				handler();
 				return;
 			}
+
+			// TODO: I could instead just add a breakpoint with an opcode condition to be a RET. E.g. OPCODE1=C9h (OPCODE1&C7h=C7h) OR OPCODE2=ED4Dh OR OPCODE2=ED4h
+			// I.e. RETI=ED4D, RETN=ED45, RET=1100101 (C9) and RET cc=11xxx000
+			// Vielleicht doch nicht: wegen Interrupt.
 
 			// get stack from zesarux
 			zSocket.send('get-stack-backtrace '+depth, data => {
@@ -954,11 +1000,15 @@ registers   yes|no: Enable registers logging
 	  * 'step backwards' the program execution in the debugger.
 	  * @param handler The handler that is called after the step is performed.
 	  */
-	 public stepBack(handler:(error?: string)=>void): void {
+	 public stepBack(handler:(instruction: string, error?: string)=>void): void {
 		let errorText;
+		let instr = '';
 		try {
 			// Move backwards in file
-			this.cpuTransactionLog.prevLine();
+			if(!this.cpuTransactionLog.prevLine())
+				throw Error('Already at start of instruction history!')
+			// Get instruction
+			instr = this.cpuTransactionLog.getLine();
 			// Clear register cache
 			this.RegisterCache = undefined;
 		}
@@ -966,7 +1016,7 @@ registers   yes|no: Enable registers logging
 			errorText = e;
 		}
 		// Call handler
-		handler(errorText);
+		handler(instr, errorText);
 	}
 
 
