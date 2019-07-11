@@ -1312,7 +1312,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack((error) => {
+			Emulator.stepBack(error => {
 				// Update memory dump etc.
 				this.update({step: true});
 

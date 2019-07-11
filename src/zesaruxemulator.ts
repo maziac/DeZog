@@ -642,30 +642,37 @@ registers   yes|no: Enable registers logging
 			if(instrUpper.startsWith('RET'))
 				expectedSP2 += 2;
 
-			if(dontCheckSP) {
-				// Get next instruction
-				this.cpuTransactionLog.nextLine();
-			}
-			else {
-				// Find next line with same SP
-				while(true) {
-					// Next line
-					if(!this.cpuTransactionLog.nextLine()) {
-						break;	// End of file reached
-					};
-					// Read SP
-					const regs = this.cpuTransactionLog.getRegisters();
-					const sp = Z80Registers.parseSP(regs);
-					// Check expected SPs
-					if(expectedSP == sp)
-						break;
-					if(expectedSP2 == sp)
-						break;
+			let errorText;
+			try {
+				if(dontCheckSP) {
+					// Get next instruction
+					this.cpuTransactionLog.nextLine();
+				}
+				else {
+					// Find next line with same SP
+					while(true) {
+						// Next line
+						if(!this.cpuTransactionLog.nextLine()) {
+							break;	// End of file reached
+						};
+						// Read SP
+						const regs = this.cpuTransactionLog.getRegisters();
+						const sp = Z80Registers.parseSP(regs);
+						// Check expected SPs
+						if(expectedSP == sp)
+							break;
+						if(expectedSP2 == sp)
+							break;
+					}
 				}
 			}
+			catch(e) {
+				errorText = e;
+			}
+
 
 			// Call handler
-			handler(instruction);
+			handler(instruction, undefined, undefined, errorText);
 			return;
 		}
 
@@ -738,14 +745,22 @@ registers   yes|no: Enable registers logging
 	public stepInto(handler:(disasm: string, tStates?: number, time?: number, error?: string)=>void): void {
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
-			// Clear register cache
-			this.RegisterCache = undefined;
-			// Move forward in file
-			this.cpuTransactionLog.nextLine();
-			// Get disassembly of instruction
-			const instr = this.cpuTransactionLog.getInstruction();
+			let errorText;
+			let instr;
+			try {
+				// Move forward in file
+				this.cpuTransactionLog.nextLine();
+				// Get disassembly of instruction
+				instr = this.cpuTransactionLog.getInstruction();
+				// Clear register cache
+				this.RegisterCache = undefined;
+			}
+			catch(e) {
+				errorText = e;
+			}
+
 			// Call handler
-			handler(instr);
+			handler(instr, undefined, undefined, errorText);
 			return;
 		}
 
@@ -940,13 +955,18 @@ registers   yes|no: Enable registers logging
 	  * @param handler The handler that is called after the step is performed.
 	  */
 	 public stepBack(handler:(error?: string)=>void): void {
-		// Clear register cache
-		this.RegisterCache = undefined;
-		// Move backwards in file
-		this.cpuTransactionLog.prevLine();
-
+		let errorText;
+		try {
+			// Move backwards in file
+			this.cpuTransactionLog.prevLine();
+			// Clear register cache
+			this.RegisterCache = undefined;
+		}
+		catch(e) {
+			errorText = e;
+		}
 		// Call handler
-		handler();
+		handler(errorText);
 	}
 
 
