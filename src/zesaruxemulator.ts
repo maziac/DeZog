@@ -505,6 +505,36 @@ registers   yes|no: Enable registers logging
 	 * i.e. tStates multiplied with current CPU frequency.
  	 */
 	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number, error?: string)=>void): void {
+		// Check for reverse debugging.
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// continue in reverse debugging will run until the start of the transaction log
+			// or until a breakpoint condition is true.
+			let errorText: string|undefined;
+			let reason = 'Break: Reached start of instruction history.';
+			try {
+				//this.state = EmulatorState.RUNNING;
+				//this.state = EmulatorState.IDLE;
+				// Loop over all lines, reverse
+				while(this.cpuTransactionLog.nextLine()) {
+					//const addr = this.cpuTransactionLog.getAddress();
+					// Check for breakpoint
+					// TODO: ...
+				}
+
+				// Clear register cache
+				this.RegisterCache = undefined;
+			}
+			catch(e) {
+				errorText = e;
+				reason = 'Break: Error occurred: ' + errorText;
+			}
+
+			// Call handler
+			contStoppedHandler(reason, undefined, undefined, errorText);
+			return;
+		}
+
+
 		// Change state
 		this.state = EmulatorState.RUNNING;
 		// Handle code coverage
