@@ -213,6 +213,10 @@
 				{
 					"command": "z80-debug.runPartialUnitTests",
 					"when": "false"
+				},
+				{
+					"command": "z80-debug.initUnitTests",
+					"when": "false"
 				}
 			],
 			"editor/context": [
