@@ -83,7 +83,7 @@ export class CoverageClass {
 			// This is called for the editor that is going to hide and for the editor
 			// that is shown.
 			// Unfortunately there is no way to differentiate so both are handled.
-			if(this.coverageFileMap.size > 0 &&  editor)
+			if(editor && (this.coverageFileMap.size > 0 || this.coverageFileMapElder.size > 0))
 				this.setCoveredLines(editor);
 		});
 	}
@@ -93,6 +93,7 @@ export class CoverageClass {
 	 */
 	public clearLineCoverage() {
 		this.coverageFileMap = new Map<string, Set<number>>();
+		this.coverageFileMapElder = new Map<string, Set<number>>();
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
 			editor.setDecorations(this.coverageDecoType, []);

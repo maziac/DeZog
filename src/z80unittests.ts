@@ -13,7 +13,6 @@ import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { CallSerializer } from './callserializer';
 import { Coverage } from './coverage';
-import { zSocket } from './zesaruxSocket';
 
 
 
@@ -141,6 +140,12 @@ export class Z80UnitTests {
 	/// Debug mode or run mode.
 	protected static debug = false;
 
+	/// Stroes the covered accresses for all unit tests.
+	protected static allCoveredAddresses: Set<number>;
+
+	/// Caches the last received addresses (from Emulator)
+	protected static lastCoveredAddresses: Array<Set<number>>;
+
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
 
@@ -185,6 +190,8 @@ export class Z80UnitTests {
 					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
 					return true;
 				}
+				// New coverage set
+				this.allCoveredAddresses = new Set<number>();
 				// Check for active debug session
 				if(vscode.debug.activeDebugSession)
 					return false;  // Try again
@@ -273,8 +280,8 @@ export class Z80UnitTests {
 			});
 
 			Emulator.on('coverage', coveredAddresses => {
-				// Covered addresses (since last break) have been sent
-				Coverage.showCodeCoverage(coveredAddresses);
+				// Cache covered addresses (since last unit test)
+			 	Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 			});
 
 			Emulator.on('warning', message => {
@@ -536,6 +543,12 @@ export class Z80UnitTests {
 	protected static handleDebugAdapter(debugAdapter: EmulDebugSessionClass) {
 		debugAdapter.on('initialized', () => {
 			try {
+				// Handle coverage
+				Emulator.on('coverage', coveredAddresses => {
+					// Cache covered addresses (since last unit test)
+					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+				});
+				// Init unit tests
 				Z80UnitTests.initUnitTests();
 				// Start unit tests after a short while
 				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
@@ -615,6 +628,10 @@ export class Z80UnitTests {
 				// Run
 				if(Z80UnitTests.utLabels)
 					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
+
+				// Remove instruction history log.
+				Emulator.clearInstructionHistory();
+
 				// Run or Debug
 				if(da) {
 					// Debug: Continue
@@ -624,10 +641,6 @@ export class Z80UnitTests {
 				}
 				else {
 					// Run: Continue
-
- // TODO: this needs to be emulator independent
- zSocket.send('cpu-transaction-log truncate yes');
-
 					Emulator.continue((data, tStates, cpuFreq) => {
 						Z80UnitTests.onBreak();
 					});
@@ -788,6 +801,15 @@ export class Z80UnitTests {
 		Z80UnitTests.dbgOutput(outTxt);
 		Z80UnitTests.outputSummary += outTxt + '\n';
 
+		// Collect coverage:
+		// Get covered addresses (since last unit test) and add to collection.
+		const target = Z80UnitTests.allCoveredAddresses;
+		const coveredAddresses = Z80UnitTests.lastCoveredAddresses;
+		const set0 = coveredAddresses[0];
+		set0.forEach(target.add, target);
+		const set1 = coveredAddresses[1];
+		set1.forEach(target.add, target);
+
 		// Next unit test
 		Z80UnitTests.utLabels.shift();
 		if(Z80UnitTests.utLabels.length == 0) {
@@ -850,6 +872,11 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 		// Clear remaining testcases
 		Z80UnitTests.CancelAllRemainingResults();
+		// Show coverage, only the elder lines
+		const emptySet = new Set<number>();
+		Coverage.showCodeCoverage([emptySet, Z80UnitTests.allCoveredAddresses]);
+		Z80UnitTests.lastCoveredAddresses = undefined as any;
+
 		// Delay this:
 		const f = () => {
 			// Remove event handling for the emulator

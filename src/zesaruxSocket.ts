@@ -455,7 +455,7 @@ export class ZesaruxSocket extends Socket {
 		this.lastCallQueue.length = 0;
 
 		// Exchange listeners
-		zSocket.myRemoveAllListeners();
+		this.myRemoveAllListeners();
 
 		// Keep the data listener
 		this.on('data', data => {
@@ -463,27 +463,31 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		// inform caller
+		let handlerCalled = false;
 		const func = () => {
+			if(handlerCalled)
+				return;
+			handlerCalled = true;
 			zSocket.myRemoveAllListeners();
 			handler();
 		}
 		// The new listeners
-		zSocket.once('error', () => {
+		this.once('error', () => {
 			LogSocket.log('Socket error (should be close).');
-			func()
+			func();
 			zSocket.end();
 		});
-		zSocket.once('timeout', () => {
+		this.once('timeout', () => {
 			LogSocket.log('Socket timeout (should be close).');
-			func()
+			func();
 			zSocket.end();
 		});
-		zSocket.once('close', () => {
+		this.once('close', () => {
 			LogSocket.log('Socket closed. OK.');
 			this.state = SocketState.UNCONNECTED;
 			func();
 		});
-		zSocket.once('end', () => {
+		this.once('end', () => {
 			LogSocket.log('Socket end. OK.');
 			this.state = SocketState.UNCONNECTED;
 			func();
@@ -503,7 +507,7 @@ export class ZesaruxSocket extends Socket {
 		*/
 
 		// Terminate if connected
-		if(this.state == SocketState.CONNECTED) {
+		if(this.state == SocketState.CONNECTED ) {
 			// Terminate connection
 			LogSocket.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
@@ -519,7 +523,13 @@ export class ZesaruxSocket extends Socket {
 		}
 
 		// Otherwise just end (and call func)
-		zSocket.end();
+		this.end();
+
+		// If already destroyed directly call the handler
+		if(this.destroyed)
+			handler();
+		else
+			this.destroy();
 	}
 
 
