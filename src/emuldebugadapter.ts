@@ -1071,7 +1071,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			console.log(data);
 
 			// Display T-states and time
-			this.showUsedTStates('Continue: Used ', tStates, cpuFreq);
+			this.showUsedTStates('Continue. ', tStates, cpuFreq);
 
 			// Send output event to inform the user about the reason
 			vscode.debug.activeDebugConsole.appendLine(data);
@@ -1283,7 +1283,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			// Step-Out
 			Emulator.stepOut((tStates, cpuFreq, error) => {
 				// Display T-states and time
-				this.showUsedTStates('StepOut: Used ', tStates, cpuFreq);
+				this.showUsedTStates('StepOut. ', tStates, cpuFreq);
 
 				// Update memory dump etc.
 				this.update();

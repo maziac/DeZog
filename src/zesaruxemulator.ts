@@ -538,11 +538,28 @@ registers   yes|no: Enable registers logging
 			try {
 				//this.state = EmulatorState.RUNNING;
 				//this.state = EmulatorState.IDLE;
+
+				// Getcurrent line
+				let currentLine = this.cpuTransactionLog.getLine();
+
 				// Loop over all lines, reverse
-				while(this.cpuTransactionLog.nextLine()) {
-					//const addr = this.cpuTransactionLog.getAddress();
+				while(true) {
+					// Handle stack
+					const inRevDbgMode = this.cpuTransactionLog.nextLine();
+					// Handle stack
+					const nextLine = this.cpuTransactionLog.getLine();
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+
+					// Check for breaks
+					if(!inRevDbgMode) {
+						break;	// End of file reached
+					};
+
 					// Check for breakpoint
 					// TODO: ...
+
+					// Next
+					currentLine = nextLine;
 				}
 
 				// Clear register cache
@@ -677,7 +694,6 @@ registers   yes|no: Enable registers logging
 		const topFrame = new Frame(pc, sp, 'PC');
 		this.reverseDbgStack.unshift(topFrame);
 	}
-
 
 
 	/**
@@ -1105,29 +1121,46 @@ registers   yes|no: Enable registers logging
 			// To overcome this also the SP is observed. And we break only if
 			// also the SP is lower/equal to when we started.
 
+			// Get current line
+			let currentLine = this.cpuTransactionLog.getLine();
+
 			// Read SP
-			let regs = this.cpuTransactionLog.getRegisters();
+			let regs = this.cpuTransactionLog.getRegisters(currentLine);
 			const startSP = Z80Registers.parseSP(regs);
 
 			// Do as long as necessary
 			let errorText;
 			try {
-				do {
+				while(true) {
+					// Handle stack
+					const inRevDbgMode = this.cpuTransactionLog.nextLine();
+					// Handle stack
+					const nextLine = this.cpuTransactionLog.getLine();
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+
+					// Check for breaks
+					if(!inRevDbgMode) {
+						break;	// End of file reached
+					};
+
 					// Get current instruction
-					const instruction = this.cpuTransactionLog.getInstruction();
-					const instrUpper = instruction.toUpperCase();
+					const instruction = this.cpuTransactionLog.getInstruction(currentLine);
+
 					// Check for RET
-					if(!instrUpper.startsWith('RET'))
-						continue;
-					// Read SP
-					const regs = this.cpuTransactionLog.getRegisters();
-					const sp = Z80Registers.parseSP(regs);
-					// Check SP
-					if(sp >= startSP) {
-						this.cpuTransactionLog.nextLine();
-						break;
+					if(instruction.startsWith('RET')) {
+						// Read SP
+						const regs = this.cpuTransactionLog.getRegisters(currentLine);
+						const sp = Z80Registers.parseSP(regs);
+						// Check SP
+						if(sp >= startSP) {
+							//this.cpuTransactionLog.nextLine();
+							break;
+						}
 					}
-				} while(this.cpuTransactionLog.nextLine());
+
+					// Next
+					currentLine = nextLine;
+				}
 			}
 			catch(e) {
 				errorText = e;
