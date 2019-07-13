@@ -24,6 +24,10 @@ export class DecorationClass {
 	/// The same but for the elder addresses.
 	protected coverageFileMapElder: Map<string, Set<number>>;
 
+	/// Holds a map with filenames associated with the addresses
+	/// for reverse debugging.
+	protected revDbgFileMap: Map<string, Set<number>>;
+
 
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize(context: vscode.ExtensionContext) {
@@ -71,6 +75,20 @@ export class DecorationClass {
 				backgroundColor: '#093003',
 			}
 		});
+
+		// Decoration for reverse debugging.
+		Decoration.revDbgDecoType = vscode.window.createTextEditorDecorationType({
+			isWholeLine: true,
+			gutterIconSize: 'auto',
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#A9E2F3',
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#045FB4',
+			}
+		});
 	}
 
 
@@ -85,7 +103,7 @@ export class DecorationClass {
 			// that is shown.
 			// Unfortunately there is no way to differentiate so both are handled.
 			if(editor && (this.coverageFileMap.size > 0 || this.coverageFileMapElder.size > 0))
-				this.setCoveredLines(editor);
+				this.setDecorationsForEditor(editor);
 		});
 	}
 
@@ -178,7 +196,7 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setCoveredLines(editor);
+			this.setDecorationsForEditor(editor);
 		}
 	}
 
@@ -188,7 +206,7 @@ export class DecorationClass {
 	 * @param coverageFileMap Association of a filename to a map of addresses.
 	 * @param editor The editor to decorate.
 	 */
-	protected setCoveredLines(editor: vscode.TextEditor) {
+	protected setDecorationsForEditor(editor: vscode.TextEditor) {
 		// Get filename
 		const edFilename = editor.document.fileName;
 
@@ -203,11 +221,11 @@ export class DecorationClass {
 				decorations.push(range);
 			}
 			// Set all decorations
-			editor.setDecorations(this.coverageDecoType, decorations);
+			editor.setDecorations(Decoration.coverageDecoType, decorations);
 		}
 		else {
 			// Clear old decorations
-			editor.setDecorations(this.coverageDecoType, []);
+			editor.setDecorations(Decoration.coverageDecoType, []);
 		}
 
 		// Elder lines
@@ -221,11 +239,29 @@ export class DecorationClass {
 				decorations.push(range);
 			}
 			// Set all decorations
-			editor.setDecorations(this.coverageElderDecoType, decorations);
+			editor.setDecorations(Decoration.coverageElderDecoType, decorations);
 		}
 		else {
 			// Clear old decorations
-			editor.setDecorations(this.coverageElderDecoType, []);
+			editor.setDecorations(Decoration.coverageElderDecoType, []);
+		}
+
+
+		// Reverse debugging lines
+		lines = this.revDbgFileMap.get(edFilename);
+		if(lines) {
+			// Decorate all immediate lines (coverage)
+			const decorations = new Array<vscode.Range>();
+			for(const line of lines) {
+				const range = new vscode.Range(line,0, line,1000);
+				decorations.push(range);
+			}
+			// Set all decorations
+			editor.setDecorations(Decoration.revDbgDecoType, decorations);
+		}
+		else {
+			// Clear old decorations
+			editor.setDecorations(Decoration.revDbgDecoType, []);
 		}
 	}
 
