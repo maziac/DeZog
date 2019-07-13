@@ -629,9 +629,9 @@ registers   yes|no: Enable registers logging
 
 
 	/**
-	 * Handles the current instruction and the previous one and distinguished what to
+	 * Handles the current instruction and the previous one and distinguishes what to
 	 * do on the virtual reverse debug stack.
-	 * Normally only the top frame on the stack is changed for the new PC value.'
+	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But if a "RET" instruction is found also the 'next' PC value is pushed
 	 * to the stack.
 	 * @param currentLine The current line of the transaction log.
@@ -655,6 +655,7 @@ registers   yes|no: Enable registers logging
 			const frame = new Frame(pc, sp, name);
 			this.reverseDbgStack.unshift(frame);
 		}
+		// Check for CALL and RST
 		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
 			// Check if the SP got bigger, if not we might have skipped a
 			// simulated RST only.
@@ -671,6 +672,66 @@ registers   yes|no: Enable registers logging
 
 		// Add current PC
 		const regs = this.cpuTransactionLog.getRegisters(currentLine);
+		const pc = Z80Registers.parsePC(regs);
+		const sp = Z80Registers.parseSP(regs);
+		const topFrame = new Frame(pc, sp, 'PC');
+		this.reverseDbgStack.unshift(topFrame);
+	}
+
+
+
+	/**
+	 * Handles the current instruction and the next one and distinguishes what to
+	 * do on the virtual reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.
+	 * But if e.g. a "CALL" or "RET" instruction is found the stack needs to be changed.
+	 * @param currentLine The current line of the transaction log.
+	 * @param nextLine The next line of the transaction log. (The one that
+	 * comes after currentLine.) If that is empty the start f the log has been reached.
+	 * In that case the reverseDbgStack is cleared because the real stack can be used.
+	 */
+	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string) {
+		// Check for end
+		if(nextLine.length == 0) {
+			this.reverseDbgStack = undefined as any;
+			return;
+		}
+
+		// Remove current frame
+		//const lastFrame =
+		assert(this.reverseDbgStack.length > 0);
+		this.reverseDbgStack.shift();
+
+		// Check for RETx
+		const instr = this.cpuTransactionLog.getInstruction(currentLine);
+		if(instr.startsWith("RET")) {
+			// Pop from call stack
+			assert(this.reverseDbgStack.length > 0);
+			this.reverseDbgStack.shift();
+		}
+		// Check for CALL and RST
+		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
+			// Check if the SP got smaller, if not we might have skipped a
+			// simulated RST only.
+			const currentRegs = this.cpuTransactionLog.getRegisters(currentLine);
+			const currentSP = Z80Registers.parseSP(currentRegs);
+			const nextRegs = this.cpuTransactionLog.getRegisters(nextLine);
+			const nextSP = Z80Registers.parseSP(nextRegs);
+			if(currentSP > nextSP) {
+				// Push to call stack
+				const pc = Z80Registers.parsePC(currentRegs);
+				// Now find label for this address
+				const callAddr = Z80Registers.parsePC(nextRegs);
+				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+				const name = ((instr.startsWith("CALL")) ? "CALL" : "RST") + labelCallAddr;
+				const frame = new Frame(pc, currentSP, name);
+				this.reverseDbgStack.unshift(frame);
+			}
+		}
+
+		// Add current PC
+		const regs = this.cpuTransactionLog.getRegisters(nextLine);
 		const pc = Z80Registers.parsePC(regs);
 		const sp = Z80Registers.parseSP(regs);
 		const topFrame = new Frame(pc, sp, 'PC');
@@ -896,9 +957,13 @@ registers   yes|no: Enable registers logging
 			let instr = '';
 			try {
 				// Get disassembly of instruction
-				instr = this.cpuTransactionLog.getInstruction();
+				const currentLine = this.cpuTransactionLog.getLine();
+				instr = this.cpuTransactionLog.getInstruction(currentLine);
 				// Move forward in file
 				this.cpuTransactionLog.nextLine();
+				// Handle stack
+				const nextLine = this.cpuTransactionLog.getLine();
+				this.handleReverseDebugStackFwrd(currentLine, nextLine);
 				// Clear register cache
 				this.RegisterCache = undefined;
 			}
