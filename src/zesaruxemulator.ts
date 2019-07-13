@@ -63,6 +63,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// Handles the transaction log (coverage and reverse debugging)
 	protected cpuTransactionLog: ZesaruxTransactionLog;
 
+	/// The virtual stack used during reverse debugging.
+	protected reverseDbgStack: RefList;
+
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
 
@@ -442,9 +445,9 @@ registers   yes|no: Enable registers logging
 			}
 			else {
 				// Neither CALL nor RST.
-					// Get last call frame
-					const frame = frames.getObject(lastCallFrameIndex);
-					frame.stack.push(addr);
+				// Get last call frame
+				const frame = frames.getObject(lastCallFrameIndex);
+				frame.stack.push(addr);
 			}
 
 
@@ -456,9 +459,30 @@ registers   yes|no: Enable registers logging
 
 	/**
 	 * Returns the stack frames.
+	 * Either the "real" ones from ZEsarUX or the virtual ones during reverse debugging.
 	 * @param handler The handler to call when ready.
 	 */
 	public stackTraceRequest(handler:(frames: RefList)=>void): void {
+		// Check for reverse debugging.
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Return virtual stack
+			assert(this.reverseDbgStack);
+			handler(this.reverseDbgStack);
+		}
+		else {
+			// "real" stack trace
+			assert(this.reverseDbgStack == undefined);
+			this.realStackTraceRequest(handler);
+		}
+	}
+
+
+	/**
+	 * Returns the "real" stack frames from ZEsarUX.
+	 * (Opposed to the virtual one during reverse debug mode.)
+	 * @param handler The handler to call when ready.
+	 */
+	public realStackTraceRequest(handler:(frames: RefList)=>void): void {
 		// Create a call stack / frame array
 		const frames = new RefList();
 
@@ -476,7 +500,7 @@ registers   yes|no: Enable registers logging
 
 			// Check if callstack need to be called
 			if(depth > 0) {
-				// get stack from zesarux
+				// Get stack from zesarux
 				zSocket.send('get-stack-backtrace '+depth, data => {
 					Log.log('Call stack: ' + data);
 					// add the received stack, something like:
@@ -534,7 +558,8 @@ registers   yes|no: Enable registers logging
 			return;
 		}
 
-
+		// Make sure that reverse debug stack is cleared
+		this.clearReverseDbgStack();
 		// Change state
 		this.state = EmulatorState.RUNNING;
 		// Handle code coverage
@@ -574,34 +599,127 @@ registers   yes|no: Enable registers logging
 	}
 
 
-	 /**
-	  * 'reverse continue' debugger program execution.
-	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	  */
-	 public reverseContinue(handler:(reason: string, error?: string)=>void) : void {
-		let errorText: string|undefined;
-		let reason;
-		try {
-			//this.state = EmulatorState.RUNNING;
-			//this.state = EmulatorState.IDLE;
-			// Loop over all lines, reverse
-			reason = 'Break: Reached end of instruction history.';
-			while(this.cpuTransactionLog.prevLine()) {
-				//const addr = this.cpuTransactionLog.getAddress();
-				// Check for breakpoint
-				// TODO: ...
+	/**
+	 * Clears the stack used for reverse debugging.
+	 * Called when leaving the reverse debug mode.
+	 */
+	protected clearReverseDbgStack() {
+		this.reverseDbgStack = undefined as any;
+	}
+
+
+	/**
+	 * Returns the pointer to the virtual reverse debug stack.
+	 * If it does not exist yet it will be created and prefilled with the current
+	 * (memory) stack values.
+	 */
+	protected prepareReverseDbgStack(handler:() => void) {
+		if(!this.reverseDbgStack) {
+			// Prefill array with current stack
+			this.realStackTraceRequest(frames => {
+				this.reverseDbgStack = frames;
+				handler();
+			});
+		}
+		else {
+			// Call immediately
+			handler();
+		}
+	}
+
+
+	/**
+	 * Handles the current instruction and the previous one and distinguished what to
+	 * do on the virtual reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.'
+	 * But if a "RET" instruction is found also the 'next' PC value is pushed
+	 * to the stack.
+	 * @param currentLine The current line of the transaction log.
+	 * @param prevLine The previous line of the transaction log. (The one that
+	 * comes after currentLine)
+	 */
+	protected handleReverseDebugStackBack(currentLine: string, prevLine: string) {
+		assert(this.reverseDbgStack.length > 0);
+		// Remove current frame
+		//const lastFrame =
+		this.reverseDbgStack.shift();
+		// Check for RETx
+		const instr = this.cpuTransactionLog.getInstruction(currentLine);
+		if(instr.startsWith("RET")) {
+			// Create new frame with better name on stack
+			const regs = this.cpuTransactionLog.getRegisters(currentLine);
+			const pc = Z80Registers.parsePC(regs);
+			const sp = Z80Registers.parseSP(regs);
+			const name = 'TODO: CALL caller name';
+			// TODO: Need to find out if RST or CALL caller.
+			const frame = new Frame(pc, sp, name);
+			this.reverseDbgStack.unshift(frame);
+		}
+		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
+			// Check if the SP got bigger, if not we might have skipped a
+			// simulated RST only.
+			const currentRegs = this.cpuTransactionLog.getRegisters(currentLine);
+			const currentSP = Z80Registers.parseSP(currentRegs);
+			const prevRegs = this.cpuTransactionLog.getRegisters(prevLine);
+			const prevSP = Z80Registers.parseSP(prevRegs);
+			if(currentSP > prevSP) {
+				// Pop from call stack
+				assert(this.reverseDbgStack.length > 0);
+				this.reverseDbgStack.shift();
+			}
+		}
+
+		// Add current PC
+		const regs = this.cpuTransactionLog.getRegisters(currentLine);
+		const pc = Z80Registers.parsePC(regs);
+		const sp = Z80Registers.parseSP(regs);
+		const topFrame = new Frame(pc, sp, 'PC');
+		this.reverseDbgStack.unshift(topFrame);
+	}
+
+
+	/**
+	 * 'reverse continue' debugger program execution.
+	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 */
+	public reverseContinue(handler:(reason: string, error?: string)=>void) : void {
+		// Make sure the call stack exists
+		this.prepareReverseDbgStack(() => {
+			let errorText: string|undefined;
+			let reason;
+			try {
+				//this.state = EmulatorState.RUNNING;
+				//this.state = EmulatorState.IDLE;
+
+				// Get current PC
+				let lastLine = this.cpuTransactionLog.getLine();
+
+				// Loop over all lines, reverse
+				reason = 'Break: Reached end of instruction history.';
+				while(this.cpuTransactionLog.prevLine()) {
+					// Stack handling:
+					const currentLine = this.cpuTransactionLog.getLine();
+					this.handleReverseDebugStackBack(currentLine, lastLine);
+					// Remember
+					lastLine = currentLine;
+
+					// Breakpoint handling:
+					//const addr = this.cpuTransactionLog.getAddress();
+					// Check for breakpoint
+					// TODO: ...
+				}
+
+				// Clear register cache
+				this.RegisterCache = undefined;
+			}
+			catch(e) {
+				errorText = e;
+				reason = 'Break: Error occurred: ' + errorText;
 			}
 
-			// Clear register cache
-			this.RegisterCache = undefined;
-		}
-		catch(e) {
-			errorText = e;
-			reason = 'Break: Error occurred: ' + errorText;
-		}
-
-		// Call handler
-		handler(reason, errorText);
+			// Call handler
+			handler(reason, errorText);
+		});
 	}
 
 
@@ -702,6 +820,9 @@ registers   yes|no: Enable registers logging
 			return;
 		}
 
+		// Make sure that reverse debug stack is cleared
+		this.clearReverseDbgStack();
+
 		// Zesarux is very special in the 'step-over' behavior.
 		// In case of e.g a 'jp cc, addr' it will never return
 		// if the condition is met because
@@ -789,6 +910,9 @@ registers   yes|no: Enable registers logging
 			handler(instr, undefined, undefined, errorText);
 			return;
 		}
+
+		// Make sure that reverse debug stack is cleared
+		this.clearReverseDbgStack();
 
 		// Normal step into.
 		this.getRegisters(data => {
@@ -947,7 +1071,9 @@ registers   yes|no: Enable registers logging
 		// Then a breakpoint is created that triggers when the SP changes to that address.
 		// I.e. when the RET (or (RET cc) gets executed.
 
-		// get current stackpointer
+		// Make sure that reverse debug stack is cleared
+		this.clearReverseDbgStack();
+		// Get current stackpointer
 		this.getRegisters( data => {
 			// Get SP
 			const sp = Z80Registers.parseSP(data);
@@ -1031,22 +1157,30 @@ registers   yes|no: Enable registers logging
 	  * @param handler The handler that is called after the step is performed.
 	  */
 	 public stepBack(handler:(instruction: string, error?: string)=>void): void {
-		let errorText;
-		let instr = '';
-		try {
-			// Move backwards in file
-			if(!this.cpuTransactionLog.prevLine())
-				throw Error('Already at start of instruction history!')
-			// Get instruction
-			instr = this.cpuTransactionLog.getLine();
-			// Clear register cache
-			this.RegisterCache = undefined;
-		}
-		catch(e) {
-			errorText = e;
-		}
-		// Call handler
-		handler(instr, errorText);
+		// Make sure the call stack exists
+		this.prepareReverseDbgStack(() => {
+			let errorText;
+			let instr = '';
+			try {
+				// Remember previous position
+				const lastLine = this.cpuTransactionLog.getLine();
+				// Move backwards in file
+				if(!this.cpuTransactionLog.prevLine())
+					throw Error('Already at start of instruction history!')
+				// Stack handling:
+				const currentLine = this.cpuTransactionLog.getLine();
+				this.handleReverseDebugStackBack(currentLine, lastLine);
+				// Get instruction
+				instr = this.cpuTransactionLog.getInstruction(currentLine);
+				// Clear register cache
+				this.RegisterCache = undefined;
+			}
+			catch(e) {
+				errorText = e;
+			}
+			// Call handler
+			handler(instr, errorText);
+		});
 	}
 
 

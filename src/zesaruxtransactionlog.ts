@@ -394,9 +394,10 @@ export class ZesaruxTransactionLog {
 	/**
 	 * @returns The registers of the current line.
 	 */
-	public getRegisters(): string {
+	public getRegisters(line?: string): string {
 		// Get current line
-		const line = this.getLine();
+		if(!line)
+			line = this.getLine();
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Turn into same format as for 'get-registers'
 		const k = line.indexOf('PC=');
@@ -407,11 +408,14 @@ export class ZesaruxTransactionLog {
 
 
 	/**
+	 * @param line If given the instruction is taken from the line, otherwise
+	 * 'getLine()' is called.
 	 * @returns The instruction, e.g. "LD A,1E".
 	 */
-	public getInstruction(): string {
+	public getInstruction(line?: string): string {
 		// Get current line
-		const line = this.getLine();
+		if(!line)
+			line = this.getLine();
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction
 		const k = line.indexOf('PC=');
@@ -424,10 +428,12 @@ export class ZesaruxTransactionLog {
 	/**
 	 * @returns The address of the current line. Uses the first 4 digits simply.
 	 */
-	// TODO: Brauch ich die?
-	public getAddress(): number {
+	public getAddress(line?: string): number {
 		// Get current line
-		const line = this.getLine(4);
+		if(!line)
+			line = this.getLine(4);
+		else
+			line = line.substr(0,4);
 		// Convert address
 		const addr = parseInt(line, 16);
 		return addr;
