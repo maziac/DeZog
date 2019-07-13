@@ -12,7 +12,7 @@ import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { CallSerializer } from './callserializer';
-import { Coverage } from './coverage';
+import { Decoration } from './decoration';
 
 
 
@@ -248,7 +248,7 @@ export class Z80UnitTests {
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 
 			// Reset the code coverage
-			Coverage.clearLineCoverage();
+			Decoration.clearLineCoverage();
 
 			// Start emulator.
 			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
@@ -874,7 +874,7 @@ export class Z80UnitTests {
 		Z80UnitTests.CancelAllRemainingResults();
 		// Show coverage, only the elder lines
 		const emptySet = new Set<number>();
-		Coverage.showCodeCoverage([emptySet, Z80UnitTests.allCoveredAddresses]);
+		Decoration.showCodeCoverage([emptySet, Z80UnitTests.allCoveredAddresses]);
 		Z80UnitTests.lastCoveredAddresses = undefined as any;
 
 		// Delay this:

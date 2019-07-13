@@ -6,7 +6,7 @@ import { EmulDebugSessionClass } from './emuldebugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import * as assert from 'assert';
-import { CoverageClass, Coverage } from './coverage';
+import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
 
 
@@ -62,13 +62,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Command to enable code coverage display and analyzes.
 	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.enableCodeCoverage', () => {
-		if(Coverage)
-			Coverage.enableCodeCoverage();
+		if(Decoration)
+			Decoration.enableCodeCoverage();
 	}));
 	// Command to disable code coverage display and analyzes.
 	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.disableCodeCoverage', () => {
-		if(Coverage)
-			Coverage.disableCodeCoverage();
+		if(Decoration)
+			Decoration.disableCodeCoverage();
 	}));
 
 	// Command to execute all unit tests
@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(provider);
 
 	// Initialize the Coverage singleton.
-	CoverageClass.Initialize(context);
+	DecorationClass.Initialize(context);
 }
 
 

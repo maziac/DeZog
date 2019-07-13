@@ -24,7 +24,7 @@ import { Disassembler } from './disassembler/disasm';
 import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import * as BinaryFile from 'binary-file';
-import { Coverage } from './coverage';
+import { Decoration } from './decoration';
 import { Z80UnitTests } from './z80unittests';
 
 
@@ -389,7 +389,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		}
 
 		// Reset the code coverage
-		Coverage.clearLineCoverage();
+		Decoration.clearLineCoverage();
 
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
@@ -464,7 +464,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		Emulator.on('coverage', coveredAddresses => {
 			// Covered addresses (since last break) have been sent
-			Coverage.showCodeCoverage(coveredAddresses);
+			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
 		Emulator.on('warning', message => {

@@ -4,14 +4,15 @@ import { Settings } from './settings';
 import * as assert from 'assert';
 
 
-/// Is a singleton. Initilaize in 'activate'.
-export let Coverage;
+/// Is a singleton. Initialize in 'activate'.
+export let Decoration;
 
 
 /**
- * A singleton that holds the code coverage.
+ * A singleton that holds the editor decorations for code coverage
+ * and reverse debugging.
  */
-export class CoverageClass {
+export class DecorationClass {
 	/// The decoration type for covered lines.
 	protected coverageDecoType: vscode.TextEditorDecorationType;
 
@@ -27,9 +28,9 @@ export class CoverageClass {
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize(context: vscode.ExtensionContext) {
 		// Create new singleton
-		Coverage = new CoverageClass();
+		Decoration = new DecorationClass();
 		// Set the absoute paths.
-		Coverage.coverageDecoType = vscode.window.createTextEditorDecorationType({
+		Decoration.coverageDecoType = vscode.window.createTextEditorDecorationType({
 			/*
 			borderWidth: '1px',
 			borderStyle: 'solid',
@@ -58,7 +59,7 @@ export class CoverageClass {
 			}
 		});
 		// For the elder lines a little lighter
-		Coverage.coverageElderDecoType = vscode.window.createTextEditorDecorationType({
+		Decoration.coverageElderDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			light: {
