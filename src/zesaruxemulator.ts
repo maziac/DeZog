@@ -724,7 +724,7 @@ registers   yes|no: Enable registers logging
 				const callAddr = Z80Registers.parsePC(nextRegs);
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
 				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-				const name = ((instr.startsWith("CALL")) ? "CALL" : "RST") + labelCallAddr;
+				const name = ((instr.startsWith("CALL")) ? "CALL " : "RST ") + labelCallAddr;
 				const frame = new Frame(pc, currentSP, name);
 				this.reverseDbgStack.unshift(frame);
 			}
@@ -809,8 +809,8 @@ registers   yes|no: Enable registers logging
 			// work just like a "stepInto". However this should happen very seldomly.
 
 			// Get current instruction
-			const instruction = this.cpuTransactionLog.getInstruction();
-			const instrUpper = instruction.toUpperCase();
+			let currentLine = this.cpuTransactionLog.getLine();
+			let instruction = this.cpuTransactionLog.getInstruction(currentLine);
 			// Read SP
 			const regs = this.cpuTransactionLog.getRegisters();
 			let expectedSP = Z80Registers.parseSP(regs);
@@ -818,15 +818,15 @@ registers   yes|no: Enable registers logging
 
 
 			// Check for changing SP
-			if(instrUpper.startsWith('PUSH'))
+			if(instruction.startsWith('PUSH'))
 				expectedSP -= 2;
-			else if(instrUpper.startsWith('POP'))
+			else if(instruction.startsWith('POP'))
 				expectedSP += 2;
-			else if(instrUpper.startsWith('DEC SP'))
+			else if(instruction.startsWith('DEC SP'))
 				expectedSP --;
-			else if(instrUpper.startsWith('INC SP'))
+			else if(instruction.startsWith('INC SP'))
 				expectedSP ++;
-			else if(instrUpper.startsWith('LD SP,')) {
+			else if(instruction.startsWith('LD SP,')) {
 				const src = instruction.substr(6);
 				if(src.startsWith('HL'))
 					expectedSP = Z80Registers.parseHL(regs);	// LD SP,HL
@@ -842,31 +842,42 @@ registers   yes|no: Enable registers logging
 
 			// Check for RET. There are 2 possibilities if RET was conditional.
 			let expectedSP2 = expectedSP;
-			if(instrUpper.startsWith('RET'))
+			if(instruction.startsWith('RET'))
 				expectedSP2 += 2;
 
 			let errorText;
 			try {
-				if(dontCheckSP) {
-					// Get next instruction
-					this.cpuTransactionLog.nextLine();
-				}
-				else {
-					// Find next line with same SP
-					while(true) {
-						// Next line
-						if(!this.cpuTransactionLog.nextLine()) {
-							break;	// End of file reached
-						};
-						// Read SP
-						const regs = this.cpuTransactionLog.getRegisters();
-						const sp = Z80Registers.parseSP(regs);
-						// Check expected SPs
-						if(expectedSP == sp)
-							break;
-						if(expectedSP2 == sp)
-							break;
+				// Find next line with same SP
+				while(true) {
+					// Next line
+					const inRevDbgMode = this.cpuTransactionLog.nextLine();
+					// Handle stack
+					const nextLine = this.cpuTransactionLog.getLine();
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+
+					// Check for breaks
+					if(!inRevDbgMode) {
+						break;	// End of file reached
+					};
+
+					if(dontCheckSP) {
+						// Break after first line
+						break;
 					}
+
+					// TODO: need to check for breakpoint
+
+					// Read SP
+					const regs = this.cpuTransactionLog.getRegisters();
+					const sp = Z80Registers.parseSP(regs);
+					// Check expected SPs
+					if(expectedSP == sp)
+						break;
+					if(expectedSP2 == sp)
+						break;
+
+					// Next
+					currentLine = nextLine;
 				}
 			}
 			catch(e) {
