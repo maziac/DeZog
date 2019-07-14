@@ -561,11 +561,12 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * 'continue' debugger program execution.
 	 * @param contExecHandler The handler that is called when the run command is executed.
-	 * @param contStoppedHandler(data, tStates, cpuFreq) The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * @param contStoppedHandler(reason, tStates, cpuFreq) The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * reason contains the stop reason as string.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public continue(contExecHandler: (data: string, tStates?: number, cpuFreq?: number, error?: string)=>void, contStoppedHandler: (data)=>void): void {
+	public continue(contStoppedHandler: (reason: string, tStates?: number, time?: number)=>void) {
 		assert(false);	// override this
 	}
 

@@ -524,15 +524,15 @@ registers   yes|no: Enable registers logging
 	/**
 	 * 'continue' debugger program execution.
 	 * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * reason contains the stop reason as string.
 	 * tStates contains the number of tStates executed and time is the time it took for execution,
 	 * i.e. tStates multiplied with current CPU frequency.
  	 */
-	public continue(contStoppedHandler: (data: string, tStates?: number, time?: number, error?: string)=>void): void {
+	public continue(contStoppedHandler: (reason: string, tStates?: number, time?: number)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuTransactionLog.isInStepBackMode()) {
 			// continue in reverse debugging will run until the start of the transaction log
 			// or until a breakpoint condition is true.
-			let errorText: string|undefined;
 			let reason = 'Break: Reached start of instruction history.';
 			try {
 				//this.state = EmulatorState.RUNNING;
@@ -556,8 +556,7 @@ registers   yes|no: Enable registers logging
 				}
 			}
 			catch(e) {
-				errorText = e;
-				reason = 'Break: Error occurred: ' + errorText;
+				reason = 'Break: Error occurred: ' + e;
 			}
 
 			// Decoration
@@ -567,7 +566,7 @@ registers   yes|no: Enable registers logging
 			this.RegisterCache = undefined;
 
 			// Call handler
-			contStoppedHandler(reason, undefined, undefined, errorText);
+			contStoppedHandler(reason, undefined, undefined);
 			return;
 		}
 

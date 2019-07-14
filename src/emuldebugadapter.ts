@@ -1070,17 +1070,14 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * vscode UI (continueRequest).
 	 */
 	public emulatorContinue() {
-		Emulator.continue((data, tStates, cpuFreq) => {
+		Emulator.continue((reason, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
-
-			// Log reason
-			console.log(data);
 
 			// Display T-states and time
 			this.showUsedTStates('Continue. ', tStates, cpuFreq);
 
 			// Send output event to inform the user about the reason
-			vscode.debug.activeDebugConsole.appendLine(data);
+			vscode.debug.activeDebugConsole.appendLine(reason);
 
 			// React depending on internal state.
 			if(EmulDebugSessionClass.state == DbgAdaperState.NORMAL) {
