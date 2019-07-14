@@ -1291,8 +1291,9 @@ registers   yes|no: Enable registers logging
 				const currentLine = this.revDbgPrev();
 				if(!currentLine)
 					throw Error('Reached end of instruction history.')
-				// Get instruction
-				instr = this.cpuTransactionLog.getInstruction(currentLine);
+				// Get instruction + address
+				const addr = this.cpuTransactionLog.getAddress(currentLine);
+				instr = addr.toString(16).toUpperCase() + ' ' + this.cpuTransactionLog.getInstruction(currentLine);
 				// Stack handling:
 				this.handleReverseDebugStackBack(currentLine, lastLine);
 			}
