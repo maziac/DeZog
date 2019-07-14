@@ -133,6 +133,10 @@ export class EmulatorClass extends EventEmitter {
 	public logpointsEnabled = new Map<string, boolean>();
 
 
+	/// The addresses of the revision history in the right order.
+	protected revDbgHistory = new Array<number>();
+
+
 	/// Initializes the machine.
 	public init() {
 		// Init the registers
@@ -1025,9 +1029,19 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * Clears the instruction history.
 	 * For reverse debugging and code coverage.
+	 * This is e.g. overridden in ZesaruxEmulator to delete the transaction logs.
 	 */
 	public clearInstructionHistory() {
-		assert(false);	// override this
+		this.revDbgHistory.length = 0;
 	}
+
+
+	/**
+	 * Emits 'hitory' to signal that the files should be decorated.
+	 */
+	public emitRevDbgHistory() {
+		this.emit('history', this.revDbgHistory);
+	}
+
 }
 

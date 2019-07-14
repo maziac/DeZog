@@ -28,9 +28,6 @@ export class DecorationClass {
 	/// for reverse debugging.
 	protected revDbgFileMap: Map<string, Set<number>>;
 
-	/// The addresses of the revision history in the right order.
-	protected revDbgHistory: Array<number>;
-
 
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize(context: vscode.ExtensionContext) {
@@ -89,7 +86,7 @@ export class DecorationClass {
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#045FB4',
+				backgroundColor: '#033563',
 			}
 		});
 	}
@@ -110,6 +107,7 @@ export class DecorationClass {
 		});
 	}
 
+
 	/**
 	 * Loops through all active editors and clear the coverage decorations.
 	 */
@@ -118,8 +116,22 @@ export class DecorationClass {
 		this.coverageFileMapElder = new Map<string, Set<number>>();
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			editor.setDecorations(this.coverageDecoType, []);
-			editor.setDecorations(this.coverageElderDecoType, []);
+			editor.setDecorations(Decoration.coverageDecoType, []);
+			editor.setDecorations(Decoration.coverageElderDecoType, []);
+		}
+	}
+
+
+
+
+	/**
+	 * Loops through all active editors and clear the coverage decorations.
+	 */
+	public clearRevDbgHistory() {
+		this.revDbgFileMap = new Map<string, Set<number>>();
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			editor.setDecorations(Decoration.revDbgDecoType, []);
 		}
 	}
 
@@ -138,7 +150,7 @@ export class DecorationClass {
 
 	/**
 	 * Disables the code coverage.
-	 * If the emulator is running (debug session) it is told to stopcollecting
+	 * If the emulator is running (debug session) it is told to stop collecting
 	 * the executed addresses.
 	 * Anyhow all displayed covered lines are reset.
 	 */
@@ -283,33 +295,14 @@ export class DecorationClass {
 
 
 	/**
-	 * Adds one address to the reverse debug decoration.
-	 * @param addr The address to add.
+	 * Is called whenever the reverse debug history changes.
+	 * Will set the decoration.
+	 * @param addresses The address to decorate.
 	 */
-	public pushRevDbgAddress(addr: number) {
-		// Push address
-		this.revDbgHistory.push(addr);
-		// Convert to line addresses
-		this.decorateRevDbgHistory();
-	}
-
-
-	/**
-	 * Removes the last address from the reverse debug decoration.
-	 */
-	public popRevDbgAddress(addr: number) {
-		// Push address
-		this.revDbgHistory.pop();
-		// Convert to line addresses
-		this.decorateRevDbgHistory();
-	}
-
-
-	protected decorateRevDbgHistory() {
+	public showRevDbgHistory(addresses: Array<number>) {
 		// Loop over all all addresses
 		this.revDbgFileMap = new Map<string, Set<number>>();
-		const addrs = new Set(this.revDbgHistory);	// Remove same addresses
-		addrs.forEach(addr => {
+		addresses.forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
 			const filename = location.fileName;
@@ -329,7 +322,7 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setCoverageDecoration(editor);
+			this.setRevDbgDecoration(editor);
 		}
 	}
 

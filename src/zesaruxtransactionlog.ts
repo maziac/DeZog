@@ -341,9 +341,6 @@ export class ZesaruxTransactionLog {
 		if(this.isAtStart())
 			return false;
 
-		// Do read 2 lines if we are at the end.
-
-
 		// Read buffer if at the end
 		if(!this.cacheBuffer) {
 			this.readCacheForward();
@@ -366,14 +363,14 @@ export class ZesaruxTransactionLog {
 	/**
 	 * Returns the line at the current (cache) offset.
 	 * If cache does not exists it return undefined.
-	 * @param count If 0 the whole stirng is returned. If not 0 only the count number of
+	 * @param count If 0 the whole string is returned. If not 0 only the count number of
 	 * characters are returned.
 	 * @returns A string or '' if cache is undefined.
 	 */
-	public getLine(count = 0): string {
+	public getLine(count = 0): string|undefined {
 		// Cache should exist
 		if(!this.cacheBuffer || this.cacheBuffer.length == 0)
-			return '';
+			return undefined;
 
 		let end;
 		if(count == 0) {
@@ -396,8 +393,10 @@ export class ZesaruxTransactionLog {
 	 */
 	public getRegisters(line?: string): string {
 		// Get current line
-		if(!line)
-			line = this.getLine();
+		if(!line) {
+			line = this.getLine() as string;
+			assert(line);
+		}
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Turn into same format as for 'get-registers'
 		const k = line.indexOf('PC=');
@@ -414,8 +413,10 @@ export class ZesaruxTransactionLog {
 	 */
 	public getInstruction(line?: string): string {
 		// Get current line
-		if(!line)
-			line = this.getLine();
+		if(!line) {
+			line = this.getLine() as string;
+			assert(line);
+		}
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction
 		const k = line.indexOf('PC=');
@@ -430,8 +431,10 @@ export class ZesaruxTransactionLog {
 	 */
 	public getAddress(line?: string): number {
 		// Get current line
-		if(!line)
-			line = this.getLine(4);
+		if(!line) {
+			line = this.getLine(4) as string;
+			assert(line);
+		}
 		else
 			line = line.substr(0,4);
 		// Convert address

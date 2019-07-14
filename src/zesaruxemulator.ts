@@ -541,19 +541,13 @@ registers   yes|no: Enable registers logging
 
 				// Getcurrent line
 				let currentLine = this.cpuTransactionLog.getLine();
+				assert(currentLine);
 
 				// Loop over all lines, reverse
-				while(true) {
+				while(currentLine) {
 					// Handle stack
-					const inRevDbgMode = this.cpuTransactionLog.nextLine();
-					// Handle stack
-					const nextLine = this.cpuTransactionLog.getLine();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
-
-					// Check for breaks
-					if(!inRevDbgMode) {
-						break;	// End of file reached
-					};
 
 					// Check for breakpoint
 					// TODO: ...
@@ -561,14 +555,17 @@ registers   yes|no: Enable registers logging
 					// Next
 					currentLine = nextLine;
 				}
-
-				// Clear register cache
-				this.RegisterCache = undefined;
 			}
 			catch(e) {
 				errorText = e;
 				reason = 'Break: Error occurred: ' + errorText;
 			}
+
+			// Decoration
+			this.emitRevDbgHistory();
+
+			// Clear register cache
+			this.RegisterCache = undefined;
 
 			// Call handler
 			contStoppedHandler(reason, undefined, undefined, errorText);
@@ -653,7 +650,8 @@ registers   yes|no: Enable registers logging
 	 * to the stack.
 	 * @param currentLine The current line of the transaction log.
 	 * @param prevLine The previous line of the transaction log. (The one that
-	 * comes after currentLine)
+	 * comes after currentLine). This can alo be the cached register values for
+	 * the first line. 'getRegisters' can cope with both formats.
 	 */
 	protected handleReverseDebugStackBack(currentLine: string, prevLine: string) {
 		assert(this.reverseDbgStack.length > 0);
@@ -706,9 +704,10 @@ registers   yes|no: Enable registers logging
 	 * comes after currentLine.) If that is empty the start f the log has been reached.
 	 * In that case the reverseDbgStack is cleared because the real stack can be used.
 	 */
-	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string) {
+	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string|undefined) {
+		assert(currentLine);
 		// Check for end
-		if(nextLine.length == 0) {
+		if(!nextLine) {
 			this.reverseDbgStack = undefined as any;
 			return;
 		}
@@ -768,17 +767,26 @@ registers   yes|no: Enable registers logging
 				//this.state = EmulatorState.RUNNING;
 				//this.state = EmulatorState.IDLE;
 
-				// Get current PC
+				// Get current PC (line)
 				let lastLine = this.cpuTransactionLog.getLine();
+				if(!lastLine) {
+					// The first line . We need to use the current registers instead of the line.
+					lastLine = this.RegisterCache as string;
+					assert(lastLine);
+				}
 
 				// Loop over all lines, reverse
 				reason = 'Break: Reached end of instruction history.';
-				while(this.cpuTransactionLog.prevLine()) {
+				while(true) {
+					// Get line
+					const currentLine = this.revDbgPrev();
+					if(!currentLine)
+						break;
 					// Stack handling:
-					const currentLine = this.cpuTransactionLog.getLine();
 					this.handleReverseDebugStackBack(currentLine, lastLine);
 					// Remember
-					lastLine = currentLine;
+					lastLine = currentLine as string;
+					assert(lastLine);
 
 					// Breakpoint handling:
 					//const addr = this.cpuTransactionLog.getAddress();
@@ -826,6 +834,7 @@ registers   yes|no: Enable registers logging
 
 			// Get current instruction
 			let currentLine = this.cpuTransactionLog.getLine();
+			assert(currentLine);
 			let instruction = this.cpuTransactionLog.getInstruction(currentLine);
 			// Read SP
 			const regs = this.cpuTransactionLog.getRegisters();
@@ -864,17 +873,10 @@ registers   yes|no: Enable registers logging
 			let errorText;
 			try {
 				// Find next line with same SP
-				while(true) {
-					// Next line
-					const inRevDbgMode = this.cpuTransactionLog.nextLine();
+				while(currentLine) {
 					// Handle stack
-					const nextLine = this.cpuTransactionLog.getLine();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
-
-					// Check for breaks
-					if(!inRevDbgMode) {
-						break;	// End of file reached
-					};
 
 					if(dontCheckSP) {
 						// Break after first line
@@ -899,6 +901,9 @@ registers   yes|no: Enable registers logging
 			catch(e) {
 				errorText = e;
 			}
+
+			// Decoration
+			this.emitRevDbgHistory();
 
 			// Clear register cache
 			this.RegisterCache = undefined;
@@ -984,19 +989,22 @@ registers   yes|no: Enable registers logging
 			let instr = '';
 			try {
 				// Get disassembly of instruction
-				const currentLine = this.cpuTransactionLog.getLine();
+				const currentLine = this.cpuTransactionLog.getLine() as string;
+				assert(currentLine);
 				instr = this.cpuTransactionLog.getInstruction(currentLine);
-				// Move forward in file
-				this.cpuTransactionLog.nextLine();
 				// Handle stack
-				const nextLine = this.cpuTransactionLog.getLine();
+				const nextLine = this.revDbgNext();
 				this.handleReverseDebugStackFwrd(currentLine, nextLine);
-				// Clear register cache
-				this.RegisterCache = undefined;
 			}
 			catch(e) {
 				errorText = e;
 			}
+
+			// Decoration
+			this.emitRevDbgHistory();
+
+			// Clear register cache
+			this.RegisterCache = undefined;
 
 			// Call handler
 			handler(instr, undefined, undefined, errorText);
@@ -1123,6 +1131,7 @@ registers   yes|no: Enable registers logging
 
 			// Get current line
 			let currentLine = this.cpuTransactionLog.getLine();
+			assert(currentLine);;
 
 			// Read SP
 			let regs = this.cpuTransactionLog.getRegisters(currentLine);
@@ -1131,17 +1140,10 @@ registers   yes|no: Enable registers logging
 			// Do as long as necessary
 			let errorText;
 			try {
-				while(true) {
+				while(currentLine) {
 					// Handle stack
-					const inRevDbgMode = this.cpuTransactionLog.nextLine();
-					// Handle stack
-					const nextLine = this.cpuTransactionLog.getLine();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
-
-					// Check for breaks
-					if(!inRevDbgMode) {
-						break;	// End of file reached
-					};
 
 					// Get current instruction
 					const instruction = this.cpuTransactionLog.getInstruction(currentLine);
@@ -1153,7 +1155,6 @@ registers   yes|no: Enable registers logging
 						const sp = Z80Registers.parseSP(regs);
 						// Check SP
 						if(sp >= startSP) {
-							//this.cpuTransactionLog.nextLine();
 							break;
 						}
 					}
@@ -1165,6 +1166,9 @@ registers   yes|no: Enable registers logging
 			catch(e) {
 				errorText = e;
 			}
+
+			// Decoration
+			this.emitRevDbgHistory();
 
 			// Clear register cache
 			this.RegisterCache = undefined;
@@ -1272,21 +1276,32 @@ registers   yes|no: Enable registers logging
 			let instr = '';
 			try {
 				// Remember previous position
-				const lastLine = this.cpuTransactionLog.getLine();
+				let lastLine = this.cpuTransactionLog.getLine() as string;
+				if(!lastLine) {
+					// The first line . We need to use the current registers instead of the line.
+					lastLine = this.RegisterCache as string;
+					assert(lastLine);
+				}
+
 				// Move backwards in file
-				if(!this.cpuTransactionLog.prevLine())
+				const currentLine = this.revDbgPrev();
+				if(!currentLine)
 					throw Error('Already at start of instruction history!')
-				// Stack handling:
-				const currentLine = this.cpuTransactionLog.getLine();
-				this.handleReverseDebugStackBack(currentLine, lastLine);
 				// Get instruction
 				instr = this.cpuTransactionLog.getInstruction(currentLine);
-				// Clear register cache
-				this.RegisterCache = undefined;
+				// Stack handling:
+				this.handleReverseDebugStackBack(currentLine, lastLine);
 			}
 			catch(e) {
 				errorText = e;
 			}
+
+			// Decoration
+			this.emitRevDbgHistory();
+
+			// Clear register cache
+			this.RegisterCache = undefined;
+
 			// Call handler
 			handler(instr, errorText);
 		});
@@ -1965,12 +1980,48 @@ registers   yes|no: Enable registers logging
 	 * Clears the instruction history.
 	 * For reverse debugging and code coverage.
 	 * This will call 'cpu-transaction-log truncate yes' to clear the log in Zesarux.
-	 * And it will delete the rotated files (As zesarux is not doing this).
+	 * And it will delete the rotated files.
 	 */
 	public clearInstructionHistory() {
+		super.clearInstructionHistory();
 		zSocket.send('cpu-transaction-log truncate yes');
 		if(this.cpuTransactionLog)
 			this.cpuTransactionLog.deleteRotatedFiles();
+	}
+
+
+	/**
+	 * @returns Returns the previous line in the transaction log.
+	 * If at end it returns undefined.
+	 */
+	protected revDbgPrev(): string|undefined {
+		// Get line
+		let line;
+		if(this.cpuTransactionLog.prevLine()) {
+			line = this.cpuTransactionLog.getLine();
+			// Add to history
+			if(line) {
+				const addr = parseInt(line.substr(0,4), 16);
+				this.revDbgHistory.push(addr);
+			}
+		}
+		return line;
+	}
+
+	/**
+	 * @returns Returns the next line in the transaction log.
+	 * If at start it returns ''.
+	 */
+	protected revDbgNext(): string|undefined {
+		// Get line
+		let line;
+		if(this.cpuTransactionLog.nextLine()) {
+			// Remove one address from history
+			assert(this.revDbgHistory.length > 0);
+			this.revDbgHistory.pop();
+			line = this.cpuTransactionLog.getLine();
+		}
+		return line;
 	}
 }
 

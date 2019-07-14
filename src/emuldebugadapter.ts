@@ -388,8 +388,9 @@ export class EmulDebugSessionClass extends DebugSession {
 			EmulDebugSessionClass.unitTestHandler(this);
 		}
 
-		// Reset the code coverage
+		// Reset the code coverage and history
 		Decoration.clearLineCoverage();
+		Decoration.clearRevDbgHistory();
 
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
@@ -1320,7 +1321,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			Emulator.stepBack((instr, error) => {
 				// Print
 				if(instr.length > 0 )
-					vscode.debug.activeDebugConsole.appendLine(instr);
+					vscode.debug.activeDebugConsole.appendLine('StepBack: '+instr);
 
 				// Update memory dump etc.
 				this.update({step: true});
