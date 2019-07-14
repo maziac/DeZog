@@ -80,6 +80,10 @@ export class DecorationClass {
 		Decoration.revDbgDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
+			borderWidth: '1px',
+			borderStyle: 'dashed', //'solid',
+			borderRadius: '5px',
+			/*
 			light: {
 				// this color will be used in light color themes
 				backgroundColor: '#A9E2F3',
@@ -88,6 +92,7 @@ export class DecorationClass {
 				// this color will be used in dark color themes
 				backgroundColor: '#033563',
 			}
+			*/
 		});
 	}
 
@@ -169,6 +174,7 @@ export class DecorationClass {
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
 	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
+		return;
 		assert(coveredAddresses.length == 2);
 		// Loop over all immediate addresses
 		this.coverageFileMap = new Map<string, Set<number>>();
