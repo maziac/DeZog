@@ -494,7 +494,7 @@ export class EmulatorClass extends EventEmitter {
 		}
 		else {
 			// get new data
-			this.getRegistersFromEmulator( regs => {
+			this.getRegistersFromEmulator(regs => {
 				// Store received data
 				this.RegisterCache = regs;
 				//const regs = data || '';	// Just to remove warning
@@ -623,9 +623,11 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * 'step backwards' the program execution in the debugger.
-	 * @param handler The handler that is called after the step is performed.
-	 */
-	public stepBack(handler:(error?: string)=>void): void {
+	  * @param handler(instruction, error) The handler that is called after the step is performed.
+	  * instruction: e.g. "081C NOP"
+	  * error: If not undefined t holds the exception message.
+	  */
+	public stepBack(handler:(instruction: string, error: string)=>void): void {
 		assert(false);	// override this
 	}
 

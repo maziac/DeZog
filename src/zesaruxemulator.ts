@@ -471,7 +471,6 @@ registers   yes|no: Enable registers logging
 		}
 		else {
 			// "real" stack trace
-			assert(this.reverseDbgStack == undefined);
 			this.realStackTraceRequest(handler);
 		}
 	}
@@ -628,16 +627,16 @@ registers   yes|no: Enable registers logging
 	 * (memory) stack values.
 	 */
 	protected prepareReverseDbgStack(handler:() => void) {
-		if(!this.reverseDbgStack) {
+		if(this.cpuTransactionLog.isInStepBackMode()) {
+			// Call immediately
+			handler();
+		}
+		else {
 			// Prefill array with current stack
 			this.realStackTraceRequest(frames => {
 				this.reverseDbgStack = frames;
 				handler();
 			});
-		}
-		else {
-			// Call immediately
-			handler();
 		}
 	}
 
@@ -758,7 +757,7 @@ registers   yes|no: Enable registers logging
 	 * 'reverse continue' debugger program execution.
 	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	 */
-	public reverseContinue(handler:(reason: string, error?: string)=>void) : void {
+	public reverseContinue(handler:(reason: string)=>void) : void {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(() => {
 			let errorText: string|undefined;
@@ -794,16 +793,20 @@ registers   yes|no: Enable registers logging
 					// TODO: ...
 				}
 
-				// Clear register cache
-				this.RegisterCache = undefined;
 			}
 			catch(e) {
 				errorText = e;
 				reason = 'Break: Error occurred: ' + errorText;
 			}
 
+			// Decoration
+			this.emitRevDbgHistory();
+
+			// Clear register cache
+			this.RegisterCache = undefined;
+
 			// Call handler
-			handler(reason, errorText);
+			handler(reason);
 		});
 	}
 
@@ -1267,9 +1270,11 @@ registers   yes|no: Enable registers logging
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @param handler The handler that is called after the step is performed.
+	  * @param handler(instruction, error) The handler that is called after the step is performed.
+	  * instruction: e.g. "081C NOP"
+	  * error: If not undefined t holds the exception message.
 	  */
-	 public stepBack(handler:(instruction: string, error?: string)=>void): void {
+	 public stepBack(handler:(instruction: string, error: string)=>void): void {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(() => {
 			let errorText;
@@ -1286,7 +1291,7 @@ registers   yes|no: Enable registers logging
 				// Move backwards in file
 				const currentLine = this.revDbgPrev();
 				if(!currentLine)
-					throw Error('Already at start of instruction history!')
+					throw Error('Reached end of instruction history.')
 				// Get instruction
 				instr = this.cpuTransactionLog.getInstruction(currentLine);
 				// Stack handling:

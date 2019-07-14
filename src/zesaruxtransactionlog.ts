@@ -4,6 +4,7 @@ import * as glob from 'glob';
 
 
 
+
 /**
  * This class takes care of the ZEsarUX cpu transaction log.
  * The file records all executed instructions. If told to it can record
@@ -79,6 +80,7 @@ export class ZesaruxTransactionLog {
 		const files = this.getRotatedFiles();
 		this.countRotations = files.length;
 		this.nlCode = '\n'.charCodeAt(0);
+		this.file = 0;
 		this.init();
 	}
 
@@ -89,6 +91,9 @@ export class ZesaruxTransactionLog {
 	public init() {
 		this.cacheSizes = [];
 		this.fileRotation = -1;
+		if(this.file)
+			fs.closeSync(this.file);
+		this.file = 0;
 		this.fileOffset = 0;
 		this.clearCache();
 	}
@@ -169,13 +174,31 @@ export class ZesaruxTransactionLog {
 	 * Skips any file with file size = 0.
 	 */
 	protected prevRotatedFile() {
+		// Open the next file
+		this.fileRotation ++;
+		this.openRotatedFile();
+
 		// ZEsarUX writes, then checks the size and if too big it rotates the file.
 		// Then a new log file is created which is completely empty.
 		// So z80-debug has to deal with empty log files.
-		do {
-			this.fileRotation ++;
-			this.openRotatedFile();
-		} while(this.fileSize == 0 && this.file);	// As long a s file with size 0 is loaded.
+		if(this.fileRotation == 0) {
+			if(!this.file) {
+				// If main log file does not exist
+				this.fileRotation = -1;
+				return;
+			}
+			if(this.fileSize == 0) {
+				// Main log exists but is empty
+				// Check if rotated file exists
+				this.fileRotation ++;
+				this.openRotatedFile();
+				if(!this.file) {
+					// Rotated file does not exist, reset
+					this.fileRotation = -1;
+					return;
+				}
+			}
+		}
 	}
 
 
@@ -253,7 +276,7 @@ export class ZesaruxTransactionLog {
 			cacheSize *= 2;
 			// Safety check
 			if(cacheSize > this.MAX_CACHE_SIZE)
-				throw new Error('File contains no useful data.')
+				throw new Error('cpu-transaction-log file contains no useful data.')
 		}
 
 		// Compensate the clipping
@@ -321,6 +344,11 @@ export class ZesaruxTransactionLog {
 		// Check if we need to load a new cache
 		if(this.cacheOffset == this.cacheClip)
 			this.readCacheReverse();
+
+		// The cahcebuffer might still be empty if at the very beginning and
+		// the log file is empty.
+		if(!this.cacheBuffer)
+			return false;
 
 		// Find last newline.
 		const k = this.cacheBuffer.lastIndexOf(this.nlCode, this.cacheOffset-2);	// Skip last newline

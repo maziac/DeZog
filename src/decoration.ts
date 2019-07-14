@@ -174,7 +174,7 @@ export class DecorationClass {
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
 	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
-		return;
+		//return;
 		assert(coveredAddresses.length == 2);
 		// Loop over all immediate addresses
 		this.coverageFileMap = new Map<string, Set<number>>();
