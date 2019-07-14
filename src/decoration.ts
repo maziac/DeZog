@@ -28,6 +28,9 @@ export class DecorationClass {
 	/// for reverse debugging.
 	protected revDbgFileMap: Map<string, Set<number>>;
 
+	/// The addresses of the revision history in the right order.
+	protected revDbgHistory: Array<number>;
+
 
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize(context: vscode.ExtensionContext) {
@@ -102,8 +105,8 @@ export class DecorationClass {
 			// This is called for the editor that is going to hide and for the editor
 			// that is shown.
 			// Unfortunately there is no way to differentiate so both are handled.
-			if(editor && (this.coverageFileMap.size > 0 || this.coverageFileMapElder.size > 0))
-				this.setDecorationsForEditor(editor);
+			this.setCoverageDecoration(editor);
+			this.setRevDbgDecoration(editor);
 		});
 	}
 
@@ -196,17 +199,19 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setDecorationsForEditor(editor);
+			this.setCoverageDecoration(editor);
 		}
 	}
 
 
 	/**
 	 * Sets coverage decoration for the given editor.
-	 * @param coverageFileMap Association of a filename to a map of addresses.
 	 * @param editor The editor to decorate.
 	 */
-	protected setDecorationsForEditor(editor: vscode.TextEditor) {
+	protected setCoverageDecoration(editor: vscode.TextEditor|undefined) {
+		if(!editor)
+			return;
+
 		// Get filename
 		const edFilename = editor.document.fileName;
 
@@ -245,10 +250,21 @@ export class DecorationClass {
 			// Clear old decorations
 			editor.setDecorations(Decoration.coverageElderDecoType, []);
 		}
+	}
 
+	/**
+	 * Sets reverse debug decoration for the given editor.
+	 * @param editor The editor to decorate.
+	 */
+	protected setRevDbgDecoration(editor: vscode.TextEditor|undefined) {
+		if(!editor)
+			return;
+
+		// Get filename
+		const edFilename = editor.document.fileName;
 
 		// Reverse debugging lines
-		lines = this.revDbgFileMap.get(edFilename);
+		let lines = this.revDbgFileMap.get(edFilename);
 		if(lines) {
 			// Decorate all immediate lines (coverage)
 			const decorations = new Array<vscode.Range>();
@@ -262,6 +278,58 @@ export class DecorationClass {
 		else {
 			// Clear old decorations
 			editor.setDecorations(Decoration.revDbgDecoType, []);
+		}
+	}
+
+
+	/**
+	 * Adds one address to the reverse debug decoration.
+	 * @param addr The address to add.
+	 */
+	public pushRevDbgAddress(addr: number) {
+		// Push address
+		this.revDbgHistory.push(addr);
+		// Convert to line addresses
+		this.decorateRevDbgHistory();
+	}
+
+
+	/**
+	 * Removes the last address from the reverse debug decoration.
+	 */
+	public popRevDbgAddress(addr: number) {
+		// Push address
+		this.revDbgHistory.pop();
+		// Convert to line addresses
+		this.decorateRevDbgHistory();
+	}
+
+
+	protected decorateRevDbgHistory() {
+		// Loop over all all addresses
+		this.revDbgFileMap = new Map<string, Set<number>>();
+		const addrs = new Set(this.revDbgHistory);	// Remove same addresses
+		addrs.forEach(addr => {
+			// Get file location for address
+			const location = Labels.getFileAndLineForAddress(addr);
+			const filename = location.fileName;
+			if(filename.length == 0)
+				return;
+			// Get filename set
+			let lines = this.revDbgFileMap.get(filename);
+			if(!lines) {
+				// Create a new
+				lines = new Set<number>();
+				this.revDbgFileMap.set(filename, lines);
+			}
+			// Add address to set
+			lines.add(location.lineNr);
+		});
+
+		// Loop through all open editors.
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			this.setCoverageDecoration(editor);
 		}
 	}
 

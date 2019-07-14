@@ -467,6 +467,11 @@ export class EmulDebugSessionClass extends DebugSession {
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
+		Emulator.on('history', addresses => {
+			// Reverse debugging history addresses
+			Decoration.showRevDbgHistory(addresses);
+		});
+
 		Emulator.on('warning', message => {
 			// Some problem occurred
 			this.showWarning(message);
