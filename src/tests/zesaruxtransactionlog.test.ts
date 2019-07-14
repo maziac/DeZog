@@ -43,7 +43,7 @@ suite('ZesaruxTransactionLog', () => {
 			assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
 
 			let line = rf.getLine();
-			assert.equal(line, '', "Line should be empty.");
+			assert.equal(line, undefined, "Line should be undefined.");
 
 			rf.prevLine();
 			line = rf.getLine();
@@ -233,7 +233,7 @@ suite('ZesaruxTransactionLog', () => {
 
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
 			let line = rf.getLine();
-			assert.equal(line, '', "Line should be empty.");
+			assert.equal(line, undefined, "Line should be undefined.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
@@ -243,12 +243,12 @@ suite('ZesaruxTransactionLog', () => {
 			rf.nextLine();
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
 			line = rf.getLine();
-			assert.equal(line, '', "Line should be empty.");
+			assert.equal(line, undefined, "Line should be undefined.");
 
 			rf.nextLine();
 			assert.equal(rf.fileRotation, -1, "Internal counter wrong.");
 			line = rf.getLine();
-			assert.equal(line, '', "Line should be empty.");
+			assert.equal(line, undefined, "Line should be undefined.");
 
 			rf.prevLine();
 			assert.equal(rf.fileRotation, 0, "Internal counter wrong.");
@@ -461,7 +461,7 @@ suite('ZesaruxTransactionLog', () => {
 		assert.ok(!rf.isInStepBackMode(), "Should not be in Step Back Mode.");
 
 		let line = rf.getLine();
-		assert.equal(line, '', "Line should be empty.");
+		assert.equal(line, undefined, "Line should be undefined.");
 
 		rf.prevLine();
 		line = rf.getLine();
@@ -533,7 +533,7 @@ suite('ZesaruxTransactionLog', () => {
 
 		rf.nextLine();
 		line = rf.getLine();
-		assert.equal(line, '', "Line should be empty.");
+		assert.equal(line, undefined, "Line should be undefined.");
 
 		assert.ok(rf.isAtStart(), "Should be at start of file(s).");
 		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
@@ -541,7 +541,7 @@ suite('ZesaruxTransactionLog', () => {
 
 		rf.nextLine();
 		line = rf.getLine();
-		assert.equal(line, '', "Line should be empty.");
+		assert.equal(line, undefined, "Line should be undefined.");
 
 		assert.ok(rf.isAtStart(), "Should be at start of file(s).");
 		assert.ok(!rf.isAtEnd(), "Should not be at end of file(s).");
