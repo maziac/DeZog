@@ -1255,16 +1255,16 @@ export class EmulDebugSessionClass extends DebugSession {
 				// Update memory dump etc.
 				this.update({step: true});
 
+				// Output a possible problem (end of log reached)
+				if(error)
+					vscode.debug.activeDebugConsole.appendLine(error);
+
 				// Response
 				this.sendResponse(response);
 				this.serializer.endExec();
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
-
-				// Show a possible error
-				if(error)
-					this.showError(error);
 			});
 
 		});
@@ -1284,15 +1284,15 @@ export class EmulDebugSessionClass extends DebugSession {
 				// Display T-states and time
 				this.showUsedTStates('StepOut. ', tStates, cpuFreq);
 
+				// Output a possible problem (end of log reached)
+				if(error)
+					vscode.debug.activeDebugConsole.appendLine(error);
+
 				// Update memory dump etc.
 				this.update();
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
-
-				// Show a possible error
-				if(error)
-					this.showError(error);
 			});
 
 			// Response is sent immediately
@@ -1312,13 +1312,13 @@ export class EmulDebugSessionClass extends DebugSession {
 		this.serializer.exec(() => {
 			// Step-Back
 			Emulator.stepBack((instr, error) => {
-				// Output a possible problem (end of log reached)
-				if(error)
-					vscode.debug.activeDebugConsole.appendLine(error);
-
 				// Print
 				if(instr.length > 0 )
 					vscode.debug.activeDebugConsole.appendLine('StepBack: '+instr);
+
+				// Output a possible problem (end of log reached)
+				if(error)
+					vscode.debug.activeDebugConsole.appendLine(error);
 
 				// Update memory dump etc.
 				this.update({step: true});
