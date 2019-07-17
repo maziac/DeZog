@@ -389,7 +389,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		}
 
 		// Reset the code coverage and history
-		Decoration.clearLineCoverage();
+		Decoration.clearCodeCoverage();
 		Decoration.clearRevDbgHistory();
 
 		// Create the machine

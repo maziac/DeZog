@@ -195,10 +195,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 				if(Settings.launch.resetOnLaunch)
 					zSocket.send('hard-reset-cpu');
 
-
-	// TOOD: REMOVE. Enable for now always
-	Settings.launch.codeCoverage.enabled = true;
-	//Settings.launch.codeCoverage = false;
 /*
 logfile     name:   File to store the log
 enabled     yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
@@ -229,15 +225,11 @@ registers   yes|no: Enable registers logging
 				zSocket.send('cpu-transaction-log autorotate yes');
 				zSocket.send('cpu-transaction-log rotatefiles 1');
 				zSocket.send('cpu-transaction-log rotatesize 0');	// No rotation on size
-				// Number of rotations
-				let rotateLines;
-				if(Settings.launch.codeCoverage.lines == -1 || Settings.launch.codeCoverage.linesElder == -1) {
-					rotateLines = 0;	// infinite
-				}
-				else {
-					rotateLines = Settings.launch.codeCoverage.lines + Settings.launch.codeCoverage.linesElder;
-				}
-				zSocket.send('cpu-transaction-log rotatelines ' + rotateLines);
+
+				// Number of lines
+				const lines = this.numberOfHistoryLines();
+				if(lines != 0)
+					zSocket.send('cpu-transaction-log rotatelines ' + lines);
 
 				// Coverage + reverse debugging settings
 
@@ -575,7 +567,7 @@ registers   yes|no: Enable registers logging
 		// Change state
 		this.state = EmulatorState.RUNNING;
 		// Handle code coverage
-		this.cpuCodeCoverage(() => {
+		this.enableCpuTransactionLog(() => {
 			// Reset T-state counter.
 			zSocket.send('reset-tstates-partial', () => {
 				// Run
@@ -1039,7 +1031,7 @@ registers   yes|no: Enable registers logging
 	 */
 	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, error?: string)=>void): void {
 		// Handle code coverage
-		this.cpuCodeCoverage(() => {
+		this.enableCpuTransactionLog(() => {
 			// Reset T-state counter etc.
 			zSocket.send('reset-tstates-partial', data => {
 				// Step into
@@ -1063,22 +1055,19 @@ registers   yes|no: Enable registers logging
 
 
 	/**
-	 * If code coverage is enabled the ZEsarUX cpu-transaction-log is enabled
+	 * If code coverage or reverse debugging enabled is enabled the ZEsarUX cpu-transaction-log is enabled
 	 * before the 'handler' is called.
-	 * If code coverage is not enabled 'handler is called immediately.
+	 * If code coverage or reverse debugging is not enabled 'handler' is called immediately.
 	 * @param handler Is called after the coverage commands have been sent.
 	 */
-	protected cpuCodeCoverage(handler:()=>void): void {
-		// Code coverage
-		if(Settings.launch.codeCoverage.enabled) {
-			// Clear the log file
-	//		zSocket.send('cpu-transaction-log truncate yes', data => {
-				// Enable logging
-				zSocket.send('cpu-transaction-log enabled yes', data => {
-					// Call handler
-					handler();
-				});
-	//		});
+	protected enableCpuTransactionLog(handler:()=>void): void {
+		// Code coverage or reverse debugging enabled
+		if(this.isCpuTransactionLogEnabled()) {
+			// Enable logging
+			zSocket.send('cpu-transaction-log enabled yes', data => {
+				// Call handler
+				handler();
+			});
 		}
 		else {
 			// Call handler (without coverage)
@@ -1097,10 +1086,10 @@ registers   yes|no: Enable registers logging
 			// Reverse debugging
 			this.cpuTransactionLog.init();
 			// Check if code coverage is enabled
-			if(Settings.launch.codeCoverage.enabled) {
+			if(Settings.codeCoverageEnabled()) {
 				// Go through coverage file and collect all addresses
-				let count0 = Settings.launch.codeCoverage.lines;
-				let count1 = Settings.launch.codeCoverage.linesElder;
+				let count0 = Settings.launch.history.codeCoverageInstructionCountYoung;
+				let count1 = Settings.launch.history.codeCoverageInstructionCountElder;
 				if(count0 == -1) {
 					count0 = 0xFFFFFFFF;
 					count1 = 0;
@@ -1982,10 +1971,48 @@ registers   yes|no: Enable registers logging
 
 
 	/**
+	 * Calculates the required number of transaction log lines from the
+	 * 'history' setting for reverse debugging and code coverage.
+	 * @returns -1 = Infinite, 0 = disabled, >0 = number of lines
+	 */
+	protected numberOfHistoryLines(): number {
+		let covRotateLines;
+		if(Settings.launch.history.codeCoverageInstructionCountYoung < 0 || Settings.launch.history.codeCoverageInstructionCountElder < 0) {
+			covRotateLines = -1;	// infinite
+		}
+		else {
+			covRotateLines = Settings.launch.history.codeCoverageInstructionCountYoung + Settings.launch.history.codeCoverageInstructionCountElder;
+		}
+
+		// Number of lines for history
+		const rdRotLines = Settings.launch.history.reverseDebugInstructionCount;
+		let totRotLines;
+		if(covRotateLines < 0 || rdRotLines < 0) {
+			totRotLines = -1;	// infinite
+		}
+		else {
+			totRotLines = covRotateLines + rdRotLines;
+		}
+
+		return totRotLines;
+	}
+
+
+	/**
+	 * @returns true if either code coverage or reverse debuggingis enabled.
+	 */
+	protected isCpuTransactionLogEnabled(): boolean {
+		return Settings.codeCoverageEnabled() || (Settings.launch.history.reverseDebugInstructionCount != 0);
+	}
+
+
+	/**
 	 * Clears the instruction history.
 	 * For reverse debugging and code coverage.
 	 * This will call 'cpu-transaction-log truncate yes' to clear the log in Zesarux.
-	 * And it will delete the rotated files.
+	 * ZEsarUX has a 'truncaterotated' but this does not remove all log files it just
+	 * empties them. And it would also not clear logs bigger than the set rotation.
+	 * So that I will not use it but clear the logs on my own.
 	 */
 	public clearInstructionHistory() {
 		super.clearInstructionHistory();

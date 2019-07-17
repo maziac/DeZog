@@ -122,10 +122,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// If enabled code coverage information is analyzed and displayed.
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
-	codeCoverage: {
-		enabled: boolean;	// If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations.
-		lines: number;		// The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).
-		linesElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
+	history: {
+		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
+		codeCoverageInstructionCountYoung: number;		// The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).
+		codeCoverageInstructionCountElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
 	}
 
 	/// Holds the formatting vor all values.
@@ -196,7 +196,7 @@ export class Settings {
 				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
 				skipInterrupt: <any>undefined,
-				codeCoverage: <any>undefined,
+				history: <any>undefined,
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
@@ -266,14 +266,14 @@ export class Settings {
 			Settings.launch.skipInterrupt = false;
 
 		// Code coverage
-		if(Settings.launch.codeCoverage == undefined)
-			Settings.launch.codeCoverage = {} as any;
-		if(Settings.launch.codeCoverage.enabled == undefined)
-			Settings.launch.codeCoverage.enabled = true;
-		if(Settings.launch.codeCoverage.lines == undefined)
-			Settings.launch.codeCoverage.lines = 10;
-		if(Settings.launch.codeCoverage.linesElder == undefined)
-			Settings.launch.codeCoverage.linesElder = (unitTests) ? -1 : 100; 	// -1 = Infinite lines for unit test
+		if(Settings.launch.history == undefined)
+			Settings.launch.history = {} as any;
+		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
+			Settings.launch.history.reverseDebugInstructionCount = 1000000;
+		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
+			Settings.launch.history.codeCoverageInstructionCountYoung = 10;
+		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)
+			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 100; 	// -1 = Infinite lines for unit test
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
@@ -347,6 +347,14 @@ export class Settings {
 
 		if(!Settings.launch.unitTestTimeout)
 			Settings.launch.unitTestTimeout = 1;	///< 1000 ms
+	}
+
+
+	/**
+	 * @returns true if the code coverage is enabled.
+	 */
+	public static codeCoverageEnabled() {
+		return (Settings.launch.history.codeCoverageInstructionCountYoung != 0) || (Settings.launch.history.codeCoverageInstructionCountElder != 0);
 	}
 }
 

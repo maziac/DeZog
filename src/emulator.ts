@@ -136,6 +136,8 @@ export class EmulatorClass extends EventEmitter {
 	/// The addresses of the revision history in the right order.
 	protected revDbgHistory = new Array<number>();
 
+	/// If code coverage display and measurement is enabled.
+	protected codeCoverageEnabled = false;
 
 	/// Initializes the machine.
 	public init() {

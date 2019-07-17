@@ -60,15 +60,10 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line]);
 	}));
 
-	// Command to enable code coverage display and analyzes.
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.enableCodeCoverage', () => {
-		if(Decoration)
-			Decoration.enableCodeCoverage();
-	}));
 	// Command to disable code coverage display and analyzes.
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.disableCodeCoverage', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.clearCodeCoverage', () => {
 		if(Decoration)
-			Decoration.disableCodeCoverage();
+			Decoration.clearCodeCoverage();
 	}));
 
 	// Command to execute all unit tests

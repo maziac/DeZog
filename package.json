@@ -134,13 +134,8 @@
 				"category": "z80-debug"
 			},
 			{
-				"command": "z80-debug.enableCodeCoverage",
-				"title": "Enable code coverage",
-				"category": "z80-debug"
-			},
-			{
-				"command": "z80-debug.disableCodeCoverage",
-				"title": "Disable code coverage",
+				"command": "z80-debug.clearCodeCoverage",
+				"title": "Clears the current code coverage decoration.",
 				"category": "z80-debug"
 			},
 			{
@@ -192,11 +187,7 @@
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.enableCodeCoverage",
-					"when": "inDebugMode"
-				},
-				{
-					"command": "z80-debug.disableCodeCoverage"
+					"command": "z80-debug.clearCodeCoverage"
 				},
 				{
 					"command": "z80-debug.getAllUnitTests",
@@ -349,18 +340,18 @@
 								"type": "boolean",
 								"description": "Skips the interrupt during stepping."
 							},
-							"codeCoverage": {
-								"enabled": {
-									"type": "boolean",
-									"description": "If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in 'normal' launch configurations."
-								},
-								"lines": {
+							"history": {
+								"reverseDebugInstructionCount": {
 									"type": "number",
-									"description": "The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter)."
+									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Each instruction will use about 200 byte in the transaction log. So 1000 instruction will use 200 kB. The default is 1.000.000 instructions which is approximately equivalent to 1 second at 4 MHz CPU speed or 200 MB."
 								},
-								"linesElder": {
+								"codeCoverageInstructionCountYoung": {
 									"type": "number",
-									"description": "More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time."
+									"description": "The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).\n-1 will enable collecting indefinite number of instructions. Use with care. This will create approx. 1 GB of transaction logs every 5 seconds at 4MHz CPU speed (or 12 GB per minute). This settings is normally only used during unit tests."
+								},
+								"codeCoverageInstructionCountElder": {
+									"type": "number",
+									"description": "More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mechanisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.\nIf both codeCoverageInstructionCounts are 0 then code coverage is disabled."
 								}
 							},
 							"formatting": {

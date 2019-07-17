@@ -248,7 +248,7 @@ export class Z80UnitTests {
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 
 			// Reset the code coverage and history
-			Decoration.clearLineCoverage();
+			Decoration.clearCodeCoverage();
 			Decoration.clearRevDbgHistory();
 
 			// Start emulator.
