@@ -243,9 +243,11 @@ registers   yes|no: Enable registers logging
 				// Set address information
 				zSocket.send('cpu-transaction-log address yes');
 				// Set opcode information
-				zSocket.send('cpu-transaction-log opcode yes');
+				//zSocket.send('cpu-transaction-log opcode yes');
+				zSocket.send('cpu-transaction-log opcode no');
 				// Set registers information
-				zSocket.send('cpu-transaction-log registers yes');
+				//zSocket.send('cpu-transaction-log registers yes');
+				zSocket.send('cpu-transaction-log registers no');
 
 				// Load sna or tap file
 				if(Settings.launch.load)
