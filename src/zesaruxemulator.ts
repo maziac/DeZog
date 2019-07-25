@@ -1193,10 +1193,6 @@ registers   yes|no: Enable registers logging
 				return;
 			}
 
-			// TODO: I could instead just add a breakpoint with an opcode condition to be a RET. E.g. OPCODE1=C9h (OPCODE1&C7h=C7h) OR OPCODE2=ED4Dh OR OPCODE2=ED4h
-			// I.e. RETI=ED4D, RETN=ED45, RET=1100101 (C9) and RET cc=11xxx000
-			// Vielleicht doch nicht: wegen Interrupt.
-
 			// get stack from zesarux
 			zSocket.send('get-stack-backtrace '+depth, data => {
 				// add the received stack, something like:

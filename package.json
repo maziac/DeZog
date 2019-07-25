@@ -135,7 +135,7 @@
 			},
 			{
 				"command": "z80-debug.clearCodeCoverage",
-				"title": "Clears the current code coverage decoration.",
+				"title": "Clear the current code coverage decoration",
 				"category": "z80-debug"
 			},
 			{

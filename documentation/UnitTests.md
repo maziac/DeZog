@@ -8,7 +8,7 @@ A good example for the use of unit tests can be found in the [z80-sample-program
 
 # Prerequisites
 
-It is recommend to use the sjasmplus assembler but you can also use other assemblers that support macros.
+It is recommended to use the sjasmplus assembler but you can also use other assemblers that support macros.
 
 The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax but also in a format that e.g. Savannah's z80asm would understand.
 minutess
@@ -179,7 +179,7 @@ You need to create a special launch.json configuration for the unit tests.
 It works mainly like the normal launch configuration but has some specialties:
 - the property 'unittest' need to be set to true. Note that only one configuration is allowed to have that property set to true.
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
-- the property 'codeCoverage' might be set to true. If true the code coverage is displayed inside the sources. Each covered line gets a green background.
+
 
 
 ## Start the Unit Tests
@@ -220,8 +220,9 @@ Failed testcases: 1
 +-------------------------------------------------
 ~~~
 
-If code coverage was set to true you will notice that the executed lines in the sources have turned to a green background.
+You will notice that the executed lines in the sources have turned to a green background.
 ![](images/unittest_coverage.jpg)
+See [Code Coverage](#code-coverage).
 
 
 If you find that a test case has failed you can also start the unit tests in debug mode:
@@ -238,6 +239,15 @@ Obviously a unit test case fails if the checked condition (the TEST_... macros) 
 But there are a few other cases when a test case fails:
 - unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration.
 - breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERT fails somewhere. If in debug mode the test case will also be counted as failed but the code execution also stops at the particular line of code. So you can directly investigate what happened.
+
+
+# Code Coverage
+
+When the unit tests have been run you can see the code coverage. The covered lines get a green background color.
+You can easily see what instructions have been covered by a test and which not.
+The coverage decoration is also available when running the unit tests in debug mode.
+It is reset whenever you start a new debug session or a new unit test.
+If you need to clear the coverage decorage at some other point go tp the command palette and enter "z80-debug: Clear the current code coverage decoration"
 
 
 # What Else

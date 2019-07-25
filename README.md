@@ -29,9 +29,9 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 ![](documentation/images/gallery_tstates.gif)
 
 
-### Code Coverage:
+### Unit tests:
 
-![](documentation/images/gallery_coverage.gif)
+![](documentation/images/gallery_unit_test.gif)
 
 
 
@@ -61,9 +61,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - memory viewer / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - change of program counter through menu
-- execution if assembler unit tests
-- display of code coverage
-
+- support for assembler unit tests with code coverage display.
 
 
 ## Constraints
