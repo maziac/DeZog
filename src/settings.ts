@@ -269,7 +269,7 @@ export class Settings {
 		if(Settings.launch.history == undefined)
 			Settings.launch.history = {} as any;
 		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
-			Settings.launch.history.reverseDebugInstructionCount = 1000000;
+			Settings.launch.history.reverseDebugInstructionCount = 0;	// TODO: enable for reverse debug
 		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
 			Settings.launch.history.codeCoverageInstructionCountYoung = 10;
 		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)

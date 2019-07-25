@@ -1093,11 +1093,11 @@ registers   yes|no: Enable registers logging
 				let count0 = Settings.launch.history.codeCoverageInstructionCountYoung;
 				let count1 = Settings.launch.history.codeCoverageInstructionCountElder;
 				if(count0 == -1) {
-					count0 = 0xFFFFFFFF;
+					count0 = 0x7FFFFFFF;
 					count1 = 0;
 				}
 				else if(count1 == -1)
-					count1 = 0xFFFFFFFF;
+					count1 = 0x7FFFFFFF;
 				const addresses = this.cpuTransactionLog.getPrevAddresses([count0, count1]);
 				// Emit code coverage event
 				this.emit('coverage', addresses);
@@ -1995,6 +1995,10 @@ registers   yes|no: Enable registers logging
 		else {
 			totRotLines = covRotateLines + rdRotLines;
 		}
+
+		// Infinity
+		if(totRotLines < 0)
+			totRotLines = 0x7FFFFFFF;
 
 		return totRotLines;
 	}

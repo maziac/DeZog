@@ -531,6 +531,18 @@ export class ZesaruxTransactionLog {
 		while(file.prevLine()) { // Previous line
 			// Get current line
 			const addr = file.getAddress();
+
+			// Make sure that addr does not exist already in previous set.
+			let next = false;
+			for(let i=0; i<l; i++) {
+				if(addrsArray[i].has(addr)) {
+					next = true;
+					break;
+				}
+			}
+			if(next)
+				continue;
+
 			// Add to set
 			addrs.add(addr);
 			// Reduce count
