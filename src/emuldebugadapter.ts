@@ -2103,7 +2103,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * @param filename The absolute file path.
 	 * @param lineNr The lineNr. Starts at 0.
 	 */
-	protected setPcToline(filename: string, lineNr: number) {
+	protected setPcToLine(filename: string, lineNr: number) {
 		// Get address of file/line
 		const realLineNr = lineNr; //this.convertClientLineToDebugger(lineNr);
 		const addr = Labels.getAddrForFileAndLine(filename, realLineNr);
@@ -2120,7 +2120,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 
 	/**
-	 * Not used at the moment.
 	 * Called from vscode when the user inputs a command in the command palette.
 	 * The method checks if the command is known and executes it.
 	 * If the command is unknown the super method is called.
@@ -2130,10 +2129,10 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
 		switch(command) {
-			case 'setPcToline':
+			case 'setPcToLine':
 				const filename = args[0];
 				const lineNr = args[1];
-				this.setPcToline(filename, lineNr);
+				this.setPcToLine(filename, lineNr);
 				break;
 
 			/*

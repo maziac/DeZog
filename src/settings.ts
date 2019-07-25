@@ -34,12 +34,12 @@ export interface ListFile {
 
 export interface Formatting {
 	/// Format how the registers are displayed in the VARIABLES area.
-	/// Is an array with 2 strings tupels. The first is an regex that checks the register.
+	/// Is an array with 2 strings tuples. The first is an regex that checks the register.
 	/// If fulfilled the 2nd is used to format the value.
 	registerVar:  Array<string>;
 
 	/// Format how the registers are displayed when hovering with the mouse.
-	/// Is an array with 2 strings tupels. The first is an regex that checks the register.
+	/// Is an array with 2 strings tuples. The first is an regex that checks the register.
 	/// If fulfilled the 2nd is used to format the value.
 	registerHover: Array<string>;
 
@@ -65,7 +65,7 @@ export interface LogDestinations {
 	/// Determines if the output should go to vscode.
 	channelOutputEnabled: boolean;
 
-	/// If given, the log is additionally put to the givn file.
+	/// If given, the log is additionally put to the given file.
 	filePath: string|undefined;
 }
 
@@ -93,7 +93,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The paths to the .labels files.
 	labelsFiles: Array<string>;
 
-	/// Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
+	/// Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
 	smallValuesMaximum: number;
 
 	/// These arguments are passed to the disassembler (z80dismblr arguments).
@@ -125,7 +125,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
 		codeCoverageInstructionCountYoung: number;		// The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).
-		codeCoverageInstructionCountElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mecahnisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
+		codeCoverageInstructionCountElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mechanisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
 	}
 
 	/// Holds the formatting vor all values.
@@ -162,7 +162,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 /// Singleton:
 /// A class through which the settings can be accessed.
-/// I.e. the paramters in launch.json.
+/// I.e. the parameters in launch.json.
 export class Settings {
 	/// the representation of the launch.json
 	public static launch:  SettingsParameters;

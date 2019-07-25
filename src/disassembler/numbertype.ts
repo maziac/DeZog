@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 
-/// A categorization (and priorization) of the numbers (labels) in the opcodes.
-/// The higher the number, the higher the prio.
+/// A categorization (and prioritization) of the numbers (labels) in the opcodes.
+/// The higher the number, the higher the priority.
 export const enum NumberType {
 	// No label
 	NONE = 0,

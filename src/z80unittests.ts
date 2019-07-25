@@ -52,7 +52,7 @@ enum Color {
  */
 function colorize(color: string, text: string): string {
 	//return color + text + '\x1b[0m';
-	return text;	// No easy colrizibg possible in output channel.
+	return text;	// No easy colorizing possible in output channel.
 }
 
 
@@ -63,7 +63,7 @@ enum TestCaseResult {
 	OK = 0,
 	FAILED = 1,
 	TIMEOUT = 2,
-	CANCELLED = 3,	// Testcases have been cancelled, e.g. manually or the connection might have been lost or whatever.
+	CANCELLED = 3,	// Test cases have been cancelled, e.g. manually or the connection might have been lost or whatever.
 }
 
 
@@ -90,7 +90,7 @@ export class Z80UnitTests {
 	/// The label used for the stack.
 	public static utStackLabel = "UNITTEST_START";
 
-	/// This array will contain the names of all UT testcases.
+	/// This array will contain the names of all UT test cases.
 	protected static utLabels: Array<string>;
 
 	/// This array will contain the names of the test cases that should be run.
@@ -124,11 +124,11 @@ export class Z80UnitTests {
 	/// Is filled with the summary of tests and results.
 	protected static outputSummary: string;
 
-	/// Counts number of failed and total testcases.
+	/// Counts number of failed and total test cases.
 	protected static countFailed: number;
 	protected static countExecuted: number;
 
-	/// Is set if the current  testcase fails.
+	/// Is set if the current  test case fails.
 	protected static currentFail: boolean;
 
 	/// The handle for the timeout.
@@ -153,7 +153,7 @@ export class Z80UnitTests {
 	 * Execute all unit tests in debug mode.
 	 */
 	public static runAllUnitTests() {
-		// All testcases
+		// All test cases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
 		Z80UnitTests.runTestsCheck();
@@ -375,7 +375,7 @@ export class Z80UnitTests {
 
 	/**
 	 * Clears the map of test cases.
-	 * Is called at first when starting (partial) unit testcases.
+	 * Is called at first when starting (partial) unit test cases.
 	 */
 	public static clearTestCaseList(){
 		// Clear map
@@ -485,7 +485,7 @@ export class Z80UnitTests {
 	public static getAllUnitTests(): Promise<UnitTestCase[]> {
 		return new Promise<UnitTestCase[]>((resolve, reject) => {
 			try {
-				// Read all listfiles.
+				// Read all list files.
 				const labels = Z80UnitTests.loadLabelsFromConfiguration();
 				// Get the unit test labels
 				const utLabels = Z80UnitTests.getAllUtLabels(labels);
@@ -851,7 +851,7 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Sends a CANCELLED for all still open running testcases
+	 * Sends a CANCELLED for all still open running test cases
 	 * to the caller (i.e. the test case adapter).
 	 */
 	protected static CancelAllRemainingResults() {
@@ -871,7 +871,7 @@ export class Z80UnitTests {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
-		// Clear remaining testcases
+		// Clear remaining test cases
 		Z80UnitTests.CancelAllRemainingResults();
 		// Show coverage, only the elder lines
 		const emptySet = new Set<number>();
@@ -933,9 +933,9 @@ export class Z80UnitTests {
 		const color = (Z80UnitTests.countFailed>0) ? Color.FgRed : Color.FgGreen;
 		const countPassed = Z80UnitTests.countExecuted - Z80UnitTests.countFailed;
 		this.unitTestOutput.appendLine('');
-		this.unitTestOutput.appendLine('Total testcases: ' + Z80UnitTests.countExecuted);
-		this.unitTestOutput.appendLine('Passed testcases: ' + countPassed);
-		this.unitTestOutput.appendLine(colorize(color, 'Failed testcases: ' + Z80UnitTests.countFailed));
+		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTests.countExecuted);
+		this.unitTestOutput.appendLine('Passed test cases: ' + countPassed);
+		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: ' + Z80UnitTests.countFailed));
 		this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
 		this.unitTestOutput.appendLine('');
 

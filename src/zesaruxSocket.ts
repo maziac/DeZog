@@ -44,7 +44,7 @@ enum SocketState {
 
 /**
  * A socket to communicate with the Zesarux debugger.
- * Defines a queue htat guarantees that each command is send one-by-one.
+ * Defines a queue that guarantees that each command is send one-by-one.
  */
 export class ZesaruxSocket extends Socket {
 
@@ -59,10 +59,10 @@ export class ZesaruxSocket extends Socket {
 	// Holds the incomplete received message.
 	private receivedDataChunk: string;
 
-	/// A sepcial long lasting command like 'run' that can be interrupted by other commands.
+	/// A special long lasting command like 'run' that can be interrupted by other commands.
 	private interruptableRunCmd: CommandEntry|undefined;
 
-	/// This value is set during intialization. It is the time that is
+	/// This value is set during initialization. It is the time that is
 	/// waited on an answer before the connection is disconnected.
 	/// In ms.
 	/// See settings 'socketTimeout'.
@@ -218,10 +218,10 @@ export class ZesaruxSocket extends Socket {
 	 * If messages are still pending the messages is queued.
 	 * Otherwise the message is directly send.
 	 * After the message is executed the 'handler' is called.
-	 * Additionally the timeout can be set until when a repsonse is expected.
+	 * Additionally the timeout can be set until when a response is expected.
 	 * @param command The message to send to ZEsarUX.
 	 * @param handler Is called when the response is received. Can be undefined.
-	 * @param timeout The timeout in ms or 0 if no timeout should be used. Defualt is 100ms. Normally use -1 (or omit) to use the timeout from the Settings.
+	 * @param timeout The timeout in ms or 0 if no timeout should be used. Default is 100ms. Normally use -1 (or omit) to use the timeout from the Settings.
 	 */
 	public send(command: string, handler: {(data)} = (data) => {}, timeout = -1) {
 		if(timeout == -1)
@@ -432,7 +432,7 @@ export class ZesaruxSocket extends Socket {
 	 * removeAllListeners is broken in vscode 1.31.1 (Feb/2019).
 	 * Here is the correct call to remove all listeners if no argument is given.
 	 * Note: this is not a full replacement.
-	 * Reproducability:
+	 * Reproducibility:
 	 * Start emulator, stop it. If you get a warning "ZEsarUX terminated
 	 * the connection" the error is still there.
 	 */

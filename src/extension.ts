@@ -57,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const position = editor.selection.active;
 		const filename = editor.document.fileName;
 		// Send to debug adapter
-		vscode.debug.activeDebugSession.customRequest('setPcToline', [filename, position.line]);
+		vscode.debug.activeDebugSession.customRequest('setPcToLine', [filename, position.line]);
 	}));
 
 	// Command to disable code coverage display and analyzes.

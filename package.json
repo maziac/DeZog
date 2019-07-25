@@ -85,7 +85,7 @@
 					"scope": "resource"
 				},
 				"z80-debug.socket.logfile": {
-					"description": "Write soccket logs to the given file.",
+					"description": "Write socket logs to the given file.",
 					"type": "string",
 					"scope": "resource"
 				}
@@ -165,12 +165,12 @@
 			},
 			{
 				"command": "z80-debug.runPartialUnitTests",
-				"title": "Run all unit testcases (from execUnitTestCase).",
+				"title": "Run all unit test cases (from execUnitTestCase).",
 				"category": "z80-debug-partial-unit-testing"
 			},
 			{
 				"command": "z80-debug.debugPartialUnitTests",
-				"title": "Run all unit testcases (from execUnitTestCase) in debug mode.",
+				"title": "Run all unit test cases (from execUnitTestCase) in debug mode.",
 				"category": "z80-debug-partial-unit-testing"
 			}
 		],
@@ -245,7 +245,7 @@
 							},
 							"rootFolder": {
 								"type": "string",
-								"description": "The path of the root folder. All other paths are relative to this. Ususally set to ${workspaceFolder}."
+								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}."
 							},
 							"listFiles": {
 								"type": "array",
@@ -297,7 +297,7 @@
 							},
 							"smallValuesMaximum": {
 								"type": "number",
-								"description": "Interpretes labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",
+								"description": "Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",
 								"default": 512
 							},
 							"disassemblerArgs": {
@@ -357,7 +357,7 @@
 							"formatting": {
 								"registerVarFormat": {
 									"type": "array",
-									"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at leat 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
+									"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
 									"items": {
 										"type": "string"
 									}
@@ -389,11 +389,11 @@
 								},
 								"bytesColor": {
 									"type": "string",
-									"descdescription": "The color of the bytes shown in hex."
+									"description": "The color of the bytes shown in hex."
 								},
 								"asciiColor": {
 									"type": "string",
-									"descdescription": "The text color of the ascii field."
+									"description": "The text color of the ascii field."
 								},
 								"addressHoverFormat": {
 									"type": "string",
@@ -405,7 +405,7 @@
 								},
 								"registerPointerColors": {
 									"type": "array",
-									"description": "An array with register/color pairs. All selected register will appear with the corresponden color in the memory view. Registers not chosen will not appear.",
+									"description": "An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear.",
 									"items": [
 										{
 											"type": "string"

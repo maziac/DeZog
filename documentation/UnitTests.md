@@ -11,7 +11,7 @@ A good example for the use of unit tests can be found in the [z80-sample-program
 It is recommended to use the sjasmplus assembler but you can also use other assemblers that support macros.
 
 The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax but also in a format that e.g. Savannah's z80asm would understand.
-minutess
+
 
 # Usage
 In order to use unit tests you must:
@@ -212,9 +212,9 @@ ut_audio.ut_sound.UT_free_tone_register2 (0xafa8):	OK
 ut_audio.ut_sound.UT_free_tone_register3 (0xb00e):	OK
 ut_audio.ut_sound.UT_choose_tone_register (0xb08b):	OK
 
-Total testcases: 65
-Passed testcases: 64
-Failed testcases: 1
+Total test cases: 65
+Passed test cases: 64
+Failed test cases: 1
 98% passed.
 
 +-------------------------------------------------
@@ -247,7 +247,7 @@ When the unit tests have been run you can see the code coverage. The covered lin
 You can easily see what instructions have been covered by a test and which not.
 The coverage decoration is also available when running the unit tests in debug mode.
 It is reset whenever you start a new debug session or a new unit test.
-If you need to clear the coverage decorage at some other point go tp the command palette and enter "z80-debug: Clear the current code coverage decoration"
+If you need to clear the coverage decoration at some other point go tp the command palette and enter "z80-debug: Clear the current code coverage decoration"
 
 
 # What Else
