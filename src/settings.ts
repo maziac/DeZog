@@ -271,9 +271,9 @@ export class Settings {
 		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
 			Settings.launch.history.reverseDebugInstructionCount = 0;	// TODO: enable for reverse debug
 		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
-			Settings.launch.history.codeCoverageInstructionCountYoung = 10;
+			Settings.launch.history.codeCoverageInstructionCountYoung = (unitTests) ? 10 : 0; // TODO: Codecoverage is disabled by default if no unit test is run. Would be too slow fon normal zesarux. I will cahnge the default if zesarux does the transaction log in memory.
 		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)
-			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 100; 	// -1 = Infinite lines for unit test
+			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 0; 	// -1 = Infinite lines for unit test
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
