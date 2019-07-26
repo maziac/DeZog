@@ -510,6 +510,7 @@ export class Z80UnitTests {
 		Z80UnitTests.countFailed = 0;
 		Z80UnitTests.countExecuted = 0;
 		Z80UnitTests.timeoutHandle = undefined;
+		Z80UnitTests.currentFail = true;
 
 		// Get the unit test code
 		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel(Z80UnitTests.utStackLabel);
