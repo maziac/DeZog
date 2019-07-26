@@ -196,7 +196,10 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Remove all listeners
 		this.removeAllListeners();
 		// Terminate
-		this.sendEvent(new TerminatedEvent());
+		try {
+			this.sendEvent(new TerminatedEvent());
+		}
+		catch(e) {};
 		//this.sendEvent(new ExitedEvent());
 	}
 
