@@ -276,7 +276,7 @@ export class Z80UnitTests {
 				}
 				catch(e) {
 					// Some error occurred
-					Z80UnitTests.stopUnitTests(undefined, e);
+					Z80UnitTests.stopUnitTests(undefined, e.message);
 				}
 			});
 
@@ -298,7 +298,7 @@ export class Z80UnitTests {
 
 			Emulator.once('error', err => {
 				// Some error occurred
-				Z80UnitTests.stopUnitTests(undefined, err);
+				Z80UnitTests.stopUnitTests(undefined, err.message);
 			});
 
 
@@ -307,7 +307,7 @@ export class Z80UnitTests {
 		}
 		catch(e) {
 			// Some error occurred
-			Z80UnitTests.stopUnitTests(undefined, e);
+			Z80UnitTests.stopUnitTests(undefined, e.message);
 		}
 	}
 
@@ -888,6 +888,9 @@ export class Z80UnitTests {
 			else {
 				// Stop emulator
 				Emulator.disconnect();
+				// Show error
+				if(errMessage)
+					vscode.window.showErrorMessage(errMessage);
 			}
 		};
 		// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)

@@ -282,7 +282,7 @@
 												},
 												"asm": {
 													"type": "string",
-													"description": "The used assembler. 'z80asm' (default), 'sjasmplus' or 'z88dk'.",
+													"description": "The used assembler. 'sjasmplus' (default), 'z80asm' or 'z88dk'.",
 													"default": "z80asm"
 												},
 												"addOffset": {
