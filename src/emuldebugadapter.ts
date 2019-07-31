@@ -338,13 +338,14 @@ export class EmulDebugSessionClass extends DebugSession {
 			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(args, rootFolder);
+			Settings.CheckSettings();
 			// Overwrite top-of-stack.
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 		}
 		catch(e) {
 			// Some error occurred
-			this.terminate('Settings: ' + e.message);
 			response.success = false;
+			response.message = e.message;
 			this.sendResponse(response);
 			return;
 		}

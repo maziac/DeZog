@@ -81,9 +81,6 @@ export class LabelsClass {
 	/// Map with label / file location association.
 	private labelLocations = new Map<string,{file: string, lineNr: number}>()
 
-	/// The top of the stack. Used to limit the call stack.
-	public topOfStack : number;
-
 	// Constructor.
 	public constructor() {
 	}
@@ -104,18 +101,11 @@ export class LabelsClass {
 	/**
 	 * This has to be set in the launchRequest.
 	 * Finishes off the loading of list and labels files.
+	 * Can throw an exception if some values make no sense.
 	 */
 	public finish() {
 		// Calculate the label offsets
 		this.calculateLabelOffsets();
-		// calculate top of stack in case it is a label
-		const tos = Labels.getNumberForLabel(Settings.launch.topOfStack);
-		if(tos)
-			this.topOfStack = tos;
-		else
-			this.topOfStack = Utility.parseValue(Settings.launch.topOfStack);
-		if(isNaN(this.topOfStack))
-			this.topOfStack = 0x10000;
 	}
 
 
@@ -745,6 +735,8 @@ export class LabelsClass {
 	 * @returns The correspondent number. May return NaN.
 	 */
 	public getNumberFromString(text: string): number {
+		if(text == undefined)
+			return NaN;
 		var result = this.getNumberForLabel(text);
 		if(result == undefined) {
 			// Try convert as string

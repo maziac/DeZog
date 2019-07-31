@@ -244,24 +244,61 @@ registers   yes|no: Enable registers logging
 				zSocket.send('cpu-transaction-log address yes');
 				// Set opcode information
 				//zSocket.send('cpu-transaction-log opcode yes');
-				zSocket.send('cpu-transaction-log opcode no');
+				//zSocket.send('cpu-transaction-log opcode no');
+				zSocket.send('cpu-transaction-log opcode yes');
 				// Set registers information
 				//zSocket.send('cpu-transaction-log registers yes');
-				zSocket.send('cpu-transaction-log registers no');
+				//zSocket.send('cpu-transaction-log registers no');
+				zSocket.send('cpu-transaction-log registers yes');
 
 				// Load sna or tap file
-				if(Settings.launch.load)
+				const loadPath = Settings.launch.load;
+				if(loadPath)
 					zSocket.send('smartload ' + Settings.launch.load);
+
+				// Load obj file(s) unit
+				for(let loadObj of Settings.launch.loadObjs) {
+					if(loadObj.path) {
+						// Convert start address
+						const start = Labels.getNumberFromString(loadObj.start);
+						if(isNaN(start))
+							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+						zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
+					}
+				}
+
+				// Set Program Counter to execAddress
+				if(Settings.launch.execAddress) {
+					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
+					if(isNaN(execAddress))
+						throw Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
+					// Set PC
+					this.setProgramCounter(execAddress);
+				}
+
+				// TODO remove
+				setTimeout(() => {
+					this.getMemoryDump(0x7258, 16, (data, address) => {
+						for (let val of data) {
+							console.log('0x' + address.toString(16), '0x'+val.toString(16));
+						}
+					});
+				}, 10000);
+
 
 				// Initialize breakpoints
 				this.initBreakpoints();
 			});
 
 			// Send 'initialize' to Machine.
-			zSocket.executeWhenQueueIsEmpty( () => {
+			setTimeout(() => {
+				zSocket.executeWhenQueueIsEmpty( () => {
 				this.state = EmulatorState.IDLE;
 				this.emit('initialized');
 			});
+			}, 11000);
+
+
 		});
 	}
 
@@ -487,7 +524,7 @@ registers   yes|no: Enable registers logging
 			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC'));
 
 			// calculate the depth of the call stack
-			const tos = Labels.topOfStack
+			const tos = this.topOfStack
 			var depth = (tos - sp)/2;	// 2 bytes per word
 			if(depth>20)	depth = 20;
 
@@ -1185,7 +1222,7 @@ registers   yes|no: Enable registers logging
 			const sp = Z80Registers.parseSP(data);
 
 			// calculate the depth of the call stack
-			var depth = Labels.topOfStack - sp;
+			var depth = this.topOfStack - sp;
 			if(depth>20)	depth = 20;
 			if(depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
@@ -1787,10 +1824,11 @@ registers   yes|no: Enable registers logging
 	 * @param address The new address for the program counter.
 	 * @param handler that is called when the PC has been set.
 	 */
-	public setProgramCounter(address: number, handler:() => void) {
+	public setProgramCounter(address: number, handler?:() => void) {
 		this.RegisterCache = undefined;
 		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
-			handler();
+			if(handler)
+				handler();
 		});
 	}
 

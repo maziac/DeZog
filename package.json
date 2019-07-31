@@ -317,9 +317,30 @@
 								"type": "string",
 								"description": "(Optional) You should set this to the label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack."
 							},
+							"execAddress": {
+								"type": "string",
+								"description": "The start address of program execution. Use a label or a number. Can only be omitted of a .sna file is loaded."
+							},
 							"load": {
 								"type": "string",
 								"description": "(Optional) Load a .tap or .sna file into the emulator on startup of the debug session."
+							},
+							"loadObjs": {
+								"type": "array",
+								"description": "List of one or many object files, i.e. memory dumps. (Optional)",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the object file (.o/.obj) file."
+										},
+										"start": {
+											"type": "string",
+											"description": "The start address, e.g. 32768. Defaults to 0."
+										}
+									}
+								}
 							},
 							"startAutomatically": {
 								"type": "boolean",

@@ -6,7 +6,7 @@ import { Frame } from './frame';
 import { EventEmitter } from 'events';
 import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { Labels } from './labels';
-import { ListFile } from './settings';
+import { Settings, ListFile } from './settings';
 import { Utility } from './utility';
 //import { Opcode } from './disassembler/opcode';
 //import { Memory } from './disassembler/memory';
@@ -112,6 +112,9 @@ export class EmulatorClass extends EventEmitter {
 
 	/// Current state, e.g. RUNNING
 	protected state = EmulatorState.UNINITIALIZED;
+
+	/// The top of the stack. Used to limit the call stack.
+	public topOfStack : number;
 
 	/// A list for the frames (call stack items)
 	protected listFrames = new RefList();
@@ -435,6 +438,11 @@ export class EmulatorClass extends EventEmitter {
 
 		// Finishes off the loading of the list and labels files
 		Labels.finish();
+
+		// calculate top of stack, execAddress
+		this.topOfStack = Labels.getNumberFromString(Settings.launch.topOfStack);
+		if(isNaN(this.topOfStack))
+			throw Error("Cannot evaluate 'topOfStack' (" + Settings.launch.topOfStack + ").");
 
 		// Set watchpoints (memory guards)
 		const watchpoints = this.createWatchPoints(watchPointLines);

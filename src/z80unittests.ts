@@ -243,6 +243,7 @@ export class Z80UnitTests {
 			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(configuration, rootFolder);
+			Settings.CheckSettings();
 
 			// Overwrite top-of-stack.
 			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
@@ -608,7 +609,7 @@ export class Z80UnitTests {
 	 * @param da The debug emulator.
 	 */
 	protected static startUnitTestsWhenQuiet(da: EmulDebugSessionClass) {
-		da.executeAfterBeingQuietFor(300, () => {
+		da.executeAfterBeingQuietFor(3000, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
 		});

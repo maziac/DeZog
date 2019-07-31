@@ -1,6 +1,7 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './utility';
 import * as path from 'path';
+import * as fs from 'fs';
 
 /**
  * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow
@@ -60,13 +61,12 @@ export interface Formatting {
 }
 
 
-/// Used to configure the logging.
-export interface LogDestinations {
-	/// Determines if the output should go to vscode.
-	channelOutputEnabled: boolean;
-
-	/// If given, the log is additionally put to the given file.
-	filePath: string|undefined;
+/// Definitions for loading the object files.
+export interface LoadObj {
+	/// The path to one obj file.
+	path: string;
+	/// The memory address of that file. Can be a label.
+	start: string;
 }
 
 
@@ -91,7 +91,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	listFiles: Array<ListFile>;
 
 	/// The paths to the .labels files.
-	labelsFiles: Array<string>;
+	labelsFiles: Array<string>;	// TODO: Remove, not used anymore. Also remove labelsFiles from snippets.
 
 	/// Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
 	smallValuesMaximum: number;
@@ -105,8 +105,15 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// label or address which is above the topmost entry on the stack. It is used to determine the end of the call stack.
 	topOfStack: string;
 
+	/// label or address to use as start address for program execution if no .sna
+	/// file is loaded.
+	execAddress: string;
+
 	/// If defined the path to a snapshot (or tap) file to load at startup
 	load: string;
+
+	/// If defined the path to a snapshot (or tap) file to load at startup
+	loadObjs: Array<LoadObj>;
 
 	/// Start automatically after launch.
 	startAutomatically: boolean;
@@ -149,12 +156,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The socket timeout in seconds.
 	socketTimeout: number;
 
-	/// General logs.
-	log: LogDestinations;
-
-	// Logging of the socket.
-	logSocket: LogDestinations;
-
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
 }
@@ -191,7 +192,9 @@ export class Settings {
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
 				topOfStack: <any>undefined,
+				execAddress: <any>undefined,
 				load: <any>undefined,
+				loadObjs: <any>undefined,
 				startAutomatically: <any>undefined,
 				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
@@ -201,8 +204,6 @@ export class Settings {
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
 				socketTimeout: <any>undefined,
-				log: <any>undefined,
-				logSocket: <any>undefined,
 				unitTestTimeout: <any>undefined,
 			}
 		}
@@ -242,10 +243,21 @@ export class Settings {
 			Settings.launch.labelsFiles = [];
 		if(!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = '0x10000';
+
 		if(Settings.launch.load)
 			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
 		else
 			Settings.launch.load = '';
+
+		if(!Settings.launch.loadObjs)
+			Settings.launch.loadObjs = [];
+		for(let loadObj of Settings.launch.loadObjs) {
+			if(loadObj.path)
+				loadObj.path = Utility.getAbsFilePath(loadObj.path);
+			else
+				loadObj.path = '';
+		}
+
 		if(Settings.launch.tmpDir == undefined)
 			Settings.launch.tmpDir = '.tmp';
 		Settings.launch.tmpDir = Utility.getAbsFilePath
@@ -274,7 +286,7 @@ export class Settings {
 		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
 			Settings.launch.history.codeCoverageInstructionCountYoung = (unitTests) ? 10 : 0; // TODO: Codec overage is disabled by default if no unit test is run. Would be too slow for normal zesarux. I will change the default if zesarux does the transaction log in memory.
 		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)
-			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 0; 	// -1 = Infinite lines for unit test
+			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? 1000 : 0; 	// -1 = Infinite lines for unit test // TODO : change to infinite
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
@@ -348,6 +360,43 @@ export class Settings {
 
 		if(!Settings.launch.unitTestTimeout)
 			Settings.launch.unitTestTimeout = 1;	///< 1000 ms
+	}
+
+
+	/**
+	 * Checks the settings and throws an exception if something is wrong.
+	 * E.g. it checks for the existence of file paths.
+	 * Note: file paths are already expanded to absolute paths.
+	 */
+	public static CheckSettings() {
+		// List files
+		for(let listFile of Settings.launch.listFiles) {
+			// Check that file exists
+			const path = listFile.path;
+			if(!fs.existsSync(path))
+				throw Error("File '" + path + "' does not exist.");
+		}
+
+		// sna/tap
+		if(Settings.launch.load) {
+			// Check that file exists
+			if(!fs.existsSync(Settings.launch.load))
+				throw Error("File '" + Settings.launch.load + "' does not exist.");
+			// If sna or tap is given it is not allowed to use an execAddress
+			if(Settings.launch.execAddress)
+				throw Error("You load a .sna or .tap file. In that case the execution address is already known from the file and you cannot set it explicitly via 'execAddress'.");
+		}
+
+		// Object files
+		for(let loadObj of Settings.launch.loadObjs) {
+			// Check that file exists
+			const path = loadObj.path;
+			if(!fs.existsSync(path))
+				throw Error("File '" + path + "' does not exist.");
+			// Check that start address is given
+			if(loadObj.start == undefined)
+				throw Error("You must specify a 'start' address for '" + path + "'.");
+		}
 	}
 
 
