@@ -152,153 +152,164 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emit('error', err);
 		});
 		zSocket.on('connected', () => {
-			// Initialize
-			zSocket.send('about');
-			zSocket.send('get-version', data => {
-				// e.g. "7.1-SN"
-				this.zesaruxVersion = parseFloat(data);
-				// Check version
-				if(this.zesaruxVersion < MIN_ZESARUX_VERSION) {
-					zSocket.quit();
-					const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
-					this.emit('error', err);
-					return;
-				}
-			});
-
-			zSocket.send('get-current-machine', data => {
-				const machine = data.toLowerCase();
-				// Determine which ZX Spectrum it is, e.g. 48K, 128K
-				if(machine.indexOf('80') >= 0)
-					this.machineType = MachineType.ZX80;
-				else if(machine.indexOf('81') >= 0)
-					this.machineType = MachineType.ZX81;
-				else if(machine.indexOf('16k') >= 0)
-					this.machineType = MachineType.SPECTRUM16K;
-				else if(machine.indexOf('48k') >= 0)
-					this.machineType = MachineType.SPECTRUM48K;
-				else if(machine.indexOf('128k') >= 0)
-					this.machineType = MachineType.SPECTRUM128K;
-				else if(machine.indexOf('tbblue') >= 0)
-					this.machineType = MachineType.TBBLUE;
-			});
-
-			// Allow extensions
-			this.zesaruxConnected();
-
-			// Wait for previous command to finish
-			zSocket.executeWhenQueueIsEmpty(() => {
-				var debug_settings = (Settings.launch.skipInterrupt) ? 32 : 0;
-				zSocket.send('set-debug-settings ' + debug_settings);
-
-				// Reset the cpu before loading.
-				if(Settings.launch.resetOnLaunch)
-					zSocket.send('hard-reset-cpu');
-
-/*
-logfile     name:   File to store the log
-enabled     yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
-autorotate  yes|no: Enables automatic rotation of the log file
-rotatefiles number: Number of files to keep in rotation (1-999)
-rotatesize  number: Size in MB to rotate log file (1-9999)
-truncate    yes|no: Truncate the log file. Requires value set to yes
-datetime    yes|no: Enable datetime logging
-tstates     yes|no: Enable tstates logging
-address     yes|no: Enable address logging. Enabled by default
-opcode      yes|no: Enable opcode logging. Enabled by default
-registers   yes|no: Enable registers logging
-*/
-				// Enter step-mode (stop)
-				zSocket.send('enter-cpu-step');
-
-				// Set the cpu transaction log (for coverage)
-				const logFilename = Utility.getAbsCpuLogFileName();
-				// Set filename
-				zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
-				// Disable for now
-				zSocket.send('cpu-transaction-log enabled no');
-				// Delete/clear it
-				zSocket.send('cpu-transaction-log truncate yes');
-
-
-				// Set autorotation
-				zSocket.send('cpu-transaction-log autorotate yes');
-				zSocket.send('cpu-transaction-log rotatefiles 1');
-				zSocket.send('cpu-transaction-log rotatesize 0');	// No rotation on size
-
-				// Number of lines
-				const lines = this.numberOfHistoryLines();
-				if(lines != 0)
-					zSocket.send('cpu-transaction-log rotatelines ' + lines);
-
-				// Coverage + reverse debugging settings
-
-				// Ignore repetition of 'HALT'
-				zSocket.send('cpu-transaction-log ignrephalt yes');
-
-				// Set datetime information
-				zSocket.send('cpu-transaction-log datetime no');
-				// Set tstates information
-				zSocket.send('cpu-transaction-log tstates no');
-				// Set address information
-				zSocket.send('cpu-transaction-log address yes');
-				// Set opcode information
-				//zSocket.send('cpu-transaction-log opcode yes');
-				//zSocket.send('cpu-transaction-log opcode no');
-				zSocket.send('cpu-transaction-log opcode yes');
-				// Set registers information
-				//zSocket.send('cpu-transaction-log registers yes');
-				//zSocket.send('cpu-transaction-log registers no');
-				zSocket.send('cpu-transaction-log registers yes');
-
-				// Load sna or tap file
-				const loadPath = Settings.launch.load;
-				if(loadPath)
-					zSocket.send('smartload ' + Settings.launch.load);
-
-				// Load obj file(s) unit
-				for(let loadObj of Settings.launch.loadObjs) {
-					if(loadObj.path) {
-						// Convert start address
-						const start = Labels.getNumberFromString(loadObj.start);
-						if(isNaN(start))
-							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
-						zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
+			let error: Error;
+			try {
+				// Initialize
+				zSocket.send('about');
+				zSocket.send('get-version', data => {
+					// e.g. "7.1-SN"
+					this.zesaruxVersion = parseFloat(data);
+					// Check version
+					if(this.zesaruxVersion < MIN_ZESARUX_VERSION) {
+						zSocket.quit();
+						const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
+						this.emit('error', err);
+						return;
 					}
-				}
+				});
 
-				// Set Program Counter to execAddress
-				if(Settings.launch.execAddress) {
-					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
-					if(isNaN(execAddress))
-						throw Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
-					// Set PC
-					this.setProgramCounter(execAddress);
-				}
+				zSocket.send('get-current-machine', data => {
+					const machine = data.toLowerCase();
+					// Determine which ZX Spectrum it is, e.g. 48K, 128K
+					if(machine.indexOf('80') >= 0)
+						this.machineType = MachineType.ZX80;
+					else if(machine.indexOf('81') >= 0)
+						this.machineType = MachineType.ZX81;
+					else if(machine.indexOf('16k') >= 0)
+						this.machineType = MachineType.SPECTRUM16K;
+					else if(machine.indexOf('48k') >= 0)
+						this.machineType = MachineType.SPECTRUM48K;
+					else if(machine.indexOf('128k') >= 0)
+						this.machineType = MachineType.SPECTRUM128K;
+					else if(machine.indexOf('tbblue') >= 0)
+						this.machineType = MachineType.TBBLUE;
+				});
 
-				// TODO remove
-				setTimeout(() => {
-					this.getMemoryDump(0x7258, 16, (data, address) => {
-						for (let val of data) {
-							console.log('0x' + address.toString(16), '0x'+val.toString(16));
+				// Allow extensions
+				this.zesaruxConnected();
+
+				// Wait for previous command to finish
+				zSocket.executeWhenQueueIsEmpty(() => {
+					var debug_settings = (Settings.launch.skipInterrupt) ? 32 : 0;
+					zSocket.send('set-debug-settings ' + debug_settings);
+
+					// Reset the cpu before loading.
+					if(Settings.launch.resetOnLaunch)
+						zSocket.send('hard-reset-cpu');
+
+	/*
+	logfile     name:   File to store the log
+	enabled     yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
+	autorotate  yes|no: Enables automatic rotation of the log file
+	rotatefiles number: Number of files to keep in rotation (1-999)
+	rotatesize  number: Size in MB to rotate log file (1-9999)
+	truncate    yes|no: Truncate the log file. Requires value set to yes
+	datetime    yes|no: Enable datetime logging
+	tstates     yes|no: Enable tstates logging
+	address     yes|no: Enable address logging. Enabled by default
+	opcode      yes|no: Enable opcode logging. Enabled by default
+	registers   yes|no: Enable registers logging
+	*/
+					// Enter step-mode (stop)
+					zSocket.send('enter-cpu-step');
+
+					// Set the cpu transaction log (for coverage)
+					const logFilename = Utility.getAbsCpuLogFileName();
+					// Set filename
+					zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
+					// Disable for now
+					zSocket.send('cpu-transaction-log enabled no');
+					// Delete/clear it
+					zSocket.send('cpu-transaction-log truncate yes');
+
+
+					// Set autorotation
+					zSocket.send('cpu-transaction-log autorotate yes');
+					zSocket.send('cpu-transaction-log rotatefiles 1');
+					zSocket.send('cpu-transaction-log rotatesize 0');	// No rotation on size
+
+					// Number of lines
+					const lines = this.numberOfHistoryLines();
+					if(lines != 0)
+						zSocket.send('cpu-transaction-log rotatelines ' + lines);
+
+					// Coverage + reverse debugging settings
+
+					// Ignore repetition of 'HALT'
+					zSocket.send('cpu-transaction-log ignrephalt yes');
+
+					// Set datetime information
+					zSocket.send('cpu-transaction-log datetime no');
+					// Set tstates information
+					zSocket.send('cpu-transaction-log tstates no');
+					// Set address information
+					zSocket.send('cpu-transaction-log address yes');
+					// Set opcode information
+					//zSocket.send('cpu-transaction-log opcode yes');
+					//zSocket.send('cpu-transaction-log opcode no');
+					zSocket.send('cpu-transaction-log opcode yes');
+					// Set registers information
+					//zSocket.send('cpu-transaction-log registers yes');
+					//zSocket.send('cpu-transaction-log registers no');
+					zSocket.send('cpu-transaction-log registers yes');
+
+					// Load sna or tap file
+					const loadPath = Settings.launch.load;
+					if(loadPath)
+						zSocket.send('smartload ' + Settings.launch.load);
+
+					// Load obj file(s) unit
+					for(let loadObj of Settings.launch.loadObjs) {
+						if(loadObj.path) {
+							// Convert start address
+							const start = Labels.getNumberFromString(loadObj.start);
+							if(isNaN(start))
+								throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+							zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
 						}
-					});
-				}, 10000);
+					}
+
+					// Set Program Counter to execAddress
+					if(Settings.launch.execAddress) {
+						const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
+						if(isNaN(execAddress)) {
+							error = new Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
+							return;
+						}
+						// Set PC
+						this.setProgramCounter(execAddress);
+					}
+
+					// TODO remove
+					setTimeout(() => {
+						this.getMemoryDump(0x7258, 16, (data, address) => {
+							for (let val of data) {
+								console.log('0x' + address.toString(16), '0x'+val.toString(16));
+							}
+						});
+					}, 10000);
 
 
-				// Initialize breakpoints
-				this.initBreakpoints();
-			});
+					// Initialize breakpoints
+					this.initBreakpoints();
+				});
 
-			// Send 'initialize' to Machine.
-			setTimeout(() => {
-				zSocket.executeWhenQueueIsEmpty( () => {
-				this.state = EmulatorState.IDLE;
-				this.emit('initialized');
-			});
-			}, 11000);
-
-
+				zSocket.executeWhenQueueIsEmpty(() => {
+					// Check for console.error
+					if(error) {
+						this.emit('error', error);
+					}
+					else {
+						// Send 'initialize' to Machine.
+						this.state = EmulatorState.IDLE;
+						this.emit('initialized');
+					}
+				});
+			}
+			catch(e) {
+				// Some error occurred
+				this.emit('error', e);
+			}
 		});
 	}
 

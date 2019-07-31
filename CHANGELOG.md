@@ -1,9 +1,10 @@
 # Changelog
 
 ## 0.9.0
-- Unit Tests!
+- Unit Tests for assembler sources!
+- Supports new enhanced breakpoint condition format of ZEsarUX.
+- new setting 'loadObjs' to load object files.
 - Requires ZEsarUX 8.0.
-- Supports new breakpoint condition format of ZEsarUX.
 
 ## 0.8.1
 - Memory pages are shown in VARIABLES section.
