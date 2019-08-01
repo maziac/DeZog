@@ -245,9 +245,6 @@ export class Z80UnitTests {
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
-			// Overwrite top-of-stack.
-			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
-
 			// Reset the code coverage and history
 			Decoration.clearCodeCoverage();
 			Decoration.clearRevDbgHistory();
@@ -609,7 +606,8 @@ export class Z80UnitTests {
 	 * @param da The debug emulator.
 	 */
 	protected static startUnitTestsWhenQuiet(da: EmulDebugSessionClass) {
-		da.executeAfterBeingQuietFor(3000, () => {
+		// TODO: MAybe I can reduce the 1 sec further.
+		da.executeAfterBeingQuietFor(1000, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
 		});

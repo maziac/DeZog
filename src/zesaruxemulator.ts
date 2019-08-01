@@ -47,16 +47,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
 
-	/// Stores the wpmem watchpoints
-	protected watchpoints = new Array<GenericWatchpoint>();
-
-
-	/// Stores the assert breakpoints
-	protected assertBreakpoints = new Array<GenericBreakpoint>();
-
-	/// Stores the log points
-	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
-
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
 
@@ -281,6 +271,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					}
 
 					// TODO remove
+					/*
 					setTimeout(() => {
 						this.getMemoryDump(0x7258, 16, (data, address) => {
 							for (let val of data) {
@@ -288,6 +279,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 							}
 						});
 					}, 10000);
+					*/
 
 
 					// Initialize breakpoints
@@ -1393,15 +1385,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Sets the watchpoint array.
-	 * @param watchPoints A list of addresses to put a guard on.
-	 */
-	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
-		this.watchpoints = [...watchPoints];
-	}
-
-
-	/**
 	 * Enables/disables all WPMEM watchpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
@@ -1426,15 +1409,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Sets the ASSERTs array.
-	 * @param assertBreakpoints A list of addresses to put a guard on.
-	 */
-	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
-		this.assertBreakpoints = [...assertBreakpoints];
-	}
-
-
-	/**
 	 * Set all assert breakpoints.
 	 * Called only once.
 	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
@@ -1455,20 +1429,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
 		if(handler)
 			handler();
-	}
-
-
-	/**
-	 * Sets the LOGPOINTs array.
-	 * @param logpoints A list of addresses with messages to put a logpoint on.
-	 */
-	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
-		this.logpoints = logpoints;
-		this.logpointsEnabled = new Map<string, boolean>();
-		// All groups:
-		for (const [group] of this.logpoints) {
-			this.logpointsEnabled.set(group, false);
-		}
 	}
 
 

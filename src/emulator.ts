@@ -142,6 +142,17 @@ export class EmulatorClass extends EventEmitter {
 	/// If code coverage display and measurement is enabled.
 	protected codeCoverageEnabled = false;
 
+	/// Stores the wpmem watchpoints
+	protected watchpoints = new Array<GenericWatchpoint>();
+
+
+	/// Stores the assert breakpoints
+	protected assertBreakpoints = new Array<GenericBreakpoint>();
+
+	/// Stores the log points
+	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
+
+
 	/// Initializes the machine.
 	public init() {
 		// Init the registers
@@ -660,7 +671,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 */
 	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
-		assert(false);	// override this
+		this.watchpoints = [...watchPoints];
 	}
 
 
@@ -690,7 +701,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
 	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
-		assert(false);	// override this
+		this.assertBreakpoints = [...assertBreakpoints];
 	}
 
 
@@ -719,7 +730,12 @@ export class EmulatorClass extends EventEmitter {
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
 	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
-		assert(false);	// override this
+		this.logpoints = logpoints;
+		this.logpointsEnabled = new Map<string, boolean>();
+		// All groups:
+		for (const [group] of this.logpoints) {
+			this.logpointsEnabled.set(group, false);
+		}
 	}
 
 

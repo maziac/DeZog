@@ -339,8 +339,6 @@ export class EmulDebugSessionClass extends DebugSession {
 			const rootFolder = vscode.workspace.rootPath || '';
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
-			// Overwrite top-of-stack.
-			Settings.launch.topOfStack = Z80UnitTests.utStackLabel;
 		}
 		catch(e) {
 			// Some error occurred
@@ -399,19 +397,19 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+		// Load files
+		try {
+			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
+			Emulator.readListFiles(Settings.launch.listFiles);
+		}
+		catch(err) {
+			// Some error occurred during loading, e.g. file not found.
+			this.terminate(err.message);
+			return;
+		}
+
 		Emulator.init();
-
 		Emulator.once('initialized', () => {
-			// Load files
-			try {
-				// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-				Emulator.readListFiles(Settings.launch.listFiles);
-			}
-			catch(err) {
-				// Some error occurred during loading, e.g. file not found.
-				this.terminate(err);
-			}
-
 			// Create memory/register dump view
 			let registerMemoryView = new MemoryRegisterView(this);
 			const regs = Settings.launch.memoryViewer.registersMemoryView;

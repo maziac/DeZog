@@ -1,5 +1,6 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './utility';
+import { Z80UnitTests } from './z80unittests';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -241,8 +242,9 @@ export class Settings {
 			Settings.launch.labelsFiles = Settings.launch.labelsFiles.map((fp) => Utility.getAbsFilePath(fp));
 		else
 			Settings.launch.labelsFiles = [];
+
 		if(!Settings.launch.topOfStack)
-			Settings.launch.topOfStack = '0x10000';
+			Settings.launch.topOfStack = (unitTests) ? '0x10000' : Z80UnitTests.utStackLabel;;
 
 		if(Settings.launch.load)
 			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
