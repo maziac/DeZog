@@ -180,6 +180,7 @@ export class Z80UnitTests {
 	 * true: unit tests are run with debugger.
 	 */
 	protected static terminateEmulatorAndStartTests(debug: boolean) {
+		Z80UnitTests.debug = debug;
 		// Wait until vscode debugger has stopped.
 		// (Unfortunately there is no event for this, so we need to wait)
 		const f = () => {
