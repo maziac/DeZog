@@ -10,10 +10,15 @@ A good example for the use of unit tests can be found in the [z80-sample-program
 
 It is recommended to use the sjasmplus assembler but you can also use other assemblers that support macros.
 
-The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax but also in a format that e.g. Savannah's z80asm would understand.
+The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax.
+
+For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc]](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well.
+
+Note: the z88dk z80asm is not supported as it lacks native support for macros.
 
 
 # Usage
+
 In order to use unit tests you must:
 1. include the unit_tests.inc file to your sources
 2. create the unit tests
@@ -252,9 +257,27 @@ If you need to clear the coverage decoration at some other point go tp the comma
 
 # What Else
 
+## Test Explorer
+
 Use another extension, [z80-unit-tests](https://github.com/maziac/z80-unit-tests), to execute the unit tests not via the command palette but via the Test Explorer UI.
 
 From that UI it is also possible to execute specific unit tests without executing the rest.
 
 Example:
 ![](images/unittest_test_explorer.jpg)
+
+
+## Settings
+
+- 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
+If you like you can set this set this to true., but then you need to set a breakpoint inside your unit test otherwise the unit test will be finished before you can see anything in the debugger.
+
+
+# Caveats
+
+For the unit test configuration (launch.json) you must not add any 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated and the PC (program counter) is set accordingly.
+
+If you use a .sna file the inherit start address is simply ignored.
+You can use .sna and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
+
+

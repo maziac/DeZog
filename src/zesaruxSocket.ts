@@ -1,4 +1,4 @@
-import { Log } from './log';
+import { Log, LogSocketCommands } from './log';
 import { Socket } from 'net';
 import { Settings } from './settings';
 import * as assert from 'assert';
@@ -281,6 +281,9 @@ export class ZesaruxSocket extends Socket {
 		let command = cmd.command + '\n';
 		this.log('=>', cmd.command);
 		this.write(command);
+		// Log only commands
+		if(LogSocketCommands)
+			LogSocketCommands.appendLine('>' + command + '<');
 		// Set timeout
 		this.setTimeout(cmd.timeout);
 	}

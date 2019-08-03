@@ -25,7 +25,6 @@ import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import * as BinaryFile from 'binary-file';
 import { Decoration } from './decoration';
-import { Z80UnitTests } from './z80unittests';
 
 
 
@@ -57,7 +56,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	protected listVariables = new RefList();
 
 	/// Only one thread is supported.
-	protected static THREAD_ID = 1;
+	public static THREAD_ID = 1;
 
 	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
 	protected serializer = new CallSerializer("Main", true);
@@ -265,7 +264,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 
 	/**
-	 * 'initialize'request.
+	 * 'initialize' request.
 	 * Respond with supported features.
 	 */
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -448,18 +447,23 @@ export class EmulDebugSessionClass extends DebugSession {
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
 				Emulator.clearInstructionHistory();
-				if(Settings.launch.startAutomatically && !EmulDebugSessionClass.unitTestHandler) {
-					// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-					this.sendEventContinued();
-					setTimeout(() => {
-						// Delay call because the breakpoints are set afterwards.
-						this.emulatorContinue();
-					}, 500);
+				if(EmulDebugSessionClass.unitTestHandler) {
+					// Handle continue/stop in the z80unittests.
+					this.emit("initialized");
 				}
 				else {
-					this.sendEvent(new StoppedEvent('stop on start', EmulDebugSessionClass.THREAD_ID));
-					// For the unit tests
-					this.emit("initialized");
+					if(Settings.launch.startAutomatically ) {
+						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
+						this.sendEventContinued();
+						setTimeout(() => {
+							// Delay call because the breakpoints are set afterwards.
+							this.emulatorContinue();
+						}, 500);
+					}
+					else {
+						// Break
+						this.sendEvent(new StoppedEvent('stop on start', EmulDebugSessionClass.THREAD_ID));
+					}
 				}
 				EmulDebugSessionClass.unitTestHandler = undefined;
 				this.serializer.endExec();

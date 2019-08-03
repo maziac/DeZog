@@ -141,15 +141,25 @@ export class Log {
 	protected write(format: string, ...args) {
 		var text = util.format(format, ...args);
 		try {
-			// write to console
-			if(this.logOutput)
-				this.logOutput.appendLine(text);
-			// Append to file
-			if(this.outFilePath)
-				appendFileSync(this.outFilePath, text + '\n');
+			// write
+			this.appendLine(text);
 		}
 		catch(e) {
 		}
+	}
+
+
+	/**
+	 * Simply outputs text.
+	 * @param text The text plus a newline is printed.
+	 */
+	public appendLine(text: string) {
+		// write to console
+		if(this.logOutput)
+			this.logOutput.appendLine(text);
+		// Append to file
+		if(this.outFilePath)
+			appendFileSync(this.outFilePath, text + '\n');
 	}
 
 
@@ -185,3 +195,5 @@ export let LogGlobal = new Log();
 /// Socket logging.
 export let LogSocket = new Log();
 
+// Special socket logging
+export let LogSocketCommands: Log;

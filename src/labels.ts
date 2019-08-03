@@ -179,7 +179,7 @@ export class LabelsClass {
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		//let dbgLineNr = 0;
 		let ii = -1;
-		for( let origLine of listLines) {
+		for(let origLine of listLines) {
 		//	dbgLineNr ++;
 			ii = ii+1
 

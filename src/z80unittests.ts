@@ -485,6 +485,9 @@ export class Z80UnitTests {
 			try {
 				// Read all list files.
 				const labels = Z80UnitTests.loadLabelsFromConfiguration();
+				// Check if unit tests available
+				if(!Z80UnitTests.AreUnitTestsAvailable(labels))
+					return resolve([]);	// Return empty array
 				// Get the unit test labels
 				const utLabels = Z80UnitTests.getAllUtLabels(labels);
 				resolve(utLabels);
@@ -494,6 +497,26 @@ export class Z80UnitTests {
 				reject(e.message || "Unknown error.");
 			}
 		});
+	}
+
+
+	/**
+	 * Check for z80asm:
+	 * In z80asm the labels will be visible in the list file for the macro definition.
+	 * Even if no unit test has been defined.
+	 * This can be checked. In that case the addresses for all labels are the same.	protected
+	 */
+	protected static AreUnitTestsAvailable(labels: LabelsClass): boolean {
+		const firstLabel = labels.getNumberForLabel("UNITTEST_TEST_WRAPPER");
+		const lastLabel = labels.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
+
+		if(firstLabel == lastLabel) {
+			// Note: this is also true if both labels are not defined (undefined == undefined)
+			return false;
+		}
+
+		// Everything fine
+		return true;
 	}
 
 
@@ -509,6 +532,9 @@ export class Z80UnitTests {
 		Z80UnitTests.countExecuted = 0;
 		Z80UnitTests.timeoutHandle = undefined;
 		Z80UnitTests.currentFail = true;
+
+		if(!Z80UnitTests.AreUnitTestsAvailable(Labels))
+			throw Error("Unit tests not enabled in assembler sources.")
 
 		// Get the unit test code
 		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel(Z80UnitTests.utStackLabel);
@@ -590,7 +616,7 @@ export class Z80UnitTests {
 	 */
 	protected static getNumberForLabel(label: string): number {
 		const addr = Labels.getNumberForLabel(label) as number;
-		if(!addr) {
+		if(addr == undefined) {
 			throw Error("Couldn't find the unit test wrapper (" + label + "). Did you forget to use the macro?");
 		}
 		return addr;
@@ -606,7 +632,6 @@ export class Z80UnitTests {
 	 * @param da The debug emulator.
 	 */
 	protected static startUnitTestsWhenQuiet(da: EmulDebugSessionClass) {
-		// TODO: MAybe I can reduce the 1 sec further.
 		da.executeAfterBeingQuietFor(1000, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
@@ -663,7 +688,7 @@ export class Z80UnitTests {
 		const label = Z80UnitTests.utLabels[0];
 		// Calculate address
 		const address = Labels.getNumberForLabel(label) as number;
-		assert(address);
+		assert(address != undefined);
 
 		// Set timeout
 		if(!Z80UnitTests.debug) {
@@ -736,6 +761,19 @@ export class Z80UnitTests {
 				Z80UnitTests.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
 				return;
 			}
+			// Check if we break on the first unit test.
+			if(!Settings.launch.startAutomatically ) {
+				const firstLabel = Z80UnitTests.utLabels[0];
+				const firstAddr = Labels.getNumberForLabel(firstLabel) as number;
+				if(firstAddr == undefined) {
+					// Error
+					Z80UnitTests.stopUnitTests(da, "Couldn't find address for first unit test label '" + firstLabel + "'.");
+					return;
+				}
+				const firstUtBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
+				Emulator.setBreakpoint(firstUtBp);
+			}
+
 			// Start unit tests
 			Z80UnitTests.nextUnitTest(da);
 			return;
@@ -882,6 +920,7 @@ export class Z80UnitTests {
 		const f = () => {
 			// Remove event handling for the emulator
 			Emulator.removeAllListeners();
+
 			// Exit
 			if(debugAdapter)
 				debugAdapter.terminate(errMessage);

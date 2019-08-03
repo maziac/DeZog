@@ -8,7 +8,7 @@ import * as Net from 'net';
 import * as assert from 'assert';
 import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
-
+import Lg = require("./log")
 
 
 /// Config section in the settings.
@@ -196,6 +196,13 @@ function configureLogging() {
 		const channelName = (logToPanel) ? "Z80 Debugger Socket" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogSocket.init(channelOut, filepath);
+	}
+
+	// Enable only to get a log of the commands only
+	if(true) {
+		const channelOut = vscode.window.createOutputChannel("Z80 Debugger Socket Commands");
+		Lg.LogSocketCommands = new Log();
+		Lg.LogSocketCommands.init(channelOut, undefined);
 	}
 
 }

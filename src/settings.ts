@@ -271,7 +271,7 @@ export class Settings {
 		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
 			Settings.launch.disassemblerArgs.esxdosRst = false;
 		if(Settings.launch.startAutomatically == undefined)
-			Settings.launch.startAutomatically = false;
+			Settings.launch.startAutomatically = (unitTests) ? false : false;
 		if(Settings.launch.resetOnLaunch == undefined)
 			Settings.launch.resetOnLaunch = true;
 		if(Settings.launch.commandsAfterLaunch == undefined)

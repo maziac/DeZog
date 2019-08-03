@@ -59,6 +59,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
 
+	/// Set to true after 'terminate()' is called. Errors will not be sent
+	/// when terminating.
+	protected terminating = false;
+
 
 	/// Initializes the machine.
 	public init() {
@@ -97,6 +101,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler is called after the connection is terminated.
 	 */
 	public terminate(handler: () => void) {
+		this.terminating = true;
 		// The socket connection must be closed as well.
 		zSocket.quit(() => {
 			// Send terminate event (to Debug Session which will send a TerminateEvent to vscode. That in turn will create a 'disconnect')
@@ -105,6 +110,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 		});
 	}
 
+
+	/**
+	 * Override removeAllListeners to remove listeners also from socket.
+	 * @param event
+	 */
+	public removeAllListeners(event?: string|symbol|undefined): this {
+		super.removeAllListeners();
+		// Additionally remove listeners from socket.
+		zSocket.removeAllListeners();
+		return this;
+	}
 
 	/**
 	 * Initializes the socket to zesarux but does not connect yet.
@@ -119,17 +135,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 		});
 
 		zSocket.on('warning', msg => {
+			if(this.terminating)
+				return;
 			// Error message from Zesarux
 			msg = "ZEsarUX: " + msg;
 			this.emit('warning', msg);
 		});
 
 		zSocket.on('error', err => {
+			if(this.terminating)
+				return;
 			// and terminate
 			err.message += " (Error in connection to ZEsarUX!)";
 			this.emit('error', err);
 		});
 		zSocket.on('close', () => {
+			if(this.terminating)
+				return;
 			this.listFrames.length = 0;
 			this.breakpoints.length = 0;
 			// and terminate
@@ -137,11 +159,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emit('error', err);
 		});
 		zSocket.on('end', () => {
+			if(this.terminating)
+				return;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
 			this.emit('error', err);
 		});
 		zSocket.on('connected', () => {
+			if(this.terminating)
+				return;
+
 			let error: Error;
 			try {
 				// Initialize
@@ -269,18 +296,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 						// Set PC
 						this.setProgramCounter(execAddress);
 					}
-
-					// TODO remove
-					/*
-					setTimeout(() => {
-						this.getMemoryDump(0x7258, 16, (data, address) => {
-							for (let val of data) {
-								console.log('0x' + address.toString(16), '0x'+val.toString(16));
-							}
-						});
-					}, 10000);
-					*/
-
 
 					// Initialize breakpoints
 					this.initBreakpoints();
