@@ -198,8 +198,8 @@ function configureLogging() {
 		LogSocket.init(channelOut, filepath);
 	}
 
-	// Enable only to get a log of the commands only
-	if(true) {
+	// Enable to get a log of the commands only
+	if(false) {
 		const channelOut = vscode.window.createOutputChannel("Z80 Debugger Socket Commands");
 		Lg.LogSocketCommands = new Log();
 		Lg.LogSocketCommands.init(channelOut, undefined);
