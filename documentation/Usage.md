@@ -63,7 +63,7 @@ A typical configuration looks like this:
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
-- startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=false).
+- startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
 - codeCoverage: If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in "normal" launch configurations.
