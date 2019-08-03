@@ -180,11 +180,13 @@ If you need to initialize something at the start of your unit test then please a
 
 ## Setup the launch.json
 
-You need to create a special launch.json configuration for the unit tests.
-It works mainly like the normal launch configuration but has some specialties:
-- the property 'unittest' need to be set to true. Note that only one configuration is allowed to have that property set to true.
+You need to create a special configuration in side the launch.json for the unit tests.
+At best you copy a working configuration, change its name (to e.g. "Unit Tests") and change/add a few properties:
+- the property 'unitTests' need to be added and set to true. Note that only one configuration is allowed to have this property set to true.
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
-
+- 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
+If you like you can set this set this to true, but then you need to set a breakpoint inside your unit test if you debug it otherwise the unit test will be finished before you can see anything in the debugger.
+- You must remove any occurrence of 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated automatically and the PC (program counter) is set accordingly.
 
 
 ## Start the Unit Tests
@@ -267,15 +269,7 @@ Example:
 ![](images/unittest_test_explorer.jpg)
 
 
-## Settings
-
-- 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
-If you like you can set this set this to true., but then you need to set a breakpoint inside your unit test otherwise the unit test will be finished before you can see anything in the debugger.
-
-
 # Caveats
-
-For the unit test configuration (launch.json) you must not add any 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated and the PC (program counter) is set accordingly.
 
 If you use a .sna file the inherit start address is simply ignored.
 You can use .sna and plain .obj files for unit tests. .tap files will not work as the loading is emulated.

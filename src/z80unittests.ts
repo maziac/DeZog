@@ -253,13 +253,13 @@ export class Z80UnitTests {
 			// Start emulator.
 			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 
+			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
+			Labels.init();
+			Emulator.readListFiles(listFiles);
+
 			// Events
 			Emulator.once('initialized', () => {
 				try {
-					// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-					Labels.init();
-					Emulator.readListFiles(listFiles);
-
 					// Enable ASSERTs etc.
 					Emulator.enableAssertBreakpoints(true);
 					Emulator.enableWPMEM(true);
@@ -763,7 +763,7 @@ export class Z80UnitTests {
 				return;
 			}
 			// Check if we break on the first unit test.
-			if(!Settings.launch.startAutomatically ) {
+			if(Z80UnitTests.debug && !Settings.launch.startAutomatically ) {
 				const firstLabel = Z80UnitTests.utLabels[0];
 				const firstAddr = Labels.getNumberForLabel(firstLabel) as number;
 				if(firstAddr == undefined) {
