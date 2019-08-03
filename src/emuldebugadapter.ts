@@ -252,6 +252,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
+		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
 		// Close register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
@@ -357,6 +358,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
+		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
 		// Setup the disassembler
 		this.setupDisassembler();
 
@@ -387,6 +389,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Call the unit test handler. It will subscribe on events.
 		if(EmulDebugSessionClass.unitTestHandler) {
+			EmulDebugSessionClass.state = DbgAdaperState.UNITTEST;
 			EmulDebugSessionClass.unitTestHandler(this);
 		}
 
