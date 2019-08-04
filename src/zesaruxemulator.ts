@@ -102,6 +102,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public terminate(handler: () => void) {
 		this.terminating = true;
+		this.clearInstructionHistory();	// delete all transaction log files
 		// The socket connection must be closed as well.
 		zSocket.quit(() => {
 			// Send terminate event (to Debug Session which will send a TerminateEvent to vscode. That in turn will create a 'disconnect')

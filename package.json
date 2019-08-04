@@ -494,9 +494,6 @@
 							"disassemblerArgs": {
 								"esxdosRst": true
 							},
-							"labelsFiles": [
-								"path_to_your_assembler_file.labels"
-							],
 							"load": "path_to_your_sna_file.sna",
 							"skipInterrupt": true,
 							"codeCoverage": false

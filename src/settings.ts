@@ -92,7 +92,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	listFiles: Array<ListFile>;
 
 	/// The paths to the .labels files.
-	labelsFiles: Array<string>;	// TODO: Remove, not used anymore. Also remove labelsFiles from snippets.
+	//labelsFiles: Array<string>;
 
 	/// Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.
 	smallValuesMaximum: number;
@@ -190,7 +190,7 @@ export class Settings {
 				zport: <any>undefined,
 				rootFolder: <any>undefined,
 				listFiles: <any>undefined,
-				labelsFiles: <any>undefined,
+//				labelsFiles: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
@@ -240,10 +240,13 @@ export class Settings {
 			});
 		else
 			Settings.launch.listFiles = [];
+
+		/*
 		if(Settings.launch.labelsFiles)
 			Settings.launch.labelsFiles = Settings.launch.labelsFiles.map((fp) => Utility.getAbsFilePath(fp));
 		else
 			Settings.launch.labelsFiles = [];
+		*/
 
 		if(!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = (unitTests) ? 'UNITTEST_STACK' : '0x10000';
@@ -290,7 +293,7 @@ export class Settings {
 		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
 			Settings.launch.history.codeCoverageInstructionCountYoung = (unitTests) ? 10 : 0; // TODO: Codec overage is disabled by default if no unit test is run. Would be too slow for normal zesarux. I will change the default if zesarux does the transaction log in memory.
 		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)
-			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? 1000 : 0; 	// -1 = Infinite lines for unit test // TODO : change to infinite
+			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 0;
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {

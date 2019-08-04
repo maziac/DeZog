@@ -917,6 +917,8 @@ export class Z80UnitTests {
 		const f = () => {
 			// Remove event handling for the emulator
 			Emulator.removeAllListeners();
+			// Remove transaction logs
+			Emulator.clearInstructionHistory();
 
 			// Exit
 			if(debugAdapter)
