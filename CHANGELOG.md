@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.9.0
+- Fixed error in unit test stack label
+
+## 0.9.0
 - Unit Tests for assembler sources!
 - Supports new enhanced breakpoint condition format of ZEsarUX.
 - new setting 'loadObjs' to load object files.

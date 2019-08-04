@@ -86,10 +86,6 @@ export interface UnitTestCase {
  * 4. Loops over all found unit tests.
  */
 export class Z80UnitTests {
-
-	/// The label used for the stack.
-	public static utStackLabel = "UNITTEST_START";
-
 	/// This array will contain the names of all UT test cases.
 	protected static utLabels: Array<string>;
 
@@ -538,7 +534,7 @@ export class Z80UnitTests {
 			throw Error("Unit tests not enabled in assembler sources.")
 
 		// Get the unit test code
-		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel(Z80UnitTests.utStackLabel);
+		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel("UNITTEST_START");
 		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;

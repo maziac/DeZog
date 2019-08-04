@@ -42,13 +42,14 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 	- supports stepping through source code
 	- either in .list file or in .asm files
 - step-over, step-in, step-out, continue, pause
+- breakpoints (and breakpoints with conditions)
 - display of
 	- disassembly
 	- Z80 registers
 	- stack
 	- callstack
 	- tbblue sprites and patterns
-- changing of Z80 registers from vscode IDE
+- changing of Z80 registers from vscode
 - labels
 	- number-label resolution, i.e. along with numbers also the corresponding label is displayed
 - hovering

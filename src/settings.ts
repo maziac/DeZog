@@ -1,6 +1,5 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './utility';
-import { Z80UnitTests } from './z80unittests';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -9,6 +8,7 @@ import * as fs from 'fs';
  * list files from not supported assemblers.
  */
 export interface ListFile {
+
 	/// The path to the file.
 	path: string;
 
@@ -166,6 +166,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 /// A class through which the settings can be accessed.
 /// I.e. the parameters in launch.json.
 export class Settings {
+
 	/// the representation of the launch.json
 	public static launch:  SettingsParameters;
 
@@ -179,6 +180,7 @@ export class Settings {
 	/// This has to be set in the launchRequest.
 	/// Initializes all values (sets anything that is not set in the json).
 	/// All relative paths are expanded with the 'rootFolder' path.
+	/// @param utTopOfStackLabel Is set by the unit tests to use a different stack.
 	static Init(launchCfg: SettingsParameters, rootFolder: string) {
 		Settings.launch = launchCfg;
 		if(!Settings.launch) {
@@ -244,7 +246,7 @@ export class Settings {
 			Settings.launch.labelsFiles = [];
 
 		if(!Settings.launch.topOfStack)
-			Settings.launch.topOfStack = (unitTests) ? '0x10000' : Z80UnitTests.utStackLabel;;
+			Settings.launch.topOfStack = (unitTests) ? 'UNITTEST_STACK' : '0x10000';
 
 		if(Settings.launch.load)
 			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
