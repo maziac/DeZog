@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.9.2
+
 ## 0.9.1
 - Fixed error in unit test stack label
 

@@ -58,7 +58,7 @@ A typical configuration looks like this:
 
 - name: The (human readable) name of the Z80-Debug-Adapter as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
-- zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the.sna file to a remote computer. So better stick to local debugging for now.
+- zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
@@ -83,13 +83,15 @@ In your launch.json:
 ~~~
 
 Note: instead of a label you can also use a fixed number.
-- load: The snapshot (or tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
+- load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
 Note 1: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
+- loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files.
+- execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
-- "memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
+- memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
 	- addressColor: The first column shows the address. You can change the color here.
 	- asciiColor: You can change the color of the ascii field here.
 	- addressHoverFormat: Format for the address when hovering.
@@ -250,7 +252,7 @@ Now start z80-debug by pressing the green arrow in the debug pane (make sure tha
 z80-debug will now
 
 - open the socket connection to ZEsarUX
-- instruct ZEsarUX to load the snapshot file (or tap file)
+- instruct ZEsarUX to load the nex, snapshot file or tap file
 - set breakpoints (if there are breakpoints set in vscode)
 - put ZEsarUX into step mode ('enter-cpu-step') and stop/break the just started assembler program
 
