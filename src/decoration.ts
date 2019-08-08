@@ -18,7 +18,7 @@ class DecorationFileMap {
 	public decoType: vscode.TextEditorDecorationType;
 
 	/// Holds a map with filenames associated with the lines.
-	public fileMap: Map<string, Array<number>>;
+	public fileMap: Map<string, Array<vscode.Range>|Array<vscode.DecorationOptions>>;
 }
 
 
@@ -131,22 +131,22 @@ export class DecorationClass {
 
 		let decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = coverageDecoType;
-		decoFileMap.fileMap = new Map<string, Array<number>>();
+		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
 		this.decorationFileMaps.set(this.COVERAGE_IMMEDIATE, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = coverageElderDecoType;
-		decoFileMap.fileMap = new Map<string, Array<number>>();
+		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
 		this.decorationFileMaps.set(this.COVERAGE_ELDER, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = revDbgDecoType;
-		decoFileMap.fileMap = new Map<string, Array<number>>();
+		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
 		this.decorationFileMaps.set(this.REVERSE_DEBUG, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = breakDecoType;
-		decoFileMap.fileMap = new Map<string, Array<number>>();
+		decoFileMap.fileMap = new Map<string, Array<vscode.DecorationOptions>>();
 		this.decorationFileMaps.set(this.BREAK, decoFileMap);
 
 		// Watch the text editors to decorate them.
@@ -201,6 +201,54 @@ export class DecorationClass {
 
 
 	/**
+	 * Sets decorations for all types.
+	 * Coverage, revers debug, breaks.
+	 */
+	protected setAllDecorations(editor: vscode.TextEditor|undefined) {
+		if(!editor)
+			return;
+
+		// Get filename
+		const edFilename = editor.document.fileName;
+
+		// Go through all coverage maps
+		for(const [,decoMap] of this.decorationFileMaps) {
+			// Get lines
+			const fileMap = decoMap.fileMap;
+			const decorations = fileMap.get(edFilename);
+			if(decorations) {
+				// Set all decorations
+				editor.setDecorations(decoMap.decoType, decorations);
+			}
+		}
+	}
+
+
+	/**
+	 * Sets decorations for a specific type.
+	 * Coverage, revers debug, breaks.
+	 * @param fileMapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
+	 * or BREAK.
+	 */
+	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
+		// Get filename
+		const edFilename = editor.document.fileName;
+
+		// Get file map
+		const decoMap = this.decorationFileMaps.get(fileMapName) as DecorationFileMap;
+		assert(decoMap);
+
+		// Get lines
+		const fileMap = decoMap.fileMap;
+		const decorations = fileMap.get(edFilename);
+		if(decorations) {
+			// Set decorations
+			editor.setDecorations(decoMap.decoType, decorations);
+		}
+	}
+
+
+	/**
 	 * Shows (adds) the code coverage of the passed addresses.
 	 * The active editors are decorated.
 	 * The set is added to the existing ones to decorate another editor when the focus changes.
@@ -228,14 +276,16 @@ export class DecorationClass {
 				if(filename.length == 0)
 					return;
 				// Get filename set
-				let lines = fileMap.get(filename);
+				let lines = fileMap.get(filename) as Array<vscode.Range>;
 				if(!lines) {
 					// Create a new
-					lines = new Array<number>();
+					lines = new Array<vscode.Range>();
 					fileMap.set(filename, lines);
 				}
+				const lineNr = location.lineNr;
+				const range = new vscode.Range(lineNr,0, lineNr,1000);
 				// Add address to set
-				lines.push(location.lineNr);
+				lines.push(range);
 			});
 		}
 
@@ -245,66 +295,6 @@ export class DecorationClass {
 			this.setDecorations(editor, this.COVERAGE_IMMEDIATE);
 			this.setDecorations(editor, this.COVERAGE_ELDER);
 		}
-	}
-
-
-	/**
-	 * Sets decorations for all types.
-	 * Coverage, revers debug, breaks.
-	 */
-	protected setAllDecorations(editor: vscode.TextEditor|undefined) {
-		if(!editor)
-			return;
-
-		// Get filename
-		const edFilename = editor.document.fileName;
-
-		// Go through all coverage maps
-		for(const [,decoMap] of this.decorationFileMaps) {
-			// Get lines
-			const fileMap = decoMap.fileMap;
-			let lines = fileMap.get(edFilename);
-			const decorations = new Array<vscode.Range>();
-			if(lines) {
-				// Decorate all immediate lines (coverage)
-				for(const line of lines) {
-					const range = new vscode.Range(line,0, line,1000);
-					decorations.push(range);
-				}
-			}
-			// Set all decorations
-			editor.setDecorations(decoMap.decoType, decorations);
-		}
-	}
-
-
-	/**
-	 * Sets decorations for a specific type.
-	 * Coverage, revers debug, breaks.
-	 * @param fileMapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
-	 * or BREAK.
-	 */
-	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
-		// Get filename
-		const edFilename = editor.document.fileName;
-
-		// Get file map
-		const decoMap = this.decorationFileMaps.get(fileMapName) as DecorationFileMap;
-		assert(decoMap);
-
-		// Get lines
-		const fileMap = decoMap.fileMap;
-		let lines = fileMap.get(edFilename);
-		const decorations = new Array<vscode.Range>();
-		if(lines) {
-			// Decorate all immediate lines (coverage)
-			for(const line of lines) {
-				const range = new vscode.Range(line,0, line,1000);
-				decorations.push(range);
-			}
-		}
-		// Set all decorations
-		editor.setDecorations(decoMap.decoType, decorations);
 	}
 
 
@@ -327,14 +317,17 @@ export class DecorationClass {
 			if(filename.length == 0)
 				return;
 			// Get filename set
-			let lines = fileMap.get(filename);
+			let lines = fileMap.get(filename) as Array<vscode.Range>;
 			if(!lines) {
 				// Create a new
-				lines = new Array<number>();
+				lines = new Array<vscode.Range>();
 				fileMap.set(filename, lines);
 			}
 			// Add address to set
-			lines.push(location.lineNr);
+			const lineNr = location.lineNr;
+			const range = new vscode.Range(lineNr,0, lineNr,1000);
+			// Add address to set
+			lines.push(range);
 		});
 
 		// Loop through all open editors.
@@ -342,6 +335,52 @@ export class DecorationClass {
 		for(const editor of editors) {
 			this.setDecorations(editor, this.REVERSE_DEBUG);
 		}
+	}
+
+
+	/**
+	 * Is called when a new 'break' should be shown.
+	 * Will set the decorations.
+	 * There are 1 to 2 decorations.
+	 * If pc == breakAddress it is a normal break at the PC.
+	 * In this case a simple decoration with the text is shown.
+	 * If pc != breakAddress it is e.g. a break because of a memory watch.
+	 * In this case the decoration at the breakAddress will contain the text and
+	 * the decoration at the pc will also get the text and also a link to the
+	 * breakAddress decoration.
+	 * @param addresses The address to decorate.
+	 */
+	public showBreak(pc: number, breakAddress: number, text: string) {
+		// Get file map
+		const decoMap = this.decorationFileMaps.get(this.BREAK) as DecorationFileMap;
+		const fileMap = decoMap.fileMap;
+		fileMap.clear();
+
+		// Get file location for pc
+		const location = Labels.getFileAndLineForAddress(pc);
+		const filename = location.fileName;
+		if(filename.length > 0) {
+			// Get filename set
+			let lines = fileMap.get(filename) as Array<vscode.DecorationOptions>;
+			if(!lines) {
+				// Create a new
+				lines = new Array<vscode.DecorationOptions>();
+				fileMap.set(filename, lines);
+			}
+			const lineNr = location.lineNr;
+			const deco = {
+				range: new vscode.Range(lineNr,0, lineNr,1000),
+				hoverMessage: undefined,
+				renderOptions: {
+				  after: {},
+				},
+			  };
+			// Add address to set
+			lines.push(deco);
+		}
+
+		// TODO: handle breakAdress: display the memory watch
+
 	}
 
 }
