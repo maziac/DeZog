@@ -122,7 +122,7 @@ export class DecorationClass {
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#ffff00',
+				backgroundColor: '#202000',
 			}
 		});
 
@@ -372,15 +372,24 @@ export class DecorationClass {
 				range: new vscode.Range(lineNr,0, lineNr,1000),
 				hoverMessage: undefined,
 				renderOptions: {
-				  after: {},
+				  after: {
+					  contentText: text
+				  },
 				},
 			  };
+
 			// Add address to set
 			lines.push(deco);
 		}
 
 		// TODO: handle breakAdress: display the memory watch
 
+
+		// Loop through all open editors.
+		const editors = vscode.window.visibleTextEditors;
+		for(const editor of editors) {
+			this.setDecorations(editor, this.BREAK);
+		}
 	}
 
 }

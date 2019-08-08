@@ -629,7 +629,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Reset T-state counter.
 			zSocket.send('reset-tstates-partial', () => {
 				// Run
-				zSocket.sendInterruptableRunCmd(reason => {
+				zSocket.sendInterruptableRunCmd(text => {
 					// (could take some time, e.g. until a breakpoint is hit)
 					// get T-State counter
 					zSocket.send('get-tstates-partial', data => {
@@ -642,6 +642,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 							this.RegisterCache = undefined;
 							// Handle code coverage
 							this.handleTransactionLog();
+							// The reason is the 2nd line
+							const reason = text.split('\n')[1];
+							assert(reason);
 							// Call handler
 							contStoppedHandler(reason, tStates, cpuFreq);
 						});
