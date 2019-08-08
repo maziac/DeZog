@@ -4,37 +4,53 @@ import { Labels } from './labels';
 import * as assert from 'assert';
 
 
+
 /// Is a singleton. Initialize in 'activate'.
 export let Decoration;
 
 
 /**
- * A singleton that holds the editor decorations for code coverage
- * and reverse debugging.
+ * Each decoration type )coverage, reverse debug, break) gets its own
+ * instance of DecorationFileMap.
+ */
+class DecorationFileMap {
+	/// The decoration type for covered lines.
+	public decoType: vscode.TextEditorDecorationType;
+
+	/// Holds a map with filenames associated with the lines.
+	public fileMap: Map<string, Array<number>>;
+}
+
+
+/**
+ * A singleton that holds the editor decorations for code coverage,
+ * reverse debugging andother decorations, e.g. 'break'.
  */
 export class DecorationClass {
-	/// The decoration type for covered lines.
-	protected coverageDecoType: vscode.TextEditorDecorationType;
+	// Names to identify the decorations.
+	protected COVERAGE_IMMEDIATE = "CovImmediate";
+	protected COVERAGE_ELDER = "CovElder";
+	protected REVERSE_DEBUG = "RevDbg";
+	protected BREAK = "Break";
 
-	/// The decoration type for elderly covered lines.
-	protected coverageElderDecoType: vscode.TextEditorDecorationType;
-
-	/// Holds a map with filenames associated with the addresses.
-	protected coverageFileMap: Map<string, Set<number>>;
-	/// The same but for the elder addresses.
-	protected coverageFileMapElder: Map<string, Set<number>>;
-
-	/// Holds a map with filenames associated with the addresses
-	/// for reverse debugging.
-	protected revDbgFileMap: Map<string, Set<number>>;
+	// Holds the decorations for coverage, reverse debug and breakpoints.
+	protected decorationFileMaps: Map<string, DecorationFileMap>;
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
 	public static Initialize(context: vscode.ExtensionContext) {
 		// Create new singleton
 		Decoration = new DecorationClass();
-		// Set the absoute paths.
-		Decoration.coverageDecoType = vscode.window.createTextEditorDecorationType({
+	}
+
+
+	/**
+	 * Register for a change of the text editor to decorate it with the
+	 * covered lines.
+	 */
+	constructor() {
+		// Create the decoration types.
+		const coverageDecoType = vscode.window.createTextEditorDecorationType({
 			/*
 			borderWidth: '1px',
 			borderStyle: 'solid',
@@ -63,7 +79,7 @@ export class DecorationClass {
 			}
 		});
 		// For the elder lines a little lighter
-		Decoration.coverageElderDecoType = vscode.window.createTextEditorDecorationType({
+		const coverageElderDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			light: {
@@ -77,7 +93,7 @@ export class DecorationClass {
 		});
 
 		// Decoration for reverse debugging.
-		Decoration.revDbgDecoType = vscode.window.createTextEditorDecorationType({
+		const revDbgDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			borderWidth: '1px',
@@ -94,21 +110,51 @@ export class DecorationClass {
 			}
 			*/
 		});
-	}
 
 
-	/**
-	 * Register for a change of the text editor to decorate it with the
-	 * covered lines.
-	 */
-	constructor() {
+		// Decoration for 'Breaks'
+		const breakDecoType = vscode.window.createTextEditorDecorationType({
+			isWholeLine: true,
+			gutterIconSize: 'auto',
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#ffff00',
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#ffff00',
+			}
+		});
+
+		// Create the map
+		this.decorationFileMaps = new Map<string, DecorationFileMap>();
+
+		let decoFileMap = new DecorationFileMap();
+		decoFileMap.decoType = coverageDecoType;
+		decoFileMap.fileMap = new Map<string, Array<number>>();
+		this.decorationFileMaps.set(this.COVERAGE_IMMEDIATE, decoFileMap);
+
+		decoFileMap = new DecorationFileMap();
+		decoFileMap.decoType = coverageElderDecoType;
+		decoFileMap.fileMap = new Map<string, Array<number>>();
+		this.decorationFileMaps.set(this.COVERAGE_ELDER, decoFileMap);
+
+		decoFileMap = new DecorationFileMap();
+		decoFileMap.decoType = revDbgDecoType;
+		decoFileMap.fileMap = new Map<string, Array<number>>();
+		this.decorationFileMaps.set(this.REVERSE_DEBUG, decoFileMap);
+
+		decoFileMap = new DecorationFileMap();
+		decoFileMap.decoType = breakDecoType;
+		decoFileMap.fileMap = new Map<string, Array<number>>();
+		this.decorationFileMaps.set(this.BREAK, decoFileMap);
+
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			// This is called for the editor that is going to hide and for the editor
 			// that is shown.
 			// Unfortunately there is no way to differentiate so both are handled.
-			this.setCoverageDecoration(editor);
-			this.setRevDbgDecoration(editor);
+			this.setAllDecorations(editor);
 		});
 	}
 
@@ -117,27 +163,40 @@ export class DecorationClass {
 	 * Loops through all active editors and clear the coverage decorations.
 	 */
 	public clearCodeCoverage() {
-		this.coverageFileMap = new Map<string, Set<number>>();
-		this.coverageFileMapElder = new Map<string, Set<number>>();
-		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
-			editor.setDecorations(Decoration.coverageDecoType, []);
-			editor.setDecorations(Decoration.coverageElderDecoType, []);
-		}
+		this.clearDecorations(this.COVERAGE_IMMEDIATE);
+		this.clearDecorations(this.COVERAGE_ELDER);
 	}
 
 
+	/**
+	 * Loops through all active editors and clear the reverse debug decorations.
+	 */
+	public clearRevDbgHistory() {
+		this.clearDecorations(this.REVERSE_DEBUG);
+	}
 
 
 	/**
-	 * Loops through all active editors and clear the coverage decorations.
+	 * Loops through all active editors and clear the 'break' decorations.
 	 */
-	public clearRevDbgHistory() {
-		this.revDbgFileMap = new Map<string, Set<number>>();
+	public clearBreak() {
+		this.clearDecorations(this.BREAK);
+	}
+
+
+	/**
+	 * Loops through all active editors and clear the decorations.
+	 * @param mapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
+	 * or BREAK.
+	 */
+	protected clearDecorations(mapName: string) {
+		const map = this.decorationFileMaps.get(mapName) as DecorationFileMap;
+		map.fileMap.clear();
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			editor.setDecorations(Decoration.revDbgDecoType, []);
+			editor.setDecorations(map.decoType, []);
 		}
+
 	}
 
 
@@ -151,127 +210,101 @@ export class DecorationClass {
 	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
 		//return;
 		assert(coveredAddresses.length == 2);
-		// Loop over all immediate addresses
-		this.coverageFileMap = new Map<string, Set<number>>();
-		coveredAddresses[0].forEach(addr => {
-			// Get file location for address
-			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
-			if(filename.length == 0)
-				return;
-			// Get filename set
-			let lines = this.coverageFileMap.get(filename);
-			if(!lines) {
-				// Create a new
-				lines = new Set<number>();
-				this.coverageFileMap.set(filename, lines);
-			}
-			// Add address to set
-			lines.add(location.lineNr);
-		});
 
-		// Loop over all elder addresses
-		this.coverageFileMapElder = new Map<string, Set<number>>();
-		coveredAddresses[1].forEach(addr => {
-			// Get file location for address
-			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
-			if(filename.length == 0)
-				return;
-			// Get filename set
-			let lines = this.coverageFileMapElder.get(filename);
-			if(!lines) {
-				// Create a new
-				lines = new Set<number>();
-				this.coverageFileMapElder.set(filename, lines);
-			}
-			// Add address to set
-			lines.add(location.lineNr);
-		});
+		const covMaps = [ this.COVERAGE_IMMEDIATE, this.COVERAGE_ELDER];
+
+		// Loop over both maps
+		for(let i=0; i<2; i++) {
+			// Get map name
+			const mapName = covMaps[i];
+			// Loop over all addresses
+			const decoMap = this.decorationFileMaps.get(mapName) as DecorationFileMap;
+			const fileMap = decoMap.fileMap;
+			fileMap.clear();
+			coveredAddresses[i].forEach(addr => {
+				// Get file location for address
+				const location = Labels.getFileAndLineForAddress(addr);
+				const filename = location.fileName;
+				if(filename.length == 0)
+					return;
+				// Get filename set
+				let lines = fileMap.get(filename);
+				if(!lines) {
+					// Create a new
+					lines = new Array<number>();
+					fileMap.set(filename, lines);
+				}
+				// Add address to set
+				lines.push(location.lineNr);
+			});
+		}
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setCoverageDecoration(editor);
+			this.setDecorations(editor, this.COVERAGE_IMMEDIATE);
+			this.setDecorations(editor, this.COVERAGE_ELDER);
 		}
 	}
 
 
 	/**
-	 * Sets coverage decoration for the given editor.
-	 * @param editor The editor to decorate.
+	 * Sets decorations for all types.
+	 * Coverage, revers debug, breaks.
 	 */
-	protected setCoverageDecoration(editor: vscode.TextEditor|undefined) {
+	protected setAllDecorations(editor: vscode.TextEditor|undefined) {
 		if(!editor)
 			return;
 
 		// Get filename
 		const edFilename = editor.document.fileName;
 
-		// Immediate lines
-		// Get lines
-		let lines = this.coverageFileMap.get(edFilename);
-		if(lines) {
-			// Decorate all immediate lines (coverage)
+		// Go through all coverage maps
+		for(const [,decoMap] of this.decorationFileMaps) {
+			// Get lines
+			const fileMap = decoMap.fileMap;
+			let lines = fileMap.get(edFilename);
 			const decorations = new Array<vscode.Range>();
-			for(const line of lines) {
-				const range = new vscode.Range(line,0, line,1000);
-				decorations.push(range);
+			if(lines) {
+				// Decorate all immediate lines (coverage)
+				for(const line of lines) {
+					const range = new vscode.Range(line,0, line,1000);
+					decorations.push(range);
+				}
 			}
 			// Set all decorations
-			editor.setDecorations(Decoration.coverageDecoType, decorations);
-		}
-		else {
-			// Clear old decorations
-			editor.setDecorations(Decoration.coverageDecoType, []);
-		}
-
-		// Elder lines
-		// Get lines
-		lines = this.coverageFileMapElder.get(edFilename);
-		if(lines) {
-			// Decorate all immediate lines (coverage)
-			const decorations = new Array<vscode.Range>();
-			for(const line of lines) {
-				const range = new vscode.Range(line,0, line,1000);
-				decorations.push(range);
-			}
-			// Set all decorations
-			editor.setDecorations(Decoration.coverageElderDecoType, decorations);
-		}
-		else {
-			// Clear old decorations
-			editor.setDecorations(Decoration.coverageElderDecoType, []);
+			editor.setDecorations(decoMap.decoType, decorations);
 		}
 	}
 
-	/**
-	 * Sets reverse debug decoration for the given editor.
-	 * @param editor The editor to decorate.
-	 */
-	protected setRevDbgDecoration(editor: vscode.TextEditor|undefined) {
-		if(!editor)
-			return;
 
+	/**
+	 * Sets decorations for a specific type.
+	 * Coverage, revers debug, breaks.
+	 * @param fileMapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
+	 * or BREAK.
+	 */
+	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
 		// Get filename
 		const edFilename = editor.document.fileName;
 
-		// Reverse debugging lines
-		let lines = this.revDbgFileMap.get(edFilename);
+		// Get file map
+		const decoMap = this.decorationFileMaps.get(fileMapName) as DecorationFileMap;
+		assert(decoMap);
+
+		// Get lines
+		const fileMap = decoMap.fileMap;
+		let lines = fileMap.get(edFilename);
+		const decorations = new Array<vscode.Range>();
 		if(lines) {
 			// Decorate all immediate lines (coverage)
-			const decorations = new Array<vscode.Range>();
 			for(const line of lines) {
 				const range = new vscode.Range(line,0, line,1000);
 				decorations.push(range);
 			}
-			// Set all decorations
-			editor.setDecorations(Decoration.revDbgDecoType, decorations);
 		}
-		else {
-			// Clear old decorations
-			editor.setDecorations(Decoration.revDbgDecoType, []);
-		}
+		// Set all decorations
+		editor.setDecorations(decoMap.decoType, decorations);
 	}
 
 
@@ -281,8 +314,12 @@ export class DecorationClass {
 	 * @param addresses The address to decorate.
 	 */
 	public showRevDbgHistory(addresses: Array<number>) {
+		// Get file map
+		const decoMap = this.decorationFileMaps.get(this.REVERSE_DEBUG) as DecorationFileMap;
+		const fileMap = decoMap.fileMap;
+		fileMap.clear();
+
 		// Loop over all all addresses
-		this.revDbgFileMap = new Map<string, Set<number>>();
 		addresses.forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
@@ -290,20 +327,20 @@ export class DecorationClass {
 			if(filename.length == 0)
 				return;
 			// Get filename set
-			let lines = this.revDbgFileMap.get(filename);
+			let lines = fileMap.get(filename);
 			if(!lines) {
 				// Create a new
-				lines = new Set<number>();
-				this.revDbgFileMap.set(filename, lines);
+				lines = new Array<number>();
+				fileMap.set(filename, lines);
 			}
 			// Add address to set
-			lines.add(location.lineNr);
+			lines.push(location.lineNr);
 		});
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setRevDbgDecoration(editor);
+			this.setDecorations(editor, this.REVERSE_DEBUG);
 		}
 	}
 
