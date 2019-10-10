@@ -263,10 +263,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 					// Code coverage
-					if(Settings.codeCoverageEnabled)
+					if(Settings.codeCoverageEnabled) {
 						zSocket.send('cpu-code-coverage enabled yes');
+						zSocket.send('cpu-code-coverage clear');
+					}
 					else
 						zSocket.send('cpu-code-coverage enabled no');
+/*
+					zSocket.send('cpu-code-coverage get', data => {
+						const a = data;
+						});
+*/
 
 					// Number of lines for reverse debug
 					//const lines = this.numberOfHistoryLines();
@@ -1142,7 +1149,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Clear coverage in ZEsarUX
 			zSocket.send('cpu-code-coverage clear');
 			// Emit code coverage event
-			this.emit('coverage', [addresses]);	// TODO: I don't need the array of sets, just one set
+			this.emit('coverage', addresses);
 		});
 	}
 

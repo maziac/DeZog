@@ -28,8 +28,8 @@ class DecorationFileMap {
  */
 export class DecorationClass {
 	// Names to identify the decorations.
-	protected COVERAGE_IMMEDIATE = "CovImmediate";
-	protected COVERAGE_ELDER = "CovElder";
+	protected COVERAGE = "Coverage";
+	protected REVERSE_DEBUG_PREVIOUS = "RevDbgPrevious";
 	protected REVERSE_DEBUG = "RevDbg";
 	protected BREAK = "Break";
 
@@ -132,12 +132,12 @@ export class DecorationClass {
 		let decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = coverageDecoType;
 		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
-		this.decorationFileMaps.set(this.COVERAGE_IMMEDIATE, decoFileMap);
+		this.decorationFileMaps.set(this.COVERAGE, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = coverageElderDecoType;
 		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
-		this.decorationFileMaps.set(this.COVERAGE_ELDER, decoFileMap);
+		this.decorationFileMaps.set(this.REVERSE_DEBUG_PREVIOUS, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = revDbgDecoType;
@@ -163,8 +163,7 @@ export class DecorationClass {
 	 * Loops through all active editors and clear the coverage decorations.
 	 */
 	public clearCodeCoverage() {
-		this.clearDecorations(this.COVERAGE_IMMEDIATE);
-		this.clearDecorations(this.COVERAGE_ELDER);
+		this.clearDecorations(this.COVERAGE);
 	}
 
 
@@ -172,6 +171,7 @@ export class DecorationClass {
 	 * Loops through all active editors and clear the reverse debug decorations.
 	 */
 	public clearRevDbgHistory() {
+		this.clearDecorations(this.REVERSE_DEBUG_PREVIOUS);
 		this.clearDecorations(this.REVERSE_DEBUG);
 	}
 
@@ -255,45 +255,36 @@ export class DecorationClass {
 	 * Is called when the event 'covered' has been emitted by the Emulator.
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
-	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
-		//return;
-		//assert(coveredAddresses.length == 2);
-
-		const covMaps = [ this.COVERAGE_IMMEDIATE, this.COVERAGE_ELDER];
-
-		// Loop over both maps
-		for(let i=0; i<1 /*2*/; i++) {
-			// Get map name
-			const mapName = covMaps[i];
-			// Loop over all addresses
-			const decoMap = this.decorationFileMaps.get(mapName) as DecorationFileMap;
-			const fileMap = decoMap.fileMap;
-			fileMap.clear();
-			coveredAddresses[i].forEach(addr => {
-				// Get file location for address
-				const location = Labels.getFileAndLineForAddress(addr);
-				const filename = location.fileName;
-				if(filename.length == 0)
-					return;
-				// Get filename set
-				let lines = fileMap.get(filename) as Array<vscode.Range>;
-				if(!lines) {
-					// Create a new
-					lines = new Array<vscode.Range>();
-					fileMap.set(filename, lines);
-				}
-				const lineNr = location.lineNr;
-				const range = new vscode.Range(lineNr,0, lineNr,1000);
-				// Add address to set
-				lines.push(range);
-			});
-		}
+	public showCodeCoverage(coveredAddresses: Set<number>) {
+		// Get map name
+		const mapName = this.COVERAGE;
+		// Loop over all addresses
+		const decoMap = this.decorationFileMaps.get(mapName) as DecorationFileMap;
+		const fileMap = decoMap.fileMap;
+		fileMap.clear();
+		coveredAddresses.forEach(addr => {
+			// Get file location for address
+			const location = Labels.getFileAndLineForAddress(addr);
+			const filename = location.fileName;
+			if(filename.length == 0)
+				return;
+			// Get filename set
+			let lines = fileMap.get(filename) as Array<vscode.Range>;
+			if(!lines) {
+				// Create a new
+				lines = new Array<vscode.Range>();
+				fileMap.set(filename, lines);
+			}
+			const lineNr = location.lineNr;
+			const range = new vscode.Range(lineNr,0, lineNr,1000);
+			// Add address to set
+			lines.push(range);
+		});
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setDecorations(editor, this.COVERAGE_IMMEDIATE);
-			this.setDecorations(editor, this.COVERAGE_ELDER);
+			this.setDecorations(editor, this.COVERAGE);
 		}
 	}
 
@@ -333,6 +324,7 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
+			this.setDecorations(editor, this.REVERSE_DEBUG_PREVIOUS);
 			this.setDecorations(editor, this.REVERSE_DEBUG);
 		}
 	}
