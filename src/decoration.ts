@@ -257,12 +257,12 @@ export class DecorationClass {
 	 */
 	public showCodeCoverage(coveredAddresses: Array<Set<number>>) {
 		//return;
-		assert(coveredAddresses.length == 2);
+		//assert(coveredAddresses.length == 2);
 
 		const covMaps = [ this.COVERAGE_IMMEDIATE, this.COVERAGE_ELDER];
 
 		// Loop over both maps
-		for(let i=0; i<2; i++) {
+		for(let i=0; i<1 /*2*/; i++) {
 			// Get map name
 			const mapName = covMaps[i];
 			// Loop over all addresses

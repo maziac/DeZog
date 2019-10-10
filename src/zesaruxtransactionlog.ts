@@ -27,6 +27,7 @@ import * as glob from 'glob';
  * - read the content of a line (the PC and registers, instruction)
  */
 export class ZesaruxTransactionLog {
+// TODO: Remove completely
 
 	/// The maximum cache size. If a file with no useful data (no newlines) of this size
 	/// is found an exception is thrown.

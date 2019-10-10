@@ -231,46 +231,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Enter step-mode (stop)
 					zSocket.send('enter-cpu-step');
 
-					// Set the cpu transaction log (for coverage)
-					const logFilename = Utility.getAbsCpuLogFileName();
-					// Set filename
-					zSocket.send('cpu-transaction-log logfile ' + logFilename + '');
-					// Disable for now
-					zSocket.send('cpu-transaction-log enabled no');
-					// Delete/clear it
-					zSocket.send('cpu-transaction-log truncate yes');
-
-
-					// Set autorotation
-					zSocket.send('cpu-transaction-log autorotate yes');
-					zSocket.send('cpu-transaction-log rotatefiles 1');
-					zSocket.send('cpu-transaction-log rotatesize 0');	// No rotation on size
-
-					// Number of lines
-					const lines = this.numberOfHistoryLines();
-					if(lines != 0)
-						zSocket.send('cpu-transaction-log rotatelines ' + lines);
-
-					// Coverage + reverse debugging settings
-
-					// Ignore repetition of 'HALT'
-					zSocket.send('cpu-transaction-log ignrephalt yes');
-
-					// Set datetime information
-					zSocket.send('cpu-transaction-log datetime no');
-					// Set tstates information
-					zSocket.send('cpu-transaction-log tstates no');
-					// Set address information
-					zSocket.send('cpu-transaction-log address yes');
-					// Set opcode information
-					//zSocket.send('cpu-transaction-log opcode yes');
-					//zSocket.send('cpu-transaction-log opcode no');
-					zSocket.send('cpu-transaction-log opcode yes');
-					// Set registers information
-					//zSocket.send('cpu-transaction-log registers yes');
-					//zSocket.send('cpu-transaction-log registers no');
-					zSocket.send('cpu-transaction-log registers yes');
-
 					// Load sna or tap file
 					const loadPath = Settings.launch.load;
 					if(loadPath)
@@ -300,6 +260,22 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 					// Initialize breakpoints
 					this.initBreakpoints();
+
+
+					// Code coverage
+					if(Settings.codeCoverageEnabled)
+						zSocket.send('cpu-code-coverage enabled yes');
+					else
+						zSocket.send('cpu-code-coverage enabled no');
+
+					// Number of lines for reverse debug
+					//const lines = this.numberOfHistoryLines();
+
+
+					// Coverage + reverse debugging settings
+
+					// TODO: Ignore repetition of 'HALT'
+
 				});
 
 				zSocket.executeWhenQueueIsEmpty(() => {
@@ -641,7 +617,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 							// Clear register cache
 							this.RegisterCache = undefined;
 							// Handle code coverage
-							this.handleTransactionLog();
+							this.handleCodeCoverage();
 							// The reason is the 2nd line
 							const reason = text.split('\n')[1];
 							assert(reason);
@@ -1106,7 +1082,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 							// Call handler
 							handler(tStates, cpuFreq);
 							// Handle code coverage
-							this.handleTransactionLog();
+							this.handleCodeCoverage();
 						});
 					});
 				});
@@ -1122,15 +1098,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler Is called after the coverage commands have been sent.
 	 */
 	protected enableCpuTransactionLog(handler:()=>void): void {
+		// TODO: similar for reverse debug
+
+		/*
 		// Code coverage or reverse debugging enabled
-		if(this.isCpuTransactionLogEnabled()) {
+		if(Settings.codeCoverageEnabled()) {
 			// Enable logging
-			zSocket.send('cpu-transaction-log enabled yes', data => {
+			zSocket.send('cpu-code-coverage get', data => {
 				// Call handler
 				handler();
 			});
 		}
-		else {
+		else
+		*/
+		{
 			// Call handler (without coverage)
 			handler();
 		}
@@ -1138,29 +1119,30 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Stops the cpu-transaction-log file to flush it.
-	 * Then reads it and collects all passed addresses.
+	 * Reads the coverage addresses and clears them in ZEsarUX.
 	 */
-	protected handleTransactionLog() {
-		// Disable logging to close/flush the file.
-		zSocket.send('cpu-transaction-log enabled no', () => {
-			// Reverse debugging
-			this.cpuTransactionLog.init();
-			// Check if code coverage is enabled
-			if(Settings.codeCoverageEnabled()) {
-				// Go through coverage file and collect all addresses
-				let count0 = Settings.launch.history.codeCoverageInstructionCountYoung;
-				let count1 = Settings.launch.history.codeCoverageInstructionCountElder;
-				if(count0 == -1) {
-					count0 = 0x7FFFFFFF;
-					count1 = 0;
-				}
-				else if(count1 == -1)
-					count1 = 0x7FFFFFFF;
-				const addresses = this.cpuTransactionLog.getPrevAddresses([count0, count1]);
-				// Emit code coverage event
-				this.emit('coverage', addresses);
+	protected handleCodeCoverage() {
+		// Check if code coverage is enabled
+		if(!Settings.codeCoverageEnabled)
+			return;
+
+		// Get coverage
+		zSocket.send('cpu-code-coverage get', data => {
+			// Check for error
+			if(data.startsWith('Error'))
+				return;
+			// Parse data and collect addresses
+			const addresses = new Set<number>();
+			const length = data.length;
+			for(let k=0; k<length; k+=5) {
+				const addressString = data.substr(k,4);
+				const address = parseInt(addressString, 16);
+				addresses.add(address);
 			}
+			// Clear coverage in ZEsarUX
+			zSocket.send('cpu-code-coverage clear');
+			// Emit code coverage event
+			this.emit('coverage', [addresses]);	// TODO: I don't need the array of sets, just one set
 		});
 	}
 
@@ -2029,8 +2011,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * @returns true if either code coverage or reverse debuggingis enabled.
+	 * @returns true if either code coverage or reverse debugging is enabled.
 	 */
+	// TODO: REMOVE
 	protected isCpuTransactionLogEnabled(): boolean {
 		return Settings.codeCoverageEnabled() || (Settings.launch.history.reverseDebugInstructionCount != 0);
 	}
@@ -2045,10 +2028,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * So that I will not use it but clear the logs on my own.
 	 */
 	public clearInstructionHistory() {
+		// TODO: REMOVE
 		super.clearInstructionHistory();
+		/*
 		zSocket.send('cpu-transaction-log truncate yes');
 		if(this.cpuTransactionLog)
 			this.cpuTransactionLog.deleteRotatedFiles();
+		*/
 	}
 
 

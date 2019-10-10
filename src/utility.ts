@@ -704,6 +704,7 @@ export class Utility {
 	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/cpu.log".
 	 */
 	public static getAbsCpuLogFileName(): string {
+		// TODO: REMOVE
 		const relPath = this.getRelTmpFilePath(CpuLogFileName);
 		return this.getAbsFilePath(relPath);
 	}
