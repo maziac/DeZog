@@ -278,8 +278,8 @@ export class EmulDebugSessionClass extends DebugSession {
 		response.body.supportsConfigurationDoneRequest = false;
 
 		// make VS Code to show a 'step back' button (Reverse Debugging)
-		//response.body.supportsStepBack = true;
-		response.body.supportsStepBack = false;
+		response.body.supportsStepBack = true;
+		//response.body.supportsStepBack = false;
 
 		// Maybe terminated on error
 		response.body.supportTerminateDebuggee = true;
