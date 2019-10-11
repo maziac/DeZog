@@ -18,10 +18,6 @@ const TmpDasmFileName = 'disasm.asm';
 const StateFileName = 'state_%s.bin';
 
 
-/// The file name used to store the cpu log.
-const CpuLogFileName = 'cpu.log';
-
-
 export class Utility {
 
 	/// The rootpath to the project. Used in abs and relative filename functions.
@@ -694,18 +690,6 @@ export class Utility {
 	public static getAbsStateFileName(stateName: string): string {
 		const fName = util.format(StateFileName, stateName);
 		const relPath = this.getRelTmpFilePath(fName);
-		return this.getAbsFilePath(relPath);
-	}
-
-
-	/**
-	 * Returns the file path of the cpu transaction log filename. Used for
-	 * unit test coverage.
-	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/cpu.log".
-	 */
-	public static getAbsCpuLogFileName(): string {
-		// TODO: REMOVE
-		const relPath = this.getRelTmpFilePath(CpuLogFileName);
 		return this.getAbsFilePath(relPath);
 	}
 

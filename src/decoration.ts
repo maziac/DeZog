@@ -261,7 +261,7 @@ export class DecorationClass {
 		// Loop over all addresses
 		const decoMap = this.decorationFileMaps.get(mapName) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
-		fileMap.clear();
+		//fileMap.clear();
 		coveredAddresses.forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);

@@ -476,16 +476,16 @@ note over xxx: Convert addresses to\nsource file locations.
 hide footbox
 title Coverage new
 participant xxx
-Emulator -> ZEsarUX: cpu-cpu-coverage enabled yes
-Emulator -> ZEsarUX: cpu-cpu-coverage clear
+Emulator -> ZEsarUX: cpu-code-coverage enabled yes
+Emulator -> ZEsarUX: cpu-code-coverage clear
 ...
 xxx -> Emulator: Step/Continue
 Emulator -> ZEsarUX: cpu-step/run
 note over ZEsarUX: stopped
 Emulator <-- ZEsarUX
-Emulator -> ZEsarUX: cpu-cpu-coverage get
+Emulator -> ZEsarUX: cpu-code-coverage get
 Emulator <-- ZEsarUX: Executed addresses
-Emulator -> ZEsarUX: cpu-cpu-coverage clear
+Emulator -> ZEsarUX: cpu-code-coverage clear
 xxx <-- Emulator: Event: 'coverage'
 note over xxx: Convert addresses to\nsource file locations.
 ```
