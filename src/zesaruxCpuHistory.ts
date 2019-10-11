@@ -32,8 +32,8 @@ export class ZesaruxCpuHistory {
 	// 1 = previous instruction and so on
 	protected revHistoryInstructionIndex;
 
-	// The real maximum size.
-	protected maxSize = 0;
+	// The real size.
+	protected size = 0;
 
 	/**
 	 * Creates the object.
@@ -48,13 +48,11 @@ export class ZesaruxCpuHistory {
 	 */
 	public init() {
 		this.revHistoryInstructionIndex = 0;
-		this.maxSize = this.MAX_SIZE;
+		this.size = 0;
 		zSocket.send('cpu-history enabled yes '+this.MAX_SIZE, () => {
 			zSocket.send('cpu-history set-max-size '+this.MAX_SIZE, () => {
 				zSocket.send('cpu-history clear '+this.MAX_SIZE, () => {
-					zSocket.send('cpu-history get-size', data => {
-				this.maxSize = parseInt(data);
-					});
+					zSocket.send('cpu-history started yes');
 				});
 			});
 		});
@@ -65,13 +63,24 @@ export class ZesaruxCpuHistory {
 	 * Moves the pointer to the previous instruction.
 	 * @returns false if there is no previous instruction.
 	 */
-	public prevInstruction(): boolean {
-		// Safety check
-		if(this.isAtEnd())
-			return false;
-
-		this.revHistoryInstructionIndex ++;
-		return true;
+	public async prevInstruction(): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Check if it is the first retrieved line
+			if(this.revHistoryInstructionIndex == 0) {
+				// Get size of history
+				zSocket.send('cpu-history get-size', async data => {
+					this.size = parseInt(data);
+					if(this.revHistoryInstructionIndex < this.size)
+						this.revHistoryInstructionIndex ++;
+					resolve();
+				});
+			}
+			else {
+				if(this.revHistoryInstructionIndex < this.size)
+					this.revHistoryInstructionIndex ++;
+				resolve();
+			}
+		});
 	}
 
 
@@ -81,7 +90,7 @@ export class ZesaruxCpuHistory {
 	 */
 	public nextInstruction(): boolean {
 		// Safety check
-		if(this.isAtStart())
+		if(this.revHistoryInstructionIndex == 0)
 			return false;
 
 		this.revHistoryInstructionIndex --;
@@ -95,16 +104,19 @@ export class ZesaruxCpuHistory {
 	 * May throw an exception if wrong data is received.
 	 * @returns A string with the instruction and registers.
 	 */
-	public getLine(): string {
-		let currentLine;
-		this.getLinePromise()
-		.then(line => {
-			currentLine = line;
-		})
-		.catch(() => {
+	public async getLine(): Promise<string|undefined> {
+		try {
+			let currentLine;
+			// Check if it is the first retrieved line
+			if(this.revHistoryInstructionIndex > 0
+				&& this.revHistoryInstructionIndex <= this.size) {
+					 currentLine = await this.getLinePromise();
+			}
+			return currentLine;
+		}
+		catch(e) {
 			throw Error("Error retrieving the cpu history from ZEsarUX.");
-		});
-		return currentLine;
+		}
 	}
 
 	/**
@@ -112,9 +124,11 @@ export class ZesaruxCpuHistory {
 	 * Is async.
 	 * @returns A string with the instruction and registers.
 	 */
-	protected async getLinePromise(): Promise<string> {
+	protected getLinePromise(): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
-			 zSocket('get-cpu-history ' + this.revHistoryInstructionIndex, data => {
+			assert(this.revHistoryInstructionIndex > 0);
+			const index = this.revHistoryInstructionIndex-1;
+			zSocket.send('cpu-history get index ' + index, data => {
 				if(data.startsWith("Error"))
 					reject();
 				else
@@ -127,12 +141,7 @@ export class ZesaruxCpuHistory {
 	/**
 	 * @returns The registers of the current line.
 	 */
-	public getRegisters(line?: string): string {
-		// Get current line
-		if(!line) {
-			line = this.getLine() as string;
-			assert(line);
-		}
+	public getRegisters(line: string): string {
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Turn into same format as for 'get-registers'
 		const k = line.indexOf('PC=');
@@ -147,12 +156,7 @@ export class ZesaruxCpuHistory {
 	 * 'getLine()' is called.
 	 * @returns The instruction, e.g. "LD A,1E".
 	 */
-	public getInstruction(line?: string): string {
-		// Get current line
-		if(!line) {
-			line = this.getLine() as string;
-			assert(line);
-		}
+	public getInstruction(line: string): string {
 		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction
 		const k = line.indexOf('PC=');
@@ -165,13 +169,8 @@ export class ZesaruxCpuHistory {
 	/**
 	 * @returns The address of the current line. Uses the first 4 digits simply.
 	 */
-	public getAddress(line?: string): number {
-		// Get current line
-		if(!line) {
-			line = this.getLine() as string;
-			assert(line);
-		}
-		line = line.substr(0,4);
+	public getAddress(line: string): number {
+		line = line.substr(3,4);
 		// Convert address
 		const addr = parseInt(line, 16);
 		return addr;
@@ -182,24 +181,15 @@ export class ZesaruxCpuHistory {
 	 * @returns Returns true if in step back mode.
 	 */
 	public isInStepBackMode() {
-		return !this.isAtStart();
-	}
-
-
-	/**
-	 * @returns true if at the very start of the file(s).
-	 */
-	protected isAtStart() {
-		return (this.revHistoryInstructionIndex <= 0);
+		return (this.revHistoryInstructionIndex > 0);
 	}
 
 
 	/**
 	 * @returns true if at the very end of the file(s).
 	 */
-	protected isAtEnd() {
-	//return (this.fileRotation >= 0) && (!this.file);
-		return (this.revHistoryInstructionIndex >= this.maxSize);
+	public isAtEnd() {
+		return (this.revHistoryInstructionIndex >= this.size);
 	}
 
 }

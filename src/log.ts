@@ -168,6 +168,9 @@ export class Log {
 	 * @returns 'class.method'. E.g. "ZesaruxDebugSession.initializeRequest:"
 	 */
 	protected callerName(): string {
+		// Diabled
+		return '';
+
 		// Check if caller name is configured
 		if(this.callerNameIndex < 0)
 			return '';
