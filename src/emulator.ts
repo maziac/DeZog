@@ -504,7 +504,7 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	* Gets the registers from cache. If cache is empty retrieves teh registers from
+	* Gets the registers from cache. If cache is empty retrieves the registers from
 	* the emulator.
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/

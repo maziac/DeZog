@@ -684,6 +684,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * the first line. 'getRegisters' can cope with both formats.
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string) {
+		// TODO: handle stack
+		if (false) {
+
 		assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
 		//const lastFrame =
@@ -715,6 +718,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				assert(this.reverseDbgStack.length > 0);
 				this.reverseDbgStack.shift();
 			}
+		}
 		}
 
 		// Add current PC
@@ -1312,6 +1316,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let errorText;
 			let instr = '';
 			try {
+				/*
 				// Remember previous position
 				let lastLine = await this.cpuHistory.getLine() as string;
 				if(!lastLine) {
@@ -1319,6 +1324,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 					lastLine = this.RegisterCache as string;
 					assert(lastLine);
 				}
+				*/
+				let lastLine;  // Not required anymore
 
 				// Move backwards
 				const currentLine = await this.revDbgPrev();

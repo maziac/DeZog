@@ -103,7 +103,8 @@ export class StateZX16K extends StateZ80 {
 	 */
 	public async write(binFile: BinaryFile) {
 		// Write registers
-		const bufRegs = new Buffer(this.registers.buffer);
+		//const bufRegs = new Buffer(this.registers.buffer);
+		const bufRegs = Buffer.from(this.registers.buffer);
 		await binFile.write(bufRegs);
 
 		//for(const reg of this.registers)
@@ -117,7 +118,8 @@ export class StateZX16K extends StateZ80 {
 			// size
 			await binFile.writeUInt16(bank.length);
 			// data
-			await binFile.write(new Buffer(bank.buffer));
+			//await binFile.write(new Buffer(bank.buffer));
+			await binFile.write(Buffer.from(bank.buffer));
 		}
 	}
 

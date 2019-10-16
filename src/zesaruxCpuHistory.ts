@@ -7,7 +7,7 @@ import { zSocket } from './zesaruxSocket';
  * This class takes care of the ZEsarUX cpu history.
  * Each history instruction can be retireved form ZEsarUx.
  * The format of each line is:
- * 8193 CALL 8000 PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+ * PC=15e2 SP=ff4e AF=005c BC=174b HL=107f DE=0006 IX=ffff IY=5c3a AF'=0044 BC'=ffff HL'=ffff DE'=5cb9 I=3f R=6a IM1 IFF12
  *
  * These are the ZEsarUX cpu history zrcp commands:
  * cpu-history ...:
@@ -49,9 +49,9 @@ export class ZesaruxCpuHistory {
 	public init() {
 		this.revHistoryInstructionIndex = 0;
 		this.size = 0;
-		zSocket.send('cpu-history enabled yes '+this.MAX_SIZE, () => {
+		zSocket.send('cpu-history enabled yes', () => {
 			zSocket.send('cpu-history set-max-size '+this.MAX_SIZE, () => {
-				zSocket.send('cpu-history clear '+this.MAX_SIZE, () => {
+				zSocket.send('cpu-history clear', () => {
 					zSocket.send('cpu-history started yes');
 				});
 			});
@@ -127,12 +127,13 @@ export class ZesaruxCpuHistory {
 	protected getLinePromise(): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			assert(this.revHistoryInstructionIndex > 0);
-			const index = this.revHistoryInstructionIndex-1;
-			zSocket.send('cpu-history get index ' + index, data => {
+			const index = this.size - this.revHistoryInstructionIndex;
+			zSocket.send('cpu-history get ' + index, data => {
 				if(data.startsWith("Error"))
 					reject();
-				else
+				else {
 					resolve(data);
+				}
 			 });
 		});
 	}
@@ -142,7 +143,7 @@ export class ZesaruxCpuHistory {
 	 * @returns The registers of the current line.
 	 */
 	public getRegisters(line: string): string {
-		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+		// E.g. "PC=15e2 SP=ff4e AF=005c BC=174b HL=107f DE=0006 IX=ffff IY=5c3a AF'=0044 BC'=ffff HL'=ffff DE'=5cb9 I=3f R=6a IM1 IFF12"
 		// Turn into same format as for 'get-registers'
 		const k = line.indexOf('PC=');
 		assert(k >= 0);
