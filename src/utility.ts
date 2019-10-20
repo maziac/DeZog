@@ -625,7 +625,7 @@ export class Utility {
 
 
 	/**
-	 * If relFilePath is a relative path the vscode.workspace.rootPathr
+	 * If relFilePath is a relative path the vscode.workspace.rootPath
 	 * path is added.
 	 * @param relFilePath A relative path
 	 * @returns An absolute path

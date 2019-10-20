@@ -332,11 +332,10 @@ export class EmulDebugSessionClass extends DebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			// Set root path
-			Utility.setRootPath(vscode.workspace.rootPath);
+			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '');
 
 			// Save args
-			//const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
-			const rootFolder = vscode.workspace.rootPath || '';
+			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
 		}
