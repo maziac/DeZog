@@ -334,6 +334,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public async getRegistersFromEmulator(handler: (registersString: string) => void) {
 		// Check if in reverse debugging mode
+		// In this mode registersCache should be set and thus this function is never called.
+		assert(!this.cpuHistory.isInStepBackMode());
+		/*
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Read registers from file
 			let line = await this.cpuHistory.getLine() as string;
@@ -342,6 +345,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			handler(data);
 			return;
 		}
+		*/
 
 		// Get new (real emulator) data
 		zSocket.send('get-registers', data => {
@@ -568,13 +572,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 				//this.state = EmulatorState.IDLE;
 
 				// Getcurrent line
-				let currentLine: string|undefined = await this.cpuHistory.getLine();
+				let currentLine: string|undefined = await this.cpuHistory.getLineXXX();
 				assert(currentLine);
 
 				// Loop over all lines, reverse
 				while(currentLine) {
 					// Handle stack
-					const nextLine = this.revDbgNext();
+					const nextLine = await this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Check for breakpoint
@@ -678,19 +682,18 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But if a "RET" instruction is found also the 'next' PC value is pushed
 	 * to the stack.
-	 * @param currentLine The current line of the transaction log.
-	 * @param prevLine The previous line of the transaction log. (The one that
-	 * comes after currentLine). This can alo be the cached register values for
-	 * the first line. 'getRegisters' can cope with both formats.
+	 * @param currentLine The current line of the cpu history.
 	 */
-	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string) {
-		// TODO: handle stack
-		if (false) {
-
+	protected async handleReverseDebugStackBack(currentLine: string) {
+		let prevLine;
 		assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
 		//const lastFrame =
 		this.reverseDbgStack.shift();
+
+		// TODO: handle stack
+		if (false) {
+
 		// Check for RETx
 		assert(currentLine)
 		//	currentLine = await this.cpuHistory.getLine();
@@ -804,7 +807,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				//this.state = EmulatorState.IDLE;
 
 				// Get current PC (line)
-				let lastLine = await this.cpuHistory.getLine();
+				let lastLine = await this.cpuHistory.getLineXXX();
 				if(!lastLine) {
 					// The first line. We need to use the current registers instead of the line.
 					lastLine = this.RegisterCache as string;
@@ -819,7 +822,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					if(!currentLine)
 						break;
 					// Stack handling:
-					this.handleReverseDebugStackBack(currentLine, lastLine);
+					this.handleReverseDebugStackBack(currentLine);
 					// Remember
 					lastLine = currentLine as string;
 					assert(lastLine);
@@ -873,7 +876,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// work just like a "stepInto". However this should happen very seldomly.
 
 			// Get current instruction
-			let currentLine: string = await this.cpuHistory.getLine() as string;
+			let currentLine: string = await this.cpuHistory.getLineXXX() as string;
 			assert(currentLine);
 			let instruction = this.cpuHistory.getInstruction(currentLine);
 			// Read SP
@@ -915,7 +918,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Find next line with same SP
 				while(currentLine) {
 					// Handle stack
-					const nextLine = this.revDbgNext();
+					const nextLine = await this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					if(dontCheckSP) {
@@ -1029,11 +1032,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let instr = '';
 			try {
 				// Get disassembly of instruction
-				const currentLine = await this.cpuHistory.getLine() as string;
+				const currentLine = await this.cpuHistory.getLineXXX() as string;
 				assert(currentLine);
 				instr = this.cpuHistory.getInstruction(currentLine);
 				// Handle stack
-				const nextLine = this.revDbgNext();
+				const nextLine = await this.revDbgNext();
 				this.handleReverseDebugStackFwrd(currentLine, nextLine);
 			}
 			catch(e) {
@@ -1173,7 +1176,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// also the SP is lower/equal to when we started.
 
 			// Get current line
-			let currentLine = await this.cpuHistory.getLine() as string;
+			let currentLine = await this.cpuHistory.getLineXXX() as string;
 			assert(currentLine);;
 
 			// Read SP
@@ -1185,7 +1188,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			try {
 				while(currentLine) {
 					// Handle stack
-					const nextLine = this.revDbgNext();
+					const nextLine = await this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Get current instruction
@@ -1310,45 +1313,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 	  * instruction: e.g. "081C NOP"
 	  * error: If not undefined t holds the exception message.
 	  */
-	 public stepBack(handler:(instruction: string, error: string)=>void) {
+	 public stepBack(handler:(error: string)=>void) {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(async () => {
 			let errorText;
-			let instr = '';
 			try {
-				/*
-				// Remember previous position
-				let lastLine = await this.cpuHistory.getLine() as string;
-				if(!lastLine) {
-					// The first line. We need to use the current registers instead of the line.
-					lastLine = this.RegisterCache as string;
-					assert(lastLine);
-				}
-				*/
-				let lastLine;  // Not required anymore
-
-				// Move backwards
 				const currentLine = await this.revDbgPrev();
 				if(!currentLine)
 					throw Error('Reached end of instruction history.')
-				// Get instruction + address
-				const addr = this.cpuHistory.getAddress(currentLine);
-				instr = addr.toString(16).toUpperCase() + ' ' + this.cpuHistory.getInstruction(currentLine);
 				// Stack handling:
-				this.handleReverseDebugStackBack(currentLine, lastLine);
+				this.handleReverseDebugStackBack(currentLine);
 			}
 			catch(e) {
 				errorText = e;
 			}
 
 			// Decoration
-			this.emitRevDbgHistory();
-
-			// Clear register cache
-			this.RegisterCache = undefined;
+			if(!errorText)
+				this.emitRevDbgHistory();
 
 			// Call handler
-			handler(instr, errorText);
+			handler(errorText);
 		});
 	}
 
@@ -2055,16 +2040,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * If at end it returns undefined.
 	 */
 	protected async revDbgPrev(): Promise<string|undefined> {
-		// Get line
-		await this.cpuHistory.prevInstruction();
-		// Check for end of history
-		if(this.cpuHistory.isAtEnd())
-			return undefined;
-		let line = await this.cpuHistory.getLine() as string;
-		assert(line);
-		// Add to history
-		const addr = parseInt(line.substr(3,4), 16);
-		this.revDbgHistory.push(addr);
+		let line = await this.cpuHistory.getPrevRegisters();
+		if(line) {
+			// Add to register cache
+			this.RegisterCache = line;
+			// Add to history for decoration
+			const addr = parseInt(line.substr(3,4), 16);
+			this.revDbgHistory.push(addr);
+		}
 		return line;
 	}
 
@@ -2072,14 +2055,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @returns Returns the next line in the transaction log.
 	 * If at start it returns ''.
 	 */
-	protected revDbgNext(): string|undefined {
+	protected async revDbgNext(): Promise<string|undefined> {
 		// Get line
-		let line;
-		if(this.cpuHistory.nextInstruction()) {
+		let line = await this.cpuHistory.getNextRegisters();
+		if(line) {
+			// Add to register cache
+			this.RegisterCache = line;
 			// Remove one address from history
 			assert(this.revDbgHistory.length > 0);
 			this.revDbgHistory.pop();
-			line = this.cpuHistory.getLine();
 		}
 		return line;
 	}

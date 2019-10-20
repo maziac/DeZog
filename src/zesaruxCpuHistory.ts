@@ -5,7 +5,7 @@ import { zSocket } from './zesaruxSocket';
 
 /**
  * This class takes care of the ZEsarUX cpu history.
- * Each history instruction can be retireved form ZEsarUx.
+ * Each history instruction can be retrieved form ZEsarUx.
  * The format of each line is:
  * PC=15e2 SP=ff4e AF=005c BC=174b HL=107f DE=0006 IX=ffff IY=5c3a AF'=0044 BC'=ffff HL'=ffff DE'=5cb9 I=3f R=6a IM1 IFF12
  *
@@ -25,7 +25,7 @@ import { zSocket } from './zesaruxSocket';
 export class ZesaruxCpuHistory {
 
 	/// The maximum count of instructions in history.
-	protected MAX_SIZE = 5;
+	protected MAX_SIZE = 10;
 
 	/// The pointer to the past executed instructions.
 	// 0 = current instruction
@@ -47,7 +47,7 @@ export class ZesaruxCpuHistory {
 	 * Init.
 	 */
 	public init() {
-		this.revHistoryInstructionIndex = 0;
+		this.revHistoryInstructionIndex = -1;
 		this.size = 0;
 		zSocket.send('cpu-history enabled yes', () => {
 			zSocket.send('cpu-history set-max-size '+this.MAX_SIZE, () => {
@@ -104,13 +104,14 @@ export class ZesaruxCpuHistory {
 	 * May throw an exception if wrong data is received.
 	 * @returns A string with the instruction and registers.
 	 */
-	public async getLine(): Promise<string|undefined> {
+	// REMOVE:
+	public async getLineXXX(): Promise<string|undefined> {
 		try {
 			let currentLine;
 			// Check if it is the first retrieved line
 			if(this.revHistoryInstructionIndex > 0
 				&& this.revHistoryInstructionIndex <= this.size) {
-					 currentLine = await this.getLinePromise();
+					 currentLine = undefined;
 			}
 			return currentLine;
 		}
@@ -119,22 +120,59 @@ export class ZesaruxCpuHistory {
 		}
 	}
 
+
+	/**
+	 * Retrieves the registers at the previous instruction from ZEsarUX cpu history.
+	 * Is async.
+	 * @returns A string with the registers or undefined if at the end of the history.
+	 */
+	public async getPrevRegisters(): Promise<string|undefined> {
+		this.revHistoryInstructionIndex ++;
+		const currentLine = await this.getRegistersPromise();
+		if(!currentLine)
+			this.revHistoryInstructionIndex --;
+		return currentLine;
+	}
+
+
+	/**
+	 * Retrieves the registers at the next instruction from ZEsarUX cpu history.
+	 * Is async.
+	 * @returns A string with the registers or undefined if at the start of the history.
+	 */
+	public async getNextRegisters(): Promise<string|undefined> {
+		let currentLine;
+		// Check if it is the first retrieved line
+		if(this.revHistoryInstructionIndex >= 0) {
+			this.revHistoryInstructionIndex --;
+			currentLine = await this.getRegistersPromise();
+			assert(currentLine);
+		}
+		return currentLine;
+	}
+
+
 	/**
 	 * Retrieves the instruction from ZEsarUX cpu history.
 	 * Is async.
-	 * @returns A string with the instruction and registers.
+	 * @returns A string with the registers or undefined if at the end of the history.
 	 */
-	protected getLinePromise(): Promise<string> {
+	protected getRegistersPromise(): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
-			assert(this.revHistoryInstructionIndex > 0);
-			const index = this.size - this.revHistoryInstructionIndex;
-			zSocket.send('cpu-history get ' + index, data => {
-				if(data.startsWith("Error"))
-					reject();
-				else {
-					resolve(data);
-				}
-			 });
+			assert(this.revHistoryInstructionIndex >= 0);
+			/*
+			zSocket.send('cpu-history get-size', data => {
+				const size = parseInt(data);
+				const index = size - 1 - this.revHistoryInstructionIndex;
+				*/
+				const index = this.revHistoryInstructionIndex;
+				zSocket.send('cpu-history get ' + index, data => {
+					if(data.substr(0,5).toLowerCase() == 'error')
+						resolve(undefined);
+					else
+						resolve(data);
+				}, true);
+//			 });
 		});
 	}
 
@@ -182,7 +220,7 @@ export class ZesaruxCpuHistory {
 	 * @returns Returns true if in step back mode.
 	 */
 	public isInStepBackMode() {
-		return (this.revHistoryInstructionIndex > 0);
+		return (this.revHistoryInstructionIndex >= 0);
 	}
 
 

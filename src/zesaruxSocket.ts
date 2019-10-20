@@ -411,12 +411,14 @@ export class ZesaruxSocket extends Socket {
 
 			// Check on error from zesarux
 			if(concData.substr(0,5).toLowerCase() == 'error') {
-				// send message through to UI
-				let msg = '';
-				if(cEntry)
-					msg = cEntry.command + ' => ';
-				msg += concData;
-				this.emit('warning', msg);
+				if(!cEntry || !(cEntry.suppressErrorHandling)) {
+					// send message through to UI
+					let msg = '';
+					if(cEntry)
+						msg = cEntry.command + ' => ';
+					msg += concData;
+					this.emit('warning', msg);
+				}
 			}
 
 			// Execute handler

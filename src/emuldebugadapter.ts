@@ -1331,10 +1331,9 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack((instr, error) => {
+			Emulator.stepBack((error) => {
 				// Print
-				if(instr.length > 0 )
-					vscode.debug.activeDebugConsole.appendLine('StepBack: '+instr);
+				vscode.debug.activeDebugConsole.appendLine('StepBack.');
 
 				// Output a possible problem (end of log reached)
 				if(error)
