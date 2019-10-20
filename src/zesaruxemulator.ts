@@ -803,17 +803,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let errorText: string|undefined;
 			let reason;
 			try {
-				//this.state = EmulatorState.RUNNING;
-				//this.state = EmulatorState.IDLE;
-
-				// Get current PC (line)
-				let lastLine = await this.cpuHistory.getLineXXX();
-				if(!lastLine) {
-					// The first line. We need to use the current registers instead of the line.
-					lastLine = this.RegisterCache as string;
-					assert(lastLine);
-				}
-
 				// Loop over all lines, reverse
 				reason = 'Break: Reached end of instruction history.';
 				while(true) {
@@ -823,12 +812,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 						break;
 					// Stack handling:
 					this.handleReverseDebugStackBack(currentLine);
-					// Remember
-					lastLine = currentLine as string;
-					assert(lastLine);
 
 					// Breakpoint handling:
-					//const addr = this.cpuTransactionLog.getAddress();
 					// Check for breakpoint
 					// TODO: ...
 				}
@@ -841,9 +826,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Decoration
 			this.emitRevDbgHistory();
-
-			// Clear register cache
-			this.RegisterCache = undefined;
 
 			// Call handler
 			handler(reason);
