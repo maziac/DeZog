@@ -571,15 +571,19 @@ export class ZesaruxEmulator extends EmulatorClass {
 				//this.state = EmulatorState.RUNNING;
 				//this.state = EmulatorState.IDLE;
 
-				// Getcurrent line
-				let currentLine: string|undefined = await this.cpuHistory.getLineXXX();
+				// Get current line
+				let currentLine: string = this.RegisterCache as string;
 				assert(currentLine);
 
 				// Loop over all lines, reverse
-				while(currentLine) {
+				while(true) {
 					// Handle stack
 					const nextLine = await this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					if(!nextLine) {
+						this.RegisterCache = undefined;
+						break;
+					}
 
 					// Check for breakpoint
 					// TODO: ...
@@ -594,9 +598,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Decoration
 			this.emitRevDbgHistory();
-
-			// Clear register cache
-			this.RegisterCache = undefined;
 
 			// Call handler
 			contStoppedHandler(reason, undefined, undefined);
@@ -756,6 +757,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 		assert(this.reverseDbgStack.length > 0);
 		this.reverseDbgStack.shift();
 
+
+		// TODO:
+		if(false) {
+
 		// Check for RETx
 		const instr = this.cpuHistory.getInstruction(currentLine);
 		if(instr.startsWith("RET")) {
@@ -769,7 +774,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// simulated RST only.
 			const currentRegs = this.cpuHistory.getRegisters(currentLine);
 			const currentSP = Z80Registers.parseSP(currentRegs);
-			const nextRegs = this.cpuHistory.getRegisters(nextLine);
+			const nextRegs = this.cpuHistory.getRegisters(nextLine as string);
 			const nextSP = Z80Registers.parseSP(nextRegs);
 			if(currentSP > nextSP) {
 				// Push to call stack
@@ -782,6 +787,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const frame = new Frame(pc, currentSP, name);
 				this.reverseDbgStack.unshift(frame);
 			}
+		}
 		}
 
 		// Add current PC
@@ -843,6 +849,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 public async stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
+			// TODO: check for step over
+
+			/*
 			// Step over should skip all CALLs and RST.
 			// This is more difficult as it seems. It could also happen that an
 			// interrupt kicks in.
@@ -895,22 +904,37 @@ export class ZesaruxEmulator extends EmulatorClass {
 			if(instruction.startsWith('RET'))
 				expectedSP2 += 2;
 
+			*/
+
+
+			// Get current line
+			let currentLine: string = this.RegisterCache as string;
+			assert(currentLine);
+
 			let errorText;
 			try {
 				// Find next line with same SP
 				while(currentLine) {
 					// Handle stack
-					const nextLine = await this.revDbgNext();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					if(!nextLine) {
+						this.RegisterCache = undefined;
+						break;
+					}
 
+					break;	// for now
+					/*
 					if(dontCheckSP) {
 						// Break after first line
 						break;
 					}
+					*/
 
 					// TODO: need to check for breakpoint
 
 					// Read SP
+					/*
 					const regs = this.cpuHistory.getRegisters(currentLine);
 					const sp = Z80Registers.parseSP(regs);
 					// Check expected SPs
@@ -918,6 +942,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						break;
 					if(expectedSP2 == sp)
 						break;
+					*/
 
 					// Next
 					currentLine = nextLine as string;
@@ -930,10 +955,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Decoration
 			this.emitRevDbgHistory();
 
-			// Clear register cache
-			this.RegisterCache = undefined;
-
 			// Call handler
+			let instruction = "";
 			handler(instruction, undefined, undefined, errorText);
 			return;
 		}
@@ -2037,9 +2060,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @returns Returns the next line in the transaction log.
 	 * If at start it returns ''.
 	 */
-	protected async revDbgNext(): Promise<string|undefined> {
+	protected revDbgNext(): string|undefined {
 		// Get line
-		let line = await this.cpuHistory.getNextRegisters();
+		let line = this.cpuHistory.getNextRegisters();
 		if(line) {
 			// Add to register cache
 			this.RegisterCache = line;
