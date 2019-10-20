@@ -21,10 +21,12 @@ export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the speci
 class CommandEntry {
 	public command: string|undefined;	///< The command string
 	public handler: (data: string) => void;	///< The handler being executed after receiving data.
+	public suppressErrorHandling: boolean; ///< Normally a warning is output to the UI if a return value (from ZEsarUx) starts with the text "error". If suppressErrorHandling is true this is not signalled to the user.
 	public timeout: number;		///< The timeout until a response is expected.
-	constructor(command: string|undefined, handler: (data: string) => void, timeout: number) {
+	constructor(command: string|undefined, handler: (data: string) => void, suppressErrorHandling: boolean, timeout: number) {
 		this.command = command;
 		this.handler = handler;
+		this.suppressErrorHandling = suppressErrorHandling;
 		this.timeout = timeout;
 	}
 }
@@ -98,7 +100,7 @@ export class ZesaruxSocket extends Socket {
 			this.state = SocketState.CONNECTED;
 			LogSocket.log('First text from ZEsarUX received!');
 			this.emit('connected');	// data transmission may start now.
-		}, 0);
+		}, false, 0);
 		this.queue.push(cEntry);
 		this.emitQueueChanged();
 	}
@@ -221,20 +223,22 @@ export class ZesaruxSocket extends Socket {
 	 * Additionally the timeout can be set until when a response is expected.
 	 * @param command The message to send to ZEsarUX.
 	 * @param handler Is called when the response is received. Can be undefined.
+	 * @param suppressErrorHandling Normally a warning is output to the UI if a return value (from ZEsarUx)
+	 * starts with the text "error". If suppressErrorHandling is true this
+	 * is not signalled to the user.
 	 * @param timeout The timeout in ms or 0 if no timeout should be used. Default is 100ms. Normally use -1 (or omit) to use the timeout from the Settings.
 	 */
-	public send(command: string, handler: {(data)} = (data) => {}, timeout = -1) {
-		if(timeout == -1)
-			timeout = this.MSG_TIMEOUT;
+	public send(command: string, handler: {(data)} = (data) => {}, suppressErrorHandling = false, /*, timeout = -1*/) {
+		const timeout = this.MSG_TIMEOUT;
 		// Create command entry
-		var cEntry = new CommandEntry(command, handler, timeout);
+		var cEntry = new CommandEntry(command, handler, suppressErrorHandling, timeout);
 		this.queue.push(cEntry);
 		this.emitQueueChanged();
 		// check if command can be sent right away
 		if(this.queue.length == 1) {
 			if(this.interruptableRunCmd) {
 				// Interrupt the command: create an interrupt cmd
-				const cBreak = new CommandEntry('', ()=>{},this.MSG_TIMEOUT);
+				const cBreak = new CommandEntry('', ()=>{},false, this.MSG_TIMEOUT);
 				// Insert as first command
 				this.queue.unshift(cBreak);
 				this.emitQueueChanged();
@@ -258,7 +262,7 @@ export class ZesaruxSocket extends Socket {
 	public sendInterruptableRunCmd(handler: (data) => void) {
 		assert(this.interruptableRunCmd == undefined);	// Only one interruptable
 		// Create command entry
-		this.interruptableRunCmd = new CommandEntry('run', handler, NO_TIMEOUT);
+		this.interruptableRunCmd = new CommandEntry('run', handler, false, NO_TIMEOUT);
 		// check if command can be sent right away
 		if(this.queue.length == 0) {
 			this.sendSocketCmd(this.interruptableRunCmd);
@@ -397,8 +401,16 @@ export class ZesaruxSocket extends Socket {
 				}
 			}
 
-				// Check on error from zesarux
-			if(concData.startsWith('Error')) {
+
+			// Send next entry (if any)
+			this.sendSocket();
+
+			// Save old interruptable (could be that a new one is set in the handlers)
+			const interCmd = this.interruptableRunCmd;
+
+
+			// Check on error from zesarux
+			if(concData.substr(0,5).toLowerCase() == 'error') {
 				// send message through to UI
 				let msg = '';
 				if(cEntry)
@@ -406,12 +418,6 @@ export class ZesaruxSocket extends Socket {
 				msg += concData;
 				this.emit('warning', msg);
 			}
-
-			// Send next entry (if any)
-			this.sendSocket();
-
-			// Save old interruptable (could be that a new one is set in the handlers)
-			const interCmd = this.interruptableRunCmd;
 
 			// Execute handler
 			if( cEntry != undefined)
@@ -423,9 +429,9 @@ export class ZesaruxSocket extends Socket {
 			// Check if interruptable command needs to be restarted.
 			if(this.queue.length == 0
 				&& interCmd) {
-					// Restart
-					this.sendSocketCmd(interCmd);
-				}
+				// Restart
+				this.sendSocketCmd(interCmd);
+			}
 
 		}
 	}
