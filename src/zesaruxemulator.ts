@@ -578,12 +578,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Loop over all lines, reverse
 				while(true) {
 					// Handle stack
-					const nextLine = await this.revDbgNext();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
-					if(!nextLine) {
-						this.RegisterCache = undefined;
+					if(!nextLine)
 						break;
-					}
 
 					// Check for breakpoint
 					// TODO: ...
@@ -918,10 +916,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Handle stack
 					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
-					if(!nextLine) {
-						this.RegisterCache = undefined;
+					if(!nextLine)
 						break;
-					}
 
 					break;	// for now
 					/*
@@ -1035,13 +1031,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(this.cpuHistory.isInStepBackMode()) {
 			let errorText;
 			let instr = '';
+			// Get current line
+			let currentLine: string = this.RegisterCache as string;
+			assert(currentLine);
+
 			try {
-				// Get disassembly of instruction
-				const currentLine = await this.cpuHistory.getLineXXX() as string;
-				assert(currentLine);
-				instr = this.cpuHistory.getInstruction(currentLine);
 				// Handle stack
-				const nextLine = await this.revDbgNext();
+				const nextLine = this.revDbgNext();
 				this.handleReverseDebugStackFwrd(currentLine, nextLine);
 			}
 			catch(e) {
@@ -1050,9 +1046,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Decoration
 			this.emitRevDbgHistory();
-
-			// Clear register cache
-			this.RegisterCache = undefined;
 
 			// Call handler
 			handler(instr, undefined, undefined, errorText);
@@ -1193,7 +1186,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			try {
 				while(currentLine) {
 					// Handle stack
-					const nextLine = await this.revDbgNext();
+					const nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Get current instruction
@@ -2063,9 +2056,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	protected revDbgNext(): string|undefined {
 		// Get line
 		let line = this.cpuHistory.getNextRegisters();
+		this.RegisterCache = line;
 		if(line) {
-			// Add to register cache
-			this.RegisterCache = line;
 			// Remove one address from history
 			assert(this.revDbgHistory.length > 0);
 			this.revDbgHistory.pop();

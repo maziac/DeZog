@@ -25,9 +25,9 @@ import { zSocket } from './zesaruxSocket';
 export class ZesaruxCpuHistory {
 
 	/// The maximum count of instructions in history.
-	protected MAX_SIZE = 10;
+	protected MAX_SIZE = 100;
 
-	// Contains the cpu instructon (register) history.
+	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
 	protected history: Array<string>;
