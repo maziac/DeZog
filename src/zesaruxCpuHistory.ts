@@ -24,38 +24,33 @@ import { zSocket } from './zesaruxSocket';
  */
 export class ZesaruxCpuHistory {
 
-	/// The maximum count of instructions in history.
-	protected MAX_SIZE = 100;
-
 	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
 	protected history: Array<string>;
 
-	// The real size.
-	protected size = 0;
-
 	/**
 	 * Creates the object.
 	 */
 	constructor() {
-		this.init();
+		this.history = Array<string>();
 	}
 
 
 	/**
 	 * Init.
+	 * @param size The max size of the history.
 	 */
-	public init() {
-		this.history = Array<string>();
-		this.size = 0;
-		zSocket.send('cpu-history enabled yes', () => {
-			zSocket.send('cpu-history set-max-size '+this.MAX_SIZE, () => {
-				zSocket.send('cpu-history clear', () => {
-					zSocket.send('cpu-history started yes');
-				});
-			});
-		});
+	public init(maxSize: number) {
+		if(maxSize > 0) {
+			zSocket.send('cpu-history enabled yes');
+			zSocket.send('cpu-history set-max-size ' + maxSize);
+			zSocket.send('cpu-history clear');
+			zSocket.send('cpu-history started yes');
+		}
+		else {
+			zSocket.send('cpu-history enabled no');
+		}
 	}
 
 

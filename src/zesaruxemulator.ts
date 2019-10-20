@@ -68,6 +68,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public init() {
 		super.init();
 
+		// Reverse debugging / CPU history
+		this.cpuHistory = new ZesaruxCpuHistory();
+
 		// Create the socket for communication (not connected yet)
 		this.setupSocket();
 
@@ -266,14 +269,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 					else
 						zSocket.send('cpu-code-coverage enabled no');
 
-					// Reverse debugging / CPU history
-					this.cpuHistory = new ZesaruxCpuHistory();
-
-					// Number of lines for reverse debug
-					//const lines = this.numberOfHistoryLines();
-
-
-					// Coverage + reverse debugging settings
+					// Reverse debugging.
+					this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
 
 					// TODO: Ignore repetition of 'HALT'
 
@@ -335,6 +332,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public async getRegistersFromEmulator(handler: (registersString: string) => void) {
 		// Check if in reverse debugging mode
 		// In this mode registersCache should be set and thus this function is never called.
+		assert(this.cpuHistory);
 		assert(!this.cpuHistory.isInStepBackMode());
 		/*
 		if(this.cpuHistory.isInStepBackMode()) {

@@ -153,10 +153,16 @@ export class EmulatorClass extends EventEmitter {
 	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
 
 
-	/// Initializes the machine.
-	public init() {
+	/// Constructor.
+	constructor() {
+		super();
 		// Init the registers
 		Z80Registers.init();
+	}
+
+
+	/// Initializes the machine.
+	public init() {
 	}
 
 

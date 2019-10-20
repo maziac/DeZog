@@ -279,7 +279,6 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// make VS Code to show a 'step back' button (Reverse Debugging)
 		response.body.supportsStepBack = true;
-		//response.body.supportsStepBack = false;
 
 		// Maybe terminated on error
 		response.body.supportTerminateDebuggee = true;
@@ -301,7 +300,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		this.sendResponse(response);
 
-		// Note: The InitializedEvent will be send when the socket connection has been successfull. Afterwards the breakpoints are set.
+		// Note: The InitializedEvent will be send when the socket connection has been successful. Afterwards the breakpoints are set.
 	}
 
 
@@ -398,6 +397,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Create the machine
 		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+
 		// Load files
 		try {
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
