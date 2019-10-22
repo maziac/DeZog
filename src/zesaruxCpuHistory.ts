@@ -1,13 +1,19 @@
 import * as assert from 'assert';
 import { zSocket } from './zesaruxSocket';
+import { Opcode } from './disassembler/opcode';
+import { BaseMemory } from './disassembler/basememory';
+import { Z80Registers } from './z80Registers';
 
 
 
 /**
  * This class takes care of the ZEsarUX cpu history.
- * Each history instruction can be retrieved form ZEsarUx.
+ * Each history instruction can be retrieved from ZEsarUx.
  * The format of each line is:
- * PC=15e2 SP=ff4e AF=005c BC=174b HL=107f DE=0006 IX=ffff IY=5c3a AF'=0044 BC'=ffff HL'=ffff DE'=5cb9 I=3f R=6a IM1 IFF12
+ * PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c
+ * which is very much the same as the line retrieved during each forward step. To compare, forward-step:
+ * PC=003a SP=ff42 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=07  F=-Z-H3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0  TSTATES: 46
+ * 003A LD HL,(5C78)
  *
  * These are the ZEsarUX cpu history zrcp commands:
  * cpu-history ...:
@@ -126,6 +132,7 @@ export class ZesaruxCpuHistory {
 	/**
 	 * @returns The registers of the current line.
 	 */
+	// TODO: REMOVE. Not required anymore.
 	public getRegisters(line: string): string {
 		// E.g. "PC=15e2 SP=ff4e AF=005c BC=174b HL=107f DE=0006 IX=ffff IY=5c3a AF'=0044 BC'=ffff HL'=ffff DE'=5cb9 I=3f R=6a IM1 IFF12"
 		// Turn into same format as for 'get-registers'
@@ -137,12 +144,46 @@ export class ZesaruxCpuHistory {
 
 
 	/**
+	 * Input a line which was retireved by 'cpu-history get N' and return the opcodes string.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @return E.g. "e52a785c"
+	 */
+	public getOpcodes(line: string): string {
+		const opcodes = line.substr(107);
+		return opcodes;
+	}
+
+
+	/**
+	 * Disassembles an instruction from the given opcode string.
+	 * Uses 'PC=xxxx' and '(PC)=yyyyyyyy' from the input string.
+	 * @param opcodes E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @returns The instruction, e.g. "LD A,1E".
+	 */
+	public getInstruction(line: string): string {
+		// Prepare bytes to memory
+		const opcodes = this.getOpcodes(line);
+		const pc = Z80Registers.parsePC(line);
+		const buffer = new BaseMemory(pc, 4);
+		for(let i=0; i<4; i++) {
+			const opc = parseInt(opcodes.substr(i*2, 2), 16);
+			buffer.setValueAtIndex(i, opc);
+		}
+		// Get opcode
+		const opcode = Opcode.getOpcodeAt(buffer, pc);
+		// Disassemble
+		const opCodeDescription = opcode.disassemble();
+		return opCodeDescription.mnemonic;
+	}
+
+
+	/**
 	 * @param line If given the instruction is taken from the line, otherwise
 	 * 'getLine()' is called.
 	 * @returns The instruction, e.g. "LD A,1E".
 	 */
-	public getInstruction(line: string): string {
-		// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+	public getInstructionOld(line: string): string {
+	// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction
 		const k = line.indexOf('PC=');
 		assert(k >= 0);

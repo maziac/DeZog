@@ -18,7 +18,7 @@ export class BaseMemory {
 	/**
 	 * Constructor: Initializes memory.
 	 * @param startAddress The start address of the memory area.
-	 * @param size The soze of the memory area.
+	 * @param size The size of the memory area.
 	 */
 	constructor (startAddress: number, size: number) {
 		this.memory = new Uint8Array(size);

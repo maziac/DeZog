@@ -694,7 +694,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for RETx
 		assert(currentLine)
 		//	currentLine = await this.cpuHistory.getLine();
-		const instr = this.cpuHistory.getInstruction(currentLine);
+		const instr = this.cpuHistory.getInstructionOld(currentLine);
 		if(instr.startsWith("RET")) {
 			// Create new frame with better name on stack
 			const regs = this.cpuHistory.getRegisters(currentLine);
@@ -758,7 +758,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(false) {
 
 		// Check for RETx
-		const instr = this.cpuHistory.getInstruction(currentLine);
+		const instr = this.cpuHistory.getInstructionOld(currentLine);
 		if(instr.startsWith("RET")) {
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
@@ -1188,7 +1188,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Get current instruction
-					const instruction = this.cpuHistory.getInstruction(currentLine);
+					const instruction = this.cpuHistory.getInstructionOld(currentLine);
 
 					// Check for RET
 					if(instruction.startsWith('RET')) {
