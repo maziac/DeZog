@@ -3,6 +3,7 @@ import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
 import { Z80Registers } from './z80Registers';
+import { Utility } from './utility';
 
 
 
@@ -34,6 +35,9 @@ export class ZesaruxCpuHistory {
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
 	protected history: Array<string>;
+
+	// The first time the index is searched. Afterwards the stored one is used.
+	protected pcIndex = -1;
 
 	/**
 	 * Creates the object.
@@ -149,7 +153,12 @@ export class ZesaruxCpuHistory {
 	 * @return E.g. "e52a785c"
 	 */
 	public getOpcodes(line: string): string {
-		const opcodes = line.substr(107);
+		if(this.pcIndex < 0) {
+			this.pcIndex = line.indexOf('(PC)=');
+			assert(this.pcIndex >= 0);
+			this.pcIndex += 5;
+		}
+		const opcodes = line.substr(this.pcIndex, 8);
 		return opcodes;
 	}
 
@@ -173,7 +182,8 @@ export class ZesaruxCpuHistory {
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
 		const opCodeDescription = opcode.disassemble();
-		return opCodeDescription.mnemonic;
+		const instr = '  ' + Utility.getHexString(pc, 4) + ' ' + opCodeDescription.mnemonic;
+		return instr;
 	}
 
 
@@ -182,6 +192,7 @@ export class ZesaruxCpuHistory {
 	 * 'getLine()' is called.
 	 * @returns The instruction, e.g. "LD A,1E".
 	 */
+	// TODO: REMOVE
 	public getInstructionOld(line: string): string {
 	// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
 		// Extract the instruction

@@ -652,9 +652,10 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * 'step backwards' the program execution in the debugger.
 	  * @param handler(instruction, error) The handler that is called after the step is performed.
+	  * instruction: e.g. "081C NOP"
 	  * error: If defined this holds the exception message.
 	  */
-	public stepBack(handler:(error: string)=>void): void {
+	public stepBack(handler:(instruction: string, error: string)=>void): void {
 		assert(false);	// override this
 	}
 

@@ -1186,7 +1186,9 @@ export class EmulDebugSessionClass extends DebugSession {
 			// Step-Over
 			Emulator.stepOver((disasm, tStates, cpuFreq, error) => {
 				// Display T-states and time
-				const text = disasm ? disasm+' \t; ' : '';
+				let text = disasm || '';
+				if(tStates || cpuFreq)
+					text += ' \t; ';
 				this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
 
 				// Update memory dump etc.
@@ -1330,9 +1332,9 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack((error) => {
+			Emulator.stepBack((instruction, error) => {
 				// Print
-				vscode.debug.activeDebugConsole.appendLine('StepBack.');
+				vscode.debug.activeDebugConsole.appendLine('StepBack: ' + instruction);
 
 				// Output a possible problem (end of log reached)
 				if(error)

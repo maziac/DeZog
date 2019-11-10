@@ -950,7 +950,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			let instruction = "";
+			let instruction = this.cpuHistory.getInstruction(currentLine);
+
 			handler(instruction, undefined, undefined, errorText);
 			return;
 		}
@@ -1309,14 +1310,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 	  * instruction: e.g. "081C NOP"
 	  * error: If not undefined t holds the exception message.
 	  */
-	 public stepBack(handler:(error: string)=>void) {
+	 public stepBack(handler:(instruction: string, error: string)=>void) {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(async () => {
 			let errorText;
+			let instruction = '';
 			try {
 				const currentLine = await this.revDbgPrev();
 				if(!currentLine)
 					throw Error('Reached end of instruction history.')
+				// Get instruction
+				instruction = this.cpuHistory.getInstruction(currentLine);
 				// Stack handling:
 				this.handleReverseDebugStackBack(currentLine);
 			}
@@ -1329,7 +1333,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				this.emitRevDbgHistory();
 
 			// Call handler
-			handler(errorText);
+			handler(instruction, errorText);
 		});
 	}
 
