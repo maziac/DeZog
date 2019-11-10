@@ -679,6 +679,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But if a "RET" instruction is found also the 'next' PC value is pushed
 	 * to the stack.
+	 *
+	 * Handles the current instruction to setup the reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.
+	 * But if a "RET" instruction is found also the 'next' PC value is pushed
+	 * to the stack.
+	 * If a CALL is found it is checked if it has been executed (if it was conditional).
 	 * @param currentLine The current line of the cpu history.
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string) {
@@ -688,14 +694,33 @@ export class ZesaruxEmulator extends EmulatorClass {
 		//const lastFrame =
 		this.reverseDbgStack.shift();
 
-		// TODO: handle stack
-		if (false) {
-
 		// Check for RETx
 		assert(currentLine)
+
+		const AF = Z80Registers.getRegValueByName("AF", currentLine);
+		const flags = AF & 0xFF;
+
+
+
+		const opcodes = this.cpuHistory.getOpcodes(currentLine);
+		const opcode0 = parseInt(opcodes.substr(0,2), 16);
+		// A conditional RET cc is a:
+		// C0, D0, E0, F0. 11000000, 11010000, 11100000, 11110000
+		// C8, D8, E8, F8. 11001000, 11011000, 11110000, 11111000
+		// An unconditional RET is a:
+		// C9
+		// A RETN is a:
+		// 45, 55, 65, 75,  5D, 6D, 7D
+		// A RETI is a:
+		// 4D
+
+
 		//	currentLine = await this.cpuHistory.getLine();
-		const instr = this.cpuHistory.getInstructionOld(currentLine);
+		const instr = this.cpuHistory.getInstruction(currentLine);
 		if(instr.startsWith("RET")) {
+			// Check if it was conditional
+			const cond = instr.substr(4,2);
+
 			// Create new frame with better name on stack
 			const regs = currentLine;
 			const pc = Z80Registers.parsePC(regs);
@@ -718,7 +743,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 				assert(this.reverseDbgStack.length > 0);
 				this.reverseDbgStack.shift();
 			}
-		}
 		}
 
 		// Add current PC
@@ -952,7 +976,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Call handler
 			let instruction = this.cpuHistory.getInstruction(currentLine);
 
-			handler(instruction, undefined, undefined, errorText);
+			handler('  '+instruction, undefined, undefined, errorText);
 			return;
 		}
 
@@ -1333,7 +1357,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				this.emitRevDbgHistory();
 
 			// Call handler
-			handler(instruction, errorText);
+			handler('  '+instruction, errorText);
 		});
 	}
 

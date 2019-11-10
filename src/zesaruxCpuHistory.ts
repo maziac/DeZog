@@ -168,7 +168,7 @@ export class ZesaruxCpuHistory {
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
 		const opCodeDescription = opcode.disassemble();
-		const instr = '  ' + Utility.getHexString(pc, 4) + ' ' + opCodeDescription.mnemonic;
+		const instr = Utility.getHexString(pc, 4) + ' ' + opCodeDescription.mnemonic;
 		return instr;
 	}
 

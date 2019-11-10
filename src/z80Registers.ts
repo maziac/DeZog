@@ -26,6 +26,13 @@ export class Z80Registers {
 	 * A65E RETI
 	 */
 
+	// F flag constants for bit comparison.
+	public static FLAG_S = 1 << 7;
+	public static FLAG_Z = 1 << 6;
+	public static FLAG_H = 1 << 4;
+	public static FLAG_PV = 1 << 2;
+	public static FLAG_N = 1 << 1;
+	public static FLAG_C = 1 << 0;
 
 	/**
 	 * Called during the launchRequest.
@@ -372,5 +379,36 @@ export class Z80Registers {
 			resRegs = regs.filter(reg => value == this.getRegValueByName(reg, regsString));
 		}
 		return resRegs;
+	}
+
+	/**
+	 * Check if the cc condition is met by the flags.
+	 * @param cc E.g. 010b for "NC" (as in "CALL NC,nnnn")
+	 * @param flags E.g. 00000001b, C is set
+	 * @returns false, NC is not met.
+	 */
+	public static isCcMetByFlag(cc: number, flags: number): boolean {
+		const testSet = ((cc & 0x01) != 0);
+		let condTest;
+		cc = (cc >> 1) & 0x03;
+		switch(cc) {
+			case 0:	// NZ, Z
+				condTest = ((flags & this.FLAG_Z) != 0);
+				break;
+			case 1:	// NC, C
+				condTest = ((flags & this.FLAG_C) != 0);
+				break;
+			case 2:	// PO, PE
+				condTest = ((flags & this.FLAG_PV) != 0);
+				break;
+			case 3:	// P, M
+				condTest = ((flags & this.FLAG_S) != 0);
+				break;
+			default:
+				assert(false);	// Impossible.
+		}
+
+		const ccIsTrue = (condTest == testSet);
+		return ccIsTrue;
 	}
 }
