@@ -148,7 +148,7 @@ export class ZesaruxCpuHistory {
 
 
 	/**
-	 * Input a line which was retireved by 'cpu-history get N' and return the opcodes string.
+	 * Input a line which was retrieved by 'cpu-history get N' and return the opcodes string.
 	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
 	 * @return E.g. "e52a785c"
 	 */
