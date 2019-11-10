@@ -697,7 +697,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const instr = this.cpuHistory.getInstructionOld(currentLine);
 		if(instr.startsWith("RET")) {
 			// Create new frame with better name on stack
-			const regs = this.cpuHistory.getRegisters(currentLine);
+			const regs = currentLine;
 			const pc = Z80Registers.parsePC(regs);
 			const sp = Z80Registers.parseSP(regs);
 			const name = 'TODO: CALL caller name';
@@ -709,9 +709,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
 			// Check if the SP got bigger, if not we might have skipped a
 			// simulated RST only.
-			const currentRegs = this.cpuHistory.getRegisters(currentLine);
+			const currentRegs = currentLine;
 			const currentSP = Z80Registers.parseSP(currentRegs);
-			const prevRegs = this.cpuHistory.getRegisters(prevLine);
+			const prevRegs = prevLine;
 			const prevSP = Z80Registers.parseSP(prevRegs);
 			if(currentSP > prevSP) {
 				// Pop from call stack
@@ -722,7 +722,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 
 		// Add current PC
-		const regs = this.cpuHistory.getRegisters(currentLine);
+		const regs = currentLine;
 		const pc = Z80Registers.parsePC(regs);
 		const sp = Z80Registers.parseSP(regs);
 		const topFrame = new Frame(pc, sp, 'PC');
@@ -768,9 +768,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
 			// Check if the SP got smaller, if not we might have skipped a
 			// simulated RST only.
-			const currentRegs = this.cpuHistory.getRegisters(currentLine);
+			const currentRegs = currentLine;
 			const currentSP = Z80Registers.parseSP(currentRegs);
-			const nextRegs = this.cpuHistory.getRegisters(nextLine as string);
+			const nextRegs = nextLine as string;
 			const nextSP = Z80Registers.parseSP(nextRegs);
 			if(currentSP > nextSP) {
 				// Push to call stack
@@ -787,7 +787,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 
 		// Add current PC
-		const regs = this.cpuHistory.getRegisters(nextLine);
+		const regs = nextLine;
 		const pc = Z80Registers.parsePC(regs);
 		const sp = Z80Registers.parseSP(regs);
 		const topFrame = new Frame(pc, sp, 'PC');
@@ -1177,7 +1177,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			assert(currentLine);;
 
 			// Read SP
-			let regs = this.cpuHistory.getRegisters(currentLine);
+			let regs = currentLine;
 			const startSP = Z80Registers.parseSP(regs);
 
 			// Do as long as necessary
@@ -1194,7 +1194,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Check for RET
 					if(instruction.startsWith('RET')) {
 						// Read SP
-						const regs = this.cpuHistory.getRegisters(currentLine);
+						const regs = currentLine;
 						const sp = Z80Registers.parseSP(regs);
 						// Check SP
 						if(sp >= startSP) {
