@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
-import { Z80Registers, Z80RegisterHoverFormat } from './z80Registers';
+import { Z80Registers } from './z80Registers';
 
 
 

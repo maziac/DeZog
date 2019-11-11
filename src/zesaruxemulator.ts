@@ -688,32 +688,37 @@ export class ZesaruxEmulator extends EmulatorClass {
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string) {
 		assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
-		//const lastFrame =
 		this.reverseDbgStack.shift();
-		// Check for RETx
-		assert(currentLine)
-		const instr = this.cpuHistory.getInstruction(currentLine);
-		if(instr.startsWith("RET")) {
+
+		// Sets the expected SP value.
+		const currentSP = Z80Registers.parseSP(currentLine);
+		let expectedSP = currentSP;
+	//	const nextSP = Z80Registers.parseSP(nextLine);
+
+		// Check for RET (RET cc and RETI/N)
+		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
+			expectedSP -= 2;	// RET pops from the stack, but reverse
 			// Create new frame with better name on stack
 			const pc = Z80Registers.parsePC(currentLine);
 			const sp = Z80Registers.parseSP(currentLine);
-			// Add new frame
+			// Add new frame to stack
 			const name = 'FRAME: RET @' + Utility.getHexString(pc,4);
 			const frame = new Frame(pc, sp, name);
 			this.reverseDbgStack.unshift(frame);
 		}
-		// Check for CALL and RST
-		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
-			// Check if the SP got bigger, if not we might have skipped a
-			// simulated RST only.
-			const currentSP = Z80Registers.parseSP(currentLine);
-			const prevSP = Z80Registers.parseSP(prevLine);
-			if(currentSP > prevSP) {
-				// Pop from call stack
-				assert(this.reverseDbgStack.length > 0);
-				this.reverseDbgStack.shift();
-			}
+		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
+			expectedSP += 2;	// CALL pushes to the stack, but reverse
+			// Pop from call stack
+			assert(this.reverseDbgStack.length > 0);
+			this.reverseDbgStack.shift();
 		}
+		else if(this.cpuHistory.isRst(currentLine)) {
+			expectedSP += 2;	// CALL pushes to the stack, but reverse
+			// Pop from call stack
+			assert(this.reverseDbgStack.length > 0);
+			this.reverseDbgStack.shift();
+		}
+
 
 		// Add current PC
 		const pc = Z80Registers.parsePC(currentLine);
@@ -742,36 +747,57 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 
 		// Remove current frame
-		//const lastFrame =
 		assert(this.reverseDbgStack.length > 0);
 		this.reverseDbgStack.shift();
 
-		// Check for RETx
-		const instr = this.cpuHistory.getInstruction(currentLine);
-		if(instr.startsWith("RET")) {
+		// Sets the expected SP value.
+		const currentSP = Z80Registers.parseSP(currentLine);
+		let expectedSP = currentSP;
+		const nextSP = Z80Registers.parseSP(nextLine);
+
+		// Check for RET (RET cc and RETI/N)
+		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
+			expectedSP += 2;	// RET pops from the stack
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
 		}
-		// Check for CALL and RST
-		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
-			// Check if the SP got smaller, if not we might have skipped a
-			// simulated RST only.
-			const currentRegs = currentLine;
-			const currentSP = Z80Registers.parseSP(currentRegs);
-			const nextRegs = nextLine;
-			const nextSP = Z80Registers.parseSP(nextRegs);
-			if(currentSP > nextSP) {
-				// Push to call stack
-				const pc = Z80Registers.parsePC(currentRegs);
-				// Now find label for this address
-				const callAddr = Z80Registers.parsePC(nextRegs);
-				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-				const name = ((instr.startsWith("CALL")) ? "CALL " : "RST ") + labelCallAddr;
-				const frame = new Frame(pc, currentSP, name);
-				this.reverseDbgStack.unshift(frame);
-			}
+		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
+			expectedSP -= 2;	// CALL pushes to the stack
+			// Push to call stack
+			const pc = Z80Registers.parsePC(currentLine);
+			// Now find label for this address
+			const callAddr = Z80Registers.parsePC(nextLine);
+			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+			const name = "CALL " + labelCallAddr;
+			const frame = new Frame(pc, currentSP, name);
+			this.reverseDbgStack.unshift(frame);
+		}
+		else if(this.cpuHistory.isRst(currentLine)) {
+			expectedSP -= 2;	// RST pushes to the stack
+			// Push to call stack
+			const pc = Z80Registers.parsePC(currentLine);
+			// Now find label for this address
+			const callAddr = Z80Registers.parsePC(nextLine);
+			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+			const name = "RST " + labelCallAddr;
+			const frame = new Frame(pc, currentSP, name);
+			this.reverseDbgStack.unshift(frame);
+		}
+
+		// Check for interrupt
+		if(expectedSP != nextSP) {
+			// Interrupt occurred. Push current PC to call stack.
+			const pc = Z80Registers.parsePC(currentLine);
+			// Now find label for this address
+			const intrptAddr = Z80Registers.parsePC(nextLine);
+			const labelCallAddrArr = Labels.getLabelsForNumber(intrptAddr);
+			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(intrptAddr,4)+'h';
+			const name = "Interrupt " + labelCallAddr;
+			const frame = new Frame(pc, currentSP, name);
+			this.reverseDbgStack.unshift(frame);
 		}
 
 		// Add current PC

@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Z80Registers, Z80RegisterHoverFormat } from '../z80Registers';
+import { Z80Registers } from '../z80Registers';
 
 suite('Z80Registers', () => {
 
