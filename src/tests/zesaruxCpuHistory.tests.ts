@@ -349,6 +349,41 @@ suite('ZesaruxCpuHistory', () => {
 
 		});
 
+
+		test('isRst', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isCallAndExecuted("(PC)=c7000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=cf000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=d7000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=df000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=e7000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=ef000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=f7000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isCallAndExecuted("(PC)=ff000000")
+			assert.equal(false, result);
+		});
+
 	});
 });
 
