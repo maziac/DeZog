@@ -387,6 +387,7 @@ export class Z80Registers {
 	 * @param flags E.g. 00000001b, C is set
 	 * @returns false, NC is not met.
 	 */
+	/* NOT USED
 	public static isCcMetByFlag(cc: number, flags: number): boolean {
 		const testSet = ((cc & 0x01) != 0);
 		let condTest;
@@ -411,4 +412,5 @@ export class Z80Registers {
 		const ccIsTrue = (condTest == testSet);
 		return ccIsTrue;
 	}
+	*/
 }

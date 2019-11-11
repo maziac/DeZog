@@ -679,48 +679,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But if a "RET" instruction is found also the 'next' PC value is pushed
 	 * to the stack.
-	 *
-	 * Handles the current instruction to setup the reverse debug stack.
-	 * Normally only the top frame on the stack is changed for the new PC value.
-	 * But if a "RET" instruction is found also the 'next' PC value is pushed
-	 * to the stack.
-	 * If a CALL is found it is checked if it has been executed (if it was conditional).
-	 * @param currentLine The current line of the cpu history.
+	 * @param currentLine The current line of the transaction log.
+	 * @param prevLine The previous line of the transaction log. (The one that
+	 * comes before currentLine). This can also be the cached register values for
+	 * the first line.
 	 */
-	protected async handleReverseDebugStackBack(currentLine: string) {
-		let prevLine;
+	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string) {
 		assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
 		//const lastFrame =
 		this.reverseDbgStack.shift();
-
 		// Check for RETx
 		assert(currentLine)
-
-		const AF = Z80Registers.getRegValueByName("AF", currentLine);
-		const flags = AF & 0xFF;
-
-
-
-		const opcodes = this.cpuHistory.getOpcodes(currentLine);
-		const opcode0 = parseInt(opcodes.substr(0,2), 16);
-		// A conditional RET cc is a:
-		// C0, D0, E0, F0. 11000000, 11010000, 11100000, 11110000
-		// C8, D8, E8, F8. 11001000, 11011000, 11110000, 11111000
-		// An unconditional RET is a:
-		// C9
-		// A RETN is a:
-		// 45, 55, 65, 75,  5D, 6D, 7D
-		// A RETI is a:
-		// 4D
-
-
-		//	currentLine = await this.cpuHistory.getLine();
-		const instr = this.cpuHistory.getInstruction(currentLine);
+		const instr = currentLine;
 		if(instr.startsWith("RET")) {
-			// Check if it was conditional
-			const cond = instr.substr(4,2);
-
 			// Create new frame with better name on stack
 			const regs = currentLine;
 			const pc = Z80Registers.parsePC(regs);
@@ -761,10 +733,162 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * But if e.g. a "CALL" or "RET" instruction is found the stack needs to be changed.
 	 * @param currentLine The current line of the transaction log.
 	 * @param nextLine The next line of the transaction log. (The one that
-	 * comes after currentLine.) If that is empty the start f the log has been reached.
+	 * comes after currentLine.) If that is empty the start of the log has been reached.
 	 * In that case the reverseDbgStack is cleared because the real stack can be used.
 	 */
 	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string|undefined) {
+		assert(currentLine);
+		// Check for end
+		if(!nextLine) {
+			this.reverseDbgStack = undefined as any;
+			return;
+		}
+
+		// Remove current frame
+		//const lastFrame =
+		assert(this.reverseDbgStack.length > 0);
+		this.reverseDbgStack.shift();
+
+		// Check for RETx
+		const instr = this.cpuHistory.getInstruction(currentLine);
+		if(instr.startsWith("RET")) {
+			// Pop from call stack
+			assert(this.reverseDbgStack.length > 0);
+			this.reverseDbgStack.shift();
+		}
+		// Check for CALL and RST
+		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
+			// Check if the SP got smaller, if not we might have skipped a
+			// simulated RST only.
+			const currentRegs = currentLine;
+			const currentSP = Z80Registers.parseSP(currentRegs);
+			const nextRegs = nextLine;
+			const nextSP = Z80Registers.parseSP(nextRegs);
+			if(currentSP > nextSP) {
+				// Push to call stack
+				const pc = Z80Registers.parsePC(currentRegs);
+				// Now find label for this address
+				const callAddr = Z80Registers.parsePC(nextRegs);
+				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+				const name = ((instr.startsWith("CALL")) ? "CALL " : "RST ") + labelCallAddr;
+				const frame = new Frame(pc, currentSP, name);
+				this.reverseDbgStack.unshift(frame);
+			}
+		}
+
+		// Add current PC
+		const regs = nextLine;
+		const pc = Z80Registers.parsePC(regs);
+		const sp = Z80Registers.parseSP(regs);
+		const topFrame = new Frame(pc, sp, 'PC');
+		this.reverseDbgStack.unshift(topFrame);
+	}
+
+
+
+	/**
+	 * Handles the current instruction and the previous one and distinguishes what to
+	 * do on the virtual reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.
+	 * But if a "RET" instruction is found also the 'next' PC value is pushed
+	 * to the stack.
+	 *
+	 * Handles the current instruction to setup the reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.
+	 * But if a "RET" instruction is found also the 'next' PC value is pushed
+	 * to the stack.
+	 * If a CALL is found it is checked if it has been executed (if it was conditional).
+	 * @param currentLine The current line of the cpu history.
+	 */
+	/*
+	protected async handleReverseDebugStackBackfalsch(currentLine: string) {
+		let prevLine;
+		assert(this.reverseDbgStack.length > 0);
+		// Remove current frame
+		//const lastFrame =
+		this.reverseDbgStack.shift();
+
+		// Check for RETx
+		assert(currentLine)
+
+		const AF = Z80Registers.getRegValueByName("AF", currentLine);
+		const flags = AF & 0xFF;
+
+		const opcodes = this.cpuHistory.getOpcodes(currentLine);
+		const opcode0 = parseInt(opcodes.substr(0,2), 16);
+		// Check for RET
+		let opcodeRet = false;
+		if(opcode0 == 0xC9)	// RET
+			opcodeRet = true;
+		else if((opcode0 & 0b11000111) == 0b11000111) {
+			// RET cc
+		}
+		// RETN, RETI
+
+		// A conditional RET cc is a:
+		// C0, D0, E0, F0. 11000000, 11010000, 11100000, 11110000
+		// C8, D8, E8, F8. 11001000, 11011000, 11110000, 11111000
+		// An unconditional RET is a:
+		// C9
+		// A RETN is a:
+		// 45, 55, 65, 75,  5D, 6D, 7D
+		// A RETI is a:
+		// 4D
+
+
+		//	currentLine = await this.cpuHistory.getLine();
+		const instr = this.cpuHistory.getInstruction(currentLine);
+		if(instr.startsWith("RET")) {
+			// Check if it was conditional
+			const cond = instr.substr(4,2);
+			if(cond != "")
+
+			// Create new frame with better name on stack
+			const regs = currentLine;
+			const pc = Z80Registers.parsePC(regs);
+			const sp = Z80Registers.parseSP(regs);
+			const name = 'TODO: CALL caller name';
+			// TODO: Need to find out if RST or CALL caller.
+			const frame = new Frame(pc, sp, name);
+			this.reverseDbgStack.unshift(frame);
+		}
+		// Check for CALL and RST
+		else if(instr.startsWith("CALL") || instr.startsWith("RST")) {
+			// Check if the SP got bigger, if not we might have skipped a
+			// simulated RST only.
+			const currentRegs = currentLine;
+			const currentSP = Z80Registers.parseSP(currentRegs);
+			const prevRegs = prevLine;
+			const prevSP = Z80Registers.parseSP(prevRegs);
+			if(currentSP > prevSP) {
+				// Pop from call stack
+				assert(this.reverseDbgStack.length > 0);
+				this.reverseDbgStack.shift();
+			}
+		}
+
+		// Add current PC
+		const regs = currentLine;
+		const pc = Z80Registers.parsePC(regs);
+		const sp = Z80Registers.parseSP(regs);
+		const topFrame = new Frame(pc, sp, 'PC');
+		this.reverseDbgStack.unshift(topFrame);
+	}
+*/
+
+	/**
+	 * Handles the current instruction and the next one and distinguishes what to
+	 * do on the virtual reverse debug stack.
+	 * Normally only the top frame on the stack is changed for the new PC value.
+	 * But if e.g. a "CALL" or "RET" instruction is found the stack needs to be changed.
+	 * @param currentLine The current line of the transaction log.
+	 * @param nextLine The next line of the transaction log. (The one that
+	 * comes after currentLine.) If that is empty the start f the log has been reached.
+	 * In that case the reverseDbgStack is cleared because the real stack can be used.
+	 */
+/*
+	protected handleReverseDebugStackFwrdvielleichtfalsch(currentLine: string, nextLine: string|undefined) {
 		assert(currentLine);
 		// Check for end
 		if(!nextLine) {
@@ -817,6 +941,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const topFrame = new Frame(pc, sp, 'PC');
 		this.reverseDbgStack.unshift(topFrame);
 	}
+*/
 
 
 	/**
@@ -831,17 +956,22 @@ export class ZesaruxEmulator extends EmulatorClass {
 			try {
 				// Loop over all lines, reverse
 				reason = 'Break: Reached end of instruction history.';
+				let prevLine = this.RegisterCache as string;
+				assert(prevLine);
 				while(true) {
 					// Get line
 					const currentLine = await this.revDbgPrev();
 					if(!currentLine)
 						break;
 					// Stack handling:
-					this.handleReverseDebugStackBack(currentLine);
+					this.handleReverseDebugStackBack(currentLine, prevLine);
 
 					// Breakpoint handling:
 					// Check for breakpoint
 					// TODO: ...
+
+					// Next
+					prevLine = currentLine;
 				}
 
 			}
@@ -1340,13 +1470,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let errorText;
 			let instruction = '';
 			try {
+				// Remember previous line
+				let prevLine = this.RegisterCache as string;
+				assert(prevLine);
 				const currentLine = await this.revDbgPrev();
 				if(!currentLine)
 					throw Error('Reached end of instruction history.')
 				// Get instruction
 				instruction = this.cpuHistory.getInstruction(currentLine);
 				// Stack handling:
-				this.handleReverseDebugStackBack(currentLine);
+				this.handleReverseDebugStackBack(currentLine, prevLine);
 			}
 			catch(e) {
 				errorText = e;

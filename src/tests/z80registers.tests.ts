@@ -13,6 +13,7 @@ suite('Z80Registers', () => {
 	teardown( () => dc.disconnect() );
 */
 
+/*
 	suite('Conditions & Flags', () => {
 
 		test('isCcMetByFlag NZ,Z', () => {
@@ -78,7 +79,7 @@ suite('Z80Registers', () => {
 			assert.equal(false, result);
 		});
 
-
 	});
+*/
 });
 
