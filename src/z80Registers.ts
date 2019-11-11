@@ -384,10 +384,9 @@ export class Z80Registers {
 	/**
 	 * Check if the cc condition is met by the flags.
 	 * @param cc E.g. 010b for "NC" (as in "CALL NC,nnnn")
-	 * @param flags E.g. 00000001b, C is set
+	 * @param flags E.g. 00000001b, C is set. Only the lower byte is important.
 	 * @returns false, NC is not met.
 	 */
-	/* NOT USED
 	public static isCcMetByFlag(cc: number, flags: number): boolean {
 		const testSet = ((cc & 0x01) != 0);
 		let condTest;
@@ -412,5 +411,4 @@ export class Z80Registers {
 		const ccIsTrue = (condTest == testSet);
 		return ccIsTrue;
 	}
-	*/
 }

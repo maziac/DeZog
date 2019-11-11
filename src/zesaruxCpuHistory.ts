@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
-import { Z80Registers } from './z80Registers';
+import { Z80Registers, Z80RegisterHoverFormat } from './z80Registers';
 
 
 
@@ -206,5 +206,89 @@ export class ZesaruxCpuHistory {
 		return (this.history.length > 0);
 	}
 
+
+	/**
+	 * Tests if the line includes a RET instruction and if it is
+	 * conditional it tests if the condition was true.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @returns false=if not RET (or RETI or RETN) or condition of RET cc is not met.
+	 */
+	public isRetAndExecuted(line: string): boolean {
+		// Get opcodes
+		const opcodes = this.getOpcodes(line);
+		// Check for RET
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		if(0xC9 == opcode0)
+			return true;
+		// Check for RETI or RETN
+		const opcode01 = parseInt(opcodes.substr(0,4),16);
+		if([0xED4D, 0xED45].includes(opcode01))
+			return true;
+
+		// Now check for RET cc
+		const mask = 0b11000000;
+		if((opcode0 & mask) == mask) {
+			// RET cc, get cc
+			const cc = (opcode0 & ~mask) >> 3;
+			// Get flags
+			const AF = Z80Registers.parseAF(line);
+			// Check condition
+			const condMet = Z80Registers.isCcMetByFlag(cc, AF);
+			return condMet;
+		}
+
+		// No RET or condition not met
+		return false;
+	}
+
+
+	/**
+	 * Tests if the line includes a CALL instruction and if it is
+	 * conditional it tests if the condition was true.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @returns false=if not CALL or condition of CALL cc is not met.
+	 */
+	public isCallAndExecuted(line: string): boolean {
+		// Get opcodes
+		const opcodes = this.getOpcodes(line);
+		// Check for CALL
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		if(0xCD == opcode0)
+			return true;
+
+		// Now check for CALL cc
+		const mask = 0b11000100;
+		if((opcode0 & mask) == mask) {
+			// RET cc, get cc
+			const cc = (opcode0 & ~mask) >> 3;
+			// Get flags
+			const AF = Z80Registers.parseAF(line);
+			// Check condition
+			const condMet = Z80Registers.isCcMetByFlag(cc, AF);
+			return condMet;
+		}
+
+		// No CALL or condition not met
+		return false;
+	}
+
+
+	/**
+	 * Tests if the line includes a RST instruction.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @returns true=if RST
+	 */
+	public isRst(line: string): boolean {
+		// Get opcodes
+		const opcodes = this.getOpcodes(line);
+		// Check for RST
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		const mask = 0b11000111;
+		if((opcode0 & mask) == mask)
+			return true;
+
+		// No RST
+		return false;
+	}
 }
 

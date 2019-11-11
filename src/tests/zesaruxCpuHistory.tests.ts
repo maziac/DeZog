@@ -162,5 +162,103 @@ suite('ZesaruxCpuHistory', () => {
 
 	});
 
+
+	suite('isRetCallRst', () => {
+
+		test('isRetAndExecuted', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isRetAndExecuted("(PC)=c9000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("(PC)=01000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("(PC)=ed4d0000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("(PC)=ed450000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("(PC)=0ed110000")
+			assert.equal(false, result);
+		});
+
+		test('isRetAndExecuted NZ,Z', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isRetAndExecuted("AF=00BF (PC)=c0000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0040 (PC)=c8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=00BF (PC)=c8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0040 (PC)=c0000000")
+			assert.equal(true, result);
+		});
+
+		test('isRetAndExecuted NC,C', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isRetAndExecuted("AF=00FE (PC)=d0000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0001 (PC)=d8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=00FE (PC)=d8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0001 (PC)=d0000000")
+			assert.equal(true, result);
+		});
+
+		test('isRetAndExecuted PO,PE', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isRetAndExecuted("AF=00FB (PC)=e0000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0004 (PC)=e8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=00FB (PC)=e8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0004 (PC)=e0000000")
+			assert.equal(true, result);
+		});
+
+		test('isRetAndExecuted P,M', () => {
+			let hist = new ZesaruxCpuHistory();
+			let result = hist.isRetAndExecuted("AF=007F (PC)=f0000000")
+			assert.equal(true, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0080 (PC)=f8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=007F (PC)=f8000000")
+			assert.equal(false, result);
+
+			hist = new ZesaruxCpuHistory();
+			result = hist.isRetAndExecuted("AF=0080 (PC)=f0000000")
+			assert.equal(true, result);
+		});
+
+	});
 });
 
