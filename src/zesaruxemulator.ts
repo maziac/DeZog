@@ -697,7 +697,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			const regs = currentLine;
 			const pc = Z80Registers.parsePC(regs);
 			const sp = Z80Registers.parseSP(regs);
-			const name = 'TODO: CALL caller name';
+			const name = 'FRAME: RET @' + Utility.getHexString(pc,4);
 			// TODO: Need to find out if RST or CALL caller.
 			const frame = new Frame(pc, sp, name);
 			this.reverseDbgStack.unshift(frame);
