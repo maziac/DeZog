@@ -2220,11 +2220,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Get line
 		let line = this.cpuHistory.getNextRegisters();
 		this.RegisterCache = line;
-		if(line) {
+		//if(line) {
 			// Remove one address from history
-			assert(this.revDbgHistory.length > 0);
+		//	assert(this.revDbgHistory.length > 0);
 			this.revDbgHistory.pop();
-		}
+		//}
 		return line;
 	}
 }

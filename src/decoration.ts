@@ -10,7 +10,7 @@ export let Decoration;
 
 
 /**
- * Each decoration type )coverage, reverse debug, break) gets its own
+ * Each decoration type (coverage, reverse debug, break) gets its own
  * instance of DecorationFileMap.
  */
 class DecorationFileMap {
@@ -292,15 +292,17 @@ export class DecorationClass {
 	/**
 	 * Is called whenever the reverse debug history changes.
 	 * Will set the decoration.
-	 * @param addresses The address to decorate.
+	 * @param addresses The addresses to decorate.
 	 */
 	public showRevDbgHistory(addresses: Array<number>) {
+		// Clear decorations
+		this.clearRevDbgHistory();
+
 		// Get file map
 		const decoMap = this.decorationFileMaps.get(this.REVERSE_DEBUG) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
-		fileMap.clear();
 
-		// Loop over all all addresses
+		// Loop over all addresses
 		addresses.forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
