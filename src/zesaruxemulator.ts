@@ -691,7 +691,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.reverseDbgStack.shift();
 		// Check for RETx
 		assert(currentLine)
-		const instr = currentLine;
+		const instr = this.cpuHistory.getInstruction(currentLine);
 		if(instr.startsWith("RET")) {
 			// Create new frame with better name on stack
 			const regs = currentLine;
@@ -1104,9 +1104,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			let instruction = this.cpuHistory.getInstruction(currentLine);
-
-			handler('  '+instruction, undefined, undefined, errorText);
+			let instruction = '';
+			if(currentLine) {
+				const pc = Z80Registers.parsePC(currentLine);
+				instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
+			}
+			handler(instruction, undefined, undefined, errorText);
 			return;
 		}
 
@@ -1476,10 +1479,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const currentLine = await this.revDbgPrev();
 				if(!currentLine)
 					throw Error('Reached end of instruction history.')
-				// Get instruction
-				instruction = this.cpuHistory.getInstruction(currentLine);
 				// Stack handling:
 				this.handleReverseDebugStackBack(currentLine, prevLine);
+				// Get instruction
+				const pc = Z80Registers.parsePC(currentLine);
+				instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 			}
 			catch(e) {
 				errorText = e;
@@ -1490,7 +1494,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				this.emitRevDbgHistory();
 
 			// Call handler
-			handler('  '+instruction, errorText);
+			handler(instruction, errorText);
 		});
 	}
 

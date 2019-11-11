@@ -3,7 +3,6 @@ import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
 import { Z80Registers } from './z80Registers';
-import { Utility } from './utility';
 
 
 
@@ -168,7 +167,7 @@ export class ZesaruxCpuHistory {
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
 		const opCodeDescription = opcode.disassemble();
-		const instr = Utility.getHexString(pc, 4) + ' ' + opCodeDescription.mnemonic;
+		const instr = opCodeDescription.mnemonic;
 		return instr;
 	}
 
