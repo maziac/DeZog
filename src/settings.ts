@@ -337,7 +337,7 @@ export class Settings {
 		if(!Settings.launch.formatting.arrayWord)
 			Settings.launch.formatting.arrayWord = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.formatting.stackVar)
-			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{{:labels|, |}}";
+			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.tabSize)
 			Settings.launch.tabSize = 6;
 		if(!Settings.launch.socketTimeout)

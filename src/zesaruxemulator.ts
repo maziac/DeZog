@@ -492,10 +492,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param address The address of the instruction, for the first call this is the PC.
 	 * For the other calls this is retAddr-3 or similar.
 	 * @param index The index in zStack. Is increased with every call.
-	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
+	 * @param zStackAddress The stack start address (the SP).
 	 * @param handler The handler to call when ready.
 	 */
-	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, lastCallFrameIndex: number, handler:(frames: Array<Frame>)=>void) {
+	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler:(frames: Array<Frame>)=>void) {
 
 		// Check for last frame
 		if(index >= zStack.length) {
@@ -534,19 +534,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Now find label for this address
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
 				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+				// Find pushed values
+				const stack = new Array<number>();
+				for(let l=index-1; l>=0; l--) {
+					const addrTypeString = zStack[l];
+					if(!addrTypeString.includes('push'))
+						break;	// Until something else than PUSH is found
+					const pushedValue = parseInt(addrTypeString,16);
+					stack.push(pushedValue);
+				}
 				// Save
-				lastCallFrameIndex = frames.addObject(new Frame(address, /*zStackAddress+*/2*index, labelCallAddr));
+				const frame = new Frame(address, zStackAddress+2*(index-1), labelCallAddr)
+				frame.stack = stack;
+				frames.addObject(frame);
 				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, callerAddr, index+1, lastCallFrameIndex, handler);
+				this.setupCallStackFrameArray(frames, zStack, callerAddr, index+1, zStackAddress, handler);
 			});
 		}
 		else {
 			// Neither CALL nor RST.
-			// Get last call frame
-		//	const frame = frames.getObject(lastCallFrameIndex);
-		//	frame.stack.push(retAddr);
 			// Call recursively
-			this.setupCallStackFrameArray(frames, zStack, address, index+1, lastCallFrameIndex, handler);
+			this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, handler);
 		}
 	}
 
@@ -593,12 +601,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Parse the PC value
 			const pc = Z80Registers.parsePC(data);
 			const sp = Z80Registers.parseSP(data);
-			const lastCallIndex = 0; // frames.addObject(new Frame(pc, sp, 'PC'));
-
 			// calculate the depth of the call stack
 			const tos = this.topOfStack
 			var depth = (tos - sp)/2;	// 2 bytes per word
-			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)	depth = ZesaruxEmulator.MAX_STACK_ITEMS;
+			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
+				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 
 			// Get 'extended-stack' from zesarux
 			zSocket.send('extended-stack get '+depth, data => {
@@ -607,7 +614,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const zStack = data.split('\n');
 				zStack.splice(zStack.length-1);	// ignore last (is empty)
 				// rest of callstack
-				this.setupCallStackFrameArray(frames, zStack, pc, 0, lastCallIndex, handler);
+				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
 			});
 		});
 	}

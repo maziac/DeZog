@@ -251,7 +251,7 @@ export class StackVar extends ShallowVar {
 	/**
 	 * Constructor.
 	 * @param stack The array containing the pushed data (address + value).
-	 * @param stackAddress The start address of the stack.
+	 * @param stackAddress The start address of the stack (the top). The stack grows to bottom.
 	 */
 	public constructor(stack: Array<number>, stackAddress: number) {
 		super();
@@ -284,7 +284,7 @@ export class StackVar extends ShallowVar {
 		var value = this.stack[0];
 		const recursiveFunction = (formatted) => {
 			stackList.push({
-				name: Utility.getHexString(this.stackAddress+2*index,4),
+				name: Utility.getHexString(this.stackAddress-2*index,4),
 				type: formatted,
 				value: formatted,
 				variablesReference: 0
