@@ -44,6 +44,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// The breakpoint used for step-out.
 	static STEP_BREAKPOINT_ID = 100;
 
+	// Maximum stack items to handle.
+	static MAX_STACK_ITEMS = 100;
+
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
 
@@ -272,6 +275,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Reverse debugging.
 					this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
 
+					// Enable extended stack
+					zSocket.send('extended-stack enabled yes');
+
+
 					// TODO: Ignore repetition of 'HALT'
 
 				});
@@ -384,6 +391,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
 	 * k=0, addr=0: Neither CALL nor RST found.
 	 */
+	/*
 	protected findCallOrRst(addr: number, handler:(k: number, addr: number)=>void) {
 		// Get the 3 bytes before address.
 		zSocket.send( 'read-memory ' + (addr-3) + ' ' + 3, data => { // subtract opcode + address (last 3 bytes)
@@ -422,30 +430,71 @@ export class ZesaruxEmulator extends EmulatorClass {
 			handler(0, 0);
 		});
 	}
+*/
+
+	/**
+	 * Returns the contents of (addr+1).
+	 * It assumes that at addr there is a "CALL calladdr" instruction and it returns the
+	 * callAddr.
+	 * It retrieves the memory contents at addr+1 and calls 'handler' with the result.
+	 * @param addr The address.
+	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
+	 */
+	protected getCallAddress(addr: number, handler:(callAddr: number)=>void) {
+		// Get the 3 bytes before address.
+		zSocket.send( 'read-memory ' + (addr+1) + ' 2', data => { // retrieve calladdr
+			// Get low byte
+			const lowByte = parseInt(data.substr(0,2),16);
+			// Get high byte
+			const highByte = parseInt(data.substr(2,2),16);
+			// Calculate address
+			const callAddr = (highByte<<8) + lowByte;
+			// Call handler
+			handler(callAddr);
+		});
+	}
+
+
+	/**
+	 * Returns the address of (addr).
+	 * It assumes that at addr there is a "RST p" instruction and it returns the
+	 * callAddr, i.e. p.
+	 * It retrieves the memory contents at addr, extract p and calls 'handler' with the result.
+	 * @param addr The address.
+	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
+	 */
+	protected getRstAddress(addr: number, handler:(callAddr: number)=>void) {
+		// Get the 3 bytes before address.
+		zSocket.send( 'read-memory ' + (addr+1) + ' 1', data => { // retrieve p
+			// Get low byte
+			const p = parseInt(data.substr(0,2),16) & 0b00111000;
+			// Call handler
+			handler(p);
+		});
+	}
 
 
 	/**
 	 * Helper function to prepare the callstack for vscode.
-	 * What makes it complicated is the fact that for every word on the stack the zesarux
-	 * has to be called to get the disassembly to check if it was a CALL.
+	 * Check if the
 	 * The function calls itself recursively.
+ 	 * Uses the zesarux 'extended-stack' feature. I.e. each data on the stack
+	 * also has a type, e.g. push, call, rst, interrupt. So it is easy to tell which
+	 * are the call addresses and even when an interrupt starts.
+	 * Interrupts will be shown in a different 'thread'.
+	 * An 'extended-stack' response from ZEsarUx looks like:
+	 * 15F7H maskable_interrupt
+	 * FFFFH push
+	 * 15E1H call
+	 * 0000H default
 	 * @param frames The array that is sent at the end which is increased every call.
-	 * @param zStack The original zesarux stack frame.
+	 * @param zStack The original zesarux stack frame. Each line in zStack looks like "FFFFH push" or "15E1H call"
 	 * @param zStackAddress The start address of the stack.
 	 * @param index The index in zStack. Is increased with every call.
 	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
 	 * @param handler The handler to call when ready.
 	 */
 	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, zStackAddress: number, index: number, lastCallFrameIndex: number, handler:(frames: Array<Frame>)=>void) {
-
-		// skip invalid addresses (should not happen)
-		var addrString;
-		while(index < zStack.length) {
-			addrString = zStack[index];
-			if(addrString.length >= 4)
-				break;
-			++index;
-		}
 
 		// Check for last frame
 		if(index >= zStack.length) {
@@ -456,35 +505,46 @@ export class ZesaruxEmulator extends EmulatorClass {
 			return;
 		}
 
-		// Get caller address with opcode (e.g. "call sub1")
-		const addr = parseInt(addrString,16);
+		// Split address and type
+		const addrTypeString = zStack[index];
+		const addr = parseInt(addrTypeString,16);
+		const type = addrTypeString.substr(6);
+
 		// Check for CALL or RST
-		this.findCallOrRst(addr, (k, callAddr) => {
-			if(k == 3) {
-				// CALL.
+		let k = 0;
+		let func;
+		if(type == "call") {
+			k = 3;	// Opcode length for CALL
+			func = this.getCallAddress;
+		}
+		else if(type == "rst") {
+			k = 1;	// Opcode length range for RST
+			func = this.getRstAddress;
+		}
+
+		// TODO: add interrupt
+
+		// Check if we need to add something to the callstack
+		if(func) {
+			func(addr-k, callAddr => {
 				// Now find label for this address
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
 				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 				// Save
-				lastCallFrameIndex = frames.addObject(new Frame(addr-3, zStackAddress+2*index, 'CALL ' + labelCallAddr));
-			}
-			else if(k==1 || k == 2) {
-				// RST.
-				const pString = Utility.getHexString(callAddr,2)+'h'
-				// Save
-				lastCallFrameIndex = frames.addObject(new Frame(addr-k, zStackAddress+2*index, 'RST ' + pString));
-			}
-			else {
-				// Neither CALL nor RST.
-				// Get last call frame
-				const frame = frames.getObject(lastCallFrameIndex);
-				frame.stack.push(addr);
-			}
-
-
+				lastCallFrameIndex = frames.addObject(new Frame(callAddr, zStackAddress+2*index, type.toUpperCase() + ' ' + labelCallAddr));
+				// Call recursively
+				this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
+			});
+		}
+		else {
+			// Neither CALL nor RST.
+			// Get last call frame
+			const frame = frames.getObject(lastCallFrameIndex);
+			frame.stack.push(addr);
 			// Call recursively
 			this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
-		});
+		}
+
 	}
 
 
@@ -510,6 +570,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * Returns the "real" stack frames from ZEsarUX.
 	 * (Opposed to the virtual one during reverse debug mode.)
+	 * Uses the zesarux 'extended-stack' feature. I.e. each data on the stack
+	 * also has a type, e.g. push, call, rst, interrupt. So it is easy to tell which
+	 * are the call addresses and even when an interrupt starts.
+	 * Interrupts will be shown in a different 'thread'.
+	 * An 'extended-stack' response from ZEsarUx looks like:
+	 * 15F7H maskable_interrupt
+	 * FFFFH push
+	 * 15E1H call
+	 * 0000H default
 	 * @param handler The handler to call when ready.
 	 */
 	public realStackTraceRequest(handler:(frames: RefList)=>void): void {
@@ -526,17 +595,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// calculate the depth of the call stack
 			const tos = this.topOfStack
 			var depth = (tos - sp)/2;	// 2 bytes per word
-			if(depth>20)	depth = 20;
+			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)	depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 
-			// Check if callstack need to be called
+			// Check if callstack needs to be called
 			if(depth > 0) {
-				// Get stack from zesarux
-				zSocket.send('get-stack-backtrace '+depth, data => {
+				// Get 'extended-stack' from zesarux
+				zSocket.send('extended-stack get '+depth, data => {
 					Log.log('Call stack: ' + data);
-					// add the received stack, something like:
-					// get-stack-backtrace 11:
-					// 744EH D0C5H D12AH CC18H CBD3H 0E01H 0100H 0000H 0000H 3200H 0000H
-					const zStack = data.split(' ');
+					data = data.replace(/\r/gm, "");
+					const zStack = data.split('\n');
 					zStack.splice(zStack.length-1);	// ignore last (is empty)
 					// rest of callstack
 					this.setupCallStackFrameArray(frames, zStack, sp, 0, lastCallIndex, handler);
@@ -679,7 +746,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Example: Normally only the top frame on the stack is changed for the new PC value.
 	 * But if a "RET" instruction is found also the 'next' PC value is pushed
 	 * to the stack.
-	 * Note: This should work without any special check for interrupts.
+	 * Note: We are not able to detect interrupts reliable. Therefore interrupts will not be put on
+	 * the stack and RETI/RETN will not pop from the stack.
+	 *
 	 * @param currentLine The current line of the transaction log.
 	 * @param prevLine The previous line of the transaction log. (The one that
 	 * comes before currentLine). This can also be the cached register values for
@@ -691,13 +760,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.reverseDbgStack.shift();
 
 		// Sets the expected SP value.
-		const currentSP = Z80Registers.parseSP(currentLine);
-		let expectedSP = currentSP;
-	//	const nextSP = Z80Registers.parseSP(nextLine);
+		//const currentSP = Z80Registers.parseSP(currentLine);
 
 		// Check for RET (RET cc and RETI/N)
 		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
-			expectedSP -= 2;	// RET pops from the stack, but reverse
 			// Create new frame with better name on stack
 			const pc = Z80Registers.parsePC(currentLine);
 			const sp = Z80Registers.parseSP(currentLine);
@@ -707,13 +773,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.reverseDbgStack.unshift(frame);
 		}
 		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
-			expectedSP += 2;	// CALL pushes to the stack, but reverse
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
 		}
 		else if(this.cpuHistory.isRst(currentLine)) {
-			expectedSP += 2;	// CALL pushes to the stack, but reverse
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
@@ -733,6 +797,42 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * do on the virtual reverse debug stack.
 	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But if e.g. a "CALL" or "RET" instruction is found the stack needs to be changed.
+	 * Note: We are not able to detect interrupts reliable. Therefore interrupts will not be put on
+	 * the stack and RETI/RETN will not pop from the stack.
+	 *
+	 * CALL, RST and RETx are the only instructions that should manipulate the call stack
+	 * except for interrupts.
+	 * Interrupt recognition is harder than it seems. Here it is done in the following way:
+	 * If a CALL/RST/RETx is found the next expected SP (expSP) and the next expected PC (expPC)
+	 * is calculated.
+	 * There are 4 group of commands (branching means that a non-normal execution flow is chosen):
+	 * - A = CALL/RST/RETx: Changing SP if executed. Potentially branching.
+	 * - B = PUSH/POP, ADD SP...: Change SP, but not branching.
+	 * - C = JP/JR: Not changing SP, but potentially branching.
+	 * - D = Rest: Not changing SP, not branching.
+	 *
+	 * If an interrupt occurs it: changes SP and changes PC. I.e. this is like group A changing
+	 * both: SP and branching.
+	 *
+	 * Now there are special cases:
+	 * Interrupt happens just right after CALL/RST/RETx.
+	 * In this case we need to distinguish:
+	 * - CALL/RST: Next line: SP is decremented by 4 (expSP != SP). PC != expPC.
+	 * - RETx: Next line: SP stays (incremented by 2+decremented by 2) (ExpSP != SP). PC != expPC.
+	 *
+	 * So the algorithm is:
+	 * IF CALL/RST/RETx
+	 * 		IF (expSP != SP) && (PC != expPC)
+	 * 			// Interrupt occurred
+	 * 		ENDIF
+	 * ELSE
+	 * 		IF SP changed
+	 * 			IF PC != prevPC+instruction_size
+	 * 				// Interrupt occurred
+	 * 			ENDIF
+	 * 		ENDIF
+	 * ENDIF
+	 *
 	 * @param currentLine The current line of the transaction log.
 	 * @param nextLine The next line of the transaction log. (The one that
 	 * comes after currentLine.) If that is empty the start of the log has been reached.
@@ -751,21 +851,22 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.reverseDbgStack.shift();
 
 		// Sets the expected SP value.
-		const currentSP = Z80Registers.parseSP(currentLine);
-		let expectedSP = currentSP;
-		const nextSP = Z80Registers.parseSP(nextLine);
+		//const currentSP = Z80Registers.parseSP(currentLine);
+		//let expectedSP = currentSP;
+		//const nextSP = Z80Registers.parseSP(nextLine);
 
 		// Check for RET (RET cc and RETI/N)
 		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
-			expectedSP += 2;	// RET pops from the stack
+			//expectedSP += 2;	// RET pops from the stack
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
 		}
 		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
-			expectedSP -= 2;	// CALL pushes to the stack
+			//expectedSP -= 2;	// CALL pushes to the stack
 			// Push to call stack
 			const pc = Z80Registers.parsePC(currentLine);
+			const currentSP = Z80Registers.parseSP(currentLine);
 			// Now find label for this address
 			const callAddr = Z80Registers.parsePC(nextLine);
 			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
@@ -775,9 +876,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.reverseDbgStack.unshift(frame);
 		}
 		else if(this.cpuHistory.isRst(currentLine)) {
-			expectedSP -= 2;	// RST pushes to the stack
+			//expectedSP -= 2;	// RST pushes to the stack
 			// Push to call stack
 			const pc = Z80Registers.parsePC(currentLine);
+			const currentSP = Z80Registers.parseSP(currentLine);
 			// Now find label for this address
 			const callAddr = Z80Registers.parsePC(nextLine);
 			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
@@ -788,6 +890,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 
 		// Check for interrupt
+		/*
 		if(expectedSP != nextSP) {
 			// Interrupt occurred. Push current PC to call stack.
 			const pc = Z80Registers.parsePC(currentLine);
@@ -799,6 +902,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			const frame = new Frame(pc, currentSP, name);
 			this.reverseDbgStack.unshift(frame);
 		}
+		*/
 
 		// Add current PC
 		const regs = nextLine;
@@ -1258,7 +1362,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// calculate the depth of the call stack
 			var depth = this.topOfStack - sp;
-			if(depth>20)	depth = 20;
+			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)	depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 			if(depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
 				handler();
@@ -1266,61 +1370,52 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// get stack from zesarux
-			zSocket.send('get-stack-backtrace '+depth, data => {
-				// add the received stack, something like:
-				// get-stack-backtrace 11:
-				// 744EH D0C5H D12AH CC18H CBD3H 0E01H 0100H 0000H 0000H 3200H 0000H
-				const zStack = data.split(' ');
+			zSocket.send('extended-stack get '+depth, data => {
+				data = data.replace(/\r/gm, "");
+				const zStack = data.split('\n');
 				zStack.splice(zStack.length-1);	// ignore last (is empty)
-				// Now search the call stack for an address that points after a 'CALL'.
-				const recursiveFunc = (stack: Array<string>, sp: number) => {
-					// Search for "CALL"
-					const addrString = stack.shift();
-					if(!addrString) {
-						// Stop searching, no "CALL" found.
-						// Nothing to step out, i.e. immediately return.
-						handler();
-					}
-					else {
-						const addr = parseInt(addrString,16);
-						this.findCallOrRst(addr, (k) => {
-							if(k != 0) {
-								// CALL or RST found, set breakpoint: when SP gets bigger than the current value.
-								// Set action first (no action).
-								const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
-								zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
-									// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
-									const condition = 'SP=' + (sp+2);
-									zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
-										// enable breakpoint
-										zSocket.send('enable-breakpoint ' + bpId, () => {
 
-											// Clear register cache
-											this.RegisterCache = undefined;
-											// Run
-											this.state = EmulatorState.RUNNING;
-											this.cpuStepGetTime('run', (tStates, cpuFreq) => {
-												// Disable breakpoint
-												zSocket.send('disable-breakpoint ' + bpId, () => {
-													this.state = EmulatorState.IDLE;
-													handler(tStates, cpuFreq);
-												});
-											});
+				// Loop through stack:
+				let bpSp = sp;
+				for(const addrTypeString of zStack) {
+					// Increase breakpoint address
+					bpSp += 2;
+					// Split address and type
+					const type = addrTypeString.substr(6);
+					if(type == "call" || type == "rst" || type.includes("interrupt")) {
+						//const addr = parseInt(addrTypeString,16);
+						// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
+						// Set action first (no action).
+						const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
+							// Set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
+							const condition = 'SP=' + bpSp;
+							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+								// Enable breakpoint
+								zSocket.send('enable-breakpoint ' + bpId, () => {
 
+									// Clear register cache
+									this.RegisterCache = undefined;
+									// Run
+									this.state = EmulatorState.RUNNING;
+									this.cpuStepGetTime('run', (tStates, cpuFreq) => {
+										// Disable breakpoint
+										zSocket.send('disable-breakpoint ' + bpId, () => {
+											this.state = EmulatorState.IDLE;
+											handler(tStates, cpuFreq);
 										});
 									});
+
 								});
-								return;
-							}
-							// "CALL" not found, so continue searching
-							recursiveFunc(stack, sp+2);
+							});
 						});
+						// Return on a CALL etc.
+						return;
 					}
-				};	// end recursiveFunc
+				}
 
-				// Loop the call stack recursively
-				recursiveFunc(zStack, sp);
-
+				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
+				handler();
 			});
 		});
 	}
