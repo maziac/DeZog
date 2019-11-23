@@ -140,7 +140,7 @@ export class Z80UnitTests {
 	protected static allCoveredAddresses: Set<number>;
 
 	/// Caches the last received addresses (from Emulator)
-	protected static lastCoveredAddresses: Array<Set<number>>;
+	protected static lastCoveredAddresses: Set<number>;
 
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
@@ -839,11 +839,7 @@ export class Z80UnitTests {
 		// Collect coverage:
 		// Get covered addresses (since last unit test) and add to collection.
 		const target = Z80UnitTests.allCoveredAddresses;
-		const coveredAddresses = Z80UnitTests.lastCoveredAddresses;
-		const set0 = coveredAddresses[0];
-		set0.forEach(target.add, target);
-		const set1 = coveredAddresses[1];
-		set1.forEach(target.add, target);
+		Z80UnitTests.lastCoveredAddresses.forEach(target.add, target);
 
 		// Next unit test
 		Z80UnitTests.utLabels.shift();
