@@ -253,7 +253,7 @@ export class LabelsClass {
 							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 							try {
 								// Evaluate
-								const value = Utility.evalExpression(valueString);
+								const value = Utility.evalExpression(valueString, false);
 								//const entry = { value, file: fileName, line: lineNr};
 								this.numberForLabel.set(label, value);
 								// Add label
@@ -289,7 +289,7 @@ export class LabelsClass {
 				}
 
 				// Store address (or several addresses for one line)
-				for(let k=0; k<countBytes; k++) {  // WAHRSCHEINLICH in die matchBytes Klammer ziehen
+				for(let k=0; k<countBytes; k++) {
 					const entry = {fileName: '', lineNr: -1-k, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
 					listFile.push(entry)
 				}
