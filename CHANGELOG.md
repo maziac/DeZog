@@ -1,6 +1,10 @@
 # Changelog
 
 ## 0.9.2
+- Changed to use ZEsarUX 'cpu-code-coverage' for decorating code coverage.
+- Changed to use ZEsarUX 'extended-stack' for displaying the callstack. This makes it possible to highlight interrupts in the callstack.
+- Started use of cpu-history for reverse debugging.
+- Fixed bug in sjasmplus parser (fake instructions).
 
 ## 0.9.1
 - Fixed error in unit test stack label

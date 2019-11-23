@@ -271,7 +271,9 @@ export class LabelsClass {
 				}
 
 				// Search for bytes after the address:
-				const matchBytes = /^[0-9a-f]+\s+(([0-9a-f][0-9a-f]\s)+|([0-9a-f][0-9a-f])+)/i.exec(line);
+				//line = "80F1 D5 C5";
+				const matchBytes = /^[0-9a-f]+((\s+[0-9a-f][0-9a-f])+)/i.exec(line);
+				//const matchBytes = /^[0-9a-f]+\s+(([0-9a-f][0-9a-f]\s)+|([0-9a-f][0-9a-f])+)/i.exec(line);
 				// Count how many bytes are included in the line.
 				if(matchBytes) {
 					const bytes = matchBytes[1].trim();
@@ -287,7 +289,7 @@ export class LabelsClass {
 				}
 
 				// Store address (or several addresses for one line)
-				for(let k=0; k<countBytes; k++) {
+				for(let k=0; k<countBytes; k++) {  // WAHRSCHEINLICH in die matchBytes Klammer ziehen
 					const entry = {fileName: '', lineNr: -1-k, addr: address+k, line: origLine, modulePrefix: labelPrefix, lastLabel: lastLabel};
 					listFile.push(entry)
 				}
