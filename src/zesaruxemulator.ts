@@ -276,6 +276,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
 
 					// Enable extended stack
+					zSocket.send('extended-stack enabled no');	// bug in ZEsarUX
 					zSocket.send('extended-stack enabled yes');
 
 
@@ -500,7 +501,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for last frame
 		if(index >= zStack.length) {
 			// Top frame
-			frames.addObject(new Frame(address, /*zStackAddress+*/2*index, 'main'));
+			frames.addObject(new Frame(address, zStackAddress+2*index, '__MAIN__'));
 			// Use new frames
 			this.listFrames = frames;
 			// call handler
@@ -524,8 +525,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 			k = 1;	// Opcode length range for RST
 			func = this.getRstAddress;
 		}
-
-		// TODO: add interrupt
+		else if(type.includes("interrupt")) {
+			// Find pushed values
+			const stack = new Array<number>();
+			for(let l=index-1; l>=0; l--) {
+				const addrTypeString = zStack[l];
+				if(!addrTypeString.includes('push'))
+					break;	// Until something else than PUSH is found
+				const pushedValue = parseInt(addrTypeString,16);
+				stack.push(pushedValue);
+			}
+			// Save
+			const frame = new Frame(address, zStackAddress+2*(index-1), "__INTERRUPT__");
+			frame.stack = stack;
+			frames.addObject(frame);
+			// Call recursively
+			this.setupCallStackFrameArray(frames, zStack, retAddr, index+1, zStackAddress, handler);
+			return;
+		}
 
 		// Check if we need to add something to the callstack
 		if(func) {
