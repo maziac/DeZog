@@ -1368,7 +1368,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 		// find the first return address.
-		// Then a breakpoint is created that triggers when the SP changes to that address.
+		// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
 		// I.e. when the RET (or (RET cc) gets executed.
 
 		// Make sure that reverse debug stack is cleared
@@ -1407,7 +1407,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 						const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
 						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
 							// Set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
-							const condition = 'SP=' + bpSp;
+							// Note: PC=PEEKW(SP-2) finds an executed RET.
+							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
 							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
 								// Enable breakpoint
 								zSocket.send('enable-breakpoint ' + bpId, () => {
