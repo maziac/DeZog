@@ -265,7 +265,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 					// Code coverage
-					if(Settings.codeCoverageEnabled) {
+					if(Settings.codeCoverageEnabled()) {
 						zSocket.send('cpu-code-coverage enabled yes');
 						zSocket.send('cpu-code-coverage clear');
 					}
@@ -1276,7 +1276,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected handleCodeCoverage() {
 		// Check if code coverage is enabled
-		if(!Settings.codeCoverageEnabled)
+		if(!Settings.codeCoverageEnabled())
 			return;
 
 		// Get coverage
