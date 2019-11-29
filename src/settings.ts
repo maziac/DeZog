@@ -132,8 +132,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
-		codeCoverageInstructionCountYoung: number;		// The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).
-		codeCoverageInstructionCountElder: number;	// More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mechanisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.
+		codeCoverageInstructionCount: number;	// The number of lines to highlight as covered.
 	}
 
 	/// Holds the formatting vor all values.
@@ -289,10 +288,8 @@ export class Settings {
 			Settings.launch.history = {} as any;
 		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
 			Settings.launch.history.reverseDebugInstructionCount = 0;
-		if(Settings.launch.history.codeCoverageInstructionCountYoung == undefined)
-			Settings.launch.history.codeCoverageInstructionCountYoung = (unitTests) ? 10 : 0; // TODO: Codec overage is disabled by default if no unit test is run. Would be too slow for normal zesarux. I will change the default if zesarux does the transaction log in memory.
-		if(Settings.launch.history.codeCoverageInstructionCountElder == undefined)
-			Settings.launch.history.codeCoverageInstructionCountElder = (unitTests) ? -1 : 0;
+		if(Settings.launch.history.codeCoverageInstructionCount == undefined)
+			Settings.launch.history.codeCoverageInstructionCount = (unitTests) ? -1 : 0;
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
@@ -410,7 +407,7 @@ export class Settings {
 	 * @returns true if the code coverage is enabled.
 	 */
 	public static codeCoverageEnabled() {
-		return (Settings.launch.history.codeCoverageInstructionCountYoung != 0) || (Settings.launch.history.codeCoverageInstructionCountElder != 0);
+		return (Settings.launch.history.codeCoverageInstructionCount != 0);
 	}
 }
 

@@ -523,6 +523,9 @@ export class ZesaruxSocket extends Socket {
 			LogSocket.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
 			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
+			this.send('cpu-history enabled no');
+			this.send('cpu-code-coverage enabled no');
+			this.send('extended-stack enabled no');
 			this.send('clear-membreakpoints');
 			this.send('disable-breakpoints');
 			this.send('quit', data => {

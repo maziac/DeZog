@@ -3,13 +3,14 @@
 The main idea is to support not only the (normal) forward stepping but also stepping backwards in time.
 
 Due to emulator restrictions a lightweight approach is chosen.
-Fortunately ZEsarUx supports a cpu-transaction-log.
+Fortunately ZEsarUx supports a cpu-history.
 This can record for each executed opcode
 - the address
 - the opcode
 - the registers contents
+- andthe stack contents
 
-I.e. while stepping backwards it would be possible to show the correct register contents at that point in time.
+I.e. while stepping backwards it is possible to show the correct register contents at that point in time.
 
 The memory contents or other HW states are not recorded.
 Therefore this is a lightweight solution.
@@ -20,14 +21,14 @@ Of course, knowing the correct memory contents would be beneficially but also wi
 
 # Design
 
-The whole cpu-transaction-log logic is implemented in the ZesaruxEmulator.
+The whole cpu-history logic is implemented in the ZesaruxEmulator.
 I.e. it is hidden from the Emulator class.
 
 The Emulator/ZesaruxEmulator class has to provide methods for step back and running reverse.
 
 
-When the ZesaruxEmulator class receives a stepBack for the first time it will open the transaction log. and the system is in reverse debugging mode.
-It now reads the last line of the cpu-transaction-log file and retrieve
+When the ZesaruxEmulator class receives a stepBack for the first time it will retrieve last item from the ZEsarUX cpu-history and the system is in reverse debugging mode.
+It now reads the last line of the cpu-history and retrieves
 - the address
 - the registers
 - the opcode (as string)
@@ -45,6 +46,8 @@ user -> vscode: "Step Back"
 vscode -> session: stepBackRequest
 
 session -> emul: stepBack
+emul -> zesarux: cpu-history get 0
+emul <-- zesarux
 session <-- emul
 
 vscode <-- session: response
@@ -84,35 +87,37 @@ Not only "StepBack" need to be considered in reverse debug mode the other (forwa
 ### StepBack
 
 The MSC is shown above.
-"StepBack" simply moves up the transaction log by one.
+"StepBack" simply moves up the cpu-history by one.
 
 
 ### ContinueReverse
 
-"ContinueReverse" moves up the transaction log until
+"ContinueReverse" moves up the cpu-history until
 - a breakpoint is hit or
-- the file ends
+- end of cpu-history
 
 
 ## Forward
 
 The forward procedures all work basically in 2 modes.
-- the normal mode: stepping/runnning in the emulator, ZEsarUX)
-- the reverse mode: stepping/runnning through the transaction log
+- the normal mode: stepping/runnning in the emulator, i.e. no reverse debugging
+- the reverse mode: stepping/runnning through the cpu-history
 
 Below are only the reverse procedures described.
 
 
 ### Continue
 
-"Continue" moves down in the transaction log until
+"Continue" moves down in the cpu-history until
 - a breakpoint is hit or
-- the file ends
+- start of the cpu-history
 
-Note: When the file ends "Continue" stops. It does not automatically move over into "normal" continue mode.
+Note: When the start of the cpu-history is found it does not automatically move over into "normal" continue mode.
 
 
 ### StepOver
+
+<<<TODO: NEEDS REWORK>>>
 
 "StepOver" needs to step over "CALL"s and "RST"s. This is not so simple as it seems.
 
@@ -137,7 +142,7 @@ A "RET" is found. So there is no hint what address to expect next. If the same t
 The idea is that if a subroutine is "CALL"ed then the SP (stack pointeR) will decrease by 2.
 I.e. if no subroutine is called the SP will not change.
 
-I.e. the algorithm simply searches the transaction log downwards until a line with the same SP is found.
+I.e. the algorithm simply searches the cpu-history downwards until a line with the same SP is found.
 
 If an interrupt would kick in the SP changes and the interrupt would be skipped.
 
@@ -154,21 +159,25 @@ Some instructions change the SP intentionally. This instructions need special ca
 - "RETx": the expected_SP is either SP+2 or it could also be SP in case of a conditional RET. So both are checked. Note: for ease of implementation conditional and unconditonal RET is not distinguished.
 
 
-Note: If during moving through the transaction log a breakpoint is hit "StepOver" stops.
+Note: If during moving through the cpu-history a breakpoint is hit "StepOver" stops.
 
 
 ### StepInto
 
-"StepInto" simply moves down the transaction log by one.
+"StepInto" simply moves down the cpu-history by one.
 
 If an interrupt kicks-in it steps into the interrupt.
 
 
 ### StepOut
 
-"StepOut" moves down the transaction log until
+"StepOut" moves down the cpu-history until
 - a breakpoint is hit or
 - a "RETx" (conditional or unconditional) is found
+
+
+<<<TODO: NEEDS REWORK>>>
+
 
 **Approach A:**
 If a "RETx" is found the SP value is stored and the next line is analysed.
@@ -183,7 +192,7 @@ One could ignore the "RETI" but then "StepOut" of an interrupt would not work.
 
 
 **Approach B: (better)**
-The current SP is is stored and the transaction log is analyzed until a "RET" is found and the next line contains an SP that is bigger than the original SP.
+The current SP is is stored and the cpu-history is analyzed until a "RET" is found and the next line contains an SP that is bigger than the original SP.
 
 Notes:
 - as POP etc. can also modify the SP, it is searched for a "RET" and the SP of the following line. This could go wrong if the SP changes w.g. because of a POP and then a "RET cc" (conditional) is not executed. In that case the algorthm will stop although we have not really stepped out.
@@ -192,7 +201,7 @@ Notes:
 
 ### Interrupts
 
-The transaction log simply records the executed addressed. This also means that the interrupts are inserted when they occur.
+The cpu-history simply records the executed addressed. This also means that the interrupts are inserted when they occur.
 
 
 ### Breakpoints
@@ -214,16 +223,6 @@ Of course, one could evaluate at lest the conditions without memory, i.e. the re
 - scopesRequest: No special behavior.
 - stackTraceRequest: No special behavior. As the memory contents changes are not known this will simply return the current memory state at the time the reverse debugging was entered.
 - variablesRequest: No special behavior. The only special variables that change are the registers. These are special treated in the Emulator.
-
-
-# Open
-
-- Soll ich tstates Information anzeigen?
-- müsste ich ja auch aufsummieren bei "reverseContinue" bis zum BreakPoint.
-
-- init() vom ZesaruxTransactionLog ist in CodeCoverage Funktion. Das muss ich umdesignen.
-
-- Wenn sowieso immer alle Register gebracht werden in dem CPU transaction log, dann ist die address Information redundant, da sie auch in den Registern vorhanden ist. Ich kann also 5 byte sparen, wenn ich die Adress Info nicht mehr explizit anfordere sondern aus "PC=xxxx" extrahiere.
 
 
 ## Pseudocode (ZEsarUX):
@@ -265,43 +264,39 @@ DE=7896 PC=A089 dCount=2343
 Note: dCount (differential count) is a decimal number, i.e. it can grow bigger than FFFFh.
 
 vscode could show this when hovering above a register.
-Note: this would require to read always the complete transaction-log.
+Note: this would require to read always the complete cpu-history.
 
 
-# Length of the recording
 
-The transaction log can become very big very fast. Each transaction will occupy about 100 bytes. I.e. at a 4MHZ clock speed we will generate about 100MB of data.
-Or 1GB per 10 secs. A minute will generate 6GB and an hour generates 360GB.
-In modern PCs this is manageable as normally one would require to run a program only for a few secs, maybe minutes.
-But in some cases, when e.g. hunting a bug that very rarely occurs and were the system e.g. would have to run over night, it would be more beneficial to have an option to limit the max. length of the transaction log and store only the last transactions.
-Like a queue that forgets the oldest entries.
+# Restrictions
 
-<This is currently discussed with Cesar>.
+There is no reliable way to determine interrupts while stepping backwards.
+This affects the displayed callstack.
 
+The callstack requires the **called** address for display. This is the address that is e.g. called when an instruction like "CALL nnnn" is executed. nnnn in this example is the called address.
 
-# Reaching the End of the Recording
+To obtain this address the return address (let's call it ret_addr) from the stack is used.
+The ret_addr just points after the executed CALL instruction.
+A CALL opcode start with one byte to determine the instruction followed by 2 bytes for the called address (nnnn).
+To get the called address we need to get the memory contents from the location ret_addr-2, i.e. (ret_addr-2).
 
-When reaching the end of the recording it is not possible to step back further.
+This works very well without interrupts.
 
+With interrupts there are problems.
+Since an interrupt can happen everytime, it can also happen when some "CALL mmmm" is executed.
+In that case the algorithm would take the mmmm address as the called address and show that in the callstack. This is, of course, incorrect.
 
-# Breakpoints
+Anyhow after returning from the interrupt the callstack is OK again.
 
-Running inside the transaction log will, of course, not fire any of the ZEsarUX breakpoints. Neither when running backwards nor forward.
-
-There are several options:
-- ignore breakpoints: running would run til the end of the transaction log. This is not helpful. In fact it would be mean that running backward does not work only stepping backward.
-- ignore breakpoint conditions (other than the PC): This would be simple to implement and would already cover a lot of use case.
-- mimic the breakpoint conditions: the breakpoint conditions could be evaluated during running inside the transaction-log. This would be one of the best options although the most difficult to implement. It is also questionable how many use cases this will really include as the memory conditions can anyway not be tested. So we can only check on register values.
+Thus, if you have enabled the option "skipInterrupt": true' you will normally not run into this problem.
 
 
 
 
-# Additional Features
+# Open
 
-Ideas:
-
-- E.g. history of registers:
+- Soll ich tstates Information anzeigen?
+- müsste ich ja auch aufsummieren bei "reverseContinue" bis zum BreakPoint.
+- Will ich: "Get historic registers" um eine Register historie anzuzeigen?
+E.g. history of registers:
 It would be possible to have a look at the registers, e.g. when they changed. With a click one could move to the source code location/time when the change happened.
-
-
-

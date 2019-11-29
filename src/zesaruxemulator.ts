@@ -104,7 +104,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public terminate(handler: () => void) {
 		this.terminating = true;
-		this.clearInstructionHistory();	// delete all transaction log files
+		this.clearInstructionHistory();
 		// The socket connection must be closed as well.
 		zSocket.quit(() => {
 			// Send terminate event (to Debug Session which will send a TerminateEvent to vscode. That in turn will create a 'disconnect')
@@ -217,19 +217,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 					if(Settings.launch.resetOnLaunch)
 						zSocket.send('hard-reset-cpu');
 
-	/*
-	logfile     name:   File to store the log
-	enabled     yes|no: Enable or disable the cpu transaction log. Requires logfile to enable it
-	autorotate  yes|no: Enables automatic rotation of the log file
-	rotatefiles number: Number of files to keep in rotation (1-999)
-	rotatesize  number: Size in MB to rotate log file (1-9999)
-	truncate    yes|no: Truncate the log file. Requires value set to yes
-	datetime    yes|no: Enable datetime logging
-	tstates     yes|no: Enable tstates logging
-	address     yes|no: Enable address logging. Enabled by default
-	opcode      yes|no: Enable opcode logging. Enabled by default
-	registers   yes|no: Enable registers logging
-	*/
 					// Enter step-mode (stop)
 					zSocket.send('enter-cpu-step');
 
@@ -647,7 +634,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public async continue(contStoppedHandler: (reason: string, tStates?: number, time?: number)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
-			// continue in reverse debugging will run until the start of the transaction log
+			// Continue in reverse debugging
+			// Will run until the start of the instruction history
 			// or until a breakpoint condition is true.
 			let reason = 'Break: Reached start of instruction history.';
 			try {
@@ -689,30 +677,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.clearReverseDbgStack();
 		// Change state
 		this.state = EmulatorState.RUNNING;
-		// Handle code coverage
-		this.enableCpuTransactionLog(() => {
-			// Reset T-state counter.
-			zSocket.send('reset-tstates-partial', () => {
-				// Run
-				zSocket.sendInterruptableRunCmd(text => {
-					// (could take some time, e.g. until a breakpoint is hit)
-					// get T-State counter
-					zSocket.send('get-tstates-partial', data => {
-						const tStates = parseInt(data);
-						// get clock frequency
-						zSocket.send('get-cpu-frequency', data => {
-							const cpuFreq = parseInt(data);
-							this.state = EmulatorState.IDLE;
-							// Clear register cache
-							this.RegisterCache = undefined;
-							// Handle code coverage
-							this.handleCodeCoverage();
-							// The reason is the 2nd line
-							const reason = text.split('\n')[1];
-							assert(reason);
-							// Call handler
-							contStoppedHandler(reason, tStates, cpuFreq);
-						});
+		// Reset T-state counter.
+		zSocket.send('reset-tstates-partial', () => {
+			// Run
+			zSocket.sendInterruptableRunCmd(text => {
+				// (could take some time, e.g. until a breakpoint is hit)
+				// get T-State counter
+				zSocket.send('get-tstates-partial', data => {
+					const tStates = parseInt(data);
+					// get clock frequency
+					zSocket.send('get-cpu-frequency', data => {
+						const cpuFreq = parseInt(data);
+						this.state = EmulatorState.IDLE;
+						// Clear register cache
+						this.RegisterCache = undefined;
+						// Handle code coverage
+						this.handleCodeCoverage();
+						// The reason is the 2nd line
+						const reason = text.split('\n')[1];
+						assert(reason);
+						// Call handler
+						contStoppedHandler(reason, tStates, cpuFreq);
 					});
 				});
 			});
@@ -767,8 +752,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Note: We are not able to detect interrupts reliable. Therefore interrupts will not be put on
 	 * the stack and RETI/RETN will not pop from the stack.
 	 *
-	 * @param currentLine The current line of the transaction log.
-	 * @param prevLine The previous line of the transaction log. (The one that
+	 * @param currentLine The current line of the cpu history.
+	 * @param prevLine The previous line of the cpu history. (The one that
 	 * comes before currentLine). This can also be the cached register values for
 	 * the first line.
 	 */
@@ -851,8 +836,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * 		ENDIF
 	 * ENDIF
 	 *
-	 * @param currentLine The current line of the transaction log.
-	 * @param nextLine The next line of the transaction log. (The one that
+	 * @param currentLine The current line of the cpu history.
+	 * @param nextLine The next line of the cpu history. (The one that
 	 * comes after currentLine.) If that is empty the start of the log has been reached.
 	 * In that case the reverseDbgStack is cleared because the real stack can be used.
 	 */
@@ -1220,54 +1205,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, error?: string)=>void): void {
-		// Handle code coverage
-		this.enableCpuTransactionLog(() => {
-			// Reset T-state counter etc.
-			zSocket.send('reset-tstates-partial', data => {
-				// Step into
-				zSocket.send(cmd, data => {
-					// get T-State counter
-					zSocket.send('get-tstates-partial', data => {
-						const tStates = parseInt(data);
-						// get clock frequency
-						zSocket.send('get-cpu-frequency', data => {
-							const cpuFreq = parseInt(data);
-							// Call handler
-							handler(tStates, cpuFreq);
-							// Handle code coverage
-							this.handleCodeCoverage();
-						});
+		// Reset T-state counter etc.
+		zSocket.send('reset-tstates-partial', data => {
+			// Step into
+			zSocket.send(cmd, data => {
+				// get T-State counter
+				zSocket.send('get-tstates-partial', data => {
+					const tStates = parseInt(data);
+					// get clock frequency
+					zSocket.send('get-cpu-frequency', data => {
+						const cpuFreq = parseInt(data);
+						// Call handler
+						handler(tStates, cpuFreq);
+						// Handle code coverage
+						this.handleCodeCoverage();
 					});
 				});
 			});
 		});
-	}
-
-
-	/**
-	 * If code coverage or reverse debugging enabled is enabled the ZEsarUX cpu-transaction-log is enabled
-	 * before the 'handler' is called.
-	 * If code coverage or reverse debugging is not enabled 'handler' is called immediately.
-	 * @param handler Is called after the coverage commands have been sent.
-	 */
-	protected enableCpuTransactionLog(handler:()=>void): void {
-		// TODO: similar for reverse debug
-
-		/*
-		// Code coverage or reverse debugging enabled
-		if(Settings.codeCoverageEnabled()) {
-			// Enable logging
-			zSocket.send('cpu-code-coverage get', data => {
-				// Call handler
-				handler();
-			});
-		}
-		else
-		*/
-		{
-			// Call handler (without coverage)
-			handler();
-		}
 	}
 
 
@@ -1309,7 +1264,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public async stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
-			// Step out will run until the start of the transaction log
+			// Step out will run until the start of the cpu history
 			// or until a "RETx" is found (one behind).
 			// To make it more complicated: this would falsely find a RETI event
 			// if stepout was not started form the ISR.
@@ -2116,67 +2071,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Calculates the required number of transaction log lines from the
-	 * 'history' setting for reverse debugging and code coverage.
-	 * @returns -1 = Infinite, 0 = disabled, >0 = number of lines
-	 */
-	protected numberOfHistoryLines(): number {
-		let covRotateLines;
-		if(Settings.launch.history.codeCoverageInstructionCountYoung < 0 || Settings.launch.history.codeCoverageInstructionCountElder < 0) {
-			covRotateLines = -1;	// infinite
-		}
-		else {
-			covRotateLines = Settings.launch.history.codeCoverageInstructionCountYoung + Settings.launch.history.codeCoverageInstructionCountElder;
-		}
-
-		// Number of lines for history
-		const rdRotLines = Settings.launch.history.reverseDebugInstructionCount;
-		let totRotLines;
-		if(covRotateLines < 0 || rdRotLines < 0) {
-			totRotLines = -1;	// infinite
-		}
-		else {
-			totRotLines = covRotateLines + rdRotLines;
-		}
-
-		// Infinity
-		if(totRotLines < 0)
-			totRotLines = 0x7FFFFFFF;
-
-		return totRotLines;
-	}
-
-
-	/**
-	 * @returns true if either code coverage or reverse debugging is enabled.
-	 */
-	// TODO: REMOVE
-	protected isCpuTransactionLogEnabled(): boolean {
-		return Settings.codeCoverageEnabled() || (Settings.launch.history.reverseDebugInstructionCount != 0);
-	}
-
-
-	/**
-	 * Clears the instruction history.
-	 * For reverse debugging and code coverage.
-	 * This will call 'cpu-transaction-log truncate yes' to clear the log in Zesarux.
-	 * ZEsarUX has a 'truncaterotated' but this does not remove all log files it just
-	 * empties them. And it would also not clear logs bigger than the set rotation.
-	 * So that I will not use it but clear the logs on my own.
-	 */
-	public clearInstructionHistory() {
-		// TODO: REMOVE
-		super.clearInstructionHistory();
-		/*
-		zSocket.send('cpu-transaction-log truncate yes');
-		if(this.cpuTransactionLog)
-			this.cpuTransactionLog.deleteRotatedFiles();
-		*/
-	}
-
-
-	/**
-	 * @returns Returns the previous line in the transaction log.
+	 * @returns Returns the previous line in the cpu history.
 	 * If at end it returns undefined.
 	 */
 	protected async revDbgPrev(): Promise<string|undefined> {
@@ -2192,18 +2087,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 	}
 
 	/**
-	 * @returns Returns the next line in the transaction log.
+	 * @returns Returns the next line in the cpu history.
 	 * If at start it returns ''.
 	 */
 	protected revDbgNext(): string|undefined {
 		// Get line
 		let line = this.cpuHistory.getNextRegisters();
 		this.RegisterCache = line;
-		//if(line) {
-			// Remove one address from history
-		//	assert(this.revDbgHistory.length > 0);
-			this.revDbgHistory.pop();
-		//}
+		// Remove one address from history
+		this.revDbgHistory.pop();
 		return line;
 	}
 }

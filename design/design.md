@@ -356,7 +356,9 @@ emul -> socket: quit
 note over socket: removeAllListeners
 note over socket: install new listeners\n(close, end, ...)
 
-socket -> zesarux: pu-transaction-log truncate yes
+socket -> zesarux: cpu-code-coverage enabled yes
+socket <-- zesarux
+socket -> zesarux: cpu-history enabled yes
 socket <-- zesarux
 socket -> zesarux: clear-membreakpoints
 socket <-- zesarux
@@ -459,25 +461,9 @@ xxx is either the EmulDebugAdapter or the Z80UnitTests.
 
 ```puml
 hide footbox
-title Coverage old
-xxx -> Emulator: Step/Continue
-Emulator -> ZEsarUX: cpu-transaction-log enabled yes\n(start logging)
-Emulator -> ZEsarUX: cpu-step/run
-note over ZEsarUX: stopped
-Emulator <-- ZEsarUX:
-Emulator -> ZEsarUX: cpu-transaction-log enabled no\n(flush the log file)
-note over Emulator: Parse the log file.\nCollect all addresses.
-xxx <-- Emulator: Event: 'coverage'
-note over xxx: Convert addresses to\nsource file locations.
-```
-
-
-```puml
-hide footbox
 title Coverage new
 participant xxx
 Emulator -> ZEsarUX: cpu-code-coverage enabled yes
-Emulator -> ZEsarUX: cpu-code-coverage clear
 ...
 xxx -> Emulator: Step/Continue
 Emulator -> ZEsarUX: cpu-step/run
@@ -485,7 +471,6 @@ note over ZEsarUX: stopped
 Emulator <-- ZEsarUX
 Emulator -> ZEsarUX: cpu-code-coverage get
 Emulator <-- ZEsarUX: Executed addresses
-Emulator -> ZEsarUX: cpu-code-coverage clear
 xxx <-- Emulator: Event: 'coverage'
 note over xxx: Convert addresses to\nsource file locations.
 ```

@@ -52,6 +52,6 @@ If a specific (or several) testcases are debugged no summary is written but the 
 
 # Coverage
 
-While the unit tests are executed the ZEsarUX cpu-transaction-log is enabled.
-This log records all executed addresses.
-When the unit tests are passed (or on every break) the transaction  log is read, the addresses are converted to source code locations and the vscode is told to mark (decorate) the covered lines.
+While the unit tests are executed the ZEsarUX cpu-code-coverage is enabled.
+This records all executed addresses.
+When the unit tests are passed (or on every break) the code coverage is read, the addresses are converted to source code locations and the vscode is told to mark (decorate) the covered lines.

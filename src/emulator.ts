@@ -1063,8 +1063,7 @@ export class EmulatorClass extends EventEmitter {
 
 	/**
 	 * Clears the instruction history.
-	 * For reverse debugging and code coverage.
-	 * This is e.g. overridden in ZesaruxEmulator to delete the transaction logs.
+	 * For reverse debugging.
 	 */
 	public clearInstructionHistory() {
 		this.revDbgHistory.length = 0;

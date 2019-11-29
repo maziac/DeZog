@@ -364,15 +364,11 @@
 							"history": {
 								"reverseDebugInstructionCount": {
 									"type": "number",
-									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Each instruction will use about 200 byte in the transaction log. So 1000 instruction will use 200 kB. The default is 1.000.000 instructions which is approximately equivalent to 1 second at 4 MHz CPU speed or 200 MB."
+									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off."
 								},
-								"codeCoverageInstructionCountYoung": {
+								"codeCoverageInstructionCount": {
 									"type": "number",
-									"description": "The number of lines to highlight as covered. These are the immediate previous lines executed before the current PC (program counter).\n-1 will enable collecting indefinite number of instructions. Use with care. This will create approx. 1 GB of transaction logs every 5 seconds at 4MHz CPU speed (or 12 GB per minute). This settings is normally only used during unit tests."
-								},
-								"codeCoverageInstructionCountElder": {
-									"type": "number",
-									"description": "More lines to highlight. These lines will be highlighted differently. With the 2 different highlighting mechanisms it is easily visible what has been immediately executed (e.g. to follow the branches) and what has been covered but is further away in time.\nIf both codeCoverageInstructionCounts are 0 then code coverage is disabled."
+									"description": "The number of lines to highlight as covered.\n-1 will enable collecting indefinite number of instructions."
 								}
 							},
 							"formatting": {
