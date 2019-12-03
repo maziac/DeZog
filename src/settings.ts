@@ -132,7 +132,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
-		codeCoverageInstructionCount: number;	// The number of lines to highlight as covered.
+		codeCoverageEnabled: boolean;	// Enable/disable code coverage.
 	}
 
 	/// Holds the formatting vor all values.
@@ -287,9 +287,9 @@ export class Settings {
 		if(Settings.launch.history == undefined)
 			Settings.launch.history = {} as any;
 		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
-			Settings.launch.history.reverseDebugInstructionCount = 0;
-		if(Settings.launch.history.codeCoverageInstructionCount == undefined)
-			Settings.launch.history.codeCoverageInstructionCount = (unitTests) ? -1 : 0;
+			Settings.launch.history.reverseDebugInstructionCount = 10000;
+		if(Settings.launch.history.codeCoverageEnabled == undefined)
+			Settings.launch.history.codeCoverageEnabled = (unitTests) ? true : true;
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {
@@ -400,14 +400,6 @@ export class Settings {
 			if(loadObj.start == undefined)
 				throw Error("You must specify a 'start' address for '" + path + "'.");
 		}
-	}
-
-
-	/**
-	 * @returns true if the code coverage is enabled.
-	 */
-	public static codeCoverageEnabled() {
-		return (Settings.launch.history.codeCoverageInstructionCount != 0);
 	}
 }
 

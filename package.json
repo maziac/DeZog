@@ -364,11 +364,11 @@
 							"history": {
 								"reverseDebugInstructionCount": {
 									"type": "number",
-									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off."
+									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
 								},
-								"codeCoverageInstructionCount": {
-									"type": "number",
-									"description": "The number of lines to highlight as covered.\n-1 will enable collecting indefinite number of instructions."
+								"codeCoverageEnabled": {
+									"type": "boolean",
+									"description": "Enables/disables code coverage. Default is 'true."
 								}
 							},
 							"formatting": {

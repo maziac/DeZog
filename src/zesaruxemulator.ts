@@ -252,7 +252,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 					// Code coverage
-					if(Settings.codeCoverageEnabled()) {
+					if(Settings.launch.history.codeCoverageEnabled) {
 						zSocket.send('cpu-code-coverage enabled yes');
 						zSocket.send('cpu-code-coverage clear');
 					}
@@ -744,13 +744,41 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 * Note: For the current checks I only need the currentLine.
 	 * Handles the current instruction and the previous one and distinguishes what to
 	 * do on the virtual reverse debug stack.
 	 * Example: Normally only the top frame on the stack is changed for the new PC value.
-	 * But if a "RET" instruction is found also the 'next' PC value is pushed
-	 * to the stack.
-	 * Note: We are not able to detect interrupts reliable. Therefore interrupts will not be put on
-	 * the stack and RETI/RETN will not pop from the stack.
+	 * But for a few instructions a special behavior is implemented:
+	 *
+	 * RET:
+	 * If a "RET" (or RET cc/RETI/RETN) instruction is found it is checked by the flags
+	 * if it was really executed. If yes also the (SP) content is pushed on
+	 * the stack.
+	 * The (SP) is the return address, ret_addr. Usually the ret_addr-3 is the start of a
+	 * CALL instruction and at (ret_addr-2) the called address, i.e. the function call
+	 * used to display on the stack, is found.
+	 * Unfortunately reality is more complicated. First: the caller could also be a RST instruction.
+	 * Therefore, if no CALL is found, it is also checked for a RST at address = ret_addr-1.
+	 * Furthermore the RET might be from an interrupt. In that case there normally is no CALL at
+	 * ret_addr-3.
+	 * So if there is no CALL it is assumed that it was an interrupt. Unfortunately this is
+	 * not fool proof.
+	 * A) The return address might have been manipulated. In that case an interrupt is indicated
+	 * even if there is none.
+	 * B) At retaddr-3 there could be a CALL instruction. In that case no interrupt is indicated
+	 * instead a wrong function is shown.
+	 * This is something we hve to live with.
+	 *
+	 * CALL:
+	 * If a CALL (or CALL cc/RST) is found instruction is found it is checked by the flags
+	 * if it was really executed. If yes the current SP is simply incremented by 2 (i.e. the
+	 * last value is popped from the stack).
+	 *
+	 * POP:
+	 * If a POP nn is found the content of (SP) is pushed on the stack.
+	 *
+	 * PUSH:
+	 * If a PUSH nn is found the last value is popped from the stack.
 	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param prevLine The previous line of the cpu history. (The one that
@@ -767,6 +795,44 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Check for RET (RET cc and RETI/N)
 		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
+			// Get return address
+			const retAddr = this.cpuHistory.getSPContent(currentLine);
+			// Get memory at return address
+			zSocket.send( 'read-memory ' + ((retAddr-3)&0xFFFF) + ' 3', data => {
+				// Check for CALL and RST
+				const firstByte = parseInt(data.substr(0,2),16);
+				let calledAddr;
+				if(this.cpuHistory.isCall(firstByte)) {
+					// Is a CALL or CALL cc, get called address
+					// Get low byte
+					const lowByte = parseInt(data.substr(2,2),16);
+					// Get high byte
+					const highByte = parseInt(data.substr(4,2),16);
+					// Calculate address
+					calledAddr = (highByte<<8) + lowByte;
+				}
+				else if(this.cpuHistory.isRst(firstByte)) {
+					// Is a Rst, get p
+					calledAddr = firstByte & 0b00111000;
+				}
+				// If no calledAddr then we assume an interrupt
+				let calledAddrLabel;
+				if(calledAddr == undefined) {
+					// Interrupt assumed
+					calledAddrLabel = "__INTERRUPT__";
+				}
+				else {
+					// Get label
+					Hier
+				}
+
+
+				// Get low byte
+				const p = parseInt(data.substr(0,2),16) & 0b00111000;
+				// Call handler
+				handler(p);
+			});
+
 			// Create new frame with better name on stack
 			const pc = Z80Registers.parsePC(currentLine);
 			const sp = Z80Registers.parseSP(currentLine);
@@ -796,45 +862,39 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 *
+	/**
+	 * Note: For the current checks I only need the currentLine.
 	 * Handles the current instruction and the next one and distinguishes what to
 	 * do on the virtual reverse debug stack.
 	 * Normally only the top frame on the stack is changed for the new PC value.
-	 * But if e.g. a "CALL" or "RET" instruction is found the stack needs to be changed.
-	 * Note: We are not able to detect interrupts reliable. Therefore interrupts will not be put on
-	 * the stack and RETI/RETN will not pop from the stack.
+	 * But for a few instructions a special behavior is implemented:
 	 *
-	 * CALL, RST and RETx are the only instructions that should manipulate the call stack
-	 * except for interrupts.
-	 * Interrupt recognition is harder than it seems. Here it is done in the following way:
-	 * If a CALL/RST/RETx is found the next expected SP (expSP) and the next expected PC (expPC)
-	 * is calculated.
-	 * There are 4 group of commands (branching means that a non-normal execution flow is chosen):
-	 * - A = CALL/RST/RETx: Changing SP if executed. Potentially branching.
-	 * - B = PUSH/POP, ADD SP...: Change SP, but not branching.
-	 * - C = JP/JR: Not changing SP, but potentially branching.
-	 * - D = Rest: Not changing SP, not branching.
+	 * RET:
+	 * If a "RET" (or RET cc/RETI/RETN) instruction is found it is checked by the flags
+	 * if it was really executed. If yes the last value is popped from the stack.
 	 *
-	 * If an interrupt occurs it: changes SP and changes PC. I.e. this is like group A changing
-	 * both: SP and branching.
+	 * CALL:
+	 * If a CALL nnnn (or CALL cc/RST) is found instruction is found it is checked by the flags
+	 * if it was really executed. If yes the called address nnnn is used for displaying the
+	 * function on the stack. The return address, PC+3 (or PC+1), is put on the stack.
 	 *
-	 * Now there are special cases:
-	 * Interrupt happens just right after CALL/RST/RETx.
-	 * In this case we need to distinguish:
-	 * - CALL/RST: Next line: SP is decremented by 4 (expSP != SP). PC != expPC.
-	 * - RETx: Next line: SP stays (incremented by 2+decremented by 2) (ExpSP != SP). PC != expPC.
+	 * POP:
+	 * If a POP nn is found the  last value is popped from the stack.
 	 *
-	 * So the algorithm is:
-	 * IF CALL/RST/RETx
-	 * 		IF (expSP != SP) && (PC != expPC)
-	 * 			// Interrupt occurred
-	 * 		ENDIF
-	 * ELSE
-	 * 		IF SP changed
-	 * 			IF PC != prevPC+instruction_size
-	 * 				// Interrupt occurred
-	 * 			ENDIF
-	 * 		ENDIF
-	 * ENDIF
+	 * PUSH:
+	 * If a PUSH nn is found the pushed register is pushed to the stack.
+	 *
+	 * Note:
+	 * To ease the disassembly both lines, current and next, could be used.
+	 * If next does not exist the real extended stack can be loaded.
+	 * Otherwise for CALL and PUSH the (SP) value contains the pushed value.
+	 * Unfortunately an interrupt might have kicked in and this value is not reliable.
+	 *
+	 * Interrupt detection:
+	 * If SP decreases AND PC changes to an unexpected address then an interrupt is assumed.
+	 * The PC from the next line is taken (or the (SP) content from the next line) and pushed
+	 * on the stack. As function "INTERRUPT" is shown.
 	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history. (The one that
@@ -1231,7 +1291,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected handleCodeCoverage() {
 		// Check if code coverage is enabled
-		if(!Settings.codeCoverageEnabled())
+		if(!Settings.launch.history.codeCoverageEnabled)
 			return;
 
 		// Get coverage
@@ -1399,7 +1459,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	  * 'step backwards' the program execution in the debugger.
 	  * @param handler(instruction, error) The handler that is called after the step is performed.
 	  * instruction: e.g. "081C NOP"
-	  * error: If not undefined t holds the exception message.
+	  * error: If not undefined it holds the exception message.
 	  */
 	 public stepBack(handler:(instruction: string, error: string)=>void) {
 		// Make sure the call stack exists
