@@ -7,7 +7,7 @@
  */
 export class Frame {
 	public addr: number;	///< The corresponding address
-	public name: string;	///< The shown name, e.g. "CALL clear_screen"
+	public name: string;	///< The shown name, e.g. "clear_screen"
 	public stack = new Array<number>();	///< The objects currently pushed on the stack
 	public stackStartAddress = -1;	///< The start address of the stack. TODO: Not used ?
 
@@ -15,7 +15,7 @@ export class Frame {
 	 * Constructor
 	 * @param addr The corresponding address
 	 * @param stackAddr The start address of the stack
-	 * @param name The shown name, e.g. "CALL clear_screen"
+	 * @param name The shown name, e.g. "clear_screen"
 	 */
 	constructor(addr: number, stackAddr: number, name: string,) {
 		this.addr = addr;

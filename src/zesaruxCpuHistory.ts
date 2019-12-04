@@ -38,6 +38,9 @@ export class ZesaruxCpuHistory {
 	// The first time the index is searched. Afterwards the stored one is used.
 	protected pcIndex = -1;
 
+	// The first time the index is searched. Afterwards the stored one is used.
+	protected spIndex = -1;
+
 	/**
 	 * Creates the object.
 	 */
@@ -151,7 +154,7 @@ export class ZesaruxCpuHistory {
 	/**
 	 * Disassembles an instruction from the given opcode string.
 	 * Uses 'PC=xxxx' and '(PC)=yyyyyyyy' from the input string.
-	 * @param opcodes E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @param opcodes E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
 	 * @returns The instruction, e.g. "LD A,1E".
 	 */
 	public getInstruction(line: string): string {
@@ -169,6 +172,25 @@ export class ZesaruxCpuHistory {
 		const opCodeDescription = opcode.disassemble();
 		const instr = opCodeDescription.mnemonic;
 		return instr;
+	}
+
+
+
+	/**
+	 * Reads the SP content from a given opcode string.
+	 * Uses '(SP))=xxxx'  from the input string.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
+	 * @returns The (sp), e.g. 0xA2BF
+	 */
+	public getSPContent(line: string): number {
+		if(this.spIndex < 0) {
+			this.spIndex = line.indexOf('(SP)=');
+			assert(this.spIndex >= 0);
+			this.spIndex += 5;
+		}
+		const spString = line.substr(this.spIndex, 4);
+		const sp = parseInt(spString,16);
+		return sp;
 	}
 
 
@@ -226,8 +248,8 @@ export class ZesaruxCpuHistory {
 			return true;
 
 		// Now check for RET cc
-		const mask = 0b11000000;
-		if((opcode0 & mask) == mask) {
+		const mask = 0b11000111;
+		if((opcode0 & mask) == 0b11000000) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >> 3;
 			// Get flags
@@ -257,8 +279,8 @@ export class ZesaruxCpuHistory {
 			return true;
 
 		// Now check for CALL cc
-		const mask = 0b11000100;
-		if((opcode0 & mask) == mask) {
+		const mask = 0b11000111;
+		if((opcode0 & mask) == 0b11000100) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >> 3;
 			// Get flags
@@ -283,11 +305,90 @@ export class ZesaruxCpuHistory {
 		const opcodes = this.getOpcodes(line);
 		// Check for RST
 		const opcode0 = parseInt(opcodes.substr(0,2),16);
-		const mask = 0b11000111;
+
+		return this.isRstOpcode(opcode0);
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a CALL.
+	 * @param opcode0 The first byte of an instruction.
+	 * @returns true if "CALL" or "CALL cc". Does nto matter if call was executed or not.
+	 */
+	public isCallOpcode(opcode0: number): boolean {
+		// Check for CALL
+		if(0xCD == opcode0)
+			return true;
+
+		// Now check for CALL cc
+		const mask = 0b11000100;
 		if((opcode0 & mask) == mask)
 			return true;
 
+		// No CALL
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a RST.
+	 * @param opcode0 The first byte of an instruction.
+	 * @returns true if "RST".
+	 */
+	public isRstOpcode(opcode0: number): boolean {
+		const mask = 0b11000111;
+		if((opcode0 & mask) == 0b11000111)
+			return true;
+
 		// No RST
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a PUSH.
+	 * @param opcode0 The first byte of an instruction.
+	 * @param opcode1 The second byte of an instruction.
+	 * @returns true if "PUSH". Also for ZXNext "PUSH nnnn"
+	 */
+	public isPushOpcode(opcode0: number, opcode1: number): boolean {
+		// PUSH qq
+		const mask = 0b11001111;
+		if((opcode0 & mask) == 0x11000101)
+			return true;
+
+		// PUSH IX or IY
+		if(opcode1 == 0xE5 &&
+			(opcode0 == 0xDD || opcode0 == 0xFD))
+			return true;
+
+		// PUSH nnnn, ZXNext
+		if(opcode0 == 0xED && opcode1 == 0x8A)
+			return true;
+
+		// No PUSH
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a POP.
+	 * @param opcode0 The first byte of an instruction.
+	 * @param opcode1 The second byte of an instruction.
+	 * @returns true if "POP".
+	 */
+	public isPopOpcode(opcode0: number, opcode1: number): boolean {
+		// POP qq
+		const mask = 0b11001111;
+		if((opcode0 & mask) == 0b11000001)
+			return true;
+
+		// POP IX or IY
+		if(opcode1 == 0xE1 &&
+			(opcode0 == 0xDD || opcode0 == 0xFD))
+			return true;
+
+		// No POP
 		return false;
 	}
 

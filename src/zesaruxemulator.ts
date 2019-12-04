@@ -771,8 +771,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 *
 	 * CALL:
 	 * If a CALL (or CALL cc/RST) is found instruction is found it is checked by the flags
-	 * if it was really executed. If yes the current SP is simply incremented by 2 (i.e. the
-	 * last value is popped from the stack).
+	 * if it was really executed. If yes the last value is popped from the stack.
 	 *
 	 * POP:
 	 * If a POP nn is found the content of (SP) is pushed on the stack.
@@ -788,10 +787,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string) {
 		assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
-		this.reverseDbgStack.shift();
+		//this.reverseDbgStack.shift();
 
-		// Sets the expected SP value.
-		//const currentSP = Z80Registers.parseSP(currentLine);
+		// Get SP
+		//const sp = Z80Registers.parseSP(currentLine);
 
 		// Check for RET (RET cc and RETI/N)
 		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
@@ -801,63 +800,72 @@ export class ZesaruxEmulator extends EmulatorClass {
 			zSocket.send( 'read-memory ' + ((retAddr-3)&0xFFFF) + ' 3', data => {
 				// Check for CALL and RST
 				const firstByte = parseInt(data.substr(0,2),16);
-				let calledAddr;
-				if(this.cpuHistory.isCall(firstByte)) {
+				let callAddr;
+				if(this.cpuHistory.isCallOpcode(firstByte)) {
 					// Is a CALL or CALL cc, get called address
 					// Get low byte
 					const lowByte = parseInt(data.substr(2,2),16);
 					// Get high byte
 					const highByte = parseInt(data.substr(4,2),16);
 					// Calculate address
-					calledAddr = (highByte<<8) + lowByte;
+					callAddr = (highByte<<8) + lowByte;
 				}
-				else if(this.cpuHistory.isRst(firstByte)) {
+				else if(this.cpuHistory.isRstOpcode(firstByte)) {
 					// Is a Rst, get p
-					calledAddr = firstByte & 0b00111000;
+					callAddr = firstByte & 0b00111000;
 				}
 				// If no calledAddr then we assume an interrupt
-				let calledAddrLabel;
-				if(calledAddr == undefined) {
+				let labelCallAddr;
+				if(callAddr == undefined) {
 					// Interrupt assumed
-					calledAddrLabel = "__INTERRUPT__";
+					labelCallAddr = "__INTERRUPT__";
 				}
 				else {
-					// Get label
-					Hier
+					// Now find label for this address
+					const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+					labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 				}
 
+				// And push to stack
+				const sp = Z80Registers.parseSP(currentLine);
+				const frame = new Frame(pc, sp, labelCallAddr);
+				this.reverseDbgStack.unshift(frame);
 
-				// Get low byte
-				const p = parseInt(data.substr(0,2),16) & 0b00111000;
 				// Call handler
-				handler(p);
+				handler();
 			});
-
-			// Create new frame with better name on stack
-			const pc = Z80Registers.parsePC(currentLine);
-			const sp = Z80Registers.parseSP(currentLine);
-			// Add new frame to stack
-			const name = 'FRAME: RET @' + Utility.getHexString(pc,4);
-			const frame = new Frame(pc, sp, name);
-			this.reverseDbgStack.unshift(frame);
+			return;
 		}
-		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
+
+		// Check for CALL
+		if(this.cpuHistory.isCallAndExecuted(currentLine) || this.cpuHistory.isRst(currentLine)) {
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
-		}
-		else if(this.cpuHistory.isRst(currentLine)) {
-			// Pop from call stack
-			assert(this.reverseDbgStack.length > 0);
-			this.reverseDbgStack.shift();
+			return;
 		}
 
+		// Otherwise simply change current PC
+		if(this.reverseDbgStack.length == 0)
+			return; // Return if no stack
 
-		// Add current PC
 		const pc = Z80Registers.parsePC(currentLine);
-		const sp = Z80Registers.parseSP(currentLine);
-		const topFrame = new Frame(pc, sp, 'PC');
-		this.reverseDbgStack.unshift(topFrame);
+		const frame = this.reverseDbgStack[0];
+		frame.addr = pc;
+
+		// Check if the frame stack needs to be changed, if it's push or pop.
+		const opcodes = this.cpuHistory.getOpcodes(currentLine);
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		const opcode1 = parseInt(opcodes.substr(2,2),16);
+		if(this.cpuHistory.isPopOpcode(opcode0, opcode1)) {
+			// Push to stack
+			const pushedValue = this.cpuHistory.getSPContent(currentLine);
+			frame.stack.unshift(pushedValue);
+		}
+		else if(this.cpuHistory.isPushOpcode(opcode0, opcode1)) {
+			// Pop from stack
+			frame.stack.shift();
+		}
 	}
 
 
