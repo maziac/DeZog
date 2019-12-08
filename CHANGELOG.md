@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 0.9.3
+- Use of cpu-history for reverse debugging.
+
+
 ## 0.9.2
 - Fixed bug in register parsing.
 - Changed to use ZEsarUX 'cpu-code-coverage' for decorating code coverage.

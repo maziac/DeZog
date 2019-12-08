@@ -166,7 +166,15 @@ export class LabelsClass {
 		}
 
 		// Regex to find labels
-		let labelRegex = new RegExp(/^[0-9a-f]+\s+([\s0-9a-f]*)\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		let labelRegex;
+		if(sjasmplus) {
+			// Allow labels without :
+			labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		}
+		else {
+			// Require a : after the label
+			labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+		}
 
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
@@ -232,7 +240,7 @@ export class LabelsClass {
 				// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
 				const match = labelRegex.exec(line);
 				if(match) {
-					let label = match[3];
+					let label = match[2];
 					if(label.startsWith('.')) {
 						// local label
 						if(lastLabel) // Add Last label
@@ -242,14 +250,14 @@ export class LabelsClass {
 						// Remember last label (for local labels)
 						lastLabel = label;
 					}
-					const global = match[2];
+					const global = match[1];
 					if(global == '' && labelPrefix)
 						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
 					const equ = match[4];
 					if(equ) {
 						if(equ.toLowerCase().startsWith('equ')) {
 							// EQU: add to label array
-							const valueString = match[5];
+							const valueString = match[4];
 							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 							try {
 								// Evaluate
