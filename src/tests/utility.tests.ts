@@ -90,7 +90,7 @@ suite('Utility', () => {
 			Settings.Init(<any>undefined, '');
 			EmulatorFactory.createEmulator(EmulatorType.ZESARUX);
 			Z80Registers.init();
-			Emulator.RegisterCache = "PC=6005 SP=6094 BC=0100 AF=cf8c HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
+			Emulator.RegisterCache = "PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0";
 		});
 
 		suite('formats', () => {
@@ -255,6 +255,58 @@ suite('Utility', () => {
             assert.ok(isNaN(res), "Wrong parsing result");
 		 });
 
+	});
+
+
+	suite('evalExpression', () => {
+
+		test('plus', () => {
+            let res = Utility.evalExpression('2+5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Utility.evalExpression('2 +5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Utility.evalExpression('2+ 5');
+			assert.equal(7, res, "Wrong eval result");
+
+			res = Utility.evalExpression('2 + 5');
+			assert.equal(7, res, "Wrong eval result");
+		});
+
+        test('shift <<', () => {
+            let res = Utility.evalExpression('0<<3');
+			assert.equal(0, res, "Wrong eval result");
+
+            res = Utility.evalExpression('2<<3');
+            assert.equal(2<<3, res, "Wrong eval result");
+
+            res = Utility.evalExpression('2 <<3');
+            assert.equal(2<<3, res, "Wrong eval result");
+
+			res = Utility.evalExpression('2<< 3');
+			assert.equal(2<<3, res, "Wrong eval result");
+
+			res = Utility.evalExpression('2 << 3');
+            assert.equal(2<<3, res, "Wrong eval result");
+		});
+
+		test('shift >>', () => {
+            let res = Utility.evalExpression('0>>3');
+			assert.equal(0, res, "Wrong eval result");
+
+            res = Utility.evalExpression('0x0F>>3');
+            assert.equal(0x0F>>3, res, "Wrong eval result");
+
+            res = Utility.evalExpression('0x0F >>3');
+            assert.equal(0x0F>>3, res, "Wrong eval result");
+
+			res = Utility.evalExpression('0x0F>> 3');
+			assert.equal(0x0F>>3, res, "Wrong eval result");
+
+			res = Utility.evalExpression('0x0F >> 3');
+            assert.equal(0x0F>>3, res, "Wrong eval result");
+		});
 
 	});
 

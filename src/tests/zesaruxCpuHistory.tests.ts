@@ -1,14 +1,15 @@
 
 import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../zesaruxCpuHistory';
+import { Z80Registers, Z80RegisterHoverFormat } from '../z80Registers';
 
 suite('ZesaruxCpuHistory', () => {
 
-/*
-	setup( () => {
-		return dc.start();
+	setup(() => {
+		Z80Registers.init();
 	});
 
+/*
 	teardown( () => dc.disconnect() );
 */
 

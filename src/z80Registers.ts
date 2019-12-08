@@ -37,25 +37,42 @@ export class Z80Registers {
 	public static FLAG_C = 1 << 0;
 
 	// Indices for first time search.
-	protected static pcIndex = -1;
-	protected static spIndex = -1;
-	protected static afIndex = -1;
-	protected static bcIndex = -1;
-	protected static hlIndex = -1;
-	protected static deIndex = -1;
-	protected static ixIndex = -1;
-	protected static iyIndex = -1;
-	protected static af2Index = -1;
-	protected static bc2Index = -1;
-	protected static hl2Index = -1;
-	protected static de2Index = -1;
-	protected static iIndex = -1;
-	protected static rIndex = -1;
+	protected static pcIndex: number;
+	protected static spIndex: number;
+	protected static afIndex: number;
+	protected static bcIndex: number;
+	protected static hlIndex: number;
+	protected static deIndex: number;
+	protected static ixIndex: number;
+	protected static iyIndex: number;
+	protected static af2Index: number;
+	protected static bc2Index: number;
+	protected static hl2Index: number;
+	protected static de2Index: number;
+	protected static iIndex: number;
+	protected static rIndex: number;
 
 	/**
 	 * Called during the launchRequest.
 	 */
 	public static init() {
+		// Indices for first time search.
+		Z80Registers.pcIndex = -1;
+		Z80Registers.spIndex = -1;
+		Z80Registers.afIndex = -1;
+		Z80Registers.bcIndex = -1;
+		Z80Registers.deIndex = -1;
+		Z80Registers.hlIndex = -1;
+		Z80Registers.ixIndex = -1;
+		Z80Registers.iyIndex = -1;
+		Z80Registers.af2Index = -1;
+		Z80Registers.bc2Index = -1;
+		Z80Registers.hl2Index = -1;
+		Z80Registers.de2Index = -1;
+		Z80Registers.iIndex = -1;
+		Z80Registers.rIndex = -1;
+
+		// Init the map
 		Z80Registers.regMap.set("AF", Z80Registers.parseAF);
 		Z80Registers.regMap.set("BC", Z80Registers.parseBC);
 		Z80Registers.regMap.set("DE", Z80Registers.parseDE);

@@ -232,7 +232,7 @@ export class Utility {
 					// Check for "normal" label
 					res = Labels.getNumberFromString(lbl);
 					if(isNaN(res))
-						throw SyntaxError(p1 + ' is unknown.');
+						res = p1;	// Return unchanged substring
 				}
 			}
 			return res.toString();
