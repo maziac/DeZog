@@ -779,12 +779,24 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * PUSH:
 	 * If a PUSH nn is found the last value is popped from the stack.
 	 *
+	 * CALL/PUSH/Interrupt:
+	 * All these result in popping data from the stack. So it is checked simply how much is removed:
+	 * I.e. count=SP-SPprev. First the data is removed from the data stack. If something is remaining
+	 * it is removed from the callstack.
+	 * Normally count is only 2. In case a PUSH/CALL and an interrupt happens at the same time it
+	 * might be 4. In other (not supported cases) the SP is maybe directly changed. In that case the
+	 * stack may show completely wrong values. But that's how it is if the SP is changed.
+	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param prevLine The previous line of the cpu history. (The one that
 	 * comes before currentLine). This can also be the cached register values for
 	 * the first line.
 	 */
 	// TODO: REMOVE prevline, not used.
+//	Hier muss noch Interrupt removal bei Step Back erkannt werden. Also aus dem Interrrupt raus. dann erkennen ob der SP nicht "expected" ist -> dann Interrupt removal
+//	Vielleicht kann ich auch einfach den Stackpointer nehmen und damit den Stack bereinigen, könnte auch für PUSH gehen .
+//Funktioniert => Einchecken
+
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
 		//assert(this.reverseDbgStack.length > 0);
 		// Remove current frame
@@ -840,6 +852,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				return;
 			}
 
+			/*
 			// Check for CALL
 			if(this.cpuHistory.isCallAndExecuted(currentLine) || this.cpuHistory.isRst(currentLine)) {
 				// Pop from call stack
@@ -849,6 +862,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				resolve();
 				return;
 			}
+			*/
 
 			// Otherwise simply change current PC
 			if(this.reverseDbgStack.length == 0) {
@@ -858,7 +872,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			const pc = Z80Registers.parsePC(currentLine);
-			const frame = this.reverseDbgStack[0];
+			let frame = this.reverseDbgStack[0];
 			frame.addr = pc;
 
 			// Check if the frame stack needs to be changed, if it's push or pop.
@@ -870,9 +884,33 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const pushedValue = this.cpuHistory.getSPContent(currentLine);
 				frame.stack.push(pushedValue);
 			}
+
+			/*
 			else if(this.cpuHistory.isPushOpcode(opcode0, opcode1)) {
 				// Pop from stack
 				frame.stack.pop();
+			}
+			*/
+
+			// Check if SP has decreased (CALL/PUSH/Interrupt)
+			const sp = Z80Registers.parseSP(currentLine);
+			const spPrev = Z80Registers.parseSP(prevLine);
+			let countRemove = sp - spPrev;
+			while(countRemove > 0 && this.reverseDbgStack.length > 0) {
+				// First remove the data stack
+				while(countRemove > 0 && frame.stack.length > 0) {
+					// Pop from stack
+					frame.stack.pop();
+					countRemove -= 2;
+				}
+				// Now remove callstack
+				if(countRemove > 0) {
+					this.reverseDbgStack.shift();
+					countRemove -= 2;
+					// get next frame if countRemove still > 0
+					frame = this.reverseDbgStack[0];
+					frame.addr = pc;
+				}
 			}
 
 			// End
