@@ -396,7 +396,7 @@ export class Utility {
 			// Formatting
 			(cs) => {
 				// Format
-				var valString = this.numberFormattedSync(value, size, format, regsString, name, memWord, tabSizeArr);
+				var valString = Utility.numberFormattedSync(value, size, format, regsString, name, memWord, tabSizeArr);
 
 				// Call handler with the result string
 				handler(valString);
@@ -609,7 +609,7 @@ export class Utility {
 	 * @returns A relative path
 	 */
 	public static getRelFilePath(absFilePath: string): string {
-		const filePath = path.relative(this.rootPath || '', absFilePath);
+		const filePath = path.relative(Utility.rootPath || '', absFilePath);
 		return filePath;
 	}
 
@@ -620,7 +620,7 @@ export class Utility {
 	 */
 	public static setRootPath(rootPath: string|undefined) {
 		assert(rootPath);
-		(this.rootPath as any) = rootPath;
+		(Utility.rootPath as any) = rootPath;
 	}
 
 
@@ -634,7 +634,7 @@ export class Utility {
 		if(path.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
-		const usedRootPath = (rootPath) ? rootPath : this.rootPath || '';
+		const usedRootPath = (rootPath) ? rootPath : Utility.rootPath || '';
 		const filePath = path.join(usedRootPath, relFilePath);
 		return filePath;
 	}
@@ -677,7 +677,7 @@ export class Utility {
 	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
 	 */
 	public static getRelTmpDisasmFilePath(): string {
-		return this.getRelTmpFilePath(TmpDasmFileName);
+		return Utility.getRelTmpFilePath(TmpDasmFileName);
 	}
 
 
@@ -689,8 +689,8 @@ export class Utility {
 	 */
 	public static getAbsStateFileName(stateName: string): string {
 		const fName = util.format(StateFileName, stateName);
-		const relPath = this.getRelTmpFilePath(fName);
-		return this.getAbsFilePath(relPath);
+		const relPath = Utility.getRelTmpFilePath(fName);
+		return Utility.getAbsFilePath(relPath);
 	}
 
 
