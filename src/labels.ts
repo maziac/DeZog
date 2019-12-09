@@ -168,11 +168,11 @@ export class LabelsClass {
 		// Regex to find labels
 		let labelRegex;
 		if(sjasmplus) {
-			// Allow labels without :
-			labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+			// Allow labels without ":"
+			labelRegex = new RegExp(/^.{18}(@?)([^;:\s0-9][^:;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 		}
 		else {
-			// Require a : after the label
+			// Require a ":"" after the label
 			labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 		}
 
@@ -253,7 +253,7 @@ export class LabelsClass {
 					const global = match[1];
 					if(global == '' && labelPrefix)
 						label = labelPrefix + label;	// Add prefix if not global (only sjasmplus)
-					const equ = match[4];
+					const equ = match[3];
 					if(equ) {
 						if(equ.toLowerCase().startsWith('equ')) {
 							// EQU: add to label array

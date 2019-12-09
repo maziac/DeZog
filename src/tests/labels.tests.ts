@@ -168,6 +168,74 @@ suite('Labels', () => {
 			assert.equal( labels[0], 'pause_loop_l1+2', "Expected label+index wrong.");
 		});
 
+
+		test('sjasmplus labels with ":"', () => {
+			const labels = Labels;
+			labels.loadAsmListFile('./src/tests/data/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.finish();
+
+			let value = labels.getNumberForLabel('screen_top');
+			assert.equal(0x80cb, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('PAUSE_TIME');
+			assert.equal(5000, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause');
+			assert.equal(0x80cc, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause_loop_l2');
+			assert.equal(0x80cf, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause_loop_l1');
+			assert.equal(0x80d1, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('BCKG_LINE_SIZE');
+			assert.equal(32, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CBLACK');
+			assert.equal(0<<3, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CBLUE');
+			assert.equal(1<<3, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CRED');
+			assert.equal(2<<3, value, "Expected address wrong.");
+		});
+
+
+		test('sjasmplus labels without ":"', () => {
+			const labels = Labels;
+			labels.loadAsmListFile('./src/tests/data/sjasm2_wo_colon.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.finish();
+
+			let value = labels.getNumberForLabel('screen_top');
+			assert.equal(0x80cb, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('PAUSE_TIME');
+			assert.equal(5000, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause');
+			assert.equal(0x80cc, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause_loop_l2');
+			assert.equal(0x80cf, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('pause_loop_l1');
+			assert.equal(0x80d1, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('BCKG_LINE_SIZE');
+			assert.equal(32, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CBLACK');
+			assert.equal(0<<3, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CBLUE');
+			assert.equal(1<<3, value, "Expected address wrong.");
+
+			value = labels.getNumberForLabel('CRED');
+			assert.equal(2<<3, value, "Expected address wrong.");
+		});
+
 	});
 });
 
