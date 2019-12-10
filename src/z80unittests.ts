@@ -226,7 +226,7 @@ export class Z80UnitTests {
 	protected static runTests() {
 		try {
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : ''); //vscode.workspace.rootPath
+			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : ''); //vscode.workspace.rootPath
 
 			// Mode
 			this.debug = false;
@@ -237,7 +237,7 @@ export class Z80UnitTests {
 			const listFiles = configuration.listFiles;
 
 			// Setup settings
-			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '';
+			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
@@ -349,7 +349,7 @@ export class Z80UnitTests {
 	protected static debugTests() {
 		try {
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '');  //vscode.workspace.rootPath
+			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');  //vscode.workspace.rootPath
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
@@ -451,7 +451,7 @@ export class Z80UnitTests {
 	 */
 	protected static loadLabelsFromConfiguration(): LabelsClass {
 		// Set root path
-		Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : '');  //vscode.workspace.rootPath
+		Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');  //vscode.workspace.rootPath
 
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
