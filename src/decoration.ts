@@ -29,7 +29,6 @@ class DecorationFileMap {
 export class DecorationClass {
 	// Names to identify the decorations.
 	protected COVERAGE = "Coverage";
-	protected REVERSE_DEBUG_PREVIOUS = "RevDbgPrevious";
 	protected REVERSE_DEBUG = "RevDbg";
 	protected BREAK = "Break";
 
@@ -78,6 +77,7 @@ export class DecorationClass {
 				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
 			}
 		});
+		/*
 		// For the elder lines a little lighter
 		const coverageElderDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
@@ -91,6 +91,7 @@ export class DecorationClass {
 				backgroundColor: '#093003',
 			}
 		});
+		*/
 
 		// Decoration for reverse debugging.
 		const revDbgDecoType = vscode.window.createTextEditorDecorationType({
@@ -135,11 +136,6 @@ export class DecorationClass {
 		this.decorationFileMaps.set(this.COVERAGE, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
-		decoFileMap.decoType = coverageElderDecoType;
-		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
-		this.decorationFileMaps.set(this.REVERSE_DEBUG_PREVIOUS, decoFileMap);
-
-		decoFileMap = new DecorationFileMap();
 		decoFileMap.decoType = revDbgDecoType;
 		decoFileMap.fileMap = new Map<string, Array<vscode.Range>>();
 		this.decorationFileMaps.set(this.REVERSE_DEBUG, decoFileMap);
@@ -171,7 +167,6 @@ export class DecorationClass {
 	 * Loops through all active editors and clear the reverse debug decorations.
 	 */
 	public clearRevDbgHistory() {
-		this.clearDecorations(this.REVERSE_DEBUG_PREVIOUS);
 		this.clearDecorations(this.REVERSE_DEBUG);
 	}
 
@@ -186,8 +181,7 @@ export class DecorationClass {
 
 	/**
 	 * Loops through all active editors and clear the decorations.
-	 * @param mapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
-	 * or BREAK.
+	 * @param mapName E.g. COVERAGE, REVERSE_DEBUG or BREAK.
 	 */
 	protected clearDecorations(mapName: string) {
 		const map = this.decorationFileMaps.get(mapName) as DecorationFileMap;
@@ -227,8 +221,7 @@ export class DecorationClass {
 	/**
 	 * Sets decorations for a specific type.
 	 * Coverage, revers debug, breaks.
-	 * @param fileMapName E.g. COVERAGE_IMMEDIATE, COVERAGE_ELDER, REVERSE_DEBUG
-	 * or BREAK.
+	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG or BREAK.
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
 		// Get filename
@@ -326,7 +319,6 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setDecorations(editor, this.REVERSE_DEBUG_PREVIOUS);
 			this.setDecorations(editor, this.REVERSE_DEBUG);
 		}
 	}
@@ -334,14 +326,10 @@ export class DecorationClass {
 
 	/**
 	 * Is called when a new 'break' should be shown.
-	 * Will set the decorations.
-	 * There are 1 to 2 decorations.
-	 * If pc == breakAddress it is a normal break at the PC.
-	 * In this case a simple decoration with the text is shown.
-	 * If pc != breakAddress it is e.g. a break because of a memory watch.
-	 * In this case the decoration at the breakAddress will contain the text and
-	 * the decoration at the pc will also get the text and also a link to the
-	 * breakAddress decoration.
+	 * This happens only during run.
+	 * The decoration are cleared before the 'continue', that means that a decorations
+	 * stays during e.g. 'stepping' until the next 'continue' occurs.
+	 * It displays the break + break condition.
 	 * @param addresses The address to decorate.
 	 */
 	public showBreak(pc: number, breakAddress: number, text: string) {
@@ -367,7 +355,8 @@ export class DecorationClass {
 				hoverMessage: undefined,
 				renderOptions: {
 				  after: {
-					  contentText: text
+					  contentText: text,
+					  margin: "1.5em"
 				  },
 				},
 			  };
@@ -375,9 +364,6 @@ export class DecorationClass {
 			// Add address to set
 			lines.push(deco);
 		}
-
-		// TODO: handle breakAdress: display the memory watch
-
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;

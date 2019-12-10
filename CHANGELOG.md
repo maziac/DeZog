@@ -5,6 +5,9 @@
 - Use of cpu-history for reverse debugging.
 
 
+## 0.9.2-1
+- Allows parsing of sjasmplus labels without ":".
+
 ## 0.9.2
 - Fixed bug in register parsing.
 - Changed to use ZEsarUX 'cpu-code-coverage' for decorating code coverage.

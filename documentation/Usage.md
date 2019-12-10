@@ -436,7 +436,15 @@ Notes:
 - LOGPOINTs can do math with fixed labels but not with registers. I.e. "${b@(my_data+5)}" will work. It will statically calculate my_data+5 and lookup the memory value. But "${b@(IX+1)}" will not work as it would have to dynamically calculate "IX+1" at runtime.
 
 
-### vscode breakpoint conditions
+### vscode breakpoint
+
+You simply set a breakpoint by clicking left to the line where you want the breakpoint to be.
+A red dot indicates the presense of a breakpoint.
+
+Breakpoints can be set only per line. I.e. it is not possible to have multiple breakpoints in one line.
+
+
+__Breakpoint conditions:__
 
 Along with breakpoints you can also use breakpoint conditions. The breakpoint condition is checked additionally whenever a breakpoint is fired at a certain address.
 Only if also the breakpoint condition is met the program execution will stop.
@@ -461,6 +469,17 @@ Note 1: "&&" has higher priority than "||".
 Note 2: Brackets, "()", are used only for prioritization of the expression. To read the contents of an address use "b@(...)" or "w@(...)". "b@(address)" and "w@(address)" return the byte and word contents at 'address'
 
 Note 3: Some of the operators (like "!=", "||" or "b@(...)" are converted to the ZEsarUX format style (i.e. "=", "OR", "peek(...)") but you can also use the ZEsarUX style directly.
+
+
+__Breakpoints in interrupts:__
+
+You can also set breakpoints in interrupts.
+
+But when you also set the launch.json option "skipInterrupts" to true you will feel that the behaviour is somewhat strange:
+If the breakpoint is hit the program will stop, but because of "skipInterrupts" it will stop after the interrupt finished.
+
+Although the behavior is correct it looks like the program is randomly stopping.
+
 
 
 ### vscode logpoints
@@ -680,7 +699,7 @@ Stepping works slightly different to stepping in ZEsarUX.
 ## Known Issues
 
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
-
+- Hovering does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 
 
 ## Notes
