@@ -284,7 +284,8 @@ export class EmulDebugSessionClass extends DebugSession {
 		response.body.supportTerminateDebuggee = true;
 
 		// The PC value might be changed.
-		response.body.supportsGotoTargetsRequest = true;
+		//response.body.supportsGotoTargetsRequest = true;
+		response.body.supportsGotoTargetsRequest = false;	// I use my own "Move Program Counter to Cursor"
 
 		// Support hovering over values (registers)
 		response.body.supportsEvaluateForHovers = true;
