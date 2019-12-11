@@ -2,8 +2,11 @@
 
 
 ## 0.9.3
-- Use of cpu-history for reverse debugging.
+- Maybe: Use of cpu-history for reverse debugging.
+- Maybe: Breakpoint decorations
 
+## 0.9.2-2
+- Fixed path problem for windows.
 
 ## 0.9.2-1
 - Allows parsing of sjasmplus labels without ":".
