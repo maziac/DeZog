@@ -589,5 +589,5 @@ export class ZesaruxSocket extends Socket {
 
 
 /// zSocket is the singleton object that should be accessed.
-export let zSocket;
+export let zSocket: ZesaruxSocket;
 

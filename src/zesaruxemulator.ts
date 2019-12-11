@@ -804,6 +804,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// Get SP
 		//const sp = Z80Registers.parseSP(currentLine);
+		console.log("currentLine");
+		console.log(currentLine);
+		console.log("prevLine");
+		console.log(prevLine);
+
 
 		return new Promise<void>( resolve => {
 			// Check for RET (RET cc and RETI/N)
