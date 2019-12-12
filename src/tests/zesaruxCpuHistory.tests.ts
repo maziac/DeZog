@@ -387,6 +387,17 @@ suite('ZesaruxCpuHistory', () => {
 			assert.equal(false, result);
 		});
 
+		test('parse16Address', () => {
+			let addr = (<any>ZesaruxCpuHistory).parse16Address("CAD9");
+			assert.equal(0xD9CA, addr);
+
+			addr = (<any>ZesaruxCpuHistory).parse16Address("123");
+			assert.equal(0x312, addr);
+
+			addr = (<any>ZesaruxCpuHistory).parse16Address("1");
+			assert.equal(0x1, addr);
+		});
+
 	});
 });
 

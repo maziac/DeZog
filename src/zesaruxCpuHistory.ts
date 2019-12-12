@@ -369,7 +369,7 @@ export class ZesaruxCpuHistory {
 	 * @param littleEndianAddress E.g. "CAD9"
 	 * @returns E.g. 0xD9CA
 	 */
-	protected parse16Address(littleEndianAddress: string): number {
+	protected static parse16Address(littleEndianAddress: string): number {
 		const lowByte = parseInt(littleEndianAddress.substr(0,2),16);
 		const highByte = parseInt(littleEndianAddress.substr(2,2),16);
 		const addr = lowByte + (highByte<<8);
