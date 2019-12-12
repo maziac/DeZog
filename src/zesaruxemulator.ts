@@ -767,7 +767,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * even if there is none.
 	 * B) At retaddr-3 there could be a CALL instruction. In that case no interrupt is indicated
 	 * instead a wrong function is shown.
-	 * This is something we hve to live with.
+	 * This is something we have to live with.
 	 *
 	 * CALL:
 	 * If a CALL (or CALL cc/RST) is found instruction is found it is checked by the flags
@@ -811,8 +811,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 		return new Promise<void>( resolve => {
+			// Get some values
+			const sp = Z80Registers.parseSP(currentLine);
+			const opcodes = this.cpuHistory.getOpcodes(currentLine);
+			const flags = Z80Registers.parseAF(currentLine);
+
 			// Check for RET (RET cc and RETI/N)
-			if(this.cpuHistory.isRetAndExecuted(currentLine)) {
+			if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 				// Get return address
 				const retAddr = this.cpuHistory.getSPContent(currentLine);
 				// Get memory at return address
@@ -880,11 +885,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let frame = this.reverseDbgStack[0];
 			frame.addr = pc;
 
-			// Check if the frame stack needs to be changed, if it's push or pop.
-			const opcodes = this.cpuHistory.getOpcodes(currentLine);
-			const opcode0 = parseInt(opcodes.substr(0,2),16);
-			const opcode1 = parseInt(opcodes.substr(2,2),16);
-			if(this.cpuHistory.isPopOpcode(opcode0, opcode1)) {
+			// Check if the frame stack needs to be changed, if it's pop.
+			if(this.cpuHistory.isPop(opcodes)) {
 				// Push to stack
 				const pushedValue = this.cpuHistory.getSPContent(currentLine);
 				frame.stack.push(pushedValue);
@@ -898,7 +900,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			*/
 
 			// Check if SP has decreased (CALL/PUSH/Interrupt)
-			const sp = Z80Registers.parseSP(currentLine);
 			const spPrev = Z80Registers.parseSP(prevLine);
 			let countRemove = sp - spPrev;
 			while(countRemove > 0 && this.reverseDbgStack.length > 0) {
@@ -959,6 +960,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * The PC from the next line is taken (or the (SP) content from the next line) and pushed
 	 * on the stack. As function "INTERRUPT" is shown.
 	 *
+	 *
+	 * Interrupt recognition:
+	 * All instructions CALL/RET/PUSH/PUSH etc. set an expected SP value.
+	 * If the real SP value from the previous line is different this is the indication that an interrupt
+	 * has occurred.
+	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history. (The one that
 	 * comes after currentLine.) If that is empty the start of the log has been reached.
@@ -981,14 +988,19 @@ export class ZesaruxEmulator extends EmulatorClass {
 		//let expectedSP = currentSP;
 		//const nextSP = Z80Registers.parseSP(nextLine);
 
+		// Get some values
+		const sp = Z80Registers.parseSP(currentLine);
+		const opcodes = this.cpuHistory.getOpcodes(currentLine);
+		const flags = Z80Registers.parseAF(currentLine);
+
 		// Check for RET (RET cc and RETI/N)
-		if(this.cpuHistory.isRetAndExecuted(currentLine)) {
+		if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 			//expectedSP += 2;	// RET pops from the stack
 			// Pop from call stack
 			assert(this.reverseDbgStack.length > 0);
 			this.reverseDbgStack.shift();
 		}
-		else if(this.cpuHistory.isCallAndExecuted(currentLine)) {
+		else if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
 			//expectedSP -= 2;	// CALL pushes to the stack
 			// Push to call stack
 			const pc = Z80Registers.parsePC(currentLine);
@@ -1033,7 +1045,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Add current PC
 		const regs = nextLine;
 		const pc = Z80Registers.parsePC(regs);
-		const sp = Z80Registers.parseSP(regs);
 		const topFrame = new Frame(pc, sp, 'PC');
 		this.reverseDbgStack.unshift(topFrame);
 	}

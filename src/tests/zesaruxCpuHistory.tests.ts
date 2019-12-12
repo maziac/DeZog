@@ -188,49 +188,47 @@ suite('ZesaruxCpuHistory', () => {
 			const testRetConditional = (opcode1: number, opcode2: number, flags: number) => {
 				// opcode1, flag=0
 				let hist = new ZesaruxCpuHistory();
-				let line = "AF=00" + getHexString(~flags) + " (PC)=" + getHexString(opcode1) + "000000"
-				let result = hist.isRetAndExecuted(line);
+				let opcodes = getHexString(opcode1) + "000000";
+				let result = hist.isRetAndExecuted(opcodes, ~flags);
 				assert.equal(true, result);
 
 				// opcode1, flag=1
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(flags) + " (PC)=" + getHexString(opcode1) + "000000"
-				result = hist.isRetAndExecuted(line);
+				result = hist.isRetAndExecuted(opcodes, flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=0
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(~flags) + " (PC)=" + getHexString(opcode2) + "000000"
-				result = hist.isRetAndExecuted(line);
+				opcodes = getHexString(opcode2) + "000000";
+				result = hist.isRetAndExecuted(opcodes, ~flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=1
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(flags) + " (PC)=" + getHexString(opcode2) + "000000"
-				result = hist.isRetAndExecuted(line);
+				result = hist.isRetAndExecuted(opcodes, flags);
 				assert.equal(true, result);
 			};
 
 
 			test('isRetAndExecuted unconditional', () => {
 				let hist = new ZesaruxCpuHistory();
-				let result = hist.isRetAndExecuted("(PC)=c9000000")
+				let result = hist.isRetAndExecuted("c9000000", 0);
 				assert.equal(true, result);
 
 				hist = new ZesaruxCpuHistory();
-				result = hist.isRetAndExecuted("(PC)=01000000")
+				result = hist.isRetAndExecuted("01000000", 0);
 				assert.equal(false, result);
 
 				hist = new ZesaruxCpuHistory();
-				result = hist.isRetAndExecuted("(PC)=ed4d0000")
+				result = hist.isRetAndExecuted("ed4d0000", 0);
 				assert.equal(true, result);
 
 				hist = new ZesaruxCpuHistory();
-				result = hist.isRetAndExecuted("(PC)=ed450000")
+				result = hist.isRetAndExecuted("ed450000", 0);
 				assert.equal(true, result);
 
 				hist = new ZesaruxCpuHistory();
-				result = hist.isRetAndExecuted("(PC)=0ed110000")
+				result = hist.isRetAndExecuted("9ed11000", 0);
 				assert.equal(false, result);
 			});
 
@@ -279,36 +277,35 @@ suite('ZesaruxCpuHistory', () => {
 			const testCallConditional = (opcode1: number, opcode2: number, flags: number) => {
 				// opcode1, flag=0
 				let hist = new ZesaruxCpuHistory();
-				let line = "AF=00" + getHexString(~flags) + " (PC)=" + getHexString(opcode1) + "000000"
-				let result = hist.isCallAndExecuted(line);
+				let opcodes = getHexString(opcode1) + "000000";
+				let result = hist.isCallAndExecuted(opcodes, ~flags);
 				assert.equal(true, result);
 
 				// opcode1, flag=1
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(flags) + " (PC)=" + getHexString(opcode1) + "000000"
-				result = hist.isCallAndExecuted(line);
+				result = hist.isCallAndExecuted(opcodes, flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=0
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(~flags) + " (PC)=" + getHexString(opcode2) + "000000"
-				result = hist.isCallAndExecuted(line);
+				opcodes = getHexString(opcode2) + "000000";
+				result = hist.isCallAndExecuted(opcodes, ~flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=1
 				hist = new ZesaruxCpuHistory();
-				line = "AF=00" + getHexString(flags) + " (PC)=" + getHexString(opcode2) + "000000"
-				result = hist.isCallAndExecuted(line);
+				opcodes = getHexString(opcode2) + "000000";
+				result = hist.isCallAndExecuted(opcodes, flags);
 				assert.equal(true, result);
 			};
 
 			test('isCallAndExecuted unconditional', () => {
 				let hist = new ZesaruxCpuHistory();
-				let result = hist.isCallAndExecuted("(PC)=cd000000")
+				let result = hist.isCallAndExecuted("cd000000", 0);
 				assert.equal(true, result);
 
 				hist = new ZesaruxCpuHistory();
-				result = hist.isCallAndExecuted("(PC)=01000000")
+				result = hist.isCallAndExecuted("01000000", 0);
 				assert.equal(false, result);
 			});
 
@@ -353,40 +350,40 @@ suite('ZesaruxCpuHistory', () => {
 
 		test('isRst', () => {
 			let hist = new ZesaruxCpuHistory();
-			let result = hist.isRst("(PC)=c7000000")
+			let result = hist.isRst("c7000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=cf000000")
+			result = hist.isRst("cf000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=d7000000")
+			result = hist.isRst("d7000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=df000000")
+			result = hist.isRst("df000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=e7000000")
+			result = hist.isRst("e7000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=ef000000")
+			result = hist.isRst("ef000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=f7000000")
+			result = hist.isRst("f7000000")
 			assert.equal(true, result);
 
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=ff000000")
+			result = hist.isRst("ff000000")
 			assert.equal(true, result);
 
 			// No rst
 			hist = new ZesaruxCpuHistory();
-			result = hist.isRst("(PC)=c8000000")
+			result = hist.isRst("c8000000")
 			assert.equal(false, result);
 		});
 

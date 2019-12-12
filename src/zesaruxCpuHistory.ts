@@ -138,7 +138,7 @@ export class ZesaruxCpuHistory {
 	/**
 	 * Input a line which was retrieved by 'cpu-history get N' and return the opcodes string.
 	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
-	 * @return E.g. "e52a785c"
+	 * @return E.g. "E52A785C"
 	 */
 	public getOpcodes(line: string): string {
 		if(this.pcIndex < 0) {
@@ -201,7 +201,7 @@ export class ZesaruxCpuHistory {
 	 */
 	// TODO: REMOVE
 	public getInstructionOld(line: string): string {
-	// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0
+	// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0"
 		// Extract the instruction
 		const k = line.indexOf('PC=');
 		assert(k >= 0);
@@ -230,32 +230,32 @@ export class ZesaruxCpuHistory {
 
 
 	/**
-	 * Tests if the line includes a RET instruction and if it is
+	 * Tests if the opcode is a RET instruction and if it is
 	 * conditional it tests if the condition was true.
-	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @param opcodes E.g. "e52a785c"
+	 * @param flags The flags.
 	 * @returns false=if not RET (or RETI or RETN) or condition of RET cc is not met.
 	 */
-	public isRetAndExecuted(line: string): boolean {
-		// Get opcodes
-		const opcodes = this.getOpcodes(line);
+	public isRetAndExecuted(opcodes: string, flags: number): boolean {
 		// Check for RET
-		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		const opcode0 = parseInt(opcodes.substr(0,2), 16);
 		if(0xC9 == opcode0)
 			return true;
+
 		// Check for RETI or RETN
-		const opcode01 = parseInt(opcodes.substr(0,4),16);
-		if([0xED4D, 0xED45].includes(opcode01))
-			return true;
+		if(0xED == opcode0) {
+			const opcode1 = parseInt(opcodes.substr(2,2), 16);
+			if(0x4D == opcode1 || 0x45 == opcode1)
+				return true;
+		}
 
 		// Now check for RET cc
 		const mask = 0b11000111;
 		if((opcode0 & mask) == 0b11000000) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >> 3;
-			// Get flags
-			const AF = Z80Registers.parseAF(line);
 			// Check condition
-			const condMet = Z80Registers.isCcMetByFlag(cc, AF);
+			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
 			return condMet;
 		}
 
@@ -265,14 +265,13 @@ export class ZesaruxCpuHistory {
 
 
 	/**
-	 * Tests if the line includes a CALL instruction and if it is
+	 * Tests if the opcode is a CALL instruction and if it is
 	 * conditional it tests if the condition was true.
-	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @param opcodes E.g. "e52a785c"
+	 * @param flags The flags.
 	 * @returns false=if not CALL or condition of CALL cc is not met.
 	 */
-	public isCallAndExecuted(line: string): boolean {
-		// Get opcodes
-		const opcodes = this.getOpcodes(line);
+	public isCallAndExecuted(opcodes: string, flags: number): boolean {
 		// Check for CALL
 		const opcode0 = parseInt(opcodes.substr(0,2),16);
 		if(0xCD == opcode0)
@@ -283,10 +282,8 @@ export class ZesaruxCpuHistory {
 		if((opcode0 & mask) == 0b11000100) {
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >> 3;
-			// Get flags
-			const AF = Z80Registers.parseAF(line);
 			// Check condition
-			const condMet = Z80Registers.isCcMetByFlag(cc, AF);
+			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
 			return condMet;
 		}
 
@@ -297,16 +294,155 @@ export class ZesaruxCpuHistory {
 
 	/**
 	 * Tests if the line includes a RST instruction.
-	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @param opcodes E.g. "e52a785c"
 	 * @returns true=if RST
 	 */
-	public isRst(line: string): boolean {
-		// Get opcodes
-		const opcodes = this.getOpcodes(line);
+	public isRst(opcodes: string): boolean {
 		// Check for RST
 		const opcode0 = parseInt(opcodes.substr(0,2),16);
 
 		return this.isRstOpcode(opcode0);
+	}
+
+
+	/**
+	 * Tests if the opcode is a PUSH instruction.
+	 * @param opcodes E.g. "e52a785c"
+	 * @returns true=if PUSH
+	 */
+	public isPush(opcodes: string): boolean {
+		// Check for PUSH
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+
+		// PUSH qq
+		const mask = 0b11001111;
+		if((opcode0 & mask) == 0x11000101)
+			return true;
+
+		// PUSH IX or IY
+		if(opcode0 == 0xDD || opcode0 == 0xFD) {
+			const opcode1 = parseInt(opcodes.substr(2,2),16);
+			if(opcode1 == 0xE5)
+				return true;
+		}
+
+		// PUSH nnnn, ZXNext
+		if(opcode0 == 0xED) {
+			const opcode1 = parseInt(opcodes.substr(2,2),16);
+			if(opcode1 == 0x8A)
+				return true;
+		}
+
+		// No PUSH
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode is a POP instruction.
+	 * @param opcodes E.g. "e52a785c"
+	 * @returns true=if POP
+	 */
+	public isPop(opcodes: string): boolean {
+		// Check for POP
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+
+		// POP qq
+		const mask = 0b11001111;
+		if((opcode0 & mask) == 0b11000001)
+			return true;
+
+		// POP IX or IY
+		if(opcode0 == 0xDD || opcode0 == 0xFD) {
+			const opcode1 = parseInt(opcodes.substr(2,2),16);
+			if(opcode1 == 0xE1)
+				return true;
+		}
+
+		// No POP
+		return false;
+	}
+
+
+	/**
+	 * Parses a string with a hex address. The address is little endian format.
+	 * @param littleEndianAddress E.g. "CAD9"
+	 * @returns E.g. 0xD9CA
+	 */
+	protected parse16Address(littleEndianAddress: string): number {
+		const lowByte = parseInt(littleEndianAddress.substr(0,2),16);
+		const highByte = parseInt(littleEndianAddress.substr(2,2),16);
+		const addr = lowByte + (highByte<<8);
+		return addr;
+	}
+
+	/**
+	 * Returns the previous SP value. Check all direct changes (e.g. inc sp) to SP.
+	 * Does not check CALL/RET/RST/PUSH and POP.
+	 * For LD SP,(nnnn) undefinedis returned otherwise a real number.
+	 * @param opcodes E.g. "e52a785c"
+	 * @param sp The SP value.
+	 * @param line The complete hitory line, eg. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf".
+	 * @return The previous SP value or undefined if unknown.
+	 */
+	public calcDirectSpChanges(opcodes: string, sp: number, line: string): number|undefined {
+		let expectedSp: number|undefined = sp;
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+
+		switch(opcode0) {
+			case 0x31:	// LD SP,nnnn
+				const addr = opcodes.substr(2,4);
+				expectedSp = this.parse16Address(addr);
+				break;
+
+			case 0x31:	// INC SP
+				expectedSp ++;
+				break;
+
+			case 0x3B:	// DEC SP
+				expectedSp ++;
+				break;
+
+			case 0xF9:	// LD SP,HL
+				// Get HL
+				const hl = Z80Registers.parseHL(line);
+				expectedSp = hl;
+				break;
+
+			case 0xED:
+				{
+					const opcode1 = parseInt(opcodes.substr(2,2),16);
+					if(opcode1 == 0x7B) {
+						// LD SP,(nnnn)
+						expectedSp = undefined;
+					}
+				}
+				break;
+
+			case 0xDD:
+				{
+					const opcode1 = parseInt(opcodes.substr(2,2),16);
+					if(opcode1 == 0xF9) {
+						// LD SP,IX
+						const ix = Z80Registers.parseIX(line);
+						expectedSp = ix;
+					}
+				}
+				break;
+
+			case 0xFD:
+				{
+					const opcode1 = parseInt(opcodes.substr(2,2),16);
+					if(opcode1 == 0xF9) {
+						// LD SP,IY
+						const iy = Z80Registers.parseIY(line);
+						expectedSp = iy;
+					}
+				}
+				break;
+		}
+
+		return expectedSp;
 	}
 
 
@@ -351,6 +487,7 @@ export class ZesaruxCpuHistory {
 	 * @param opcode1 The second byte of an instruction.
 	 * @returns true if "PUSH". Also for ZXNext "PUSH nnnn"
 	 */
+/*
 	public isPushOpcode(opcode0: number, opcode1: number): boolean {
 		// PUSH qq
 		const mask = 0b11001111;
@@ -369,7 +506,7 @@ export class ZesaruxCpuHistory {
 		// No PUSH
 		return false;
 	}
-
+*/
 
 	/**
 	 * Tests if the opcode byte is from a POP.
@@ -377,6 +514,7 @@ export class ZesaruxCpuHistory {
 	 * @param opcode1 The second byte of an instruction.
 	 * @returns true if "POP".
 	 */
+/*
 	public isPopOpcode(opcode0: number, opcode1: number): boolean {
 		// POP qq
 		const mask = 0b11001111;
@@ -391,6 +529,7 @@ export class ZesaruxCpuHistory {
 		// No POP
 		return false;
 	}
+*/
 
 }
 

@@ -153,6 +153,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back from isr to PUSH instruction', () => {
 			// Add something to remove
+			emul.reverseDbgStack[0].stack.push(1234);	// The PUSHed value
 			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
 
 			// 0038 DI
