@@ -744,59 +744,26 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
-	 * Note: For the current checks I only need the currentLine.
 	 * Handles the current instruction and the previous one and distinguishes what to
 	 * do on the virtual reverse debug stack.
-	 * Example: Normally only the top frame on the stack is changed for the new PC value.
-	 * But for a few instructions a special behavior is implemented:
 	 *
-	 * RET:
-	 * If a "RET" (or RET cc/RETI/RETN) instruction is found it is checked by the flags
-	 * if it was really executed. If yes also the (SP) content is pushed on
-	 * the stack.
-	 * The (SP) is the return address, ret_addr. Usually the ret_addr-3 is the start of a
-	 * CALL instruction and at (ret_addr-2) the called address, i.e. the function call
-	 * used to display on the stack, is found.
-	 * Unfortunately reality is more complicated. First: the caller could also be a RST instruction.
-	 * Therefore, if no CALL is found, it is also checked for a RST at address = ret_addr-1.
-	 * Furthermore the RET might be from an interrupt. In that case there normally is no CALL at
-	 * ret_addr-3.
-	 * So if there is no CALL it is assumed that it was an interrupt. Unfortunately this is
-	 * not fool proof.
-	 * A) The return address might have been manipulated. In that case an interrupt is indicated
-	 * even if there is none.
-	 * B) At retaddr-3 there could be a CALL instruction. In that case no interrupt is indicated
-	 * instead a wrong function is shown.
-	 * This is something we have to live with.
-	 *
-	 * CALL:
-	 * If a CALL (or CALL cc/RST) is found instruction is found it is checked by the flags
-	 * if it was really executed. If yes the last value is popped from the stack.
-	 *
-	 * POP:
-	 * If a POP nn is found the content of (SP) is pushed on the stack.
-	 *
-	 * PUSH:
-	 * If a PUSH nn is found the last value is popped from the stack.
-	 *
-	 * CALL/PUSH/Interrupt:
-	 * All these result in popping data from the stack. So it is checked simply how much is removed:
-	 * I.e. count=SP-SPprev. First the data is removed from the data stack. If something is remaining
-	 * it is removed from the callstack.
-	 * Normally count is only 2. In case a PUSH/CALL and an interrupt happens at the same time it
-	 * might be 4. In other (not supported cases) the SP is maybe directly changed. In that case the
-	 * stack may show completely wrong values. But that's how it is if the SP is changed.
+	 * Algorithm:
+	 * 1. If (executed) RET
+	 * 1.a 		Get caller address
+	 * 1.b		If CALL then use it other "__INTERRUPT__"
+	 * 1.c		Add to callstack and set PC in frame
+	 * 1.d		return
+	 * 2. set PC in current frame
+	 * 3. If POP
+	 * 3.a		Add (SP) to the frame stack
+	 * 4. If SP > previous SP
+	 * 4.a		Remove from frame stack and call stack
 	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param prevLine The previous line of the cpu history. (The one that
 	 * comes before currentLine). This can also be the cached register values for
 	 * the first line.
 	 */
-	// TODO: REMOVE prevline, not used.
-//	Hier muss noch Interrupt removal bei Step Back erkannt werden. Also aus dem Interrrupt raus. dann erkennen ob der SP nicht "expected" ist -> dann Interrupt removal
-//	Vielleicht kann ich auch einfach den Stackpointer nehmen und damit den Stack bereinigen, könnte auch für PUSH gehen .
-//Funktioniert => Einchecken
-
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
 		//assert(this.reverseDbgStack.length > 0);
 		// Remove current frame

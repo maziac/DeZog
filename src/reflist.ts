@@ -10,6 +10,8 @@ export class RefList extends Array {
 
 	/**
 	 * Adds an object to the list and returns it's index.
+	 * Use this instead of a simple push if you need to get the reference id to the object.
+	 * If you don't need the id you can use push or unshift.
 	 * @param obj The object to add.
 	 * @returns The index of the object in the list. I.e. a unique reference number (!=0) to the object.
 	 */
