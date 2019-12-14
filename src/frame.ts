@@ -9,7 +9,7 @@ export class Frame {
 	public addr: number;	///< The corresponding address
 	public name: string;	///< The shown name, e.g. "clear_screen"
 	public stack = new Array<number>();	///< The objects currently pushed on the stack
-	public stackStartAddress = -1;	///< The start address of the stack. TODO: Not used ?
+	public stackStartAddress = -1;	///< The start address of the stack.
 
 	/**
 	 * Constructor

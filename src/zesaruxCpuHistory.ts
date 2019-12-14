@@ -3,9 +3,6 @@ import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
 import { Z80Registers } from './z80Registers';
-import { utils } from 'mocha';
-import { Utility } from './utility';
-
 
 
 /**

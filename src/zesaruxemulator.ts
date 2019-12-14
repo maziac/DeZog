@@ -650,9 +650,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				while(true) {
 					// Handle stack
 					const nextLine = this.revDbgNext();
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 					if(!nextLine)
 						break;
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Check for breakpoint
 					// TODO: ...
@@ -765,17 +765,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * the first line.
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
-		//assert(this.reverseDbgStack.length > 0);
-		// Remove current frame
-		//this.reverseDbgStack.shift();
-
-		// Get SP
-		//const sp = Z80Registers.parseSP(currentLine);
 		console.log("currentLine");
 		console.log(currentLine);
 		console.log("prevLine");
 		console.log(prevLine);
-
 
 		return new Promise<void>( resolve => {
 			// Get some values
@@ -829,18 +822,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 				return;
 			}
 
-			/*
-			// Check for CALL
-			if(this.cpuHistory.isCallAndExecuted(currentLine) || this.cpuHistory.isRst(currentLine)) {
-				// Pop from call stack
-				assert(this.reverseDbgStack.length > 0);
-				this.reverseDbgStack.shift();
-				// End
-				resolve();
-				return;
-			}
-			*/
-
 			// Otherwise simply change current PC
 			if(this.reverseDbgStack.length == 0) {
 				 // Return if no stack
@@ -848,23 +829,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 				return;
 			}
 
-			const pc = Z80Registers.parsePC(currentLine);
-			let frame = this.reverseDbgStack[0];
-			frame.addr = pc;
-
 			// Check if the frame stack needs to be changed, if it's pop.
+			let frame = this.reverseDbgStack[0];
 			if(this.cpuHistory.isPop(opcodes)) {
 				// Push to stack
 				const pushedValue = this.cpuHistory.getSPContent(currentLine);
 				frame.stack.push(pushedValue);
 			}
-
-			/*
-			else if(this.cpuHistory.isPushOpcode(opcode0, opcode1)) {
-				// Pop from stack
-				frame.stack.pop();
-			}
-			*/
 
 			// Check if SP has decreased (CALL/PUSH/Interrupt)
 			const spPrev = Z80Registers.parseSP(prevLine);
@@ -882,9 +853,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 					countRemove -= 2;
 					// get next frame if countRemove still > 0
 					frame = this.reverseDbgStack[0];
-					frame.addr = pc;
 				}
 			}
+
+			// Adjust PC within frame
+			const pc = Z80Registers.parsePC(currentLine);
+			frame.addr = pc;
 
 			// End
 			resolve();
@@ -952,274 +926,117 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * has occurred.
 	 *
 	 * @param currentLine The current line of the cpu history.
-	 * @param nextLine The next line of the cpu history. (The one that
-	 * comes after currentLine.) If that is empty the start of the log has been reached.
-	 * In that case the reverseDbgStack is cleared because the real stack can be used.
+	 * @param nextLine The next line of the cpu history.
 	 */
-	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string|undefined) {
+	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string) {
 		assert(currentLine);
-		// Check for end
-		if(!nextLine) {
-			this.reverseDbgStack = undefined as any;
-			return;
-		}
+		assert(nextLine);
 
-			/**
-	 * Handles the current instruction and the next one and distinguishes what to
-	 * do on the virtual reverse debug stack.
-	 *
-	 *
-	 * Algorithm:
-	 * 1. If (executed) CALL/RST
-	 * 1.a 		expectedSP = SP-2
-	 * 1.b		Put called address to callstack and set PC in frame
-	 * 2. else If PUSH
-	 * 2.a		expectedSP = SP-2
-	 * 2.b		Add pushed value to frame stack
-	 * 3. else If POP/RET
-	 * 3.a		expectedSP = SP+2
-	 * 3. else
-	 * 3.a		expectedSP = calcDirectSpChanges
-	 * 4. If nextSP != expectedSP   // Check for interrupt
-	 * 4.a		Put nextPC on callstack
-	 * 5. If SP > previous SP
-	 * 5.a		Remove from frame stack and call stack
-	 */
+		return new Promise<void>( resolve => {
+			// Get some values
+			const nextSP = Z80Registers.parseSP(nextLine);
+			const sp = Z80Registers.parseSP(currentLine);
+			let expectedSP: number|undefined = sp;
+			let expectedPC;
+			const opcodes = this.cpuHistory.getOpcodes(currentLine);
+			const flags = Z80Registers.parseAF(currentLine);
+			let frame = this.reverseDbgStack[0];
 
-
-	return new Promise<void>( resolve => {
-		// Get some values
-		const sp = Z80Registers.parseSP(currentLine);
-		let expectedSP = sp;
-		const opcodes = this.cpuHistory.getOpcodes(currentLine);
-		const flags = Z80Registers.parseAF(currentLine);
-
-		// Check for CALL (CALL cc)
-		if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
-			expectedSP -= 2;	// CALL pushes to the stack
-			// Push to call stack
-			const pc = Z80Registers.parsePC(currentLine);
-			// Now find label for this address
-			const callAddr = Z80Registers.parsePC(nextLine);
-			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-			const name = labelCallAddr;
-			const frame = new Frame(pc, sp, name);
-			this.reverseDbgStack.unshift(frame);
-		}
-		// Check for RST
-		else if(this.cpuHistory.isRst(opcodes)) {
-			expectedSP -= 2;	// RST pushes to the stack
-			// Push to call stack
-			const pc = Z80Registers.parsePC(currentLine);
-			// Now find label for this address
-			const callAddr = Z80Registers.parsePC(nextLine);
-			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-			const name = labelCallAddr;
-			const frame = new Frame(pc, sp, name);
-			this.reverseDbgStack.unshift(frame);
-		}
-		else {
-			// Check for PUSH
-			const pushedValue = this.cpuHistory.getPushedValue(opcodes, currentLine);
-			if(pushedValue != undefined) {	// Is undefined if not a PUSH
-				expectedSP -= 2;	// PUSH pushes to the stack
-				// Push to frame stack
-				let frame = this.reverseDbgStack[0];
-				frame.stack.unshift(pushedValue);
-			}
-			// Check for POP
-			else if(this.cpuHistory.isPop(opcodes)
-				|| this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
-				expectedSP += 2;	// Pop from the stack
-			}
-			// Otherwise calculate the expected SP
-			else {
-				expectedSP = this.cpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
-			}
-		}
-
-
-
-
-
-		if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
-			// Get return address
-			const retAddr = this.cpuHistory.getSPContent(currentLine);
-			// Get memory at return address
-			zSocket.send( 'read-memory ' + ((retAddr-3)&0xFFFF) + ' 3', data => {
-				// Check for CALL and RST
-				const firstByte = parseInt(data.substr(0,2),16);
-				let callAddr;
-				if(this.cpuHistory.isCallOpcode(firstByte)) {
-					// Is a CALL or CALL cc, get called address
-					// Get low byte
-					const lowByte = parseInt(data.substr(2,2),16);
-					// Get high byte
-					const highByte = parseInt(data.substr(4,2),16);
-					// Calculate address
-					callAddr = (highByte<<8) + lowByte;
-				}
-				else if(this.cpuHistory.isRstOpcode(firstByte)) {
-					// Is a Rst, get p
-					callAddr = firstByte & 0b00111000;
-				}
-				// If no calledAddr then we assume an interrupt
-				let labelCallAddr;
-				if(callAddr == undefined) {
-					// Interrupt assumed
-					labelCallAddr = "__INTERRUPT__";
-				}
-				else {
-					// Now find label for this address
-					const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-					labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-				}
-
-				// And push to stack
-				const pc = Z80Registers.parsePC(currentLine);
-				const sp = Z80Registers.parseSP(currentLine);
-				const frame = new Frame(pc, sp, labelCallAddr);
+			// Check for CALL (CALL cc)
+			if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
+				expectedSP -= 2;	// CALL pushes to the stack
+				// Now find label for this address
+				const callAddr = Z80Registers.parsePC(nextLine);
+				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+				const name = labelCallAddr;
+				frame = new Frame(0, nextSP-2, name);	// pc is set later anyway
 				this.reverseDbgStack.unshift(frame);
+			}
+			// Check for RST
+			else if(this.cpuHistory.isRst(opcodes)) {
+				expectedSP -= 2;	// RST pushes to the stack
+				// Now find label for this address
+				const callAddr = Z80Registers.parsePC(nextLine);
+				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
+				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+				const name = labelCallAddr;
+				frame = new Frame(0, nextSP-2, name);	// pc is set later anyway
+				this.reverseDbgStack.unshift(frame);
+			}
+			else {
+				// Check for PUSH
+				const pushedValue = this.cpuHistory.getPushedValue(opcodes, currentLine);
+				if(pushedValue != undefined) {	// Is undefined if not a PUSH
+					expectedSP -= 2;	// PUSH pushes to the stack
+					// Push to frame stack
+					frame?.stack.unshift(pushedValue);
+				}
+				// Check for POP
+				else if(this.cpuHistory.isPop(opcodes)
+					|| this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
+					expectedSP += 2;	// Pop from the stack
+				}
+				// Otherwise calculate the expected SP
+				else {
+					expectedSP = this.cpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
+					if(expectedSP == undefined) {
+						// This means: Opcode was LD SP,(nnnn).
+						// So use PC instead to check.
+						const pc = Z80Registers.parsePC(currentLine);
+						expectedPC = pc + 4;	// 4 = size of instruction
+					}
+				}
+			}
 
-				// End
-				resolve();
-			});
-			return;
-		}
 
-		/*
-		// Check for CALL
-		if(this.cpuHistory.isCallAndExecuted(currentLine) || this.cpuHistory.isRst(currentLine)) {
-			// Pop from call stack
-			assert(this.reverseDbgStack.length > 0);
-			this.reverseDbgStack.shift();
+			// Check for interrupt. Either use SP or use PC to check.
+			let interruptFound = false;
+			const nextPC = Z80Registers.parsePC(nextLine);
+			if(expectedSP != undefined) {
+				// Use SP for checking
+				if(nextSP == expectedSP-2)
+					interruptFound = true;
+			}
+			else {
+				// Use PC for checking
+				assert(expectedPC);
+				if(nextPC != expectedPC)
+					interruptFound = true;
+			}
+
+			// Interrupt
+			if(interruptFound) {
+				// Put nextPC on callstack
+				const name = "__INTERRUPT__";
+				frame = new Frame(0, nextSP, name);	// pc is set later anyway
+				this.reverseDbgStack.unshift(frame);
+			}
+
+			// Check if SP has increased (POP/RET)
+			let countRemove = nextSP - sp;
+			while(countRemove > 0 && this.reverseDbgStack.length > 0) {
+				// First remove the data stack
+				while(countRemove > 0 && frame.stack.length > 0) {
+					// Pop from stack
+					frame.stack.pop();
+					countRemove -= 2;
+				}
+				// Now remove callstack
+				if(countRemove > 0) {
+					this.reverseDbgStack.shift();
+					countRemove -= 2;
+					// get next frame if countRemove still > 0
+					frame = this.reverseDbgStack[0];
+				}
+			}
+
+			// Adjust PC within frame
+			frame.addr = nextPC;
+
 			// End
 			resolve();
-			return;
-		}
-		*/
-
-		// Otherwise simply change current PC
-		if(this.reverseDbgStack.length == 0) {
-			 // Return if no stack
-			resolve();
-			return;
-		}
-
-		const pc = Z80Registers.parsePC(currentLine);
-		let frame = this.reverseDbgStack[0];
-		frame.addr = pc;
-
-		// Check if the frame stack needs to be changed, if it's pop.
-		if(this.cpuHistory.isPop(opcodes)) {
-			// Push to stack
-			const pushedValue = this.cpuHistory.getSPContent(currentLine);
-			frame.stack.push(pushedValue);
-		}
-
-		/*
-		else if(this.cpuHistory.isPushOpcode(opcode0, opcode1)) {
-			// Pop from stack
-			frame.stack.pop();
-		}
-		*/
-
-		// Check if SP has decreased (CALL/PUSH/Interrupt)
-		const spPrev = Z80Registers.parseSP(prevLine);
-		let countRemove = sp - spPrev;
-		while(countRemove > 0 && this.reverseDbgStack.length > 0) {
-			// First remove the data stack
-			while(countRemove > 0 && frame.stack.length > 0) {
-				// Pop from stack
-				frame.stack.pop();
-				countRemove -= 2;
-			}
-			// Now remove callstack
-			if(countRemove > 0) {
-				this.reverseDbgStack.shift();
-				countRemove -= 2;
-				// get next frame if countRemove still > 0
-				frame = this.reverseDbgStack[0];
-				frame.addr = pc;
-			}
-		}
-
-		// End
-		resolve();
-	});
-
-	/////////////////////////////
-
-		// Remove current frame
-		assert(this.reverseDbgStack.length > 0);
-		this.reverseDbgStack.shift();
-
-		// Sets the expected SP value.
-		//const currentSP = Z80Registers.parseSP(currentLine);
-		//let expectedSP = currentSP;
-		//const nextSP = Z80Registers.parseSP(nextLine);
-
-		// Get some values
-		const sp = Z80Registers.parseSP(currentLine);
-		const opcodes = this.cpuHistory.getOpcodes(currentLine);
-		const flags = Z80Registers.parseAF(currentLine);
-
-		// Check for RET (RET cc and RETI/N)
-		if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
-			//expectedSP += 2;	// RET pops from the stack
-			// Pop from call stack
-			assert(this.reverseDbgStack.length > 0);
-			this.reverseDbgStack.shift();
-		}
-		else if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
-			//expectedSP -= 2;	// CALL pushes to the stack
-			// Push to call stack
-			const pc = Z80Registers.parsePC(currentLine);
-			const currentSP = Z80Registers.parseSP(currentLine);
-			// Now find label for this address
-			const callAddr = Z80Registers.parsePC(nextLine);
-			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-			const name = "CALL " + labelCallAddr;
-			const frame = new Frame(pc, currentSP, name);
-			this.reverseDbgStack.unshift(frame);
-		}
-		else if(this.cpuHistory.isRst(currentLine)) {
-			//expectedSP -= 2;	// RST pushes to the stack
-			// Push to call stack
-			const pc = Z80Registers.parsePC(currentLine);
-			const currentSP = Z80Registers.parseSP(currentLine);
-			// Now find label for this address
-			const callAddr = Z80Registers.parsePC(nextLine);
-			const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-			const name = "RST " + labelCallAddr;
-			const frame = new Frame(pc, currentSP, name);
-			this.reverseDbgStack.unshift(frame);
-		}
-
-		// Check for interrupt
-		/*
-		if(expectedSP != nextSP) {
-			// Interrupt occurred. Push current PC to call stack.
-			const pc = Z80Registers.parsePC(currentLine);
-			// Now find label for this address
-			const intrptAddr = Z80Registers.parsePC(nextLine);
-			const labelCallAddrArr = Labels.getLabelsForNumber(intrptAddr);
-			const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(intrptAddr,4)+'h';
-			const name = "Interrupt " + labelCallAddr;
-			const frame = new Frame(pc, currentSP, name);
-			this.reverseDbgStack.unshift(frame);
-		}
-		*/
-
-		// Add current PC
-		const regs = nextLine;
-		const pc = Z80Registers.parsePC(regs);
-		const topFrame = new Frame(pc, sp, 'PC');
-		this.reverseDbgStack.unshift(topFrame);
+		});
 	}
 
 
@@ -1339,37 +1156,21 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Get current line
 			let currentLine: string = this.RegisterCache as string;
 			assert(currentLine);
+			let nextLine;
 
 			let errorText;
 			try {
 				// Find next line with same SP
-				while(currentLine) {
-					// Handle stack
-					const nextLine = this.revDbgNext();
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+				while(true) {
+					// Get next line
+					nextLine = this.revDbgNext();
 					if(!nextLine)
-						break;
+						break;	// At end of reverse debugging. Simply get the real call stack.
 
-					break;	// for now
-					/*
-					if(dontCheckSP) {
-						// Break after first line
-						break;
-					}
-					*/
+					// Handle reverse stack
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
-					// TODO: need to check for breakpoint
-
-					// Read SP
-					/*
-					const regs = this.cpuHistory.getRegisters(currentLine);
-					const sp = Z80Registers.parseSP(regs);
-					// Check expected SPs
-					if(expectedSP == sp)
-						break;
-					if(expectedSP2 == sp)
-						break;
-					*/
+					break; // TODO
 
 					// Next
 					currentLine = nextLine as string;
@@ -1389,7 +1190,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 				instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 			}
 			handler(instruction, undefined, undefined, errorText);
-			return;
+
+			// Return if next line is available, i.e. as long as we did not reach the start.
+			// Otherwise get the callstack from ZEsarUX.
+			if(nextLine)
+				return;
 		}
 
 		// Make sure that reverse debug stack is cleared
@@ -1468,12 +1273,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let instr = '';
 			// Get current line
 			let currentLine: string = this.RegisterCache as string;
+			let nextLine;
 			assert(currentLine);
 
 			try {
 				// Handle stack
-				const nextLine = this.revDbgNext();
-				this.handleReverseDebugStackFwrd(currentLine, nextLine);
+				nextLine = this.revDbgNext();
+				if(nextLine)
+					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 			}
 			catch(e) {
 				errorText = e;
@@ -1484,7 +1291,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Call handler
 			handler(instr, undefined, undefined, errorText);
-			return;
+
+			// Return if next line is available, i.e. as long as we did not reach the start.
+			// Otherwise get the callstack from ZEsarUX.
+			if(nextLine)
+				return;
 		}
 
 		// Make sure that reverse debug stack is cleared
@@ -1588,10 +1399,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Do as long as necessary
 			let errorText;
+			let nextLine;
 			try {
 				while(currentLine) {
 					// Handle stack
-					const nextLine = this.revDbgNext();
+					nextLine = this.revDbgNext();
 					this.handleReverseDebugStackFwrd(currentLine, nextLine);
 
 					// Get current instruction
@@ -1624,7 +1436,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Call handler
 			handler(undefined, undefined, errorText);
-			return;
+
+			// Return if next line is available, i.e. as long as we did not reach the start.
+			// Otherwise get the callstack from ZEsarUX.
+			if(nextLine)
+				return;
 		}
 
 
