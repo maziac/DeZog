@@ -28,6 +28,43 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 
+		test('getPushedValue', () => {
+			const hist = new ZesaruxCpuHistory();
+
+			// PUSH BC
+			let value = hist.getPushedValue("c5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0x1234, value);
+
+			// PUSH DE
+			value = hist.getPushedValue("d5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0x5678, value);
+
+			// PUSH HL
+			value = hist.getPushedValue("e5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0x9ABC, value);
+
+			// PUSH AF
+			value = hist.getPushedValue("f5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0xDEF0, value);
+
+			// PUSH IX
+			value = hist.getPushedValue("dde5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0x75CA, value);
+
+			// PUSH IY
+			value = hist.getPushedValue("fde5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0x54FD, value);
+
+			// PUSH nnnn
+			value = hist.getPushedValue("ed8ac0b1", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(0xC0B1, value);
+
+			// no PUSH
+			value = hist.getPushedValue("11", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
+			assert.equal(undefined, value);
+		});
+
+
 		test('calcDirectSpChanges', () => {
 			const hist = new ZesaruxCpuHistory();
 

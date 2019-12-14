@@ -3,6 +3,8 @@ import { zSocket } from './zesaruxSocket';
 import { Opcode } from './disassembler/opcode';
 import { BaseMemory } from './disassembler/basememory';
 import { Z80Registers } from './z80Registers';
+import { utils } from 'mocha';
+import { Utility } from './utility';
 
 
 
@@ -361,6 +363,59 @@ export class ZesaruxCpuHistory {
 
 		// No POP
 		return false;
+	}
+
+
+	/**
+	 * Returns the pushed value.
+	 * @param opcodes E.g. "c5" (PUSH BC), BC being 0x1234
+	 * @param line Instruction line, eg. "HL=AB56 BC=1234 DE=..."
+	 * @returns 0x1234
+	 */
+	public getPushedValue(opcodes: string, line: string): number {
+		// Check for PUSH
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+
+		let value;
+		switch(opcode0) {
+			case 0xC5:	// PUSH BC
+				value = Z80Registers.parseBC(line);
+				break;
+			case 0xD5:	// PUSH DE
+				value = Z80Registers.parseDE(line);
+				break;
+			case 0xE5:	// PUSH HL
+				value = Z80Registers.parseHL(line);
+				break;
+			case 0xF5:	// PUSH AF
+				value = Z80Registers.parseAF(line);
+				break;
+
+			case 0xDD:
+			case 0xFD:
+				{
+					const opcode1 = parseInt(opcodes.substr(2,2),16);
+					if(opcode1 == 0xE5) {
+						if(opcode0 == 0xDD)
+							value = Z80Registers.parseIX(line);	// PUSH IX
+						else
+							value = Z80Registers.parseIY(line);	// PUSH IY
+					}
+				}
+				break;
+
+			case 0xED:
+				{
+					const opcode1 = parseInt(opcodes.substr(2,2),16);
+					if(opcode1 == 0x8A) {
+						const addrStr = opcodes.substr(4);
+						value = parseInt(addrStr,16);	// BIG endian
+					}
+				}
+				break;
+		}
+
+		return value;
 	}
 
 
