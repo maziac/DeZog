@@ -488,7 +488,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for last frame
 		if(index >= zStack.length) {
 			// Top frame
-			frames.addObject(new Frame(address, zStackAddress+2*index, '__MAIN__'));
+			const sp = zStackAddress+2*index;
+			frames.addObject(new Frame(address, sp, this.getMainName(sp)));
 			// Use new frames
 			this.listFrames = frames;
 			// call handler
@@ -523,7 +524,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				stack.push(pushedValue);
 			}
 			// Save
-			const frame = new Frame(address, zStackAddress+2*(index-1), "__INTERRUPT__");
+			const frame = new Frame(address, zStackAddress+2*(index-1), this.getInterruptName());
 			frame.stack = stack;
 			frames.addObject(frame);
 			// Call recursively
@@ -715,6 +716,33 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 * Returns the name of the interrupt.
+	 */
+	protected getInterruptName() {
+		return "__INTERRUPT__";
+	}s
+
+
+	/**
+	 * Returns the name of the main function.
+	 * @param sp The current SP value.
+	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
+	 */
+	protected getMainName(sp: number) {
+		let part = "";
+		if(this.topOfStack) {
+			const diff = this.topOfStack - sp;
+			if(diff != 0) {
+				if(diff > 0)
+					part = "+";
+				part += diff.toString();
+			}
+		}
+		return "__MAIN" + part + "__";
+	}
+
+
+	/**
 	 * Clears the stack used for reverse debugging.
 	 * Called when leaving the reverse debug mode.
 	 */
@@ -802,7 +830,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					let labelCallAddr;
 					if(callAddr == undefined) {
 						// Interrupt assumed
-						labelCallAddr = "__INTERRUPT__";
+						labelCallAddr = this.getInterruptName();
 					}
 					else {
 						// Now find label for this address
@@ -822,15 +850,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 				return;
 			}
 
-			// Otherwise simply change current PC
-			if(this.reverseDbgStack.length == 0) {
-				 // Return if no stack
-				resolve();
-				return;
+			// Check if there is at least one frame
+			let frame = this.reverseDbgStack[0];
+			if(!frame) {
+				 // Create new stack entry if none exists
+				 // (could happen in errorneous situations if there are more RETs then CALLs)
+				 frame = new Frame(0, sp, this.getMainName(sp));
+				 this.reverseDbgStack.unshift(frame);
 			}
 
 			// Check if the frame stack needs to be changed, if it's pop.
-			let frame = this.reverseDbgStack[0];
 			if(this.cpuHistory.isPop(opcodes)) {
 				// Push to stack
 				const pushedValue = this.cpuHistory.getSPContent(currentLine);
@@ -1008,7 +1037,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Interrupt
 			if(interruptFound) {
 				// Put nextPC on callstack
-				const name = "__INTERRUPT__";
+				const name = this.getInterruptName();
 				frame = new Frame(0, nextSP, name);	// pc is set later anyway
 				this.reverseDbgStack.unshift(frame);
 			}
