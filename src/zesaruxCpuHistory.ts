@@ -369,7 +369,7 @@ export class ZesaruxCpuHistory {
 	 * @param littleEndianAddress E.g. "CAD9"
 	 * @returns E.g. 0xD9CA
 	 */
-	protected static parse16Address(littleEndianAddress: string): number {
+	protected parse16Address(littleEndianAddress: string): number {
 		const lowByte = parseInt(littleEndianAddress.substr(0,2),16);
 		const highByte = parseInt(littleEndianAddress.substr(2,2),16);
 		const addr = lowByte + (highByte<<8);
@@ -382,7 +382,7 @@ export class ZesaruxCpuHistory {
 	 * For LD SP,(nnnn) undefinedis returned otherwise a real number.
 	 * @param opcodes E.g. "e52a785c"
 	 * @param sp The SP value.
-	 * @param line The complete hitory line, eg. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf".
+	 * @param line The complete history line, eg. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf".
 	 * @return The previous SP value or undefined if unknown.
 	 */
 	public calcDirectSpChanges(opcodes: string, sp: number, line: string): number|undefined {
@@ -395,12 +395,12 @@ export class ZesaruxCpuHistory {
 				expectedSp = this.parse16Address(addr);
 				break;
 
-			case 0x31:	// INC SP
+			case 0x33:	// INC SP
 				expectedSp ++;
 				break;
 
 			case 0x3B:	// DEC SP
-				expectedSp ++;
+				expectedSp --;
 				break;
 
 			case 0xF9:	// LD SP,HL

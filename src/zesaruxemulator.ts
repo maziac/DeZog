@@ -890,14 +890,31 @@ export class ZesaruxEmulator extends EmulatorClass {
 			resolve();
 		});
 	}
-
+// TODO: Vielleicht auch aus isCall/RetIsExecuted 2 Funktionen machen
 
 	/**
-	 *
-	/**
-	 * Note: For the current checks I only need the currentLine.
 	 * Handles the current instruction and the next one and distinguishes what to
 	 * do on the virtual reverse debug stack.
+	 *
+	 *
+	 * Algorithm:
+	 * 1. If (executed) CALL/RST
+	 * 1.a 		expectedSP = SP-2
+	 * 1.b		Put called address to callstack and set PC in frame
+	 * 2. else If PUSH
+	 * 2.a		expectedSP = SP-2
+	 * 2.b		Add pushed value to frame stack
+	 * 3. else If POP/RET
+	 * 3.a		expectedSP = SP+2
+	 * 3. else
+	 * 3.a		expectedSP = calcDirectSpChanges
+	 * 4. If nextSP != expectedSP   // Check for interrupt
+	 * 4.a		Put nextPC on callstack
+	 * 5. If SP > previous SP
+	 * 5.a		Remove from frame stack and call stack
+	 *
+	 *
+	 *
 	 * Normally only the top frame on the stack is changed for the new PC value.
 	 * But for a few instructions a special behavior is implemented:
 	 *

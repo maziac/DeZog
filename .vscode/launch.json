@@ -21,10 +21,11 @@
 			"internalConsoleOptions": "openOnSessionStart"
 		},
 		*/
+
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Extension",
+			"name": "#Extension",
 			"preLaunchTask": "npm",
 			"runtimeExecutable": "${execPath}",
 			"args": [
@@ -35,7 +36,7 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Server",
+			"name": "#Server",
 			"cwd": "${workspaceFolder}",
 			"program": "${workspaceFolder}/src/debugAdapter.ts",
 			"args": [
@@ -44,6 +45,7 @@
 			],
 			"outFiles": [ "${workspaceFolder}/out/**/*.js" ]
 		},
+
 		{
 			"type": "node",
 			"request": "launch",
@@ -63,7 +65,7 @@
 	"compounds": [
 		{
 			"name": "Extension + Server",
-			"configurations": [ "Extension", "Server" ],
+			"configurations": [ "#Extension", "#Server" ],
 			"runtimeExecutable": "/usr/local/bin/node"
 		}
 

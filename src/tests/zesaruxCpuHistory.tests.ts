@@ -15,6 +15,52 @@ suite('ZesaruxCpuHistory', () => {
 
 	suite('disassemble', () => {
 
+		test('parse16Address', () => {
+			const hist = <any> new ZesaruxCpuHistory();
+			let addr = hist.parse16Address("CAD9");
+			assert.equal(0xD9CA, addr);
+
+			addr = hist.parse16Address("123");
+			assert.equal(0x312, addr);
+
+			addr = hist.parse16Address("1");
+			assert.equal(0x1, addr);
+		});
+
+
+		test('calcDirectSpChanges', () => {
+			const hist = new ZesaruxCpuHistory();
+
+			// LD SP,nnnn
+			let expSp = hist.calcDirectSpChanges("31abcd", 100, "");
+			assert.equal(0xcdab, expSp);
+
+		    // INC SP
+			expSp = hist.calcDirectSpChanges("33", 100, "");
+			assert.equal(101, expSp);
+
+			// DEC SP
+			expSp = hist.calcDirectSpChanges("3b", 100, "");
+			assert.equal(99, expSp);
+
+			// LD SP,HL
+			expSp = hist.calcDirectSpChanges("f9", 100, "HL=1F9B");
+			assert.equal(0x1F9B, expSp);
+
+			// LD SP,(nnnn)
+			expSp = hist.calcDirectSpChanges("ed7b", 100, "");
+			assert.equal(undefined, expSp);
+
+			// LD SP,IX
+			expSp = hist.calcDirectSpChanges("ddf9", 100, "IX=1234 IY=ABCD");
+			assert.equal(0x1234, expSp);
+
+			// LD SP,IY
+			expSp = hist.calcDirectSpChanges("fdf9", 100, "IX=1234 IY=ABCD");
+			assert.equal(0xABCD, expSp);
+		});
+
+
 		test('getOpcodes', () => {
 			const hist = new ZesaruxCpuHistory();
 
@@ -386,18 +432,7 @@ suite('ZesaruxCpuHistory', () => {
 			result = hist.isRst("c8000000")
 			assert.equal(false, result);
 		});
-
-		test('parse16Address', () => {
-			let addr = (<any>ZesaruxCpuHistory).parse16Address("CAD9");
-			assert.equal(0xD9CA, addr);
-
-			addr = (<any>ZesaruxCpuHistory).parse16Address("123");
-			assert.equal(0x312, addr);
-
-			addr = (<any>ZesaruxCpuHistory).parse16Address("1");
-			assert.equal(0x1, addr);
-		});
-
 	});
+
 });
 
