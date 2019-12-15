@@ -804,6 +804,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
 			const flags = Z80Registers.parseAF(currentLine);
 
+			// Check if there is at least one frame
+			let frame = this.reverseDbgStack[0];
+			if(!frame) {
+				 // Create new stack entry if none exists
+				 // (could happen in errorneous situations if there are more RETs then CALLs)
+				 frame = new Frame(0, sp, this.getMainName(sp));
+				 this.reverseDbgStack.unshift(frame);
+			}
+
 			// Check for RET (RET cc and RETI/N)
 			if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 				// Get return address
@@ -839,9 +848,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 						labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 					}
 
+					// Check if there also was an interrupt in previous line
+					const expectedPrevSP = sp + 2;
+					const prevSP = Z80Registers.parseSP(prevLine);
+					if(expectedPrevSP != prevSP) {
+						// We came from an interrupt. Remove interrupt address from call stack.
+						this.reverseDbgStack.shift();
+					}
+
 					// And push to stack
 					const pc = Z80Registers.parsePC(currentLine);
-					const sp = Z80Registers.parseSP(currentLine);
 					const frame = new Frame(pc, sp, labelCallAddr);
 					this.reverseDbgStack.unshift(frame);
 
@@ -849,15 +865,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 					resolve();
 				});
 				return;
-			}
-
-			// Check if there is at least one frame
-			let frame = this.reverseDbgStack[0];
-			if(!frame) {
-				 // Create new stack entry if none exists
-				 // (could happen in errorneous situations if there are more RETs then CALLs)
-				 frame = new Frame(0, sp, this.getMainName(sp));
-				 this.reverseDbgStack.unshift(frame);
 			}
 
 			// Check if the frame stack needs to be changed, if it's pop.
@@ -893,7 +900,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			else {
 				// Increased. Put something on the stack
 				while(count < -1) {
-					// Push somehting unknown to the stack
+					// Push something unknown to the stack
 					frame.stack.push(undefined);
 					count += 2;
 				}

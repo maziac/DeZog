@@ -274,7 +274,7 @@ suite('ZesaruxEmulator', () => {
 			// Handle step back
 			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
-			assert.equal(2, emul.reverseDbgStack.length);
+			assert.equal(1, emul.reverseDbgStack.length);
 			const frame = emul.reverseDbgStack[0];
 			assert.equal("__UNKNOWN__", frame.name);
 		});
