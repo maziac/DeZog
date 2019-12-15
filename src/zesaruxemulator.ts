@@ -800,7 +800,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		return new Promise<void>( resolve => {
 			// Get some values
-			const sp = Z80Registers.parseSP(currentLine);
+			let sp = Z80Registers.parseSP(currentLine);
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
 			const flags = Z80Registers.parseAF(currentLine);
 
@@ -826,11 +826,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 						// Is a Rst, get p
 						callAddr = firstByte & 0b00111000;
 					}
-					// If no calledAddr then we assume an interrupt
+					// If no calledAddr then we don't know.
+					// Possibly it is an interrupt, but it could be also an errorneous situation, e.g. too many RETs
 					let labelCallAddr;
 					if(callAddr == undefined) {
-						// Interrupt assumed
-						labelCallAddr = this.getInterruptName();
+						// Unknown
+						labelCallAddr = "__UNKNOWN__";
 					}
 					else {
 						// Now find label for this address
@@ -860,34 +861,51 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// Check if the frame stack needs to be changed, if it's pop.
+			let pushedValue;
 			if(this.cpuHistory.isPop(opcodes)) {
-				// Push to stack
-				const pushedValue = this.cpuHistory.getSPContent(currentLine);
-				frame.stack.push(pushedValue);
+				// Remember to push to stack
+				pushedValue = this.cpuHistory.getSPContent(currentLine);
+				// Correct stack (this strange behavior is doen to cope with an interrupt)
+				sp += 2;
 			}
 
-			// Check if SP has decreased (CALL/PUSH/Interrupt)
+			// Check if SP has decreased (CALL/PUSH/Interrupt) or increased
 			const spPrev = Z80Registers.parseSP(prevLine);
-			let countRemove = sp - spPrev;
-			while(countRemove > 0 && this.reverseDbgStack.length > 0) {
-				// First remove the data stack
-				while(countRemove > 0 && frame.stack.length > 0) {
-					// Pop from stack
-					frame.stack.pop();
-					countRemove -= 2;
+			let count = sp - spPrev;
+			if(count > 0) {
+				// Decreased (CALL/PUSH/Interrupt)
+				while(count > 1 && this.reverseDbgStack.length > 0) {
+					// First remove the data stack
+					while(count > 1 && frame.stack.length > 0) {
+						// Pop from stack
+						frame.stack.pop();
+						count -= 2;
+					}
+					// Now remove callstack
+					if(count > 1) {
+						this.reverseDbgStack.shift();
+						count -= 2;
+						// get next frame if countRemove still > 0
+						frame = this.reverseDbgStack[0];
+					}
 				}
-				// Now remove callstack
-				if(countRemove > 0) {
-					this.reverseDbgStack.shift();
-					countRemove -= 2;
-					// get next frame if countRemove still > 0
-					frame = this.reverseDbgStack[0];
+			}
+			else {
+				// Increased. Put something on the stack
+				while(count < -1) {
+					// Push somehting unknown to the stack
+					frame.stack.push(undefined);
+					count += 2;
 				}
 			}
 
 			// Adjust PC within frame
 			const pc = Z80Registers.parsePC(currentLine);
 			frame.addr = pc;
+
+			// Add a possibly pushed value
+			if(pushedValue)
+				frame.stack.push(pushedValue);
 
 			// End
 			resolve();
