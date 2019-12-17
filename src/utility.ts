@@ -350,8 +350,15 @@ export class Utility {
 	 * @param handler A function that is called with the formatted string as argument.
 	 * It is required because it might be that for formatting it is required to
 	 * get more data from the socket.
+	 * @param undefText Text to use if value is undefined. Defaults to "undefiened".
 	 */
-	public static numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, handler: (formattedString: string) => void) {
+	public static numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, handler: (formattedString: string) => void, undefText = "undefined") {
+		// Safety check
+		if(value == undefined) {
+			handler("undefined");
+			return;
+		}
+
 		// Variables
 		var memWord = 0;
 		var regsString = '';	// default: don't return registers.

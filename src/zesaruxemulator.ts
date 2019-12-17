@@ -543,8 +543,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 				const stack = new Array<number>();
 				for(let l=index-1; l>=0; l--) {
 					const addrTypeString = zStack[l];
-					if(!addrTypeString.includes('push'))
-						break;	// Until something else than PUSH is found
+					if(!(addrTypeString.includes('push') || addrTypeString.includes('default')))
+						break;	// Until something else than PUSH or default is found
 					const pushedValue = parseInt(addrTypeString,16);
 					stack.push(pushedValue);
 				}

@@ -282,6 +282,7 @@ export class StackVar extends ShallowVar {
 		// Loop list as recursive function
 		var index = 0;
 		var value = this.stack[0];
+		const undefText = "unknown";
 		const recursiveFunction = (formatted) => {
 			stackList.push({
 				name: Utility.getHexString(this.stackAddress-2*index,4),
@@ -294,7 +295,7 @@ export class StackVar extends ShallowVar {
 			if(index < this.stack.length) {
 				// Next
 				value = this.stack[index];
-				Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction);
+				Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction, undefText);
 			}
 			else {
 				// end, call handler
@@ -303,7 +304,7 @@ export class StackVar extends ShallowVar {
 		};
 
 		// Call recursively
-		Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction);
+		Utility.numberFormatted('', value, 2, format, tabSizes, recursiveFunction, undefText);
 	}
 
 
