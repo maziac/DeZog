@@ -263,10 +263,10 @@ suite('ZesaruxEmulator', () => {
 		test('Unallowed RET', () => {
 			// RETs from main function (something unexpected might happen in the assembler code)
 
-			// 0001 XOR A
+			// 80E9 ...
 			// 8123 RET
 			const currentLine = "PC=0049 SP=83ff AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7a IM0 IFF12 (PC)=c90608af (SP)=80e9";
-			const prevLine = "C=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12";
+			const prevLine = "PC=80e9 SP=8401 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=7b IM0 IFF12";
 
 			// There is no caller, but some memory must be returned
 			mockSocket.dataArray.push("AA3412");
@@ -274,9 +274,53 @@ suite('ZesaruxEmulator', () => {
 			// Handle step back
 			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
+			assert.equal(2, emul.reverseDbgStack.length);
+			let frame = emul.reverseDbgStack[0];
+			assert.equal("__UNKNOWN__", frame.name);	// Could as well have been an interrupt
+			frame = emul.reverseDbgStack[1];
+			assert.equal("__TEST_MAIN__", frame.name);
+		});
+
+		test('LD SP bigger', () => {
+			// Put 1 value on frame stack
+			let frame = emul.reverseDbgStack[0];
+			frame.stack.push(0x0101);
+
+			// 80F7 NOP						// SP=8402
+			// 80F6 LD SP,HL // HL = SP+4,	   SP=83FE, removes 2 items from the stack
+			const currentLine = "PC=80f6 SP=83fe AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=1f IM0 IFF12 (PC)=f900cdd3 (SP)=0303";
+			const prevLine = "PC=80f7 SP=8402 AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=20 IM0 IFF12";	// (PC)=00cdd380 (SP)=0101;
+
+			// Handle step back
+			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			// 2 undefined values have been added.			assert.equal(1, emul.reverseDbgStack.length);
+			frame = emul.reverseDbgStack[0];
+			assert.equal(3, frame.stack.length);
+			assert.equal(0x0101, frame.stack[0]);
+			assert.equal(undefined, frame.stack[1]);
+			assert.equal(undefined, frame.stack[2]);
+		});
+
+
+		test('LD SP smaller', () => {
+			// Put 3 values on frame stack
+			let frame = emul.reverseDbgStack[0];
+			frame.stack.push(0x0101);
+			frame.stack.push(0x0202);
+			frame.stack.push(0x0303);
+
+			// 80F7 NOP						// SP=83FA
+			// 80F6 LD SP,HL // HL = SP-4,	   SP=83FE, pushes 2 items to the stack
+			const currentLine = "PC=80f6 SP=83fe AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6e IM0 IFF12 (PC)=f900cdd3 (SP)=0303";
+			const prevLine = "PC=80f7 SP=83fa AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6f IM0 IFF12";	// (PC)=00cdd380 (SP)=0000"
+
+			// Handle step back
+			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			// 2 values have been pushed to the frame stack
 			assert.equal(1, emul.reverseDbgStack.length);
-			const frame = emul.reverseDbgStack[0];
-			assert.equal("__UNKNOWN__", frame.name);
+			frame = emul.reverseDbgStack[0];
+			assert.equal(1, frame.stack.length);
+			assert.equal(0x0101, frame.stack[0]);
 		});
 
 	});
