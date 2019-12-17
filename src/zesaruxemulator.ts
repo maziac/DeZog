@@ -994,12 +994,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 		return new Promise<void>( resolve => {
 			// Get some values
 			const nextSP = Z80Registers.parseSP(nextLine);
-			const sp = Z80Registers.parseSP(currentLine);
+			let sp = Z80Registers.parseSP(currentLine);
 			let expectedSP: number|undefined = sp;
 			let expectedPC;
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
 			const flags = Z80Registers.parseAF(currentLine);
+
+			// Check if there is at least one frame
 			let frame = this.reverseDbgStack[0];
+			if(!frame) {
+					// Create new stack entry if none exists
+					// (could happen in errorneous situations if there are more RETs then CALLs)
+					frame = new Frame(0, sp, this.getMainName(sp));
+					this.reverseDbgStack.unshift(frame);
+			}
 
 			// Check for CALL (CALL cc)
 			if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
@@ -1027,9 +1035,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Check for PUSH
 				const pushedValue = this.cpuHistory.getPushedValue(opcodes, currentLine);
 				if(pushedValue != undefined) {	// Is undefined if not a PUSH
-					expectedSP -= 2;	// PUSH pushes to the stack
 					// Push to frame stack
-					frame?.stack.unshift(pushedValue);
+					frame.stack.unshift(pushedValue);
+					sp -= 2;	// PUSH pushes to the stack
+					expectedSP = sp;
 				}
 				// Check for POP
 				else if(this.cpuHistory.isPop(opcodes)
@@ -1064,30 +1073,43 @@ export class ZesaruxEmulator extends EmulatorClass {
 					interruptFound = true;
 			}
 
+			// Check if SP has increased (POP/RET)
+			let usedSP = expectedSP;
+			if(!usedSP)
+				usedSP = Z80Registers.parseSP(nextLine);
+			let count = usedSP - sp;
+			if(count > 0) {
+				while(count > 1 && this.reverseDbgStack.length > 0) {
+					// First remove the data stack
+					while(count > 1 && frame.stack.length > 0) {
+						// Pop from stack
+						frame.stack.pop();
+						count -= 2;
+					}
+					// Now remove callstack
+					if(count > 1) {
+						this.reverseDbgStack.shift();
+						count -= 2;
+						// get next frame if countRemove still > 0
+						frame = this.reverseDbgStack[0];
+					}
+				}
+			}
+			else {
+				// Decreased. Put something on the stack
+				while(count < -1) {
+					// Push something unknown to the stack
+					frame.stack.push(undefined);
+					count += 2;
+				}
+			}
+
 			// Interrupt
 			if(interruptFound) {
 				// Put nextPC on callstack
 				const name = this.getInterruptName();
 				frame = new Frame(0, nextSP, name);	// pc is set later anyway
 				this.reverseDbgStack.unshift(frame);
-			}
-
-			// Check if SP has increased (POP/RET)
-			let countRemove = nextSP - sp;
-			while(countRemove > 0 && this.reverseDbgStack.length > 0) {
-				// First remove the data stack
-				while(countRemove > 0 && frame.stack.length > 0) {
-					// Pop from stack
-					frame.stack.pop();
-					countRemove -= 2;
-				}
-				// Now remove callstack
-				if(countRemove > 0) {
-					this.reverseDbgStack.shift();
-					countRemove -= 2;
-					// get next frame if countRemove still > 0
-					frame = this.reverseDbgStack[0];
-				}
 			}
 
 			// Adjust PC within frame

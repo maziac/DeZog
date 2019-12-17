@@ -125,14 +125,14 @@ suite('ZesaruxEmulator', () => {
 			assert.equal("80E5h", frame.name);
 		});
 
-		test('step back from isr', () => {
+		test('step forward from isr ret', () => {
 			// Add something to remove
 			emul.reverseDbgStack.unshift(new Frame(0, 0, "ISR"));
 
-			// 0038 DI
-			// 80D3 LD A,02h
-			const currentLine = "PC=80d3 SP=83fb AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=34 IM0 IFF12 (PC)=3e020603 (SP)=80f5";
-			const nextLine = "PC=0038 SP=83f9 AF=0208 BC=0303 HL=0101 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=36 IM0 IFF-- "; //(PC)=f3dde5e5 (SP)=80d5";
+			// 0049 RET (from ISR)
+			// 80D3 80D9 PUSH BC
+			const currentLine = "PC=0049 SP=83f5 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=35 IM0 IFF12 (PC)=c90608af (SP)=80d7";
+			const nextLine = "PC=80d7 SP=83f7 AF=02c9 BC=0303 HL=0101 DE=0202 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=36 IM0 IFF12 (PC)=0e04c5f5 (SP)=80f6";
 
 			// Handle step forward
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
@@ -178,27 +178,27 @@ suite('ZesaruxEmulator', () => {
 
 		});
 
-		test('step back from isr to RET instruction', () => {
+		test('step forward from RET to isr', () => {
 			// Add a 2nd call stack for the interrupt.
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "INTERRUPT"));
+			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
 			// Prepare memory of caller: CALL 80E5h
 			mockSocket.dataArray.push("CDE580");
 
-			// 0038 DI
-			// 80E5 RET
-			const currentLine = "PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=24 IM0 IFF12 (PC)=c900ed8a (SP)=8147";
-			const nextLine = "PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=26  F=SZ--3--C F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0";
+			//  80E5 RET
+			//  0038 DI
+			const currentLine = "PC=80e5 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=29 IM0 IFF12 (PC)=c900ed8a (SP)=8147";
+			const nextLine = "PC=0038 SP=8400 AF=01c9 BC=0000 HL=4000 DE=2000 IX=03d4 IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2b IM0 IFF-- (PC)=f3dde5e5 (SP)=8147";
 
 			// Handle step forward
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 
-			// The interrupt must be removed from the callstack,
-			// but the RET must have been pushed to the call stack.
+			// The RET must have been removed from the callstack,
+			// but the ISR must have been pushed to the call stack.
 			assert.equal(2, emul.reverseDbgStack.length);
 			let frame = emul.reverseDbgStack[1];
 			assert.equal("__TEST_MAIN__", frame.name);
 			frame = emul.reverseDbgStack[0];
-			assert.equal("80E5h", frame.name);
+			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
 
