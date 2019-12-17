@@ -653,7 +653,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					const nextLine = this.revDbgNext();
 					if(!nextLine)
 						break;
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for breakpoint
 					// TODO: ...
@@ -982,9 +982,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history.
 	 */
-	protected handleReverseDebugStackFwrd(currentLine: string, nextLine: string) {
+	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
 		assert(currentLine);
 		assert(nextLine);
+
+		console.log("currentLine");
+		console.log(currentLine);
+		console.log("nextLine");
+		console.log(nextLine);
 
 		return new Promise<void>( resolve => {
 			// Get some values
@@ -1222,7 +1227,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						break;	// At end of reverse debugging. Simply get the real call stack.
 
 					// Handle reverse stack
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					break; // TODO
 
@@ -1334,7 +1339,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Handle stack
 				nextLine = this.revDbgNext();
 				if(nextLine)
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					this.handleReverseDebugStackForward(currentLine, nextLine);
 			}
 			catch(e) {
 				errorText = e;
@@ -1458,7 +1463,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				while(currentLine) {
 					// Handle stack
 					nextLine = this.revDbgNext();
-					this.handleReverseDebugStackFwrd(currentLine, nextLine);
+					if(!nextLine)
+						break;
+					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Get current instruction
 					const instruction = this.cpuHistory.getInstructionOld(currentLine);
