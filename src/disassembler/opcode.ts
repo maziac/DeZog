@@ -571,6 +571,21 @@ class OpcodeNext extends Opcode {
 }
 
 
+/// Push nn must be derived because the nn is big endian.
+class OpcodeNextPush extends OpcodeNext {
+	constructor(code: number, name: string) {
+		super(code, name);
+	}
+	// Big endian value.
+	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {
+		const high = memory.getValueAt(address+1);
+		const low = memory.getValueAt(address+2);
+		this.value = (high<<8) | low;
+		return this;
+	}
+}
+
+
 /**
  * Special opcode to decode the next register
  */
@@ -1343,7 +1358,7 @@ export const OpcodesED: Array<Opcode> = [
 	new Opcode(0x7F, "[ld r,r?]"),
 	...Array<number>(0x0A).fill(0).map((value, index) => new OpcodeInvalid(0x80+index)),
 
-	new OpcodeNext(0x8A, "PUSH #nn"),     // ZX Spectrum Next
+	new OpcodeNextPush(0x8A, "PUSH #nn"),     // ZX Spectrum Next
 	...Array<number>(0x06).fill(0).map((value, index) => new OpcodeInvalid(0x8B+index)),
 
 	new OpcodeNext_nextreg_n_n(0x91, "NEXTREG #n,#n"),     // ZX Spectrum Next
