@@ -71,11 +71,10 @@ suite('ZesaruxEmulator', () => {
 		});
 
 
-		test('step back push', () => {
-			// Prepare stack
+		test('step back PUSH', () => {
+			// Push something on the stack
 			let frame = emul.reverseDbgStack[0];
-			frame.stack.push(0x2F01);	// push something on the stack
-
+			frame.stack.push(0x2F01);
 			// 80ED PUSH 2F01h
 			// 80E9 PUSH CA00h
 			const currentLine = "PC=80e9 SP=8401 AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=43 IM0 IFF12 (PC)=ed8a00ca (SP)=0065";
@@ -90,7 +89,7 @@ suite('ZesaruxEmulator', () => {
 			assert.equal(0, frame.stack.length);  // Nothing on the function stack
 		});
 
-		test('step back pop', () => {
+		test('step back POP', () => {
 			//   80F6 POP DE
 			//   80F7 POP HL (not executed)
 			const currentLine = "PC=80f6 SP=83ff AF=0208 BC=0303 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=4a IM0 IFF12 (PC)=d1e100c9 (SP)=0202";
@@ -106,7 +105,7 @@ suite('ZesaruxEmulator', () => {
 			assert.equal(0x0202, frame.stack[0]);
 		});
 
-		test('step back call', () => {
+		test('step back CALL', () => {
 			// Add something to remove
 			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
 
@@ -121,14 +120,29 @@ suite('ZesaruxEmulator', () => {
 			assert.equal(1, emul.reverseDbgStack.length);
 		});
 
-		test('step back ret', () => {
+		test('step back RST', () => {
+			// Add something to remove
+			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+
+			// 80D3 LD A,02h
+		    // 80F2 RST 18h
+			const currentLine = "PC=80f2 SP=83fd AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3b IM0 IFF12 (PC)=dfd380c1 (SP)=0303";
+			const prevLine = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=3c IM0 IFF12 (PC)=3e020603 (SP)=80f5";
+
+			// Handle step back
+			emul.handleReverseDebugStackBack(currentLine, prevLine);
+			// Value has been removed from the callstack
+			assert.equal(1, emul.reverseDbgStack.length);
+		});
+
+		test('step back RET', () => {
 			// 80F5 POP BC
 			// 80E4 RET
 			const currentLine = "PC=80e4 SP=83fb AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=48 IM0 IFF12 (PC)=c9ed8a01 (SP)=80f5";
 			const prevLine = "PC=80f5 SP=83fd AF=0208 BC=0304 HL=4000 DE=0202 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=49 IM0 IFF12 "; //(PC)=c1d1e100 (SP)=0303";
 
 			// Caller
-			mockSocket.dataArray.push("CD3412");	// memory content at CALL nnnn, e.g. CD
+			mockSocket.dataArray.push("CD3412");	// memory content at CALL nnnn
 
 			// Handle step back
 			emul.handleReverseDebugStackBack(currentLine, prevLine);
@@ -259,7 +273,7 @@ suite('ZesaruxEmulator', () => {
 		test('LD SP bigger', () => {
 			// Put 1 value on frame stack
 			let frame = emul.reverseDbgStack[0];
-			frame.stack.push(0x0101);
+			frame.stack.push(0x0201);
 
 			// 80F7 NOP						// SP=8402
 			// 80F6 LD SP,HL // HL = SP+4,	   SP=83FE, removes 2 items from the stack
@@ -268,10 +282,11 @@ suite('ZesaruxEmulator', () => {
 
 			// Handle step back
 			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
-			// 2 undefined values have been added.			assert.equal(1, emul.reverseDbgStack.length);
+			// 2 undefined values have been added.
+			assert.equal(1, emul.reverseDbgStack.length);
 			frame = emul.reverseDbgStack[0];
 			assert.equal(3, frame.stack.length);
-			assert.equal(0x0101, frame.stack[0]);
+			assert.equal(0x0201, frame.stack[0]);
 			assert.equal(undefined, frame.stack[1]);
 			assert.equal(undefined, frame.stack[2]);
 		});
@@ -280,9 +295,9 @@ suite('ZesaruxEmulator', () => {
 		test('LD SP smaller', () => {
 			// Put 3 values on frame stack
 			let frame = emul.reverseDbgStack[0];
-			frame.stack.push(0x0101);
-			frame.stack.push(0x0202);
-			frame.stack.push(0x0303);
+			frame.stack.push(0x0201);
+			frame.stack.push(0x0302);
+			frame.stack.push(0x0403);
 
 			// 80F7 NOP						// SP=83FA
 			// 80F6 LD SP,HL // HL = SP-4,	   SP=83FE, pushes 2 items to the stack
@@ -295,7 +310,7 @@ suite('ZesaruxEmulator', () => {
 			assert.equal(1, emul.reverseDbgStack.length);
 			frame = emul.reverseDbgStack[0];
 			assert.equal(1, frame.stack.length);
-			assert.equal(0x0101, frame.stack[0]);
+			assert.equal(0x0201, frame.stack[0]);
 		});
 
 	});

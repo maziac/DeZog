@@ -299,8 +299,21 @@ export class ZesaruxCpuHistory {
 	public isRst(opcodes: string): boolean {
 		// Check for RST
 		const opcode0 = parseInt(opcodes.substr(0,2),16);
-
 		return this.isRstOpcode(opcode0);
+	}
+
+
+	/**
+	 * Returns the RST address. Note: It is not checked if the opcode is
+	 * really a RST instruction.
+	 * @param opcodes A strign of opcodes. Length: at least 2 characters (1 byte)
+	 * @returns E.g. 0x48.
+	 */
+	public getRstAddress(opcodes: string): number {
+		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		const mask = ~0b11000111;
+		const address = (opcode0 & mask);
+		return address;
 	}
 
 
@@ -421,7 +434,7 @@ export class ZesaruxCpuHistory {
 	 * @param littleEndianAddress E.g. "CAD9"
 	 * @returns E.g. 0xD9CA
 	 */
-	protected parse16Address(littleEndianAddress: string): number {
+	public parse16Address(littleEndianAddress: string): number {
 		const lowByte = parseInt(littleEndianAddress.substr(0,2),16);
 		const highByte = parseInt(littleEndianAddress.substr(2,2),16);
 		const addr = lowByte + (highByte<<8);
@@ -531,7 +544,6 @@ export class ZesaruxCpuHistory {
 		// No RST
 		return false;
 	}
-
 
 	/**
 	 * Tests if the opcode byte is from a PUSH.

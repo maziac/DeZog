@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"identifier": "npm",
+			"label": "npm",
 			"script": "watch",
 			"problemMatcher": [
 				"$tsc-watch"

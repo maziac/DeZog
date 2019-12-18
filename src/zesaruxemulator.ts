@@ -793,10 +793,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * the first line.
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
-		console.log("currentLine");
-		console.log(currentLine);
-		console.log("prevLine");
-		console.log(prevLine);
+		assert(currentLine);
+		//console.log("currentLine");
+		//console.log(currentLine);
+		//console.log("prevLine");
+		//console.log(prevLine);
 
 		return new Promise<void>( resolve => {
 			// Get some values
@@ -919,12 +920,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 		});
 	}
 // TODO: Vielleicht auch aus isCall/RetIsExecuted 2 Funktionen machen
-// TODO: Brauch ich überhaupt einen expliziten reverseDebugStack?
+
 
 	/**
 	 * Handles the current instruction and the next one and distinguishes what to
 	 * do on the virtual reverse debug stack.
-	 *
+	 * Note: This function wouldn'T have to be async (Promise) but
+	 * it doesn't hurt and maybe I decide in future to communicate
+	 * with ZEsarUX for some reason.
 	 *
 	 * Algorithm:
 	 * 1. If (executed) CALL/RST
@@ -941,55 +944,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * 4.a		Put nextPC on callstack
 	 * 5. If SP > previous SP
 	 * 5.a		Remove from frame stack and call stack
-	 *
-	 *
-	 *
-	 * Normally only the top frame on the stack is changed for the new PC value.
-	 * But for a few instructions a special behavior is implemented:
-	 *
-	 * RET:
-	 * If a "RET" (or RET cc/RETI/RETN) instruction is found it is checked by the flags
-	 * if it was really executed. If yes the last value is popped from the stack.
-	 *
-	 * CALL:
-	 * If a CALL nnnn (or CALL cc/RST) is found instruction is found it is checked by the flags
-	 * if it was really executed. If yes the called address nnnn is used for displaying the
-	 * function on the stack. The return address, PC+3 (or PC+1), is put on the stack.
-	 *
-	 * POP:
-	 * If a POP nn is found the  last value is popped from the stack.
-	 *
-	 * PUSH:
-	 * If a PUSH nn is found the pushed register is pushed to the stack.
-	 *
-	 * Note:
-	 * To ease the disassembly both lines, current and next, could be used.
-	 * If next does not exist the real extended stack can be loaded.
-	 * Otherwise for CALL and PUSH the (SP) value contains the pushed value.
-	 * Unfortunately an interrupt might have kicked in and this value is not reliable.
-	 *
-	 * Interrupt detection:
-	 * If SP decreases AND PC changes to an unexpected address then an interrupt is assumed.
-	 * The PC from the next line is taken (or the (SP) content from the next line) and pushed
-	 * on the stack. As function "INTERRUPT" is shown.
-	 *
-	 *
-	 * Interrupt recognition:
-	 * All instructions CALL/RET/PUSH/PUSH etc. set an expected SP value.
-	 * If the real SP value from the previous line is different this is the indication that an interrupt
-	 * has occurred.
-	 *
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history.
 	 */
-	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
+	protected handleReverseDebugStackForward(currentLine: string, nextLine: string): Promise<void> {
 		assert(currentLine);
 		assert(nextLine);
-
-		console.log("currentLine");
-		console.log(currentLine);
-		console.log("nextLine");
-		console.log(nextLine);
+		//console.log("currentLine");
+		//console.log(currentLine);
+		//console.log("nextLine");
+		//console.log(nextLine);
 
 		return new Promise<void>( resolve => {
 			// Get some values
@@ -1003,17 +967,19 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Check if there is at least one frame
 			let frame = this.reverseDbgStack[0];
 			if(!frame) {
-					// Create new stack entry if none exists
-					// (could happen in errorneous situations if there are more RETs then CALLs)
-					frame = new Frame(0, sp, this.getMainName(sp));
-					this.reverseDbgStack.unshift(frame);
+				// Create new stack entry if none exists
+				// (could happen in errorneous situations if there are more RETs then CALLs)
+				frame = new Frame(0, sp, this.getMainName(sp));
+				this.reverseDbgStack.unshift(frame);
 			}
 
 			// Check for CALL (CALL cc)
 			if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
-				expectedSP -= 2;	// CALL pushes to the stack
+				sp -= 2;	// CALL pushes to the stack
+				expectedSP = sp;
 				// Now find label for this address
-				const callAddr = Z80Registers.parsePC(nextLine);
+				const callAddrStr = opcodes.substr(2,4);
+				const callAddr = this.cpuHistory.parse16Address(callAddrStr);
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
 				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 				const name = labelCallAddr;
@@ -1022,9 +988,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 			// Check for RST
 			else if(this.cpuHistory.isRst(opcodes)) {
-				expectedSP -= 2;	// RST pushes to the stack
+				sp -= 2;	// RST pushes to the stack
+				expectedSP = sp;
 				// Now find label for this address
-				const callAddr = Z80Registers.parsePC(nextLine);
+				const callAddr = this.cpuHistory.getRstAddress(opcodes);
 				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
 				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
 				const name = labelCallAddr;
@@ -1056,7 +1023,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 					}
 				}
 			}
-
 
 			// Check for interrupt. Either use SP or use PC to check.
 			let interruptFound = false;
@@ -1176,65 +1142,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 public async stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
-			// TODO: check for step over
-
-			/*
-			// Step over should skip all CALLs and RST.
-			// This is more difficult as it seems. It could also happen that an
-			// interrupt kicks in.
-			// The algorithm does work by checking the SP:
-			// 1. SP is read
-			// 2. switch to next line
-			// 3. SP is read
-			// 4. If SP has not changed stop
-			// 5. Otherwise switch to next line until SP is reached.
-			// Note: does not work for PUSH/POP or "LD SP". Therefore these are
-			// handled in a special way. However, if an interrupt would kick in when
-			// e.g. a "LD SP,(nnnn)" is done, then the "stepOver" would incorrectly
-			// work just like a "stepInto". However this should happen very seldomly.
-
-			// Get current instruction
-			let currentLine: string = await this.cpuHistory.getLineXXX() as string;
-			assert(currentLine);
-			let instruction = this.cpuHistory.getInstruction(currentLine);
-			// Read SP
-			const regs = this.cpuHistory.getRegisters(currentLine);
-			let expectedSP = Z80Registers.parseSP(regs);
-			let dontCheckSP = false;
-
-
-			// Check for changing SP
-			if(instruction.startsWith('PUSH'))
-				expectedSP -= 2;
-			else if(instruction.startsWith('POP'))
-				expectedSP += 2;
-			else if(instruction.startsWith('DEC SP'))
-				expectedSP --;
-			else if(instruction.startsWith('INC SP'))
-				expectedSP ++;
-			else if(instruction.startsWith('LD SP,')) {
-				const src = instruction.substr(6);
-				if(src.startsWith('HL'))
-					expectedSP = Z80Registers.parseHL(regs);	// LD SP,HL
-				else if(src.startsWith('IX'))
-					expectedSP = Z80Registers.parseIX(regs);	// LD SP,IX
-				else if(src.startsWith('IY'))
-					expectedSP = Z80Registers.parseIY(regs);	// LD SP,IY
-				else if(src.startsWith('('))
-					dontCheckSP = true;	// LD SP,(nnnn)	-> no way to determine memory contents
-				else
-					expectedSP = parseInt(src, 16);		// LD SP,nnnn
-			}
-
-			// Check for RET. There are 2 possibilities if RET was conditional.
-			let expectedSP2 = expectedSP;
-			if(instruction.startsWith('RET'))
-				expectedSP2 += 2;
-
-			*/
-
-
-			// Get current line
+				// Get current line
 			let currentLine: string = this.RegisterCache as string;
 			assert(currentLine);
 			let nextLine;
@@ -1274,8 +1182,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
-			if(nextLine)
-				return;
+			if(!nextLine) {
+				// Get the registers etc. from ZEsarUX
+				this.RegisterCache = undefined;
+				this.getRegisters(() => {});
+			}
+			return;
 		}
 
 		// Make sure that reverse debug stack is cleared
