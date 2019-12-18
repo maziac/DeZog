@@ -575,13 +575,7 @@ class OpcodeNext extends Opcode {
 class OpcodeNextPush extends OpcodeNext {
 	constructor(code: number, name: string) {
 		super(code, name);
-	}
-	// Big endian value.
-	public getOpcodeAt(memory: BaseMemory, address: number): Opcode {
-		const high = memory.getValueAt(address+1);
-		const low = memory.getValueAt(address+2);
-		this.value = (high<<8) | low;
-		return this;
+		this.valueType = NumberType.NUMBER_WORD_BIG_ENDIAN;
 	}
 }
 
