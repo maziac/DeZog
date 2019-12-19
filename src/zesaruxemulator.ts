@@ -636,8 +636,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Continue in reverse debugging
-			// Will run until the start of the instruction history
+			// Will run until after the first of the instruction history
 			// or until a breakpoint condition is true.
+
+			// Get current line
+			let currentLine: string = this.RegisterCache as string;
+			assert(currentLine);
+			let nextLine;
+
 			let reason = 'Break: Reached start of instruction history.';
 			try {
 				//this.state = EmulatorState.RUNNING;
@@ -646,11 +652,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Get current line
 				let currentLine: string = this.RegisterCache as string;
 				assert(currentLine);
+				let nextLine;
 
 				// Loop over all lines, reverse
 				while(true) {
 					// Handle stack
-					const nextLine = this.revDbgNext();
+					nextLine = this.revDbgNext();
 					if(!nextLine)
 						break;
 					this.handleReverseDebugStackForward(currentLine, nextLine);
@@ -671,6 +678,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Call handler
 			contStoppedHandler(reason, undefined, undefined);
+
+			// Return if next line is available, i.e. as long as we did not reach the start.
+			// Otherwise get the callstack from ZEsarUX.
+			if(!nextLine) {
+				// Get the registers etc. from ZEsarUX
+				this.RegisterCache = undefined;
+				this.getRegisters(() => {});
+			}
 			return;
 		}
 
@@ -1142,7 +1157,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 public async stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
-				// Get current line
+			// Get current line
 			let currentLine: string = this.RegisterCache as string;
 			assert(currentLine);
 			let nextLine;
