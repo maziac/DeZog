@@ -107,3 +107,19 @@ Please look at the documentation ['Usage of the VS Code Z80 Debug Adapter'](docu
 z80-debug is licensed under the [MIT license](https://github.com/maziac/z80-debug/blob/master/LICENSE.txt).
 
 The source code is available on [github](https://github.com/maziac/z80-debug).
+
+
+# Extras
+
+Here is also a great tutorial from Cesar Wagener who documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
+It deals with setting up
+- sjasmplus
+- ZEsarUX and the
+- z80-debug vscode extension
+
+and is available in [English](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_English.pdf), [Spain](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_Spain.pdf) and [German](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_German.pdf).
+
+Please note: The tutorial uses the bleeding edge sources and therefore shows how to build ZEsarUX. It also uses a beta release of z80-debug.
+If you use the official releases of ZEsarUX and z80-debug you don't have to build yourself.
+Nevertheless Cesar (Wagener) also shows how to setup the system under Windows and explains a few features of z80-debug so that it is definitely useful to get you started.
+
