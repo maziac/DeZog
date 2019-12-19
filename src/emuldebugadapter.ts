@@ -2076,15 +2076,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	}
 
 
-	// TODO: Don't know yet how to deal with this.
-	protected gotoRequest(response: DebugProtocol.GotoResponse, args: DebugProtocol.GotoArguments): void {
-		// Serialize
-		this.serializer.exec( () => {
-			this.sendResponse(response);
-		});
-	}
-
-
     /**
 	* Called eg. if user changes a register value.
 	*/
