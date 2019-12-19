@@ -1173,11 +1173,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			let instruction = '';
-			if(currentLine) {
-				const pc = Z80Registers.parsePC(currentLine);
-				instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
-			}
+			const pc = Z80Registers.parsePC(currentLine);
+			const instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 			handler(instruction, undefined, undefined, errorText);
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
@@ -1262,18 +1259,19 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public async stepInto(handler:(disasm: string, tStates?: number, time?: number, error?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
-			let errorText;
-			let instr = '';
 			// Get current line
 			let currentLine: string = this.RegisterCache as string;
-			let nextLine;
 			assert(currentLine);
+			let nextLine;
 
+			let errorText;
 			try {
-				// Handle stack
+				// Get next line
 				nextLine = this.revDbgNext();
-				if(nextLine)
+				if(nextLine) {
+					// Handle reverse stack
 					this.handleReverseDebugStackForward(currentLine, nextLine);
+				}
 			}
 			catch(e) {
 				errorText = e;
@@ -1283,12 +1281,18 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			handler(instr, undefined, undefined, errorText);
+			const pc = Z80Registers.parsePC(currentLine);
+			const instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
+			handler(instruction, undefined, undefined, errorText);
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
-			if(nextLine)
-				return;
+			if(!nextLine) {
+				// Get the registers etc. from ZEsarUX
+				this.RegisterCache = undefined;
+				this.getRegisters(() => {});
+			}
+			return;
 		}
 
 		// Make sure that reverse debug stack is cleared
