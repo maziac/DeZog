@@ -1162,6 +1162,22 @@ export class ZesaruxEmulator extends EmulatorClass {
 			assert(currentLine);
 			let nextLine;
 
+			// Check for CALL/RST. If not do a normal step-into.
+			// If YES stop if pc reaches the next instruction.
+			const opcodes = this.cpuHistory.getOpcodes(currentLine);
+			const opcode0 = parseInt(opcodes.substr(0,2), 16);
+			let pc = Z80Registers.parsePC(currentLine);
+			let nextPC0;
+			let nextPC1;
+			if(this.cpuHistory.isCallOpcode(opcode0)) {
+				nextPC0 = pc+3;
+				nextPC1 = nextPC0;
+			}
+			else if(this.cpuHistory.isRstOpcode(opcode0)) {
+				nextPC0 = pc+1;
+				nextPC1 = nextPC0+1;	// If return address is adjusted
+			}
+
 			let errorText;
 			try {
 				// Find next line with same SP
@@ -1174,7 +1190,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Handle reverse stack
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
-					break; // TODO
+					// Check if next instruction is required
+					if(nextPC0 == undefined)
+						break;	// A simple step-into
+
+					// Get PC
+					pc = Z80Registers.parsePC(nextLine);
+					// Check for "breakpoint"
+					if(pc == nextPC0 || pc == nextPC1)
+						break;
 
 					// Next
 					currentLine = nextLine as string;
@@ -1188,7 +1212,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			const pc = Z80Registers.parsePC(currentLine);
 			const instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 			handler(instruction, undefined, undefined, errorText);
 
@@ -1397,7 +1420,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Step out will run until the start of the cpu history
 			// or until a "RETx" is found (one behind).
 			// To make it more complicated: this would falsely find a RETI event
-			// if stepout was not started form the ISR.
+			// if stepout was not started from the ISR.
 			// To overcome this also the SP is observed. And we break only if
 			// also the SP is lower/equal to when we started.
 
@@ -1472,10 +1495,16 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// calculate the depth of the call stack
 			var depth = this.topOfStack - sp;
-			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)	depth = ZesaruxEmulator.MAX_STACK_ITEMS;
+			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
+				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 			if(depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
-				handler();
+				handler(undefined, undefined, "Call stack empty");
+				return;
+			}
+			else if(depth < 0) {
+				// Callstack corrupted?
+				handler(undefined, undefined, "SP above topOfStack. Stack corrupted?");
 				return;
 			}
 
