@@ -111,7 +111,7 @@ The source code is available on [github](https://github.com/maziac/z80-debug).
 
 # Extras
 
-Here is also a great tutorial from Cesar Wagener who documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
+Here is also a great tutorial from Cesar Wagener Moriana who documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
 It deals with setting up
 - sjasmplus
 - ZEsarUX and the

@@ -194,22 +194,6 @@ export class ZesaruxCpuHistory {
 
 
 	/**
-	 * @param line If given the instruction is taken from the line, otherwise
-	 * 'getLine()' is called.
-	 * @returns The instruction, e.g. "LD A,1E".
-	 */
-	// TODO: REMOVE
-	public getInstructionOld(line: string): string {
-	// E.g. "8000 LD A,1E PC=8000 SP=ff2b BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=01  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0"
-		// Extract the instruction
-		const k = line.indexOf('PC=');
-		assert(k >= 0);
-		const instr = line.substr(5, k-5-1);
-		return instr;
-	}
-
-
-	/**
 	 * @returns The address of the current line. Uses the first 4 digits simply.
 	 */
 	public getAddress(line: string): number {

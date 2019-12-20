@@ -1430,34 +1430,31 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// also the SP is lower/equal to when we started.
 
 			// Get current line
-			let currentLine = await this.cpuHistory.getLineXXX() as string;
-			assert(currentLine);;
-
-			// Read SP
-			let regs = currentLine;
-			const startSP = Z80Registers.parseSP(regs);
-
-			// Do as long as necessary
-			let errorText;
+			let currentLine: string = this.RegisterCache as string;
+			assert(currentLine);
 			let nextLine;
+			const startSP = Z80Registers.parseSP(currentLine);
+
+			let errorText;
 			try {
-				while(currentLine) {
-					// Handle stack
+				// Find next line with same SP
+				while(true) {
+					// Get next line
 					nextLine = this.revDbgNext();
 					if(!nextLine)
-						break;
+						break;	// At end of reverse debugging. Simply get the real call stack.
+
+					// Handle reverse stack
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
-					// Get current instruction
-					const instruction = this.cpuHistory.getInstructionOld(currentLine);
-
-					// Check for RET
-					if(instruction.startsWith('RET')) {
+					// Check for RET(I/N)
+					const flags = Z80Registers.parseAF(currentLine);
+					const opcodes = this.cpuHistory.getOpcodes(currentLine);
+					if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 						// Read SP
-						const regs = currentLine;
-						const sp = Z80Registers.parseSP(regs);
+						const sp = Z80Registers.parseSP(nextLine);
 						// Check SP
-						if(sp >= startSP) {
+						if(sp > startSP) {
 							break;
 						}
 					}
@@ -1473,16 +1470,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Decoration
 			this.emitRevDbgHistory();
 
-			// Clear register cache
-			this.RegisterCache = undefined;
-
 			// Call handler
 			handler(undefined, undefined, errorText);
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
-			if(nextLine)
-				return;
+			if(!nextLine) {
+				// Get the registers etc. from ZEsarUX
+				this.RegisterCache = undefined;
+				this.getRegisters(() => {});
+			}
+			return;
 		}
 
 
