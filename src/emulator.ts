@@ -1071,7 +1071,7 @@ export class EmulatorClass extends EventEmitter {
 	 * Emits 'history' to signal that the files should be decorated.
 	 */
 	public emitRevDbgHistory() {
-		this.emit('history', this.revDbgHistory);
+		// TODO this.emit('history', this.revDbgHistory);
 	}
 
 }

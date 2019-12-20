@@ -34,6 +34,9 @@ export class ZesaruxCpuHistory {
 	// At index 0 the current registers are cached.
 	protected history: Array<string>;
 
+	// The current history index.
+	protected historyIndex = -1;
+
 	// The first time the index is searched. Afterwards the stored one is used.
 	protected pcIndex = -1;
 
@@ -66,22 +69,27 @@ export class ZesaruxCpuHistory {
 
 
 	/**
-	 * Retrieves the instruction from ZEsarUX cpu history.
-	 * Is async.
-	 * May throw an exception if wrong data is received.
-	 * @returns A string with the instruction and registers.
+	 * Clears the history cache. Is called on each "normal" step.
 	 */
-	// REMOVE:
-	public async getLineXXX(): Promise<string|undefined> {
-		try {
-			let currentLine;
-			// Check if it is the first retrieved line
+	public clearCache() {
+		this.history.length = 0;
+		this.historyIndex = -1;
+	}
 
-			return currentLine;
-		}
-		catch(e) {
-			throw Error("Error retrieving the cpu history from ZEsarUX.");
-		}
+
+	/**
+	 * Increases this.historyIndex and returns the registers at that index.
+	 * @returns Returns the registers or undefined.
+	 */
+	protected getPrevRegisters(): string|undefined {
+		const index = this.historyIndex + 1;
+		//console.log("len=" + this.history.length + ", index=" + index);
+		assert(index >= 0);
+		if(index >= this.history.length)
+			return undefined;
+		this.historyIndex = index;
+		const regs = this.history[index];
+		return regs;
 	}
 
 
@@ -90,10 +98,17 @@ export class ZesaruxCpuHistory {
 	 * Is async.
 	 * @returns A string with the registers or undefined if at the end of the history.
 	 */
-	public async getPrevRegisters(): Promise<string|undefined> {
-		const currentLine = await this.getRegistersPromise(this.history.length);
-		if(currentLine)
-			this.history.push(currentLine);
+	public async getPrevRegistersAsync(): Promise<string|undefined> {
+		let currentLine = this.getPrevRegisters();
+		if(!currentLine)
+		{
+			const index = this.historyIndex + 1;
+			currentLine = await this.getRegistersPromise(index);
+			if(currentLine) {
+				this.historyIndex = index;
+				this.history.push(currentLine);
+			}
+		}
 		return currentLine;
 	}
 
@@ -104,13 +119,12 @@ export class ZesaruxCpuHistory {
 	 * @returns A string with the registers or undefined if at the start of the history.
 	 */
 	public getNextRegisters(): string|undefined {
-		// Remove last one
-		this.history.pop();
-		// Get previous item
-		const len = this.history.length;
 		let currentLine;
-		if(len > 0)
-			currentLine = this.history[len-1];
+		// Get previous item
+		assert(this.historyIndex >= 0);
+		this.historyIndex --;
+		if(this.historyIndex >= 0)
+			currentLine = this.history[this.historyIndex];
 		return currentLine;
 	}
 
@@ -208,7 +222,7 @@ export class ZesaruxCpuHistory {
 	 * @returns Returns true if in step back mode.
 	 */
 	public isInStepBackMode() {
-		return (this.history.length > 0);
+		return (this.historyIndex >= 0);
 	}
 
 

@@ -769,6 +769,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected clearReverseDbgStack() {
 		this.reverseDbgStack = undefined as any;
+		this.cpuHistory.clearCache();
 	}
 
 
@@ -1131,6 +1132,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					const currentLine = await this.revDbgPrev();
 					if(!currentLine)
 						break;
+
 					// Stack handling:
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 
@@ -2270,7 +2272,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * If at end it returns undefined.
 	 */
 	protected async revDbgPrev(): Promise<string|undefined> {
-		let line = await this.cpuHistory.getPrevRegisters();
+		const line = await this.cpuHistory.getPrevRegistersAsync();
 		if(line) {
 			// Add to register cache
 			this.RegisterCache = line;
@@ -2280,6 +2282,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		}
 		return line;
 	}
+
 
 	/**
 	 * @returns Returns the next line in the cpu history.
