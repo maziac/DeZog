@@ -652,7 +652,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Get current line
 				let currentLine: string = this.RegisterCache as string;
 				assert(currentLine);
-				let nextLine;
 
 				// Loop over all lines, reverse
 				while(true) {
@@ -682,9 +681,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Decoration
 			this.emitRevDbgHistory();
 
-			// Call handler
-			contStoppedHandler(reason, undefined, undefined);
-
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
 			if(!nextLine) {
@@ -692,6 +688,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 				this.RegisterCache = undefined;
 				this.getRegisters(() => {});
 			}
+
+			// Call handler
+			contStoppedHandler(reason, undefined, undefined);
 			return;
 		}
 
