@@ -815,6 +815,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		//console.log(prevLine);
 
 		return new Promise<void>( resolve => {
+
 			// Get some values
 			let sp = Z80Registers.parseSP(currentLine);
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
@@ -888,7 +889,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			if(this.cpuHistory.isPop(opcodes)) {
 				// Remember to push to stack
 				pushedValue = this.cpuHistory.getSPContent(currentLine);
-				// Correct stack (this strange behavior is doen to cope with an interrupt)
+				// Correct stack (this strange behavior is done to cope with an interrupt)
 				sp += 2;
 			}
 
@@ -906,6 +907,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 					}
 					// Now remove callstack
 					if(count > 1) {
+						// Stop if last item on stack
+						if(this.reverseDbgStack.length <= 1)
+							break;
 						this.reverseDbgStack.shift();
 						count -= 2;
 						// get next frame if countRemove still > 0
@@ -923,11 +927,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// Adjust PC within frame
-			const pc = Z80Registers.parsePC(currentLine);
+			const pc = Z80Registers.parsePC(currentLine)
+			assert(frame);
 			frame.addr = pc;
 
 			// Add a possibly pushed value
-			if(pushedValue)
+			if(pushedValue != undefined)
 				frame.stack.push(pushedValue);
 
 			// End
