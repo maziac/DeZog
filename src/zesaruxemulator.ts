@@ -663,7 +663,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for breakpoint
-					// TODO: ...
+					const bp = this.checkPcBreakpoints(nextLine);
+					if(bp) {
+						reason = 'Breakpoint hit at PC='+Utility.getHexString(bp.address,4);
+						if(bp.condition)
+							reason += ', condition: ' + bp.condition;
+						break;	// BP hit and condition met.
+					}
 
 					// Next
 					currentLine = nextLine;
@@ -1128,9 +1134,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Stack handling:
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 
-					// Breakpoint handling:
 					// Check for breakpoint
-					// TODO: ...
+					const bp = this.checkPcBreakpoints(currentLine);
+					if(bp) {
+						reason = 'Breakpoint hit at PC='+Utility.getHexString(bp.address,4);
+						if(bp.condition)
+							reason += ', condition: ' + bp.condition;
+						break;	// BP hit and condition met.
+					}
 
 					// Next
 					prevLine = currentLine;
@@ -1779,7 +1790,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public setBreakpoint(bp: EmulatorBreakpoint): number {
 		// Check for logpoint (not supported)
 		if(bp.log) {
-			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '"). Instead a normal breakpoint is set.');
+			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
 			// set to unverified
 			bp.address = -1;
 			return 0;
@@ -1887,6 +1898,21 @@ export class ZesaruxEmulator extends EmulatorClass {
 				tmpDisasmFileHandler
 			);
 		});
+	}
+
+
+	/**
+	 * Returns the breakpoint at the given address.
+	 * Note: Checks only breakpoints with a set 'address'.
+	 * @param regs The registers as string, e.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
+	 */
+	protected checkPcBreakpoints(regs: string): EmulatorBreakpoint|undefined {
+		const pc = Z80Registers.parsePC(regs);
+		for(const bp of this.breakpoints) {
+			if(bp.address == pc)
+				return bp;
+		}
+		return undefined;
 	}
 
 
