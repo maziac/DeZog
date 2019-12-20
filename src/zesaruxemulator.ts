@@ -939,7 +939,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			resolve();
 		});
 	}
-// TODO: Vielleicht auch aus isCall/RetIsExecuted 2 Funktionen machen
 
 
 	/**
@@ -2059,6 +2058,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	public setProgramCounter(address: number, handler?:() => void) {
 		this.RegisterCache = undefined;
+		this.clearReverseDbgStack();
 		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
 			if(handler)
 				handler();
