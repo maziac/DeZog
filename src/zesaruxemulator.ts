@@ -57,7 +57,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	protected cpuHistory: ZesaruxCpuHistory;
 
 	/// The virtual stack used during reverse debugging.
-	protected reverseDbgStack: RefList;  // TODO: Der Debug Stack geht an der Reflist mit unshift vorbei. Brauche ich hier überhaupt eine reflist ?
+	protected reverseDbgStack: RefList;
 
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');

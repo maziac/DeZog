@@ -1,9 +1,9 @@
 # Changelog
 
-
 ## 0.9.4
-- Maybe: Use of cpu-history for reverse debugging.
-- Maybe: Breakpoint decorations
+- Reverse debugging available
+	- Uses ZEsarUX cpu-history zrcp command
+	- Breakpoints (without condition) are evaluated
 
 ## 0.9.3-2
 - Fixed path problem for windows.

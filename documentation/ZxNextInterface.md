@@ -1,6 +1,6 @@
 # ZX Next Interface
 
-Here I collect first ideas to conenct the z80-debug-adapter remotely with a real ZX Next Spectrum.
+Here I collect first ideas to connect the z80-debug-adapter remotely with a real ZX Next Spectrum.
 
 It basically has to communicate with the ZX Next similarly as with ZEsarUX, but there are, of course, specific problems.
 
@@ -17,6 +17,15 @@ RS232, Raspi?
 
 ZS Next has a UART, e.g. to connect to Wifi.
 How to program it. Does it use an interrupt? Would be required.
+
+# Interrupt driven receiption
+
+The debugged program need to be able to run most of the time as "normal".
+Then, when the user presses "Break" on the PC in the IDE, the debugged program need to be stopped.
+Since the debugged program is out of our control it is required that this break happens via an interrupt.
+
+
+
 
 # ZX Next SW
 
