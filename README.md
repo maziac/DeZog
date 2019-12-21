@@ -38,10 +38,12 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 ## Features
 
 - supports ZEsarUX emulator (>= v8.0)
-- reads .list and .labels files
+- reads .list files
 	- supports stepping through source code
 	- either in .list file or in .asm files
 - step-over, step-in, step-out, continue, pause
+- reverse debugging via step back and reverse continue
+- code coverage visualization
 - breakpoints (and breakpoints with conditions)
 - display of
 	- disassembly
@@ -62,7 +64,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - memory viewer / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - change of program counter through menu
-- support for assembler unit tests with code coverage display.
+- support for assembler unit tests
 
 
 ## Constraints
