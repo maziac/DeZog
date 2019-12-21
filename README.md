@@ -111,15 +111,18 @@ The source code is available on [github](https://github.com/maziac/z80-debug).
 
 # Extras
 
-Here is also a great tutorial from Cesar Wagener Moriana who documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
+Here is also a great tutorial from Cesar Wagener Moriana (not to confuse with Cesar Hernandez bano, the autor of ZEsarUX).
+He documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
 It deals with setting up
 - sjasmplus
 - ZEsarUX and the
 - z80-debug vscode extension
 
-and is available in [English](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_English.pdf), [Spain](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_Spain.pdf) and [German](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/IDE_Spectrum_German.pdf).
+and is available in English, Spain and German [here](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/).
 
-Please note: The tutorial uses the bleeding edge sources and therefore shows how to build ZEsarUX. It also uses a beta release of z80-debug.
-If you use the official releases of ZEsarUX and z80-debug you don't have to build yourself.
-Nevertheless Cesar (Wagener) also shows how to setup the system under Windows and explains a few features of z80-debug so that it is definitely useful to get you started.
+Please note: The tutorial uses the bleeding edge sources and therefore shows how to build ZEsarUX. It also uses a previous beta release of z80-debug. As a rule of thumb: if you use the latest ZEsarUX sources or beta releases you should also use the latest z80-debug release from github.
+
+If you instead use the stable release for z80-debug from the market place then you can also use latest stable release for ZEsarUX.
+
+Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug so that it is a great advice to get you started.
 
