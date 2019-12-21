@@ -40,7 +40,10 @@ A typical configuration looks like this:
             ],
             "startAutomatically": false,
             "skipInterrupt": true,
-            "codeCoverage": false,
+            "history": {
+                "reverseDebugInstructionCount": 10000,
+                "codeCoverageEnabled": true
+            },
             "commandsAfterLaunch": [
                 //"-sprites",
                 //"-patterns"
@@ -66,7 +69,8 @@ Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
-- codeCoverage: If enabled code coverage information is analyzed and displayed (source code lines are highlighted). Useful especially for unit tests but can be enabled also in "normal" launch configurations.
+- reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
+- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "z80-debug: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
@@ -297,6 +301,62 @@ I have collected a few that I found useful:
 # Rename back to .mmc (optional).
 ./zesarux --machine tbblue --sna-no-change-machine --enable-mmc --enable-divmmc-ports --mmc-file "<your-mmc-image>"  --enable-remoteprotocol &
 ```
+
+
+### Reverse Debugging
+
+**!!! In beta currently !!!**
+
+A special feature of the Z80 Debug Adapter is the possibility to reverse debug your program.
+(Sometimes this is referred to as "[Time travel debugging](https://en.wikipedia.org/wiki/Time_travel_debugging)", "Historical debugging" or "Replay debugger".)
+This means you can go "back in time" and inspect program flow and register values from the past.
+
+The number of instructions you can step back is configurable and just a matter of memory.
+E.g. one instruction line will occupy ca. 40 bytes of memory. So to store 1 second you need approx. 1 million instructions with a Z80 CPU that uses 4Mhz. This results in about 40MB.
+Or in other words: if you would like to spend 1GB RAM you could store 25 secs.
+
+The number of instructions is set in
+~~~
+"history": {
+    "reverseDebugInstructionCount": 20000,
+}
+~~~
+The default is set to 10000 instructions and should be more than enough for most use cases.
+
+Reverse debugging is basically done via the 2 red circled buttons in vscode:
+![](images/revdbg_buttons.jpg)
+
+The first does a single step back (one instruction) and the 2nd runs through the whole recorded history until it hits a breakpoint or until the end of the history is reached.
+
+When you step back the lines in the source code are visually marked with a dotted frame so you know that you are in reverse debugging mode:
+![](images/revdbg_visualization.jpg)
+
+When you are in reverse debugging mode and do a forward continue/step over/step into/step out the commands operate on the instruction history.
+I.e. you can step back and forward in the code as you like.
+Registers and callstack are updated accordingly.
+
+But please note: The history stores only the register values and stack contents. I.e. the memory or other HW state is not stored.
+So whenever a memory location is changed from the program code in reverse debugging this will not be reflected in e.g. the memory view.
+You can only rely on the register values.
+
+
+
+### Code Coverage
+
+Code coverage can be enabled/disabled via:
+~~~
+"history": {
+    "codeCoverageEnabled": true
+}
+~~~
+
+The default is 'true'.
+
+If code coverage is enabled all executed lines in your source code are visually marked with a green background.
+![](images/coverage_visualization.jpg)
+
+You can use the code coverage feature in several ways. E.g. in unit tests you can directly see which lines of code are not covered. I.e. for which conditions you still need to write a test.
+Or during debugging you can clear the code coverage (palette command "z80-debug: Clear current code coverage decoration") and then step over a function (a CALL). Afterwards you can navigate into the function and see what has been executed and which branches have not.
 
 
 ### Stop Debugging

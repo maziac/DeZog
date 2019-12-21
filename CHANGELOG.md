@@ -1,9 +1,10 @@
 # Changelog
 
 ## 0.9.4
-- Reverse debugging available
-	- Uses ZEsarUX cpu-history zrcp command
-	- Breakpoints (without condition) are evaluated
+- Reverse debugging available.
+	- Uses ZEsarUX cpu-history zrcp command.
+	- Breakpoints (without condition) are evaluated.
+- Fixed bug in disassembling ZX Next instruction PUSH nn.
 
 ## 0.9.3-2
 - Fixed path problem for windows.

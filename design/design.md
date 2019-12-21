@@ -100,8 +100,7 @@ Emulator <-> Socket:
 
 ## Activation
 
-z80-debug is activated in the 'activate' function in extension.ts
-by registering the ZesaruxConfigurationProvider.
+z80-debug is activated in the 'activate' function in extension.ts by registering the ZesaruxConfigurationProvider.
 This happens e.g. when the Debugger is started.
 Short after 'ZesaruxConfigurationProvider::resolveDebugConfiguration' is called.
 As the debug adapter is entirely implemented in Typescript it lives in the same process as the extension which simplifies debugging the debug-adapter.
