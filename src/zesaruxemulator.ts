@@ -768,6 +768,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected clearReverseDbgStack() {
 		this.reverseDbgStack = undefined as any;
+		this.revDbgHistory.length = 0;
 		this.cpuHistory.clearCache();
 	}
 
@@ -2086,6 +2087,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public setProgramCounter(address: number, handler?:() => void) {
 		this.RegisterCache = undefined;
 		this.clearReverseDbgStack();
+		this.emitRevDbgHistory();
 		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
 			if(handler)
 				handler();

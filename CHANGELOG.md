@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.5
+- Fixed moving of PC to cursor during reverse debugging.
+
 ## 0.9.4
 - Reverse debugging available.
 	- Uses ZEsarUX cpu-history zrcp command.
