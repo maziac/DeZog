@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import { basename } from 'path';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent } from 'vscode-debugadapter/lib/main';
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent } from 'vscode-debugadapter/lib/main';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
@@ -277,8 +277,8 @@ export class EmulDebugSessionClass extends DebugSession {
 		// the adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = false;
 
-		// make VS Code to show a 'step back' button (Reverse Debugging)
-		response.body.supportsStepBack = true;
+		// Is done in launchRequest:
+		//response.body.supportsStepBack = true;
 
 		// Maybe terminated on error
 		response.body.supportTerminateDebuggee = true;
@@ -345,6 +345,12 @@ export class EmulDebugSessionClass extends DebugSession {
 			response.message = e.message;
 			this.sendResponse(response);
 			return;
+		}
+
+		// Check if reverse debugging is enabled and send capabilities
+		if(Settings.launch.history.reverseDebugInstructionCount > 0) {
+			// Enable reverse debugging
+			this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
 		}
 
 		// Launch emulator

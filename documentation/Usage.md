@@ -321,7 +321,7 @@ The number of instructions is set in
     "reverseDebugInstructionCount": 20000,
 }
 ~~~
-The default is set to 10000 instructions and should be more than enough for most use cases.
+The default is set to 10000 instructions and should be more than enough for most use cases. (Use 0 to disable.)
 
 Reverse debugging is basically done via the 2 red circled buttons in vscode:
 ![](images/revdbg_buttons.jpg)
