@@ -662,11 +662,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for breakpoint
-					const bp = this.checkPcBreakpoints(nextLine);
-					if(bp) {
-						reason = 'Breakpoint hit at PC='+Utility.getHexString(bp.address,4);
-						if(bp.condition)
-							reason += ', condition: ' + bp.condition;
+					this.RegisterCache = nextLine;
+					const condition = this.checkPcBreakpoints(nextLine);
+					if(condition != undefined) {
+						reason = condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -1137,11 +1136,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 
 					// Check for breakpoint
-					const bp = this.checkPcBreakpoints(currentLine);
-					if(bp) {
-						reason = 'Breakpoint hit at PC='+Utility.getHexString(bp.address,4);
-						if(bp.condition)
-							reason += ', condition: ' + bp.condition;
+					this.RegisterCache = currentLine;
+					const condition = this.checkPcBreakpoints(currentLine);
+					if(condition != undefined) {
+						reason = condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -1201,8 +1199,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				while(true) {
 					// Get next line
 					nextLine = this.revDbgNext();
-					if(!nextLine)
+					if(!nextLine) {
+						errorText = 'Break: Reached start of instruction history.'
 						break;	// At end of reverse debugging. Simply get the real call stack.
+					}
 
 					// Handle reverse stack
 					this.handleReverseDebugStackForward(currentLine, nextLine);
@@ -1216,6 +1216,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 					// Check for "breakpoint"
 					if(pc == nextPC0 || pc == nextPC1)
 						break;
+
+					// Check for "real" breakpoint
+					this.RegisterCache = nextLine;
+					const condition = this.checkPcBreakpoints(nextLine);
+					if(condition != undefined) {
+						errorText = condition;
+						break;	// BP hit and condition met.
+					}
 
 					// Next
 					currentLine = nextLine as string;
@@ -1453,8 +1461,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 				while(true) {
 					// Get next line
 					nextLine = this.revDbgNext();
-					if(!nextLine)
+					if(!nextLine) {
+						errorText = 'Break: Reached start of instruction history.';
 						break;	// At end of reverse debugging. Simply get the real call stack.
+					}
 
 					// Handle reverse stack
 					this.handleReverseDebugStackForward(currentLine, nextLine);
@@ -1469,6 +1479,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 						if(sp > startSP) {
 							break;
 						}
+					}
+
+					// Check for breakpoint
+					this.RegisterCache = nextLine;
+					const condition = this.checkPcBreakpoints(nextLine);
+					if(condition != undefined) {
+						errorText = condition;
+						break;	// BP hit and condition met.
 					}
 
 					// Next
@@ -1907,14 +1925,46 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Returns the breakpoint at the given address.
 	 * Note: Checks only breakpoints with a set 'address'.
 	 * @param regs The registers as string, e.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
+	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
-	protected checkPcBreakpoints(regs: string): EmulatorBreakpoint|undefined {
+	protected checkPcBreakpoints(regs: string): string|undefined {
+		assert(this.RegisterCache);
+		let condition;
 		const pc = Z80Registers.parsePC(regs);
 		for(const bp of this.breakpoints) {
-			if(bp.address == pc)
-				return bp;
+			if(bp.address == pc) {
+				// Check for condition
+				if(!bp.condition) {
+					condition = "";
+					break;
+				}
+
+				// Evaluate condition
+				try {
+					const result = Utility.evalExpression(bp.condition, true);
+					if(result != 0) {
+						condition = bp.condition;
+						break;
+					}
+				}
+				catch(e) {
+					// A problem during evaluation happened,
+					// e.g. a memory location has been tested which is not possible
+					// during reverse debugging.
+					condition = "Could not evaluate: " + bp.condition;
+					break;
+				}
+			}
 		}
-		return undefined;
+
+		// Text
+		let reason;
+		if(condition != undefined) {
+			reason = 'Breakpoint hit at PC=' + Utility.getHexString(pc,4);
+			if(condition != "")
+				reason += ', ' + condition;
+		}
+		return reason;
 	}
 
 

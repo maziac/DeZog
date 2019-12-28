@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxEmulator } from './zesaruxemulator';
 import { ZesaruxExtEmulator } from './zesaruxextemulator';
+import { EmulatorClass } from './emulator';
 
 
 /// Different machine emulators.
@@ -24,10 +25,10 @@ export class EmulatorFactory {
 	public static createEmulator(emul: EmulatorType) {
 		switch(emul) {
 			case EmulatorType.ZESARUX:
-				Emulator = new ZesaruxEmulator();
+				EmulatorFactory.setEmulator(new ZesaruxEmulator());
 				break;
 			case EmulatorType.ZESARUX_EXT:	// Zesarux with own extensions.
-				Emulator = new ZesaruxExtEmulator();
+				EmulatorFactory.setEmulator(new ZesaruxExtEmulator());
 				break;
 			case EmulatorType.MAME:
 				assert(false);	// needs to be implemented
@@ -36,6 +37,14 @@ export class EmulatorFactory {
 				assert(false);
 				break;
 		}
+	}
+
+
+	/**
+	 * Sets the emulator variable.
+	 */
+	protected static setEmulator(emulator: EmulatorClass) {
+		Emulator = emulator;
 	}
 
 }

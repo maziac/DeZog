@@ -339,6 +339,19 @@ But please note: The history stores only the register values and stack contents.
 So whenever a memory location is changed from the program code in reverse debugging this will not be reflected in e.g. the memory view.
 You can only rely on the register values.
 
+#### Breakpoints in Reverse Debug Mode
+
+You can also use breakpoints during reverse debugging.
+The normal (program counter related) breakpoints work just as you would expect.
+
+It is also possible to add a condition. I.e. you can additionally test for certain register values.
+
+But please note that during reverse debugging the memory contents is not evaluated. A breakpoint that checks for memory is not evaluated correctly. In such a case the breakpoint will fire always.
+E.g. a condition like this
+~~~
+b@(HL) == 0
+~~~
+will be evaluated to true always so that you don't miss such a breakpoint.
 
 
 ### Code Coverage

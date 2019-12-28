@@ -2,8 +2,8 @@
 import * as assert from 'assert';
 import { Utility } from '../utility';
 import { Z80Registers } from '../z80Registers';
+import { EmulatorClass } from '../emulator';
 import { Emulator, EmulatorType, EmulatorFactory } from '../emulatorfactory';
-//import { EmulatorClass } from '../emulator';
 import { Settings } from '../settings';
 
 
@@ -306,6 +306,86 @@ suite('Utility', () => {
 
 			res = Utility.evalExpression('0x0F >> 3');
             assert.equal(0x0F>>3, res, "Wrong eval result");
+		});
+
+
+
+		suite('breakpoints', () => {
+			setup(() => {
+				(<any>EmulatorFactory).setEmulator(new EmulatorClass());
+			});
+
+			test('simple', () => {
+				(<any>Emulator).RegisterCache = "";
+				let res = Utility.evalExpression('0x1234 == 0x1234', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('0x1235 == 0x1234', true);
+				assert.equal(0, res, "Wrong eval result");
+			});
+
+			test('register SP', () => {
+				(<any>Emulator).RegisterCache = "PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5";
+				let res = Utility.evalExpression('SP == 0x83FB', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('0x83FB == SP', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('SP == 0x83FA', true);
+				assert.equal(0, res, "Wrong eval result");
+
+				res = Utility.evalExpression('0x83FB != SP', true);
+				assert.equal(0, res, "Wrong eval result");
+			});
+
+			test('All registers', () => {
+				(<any>Emulator).RegisterCache = "PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5";
+
+				let res = Utility.evalExpression('PC == 0x80D3', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('AF == 3F08h', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('BC == 0x1234', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('DE == 9ABCh', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('HL == 5678h', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('IX == 0xFEDC', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression('IY == 0x5C3A', true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression("AF' == 0143h", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression("BC' == 0x2345", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression("DE' == 89ABh", true);
+				assert.equal(1, res, "Wrong eval result");
+
+				res = Utility.evalExpression("HL' == F4F3h", true);
+				assert.equal(1, res, "Wrong eval result");
+			});
+
+
+			test('memory (exception)', () => {
+				(<any>Emulator).RegisterCache = "PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5";
+
+				// It is not supported to retrieve memory locations.
+				// Therefore a test is done on an exception.
+				assert.throws( () => {
+					Utility.evalExpression('b@(1000) == 50', true);
+				}, "Expected an exception");
+			});
 		});
 
 	});

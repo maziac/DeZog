@@ -1208,9 +1208,9 @@ export class EmulDebugSessionClass extends DebugSession {
 				// Send event
 				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 
-				// Show a possible error
+				// Output a possibly error
 				if(error)
-					this.showError(error);
+					vscode.debug.activeDebugConsole.appendLine(error);
 			});
 	}
 

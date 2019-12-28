@@ -194,16 +194,17 @@ export class Utility {
 	 * Examples:
 	 * 2-5*3 => -13, -Dh
 	 * LBL_TEST+1 => 32769, 8001h
+	 * HL' != 1111h
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * @param evalRegisters If true then register names will also be evaluated.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
-	 * @returns The evaluated number.
+	 * @returns The evaluated number. (If a boolean expression is evaluated a 1 is returned for true and a 0 for false)
 	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
 	 */
 	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?:string, lastLabel?: string): number {
-		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[0-9]+\S+|0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*|'[\S ]+')/g, (match, p1) => {
+		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[0-9]+\S+|0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|'[\S ]+')/g, (match, p1) => {
 			let res;
 			if(evalRegisters) {
 				// Check if it might be a register name.
@@ -239,7 +240,12 @@ export class Utility {
 		});
 		// Evaluate
 		const result = eval(exprLabelled);
-		// return
+
+		// Check if boolean
+		if(typeof(result) == 'boolean')
+			return (result) ? 1 : 0;
+
+			// Return normal number
 		return result;
 	}
 
