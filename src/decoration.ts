@@ -97,10 +97,12 @@ export class DecorationClass {
 		const revDbgDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
+			/* This gives a bad performance, it's better to change just the color.
 			borderWidth: '1px',
 			borderStyle: 'dashed', //'solid',
 			borderRadius: '5px',
-			/*
+			*/
+
 			light: {
 				// this color will be used in light color themes
 				backgroundColor: '#A9E2F3',
@@ -109,7 +111,7 @@ export class DecorationClass {
 				// this color will be used in dark color themes
 				backgroundColor: '#033563',
 			}
-			*/
+
 		});
 
 

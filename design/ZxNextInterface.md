@@ -65,6 +65,7 @@ From what I have seen from the Z80 sources I need to modify them slightly for my
 - There are only 10 breakpoints available. I probably need to increase this (100?)
 - A breakpoint is cleared when hit. I need to remove this feature.
 - 38h IM1 interrupt is turned off. So not usable with running interrupts (breakpoints use RST 38h). Seems Chris is working on this.
+- No conditional breakpoint. I need to implement this on Z80 side.
 
 
 # SW Breakpoints
@@ -72,3 +73,22 @@ From what I have seen from the Z80 sources I need to modify them slightly for my
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
 Chris uses RST 38h which makes the interrupts unusable but if the ROM is exchanged then it should be possible to use also other values.
 If DIVMMC is used it depends on what addresses it reacts.
+
+## Breakpoint conditions
+
+After a breakpoint is hit it needs to be checked if the condition is true.
+
+Conditions like
+```(A > 3) AND (PEEKW(SP) != PC)```
+should be allowed.
+
+Here is the algorithm to implement the math expression: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+
+
+# Reverse Debugging
+
+Real reverse debugging, i.e. collecting a trace of instruction on the ZX Next, is not possible because this would run far too slow.
+
+But it is possible to implement a lite version:
+While steping or running (and break stopping) through the code at each stop the stack is and the register values are saved.
+Then, when back stepping, one can exactly step back through these stored values.

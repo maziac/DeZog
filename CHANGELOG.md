@@ -2,6 +2,7 @@
 
 ## 0.9.5
 - Fixed moving of PC to cursor during reverse debugging.
+- Changed reverse debug decoration to blue background only due to performance reasons.
 
 ## 0.9.4
 - Reverse debugging available.
