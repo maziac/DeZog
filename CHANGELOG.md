@@ -1,9 +1,12 @@
 # Changelog
 
+# 0.9.6
+- mixed extended and real stack
+
 ## 0.9.5
 - Reverse debugging: Conditional breakpoints.
 - Fixed moving of PC to cursor during reverse debugging.
-- Changed reverse debug decoration to blue background only due to performance reasons.
+- Changed reverse debug decoration to blue background due to performance reasons.
 
 ## 0.9.4
 - Reverse debugging available.

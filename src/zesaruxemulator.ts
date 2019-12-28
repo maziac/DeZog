@@ -595,6 +595,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * FFFFH push
 	 * 15E1H call
 	 * 0000H default
+	 *
+	 * Note: I'm not using the "pure" extended stack from zesarux but a mixture
+	 * of the extended stack and the real stack.
+	 * The extended stack values are good for CALL/RST/interrupt but for PUSH/DEFAULT
+	 * it contains the values during e.g. the PUSH. For DEFAULT it contains undefined
+	 * values.
+	 * So I'm using the real stack values for PUSH and DEFAULT.
 	 * @param handler The handler to call when ready.
 	 */
 	public realStackTraceRequest(handler:(frames: RefList)=>void): void {
@@ -612,14 +619,27 @@ export class ZesaruxEmulator extends EmulatorClass {
 			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
 				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 
-			// Get 'extended-stack' from zesarux
-			zSocket.send('extended-stack get '+depth, data => {
-				Log.log('Call stack: ' + data);
-				data = data.replace(/\r/gm, "");
-				const zStack = data.split('\n');
-				zStack.splice(zStack.length-1);	// ignore last (is empty)
-				// rest of callstack
-				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+			// Get normal stack, e.g. "02C9H 0404H 80F8H 0403H 0302H 0201H 8147H 0000H 0000H 0000H"
+			zSocket.send('get-stack-backtrace '+depth, data => {
+				const rStack = data.split(' ');
+				// Get 'extended-stack' from zesarux
+				zSocket.send('extended-stack get '+depth, data => {
+					Log.log('Call stack: ' + data);
+					data = data.replace(/\r/gm, "");
+					const zStack = data.split('\n');
+					const len = zStack.length-1;
+					zStack.splice(len);	// ignore last (is empty)
+					// Mix stacks
+					for(let i=0; i<len; i++) {
+						const type = zStack[i].substr(6);
+						// if not CALL, RST or interrupt
+						if(!(type.includes('call') || type.includes('rst') || type.includes('interrupt'))) {
+							zStack[i] = rStack[i] + ' ' + zStack[i].substr(6);
+						}
+					}
+					// Rest of callstack
+					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+				});
 			});
 		});
 	}
