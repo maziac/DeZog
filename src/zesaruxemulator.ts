@@ -1493,7 +1493,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				addresses.push(address);
 			}
 			// Emit code coverage event
-			this.emit('shortHistory', startIndex, addresses);
+			this.emit('historySpot', startIndex, addresses);
 		});
 	}
 

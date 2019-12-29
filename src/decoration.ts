@@ -31,7 +31,7 @@ export class DecorationClass {
 	protected COVERAGE = "Coverage";
 	protected REVERSE_DEBUG = "RevDbg";
 	protected BREAK = "Break";
-	protected SHORT_HISTORY = "ShortHistory";
+	protected HISTORY_SPOT = "HistorySpot";
 
 	// Holds the decorations for coverage, reverse debug and breakpoints.
 	protected decorationFileMaps: Map<string, DecorationFileMap>;
@@ -74,7 +74,7 @@ export class DecorationClass {
 		});
 
 		// For the short history decoration type.
-		const shortHistoryDecoType = vscode.window.createTextEditorDecorationType({
+		const historySpotDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			light: {
@@ -149,9 +149,9 @@ export class DecorationClass {
 		this.decorationFileMaps.set(this.BREAK, decoFileMap);
 
 		decoFileMap = new DecorationFileMap();
-		decoFileMap.decoType = shortHistoryDecoType;
+		decoFileMap.decoType = historySpotDecoType;
 		decoFileMap.fileMap = new Map<string, Array<vscode.DecorationOptions>>();
-		this.decorationFileMaps.set(this.SHORT_HISTORY, decoFileMap);
+		this.decorationFileMaps.set(this.HISTORY_SPOT, decoFileMap);
 
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -188,10 +188,10 @@ export class DecorationClass {
 
 
 	/**
-	 * Loops through all active editors and clears the 'ShortHistory' decorations.
+	 * Loops through all active editors and clears the 'historySpot' decorations.
 	 */
-	public clearShortHistory() {
-		this.clearDecorations(this.SHORT_HISTORY);
+	public clearHistorySpot() {
+		this.clearDecorations(this.HISTORY_SPOT);
 	}
 
 
@@ -396,12 +396,12 @@ export class DecorationClass {
 	 * @param addresses The addresses to decorate. Is an ordered list.
 	 * The youngest address (instruction) is at index 0.
 	 */
-	public showShortHistory(startIndex, addresses: Array<number>) {
+	public showHistorySpot(startIndex, addresses: Array<number>) {
 		// Clear decorations
-		this.clearShortHistory();
+		this.clearHistorySpot();
 
 		// Get file map
-		const decoMap = this.decorationFileMaps.get(this.SHORT_HISTORY) as DecorationFileMap;
+		const decoMap = this.decorationFileMaps.get(this.HISTORY_SPOT) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
 
 		// Check if addresses are used more than once
@@ -460,7 +460,7 @@ export class DecorationClass {
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
 		for(const editor of editors) {
-			this.setDecorations(editor, this.SHORT_HISTORY);
+			this.setDecorations(editor, this.HISTORY_SPOT);
 		}
 	}
 }

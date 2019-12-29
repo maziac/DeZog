@@ -369,7 +369,7 @@
 								},
 								"spotCount": {
 									"type": "number",
-									"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Default is 10."
+									"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
 								},
 								"codeCoverageEnabled": {
 									"type": "boolean",
