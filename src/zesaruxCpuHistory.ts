@@ -57,13 +57,13 @@ export class ZesaruxCpuHistory {
 	 */
 	public init(maxSize: number) {
 		if(maxSize > 0) {
-			zSocket.send('cpu-history enabled yes');
+			zSocket.send('cpu-history enabled yes', () => {}, true);
 			zSocket.send('cpu-history set-max-size ' + maxSize);
 			zSocket.send('cpu-history clear');
 			zSocket.send('cpu-history started yes');
 		}
 		else {
-			zSocket.send('cpu-history enabled no');
+			zSocket.send('cpu-history enabled no', () => {}, true);
 		}
 	}
 

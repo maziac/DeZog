@@ -1109,8 +1109,9 @@ export class EmulDebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine(reason);
 
 			// Use reason for break-decoration.
+			// Output looks e.g. like: "Breakpoint fired: PC=811EH"
 			// Get break address
-			const match = / ([0-9a-f]+)h /i.exec(reason);
+			const match = /([0-9a-f]+)h/i.exec(reason);
 			if(match) {
 				const addrString = match[1];
 				const breakAddr = parseInt(addrString, 16);
@@ -2145,6 +2146,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 			this.sendEventContinued();
 			this.sendEvent(new StoppedEvent('PC-change', EmulDebugSessionClass.THREAD_ID));
+			// Handle decorations
+			Emulator.emitRevDbgHistory();
+			Emulator.handleHistorySpot();
 		});
 	}
 

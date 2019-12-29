@@ -309,7 +309,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			zSocket.send('clear-membreakpoints');
 
 			// Clear all breakpoints
-			zSocket.send('enable-breakpoints');
+			zSocket.send('enable-breakpoints', () => {}, true);
 			this.clearAllZesaruxBreakpoints();
 
 			// Init breakpoint array
@@ -1910,8 +1910,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// set action first (no action)
 		const shortCond = (condition.length < 50) ? condition : condition.substr(0,50) + '...';
-		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
-//	zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+// TODO		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
+	zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
 		// set the breakpoint
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + condition, () => {
 				// enable the breakpoint
@@ -2203,7 +2203,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public setProgramCounter(address: number, handler?:() => void) {
 		this.RegisterCache = undefined;
 		this.clearReverseDbgStack();
-		this.emitRevDbgHistory();
 		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
 			if(handler)
 				handler();
