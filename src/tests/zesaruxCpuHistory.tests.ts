@@ -247,6 +247,63 @@ suite('ZesaruxCpuHistory', () => {
 	});
 
 
+	suite('isCallOpcode', () => {
+
+		test('is CALL', () => {
+			const hist = new ZesaruxCpuHistory();
+			// Test
+			const opcode0 = 0xCD;	// Extended code like in PUSH nn
+			assert.ok(hist.isCallOpcode(opcode0));
+		});
+
+
+		test('is CALL cc', () => {
+			const hist = new ZesaruxCpuHistory();
+			// Test
+			assert.ok(hist.isCallOpcode(0xC4));
+			assert.ok(hist.isCallOpcode(0xD4));
+			assert.ok(hist.isCallOpcode(0xE4));
+			assert.ok(hist.isCallOpcode(0xF4));
+
+			assert.ok(hist.isCallOpcode(0xCC));
+			assert.ok(hist.isCallOpcode(0xDC));
+			assert.ok(hist.isCallOpcode(0xEC));
+			assert.ok(hist.isCallOpcode(0xFC));
+		});
+
+		test('is not CALL', () => {
+			const hist = new ZesaruxCpuHistory();
+			// Test
+			const opcode0 = 0xED;	// Extended code like in PUSH nn
+			assert.ok(!hist.isCallOpcode(opcode0));
+		});
+	});
+
+
+	suite('isRstOpcode', () => {
+
+		test('is RST', () => {
+			const hist = new ZesaruxCpuHistory();
+			// Test
+			assert.ok(hist.isRstOpcode(0xC7));
+			assert.ok(hist.isRstOpcode(0xD7));
+			assert.ok(hist.isRstOpcode(0xE7));
+			assert.ok(hist.isRstOpcode(0xF7));
+
+			assert.ok(hist.isRstOpcode(0xCF));
+			assert.ok(hist.isRstOpcode(0xDF));
+			assert.ok(hist.isRstOpcode(0xEF));
+			assert.ok(hist.isRstOpcode(0xFF));
+		});
+
+		test('is not RST', () => {
+			const hist = new ZesaruxCpuHistory();
+			// Test
+			const opcode0 = 0xED;	// Extended code like in PUSH nn
+			assert.ok(!hist.isRstOpcode(opcode0));
+		});
+	});
+
 	suite('isRetCallRst', () => {
 
 		// Returns a lower case 1 byte hex value.

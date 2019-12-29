@@ -529,8 +529,8 @@ export class ZesaruxCpuHistory {
 			return true;
 
 		// Now check for CALL cc
-		const mask = 0b11000100;
-		if((opcode0 & mask) == mask)
+		const mask = 0b11000111;
+		if((opcode0 & mask) == 0b11000100)
 			return true;
 
 		// No CALL
