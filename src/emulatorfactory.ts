@@ -10,6 +10,7 @@ export enum EmulatorType {
 	UNKNOWN = 0,
 	ZESARUX,		/// ZEsarUX
 	ZESARUX_EXT,	/// ZEsarUX with own extensions (e.g. fast breakpoints)
+	ZXNEXT,			/// ZXNEXT HW connected via UART
 	MAME,			/// MAME
 }
 
@@ -29,6 +30,9 @@ export class EmulatorFactory {
 				break;
 			case EmulatorType.ZESARUX_EXT:	// Zesarux with own extensions.
 				EmulatorFactory.setEmulator(new ZesaruxExtEmulator());
+				break;
+			case EmulatorType.ZXNEXT:
+				assert(false);	// needs to be implemented
 				break;
 			case EmulatorType.MAME:
 				assert(false);	// needs to be implemented

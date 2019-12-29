@@ -78,6 +78,15 @@ export class ZesaruxCpuHistory {
 
 
 	/**
+	 * Returns the history index.
+	 * -1 if history is not in use.
+	 */
+	public getHistoryIndex() {
+		return this.historyIndex;
+	}
+
+
+	/**
 	 * Increases this.historyIndex and returns the registers at that index.
 	 * @returns Returns the registers or undefined.
 	 */
@@ -542,56 +551,6 @@ export class ZesaruxCpuHistory {
 		// No RST
 		return false;
 	}
-
-	/**
-	 * Tests if the opcode byte is from a PUSH.
-	 * @param opcode0 The first byte of an instruction.
-	 * @param opcode1 The second byte of an instruction.
-	 * @returns true if "PUSH". Also for ZXNext "PUSH nnnn"
-	 */
-/*
-	public isPushOpcode(opcode0: number, opcode1: number): boolean {
-		// PUSH qq
-		const mask = 0b11001111;
-		if((opcode0 & mask) == 0x11000101)
-			return true;
-
-		// PUSH IX or IY
-		if(opcode1 == 0xE5 &&
-			(opcode0 == 0xDD || opcode0 == 0xFD))
-			return true;
-
-		// PUSH nnnn, ZXNext
-		if(opcode0 == 0xED && opcode1 == 0x8A)
-			return true;
-
-		// No PUSH
-		return false;
-	}
-*/
-
-	/**
-	 * Tests if the opcode byte is from a POP.
-	 * @param opcode0 The first byte of an instruction.
-	 * @param opcode1 The second byte of an instruction.
-	 * @returns true if "POP".
-	 */
-/*
-	public isPopOpcode(opcode0: number, opcode1: number): boolean {
-		// POP qq
-		const mask = 0b11001111;
-		if((opcode0 & mask) == 0b11000001)
-			return true;
-
-		// POP IX or IY
-		if(opcode1 == 0xE1 &&
-			(opcode0 == 0xDD || opcode0 == 0xFD))
-			return true;
-
-		// No POP
-		return false;
-	}
-*/
 
 }
 

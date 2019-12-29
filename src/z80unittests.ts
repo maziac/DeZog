@@ -903,9 +903,8 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 		// Clear remaining test cases
 		Z80UnitTests.CancelAllRemainingResults();
-		// Show coverage, only the elder lines
-		const emptySet = new Set<number>();
-		Decoration.showCodeCoverage([emptySet, Z80UnitTests.allCoveredAddresses]);
+		// Show coverage
+		Decoration.showCodeCoverage(Z80UnitTests.allCoveredAddresses);
 		Z80UnitTests.lastCoveredAddresses = undefined as any;
 
 		// Delay this:

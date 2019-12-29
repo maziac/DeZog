@@ -484,9 +484,14 @@ export class EmulDebugSessionClass extends DebugSession {
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
-		Emulator.on('history', addresses => {
+		Emulator.on('revDbgHistory', addresses => {
 			// Reverse debugging history addresses
 			Decoration.showRevDbgHistory(addresses);
+		});
+
+		Emulator.on('shortHistory', addresses => {
+			// Short history addresses
+			Decoration.showShortHistory(addresses);
 		});
 
 		Emulator.on('warning', message => {
@@ -911,6 +916,14 @@ export class EmulDebugSessionClass extends DebugSession {
 				resp.body = {stackFrames: sfrs,	totalFrames: 1};
 				this.sendResponse(resp);
 			}
+			// end the serialized call:
+			this.serializer.endExec();
+		});
+
+
+		// Get short history decoration.
+		this.serializer.exec(() => {
+			Emulator.handleShortHistory();
 			// end the serialized call:
 			this.serializer.endExec();
 		});

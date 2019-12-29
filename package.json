@@ -367,6 +367,10 @@
 									"type": "number",
 									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
 								},
+								"shortHistoryCount": {
+									"type": "number",
+									"description": "Sets the number of instruction to show for the short history. E.g. if set to 5 it will highlight the 5 instructions before the current one. Default is 10."
+								},
 								"codeCoverageEnabled": {
 									"type": "boolean",
 									"description": "Enables/disables code coverage. Default is 'true."

@@ -1,7 +1,8 @@
 # Changelog
 
 # 0.9.6
-- mixed extended and real stack
+- shortHistoryCount added. A list of instructions is highlighted that were executed just before the current one.
+- mixed extended and real stack.
 
 ## 0.9.5
 - Reverse debugging: Conditional breakpoints.

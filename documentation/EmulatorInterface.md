@@ -158,6 +158,8 @@ Other:
 - read-memory
 - write-memory
 - set-register
+- cpu-history
+- extended-stack
 
 
 ### ShallowVar

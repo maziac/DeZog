@@ -1068,11 +1068,19 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * Emits 'history' to signal that the files should be decorated.
+	 * Emits 'revDbgHistory' to signal that the files should be decorated.
 	 */
 	public emitRevDbgHistory() {
-		this.emit('history', this.revDbgHistory);
+		this.emit('revDbgHistory', this.revDbgHistory);
 	}
 
+	/**
+	 * Reads the short history and emits it.
+	 * Is used to display short history decoration.
+	 * Is called by the EmulDebugAdapter.
+	 * Default implementation does nothing. Is implemented only by ZesaruxEmulator.
+	 */
+	public handleShortHistory() {
+	}
 }
 

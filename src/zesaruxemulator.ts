@@ -619,6 +619,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
 				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
 
+			// Special handling if stack depth is 0
+			if(depth <= 0) {
+				const zStack = new Array<string>();
+				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+				return;
+			}
+
 			// Get normal stack, e.g. "02C9H 0404H 80F8H 0403H 0302H 0201H 8147H 0000H 0000H 0000H"
 			zSocket.send('get-stack-backtrace '+depth, data => {
 				const rStack = data.split(' ');
@@ -1454,6 +1461,40 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 
 	/**
+	 * Reads the short history and emits it.
+	 * Is used to display short history decoration.
+	 * Is called by the EmulDebugAdapter.
+	 */
+	public handleShortHistory() {
+		// Check if code coverage is enabled
+		const count = Settings.launch.history.shortHistoryCount;
+		if(count <= 0)
+			return;
+
+		// Get start index
+		let index = this.cpuHistory.getHistoryIndex() + 1;
+
+		// Get short history
+		zSocket.send('cpu-history get-pc ' + index + ' ' + count, data => {
+			// data e.g. = "80d9 80d7 80d5 80d3 80f5 "
+			// Check for error
+			if(data.startsWith('Error'))
+				return;
+			// Parse data and collect addresses
+			const addresses = new Array<number>();
+			const length = data.length;
+			for(let k=0; k<length; k+=5) {
+				const addressString = data.substr(k,4);
+				const address = parseInt(addressString, 16);
+				addresses.push(address);
+			}
+			// Emit code coverage event
+			this.emit('shortHistory', addresses);
+		});
+	}
+
+
+	/**
 	 * 'step out' of current call.
 	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
 	 * tStates contains the number of tStates executed.
@@ -1866,7 +1907,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// set action first (no action)
 		const shortCond = (condition.length < 50) ? condition : condition.substr(0,50) + '...';
 		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
-			// set the breakpoint
+//	zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+		// set the breakpoint
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + condition, () => {
 				// enable the breakpoint
 				zSocket.send('enable-breakpoint ' + bp.bpId);

@@ -132,6 +132,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
+		shortHistoryCount: number; // Sets the number of instruction to show for the short history. E.g. if set to 5 it will highlight the 5 instructions before the current one.
 		codeCoverageEnabled: boolean;	// Enable/disable code coverage.
 	}
 
@@ -283,11 +284,21 @@ export class Settings {
 		if(Settings.launch.skipInterrupt == undefined)
 			Settings.launch.skipInterrupt = false;
 
-		// Code coverage
+		// Reverse debugging
 		if(Settings.launch.history == undefined)
 			Settings.launch.history = {} as any;
 		if(Settings.launch.history.reverseDebugInstructionCount == undefined)
 			Settings.launch.history.reverseDebugInstructionCount = 10000;
+
+		// Short history
+		if(Settings.launch.history.shortHistoryCount == undefined)
+			Settings.launch.history.shortHistoryCount = 10;
+		if(Settings.launch.history.shortHistoryCount > Settings.launch.history.reverseDebugInstructionCount)
+			Settings.launch.history.shortHistoryCount = Settings.launch.history.reverseDebugInstructionCount;
+		if(Settings.launch.history.shortHistoryCount > 100)
+			Settings.launch.history.shortHistoryCount = 100;
+
+		// Code coverage
 		if(Settings.launch.history.codeCoverageEnabled == undefined)
 			Settings.launch.history.codeCoverageEnabled = (unitTests) ? true : true;
 
