@@ -923,7 +923,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Get short history decoration.
 		this.serializer.exec(() => {
-			Emulator.handleShortHistory();
+			Emulator.handleHistorySpot();
 			// end the serialized call:
 			this.serializer.endExec();
 		});

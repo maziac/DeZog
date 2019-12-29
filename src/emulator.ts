@@ -1082,7 +1082,7 @@ export class EmulatorClass extends EventEmitter {
 	 * Is called by the EmulDebugAdapter.
 	 * Default implementation does nothing. Is implemented only by ZesaruxEmulator.
 	 */
-	public handleShortHistory() {
+	public handleHistorySpot() {
 	}
 }
 

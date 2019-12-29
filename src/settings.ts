@@ -132,7 +132,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
-		shortHistoryCount: number; // Sets the number of instruction to show for the short history. E.g. if set to 5 it will highlight the 5 instructions before the current one.
+		spotCount: number;	// Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown.
 		codeCoverageEnabled: boolean;	// Enable/disable code coverage.
 	}
 
@@ -291,12 +291,14 @@ export class Settings {
 			Settings.launch.history.reverseDebugInstructionCount = 10000;
 
 		// Short history
-		if(Settings.launch.history.shortHistoryCount == undefined)
-			Settings.launch.history.shortHistoryCount = 10;
-		if(Settings.launch.history.shortHistoryCount > Settings.launch.history.reverseDebugInstructionCount)
-			Settings.launch.history.shortHistoryCount = Settings.launch.history.reverseDebugInstructionCount;
-		if(Settings.launch.history.shortHistoryCount > 100)
-			Settings.launch.history.shortHistoryCount = 100;
+		if(Settings.launch.history.spotCount == undefined)
+			Settings.launch.history.spotCount = 10;
+		if(Settings.launch.history.spotCount > Settings.launch.history.reverseDebugInstructionCount)
+			Settings.launch.history.spotCount = Settings.launch.history.reverseDebugInstructionCount;
+		if(Settings.launch.history.spotCount > 100)
+			Settings.launch.history.spotCount = 100;
+		if(Settings.launch.history.spotCount < 0)
+			Settings.launch.history.spotCount = 0;
 
 		// Code coverage
 		if(Settings.launch.history.codeCoverageEnabled == undefined)

@@ -1465,9 +1465,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * Is used to display short history decoration.
 	 * Is called by the EmulDebugAdapter.
 	 */
-	public handleShortHistory() {
+	public handleHistorySpot() {
 		// Check if code coverage is enabled
-		const count = Settings.launch.history.shortHistoryCount;
+		const count = Settings.launch.history.spotCount;
 		if(count <= 0)
 			return;
 
