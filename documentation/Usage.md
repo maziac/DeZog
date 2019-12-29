@@ -328,16 +328,46 @@ Reverse debugging is basically done via the 2 red circled buttons in vscode:
 
 The first does a single step back (one instruction) and the 2nd runs through the whole recorded history until it hits a breakpoint or until the end of the history is reached.
 
-When you step back the lines in the source code are visually marked with a dotted frame so you know that you are in reverse debugging mode:
+When you step back the lines in the source code are visually marked with a slight gray background so you know that you are in reverse debugging mode:
 ![](images/revdbg_visualization.jpg)
 
-When you are in reverse debugging mode and do a forward continue/step over/step into/step out the commands operate on the instruction history.
+When you are in reverse debugging mode and do a forward continue/step-over/step-into/step-out the commands operate on the instruction history.
 I.e. you can step back and forward in the code as you like.
-Registers and callstack are updated accordingly.
+Registers and the callstack are updated accordingly.
 
 But please note: The history stores only the register values and stack contents. I.e. the memory or other HW state is not stored.
 So whenever a memory location is changed from the program code in reverse debugging this will not be reflected in e.g. the memory view.
 You can only rely on the register values.
+
+
+#### History Spot
+
+You can enable/disable a history spot around the current PC:
+~~~
+"history": {
+    "spotCount": 10
+}
+~~~
+
+If enabled (!= 0) you see the historic indices of the instructions. E.g. here:
+![](images/spot_count1.jpg)
+
+The indices are shown in brackets to the right.
+The PC is currently in line 988.
+The previous executed instruction is at index -1. Before at line 986 is index -2.
+Before that instructuin at index -3 (line 1008) we see that there was a branch. Obviously the flags have been NZ and the branch was taken.
+
+With the *History Spot* you can see what has just happened before without having to back step.
+
+In case a line/instruction has been executed more than once you will find several indices in the brackets. E.g.:
+![](images/spot_count2.jpg)
+
+When you step back you can also see the next instructions i.e. where you came from.
+If 'spotcount' is e.g. 10 you see a maximum of 10 previous and next indices.
+
+Here is an animated gif to illustrate the behaviour:
+![](images/spot_count_animated.gif)
+
 
 #### Breakpoints in Reverse Debug Mode
 
