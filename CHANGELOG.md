@@ -2,7 +2,9 @@
 
 # 0.9.6
 - shortHistoryCount added. A list of instructions is highlighted that were executed just before the current one.
-- mixed extended and real stack.
+- Fixed extended and real stack.
+- Fix for coverage display after unit tests stopped.
+- Fix for forward step during reverse debug (isCallOpcode corrected)
 
 ## 0.9.5
 - Reverse debugging: Conditional breakpoints.

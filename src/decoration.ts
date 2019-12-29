@@ -374,7 +374,7 @@ export class DecorationClass {
 					  margin: "1.5em"
 				  },
 				},
-			  };
+			};
 
 			// Add address to set
 			lines.push(deco);
@@ -404,6 +404,7 @@ export class DecorationClass {
 		const fileMap = decoMap.fileMap;
 
 		// Loop over all addresses
+		let index = -1;
 		addresses.forEach(addr => {
 			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
@@ -411,17 +412,34 @@ export class DecorationClass {
 			if(filename.length == 0)
 				return;
 			// Get filename set
-			let lines = fileMap.get(filename) as Array<vscode.Range>;
+			let lines = fileMap.get(filename) as Array<vscode.DecorationOptions>;
 			if(!lines) {
 				// Create a new
-				lines = new Array<vscode.Range>();
+				lines = new Array<vscode.DecorationOptions>();
 				fileMap.set(filename, lines);
 			}
 			// Add address to set
 			const lineNr = location.lineNr;
-			const range = new vscode.Range(lineNr,0, lineNr,1000);
+			const deco = {
+				range: new vscode.Range(lineNr,0, lineNr,1000),
+				hoverMessage: undefined,
+				renderOptions: {
+				  after: {
+					  contentText: "[" + index.toString() + "]",
+					  margin: "1.5em",
+					  //height: "5px",
+					  //fontWeight: "4em",
+					  //width: "4em",
+					  //fontStyle: "italic",
+				  },
+				},
+			};
+
 			// Add address to set
-			lines.push(range);
+			lines.push(deco);
+
+			// Next
+			index --;
 		});
 
 		// Loop through all open editors.
