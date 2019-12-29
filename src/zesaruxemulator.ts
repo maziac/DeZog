@@ -253,17 +253,17 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 					// Code coverage
 					if(Settings.launch.history.codeCoverageEnabled) {
-						zSocket.send('cpu-code-coverage enabled yes');
+						zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
 						zSocket.send('cpu-code-coverage clear');
 					}
 					else
-						zSocket.send('cpu-code-coverage enabled no');
+						zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
 
 					// Reverse debugging.
 					this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
 
 					// Enable extended stack
-					zSocket.send('extended-stack enabled no');	// bug in ZEsarUX
+					zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
 					zSocket.send('extended-stack enabled yes');
 
 
@@ -627,10 +627,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// Get normal stack, e.g. "02C9H 0404H 80F8H 0403H 0302H 0201H 8147H 0000H 0000H 0000H"
-			zSocket.send('get-stack-backtrace '+depth, data => {
+			zSocket.send('get-stack-backtrace ' + depth, data => {
 				const rStack = data.split(' ');
 				// Get 'extended-stack' from zesarux
-				zSocket.send('extended-stack get '+depth, data => {
+				zSocket.send('extended-stack get ' + depth, data => {
 					Log.log('Call stack: ' + data);
 					data = data.replace(/\r/gm, "");
 					const zStack = data.split('\n');

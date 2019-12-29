@@ -4,7 +4,8 @@
 - spotCount added. A list of instructions is highlighted that were executed just before and just after the current one.
 - Fixed extended and real stack.
 - Fix for coverage display after unit tests stopped.
-- Fix for forward step during reverse debug (isCallOpcode corrected)
+- Fix for forward step during reverse debug (isCallOpcode corrected).
+- Suppressed "Already enabled" errors.
 
 ## 0.9.5
 - Reverse debugging: Conditional breakpoints.

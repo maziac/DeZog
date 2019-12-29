@@ -422,7 +422,7 @@ export class ZesaruxSocket extends Socket {
 			}
 
 			// Execute handler
-			if( cEntry != undefined)
+			if(cEntry != undefined)
 				cEntry.handler(concData);
 
 			// Check if last command is completed (if queue is empty)

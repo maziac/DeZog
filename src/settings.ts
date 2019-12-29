@@ -249,7 +249,9 @@ export class Settings {
 		*/
 
 		if(!Settings.launch.topOfStack)
-			Settings.launch.topOfStack = (unitTests) ? 'UNITTEST_STACK' : '0x10000';
+			Settings.launch.topOfStack = '0x10000';
+		if(unitTests)
+			Settings.launch.topOfStack = 'UNITTEST_STACK';
 
 		if(Settings.launch.load)
 			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
