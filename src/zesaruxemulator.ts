@@ -1474,8 +1474,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Get start index
 		let index = this.cpuHistory.getHistoryIndex() + 1;
 
-		const addresses = this.cpuHistory.getPreviousHistoryEntries(count);
-		const startIndex = index - addresses.length;
+		let startIndex = index - count;
+		if(startIndex < 0)
+			startIndex = 0;
+		const addresses = this.revDbgHistory.slice(startIndex);
 
 		// Get short history
 		zSocket.send('cpu-history get-pc ' + index + ' ' + count, data => {
@@ -2392,7 +2394,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Add to register cache
 			this.RegisterCache = line;
 			// Add to history for decoration
-			const addr = parseInt(line.substr(3,4), 16);
+			const addr = Z80Registers.parsePC(line);
 			this.revDbgHistory.push(addr);
 		}
 		return line;

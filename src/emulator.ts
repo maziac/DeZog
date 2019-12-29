@@ -1071,7 +1071,9 @@ export class EmulatorClass extends EventEmitter {
 	 * Emits 'revDbgHistory' to signal that the files should be decorated.
 	 */
 	public emitRevDbgHistory() {
-		this.emit('revDbgHistory', this.revDbgHistory);
+		// Change debug history array into set.
+		const addrSet = new Set(this.revDbgHistory)
+		this.emit('revDbgHistory', addrSet);
 	}
 
 	/**

@@ -303,7 +303,7 @@ export class DecorationClass {
 	 * Will set the decoration.
 	 * @param addresses The addresses to decorate.
 	 */
-	public showRevDbgHistory(addresses: Array<number>) {
+	public showRevDbgHistory(addresses: Set<number>) {
 		// Clear decorations
 		this.clearRevDbgHistory();
 
