@@ -79,12 +79,18 @@ export class DecorationClass {
 			gutterIconSize: 'auto',
 			light: {
 				// this color will be used in light color themes
-				backgroundColor: '#89C2D3',
+//				backgroundColor: '#89C2D3',
+				after: {
+					color: "#808080",
+				}
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#022031',
-			}
+//				backgroundColor: '#022031',
+				after: {
+					color: "#808080",
+				}
+			},
 		});
 
 		// Decoration for reverse debugging.
@@ -99,11 +105,13 @@ export class DecorationClass {
 
 			light: {
 				// this color will be used in light color themes
-				backgroundColor: '#A9E2F3',
+				//backgroundColor: '#A9E2F3',
+				backgroundColor: '#C7C7C7',
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#033563',
+				//backgroundColor: '#033563',
+				backgroundColor: '#353535',
 			}
 
 		});
@@ -433,9 +441,10 @@ export class DecorationClass {
 				range: new vscode.Range(lineNr,0, lineNr,1000),
 				hoverMessage: undefined,
 				renderOptions: {
+				  //opacity: "0.5",
 				  after: {
 					  contentText: "[" + text + "]",
-					  margin: "1.5em",
+					  margin: "2.5em",
 					  //height: "5px",
 					  //fontWeight: "4em",
 					  //width: "4em",
