@@ -51,36 +51,6 @@ export class DecorationClass {
 	constructor() {
 		// Create the decoration types.
 		const coverageDecoType = vscode.window.createTextEditorDecorationType({
-			/*
-			borderWidth: '1px',
-			borderStyle: 'solid',
-			overviewRulerColor: 'blue',
-			overviewRulerLane: vscode.OverviewRulerLane.Right,
-			light: {
-				// this color will be used in light color themes
-				borderColor: 'darkblue'
-			},
-			dark: {
-				// this color will be used in dark color themes
-				borderColor: 'lightblue'
-			}
-			*/
-			isWholeLine: true,
-			gutterIconSize: 'auto',
-			light: {
-				// this color will be used in light color themes
-				backgroundColor: '#B0E090',
-				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-light.svg'),
-			},
-			dark: {
-				// this color will be used in dark color themes
-				backgroundColor: '#0C4004',
-				//gutterIconPath: context.asAbsolutePath('./images/coverage/gutter-icon-dark.svg'),
-			}
-		});
-
-		// For the elder lines a little lighter
-		const shortHistoryDecoType = vscode.window.createTextEditorDecorationType({
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			light: {
@@ -90,6 +60,30 @@ export class DecorationClass {
 			dark: {
 				// this color will be used in dark color themes
 				backgroundColor: '#093003',
+			}
+			/*
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#B0E090',
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#0C4004',
+			}
+			*/
+		});
+
+		// For the short history decoration type.
+		const shortHistoryDecoType = vscode.window.createTextEditorDecorationType({
+			isWholeLine: true,
+			gutterIconSize: 'auto',
+			light: {
+				// this color will be used in light color themes
+				backgroundColor: '#89C2D3',
+			},
+			dark: {
+				// this color will be used in dark color themes
+				backgroundColor: '#022031',
 			}
 		});
 
@@ -113,7 +107,6 @@ export class DecorationClass {
 			}
 
 		});
-
 
 		// Decoration for 'Breaks'
 		const breakDecoType = vscode.window.createTextEditorDecorationType({
@@ -395,7 +388,7 @@ export class DecorationClass {
 	 * @param addresses The addresses to decorate. Is an ordered list.
 	 * The youngest address (instruction) is at index 0.
 	 */
-	public showShortHistory(addresses: Array<number>) {
+	public showShortHistory(startIndex, addresses: Array<number>) {
 		// Clear decorations
 		this.clearShortHistory();
 
@@ -403,12 +396,28 @@ export class DecorationClass {
 		const decoMap = this.decorationFileMaps.get(this.SHORT_HISTORY) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
 
-		// Loop over all addresses
-		let index = -1;
+		// Check if addresses are used more than once
+		const addressMap = new Map<string, string>();
+		let index = -startIndex-1;
 		addresses.forEach(addr => {
-			// Get file location for address
 			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
+			const locString =  location.lineNr + ';' + location.fileName;
+			let text = addressMap.get(locString);
+			if(text)
+				text += "," + index.toString();
+			else
+				text = index.toString();
+			addressMap.set(locString, text);
+			// Next
+			index --;
+		});
+
+		// Loop over all addresses
+		for(const [locString, text] of addressMap) {
+			// Get file location for address
+			//const location = Labels.getFileAndLineForAddress(addr);
+			const k = locString.indexOf(';');
+			const filename = locString.substr(k+1);
 			if(filename.length == 0)
 				return;
 			// Get filename set
@@ -419,13 +428,13 @@ export class DecorationClass {
 				fileMap.set(filename, lines);
 			}
 			// Add address to set
-			const lineNr = location.lineNr;
+			const lineNr = parseInt(locString);
 			const deco = {
 				range: new vscode.Range(lineNr,0, lineNr,1000),
 				hoverMessage: undefined,
 				renderOptions: {
 				  after: {
-					  contentText: "[" + index.toString() + "]",
+					  contentText: "[" + text + "]",
 					  margin: "1.5em",
 					  //height: "5px",
 					  //fontWeight: "4em",
@@ -437,10 +446,7 @@ export class DecorationClass {
 
 			// Add address to set
 			lines.push(deco);
-
-			// Next
-			index --;
-		});
+		}
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;

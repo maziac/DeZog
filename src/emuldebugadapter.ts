@@ -489,9 +489,9 @@ export class EmulDebugSessionClass extends DebugSession {
 			Decoration.showRevDbgHistory(addresses);
 		});
 
-		Emulator.on('shortHistory', addresses => {
+		Emulator.on('shortHistory', (startIndex, addresses) => {
 			// Short history addresses
-			Decoration.showShortHistory(addresses);
+			Decoration.showShortHistory(startIndex, addresses);
 		});
 
 		Emulator.on('warning', message => {

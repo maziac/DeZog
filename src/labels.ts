@@ -10,7 +10,7 @@ import { Z80Registers } from './z80Registers';
 /**
  * For the association of the addresses to the files.
  */
-interface SourceFileEntry {
+export interface SourceFileEntry {
 	fileName: string;	/// The associated source filename
 	lineNr: number;		/// The line number of the associated source file
 	modulePrefix: string|undefined;	/// For sjasmplus: module is an optional module prefix that is added to all labels (e.g. "sprites.sw.").

@@ -86,6 +86,26 @@ export class ZesaruxCpuHistory {
 	}
 
 
+
+	/**
+	 * Returns the last count addresses from the history.
+	 * The lower index first.
+	 */
+	public getPreviousHistoryEntries(count: number) {
+		const currIndex = this.historyIndex;
+		let start = currIndex - count;
+		if(start < 0)
+			start = 0;
+		const arr = new Array<number>();
+		for(let i=start; i<=currIndex; i++) {
+			const line = this.history[i];
+			const addr = Z80Registers.parsePC(line);
+			arr.push(addr);
+		}
+		return arr;
+	}
+
+
 	/**
 	 * Increases this.historyIndex and returns the registers at that index.
 	 * @returns Returns the registers or undefined.

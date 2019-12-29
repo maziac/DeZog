@@ -1474,6 +1474,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Get start index
 		let index = this.cpuHistory.getHistoryIndex() + 1;
 
+		const addresses = this.cpuHistory.getPreviousHistoryEntries(count);
+		const startIndex = index - addresses.length;
+
 		// Get short history
 		zSocket.send('cpu-history get-pc ' + index + ' ' + count, data => {
 			// data e.g. = "80d9 80d7 80d5 80d3 80f5 "
@@ -1481,7 +1484,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 			if(data.startsWith('Error'))
 				return;
 			// Parse data and collect addresses
-			const addresses = new Array<number>();
 			const length = data.length;
 			for(let k=0; k<length; k+=5) {
 				const addressString = data.substr(k,4);
@@ -1489,7 +1491,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				addresses.push(address);
 			}
 			// Emit code coverage event
-			this.emit('shortHistory', addresses);
+			this.emit('shortHistory', startIndex, addresses);
 		});
 	}
 
