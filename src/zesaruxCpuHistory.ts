@@ -37,9 +37,6 @@ export class ZesaruxCpuHistory {
 	// The current history index.
 	protected historyIndex = -1;
 
-	// The number of available instructions.
-	protected historySize = -1;
-
 	// The first time the index is searched. Afterwards the stored one is used.
 	protected pcIndex = -1;
 
@@ -77,7 +74,6 @@ export class ZesaruxCpuHistory {
 	public clearCache() {
 		this.history.length = 0;
 		this.historyIndex = -1;
-		this.historySize = -1;
 	}
 
 
@@ -87,15 +83,6 @@ export class ZesaruxCpuHistory {
 	 */
 	public getHistoryIndex() {
 		return this.historyIndex;
-	}
-
-
-	/**
-	 * Returns the history size.
-	 * -1 if history is not in use.
-	 */
-	public getHistorySize() {
-		return this.historySize;
 	}
 
 
@@ -122,16 +109,9 @@ export class ZesaruxCpuHistory {
 	 */
 	public async getPrevRegistersAsync(): Promise<string|undefined> {
 		let currentLine = this.getPrevRegisters();
-		if(!currentLine) {
+		if(!currentLine)
+		{
 			const index = this.historyIndex + 1;
-
-			// Check if we need to retrieve the available size
-			if(this.historySize < 0) {
-				// Is done only for the first time
-				this.historySize = await this.getHistorySizePromise();
-			}
-
-			// Get historic registers
 			currentLine = await this.getRegistersPromise(index);
 			if(currentLine) {
 				this.historyIndex = index;
@@ -162,33 +142,17 @@ export class ZesaruxCpuHistory {
 	 * Retrieves the instruction from ZEsarUX cpu history.
 	 * Is async.
 	 * @param index The index to retrieve. Starts at 0.
-	 * @returns A string with the registers or undefined if at the end of the history.
+	 * @returns A string with the registers.
 	 */
 	protected getRegistersPromise(index: number): Promise<string> {
-		return new Promise<string>(resolve => {
+		return new Promise<string>((resolve, reject) => {
 			assert(index >= 0);
-			assert(this.historySize >= 0);
-			if(index >= this.historySize) {
-				resolve(undefined);	// end reached
-			}
-			else {
-				zSocket.send('cpu-history get ' + index, data => {
+			zSocket.send('cpu-history get ' + index, data => {
+				if(data.substr(0,5).toLowerCase() == 'error')
+					resolve(undefined);
+				else
 					resolve(data);
-				});
-			}
-		});
-	}
-
-
-	/**
-	 * Retrieves the history size from ZEsarUX.
-	 */
-	protected getHistorySizePromise(): Promise<number> {
-		return new Promise<number>(resolve => {
-				zSocket.send('cpu-history get-size', data => {
-				const count = parseInt(data);
-				resolve(count);
-			});
+			}, true);
 		});
 	}
 

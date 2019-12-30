@@ -1504,11 +1504,6 @@ export class ZesaruxEmulator extends EmulatorClass {
 		if(count <= 0)
 			return;
 
-		// Get history size
-		const historySize = this.cpuHistory.getHistorySize();
-		if(historySize <= 0)
-			return;
-
 		// Get start index
 		let index = this.cpuHistory.getHistoryIndex() + 1;
 
@@ -1517,33 +1512,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 			startIndex = 0;
 		const addresses = this.revDbgHistory.slice(startIndex);
 
-		// Get spot history
-		let rCount = count;
-		if(index+rCount >= historySize)
-			rCount = historySize-index;
-		if(rCount <= 0) {
-			// Too high:
-			// Emit spot history event
-			this.emit('historySpot', startIndex, addresses);
-			return;
-		}
-
-		// Otherwise retrieve the history from zesarux.
-		zSocket.send('cpu-history get-pc ' + index + ' ' + rCount, data => {
+		// Get short history
+		zSocket.send('cpu-history get-pc ' + index + ' ' + count, data => {
 			// data e.g. = "80d9 80d7 80d5 80d3 80f5 "
-			// Check for error
-			if(data.startsWith('Error'))
-				return;
+			// or "80d9 80d7 Error..." if not all data is available.
 			// Parse data and collect addresses
 			const length = data.length;
 			for(let k=0; k<length; k+=5) {
 				const addressString = data.substr(k,4);
+				// Check for error
+				if(addressString.toLowerCase() == 'erro')
+					break;
 				const address = parseInt(addressString, 16);
 				addresses.push(address);
 			}
-			// Emit spot history event
+			// Emit code coverage event
 			this.emit('historySpot', startIndex, addresses);
-		});
+		}, true);
 	}
 
 
