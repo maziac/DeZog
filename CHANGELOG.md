@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.9.7
+- Different way to step-over (SP).
+
 # 0.9.6
 - spotCount added. A list of instructions is highlighted that were executed just before and just after the current one.
 - Fixed extended and real stack.
