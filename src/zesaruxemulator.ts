@@ -671,7 +671,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			assert(currentLine);
 			let nextLine;
 
-			let reason = 'Break: Reached start of instruction history.';
+			let reason;
 			try {
 				//this.state = EmulatorState.RUNNING;
 				//this.state = EmulatorState.IDLE;
@@ -701,7 +701,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				}
 			}
 			catch(e) {
-				reason = 'Break: Error occurred: ' + e;
+				reason = 'Error occurred: ' + e;
 			}
 
 			// Decoration
@@ -709,14 +709,20 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
-			if(!nextLine) {
+			if(nextLine) {
+				// Call handler
+				contStoppedHandler(reason, undefined, undefined);
+			}
+			else {
 				// Get the registers etc. from ZEsarUX
 				this.RegisterCache = undefined;
-				this.getRegisters(() => {});
+				this.getRegisters(data => {
+					const pc = Z80Registers.parsePC(data);
+					reason = 'Break at PC=' + Utility.getHexString(pc,4) + 'h: Reached start of instruction history.';
+					contStoppedHandler(reason, undefined, undefined);
+				});
 			}
 
-			// Call handler
-			contStoppedHandler(reason, undefined, undefined);
 			return;
 		}
 
@@ -741,8 +747,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						// Handle code coverage
 						this.handleCodeCoverage();
 						// The reason is the 2nd line
-						const reason = text.split('\n')[1];
-						assert(reason);
+						const reason = this.getBreakReason(text);
 						// Call handler
 						contStoppedHandler(reason, tStates, cpuFreq);
 					});
@@ -751,6 +756,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 		});
 	}
 
+
+	/**
+	 * Extracts the break reason from the zesarux text returned for the zrcp "run"
+	 * command.
+	 * @param text E.g. Running until a breakpoint, key press or data sent, menu opening or other event
+	 * Breakpoint fired: PC=811FH AND (A<>0)
+	 *   811F LD A,03"
+	 * @returns E.g. "Breakpoint fired: PC=811FH AND (A<>0)"
+	 */
+	protected getBreakReason(text: string): string {
+		// The reason is the 2nd line
+		let result;
+		const reason = text.split('\n')[1];
+		if(reason && reason.startsWith('Break'))
+			result = reason;
+		return result;
+	}
 
 	/**
 	  * 'pause' the debugger.
@@ -1196,7 +1218,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	 public async stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void) {
+	 public async stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, breakReason?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Get current line
@@ -1220,14 +1242,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 				nextPC1 = nextPC0+1;	// If return address is adjusted
 			}
 
-			let errorText;
+			let breakReason;
 			try {
 				// Find next line with same SP
 				while(true) {
 					// Get next line
 					nextLine = this.revDbgNext();
 					if(!nextLine) {
-						errorText = 'Break: Reached start of instruction history.'
+						breakReason = 'Break: Reached start of instruction history.'
 						break;	// At end of reverse debugging. Simply get the real call stack.
 					}
 
@@ -1248,7 +1270,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.RegisterCache = nextLine;
 					const condition = this.checkPcBreakpoints(nextLine);
 					if(condition != undefined) {
-						errorText = condition;
+						breakReason = condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -1257,7 +1279,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 				}
 			}
 			catch(e) {
-				errorText = e;
+				breakReason = e;
 			}
 
 			// Decoration
@@ -1265,7 +1287,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Call handler
 			const instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
-			handler(instruction, undefined, undefined, errorText);
+			handler(instruction, undefined, undefined, breakReason);
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
@@ -1287,8 +1309,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// instruction what, for a jp-instruction, obviously never happens.
 		// Therefore a 'step-into' is executed instead. The only problem is that a
 		// 'step-into' is not the desired behavior for a CALL.
-		// So we first check if the instruction is a CALL and
-		// then either execute a 'step-over' or a step-into'.
+		// Furthermore we don't get a break reason for a zesarux step-over.
+		// I.e. if a step-over is interrupted by a breakpoint zesarux breaks at the breakpoint
+		// but does not show a reason.
+		// Therefore the CALL and RST are exceuted with a "run".
+		// All others are executed with a step-into.
+		// Only exception is LDDR etc. Those are executed as step-over.
 		this.getRegisters(data => {
 			const pc = Z80Registers.parsePC(data);
 			zSocket.send('disassemble ' + pc, disasm => {
@@ -1297,28 +1323,35 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Check if this was a "CALL something" or "CALL n/z,something"
 				const opcode = disasm.substr(7,4);
 
+				let condition;
 				if(opcode == "RST ") {
 					// Use a special handling for RST required for esxdos.
 					// Zesarux internally just sets a breakpoint after the current opcode. In esxdos this
 					// address is used as parameter. I.e. the return address is tweaked after that address.
 					// Therefore we set an additional breakpoint 1 after the current address.
+					condition = 'PC=' + (pc+1) + ' OR PC=' + (pc+2);
+				}
+				else if(opcode=="CALL") {
+					condition = 'PC=' + (pc+3);
+				}
 
+				if(condition) {
+					// We do a "run" instead of a step-into/over
 					// Set action first (no action).
 					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
 					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
-						// set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
-						const condition = 'PC=' + (pc+2);	// PC+1 would be the normal return address.
+						// set the breakpoint
 						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
 							// enable breakpoint
 							zSocket.send('enable-breakpoint ' + bpId, () => {
 								// Run
 								this.state = EmulatorState.RUNNING;
-								this.cpuStepGetTime('cpu-step-over', (tStates, cpuFreq) => {
-									// takes a little while, then step-over RET
+								this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 									// Disable breakpoint
 									zSocket.send('disable-breakpoint ' + bpId, () => {
 										this.state = EmulatorState.IDLE;
-										handler(disasm, tStates, cpuFreq);
+										handler(disasm, tStates, cpuFreq, breakReason);
 									});
 								});
 							});
@@ -1326,12 +1359,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 					});
 				}
 				else {
-					// No special handling for the other opcodes.
-					const cmd = (opcode=="CALL" || opcode=="LDIR" || opcode=="LDDR") ? 'cpu-step-over' : 'cpu-step';
+					// "normal" opcode, just check for repetitive ones
+					const cmd = (opcode=="LDIR" || opcode=="LDDR" || opcode=="CPIR" || opcode=="CPDR") ? 'cpu-step-over' : 'cpu-step';
 					// Step
-					this.cpuStepGetTime(cmd, (tStates, cpuFreq) => {
+					this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReason) => {
 						// Call handler
-						handler(disasm, tStates, cpuFreq);
+						handler(disasm, tStates, cpuFreq, breakReason);
 					});
 				}
 			});
@@ -1405,15 +1438,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/**
 	 * Executes a step and also returns the T-states and time needed.
 	 * @param cmd Either 'cpu-step' or 'cpu-step-over'.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
+	 * @param handler(tStates, cpuFreq, breakReason) The handler that is called after the step is performed.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, error?: string)=>void): void {
+	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, breakReason?: string)=>void): void {
 		// Reset T-state counter etc.
 		zSocket.send('reset-tstates-partial', data => {
-			// Step into
-			zSocket.send(cmd, data => {
+			// Command, e.g. step into
+			zSocket.send(cmd, result => {
 				// get T-State counter
 				zSocket.send('get-tstates-partial', data => {
 					const tStates = parseInt(data);
@@ -1421,7 +1454,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 					zSocket.send('get-cpu-frequency', data => {
 						const cpuFreq = parseInt(data);
 						// Call handler
-						handler(tStates, cpuFreq);
+						const breakReason = this.getBreakReason(result);
+						handler(tStates, cpuFreq, breakReason);
 						// Handle code coverage
 						this.handleCodeCoverage();
 					});
@@ -1500,11 +1534,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	 * 'step out' of current call.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
+	 * @param handler(tStates, cpuFreq, breakReason) The handler that is called after the step is performed.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void) {
+	public async stepOut(handler:(tStates?: number, cpuFreq?: number, breakReason?: string)=>void) {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Step out will run until the start of the cpu history
@@ -1520,14 +1554,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let nextLine;
 			const startSP = Z80Registers.parseSP(currentLine);
 
-			let errorText;
+			let breakReason;
 			try {
 				// Find next line with same SP
 				while(true) {
 					// Get next line
 					nextLine = this.revDbgNext();
 					if(!nextLine) {
-						errorText = 'Break: Reached start of instruction history.';
+						breakReason = 'Break: Reached start of instruction history.';
 						break;	// At end of reverse debugging. Simply get the real call stack.
 					}
 
@@ -1550,7 +1584,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.RegisterCache = nextLine;
 					const condition = this.checkPcBreakpoints(nextLine);
 					if(condition != undefined) {
-						errorText = condition;
+						breakReason = condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -1559,14 +1593,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 				}
 			}
 			catch(e) {
-				errorText = e;
+				breakReason = e;
 			}
 
 			// Decoration
 			this.emitRevDbgHistory();
 
 			// Call handler
-			handler(undefined, undefined, errorText);
+			handler(undefined, undefined, breakReason);
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			// Otherwise get the callstack from ZEsarUX.
@@ -1625,7 +1659,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						// Set action first (no action).
 						const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
 						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
-							// Set the breakpoint (conditions are evaluated by order. 'and' does not take precedence before 'or').
+							// Set the breakpoint.
 							// Note: PC=PEEKW(SP-2) finds an executed RET.
 							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
 							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
@@ -1636,11 +1670,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 									this.RegisterCache = undefined;
 									// Run
 									this.state = EmulatorState.RUNNING;
-									this.cpuStepGetTime('run', (tStates, cpuFreq) => {
+									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 										// Disable breakpoint
 										zSocket.send('disable-breakpoint ' + bpId, () => {
 											this.state = EmulatorState.IDLE;
-											handler(tStates, cpuFreq);
+											handler(tStates, cpuFreq, breakReason);
 										});
 									});
 
@@ -2026,7 +2060,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Text
 		let reason;
 		if(condition != undefined) {
-			reason = 'Breakpoint hit at PC=' + Utility.getHexString(pc,4);
+			reason = 'Breakpoint hit at PC=' + Utility.getHexString(pc,4) + 'h';
 			if(condition != "")
 				reason += ', ' + condition;
 		}
@@ -2354,6 +2388,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			handler(patterns);
 		});
 	}
+
+	// ------------------------------------
 
 
 	/**
