@@ -8,7 +8,6 @@
 - Suppressed "Already enabled" errors.
 - Prepared breakpoint decorations.
 
-
 ## 0.9.5
 - Reverse debugging: Conditional breakpoints.
 - Fixed moving of PC to cursor during reverse debugging.
