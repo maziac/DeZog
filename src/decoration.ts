@@ -121,12 +121,15 @@ export class DecorationClass {
 			isWholeLine: true,
 			gutterIconSize: 'auto',
 			light: {
-				// this color will be used in light color themes
-				backgroundColor: '#ffff00',
+				after: {
+					color: "black",
+				}
 			},
 			dark: {
-				// this color will be used in dark color themes
-				backgroundColor: '#202000',
+				after: {
+					color: "#808080",
+				}
+
 			}
 		});
 
@@ -236,10 +239,14 @@ export class DecorationClass {
 
 	/**
 	 * Sets decorations for a specific type.
-	 * Coverage, revers debug, breaks.
-	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG, SHORT_HISTORY or BREAK.
+	 * Coverage, revers debug, breaks.spec
+	 *
+	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG, HISTORY_SPOT or BREAK.
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
+		if(fileMapName != this.BREAK)
+			return;
+
 		// Get filename
 		const edFilename = editor.document.fileName;
 
