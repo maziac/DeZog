@@ -1322,19 +1322,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// Check if this was a "CALL something" or "CALL n/z,something"
 				const opcode = disasm.substr(7,4);
 
-				let condition;
-				if(opcode == "RST ") {
-					// Use a special handling for RST required for esxdos.
-					// Zesarux internally just sets a breakpoint after the current opcode. In esxdos this
-					// address is used as parameter. I.e. the return address is tweaked after that address.
-					// Therefore we set an additional breakpoint 1 after the current address.
-					condition = 'PC=' + (pc+1) + ' OR PC=' + (pc+2);
-				}
-				else if(opcode=="CALL") {
-					condition = 'PC=' + (pc+3);
-				}
-
-				if(condition) {
+				// For RST and CALL we break when SP reaches the current SP again.
+				// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
+				// reached if the stack is manipulated.
+				// A SP breakpoint might be hit when the stack is being manipulated, but at least it
+				// is hit and does not run forever.
+				if(opcode == "RST " || opcode=="CALL") {
+					// Set condition
+					const sp = Z80Registers.parseSP(data);
+					const condition = 'SP>=' + sp;
 					// We do a "run" instead of a step-into/over
 					// Set action first (no action).
 					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
