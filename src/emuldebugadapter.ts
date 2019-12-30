@@ -1351,7 +1351,6 @@ export class EmulDebugSessionClass extends DebugSession {
 				if(breakReason) {
 					// Output a possible problem (end of log reached)
 					vscode.debug.activeDebugConsole.appendLine(breakReason);
-
 					// Show break reason
 					this.decorateBreak(breakReason);
 				}
@@ -1380,13 +1379,16 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack((instruction, error) => {
+			Emulator.stepBack((instruction, breakReason) => {
 				// Print
 				vscode.debug.activeDebugConsole.appendLine('StepBack: ' + instruction);
 
-				// Output a possible problem (end of log reached)
-				if(error)
-					vscode.debug.activeDebugConsole.appendLine(error);
+				if(breakReason) {
+					// Output a possible problem (end of log reached)
+					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					// Show break reason
+					this.decorateBreak(breakReason);
+				}
 
 				// Update memory dump etc.
 				this.update({step: true});

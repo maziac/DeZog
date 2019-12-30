@@ -1695,38 +1695,39 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @param handler(instruction, error) The handler that is called after the step is performed.
+	  * @param handler(instruction, breakReason) The handler that is called after the step is performed.
 	  * instruction: e.g. "081C NOP"
-	  * error: If not undefined it holds the exception message.
+	  * breakReason: If not undefined it holds the break reason message.
 	  */
-	 public stepBack(handler:(instruction: string, error: string)=>void) {
+	 public stepBack(handler:(instruction: string, breakReason: string)=>void) {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(async () => {
-			let errorText;
+			let breakReason;
 			let instruction = '';
 			try {
 				// Remember previous line
 				let prevLine = this.RegisterCache as string;
 				assert(prevLine);
 				const currentLine = await this.revDbgPrev();
-				if(!currentLine)
-					throw Error('Reached end of instruction history.')
-				// Stack handling:
-				await this.handleReverseDebugStackBack(currentLine, prevLine);
-				// Get instruction
-				const pc = Z80Registers.parsePC(currentLine);
-				instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
+				if(currentLine) {
+					// Stack handling:
+					await this.handleReverseDebugStackBack(currentLine, prevLine);
+					// Get instruction
+					const pc = Z80Registers.parsePC(currentLine);
+					instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
+				}
+				else
+					breakReason = 'Break: Reached end of instruction history.';
 			}
 			catch(e) {
-				errorText = e;
+				breakReason = e;
 			}
 
 			// Decoration
-			if(!errorText)
-				this.emitRevDbgHistory();
+			this.emitRevDbgHistory();
 
 			// Call handler
-			handler(instruction, errorText);
+			handler(instruction, breakReason);
 		});
 	}
 
