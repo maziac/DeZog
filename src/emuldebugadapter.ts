@@ -1078,6 +1078,21 @@ export class EmulDebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Decorates the current PC source line with a reason.
+	 * @oaram "Breakpoint fired: PC=811EH" or undefined (prints nothing)
+	 */
+	public decorateBreak(breakReason: string) {
+		if(!breakReason)
+			return;
+		// Get PC
+		Emulator.getRegisters(regs => {
+			const pc = Z80Registers.parsePC(regs);
+			Decoration.showBreak(pc, breakReason);
+		});
+	}
+
+
+	/**
 	  * vscode requested 'continue'.
 	  * @param response
 	  * @param args
@@ -1099,24 +1114,19 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * vscode UI (continueRequest).
 	 */
 	public emulatorContinue() {
+		Decoration.clearBreak();
 		Emulator.continue((reason, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 			// Display T-states and time
 			this.showUsedTStates('Continue. ', tStates, cpuFreq);
 
-			// Send output event to inform the user about the reason
-			vscode.debug.activeDebugConsole.appendLine(reason);
+			if(reason) {
+				// Send output event to inform the user about the reason
+				vscode.debug.activeDebugConsole.appendLine(reason);
 
-			// Use reason for break-decoration.
-			// Output looks e.g. like: "Breakpoint fired: PC=811EH"
-			// Get break address
-			const match = /([0-9a-f]+)h/i.exec(reason);
-			if(match) {
-				const addrString = match[1];
-				const breakAddr = parseInt(addrString, 16);
-				// Now do decoration
-				Decoration.showBreak(breakAddr, breakAddr, reason); // TODO: get PC for first parameter.
+				// Use reason for break-decoration.
+				this.decorateBreak(reason);
 			}
 
 			// React depending on internal state.
@@ -1175,6 +1185,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	 protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments) : void {
+		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
 			// Output
@@ -1204,28 +1215,33 @@ export class EmulDebugSessionClass extends DebugSession {
 		* @param handler Is called after successful step-over.
 	  */
 	 public emulatorStepOver(handler?: () => void): void {
-			// Step-Over
-			Emulator.stepOver((disasm, tStates, cpuFreq, error) => {
-				// Display T-states and time
-				let text = disasm || '';
-				if(tStates || cpuFreq)
-					text += ' \t; ';
-				this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
+		Decoration.clearBreak();
+		// Step-Over
+		Emulator.stepOver((disasm, tStates, cpuFreq, breakReason) => {
+			// Display T-states and time
+			let text = disasm || '';
+			if(tStates || cpuFreq)
+				text += ' \t; ';
+			this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
 
-				// Update memory dump etc.
-				this.update({step: true});
+			// Update memory dump etc.
+			this.update({step: true});
 
-				// Response
-				if(handler)
-					handler();
+			// Response
+			if(handler)
+				handler();
 
-				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+			// Send event
+			this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
 
-				// Output a possibly error
-				if(error)
-					vscode.debug.activeDebugConsole.appendLine(error);
-			});
+			if(breakReason) {
+				// Output a possible problem
+				vscode.debug.activeDebugConsole.appendLine(breakReason);
+
+				// Show break reason
+				this.decorateBreak(breakReason);
+			}
+		});
 	}
 
 
@@ -1235,6 +1251,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
+		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Over
@@ -1286,6 +1303,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected stepInRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
@@ -1319,16 +1337,21 @@ export class EmulDebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	 protected stepOutRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Emulator.stepOut((tStates, cpuFreq, error) => {
+			Emulator.stepOut((tStates, cpuFreq, breakReason) => {
 				// Display T-states and time
 				this.showUsedTStates('StepOut. ', tStates, cpuFreq);
 
-				// Output a possible problem (end of log reached)
-				if(error)
-					vscode.debug.activeDebugConsole.appendLine(error);
+				if(breakReason) {
+					// Output a possible problem (end of log reached)
+					vscode.debug.activeDebugConsole.appendLine(breakReason);
+
+					// Show break reason
+					this.decorateBreak(breakReason);
+				}
 
 				// Update memory dump etc.
 				this.update();
@@ -1350,6 +1373,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	 protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back

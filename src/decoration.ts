@@ -349,13 +349,12 @@ export class DecorationClass {
 
 	/**
 	 * Is called when a new 'break' should be shown.
-	 * This happens only during run.
-	 * The decoration are cleared before the 'continue', that means that a decorations
-	 * stays during e.g. 'stepping' until the next 'continue' occurs.
-	 * It displays the break + break condition.
-	 * @param addresses The address to decorate.
+	 * This happens during continue, continueReverse, stepOut, stepOver.
+	 * The break decoration is cleared before all those actions.
+	 * @param pc The address to decorate. Used to find teh source line.
+	 * @param text The text to show.
 	 */
-	public showBreak(pc: number, breakAddress: number, text: string) {
+	public showBreak(pc: number, text: string) {
 		// Get file map
 		const decoMap = this.decorationFileMaps.get(this.BREAK) as DecorationFileMap;
 		const fileMap = decoMap.fileMap;
@@ -394,7 +393,6 @@ export class DecorationClass {
 			this.setDecorations(editor, this.BREAK);
 		}
 	}
-
 
 
 	/**

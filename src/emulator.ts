@@ -986,9 +986,9 @@ export class EmulatorClass extends EventEmitter {
 	/**
 	 * Change the program counter.
 	 * @param address The new address for the program counter.
-	 * @param handler that is called when the PC has been set.
+	 * @param handler That is called when the PC has been set.
 	 */
-	public setProgramCounter(address: number, handler:() => void) {
+	public setProgramCounter(address: number, handler?:() => void) {
 		assert(false);	// override this
 	}
 
