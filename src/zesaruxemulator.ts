@@ -1943,8 +1943,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		// set action first (no action)
 		const shortCond = (condition.length < 50) ? condition : condition.substr(0,50) + '...';
-// TODO		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
-	zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
+	//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
 		// set the breakpoint
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + condition, () => {
 				// enable the breakpoint
