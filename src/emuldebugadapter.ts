@@ -1192,9 +1192,13 @@ export class EmulDebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
 
 			// Continue debugger
-			Emulator.reverseContinue((reason) => {
-				// Output stop reason.
-				vscode.debug.activeDebugConsole.appendLine(reason);
+			Emulator.reverseContinue(breakReason => {
+				if(breakReason) {
+					// Output a possible problem
+					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					// Show break reason
+					this.decorateBreak(breakReason);
+				}
 				// Update memory dump etc.
 				this.update();
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
@@ -1237,7 +1241,6 @@ export class EmulDebugSessionClass extends DebugSession {
 			if(breakReason) {
 				// Output a possible problem
 				vscode.debug.activeDebugConsole.appendLine(breakReason);
-
 				// Show break reason
 				this.decorateBreak(breakReason);
 			}

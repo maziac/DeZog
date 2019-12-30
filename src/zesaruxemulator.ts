@@ -1165,21 +1165,21 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * 'reverse continue' debugger program execution.
 	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	 */
-	public reverseContinue(handler:(reason: string)=>void) {
+	public reverseContinue(handler:(breakReason: string)=>void) {
 		// Make sure the call stack exists
 		this.prepareReverseDbgStack(async () => {
-			let errorText: string|undefined;
-			let reason;
+			let breakReason;
 			try {
 				// Loop over all lines, reverse
-				reason = 'Break: Reached end of instruction history.';
 				let prevLine = this.RegisterCache as string;
 				assert(prevLine);
 				while(true) {
 					// Get line
 					const currentLine = await this.revDbgPrev();
-					if(!currentLine)
+					if(!currentLine) {
+						breakReason = 'Break: Reached end of instruction history.';
 						break;
+					}
 
 					// Stack handling:
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
@@ -1188,7 +1188,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.RegisterCache = currentLine;
 					const condition = this.checkPcBreakpoints(currentLine);
 					if(condition != undefined) {
-						reason = condition;
+						breakReason = condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -1198,15 +1198,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			}
 			catch(e) {
-				errorText = e;
-				reason = 'Break: Error occurred: ' + errorText;
+				breakReason = 'Break: Error occurred: ' + e;
 			}
 
 			// Decoration
 			this.emitRevDbgHistory();
 
 			// Call handler
-			handler(reason);
+			handler(breakReason);
 		});
 	}
 

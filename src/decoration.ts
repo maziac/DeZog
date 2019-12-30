@@ -244,8 +244,8 @@ export class DecorationClass {
 	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG, HISTORY_SPOT or BREAK.
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
-		if(fileMapName != this.BREAK)
-			return;
+	//	if(fileMapName != this.BREAK)
+	//		return;
 
 		// Get filename
 		const edFilename = editor.document.fileName;
