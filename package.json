@@ -20,7 +20,7 @@
 		"vscode": "^1.35.1",
 		"node": "^7.9.0"
 	},
-	"icon": "images/z80-debug-icon.png",
+	"icon": "images/dezog-icon.png",
 	"categories": [
 		"Debuggers"
 	],
