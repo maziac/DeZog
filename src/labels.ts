@@ -121,7 +121,7 @@ export class LabelsClass {
 	 * @param sources The directories to search for the sources. (If include file names are used.)
 	 * @param filter A regular expression string which is applied to each line. Used e.g. to filter the z88dk lines. The filter string is setup
 	 * like a sed substitution, e.g. '/^[0-9]+\\s+//' to filter the line numbers of z88dk.
-	 * @param asm The used compiler. "z80asm" or "sjasmplus" (default). Handles the way the include files ar decoded differently.
+	 * @param asm The used compiler. "z80asm", "z88dk" or "sjasmplus" (default). Handles the way the include files ar decoded differently.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
 	 */
@@ -173,7 +173,8 @@ export class LabelsClass {
 		}
 		else {
 			// Require a ":"" after the label
-			labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+			labelRegex = new RegExp(/^[0-9a-f]+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
+			//labelRegex = new RegExp(/^[0-9a-f]+\s+[\s0-9a-f]*\s+>?(@?)([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i);
 		}
 
 		// Read all lines and extract the PC value

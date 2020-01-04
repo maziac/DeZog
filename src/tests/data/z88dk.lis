@@ -1,0 +1,88 @@
+1     0000              ; User Interface.
+2     0000              ; Prints the text and observes the keyboard.
+3     0000              ; Calls the test according the pressed key.
+4     0000              ; Shows several screens with different tests.
+5     0000              ; Use SPACE to cycle through the screens.
+6     0000
+7     0000              defc MAGENTA= 03h
+8     0000              defc CS_ROM_VALUE=0f1h	; ROM value at 0039h
+9     0000              ; START
+10    0000              main:
+11    0000              	; do not disturb tests with interrupts.
+12    0000  F3          	di
+13    0001
+14    0001              	; prepare printing
+15    0001  3E 02       	ld a,2              ; upper screen
+16    0003  CD 01 16        call 5633           ; open channel
+17    0006
+18    0006              	; load screen-1
+19    0006  3E FF       	ld a,-1
+20    0008  32 DA 00    	ld (test_screen_index),a
+21    000B
+22    000B              ct_ui_first_table:
+23    000B  21 C9 00    	ld hl,screen_table - 10*2	; 10 jump table entries
+24    000E  22 DB 00    	ld (screen_table_ptr),hl
+25    0011
+26    0011              ct_ui_show_screen:
+27    0011              	; black border
+28    0011  AF          	xor a
+29    0012  D3 FE       	out (0xfe),a
+30    0014              	; clear screen
+31    0014  AF          	xor a
+32    0015  CD D0 00    	call clear_screen
+33    0018
+34    0018              	; next test screen
+35    0018  2A DB 00    	ld hl,(screen_table_ptr)
+36    001B  11 14 00    	ld de,10*2	; 10 jump table entries
+37    001E  19          	add hl,de
+38    001F              	; get text
+39    001F  5E          	ld e,(hl)
+40    0020  23          	inc hl
+41    0021  7E          	ld a,(hl)
+42    0022  B7          	or a	; If upper part of the address is 0 start all over again
+43    00DA
+44    00DA
+45    00DA              ; The current shown screen
+46    00DA  00          test_screen_index:	defb 0
+47    00DB
+48    00DB
+49    00DB              ; The pointer to the screen_table.
+50    00DB  DD 00       screen_table_ptr: defw screen_table
+51    00DD
+52    00DD
+53    00DD              ; Contains the start addresses of the text for the screens and the length.
+54    00DD              screen_table:
+55    00DD              	; Text
+56    00DD  27 01 1C 01 	defw currah_tests1_text, currah_tests1_text_end-currah_tests1_text
+57    00E1              	; Tests
+58    00E1  7C 04       	defw ct_test_out_38
+59    00E3  86 04       	defw ct_test_in_38
+60    00E5  8F 04       	defw ct_mem_write_38
+61    00E7  97 04       	defw ct_mem_read_38
+62    00E9  9E 04       	defw ct_spectrum_mem_holes_test
+63    00EB  DD 04       	defw ct_aahh_with_3000
+64    00ED  F4 04       	defw ct_aahh_with_3001
+65    00EF  00 00       	defw 0
+66    00F1  FC 04       	defw ct_test_with_bit_6
+67    00F3  15 05       	defw ct_test_without_bit_6
+68    00F5
+69    00F5              	; Text
+70    00F5  43 02 26 01 	defw currah_tests2_text, currah_tests2_text_end-currah_tests2_text
+71    00F9              	; Tests
+72    09A1
+73    09A1              ; Pointer to current screen address, rotation and delay counter.
+74    09A1  00 00       display_hor_a_address:		defw 0
+75    09A3  00          display_hor_a_rotation:		defb 0
+76    09A4  00          display_hor_a_counter:		defb 0
+77    09A5  00          display_hor_a_delay_value:	defb 0
+78    09A6              ; Temporary store for the bits in a
+79    09A6  00          display_hor_a_value:		defb 0
+80    09A7
+81    09A7
+82    09A7              ; Displays for all 8 horizontal lines a marker indicating 0 at the left side.
+83    09A7              display_hor_zero_markers:
+84    09A7  CD 8F 09    	call reset_display_hor_a
+85    09AA  24          	inc h
+86    09AB
+87    09AB              	; set zero markers
+88    09AB  3E 1C       	ld a,00011100b

@@ -5,7 +5,7 @@ npm-debug.log
 z80-debug.txt
 *.vsix
 logs/
-data/
+/data/
 .vscode/
 notes.md
 /coverage/

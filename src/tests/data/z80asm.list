@@ -1,0 +1,98 @@
+# File main.asm
+0000           ;===========================================================================
+0000           ; main.asm
+0000           ; The program starts here.
+===========================================================================
+0000           ; ZX Spectrum definitions and constants.
+0000           ;===========================================================================
+0000           ; ZX Spectrum specific constants and defines.
+0000
+0000
+0000           ;=========================================================================================
+0000           ; Constants
+0000           ;=========================================================================================
+0000
+0000
+0000           ; Screen dimensions
+0000           SCREEN_WIDTH_IN_BYTES:        equ 32
+0000           SCREEN_HEIGHT_IN_BYTES:       equ 24
+0000           SCREEN_WIDTH:                 equ SCREEN_WIDTH_IN_BYTES*8
+0000           SCREEN_HEIGHT:                equ SCREEN_HEIGHT_IN_BYTES*8
+0000
+0000           ; For printing
+0000           INK:           equ 0x10 ; ZX Spectrum ASCII Control code: INK, color (Bits 0-2)
+0000           PAPER:              equ 0x11 ; ZX Spectrum ASCII Control code: PAPER, color (Bits 3-5)
+0000           PRN_FLASH:          equ 0x12 ; ZX Spectrum ASCII Control code: FLASH, on/off (Bit 7)
+0000           PRN_BRIGHT:         equ 0x13 ; ZX Spectrum ASCII Control code: BRIGHT, on/off (Bit 6)
+0000           INVERSE:       equ 0x14 ; ZX Spectrum ASCII Control code: IVERSE, on/off
+0000           OVER:               equ 0x15 ; ZX Spectrum ASCII Control code: OVER, ON=XOR/OFF=replace
+0000           AT:                 equ 0x16 ; ZX Spectrum ASCII Control code: AT, y, x
+0000           TAB:           equ 0x17 ; ZX Spectrum ASCII Control code: TAB
+0000
+0000           ; Color codes
+0000           BLACK:              equ 0
+0000           BLUE:               equ 1
+0000           RED:           equ 2
+0000           MAGENTA:       equ 3
+0000           GREEN:              equ 4
+0000           CYAN:               equ 5
+0000           YELLOW:             equ 6
+0000           WHITE:              equ 7
+0000           TRANSPARENT:   equ 8
+0000           FLASH:         equ 10000000b ; (Bit 7)
+0000           BRIGHT:        equ 01000000b ; (Bit 6)
+0000
+0000
+0000           ;=========================================================================================
+0000           ; Memory map
+0000           ;=========================================================================================
+0000
+
+0000           ; 0x0000 to 0x3FFF is ROM
+0000                org 4000h
+4000
+4000
+4000           ;===========================================================================
+4000           ; Include the screen and system variables
+4000           ;===========================================================================
+4000           ; The screen and system variables data area of a ZX Spectrum.
+4000
+4000
+4000           ; Screen size without color attributes.
+4000           SCREEN_SIZE:   equ 0x1800
+4000
+4000           ; Pixel Screen (0x4000 to 0x57FF)
+4000           SCREEN:
+4000 00...               defs SCREEN_SIZE
+5800           SCREEN_END:
+5800
+5800
+5800           ; Color Screen (0x5800 to 0x5AFF)
+5800           SCREEN_COLOR:
+5800 00...               defs 0x0300
+5b00           SCREEN_COLOR_END:
+5b00
+5b00           ; Start of printer buffer 0x5B00 - 0x5BFF
+5b00           LBL_PRINTER_BUFFER:
+5b00 00...               defs 0x0100
+5c00
+7015           check_score_for_new_ship:
+7015 2a 5d 64            ld hl,(_LBL_SCORE)
+7018 ed 5b 25 60         ld de,(score_for_new_ship)
+701c b7        ltest1:   or a ; reset carry
+701d ed 52               sbc hl,de
+701f d8                  ret c ; Return if not reached
+7020
+7020                ; Check if already in game over mode
+7020 3a 9e d0            ld a,(game_loop_state)
+7023 fe 14               cp STATE_GAME_LOOP_GAME_OVER
+7025 c8                  ret z
+7026
+7026                ; Check if already max ships
+7026 3a d0 61            ld a,(_VAR_SHIP_COUNT)
+7029 fe 0a               cp MAX_NUMBER_OF_SHIPS
+702b d0                  ret nc
+702c
+0000
+# End of file main.asm
+0000

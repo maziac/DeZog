@@ -237,5 +237,66 @@ suite('Labels', () => {
 		});
 
 	});
+
+
+	suite('List files', () => {
+
+		test('z80asm.list', () => {
+			Labels.loadAsmListFile('./src/tests/data/z80asm.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.finish();
+
+			// Checks
+			let res = Labels.getNumberForLabel("check_score_for_new_ship");
+			assert.equal(0x7015, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("ltest1");
+			assert.equal(0x701C, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("SCREEN_COLOR");
+			assert.equal(0x5800, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("SCREEN_SIZE");
+			assert.equal(0x1800, res, "Label wrong.");
+		});
+
+		test('rom.list', () => {
+			Labels.loadAsmListFile('./src/tests/data/rom.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.finish();
+
+			// Checks
+			let res = Labels.getNumberForLabel("L0055");
+			assert.equal(0x0055, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("L022C");
+			assert.equal(0x022C, res, "Label wrong.");
+		});
+
+
+		test('z88dk.lis', () => {
+			Labels.loadAsmListFile('./src/tests/data/z88dk.lis', undefined, [""], undefined, "z88dk", 0);
+			Labels.finish();
+
+			// Checks
+			let res = Labels.getNumberForLabel("ct_ui_first_table");
+			assert.equal(0x000B, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("display_hor_zero_markers");
+			assert.equal(0x09A7, res, "Label wrong.");
+
+			res = Labels.getNumberForLabel("display_hor_a_address");
+			assert.equal(0x09A1, res, "Label wrong.");
+
+			// defc (=equ) is not supported
+			res = Labels.getNumberForLabel("MAGENTA");
+			assert.notEqual(3, res, "Label wrong.");
+
+			// defc (=equ) is not supported
+			res = Labels.getNumberForLabel("CS_ROM_VALUE");
+			assert.notEqual(0xF1, res, "Label wrong.");
+		});
+
+
+	});
+
 });
 

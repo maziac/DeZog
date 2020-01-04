@@ -1,0 +1,36 @@
+0000			;; START
+0000	L0000:  DI                      ; Disable Interrupts.
+0001			XOR     A               ; Signal coming from START.
+0002			LD      DE,$FFFF        ; Set pointer to top of possible physical RAM.
+0005			JP      L11CB           ; Jump forward to common code at START-NEW.
+0055
+0055			;; ERROR-3
+0055	L0055:  LD      (IY+$00),L      ; Store it in the system variable ERR_NR.
+022c
+022c
+022c			;; E-UNSHIFT
+022c			;  The 26 unshifted extended mode keys for the alphabetic characters.
+022c			;  The green keywords on the original keyboard.
+022c	L022C:  DEFB    $E3             ; READ
+022d			DEFB    $C4             ; BIN
+03b2			; ---
+03b2
+03b2			;; K-@-CHAR
+03b2	L03B2:  LD      A,$40           ; substitute ASCII '@'
+03b4			RET                     ; return.
+03b5
+03d6
+03d6			;; BE-H&L-LP
+03d6	L03D6:  DEC     C        ;(4)   ; timing loop for duration of
+03f2			;; BE-AGAIN                     ; halfway through cycle
+03f2	L03F2:  LD      C,L      ;(4)   ; C = medium part of tone period
+03f3			INC     C        ;(4)   ; adds 16 cycles to make duration of high = duration of low
+03f4			JP      (IX)     ;(8)   ; do high pulse of tone
+03f6
+03f6			;; BE-END
+03f6	L03F6:  EI                      ; Enable Interrupts
+03f7			RET                     ;
+03f8
+03f8
+03f8	L03F8:  RST     28H             ;; FP-CALC
+03f9			DEFB    $31             ;;duplicate                  ; duplicate pitch
