@@ -64,7 +64,7 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - [memory viewer](documentation/Usage.md#memory-dumps) / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - [change of program counter](documentation/Usage.md#change-the-program-counter) through menu
-- support for assembler [unit tests](documentation/Usage.md#unittests)
+- support for assembler [unit tests](documentation/Unittests.md)
 
 
 ## Constraints
