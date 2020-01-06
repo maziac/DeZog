@@ -345,7 +345,7 @@
 							},
 							"startAutomatically": {
 								"type": "boolean",
-								"description": "Start automatically after launch."
+								"description": "Start automatically after launch. Default is false."
 							},
 							"resetOnLaunch": {
 								"type": "boolean",
