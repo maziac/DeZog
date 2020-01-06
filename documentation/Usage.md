@@ -30,13 +30,19 @@ A typical configuration looks like this:
             "zhostname": "localhost",
             "zport": 10000,
             "listFiles": [
-                // "../rom48.list",
                 {
                     "path": "z80-sample-program.list",
                     "useFiles": true,
                     "asm": "sjasmplus",
                     "mainFile": "main.asm"
-                }
+                },
+                /*
+                {
+                    "path": "rom48.list",
+                    "asm": "z80asm",
+                    "srcDirs": [], // Use list file directly
+                },
+                */
             ],
             "startAutomatically": false,
             "skipInterrupt": true,
@@ -140,15 +146,14 @@ You need to enter the list files under
     "path": "z80-sample-program.list",
     "asm": "sjasmplus",
     "mainFile": "main.asm",
-    "srcDirs": ""
+    "srcDirs": [""]
     }
 ~~~
 
 - path: the path to the list file (relative to the 'rootFolder').
 - srcDirs (default=[""]):
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
-    - string = Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directory given here. Is relative to the 'rootFolder'.
-    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried.
+    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your siles in subfolders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
 - asm: Choose you assembler here. "sjasmplus", "z80asm" or "z88dk". You don't need 'filter' if you specify 'asm'.
 - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
@@ -305,8 +310,6 @@ I have collected a few that I found useful:
 
 ### Reverse Debugging
 
-**!!! In beta currently !!!**
-
 A special feature of the Z80 Debug Adapter is the possibility to reverse debug your program.
 (Sometimes this is referred to as "[Time travel debugging](https://en.wikipedia.org/wiki/Time_travel_debugging)", "Historical debugging" or "Replay debugger".)
 This means you can go "back in time" and inspect program flow and register values from the past.
@@ -451,6 +454,19 @@ scratch_area:
 In this example it is assumed that your algorithm uses the 'scratch_area' to write some data. You defined that this area is 10 bytes in size. Thus if someone would write after
 these 10 bytes it would mean that the algorithm is wrong.
 Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
+
+Another useful scenario is to secure the stack for over- or underrun:
+
+~~~assembly
+; Reserve stack space
+stack_bottom:
+    defw    0   ; WPMEM, 2
+    defs    50*2, 0
+stack_top:
+    defw 0  ; WPMEM, 2
+~~~
+This will observe 2 addresses at the bottom and 2 addresses at the top.
+
 
 Caveats:
 
@@ -775,13 +791,6 @@ and choose "Move Program Counter to Cursor".
 
 See [Notes](#Notes).
 
-
-<!--
-## Reverse Debugging
-
-Notes:
-- The HALT instruction: If a 'HALT' instruction is used it is normally repeated a big amount of time. For your convenience z80-debug will skip over it on stepping backwards or forward in reverse debugging mode as if it were only a single instruction.
--->
 
 ## Unittests
 

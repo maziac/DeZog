@@ -37,13 +37,13 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 ## Features
 
-- supports ZEsarUX emulator (>= v8.0)
+- supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.0)
 - reads .list files
 	- supports stepping through source code
 	- either in .list file or in .asm files
 - step-over, step-in, step-out, continue, pause
-- reverse debugging via step back and reverse continue
-- code coverage visualization
+- [reverse debugging](documentation/Usage.md#reverse-debugging) via step back and reverse continue
+- [code coverage](documentation/Usage.md#code-coverage) visualization
 - breakpoints (and breakpoints with conditions)
 - display of
 	- disassembly
@@ -57,14 +57,14 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 - hovering
 	- registers: reveals its contents and associated label
 	- labels: reveals their value
-- watches of labels
+- [watches](documentation/Usage.md#watches) of labels
 - formatting registers
 	- customizable formatting for registers, e.g. format as hex and/or decimal and/or label etc.
 	- different formatting for registers while hovering
-- memory viewer / editor
+- [memory viewer](documentation/Usage.md#memory-dumps) / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
-- change of program counter through menu
-- support for assembler unit tests
+- [change of program counter](documentation/Usage.md#change-the-program-counter) through menu
+- support for assembler [unit tests](documentation/Usage.md#unittests)
 
 
 ## Constraints
