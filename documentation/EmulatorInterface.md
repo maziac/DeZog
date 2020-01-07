@@ -1,12 +1,10 @@
 
 # TODO
 
-- Interface von ShallowVar ändern. Die sollen über Machine gehen.
-So dass ich in Machine alle Emulator spezifischen Dinge habe.
-- Ich muss wohl eigenes lua script bauen, um erweiterte Befehle wie 'disassemble, step-over, change driver' zu benutzen. Dann kann ich auch gleich eigenes definieren. Wenn ich das gleiche wie bei ZEsarux verwende müsste ich nichts ändern! (Wunschdenken, e.g. unterschiedliches Breakpoint Nummer handling. Das funktioniert nicht: Machine abstrahiert den Emulator.).
-- Register parsing muss nach 'Machine'.
-- Vielleicht 'Machine' umbenennen nach 'Emulator'.
-
+- Interface von ShallowVar ändern. Die sollen über EmulatorClass gehen.
+So dass ich in EmulatorClass alle Emulator spezifischen Dinge habe.
+- Ich muss wohl eigenes lua script bauen, um erweiterte Befehle wie 'disassemble, step-over, change driver' zu benutzen. Dann kann ich auch gleich eigenes definieren. Wenn ich das gleiche wie bei ZEsarux verwende müsste ich nichts ändern! (Wunschdenken, e.g. unterschiedliches Breakpoint Nummer handling. Das funktioniert nicht: EmulatorClass abstrahiert den Emulator.).
+- Register parsing muss nach 'EmulatorClass'.
 
 # Emulator Interface
 
@@ -15,17 +13,23 @@ This document describes the messages used to interface with the emulator(s).
 
 # General
 
-To interface to different emulators (e.g. MAME, ZEsarUX) the Machine classes are used. The specific 'Machine' implementations abstracts the emulator interface and the used "HW" (e.g. Spectrum 48, Spectrum 128, ...).
+To interface to different emulators (e.g. MAME, ZEsarUX and also ZXNext HW) the Emulator classes (EmulatorClass) are used. The specific 'EmulatorClass' implementations abstracts the emulator interface and the used "HW" (e.g. Spectrum 48, Spectrum 128, ...).
 
 In general the following interfaces are required:
 - start, stop, stepping
 - reading, setting registers
 - reading, setting memory
+- reading ZX Next registers
+- setting breakpoints
+- conditional breakpoints
+- revere debugging (cpu history)
+- save/load state
 
-The 'Machine' instance is created in the 'create' function. Here a different Machine is chosen depending on the configuration.
 
-The Machine interface to vscode via the 'EmulDebugAdapter'. The main interfaces are:
-- init: Initialization of the Machine.
+The 'EmulatorClass' instance is created in the 'create' function. Here a different EmulatorClass is chosen depending on the configuration.
+
+The EmulatorClass interface to vscode via the 'EmulDebugAdapter'. The main interfaces are:
+- init: Initialization of the EmulatorClass.
 - continue, next, pause, stepOver, stepInto, stepOut, (reverseContinue, stepBack): Stepping through code. Called as reaction to clicking the correspondent vscode buttons.
 - getRegisters, getRegisterValue: Returns register values. Called if the registers are updated, e.g. in the VARIABLES area on every step.
 - setProgramCounter: Change the program counter. Used when the program counter is changed from the menu.
@@ -36,18 +40,37 @@ The Machine interface to vscode via the 'EmulDebugAdapter'. The main interfaces 
 - dbgExec: Executes a command on the emulator.
 - getMemoryDump: Retrieves a memory dump.
 - writeMemory: Changes memory values.
-- state save/restore: Saves and restores the complete machine state.
+- getTbblueRegister: Reads ZXNext registers.
+- state save/restore: Saves and restores the complete EmulatorClass state.
 
-Apart from Machine there is another class collection that communicate with the emulator, the ShallowVar classes.
+Apart from EmulatorClass there is another class collection that communicate with the emulator, the ShallowVar classes.
 The ShallowVar classes represent variables shown e.g. in vscode's VARIABLES section ot the WATCHES section. Examples are: Disassembly, registers, watches.
-Whenever the value should be updated, vscode requests the value and the ShallowVar sends teh request to the emulator and receives the value as response.
+Whenever the value should be updated, vscode requests the value and the ShallowVar sends the request to the emulator and receives the value as response.
+
+
+# Functionality Overview - ZEsarUX, CSpect, ZXNext HW
+
+Note: Currently (01/2020) only the ZEsarUX interface is implemented.
+
+
+|           | start, step | ext. break | breakpoints | cond. bp | mem bp | rev. dbg |save state | ZXNext regs | Unittests |
+|-----------|-------------|------------|-------------|----------|--------|----------|-----------|-------------|-----------|
+| ZEsarUX   | y           | y          | y           | y        | y      | y        | n         | y           | y         |
+| CSpect    | y           | y          | y           | e        | n      | n        | ?         | e           | e         |
+| ZXNext HW | y           | s          | y           | e        | n      | n        | n         | e           | e         |
+| MAME      | y           | y          | y           | ?        | ?y     | n        | n         | n           | ?         |
+
+y = is or would be support
+s = somewhat, supported but with constraints
+e = is some effort to support but possible
+n = not supported
 
 
 ## MAME
 
 ### gdbstub
 
-The Machine communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
+The EmulatorClass communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
 
 I.e. MAME uses gdb syntax for communicaton with z80-debug.
 
@@ -65,7 +88,7 @@ Here are the available commands:
 
 Missing:
 - step-over, disassemble: not in serial protocol. done in gdb.
-- machine info: not available.
+- EmulatorClass info: not available.
 - Possibility to change the 'driver', e.g. Spectrum 48k or Spectrum 128k
 
 
@@ -73,8 +96,8 @@ Missing:
 
 Init:
 [MAME]>
-debugger = manager:machine():debugger()
-cpu = manager:machine().devices[":maincpu"]
+debugger = manager:EmulatorClass():debugger()
+cpu = manager:EmulatorClass().devices[":maincpu"]
 space = cpu.spaces["program"]
 consolelog = debugger.consolelog
 errorlog = debugger.errorlog
@@ -121,9 +144,10 @@ Commands:
 - write-memory
 	- space:write_log_u8(32768,15)
 
-- get-stack-backtrace: not as suchneed to be constructed through register and mem read.
+- get-stack-backtrace: not as such. need to be constructed through register and mem read.
 
 - breakpoint action, i.e. bp logs: MAME can do a printf to console. That could be transmitted to z80-debug.
+
 
 ### Open (MAME)
 
@@ -132,15 +156,15 @@ Commands:
 
 ## ZEsarUX
 
-The Machine communicates with the emulator via the ZEsaruxSocket.
+The EmulatorClass communicates with the emulator via the ZEsaruxSocket.
 The following commands are used.
 
-### Machine
+### EmulatorClass
 
 Initialization (after connection setup):
 - about
 - get-version
-- get-current-machine
+- get-current-EmulatorClass
 - set-debug-settings
 - enter-cpu-step
 
@@ -160,6 +184,7 @@ Other:
 - set-register
 - cpu-history
 - extended-stack
+- getTbblueRegister
 
 
 ### ShallowVar
