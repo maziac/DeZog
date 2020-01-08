@@ -521,7 +521,6 @@ export class EmulatorClass extends EventEmitter {
 			this.getRegistersFromEmulator(regs => {
 				// Store received data
 				this.RegisterCache = regs;
-				//const regs = data || '';	// Just to remove warning
 				handler(regs);
 			});
 		}
