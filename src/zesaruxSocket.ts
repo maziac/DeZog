@@ -202,7 +202,7 @@ export class ZesaruxSocket extends Socket {
 	 * Otherwise it is executed when queue becomes empty.
 	 * @param handler The method to execute.
 	 */
-	public executeWhenQueueIsEmpty(handler: ()=>void) {
+	public executeWhenQueueIsEmpty(handler?: ()=>void) {
 		if(!handler)
 			return;
 		if(this.queue.length == 0) {

@@ -212,9 +212,10 @@ export class Utility {
 					// Note: this is called synchronously because the cached register is available.
 					// If (it should not but if) it would be called asynchronously the
 					// addressString would simply be not decoded.
-					Emulator.getRegisterValue(p1, value => {
-						res = value;
-					});
+					try {
+						res = Emulator.getRegisterValue(p1);
+					}
+					catch {};
 				}
 			}
 			if(isNaN(res)) {
@@ -238,6 +239,7 @@ export class Utility {
 			}
 			return res.toString();
 		});
+
 		// Evaluate
 		const result = eval(exprLabelled);
 
@@ -350,24 +352,24 @@ export class Utility {
 	 * ${unsigned} = value as unsigned, e.g. 1234
 	 * $(signed) = value as signed, e.g. -59
 	 * $(bits) = value as bits , e.g. 10011011
-	 * $(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC
+	 * $(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC
 	 * ${labels} = value as label (or several labels)"
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
 	 * @param handler A function that is called with the formatted string as argument.
 	 * It is required because it might be that for formatting it is required to
 	 * get more data from the socket.
-	 * @param undefText Text to use if value is undefined. Defaults to "undefiened".
+	 * @param undefText Text to use if value is undefined. Defaults to "undefined".
 	 */
 	public static numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, handler: (formattedString: string) => void, undefText = "undefined") {
 		// Safety check
 		if(value == undefined) {
-			handler("undefined");
+			handler(undefText);
 			return;
 		}
 
 		// Variables
 		var memWord = 0;
-		var regsString = '';	// default: don't return registers.
+		let regsAsWell = false;
 
 		// Serialize calls
 		CallSerializer.execAll(
@@ -376,9 +378,9 @@ export class Utility {
 			(cs) => {
 				// case asynchronously retrieve the register values.
 				// Return registers only if 'name' itself is not a register.
-				if(!Z80Registers.isRegister(name)) {
-					Emulator.getRegisters(data => {
-						regsString = data;
+				if (!Z80Registers.isRegister(name)) {
+					regsAsWell = true;
+					Emulator.getRegisters().then(() => {
 						cs.endExec();
 					});
 				}
@@ -409,7 +411,7 @@ export class Utility {
 			// Formatting
 			(cs) => {
 				// Format
-				var valString = Utility.numberFormattedSync(value, size, format, regsString, name, memWord, tabSizeArr);
+				var valString = Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
 
 				// Call handler with the result string
 				handler(valString);
@@ -437,16 +439,16 @@ export class Utility {
 	 * $(bits) = value as bits , e.g. 10011011
 	 * $(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC
 	 * ${labels} = value as label (or several labels)"
-	 * @param paramRegsString The register string retrieved from zesarux. Can be omitted or undefined or ''.
+	 * @param regsAsWell If true then also matching register names will be returned.
 	 * @param paramName The name, e.g. a register name "A" etc. or a label name. Can be omitted or undefined or ''.
 	 * @param paramWordAtAddress If value is an address and formatting should print that the value is given here.
 	 * The same value (the low byte) is also used for displaying the byte at address. Can be omitted or 0 if unused.
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
 	 * @returns The formatted string.
 	 */
-	public static numberFormattedSync(value: number, size: number, format: string, paramRegsString?: string, paramName?: string, paramWordAtAddress?: number, tabSizeArr?: Array<string>): string {
+	// TODO: Here muss der paramRegsString raus.
+	public static numberFormattedSync(value: number, size: number, format: string, regsAsWell = false, paramName?: string, paramWordAtAddress?: number, tabSizeArr?: Array<string>): string {
 		// Check for defaults
-		const regsString = paramRegsString || '';
 		const name = paramName || '';
 		const wordAtAddress = paramWordAtAddress || 0;
 		// Search for format string '${...}'
@@ -529,7 +531,7 @@ export class Utility {
 				case 'labels':
 				{
 					// calculate labels
-					const labels = Labels.getLabelsForNumber(value, regsString);
+					const labels = Labels.getLabelsForNumber(value, regsAsWell);
 					// format
 					if(labels && labels.length > 0)
 						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
@@ -540,7 +542,7 @@ export class Utility {
 				case 'labelsplus':
 				{
 					// calculate labels
-					const labels = Labels.getLabelsPlusIndexForNumber(value, regsString);
+					const labels = Labels.getLabelsPlusIndexForNumber(value, regsAsWell);
 					// format
 					if(labels && labels.length > 0)
 						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
@@ -596,9 +598,9 @@ export class Utility {
 		const format = formatMap.get(reg);
 		assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
-		Emulator.getRegisters(data => {
+		Emulator.getRegisters().then(() => {
 			// Get value of register
-			const value = Z80Registers.getRegValueByName(reg, data);
+			const value = Emulator.getRegisterValue(reg);
 
 			// do the formatting
 			let rLen;

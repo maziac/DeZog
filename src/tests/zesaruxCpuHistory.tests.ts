@@ -2,21 +2,28 @@
 import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../zesaruxCpuHistory';
 import { Z80Registers } from '../z80Registers';
+import { ZesaruxRegisters } from '../zesaruxregisters';
 
 suite('ZesaruxCpuHistory', () => {
 
 	setup(() => {
-		Z80Registers.init();
+		Z80Registers.Init();
 	});
 
 /*
 	teardown( () => dc.disconnect() );
 */
+	function createCpuHistory(): ZesaruxCpuHistory {
+		const regs = new ZesaruxRegisters();
+		const hist = new ZesaruxCpuHistory(regs);
+		return hist;
+	}
+
 
 	suite('disassemble', () => {
 
 		test('parse16Address', () => {
-			const hist = <any> new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			let addr = hist.parse16Address("CAD9");
 			assert.equal(0xD9CA, addr);
 
@@ -29,7 +36,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getPushedValue', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			// PUSH BC
 			let value = hist.getPushedValue("c5", "BC=1234 DE=5678 HL=9ABC AF=DEF0 IX=75CA IY=54FD");
@@ -66,7 +73,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('calcDirectSpChanges', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			// LD SP,nnnn
 			let expSp = hist.calcDirectSpChanges("31abcd", 100, "");
@@ -99,7 +106,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getOpcodes', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c");
 			assert.equal("e52a785c", result);
@@ -109,7 +116,7 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('getInstruction 1-4 bytes', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal("e5000000", result);
@@ -142,7 +149,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getInstruction RST', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal("e5000000", result);
@@ -162,7 +169,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getInstruction CALL cc', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal("e5000000", result);
@@ -197,7 +204,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getInstruction RET, RETI, RETN', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal("e5000000", result);
@@ -214,7 +221,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getInstruction RET cc', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 
 			let result = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal("e5000000", result);
@@ -250,7 +257,7 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isCallOpcode', () => {
 
 		test('is CALL', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			const opcode0 = 0xCD;	// Extended code like in PUSH nn
 			assert.ok(hist.isCallOpcode(opcode0));
@@ -258,7 +265,7 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('is CALL cc', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			assert.ok(hist.isCallOpcode(0xC4));
 			assert.ok(hist.isCallOpcode(0xD4));
@@ -272,7 +279,7 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not CALL', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			const opcode0 = 0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isCallOpcode(opcode0));
@@ -283,7 +290,7 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isRstOpcode', () => {
 
 		test('is RST', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			assert.ok(hist.isRstOpcode(0xC7));
 			assert.ok(hist.isRstOpcode(0xD7));
@@ -297,7 +304,7 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not RST', () => {
-			const hist = new ZesaruxCpuHistory();
+			const hist = createCpuHistory();
 			// Test
 			const opcode0 = 0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isRstOpcode(opcode0));
@@ -327,47 +334,47 @@ suite('ZesaruxCpuHistory', () => {
 			// Called by all test ret conditional tests.
 			const testRetConditional = (opcode1: number, opcode2: number, flags: number) => {
 				// opcode1, flag=0
-				let hist = new ZesaruxCpuHistory();
+				let hist = createCpuHistory();
 				let opcodes = getHexString(opcode1) + "000000";
 				let result = hist.isRetAndExecuted(opcodes, ~flags);
 				assert.equal(true, result);
 
 				// opcode1, flag=1
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted(opcodes, flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=0
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				opcodes = getHexString(opcode2) + "000000";
 				result = hist.isRetAndExecuted(opcodes, ~flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=1
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted(opcodes, flags);
 				assert.equal(true, result);
 			};
 
 
 			test('isRetAndExecuted unconditional', () => {
-				let hist = new ZesaruxCpuHistory();
+				let hist = createCpuHistory();
 				let result = hist.isRetAndExecuted("c9000000", 0);
 				assert.equal(true, result);
 
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted("01000000", 0);
 				assert.equal(false, result);
 
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted("ed4d0000", 0);
 				assert.equal(true, result);
 
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted("ed450000", 0);
 				assert.equal(true, result);
 
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isRetAndExecuted("9ed11000", 0);
 				assert.equal(false, result);
 			});
@@ -416,35 +423,35 @@ suite('ZesaruxCpuHistory', () => {
 			// Called by all test call conditional tests.
 			const testCallConditional = (opcode1: number, opcode2: number, flags: number) => {
 				// opcode1, flag=0
-				let hist = new ZesaruxCpuHistory();
+				let hist = createCpuHistory();
 				let opcodes = getHexString(opcode1) + "000000";
 				let result = hist.isCallAndExecuted(opcodes, ~flags);
 				assert.equal(true, result);
 
 				// opcode1, flag=1
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isCallAndExecuted(opcodes, flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=0
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				opcodes = getHexString(opcode2) + "000000";
 				result = hist.isCallAndExecuted(opcodes, ~flags);
 				assert.equal(false, result);
 
 				// opcode2, flag=1
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				opcodes = getHexString(opcode2) + "000000";
 				result = hist.isCallAndExecuted(opcodes, flags);
 				assert.equal(true, result);
 			};
 
 			test('isCallAndExecuted unconditional', () => {
-				let hist = new ZesaruxCpuHistory();
+				let hist = createCpuHistory();
 				let result = hist.isCallAndExecuted("cd000000", 0);
 				assert.equal(true, result);
 
-				hist = new ZesaruxCpuHistory();
+				hist = createCpuHistory();
 				result = hist.isCallAndExecuted("01000000", 0);
 				assert.equal(false, result);
 			});
@@ -489,40 +496,40 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('isRst', () => {
-			let hist = new ZesaruxCpuHistory();
+			let hist = createCpuHistory();
 			let result = hist.isRst("c7000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("cf000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("d7000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("df000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("e7000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("ef000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("f7000000")
 			assert.equal(true, result);
 
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("ff000000")
 			assert.equal(true, result);
 
 			// No rst
-			hist = new ZesaruxCpuHistory();
+			hist = createCpuHistory();
 			result = hist.isRst("c8000000")
 			assert.equal(false, result);
 		});

@@ -251,9 +251,8 @@ export class MemoryDumpView extends BaseView {
 	/**
 	 * Creates one html table out of a meta block.
 	 * @param metaBlock The block to convert.
-	 * @param regsString The register string from zesarux.
 	 */
-	protected createHtmlTable(metaBlock: MetaBlock, regsString: string): string {
+	protected createHtmlTable(metaBlock: MetaBlock): string {
 		const format = `
 		<script>
 		const vscode = acquireVsCodeApi();
@@ -542,12 +541,12 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Get register values
-		Emulator.getRegisters((regsString) => {
+		Emulator.getRegisters().then(() => {
 			// Loop through all metablocks
 			var tables;
 			const vertBreak = this.getHtmlVertBreak();
 			for(let mb of this.memDump.metaBlocks) {
-				const table = this.createHtmlTable(mb, regsString);
+				const table = this.createHtmlTable(mb);
 				tables = (tables) ? tables + vertBreak + table : table;
 			}
 
@@ -565,16 +564,15 @@ export class MemoryDumpView extends BaseView {
 	 * Colors are only set if the webview is visible.
 	 */
 	protected setColorsForRegisterPointers() {
-		// Get register values
-		Emulator.getRegisters((regsString) => {
-			// Set colors for register pointers
-			const arr = Settings.launch.memoryViewer.registerPointerColors;
-			for(let i=0; i<arr.length-1; i+=2) {
-				const reg = arr[i];
-				if(!Z80Registers.isRegister(reg))
-					continue;
-				// get address = value of reg
-				const address = Z80Registers.getRegValueByName(reg, regsString);
+		// Set colors for register pointers
+		const arr = Settings.launch.memoryViewer.registerPointerColors;
+		for(let i=0; i<arr.length-1; i+=2) {
+			const reg = arr[i];
+			if(!Z80Registers.isRegister(reg))
+				continue;
+			// get address = value of reg
+			Emulator.getRegisters().then(() => {
+				const address = Emulator.getRegisterValue(reg)
 				console.log( reg + ': ' + address.toString(16));
 				// Clear old color
 				const prevAddr = this.prevRegAddr.get(reg) || -1;	// To calm the transpiler
@@ -594,8 +592,8 @@ export class MemoryDumpView extends BaseView {
 				this.sendMessageToWebView(msg);
 				// Store
 				this.prevRegAddr.set(reg, address);
-			}
-		});
+			});
+		}
 	}
 
 

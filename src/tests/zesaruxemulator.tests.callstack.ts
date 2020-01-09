@@ -9,7 +9,7 @@ suite('ZesaruxEmulator', () => {
 	let emul: any;
 
 	setup(() => {
-		Z80Registers.init();
+		Z80Registers.Init();
 	});
 
 /*

@@ -90,7 +90,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableWPMEMExt(enable: boolean, handler: () => void) {
+	public enableWPMEMExt(enable: boolean, handler?: () => void) {
 		if(enable)
 			this.setWatchpointsExt(this.watchpoints);
 		else
@@ -134,7 +134,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpointsExt(enable: boolean, handler: () => void) {
+	public enableAssertBreakpointsExt(enable: boolean, handler?: () => void) {
 		if(enable) {
 			this.setAssertBreakpointsExt(this.assertBreakpoints);
 		}
@@ -229,7 +229,7 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableLogpointsExt(group: string, enable: boolean, handler: () => void) {
+	public enableLogpointsExt(group: string, enable: boolean, handler?: () => void) {
 		// Function execute for one group or for all groups:
 		const f = (grp, arr) => {
 			if(enable) {

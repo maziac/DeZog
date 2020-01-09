@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import { zSocket, ZesaruxSocket } from './zesaruxSocket';
-import { Z80Registers } from './z80Registers';
 import { Utility } from './utility';
 import { Labels } from './labels';
 import { Settings } from './settings';
@@ -12,13 +11,13 @@ import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPa
 import { StateZ80 } from './statez80';
 import { CallSerializer } from './callserializer';
 import { ZesaruxCpuHistory } from './zesaruxCpuHistory';
-//import * as lineRead from 'n-readlines';
-
+import { Z80Registers } from './z80Registers';
+import { ZesaruxRegisters } from './zesaruxregisters';
 
 
 
 /// Minimum required ZEsarUX version.
-const MIN_ZESARUX_VERSION = 8.0;
+const MIN_ZESARUX_VERSION = 8.1;
 
 
 // Some Zesarux constants.
@@ -66,13 +65,23 @@ export class ZesaruxEmulator extends EmulatorClass {
 	/// when terminating.
 	protected terminating = false;
 
+	/// A simple pointer to z80Registers. Just to avoid the typing for the casting.
+	protected zesaruxRegisters: ZesaruxRegisters;
+
+	/// Constructor.
+	constructor() {
+		super();
+		// Create z80 registers instance that deals with the ZEsarUX specific format.
+		this.zesaruxRegisters = new ZesaruxRegisters();
+		this.z80Registers = this.zesaruxRegisters;
+		// Reverse debugging / CPU history
+		this.cpuHistory = new ZesaruxCpuHistory(this.zesaruxRegisters);
+	}
+
 
 	/// Initializes the machine.
 	public init() {
 		super.init();
-
-		// Reverse debugging / CPU history
-		this.cpuHistory = new ZesaruxCpuHistory();
 
 		// Create the socket for communication (not connected yet)
 		this.setupSocket();
@@ -324,45 +333,62 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * From outside better use 'getRegisters' (the cached version).
 	 * @param handler(registersString) Passes 'registersString' to the handler.
 	 */
-	public async getRegistersFromEmulator(handler: (registersString: string) => void) {
+	protected getRegistersFromEmulator(): Promise<void>  {
 		// Check if in reverse debugging mode
 		// In this mode registersCache should be set and thus this function is never called.
 		assert(this.cpuHistory);
 		assert(!this.cpuHistory.isInStepBackMode());
-		/*
-		if(this.cpuHistory.isInStepBackMode()) {
-			// Read registers from file
-			let line = await this.cpuHistory.getLine() as string;
-			assert(line);
-			let data = this.cpuHistory.getRegisters(line);
-			handler(data);
-			return;
-		}
-		*/
 
-		// Get new (real emulator) data
-		zSocket.send('get-registers', data => {
-			// convert received data to right format ...
-			// data is e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
-			handler(data);
+		return new Promise<void>(resolve => {
+			// Get new (real emulator) data
+			zSocket.send('get-registers', data => {
+				// convert received data to right format ...
+				// data is e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
+				this.zesaruxRegisters.setCache(data);
+				resolve();
+			});
 		});
 	}
 
 
 	/**
+	* Gets the registers from cache. If cache is empty retrieves the registers from
+	* the emulator.
+	* @param handler(registersString) Passes 'registersString' to the handler.
+	*/
+	public getRegisters(): Promise<void> {
+		if (this.zesaruxRegisters.getCache()) {
+			// Already exists, return immediately
+			return new Promise<void>(resolve => {
+				resolve();
+			});
+		}
+		else {
+			// get new data
+			return this.getRegistersFromEmulator();
+		}
+	}
+
+
+	/**
 	 * Sets the value for a specific register.
-	 * @param name The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
+	 * Reads the value from the emulator and returns it in the promise.
+	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
+	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param value The new register value.
-	 * @param handler The handler that is called when command has finished.
+	 * @return Promise with the "real" register value.
 	 */
-	public setRegisterValue(name: string, value: number, handler?: (resp) => void) {
-		// set value
-		zSocket.send('set-register ' + name + '=' + value, data => {
-			// Get real value (should be the same as the set value)
-			if(handler)
-				Z80Registers.getVarFormattedReg(name, data, formatted => {
-					handler(formatted);
+	public setRegisterValue(register: string, value: number): Promise<number> {
+		return new Promise<number>(resolve => {
+			// set value
+			zSocket.send('set-register ' + register + '=' + value, data => {
+				// Get real value (should be the same as the set value)
+				this.getRegistersFromEmulator()
+				.then(() => {
+					const realValue = this.getRegisterValue(register);
+					resolve(realValue);
 				});
+			});
 		});
 	}
 
@@ -609,10 +635,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const frames = new RefList();
 
 		// Get current pc
-		this.getRegisters(data => {
+		this.getRegisters().then(() => {
 			// Parse the PC value
-			const pc = Z80Registers.parsePC(data);
-			const sp = Z80Registers.parseSP(data);
+			const pc = this.z80Registers.getPC();
+			const sp = this.z80Registers.getSP();
 			// calculate the depth of the call stack
 			const tos = this.topOfStack
 			var depth = (tos - sp)/2;	// 2 bytes per word
@@ -666,18 +692,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Will run until after the first of the instruction history
 			// or until a breakpoint condition is true.
 
-			// Get current line
-			let currentLine: string = this.RegisterCache as string;
-			assert(currentLine);
 			let nextLine;
-
 			let reason;
 			try {
 				//this.state = EmulatorState.RUNNING;
 				//this.state = EmulatorState.IDLE;
 
 				// Get current line
-				let currentLine: string = this.RegisterCache as string;
+				let currentLine: string = this.zesaruxRegisters.getCache();
 				assert(currentLine);
 
 				// Loop over all lines, reverse
@@ -686,10 +708,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 					nextLine = this.revDbgNext();
 					if(!nextLine)
 						break;
+					// TODO: wharscheinlcih kann ich ganz auf currentLine verzichten, wenn ich statdessen RegiterCache verwende.
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for breakpoint
-					this.RegisterCache = nextLine;
+					this.zesaruxRegisters.setCache(nextLine);
 					const condition = this.checkPcBreakpoints(nextLine);
 					if(condition != undefined) {
 						reason = condition;
@@ -715,9 +738,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 			else {
 				// Get the registers etc. from ZEsarUX
-				this.RegisterCache = undefined;
-				this.getRegisters(data => {
-					const pc = Z80Registers.parsePC(data);
+				this.zesaruxRegisters.clearCache();
+				this.getRegisters().then(() => {
+					const pc = this.getPC();
 					reason = 'Break at PC=' + Utility.getHexString(pc,4) + 'h: Reached start of instruction history.';
 					contStoppedHandler(reason, undefined, undefined);
 				});
@@ -743,7 +766,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 						const cpuFreq = parseInt(data);
 						this.state = EmulatorState.IDLE;
 						// Clear register cache
-						this.RegisterCache = undefined;
+						this.zesaruxRegisters.clearCache();
 						// Handle code coverage
 						this.handleCodeCoverage();
 						// The reason is the 2nd line
@@ -872,9 +895,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		return new Promise<void>( resolve => {
 
 			// Get some values
-			let sp = Z80Registers.parseSP(currentLine);
+			let sp = this.zesaruxRegisters.parseSP(currentLine);
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
-			const flags = Z80Registers.parseAF(currentLine);
+			const flags = this.zesaruxRegisters.parseAF(currentLine);
 
 			// Check if there is at least one frame
 			let frame = this.reverseDbgStack[0];
@@ -922,14 +945,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 					// Check if there also was an interrupt in previous line
 					const expectedPrevSP = sp + 2;
-					const prevSP = Z80Registers.parseSP(prevLine);
+					const prevSP = this.zesaruxRegisters.parseSP(prevLine);
 					if(expectedPrevSP != prevSP) {
 						// We came from an interrupt. Remove interrupt address from call stack.
 						this.reverseDbgStack.shift();
 					}
 
 					// And push to stack
-					const pc = Z80Registers.parsePC(currentLine);
+					const pc = this.zesaruxRegisters.parsePC(currentLine);
 					const frame = new Frame(pc, sp, labelCallAddr);
 					this.reverseDbgStack.unshift(frame);
 
@@ -949,7 +972,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// Check if SP has decreased (CALL/PUSH/Interrupt) or increased
-			const spPrev = Z80Registers.parseSP(prevLine);
+			const spPrev = this.zesaruxRegisters.parseSP(prevLine);
 			let count = sp - spPrev;
 			if(count > 0) {
 				// Decreased (CALL/PUSH/Interrupt)
@@ -982,7 +1005,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			}
 
 			// Adjust PC within frame
-			const pc = Z80Registers.parsePC(currentLine)
+			const pc = this.zesaruxRegisters.parsePC(currentLine)
 			assert(frame);
 			frame.addr = pc;
 
@@ -1031,12 +1054,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 		return new Promise<void>( resolve => {
 			// Get some values
-			const nextSP = Z80Registers.parseSP(nextLine);
-			let sp = Z80Registers.parseSP(currentLine);
+			const nextSP = this.zesaruxRegisters.parseSP(nextLine);
+			let sp = this.zesaruxRegisters.parseSP(currentLine);
 			let expectedSP: number|undefined = sp;
 			let expectedPC;
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
-			const flags = Z80Registers.parseAF(currentLine);
+			const flags = this.zesaruxRegisters.parseAF(currentLine);
 
 			// Check if there is at least one frame
 			let frame = this.reverseDbgStack[0];
@@ -1092,7 +1115,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					if(expectedSP == undefined) {
 						// This means: Opcode was LD SP,(nnnn).
 						// So use PC instead to check.
-						const pc = Z80Registers.parsePC(currentLine);
+						const pc = this.zesaruxRegisters.parsePC(currentLine);
 						expectedPC = pc + 4;	// 4 = size of instruction
 					}
 				}
@@ -1100,7 +1123,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 
 			// Check for interrupt. Either use SP or use PC to check.
 			let interruptFound = false;
-			const nextPC = Z80Registers.parsePC(nextLine);
+			const nextPC = this.zesaruxRegisters.parsePC(nextLine);
 			if(expectedSP != undefined) {
 				// Use SP for checking
 				if(nextSP == expectedSP-2)
@@ -1116,7 +1139,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Check if SP has increased (POP/RET)
 			let usedSP = expectedSP;
 			if(!usedSP)
-				usedSP = Z80Registers.parseSP(nextLine);
+				usedSP = this.zesaruxRegisters.parseSP(nextLine);
 			let count = usedSP - sp;
 			if(count > 0) {
 				while(count > 1 && this.reverseDbgStack.length > 0) {
@@ -1171,7 +1194,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let breakReason;
 			try {
 				// Loop over all lines, reverse
-				let prevLine = this.RegisterCache as string;
+				let prevLine = this.zesaruxRegisters.getCache();
 				assert(prevLine);
 				while(true) {
 					// Get line
@@ -1185,7 +1208,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 
 					// Check for breakpoint
-					this.RegisterCache = currentLine;
+					this.zesaruxRegisters.setCache(currentLine);
 					const condition = this.checkPcBreakpoints(currentLine);
 					if(condition != undefined) {
 						breakReason = condition;
@@ -1221,7 +1244,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Get current line
-			let currentLine: string = this.RegisterCache as string;
+			let currentLine = this.zesaruxRegisters.getCache();
 			assert(currentLine);
 			let nextLine;
 
@@ -1229,7 +1252,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// If YES stop if pc reaches the next instruction.
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
 			const opcode0 = parseInt(opcodes.substr(0,2), 16);
-			let pc = Z80Registers.parsePC(currentLine);
+			let pc = this.zesaruxRegisters.parsePC(currentLine);
 			let nextPC0;
 			let nextPC1;
 			if(this.cpuHistory.isCallOpcode(opcode0)) {
@@ -1260,13 +1283,13 @@ export class ZesaruxEmulator extends EmulatorClass {
 						break;	// A simple step-into
 
 					// Get PC
-					pc = Z80Registers.parsePC(nextLine);
+					pc = this.zesaruxRegisters.parsePC(nextLine);
 					// Check for "breakpoint"
 					if(pc == nextPC0 || pc == nextPC1)
 						break;
 
 					// Check for "real" breakpoint
-					this.RegisterCache = nextLine;
+					this.zesaruxRegisters.setCache(nextLine);
 					const condition = this.checkPcBreakpoints(nextLine);
 					if(condition != undefined) {
 						breakReason = condition;
@@ -1292,8 +1315,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Otherwise get the callstack from ZEsarUX.
 			if(!nextLine) {
 				// Get the registers etc. from ZEsarUX
-				this.RegisterCache = undefined;
-				this.getRegisters(() => {});
+				this.zesaruxRegisters.clearCache();
+				this.getRegisters();
 			}
 			return;
 		}
@@ -1314,11 +1337,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Therefore the CALL and RST are exceuted with a "run".
 		// All others are executed with a step-into.
 		// Only exception is LDDR etc. Those are executed as step-over.
-		this.getRegisters(data => {
-			const pc = Z80Registers.parsePC(data);
+		this.getRegisters().then(() => {
+			const pc = this.z80Registers.getPC();
 			zSocket.send('disassemble ' + pc, disasm => {
-				// Clear register cache
-				this.RegisterCache = undefined;
 				// Check if this was a "CALL something" or "CALL n/z,something"
 				const opcode = disasm.substr(7,4);
 
@@ -1327,13 +1348,15 @@ export class ZesaruxEmulator extends EmulatorClass {
 				// reached if the stack is manipulated.
 				// A SP breakpoint might be hit when the stack is being manipulated, but at least it
 				// is hit and does not run forever.
-				if(opcode == "RST " || opcode=="CALL") {
+				if(opcode == "RST " || opcode == "CALL") {
 					// Set condition
-					const sp = Z80Registers.parseSP(data);
+					const sp = this.zesaruxRegisters.getSP();
 					const condition = 'SP>=' + sp;
 					// We do a "run" instead of a step-into/over
 					// Set action first (no action).
 					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+					// Clear register cache
+					this.zesaruxRegisters.clearCache();
 					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
 					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
 						// set the breakpoint
@@ -1356,6 +1379,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 				else {
 					// "normal" opcode, just check for repetitive ones
 					const cmd = (opcode=="LDIR" || opcode=="LDDR" || opcode=="CPIR" || opcode=="CPDR") ? 'cpu-step-over' : 'cpu-step';
+					// Clear register cache
+					this.zesaruxRegisters.clearCache();
 					// Step
 					this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReason) => {
 						// Call handler
@@ -1378,7 +1403,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Check for reverse debugging.
 		if(this.cpuHistory.isInStepBackMode()) {
 			// Get current line
-			let currentLine: string = this.RegisterCache as string;
+			let currentLine = this.zesaruxRegisters.getCache();
 			assert(currentLine);
 			let nextLine;
 
@@ -1399,7 +1424,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 			this.emitRevDbgHistory();
 
 			// Call handler
-			const pc = Z80Registers.parsePC(currentLine);
+			const pc = this.zesaruxRegisters.getPC();
 			const instruction =  '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 			handler(instruction, undefined, undefined, errorText);
 
@@ -1407,8 +1432,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Otherwise get the callstack from ZEsarUX.
 			if(!nextLine) {
 				// Get the registers etc. from ZEsarUX
-				this.RegisterCache = undefined;
-				this.getRegisters(() => {});
+				this.zesaruxRegisters.clearCache();
+				this.getRegisters();
 			}
 			return;
 		}
@@ -1417,11 +1442,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 		this.clearReverseDbgStack();
 
 		// Normal step into.
-		this.getRegisters(data => {
-			const pc = Z80Registers.parsePC(data);
+		this.getRegisters().then(() => {
+			const pc = this.zesaruxRegisters.getPC();
 			zSocket.send('disassemble ' + pc, disasm => {
 				// Clear register cache
-				this.RegisterCache = undefined;
+				this.zesaruxRegisters.clearCache();
 				this.cpuStepGetTime('cpu-step', (tStates, cpuFreq) => {
 					handler(disasm, tStates, cpuFreq);
 				});
@@ -1545,11 +1570,10 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// also the SP is lower/equal to when we started.
 
 			// Get current line
-			let currentLine: string = this.RegisterCache as string;
+			let currentLine = this.zesaruxRegisters.getCache();
 			assert(currentLine);
 			let nextLine;
-			const startSP = Z80Registers.parseSP(currentLine);
-
+			const startSP = this.zesaruxRegisters.getSP();
 			let breakReason;
 			try {
 				// Find next line with same SP
@@ -1565,11 +1589,11 @@ export class ZesaruxEmulator extends EmulatorClass {
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for RET(I/N)
-					const flags = Z80Registers.parseAF(currentLine);
+					const flags = this.zesaruxRegisters.parseAF(currentLine);
 					const opcodes = this.cpuHistory.getOpcodes(currentLine);
 					if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 						// Read SP
-						const sp = Z80Registers.parseSP(nextLine);
+						const sp = this.zesaruxRegisters.parseSP(nextLine);
 						// Check SP
 						if(sp > startSP) {
 							break;
@@ -1577,7 +1601,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 					}
 
 					// Check for breakpoint
-					this.RegisterCache = nextLine;
+					this.zesaruxRegisters.setCache(nextLine);
 					const condition = this.checkPcBreakpoints(nextLine);
 					if(condition != undefined) {
 						breakReason = condition;
@@ -1602,8 +1626,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 			// Otherwise get the callstack from ZEsarUX.
 			if(!nextLine) {
 				// Get the registers etc. from ZEsarUX
-				this.RegisterCache = undefined;
-				this.getRegisters(() => {});
+				this.zesaruxRegisters.clearCache();
+				this.getRegisters();
 			}
 			return;
 		}
@@ -1617,9 +1641,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		// Make sure that reverse debug stack is cleared
 		this.clearReverseDbgStack();
 		// Get current stackpointer
-		this.getRegisters( data => {
+		this.getRegisters().then(() => {
 			// Get SP
-			const sp = Z80Registers.parseSP(data);
+			const sp = this.zesaruxRegisters.getSP();
 
 			// calculate the depth of the call stack
 			var depth = this.topOfStack - sp;
@@ -1663,7 +1687,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 								zSocket.send('enable-breakpoint ' + bpId, () => {
 
 									// Clear register cache
-									this.RegisterCache = undefined;
+									this.zesaruxRegisters.clearCache();
 									// Run
 									this.state = EmulatorState.RUNNING;
 									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
@@ -1702,14 +1726,14 @@ export class ZesaruxEmulator extends EmulatorClass {
 			let instruction = '';
 			try {
 				// Remember previous line
-				let prevLine = this.RegisterCache as string;
+				let prevLine = this.zesaruxRegisters.getCache();
 				assert(prevLine);
 				const currentLine = await this.revDbgPrev();
 				if(currentLine) {
 					// Stack handling:
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 					// Get instruction
-					const pc = Z80Registers.parsePC(currentLine);
+					const pc = this.zesaruxRegisters.getPC();
 					instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 				}
 				else
@@ -1777,7 +1801,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableWPMEM(enable: boolean, handler: () => void) {
+	public enableWPMEM(enable: boolean, handler?: () => void) {
 		if(enable) {
 			this.setWatchpoints(this.watchpoints);
 		}
@@ -1811,7 +1835,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+	public enableAssertBreakpoints(enable: boolean, handler?: () => void) {
 		// not supported.
 		if(this.assertBreakpoints.length > 0)
 			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
@@ -1837,7 +1861,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
+	public enableLogpoints(group: string, enable: boolean, handler?: () => void) {
 		// not supported.
 		if(this.logpoints.size > 0)
 			this.emit('warning', 'ZEsarUX does not support LOGPOINTs in the sources.');
@@ -2024,10 +2048,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param regs The registers as string, e.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
 	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
+	// TODO: da ich RegisterCache soweoso vorher setze, kann ich mir "regs" sparen.
+	// Vielleicht kann ich sogar auf die ganzen parseXX Funktionen verzichten, bzw. auf den data parameter.
 	protected checkPcBreakpoints(regs: string): string|undefined {
-		assert(this.RegisterCache);
+		assert(this.zesaruxRegisters.getCache());
 		let condition;
-		const pc = Z80Registers.parsePC(regs);
+		const pc = this.zesaruxRegisters.getPC();
 		for(const bp of this.breakpoints) {
 			if(bp.address == pc) {
 				// Check for condition
@@ -2232,7 +2258,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param handler that is called when the PC has been set.
 	 */
 	public setProgramCounter(address: number, handler?:() => void) {
-		this.RegisterCache = undefined;
+		this.zesaruxRegisters.clearCache();
 		this.clearReverseDbgStack();
 		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
 			if(handler)
@@ -2249,7 +2275,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	public stateSave(handler: (stateData) => void) {
 		// Create state variable
 		const state = StateZ80.createState(this.machineType);
-		if(!state)
+		if (!state)
 			throw new Error("Machine unknown. Can't save the state.")
 		// Get state
 		state.stateSave(handler);
@@ -2262,13 +2288,12 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 * @param stateData Pointer to the data to restore.
 	 * @param handler The handler that is called after restoring.
 	 */
-	public stateRestore(stateData: StateZ80, handler?: ()=>void) {
+	public stateRestore(stateData: StateZ80, handler?: () => void) {
 		// Clear register cache
-		this.RegisterCache = undefined;
+		this.zesaruxRegisters.clearCache();
 		// Restore state
 		stateData.stateRestore(handler);
 	}
-
 
 
 	// ZX Next related ---------------------------------
@@ -2424,9 +2449,9 @@ export class ZesaruxEmulator extends EmulatorClass {
 		const line = await this.cpuHistory.getPrevRegistersAsync();
 		if(line) {
 			// Add to register cache
-			this.RegisterCache = line;
+			this.zesaruxRegisters.setCache(line);
 			// Add to history for decoration
-			const addr = Z80Registers.parsePC(line);
+			const addr = this.zesaruxRegisters.getPC();
 			this.revDbgHistory.push(addr);
 		}
 		return line;
@@ -2439,8 +2464,8 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected revDbgNext(): string|undefined {
 		// Get line
-		let line = this.cpuHistory.getNextRegisters();
-		this.RegisterCache = line;
+		let line = this.cpuHistory.getNextRegisters() as string;
+		this.zesaruxRegisters.setCache(line);
 		// Remove one address from history
 		this.revDbgHistory.pop();
 		return line;

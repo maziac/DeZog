@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { EmulDebugSessionClass } from './emuldebugadapter';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
-import { Z80Registers } from './z80registers';
+//import { Z80Registers } from './z80registers';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './emulator';
 import { GenericWatchpoint } from './genericwatchpoint';
@@ -594,9 +594,9 @@ export class Z80UnitTests {
 	protected static onBreak(debugAdapter?: EmulDebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
-		Emulator.getRegisters(data => {
+		Emulator.getRegisters().then(() => {
 			// Parse the PC value
-			const pc = Z80Registers.parsePC(data);
+			const pc = Emulator.getPC();
 			//const sp = Z80Registers.parseSP(data);
 			// Check if test case was successful
 			Z80UnitTests.checkUnitTest(pc, debugAdapter);
@@ -919,7 +919,7 @@ export class Z80UnitTests {
 				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
-				Emulator.disconnect();
+				Emulator.disconnect(() => {});
 				// Show error
 				if(errMessage)
 					vscode.window.showErrorMessage(errMessage);

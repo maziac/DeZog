@@ -40,17 +40,18 @@ export class StateZ80 {
 
 	/**
 	 * Stores all registers.
-	 * @param handler(stateData) The handler that is called after restoring.
+	 * @param handler(stateData) The handler that is called after saving.
 	 */
 	public stateSave(handler?: (stateData) => void) {
-		// Save all registers
-		let i = 0;
-		for( const regName of this.allRegs) {
-			Emulator.getRegisterValue( regName, value => {
-				this.registers[i] = value;
-				i ++;
-			});
-		}
+		// Get registers
+		Emulator.getRegisters().then(() => {
+			// Save all registers
+			let i = 0;
+			for (const regName of this.allRegs) {
+				this.registers[i] = Emulator.getRegisterValue(regName);
+				i++;
+			}
+		});
 	}
 
 

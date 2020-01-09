@@ -1,6 +1,7 @@
 
 import * as assert from 'assert';
 import { Z80Registers } from './z80Registers';
+import { StateZ80 } from './statez80';
 import { RefList } from './reflist';
 import { Frame } from './frame';
 import { EventEmitter } from 'events';
@@ -8,9 +9,7 @@ import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
 import { Labels } from './labels';
 import { Settings, ListFile } from './settings';
 import { Utility } from './utility';
-//import { Opcode } from './disassembler/opcode';
-//import { Memory } from './disassembler/memory';
-//import { Format } from './disassembler/format';
+
 
 
 /**
@@ -122,10 +121,6 @@ export class EmulatorClass extends EventEmitter {
 	/// Mirror of the emulator's breakpoints.
 	protected breakpoints = new Array<EmulatorBreakpoint>();
 
-	/// The register cache for values retrieved from emulator.
-	/// Is a simple string that needs to get parsed.
-	public RegisterCache: string|undefined = undefined;
-
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled = false;
 
@@ -149,12 +144,16 @@ export class EmulatorClass extends EventEmitter {
 	/// Stores the log points
 	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
 
+	// The Z80 registers. Should be initialized with a specialized version for the given emulator.
+	protected z80Registers: Z80Registers;
+
 
 	/// Constructor.
+	/// Override this and create a z80Registers instance.
 	constructor() {
 		super();
 		// Init the registers
-		Z80Registers.init();
+		Z80Registers.Init();
 	}
 
 
@@ -354,7 +353,6 @@ export class EmulatorClass extends EventEmitter {
 	}
 
 
-
 	/**
 	 * Evaluates a log message, i.e. a message that was given for a logpoint.
 	 * The format is checked and also the labels are changed into numbers.
@@ -362,7 +360,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
-	protected evalLogMessage(logMsg: string|undefined): string|undefined {
+	public evalLogMessage(logMsg: string|undefined): string|undefined {
 		if(!logMsg)
 			return undefined
 
@@ -498,32 +496,22 @@ export class EmulatorClass extends EventEmitter {
 
 
 	/**
-	 * Override this to retrieve the registers from the emulator.
-	 * @param handler(registersString) Passes 'registersString' to the handler.
-	 */
-	public getRegistersFromEmulator(handler: (registersString: string) => void) {
-		assert(false);	// override this
+	* Gets the registers from cache. If cache is empty retrieves the registers from
+	* the emulator.
+    * Override.
+	* @param handler(registersString) Passes 'registersString' to the handler.
+	*/
+	public getRegisters(): Promise<void> {
+		assert(false);
+		return new Promise<void>(() => {});
 	}
 
 
 	/**
-	* Gets the registers from cache. If cache is empty retrieves the registers from
-	* the emulator.
-	* @param handler(registersString) Passes 'registersString' to the handler.
-	*/
-	public getRegisters(handler: (registersString: string) => void) {
-		if(this.RegisterCache) {
-			// Already exists, return immediately
-			handler(this.RegisterCache);
-		}
-		else {
-			// get new data
-			this.getRegistersFromEmulator(regs => {
-				// Store received data
-				this.RegisterCache = regs;
-				handler(regs);
-			});
-		}
+	 * Returns the PC value.
+	 */
+	public getPC(): number {
+		return this.getRegisterValue("PC");
 	}
 
 
@@ -532,33 +520,60 @@ export class EmulatorClass extends EventEmitter {
 	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param handler(value) The handler that is called with the value when command has finished.
 	 */
-	public getRegisterValue(register: string, handler: (value: number) => void) {
-		this.getRegisters((regsString) => {
-			const value = Z80Registers.getRegValueByName(register, regsString);
-			handler(value);
-		});
+
+	public getRegisterValue(register: string): number {
+		const value = this.z80Registers.getRegValueByName(register);
+		return value;
+	}
+
+
+	/**
+	 * Returns all registers with the given value.
+	 * Is used to find registers that match a certain address. (Hovering)
+	 * @param value The value to find.
+	 * @returns An array of strings with register names that match. If no matching register is found returns an empty array.
+	 */
+	public getRegistersEqualTo(value: number): Array<string> {
+		let resRegs: Array<string> = [];
+		if(this.z80Registers.valid()) {
+			const regs = [ "HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'" ];
+			resRegs = regs.filter(reg => value == this.z80Registers.getRegValueByName(reg));
+		}
+		return resRegs;
+	}
+
+
+	/**
+	 * Returns the 'letiable' formatted register value.
+	 * @param reg The name of the register, e.g. "A" or "BC"
+	 * @returns The formatted string.
+	 */
+	public getVarFormattedReg(reg: string): string {
+		return this.z80Registers.getVarFormattedReg(reg);
+	}
+
+
+	/**
+	 * Returns the 'hover' formatted register value.
+	 * @param reg The name of the register, e.g. "A" or "BC"
+	 * @returns The formatted string.
+	 */
+	public getHoverFormattedReg(reg: string): string {
+		return this.z80Registers.getHoverFormattedReg(reg);
 	}
 
 
 	/**
 	 * Sets the value for a specific register.
+	 * Reads the value from the emulator and returns it in the promise.
+	 * Note: if in reverse debug mode the function should do nothing and the promise should return the previous value.
 	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 * @param value The new register value.
-	 * @param handler The handler that is called when command has finished.
+	 * @return Promise with the "real" register value.
 	 */
-	public setRegisterValue(register: string, value: number, handler?: (resp) => void) {
+	public setRegisterValue(register: string, value: number): Promise<number> {
 		assert(false);	// override this
-	}
-
-	/**
-	 * Returns a specific register value as a formatted string.
-	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
-	 * @param handler(formattedString) The 'formattedString' is passed to handler.
-	 */
-	public getVarFormattedRegister(register: string, handler: (formattedString: string) => void) {
-		this.getRegisters((regsString) => {
-			Z80Registers.getVarFormattedReg(register, regsString,  handler);
-		});
+		return new Promise<number>(() => {});
 	}
 
 
@@ -682,7 +697,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableWPMEM(enable: boolean, handler: () => void) {
+	public enableWPMEM(enable: boolean, handler?: () => void) {
 		assert(false);	// override this
 	}
 
@@ -722,7 +737,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler: () => void) {
+	public enableAssertBreakpoints(enable: boolean, handler?: () => void) {
 		assert(false);	// override this
 	}
 
@@ -758,7 +773,7 @@ export class EmulatorClass extends EventEmitter {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableLogpoints(group: string, enable: boolean, handler: () => void) {
+	public enableLogpoints(group: string, enable: boolean, handler?: () => void) {
 		assert(false);	// override this
 	}
 
@@ -815,7 +830,7 @@ export class EmulatorClass extends EventEmitter {
 	 */
 	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
 		handler:(bps: Array<EmulatorBreakpoint>)=>void,
-		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
+		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint|undefined) {
 
 		try {
 			// get all old breakpoints for the path
@@ -1063,6 +1078,28 @@ export class EmulatorClass extends EventEmitter {
 	 */
 	public clearInstructionHistory() {
 		this.revDbgHistory.length = 0;
+	}
+
+
+	/**
+	 * Called from "-state save" command.
+	 * Stores all RAM + the registers.
+	 * Override.
+	 * @param handler(stateData) The handler that is called after restoring.
+	 */
+	public stateSave(handler: (stateData) => void) {
+
+	}
+
+
+	/**
+	 * Called from "-state load" command.
+	 * Restores all RAM + the registers from a former "-state save".
+	 * Override.
+	 * @param stateData Pointer to the data to restore.
+	 * @param handler The handler that is called after restoring.
+	 */
+	public stateRestore(stateData: StateZ80, handler?: () => void) {
 	}
 
 

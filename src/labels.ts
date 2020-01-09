@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { Settings } from './settings';
-import { Z80Registers } from './z80Registers';
+//
+import { Emulator } from './emulatorfactory';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
 //import { start } from 'repl';
@@ -650,15 +651,21 @@ export class LabelsClass {
 	 * Returns all labels with the exact same address
 	 * to the given address.
 	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
-	 * @param regsString If defined it also returns registers (from the regsString)which match the number. Can be omitted. Then no registers are returned.
+	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
-	public getLabelsForNumber(number: number, regsString: string = ''): Array<string> {
+	public getLabelsForNumber(number: number, regsAsWell = false): Array<string> {
 		if(number <= Settings.launch.smallValuesMaximum || number > 0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
 		}
-		var names = Z80Registers.getRegistersEqualTo(number, regsString);
-		var labels = this.labelsForNumber[number];
+
+		let names;
+		if (regsAsWell)
+			names = Emulator.getRegistersEqualTo(number);
+		else
+			names = new Array<string>();
+
+		let labels = this.labelsForNumber[number];
 
 		if(labels && typeof labels !== 'number') {
 			names.push(...labels);
@@ -673,15 +680,21 @@ export class LabelsClass {
 	 * If label is equal to given addr the label itself is returned.
 	 * If label is not equal to given addr the label+offset is returned.
 	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
-	 * @param regsString If defined it also returns registers (from the regsString) which match the number exactly. Can be omitted. Then no registers are returned.
+	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels + offset
 	 */
-	public getLabelsPlusIndexForNumber(number: number, regsString: string = ''): Array<string> {
+	public getLabelsPlusIndexForNumber(number: number, regsAsWell = false): Array<string> {
 		if(number <= Settings.launch.smallValuesMaximum || number > 0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
 		}
-		var names = Z80Registers.getRegistersEqualTo(number, regsString);
-		var labels = this.labelsForNumber[number];
+
+		let names;
+		if (regsAsWell)
+			names = Emulator.getRegistersEqualTo(number);
+		else
+			names = new Array<string>();
+
+		let labels = this.labelsForNumber[number];
 		if(labels) {
 			if(typeof labels !== 'number') {
 				names.push(...labels);

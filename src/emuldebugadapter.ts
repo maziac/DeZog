@@ -1085,8 +1085,8 @@ export class EmulDebugSessionClass extends DebugSession {
 		if(!breakReason)
 			return;
 		// Get PC
-		Emulator.getRegisters(regs => {
-			const pc = Z80Registers.parsePC(regs);
+		Emulator.getRegisters().then(() => {
+			const pc = Emulator.getPC();
 			Decoration.showBreak(pc, breakReason);
 		});
 	}
@@ -1489,109 +1489,104 @@ export class EmulDebugSessionClass extends DebugSession {
 			}
 		}
 
+		Log.log('evaluate.expression: ' + args.expression);
+		Log.log('evaluate.context: ' + args.context);
+		Log.log('evaluate.format: ' + args.format);
 
-		// Serialize
-		this.serializer.exec(() => {
-			Log.log('evaluate.expression: ' + args.expression);
-			Log.log('evaluate.context: ' + args.context);
-			Log.log('evaluate.format: ' + args.format);
+		// get the name
+		const name = expression;
+		// Check if it is a register
+		if(Z80Registers.isRegister(name)) {
+			const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
+			Utility.getFormattedRegister(name, formatMap, (formattedValue) => {
+				response.body = {
+					result: formattedValue,
+					variablesReference: 0
+				};
+				this.sendResponse(response);
+			});
+			return;
+		}
 
-			// get the name
-			const name = expression;
-			// Check if it is a register
-			if(Z80Registers.isRegister(name)) {
-				const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
-				Utility.getFormattedRegister(name, formatMap, (formattedValue) => {
-					response.body = {
-						result: formattedValue,
-						variablesReference: 0
-					};
-					this.sendResponse(response);
-					this.serializer.endExec();
-				});
-				return;
-			}
-
-			// Check if it is a label. A label may have a special formatting:
-			// Example: LBL_TEXT 10, b
-			// = Addresse LBL_TEXT, 10 bytes
-			const match = /^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
-			if(match) {
-				let labelString = match[1];
-				let sizeString = match[3];
-				let byteWord = match[5];
-				// Defaults
-				if(labelString) {
-					let labelValue = NaN;
-					let lastLabel;
-					let modulePrefix;
-					// First check for module name and local label prefix (sjasmplus).
-					if(Emulator.RegisterCache) {
-						// Get current pc
-						const pc = Z80Registers.parsePC(Emulator.RegisterCache);
-						const entry = Labels.getFileAndLineForAddress(pc);
-						// Local label and prefix
-						lastLabel = entry.lastLabel;
-						modulePrefix = entry.modulePrefix;
-					}
+		// Check if it is a label. A label may have a special formatting:
+		// Example: LBL_TEXT 10, b
+		// = Addresse LBL_TEXT, 10 bytes
+		const match = /^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
+		if(match) {
+			let labelString = match[1];
+			let sizeString = match[3];
+			let byteWord = match[5];
+			// Defaults
+			if(labelString) {
+				let labelValue = NaN;
+				let lastLabel;
+				let modulePrefix;
+				// First check for module name and local label prefix (sjasmplus).
+				Emulator.getRegisters().then(() => {
+					const pc = Emulator.getPC();
+					const entry = Labels.getFileAndLineForAddress(pc);
+					// Local label and prefix
+					lastLabel = entry.lastLabel;
+					modulePrefix = entry.modulePrefix;
 
 					// Convert label
 					try {
 						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
-					} catch {}
+					} catch { }
 
-					if(!isNaN(labelValue)) {
-						var size = 100;
-						if(sizeString) {
-							const readSize = Labels.getNumberFromString(sizeString) || NaN;
-							if(!isNaN(readSize))
-								size = readSize;
-						}
-						if(!byteWord || byteWord.length == 0)
-							byteWord = "bw";	// both byte and word
-						// Now create a "variable" for the bigValues or small values
-						const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
-						Utility.numberFormatted(name, labelValue, 2,
-							format, undefined, (formattedValue) => {
-								if(labelValue <= Settings.launch.smallValuesMaximum) {
-									// small value
-									// Response
-									response.body = {
-										result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
-										variablesReference: 0,
-										//type: "data",
-										//amedVariables: 0
-									}
-								}
-								else {
-									// big value
-									// Create a label variable
-									const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
-									// Add to list
-									const ref = this.listVariables.addObject(labelVar);
-									// Response
-									response.body = {
-										result: (args.context == 'hover') ? name+': '+formattedValue : formattedValue,
-										variablesReference: ref,
-										type: "data",
-										//presentationHint: ,
-										namedVariables: 2,
-										//indexedVariables: 100
-									}
-								};
-								this.sendResponse(response);
-								this.serializer.endExec();
-							});
+					if (isNaN(labelValue)) {
+						// Return empty response
+						this.sendResponse(response);
 						return;
 					}
-				}
-			}
 
-			// Default: return nothing
-			this.sendResponse(response);
-			this.serializer.endExec();
-		});
+					// Is a number
+					var size = 100;
+					if (sizeString) {
+						const readSize = Labels.getNumberFromString(sizeString) || NaN;
+						if (!isNaN(readSize))
+							size = readSize;
+					}
+					if (!byteWord || byteWord.length == 0)
+						byteWord = "bw";	// both byte and word
+					// Now create a "variable" for the bigValues or small values
+					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
+					Utility.numberFormatted(name, labelValue, 2, format, undefined, (formattedValue) => {
+						if (labelValue <= Settings.launch.smallValuesMaximum) {
+							// small value
+							// Response
+							response.body = {
+								result: (args.context == 'hover') ? name + ': ' + formattedValue : formattedValue,
+								variablesReference: 0,
+								//type: "data",
+								//amedVariables: 0
+							}
+						}
+						else {
+							// big value
+							// Create a label variable
+							const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+							// Add to list
+							const ref = this.listVariables.addObject(labelVar);
+							// Response
+							response.body = {
+								result: (args.context == 'hover') ? name + ': ' + formattedValue : formattedValue,
+								variablesReference: ref,
+								type: "data",
+								//presentationHint: ,
+								namedVariables: 2,
+								//indexedVariables: 100
+							};
+						}
+						this.sendResponse(response);
+					});
+				});	// Emulator.getRegisters
+				return;
+			}	// If labelString
+		}	// If match
 
+		// Default: return nothing
+		this.sendResponse(response);
 	}
 
 

@@ -1,7 +1,7 @@
 # Changelog
 
-# 0.9.8
-
+# 0.10.0
+- Major redesign around Z80Registers to make it easier to add other remotes like a real ZXNext HW.
 
 # 0.9.7
 - Different way to step-over (SP).

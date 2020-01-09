@@ -2,7 +2,6 @@
 //import { Log } from './log';
 import { Labels } from './labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { Z80Registers } from './z80Registers';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings'
 import { Utility } from './utility';
@@ -161,31 +160,19 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}) {
-		Emulator.getRegisters(data => {
+		Emulator.getRegisters().then(() => {
 			const registers = new Array<DebugProtocol.Variable>();
 			const regNames = this.registerNames();
-
-			// Serialize formatting calls on independent serializer.
-			const innerSerializer = new CallSerializer("Inner");
 			for(let regName of regNames) {
-				innerSerializer.exec(() => {
-					Z80Registers.getVarFormattedReg(regName, data, (formattedValue) => {
-						registers.push({
-							name: regName,
-							type: formattedValue,
-							value: formattedValue,
-							variablesReference: 0
-						});
-						innerSerializer.endExec();
-					});
+				const formattedValue = Emulator.getVarFormattedReg(regName);
+				registers.push({
+					name: regName,
+					type: formattedValue,
+					value: formattedValue,
+					variablesReference: 0
 				});
 			}
-
-			// call handler
-			innerSerializer.exec(() => {
-				handler(registers);
-				innerSerializer.endExec();
-			});
+			handler(registers);
 		});
 	}
 
@@ -200,16 +187,20 @@ export class RegistersMainVar extends ShallowVar {
 		// Check if value is valid
 		if(isNaN(value)) {
 			// Get old value and send it back
-			Emulator.getRegisters(data => {
-				Z80Registers.getVarFormattedReg(name, data, formatted => {
-					handler(formatted);
-				});
+			Emulator.getRegisters()
+			.then(() => {
+				const formatted = Emulator.getVarFormattedReg(name);
+				handler(formatted);
 			});
 			return;
 		}
 
-		// set value
-		Emulator.setRegisterValue(name, value, handler);
+		// Set value
+		Emulator.setRegisterValue(name, value)
+		.then(() => {
+			const formatted = Emulator.getVarFormattedReg(name);
+			handler(formatted);
+		});
 	}
 
 

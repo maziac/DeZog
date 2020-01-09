@@ -54,4 +54,5 @@ export class EmulatorFactory {
 }
 
 
-export var Emulator;
+export var Emulator: EmulatorClass;
+//TODO: Change to: "export var Emulator: EmulatorClass;" and correct the errors.
