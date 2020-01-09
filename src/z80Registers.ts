@@ -4,7 +4,7 @@ import { Settings } from './settings';
 
 
 /// The formatting (for VARIABLES) for each register is provided through a map.
-export let Z80RegisterVarFormat: Map<string, string>;  // TODO: Beide maps über statische Funktion exportieren.
+export let Z80RegisterVarFormat: Map<string, string>;
 
 /// The formatting (for hovering) for each register is provided through a map.
 export let Z80RegisterHoverFormat: Map<string, string>;

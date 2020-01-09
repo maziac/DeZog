@@ -1,10 +1,6 @@
 
 # TODO
 
-- Interface von ShallowVar ändern. Die sollen über EmulatorClass gehen.
-So dass ich in EmulatorClass alle Emulator spezifischen Dinge habe.
-- Ich muss wohl eigenes lua script bauen, um erweiterte Befehle wie 'disassemble, step-over, change driver' zu benutzen. Dann kann ich auch gleich eigenes definieren. Wenn ich das gleiche wie bei ZEsarux verwende müsste ich nichts ändern! (Wunschdenken, e.g. unterschiedliches Breakpoint Nummer handling. Das funktioniert nicht: EmulatorClass abstrahiert den Emulator.).
-- Register parsing muss nach 'EmulatorClass'.
 
 # Emulator Interface
 
@@ -46,6 +42,11 @@ The EmulatorClass interface to vscode via the 'EmulDebugAdapter'. The main inter
 Apart from EmulatorClass there is another class collection that communicate with the emulator, the ShallowVar classes.
 The ShallowVar classes represent variables shown e.g. in vscode's VARIABLES section ot the WATCHES section. Examples are: Disassembly, registers, watches.
 Whenever the value should be updated, vscode requests the value and the ShallowVar sends the request to the emulator and receives the value as response.
+
+Every specific Emulator derives three different classes:
+- EmulatorClass
+- Socket
+- Z80Registers
 
 
 # Functionality Overview - ZEsarUX, CSpect, ZXNext HW

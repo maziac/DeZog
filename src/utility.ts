@@ -446,7 +446,6 @@ export class Utility {
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
 	 * @returns The formatted string.
 	 */
-	// TODO: Here muss der paramRegsString raus.
 	public static numberFormattedSync(value: number, size: number, format: string, regsAsWell = false, paramName?: string, paramWordAtAddress?: number, tabSizeArr?: Array<string>): string {
 		// Check for defaults
 		const name = paramName || '';
