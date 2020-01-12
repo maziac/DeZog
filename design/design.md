@@ -100,7 +100,7 @@ Emulator <-> Socket:
 
 ## Activation
 
-z80-debug is activated in the 'activate' function in extension.ts by registering the ZesaruxConfigurationProvider.
+DeZog is activated in the 'activate' function in extension.ts by registering the ZesaruxConfigurationProvider.
 This happens e.g. when the Debugger is started.
 Short after 'ZesaruxConfigurationProvider::resolveDebugConfiguration' is called.
 As the debug adapter is entirely implemented in Typescript it lives in the same process as the extension which simplifies debugging the debug-adapter.
@@ -453,7 +453,7 @@ note over unittest: Start unit tests
 
 Code coverage can be enabled in the launch settings.
 Everytime the program is stopped the "Emulator" will send information about the executed addresses.
-The z80-debug adatper will then highlight the covered lines.
+DeZog will then highlight the covered lines.
 This is available everywhere (e.g. during debugging or during execution of unit tests).
 
 xxx is either the EmulDebugAdapter or the Z80UnitTests.

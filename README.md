@@ -4,15 +4,15 @@
 
 **Note: you need to install at least ZEsarUX version 8.0**
 
-The Z80-Debug-Adapter (z80-debug) lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
+DeZog lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
 With this extension it is possible to debug assembler programs built for the ZX Spectrum.
 It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
 (It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug at ZEsarUX.)
-The biggest help it offers is that you are able to step through your sources and that  z80-debug is aware of all labels and can give hints to what label a number resolves.
+The biggest help it offers is that you are able to step through your sources and that  DeZog is aware of all labels and can give hints to what label a number resolves.
 
-The z80-debug connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called zrcp (ZEsarUX Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
+DeZog connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called zrcp (ZEsarUX Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
 
-Note: The Z80-Debug-Adapter does not include any support for building from assembler sources. For this you need to create a build task yourself. For an example look here: https://github.com/maziac/z80-sample-program
+Note: DeZog does not include any support for building from assembler sources. For this you need to create a build task yourself. For an example look here: https://github.com/maziac/z80-sample-program
 
 
 ## Gallery
@@ -80,16 +80,16 @@ Note: The Z80-Debug-Adapter does not include any support for building from assem
 
 ### Prerequisites
 
-In order to use z80-debug you need
+In order to use DeZog you need
 - vscode (of course)
 - the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.0 is required.
 
 
-### z80-debug
+### DeZog
 
-In Visual Studio Code simply install "Z80 Debugger" (maziac.z80-debug) from the Marketplace.
+In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
 
-There are 2 other extensions that are not required to work with z80-debug but may help:
+There are 2 other extensions that are not required to work with DeZog but may help:
 - [asm-code-lens](https://github.com/maziac/asm-code-lens):
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
@@ -106,19 +106,19 @@ Please look at the documentation ['Usage of the VS Code Z80 Debug Adapter'](docu
 
 ## License
 
-z80-debug is licensed under the [MIT license](https://github.com/maziac/z80-debug/blob/master/LICENSE.txt).
+dezog is licensed under the [MIT license](https://github.com/maziac/dezog/blob/master/LICENSE.txt).
 
-The source code is available on [github](https://github.com/maziac/z80-debug).
+The source code is available on [github](https://github.com/maziac/dezog).
 
 
 # Extras
 
 Here is also a great tutorial from Cesar Wagener Moriana (not to confuse with Cesar Hernandez bano, the autor of ZEsarUX).
-He documented how he put all things together. If you are new to the Z80-Debug-Adapter this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
+He documented how he put all things together. If you are new to DeZog this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
 It deals with setting up
 - sjasmplus
 - ZEsarUX and the
-- z80-debug vscode extension
+- DeZog vscode extension
 
 and is available in English, Spain and German [here](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/).
 

@@ -12,7 +12,7 @@ import Lg = require("./log")
 
 
 /// Config section in the settings.
-const CONFIG_SECTION = 'z80-debug';
+const CONFIG_SECTION = 'dezog';
 
 /**
  * Register configuration provider and command palette commands.
@@ -46,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to change the program counter via menu.
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.movePCtoCursor', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.movePCtoCursor', () => {
 		// Only allowed in debug context
 		if(!vscode.debug.activeDebugSession)
 			return;
@@ -61,18 +61,18 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to disable code coverage display and analyzes.
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.clearCodeCoverage', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.clearCodeCoverage', () => {
 		if(Decoration)
 			Decoration.clearCodeCoverage();
 	}));
 
 	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runAllUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.runAllUnitTests', () => {
 		Z80UnitTests.runAllUnitTests();
 	}));
 
 	// Command to run (some) unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.debugAllUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugAllUnitTests', () => {
 		Z80UnitTests.debugAllUnitTests();
 	}));
 
@@ -88,34 +88,34 @@ export function activate(context: vscode.ExtensionContext) {
 	*/
 
 	// Command to get a list of all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.getAllUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', () => {
 		return Z80UnitTests.getAllUnitTests();
 	}));
 
 	// Command to initialize partial unit testing
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.initUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.initUnitTests', () => {
 		Z80UnitTests.clearTestCaseList();
 	}));
 
 	// Command to (delayed) execute a single unit test case
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.execUnitTestCase', (tcLabel: string) => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.execUnitTestCase', (tcLabel: string) => {
 		return Z80UnitTests.execUnitTestCase(tcLabel);
 	}));
 
 	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.runPartialUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.runPartialUnitTests', () => {
 		// Send to debug adapter
 		Z80UnitTests.runPartialUnitTests();
 	}));
 
 	// Command to run (some) unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('z80-debug.debugPartialUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugPartialUnitTests', () => {
 		Z80UnitTests.debugPartialUnitTests();
 	}));
 
 	// Register a configuration provider for 'zesarux' debug type
 	const provider = new ZesaruxConfigurationProvider()
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('z80-debug', provider));
+	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', provider));
 	context.subscriptions.push(provider);
 
 	// Initialize the Coverage singleton.
@@ -184,7 +184,7 @@ function configureLogging() {
 	{
 		const logToPanel = configuration.get<boolean>('logpanel');
 		const filepath = configuration.get<string>('logfile');
-		const channelName = (logToPanel) ? "Z80 Debugger" : undefined;
+		const channelName = (logToPanel) ? "DeZog" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		Log.init(channelOut, filepath);
 	}
@@ -193,14 +193,14 @@ function configureLogging() {
 	{
 		const logToPanel = configuration.get<boolean>('socket.logpanel');
 		const filepath = configuration.get<string>('socket.logfile');
-		const channelName = (logToPanel) ? "Z80 Debugger Socket" : undefined;
+		const channelName = (logToPanel) ? "DeZog Socket" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogSocket.init(channelOut, filepath);
 	}
 
 	// Enable to get a log of the commands only
 	if(false) {
-		const channelOut = vscode.window.createOutputChannel("Z80 Debugger Socket Commands");
+		const channelOut = vscode.window.createOutputChannel("DeZog Socket Commands");
 		Lg.LogSocketCommands = new Log();
 		Lg.LogSocketCommands.init(channelOut, undefined);
 	}

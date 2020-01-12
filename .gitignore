@@ -2,7 +2,6 @@
 node_modules/
 out/
 npm-debug.log
-z80-debug.txt
 *.vsix
 logs/
 /data/

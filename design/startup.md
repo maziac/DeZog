@@ -15,12 +15,12 @@ participant ZXDebug
 participant ZXSocket as "Zesarux\nSocket"
 
 == init  ==
-vscode -> ZXDebug: <font color=red><b>initialize</b></font>, ({"clientID":"vscode","clientName":"Visual Studio Code",\n"adapterID":"z80-debug","pathFormat":"path","linesStartAt1":true,"columnsStartAt1":true,\n"supportsVariableType":true,"supportsVariablePaging":true,\n"supportsRunInTerminalRequest":true,"locale":"en-us"})
+vscode -> ZXDebug: <font color=red><b>initialize</b></font>, ({"clientID":"vscode","clientName":"Visual Studio Code",\n"adapterID":"dezog","pathFormat":"path","linesStartAt1":true,"columnsStartAt1":true,\n"supportsVariableType":true,"supportsVariablePaging":true,\n"supportsRunInTerminalRequest":true,"locale":"en-us"})
 vscode <- ZXDebug: <font color=red><b>sendResponse, initialize</b></font>({"supportsConfigurationDoneRequest":false,\n"supportsStepBack":true,"supportTerminateDebuggee":true,"supportsGotoTargetsRequest":true,\n"supportsEvaluateForHovers":true,"supportsSetVariable":true})
 
 
 == launch==
-vscode -> ZXDebug: <font color=red><b>launch</b></font>({"type":"z80-debug","request":"launch","name":"Zesarux Debugger",\n"debugServer":4711,"startAutomatically":false,\n"listFile":"/Volumes/Macintosh HD 2/Projects/zesarux/starwarrior/starwarrior.list",\n"labelsFile":"/Volumes/Macintosh HD 2/Projects/zesarux/starwarrior/starwarrior.labels",\n"skipInterrupt":true,"__sessionId":"e0eec1b5-3612-462f-bd08-7c78fcf99476"})
+vscode -> ZXDebug: <font color=red><b>launch</b></font>({"type":"dezog","request":"launch","name":"Zesarux Debugger",\n"debugServer":4711,"startAutomatically":false,\n"listFile":"/Volumes/Macintosh HD 2/Projects/zesarux/starwarrior/starwarrior.list",\n"labelsFile":"/Volumes/Macintosh HD 2/Projects/zesarux/starwarrior/starwarrior.labels",\n"skipInterrupt":true,"__sessionId":"e0eec1b5-3612-462f-bd08-7c78fcf99476"})
 vscode <- ZXDebug: <font color=red><b>sendResponse, launch</b></font>(undefined)
 ZXSocket <- ZXDebug: connect
 ZXSocket -> ZXDebug: connected

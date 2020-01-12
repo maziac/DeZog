@@ -143,7 +143,7 @@ export class Z80UnitTests {
 	protected static lastCoveredAddresses: Set<number>;
 
 	/// The output channel for the unit tests
-	protected static unitTestOutput = vscode.window.createOutputChannel("Z80 Debugger Unit Tests");
+	protected static unitTestOutput = vscode.window.createOutputChannel("DeZog Unit Tests");
 
 	/**
 	 * Execute all unit tests in debug mode.

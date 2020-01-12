@@ -1,6 +1,6 @@
 # ZX Next Interface
 
-Here I collect first ideas to connect the z80-debug-adapter remotely with a real ZX Next Spectrum.
+Here I collect first ideas to connect DeZog remotely with a real ZX Next Spectrum.
 
 It basically has to communicate with the ZX Next similarly as with ZEsarUX, but there are, of course, specific problems.
 
@@ -49,9 +49,9 @@ So apart form the NMI button there is no method that would always work.
 
 # ZX Next SW
 
-The ZX Next requires a program to be executed on the Next to communicate with the PC with the z80-debug-adapter.
+The ZX Next requires a program to be executed on the Next to communicate with the PC with DeZog.
 The SW has the following main tasks:
-- communication with z80-debug
+- communication with DeZog
 - read/write registers
 - break the execution
 - set SW breakpoints

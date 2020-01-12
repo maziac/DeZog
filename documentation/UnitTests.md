@@ -1,6 +1,6 @@
 # Unit Tests
 
-The z80-debug adapter offers the possibility to  execute unit tests.
+DeZog offers the possibility to  execute unit tests.
 You can directly run the unit tests or use the [z80-unit-tests](https://github.com/maziac/z80-unit-tests) extension to execute the tests from a test explorer UI.
 
 A good example for the use of unit tests can be found in the [z80-sample-program](https://github.com/maziac/z80-sample-program).
@@ -195,10 +195,10 @@ Make sure ZEsarUX is running and has remote control enabled (just like in a norm
 Make sure that no debug session is currently running.
 
 Press F1 for the command palette to appear.
-Enter "z80-debug: Run all unit tests".
+Enter "dezog: Run all unit tests".
 
-The z80-debug adapter will connect ZEsarUX and execute the unit tests.
-At the end you get a summary like this (in the vscode "OUTPUT" panel channel "Z80 Debugger Unit Tests"):
+DeZog will connect ZEsarUX and execute the unit tests.
+At the end you get a summary like this (in the vscode "OUTPUT" panel channel "DeZog Unit Tests"):
 ~~~
 +-------------------------------------------------
 UNITTEST SUMMARY:
@@ -233,7 +233,7 @@ See [Code Coverage](#code-coverage).
 
 
 If you find that a test case has failed you can also start the unit tests in debug mode:
-Press F1 and enter "z80-debug: Run all unit tests in debug mode".
+Press F1 and enter "dezog: Run all unit tests in debug mode".
 
 The debugger is started and will stop at the failing test. E.g.
 ![](images/unittest_coverage_failed_test.jpg)
@@ -254,7 +254,7 @@ When the unit tests have been run you can see the code coverage. The covered lin
 You can easily see what instructions have been covered by a test and which not.
 The coverage decoration is also available when running the unit tests in debug mode.
 It is reset whenever you start a new debug session or a new unit test.
-If you need to clear the coverage decoration at some other point go tp the command palette and enter "z80-debug: Clear the current code coverage decoration"
+If you need to clear the coverage decoration at some other point go tp the command palette and enter "dezog: Clear the current code coverage decoration"
 
 
 # What Else

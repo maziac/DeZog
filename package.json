@@ -1,7 +1,7 @@
 {
-	"name": "z80-debug",
-	"displayName": "Z80 Debugger",
-	"version": "0.10.0",
+	"name": "dezog",
+	"displayName": "DeZog",
+	"version": "0.11.0",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -12,6 +12,7 @@
 		"debugger",
 		"z80",
 		"z80-debug",
+		"dezog",
 		"zesarux",
 		"zx spectrum",
 		"assembler"
@@ -27,7 +28,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/maziac/z80-debug"
+		"url": "https://github.com/maziac/dezog"
 	},
 	"scripts": {
 		"prepublish": "tsc -p ./src",
@@ -68,24 +69,24 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Z80 Debugger configuration",
+			"title": "DeZog configuration",
 			"properties": {
-				"z80-debug.logpanel": {
+				"dezog.logpanel": {
 					"description": "Write global logs to an output panel.",
 					"type": "boolean",
 					"scope": "resource"
 				},
-				"z80-debug.logfile": {
+				"dezog.logfile": {
 					"description": "Write global logs to the given file.",
 					"type": "string",
 					"scope": "resource"
 				},
-				"z80-debug.socket.logpanel": {
+				"dezog.socket.logpanel": {
 					"description": "Write socket logs to an output panel.",
 					"type": "boolean",
 					"scope": "resource"
 				},
-				"z80-debug.socket.logfile": {
+				"dezog.socket.logfile": {
 					"description": "Write socket logs to the given file.",
 					"type": "string",
 					"scope": "resource"
@@ -130,99 +131,99 @@
 		],
 		"commands": [
 			{
-				"command": "z80-debug.movePCtoCursor",
+				"command": "dezog.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
-				"category": "z80-debug"
+				"category": "dezog"
 			},
 			{
-				"command": "z80-debug.clearCodeCoverage",
+				"command": "dezog.clearCodeCoverage",
 				"title": "Clear the current code coverage decoration",
-				"category": "z80-debug"
+				"category": "dezog"
 			},
 			{
-				"command": "z80-debug.runAllUnitTests",
+				"command": "dezog.runAllUnitTests",
 				"title": "Run all unit tests",
-				"category": "z80-debug"
+				"category": "dezog"
 			},
 			{
-				"command": "z80-debug.debugAllUnitTests",
+				"command": "dezog.debugAllUnitTests",
 				"title": "Run all unit tests in debug mode",
-				"category": "z80-debug"
+				"category": "dezog"
 			},
 			{
-				"command": "z80-debug.getAllUnitTests",
+				"command": "dezog.getAllUnitTests",
 				"title": "Get all unit test case labels.",
-				"category": "z80-debug-partial-unit-testing"
+				"category": "dezog-partial-unit-testing"
 			},
 			{
-				"command": "z80-debug.initUnitTests",
+				"command": "dezog.initUnitTests",
 				"title": "Initializes partial unit testing.",
-				"category": "z80-debug-partial-unit-testing"
+				"category": "dezog-partial-unit-testing"
 			},
 			{
-				"command": "z80-debug.execUnitTestCase",
+				"command": "dezog.execUnitTestCase",
 				"title": "(Delayed) execution of one unit test case.",
-				"category": "z80-debug-partial-unit-testing"
+				"category": "dezog-partial-unit-testing"
 			},
 			{
-				"command": "z80-debug.runPartialUnitTests",
+				"command": "dezog.runPartialUnitTests",
 				"title": "Run all unit test cases (from execUnitTestCase).",
-				"category": "z80-debug-partial-unit-testing"
+				"category": "dezog-partial-unit-testing"
 			},
 			{
-				"command": "z80-debug.debugPartialUnitTests",
+				"command": "dezog.debugPartialUnitTests",
 				"title": "Run all unit test cases (from execUnitTestCase) in debug mode.",
-				"category": "z80-debug-partial-unit-testing"
+				"category": "dezog-partial-unit-testing"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "z80-debug.runAllUnitTests"
+					"command": "dezog.runAllUnitTests"
 				},
 				{
-					"command": "z80-debug.debugAllUnitTests"
+					"command": "dezog.debugAllUnitTests"
 				},
 				{
-					"command": "z80-debug.movePCtoCursor",
+					"command": "dezog.movePCtoCursor",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.clearCodeCoverage"
+					"command": "dezog.clearCodeCoverage"
 				},
 				{
-					"command": "z80-debug.getAllUnitTests",
+					"command": "dezog.getAllUnitTests",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.execUnitTestCase",
+					"command": "dezog.execUnitTestCase",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.debugPartialUnitTests",
+					"command": "dezog.debugPartialUnitTests",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.runPartialUnitTests",
+					"command": "dezog.runPartialUnitTests",
 					"when": "false"
 				},
 				{
-					"command": "z80-debug.initUnitTests",
+					"command": "dezog.initUnitTests",
 					"when": "false"
 				}
 			],
 			"editor/context": [
 				{
 					"when": "resourceLangId == asm-collection && inDebugMode",
-					"command": "z80-debug.movePCtoCursor",
+					"command": "dezog.movePCtoCursor",
 					"group": "debug"
 				}
 			]
 		},
 		"debuggers": [
 			{
-				"type": "z80-debug",
-				"label": "Z80 Debugger",
+				"type": "dezog",
+				"label": "DeZog",
 				"program": "./out/emuldebugadapter.js",
 				"runtime": "node",
 				"configurationAttributes": {
@@ -278,7 +279,7 @@
 												},
 												"filter": {
 													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by z80-debug. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasmplus' or 'z88dk'.",
+													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by dezog. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasmplus' or 'z88dk'.",
 													"default": null
 												},
 												"asm": {
@@ -477,12 +478,12 @@
 				},
 				"configurationSnippets": [
 					{
-						"label": "Z80 Debugger: Launch",
-						"description": "Configuration for the Z80 Debugger.",
+						"label": "DeZog: Launch",
+						"description": "Configuration for DeZog.",
 						"body": {
-							"type": "z80-debug",
+							"type": "dezog",
 							"request": "launch",
-							"name": "Z80 Debugger",
+							"name": "DeZog",
 							"zhostname": "localhost",
 							"zport": 10000,
 							"topOfStack": "stack_top",

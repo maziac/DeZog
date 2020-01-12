@@ -1,11 +1,11 @@
 # Usage of the VS Code Z80 Debug Adapter
 
-This document describes the feature of z80-debug and how they can be used.
+This document describes the feature of DeZog and how they can be used.
 
 
 ## Sample Program
 
-I provide a simple sample assembler program to demonstrate the features of z80-debug.
+I provide a simple sample assembler program to demonstrate the features of DeZog.
 
 You can find it here:
 https://github.com/maziac/z80-sample-program
@@ -17,16 +17,16 @@ It includes the sources and the binaries (.list, .sna files). So, if you don't w
 
 ### launch.json
 
-After installing you need to add the configuration for "z80-debug".
+After installing you need to add the configuration for "DeZog".
 
 A typical configuration looks like this:
 
 ~~~
     "configurations": [
         {
-            "type": "z80-debug",
+            "type": "dezog",
             "request": "launch",
-            "name": "Z80 Debugger",
+            "name": "DeZog",
             "zhostname": "localhost",
             "zport": 10000,
             "listFiles": [
@@ -65,7 +65,7 @@ A typical configuration looks like this:
        }
 ~~~
 
-- name: The (human readable) name of the Z80-Debug-Adapter as it appears in vscode.
+- name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
@@ -76,11 +76,11 @@ Please have a look at the [Listfile](#listfile) section.
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
     If true ZEsarUX does not break in interrupts (on manual break)
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
-- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "z80-debug: Clear current code coverage decoration".
+- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
-- topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information z80-debug does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
+- topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 
 ~~~assembly
 Your assembler file:
@@ -94,11 +94,11 @@ In your launch.json:
 
 Note: instead of a label you can also use a fixed number.
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
-Note 1: you can also omit this. In that case the z80-debug attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
+Note 1: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
 Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files.
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
-- smallValuesMaximum: z80-debug format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
+- smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
 - tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
 - memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
@@ -120,19 +120,19 @@ To distinguish them I will call them
 a) the **Savannah-z80asm** (or z80asm) from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
 b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
 
-The z80-debug supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
+DeZog supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
 
 
 #### The list file
 
 The most important configuration to do is the *.list file. The list file contains
-all the information required by z80-debug. While reading this file z80-debug
+all the information required by DeZog. While reading this file DeZog
 - associates addresses with line numbers
 - associates addresses with files
 - reads in labels and constants
 
 An example how this works:
-When you do a 'step-over' in the debugger, z80-debug request the new PC (program counter) value from ZEsarUX.
+When you do a 'step-over' in the debugger, DeZog request the new PC (program counter) value from ZEsarUX.
 The address of the PC is looked up to find the line in the list file.
 Now depending on the value of 'srcDirs'
 - []: Empty array. The corresponding line in the list file is shown or
@@ -174,7 +174,7 @@ Here is an example to use for the **z88dk-z80asm**:
 ~~~
 Explanation:
 - "path": is the path to the list file. z88dk list file use the extension .lis.
-- "srcDirs": set to an empty array. This means that z80-debug will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
+- "srcDirs": set to an empty array. This means that DeZog will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
 - "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
 
 And here an example to use for the **sjasmplus**:
@@ -194,8 +194,8 @@ Explanation:
 
 
 Other assemblers:
-I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use z80-debug. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
-The required format for z80-debug is that
+I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use DeZog. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
+The required format for DeZog is that
 - each line starts with the address
 - labels are terminated by an ':' and
 - constants look like: 'some_constant: EQU value'
@@ -207,7 +207,7 @@ The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the
 
 #### Without a listfile
 
-If you don't setup any list file then you can still start z80-debug and it will work.
+If you don't setup any list file then you can still start DeZog and it will work.
 The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for an on-the-fly disassembly.
 Whenever the program is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
 If not a short amount of memory is added to the disassembly.
@@ -237,7 +237,7 @@ sjasmplus:
 - Labels may end with or without ":"
 - temporary labels, e.g. labels that are just called "1" or "2".
 
-z80-debug supports most of them but with some restrictions:
+DeZog supports most of them but with some restrictions:
 
 - local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
@@ -248,7 +248,7 @@ z80-debug supports most of them but with some restrictions:
 
 ### Usage
 
-Before you start z80-debug in vscode make sure that you have started ZEsarUX.
+Before you start DeZog in vscode make sure that you have started ZEsarUX.
 In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
@@ -256,16 +256,16 @@ Important: Make sure that there is no UI window open in ZEsarUX when you try to 
 Sometimes it works but sometimes ZEsarUX will not connect.
 You might get an error like "ZEsarUX did not communicate!" in vscode.
 
-Now start z80-debug by pressing the green arrow in the debug pane (make sure that you chose the right debugger, i.e. "Z80 Debug").
+Now start DeZog by pressing the green arrow in the debug pane (make sure that you chose the right debugger, i.e. "Z80 Debug").
 
-z80-debug will now
+DeZog will now
 
 - open the socket connection to ZEsarUX
 - instruct ZEsarUX to load the nex, snapshot file or tap file
 - set breakpoints (if there are breakpoints set in vscode)
 - put ZEsarUX into step mode ('enter-cpu-step') and stop/break the just started assembler program
 
-z80-debug/vscode will now display the opcode of the current PC (program counter) in the right position in your .asm file.
+DeZog/vscode will now display the opcode of the current PC (program counter) in the right position in your .asm file.
 At the left side you see the disassembly and the registers in the VARIABLES section and the
 call stack in the CALL STACK section.
 
@@ -402,12 +402,12 @@ If code coverage is enabled all executed lines in your source code are visually 
 ![](images/coverage_visualization.jpg)
 
 You can use the code coverage feature in several ways. E.g. in unit tests you can directly see which lines of code are not covered. I.e. for which conditions you still need to write a test.
-Or during debugging you can clear the code coverage (palette command "z80-debug: Clear current code coverage decoration") and then step over a function (a CALL). Afterwards you can navigate into the function and see what has been executed and which branches have not.
+Or during debugging you can clear the code coverage (palette command "dezog: Clear current code coverage decoration") and then step over a function (a CALL). Afterwards you can navigate into the function and see what has been executed and which branches have not.
 
 
 ### Stop Debugging
 
-To stop debugging press the orange square button in vscode. This will stop the z80-debug adapter and disconnect from ZEsarUX.
+To stop debugging press the orange square button in vscode. This will stop DeZog and disconnect from ZEsarUX.
 After disconnecting ZEsarUX, ZEsarUX will also leave cpu-step mode and therefore continue running the program.
 
 
@@ -485,8 +485,8 @@ Notes:
 ### ASSERT
 
 Similar to WPMEM you can use ASSERTs in comments in the assembler sources.
-An ASSERT is translated by z80-debug into a breakpoints with an "inverted" condition.
-For all ASSERTs in your source code z80-debug can set the correspondent breakpoints automatically at startup.
+An ASSERT is translated by DeZog into a breakpoints with an "inverted" condition.
+For all ASSERTs in your source code DeZog can set the correspondent breakpoints automatically at startup.
 
 The ASSERT syntax is:
 
@@ -529,7 +529,7 @@ Notes:
 ### LOGPOINT
 
 Another special keyword is LOGPOINT in comments in the assembler sources.
-A LOGPOINT is translated by z80-debug into a breakpoint that does not stop execution but instead prints a log message.
+A LOGPOINT is translated by DeZog into a breakpoint that does not stop execution but instead prints a log message.
 
 The LOGPOINT syntax is:
 
@@ -695,7 +695,7 @@ You can also open multiple memory dumps at once by adding more address/size rang
 This opens a memory dump view 3 memory blocks.
 Please note that if you enter overlapping blocks the dump will merge them in the display.
 
-z80-debug opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
+DeZog opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
 
 The register memory view:
 
@@ -760,11 +760,11 @@ It is also possible to change the palette if the current palette is not suitable
 
 If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
 The dump is updated on each step.
-z80-debug cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
+DeZog cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
 a byte array and a word array, on default.
 However you have a few options if you add more parameters to the label.
 
-If you double-click on the label in the WATCHES area you can edit it. You can tell z80-debug the number of elements to show and if it should show bytes, words or both.
+If you double-click on the label in the WATCHES area you can edit it. You can tell DeZog the number of elements to show and if it should show bytes, words or both.
 The format is:
 
 ~~~
@@ -802,9 +802,9 @@ Please see [here](UnitTests.md).
 
 Stepping works slightly different to stepping in ZEsarUX.
 
-- step-over: A step-over always returns. step-over should work like you would intuitively expect it to work (at least for me :-) ). You can step-over a 'jp' opcode and it will break on the next opcode, the jump address. z80-debug does so by looking at the current opcode: If a 'call' or a 'ldir/lddr' is found a ZEsarUX 'cpu-step-over' is done, in all other case a 'cpu-step' (into) is done.
+- step-over: A step-over always returns. step-over should work like you would intuitively expect it to work (at least for me :-) ). You can step-over a 'jp' opcode and it will break on the next opcode, the jump address. DeZog does so by looking at the current opcode: If a 'call' or a 'ldir/lddr' is found a ZEsarUX 'cpu-step-over' is done, in all other case a 'cpu-step' (into) is done.
 
-- step-out: This is not available in ZEsarUX, but in z80-debug you can make use of a step-out. z80 debug examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
+- step-out: This is not available in ZEsarUX, but in DeZog you can make use of a step-out. z80 debug examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
 
 
 

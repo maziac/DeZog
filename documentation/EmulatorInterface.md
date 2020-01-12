@@ -73,7 +73,7 @@ n = not supported
 
 The EmulatorClass communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
 
-I.e. MAME uses gdb syntax for communicaton with z80-debug.
+I.e. MAME uses gdb syntax for communicaton with DeZog.
 
 Here are the available commands:
 - CTRL-C: Break (stop debugger execution)
@@ -147,7 +147,7 @@ Commands:
 
 - get-stack-backtrace: not as such. need to be constructed through register and mem read.
 
-- breakpoint action, i.e. bp logs: MAME can do a printf to console. That could be transmitted to z80-debug.
+- breakpoint action, i.e. bp logs: MAME can do a printf to console. That could be transmitted to DeZog.
 
 
 ### Open (MAME)
