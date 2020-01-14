@@ -1,23 +1,24 @@
-# VS Code Z80 Debug Adapter
+# DeZog - Z80 Debugger
 
 ![](documentation/images/main.gif)
 
 **Note: you need to install at least ZEsarUX version 8.0**
 
-DeZog lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (a ZX Spectrum emulator).
+DeZog lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (ZX Spectrum emulator).
 With this extension it is possible to debug assembler programs built for the ZX Spectrum.
 It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
-(It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug at ZEsarUX.)
+(It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug with ZEsarUX.)
 The biggest help it offers is that you are able to step through your sources and that  DeZog is aware of all labels and can give hints to what label a number resolves.
 
 DeZog connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called zrcp (ZEsarUX Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
 
-Note: DeZog does not include any support for building from assembler sources. For this you need to create a build task yourself. For an example look here: https://github.com/maziac/z80-sample-program
+Note: DeZog does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
 
 
 ## Gallery
 
 ### Sprites:
+
 - Display of sprites with register indices and position
 - Display of all patterns with indices
 
