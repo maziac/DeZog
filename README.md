@@ -90,14 +90,16 @@ In order to use DeZog you need
 
 In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
 
-There are 2 other extensions that are not required to work with DeZog but may help:
+There are 3 other extensions that are not required to work with DeZog but may help:
 - [asm-code-lens](https://github.com/maziac/asm-code-lens):
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
 - [z80-unit-tests](https://github.com/maziac/z80-unit-tests):
 	- an extension to start/debug unit tests from a graphical UI
+- [z80-instruction-set](https://github.com/maziac/z80-instruction-set):
+	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
 
-Both can be installed from the market place.
+All can be installed from the market place.
 
 
 ## Usage
