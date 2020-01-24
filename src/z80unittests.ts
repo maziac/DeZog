@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { DebugSessionClass } from './debugadapter';
-import { RemoteFactory, EmulatorType, Remote } from './remotes/remotefactory';
+import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './remotes/remote';
 import { GenericWatchpoint } from './genericwatchpoint';
@@ -245,7 +245,7 @@ export class Z80UnitTests {
 			Decoration.clearRevDbgHistory();
 
 			// Start emulator.
-			RemoteFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+			RemoteFactory.createRemote(Settings.launch.remoteType);
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 			Labels.init();

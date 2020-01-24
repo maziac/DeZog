@@ -1,19 +1,10 @@
 
 import * as assert from 'assert';
-import { ZesaruxEmulator } from './zesarux/zesaruxemulator';
 import { ZesaruxExtEmulator } from './zesarux/zesaruxextemulator';
 import { ZxNextRemote } from './zxnext/zxnextremote';
 import { RemoteClass } from './remote';
 
 
-/// Different machine emulators.
-export enum EmulatorType {
-	UNKNOWN = 0,
-	ZESARUX,		/// ZEsarUX
-	ZESARUX_EXT,	/// ZEsarUX with own extensions (e.g. fast breakpoints)
-	ZXNEXT,			/// ZXNEXT HW connected via UART
-	MAME,			/// MAME
-}
 
 /**
  * The factory creates a new remote.
@@ -21,19 +12,18 @@ export enum EmulatorType {
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
+	 * @param remoteType 'zesarux' or 'zxnext'. For 'zesarux' always the ZesaruxExtEmulator is created.
+	 * It will fallback to Zesarux if no ZesaruxExt is connected.
 	 */
-	public static createEmulator(emul: EmulatorType) {
-		switch(emul) {
-			case EmulatorType.ZESARUX:
-				RemoteFactory.setEmulator(new ZesaruxEmulator());
-				break;
-			case EmulatorType.ZESARUX_EXT:	// Zesarux with own extensions.
+	public static createRemote(remoteType: string) {
+		switch (remoteType) {
+			case 'zesarux':
 				RemoteFactory.setEmulator(new ZesaruxExtEmulator());
 				break;
-			case EmulatorType.ZXNEXT:
+			case 'zxnext':
 				RemoteFactory.setEmulator(new ZxNextRemote());
 				break;
-			case EmulatorType.MAME:
+			case 'mame':
 				assert(false);	// needs to be implemented
 				break;
 			default:

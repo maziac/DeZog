@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Utility } from '../utility';
 import { Z80Registers } from '../z80Registers';
 //import { EmulatorClass } from '../emulator';
-import { Remote, EmulatorType, RemoteFactory } from '../remotes/remotefactory';
+import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
@@ -92,7 +92,7 @@ suite('Utility', () => {
 				remoteType: 'zesarux'
 			};
 			Settings.Init(cfg, '');
-			RemoteFactory.createEmulator(EmulatorType.ZESARUX);
+			RemoteFactory.createRemote(cfg.remoteType);
 			Z80Registers.Init();
 			((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 		});
@@ -316,7 +316,7 @@ suite('Utility', () => {
 
 		suite('breakpoints', () => {
 			setup(() => {
-				RemoteFactory.createEmulator(EmulatorType.ZESARUX);
+				RemoteFactory.createRemote('zesarux');
 			});
 
 			test('simple', () => {

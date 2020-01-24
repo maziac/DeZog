@@ -1,8 +1,13 @@
 # Changelog
 
+# 0.11.3
+- Added remoteType to package.json.
+
+# 0.11.2
+- More refactoring.
+
 # 0.11.1
 - Regrouping files in folders.
-- Added remoteType to package.json.
 
 # 0.11.0
 - The z80-debug adapter has been renamed to "DeZog".

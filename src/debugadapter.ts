@@ -14,7 +14,7 @@ import { Settings, SettingsParameters } from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
-import { RemoteFactory, EmulatorType, Remote } from './remotes/remotefactory';
+import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './views/zxnextspritesview';
 import { TextView } from './views/textview';
@@ -403,7 +403,7 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearRevDbgHistory();
 
 		// Create the machine
-		RemoteFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+		RemoteFactory.createRemote(Settings.launch.remoteType);
 
 		// Load files
 		try {
