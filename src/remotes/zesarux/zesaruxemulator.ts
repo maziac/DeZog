@@ -811,7 +811,7 @@ export class ZesaruxEmulator extends EmulatorClass {
 	 */
 	protected getInterruptName() {
 		return "__INTERRUPT__";
-	}s
+	}
 
 
 	/**

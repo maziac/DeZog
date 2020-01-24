@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import { Labels } from './labels';
-import { zSocket } from './remotes/zesarux/zesaruxSocket';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';
@@ -394,11 +393,10 @@ export class Utility {
 				const matchAddr = /(\${b@:|\${w@:)/.exec(format);
 				if(matchAddr) {
 					// Retrieve memory values
-					zSocket.send( 'read-memory ' + value + ' 2', data => {
-						const b1 = data.substr(0,2);
-						const b2 = data.substr(2,2);
-						const memByte = parseInt(b1,16);
-						memWord = memByte + (parseInt(b2,16)<<8);
+					Emulator.getMemoryDump(value, 2, data => {
+						const b1 = data[0]
+						const b2 = data[1];
+						memWord = (b2 << 8) + b1;
 						cs.endExec();
 					});
 				}

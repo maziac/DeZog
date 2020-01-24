@@ -1,5 +1,12 @@
 # Changelog
 
+# 0.11.1
+- Regrouping files in folders.
+
+# 0.11.0
+- The z80-debug adapter has been renamed to "DeZog".
+- All references have been changed. Instead of "z80-debug" now "dezog" is used to refer to internal functions.
+
 # 0.10.0
 - Major redesign around Z80Registers to make it easier to add other remotes like a real ZXNext HW.
 
