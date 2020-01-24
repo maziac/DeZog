@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-import { RemoteDebugSessionClass } from './remotedebugadapter';
+import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, EmulatorType, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
 import { EmulatorBreakpoint } from './remotes/remote';
@@ -355,7 +355,7 @@ export class Z80UnitTests {
 			const configName: string = configuration.name;
 
 			// Start debugger
-			const success = RemoteDebugSessionClass.unitTests(configName, this.handleDebugAdapter);
+			const success = DebugSessionClass.unitTests(configName, this.handleDebugAdapter);
 			if(!success) {
 				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			}
@@ -561,7 +561,7 @@ export class Z80UnitTests {
 	 * Handles the states of the debug adapter. Will be called after setup
 	 * @param debugAdapter The debug adapter.
 	 */
-	protected static handleDebugAdapter(debugAdapter: RemoteDebugSessionClass) {
+	protected static handleDebugAdapter(debugAdapter: DebugSessionClass) {
 		debugAdapter.on('initialized', () => {
 			try {
 				// Handle coverage
@@ -590,7 +590,7 @@ export class Z80UnitTests {
 	 * or because of an error (ASSERT).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
-	protected static onBreak(debugAdapter?: RemoteDebugSessionClass) {
+	protected static onBreak(debugAdapter?: DebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
 		Remote.getRegisters().then(() => {
@@ -626,7 +626,7 @@ export class Z80UnitTests {
 	 * If we don't wait we would miss a few and we wouldn't break.
 	 * @param da The debug emulator.
 	 */
-	protected static startUnitTestsWhenQuiet(da: RemoteDebugSessionClass) {
+	protected static startUnitTestsWhenQuiet(da: DebugSessionClass) {
 		da.executeAfterBeingQuietFor(1000, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
@@ -640,7 +640,7 @@ export class Z80UnitTests {
 	 * tests.
 	 * @param da The debug adapter.
 	 */
-	protected static execAddr(address: number, da?: RemoteDebugSessionClass) {
+	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr, () => {
@@ -675,7 +675,7 @@ export class Z80UnitTests {
 	 * Executes the next test case.
 	 * @param da The debug adapter.
 	 */
-	protected static nextUnitTest(da?: RemoteDebugSessionClass) {
+	protected static nextUnitTest(da?: DebugSessionClass) {
 		// Increase count
 		Z80UnitTests.countExecuted ++;
 		Z80UnitTests.currentFail = false;
@@ -709,7 +709,7 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
 	 */
-	protected static checkUnitTest(pc: number, da?: RemoteDebugSessionClass) {
+	protected static checkUnitTest(pc: number, da?: DebugSessionClass) {
 		// Check if it was a timeout
 		let timeoutFailure = !Z80UnitTests.debug;
 		if(Z80UnitTests.timeoutHandle) {
@@ -896,7 +896,7 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: RemoteDebugSessionClass|undefined, errMessage?: string) {
+	protected static stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string) {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
