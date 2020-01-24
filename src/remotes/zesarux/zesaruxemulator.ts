@@ -31,9 +31,9 @@ class Zesarux {
 
 
 /**
- * The representation of the Z80 machine.
- * It receives the requests from the EmulDebugAdapter and communicates with
- * the EmulConnector.
+ * The representation of the ZEsarUX emulator.
+ * It receives the requests from the DebugAdapter and communicates with
+ * the ZesaruxSocket.
  */
 export class ZesaruxEmulator extends RemoteClass {
 

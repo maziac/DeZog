@@ -75,7 +75,7 @@ export class ZxNextUsbSerial extends Socket {
 	 * Used in the launchRequest.
 	 */
 	public static Init() {
-		zSocket = new ZesaruxSocket();
+		zSocket = new ZxNextUsbSerial();
 		zSocket.init();
 	}
 
@@ -589,5 +589,5 @@ export class ZxNextUsbSerial extends Socket {
 
 
 /// zSocket is the singleton object that should be accessed.
-export let zSocket: ZesaruxSocket;
+export let zSocket: ZxNextUsbSerial;
 
