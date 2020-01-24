@@ -1,7 +1,7 @@
 import * as assert from 'assert';
-import { MachineType } from './emulator';
-import { Emulator } from './emulatorfactory';
-//import { EmulDebugAdapter } from './emuldebugadapter';
+import { MachineType } from './remotes/emulator';
+import { Emulator } from './remotes/emulatorfactory';
+
 
 /// For saving/restoring the state.
 //import * as fs from 'fs';

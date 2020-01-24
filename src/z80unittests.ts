@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { EmulDebugSessionClass } from './emuldebugadapter';
-import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';
-//import { Z80Registers } from './z80registers';
+import { EmulatorFactory, EmulatorType, Emulator } from './remotes/emulatorfactory';
 import { Labels } from './labels';
-import { EmulatorBreakpoint } from './emulator';
+import { EmulatorBreakpoint } from './remotes/emulator';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels';
 import { Settings } from './settings';

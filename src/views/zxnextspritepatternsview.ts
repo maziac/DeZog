@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import * as util from 'util';
 import * as gw from "gif-writer";
-import { Emulator } from '../emulatorfactory';
+import { Emulator } from '../remotes/emulatorfactory';
 import { EventEmitter } from 'events';
 import { BaseView } from './baseview';
 

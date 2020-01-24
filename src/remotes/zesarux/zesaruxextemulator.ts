@@ -1,6 +1,6 @@
 
 //import * as assert from 'assert';
-import { EmulatorBreakpoint } from '../../emulator';
+import { EmulatorBreakpoint } from '../emulator';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { ZesaruxEmulator } from './zesaruxemulator';
 import { zSocket } from './zesaruxSocket';

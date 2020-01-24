@@ -1,6 +1,6 @@
 'use strict';
 
-import { Emulator  } from '../emulatorfactory';
+import { Emulator  } from '../remotes/emulatorfactory';
 //import { Z80Registers } from './z80Registers';
 //import { EventEmitter } from 'events';
 import { MemoryDumpView } from './memorydumpview';

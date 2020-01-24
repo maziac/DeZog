@@ -6,7 +6,7 @@ import { CallSerializer } from '../callserializer';
 import { Settings } from '../settings'
 import { Utility } from '../utility';
 import { RefList } from '../reflist';
-import { Emulator } from '../emulatorfactory';
+import { Emulator } from '../remotes/emulatorfactory';
 import { BaseMemory } from '../disassembler/basememory';
 import { Opcode } from '../disassembler/opcode';
 import { Format } from '../disassembler/format';

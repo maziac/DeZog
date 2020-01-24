@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { Settings } from './settings';
 //
-import { Emulator } from './emulatorfactory';
+import { Emulator } from './remotes/emulatorfactory';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
 //import { start } from 'repl';

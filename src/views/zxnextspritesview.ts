@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Emulator } from '../emulatorfactory';
+import { Emulator } from '../remotes/emulatorfactory';
 import * as util from 'util';
 import { EventEmitter } from 'events';
 import { ZxNextSpritePatternsView, PatternGif } from './zxnextspritepatternsview';

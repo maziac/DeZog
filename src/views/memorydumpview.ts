@@ -2,7 +2,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { Emulator } from '../emulatorfactory';
+import { Emulator } from '../remotes/emulatorfactory';
 import * as util from 'util';
 import { Utility } from '../utility';
 import { Labels } from '../labels';

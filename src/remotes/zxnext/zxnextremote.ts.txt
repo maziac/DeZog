@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { zSocket, ZesaruxSocket } from './zesaruxSocket';
+import { zSocket, ZesaruxSocket } from './zxnextusbserial';
 import { Utility } from '../../utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
@@ -7,12 +7,12 @@ import { RefList } from '../../reflist';
 import { Log } from '../../log';
 import { Frame } from '../../frame';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../emulator';
+import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../../emulator';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxCpuHistory';
 import { Z80Registers } from '../../z80Registers';
-import { ZesaruxRegisters } from './zesaruxregisters';
+import { ZesaruxRegisters } from './zxnextegisters';
 
 
 
@@ -35,7 +35,7 @@ class Zesarux {
  * It receives the requests from the EmulDebugAdapter and communicates with
  * the EmulConnector.
  */
-export class ZesaruxEmulator extends EmulatorClass {
+export class ZxNextRemote extends EmulatorClass {
 
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;

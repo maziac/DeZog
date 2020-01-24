@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Utility } from '../utility';
 import { Z80Registers } from '../z80Registers';
 //import { EmulatorClass } from '../emulator';
-import { Emulator, EmulatorType, EmulatorFactory } from '../emulatorfactory';
+import { Emulator, EmulatorType, EmulatorFactory } from '../remotes/emulatorfactory';
 import { Settings } from '../settings';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 

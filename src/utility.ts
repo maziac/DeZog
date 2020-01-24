@@ -3,7 +3,7 @@ import { Labels } from './labels';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';
-import { Emulator } from './emulatorfactory';
+import { Emulator } from './remotes/emulatorfactory';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
