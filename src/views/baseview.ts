@@ -2,7 +2,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { CallSerializer } from './callserializer';
+import { CallSerializer } from '../callserializer';
 import { EventEmitter } from 'events';
 
 

@@ -2,14 +2,14 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { Emulator } from './emulatorfactory';
+import { Emulator } from '../emulatorfactory';
 import * as util from 'util';
-import { Utility } from './utility';
-import { Labels } from './labels';
-import { MetaBlock, MemoryDump } from './memorydump';
+import { Utility } from '../utility';
+import { Labels } from '../labels';
+import { MetaBlock, MemoryDump } from '../memorydump';
 import { EventEmitter } from 'events';
-import { Settings } from './settings';
-import { Z80Registers } from './z80Registers';
+import { Settings } from '../settings';
+import { Z80Registers } from '../z80Registers';
 import { BaseView } from './baseview';
 
 
