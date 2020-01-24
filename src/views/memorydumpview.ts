@@ -2,7 +2,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { Emulator } from '../remotes/emulatorfactory';
+import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { Utility } from '../utility';
 import { Labels } from '../labels';
@@ -145,7 +145,7 @@ export class MemoryDumpView extends BaseView {
 	 * @param value The new value.
 	 */
 	protected changeMemory(address: number, value: number) {
-		Emulator.writeMemory(address, value, (realValue) => {
+		Remote.writeMemory(address, value, (realValue) => {
 			// Also update the value and the hovertext in all webviews
 			for(let mdv of MemoryDumpView.MemoryViews) {
 				// check first if address included at all
@@ -229,7 +229,7 @@ export class MemoryDumpView extends BaseView {
 		for(let metaBlock of this.memDump.metaBlocks) {
 			this.serializer.exec(() => {
 				// Updates the shown memory dump.
-				Emulator.getMemoryDump(metaBlock.address, metaBlock.size, (data) => {
+				Remote.getMemoryDump(metaBlock.address, metaBlock.size, (data) => {
 					// Store data
 					metaBlock.prevData = metaBlock.data;
 					metaBlock.data = data;
@@ -541,7 +541,7 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Get register values
-		Emulator.getRegisters().then(() => {
+		Remote.getRegisters().then(() => {
 			// Loop through all metablocks
 			var tables;
 			const vertBreak = this.getHtmlVertBreak();
@@ -571,8 +571,8 @@ export class MemoryDumpView extends BaseView {
 			if(!Z80Registers.isRegister(reg))
 				continue;
 			// get address = value of reg
-			Emulator.getRegisters().then(() => {
-				const address = Emulator.getRegisterValue(reg)
+			Remote.getRegisters().then(() => {
+				const address = Remote.getRegisterValue(reg)
 				console.log( reg + ': ' + address.toString(16));
 				// Clear old color
 				const prevAddr = this.prevRegAddr.get(reg) || -1;	// To calm the transpiler

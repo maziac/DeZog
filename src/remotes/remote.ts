@@ -100,11 +100,11 @@ export interface MemoryPage {
 
 
 /**
- * The representation of the Z80 emulator (e.g. Zesarux or MAME).
- * It receives the requests from the EmulDebugAdapter and communicates with
- * the EmulConnector.
+ * The representation of the Z80 emulator (e.g. Zesarux or MAME) or a real remote ZX Next HW.
+ * It receives the requests from the RemoteDebugAdapter and communicates with
+ * the Connector (socket or serial).
  */
-export class EmulatorClass extends EventEmitter {
+export class RemoteClass extends EventEmitter {
 
 	/// The machine type, e.g. 48k or 128k etc.
 	public machineType = MachineType.UNKNOWN;

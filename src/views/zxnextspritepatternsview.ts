@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import * as util from 'util';
 import * as gw from "gif-writer";
-import { Emulator } from '../remotes/emulatorfactory';
+import { Remote } from '../remotes/remotefactory';
 import { EventEmitter } from 'events';
 import { BaseView } from './baseview';
 
@@ -333,11 +333,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 				return;
 			}
 			// Get the transparent index
-			Emulator.getTbblueRegister(75, value => {
+			Remote.getTbblueRegister(75, value => {
 				ZxNextSpritePatternsView.spritesPaletteTransparentIndex = value;
 			});
 			// Get in use palette number
-			Emulator.getTbblueRegister(0x43, value => {	// ULANextControlRegister
+			Remote.getTbblueRegister(0x43, value => {	// ULANextControlRegister
 				ZxNextSpritePatternsView.currentPaletteNumber = (value>>3) & 0x01;
 				// End
 				this.serializer.endExec();
@@ -352,7 +352,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			}
 
 			// Get in use palette number
-			Emulator.getTbblueRegister(0x43, value => {	// ULANextControlRegister
+			Remote.getTbblueRegister(0x43, value => {	// ULANextControlRegister
 				let paletteNumber;
 				// Check palette selection and maybe override this number
 				const usedPal = this.usedPalette;
@@ -372,7 +372,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 						break;
 				}
 				// Get palette
-				Emulator.getTbblueSpritesPalette(paletteNumber, paletteArray => {
+				Remote.getTbblueSpritesPalette(paletteNumber, paletteArray => {
 					// Convert bits to single numbers
 					const loadedPalette = new Array<number>(3*256);
 					// 3 colors
@@ -422,7 +422,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				else {
 					// Get pattern from emulator
 					usedIndex.push(index);
-					Emulator.getTbblueSpritePatterns(index, 1, spritePatterns => {
+					Remote.getTbblueSpritePatterns(index, 1, spritePatterns => {
 						const indexPop = usedIndex.shift() || 0;	// calm the transpiler
 						ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 						// end

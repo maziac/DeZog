@@ -1,4 +1,4 @@
 
- import { EmulDebugSessionClass } from './emuldebugadapter';
+ import { RemoteDebugSessionClass } from './remotedebugadapter';
 
- EmulDebugSessionClass.run(EmulDebugSessionClass);
+ RemoteDebugSessionClass.run(RemoteDebugSessionClass);

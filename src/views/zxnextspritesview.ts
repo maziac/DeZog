@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Emulator } from '../remotes/emulatorfactory';
+import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { EventEmitter } from 'events';
 import { ZxNextSpritePatternsView, PatternGif } from './zxnextspritepatternsview';
@@ -176,7 +176,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	protected getAllVisibleSprites() {
 		this.serializer.exec(() => {
 			// Get sprites
-			Emulator.getTbblueSprites(0, 64, sprites => {
+			Remote.getTbblueSprites(0, 64, sprites => {
 				// Loop over all sprites
 				for(let k=0; k<64; k++) {
 					const attrs = sprites[k];
@@ -212,7 +212,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 					return;
 				}
 				// Execute
-				Emulator.getTbblueSprites(slot, 1, sprites => {
+				Remote.getTbblueSprites(slot, 1, sprites => {
 					const attrs = sprites[0];
 					const sprite = new SpriteData(attrs);
 					this.sprites[slot] = sprite;
@@ -234,7 +234,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	protected getSpritesClippingWindow() {
 		this.serializer.exec(() => {
 			// Check if clippping is set (Layer priority)
-			Emulator.getTbblueRegister(21, value => {
+			Remote.getTbblueRegister(21, value => {
 				this.clippingEnabled = (value & 0x02) == 0;
 				if(!this.clippingEnabled) {
 					// end
@@ -242,7 +242,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 					return;
 				}
 				// Get clipping
-				Emulator.getTbblueSpritesClippingWindow( (xl, xr, yt, yb) => {
+				Remote.getTbblueSpritesClippingWindow( (xl, xr, yt, yb) => {
 					this.clipXl = xl;
 					this.clipXr = xr;
 					this.clipYt = yt;

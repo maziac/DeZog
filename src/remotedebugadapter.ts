@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log, LogSocket } from './log';
-import { EmulatorBreakpoint, MachineType } from './remotes/emulator';
+import { EmulatorBreakpoint, MachineType } from './remotes/remote';
 import { MemoryDumpView } from './views/memorydumpview';
 import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
@@ -14,7 +14,7 @@ import { Settings, SettingsParameters } from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
-import { EmulatorFactory, EmulatorType, Emulator } from './remotes/emulatorfactory';
+import { RemoteFactory, EmulatorType, Remote } from './remotes/remotefactory';
 import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './views/zxnextspritesview';
 import { TextView } from './views/textview';
@@ -39,7 +39,7 @@ enum DbgAdaperState {
  * The Emulator Debug Adapter.
  * It receives the requests from vscode and sends events to it.
  */
-export class EmulDebugSessionClass extends DebugSession {
+export class RemoteDebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
 	protected static state = DbgAdaperState.NORMAL;
 
@@ -66,7 +66,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
-	protected static unitTestHandler: ((da: EmulDebugSessionClass) => void)|undefined;
+	protected static unitTestHandler: ((da: RemoteDebugSessionClass) => void)|undefined;
 
 
 	/**
@@ -120,7 +120,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * @param handler
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static unitTests(configName: string, handler: (da: EmulDebugSessionClass) => void): boolean {
+	public static unitTests(configName: string, handler: (da: RemoteDebugSessionClass) => void): boolean {
 		assert(handler);
 
 		// Return if currently a debug session is running
@@ -188,7 +188,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public terminate(message?: string) {
-		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
+		RemoteDebugSessionClass.state = DbgAdaperState.NORMAL;
 		if(message)
 			this.showError(message);
 		Log.log("Exit debugger!");
@@ -252,12 +252,12 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
+		RemoteDebugSessionClass.state = DbgAdaperState.NORMAL;
 		// Close register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
-		Emulator.disconnect(() => {
+		Remote.disconnect(() => {
 			this.removeAllListeners();
 			this.sendResponse(response);
 		});
@@ -313,7 +313,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 */
 	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
 		// Stop machine
-		Emulator.disconnect(() => {
+		Remote.disconnect(() => {
 			// And setup a new one
 			this.launch(response);
 		});
@@ -363,7 +363,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
-		EmulDebugSessionClass.state = DbgAdaperState.NORMAL;
+		RemoteDebugSessionClass.state = DbgAdaperState.NORMAL;
 		// Setup the disassembler
 		this.setupDisassembler();
 
@@ -393,9 +393,9 @@ export class EmulDebugSessionClass extends DebugSession {
 		}
 
 		// Call the unit test handler. It will subscribe on events.
-		if(EmulDebugSessionClass.unitTestHandler) {
-			EmulDebugSessionClass.state = DbgAdaperState.UNITTEST;
-			EmulDebugSessionClass.unitTestHandler(this);
+		if(RemoteDebugSessionClass.unitTestHandler) {
+			RemoteDebugSessionClass.state = DbgAdaperState.UNITTEST;
+			RemoteDebugSessionClass.unitTestHandler(this);
 		}
 
 		// Reset the code coverage and history
@@ -403,12 +403,12 @@ export class EmulDebugSessionClass extends DebugSession {
 		Decoration.clearRevDbgHistory();
 
 		// Create the machine
-		EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+		RemoteFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 
 		// Load files
 		try {
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-			Emulator.readListFiles(Settings.launch.listFiles);
+			Remote.readListFiles(Settings.launch.listFiles);
 		}
 		catch(err) {
 			// Some error occurred during loading, e.g. file not found.
@@ -416,8 +416,8 @@ export class EmulDebugSessionClass extends DebugSession {
 			return;
 		}
 
-		Emulator.init();
-		Emulator.once('initialized', () => {
+		Remote.init();
+		Remote.once('initialized', () => {
 			// Create memory/register dump view
 			let registerMemoryView = new MemoryRegisterView(this);
 			const regs = Settings.launch.memoryViewer.registersMemoryView;
@@ -455,8 +455,8 @@ export class EmulDebugSessionClass extends DebugSession {
 
 			this.serializer.exec(() => {
 				// Check if program should be automatically started
-				Emulator.clearInstructionHistory();
-				if(EmulDebugSessionClass.unitTestHandler) {
+				Remote.clearInstructionHistory();
+				if(RemoteDebugSessionClass.unitTestHandler) {
 					// Handle continue/stop in the z80unittests.
 					this.emit("initialized");
 				}
@@ -471,46 +471,46 @@ export class EmulDebugSessionClass extends DebugSession {
 					}
 					else {
 						// Break
-						this.sendEvent(new StoppedEvent('stop on start', EmulDebugSessionClass.THREAD_ID));
+						this.sendEvent(new StoppedEvent('stop on start', RemoteDebugSessionClass.THREAD_ID));
 					}
 				}
-				EmulDebugSessionClass.unitTestHandler = undefined;
+				RemoteDebugSessionClass.unitTestHandler = undefined;
 				this.serializer.endExec();
 			});
 		});
 
-		Emulator.on('coverage', coveredAddresses => {
+		Remote.on('coverage', coveredAddresses => {
 			// Covered addresses (since last break) have been sent
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
-		Emulator.on('revDbgHistory', addresses => {
+		Remote.on('revDbgHistory', addresses => {
 			// Reverse debugging history addresses
 			Decoration.showRevDbgHistory(addresses);
 		});
 
-		Emulator.on('historySpot', (startIndex, addresses) => {
+		Remote.on('historySpot', (startIndex, addresses) => {
 			// Short history addresses
 			Decoration.showHistorySpot(startIndex, addresses);
 		});
 
-		Emulator.on('warning', message => {
+		Remote.on('warning', message => {
 			// Some problem occurred
 			this.showWarning(message);
 		});
 
-		Emulator.on('log', message => {
+		Remote.on('log', message => {
 			// Show the log (from the socket/ZEsarUX) in the debug console
 			vscode.debug.activeDebugConsole.appendLine("Log: " + message);
 
 		});
 
-		Emulator.once('error', err => {
+		Remote.once('error', err => {
 			// Some error occurred
 			this.terminate(err.message);
 		});
 
-		Emulator.once('terminated', () => {
+		Remote.once('terminated', () => {
 			// Emulator has been terminated (e.g. by unit tests)
 			this.terminate();
 		});
@@ -537,7 +537,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			const bps = new Array<EmulatorBreakpoint>();
 			for(const bp of givenBps) {
 				try {
-					const log = Emulator.evalLogMessage(bp.logMessage);
+					const log = Remote.evalLogMessage(bp.logMessage);
 					var mbp: EmulatorBreakpoint;
 					mbp = {
 						bpId: 0,
@@ -557,7 +557,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 
 			// Set breakpoints for the file.
-			Emulator.setBreakpoints(path, bps,
+			Remote.setBreakpoints(path, bps,
 				currentBreakpoints => {
 					/*
 					// Go through original list of vscode breakpoints and check if they are verified or not
@@ -634,7 +634,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			// Just return a default thread.
 			response.body = {
 				threads: [
-					new Thread(EmulDebugSessionClass.THREAD_ID, "thread_default")
+					new Thread(RemoteDebugSessionClass.THREAD_ID, "thread_default")
 				]
 			};
 			this.sendResponse(response);
@@ -683,7 +683,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			this.listVariables.length = 0;
 
 			// Get the call stack trace.
-			Emulator.stackTraceRequest(frames => {
+			Remote.stackTraceRequest(frames => {
 
 				// Check frames for end
 				const frameRealCount = frames.length;
@@ -731,7 +731,7 @@ export class EmulDebugSessionClass extends DebugSession {
 					// So fetch a memory dump
 					const fetchAddress = fetchAddresses[index];
 					const fetchSize = 100;	// N bytes
-					Emulator.getMemoryDump(fetchAddress, fetchSize, data => {
+					Remote.getMemoryDump(fetchAddress, fetchSize, data => {
 						// Save data for later writing
 						fetchData.push(data);
 						// Note: because of self-modifying code it may have changed
@@ -923,7 +923,7 @@ export class EmulDebugSessionClass extends DebugSession {
 
 		// Get short history decoration.
 		this.serializer.exec(() => {
-			Emulator.handleHistorySpot();
+			Remote.handleHistorySpot();
 			// end the serialized call:
 			this.serializer.endExec();
 		});
@@ -966,7 +966,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			const scopes = new Array<Scope>();
 			const frameId = args.frameId;
 			//const frame = this.listFrames.getObject(frameId);
-			const frame = Emulator.getFrame(frameId);
+			const frame = Remote.getFrame(frameId);
 			if(!frame) {
 				// No frame found, send empty response
 				response.body = {scopes: scopes};
@@ -1085,8 +1085,8 @@ export class EmulDebugSessionClass extends DebugSession {
 		if(!breakReason)
 			return;
 		// Get PC
-		Emulator.getRegisters().then(() => {
-			const pc = Emulator.getPC();
+		Remote.getRegisters().then(() => {
+			const pc = Remote.getPC();
 			Decoration.showBreak(pc, breakReason);
 		});
 	}
@@ -1115,7 +1115,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 */
 	public emulatorContinue() {
 		Decoration.clearBreak();
-		Emulator.continue((reason, tStates, cpuFreq) => {
+		Remote.continue((reason, tStates, cpuFreq) => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 			// Display T-states and time
@@ -1130,7 +1130,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			}
 
 			// React depending on internal state.
-			if(EmulDebugSessionClass.state == DbgAdaperState.NORMAL) {
+			if(RemoteDebugSessionClass.state == DbgAdaperState.NORMAL) {
 				// Send break
 				this.sendEventBreakAndUpdate();
 			}
@@ -1149,7 +1149,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Update memory dump etc.
 		this.update();
 		// Send event
-		this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
+		this.sendEvent(new StoppedEvent('break', RemoteDebugSessionClass.THREAD_ID));
 	}
 
 
@@ -1158,7 +1158,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 */
 	public sendEventContinued() {
 		// Send event
-		this.sendEvent(new ContinuedEvent(EmulDebugSessionClass.THREAD_ID));
+		this.sendEvent(new ContinuedEvent(RemoteDebugSessionClass.THREAD_ID));
 	}
 
 
@@ -1171,7 +1171,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Pause the debugger
-			Emulator.pause();
+			Remote.pause();
 			// Response is sent immediately
 			this.sendResponse(response);
 			this.serializer.endExec();
@@ -1192,7 +1192,7 @@ export class EmulDebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
 
 			// Continue debugger
-			Emulator.reverseContinue(breakReason => {
+			Remote.reverseContinue(breakReason => {
 				if(breakReason) {
 					// Output a possible problem
 					vscode.debug.activeDebugConsole.appendLine(breakReason);
@@ -1202,7 +1202,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				// Update memory dump etc.
 				this.update();
 				// It returns here not immediately but only when a breakpoint is hit or pause is requested.
-				this.sendEvent(new StoppedEvent('break', EmulDebugSessionClass.THREAD_ID));
+				this.sendEvent(new StoppedEvent('break', RemoteDebugSessionClass.THREAD_ID));
 			});
 
 			// Response is sent immediately
@@ -1221,7 +1221,7 @@ export class EmulDebugSessionClass extends DebugSession {
 	 public emulatorStepOver(handler?: () => void): void {
 		Decoration.clearBreak();
 		// Step-Over
-		Emulator.stepOver((disasm, tStates, cpuFreq, breakReason) => {
+		Remote.stepOver((disasm, tStates, cpuFreq, breakReason) => {
 			// Display T-states and time
 			let text = disasm || '';
 			if(tStates || cpuFreq)
@@ -1236,7 +1236,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				handler();
 
 			// Send event
-			this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+			this.sendEvent(new StoppedEvent('step', RemoteDebugSessionClass.THREAD_ID));
 
 			if(breakReason) {
 				// Output a possible problem
@@ -1310,7 +1310,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Emulator.stepInto((disasm, tStates, cpuFreq, error) => {
+			Remote.stepInto((disasm, tStates, cpuFreq, error) => {
 				// Display T-states and time
 				const text = disasm ? disasm+' \t; ' : '';
 				this.showUsedTStates('StepInto: '+text, tStates, cpuFreq);
@@ -1327,7 +1327,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				this.serializer.endExec();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', RemoteDebugSessionClass.THREAD_ID));
 			});
 
 		});
@@ -1344,7 +1344,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Emulator.stepOut((tStates, cpuFreq, breakReason) => {
+			Remote.stepOut((tStates, cpuFreq, breakReason) => {
 				// Display T-states and time
 				this.showUsedTStates('StepOut. ', tStates, cpuFreq);
 
@@ -1359,7 +1359,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				this.update();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', RemoteDebugSessionClass.THREAD_ID));
 			});
 
 			// Response is sent immediately
@@ -1379,7 +1379,7 @@ export class EmulDebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Back
-			Emulator.stepBack((instruction, breakReason) => {
+			Remote.stepBack((instruction, breakReason) => {
 				// Print
 				vscode.debug.activeDebugConsole.appendLine('StepBack: ' + instruction);
 
@@ -1398,7 +1398,7 @@ export class EmulDebugSessionClass extends DebugSession {
 				this.serializer.endExec();
 
 				// Send event
-				this.sendEvent(new StoppedEvent('step', EmulDebugSessionClass.THREAD_ID));
+				this.sendEvent(new StoppedEvent('step', RemoteDebugSessionClass.THREAD_ID));
 			});
 		});
 	}
@@ -1522,8 +1522,8 @@ export class EmulDebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				Emulator.getRegisters().then(() => {
-					const pc = Emulator.getPC();
+				Remote.getRegisters().then(() => {
+					const pc = Remote.getPC();
 					const entry = Labels.getFileAndLineForAddress(pc);
 					// Local label and prefix
 					lastLabel = entry.lastLabel;
@@ -1693,7 +1693,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			throw new Error('No command given.');
 		}
 		else {
-			Emulator.dbgExec(machineCmd, (data) => {
+			Remote.dbgExec(machineCmd, (data) => {
 				if(redirectToView) {
 					// Create new view
 					const panel = new TextView(this, "exec: "+machineCmd, data);
@@ -1794,7 +1794,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	protected evalLOGPOINT(tokens: Array<string>, handler: (text:string)=>void) {
 		const show = () => {
 			// Always show enable status of all Logpoints
-			const enableMap = Emulator.logpointsEnabled;
+			const enableMap = Remote.logpointsEnabled;
 			// All groups:
 			let text = 'LOGPOINT groups:';
 			for (const [group, enable] of enableMap) {
@@ -1808,7 +1808,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all logpoints
 			const enable = (param == 'enable');
-			Emulator.enableLogpoints(group, enable, () => {
+			Remote.enableLogpoints(group, enable, () => {
 				// Print to console
 				show();
 			});
@@ -1832,7 +1832,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	protected evalASSERT(tokens: Array<string>, handler: (text:string)=>void) {
 		const show = () => {
 			// Always show enable status of all ASSERT breakpoints
-			const enable = Emulator.assertBreakpointsEnabled;
+			const enable = Remote.assertBreakpointsEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
 			handler('ASSERT breakpoints are ' + enableString + '.');
 		}
@@ -1841,7 +1841,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all assert breakpoints
 			const enable = (param == 'enable');
-			Emulator.enableAssertBreakpoints(enable, () => {
+			Remote.enableAssertBreakpoints(enable, () => {
 				// Print to console
 				show();
 			});
@@ -1865,7 +1865,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	protected evalWPMEM(tokens: Array<string>, handler: (text:string)=>void) {
 		const show = () => {
 			// Always show enable status of all WPMEM watchpoints
-			const enable = Emulator.wpmemEnabled;
+			const enable = Remote.wpmemEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
 			handler('WPMEM watchpoints are ' + enableString + '.');
 		}
@@ -1874,7 +1874,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all WPMEM watchpoints
 			const enable = (param == 'enable');
-			Emulator.enableWPMEM(enable, () => {
+			Remote.enableWPMEM(enable, () => {
 				// Print to console
 				show();
 			});
@@ -1897,7 +1897,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected evalSpritePatterns(tokens: Array<string>, handler: (text:string)=>void) {
 		// First check for tbblue
-		if(Emulator.machineType != MachineType.TBBLUE)
+		if(Remote.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
@@ -1972,7 +1972,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected evalSprites(tokens: Array<string>, handler: (text:string)=>void) {
 		// First check for tbblue
-		if(Emulator.machineType != MachineType.TBBLUE)
+		if(Remote.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
@@ -2068,7 +2068,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				handler(text);
 				// Reload register values etc.
 				this.sendEventContinued();
-				this.sendEvent(new StoppedEvent('Restore', EmulDebugSessionClass.THREAD_ID));
+				this.sendEvent(new StoppedEvent('Restore', RemoteDebugSessionClass.THREAD_ID));
 			});
 		}
 		else {
@@ -2165,14 +2165,14 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if( addr < 0 )
 			return;
 		// Now change Program Counter
-		Emulator.setProgramCounter(addr, () => {
+		Remote.setProgramCounter(addr, () => {
 			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
 			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
 			this.sendEventContinued();
-			this.sendEvent(new StoppedEvent('PC-change', EmulDebugSessionClass.THREAD_ID));
+			this.sendEvent(new StoppedEvent('PC-change', RemoteDebugSessionClass.THREAD_ID));
 			// Handle decorations
-			Emulator.emitRevDbgHistory();
-			Emulator.handleHistorySpot();
+			Remote.emitRevDbgHistory();
+			Remote.handleHistorySpot();
 		});
 	}
 
@@ -2231,7 +2231,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected stateSave(stateName: string, handler:(errorText?: string) => void) {
 		// Save state
-		Emulator.stateSave(stateData => {
+		Remote.stateSave(stateData => {
 			let filePath;
 			try {
 				// Save data to temp directory
@@ -2273,7 +2273,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				await stateData.read(binFile);
 				await binFile.close();
 				// Restore state
-				Emulator.stateRestore(stateData, () => {
+				Remote.stateRestore(stateData, () => {
 					handler();
 				});
 			}) ();
@@ -2294,7 +2294,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * @param handler This handler is called after being quiet for the given timeout.
 	 */
 	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
-		Emulator.executeAfterBeingQuietFor(timeout, handler);
+		Remote.executeAfterBeingQuietFor(timeout, handler);
 	}
 
 

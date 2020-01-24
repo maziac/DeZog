@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { Utility } from './utility';
 import { Settings } from './settings';
 //
-import { Emulator } from './remotes/emulatorfactory';
+import { Remote } from './remotes/remotefactory';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
 //import { start } from 'repl';
@@ -661,7 +661,7 @@ export class LabelsClass {
 
 		let names;
 		if (regsAsWell)
-			names = Emulator.getRegistersEqualTo(number);
+			names = Remote.getRegistersEqualTo(number);
 		else
 			names = new Array<string>();
 
@@ -690,7 +690,7 @@ export class LabelsClass {
 
 		let names;
 		if (regsAsWell)
-			names = Emulator.getRegistersEqualTo(number);
+			names = Remote.getRegistersEqualTo(number);
 		else
 			names = new Array<string>();
 

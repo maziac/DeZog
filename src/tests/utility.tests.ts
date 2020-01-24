@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Utility } from '../utility';
 import { Z80Registers } from '../z80Registers';
 //import { EmulatorClass } from '../emulator';
-import { Emulator, EmulatorType, EmulatorFactory } from '../remotes/emulatorfactory';
+import { Remote, EmulatorType, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
@@ -89,9 +89,9 @@ suite('Utility', () => {
 
 		setup(() => {
 			Settings.Init(undefined as any, '');
-			EmulatorFactory.createEmulator(EmulatorType.ZESARUX);
+			RemoteFactory.createEmulator(EmulatorType.ZESARUX);
 			Z80Registers.Init();
-			((Emulator as any).z80Registers as ZesaruxRegisters).setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
+			((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 		});
 
 		suite('formats', () => {
@@ -313,11 +313,11 @@ suite('Utility', () => {
 
 		suite('breakpoints', () => {
 			setup(() => {
-				EmulatorFactory.createEmulator(EmulatorType.ZESARUX);
+				RemoteFactory.createEmulator(EmulatorType.ZESARUX);
 			});
 
 			test('simple', () => {
-				((Emulator as any).z80Registers as ZesaruxRegisters).setCache("");
+				((Remote as any).z80Registers as ZesaruxRegisters).setCache("");
 				let res = Utility.evalExpression('0x1234 == 0x1234', true);
 				assert.equal(1, res, "Wrong eval result");
 
@@ -326,7 +326,7 @@ suite('Utility', () => {
 			});
 
 			test('register SP', () => {
-				((Emulator as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 				let res = Utility.evalExpression('SP == 0x83FB', true);
 				assert.equal(1, res, "Wrong eval result");
 
@@ -341,7 +341,7 @@ suite('Utility', () => {
 			});
 
 			test('All registers', () => {
-				((Emulator as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 
 				let res = Utility.evalExpression('PC == 0x80D3', true);
 				assert.equal(1, res, "Wrong eval result");
@@ -379,7 +379,7 @@ suite('Utility', () => {
 
 
 			test('memory (exception)', () => {
-				((Emulator as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 
 				// It is not supported to retrieve memory locations.
 				// Therefore a test is done on an exception.

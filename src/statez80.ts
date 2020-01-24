@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import { MachineType } from './remotes/emulator';
-import { Emulator } from './remotes/emulatorfactory';
+import { MachineType } from './remotes/remote';
+import { Remote } from './remotes/remotefactory';
 
 
 /// For saving/restoring the state.
@@ -44,11 +44,11 @@ export class StateZ80 {
 	 */
 	public stateSave(handler?: (stateData) => void) {
 		// Get registers
-		Emulator.getRegisters().then(() => {
+		Remote.getRegisters().then(() => {
 			// Save all registers
 			let i = 0;
 			for (const regName of this.allRegs) {
-				this.registers[i] = Emulator.getRegisterValue(regName);
+				this.registers[i] = Remote.getRegisterValue(regName);
 				i++;
 			}
 		});
@@ -64,7 +64,7 @@ export class StateZ80 {
 		let i = 0;
 		for( const regName of this.allRegs) {
 			const value = this.registers[i++];
-			Emulator.setRegisterValue(regName, value);
+			Remote.setRegisterValue(regName, value);
 		}
 	}
 };
@@ -167,7 +167,7 @@ export class StateZX16K extends StateZ80 {
 			// Get address
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
-			Emulator.getMemoryDump(address, 0x4000, data => {
+			Remote.getMemoryDump(address, 0x4000, data => {
 				const bnr = bankNrs.shift();
 				if(bnr != undefined)	// calm the transpiler
 					this.banks[i] = data;
@@ -199,7 +199,7 @@ export class StateZX16K extends StateZ80 {
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
 			const bankData = this.banks[k++];
-			Emulator.writeMemoryDump(address, bankData, () => {
+			Remote.writeMemoryDump(address, bankData, () => {
 				// Call handler
 				i ++;
 				if(i >= count && handler)

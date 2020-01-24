@@ -3,7 +3,7 @@ import { Labels } from './labels';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';
-import { Emulator } from './remotes/emulatorfactory';
+import { Remote } from './remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
@@ -212,7 +212,7 @@ export class Utility {
 					// If (it should not but if) it would be called asynchronously the
 					// addressString would simply be not decoded.
 					try {
-						res = Emulator.getRegisterValue(p1);
+						res = Remote.getRegisterValue(p1);
 					}
 					catch {};
 				}
@@ -379,7 +379,7 @@ export class Utility {
 				// Return registers only if 'name' itself is not a register.
 				if (!Z80Registers.isRegister(name)) {
 					regsAsWell = true;
-					Emulator.getRegisters().then(() => {
+					Remote.getRegisters().then(() => {
 						cs.endExec();
 					});
 				}
@@ -393,7 +393,7 @@ export class Utility {
 				const matchAddr = /(\${b@:|\${w@:)/.exec(format);
 				if(matchAddr) {
 					// Retrieve memory values
-					Emulator.getMemoryDump(value, 2, data => {
+					Remote.getMemoryDump(value, 2, data => {
 						const b1 = data[0]
 						const b2 = data[1];
 						memWord = (b2 << 8) + b1;
@@ -595,9 +595,9 @@ export class Utility {
 		const format = formatMap.get(reg);
 		assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
-		Emulator.getRegisters().then(() => {
+		Remote.getRegisters().then(() => {
 			// Get value of register
-			const value = Emulator.getRegisterValue(reg);
+			const value = Remote.getRegisterValue(reg);
 
 			// do the formatting
 			let rLen;

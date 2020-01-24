@@ -7,7 +7,7 @@ import { RefList } from '../../reflist';
 import { Log } from '../../log';
 import { Frame } from '../../frame';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../emulator';
+import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxCpuHistory';
@@ -35,7 +35,7 @@ class Zesarux {
  * It receives the requests from the EmulDebugAdapter and communicates with
  * the EmulConnector.
  */
-export class ZesaruxEmulator extends EmulatorClass {
+export class ZesaruxEmulator extends RemoteClass {
 
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;

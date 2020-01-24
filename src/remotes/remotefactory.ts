@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxEmulator } from './zesarux/zesaruxemulator';
 import { ZesaruxExtEmulator } from './zesarux/zesaruxextemulator';
-import { EmulatorClass } from './emulator';
+import { RemoteClass } from './remote';
 
 
 /// Different machine emulators.
@@ -15,21 +15,19 @@ export enum EmulatorType {
 }
 
 /**
- * The representation of the Z80 machine.
- * It receives the requests from the EmulDebugAdapter and commincates with
- * the EmulConnector.
+ * The factory creates a new remote.
  */
-export class EmulatorFactory {
+export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
 	 */
 	public static createEmulator(emul: EmulatorType) {
 		switch(emul) {
 			case EmulatorType.ZESARUX:
-				EmulatorFactory.setEmulator(new ZesaruxEmulator());
+				RemoteFactory.setEmulator(new ZesaruxEmulator());
 				break;
 			case EmulatorType.ZESARUX_EXT:	// Zesarux with own extensions.
-				EmulatorFactory.setEmulator(new ZesaruxExtEmulator());
+				RemoteFactory.setEmulator(new ZesaruxExtEmulator());
 				break;
 			case EmulatorType.ZXNEXT:
 				assert(false);	// needs to be implemented
@@ -47,11 +45,11 @@ export class EmulatorFactory {
 	/**
 	 * Sets the emulator variable.
 	 */
-	protected static setEmulator(emulator: EmulatorClass) {
-		Emulator = emulator;
+	protected static setEmulator(emulator: RemoteClass) {
+		Remote = emulator;
 	}
 
 }
 
 
-export var Emulator: EmulatorClass;
+export var Remote: RemoteClass;

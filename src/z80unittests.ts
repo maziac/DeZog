@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
-import { EmulDebugSessionClass } from './emuldebugadapter';
-import { EmulatorFactory, EmulatorType, Emulator } from './remotes/emulatorfactory';
+import { RemoteDebugSessionClass } from './remotedebugadapter';
+import { RemoteFactory, EmulatorType, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
-import { EmulatorBreakpoint } from './remotes/emulator';
+import { EmulatorBreakpoint } from './remotes/remote';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels';
 import { Settings } from './settings';
@@ -200,9 +200,9 @@ export class Z80UnitTests {
 			});
 		}
 
-		if(Emulator) {
+		if(Remote) {
 			// Terminate emulator
-			Emulator.terminate(f);
+			Remote.terminate(f);
 		}
 		else
 			f();
@@ -245,20 +245,20 @@ export class Z80UnitTests {
 			Decoration.clearRevDbgHistory();
 
 			// Start emulator.
-			EmulatorFactory.createEmulator(EmulatorType.ZESARUX_EXT);
+			RemoteFactory.createEmulator(EmulatorType.ZESARUX_EXT);
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 			Labels.init();
-			Emulator.readListFiles(listFiles);
+			Remote.readListFiles(listFiles);
 
 			// Events
-			Emulator.once('initialized', () => {
+			Remote.once('initialized', () => {
 				try {
 					// Enable ASSERTs etc.
-					Emulator.enableAssertBreakpoints(true);
-					Emulator.enableWPMEM(true);
+					Remote.enableAssertBreakpoints(true);
+					Remote.enableWPMEM(true);
 					try {
-						Emulator.enableLogpoints('UNITTEST', true);
+						Remote.enableLogpoints('UNITTEST', true);
 					}
 					catch {}	// Just in case the group is undefined
 
@@ -273,30 +273,30 @@ export class Z80UnitTests {
 				}
 			});
 
-			Emulator.on('coverage', coveredAddresses => {
+			Remote.on('coverage', coveredAddresses => {
 				// Cache covered addresses (since last unit test)
 			 	Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 			});
 
-			Emulator.on('warning', message => {
+			Remote.on('warning', message => {
 				// Some problem occurred
 				vscode.window.showWarningMessage(message);
 			});
 
-			Emulator.on('log', message => {
+			Remote.on('log', message => {
 				// Show the log (from the socket/ZEsarUX) in the debug console
 				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
 
 			});
 
-			Emulator.once('error', err => {
+			Remote.once('error', err => {
 				// Some error occurred
 				Z80UnitTests.stopUnitTests(undefined, err.message);
 			});
 
 
 			// Connect to debugger.
-			Emulator.init();
+			Remote.init();
 		}
 		catch(e) {
 			// Some error occurred
@@ -355,7 +355,7 @@ export class Z80UnitTests {
 			const configName: string = configuration.name;
 
 			// Start debugger
-			const success = EmulDebugSessionClass.unitTests(configName, this.handleDebugAdapter);
+			const success = RemoteDebugSessionClass.unitTests(configName, this.handleDebugAdapter);
 			if(!success) {
 				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			}
@@ -546,14 +546,14 @@ export class Z80UnitTests {
 
 		// Success and failure breakpoints
 		const successBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
-		Emulator.setBreakpoint(successBp);
+		Remote.setBreakpoint(successBp);
 		const failureBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
-		Emulator.setBreakpoint(failureBp);
+		Remote.setBreakpoint(failureBp);
 
 		// Stack watchpoints
 		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
 		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
-		Emulator.setWatchpoints([stackMinWp, stackMaxWp]);
+		Remote.setWatchpoints([stackMinWp, stackMaxWp]);
 	}
 
 
@@ -561,11 +561,11 @@ export class Z80UnitTests {
 	 * Handles the states of the debug adapter. Will be called after setup
 	 * @param debugAdapter The debug adapter.
 	 */
-	protected static handleDebugAdapter(debugAdapter: EmulDebugSessionClass) {
+	protected static handleDebugAdapter(debugAdapter: RemoteDebugSessionClass) {
 		debugAdapter.on('initialized', () => {
 			try {
 				// Handle coverage
-				Emulator.on('coverage', coveredAddresses => {
+				Remote.on('coverage', coveredAddresses => {
 					// Cache covered addresses (since last unit test)
 					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 				});
@@ -590,12 +590,12 @@ export class Z80UnitTests {
 	 * or because of an error (ASSERT).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
-	protected static onBreak(debugAdapter?: EmulDebugSessionClass) {
+	protected static onBreak(debugAdapter?: RemoteDebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
-		Emulator.getRegisters().then(() => {
+		Remote.getRegisters().then(() => {
 			// Parse the PC value
-			const pc = Emulator.getPC();
+			const pc = Remote.getPC();
 			//const sp = Z80Registers.parseSP(data);
 			// Check if test case was successful
 			Z80UnitTests.checkUnitTest(pc, debugAdapter);
@@ -626,7 +626,7 @@ export class Z80UnitTests {
 	 * If we don't wait we would miss a few and we wouldn't break.
 	 * @param da The debug emulator.
 	 */
-	protected static startUnitTestsWhenQuiet(da: EmulDebugSessionClass) {
+	protected static startUnitTestsWhenQuiet(da: RemoteDebugSessionClass) {
 		da.executeAfterBeingQuietFor(1000, () => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
@@ -640,18 +640,18 @@ export class Z80UnitTests {
 	 * tests.
 	 * @param da The debug adapter.
 	 */
-	protected static execAddr(address: number, da?: EmulDebugSessionClass) {
+	protected static execAddr(address: number, da?: RemoteDebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
-		Emulator.writeMemoryDump(this.addrCall, callAddr, () => {
+		Remote.writeMemoryDump(this.addrCall, callAddr, () => {
 			// Set PC
-			Emulator.setProgramCounter(this.addrTestWrapper, () => {
+			Remote.setProgramCounter(this.addrTestWrapper, () => {
 				// Run
 				if(Z80UnitTests.utLabels)
 					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
 
 				// Remove instruction history log.
-				Emulator.clearInstructionHistory();
+				Remote.clearInstructionHistory();
 
 				// Run or Debug
 				if(da) {
@@ -662,7 +662,7 @@ export class Z80UnitTests {
 				}
 				else {
 					// Run: Continue
-					Emulator.continue((data, tStates, cpuFreq) => {
+					Remote.continue((data, tStates, cpuFreq) => {
 						Z80UnitTests.onBreak();
 					});
 				}
@@ -675,7 +675,7 @@ export class Z80UnitTests {
 	 * Executes the next test case.
 	 * @param da The debug adapter.
 	 */
-	protected static nextUnitTest(da?: EmulDebugSessionClass) {
+	protected static nextUnitTest(da?: RemoteDebugSessionClass) {
 		// Increase count
 		Z80UnitTests.countExecuted ++;
 		Z80UnitTests.currentFail = false;
@@ -693,7 +693,7 @@ export class Z80UnitTests {
 				clearTimeout(Z80UnitTests.timeoutHandle);
 				Z80UnitTests.timeoutHandle = undefined;
 				// Failure: Timeout. Send a break.
-				Emulator.pause();
+				Remote.pause();
 			}, 1000*Settings.launch.unitTestTimeout);
 		}
 
@@ -709,7 +709,7 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
 	 */
-	protected static checkUnitTest(pc: number, da?: EmulDebugSessionClass) {
+	protected static checkUnitTest(pc: number, da?: RemoteDebugSessionClass) {
 		// Check if it was a timeout
 		let timeoutFailure = !Z80UnitTests.debug;
 		if(Z80UnitTests.timeoutHandle) {
@@ -766,7 +766,7 @@ export class Z80UnitTests {
 					return;
 				}
 				const firstUtBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
-				Emulator.setBreakpoint(firstUtBp);
+				Remote.setBreakpoint(firstUtBp);
 			}
 
 			// Start unit tests
@@ -896,7 +896,7 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: EmulDebugSessionClass|undefined, errMessage?: string) {
+	protected static stopUnitTests(debugAdapter: RemoteDebugSessionClass|undefined, errMessage?: string) {
 		// Clear timeout
 		clearTimeout(Z80UnitTests.timeoutHandle);
 		Z80UnitTests.timeoutHandle = undefined;
@@ -909,16 +909,16 @@ export class Z80UnitTests {
 		// Delay this:
 		const f = () => {
 			// Remove event handling for the emulator
-			Emulator.removeAllListeners();
+			Remote.removeAllListeners();
 			// For reverse debugging.
-			Emulator.clearInstructionHistory();
+			Remote.clearInstructionHistory();
 
 			// Exit
 			if(debugAdapter)
 				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
-				Emulator.disconnect(() => {});
+				Remote.disconnect(() => {});
 				// Show error
 				if(errMessage)
 					vscode.window.showErrorMessage(errMessage);

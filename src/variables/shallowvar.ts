@@ -6,7 +6,7 @@ import { CallSerializer } from '../callserializer';
 import { Settings } from '../settings'
 import { Utility } from '../utility';
 import { RefList } from '../reflist';
-import { Emulator } from '../remotes/emulatorfactory';
+import { Remote } from '../remotes/remotefactory';
 import { BaseMemory } from '../disassembler/basememory';
 import { Opcode } from '../disassembler/opcode';
 import { Format } from '../disassembler/format';
@@ -72,7 +72,7 @@ export class DisassemblyVar extends ShallowVar {
 	public getContent(handler: (varlist: Array<DebugProtocol.Variable>) => {}) {
 		// Get code memory
 		const size = 4*this.count;	// 4 is the max size of an opcode
-		Emulator.getMemoryDump(this.addr, size, data => {
+		Remote.getMemoryDump(this.addr, size, data => {
 			// convert hex values to bytes
 			const buffer = new BaseMemory(this.addr, size);
 			for(let i=0; i<size; i++) {
@@ -130,7 +130,7 @@ export class MemoryPagesVar extends ShallowVar {
 	 */
 	public getContent(handler: (varlist: Array<DebugProtocol.Variable>) => {}) {
 		// Get code memory
-		Emulator.getMemoryPages(memoryPages => {
+		Remote.getMemoryPages(memoryPages => {
 			// Convert array
 			const segments = memoryPages.map(page => {
 				const name = Utility.getHexString(page.start,4) + '-' + Utility.getHexString(page.end,4);
@@ -160,11 +160,11 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public getContent(handler: (varlist:Array<DebugProtocol.Variable>) => {}) {
-		Emulator.getRegisters().then(() => {
+		Remote.getRegisters().then(() => {
 			const registers = new Array<DebugProtocol.Variable>();
 			const regNames = this.registerNames();
 			for(let regName of regNames) {
-				const formattedValue = Emulator.getVarFormattedReg(regName);
+				const formattedValue = Remote.getVarFormattedReg(regName);
 				registers.push({
 					name: regName,
 					type: formattedValue,
@@ -187,18 +187,18 @@ export class RegistersMainVar extends ShallowVar {
 		// Check if value is valid
 		if(isNaN(value)) {
 			// Get old value and send it back
-			Emulator.getRegisters()
+			Remote.getRegisters()
 			.then(() => {
-				const formatted = Emulator.getVarFormattedReg(name);
+				const formatted = Remote.getVarFormattedReg(name);
 				handler(formatted);
 			});
 			return;
 		}
 
 		// Set value
-		Emulator.setRegisterValue(name, value)
+		Remote.setRegisterValue(name, value)
 		.then(() => {
-			const formatted = Emulator.getVarFormattedReg(name);
+			const formatted = Remote.getVarFormattedReg(name);
 			handler(formatted);
 		});
 	}
@@ -320,7 +320,7 @@ export class StackVar extends ShallowVar {
 			data[1] = value >> 8;
 
 			serializer.exec(() => {
-				Emulator.writeMemoryDump(address, data, () => {
+				Remote.writeMemoryDump(address, data, () => {
 					serializer.endExec();
 				});
 			});
@@ -328,7 +328,7 @@ export class StackVar extends ShallowVar {
 
 		serializer.exec(() => {
 			// Retrieve memory values, to see if they really have been set.
-			Emulator.getMemoryDump(address, 2, data => {
+			Remote.getMemoryDump(address, 2, data => {
 				const memWord = data[0] + (data[1]<<8);
 				// Pass formatted string to vscode
 				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
