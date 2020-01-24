@@ -1,15 +1,15 @@
 
 //import { Log } from './log';
-import { Labels } from './labels';
+import { Labels } from '../labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { CallSerializer } from './callserializer';
-import { Settings } from './settings'
-import { Utility } from './utility';
-import { RefList } from './reflist';
-import { Emulator } from './emulatorfactory';
-import { BaseMemory } from './disassembler/basememory';
-import { Opcode } from './disassembler/opcode';
-import { Format } from './disassembler/format';
+import { CallSerializer } from '../callserializer';
+import { Settings } from '../settings'
+import { Utility } from '../utility';
+import { RefList } from '../reflist';
+import { Emulator } from '../emulatorfactory';
+import { BaseMemory } from '../disassembler/basememory';
+import { Opcode } from '../disassembler/opcode';
+import { Format } from '../disassembler/format';
 
 
 /**

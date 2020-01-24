@@ -1,17 +1,17 @@
 import * as assert from 'assert';
 import { zSocket, ZesaruxSocket } from './zesaruxSocket';
-import { Utility } from './utility';
-import { Labels } from './labels';
-import { Settings } from './settings';
-import { RefList } from './reflist';
-import { Log } from './log';
-import { Frame } from './frame';
-import { GenericWatchpoint, GenericBreakpoint } from './genericwatchpoint';
-import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from './emulator';
-import { StateZ80 } from './statez80';
-import { CallSerializer } from './callserializer';
+import { Utility } from '../../utility';
+import { Labels } from '../../labels';
+import { Settings } from '../../settings';
+import { RefList } from '../../reflist';
+import { Log } from '../../log';
+import { Frame } from '../../frame';
+import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
+import { EmulatorClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../../emulator';
+import { StateZ80 } from '../../statez80';
+import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxCpuHistory';
-import { Z80Registers } from './z80Registers';
+import { Z80Registers } from '../../z80Registers';
 import { ZesaruxRegisters } from './zesaruxregisters';
 
 

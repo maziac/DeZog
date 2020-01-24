@@ -5,7 +5,7 @@ import { Z80Registers } from '../z80Registers';
 //import { EmulatorClass } from '../emulator';
 import { Emulator, EmulatorType, EmulatorFactory } from '../emulatorfactory';
 import { Settings } from '../settings';
-import { ZesaruxRegisters } from '../zesaruxregisters';
+import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 
 suite('Utility', () => {

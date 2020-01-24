@@ -1,8 +1,8 @@
-import { Log, LogSocketCommands } from './log';
+import { Log, LogSocketCommands } from '../../log';
 import { Socket } from 'net';
-import { Settings } from './settings';
+import { Settings } from '../../settings';
 import * as assert from 'assert';
-import { LogSocket } from './log';
+import { LogSocket } from '../../log';
 
 
 //import { setKeepAliveInterval } from 'net-keepalive';

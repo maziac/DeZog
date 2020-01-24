@@ -11,7 +11,7 @@ import { MemoryDumpView } from './memorydumpview';
 import { MemoryRegisterView } from './memoryregisterview';
 import { RefList } from './reflist';
 import { Settings, SettingsParameters } from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './shallowvar';
+import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
 import { Utility } from './utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80Registers';
 import { EmulatorFactory, EmulatorType, Emulator } from './emulatorfactory';

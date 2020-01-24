@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { Z80Registers } from '../z80Registers';
-import { ZesaruxRegisters } from '../zesaruxRegisters';
+import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 
 

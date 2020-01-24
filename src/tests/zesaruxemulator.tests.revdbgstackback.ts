@@ -1,12 +1,12 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory } from '../zesaruxCpuHistory';
-import { ZesaruxEmulator } from '../zesaruxemulator';
+import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxCpuHistory';
+import { ZesaruxEmulator } from '../remotes/zesarux/zesaruxemulator';
 import { Z80Registers } from '../z80Registers';
-import { ZesaruxSocket, zSocket } from '../zesaruxSocket';
+import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxSocket';
 import { RefList } from '../reflist';
 import { Frame } from '../frame';
-import { ZesaruxRegisters } from '../zesaruxregisters';
+import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 
 // Mock for the socket.

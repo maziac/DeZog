@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { Labels } from './labels';
-import { zSocket } from './zesaruxSocket';
+import { zSocket } from './remotes/zesarux/zesaruxSocket';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './z80Registers';

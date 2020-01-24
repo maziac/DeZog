@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
-import { ZesaruxEmulator } from './zesaruxemulator';
-import { ZesaruxExtEmulator } from './zesaruxextemulator';
+import { ZesaruxEmulator } from './remotes/zesarux/zesaruxemulator';
+import { ZesaruxExtEmulator } from './remotes/zesarux/zesaruxextemulator';
 import { EmulatorClass } from './emulator';
 
 

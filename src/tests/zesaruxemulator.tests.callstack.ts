@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { ZesaruxEmulator } from '../zesaruxemulator';
+import { ZesaruxEmulator } from '../remotes/zesarux/zesaruxemulator';
 import { Z80Registers } from '../z80Registers';
 
 

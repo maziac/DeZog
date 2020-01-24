@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory } from '../zesaruxCpuHistory';
+import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxCpuHistory';
 import { Z80Registers } from '../z80Registers';
-import { ZesaruxRegisters } from '../zesaruxregisters';
+import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 suite('ZesaruxCpuHistory', () => {
 
