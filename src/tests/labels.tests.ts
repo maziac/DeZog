@@ -5,8 +5,11 @@ import { Settings } from '../settings';
 
 suite('Labels', () => {
 
-	setup( () => {
-		Settings.Init(<any>undefined, '');
+	setup(() => {
+		const cfg: any = {
+			remoteType: 'zesarux'
+		};
+		Settings.Init(cfg, '');
 		Labels.init();
 	});
 

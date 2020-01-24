@@ -13,8 +13,51 @@ suite('Settings', () => {
 
 	suite('CheckSettings', () => {
 
+		test('CheckSettings - remoteType none', () => {
+			const cfgEmpty: any = {
+			};
+			Settings.Init(cfgEmpty, '');
+			assert.throws(() => {
+				Settings.CheckSettings();
+			}, "Should fail without remoteType.");
+
+			const cfg: any = {
+				remoteType: 'something'
+			};
+			Settings.Init(cfg, '');
+			assert.throws(() => {
+				Settings.CheckSettings();
+			}, "Should fail with wrong remoteType.");
+		});
+
+
+		test('CheckSettings - remoteType=zesarux', () => {
+			const cfg: any = {
+				remoteType: 'zesarux'
+			};
+			Settings.Init(cfg, '');
+			assert.doesNotThrow(() => {
+				Settings.CheckSettings();
+			}, "Should not fail with remoteType=zesarux.");
+		});
+
+
+		test('CheckSettings - remoteType=zxnext', () => {
+			const cfg: any = {
+				remoteType: 'zxnext'
+			};
+			Settings.Init(cfg, '');
+			assert.doesNotThrow(() => {
+				Settings.CheckSettings();
+			}, "Should not fail with remoteType=zxnext.");
+		});
+
+
 		test('CheckSettings - Default', () => {
-			Settings.Init(<any>undefined, '');
+			const cfg: any = {
+				remoteType: 'zesarux'
+			};
+			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Should not fail with default config.");
@@ -22,14 +65,15 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - listFiles 1', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				listFiles: [
 					{ path: "./src/tests/data/settings/filenotexists.list" }
 				]
 			};
 
 			// File does not exist -> Exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -37,14 +81,15 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - listFiles 2', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				listFiles: [
 					{ path: "./src/tests/data/settings/file.list" }
 				]
 			};
 
 			// File does exist -> No exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does exist.");
@@ -52,12 +97,13 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - load 1', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				load: "./src/tests/data/settings/filenotexists.sna"
 			};
 
 			// File does not exist -> Exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -65,12 +111,13 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - load 2', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				load: "./src/tests/data/settings/file.sna"
 			};
 
 			// File does exist -> No exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does exist.");
@@ -78,13 +125,14 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - load and execAddress', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				load: "./src/tests/data/settings/file.sna",
 				execAddress: "1234"
 			};
 
 			// File does exist -> No exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: There should be an exception if 'load' and 'execAddress' are used together.");
@@ -92,7 +140,8 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - loadObj 1', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2notexists.obj", start: "1234" }
@@ -100,7 +149,7 @@ suite('Settings', () => {
 			};
 
 			// File 2 does not exist -> Exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -108,7 +157,8 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - loadObj 2', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2.obj", start: "1234" }
@@ -116,7 +166,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: files do exist.");
@@ -125,7 +175,8 @@ suite('Settings', () => {
 
 
 		test('CheckSettings - loadObj start', () => {
-			const cfg = {
+			const cfg: any = {
+				remoteType: 'zesarux',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2.obj" }
@@ -133,7 +184,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.Init(cfg as any, '');
+			Settings.Init(cfg, '');
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: 'start' should be defined.");

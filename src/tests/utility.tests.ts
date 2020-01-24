@@ -88,7 +88,10 @@ suite('Utility', () => {
 	suite('numberFormattedBy', () => {
 
 		setup(() => {
-			Settings.Init(undefined as any, '');
+			const cfg: any = {
+				remoteType: 'zesarux'
+			};
+			Settings.Init(cfg, '');
 			RemoteFactory.createEmulator(EmulatorType.ZESARUX);
 			Z80Registers.Init();
 			((Remote as any).z80Registers as ZesaruxRegisters).setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");

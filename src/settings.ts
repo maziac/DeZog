@@ -76,10 +76,13 @@ export interface LoadObj {
  * The configuration parameters for the zesarux debugger.
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments  {
+	/// The remote type: zesarux or zxnext.
+	remoteType: string;
+
 	/// true if the configuration is for unit tests.
 	unitTests: false;
 
-	/// The Zesarux ZRCP telnet host name
+	/// The Zesarux ZRCP telnet host name/IP address
 	zhostname: string;
 
 	/// The Zesarux ZRCP telnet port
@@ -185,6 +188,7 @@ export class Settings {
 		Settings.launch = launchCfg;
 		if(!Settings.launch) {
 			Settings.launch = {
+				remoteType: <any>undefined,
 				unitTests: <any>undefined,
 				zhostname: <any>undefined,
 				zport: <any>undefined,
@@ -212,7 +216,7 @@ export class Settings {
 		}
 
 		// Check for default values (for some reasons the default values from the package.json are not used)
-		if(Settings.launch.unitTests == undefined)
+		if (Settings.launch.unitTests == undefined)
 			Settings.launch.unitTests = false;
 		const unitTests = Settings.launch.unitTests;
 
@@ -387,6 +391,14 @@ export class Settings {
 	 * Note: file paths are already expanded to absolute paths.
 	 */
 	public static CheckSettings() {
+		// Check remote type
+		const rType = Settings.launch.remoteType;
+		const allowedTypes = ['zesarux', 'zxnext'];
+		const found = (allowedTypes.indexOf(rType) >= 0);
+		if (!found) {
+			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
+		}
+
 		// List files
 		for(let listFile of Settings.launch.listFiles) {
 			// Check that file exists

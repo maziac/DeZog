@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxEmulator } from './zesarux/zesaruxemulator';
 import { ZesaruxExtEmulator } from './zesarux/zesaruxextemulator';
+import { ZxNextRemote } from './zxnext/zxnextremote';
 import { RemoteClass } from './remote';
 
 
@@ -30,7 +31,7 @@ export class RemoteFactory {
 				RemoteFactory.setEmulator(new ZesaruxExtEmulator());
 				break;
 			case EmulatorType.ZXNEXT:
-				assert(false);	// needs to be implemented
+				RemoteFactory.setEmulator(new ZxNextRemote());
 				break;
 			case EmulatorType.MAME:
 				assert(false);	// needs to be implemented
