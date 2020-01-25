@@ -683,24 +683,14 @@ export class RemoteClass extends EventEmitter {
    * the caller address is returned.
    * Otherwise an undefined object is returned.
    * @param stackEntryValue E.g. "3B89"
-   * @returns {name, calledAddr, callerAddr}
+   * @returns {name, callerAddr}
    * if there was a CALL or RST
    * - name: The label name or the hex string of the called address
-   * - calledAddr: The called sunroutine address
    * - callerAddr: The caller address of the subroutine
    * Otherwise undefined.
-   *
-   *
-   * TODO: REMOVE description below:
-   * @returns {type, calledAddr, callerAddr} type = 'call', 'rst', 'interrupt', 'push' or 'default'
-   * calledAddr: If 'call' or 'rst' the address that is called by CALL/RST, otherwise 0.
-   * callerAddr: If 'call' or 'rst' the address of the caller, i.e. the opcode address of
-   * the CALL and RST, otherwise 0.
-   * Note: The generic implementation does not return 'interrupt' or 'default', but e.g. the
-   * ZEsarUX implementation does.
    */
-  protected getStackEntryType(stackEntryValue: string): Promise<{name: string, calledAddr: number, callerAddr: number}|undefined> {
-    return new Promise<{name: string, calledAddr: number, callerAddr: number}|undefined>(resolve => {
+  protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
+    return new Promise<{name: string, callerAddr: number}|undefined>(resolve => {
       // Get the 3 bytes before address.
       const addr=parseInt(stackEntryValue, 16);
       this.getMemoryDump(addr-3, 3, data => {
@@ -746,7 +736,7 @@ export class RemoteClass extends EventEmitter {
         const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
 
         // Return
-        resolve({name: labelCalledAddr, calledAddr, callerAddr});
+        resolve({name: labelCalledAddr, callerAddr});
       });
     });
   }

@@ -394,14 +394,13 @@ export class ZesaruxRemote extends RemoteClass {
    * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
    * already contains the type.
    * @param stackEntryValue E.g. "3B89"
-   * @returns {name, calledAddr, callerAddr}
+   * @returns {name, callerAddr}
    * if there was a CALL or RST
    * - name: The label name or the hex string of the called address
-   * - calledAddr: The called sunroutine address
    * - callerAddr: The caller address of the subroutine
    * Otherwise undefined.
    */
-	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, calledAddr: number, callerAddr: number}|undefined> {
+	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get type
 		const type=stackEntryValue.substr(6);
 		if (type=='call'||type=='rst') {
