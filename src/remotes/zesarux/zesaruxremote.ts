@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { zSocket, ZesaruxSocket } from './zesaruxSocket';
+import { zSocket, ZesaruxSocket } from './zesaruxsocket';
 import { Utility } from '../../utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
@@ -10,8 +10,8 @@ import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
-import { ZesaruxCpuHistory } from './zesaruxCpuHistory';
-import { Z80Registers } from '../../z80Registers';
+import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
+import { Z80Registers } from '../../z80registers';
 import { ZesaruxRegisters } from './zesaruxregisters';
 
 
@@ -35,7 +35,7 @@ class Zesarux {
  * It receives the requests from the DebugAdapter and communicates with
  * the ZesaruxSocket.
  */
-export class ZesaruxEmulator extends RemoteClass {
+export class ZesaruxRemote extends RemoteClass {
 
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;
@@ -323,7 +323,7 @@ export class ZesaruxEmulator extends RemoteClass {
 
 			// Init breakpoint array
 			this.freeBreakpointIds.length = 0;
-			for(var i=1; i<=ZesaruxEmulator.MAX_USED_BREAKPOINTS; i++)
+			for(var i=1; i<=ZesaruxRemote.MAX_USED_BREAKPOINTS; i++)
 				this.freeBreakpointIds.push(i);
 	}
 
@@ -479,7 +479,7 @@ export class ZesaruxEmulator extends RemoteClass {
 	 */
 	protected getRstAddress(addr: number, handler:(callAddr: number)=>void) {
 		// Get the 3 bytes before address.
-		zSocket.send( 'read-memory ' + (addr+1) + ' 1', data => { // retrieve p
+		zSocket.send( 'read-memory ' + (addr) + ' 1', data => { // retrieve p
 			// Get low byte
 			const p = parseInt(data.substr(0,2),16) & 0b00111000;
 			// Call handler
@@ -642,8 +642,8 @@ export class ZesaruxEmulator extends RemoteClass {
 			// calculate the depth of the call stack
 			const tos = this.topOfStack
 			var depth = (tos - sp)/2;	// 2 bytes per word
-			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
-				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
+			if(depth>ZesaruxRemote.MAX_STACK_ITEMS)
+				depth = ZesaruxRemote.MAX_STACK_ITEMS;
 
 			// Special handling if stack depth is 0
 			if(depth <= 0) {
@@ -1354,7 +1354,7 @@ export class ZesaruxEmulator extends RemoteClass {
 					const condition = 'SP>=' + sp;
 					// We do a "run" instead of a step-into/over
 					// Set action first (no action).
-					const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+					const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
 					// Clear register cache
 					this.zesaruxRegisters.clearCache();
 					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
@@ -1647,8 +1647,8 @@ export class ZesaruxEmulator extends RemoteClass {
 
 			// calculate the depth of the call stack
 			var depth = this.topOfStack - sp;
-			if(depth>ZesaruxEmulator.MAX_STACK_ITEMS)
-				depth = ZesaruxEmulator.MAX_STACK_ITEMS;
+			if(depth>ZesaruxRemote.MAX_STACK_ITEMS)
+				depth = ZesaruxRemote.MAX_STACK_ITEMS;
 			if(depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
 				handler(undefined, undefined, "Call stack empty");
@@ -1677,7 +1677,7 @@ export class ZesaruxEmulator extends RemoteClass {
 						//const addr = parseInt(addrTypeString,16);
 						// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
 						// Set action first (no action).
-						const bpId = ZesaruxEmulator.STEP_BREAKPOINT_ID;
+						const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
 						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
 							// Set the breakpoint.
 							// Note: PC=PEEKW(SP-2) finds an executed RET.

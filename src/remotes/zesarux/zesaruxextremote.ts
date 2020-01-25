@@ -2,8 +2,8 @@
 //import * as assert from 'assert';
 import { EmulatorBreakpoint } from '../remote';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { ZesaruxEmulator } from './zesaruxemulator';
-import { zSocket } from './zesaruxSocket';
+import { ZesaruxRemote } from './zesaruxremote';
+import { zSocket } from './zesaruxsocket';
 //import { Labels } from './labels';
 //import { Utility } from './utility';
 
@@ -14,7 +14,7 @@ import { zSocket } from './zesaruxSocket';
  * If yes a few function from ZesaruxEmulator are exchanged.
  * The new functions use the fast breakpoints and watchpoints.
  */
-export class ZesaruxExtEmulator extends ZesaruxEmulator {
+export class ZesaruxExtRemote extends ZesaruxRemote {
 	/// Will be set on initialization if extensions are available.
 	protected extensionsAvailable = false;
 
@@ -29,19 +29,19 @@ export class ZesaruxExtEmulator extends ZesaruxEmulator {
 			if(data == 'Extensions available.') {
 				this.extensionsAvailable = true;
 				// Enable additional features
-				ZesaruxExtEmulator.prototype.initBreakpoints = ZesaruxExtEmulator.prototype.initBreakpointsExt;
+				ZesaruxExtRemote.prototype.initBreakpoints = ZesaruxExtRemote.prototype.initBreakpointsExt;
 
-				ZesaruxExtEmulator.prototype.setWatchpoints = ZesaruxExtEmulator.prototype.setWatchpointsExt;
-				ZesaruxExtEmulator.prototype.enableWPMEM = ZesaruxExtEmulator.prototype.enableWPMEMExt;
+				ZesaruxExtRemote.prototype.setWatchpoints = ZesaruxExtRemote.prototype.setWatchpointsExt;
+				ZesaruxExtRemote.prototype.enableWPMEM = ZesaruxExtRemote.prototype.enableWPMEMExt;
 
-				ZesaruxExtEmulator.prototype.setAssertBreakpoints = ZesaruxExtEmulator.prototype.setAssertBreakpointsExt;
-				ZesaruxExtEmulator.prototype.enableAssertBreakpoints = ZesaruxExtEmulator.prototype.enableAssertBreakpointsExt;
+				ZesaruxExtRemote.prototype.setAssertBreakpoints = ZesaruxExtRemote.prototype.setAssertBreakpointsExt;
+				ZesaruxExtRemote.prototype.enableAssertBreakpoints = ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
 
-				ZesaruxExtEmulator.prototype.setLogpoints = ZesaruxExtEmulator.prototype.setLogpointsExt;
-				ZesaruxExtEmulator.prototype.enableLogpoints = ZesaruxExtEmulator.prototype.enableLogpointsExt;
+				ZesaruxExtRemote.prototype.setLogpoints = ZesaruxExtRemote.prototype.setLogpointsExt;
+				ZesaruxExtRemote.prototype.enableLogpoints = ZesaruxExtRemote.prototype.enableLogpointsExt;
 
-				ZesaruxExtEmulator.prototype.setBreakpoint = ZesaruxExtEmulator.prototype.setBreakpointExt;
-				ZesaruxExtEmulator.prototype.removeBreakpoint = ZesaruxExtEmulator.prototype.removeBreakpointExt;
+				ZesaruxExtRemote.prototype.setBreakpoint = ZesaruxExtRemote.prototype.setBreakpointExt;
+				ZesaruxExtRemote.prototype.removeBreakpoint = ZesaruxExtRemote.prototype.removeBreakpointExt;
 
 			}
 		});

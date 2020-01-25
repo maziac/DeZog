@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
-import { ZesaruxEmulator } from '../remotes/zesarux/zesaruxemulator';
-import { Z80Registers } from '../z80Registers';
+import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
+import { Z80Registers } from '../z80registers';
 
 
 suite('ZesaruxEmulator', () => {
@@ -18,7 +18,7 @@ suite('ZesaruxEmulator', () => {
 
 	suite('ZesaruxCallStack', () => {
 		setup(() => {
-			emul = new ZesaruxEmulator();
+			emul = new ZesaruxRemote();
 		});
 
 		test('getInterruptName', () => {

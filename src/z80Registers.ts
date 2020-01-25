@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-//import { Utility } from './utility';
+import { Utility } from './utility';
 import { Settings } from './settings';
 
 
@@ -16,7 +16,8 @@ export enum Z80_REG {
 	AF, BC, DE, HL, IX, IY,
 	AF2, BC2, DE2, HL2,
 	A, F, B, C, D, E, H, L, I, R,
-	A2, F2, IXL, IXH, IYL, IYH
+	A2, F2, B2, C2, D2, E2, H2, L2,
+	IXH, IXL, IYH, IYL
 };
 
 
@@ -121,21 +122,25 @@ export class Z80Registers {
 
 
 	/**
+	 * Returns the register enum value for a geister string.
+	 * @param reg E.g. "HL" (case insensitive)
+	 * @returns E.g. Z80_REG.HL
+	 */
+	protected static getEnumFromName(reg: string): Z80_REG|undefined {
+		const regUpper = reg.toUpperCase();
+		const index = Z80Registers.registerNames.indexOf(regUpper);
+		if (index < 0)
+			return undefined;
+		return index;
+	}
+
+
+	/**
 	 * Returns true if the string contains a register.
 	 * @param reg To check for a register name.
 	 */
 	public static isRegister(reg: string): boolean {
-		if (!reg)
-			return false;
-		/*
-		if(reg.length == 2) {
-			// Check if both are upper case or both are lower case
-			if( (reg[0] == reg[0].toUpperCase()) != (reg[1] == reg[1].toUpperCase()))
-				return false;
-		}
-		*/
-		const regUpper = reg.toUpperCase();
-		return Z80Registers.registerNames.indexOf(regUpper) >= 0;
+		return (Z80Registers.getEnumFromName(reg) != undefined);
 	}
 
 
@@ -150,14 +155,26 @@ export class Z80Registers {
 
 	/**
 	 * Returns the formatted register value.
-	 * Override.
 	 * @param regIn The name of the register, e.g. "A" or "BC"
 	 * @param formatMap The map with the formattings (hover map or variables map)
 	 * @returns The formatted string.
 	 */
 	protected getFormattedReg(regIn: string, formatMap: any): string {
-		assert(false);
-		return regIn;
+		// Every register has a formatting otherwise it's not a valid register name
+		const reg = regIn.toUpperCase();
+		const format = formatMap.get(reg);
+		assert(format != undefined, 'Register ' + reg + ' does not exist.');
+
+		// Get value of register
+		const value = this.getRegValueByName(reg);
+
+		// do the formatting
+		let rLen = reg.length;
+		if (reg[rLen - 1] == '\'')--rLen;	// Don't count the "'" in the register name
+
+		assert(this.valid());
+		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
+		return res;
 	}
 
 

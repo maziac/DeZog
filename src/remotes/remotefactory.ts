@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { ZesaruxExtEmulator } from './zesarux/zesaruxextemulator';
+import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { ZxNextRemote } from './zxnext/zxnextremote';
 import { RemoteClass } from './remote';
 
@@ -18,7 +18,7 @@ export class RemoteFactory {
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
 			case 'zesarux':
-				RemoteFactory.setEmulator(new ZesaruxExtEmulator());
+				RemoteFactory.setEmulator(new ZesaruxExtRemote());
 				break;
 			case 'zxnext':
 				RemoteFactory.setEmulator(new ZxNextRemote());

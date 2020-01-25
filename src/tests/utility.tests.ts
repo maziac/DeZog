@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { Utility } from '../utility';
-import { Z80Registers } from '../z80Registers';
+import { Z80Registers } from '../z80registers';
 //import { EmulatorClass } from '../emulator';
 import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';

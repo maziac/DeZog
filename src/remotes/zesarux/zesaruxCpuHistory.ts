@@ -1,8 +1,8 @@
 import * as assert from 'assert';
-import { zSocket /*, ZesaruxSocket*/ } from './zesaruxSocket';
+import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 import { Opcode } from '../../disassembler/opcode';
 import { BaseMemory } from '../../disassembler/basememory';
-import { Z80Registers } from '../../z80Registers';
+import { Z80Registers } from '../../z80registers';
 //import { Emulator } from './emulatorfactory';
 import { ZesaruxRegisters } from './zesaruxregisters';
 

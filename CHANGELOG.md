@@ -2,6 +2,7 @@
 
 # 0.11.3
 - Added remoteType to package.json.
+- Fixed bug with callstack and RST.
 
 # 0.11.2
 - More refactoring.

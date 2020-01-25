@@ -1,10 +1,10 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxCpuHistory';
-import { ZesaruxEmulator } from '../remotes/zesarux/zesaruxemulator';
-import { Z80Registers } from '../z80Registers';
+import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
+import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
+import { Z80Registers } from '../z80registers';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
-import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxSocket';
+import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
 import { Frame } from '../frame';
 
@@ -36,7 +36,7 @@ suite('ZesaruxEmulator', () => {
 
 	suite('handleReverseDebugStackForward', () => {
 		setup(() => {
-			emul = new ZesaruxEmulator();
+			emul = new ZesaruxRemote();
 			const regs = new ZesaruxRegisters();
 			emul.cpuHistory = new ZesaruxCpuHistory(regs);
 			mockSocket = new MockZesaruxSocket();

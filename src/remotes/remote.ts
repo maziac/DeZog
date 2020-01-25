@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Z80Registers } from '../z80Registers';
+import { Z80Registers } from '../z80registers';
 import { StateZ80 } from '../statez80';
 import { RefList } from '../reflist';
 import { Frame } from '../frame';
@@ -480,6 +480,7 @@ export class RemoteClass extends EventEmitter {
 	 */
 	public disconnect(handler: () => void) {
 		// please override.
+		handler();
 	}
 
 
@@ -492,6 +493,7 @@ export class RemoteClass extends EventEmitter {
 	 */
 	public terminate(handler: () => void) {
 		// please override.
+		handler();
 	}
 
 
@@ -574,6 +576,49 @@ export class RemoteClass extends EventEmitter {
 	public setRegisterValue(register: string, value: number): Promise<number> {
 		assert(false);	// override this
 		return new Promise<number>(() => {});
+	}
+
+
+
+	/**
+	 * Returns the contents of (addr+1).
+	 * It assumes that at addr there is a "CALL calladdr" instruction and it returns the
+	 * callAddr.
+	 * It retrieves the memory contents at addr+1 and calls 'handler' with the result.
+	 * @param addr The address.
+	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
+	 */
+	protected getCallAddress(addr: number, handler: (callAddr: number) => void) {
+		// Get the 2 bytes after address.
+		this.getMemoryDump(addr + 1, 2, (data, address) => {
+			// Get low byte
+			const lowByte = data[0];
+			// Get high byte
+			const highByte = data[1];
+			// Calculate address
+			const callAddr = (highByte << 8) + lowByte;
+			// Call handler
+			handler(callAddr);
+		});
+	}
+
+
+	/**
+	 * Returns the address of (addr).
+	 * It assumes that at addr there is a "RST p" instruction and it returns the
+	 * callAddr, i.e. p.
+	 * It retrieves the memory contents at addr, extract p and calls 'handler' with the result.
+	 * @param addr The address.
+	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
+	 */
+	protected getRstAddress(addr: number, handler: (callAddr: number) => void) {
+		// Get the byte at address.
+		this.getMemoryDump(addr, 1, (data, address) => {
+			// Get byte and convert to address
+			const p = data[0] & 0b00111000;
+			// Call handler
+			handler(p);
+		});
 	}
 
 
