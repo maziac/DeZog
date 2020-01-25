@@ -394,101 +394,6 @@ export class ZesaruxRemote extends RemoteClass {
 
 
 	/**
-	 * This is a very specialized function to find a CALL, CALL cc or RST opcode
-	 * at the 3 bytes before the given address.
-	 * Idea is that the 'addr' is a return address from the stack and we want to find
-	 * the caller.
-	 * @param addr The address.
-	 * @param handler(k,caddr) The handler is called at the end of the function.
-	 * k=3, addr: If a CALL was found, caddr contains the call address.
-	 * k=2/1, addr: If a RST was found, caddr contains the RST address (p). k is the position,
-	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
-	 * k=0, addr=0: Neither CALL nor RST found.
-	 */
-	/*
-	protected findCallOrRst(addr: number, handler:(k: number, addr: number)=>void) {
-		// Get the 3 bytes before address.
-		zSocket.send( 'read-memory ' + (addr-3) + ' ' + 3, data => { // subtract opcode + address (last 3 bytes)
-			// Check for Call
-			const opc3 = parseInt(data.substr(0,2),16);	// get first of the 3 bytes
-			if(opc3 == 0xCD	// CALL nn
-				|| (opc3 & 0b11000111) == 0b11000100) 	// CALL cc,nn
-			{
-				// It was a CALL, get address.
-				let callAddr = parseInt(data.substr(2,4),16)
-				callAddr = (callAddr>>8) + ((callAddr & 0xFF)<<8);	// Exchange high and low byte
-				handler(3, callAddr);
-				return;
-			}
-
-			// Check if one of the 2 last bytes was a RST.
-			// Note: Not only the last byte is checkd bt also the byte before. This is
-			// a small "hack" to allow correct return addresses even for esxdos.
-			let opc12 = parseInt(data.substr(2,4),16);	// convert both opcodes at once
-			let k = 1;
-			while(opc12 != 0) {
-				if((opc12 & 0b11000111) == 0b11000111)
-					break;
-				// Next
-				opc12 >>= 8;
-				k++;
-			}
-			if(opc12 != 0) {
-				// It was a RST, get p
-				const p = opc12 & 0b00111000;
-				handler(k, p);
-				return;
-			}
-
-			// Nothing found = -1
-			handler(0, 0);
-		});
-	}
-*/
-
-	/**
-	 * Returns the contents of (addr+1).
-	 * It assumes that at addr there is a "CALL calladdr" instruction and it returns the
-	 * callAddr.
-	 * It retrieves the memory contents at addr+1 and calls 'handler' with the result.
-	 * @param addr The address.
-	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
-	 */
-	protected getCallAddress(addr: number, handler:(callAddr: number)=>void) {
-		// Get the 3 bytes before address.
-		zSocket.send( 'read-memory ' + (addr+1) + ' 2', data => { // retrieve calladdr
-			// Get low byte
-			const lowByte = parseInt(data.substr(0,2),16);
-			// Get high byte
-			const highByte = parseInt(data.substr(2,2),16);
-			// Calculate address
-			const callAddr = (highByte<<8) + lowByte;
-			// Call handler
-			handler(callAddr);
-		});
-	}
-
-
-	/**
-	 * Returns the address of (addr).
-	 * It assumes that at addr there is a "RST p" instruction and it returns the
-	 * callAddr, i.e. p.
-	 * It retrieves the memory contents at addr, extract p and calls 'handler' with the result.
-	 * @param addr The address.
-	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
-	 */
-	protected getRstAddress(addr: number, handler:(callAddr: number)=>void) {
-		// Get the 3 bytes before address.
-		zSocket.send( 'read-memory ' + (addr) + ' 1', data => { // retrieve p
-			// Get low byte
-			const p = parseInt(data.substr(0,2),16) & 0b00111000;
-			// Call handler
-			handler(p);
-		});
-	}
-
-
-	/**
 	 * Helper function to prepare the callstack for vscode.
 	 * Check if the
 	 * The function calls itself recursively.
@@ -533,11 +438,11 @@ export class ZesaruxRemote extends RemoteClass {
 		let func;
 		if(type == "call") {
 			k = 3;	// Opcode length for CALL
-			func = this.getCallAddress;
+			func = this.getCallAddress.bind(this);
 		}
 		else if(type == "rst") {
 			k = 1;	// Opcode length range for RST
-			func = this.getRstAddress;
+			func = this.getRstAddress.bind(this);
 		}
 		else if(type.includes("interrupt")) {
 			// Find pushed values
