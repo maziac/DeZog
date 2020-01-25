@@ -637,7 +637,7 @@ export class RemoteClass extends EventEmitter {
 	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
 	 * k=0, addr=0: Neither CALL nor RST found.
 	 */
-  protected stackFindCallOrRst(addr: number, handler: (k: number, addr: number) => void) {
+  protected getStackEntryTyddpe(addr: number, handler: (k: number, addr: number) => void) {
     // Get the 3 bytes before address.
     this.getMemoryDump(addr-3, 3, data => { // subtract opcode + address (last 3 bytes)
       // Check for Call
@@ -677,6 +677,81 @@ export class RemoteClass extends EventEmitter {
   }
 
 
+  /**
+   * Checks the stack entry type for the given value.
+   * If the type is CALL, RST (or interrupt) an object with the label name, the called and
+   * the caller address is returned.
+   * Otherwise an undefined object is returned.
+   * @param stackEntryValue E.g. "3B89"
+   * @returns {name, calledAddr, callerAddr}
+   * if there was a CALL or RST
+   * - name: The label name or the hex string of the called address
+   * - calledAddr: The called sunroutine address
+   * - callerAddr: The caller address of the subroutine
+   * Otherwise undefined.
+   *
+   *
+   * TODO: REMOVE description below:
+   * @returns {type, calledAddr, callerAddr} type = 'call', 'rst', 'interrupt', 'push' or 'default'
+   * calledAddr: If 'call' or 'rst' the address that is called by CALL/RST, otherwise 0.
+   * callerAddr: If 'call' or 'rst' the address of the caller, i.e. the opcode address of
+   * the CALL and RST, otherwise 0.
+   * Note: The generic implementation does not return 'interrupt' or 'default', but e.g. the
+   * ZEsarUX implementation does.
+   */
+  protected getStackEntryType(stackEntryValue: string): Promise<{name: string, calledAddr: number, callerAddr: number}|undefined> {
+    return new Promise<{name: string, calledAddr: number, callerAddr: number}|undefined>(resolve => {
+      // Get the 3 bytes before address.
+      const addr=parseInt(stackEntryValue, 16);
+      this.getMemoryDump(addr-3, 3, data => {
+        let calledAddr;
+        let callerAddr;
+        // Check for Call
+        const opc3=data[0];	// get first of the 3 bytes
+        if (opc3==0xCD	// CALL nn
+          ||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
+        {
+          // It was a CALL, get address.
+          calledAddr=(data[2]<<8)+data[1];
+          callerAddr=addr-3;
+        }
+        else {
+          // Check if one of the 2 last bytes was a RST.
+          // Note: Not only the last byte is checked but also the byte before. This is
+          // a small "hack" to allow correct return addresses even for esxdos.
+          let opc12=(data[1]<<8)+data[2];	// convert both opcodes at once
+
+          let k=1;
+          while (opc12!=0) {
+            if ((opc12&0b11000111)==0b11000111)
+              break;
+            // Next
+            opc12>>=8;
+            k++;
+          }
+          if (opc12!=0) {
+            // It was a RST, get p
+            calledAddr=opc12&0b00111000;
+            callerAddr=addr-k;
+          }
+        }
+
+        // Nothing found?
+        if (calledAddr==undefined) {
+          resolve(undefined);
+        }
+
+        // Found: get label
+        const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
+        const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
+
+        // Return
+        resolve({name: labelCalledAddr, calledAddr, callerAddr});
+      });
+    });
+  }
+
+
 	/**
 	 * Helper function to prepare the callstack for vscode.
 	 * What makes it complicated is the fact that for every word on the stack the zesarux
@@ -684,24 +759,30 @@ export class RemoteClass extends EventEmitter {
 	 * The function calls itself recursively.
 	 * @param frames The array that is sent at the end which is increased every call.
 	 * @param zStack The original zesarux stack frame.
-	 * @param zStackAddress The start address of the stack.
+   * @param address The address of the instruction, for the first call this is the PC.
 	 * @param index The index in zStack. Is increased with every call.
+	 * @param zStackAddress The stack start address (the SP).
 	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
 	 * @param handler The handler to call when ready.
 	 */
-  protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, zStackAddress: number, index: number, lastCallFrameIndex: number, handler: (frames: Array<Frame>) => void) {
-
-    // skip invalid addresses (should not happen)
-    var addrString;
-    while (index<zStack.length) {
-      addrString=zStack[index];
-      if (addrString.length>=4)
-        break;
-      ++index;
-    }
-
+  protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallFrameIndex: number, handler: (frames: Array<Frame>) => void) {
+    return;
+    /*
     // Check for last frame
     if (index>=zStack.length) {
+      // Find pushed values
+      const stack=new Array<number>();
+      for (let l=index-1; l>lastCallFrameIndex; l--) {
+        const addrTypeString=zStack[l];
+        const pushedValue=parseInt(addrTypeString, 16);
+        stack.push(pushedValue);
+      }
+      // Save top frame
+      const sp=zStackAddress+2*index;
+      const address=this.getPC();
+      const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp))
+      frame.stack=stack;
+      frames.addObject(frame);
       // Use new frames
       this.listFrames=frames;
       // call handler
@@ -710,6 +791,7 @@ export class RemoteClass extends EventEmitter {
     }
 
     // Get caller address with opcode (e.g. "call sub1")
+    const addrString=zStack[index];
     const addr=parseInt(addrString, 16);
     // Check for CALL or RST
     this.stackFindCallOrRst(addr, (k, callAddr) => {
@@ -738,6 +820,7 @@ export class RemoteClass extends EventEmitter {
       // Call recursively
       this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
     });
+  */
   }
 
 
@@ -755,23 +838,22 @@ export class RemoteClass extends EventEmitter {
       // Parse the PC value
       const pc=this.z80Registers.getPC();
       const sp=this.z80Registers.getSP();
-      const lastCallIndex=frames.addObject(new Frame(pc, sp, 'PC'));
 
       // Get the stack
       this.getStack().then(stack => {
+
         // Check if empty
         if (stack.length==0) {
-          // Use new frames
-          this.listFrames=frames;
-          // No callstack, call handler immediately
-          handler(frames);
+          // Special handling if stack depth is 0
+          const zStack=new Array<string>();
+          this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
           return;
         }
 
         // Convert to strings
         const zStack=stack.map(value => value.toString(16));
         // Rest of callstack
-        this.setupCallStackFrameArray(frames, zStack, sp, 0, lastCallIndex, handler);
+        this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
       });
     });
   }

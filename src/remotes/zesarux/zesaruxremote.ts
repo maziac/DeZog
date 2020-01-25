@@ -389,6 +389,39 @@ export class ZesaruxRemote extends RemoteClass {
 	}
 
 
+	/**
+   * Checks the stack entry type for the given value.
+   * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
+   * already contains the type.
+   * @param stackEntryValue E.g. "3B89"
+   * @returns {name, calledAddr, callerAddr}
+   * if there was a CALL or RST
+   * - name: The label name or the hex string of the called address
+   * - calledAddr: The called sunroutine address
+   * - callerAddr: The caller address of the subroutine
+   * Otherwise undefined.
+   */
+	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, calledAddr: number, callerAddr: number}|undefined> {
+		// Get type
+		const type=stackEntryValue.substr(6);
+		if (type=='call'||type=='rst') {
+			// Get the addresses
+			return super.getStackEntryType(stackEntryValue);
+		}
+
+		return new Promise<{name: string, calledAddr: number, callerAddr: number}|undefined>(resolve => {
+			if (type.includes('interrupt')) {
+				// Interrupt
+				const retAddr=parseInt(stackEntryValue, 16);
+				resolve({name: this.getInterruptName(), calledAddr: 0, callerAddr: retAddr}); // TODO
+			}
+			else {
+				// Some pushed value
+				resolve(undefined);
+			}
+		});
+	}
+
 
 	/**
 	 * Helper function to prepare the callstack for vscode.
@@ -408,27 +441,27 @@ export class ZesaruxRemote extends RemoteClass {
 	 * For the other calls this is retAddr-3 or similar.
 	 * @param index The index in zStack. Is increased with every call.
 	 * @param zStackAddress The stack start address (the SP).
+	 * @param lastCallIndex The index of the last CALL/RST (interrupt). Until
+	 * this index all values on the stack are put into the same frame.
 	 * @param handler The handler to call when ready.
 	 */
-	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler:(frames: Array<Frame>)=>void) {
+	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler:(frames: Array<Frame>)=>void) {
 		// TODO:remove
-		super.setupCallStackFrameArray(frames, zStack, address, index, zStackAddress, handler);
-		return;
+		//super.setupCallStackFrameArray(frames, zStack, address, index, zStackAddress, handler);
+		//return;
 
 		// Check for last frame
 		if (index >= zStack.length) {
 			// Find pushed values
 			const stack = new Array<number>();
-			for (let l = index - 1; l >= 0; l--) {
+			for (let l=index-1; l>lastCallIndex; l--) {
 				const addrTypeString = zStack[l];
-				if (!(addrTypeString.includes('push') || addrTypeString.includes('default')))
-					break;	// Until something else than PUSH or default is found
 				const pushedValue = parseInt(addrTypeString, 16);
 				stack.push(pushedValue);
 			}
 			// Save top frame
 			const sp = zStackAddress + 2 * index;
-			const frame = new Frame(address, zStackAddress + 2 * (index - 1), this.getMainName(sp))
+			const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp));
 			frame.stack = stack;
 			frames.addObject(frame);
 			// Use new frames
@@ -438,70 +471,31 @@ export class ZesaruxRemote extends RemoteClass {
 			return;
 		}
 
-		// Split address and type
-		const addrTypeString = zStack[index];
-		const retAddr = parseInt(addrTypeString,16);
-		const type = addrTypeString.substr(6);
-
-		// Check for CALL or RST
-		let k = 0;
-		let func;
-		if(type == "call") {
-			k = 3;	// Opcode length for CALL
-			func = this.getCallAddress.bind(this);
-		}
-		else if(type == "rst") {
-			k = 1;	// Opcode length range for RST
-			func = this.getRstAddress.bind(this);
-		}
-		else if(type.includes("interrupt")) {
-			// Find pushed values
-			const stack = new Array<number>();
-			for(let l=index-1; l>=0; l--) {
-				const addrTypeString = zStack[l];
-				if(!addrTypeString.includes('push'))
-					break;	// Until something else than PUSH is found
-				const pushedValue = parseInt(addrTypeString,16);
-				stack.push(pushedValue);
-			}
-			// Save
-			const frame = new Frame(address, zStackAddress+2*(index-1), this.getInterruptName());
-			frame.stack = stack;
-			frames.addObject(frame);
-			// Call recursively
-			this.setupCallStackFrameArray(frames, zStack, retAddr, index+1, zStackAddress, handler);
-			return;
-		}
-
-		// Check if we need to add something to the callstack
-		if(func) {
-			const callerAddr = retAddr-k;
-			func(callerAddr, callAddr => {
-				// Now find label for this address
-				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
+		// Get type of stack entry
+		const stackEntry=zStack[index];
+		this.getStackEntryType(stackEntry).then(type => {
+			if (type) {
+				// It was a CALL, RST or interrupt
 				// Find pushed values
-				const stack = new Array<number>();
-				for(let l=index-1; l>=0; l--) {
-					const addrTypeString = zStack[l];
-					if(!(addrTypeString.includes('push') || addrTypeString.includes('default')))
-						break;	// Until something else than PUSH or default is found
-					const pushedValue = parseInt(addrTypeString,16);
+				const stack=new Array<number>();
+				for (let l=index-1; l>lastCallIndex; l--) {
+					const addrTypeString=zStack[l];
+					const pushedValue=parseInt(addrTypeString, 16);
 					stack.push(pushedValue);
 				}
 				// Save
-				const frame = new Frame(address, zStackAddress+2*(index-1), labelCallAddr)
-				frame.stack = stack;
+				const frame=new Frame(address, zStackAddress+2*(index-1), type.name)
+				frame.stack=stack;
 				frames.addObject(frame);
 				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, callerAddr, index+1, zStackAddress, handler);
-			});
-		}
-		else {
-			// Neither CALL nor RST.
-			// Call recursively
-			this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, handler);
-		}
+				this.setupCallStackFrameArray(frames, zStack, type.callerAddr, index+1, zStackAddress, index, handler);
+			}
+			else {
+				// It was something else, e.g. a pushed value.
+				// Call recursively
+				this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, lastCallIndex, handler);
+			}
+		});
 	}
 
 
@@ -528,8 +522,8 @@ export class ZesaruxRemote extends RemoteClass {
 	 */
 	public realStackTraceRequest(handler: (frames: RefList) => void): void {
 		// TODO:remove
-		super.realStackTraceRequest(handler);
-		return;
+		//super.realStackTraceRequest(handler);
+		//return;
 
 		// Create a call stack / frame array
 		const frames = new RefList();
@@ -546,7 +540,7 @@ export class ZesaruxRemote extends RemoteClass {
 				if (stack.length==0) {
 					// Special handling if stack depth is 0
 					const zStack=new Array<string>();
-					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, -1,handler);
 					return;
 				}
 
@@ -567,7 +561,7 @@ export class ZesaruxRemote extends RemoteClass {
 						}
 					}
 					// Rest of callstack
-					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, -1,handler);
 				});
 			});
 		});
