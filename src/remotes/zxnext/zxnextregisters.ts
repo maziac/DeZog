@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { Z80Registers, Z80_REG } from '../../z80registers';
+import { Z80Registers, Z80_REG } from '../z80registers';
 
 
 /**

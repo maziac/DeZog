@@ -9,7 +9,7 @@ import { Labels } from '../labels';
 import { MetaBlock, MemoryDump } from '../memorydump';
 import { EventEmitter } from 'events';
 import { Settings } from '../settings';
-import { Z80Registers } from '../z80registers';
+import { Z80Registers } from '../remotes/z80registers';
 import { BaseView } from './baseview';
 
 

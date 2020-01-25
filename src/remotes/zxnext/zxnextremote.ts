@@ -11,7 +11,7 @@ import { RemoteClass, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../r
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from '../zesarux/zesaruxcpuhistory';
-import { Z80Registers } from '../../z80registers';
+import { Z80Registers } from '../z80registers';
 import { ZxNextRegisters } from './zxnextregisters';
 
 

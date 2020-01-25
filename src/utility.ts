@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import { Labels } from './labels';
 import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
-import { Z80Registers } from './z80registers';
+import { Z80Registers } from './remotes/z80registers';
 import { Remote } from './remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';

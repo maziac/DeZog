@@ -13,7 +13,7 @@ import { RefList } from './reflist';
 import { Settings, SettingsParameters } from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
 import { Utility } from './utility';
-import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './z80registers';
+import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './remotes/z80registers';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './views/zxnextspritesview';

@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
 import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
-import { Z80Registers } from '../z80registers';
+import { Z80Registers } from '../remotes/z80registers';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
 import { Frame } from '../frame';

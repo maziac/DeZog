@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import { Utility } from './utility';
-import { Settings } from './settings';
+import { Utility } from '../utility';
+import { Settings } from '../settings';
 
 
 /// The formatting (for VARIABLES) for each register is provided through a map.

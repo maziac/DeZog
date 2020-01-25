@@ -4,14 +4,13 @@ import { Utility } from '../../utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
-import { Log } from '../../log';
 import { Frame } from '../../frame';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
-import { Z80Registers } from '../../z80registers';
+import { Z80Registers } from '../z80registers';
 import { ZesaruxRegisters } from './zesaruxregisters';
 
 
@@ -42,9 +41,6 @@ export class ZesaruxRemote extends RemoteClass {
 
 	/// The breakpoint used for step-out.
 	static STEP_BREAKPOINT_ID = 100;
-
-	// Maximum stack items to handle.
-	static MAX_STACK_ITEMS = 100;
 
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
@@ -542,36 +538,32 @@ export class ZesaruxRemote extends RemoteClass {
 		this.getRegisters().then(() => {
 			// Parse the PC value
 			const pc = this.z80Registers.getPC();
-			const sp = this.z80Registers.getSP();
-			// calculate the depth of the call stack
-			const tos = this.topOfStack
-			var depth = (tos - sp)/2;	// 2 bytes per word
-			if(depth>ZesaruxRemote.MAX_STACK_ITEMS)
-				depth = ZesaruxRemote.MAX_STACK_ITEMS;
+			const sp=this.z80Registers.getSP();
 
-			// Special handling if stack depth is 0
-			if(depth <= 0) {
-				const zStack = new Array<string>();
-				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
-				return;
-			}
+			// Get the stack
+			this.getStack().then(stack => {
+				// Check if empty
+				if (stack.length==0) {
+					// Special handling if stack depth is 0
+					const zStack=new Array<string>();
+					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, handler);
+					return;
+				}
 
-			// Get normal stack, e.g. "02C9H 0404H 80F8H 0403H 0302H 0201H 8147H 0000H 0000H 0000H"
-			zSocket.send('get-stack-backtrace ' + depth, data => {
-				const rStack = data.split(' ');
-				// Get 'extended-stack' from zesarux
-				zSocket.send('extended-stack get ' + depth, data => {
-					Log.log('Call stack: ' + data);
-					data = data.replace(/\r/gm, "");
-					const zStack = data.split('\n');
-					const len = zStack.length-1;
+				// Convert to strings
+				const rStack=stack.map(value => value.toString(16));				// Get 'extended-stack' from zesarux
+				const depth=rStack.length;
+				zSocket.send('extended-stack get '+depth, data => {
+					data=data.replace(/\r/gm, "");
+					const zStack=data.split('\n');
+					const len=zStack.length-1;
 					zStack.splice(len);	// ignore last (is empty)
 					// Mix stacks
-					for(let i=0; i<len; i++) {
-						const type = zStack[i].substr(6);
+					for (let i=0; i<len; i++) {
+						const type=zStack[i].substr(6);
 						// if not CALL, RST or interrupt
-						if(!(type.includes('call') || type.includes('rst') || type.includes('interrupt'))) {
-							zStack[i] = rStack[i] + ' ' + zStack[i].substr(6);
+						if (!(type.includes('call')||type.includes('rst')||type.includes('interrupt'))) {
+							zStack[i]=rStack[i]+' '+zStack[i].substr(6);
 						}
 					}
 					// Rest of callstack
