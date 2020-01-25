@@ -400,7 +400,6 @@ export class ZesaruxRemote extends RemoteClass {
  	 * Uses the zesarux 'extended-stack' feature. I.e. each data on the stack
 	 * also has a type, e.g. push, call, rst, interrupt. So it is easy to tell which
 	 * are the call addresses and even when an interrupt starts.
-	 * Interrupts will be shown in a different 'thread'.
 	 * An 'extended-stack' response from ZEsarUx looks like:
 	 * 15F7H maskable_interrupt
 	 * FFFFH push
@@ -417,10 +416,21 @@ export class ZesaruxRemote extends RemoteClass {
 	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler:(frames: Array<Frame>)=>void) {
 
 		// Check for last frame
-		if(index >= zStack.length) {
-			// Top frame
-			const sp = zStackAddress+2*index;
-			frames.addObject(new Frame(address, sp, this.getMainName(sp)));
+		if (index >= zStack.length) {
+			// Find pushed values
+			const stack = new Array<number>();
+			for (let l = index - 1; l >= 0; l--) {
+				const addrTypeString = zStack[l];
+				if (!(addrTypeString.includes('push') || addrTypeString.includes('default')))
+					break;	// Until something else than PUSH or default is found
+				const pushedValue = parseInt(addrTypeString, 16);
+				stack.push(pushedValue);
+			}
+			// Save top frame
+			const sp = zStackAddress + 2 * index;
+			const frame = new Frame(address, zStackAddress + 2 * (index - 1), this.getMainName(sp))
+			frame.stack = stack;
+			frames.addObject(frame);
 			// Use new frames
 			this.listFrames = frames;
 			// call handler
