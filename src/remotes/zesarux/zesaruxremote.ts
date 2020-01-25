@@ -393,6 +393,7 @@ export class ZesaruxRemote extends RemoteClass {
 	}
 
 
+
 	/**
 	 * Helper function to prepare the callstack for vscode.
 	 * Check if the
@@ -406,14 +407,17 @@ export class ZesaruxRemote extends RemoteClass {
 	 * 15E1H call
 	 * 0000H default
 	 * @param frames The array that is sent at the end which is increased every call.
-	 * @param zStack The original zesarux stack frame. Each line in zStack looks like "FFFFH push" or "15E1H call"
+	 * @param zStack The extended zesarux stack frame. Each line in zStack looks like "FFFFH push" or "15E1H call"
 	 * @param address The address of the instruction, for the first call this is the PC.
 	 * For the other calls this is retAddr-3 or similar.
 	 * @param index The index in zStack. Is increased with every call.
 	 * @param zStackAddress The stack start address (the SP).
 	 * @param handler The handler to call when ready.
 	 */
-	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler:(frames: Array<Frame>)=>void) {
+	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler:(frames: Array<Frame>)=>void) {
+		// TODO:remove
+		super.setupCallStackFrameArray(frames, zStack, address, index, zStackAddress, handler);
+		return;
 
 		// Check for last frame
 		if (index >= zStack.length) {
@@ -506,25 +510,6 @@ export class ZesaruxRemote extends RemoteClass {
 
 
 	/**
-	 * Returns the stack frames.
-	 * Either the "real" ones from ZEsarUX or the virtual ones during reverse debugging.
-	 * @param handler The handler to call when ready.
-	 */
-	public stackTraceRequest(handler:(frames: RefList)=>void): void {
-		// Check for reverse debugging.
-		if(this.cpuHistory.isInStepBackMode()) {
-			// Return virtual stack
-			assert(this.reverseDbgStack);
-			handler(this.reverseDbgStack);
-		}
-		else {
-			// "real" stack trace
-			this.realStackTraceRequest(handler);
-		}
-	}
-
-
-	/**
 	 * Returns the "real" stack frames from ZEsarUX.
 	 * (Opposed to the virtual one during reverse debug mode.)
 	 * Uses the zesarux 'extended-stack' feature. I.e. each data on the stack
@@ -545,7 +530,11 @@ export class ZesaruxRemote extends RemoteClass {
 	 * So I'm using the real stack values for PUSH and DEFAULT.
 	 * @param handler The handler to call when ready.
 	 */
-	public realStackTraceRequest(handler:(frames: RefList)=>void): void {
+	public realStackTraceRequest(handler: (frames: RefList) => void): void {
+		// TODO:remove
+		super.realStackTraceRequest(handler);
+		return;
+
 		// Create a call stack / frame array
 		const frames = new RefList();
 
@@ -590,6 +579,25 @@ export class ZesaruxRemote extends RemoteClass {
 				});
 			});
 		});
+	}
+
+
+	/**
+	 * Returns the stack frames.
+	 * Either the "real" ones from ZEsarUX or the virtual ones during reverse debugging.
+	 * @param handler The handler to call when ready.
+	 */
+	public stackTraceRequest(handler: (frames: RefList) => void): void {
+		// Check for reverse debugging.
+		if (this.cpuHistory.isInStepBackMode()) {
+			// Return virtual stack
+			assert(this.reverseDbgStack);
+			handler(this.reverseDbgStack);
+		}
+		else {
+			// "real" stack trace
+			this.realStackTraceRequest(handler);
+		}
 	}
 
 
@@ -718,33 +726,6 @@ export class ZesaruxRemote extends RemoteClass {
 	 public pause(): void {
 		// Send anything through the socket
 		zSocket.sendBlank();
-	}
-
-
-	/**
-	 * Returns the name of the interrupt.
-	 */
-	protected getInterruptName() {
-		return "__INTERRUPT__";
-	}
-
-
-	/**
-	 * Returns the name of the main function.
-	 * @param sp The current SP value.
-	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
-	 */
-	protected getMainName(sp: number) {
-		let part = "";
-		if(this.topOfStack) {
-			const diff = this.topOfStack - sp;
-			if(diff != 0) {
-				if(diff > 0)
-					part = "+";
-				part += diff.toString();
-			}
-		}
-		return "__MAIN" + part + "__";
 	}
 
 

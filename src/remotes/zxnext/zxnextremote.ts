@@ -189,7 +189,7 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param zStackAddress The stack start address (the SP).
 	 * @param handler The handler to call when ready.
 	 */
-	private setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler: (frames: Array<Frame>) => void) {
+	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, handler: (frames: Array<Frame>) => void) {
 
 		// Check for last frame
 		if (index >= zStack.length) {

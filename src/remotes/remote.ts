@@ -623,6 +623,195 @@ export class RemoteClass extends EventEmitter {
 
 
 	/**
+	 * This is a very specialized function to find a CALL, CALL cc or RST opcode
+	 * at the 3 bytes before the given address.
+	 * Idea is that the 'addr' is a return address from the stack and we want to find
+	 * the caller.
+	 * @param addr The address.
+	 * @param handler(k,caddr) The handler is called at the end of the function.
+	 * k=3, addr: If a CALL was found, caddr contains the call address.
+	 * k=2/1, addr: If a RST was found, caddr contains the RST address (p). k is the position,
+	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
+	 * k=0, addr=0: Neither CALL nor RST found.
+	 */
+	protected stackFindCallOrRst(addr: number, handler: (k: number, addr: number) => void) {
+		// Get the 3 bytes before address.
+		this.getMemoryDump(addr-3, 3, data => { // subtract opcode + address (last 3 bytes)
+			// Check for Call
+			const opc3 = data[0];	// get first of the 3 bytes
+			if (opc3==0xCD	// CALL nn
+				||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
+			{
+				// It was a CALL, get address.
+				const callAddr = (data[2] << 8) + data[1];
+				handler(3, callAddr);
+				return;
+			}
+
+			// Check if one of the 2 last bytes was a RST.
+			// Note: Not only the last byte is checked but also the byte before. This is
+			// a small "hack" to allow correct return addresses even for esxdos.
+			let opc12 = (data[1] << 8) + data[2];	// convert both opcodes at once
+
+			let k = 1;
+			while (opc12 != 0) {
+				if ((opc12 & 0b11000111) == 0b11000111)
+					break;
+				// Next
+				opc12 >>= 8;
+				k++;
+			}
+			if (opc12 != 0) {
+				// It was a RST, get p
+				const p = opc12 & 0b00111000;
+				handler(k, p);
+				return;
+			}
+
+			// Nothing found
+			handler(0, 0);
+		});
+	}
+
+
+	/**
+	 * Helper function to prepare the callstack for vscode.
+	 * What makes it complicated is the fact that for every word on the stack the zesarux
+	 * has to be called to get the disassembly to check if it was a CALL.
+	 * The function calls itself recursively.
+	 * @param frames The array that is sent at the end which is increased every call.
+	 * @param zStack The original zesarux stack frame.
+	 * @param zStackAddress The start address of the stack.
+	 * @param index The index in zStack. Is increased with every call.
+	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
+	 * @param handler The handler to call when ready.
+	 */
+	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, zStackAddress: number, index: number, lastCallFrameIndex: number, handler: (frames: Array<Frame>) => void) {
+
+		// skip invalid addresses (should not happen)
+		var addrString;
+		while (index<zStack.length) {
+			addrString=zStack[index];
+			if (addrString.length>=4)
+				break;
+			++index;
+		}
+
+		// Check for last frame
+		if (index>=zStack.length) {
+			// Use new frames
+			this.listFrames=frames;
+			// call handler
+			handler(frames);
+			return;
+		}
+
+		// Get caller address with opcode (e.g. "call sub1")
+		const addr=parseInt(addrString, 16);
+		// Check for CALL or RST
+		this.stackFindCallOrRst(addr, (k, callAddr) => {
+			if (k==3) {
+				// CALL.
+				// Now find label for this address
+				const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+				const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+				// Save
+				lastCallFrameIndex=frames.addObject(new Frame(addr-3, zStackAddress+2*index, 'CALL '+labelCallAddr));
+			}
+			else if (k==1||k==2) {
+				// RST.
+				const pString=Utility.getHexString(callAddr, 2)+'h'
+				// Save
+				lastCallFrameIndex=frames.addObject(new Frame(addr-k, zStackAddress+2*index, 'RST '+pString));
+			}
+			else {
+				// Neither CALL nor RST.
+				// Get last call frame
+				const frame=frames.getObject(lastCallFrameIndex);
+				frame.stack.push(addr);
+			}
+
+
+			// Call recursively
+			this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
+		});
+	}
+
+
+
+	/**
+	 * Returns the "real" stack frames from Remote.
+	 * @param handler The handler to call when ready.
+	 */
+	public realStackTraceRequest(handler: (frames: RefList) => void): void {
+		// Create a call stack / frame array
+		const frames = new RefList();
+
+		// Get current pc
+		this.getRegisters().then(() => {
+			// Parse the PC value
+			const pc = this.z80Registers.getPC();
+			const sp = this.z80Registers.getSP();
+			const lastCallIndex = frames.addObject(new Frame(pc, sp, 'PC'));
+
+			// calculate the depth of the call stack
+			const tos = this.topOfStack
+			var depth = (tos - sp) / 2;	// 2 bytes per word
+			if (depth > 20) depth = 20;
+
+			// Check if callstack need to be called
+			if (depth > 0) {
+				// Get stack
+				this, this.getMemoryDump(sp, 2 * depth, data => {
+					// Create stack
+					const zStack: Array<string> = [];
+					for (let i = 0; i < 2 * depth; i += 2) {
+						const value = (data[i + 1] << 8) + data[i];
+						const valueString = value.toString(16);
+						zStack.push(valueString);
+					}
+					// Rest of callstack
+					this.setupCallStackFrameArray(frames, zStack, sp, 0, lastCallIndex, handler);
+				});
+			}
+			else {
+				// Use new frames
+				this.listFrames = frames;
+				// no callstack, call handler immediately
+				handler(frames);
+			}
+		});
+	}
+
+
+	/**
+	 * Returns the name of the interrupt.
+	 */
+	protected getInterruptName() {
+		return "__INTERRUPT__";
+	}
+
+
+	/**
+	 * Returns the name of the main function.
+	 * @param sp The current SP value.
+	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
+	 */
+	protected getMainName(sp: number) {
+		let part = "";
+		if (this.topOfStack) {
+			const diff = this.topOfStack - sp;
+			if (diff != 0) {
+				if (diff > 0)
+					part = "+";
+				part += diff.toString();
+			}
+		}
+		return "__MAIN" + part + "__";
+	}
+
+
+	/**
 	 * Returns the stack frames.
 	 * @param handler The handler to call when ready.
 	 */
