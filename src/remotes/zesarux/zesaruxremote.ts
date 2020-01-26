@@ -399,10 +399,9 @@ export class ZesaruxRemote extends RemoteClass {
 	 * - callerAddr: The caller address of the subroutine
 	 * Otherwise undefined.
 	 */
-	/*
 	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get type
-		const type=stackEntryValue.substr(6);
+		const type=stackEntryValue.substr(5);
 		if (type=='call'||type=='rst') {
 			// Get the addresses
 			return super.getStackEntryType(stackEntryValue);
@@ -420,7 +419,48 @@ export class ZesaruxRemote extends RemoteClass {
 			}
 		});
 	}
-	*/
+
+
+	/**
+	 * Returns the stack as array.
+	 * Oldest element is at index 0.
+	 * @returns The stack, i.e. the word values from topOfStack to SP.
+	 * But no more than about 100 elements.
+	 * The values are returned as hex string with additional from the
+	 * ZEsarUX extended stack, e.g.:
+	 *  15F7H maskable_interrupt
+	 * FFFFH push
+	 * 15E1H call
+	 * 0000H default
+	 */
+	public async getStack(): Promise<Array<string>> {
+		return new Promise<Array<string>>(async resolve => {
+			// Get normal callstack
+			const stack=await super.getStack();
+			// Get e-stack
+			const depth=stack.length;
+			if (depth==0) {
+				resolve(stack);
+				return;
+			}
+			// Get extended stack from zesarux
+			zSocket.send('extended-stack get '+depth, data => {
+				data=data.replace(/\r/gm, "");
+				const zStack=data.split('\n');
+				let len=zStack.length-1;
+				zStack.splice(len);	// ignore last (is empty)
+				if (depth<len)
+					len=depth;
+				// Mix stacks
+				for (let i=0; i<len; i++) {
+					const type=zStack[i].substr(5);
+					// Add to original stack
+					stack[depth-1-i]+=type;
+				}
+				resolve(stack);
+			});
+		});
+	}
 
 
 	/**

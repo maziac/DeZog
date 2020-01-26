@@ -715,7 +715,7 @@ export class RemoteClass extends EventEmitter {
 				}
 
 				// Convert to strings
-				const zStack=stack.map(value => value.toString(16));
+				const zStack=stack.map(value => value);
 				// Rest of callstack
 				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
 			});
@@ -788,10 +788,12 @@ export class RemoteClass extends EventEmitter {
 	/**
 	* Returns the stack as array.
 	* Oldest element is at index 0.
-	* @returns The stack, i.e. the word values from SP to topOfStack.
+	* @returns The stack, i.e. the word values from topOfStack to SP.
 	* But no more than about 100 elements.
+    * The values are returned as hex string, an additional info might follow.
+	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
-	public async getStack(): Promise<Array<number>> {
+	public async getStack(): Promise<Array<string>> {
 		await this.getRegisters();
 		const sp=this.z80Registers.getSP();
 		// calculate the depth of the call stack
@@ -800,7 +802,7 @@ export class RemoteClass extends EventEmitter {
 		if (depth>2*RemoteClass.MAX_STACK_ITEMS) depth=2*RemoteClass.MAX_STACK_ITEMS;
 
 		// Check if callstack need to be called
-		const zStack: Array<number>=[];
+		const zStack: Array<string>=[];
 		if (depth>0) {
 			// Get stack
 			const data=await this.getMemoryDump(sp, depth);
@@ -808,7 +810,7 @@ export class RemoteClass extends EventEmitter {
 			// Create stack
 			for (let i=depth-2; i>=0; i-=2) {
 				const value=(data[i+1]<<8)+data[i];
-				zStack.push(value);
+				zStack.push(value.toString(16));
 			}
 		}
 		return zStack;
@@ -830,26 +832,25 @@ export class RemoteClass extends EventEmitter {
 		// Start with main
 		const sp=this.z80Registers.getRegValue(Z80_REG.SP);
 		const len=stack.length;
-		const top=sp+2*len-2;
-		let lastCallStackFrame=new CallStackFrame(0, top, this.getMainName(sp));
+		const top=sp+2*len;
+		let lastCallStackFrame=new CallStackFrame(0, top-2, this.getMainName(top));
 		callStack.addObject(lastCallStackFrame);
 
 		// Check for each value if it maybe is a CALL or RST
 		for (let i=0; i<len; i++) {
-			const value=stack[i];
-			const valueString=value.toString(16);
+			const valueString=stack[i];
 			const type=await this.getStackEntryType(valueString);
 			if (type) {
 				// Set caller address
 				lastCallStackFrame.addr=type.callerAddr;
 				// CALL, RST or interrupt
-				const frameSP=top-2*(i+1);
+				const frameSP=top-2-2*(i+1);
 				lastCallStackFrame=new CallStackFrame(0, frameSP, type.name);
 				callStack.addObject(lastCallStackFrame);
 			}
 			else {
 				// Something else, e.g. pushed value
-				lastCallStackFrame.stack.push(value);
+				lastCallStackFrame.stack.push(parseInt(valueString,16));
 			}
 		}
 
