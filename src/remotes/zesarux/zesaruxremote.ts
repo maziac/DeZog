@@ -832,12 +832,12 @@ export class ZesaruxRemote extends RemoteClass {
 		const flags=this.zesaruxRegisters.parseAF(currentLine);
 
 		// Check if there is at least one frame
-		let frame=this.reverseDbgStack[0];
+		let frame=this.reverseDbgStack.last();
 		if (!frame) {
 			// Create new stack entry if none exists
 			// (could happen in errorneous situations if there are more RETs then CALLs)
 			frame=new CallStackFrame(0, sp, this.getMainName(sp));
-			this.reverseDbgStack.unshift(frame);
+			this.reverseDbgStack.push(frame);
 		}
 
 		// Check for CALL (CALL cc)
@@ -851,7 +851,7 @@ export class ZesaruxRemote extends RemoteClass {
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
 			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
-			this.reverseDbgStack.unshift(frame);
+			this.reverseDbgStack.push(frame);
 		}
 		// Check for RST
 		else if (this.cpuHistory.isRst(opcodes)) {
@@ -863,7 +863,7 @@ export class ZesaruxRemote extends RemoteClass {
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
 			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
-			this.reverseDbgStack.unshift(frame);
+			this.reverseDbgStack.push(frame);
 		}
 		else {
 			// Check for PUSH
@@ -921,10 +921,10 @@ export class ZesaruxRemote extends RemoteClass {
 				}
 				// Now remove callstack
 				if (count>1) {
-					this.reverseDbgStack.shift();
+					this.reverseDbgStack.pop();
 					count-=2;
 					// get next frame if countRemove still > 0
-					frame=this.reverseDbgStack[0];
+					frame=this.reverseDbgStack.last();
 				}
 			}
 		}
@@ -942,7 +942,7 @@ export class ZesaruxRemote extends RemoteClass {
 			// Put nextPC on callstack
 			const name=this.getInterruptName();
 			frame=new CallStackFrame(0, nextSP, name);	// pc is set later anyway
-			this.reverseDbgStack.unshift(frame);
+			this.reverseDbgStack.push(frame);
 		}
 
 		// Adjust PC within frame
