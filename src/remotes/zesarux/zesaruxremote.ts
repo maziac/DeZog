@@ -671,12 +671,12 @@ export class ZesaruxRemote extends RemoteClass {
 			const flags = this.zesaruxRegisters.parseAF(currentLine);
 
 			// Check if there is at least one frame
-			let frame = this.reverseDbgStack[0];
-			if(!frame) {
+			let frame = this.reverseDbgStack.last();
+			if (!frame) {
 				 // Create new stack entry if none exists
 				 // (could happen in errorneous situations if there are more RETs then CALLs)
 				 frame = new CallStackFrame(0, sp, this.getMainName(sp));
-				 this.reverseDbgStack.unshift(frame);
+				 this.reverseDbgStack.push(frame);
 			}
 
 			// Check for RET (RET cc and RETI/N)
@@ -719,13 +719,13 @@ export class ZesaruxRemote extends RemoteClass {
 					const prevSP = this.zesaruxRegisters.parseSP(prevLine);
 					if(expectedPrevSP != prevSP) {
 						// We came from an interrupt. Remove interrupt address from call stack.
-						this.reverseDbgStack.shift();
+						this.reverseDbgStack.pop();
 					}
 
 					// And push to stack
 					const pc = this.zesaruxRegisters.parsePC(currentLine);
 					const frame = new CallStackFrame(pc, sp, labelCallAddr);
-					this.reverseDbgStack.unshift(frame);
+					this.reverseDbgStack.push(frame);
 
 					// End
 					resolve();
@@ -759,10 +759,10 @@ export class ZesaruxRemote extends RemoteClass {
 						// Stop if last item on stack
 						if(this.reverseDbgStack.length <= 1)
 							break;
-						this.reverseDbgStack.shift();
+						this.reverseDbgStack.pop();
 						count -= 2;
 						// get next frame if countRemove still > 0
-						frame = this.reverseDbgStack[0];
+						frame = this.reverseDbgStack.last();
 					}
 				}
 			}

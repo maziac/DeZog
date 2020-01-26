@@ -36,4 +36,24 @@ export class RefList<type> extends Array<type> {
 		return obj;
 	}
 
+
+	/**
+	 * @returns The first element of the array. undefined if array is empty.
+	 */
+	public first(): any {
+		if (this.length == 0)
+			return undefined;
+		return this[0];
+	}
+
+
+	/**
+	 * @returns The last element of the array. undefined if array is empty.
+	 */
+	public last(): any {
+		if (this.length == 0)
+			return undefined;
+		return this[this.length-1];
+	}
+
 }
