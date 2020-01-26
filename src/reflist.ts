@@ -6,7 +6,7 @@ import { Log } from './log';
  * Class for associating IDs with objects.
  * Used e.g. for the variable references.
  */
-export class RefList extends Array {
+export class RefList<type> extends Array<type> {
 
 	/**
 	 * Adds an object to the list and returns it's index.

@@ -229,7 +229,7 @@ export class MemoryDumpView extends BaseView {
 		for(let metaBlock of this.memDump.metaBlocks) {
 			this.serializer.exec(() => {
 				// Updates the shown memory dump.
-				Remote.getMemoryDump(metaBlock.address, metaBlock.size, (data) => {
+				Remote.getMemoryDump(metaBlock.address, metaBlock.size).then(data => {
 					// Store data
 					metaBlock.prevData = metaBlock.data;
 					metaBlock.data = data;

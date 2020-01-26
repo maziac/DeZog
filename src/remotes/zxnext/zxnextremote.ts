@@ -50,7 +50,7 @@ export class ZxNextRemote extends RemoteClass {
 	protected cpuHistory: ZesaruxCpuHistory;
 
 	/// The virtual stack used during reverse debugging.
-	protected reverseDbgStack: RefList;
+	protected reverseDbgStack: RefList<any>;	// TODO:substitute 'any'
 
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
@@ -115,10 +115,7 @@ export class ZxNextRemote extends RemoteClass {
 	 * Retrieve the registers from ZX Next directly.
 	 * From outside better use 'getRegisters' (the cached version).
 	 */
-	protected getRegistersFromZxNext(): Promise<void> {
-		return new Promise<void>(resolve => {
-			resolve();
-		});
+	protected async getRegistersFromZxNext(): Promise<void> {
 	}
 
 
@@ -127,15 +124,9 @@ export class ZxNextRemote extends RemoteClass {
 	* the emulator.
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
-	public getRegisters(): Promise<void> {
-		if (this.zxnextRegisters.getCache()) {
-			// Already exists, return immediately
-			return new Promise<void>(resolve => {
-				resolve();
-			});
-		}
-		else {
-			// get new data
+	public async getRegisters(): Promise<void> {
+		if (!this.zxnextRegisters.getCache()) {
+			// Get new data
 			return this.getRegistersFromZxNext();
 		}
 	}
@@ -149,7 +140,7 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param value The new register value.
 	 * @return Promise with the "real" register value.
 	 */
-	public setRegisterValue(register: string, value: number): Promise<number> {
+	public async setRegisterValue(register: string, value: number): Promise<number> {
 		return new Promise<number>(resolve => {
 			// set value
 			zSocket.send('set-register ' + register + '=' + value, data => {
@@ -308,10 +299,6 @@ export class ZxNextRemote extends RemoteClass {
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
 		assert(currentLine);
-
-		return new Promise<void>(resolve => {
-			resolve();
-		});
 	}
 
 
@@ -340,12 +327,9 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history.
 	 */
-	protected handleReverseDebugStackForward(currentLine: string, nextLine: string): Promise<void> {
+	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
 		assert(currentLine);
 		assert(nextLine);
-		return new Promise<void>(resolve => {
-			resolve();
-		});
 	}
 
 
@@ -1024,29 +1008,31 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public getMemoryDump(address: number, size: number, handler: (data: Uint8Array, addr: number) => void) {
-		// Use chunks
-		const chunkSize = 0x10000;// 0x1000;
-		// Retrieve memory values
-		const values = new Uint8Array(size);
-		let k = 0;
-		while (size > 0) {
-			const retrieveSize = (size > chunkSize) ? chunkSize : size;
-			zSocket.send('read-memory ' + address + ' ' + retrieveSize, data => {
-				const len = data.length;
-				assert(len / 2 == retrieveSize);
-				for (var i = 0; i < len; i += 2) {
-					const valueString = data.substr(i, 2);
-					const value = parseInt(valueString, 16);
-					values[k++] = value;
-				}
+	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+		return new Promise<Uint8Array>(resolve => {
+			// Use chunks
+			const chunkSize=0x10000;// 0x1000;
+			// Retrieve memory values
+			const values=new Uint8Array(size);
+			let k=0;
+			while (size>0) {
+				const retrieveSize=(size>chunkSize)? chunkSize:size;
+				zSocket.send('read-memory '+address+' '+retrieveSize, data => {
+					const len=data.length;
+					assert(len/2==retrieveSize);
+					for (var i=0; i<len; i+=2) {
+						const valueString=data.substr(i, 2);
+						const value=parseInt(valueString, 16);
+						values[k++]=value;
+					}
+				});
+				// Next chunk
+				size-=chunkSize;
+			}
+			// send data to handler
+			zSocket.executeWhenQueueIsEmpty(() => {
+				resolve(values);
 			});
-			// Next chunk
-			size -= chunkSize;
-		}
-		// send data to handler
-		zSocket.executeWhenQueueIsEmpty(() => {
-			handler(values, address);
 		});
 	}
 

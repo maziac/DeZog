@@ -6,7 +6,7 @@ import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
 import { Frame } from '../../frame';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../remote';
+import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage, CallStackFrame } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -52,7 +52,7 @@ export class ZesaruxRemote extends RemoteClass {
 	protected cpuHistory: ZesaruxCpuHistory;
 
 	/// The virtual stack used during reverse debugging.
-	protected reverseDbgStack: RefList;
+	protected reverseDbgStack: RefList<any>;	// TODO: use real type instead of any
 
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
@@ -329,7 +329,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * From outside better use 'getRegisters' (the cached version).
 	 * @param handler(registersString) Passes 'registersString' to the handler.
 	 */
-	protected getRegistersFromEmulator(): Promise<void>  {
+	protected async getRegistersFromEmulator(): Promise<void>  {
 		// Check if in reverse debugging mode
 		// In this mode registersCache should be set and thus this function is never called.
 		assert(this.cpuHistory);
@@ -352,15 +352,9 @@ export class ZesaruxRemote extends RemoteClass {
 	* the emulator.
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
-	public getRegisters(): Promise<void> {
-		if (this.zesaruxRegisters.getCache()) {
-			// Already exists, return immediately
-			return new Promise<void>(resolve => {
-				resolve();
-			});
-		}
-		else {
-			// get new data
+	public async getRegisters(): Promise<void> {
+		if (!this.zesaruxRegisters.getCache()) {
+			// Get new data
 			return this.getRegistersFromEmulator();
 		}
 	}
@@ -374,7 +368,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param value The new register value.
 	 * @return Promise with the "real" register value.
 	 */
-	public setRegisterValue(register: string, value: number): Promise<number> {
+	public async setRegisterValue(register: string, value: number): Promise<number> {
 		return new Promise<number>(resolve => {
 			// set value
 			zSocket.send('set-register ' + register + '=' + value, data => {
@@ -390,16 +384,22 @@ export class ZesaruxRemote extends RemoteClass {
 
 
 	/**
-   * Checks the stack entry type for the given value.
-   * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
-   * already contains the type.
-   * @param stackEntryValue E.g. "3B89"
-   * @returns {name, callerAddr}
-   * if there was a CALL or RST
-   * - name: The label name or the hex string of the called address
-   * - callerAddr: The caller address of the subroutine
-   * Otherwise undefined.
-   */
+	 * Checks the stack entry type for the given value.
+	 * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
+	 * already contains the type.
+	 * An 'extended-stack' response from ZEsarUx looks like:
+	 * 15F7H maskable_interrupt
+	 * FFFFH push
+	 * 15E1H call
+	 * 0000H default
+	 * @param stackEntryValue E.g. "3B89"
+	 * @returns {name, callerAddr}
+	 * if there was a CALL or RST
+	 * - name: The label name or the hex string of the called address
+	 * - callerAddr: The caller address of the subroutine
+	 * Otherwise undefined.
+	 */
+	/*
 	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get type
 		const type=stackEntryValue.substr(6);
@@ -420,82 +420,7 @@ export class ZesaruxRemote extends RemoteClass {
 			}
 		});
 	}
-
-
-	/**
-	 * Helper function to prepare the callstack for vscode.
-	 * Check if the
-	 * The function calls itself recursively.
- 	 * Uses the zesarux 'extended-stack' feature. I.e. each data on the stack
-	 * also has a type, e.g. push, call, rst, interrupt. So it is easy to tell which
-	 * are the call addresses and even when an interrupt starts.
-	 * An 'extended-stack' response from ZEsarUx looks like:
-	 * 15F7H maskable_interrupt
-	 * FFFFH push
-	 * 15E1H call
-	 * 0000H default
-	 * @param frames The array that is sent at the end which is increased every call.
-	 * @param zStack The extended zesarux stack frame. Each line in zStack looks like "FFFFH push" or "15E1H call"
-	 * @param address The address of the instruction, for the first call this is the PC.
-	 * For the other calls this is retAddr-3 or similar.
-	 * @param index The index in zStack. Is increased with every call.
-	 * @param zStackAddress The stack start address (the SP).
-	 * @param lastCallIndex The index of the last CALL/RST (interrupt). Until
-	 * this index all values on the stack are put into the same frame.
-	 * @param handler The handler to call when ready.
-	 */
-	protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler:(frames: Array<Frame>)=>void) {
-		// TODO:remove
-		//super.setupCallStackFrameArray(frames, zStack, address, index, zStackAddress, handler);
-		//return;
-
-		// Check for last frame
-		if (index >= zStack.length) {
-			// Find pushed values
-			const stack = new Array<number>();
-			for (let l=index-1; l>lastCallIndex; l--) {
-				const addrTypeString = zStack[l];
-				const pushedValue = parseInt(addrTypeString, 16);
-				stack.push(pushedValue);
-			}
-			// Save top frame
-			const sp = zStackAddress + 2 * index;
-			const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp));
-			frame.stack = stack;
-			frames.addObject(frame);
-			// Use new frames
-			this.listFrames = frames;
-			// call handler
-			handler(frames);
-			return;
-		}
-
-		// Get type of stack entry
-		const stackEntry=zStack[index];
-		this.getStackEntryType(stackEntry).then(type => {
-			if (type) {
-				// It was a CALL, RST or interrupt
-				// Find pushed values
-				const stack=new Array<number>();
-				for (let l=index-1; l>lastCallIndex; l--) {
-					const addrTypeString=zStack[l];
-					const pushedValue=parseInt(addrTypeString, 16);
-					stack.push(pushedValue);
-				}
-				// Save
-				const frame=new Frame(address, zStackAddress+2*(index-1), type.name)
-				frame.stack=stack;
-				frames.addObject(frame);
-				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, type.callerAddr, index+1, zStackAddress, index, handler);
-			}
-			else {
-				// It was something else, e.g. a pushed value.
-				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, lastCallIndex, handler);
-			}
-		});
-	}
+	*/
 
 
 	/**
@@ -519,13 +444,17 @@ export class ZesaruxRemote extends RemoteClass {
 	 * So I'm using the real stack values for PUSH and DEFAULT.
 	 * @param handler The handler to call when ready.
 	 */
-	public realStackTraceRequest(handler: (frames: RefList) => void): void {
-		// TODO:remove
-		//super.realStackTraceRequest(handler);
-		//return;
+
+	 /* TODO:: REMOVE
+	public realStackTraceRequest(): Promise<Array<CallStackFrame>>  {
+		return new Promise<Array<CallStackFrame>>(async resolve => {
+			// Get the call stack
+			const callStack=await this.getCallStack();
+		});
 
 		// Create a call stack / frame array
 		const frames = new RefList();
+
 
 		// Get current pc
 		this.getRegisters().then(() => {
@@ -565,23 +494,24 @@ export class ZesaruxRemote extends RemoteClass {
 			});
 		});
 	}
-
+*/
 
 	/**
 	 * Returns the stack frames.
 	 * Either the "real" ones from ZEsarUX or the virtual ones during reverse debugging.
 	 * @param handler The handler to call when ready.
 	 */
-	public stackTraceRequest(handler: (frames: RefList) => void): void {
+	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
 		// Check for reverse debugging.
 		if (this.cpuHistory.isInStepBackMode()) {
 			// Return virtual stack
 			assert(this.reverseDbgStack);
-			handler(this.reverseDbgStack);
+			return this.reverseDbgStack;  // TODO: ist wahrscheinlich kein Callstackframe array
 		}
 		else {
 			// "real" stack trace
-			this.realStackTraceRequest(handler);
+			const callStack=await this.getCallStack();
+			return callStack;
 		}
 	}
 
@@ -925,7 +855,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param currentLine The current line of the cpu history.
 	 * @param nextLine The next line of the cpu history.
 	 */
-	protected handleReverseDebugStackForward(currentLine: string, nextLine: string): Promise<void> {
+	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
 		assert(currentLine);
 		assert(nextLine);
 		//console.log("currentLine");
@@ -933,135 +863,130 @@ export class ZesaruxRemote extends RemoteClass {
 		//console.log("nextLine");
 		//console.log(nextLine);
 
-		return new Promise<void>( resolve => {
-			// Get some values
-			const nextSP = this.zesaruxRegisters.parseSP(nextLine);
-			let sp = this.zesaruxRegisters.parseSP(currentLine);
-			let expectedSP: number|undefined = sp;
-			let expectedPC;
-			const opcodes = this.cpuHistory.getOpcodes(currentLine);
-			const flags = this.zesaruxRegisters.parseAF(currentLine);
+		// Get some values
+		const nextSP=this.zesaruxRegisters.parseSP(nextLine);
+		let sp=this.zesaruxRegisters.parseSP(currentLine);
+		let expectedSP: number|undefined=sp;
+		let expectedPC;
+		const opcodes=this.cpuHistory.getOpcodes(currentLine);
+		const flags=this.zesaruxRegisters.parseAF(currentLine);
 
-			// Check if there is at least one frame
-			let frame = this.reverseDbgStack[0];
-			if(!frame) {
-				// Create new stack entry if none exists
-				// (could happen in errorneous situations if there are more RETs then CALLs)
-				frame = new Frame(0, sp, this.getMainName(sp));
-				this.reverseDbgStack.unshift(frame);
-			}
+		// Check if there is at least one frame
+		let frame=this.reverseDbgStack[0];
+		if (!frame) {
+			// Create new stack entry if none exists
+			// (could happen in errorneous situations if there are more RETs then CALLs)
+			frame=new Frame(0, sp, this.getMainName(sp));
+			this.reverseDbgStack.unshift(frame);
+		}
 
-			// Check for CALL (CALL cc)
-			if(this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
-				sp -= 2;	// CALL pushes to the stack
-				expectedSP = sp;
-				// Now find label for this address
-				const callAddrStr = opcodes.substr(2,4);
-				const callAddr = this.cpuHistory.parse16Address(callAddrStr);
-				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-				const name = labelCallAddr;
-				frame = new Frame(0, nextSP-2, name);	// pc is set later anyway
-				this.reverseDbgStack.unshift(frame);
+		// Check for CALL (CALL cc)
+		if (this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
+			sp-=2;	// CALL pushes to the stack
+			expectedSP=sp;
+			// Now find label for this address
+			const callAddrStr=opcodes.substr(2, 4);
+			const callAddr=this.cpuHistory.parse16Address(callAddrStr);
+			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+			const name=labelCallAddr;
+			frame=new Frame(0, nextSP-2, name);	// pc is set later anyway
+			this.reverseDbgStack.unshift(frame);
+		}
+		// Check for RST
+		else if (this.cpuHistory.isRst(opcodes)) {
+			sp-=2;	// RST pushes to the stack
+			expectedSP=sp;
+			// Now find label for this address
+			const callAddr=this.cpuHistory.getRstAddress(opcodes);
+			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+			const name=labelCallAddr;
+			frame=new Frame(0, nextSP-2, name);	// pc is set later anyway
+			this.reverseDbgStack.unshift(frame);
+		}
+		else {
+			// Check for PUSH
+			const pushedValue=this.cpuHistory.getPushedValue(opcodes, currentLine);
+			if (pushedValue!=undefined) {	// Is undefined if not a PUSH
+				// Push to frame stack
+				frame.stack.unshift(pushedValue);
+				sp-=2;	// PUSH pushes to the stack
+				expectedSP=sp;
 			}
-			// Check for RST
-			else if(this.cpuHistory.isRst(opcodes)) {
-				sp -= 2;	// RST pushes to the stack
-				expectedSP = sp;
-				// Now find label for this address
-				const callAddr = this.cpuHistory.getRstAddress(opcodes);
-				const labelCallAddrArr = Labels.getLabelsForNumber(callAddr);
-				const labelCallAddr = (labelCallAddrArr.length > 0) ? labelCallAddrArr[0] : Utility.getHexString(callAddr,4)+'h';
-				const name = labelCallAddr;
-				frame = new Frame(0, nextSP-2, name);	// pc is set later anyway
-				this.reverseDbgStack.unshift(frame);
+			// Check for POP
+			else if (this.cpuHistory.isPop(opcodes)
+				||this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
+				expectedSP+=2;	// Pop from the stack
 			}
+			// Otherwise calculate the expected SP
 			else {
-				// Check for PUSH
-				const pushedValue = this.cpuHistory.getPushedValue(opcodes, currentLine);
-				if(pushedValue != undefined) {	// Is undefined if not a PUSH
-					// Push to frame stack
-					frame.stack.unshift(pushedValue);
-					sp -= 2;	// PUSH pushes to the stack
-					expectedSP = sp;
-				}
-				// Check for POP
-				else if(this.cpuHistory.isPop(opcodes)
-					|| this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
-					expectedSP += 2;	// Pop from the stack
-				}
-				// Otherwise calculate the expected SP
-				else {
-					expectedSP = this.cpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
-					if(expectedSP == undefined) {
-						// This means: Opcode was LD SP,(nnnn).
-						// So use PC instead to check.
-						const pc = this.zesaruxRegisters.parsePC(currentLine);
-						expectedPC = pc + 4;	// 4 = size of instruction
-					}
+				expectedSP=this.cpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
+				if (expectedSP==undefined) {
+					// This means: Opcode was LD SP,(nnnn).
+					// So use PC instead to check.
+					const pc=this.zesaruxRegisters.parsePC(currentLine);
+					expectedPC=pc+4;	// 4 = size of instruction
 				}
 			}
+		}
 
-			// Check for interrupt. Either use SP or use PC to check.
-			let interruptFound = false;
-			const nextPC = this.zesaruxRegisters.parsePC(nextLine);
-			if(expectedSP != undefined) {
-				// Use SP for checking
-				if(nextSP == expectedSP-2)
-					interruptFound = true;
-			}
-			else {
-				// Use PC for checking
-				assert(expectedPC);
-				if(nextPC != expectedPC)
-					interruptFound = true;
-			}
+		// Check for interrupt. Either use SP or use PC to check.
+		let interruptFound=false;
+		const nextPC=this.zesaruxRegisters.parsePC(nextLine);
+		if (expectedSP!=undefined) {
+			// Use SP for checking
+			if (nextSP==expectedSP-2)
+				interruptFound=true;
+		}
+		else {
+			// Use PC for checking
+			assert(expectedPC);
+			if (nextPC!=expectedPC)
+				interruptFound=true;
+		}
 
-			// Check if SP has increased (POP/RET)
-			let usedSP = expectedSP;
-			if(!usedSP)
-				usedSP = this.zesaruxRegisters.parseSP(nextLine);
-			let count = usedSP - sp;
-			if(count > 0) {
-				while(count > 1 && this.reverseDbgStack.length > 0) {
-					// First remove the data stack
-					while(count > 1 && frame.stack.length > 0) {
-						// Pop from stack
-						frame.stack.pop();
-						count -= 2;
-					}
-					// Now remove callstack
-					if(count > 1) {
-						this.reverseDbgStack.shift();
-						count -= 2;
-						// get next frame if countRemove still > 0
-						frame = this.reverseDbgStack[0];
-					}
+		// Check if SP has increased (POP/RET)
+		let usedSP=expectedSP;
+		if (!usedSP)
+			usedSP=this.zesaruxRegisters.parseSP(nextLine);
+		let count=usedSP-sp;
+		if (count>0) {
+			while (count>1&&this.reverseDbgStack.length>0) {
+				// First remove the data stack
+				while (count>1&&frame.stack.length>0) {
+					// Pop from stack
+					frame.stack.pop();
+					count-=2;
+				}
+				// Now remove callstack
+				if (count>1) {
+					this.reverseDbgStack.shift();
+					count-=2;
+					// get next frame if countRemove still > 0
+					frame=this.reverseDbgStack[0];
 				}
 			}
-			else {
-				// Decreased. Put something on the stack
-				while(count < -1) {
-					// Push something unknown to the stack
-					frame.stack.push(undefined);
-					count += 2;
-				}
+		}
+		else {
+			// Decreased. Put something on the stack
+			while (count<-1) {
+				// Push something unknown to the stack
+				frame.stack.push(undefined);
+				count+=2;
 			}
+		}
 
-			// Interrupt
-			if(interruptFound) {
-				// Put nextPC on callstack
-				const name = this.getInterruptName();
-				frame = new Frame(0, nextSP, name);	// pc is set later anyway
-				this.reverseDbgStack.unshift(frame);
-			}
+		// Interrupt
+		if (interruptFound) {
+			// Put nextPC on callstack
+			const name=this.getInterruptName();
+			frame=new Frame(0, nextSP, name);	// pc is set later anyway
+			this.reverseDbgStack.unshift(frame);
+		}
 
-			// Adjust PC within frame
-			frame.addr = nextPC;
-
-			// End
-			resolve();
-		});
+		// Adjust PC within frame
+		frame.addr=nextPC;
 	}
 
 
@@ -1997,29 +1922,31 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array, addr: number)=>void) {
-		// Use chunks
-		const chunkSize = 0x10000;// 0x1000;
-		// Retrieve memory values
-		const values = new Uint8Array(size);
-		let k = 0;
-		while(size > 0) {
-			const retrieveSize = (size > chunkSize) ? chunkSize : size;
-			zSocket.send( 'read-memory ' + address + ' ' + retrieveSize, data => {
-				const len = data.length;
-				assert(len/2 == retrieveSize);
-				for(var i=0; i<len; i+=2) {
-					const valueString = data.substr(i,2);
-					const value = parseInt(valueString,16);
-					values[k++] = value;
-				}
+	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+		return new Promise<Uint8Array>(resolve => {
+			// Use chunks
+			const chunkSize=0x10000;// 0x1000;
+			// Retrieve memory values
+			const values=new Uint8Array(size);
+			let k=0;
+			while (size>0) {
+				const retrieveSize=(size>chunkSize)? chunkSize:size;
+				zSocket.send('read-memory '+address+' '+retrieveSize, data => {
+					const len=data.length;
+					assert(len/2==retrieveSize);
+					for (var i=0; i<len; i+=2) {
+						const valueString=data.substr(i, 2);
+						const value=parseInt(valueString, 16);
+						values[k++]=value;
+					}
+				});
+				// Next chunk
+				size-=chunkSize;
+			}
+			// send data to handler
+			zSocket.executeWhenQueueIsEmpty(() => {
+				resolve(values);
 			});
-			// Next chunk
-			size -= chunkSize;
-		}
-		// send data to handler
-		zSocket.executeWhenQueueIsEmpty(() => {
-			handler(values, address);
 		});
 	}
 

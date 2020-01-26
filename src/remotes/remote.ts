@@ -1,14 +1,14 @@
 
 import * as assert from 'assert';
-import { Z80Registers } from './z80registers';
-import { StateZ80 } from '../statez80';
-import { RefList } from '../reflist';
-import { Frame } from '../frame';
-import { EventEmitter } from 'events';
-import { GenericWatchpoint, GenericBreakpoint } from '../genericwatchpoint';
-import { Labels } from '../labels';
-import { Settings, ListFile } from '../settings';
-import { Utility } from '../utility';
+import {Z80Registers, Z80_REG} from './z80registers';
+import {StateZ80} from '../statez80';
+import {RefList} from '../reflist';
+import {Frame} from '../frame';
+import {EventEmitter} from 'events';
+import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
+import {Labels} from '../labels';
+import {Settings, ListFile} from '../settings';
+import {Utility} from '../utility';
 
 
 
@@ -28,7 +28,7 @@ export interface EmulatorBreakpoint {
 /// The machine type, e.g. ZX81, Spectrum 16k, Spectrum 128k, etc.
 /// NOT USED:
 export enum MachineType {
-	UNKNOWN = 0,
+	UNKNOWN=0,
 	ZX80,
 	ZX81,
 	SPECTRUM16K,
@@ -36,50 +36,50 @@ export enum MachineType {
 	SPECTRUM128K,
 	TBBLUE
 
-/*
-	MK14     MK14
-	ZX80     ZX-80
-	ZX81     ZX-81
-	16k      Spectrum 16k
-	48k      Spectrum 48k
-	128k     Spectrum 128k
-	QL       QL
-	P2       Spectrum +2
-	P2F      Spectrum +2 (French)
-	P2S      Spectrum +2 (Spanish)
-	P2A40    Spectrum +2A (ROM v4.0)
-	P2A41    Spectrum +2A (ROM v4.1)
-	P2AS     Spectrum +2A (Spanish)
-	P340     Spectrum +3 (ROM v4.0)
-	P341     Spectrum +3 (ROM v4.1)
-	P3S      Spectrum +3 (Spanish)
-	TS2068   Timex TS 2068
-	Inves    Inves Spectrum+
-	48ks     Spectrum 48k (Spanish)
-	128ks    Spectrum 128k (Spanish)
-	TK90X    Microdigital TK90X
-	TK90XS   Microdigital TK90X (Spanish)
-	TK95     Microdigital TK95
-	Z88      Cambridge Z88
-	Sam      Sam Coupe
-	Pentagon Pentagon
-	Chloe140 Chloe 140 SE
-	Chloe280 Chloe 280 SE
-	Chrome   Chrome
-	Prism    Prism
-	ZXUNO    ZX-Uno
-	TSConf   ZX-Evolution TS-Conf
-	TBBlue   TBBlue/ZX Spectrum Next
-	ACE      Jupiter Ace
-	CPC464   Amstrad CPC 464
-	*/
+	/*
+		MK14     MK14
+		ZX80     ZX-80
+		ZX81     ZX-81
+		16k      Spectrum 16k
+		48k      Spectrum 48k
+		128k     Spectrum 128k
+		QL       QL
+		P2       Spectrum +2
+		P2F      Spectrum +2 (French)
+		P2S      Spectrum +2 (Spanish)
+		P2A40    Spectrum +2A (ROM v4.0)
+		P2A41    Spectrum +2A (ROM v4.1)
+		P2AS     Spectrum +2A (Spanish)
+		P340     Spectrum +3 (ROM v4.0)
+		P341     Spectrum +3 (ROM v4.1)
+		P3S      Spectrum +3 (Spanish)
+		TS2068   Timex TS 2068
+		Inves    Inves Spectrum+
+		48ks     Spectrum 48k (Spanish)
+		128ks    Spectrum 128k (Spanish)
+		TK90X    Microdigital TK90X
+		TK90XS   Microdigital TK90X (Spanish)
+		TK95     Microdigital TK95
+		Z88      Cambridge Z88
+		Sam      Sam Coupe
+		Pentagon Pentagon
+		Chloe140 Chloe 140 SE
+		Chloe280 Chloe 280 SE
+		Chrome   Chrome
+		Prism    Prism
+		ZXUNO    ZX-Uno
+		TSConf   ZX-Evolution TS-Conf
+		TBBlue   TBBlue/ZX Spectrum Next
+		ACE      Jupiter Ace
+		CPC464   Amstrad CPC 464
+		*/
 
 }
 
 
 /// The internal machine state.
 export enum EmulatorState {
-	UNINITIALIZED = 0,	///< before connection to ZEsarUX.
+	UNINITIALIZED=0,	///< before connection to ZEsarUX.
 	IDLE,				///< The normal state. Waiting for a new command.
 	RUNNING,			///< When a 'continue' or 'stepOut' has been requested. Until the next break.
 	RUNNING_REVERSE,	///< Not yet used. Same as 'RUNNING' but in reverse direction.
@@ -99,6 +99,18 @@ export interface MemoryPage {
 };
 
 
+export interface CallStackFrame {
+	/// The label or the address as hex string.
+	name: string;
+
+	/// The caller address
+	callerAddress: number;
+
+	/// The stack (i.e. the pushed values) of the sub routine
+	stack: Array<number>;
+};
+
+
 /**
  * The representation of the Z80 emulator (e.g. Zesarux or MAME) or a real remote ZX Next HW.
  * It receives the requests from the RemoteDebugAdapter and communicates with
@@ -106,63 +118,63 @@ export interface MemoryPage {
  */
 export class RemoteClass extends EventEmitter {
 
-  // Maximum stack items to handle.
-  static MAX_STACK_ITEMS=100;
+	// Maximum stack items to handle.
+	static MAX_STACK_ITEMS=100;
 
-  /// The machine type, e.g. 48k or 128k etc.
-  public machineType=MachineType.UNKNOWN;
+	/// The machine type, e.g. 48k or 128k etc.
+	public machineType=MachineType.UNKNOWN;
 
-  /// Current state, e.g. RUNNING
-  protected state=EmulatorState.UNINITIALIZED;
+	/// Current state, e.g. RUNNING
+	protected state=EmulatorState.UNINITIALIZED;
 
-  /// The top of the stack. Used to limit the call stack.
-  public topOfStack: number;
+	/// The top of the stack. Used to limit the call stack.
+	public topOfStack: number;
 
-  /// A list for the frames (call stack items)
-  protected listFrames=new RefList();
+	/// A list for the frames (call stack items)
+	protected listFrames=new RefList<CallStackFrame>();
 
-  /// Mirror of the emulator's breakpoints.
-  protected breakpoints=new Array<EmulatorBreakpoint>();
+	/// Mirror of the emulator's breakpoints.
+	protected breakpoints=new Array<EmulatorBreakpoint>();
 
-  /// The WPMEM watchpoints can only be enabled/disabled alltogether.
-  public wpmemEnabled=false;
+	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
+	public wpmemEnabled=false;
 
-  /// The assert breakpoints can only be enabled/disabled alltogether.
-  public assertBreakpointsEnabled=false;
+	/// The assert breakpoints can only be enabled/disabled alltogether.
+	public assertBreakpointsEnabled=false;
 
-  /// The logpoints can be enabled/disabled per group.
-  public logpointsEnabled=new Map<string, boolean>();
-
-
-  /// The addresses of the revision history in the right order.
-  protected revDbgHistory=new Array<number>();
-
-  /// Stores the wpmem watchpoints
-  protected watchpoints=new Array<GenericWatchpoint>();
+	/// The logpoints can be enabled/disabled per group.
+	public logpointsEnabled=new Map<string, boolean>();
 
 
-  /// Stores the assert breakpoints
-  protected assertBreakpoints=new Array<GenericBreakpoint>();
+	/// The addresses of the revision history in the right order.
+	protected revDbgHistory=new Array<number>();
 
-  /// Stores the log points
-  protected logpoints=new Map<string, Array<GenericBreakpoint>>();
-
-  // The Z80 registers. Should be initialized with a specialized version for the given emulator.
-  protected z80Registers: Z80Registers;
+	/// Stores the wpmem watchpoints
+	protected watchpoints=new Array<GenericWatchpoint>();
 
 
-  /// Constructor.
-  /// Override this and create a z80Registers instance.
-  constructor() {
-    super();
-    // Init the registers
-    Z80Registers.Init();
-  }
+	/// Stores the assert breakpoints
+	protected assertBreakpoints=new Array<GenericBreakpoint>();
+
+	/// Stores the log points
+	protected logpoints=new Map<string, Array<GenericBreakpoint>>();
+
+	// The Z80 registers. Should be initialized with a specialized version for the given emulator.
+	protected z80Registers: Z80Registers;
 
 
-  /// Initializes the machine.
-  public init() {
-  }
+	/// Constructor.
+	/// Override this and create a z80Registers instance.
+	constructor() {
+		super();
+		// Init the registers
+		Z80Registers.Init();
+	}
+
+
+	/// Initializes the machine.
+	public init() {
+	}
 
 
 	/**
@@ -170,74 +182,74 @@ export class RemoteClass extends EventEmitter {
 	 * @param watchPointLines An array with address and line (text) pairs.
 	 * @return An array with watch points (GenericWatchpoints).
 	 */
-  protected createWatchPoints(watchPointLines: Array<{ address: number, line: string }>): Array<GenericWatchpoint> {
-    // convert labels in watchpoints.
-    const watchpoints=new Array<GenericWatchpoint>();
+	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>): Array<GenericWatchpoint> {
+		// convert labels in watchpoints.
+		const watchpoints=new Array<GenericWatchpoint>();
 
-    let i=-1;
-    for (let entry of watchPointLines) {
-      i=i+1;
-      // WPMEM:
-      // Syntax:
-      // WPMEM [addr [, length [, access]]]
-      // with:
-      //	addr = address (or label) to observe (optional). Defaults to current address.
-      //	length = the count of bytes to observe (optional). Default = 1.
-      //	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
-      // e.g. WPMEM LBL_TEXT, 1, w
-      // or
-      // WPMEM ,1,w, MWV&B8h/0
+		let i=-1;
+		for (let entry of watchPointLines) {
+			i=i+1;
+			// WPMEM:
+			// Syntax:
+			// WPMEM [addr [, length [, access]]]
+			// with:
+			//	addr = address (or label) to observe (optional). Defaults to current address.
+			//	length = the count of bytes to observe (optional). Default = 1.
+			//	access = Read/write access. Possible values: r, w or rw. Defaults to rw.
+			// e.g. WPMEM LBL_TEXT, 1, w
+			// or
+			// WPMEM ,1,w, MWV&B8h/0
 
-      try {
-        // Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-        const match=/;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
-        if (match) {
-          // get arguments
-          let addressString=match[1];
-          let lengthString=match[3];
-          let access=match[5];
-          let cond=match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
-          // defaults
-          let entryAddress: number|undefined=entry.address;
-          if (addressString&&addressString.length>0)
-            entryAddress=Utility.evalExpression(addressString, false); // don't evaluate registers
-          if (isNaN(entryAddress))
-            continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
-          let length=1;
-          if (lengthString&&lengthString.length>0) {
-            length=Utility.evalExpression(lengthString, false); // don't evaluate registers
-          }
-          else {
-            if (!addressString||addressString.length==0) {
-              // If both, address and length are not defined it is checked
-              // if there exists bytes in the list file (i.e.
-              // numbers after the address field).
-              // If not the "WPMEM" is assumed to be inside a
-              // macro and omitted.
-              const match=/^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
-              if (!match)
-                continue;
-            }
-          }
-          if (access&&access.length>0) {
-            if (access!='r'&&access!='w'&&access!='rw') {
-              console.log("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '"+access+"' in line: '"+entry.line+"'");
-              continue;
-            }
-          }
-          else
-            access='rw';
-          // set watchpoint
-          watchpoints.push({ address: entryAddress, size: length, access: access, conditions: cond||'' });
-        }
-      }
-      catch (e) {
-        throw "Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"";
-      }
-    }
+			try {
+				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
+				const match=/;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+				if (match) {
+					// get arguments
+					let addressString=match[1];
+					let lengthString=match[3];
+					let access=match[5];
+					let cond=match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
+					// defaults
+					let entryAddress: number|undefined=entry.address;
+					if (addressString&&addressString.length>0)
+						entryAddress=Utility.evalExpression(addressString, false); // don't evaluate registers
+					if (isNaN(entryAddress))
+						continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
+					let length=1;
+					if (lengthString&&lengthString.length>0) {
+						length=Utility.evalExpression(lengthString, false); // don't evaluate registers
+					}
+					else {
+						if (!addressString||addressString.length==0) {
+							// If both, address and length are not defined it is checked
+							// if there exists bytes in the list file (i.e.
+							// numbers after the address field).
+							// If not the "WPMEM" is assumed to be inside a
+							// macro and omitted.
+							const match=/^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
+							if (!match)
+								continue;
+						}
+					}
+					if (access&&access.length>0) {
+						if (access!='r'&&access!='w'&&access!='rw') {
+							console.log("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '"+access+"' in line: '"+entry.line+"'");
+							continue;
+						}
+					}
+					else
+						access='rw';
+					// set watchpoint
+					watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond||''});
+				}
+			}
+			catch (e) {
+				throw "Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"";
+			}
+		}
 
-    return watchpoints;
-  }
+		return watchpoints;
+	}
 
 
 	/**
@@ -245,72 +257,72 @@ export class RemoteClass extends EventEmitter {
 	 * @param watchPointLines An array with address and line (text) pairs.
 	 * @return An array with asserts (GenericWatchpoints).
 	 */
-  protected createAsserts(assertLines: Array<{ address: number, line: string }>) {
-    const assertMap=new Map<number, GenericBreakpoint>();
-    // Convert ASSERTS to watchpoints
-    for (let entry of assertLines) {
-      // ASSERT:
-      // Syntax:
-      // ASSERT var comparison expr [&&|| expr]
-      // with:
-      //  var: a variable, i.e. a register like A or HL
-      //  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
-      //	expr: a mathematical expression that resolves into a constant
-      // Examples:
-      // - ASSERT A < 5
-      // - ASSERT HL <= LBL_END+2
-      // - ASSERT B > (MAX_COUNT+1)/2
+	protected createAsserts(assertLines: Array<{address: number, line: string}>) {
+		const assertMap=new Map<number, GenericBreakpoint>();
+		// Convert ASSERTS to watchpoints
+		for (let entry of assertLines) {
+			// ASSERT:
+			// Syntax:
+			// ASSERT var comparison expr [&&|| expr]
+			// with:
+			//  var: a variable, i.e. a register like A or HL
+			//  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
+			//	expr: a mathematical expression that resolves into a constant
+			// Examples:
+			// - ASSERT A < 5
+			// - ASSERT HL <= LBL_END+2
+			// - ASSERT B > (MAX_COUNT+1)/2
 
-      // ASSERTs are breakpoints with "inverted" condition.
-      // Now check more thoroughly: group1=var, group2=comparison, group3=expression
-      try {
-        const matchAssert=/;.*\bASSERT\b/.exec(entry.line);
-        if (!matchAssert) {
-          // Eg. could be that "ASSERTx" was found.
-          continue;
-        }
+			// ASSERTs are breakpoints with "inverted" condition.
+			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
+			try {
+				const matchAssert=/;.*\bASSERT\b/.exec(entry.line);
+				if (!matchAssert) {
+					// Eg. could be that "ASSERTx" was found.
+					continue;
+				}
 
-        // Get part of the string after the "ASSERT"
-        const part=entry.line.substr(matchAssert.index+matchAssert[0].length).trim();
+				// Get part of the string after the "ASSERT"
+				const part=entry.line.substr(matchAssert.index+matchAssert[0].length).trim();
 
-        // Check if no condition was set = ASSERT false = Always break
-        let conds='';
-        if (part.length>0) {
-          // Some condition is set
-          const regex=/\s*([^;]*)/i;
-          let match=regex.exec(part);
-          if (!match)	// At least one match should be found
-            throw "Expecting 'ASSERT expr'.";
-          conds=match[1];
-        }
+				// Check if no condition was set = ASSERT false = Always break
+				let conds='';
+				if (part.length>0) {
+					// Some condition is set
+					const regex=/\s*([^;]*)/i;
+					let match=regex.exec(part);
+					if (!match)	// At least one match should be found
+						throw "Expecting 'ASSERT expr'.";
+					conds=match[1];
+				}
 
-        // Negate the expression
-        conds='!('+conds+')';
+				// Negate the expression
+				conds='!('+conds+')';
 
-        // Check if ASSERT for that address already exists.
-        if (conds.length>0) {
-          let bp=assertMap.get(entry.address);
-          if (bp) {
-            // Already exists: just add condition.
-            bp.conditions='('+bp.conditions+') || ('+conds+')';
-          }
-          else {
-            // Breakpoint for address does not yet exist. Create a new one.
-            const assertBp={ address: entry.address, conditions: conds, log: undefined };
-            assertMap.set(entry.address, assertBp);
-          }
-        }
-      }
-      catch (e) {
-        console.log("Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"");
-      }
-    }
+				// Check if ASSERT for that address already exists.
+				if (conds.length>0) {
+					let bp=assertMap.get(entry.address);
+					if (bp) {
+						// Already exists: just add condition.
+						bp.conditions='('+bp.conditions+') || ('+conds+')';
+					}
+					else {
+						// Breakpoint for address does not yet exist. Create a new one.
+						const assertBp={address: entry.address, conditions: conds, log: undefined};
+						assertMap.set(entry.address, assertBp);
+					}
+				}
+			}
+			catch (e) {
+				console.log("Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"");
+			}
+		}
 
-    // Convert map to array.
-    const assertsArray=Array.from(assertMap.values());
+		// Convert map to array.
+		const assertsArray=Array.from(assertMap.values());
 
-    return assertsArray;
-  }
+		return assertsArray;
+	}
 
 
 	/**
@@ -318,42 +330,42 @@ export class RemoteClass extends EventEmitter {
 	 * @param watchPointLines An array with address and line (text) pairs.
 	 * @return An array with log points (GenericWatchpoints).
 	 */
-  protected createLogPoints(watchPointLines: Array<{ address: number, line: string }>): Map<string, Array<GenericBreakpoint>> {
-    // convert labels in watchpoints.
-    const logpoints=new Map<string, Array<GenericBreakpoint>>();
-    for (let entry of watchPointLines) {
-      // LOGPOINT:
-      // Syntax:
-      // LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
-      // e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
+	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
+		// convert labels in watchpoints.
+		const logpoints=new Map<string, Array<GenericBreakpoint>>();
+		for (let entry of watchPointLines) {
+			// LOGPOINT:
+			// Syntax:
+			// LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
+			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
 
-      // Now check more thoroughly i.e. for comma
-      const match=/;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
-      if (match) {
-        // get arguments
-        const group=match[2]||"DEFAULT";
-        const logMsg='['+group+'] '+match[3];
-        // Create group if not existent
-        let array=logpoints.get(group);
-        if (!array) {
-          array=new Array<GenericBreakpoint>();
-          logpoints.set(group, array);
-        }
-        // Convert labels
-        try {
-          const log=this.evalLogMessage(logMsg);
-          // set watchpoint
-          array.push({ address: entry.address, conditions: '', log: log });
-        }
-        catch (e) {
-          // Show error
-          console.log(e);
-        }
-      }
-    }
+			// Now check more thoroughly i.e. for comma
+			const match=/;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
+			if (match) {
+				// get arguments
+				const group=match[2]||"DEFAULT";
+				const logMsg='['+group+'] '+match[3];
+				// Create group if not existent
+				let array=logpoints.get(group);
+				if (!array) {
+					array=new Array<GenericBreakpoint>();
+					logpoints.set(group, array);
+				}
+				// Convert labels
+				try {
+					const log=this.evalLogMessage(logMsg);
+					// set watchpoint
+					array.push({address: entry.address, conditions: '', log: log});
+				}
+				catch (e) {
+					// Show error
+					console.log(e);
+				}
+			}
+		}
 
-    return logpoints;
-  }
+		return logpoints;
+	}
 
 
 	/**
@@ -363,50 +375,50 @@ export class RemoteClass extends EventEmitter {
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
-  public evalLogMessage(logMsg: string|undefined): string|undefined {
-    if (!logMsg)
-      return undefined
+	public evalLogMessage(logMsg: string|undefined): string|undefined {
+		if (!logMsg)
+			return undefined
 
-    // Search all "${...}""
-    const result=logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
-      // Check syntax
-      const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
-      if (!matchInner)
-        throw "Log message format error: '"+match+"' in '"+logMsg+"'";
-      const end=(matchInner[6])? ':'+matchInner[6]:'';
-      let addr=matchInner[3]||'';
-      if (addr.length) {
-        const access=matchInner[2]||'';
-        // Check if it is a register
-        if (Z80Registers.isRegister(addr)) {
-          // e.g. addr == "HL" in "(HL)"
-          return "${"+access+"("+addr+")"+end+"}";
-        }
-        else {
-          // Check variable for label
-          try {
-            //console.log('evalLogMessage: ' + logMsg + ': ' + addr);
-            const converted=Utility.evalExpression(addr, false);
-            return "${"+access+"("+converted.toString()+")"+end+"}";
-          }
-          catch (e) {
-            // If it cannot be converted (e.g. a register name) an exception will be thrown.
-            throw "Log message format error: "+e.message+" in '"+logMsg+"'";
-          }
-        }
-      }
-      else {
-        // Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
-        const reg=matchInner[4];
-        if (!Z80Registers.isRegister(reg))
-          throw "Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'";
-        return "${"+reg+end+"}";
-      }
-    });
+		// Search all "${...}""
+		const result=logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
+			// Check syntax
+			const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
+			if (!matchInner)
+				throw "Log message format error: '"+match+"' in '"+logMsg+"'";
+			const end=(matchInner[6])? ':'+matchInner[6]:'';
+			let addr=matchInner[3]||'';
+			if (addr.length) {
+				const access=matchInner[2]||'';
+				// Check if it is a register
+				if (Z80Registers.isRegister(addr)) {
+					// e.g. addr == "HL" in "(HL)"
+					return "${"+access+"("+addr+")"+end+"}";
+				}
+				else {
+					// Check variable for label
+					try {
+						//console.log('evalLogMessage: ' + logMsg + ': ' + addr);
+						const converted=Utility.evalExpression(addr, false);
+						return "${"+access+"("+converted.toString()+")"+end+"}";
+					}
+					catch (e) {
+						// If it cannot be converted (e.g. a register name) an exception will be thrown.
+						throw "Log message format error: "+e.message+" in '"+logMsg+"'";
+					}
+				}
+			}
+			else {
+				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
+				const reg=matchInner[4];
+				if (!Z80Registers.isRegister(reg))
+					throw "Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'";
+				return "${"+reg+end+"}";
+			}
+		});
 
-    console.log('evalLogMessage: '+result);
-    return result;
-  }
+		console.log('evalLogMessage: '+result);
+		return result;
+	}
 
 
 	/**
@@ -417,61 +429,61 @@ export class RemoteClass extends EventEmitter {
 	 * @param listFiles An array with all list files.
 	 * @param sources An array with directories where the source files are located.
 	 */
-  public readListFiles(listFiles: Array<ListFile>) {
-    // Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
-    const watchPointLines=new Array<{ address: number, line: string }>();
-    const assertLines=new Array<{ address: number, line: string }>();
-    const logPointLines=new Array<{ address: number, line: string }>();
-    // Load user list and labels files
-    for (const listFile of listFiles) {
-      const file={
-        path: Utility.getAbsFilePath(listFile.path),
-        mainFile: listFile.mainFile,
-        srcDirs: listFile.srcDirs||[""],
-        filter: listFile.filter,
-        asm: listFile.asm||"sjasmplus",
-        addOffset: listFile.addOffset||0
-      };
-      Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
-        // Quick search for WPMEM
-        if (line.indexOf('WPMEM')>=0) {
-          // Add watchpoint at this address
-          watchPointLines.push({ address: address, line: line });
-        }
-        // Quick search for ASSERT
-        if (line.indexOf('ASSERT')>=0) {
-          // Add assert line at this address
-          assertLines.push({ address: address, line: line });
-        }
-        // Quick search for LOGPOINT
-        if (line.indexOf('LOGPOINT')>=0) {
-          // Add assert line at this address
-          logPointLines.push({ address: address, line: line });
-        }
-      });
-    }
+	public readListFiles(listFiles: Array<ListFile>) {
+		// Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
+		const watchPointLines=new Array<{address: number, line: string}>();
+		const assertLines=new Array<{address: number, line: string}>();
+		const logPointLines=new Array<{address: number, line: string}>();
+		// Load user list and labels files
+		for (const listFile of listFiles) {
+			const file={
+				path: Utility.getAbsFilePath(listFile.path),
+				mainFile: listFile.mainFile,
+				srcDirs: listFile.srcDirs||[""],
+				filter: listFile.filter,
+				asm: listFile.asm||"sjasmplus",
+				addOffset: listFile.addOffset||0
+			};
+			Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
+				// Quick search for WPMEM
+				if (line.indexOf('WPMEM')>=0) {
+					// Add watchpoint at this address
+					watchPointLines.push({address: address, line: line});
+				}
+				// Quick search for ASSERT
+				if (line.indexOf('ASSERT')>=0) {
+					// Add assert line at this address
+					assertLines.push({address: address, line: line});
+				}
+				// Quick search for LOGPOINT
+				if (line.indexOf('LOGPOINT')>=0) {
+					// Add assert line at this address
+					logPointLines.push({address: address, line: line});
+				}
+			});
+		}
 
-    // Finishes off the loading of the list and labels files
-    Labels.finish();
+		// Finishes off the loading of the list and labels files
+		Labels.finish();
 
-    // calculate top of stack, execAddress
-    this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
-    if (isNaN(this.topOfStack))
-      throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
+		// calculate top of stack, execAddress
+		this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
+		if (isNaN(this.topOfStack))
+			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
 
-    // Set watchpoints (memory guards)
-    const watchpoints=this.createWatchPoints(watchPointLines);
-    this.setWPMEM(watchpoints);
+		// Set watchpoints (memory guards)
+		const watchpoints=this.createWatchPoints(watchPointLines);
+		this.setWPMEM(watchpoints);
 
-    // ASSERTs
-    // Set assert breakpoints
-    const assertsArray=this.createAsserts(assertLines);
-    this.setASSERT(assertsArray);
+		// ASSERTs
+		// Set assert breakpoints
+		const assertsArray=this.createAsserts(assertLines);
+		this.setASSERT(assertsArray);
 
-    // LOGPOINTs
-    const logPointsMap=this.createLogPoints(logPointLines);
-    this.setLOGPOINT(logPointsMap);
-  }
+		// LOGPOINTs
+		const logPointsMap=this.createLogPoints(logPointLines);
+		this.setLOGPOINT(logPointsMap);
+	}
 
 
 	/**
@@ -481,10 +493,10 @@ export class RemoteClass extends EventEmitter {
 	 * Very much like 'terminate' but does not send the 'terminated' event.
 	 * @param handler is called after the connection is disconnected.
 	 */
-  public disconnect(handler: () => void) {
-    // please override.
-    handler();
-  }
+	public disconnect(handler: () => void) {
+		// please override.
+		handler();
+	}
 
 
 	/**
@@ -494,10 +506,10 @@ export class RemoteClass extends EventEmitter {
 	 * Has to emit the "this.emit('terminated')".
 	 * @param handler is called after the connection is terminated.
 	 */
-  public terminate(handler: () => void) {
-    // please override.
-    handler();
-  }
+	public terminate(handler: () => void) {
+		// please override.
+		handler();
+	}
 
 
 	/**
@@ -506,18 +518,17 @@ export class RemoteClass extends EventEmitter {
     * Override.
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
-  public getRegisters(): Promise<void> {
-    assert(false);
-    return new Promise<void>(() => { });
-  }
+	public async getRegisters(): Promise<void> {
+		assert(false);
+	}
 
 
 	/**
 	 * Returns the PC value.
 	 */
-  public getPC(): number {
-    return this.getRegisterValue("PC");
-  }
+	public getPC(): number {
+		return this.getRegisterValue("PC");
+	}
 
 
 	/**
@@ -526,10 +537,10 @@ export class RemoteClass extends EventEmitter {
 	 * @param handler(value) The handler that is called with the value when command has finished.
 	 */
 
-  public getRegisterValue(register: string): number {
-    const value=this.z80Registers.getRegValueByName(register);
-    return value;
-  }
+	public getRegisterValue(register: string): number {
+		const value=this.z80Registers.getRegValueByName(register);
+		return value;
+	}
 
 
 	/**
@@ -538,14 +549,14 @@ export class RemoteClass extends EventEmitter {
 	 * @param value The value to find.
 	 * @returns An array of strings with register names that match. If no matching register is found returns an empty array.
 	 */
-  public getRegistersEqualTo(value: number): Array<string> {
-    let resRegs: Array<string>=[];
-    if (this.z80Registers.valid()) {
-      const regs=["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
-      resRegs=regs.filter(reg => value==this.z80Registers.getRegValueByName(reg));
-    }
-    return resRegs;
-  }
+	public getRegistersEqualTo(value: number): Array<string> {
+		let resRegs: Array<string>=[];
+		if (this.z80Registers.valid()) {
+			const regs=["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
+			resRegs=regs.filter(reg => value==this.z80Registers.getRegValueByName(reg));
+		}
+		return resRegs;
+	}
 
 
 	/**
@@ -553,9 +564,9 @@ export class RemoteClass extends EventEmitter {
 	 * @param reg The name of the register, e.g. "A" or "BC"
 	 * @returns The formatted string.
 	 */
-  public getVarFormattedReg(reg: string): string {
-    return this.z80Registers.getVarFormattedReg(reg);
-  }
+	public getVarFormattedReg(reg: string): string {
+		return this.z80Registers.getVarFormattedReg(reg);
+	}
 
 
 	/**
@@ -563,9 +574,9 @@ export class RemoteClass extends EventEmitter {
 	 * @param reg The name of the register, e.g. "A" or "BC"
 	 * @returns The formatted string.
 	 */
-  public getHoverFormattedReg(reg: string): string {
-    return this.z80Registers.getHoverFormattedReg(reg);
-  }
+	public getHoverFormattedReg(reg: string): string {
+		return this.z80Registers.getHoverFormattedReg(reg);
+	}
 
 
 	/**
@@ -576,10 +587,10 @@ export class RemoteClass extends EventEmitter {
 	 * @param value The new register value.
 	 * @return Promise with the "real" register value.
 	 */
-  public setRegisterValue(register: string, value: number): Promise<number> {
-    assert(false);	// override this
-    return new Promise<number>(() => { });
-  }
+	public async setRegisterValue(register: string, value: number): Promise<number> {
+		assert(false);	// override this
+		return 0;
+	}
 
 
 
@@ -591,19 +602,19 @@ export class RemoteClass extends EventEmitter {
 	 * @param addr The address.
 	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
 	 */
-  protected getCallAddress(addr: number, handler: (callAddr: number) => void) {
-    // Get the 2 bytes after address.
-    this.getMemoryDump(addr+1, 2, (data, address) => {
-      // Get low byte
-      const lowByte=data[0];
-      // Get high byte
-      const highByte=data[1];
-      // Calculate address
-      const callAddr=(highByte<<8)+lowByte;
-      // Call handler
-      handler(callAddr);
-    });
-  }
+	protected getCallAddress(addr: number, handler: (callAddr: number) => void) {
+		// Get the 2 bytes after address.
+		this.getMemoryDump(addr+1, 2).then(data => {
+			// Get low byte
+			const lowByte=data[0];
+			// Get high byte
+			const highByte=data[1];
+			// Calculate address
+			const callAddr=(highByte<<8)+lowByte;
+			// Call handler
+			handler(callAddr);
+		});
+	}
 
 
 	/**
@@ -614,132 +625,15 @@ export class RemoteClass extends EventEmitter {
 	 * @param addr The address.
 	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
 	 */
-  protected getRstAddress(addr: number, handler: (callAddr: number) => void) {
-    // Get the byte at address.
-    this.getMemoryDump(addr, 1, (data, address) => {
-      // Get byte and convert to address
-      const p=data[0]&0b00111000;
-      // Call handler
-      handler(p);
-    });
-  }
-
-
-	/**
-	 * This is a very specialized function to find a CALL, CALL cc or RST opcode
-	 * at the 3 bytes before the given address.
-	 * Idea is that the 'addr' is a return address from the stack and we want to find
-	 * the caller.
-	 * @param addr The address.
-	 * @param handler(k,caddr) The handler is called at the end of the function.
-	 * k=3, addr: If a CALL was found, caddr contains the call address.
-	 * k=2/1, addr: If a RST was found, caddr contains the RST address (p). k is the position,
-	 * i.e. if RST was found at addr-k. Used to work also with esxdos RST.
-	 * k=0, addr=0: Neither CALL nor RST found.
-	 */
-  protected getStackEntryTyddpe(addr: number, handler: (k: number, addr: number) => void) {
-    // Get the 3 bytes before address.
-    this.getMemoryDump(addr-3, 3, data => { // subtract opcode + address (last 3 bytes)
-      // Check for Call
-      const opc3=data[0];	// get first of the 3 bytes
-      if (opc3==0xCD	// CALL nn
-        ||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
-      {
-        // It was a CALL, get address.
-        const callAddr=(data[2]<<8)+data[1];
-        handler(3, callAddr);
-        return;
-      }
-
-      // Check if one of the 2 last bytes was a RST.
-      // Note: Not only the last byte is checked but also the byte before. This is
-      // a small "hack" to allow correct return addresses even for esxdos.
-      let opc12=(data[1]<<8)+data[2];	// convert both opcodes at once
-
-      let k=1;
-      while (opc12!=0) {
-        if ((opc12&0b11000111)==0b11000111)
-          break;
-        // Next
-        opc12>>=8;
-        k++;
-      }
-      if (opc12!=0) {
-        // It was a RST, get p
-        const p=opc12&0b00111000;
-        handler(k, p);
-        return;
-      }
-
-      // Nothing found
-      handler(0, 0);
-    });
-  }
-
-
-  /**
-   * Checks the stack entry type for the given value.
-   * If the type is CALL, RST (or interrupt) an object with the label name, the called and
-   * the caller address is returned.
-   * Otherwise an undefined object is returned.
-   * @param stackEntryValue E.g. "3B89"
-   * @returns {name, callerAddr}
-   * if there was a CALL or RST
-   * - name: The label name or the hex string of the called address
-   * - callerAddr: The caller address of the subroutine
-   * Otherwise undefined.
-   */
-  protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
-    return new Promise<{name: string, callerAddr: number}|undefined>(resolve => {
-      // Get the 3 bytes before address.
-      const addr=parseInt(stackEntryValue, 16);
-      this.getMemoryDump(addr-3, 3, data => {
-        let calledAddr;
-        let callerAddr;
-        // Check for Call
-        const opc3=data[0];	// get first of the 3 bytes
-        if (opc3==0xCD	// CALL nn
-          ||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
-        {
-          // It was a CALL, get address.
-          calledAddr=(data[2]<<8)+data[1];
-          callerAddr=addr-3;
-        }
-        else {
-          // Check if one of the 2 last bytes was a RST.
-          // Note: Not only the last byte is checked but also the byte before. This is
-          // a small "hack" to allow correct return addresses even for esxdos.
-          let opc12=(data[1]<<8)+data[2];	// convert both opcodes at once
-
-          let k=1;
-          while (opc12!=0) {
-            if ((opc12&0b11000111)==0b11000111)
-              break;
-            // Next
-            opc12>>=8;
-            k++;
-          }
-          if (opc12!=0) {
-            // It was a RST, get p
-            calledAddr=opc12&0b00111000;
-            callerAddr=addr-k;
-          }
-        }
-
-        // Nothing found?
-        if (calledAddr==undefined) {
-          resolve(undefined);
-        }
-
-        // Found: get label
-        const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
-        const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
-
-        // Return
-        resolve({name: labelCalledAddr, callerAddr});
-      });
-    });
-  }
+	protected getRstAddress(addr: number, handler: (callAddr: number) => void) {
+		// Get the byte at address.
+		this.getMemoryDump(addr, 1).then(data => {
+			// Get byte and convert to address
+			const p=data[0]&0b00111000;
+			// Call handler
+			handler(p);
+		});
+	}
 
 
 	/**
@@ -755,135 +649,230 @@ export class RemoteClass extends EventEmitter {
 	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
 	 * @param handler The handler to call when ready.
 	 */
-  protected setupCallStackFrameArray(frames: RefList, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallFrameIndex: number, handler: (frames: Array<Frame>) => void) {
-    return;
-    /*
-    // Check for last frame
-    if (index>=zStack.length) {
-      // Find pushed values
-      const stack=new Array<number>();
-      for (let l=index-1; l>lastCallFrameIndex; l--) {
-        const addrTypeString=zStack[l];
-        const pushedValue=parseInt(addrTypeString, 16);
-        stack.push(pushedValue);
-      }
-      // Save top frame
-      const sp=zStackAddress+2*index;
-      const address=this.getPC();
-      const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp))
-      frame.stack=stack;
-      frames.addObject(frame);
-      // Use new frames
-      this.listFrames=frames;
-      // call handler
-      handler(frames);
-      return;
-    }
 
-    // Get caller address with opcode (e.g. "call sub1")
-    const addrString=zStack[index];
-    const addr=parseInt(addrString, 16);
-    // Check for CALL or RST
-    this.stackFindCallOrRst(addr, (k, callAddr) => {
-      if (k==3) {
-        // CALL.
-        // Now find label for this address
-        const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
-        const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
-        // Save
-        lastCallFrameIndex=frames.addObject(new Frame(addr-3, zStackAddress+2*index, 'CALL '+labelCallAddr));
-      }
-      else if (k==1||k==2) {
-        // RST.
-        const pString=Utility.getHexString(callAddr, 2)+'h'
-        // Save
-        lastCallFrameIndex=frames.addObject(new Frame(addr-k, zStackAddress+2*index, 'RST '+pString));
-      }
-      else {
-        // Neither CALL nor RST.
-        // Get last call frame
-        const frame=frames.getObject(lastCallFrameIndex);
-        frame.stack.push(addr);
-      }
+	protected setupCallStackFrameArray(frames: RefList<any>, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler: (frames: Array<Frame>) => void) {
 
+		// Check for last frame
+		if (index>=zStack.length) {
+			// Find pushed values
+			const stack=new Array<number>();
+			for (let l=index-1; l>lastCallIndex; l--) {
+				const addrTypeString=zStack[l];
+				const pushedValue=parseInt(addrTypeString, 16);
+				stack.push(pushedValue);
+			}
+			// Save top frame
+			const sp=zStackAddress+2*index;
+			const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp));
+			frame.stack=stack;
+			frames.addObject(frame);
+			// Use new frames
+			this.listFrames=frames;
+			// call handler
+			handler(frames);
+			return;
+		}
 
-      // Call recursively
-      this.setupCallStackFrameArray(frames, zStack, zStackAddress, index+1, lastCallFrameIndex, handler);
-    });
-  */
-  }
-
+		// Get type of stack entry
+		const stackEntry=zStack[index];
+		this.getStackEntryType(stackEntry).then(type => {
+			if (type) {
+				// It was a CALL, RST or interrupt
+				// Find pushed values
+				const stack=new Array<number>();
+				for (let l=index-1; l>lastCallIndex; l--) {
+					const addrTypeString=zStack[l];
+					const pushedValue=parseInt(addrTypeString, 16);
+					stack.push(pushedValue);
+				}
+				// Save
+				const frame=new Frame(address, zStackAddress+2*(index-1), type.name)
+				frame.stack=stack;
+				frames.addObject(frame);
+				// Call recursively
+				this.setupCallStackFrameArray(frames, zStack, type.callerAddr, index+1, zStackAddress, index, handler);
+			}
+			else {
+				// It was something else, e.g. a pushed value.
+				// Call recursively
+				this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, lastCallIndex, handler);
+			}
+		});
+	}
 
 
 	/**
 	 * Returns the "real" stack frames from Remote.
 	 * @param handler The handler to call when ready.
 	 */
-  public realStackTraceRequest(handler: (frames: RefList) => void): void {
-    // Create a call stack / frame array
-    const frames=new RefList();
+	public realStackTraceRequest(handler: (frames: RefList<any>) => void): void {
+		// Create a call stack / frame array
+		const frames=new RefList();
 
-    // Get current pc
-    this.getRegisters().then(() => {
-      // Parse the PC value
-      const pc=this.z80Registers.getPC();
-      const sp=this.z80Registers.getSP();
+		// Get current pc
+		this.getRegisters().then(() => {
+			// Parse the PC value
+			const pc=this.z80Registers.getPC();
+			const sp=this.z80Registers.getSP();
 
-      // Get the stack
-      this.getStack().then(stack => {
+			// Get the stack
+			this.getStack().then(stack => {
 
-        // Check if empty
-        if (stack.length==0) {
-          // Special handling if stack depth is 0
-          const zStack=new Array<string>();
-          this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
-          return;
-        }
+				// Check if empty
+				if (stack.length==0) {
+					// Special handling if stack depth is 0
+					const zStack=new Array<string>();
+					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
+					return;
+				}
 
-        // Convert to strings
-        const zStack=stack.map(value => value.toString(16));
-        // Rest of callstack
-        this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
-      });
-    });
-  }
+				// Convert to strings
+				const zStack=stack.map(value => value.toString(16));
+				// Rest of callstack
+				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
+			});
+		});
+	}
 
 
-  /**
-  * Returns the stack as array.
-  * Youngest element is at index 0.
-  * @returns The stack, i.e. the word values from SP to topOfStack.
-  * But no more than about 100 elements.
-  */
-  public getStack(): Promise<Array<number>> {
-    assert(this.z80Registers.valid());
+	/**
+	 * Checks the stack entry type for the given value.
+	 * If the type is CALL, RST (or interrupt) an object with the label name, the called and
+	 * the caller address is returned.
+	 * Otherwise an undefined object is returned.
+	 * @param stackEntryValue E.g. "3B89"
+	 * @returns {name, callerAddr}
+	 * if there was a CALL or RST
+	 * - name: The label name or the hex string of the called address
+	 * - callerAddr: The caller address of the subroutine
+	 * Otherwise undefined.
+	 */
+	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
+		// Get the 3 bytes before address.
+		const addr=parseInt(stackEntryValue, 16);
+		const data=await this.getMemoryDump(addr-3, 3);
+		let calledAddr;
+		let callerAddr;
+		// Check for Call
+		const opc3=data[0];	// get first of the 3 bytes
+		if (opc3==0xCD	// CALL nn
+			||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
+		{
+			// It was a CALL, get address.
+			calledAddr=(data[2]<<8)+data[1];
+			callerAddr=addr-3;
+		}
+		else {
+			// Check if one of the 2 last bytes was a RST.
+			// Note: Not only the last byte is checked but also the byte before. This is
+			// a small "hack" to allow correct return addresses even for esxdos.
+			let opc12=(data[1]<<8)+data[2];	// convert both opcodes at once
 
-    return new Promise<Array<number>>(resolve => {
-      const sp=this.z80Registers.getSP();
+			let k=1;
+			while (opc12!=0) {
+				if ((opc12&0b11000111)==0b11000111)
+					break;
+				// Next
+				opc12>>=8;
+				k++;
+			}
+			if (opc12!=0) {
+				// It was a RST, get p
+				calledAddr=opc12&0b00111000;
+				callerAddr=addr-k;
+			}
+		}
 
-      // calculate the depth of the call stack
-      const tos=this.topOfStack;
-      var depth=tos-sp; // 2 bytes per word
-      if (depth>2*RemoteClass.MAX_STACK_ITEMS) depth=2*RemoteClass.MAX_STACK_ITEMS;
+		// Nothing found?
+		if (calledAddr==undefined) {
+			return undefined;
+		}
 
-      // Check if callstack need to be called
-      const zStack: Array<number>=[];
-      if (depth==0) {
-        resolve(zStack);
-        return;
-      }
+		// Found: get label
+		const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
+		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
 
-      // Get stack
-      this.getMemoryDump(sp, depth, data => {
-        // Create stack
-        for (let i=0; i<depth; i+=2) {
-          const value=(data[i+1]<<8)+data[i];
-          zStack.push(value);
-        }
-        resolve(zStack);
-      });
-    });
-  }
+		// Return
+		return {name: labelCalledAddr, callerAddr};
+	}
+
+
+	/**
+	* Returns the stack as array.
+	* Youngest element is at index 0.
+	* @returns The stack, i.e. the word values from SP to topOfStack.
+	* But no more than about 100 elements.
+	*/
+	public async getStack(): Promise<Array<number>> {
+		await this.getRegisters();
+		const sp=this.z80Registers.getSP();
+		// calculate the depth of the call stack
+		const tos=this.topOfStack;
+		var depth=tos-sp; // 2 bytes per word
+		if (depth>2*RemoteClass.MAX_STACK_ITEMS) depth=2*RemoteClass.MAX_STACK_ITEMS;
+
+		// Check if callstack need to be called
+		const zStack: Array<number>=[];
+		if (depth>0) {
+			// Get stack
+			const data=await this.getMemoryDump(sp, depth);
+
+			// Create stack
+			for (let i=0; i<depth; i+=2) {
+				const value=(data[i+1]<<8)+data[i];
+				zStack.push(value);
+			}
+		}
+		return zStack;
+	}
+
+
+
+	/**
+	  * Returns the extended stack as array.
+	  * Youngest element is at index 0.
+	  * The extended stack .......
+	  * @returns The stack, i.e. the word values from SP to topOfStack.
+	  * But no more than about 100 elements.
+	  */
+	public async getCallStack(): Promise<RefList<CallStackFrame>> {
+		const callStack=new RefList<CallStackFrame>();
+		// Get normal stack values
+		const stack=await this.getStack();
+		// Start with main
+		const sp=this.z80Registers.getRegValue(Z80_REG.SP);
+		const pc=this.z80Registers.getRegValue(Z80_REG.PC);
+		const lastCallStackFrame: CallStackFrame={
+			name: this.getMainName(sp),
+			callerAddress: pc,
+			stack: []
+		};
+		callStack.addObject(lastCallStackFrame);
+
+		// Check for each value if it maybe is a CALL or RST
+		for (let i=stack.length-1; i>=0; i--) {
+			const value=stack[i];
+			const valueString=value.toString(16);
+			const type=await this.getStackEntryType(valueString);
+			if (type) {
+				// CALL, RST or interrupt
+				const lastCallStackFrame: CallStackFrame={
+					name: type.name,
+					callerAddress: type.callerAddr,
+					stack: []
+				};
+				callStack.addObject(lastCallStackFrame);
+			}
+			else {
+				// Something else, e.g. pushed value
+				lastCallStackFrame.stack.push(value);
+			}
+		}
+
+		// Return
+		this.listFrames=callStack;
+		return callStack;
+	}
 
 
 	/**
@@ -900,16 +889,16 @@ export class RemoteClass extends EventEmitter {
 	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
 	 */
 	protected getMainName(sp: number) {
-		let part = "";
+		let part="";
 		if (this.topOfStack) {
-			const diff = this.topOfStack - sp;
-			if (diff != 0) {
-				if (diff > 0)
-					part = "+";
-				part += diff.toString();
+			const diff=this.topOfStack-sp;
+			if (diff!=0) {
+				if (diff>0)
+					part="+";
+				part+=diff.toString();
 			}
 		}
-		return "__MAIN" + part + "__";
+		return "__MAIN"+part+"__";
 	}
 
 
@@ -917,8 +906,9 @@ export class RemoteClass extends EventEmitter {
 	 * Returns the stack frames.
 	 * @param handler The handler to call when ready.
 	 */
-	public stackTraceRequest(handler:(frames: RefList)=>void): void {
+	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
 		assert(false);	// override this
+		return new RefList<CallStackFrame>();
 	}
 
 
@@ -927,7 +917,7 @@ export class RemoteClass extends EventEmitter {
 	 * @returns The associated frame or undefined.
 	 */
 	public getFrame(ref: number): Frame|undefined {
-		const frame = this.listFrames.getObject(ref);
+		const frame=this.listFrames.getObject(ref);
 		return frame;
 	}
 
@@ -940,7 +930,7 @@ export class RemoteClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public continue(contStoppedHandler: (reason: string, tStates?: number, time?: number)=>void) {
+	public continue(contStoppedHandler: (reason: string, tStates?: number, time?: number) => void) {
 		assert(false);	// override this
 	}
 
@@ -953,11 +943,11 @@ export class RemoteClass extends EventEmitter {
 	}
 
 
-	 /**
-	  * 'reverse continue' debugger program execution.
-	  * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
-	  */
-	 public reverseContinue(handler:(error?: string)=>void) : void {
+	/**
+	 * 'reverse continue' debugger program execution.
+	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 */
+	public reverseContinue(handler: (error?: string) => void): void {
 		assert(false);	// override this
 	}
 
@@ -968,7 +958,7 @@ export class RemoteClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOver(handler:(disasm: string, tStates?: number, cpuFreq?: number, error?: string)=>void): void {
+	public stepOver(handler: (disasm: string, tStates?: number, cpuFreq?: number, error?: string) => void): void {
 		assert(false);	// override this
 	}
 
@@ -980,7 +970,7 @@ export class RemoteClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepInto(handler:(disasm: string, tStates?: number, time?: number, error?: string)=>void): void {
+	public stepInto(handler: (disasm: string, tStates?: number, time?: number, error?: string) => void): void {
 		assert(false);	// override this
 	}
 
@@ -991,7 +981,7 @@ export class RemoteClass extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public stepOut(handler:(tStates?: number, cpuFreq?: number, error?: string)=>void): void {
+	public stepOut(handler: (tStates?: number, cpuFreq?: number, error?: string) => void): void {
 		assert(false);	// override this
 	}
 
@@ -1002,7 +992,7 @@ export class RemoteClass extends EventEmitter {
 	  * instruction: e.g. "081C NOP"
 	  * error: If defined this holds the exception message.
 	  */
-	public stepBack(handler:(instruction: string, error: string)=>void): void {
+	public stepBack(handler: (instruction: string, error: string) => void): void {
 		assert(false);	// override this
 	}
 
@@ -1012,7 +1002,7 @@ export class RemoteClass extends EventEmitter {
 	 */
 	protected breakIfRunning() {
 		// Break if currently running
-		if(this.state == EmulatorState.RUNNING || this.state == EmulatorState.RUNNING_REVERSE) {
+		if (this.state==EmulatorState.RUNNING||this.state==EmulatorState.RUNNING_REVERSE) {
 			// Break
 			this.pause();
 		}
@@ -1024,7 +1014,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 */
 	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
-		this.watchpoints = [...watchPoints];
+		this.watchpoints=[...watchPoints];
 	}
 
 
@@ -1044,7 +1034,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
+	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints: Array<GenericWatchpoint>) => void) {
 		assert(false);	// override this
 	}
 
@@ -1054,7 +1044,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
 	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
-		this.assertBreakpoints = [...assertBreakpoints];
+		this.assertBreakpoints=[...assertBreakpoints];
 	}
 
 
@@ -1083,8 +1073,8 @@ export class RemoteClass extends EventEmitter {
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
 	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
-		this.logpoints = logpoints;
-		this.logpointsEnabled = new Map<string, boolean>();
+		this.logpoints=logpoints;
+		this.logpointsEnabled=new Map<string, boolean>();
 		// All groups:
 		for (const [group] of this.logpoints) {
 			this.logpointsEnabled.set(group, false);
@@ -1164,46 +1154,46 @@ export class RemoteClass extends EventEmitter {
 	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
 	 * an EmulatorBreakpoint.
 	 */
-	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
-		handler:(bps: Array<EmulatorBreakpoint>)=>void,
-		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint|undefined) {
+	public setBreakpoints(path: string, givenBps: Array<EmulatorBreakpoint>,
+		handler: (bps: Array<EmulatorBreakpoint>) => void,
+		tmpDisasmFileHandler: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined) {
 
 		try {
 			// get all old breakpoints for the path
-			const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
+			const oldBps=this.breakpoints.filter(bp => bp.filePath==path);
 
 			// Create new breakpoints
-			const currentBps = new Array<EmulatorBreakpoint>();
-			givenBps.forEach( bp => {
+			const currentBps=new Array<EmulatorBreakpoint>();
+			givenBps.forEach(bp => {
 				let ebp;
 				// get PC value of that line
-				let addr = Labels.getAddrForFileAndLine(path, bp.lineNr);
+				let addr=Labels.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
-				if(addr >= 0) {
+				if (addr>=0) {
 					// Now search last line with that pc
-					const file = Labels.getFileAndLineForAddress(addr);
+					const file=Labels.getFileAndLineForAddress(addr);
 					// Check if right file
-					if(path.valueOf() == file.fileName.valueOf()) {
+					if (path.valueOf()==file.fileName.valueOf()) {
 						// create breakpoint object
-						ebp = { bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log };
+						ebp={bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log};
 					}
 				}
 				else {
 					// Check if there is a routine for the temporary disassembly file
-					ebp = tmpDisasmFileHandler(bp);
+					ebp=tmpDisasmFileHandler(bp);
 				}
 
 				// add to array
-				if(!ebp) {
+				if (!ebp) {
 					// Breakpoint position invalid
-					ebp = { bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined };
+					ebp={bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined};
 				}
 				currentBps.push(ebp);
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
-			const removedBps = oldBps.filter(bp => bp.address >= 0  && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
+			const newBps=currentBps.filter(bp => bp.address>=0&&oldBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
+			const removedBps=oldBps.filter(bp => bp.address>=0&&currentBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 
 			// remove old breakpoints
 			removedBps.forEach(bp => {
@@ -1223,68 +1213,18 @@ export class RemoteClass extends EventEmitter {
 			// call handler
 			handler(currentBps);
 		}
-		catch(e) {
+		catch (e) {
 			console.log("Error: ", e);
 		}
 	}
 
 
 	/**
-	 * Returns a disassembly of the given address area.
-	 * Can be used e.g. to disassemble ROM areas.
-	 * Note 1: in the past the disassembly capabilities of the emulator's disassembler
-	 * have been used. Now the internal disassembler is used.
-	 * I.e. no need to override this anymore.
-	 * Note 2: Unfortunately I cannot use the advanced z80dismblr here: it showed that
-	 * when e.g. disassembling the ZX Spectrum only few parts of the ROM are disassembled
-	 * because a lot is done via hidden calls, i.e. calls that are hidden in data areas.
-	 * So it is better to use the 'stupid' brute force disassembly: It may decode some
-	 * data as code but at least it decodes all the area.
-	 * @param start The start address for the disassembly.
-	 * @param size The size of the memory area.
-	 * @returns The disassembly as text. Format, e.g.:
-	 *   0065 RST 38
-	 *   0066 PUSH AF
-	 *   0067 PUSH HL
-	 *   0068 LD HL,(5CB0)
-	 */
-/*
-	public getDisassembly(start: number, size: number, handler:(text)=>void) {
-		this.getMemoryDump(start, size, (data) => {
-			// data contains an array of bytes.
-
-			// convert hex values to bytes
-			const buffer = new Memory();
-			buffer.setMemory(start, data);
-
-			// disassemble all lines
-			let address = start;
-			const end = start + size;
-			let text = '';
-			while(address < end) {
-				// Get opcode
-				const opcode = Opcode.getOpcodeAt(buffer, address);
-				// disassemble
-				const opCodeDescription = opcode.disassemble();
-				const line = Format.formatDisassembly(buffer, false, 4, 12, 5, 8, address, opcode.length, opCodeDescription.mnemonic);
-				// add to disassembly
-				text += line + '\n';
-				// Next address
-				address += opcode.length;
-			}
-
-			// Use
-			handler(text);
-		});
-	}
-*/
-
-	/**
 	 * Sends a command to the emulator.
 	 * @param cmd E.g. 'get-registers'.
 	 * @param handler The response (data) is returned.
 	 */
-	public dbgExec(cmd: string, handler:(data)=>void) {
+	public dbgExec(cmd: string, handler: (data) => void) {
 		assert(false);	// override this
 	}
 
@@ -1295,8 +1235,9 @@ export class RemoteClass extends EventEmitter {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public getMemoryDump(address: number, size: number, handler:(data: Uint8Array, addr: number)=>void) {
+	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
 		assert(false);	// override this
+		return new Uint8Array();
 	}
 
 
@@ -1306,7 +1247,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param dataArray The data to write.
 	 * @param handler(response) The handler that is called when zesarux has received the data.
 	 */
-	public writeMemoryDump(address: number, dataArray: Uint8Array, handler:() => void) {
+	public writeMemoryDump(address: number, dataArray: Uint8Array, handler: () => void) {
 		assert(false);	// override this
 	}
 
@@ -1318,7 +1259,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param address The address to change.
 	 * @param value The new value.
 	 */
-	public writeMemory(address, value, handler:(realValue: number) => void) {
+	public writeMemory(address, value, handler: (realValue: number) => void) {
 		assert(false);	// override this
 	}
 
@@ -1328,7 +1269,7 @@ export class RemoteClass extends EventEmitter {
 	 * and converts it to an arry of MemoryPages.
 	 * @param handler(memoryPages) The handler that receives the memory pages list.
 	 */
-	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {
+	public getMemoryPages(handler: (memoryPages: MemoryPage[]) => void) {
 		assert(false);	// override this
 	}
 
@@ -1338,7 +1279,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param address The new address for the program counter.
 	 * @param handler That is called when the PC has been set.
 	 */
-	public setProgramCounter(address: number, handler?:() => void) {
+	public setProgramCounter(address: number, handler?: () => void) {
 		assert(false);	// override this
 	}
 
@@ -1350,7 +1291,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param registerNr The number of the register.
 	 * @param value(value) Calls 'handler' with the value of the register.
 	 */
-	public getTbblueRegister(registerNr: number, handler: (value)=>void) {
+	public getTbblueRegister(registerNr: number, handler: (value) => void) {
 		assert(false);	// override this
 	}
 
@@ -1360,7 +1301,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param paletteNr 0 or 1.
 	 * @param handler(paletteArray) Calls 'handler' with a 256 byte Array<number> with the palette values.
 	 */
-	public getTbblueSpritesPalette(paletteNr: number, handler: (paletteArray)=>void) {
+	public getTbblueSpritesPalette(paletteNr: number, handler: (paletteArray) => void) {
 		assert(false);	// override this
 	}
 
@@ -1369,7 +1310,7 @@ export class RemoteClass extends EventEmitter {
 	 * Retrieves the sprites clipping window from the emulator.
 	 * @param handler(xl, xr, yt, yb) Calls 'handler' with the clipping dimensions.
 	 */
-	public getTbblueSpritesClippingWindow(handler: (xl: number, xr: number, yt: number, yb: number)=>void) {
+	public getTbblueSpritesClippingWindow(handler: (xl: number, xr: number, yt: number, yb: number) => void) {
 		assert(false);	// override this
 	}
 
@@ -1380,7 +1321,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param count The number of slots to retrieve.
 	 * @param handler(sprites) Calls 'handler' with an array of sprite data.
 	 */
-	public getTbblueSprites(slot: number, count: number, handler: (sprites)=>void) {
+	public getTbblueSprites(slot: number, count: number, handler: (sprites) => void) {
 		assert(false);	// override this
 	}
 
@@ -1390,7 +1331,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param count The number of patterns to retrieve.
 	 * @param handler(patterns) Calls 'handler' with an array of sprite pattern data.
 	 */
-	public getTbblueSpritePatterns(index: number, count: number, handler: (patterns)=>void) {
+	public getTbblueSpritePatterns(index: number, count: number, handler: (patterns) => void) {
 		assert(false);	// override this
 	}
 
@@ -1413,7 +1354,7 @@ export class RemoteClass extends EventEmitter {
 	 * For reverse debugging.
 	 */
 	public clearInstructionHistory() {
-		this.revDbgHistory.length = 0;
+		this.revDbgHistory.length=0;
 	}
 
 
@@ -1444,7 +1385,7 @@ export class RemoteClass extends EventEmitter {
 	 */
 	public emitRevDbgHistory() {
 		// Change debug history array into set.
-		const addrSet = new Set(this.revDbgHistory)
+		const addrSet=new Set(this.revDbgHistory)
 		this.emit('revDbgHistory', addrSet);
 	}
 

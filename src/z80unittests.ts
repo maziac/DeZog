@@ -382,14 +382,11 @@ export class Z80UnitTests {
 	 * Whenever the test case is executed the result is passed in the promise.
 	 * @param tcLabels An array with the unit test case labels.
 	 */
-	public static execUnitTestCase(tcLabel: string): Promise<number> {
-		// Create promise.
-		const promise = new Promise<number>((resolve) => {
+	public static async execUnitTestCase(tcLabel: string): Promise<number> {
+		return new Promise<number>((resolve) => {
 			// Remember its resolve function.
 			Z80UnitTests.testCaseMap.set(tcLabel, resolve);
 		});
-		// Return promise.
-		return promise;
 	}
 
 
@@ -475,7 +472,7 @@ export class Z80UnitTests {
 	 * Retrieves a list of strings with the labels of all unit tests.
 	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
 	 */
-	public static getAllUnitTests(): Promise<UnitTestCase[]> {
+	public static async getAllUnitTests(): Promise<UnitTestCase[]> {
 		return new Promise<UnitTestCase[]>((resolve, reject) => {
 			try {
 				// Read all list files.

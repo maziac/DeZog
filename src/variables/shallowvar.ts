@@ -72,7 +72,7 @@ export class DisassemblyVar extends ShallowVar {
 	public getContent(handler: (varlist: Array<DebugProtocol.Variable>) => {}) {
 		// Get code memory
 		const size = 4*this.count;	// 4 is the max size of an opcode
-		Remote.getMemoryDump(this.addr, size, data => {
+		Remote.getMemoryDump(this.addr, size).then(data => {
 			// convert hex values to bytes
 			const buffer = new BaseMemory(this.addr, size);
 			for(let i=0; i<size; i++) {
@@ -328,7 +328,7 @@ export class StackVar extends ShallowVar {
 
 		serializer.exec(() => {
 			// Retrieve memory values, to see if they really have been set.
-			Remote.getMemoryDump(address, 2, data => {
+			Remote.getMemoryDump(address, 2).then(data => {
 				const memWord = data[0] + (data[1]<<8);
 				// Pass formatted string to vscode
 				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined, handler);
@@ -356,7 +356,7 @@ export class LabelVar extends ShallowVar {
 	 * @param types 'b'=byte, 'w'=word or 'bw' for byte and word
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 */
-	public constructor(addr: number, count: number, types: string, list: RefList) {
+	public constructor(addr: number, count: number, types: string, list: RefList<ShallowVar>) {
 		super();
 		// Create up to 2 pseudo variables
 		this.memArray = [];

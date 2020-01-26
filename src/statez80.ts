@@ -167,7 +167,7 @@ export class StateZX16K extends StateZ80 {
 			// Get address
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
-			Remote.getMemoryDump(address, 0x4000, data => {
+			Remote.getMemoryDump(address, 0x4000).then(data => {
 				const bnr = bankNrs.shift();
 				if(bnr != undefined)	// calm the transpiler
 					this.banks[i] = data;

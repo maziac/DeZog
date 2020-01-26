@@ -24,7 +24,8 @@ import { Disassembler } from './disassembler/disasm';
 import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import * as BinaryFile from 'binary-file';
-import { Decoration } from './decoration';
+import {Decoration} from './decoration';
+import {ShallowVar} from './variables/shallowvar';
 
 
 
@@ -53,7 +54,7 @@ export class DebugSessionClass extends DebugSession {
 	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the variables (references)
-	protected listVariables = new RefList();
+	protected listVariables=new RefList<ShallowVar>();
 
 	/// Only one thread is supported.
 	public static THREAD_ID = 1;
@@ -680,77 +681,68 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Clear all variables
-			this.listVariables.length = 0;
+			this.listVariables.length=0;
 
 			// Get the call stack trace.
-			Remote.stackTraceRequest(frames => {
-
-				// Check frames for end
-				const frameRealCount = frames.length;
-				for(; frameCount<frameRealCount; frameCount++) {
-					const frame = frames[frameCount];
-					// Check if end
-					if(frame.name === null) {
-						// rest of stack trace is garbage
-						break;
-					}
-				}
-
+			Remote.stackTraceRequest().then(callStack => {
 				// Go through complete call stack and get the sources.
 				// If no source exists than get a hexdump and disassembly later.
-				for(let index=0; index<frameCount; index++) {
-					const frame = frames[index];
+				frameCount=callStack.length;
+				for (let index=0; index<frameCount; index++) {
+					const frame=callStack[index];
 					// Get file for address
-					const addr = frame.addr;
-					const file = Labels.getFileAndLineForAddress(addr);
+					const addr=frame.callerAddress;
+					const file=Labels.getFileAndLineForAddress(addr);
 					// Store file, if it does not exist the name is empty
-					const src = this.createSource(file.fileName);
-					const lineNr = (src) ? this.convertDebuggerLineToClient(file.lineNr) : 0;
-					const sf = new StackFrame(index+1, frame.name, src, lineNr);
+					const src=this.createSource(file.fileName);
+					const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
+					const sf=new StackFrame(index+1, frame.name, src, lineNr);
 					sfrs.push(sf);
 				}
 
 				// Create array with addresses that need to be fetched for disassembly
-				for(let index=0; index<frameCount; index++) {
-					const sf = sfrs[index];
-					if(!sf.source)
-						fetchAddresses.push(frames[index].addr);
+				for (let index=0; index<frameCount; index++) {
+					const sf=sfrs[index];
+					if (!sf.source) {
+						const frame=callStack[index];
+						fetchAddresses.push(frame.callerAddress);
+					}
 				}
 
 				// Check if we need to fetch any dump.
-				const fetchAddressesCount = fetchAddresses.length;
-				if(fetchAddressesCount == 0) {
+				const fetchAddressesCount=fetchAddresses.length;
+				if (fetchAddressesCount==0) {
 					// No dumps to fetch
 					this.serializer.endExec();
 					return;
 				}
 
 				// Now get hexdumps for all non existing sources.
-				let fetchCount = 0;
-				for(let index=0; index<fetchAddressesCount; index++) {
+				let fetchCount=0;
+				for (let index=0; index<fetchAddressesCount; index++) {
 					// So fetch a memory dump
-					const fetchAddress = fetchAddresses[index];
-					const fetchSize = 100;	// N bytes
-					Remote.getMemoryDump(fetchAddress, fetchSize, data => {
+					const fetchAddress=fetchAddresses[index];
+					const fetchSize=100;	// N bytes
+					Remote.getMemoryDump(fetchAddress, fetchSize).then(data => {
 						// Save data for later writing
 						fetchData.push(data);
 						// Note: because of self-modifying code it may have changed
 						// since it was fetched at the beginning.
 						// Check if memory changed.
-						if(!doDisassembly) {
-							const checkSize = 40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
-							for(let k=0; k<checkSize; k++) {
-								const val = this.dasm.memory.getValueAt(fetchAddress+k);
-								const memAttr = this.dasm.memory.getAttributeAt(fetchAddress+k);
-								if((val != data[k]) || (memAttr == MemAttribute.UNUSED)) {
-									doDisassembly = true;
+						if (!doDisassembly) {
+							const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+							for (let k=0; k<checkSize; k++) {
+								const val=this.dasm.memory.getValueAt(fetchAddress+k);
+								const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
+								if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
+									doDisassembly=true;
 									break;
 								}
 							}
 						}
 						// Check for end
-						fetchCount ++;
-						if(fetchCount >= fetchAddressesCount) {
+						fetchCount++;
+						if (fetchCount>=fetchAddressesCount) {
 							// All dumps fetched
 							this.serializer.endExec();
 						}

@@ -393,7 +393,7 @@ export class Utility {
 				const matchAddr = /(\${b@:|\${w@:)/.exec(format);
 				if(matchAddr) {
 					// Retrieve memory values
-					Remote.getMemoryDump(value, 2, data => {
+					Remote.getMemoryDump(value, 2).then(data => {
 						const b1 = data[0]
 						const b2 = data[1];
 						memWord = (b2 << 8) + b1;

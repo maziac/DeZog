@@ -150,15 +150,15 @@ export class ZesaruxCpuHistory {
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
-	protected getRegistersPromise(index: number): Promise<string> {
-		return new Promise<string>((resolve, reject) => {
+	protected async getRegistersPromise(index: number): Promise<string> {
+		return new Promise<string>(resolve => {
 			assert(index >= 0);
 			zSocket.send('cpu-history get ' + index, data => {
 				if(data.substr(0,5).toLowerCase() == 'error')
 					resolve(undefined);
 				else
 					resolve(data);
-			}, true);
+			});
 		});
 	}
 
