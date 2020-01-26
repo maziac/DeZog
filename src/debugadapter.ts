@@ -688,10 +688,10 @@ export class DebugSessionClass extends DebugSession {
 				// Go through complete call stack and get the sources.
 				// If no source exists than get a hexdump and disassembly later.
 				frameCount=callStack.length;
-				for (let index=0; index<frameCount; index++) {
+				for (let index=frameCount-1; index>=0; index--) {
 					const frame=callStack[index];
 					// Get file for address
-					const addr=frame.callerAddress;
+					const addr=frame.addr;
 					const file=Labels.getFileAndLineForAddress(addr);
 					// Store file, if it does not exist the name is empty
 					const src=this.createSource(file.fileName);
@@ -701,11 +701,11 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Create array with addresses that need to be fetched for disassembly
-				for (let index=0; index<frameCount; index++) {
+				for (let index=frameCount-1; index>=0; index--) {
 					const sf=sfrs[index];
 					if (!sf.source) {
 						const frame=callStack[index];
-						fetchAddresses.push(frame.callerAddress);
+						fetchAddresses.push(frame.addr);
 					}
 				}
 
@@ -723,7 +723,8 @@ export class DebugSessionClass extends DebugSession {
 					// So fetch a memory dump
 					const fetchAddress=fetchAddresses[index];
 					const fetchSize=100;	// N bytes
-					Remote.getMemoryDump(fetchAddress, fetchSize).then(data => {
+					Remote.getMemoryDump(fetchAddress, fetchSize)
+						.then(data => {
 						// Save data for later writing
 						fetchData.push(data);
 						// Note: because of self-modifying code it may have changed

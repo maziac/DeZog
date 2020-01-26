@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {Z80Registers, Z80_REG} from './z80registers';
 import {StateZ80} from '../statez80';
 import {RefList} from '../reflist';
-import {Frame} from '../frame';
+import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels} from '../labels';
@@ -96,18 +96,6 @@ export interface MemoryPage {
 
 	/// The name of the mapped memory area.
 	name: string;
-};
-
-
-export interface CallStackFrame {
-	/// The label or the address as hex string.
-	name: string;
-
-	/// The caller address
-	callerAddress: number;
-
-	/// The stack (i.e. the pushed values) of the sub routine
-	stack: Array<number>;
 };
 
 
@@ -650,7 +638,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param handler The handler to call when ready.
 	 */
 
-	protected setupCallStackFrameArray(frames: RefList<any>, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler: (frames: Array<Frame>) => void) {
+	protected setupCallStackFrameArray(frames: RefList<any>, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler: (frames: Array<CallStackFrame>) => void) {
 
 		// Check for last frame
 		if (index>=zStack.length) {
@@ -663,7 +651,7 @@ export class RemoteClass extends EventEmitter {
 			}
 			// Save top frame
 			const sp=zStackAddress+2*index;
-			const frame=new Frame(address, zStackAddress+2*(index-1), this.getMainName(sp));
+			const frame=new CallStackFrame(address, zStackAddress+2*(index-1), this.getMainName(sp));
 			frame.stack=stack;
 			frames.addObject(frame);
 			// Use new frames
@@ -686,7 +674,7 @@ export class RemoteClass extends EventEmitter {
 					stack.push(pushedValue);
 				}
 				// Save
-				const frame=new Frame(address, zStackAddress+2*(index-1), type.name)
+				const frame=new CallStackFrame(address, zStackAddress+2*(index-1), type.name)
 				frame.stack=stack;
 				frames.addObject(frame);
 				// Call recursively
@@ -799,7 +787,7 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	* Returns the stack as array.
-	* Youngest element is at index 0.
+	* Oldest element is at index 0.
 	* @returns The stack, i.e. the word values from SP to topOfStack.
 	* But no more than about 100 elements.
 	*/
@@ -818,7 +806,7 @@ export class RemoteClass extends EventEmitter {
 			const data=await this.getMemoryDump(sp, depth);
 
 			// Create stack
-			for (let i=0; i<depth; i+=2) {
+			for (let i=depth-2; i>=0; i-=2) {
 				const value=(data[i+1]<<8)+data[i];
 				zStack.push(value);
 			}
@@ -830,7 +818,7 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	  * Returns the extended stack as array.
-	  * Youngest element is at index 0.
+	  * Oldest element is at index 0.
 	  * The extended stack .......
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
@@ -841,26 +829,22 @@ export class RemoteClass extends EventEmitter {
 		const stack=await this.getStack();
 		// Start with main
 		const sp=this.z80Registers.getRegValue(Z80_REG.SP);
-		const pc=this.z80Registers.getRegValue(Z80_REG.PC);
-		const lastCallStackFrame: CallStackFrame={
-			name: this.getMainName(sp),
-			callerAddress: pc,
-			stack: []
-		};
+		const len=stack.length;
+		const top=sp+2*len-2;
+		let lastCallStackFrame=new CallStackFrame(0, top, this.getMainName(sp));
 		callStack.addObject(lastCallStackFrame);
 
 		// Check for each value if it maybe is a CALL or RST
-		for (let i=stack.length-1; i>=0; i--) {
+		for (let i=0; i<len; i++) {
 			const value=stack[i];
 			const valueString=value.toString(16);
 			const type=await this.getStackEntryType(valueString);
 			if (type) {
+				// Set caller address
+				lastCallStackFrame.addr=type.callerAddr;
 				// CALL, RST or interrupt
-				const lastCallStackFrame: CallStackFrame={
-					name: type.name,
-					callerAddress: type.callerAddr,
-					stack: []
-				};
+				const frameSP=top-2*(i+1);
+				lastCallStackFrame=new CallStackFrame(0, frameSP, type.name);
 				callStack.addObject(lastCallStackFrame);
 			}
 			else {
@@ -868,6 +852,10 @@ export class RemoteClass extends EventEmitter {
 				lastCallStackFrame.stack.push(value);
 			}
 		}
+
+		// Set PC
+		const pc=this.z80Registers.getRegValue(Z80_REG.PC);
+		lastCallStackFrame.addr=pc;
 
 		// Return
 		this.listFrames=callStack;
@@ -916,7 +904,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param The reference number to the frame.
 	 * @returns The associated frame or undefined.
 	 */
-	public getFrame(ref: number): Frame|undefined {
+	public getFrame(ref: number): CallStackFrame|undefined {
 		const frame=this.listFrames.getObject(ref);
 		return frame;
 	}

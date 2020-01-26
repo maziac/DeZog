@@ -6,7 +6,7 @@ import { Z80Registers } from '../remotes/z80registers';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
-import { Frame } from '../frame';
+import { CallStackFrame } from '../callstackframe';
 
 
 // Mock for the socket.
@@ -43,7 +43,7 @@ suite('ZesaruxEmulator', () => {
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack
 			emul.reverseDbgStack = new RefList();
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "__TEST_MAIN__"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "__TEST_MAIN__"));
 		});
 
 		test('simple step forward inside history', () => {
@@ -98,7 +98,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step forward RET', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
 
 			// 80FA RET
 		    // 8146 JR 8143h
@@ -143,7 +143,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step forward from isr ret', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "ISR"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "ISR"));
 
 			// 0049 RET (from ISR)
 			// 80D3 80D9 PUSH BC
@@ -243,7 +243,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step forward from RET to isr', () => {
 			// Add a 2nd call stack for the interrupt.
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
 			// Prepare memory of caller: CALL 80E5h
 			mockSocket.dataArray.push("CDE580");
 

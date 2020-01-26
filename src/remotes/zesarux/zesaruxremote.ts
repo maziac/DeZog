@@ -4,9 +4,9 @@ import { Utility } from '../../utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
-import { Frame } from '../../frame';
+import { CallStackFrame } from '../../callstackframe';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage, CallStackFrame } from '../remote';
+import { RemoteClass, MachineType, EmulatorBreakpoint, EmulatorState, MemoryPage,  } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -506,7 +506,7 @@ export class ZesaruxRemote extends RemoteClass {
 		if (this.cpuHistory.isInStepBackMode()) {
 			// Return virtual stack
 			assert(this.reverseDbgStack);
-			return this.reverseDbgStack;  // TODO: ist wahrscheinlich kein Callstackframe array
+			return this.reverseDbgStack;
 		}
 		else {
 			// "real" stack trace
@@ -715,7 +715,7 @@ export class ZesaruxRemote extends RemoteClass {
 			if(!frame) {
 				 // Create new stack entry if none exists
 				 // (could happen in errorneous situations if there are more RETs then CALLs)
-				 frame = new Frame(0, sp, this.getMainName(sp));
+				 frame = new CallStackFrame(0, sp, this.getMainName(sp));
 				 this.reverseDbgStack.unshift(frame);
 			}
 
@@ -764,7 +764,7 @@ export class ZesaruxRemote extends RemoteClass {
 
 					// And push to stack
 					const pc = this.zesaruxRegisters.parsePC(currentLine);
-					const frame = new Frame(pc, sp, labelCallAddr);
+					const frame = new CallStackFrame(pc, sp, labelCallAddr);
 					this.reverseDbgStack.unshift(frame);
 
 					// End
@@ -876,7 +876,7 @@ export class ZesaruxRemote extends RemoteClass {
 		if (!frame) {
 			// Create new stack entry if none exists
 			// (could happen in errorneous situations if there are more RETs then CALLs)
-			frame=new Frame(0, sp, this.getMainName(sp));
+			frame=new CallStackFrame(0, sp, this.getMainName(sp));
 			this.reverseDbgStack.unshift(frame);
 		}
 
@@ -890,7 +890,7 @@ export class ZesaruxRemote extends RemoteClass {
 			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
-			frame=new Frame(0, nextSP-2, name);	// pc is set later anyway
+			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
 			this.reverseDbgStack.unshift(frame);
 		}
 		// Check for RST
@@ -902,7 +902,7 @@ export class ZesaruxRemote extends RemoteClass {
 			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
-			frame=new Frame(0, nextSP-2, name);	// pc is set later anyway
+			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
 			this.reverseDbgStack.unshift(frame);
 		}
 		else {
@@ -981,7 +981,7 @@ export class ZesaruxRemote extends RemoteClass {
 		if (interruptFound) {
 			// Put nextPC on callstack
 			const name=this.getInterruptName();
-			frame=new Frame(0, nextSP, name);	// pc is set later anyway
+			frame=new CallStackFrame(0, nextSP, name);	// pc is set later anyway
 			this.reverseDbgStack.unshift(frame);
 		}
 

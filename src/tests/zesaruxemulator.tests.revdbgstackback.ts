@@ -5,7 +5,7 @@ import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
 import { Z80Registers } from '../remotes/z80registers';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
-import { Frame } from '../frame';
+import { CallStackFrame } from '../callstackframe';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 
@@ -43,7 +43,7 @@ suite('ZesaruxEmulator', () => {
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack
 			emul.reverseDbgStack = new RefList();
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "__TEST_MAIN__"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "__TEST_MAIN__"));
 		});
 
 		test('simple step back first history instruction', () => {
@@ -109,7 +109,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back CALL', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
 
 			// 80D3 LD A,02h
 		    // 80F2 CALL 80D3h
@@ -124,7 +124,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back RST', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
 
 			// 80D3 LD A,02h
 		    // 80F2 RST 18h
@@ -157,7 +157,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back from isr', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "ISR"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "ISR"));
 
 			// 0038 DI
 			// 80D3 LD A,02h
@@ -173,7 +173,7 @@ suite('ZesaruxEmulator', () => {
 		test('step back from isr to PUSH instruction', () => {
 			// Add something to remove
 			emul.reverseDbgStack[0].stack.push(1234);	// The PUSHed value
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "FUNC"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
 
 			// 0038 DI
 			// 80E5 PUSH 0101h
@@ -188,7 +188,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back from isr to POP instruction', () => {
 			// Add a 2nd call stack for the interrupt.
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "INTERRUPT"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "INTERRUPT"));
 
 			// 0038 DI
 			// 80F6 POP BC
@@ -210,7 +210,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step back from isr to RET instruction', () => {
 			// Add a 2nd call stack for the interrupt.
-			emul.reverseDbgStack.unshift(new Frame(0, 0, "INTERRUPT"));
+			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "INTERRUPT"));
 			// Prepare memory of caller: CALL 80E5h
 			mockSocket.dataArray.push("CDE580");
 
