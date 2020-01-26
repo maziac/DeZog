@@ -35,6 +35,7 @@ suite('ZesaruxEmulator', () => {
 */
 
 	suite('handleReverseDebugStackForward', () => {
+
 		setup(() => {
 			emul = new ZesaruxRemote();
 			const regs = new ZesaruxRegisters();
@@ -43,7 +44,7 @@ suite('ZesaruxEmulator', () => {
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack
 			emul.reverseDbgStack = new RefList();
-			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "__TEST_MAIN__"));
+			emul.reverseDbgStack.push(new CallStackFrame(0, 0, "__TEST_MAIN__"));
 		});
 
 		test('simple step forward inside history', () => {
@@ -98,7 +99,7 @@ suite('ZesaruxEmulator', () => {
 
 		test('step forward RET', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
+			emul.reverseDbgStack.push(new CallStackFrame(0, 0, "FUNC"));
 
 			// 80FA RET
 		    // 8146 JR 8143h
@@ -121,7 +122,7 @@ suite('ZesaruxEmulator', () => {
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, emul.reverseDbgStack.length);
-			const frame = emul.reverseDbgStack[0];
+			const frame = emul.reverseDbgStack[1];
 			assert.equal(0x80E5, frame.addr);
 			assert.equal("80F0h", frame.name);
 		});
@@ -136,14 +137,14 @@ suite('ZesaruxEmulator', () => {
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, emul.reverseDbgStack.length);
-			const frame = emul.reverseDbgStack[0];
+			const frame = emul.reverseDbgStack[1];
 			assert.equal(0x80E5, frame.addr);
 			assert.equal("0018h", frame.name);
 		});
 
 		test('step forward from isr ret', () => {
 			// Add something to remove
-			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "ISR"));
+			emul.reverseDbgStack.push(new CallStackFrame(0, 0, "ISR"));
 
 			// 0049 RET (from ISR)
 			// 80D3 80D9 PUSH BC
@@ -166,10 +167,10 @@ suite('ZesaruxEmulator', () => {
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(2, emul.reverseDbgStack.length);
-			let frame = emul.reverseDbgStack[0];
+			let frame = emul.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame = emul.reverseDbgStack[1];
+			frame = emul.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(1, frame.stack.length);
 			assert.equal(0x0302, frame.stack[0]);
@@ -185,13 +186,13 @@ suite('ZesaruxEmulator', () => {
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(3, emul.reverseDbgStack.length);
-			let frame = emul.reverseDbgStack[0];
+			let frame = emul.reverseDbgStack[2];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 			frame = emul.reverseDbgStack[1];
 			assert.equal("80E5h", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame = emul.reverseDbgStack[2];
+			frame = emul.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -206,13 +207,13 @@ suite('ZesaruxEmulator', () => {
 			emul.handleReverseDebugStackForward(currentLine, nextLine);
 			// Value and isr have been pushed to the stack
 			assert.equal(3, emul.reverseDbgStack.length);
-			let frame = emul.reverseDbgStack[0];
+			let frame = emul.reverseDbgStack[2];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 			frame = emul.reverseDbgStack[1];
 			assert.equal("0018h", frame.name);
 			assert.equal(0, frame.stack.length);
-			frame = emul.reverseDbgStack[2];
+			frame = emul.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -232,18 +233,18 @@ suite('ZesaruxEmulator', () => {
 
 			// The interrupt must have been pushed to the call stack.
 			assert.equal(2, emul.reverseDbgStack.length);
-			frame = emul.reverseDbgStack[0];
+			frame = emul.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 			// The POP must have been pushed to the frame stack.
-			frame = emul.reverseDbgStack[1];
+			frame = emul.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
 
 		test('step forward from RET to isr', () => {
 			// Add a 2nd call stack for the interrupt.
-			emul.reverseDbgStack.unshift(new CallStackFrame(0, 0, "FUNC"));
+			emul.reverseDbgStack.push(new CallStackFrame(0, 0, "FUNC"));
 			// Prepare memory of caller: CALL 80E5h
 			mockSocket.dataArray.push("CDE580");
 
@@ -258,9 +259,9 @@ suite('ZesaruxEmulator', () => {
 			// The RET must have been removed from the callstack,
 			// but the ISR must have been pushed to the call stack.
 			assert.equal(2, emul.reverseDbgStack.length);
-			let frame = emul.reverseDbgStack[1];
+			let frame = emul.reverseDbgStack[0];
 			assert.equal("__TEST_MAIN__", frame.name);
-			frame = emul.reverseDbgStack[0];
+			frame = emul.reverseDbgStack[1];
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
 		});
@@ -276,7 +277,7 @@ suite('ZesaruxEmulator', () => {
 			(<any>emul).handleReverseDebugStackForward(currentLine, nextLine);
 			// ISR has been pushed to the callstack
 			assert.equal(2, emul.reverseDbgStack.length);
-			const frame = emul.reverseDbgStack[0];
+			const frame = emul.reverseDbgStack[1];
 			assert.equal(0x0038, frame.addr);
 			assert.equal("__INTERRUPT__", frame.name);
 			assert.equal(0, frame.stack.length);
