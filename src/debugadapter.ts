@@ -1185,7 +1185,7 @@ export class DebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine('Continue reverse...');
 
 			// Continue debugger
-			Remote.reverseContinue(breakReason => {
+			Remote.reverseContinue().then(breakReason => {
 				if(breakReason) {
 					// Output a possible problem
 					vscode.debug.activeDebugConsole.appendLine(breakReason);
@@ -1202,7 +1202,6 @@ export class DebugSessionClass extends DebugSession {
 			this.sendResponse(response);
 			this.serializer.endExec();
 		});
-
 	}
 
 
@@ -1214,12 +1213,12 @@ export class DebugSessionClass extends DebugSession {
 	 public emulatorStepOver(handler?: () => void): void {
 		Decoration.clearBreak();
 		// Step-Over
-		Remote.stepOver((disasm, tStates, cpuFreq, breakReason) => {
+		 Remote.stepOver().then(result => {
 			// Display T-states and time
-			let text = disasm || '';
-			if(tStates || cpuFreq)
+			 let text=result.instruction || '';
+			 if (result.tStates||result.cpuFreq)
 				text += ' \t; ';
-			this.showUsedTStates('StepOver: '+text, tStates, cpuFreq);
+			 this.showUsedTStates('StepOver: '+text, result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
 			this.update({step: true});
@@ -1231,11 +1230,11 @@ export class DebugSessionClass extends DebugSession {
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 
-			if(breakReason) {
+			 if (result.breakReason) {
 				// Output a possible problem
-				vscode.debug.activeDebugConsole.appendLine(breakReason);
+				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 				// Show break reason
-				this.decorateBreak(breakReason);
+				this.decorateBreak(result.breakReason);
 			}
 		});
 	}
@@ -1370,30 +1369,30 @@ export class DebugSessionClass extends DebugSession {
 	 protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		Decoration.clearBreak();
 		// Serialize
-		this.serializer.exec(() => {
-			// Step-Back
-			Remote.stepBack((instruction, breakReason) => {
-				// Print
-				vscode.debug.activeDebugConsole.appendLine('StepBack: ' + instruction);
+		 this.serializer.exec(() => {
+			 // Step-Back
+			 Remote.stepBack().then(result => {
+				 // Print
+				 vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
 
-				if(breakReason) {
-					// Output a possible problem (end of log reached)
-					vscode.debug.activeDebugConsole.appendLine(breakReason);
-					// Show break reason
-					this.decorateBreak(breakReason);
-				}
+				 if (result.breakReason) {
+					 // Output a possible problem (end of log reached)
+					 vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+					 // Show break reason
+					 this.decorateBreak(result.breakReason);
+				 }
 
-				// Update memory dump etc.
-				this.update({step: true});
+				 // Update memory dump etc.
+				 this.update({step: true});
 
-				// Response
-				this.sendResponse(response);
-				this.serializer.endExec();
+				 // Response
+				 this.sendResponse(response);
+				 this.serializer.endExec();
 
-				// Send event
-				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-			});
-		});
+				 // Send event
+				 this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			 });
+		 });
 	}
 
 

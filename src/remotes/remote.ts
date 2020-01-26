@@ -625,105 +625,6 @@ export class RemoteClass extends EventEmitter {
 
 
 	/**
-	 * Helper function to prepare the callstack for vscode.
-	 * What makes it complicated is the fact that for every word on the stack the zesarux
-	 * has to be called to get the disassembly to check if it was a CALL.
-	 * The function calls itself recursively.
-	 * @param frames The array that is sent at the end which is increased every call.
-	 * @param zStack The original zesarux stack frame.
-   * @param address The address of the instruction, for the first call this is the PC.
-	 * @param index The index in zStack. Is increased with every call.
-	 * @param zStackAddress The stack start address (the SP).
-	 * @param lastCallFrameIndex The index to the last item on stack (in listFrames) that was a CALL.
-	 * @param handler The handler to call when ready.
-	 */
-
-	protected setupCallStackFrameArray(frames: RefList<any>, zStack: Array<string>, address: number, index: number, zStackAddress: number, lastCallIndex: number, handler: (frames: Array<CallStackFrame>) => void) {
-
-		// Check for last frame
-		if (index>=zStack.length) {
-			// Find pushed values
-			const stack=new Array<number>();
-			for (let l=index-1; l>lastCallIndex; l--) {
-				const addrTypeString=zStack[l];
-				const pushedValue=parseInt(addrTypeString, 16);
-				stack.push(pushedValue);
-			}
-			// Save top frame
-			const sp=zStackAddress+2*index;
-			const frame=new CallStackFrame(address, zStackAddress+2*(index-1), this.getMainName(sp));
-			frame.stack=stack;
-			frames.addObject(frame);
-			// Use new frames
-			this.listFrames=frames;
-			// call handler
-			handler(frames);
-			return;
-		}
-
-		// Get type of stack entry
-		const stackEntry=zStack[index];
-		this.getStackEntryType(stackEntry).then(type => {
-			if (type) {
-				// It was a CALL, RST or interrupt
-				// Find pushed values
-				const stack=new Array<number>();
-				for (let l=index-1; l>lastCallIndex; l--) {
-					const addrTypeString=zStack[l];
-					const pushedValue=parseInt(addrTypeString, 16);
-					stack.push(pushedValue);
-				}
-				// Save
-				const frame=new CallStackFrame(address, zStackAddress+2*(index-1), type.name)
-				frame.stack=stack;
-				frames.addObject(frame);
-				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, type.callerAddr, index+1, zStackAddress, index, handler);
-			}
-			else {
-				// It was something else, e.g. a pushed value.
-				// Call recursively
-				this.setupCallStackFrameArray(frames, zStack, address, index+1, zStackAddress, lastCallIndex, handler);
-			}
-		});
-	}
-
-
-	/**
-	 * Returns the "real" stack frames from Remote.
-	 * @param handler The handler to call when ready.
-	 */
-	public realStackTraceRequest(handler: (frames: RefList<any>) => void): void {
-		// Create a call stack / frame array
-		const frames=new RefList();
-
-		// Get current pc
-		this.getRegisters().then(() => {
-			// Parse the PC value
-			const pc=this.z80Registers.getPC();
-			const sp=this.z80Registers.getSP();
-
-			// Get the stack
-			this.getStack().then(stack => {
-
-				// Check if empty
-				if (stack.length==0) {
-					// Special handling if stack depth is 0
-					const zStack=new Array<string>();
-					this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
-					return;
-				}
-
-				// Convert to strings
-				const zStack=stack.map(value => value);
-				// Rest of callstack
-				this.setupCallStackFrameArray(frames, zStack, pc, 0, sp, 0, handler);
-			});
-		});
-	}
-
-
-	/**
 	 * Checks the stack entry type for the given value.
 	 * If the type is CALL, RST (or interrupt) an object with the label name, the called and
 	 * the caller address is returned.
@@ -934,21 +835,28 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * 'reverse continue' debugger program execution.
-	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * The Promise resolves when it's stopped e.g. when a breakpoint is hit.
+	 * @returns A string with the break reason. (Never undefined)
 	 */
-	public reverseContinue(handler: (error?: string) => void): void {
+	public async reverseContinue(): Promise<string> {
 		assert(false);	// override this
+		return "";
 	}
+
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(disasm, tStates, cpuFreq) The handler that is called after the step is performed.
-	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
+	 * @returns A Promise with:
+	 * 'instruction' is the disassembly of the current line.
+	 * 'tStates' contains the number of tStates executed.
+	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * 'breakReason' a possibly text with the break reason
 	 */
-	public stepOver(handler: (disasm: string, tStates?: number, cpuFreq?: number, error?: string) => void): void {
+	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
+		return {
+			instruction: ""
+		};
 	}
 
 
@@ -975,14 +883,15 @@ export class RemoteClass extends EventEmitter {
 	}
 
 
-	/**
-	 * 'step backwards' the program execution in the debugger.
-	  * @param handler(instruction, error) The handler that is called after the step is performed.
-	  * instruction: e.g. "081C NOP"
-	  * error: If defined this holds the exception message.
-	  */
-	public stepBack(handler: (instruction: string, error: string) => void): void {
+/**
+  * 'step backwards' the program execution in the debugger.
+  * @returns {instruction, breakReason} Promise.
+  * instruction: e.g. "081C NOP"
+  * breakReason: If not undefined it holds the break reason message.
+  */
+	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
 		assert(false);	// override this
+		return {instruction: "", breakReason: undefined};
 	}
 
 

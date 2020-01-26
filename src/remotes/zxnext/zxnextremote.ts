@@ -257,21 +257,12 @@ export class ZxNextRemote extends RemoteClass {
 
 
 	/**
-	 * Returns the pointer to the virtual reverse debug stack.
-	 * If it does not exist yet it will be created and prefilled with the current
-	 * (memory) stack values.
+	 *  Prefills teh debug stack if it does not exist yet.
 	 */
-	protected prepareReverseDbgStack(handler: () => void) {
-		if (this.cpuHistory.isInStepBackMode()) {
-			// Call immediately
-			handler();
-		}
-		else {
+	protected async prepareReverseDbgStack(): Promise<void> {
+		if (!this.cpuHistory.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.realStackTraceRequest(frames => {
-				this.reverseDbgStack = frames;
-				handler();
-			});
+			this.reverseDbgStack=await this.getCallStack();
 		}
 	}
 
@@ -337,90 +328,27 @@ export class ZxNextRemote extends RemoteClass {
 	 * 'reverse continue' debugger program execution.
 	 * @param handler The handler that is called when it's stopped e.g. when a breakpoint is hit.
 	 */
-	public reverseContinue(handler: (breakReason: string) => void) {
+	public async reverseContinue(): Promise<string> {
 		// Make sure the call stack exists
-		this.prepareReverseDbgStack(async () => {
-			// Call handler
-			handler("");
-		});
+		await this.prepareReverseDbgStack();
+		return "";
+
 	}
 
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @param handler(disasm, tStates, cpuFreq) The handler that is called after the step is performed.
+	 * @returns A Promise with:
 	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
+	 * 'tStates' contains the number of tStates executed.
+	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * 'breakReason' a possibly text with the break reason
 	 */
-	public async stepOver(handler: (disasm: string, tStates?: number, cpuFreq?: number, breakReason?: string) => void) {
-
-
-		// Zesarux is very special in the 'step-over' behavior.
-		// In case of e.g a 'jp cc, addr' it will never return
-		// if the condition is met because
-		// it simply seems to wait until the PC reaches the next
-		// instruction what, for a jp-instruction, obviously never happens.
-		// Therefore a 'step-into' is executed instead. The only problem is that a
-		// 'step-into' is not the desired behavior for a CALL.
-		// Furthermore we don't get a break reason for a zesarux step-over.
-		// I.e. if a step-over is interrupted by a breakpoint zesarux breaks at the breakpoint
-		// but does not show a reason.
-		// Therefore the CALL and RST are exceuted with a "run".
-		// All others are executed with a step-into.
-		// Only exception is LDDR etc. Those are executed as step-over.
-		this.getRegisters().then(() => {
-			const pc = this.z80Registers.getPC();
-			zSocket.send('disassemble ' + pc, disasm => {
-				// Check if this was a "CALL something" or "CALL n/z,something"
-				const opcode = disasm.substr(7, 4);
-
-				// For RST and CALL we break when SP reaches the current SP again.
-				// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
-				// reached if the stack is manipulated.
-				// A SP breakpoint might be hit when the stack is being manipulated, but at least it
-				// is hit and does not run forever.
-				if (opcode == "RST " || opcode == "CALL") {
-					// Set condition
-					const sp = this.zxnextRegisters.getSP();
-					const condition = 'SP>=' + sp;
-					// We do a "run" instead of a step-into/over
-					// Set action first (no action).
-					const bpId = ZxNextRemote.STEP_BREAKPOINT_ID;
-					// Clear register cache
-					this.zxnextRegisters.clearCache();
-					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
-					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
-						// set the breakpoint
-						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
-							// enable breakpoint
-							zSocket.send('enable-breakpoint ' + bpId, () => {
-								// Run
-								this.state = EmulatorState.RUNNING;
-								this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
-									// Disable breakpoint
-									zSocket.send('disable-breakpoint ' + bpId, () => {
-										this.state = EmulatorState.IDLE;
-										handler(disasm, tStates, cpuFreq, breakReason);
-									});
-								});
-							});
-						});
-					});
-				}
-				else {
-					// "normal" opcode, just check for repetitive ones
-					const cmd = (opcode == "LDIR" || opcode == "LDDR" || opcode == "CPIR" || opcode == "CPDR") ? 'cpu-step-over' : 'cpu-step';
-					// Clear register cache
-					this.zxnextRegisters.clearCache();
-					// Step
-					this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReason) => {
-						// Call handler
-						handler(disasm, tStates, cpuFreq, breakReason);
-					});
-				}
-			});
-		});
+	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
+		assert(false);	// override this
+		return {
+			instruction: ""
+		};
 	}
 
 
@@ -634,13 +562,13 @@ export class ZxNextRemote extends RemoteClass {
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @param handler(instruction, breakReason) The handler that is called after the step is performed.
+	  * @returns {instruction, breakReason} Promise.
 	  * instruction: e.g. "081C NOP"
 	  * breakReason: If not undefined it holds the break reason message.
 	  */
-	public stepBack(handler: (instruction: string, breakReason: string) => void) {
-		// Call handler
-		handler("", "");
+	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
+		assert(false);
+		return {instruction: "", breakReason: undefined};
 	}
 
 
