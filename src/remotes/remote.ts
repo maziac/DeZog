@@ -711,7 +711,7 @@ export class RemoteClass extends EventEmitter {
 			// Create stack
 			for (let i=depth-2; i>=0; i-=2) {
 				const value=(data[i+1]<<8)+data[i];
-				zStack.push(value.toString(16));
+				zStack.push(Utility.getHexString(value, 4));
 			}
 		}
 		return zStack;

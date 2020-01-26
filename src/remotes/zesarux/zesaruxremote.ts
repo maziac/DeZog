@@ -407,11 +407,11 @@ export class ZesaruxRemote extends RemoteClass {
 			return super.getStackEntryType(stackEntryValue);
 		}
 
-		return new Promise<{name: string, calledAddr: number, callerAddr: number}|undefined>(resolve => {
+		return new Promise<{name: string, callerAddr: number}|undefined>(resolve => {
 			if (type.includes('interrupt')) {
 				// Interrupt
 				const retAddr=parseInt(stackEntryValue, 16);
-				resolve({name: this.getInterruptName(), calledAddr: 0, callerAddr: retAddr}); // TODO
+				resolve({name: this.getInterruptName(), callerAddr: retAddr}); // TODO
 			}
 			else {
 				// Some pushed value
