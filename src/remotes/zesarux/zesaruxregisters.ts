@@ -1,6 +1,8 @@
 import * as assert from 'assert';
 import { Utility } from '../../utility';
-import { Z80Registers, Z80_REG } from '../z80registers';
+import {Z80Registers, RegisterData } from '../z80registers';
+
+
 
 
 /**
@@ -13,18 +15,10 @@ import { Z80Registers, Z80_REG } from '../z80registers';
 export class ZesaruxRegisters extends Z80Registers {
 
 	/**
-	 * Eg.
-	 * PC=80cf SP=83f3 AF=0208 BC=0300 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=00ff HL'=f3f3 DE'=0001 I=00 R=0b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0
-	 * A65E RETI
+	 * A Line from ZEsarUX, e.g.
+	 * "PC=812c SP=8418 AF=03ff BC=02ff HL=99a2 DE=ffff IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2c  F=SZ5H3PNC F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0 "
 	 */
 
-	/// All values of the registers are provided in a map.
-	/// Together with a function to retrieve the value from the data string.
-	protected regMap = new Map<string, {(data: string):number}>();
-
-	/// The register cache for values retrieved from ZEsarUX.
-	/// Is a simple string that needs to get parsed.
-	protected RegisterCache: string|undefined;
 
 	// Indices for first time search.
 	protected pcIndex: number;
@@ -43,10 +37,9 @@ export class ZesaruxRegisters extends Z80Registers {
 	protected rIndex: number;
 
 
-
 	/**
-	 * Called during the launchRequest.
-	 */
+	* Called during the launchRequest.
+	*/
 	constructor() {
 		super();
 
@@ -65,40 +58,6 @@ export class ZesaruxRegisters extends Z80Registers {
 		this.de2Index = -1;
 		this.iIndex = -1;
 		this.rIndex = -1;
-
-		// Init the map
-		this.regMap.set("PC", this.parsePC.bind(this));
-		this.regMap.set("SP", this.parseSP.bind(this));
-
-		this.regMap.set("AF", this.parseAF.bind(this));
-		this.regMap.set("BC", this.parseBC.bind(this));
-		this.regMap.set("DE", this.parseDE.bind(this));
-		this.regMap.set("HL", this.parseHL.bind(this));
-		this.regMap.set("IX", this.parseIX.bind(this));
-		this.regMap.set("IY", this.parseIY.bind(this));
-
-		this.regMap.set("AF'", this.parseAF2.bind(this));
-		this.regMap.set("BC'", this.parseBC2.bind(this));
-		this.regMap.set("DE'", this.parseDE2.bind(this));
-		this.regMap.set("HL'", this.parseHL2.bind(this));
-
-		this.regMap.set("A", this.parseA.bind(this));
-		this.regMap.set("F", this.parseF.bind(this));
-		this.regMap.set("B", this.parseB.bind(this));
-		this.regMap.set("C", this.parseC.bind(this));
-		this.regMap.set("D", this.parseD.bind(this));
-		this.regMap.set("E", this.parseE.bind(this));
-		this.regMap.set("H", this.parseH.bind(this));
-		this.regMap.set("L", this.parseL.bind(this));
-		this.regMap.set("I", this.parseI.bind(this));
-		this.regMap.set("R", this.parseR.bind(this));
-		this.regMap.set("A'", this.parseA2.bind(this));
-		this.regMap.set("F'", this.parseF2.bind(this));
-
-		this.regMap.set("IXL", this.parseIXL.bind(this));
-		this.regMap.set("IXH", this.parseIXH.bind(this));
-		this.regMap.set("IYL", this.parseIYL.bind(this));
-		this.regMap.set("IYH", this.parseIYH.bind(this));
 	}
 
 
@@ -107,7 +66,7 @@ export class ZesaruxRegisters extends Z80Registers {
 	 * @param data The output from zesarux.
 	 * @returns The value.
 	 */
-	public parsePC(data: string): number {
+	public parsePC(data: RegisterData): number {
 		if(this.pcIndex < 0) {
 			this.pcIndex = data.indexOf('PC=');
 			assert(this.pcIndex >= 0);
@@ -117,7 +76,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseSP(data: string): number {
+	public parseSP(data: RegisterData): number {
 		if(this.spIndex < 0) {
 			this.spIndex = data.indexOf('SP=');
 			assert(this.spIndex >= 0);
@@ -127,7 +86,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseAF(data: string): number {
+	public parseAF(data: RegisterData): number {
 		if(this.afIndex < 0) {
 			this.afIndex = data.indexOf('AF=');
 			assert(this.afIndex >= 0);
@@ -137,7 +96,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseBC(data: string): number {
+	public parseBC(data: RegisterData): number {
 		if(this.bcIndex < 0) {
 			this.bcIndex = data.indexOf('BC=');
 			assert(this.bcIndex >= 0);
@@ -147,7 +106,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseHL(data: string): number {
+	public parseHL(data: RegisterData): number {
 		if(this.hlIndex < 0) {
 			this.hlIndex = data.indexOf('HL=');
 			assert(this.hlIndex >= 0);
@@ -157,7 +116,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseDE(data: string): number {
+	public parseDE(data: RegisterData): number {
 		if(this.deIndex < 0) {
 			this.deIndex = data.indexOf('DE=');
 			assert(this.deIndex >= 0);
@@ -167,7 +126,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseIX(data: string): number {
+	public parseIX(data: RegisterData): number {
 		if(this.ixIndex < 0) {
 			this.ixIndex = data.indexOf('IX=');
 			assert(this.ixIndex >= 0);
@@ -177,7 +136,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseIY(data: string): number {
+	public parseIY(data: RegisterData): number {
 		if(this.iyIndex < 0) {
 			this.iyIndex = data.indexOf('IY=');
 			assert(this.iyIndex >= 0);
@@ -187,7 +146,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseAF2(data: string): number {
+	public parseAF2(data: RegisterData): number {
 		if(this.af2Index < 0) {
 			this.af2Index = data.indexOf("AF'=");
 			assert(this.af2Index >= 0);
@@ -197,7 +156,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseBC2(data: string): number {
+	public parseBC2(data: RegisterData): number {
 		if(this.bc2Index < 0) {
 			this.bc2Index = data.indexOf("BC'=");
 			assert(this.bc2Index >= 0);
@@ -207,7 +166,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseHL2(data: string): number {
+	public parseHL2(data: RegisterData): number {
 		if(this.hl2Index < 0) {
 			this.hl2Index = data.indexOf("HL'=");
 			assert(this.hl2Index >= 0);
@@ -217,7 +176,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseDE2(data: string): number {
+	public parseDE2(data: RegisterData): number {
 		if(this.de2Index < 0) {
 			this.de2Index = data.indexOf("DE'=");
 			assert(this.de2Index >= 0);
@@ -227,7 +186,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseI(data: string): number {
+	public parseI(data: RegisterData): number {
 		if(this.iIndex < 0) {
 			this.iIndex = data.indexOf('I=');
 			assert(this.iIndex >= 0);
@@ -237,7 +196,7 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public parseR(data: string): number {
+	public RegisterData(data: string): number {
 		if(this.rIndex < 0) {
 			this.rIndex = data.indexOf('R=');
 			assert(this.rIndex >= 0);
@@ -245,110 +204,6 @@ export class ZesaruxRegisters extends Z80Registers {
 		}
 		const res = parseInt(data.substr(this.rIndex,2),16);
 		return res;
-	}
-
-	public parseA(data: string): number {
-		const res = this.parseAF(data)>>8;
-		return res;
-	}
-
-	public parseF(data: string): number {
-		const res = this.parseAF(data) & 0xFF;
-		return res;
-	}
-
-	public parseB(data: string): number {
-		const res = this.parseBC(data)>>8;
-		return res;
-	}
-
-	public parseC(data: string): number {
-		const res = this.parseBC(data) & 0xFF;
-		return res;
-	}
-
-	public parseD(data: string): number {
-		const res = this.parseDE(data)>>8;
-		return res;
-	}
-
-	public parseE(data: string): number {
-		const res = this.parseDE(data) & 0xFF;
-		return res;
-	}
-
-	public parseH(data: string): number {
-		const res = this.parseHL(data)>>8;
-		return res;
-	}
-
-	public parseL(data: string): number {
-		const res = this.parseHL(data) & 0xFF;
-		return res;
-	}
-
-	public parseA2(data: string): number {
-		const res = this.parseAF2(data)>>8;
-		return res;
-	}
-
-	public parseF2(data: string): number {
-		const res = this.parseAF2(data) & 0xFF;
-		return res;
-	}
-
-	public parseIXL(data: string): number {
-		const res = this.parseIX(data) & 0xFF;
-		return res;
-	}
-
-	public parseIXH(data: string): number {
-		const res = this.parseIX(data)>>8;
-		return res;
-	}
-
-	public parseIYL(data: string): number {
-		const res = this.parseIY(data) & 0xFF;
-		return res;
-	}
-
-	public parseIYH(data: string): number {
-		const res = this.parseIY(data)>>8;
-		return res;
-	}
-
-
-	/**
-	 * Clears the register cache.
-	 */
-	public clearCache() {
-		this.RegisterCache = undefined;
-	}
-
-
-	/**
-	 * Sets the register cache.
-	 * Used by ZesaruxEmulator.getRegistersFromEmulator and the cpu history.
-	 */
-	public setCache(line: string) {
-		this.RegisterCache = line;
-	}
-
-
-	/**
-	 * Returns the register cache.
-	 * Used by the cpu history.
-	 */
-	public getCache(): string {
-		return this.RegisterCache as string;
-	}
-
-
-	/**
-	 * Returns true if the register is available.
-	 */
-	public valid(): boolean {
-		return this.RegisterCache != undefined;
 	}
 
 
@@ -374,31 +229,5 @@ export class ZesaruxRegisters extends Z80Registers {
 		assert(this.RegisterCache)
 		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
 		return res;
-	}
-
-
-	/**
-	 * Returns the register value as a number.
-	 * @param regName The register name.
-	 * @returns The value of the register.
-	 */
-	public getRegValueByName(regName: string): number {
-		let handler = this.regMap.get(regName.toUpperCase()) || (data => 0);
-		assert(handler != undefined, 'Register ' + regName + ' does not exist.');
-		assert(this.RegisterCache);
-		let value = handler(this.RegisterCache as string);
-		return value;
-	}
-
-
-	/**
-	 * Returns the register value as a number.
-	 * Override.
-	 * @param reg The register enum.
-	 * @returns The value of the register.
-	 */
-	public getRegValue(reg: Z80_REG): number {
-		const name = Z80Registers.registerNames[reg];
-		return this.getRegValueByName(name);
 	}
 }
