@@ -9,6 +9,7 @@ import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels} from '../labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../utility';
+import {ReadStream} from 'fs';
 
 
 
@@ -652,6 +653,12 @@ export class RemoteClass extends EventEmitter {
 			callerAddr=addr-3;
 		}
 		else {
+			/*
+			I removed the check for RST:
+			An RST will happen relatively seldom. But here a RST would be found with
+			a probability of 1/16. I.e. every 16th value would be wrong.
+			Therefore I better skip the detection.
+
 			// Check if one of the 2 last bytes was a RST.
 			// Note: Not only the last byte is checked but also the byte before. This is
 			// a small "hack" to allow correct return addresses even for esxdos.
@@ -670,6 +677,7 @@ export class RemoteClass extends EventEmitter {
 				calledAddr=opc12&0b00111000;
 				callerAddr=addr-k;
 			}
+			*/
 		}
 
 		// Nothing found?
