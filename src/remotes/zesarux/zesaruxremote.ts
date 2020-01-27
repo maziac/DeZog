@@ -411,7 +411,7 @@ export class ZesaruxRemote extends RemoteClass {
 			if (type.includes('interrupt')) {
 				// Interrupt
 				const retAddr=parseInt(stackEntryValue, 16);
-				resolve({name: this.getInterruptName(), callerAddr: retAddr}); // TODO
+				resolve({name: this.getInterruptName(), callerAddr: retAddr});
 			}
 			else {
 				// Some pushed value

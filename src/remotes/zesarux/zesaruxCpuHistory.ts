@@ -67,6 +67,8 @@ export class ZesaruxCpuHistory {
 			zSocket.send('cpu-history set-max-size ' + maxSize);
 			zSocket.send('cpu-history clear');
 			zSocket.send('cpu-history started yes');
+			zSocket.send('cpu-history ignrephalt yes');
+			zSocket.send('cpu-history ignrepldxr yes');
 		}
 		else {
 			zSocket.send('cpu-history enabled no', () => {}, true);
