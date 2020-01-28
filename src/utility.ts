@@ -757,4 +757,53 @@ export class Utility {
 		f();
 	}
 
+
+	/**
+	 * Returns the time since the last call to this method.
+	 * If you want to measure the time some algorithm takes
+	 * simply surround the algorithm by 2 calls of 'timeDiff'.
+	 * Ignore the result of the first one.
+	 * The result of the 2nd call is the time that has been
+	 * required.
+	 * ~~~
+	 * timeDiff();
+	 * ... your algorithm
+	 * const time = timeDiff();
+	 * ~~~
+	 * @returns Differential time in ms.
+	 */
+	public static timeDiff(): number {
+		const time=new Date().getMilliseconds();
+		const diff=time-this.previousTimeDiffValue;
+		this.previousTimeDiffValue=time;
+		return diff;
+	}
+	static previousTimeDiffValue: number=0;
+
+
+	/**
+	 * Measures the time an algorithm/function takes to finish.
+	 * The time is returned in ms.
+	 * The algorithm is executed several times, default is 10000,
+	 * to give an accurate result.
+	 * ~~~
+	 * const time = measure(() => {
+	 *   ... your algorithm
+	 *   });
+	 * ~~~
+	 * @param algorithm The algorithm/function to measure.
+	 * @param repetitions The number of repetitions.
+	 * @returns The time in ns (nano secs). The time is for one execution. I.e
+	 * it is already divided by 'repetitions'.
+	 */
+	public static measure(algorithm: () => void, repetitions: number = 100000): number {
+		const t0=new Date().getTime();
+		for (let i=repetitions; i>0; i--) {
+			algorithm();
+		}
+		const t1=new Date().getTime();
+		const diff=(t1-t0)/repetitions;
+		const diffns=diff*1000000;	// convert to ns
+		return diffns;
+	}
 }

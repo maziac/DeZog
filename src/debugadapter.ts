@@ -258,7 +258,7 @@ export class DebugSessionClass extends DebugSession {
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
-		Remote.disconnect(() => {
+		Remote.disconnect().then(() => {
 			this.removeAllListeners();
 			this.sendResponse(response);
 		});
@@ -314,7 +314,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
 		// Stop machine
-		Remote.disconnect(() => {
+		Remote.disconnect().then(() => {
 			// And setup a new one
 			this.launch(response);
 		});
@@ -467,7 +467,7 @@ export class DebugSessionClass extends DebugSession {
 						this.sendEventContinued();
 						setTimeout(() => {
 							// Delay call because the breakpoints are set afterwards.
-							this.emulatorContinue();
+							this.remoteContinue();
 						}, 500);
 					}
 					else {
@@ -1094,7 +1094,7 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
-			this.emulatorContinue();
+			this.remoteContinue();
 			this.sendResponse(response);
 			this.serializer.endExec();
 		});
@@ -1102,24 +1102,24 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Calls 'continue' (run) on the emulator.
+	 * Calls 'continue' (run) on the remote (emulator).
 	 * Called at the beginning (startAutomatically) and from the
 	 * vscode UI (continueRequest).
 	 */
-	public emulatorContinue() {
+	public remoteContinue() {
 		Decoration.clearBreak();
-		Remote.continue((reason, tStates, cpuFreq) => {
+		Remote.continue().then(result => {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 			// Display T-states and time
-			this.showUsedTStates('Continue. ', tStates, cpuFreq);
+			this.showUsedTStates('Continue. ', result.tStates, result.cpuFreq);
 
-			if(reason) {
+			if (result.reason) {
 				// Send output event to inform the user about the reason
-				vscode.debug.activeDebugConsole.appendLine(reason);
+				vscode.debug.activeDebugConsole.appendLine(result.reason);
 
 				// Use reason for break-decoration.
-				this.decorateBreak(reason);
+				this.decorateBreak(result.reason);
 			}
 
 			// React depending on internal state.
@@ -1302,17 +1302,19 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Into
-			Remote.stepInto((disasm, tStates, cpuFreq, error) => {
+			Remote.stepInto().then(result => {
 				// Display T-states and time
-				const text = disasm ? disasm+' \t; ' : '';
-				this.showUsedTStates('StepInto: '+text, tStates, cpuFreq);
+				let text=result.instruction||'';
+				if (result.tStates||result.cpuFreq)
+					text+=' \t; ';
+				this.showUsedTStates('StepInto: '+text, result.tStates, result.cpuFreq);
 
 				// Update memory dump etc.
 				this.update({step: true});
 
-				// Output a possible problem (end of log reached)
-				if(error)
-					vscode.debug.activeDebugConsole.appendLine(error);
+				// Output a possible problem ("end of cpu history reached")
+				if (result.breakReason)
+					vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 
 				// Response
 				this.sendResponse(response);
@@ -1336,15 +1338,15 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Step-Out
-			Remote.stepOut((tStates, cpuFreq, breakReason) => {
+			Remote.stepOut().then(result => {
 				// Display T-states and time
-				this.showUsedTStates('StepOut. ', tStates, cpuFreq);
+				this.showUsedTStates('StepOut. ', result.tStates, result.cpuFreq);
 
-				if(breakReason) {
+				if (result.breakReason) {
 					// Output a possible problem (end of log reached)
-					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 					// Show break reason
-					this.decorateBreak(breakReason);
+					this.decorateBreak(result.breakReason);
 				}
 
 				// Update memory dump etc.
@@ -1833,10 +1835,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all assert breakpoints
 			const enable = (param == 'enable');
-			Remote.enableAssertBreakpoints(enable, () => {
-				// Print to console
-				show();
-			});
+			Remote.enableAssertBreakpoints(enable)
+				.then(show);	// Print to console
 		}
 		else if(param == 'status') {
 			// just show
@@ -1863,13 +1863,11 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		}
 
 		const param = tokens[0] || '';
-		if(param == 'enable' || param == 'disable') {
+		if (param=='enable'||param=='disable') {
 			// enable or disable all WPMEM watchpoints
-			const enable = (param == 'enable');
-			Remote.enableWPMEM(enable, () => {
-				// Print to console
-				show();
-			});
+			const enable=(param=='enable');
+			Remote.enableWPMEM(enable)
+				.then(show);  // Print to console
 		}
 		else if(param == 'status') {
 			// just show

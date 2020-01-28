@@ -202,7 +202,7 @@ export class Z80UnitTests {
 
 		if(Remote) {
 			// Terminate emulator
-			Remote.terminate(f);
+			Remote.terminate().then(f);
 		}
 		else
 			f();
@@ -653,13 +653,13 @@ export class Z80UnitTests {
 				// Run or Debug
 				if(da) {
 					// Debug: Continue
-					da.emulatorContinue();
+					da.remoteContinue();
 					// With vscode UI
 					da.sendEventContinued();
 				}
 				else {
 					// Run: Continue
-					Remote.continue((data, tStates, cpuFreq) => {
+					Remote.continue().then(() => {
 						Z80UnitTests.onBreak();
 					});
 				}
@@ -915,7 +915,7 @@ export class Z80UnitTests {
 				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
-				Remote.disconnect(() => {});
+				Remote.disconnect();
 				// Show error
 				if(errMessage)
 					vscode.window.showErrorMessage(errMessage);

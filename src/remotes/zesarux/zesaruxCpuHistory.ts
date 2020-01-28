@@ -3,8 +3,6 @@ import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 import { Opcode } from '../../disassembler/opcode';
 import { BaseMemory } from '../../disassembler/basememory';
 import { Z80Registers } from '../z80registers';
-//import { Emulator } from './emulatorfactory';
-import { ZesaruxRegisters } from './zesaruxregisters';
 
 
 /**
@@ -14,7 +12,6 @@ import { ZesaruxRegisters } from './zesaruxregisters';
  * PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c
  * which is very much the same as the line retrieved during each forward step. To compare, forward-step:
  * PC=003a SP=ff42 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=07  F=-Z-H3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0  TSTATES: 46
- * 003A LD HL,(5C78)
  *
  * These are the ZEsarUX cpu history zrcp commands:
  * cpu-history ...:
@@ -46,14 +43,14 @@ export class ZesaruxCpuHistory {
 	protected spIndex = -1;
 
 	// Holds a pointer to the zesarux registers
-	protected zesaruxRegisters: ZesaruxRegisters;
+	protected z80Registers: Z80Registers;
 
 	/**
 	 * Creates the object.
 	 */
-	constructor(regs: ZesaruxRegisters) {
+	constructor(regs: Z80Registers) {
 		this.history = Array<string>();
-		this.zesaruxRegisters = regs;
+		this.z80Registers = regs;
 	}
 
 
@@ -190,7 +187,7 @@ export class ZesaruxCpuHistory {
 	public getInstruction(line: string): string {
 		// Prepare bytes to memory
 		const opcodes = this.getOpcodes(line);
-		const pc = this.zesaruxRegisters.parsePC(line);
+		const pc = this.z80Registers.parsePC(line);
 		const buffer = new BaseMemory(pc, 4);
 		for(let i=0; i<4; i++) {
 			const opc = parseInt(opcodes.substr(i*2, 2), 16);
@@ -404,16 +401,16 @@ export class ZesaruxCpuHistory {
 		let value;
 		switch(opcode0) {
 			case 0xC5:	// PUSH BC
-				value = this.zesaruxRegisters.parseBC(line);
+				value = this.z80Registers.parseBC(line);
 				break;
 			case 0xD5:	// PUSH DE
-				value = this.zesaruxRegisters.parseDE(line);
+				value = this.z80Registers.parseDE(line);
 				break;
 			case 0xE5:	// PUSH HL
-				value = this.zesaruxRegisters.parseHL(line);
+				value = this.z80Registers.parseHL(line);
 				break;
 			case 0xF5:	// PUSH AF
-				value = this.zesaruxRegisters.parseAF(line);
+				value = this.z80Registers.parseAF(line);
 				break;
 
 			case 0xDD:
@@ -422,9 +419,9 @@ export class ZesaruxCpuHistory {
 					const opcode1 = parseInt(opcodes.substr(2,2),16);
 					if(opcode1 == 0xE5) {
 						if(opcode0 == 0xDD)
-							value = this.zesaruxRegisters.parseIX(line);	// PUSH IX
+							value = this.z80Registers.parseIX(line);	// PUSH IX
 						else
-							value = this.zesaruxRegisters.parseIY(line);	// PUSH IY
+							value = this.z80Registers.parseIY(line);	// PUSH IY
 					}
 				}
 				break;
@@ -485,7 +482,7 @@ export class ZesaruxCpuHistory {
 
 			case 0xF9:	// LD SP,HL
 				// Get HL
-				const hl = this.zesaruxRegisters.parseHL(line);
+				const hl = this.z80Registers.parseHL(line);
 				expectedSp = hl;
 				break;
 
@@ -504,7 +501,7 @@ export class ZesaruxCpuHistory {
 					const opcode1 = parseInt(opcodes.substr(2,2),16);
 					if(opcode1 == 0xF9) {
 						// LD SP,IX
-						const ix = this.zesaruxRegisters.parseIX(line);
+						const ix = this.z80Registers.parseIX(line);
 						expectedSp = ix;
 					}
 				}
@@ -515,7 +512,7 @@ export class ZesaruxCpuHistory {
 					const opcode1 = parseInt(opcodes.substr(2,2),16);
 					if(opcode1 == 0xF9) {
 						// LD SP,IY
-						const iy = this.zesaruxRegisters.parseIY(line);
+						const iy = this.z80Registers.parseIY(line);
 						expectedSp = iy;
 					}
 				}

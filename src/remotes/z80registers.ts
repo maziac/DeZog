@@ -32,6 +32,15 @@ export type RegisterData=any;
  * Note: the Z80Registers class and derivations are supposed
  * not to communicate via sockets directly.
  * I.e. there is no asynchronicity in these methods.
+ *
+ * For each Remote (Emulator) a derivation of this class is required
+ * to parse the data received from the remote for the registers.
+ * The derived class normally needs to implement the methods:
+ * - parsePC/SP/AF/BC/...AF2/BC2/HL2/DE2, i.e. the 2 byte (word) registers
+ * - parseI, parseR
+ * I.e. the other 1 byte register parse methods might be implemented as
+ * well but it is not necessary as the default implementation will normally
+ * work fine.
  */
 export class Z80Registers {
 

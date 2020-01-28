@@ -476,28 +476,24 @@ export class RemoteClass extends EventEmitter {
 
 
 	/**
-	 * Stops a machine/the debugger.
+	 * Stops a remote.
 	 * This will e.g. disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * Very much like 'terminate' but does not send the 'terminated' event.
-	 * @param handler is called after the connection is disconnected.
 	 */
-	public disconnect(handler: () => void) {
+	public async disconnect(): Promise<void> {
 		// please override.
-		handler();
 	}
 
 
 	/**
-	 * Terminates the machine/the debugger.
+	 * Terminates the remote.
 	 * This should disconnect the socket and un-use all data.
 	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
 	 * Has to emit the "this.emit('terminated')".
-	 * @param handler is called after the connection is terminated.
 	 */
-	public terminate(handler: () => void) {
+	public async terminate(): Promise<void> {
 		// please override.
-		handler();
 	}
 
 
@@ -505,7 +501,6 @@ export class RemoteClass extends EventEmitter {
 	* Gets the registers from cache. If cache is empty retrieves the registers from
 	* the emulator.
     * Override.
-	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
 	public async getRegisters(): Promise<void> {
 		assert(false);
@@ -522,8 +517,9 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * Returns a specific register value.
+	 * Note: The registers should already be present (cached).
+	 * I.e. there is no communication with the remote emulator involved.
 	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
-	 * @param handler(value) The handler that is called with the value when command has finished.
 	 */
 
 	public getRegisterValue(register: string): number {
@@ -579,49 +575,6 @@ export class RemoteClass extends EventEmitter {
 	public async setRegisterValue(register: string, value: number): Promise<number> {
 		assert(false);	// override this
 		return 0;
-	}
-
-
-
-	/**
-	 * Returns the contents of (addr+1).
-	 * It assumes that at addr there is a "CALL calladdr" instruction and it returns the
-	 * callAddr.
-	 * It retrieves the memory contents at addr+1 and calls 'handler' with the result.
-	 * @param addr The address.
-	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
-	 */
-	protected getCallAddress(addr: number, handler: (callAddr: number) => void) {
-		// Get the 2 bytes after address.
-		this.getMemoryDump(addr+1, 2).then(data => {
-			// Get low byte
-			const lowByte=data[0];
-			// Get high byte
-			const highByte=data[1];
-			// Calculate address
-			const callAddr=(highByte<<8)+lowByte;
-			// Call handler
-			handler(callAddr);
-		});
-	}
-
-
-	/**
-	 * Returns the address of (addr).
-	 * It assumes that at addr there is a "RST p" instruction and it returns the
-	 * callAddr, i.e. p.
-	 * It retrieves the memory contents at addr, extract p and calls 'handler' with the result.
-	 * @param addr The address.
-	 * @param handler(callAddr) The handler is called at the end of the function with the called address.
-	 */
-	protected getRstAddress(addr: number, handler: (callAddr: number) => void) {
-		// Get the byte at address.
-		this.getMemoryDump(addr, 1).then(data => {
-			// Get byte and convert to address
-			const p=data[0]&0b00111000;
-			// Call handler
-			handler(p);
-		});
 	}
 
 
@@ -802,7 +755,6 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * Returns the stack frames.
-	 * @param handler The handler to call when ready.
 	 */
 	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
 		assert(false);	// override this
@@ -822,14 +774,15 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @param contExecHandler The handler that is called when the run command is executed.
-	 * @param contStoppedHandler(reason, tStates, cpuFreq) The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * @returns A Promise with {reason, tStates, cpuFreq}.
+	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public continue(contStoppedHandler: (reason: string, tStates?: number, time?: number) => void) {
+	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}> {
 		assert(false);	// override this
+		return {reason: ""};
 	}
 
 
@@ -858,7 +811,7 @@ export class RemoteClass extends EventEmitter {
 	 * 'instruction' is the disassembly of the current line.
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason
+	 * 'breakReason' a possibly text with the break reason.
 	 */
 	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
@@ -870,24 +823,32 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
-	 * 'disasm' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
+	 * @returns A Promise:
+	 * 'instruction' is the disassembly of the current line.
+	 * 'tStates' contains the number of tStates executed.
+	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * 'breakReason' a possibly text with the break reason. This is mainly to keep the
+	 * record consistent with stepOver. But it is e.g. used to inform when the
+	 * end of the cpu history is reached.
 	 */
-	public stepInto(handler: (disasm: string, tStates?: number, time?: number, error?: string) => void): void {
+	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
+		return {
+			instruction: ""
+		};
 	}
 
 
 	/**
-	 * 'step out' of current call.
+	 * 'step out' of current subroutine.
 	 * @param handler(tStates, cpuFreq) The handler that is called after the step out is performed.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
+	 * 'tStates' contains the number of tStates executed.
+	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * 'breakReason' a possibly text with the break reason.
 	 */
-	public stepOut(handler: (tStates?: number, cpuFreq?: number, error?: string) => void): void {
+	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
+		return {};
 	}
 
 
@@ -926,10 +887,10 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * Enables/disables all WPMEM watchpoints set from the sources.
+	 * Promise is called when method finishes.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableWPMEM(enable: boolean, handler?: () => void) {
+	public async enableWPMEM(enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -937,10 +898,10 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Sets the watchpoints in the given list.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * Promises is execute when last watchpoint has been set.
 	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints: Array<GenericWatchpoint>) => void) {
+	public async setWatchpoints(watchPoints: Array<GenericWatchpoint>): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -966,10 +927,10 @@ export class RemoteClass extends EventEmitter {
 
 	/**
 	 * Enables/disables all assert breakpoints set from the sources.
+	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler?: () => void) {
+	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
 		assert(false);	// override this
 	}
 

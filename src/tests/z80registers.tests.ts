@@ -4,16 +4,6 @@ import { Z80Registers } from '../remotes/z80registers';
 
 suite('Z80Registers', () => {
 
-/*
-	setup( () => {
-	});
-*/
-
-/*
-	teardown( () => dc.disconnect() );
-*/
-
-
 	suite('Conditions & Flags', () => {
 
 		test('isCcMetByFlag NZ,Z', () => {

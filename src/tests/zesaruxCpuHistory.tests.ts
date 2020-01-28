@@ -10,9 +10,6 @@ suite('ZesaruxCpuHistory', () => {
 		Z80Registers.Init();
 	});
 
-/*
-	teardown( () => dc.disconnect() );
-*/
 	function createCpuHistory(): ZesaruxCpuHistory {
 		const regs = new ZesaruxRegisters();
 		const hist = new ZesaruxCpuHistory(regs);

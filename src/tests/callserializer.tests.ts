@@ -4,14 +4,6 @@ import { CallSerializer } from '../callserializer';
 
 suite('CallSerializer', () => {
 
-/*
-	setup( () => {
-		return dc.start();
-	});
-
-	teardown( () => dc.disconnect() );
-*/
-
 	suite('execAll', () => {
 
 		test('1 func', (done) => {

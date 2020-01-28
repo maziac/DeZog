@@ -7,10 +7,6 @@ suite('Settings', () => {
 	setup( () => {
 	});
 
-/*
-	teardown( () => dc.disconnect() );
-*/
-
 	suite('CheckSettings', () => {
 
 		test('CheckSettings - remoteType none', () => {

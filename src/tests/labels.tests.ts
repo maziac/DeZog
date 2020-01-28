@@ -13,9 +13,6 @@ suite('Labels', () => {
 		Labels.init();
 	});
 
-/*
-	teardown( () => dc.disconnect() );
-*/
 
 	suite('Files/lines vs list file', () => {
 

@@ -5,7 +5,7 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { RemoteClass, EmulatorBreakpoint, EmulatorState, MemoryPage } from '../remote';
+import { RemoteClass, EmulatorBreakpoint, MemoryPage } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from '../zesarux/zesaruxcpuhistory';
@@ -86,21 +86,17 @@ export class ZxNextRemote extends RemoteClass {
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the disconnect happened.
 	 */
-	public disconnect(handler: () => void) {
-		handler();
+	public async disconnect(): Promise<void> {
 	}
 
 
 	/**
-	 * Terminates the machine/the debugger.
-	 * This will disconnect the socket to zesarux and un-use all data.
-	 * Called e.g. when the unit tests want to terminate.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 * @param handler is called after the disconnect happened.
+	 * Terminates the remote.
+	 * This should disconnect the serial connection and un-use all data.
+	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
+	 * Has to emit the "this.emit('terminated')".
 	 */
-	public terminate(handler: () => void) {
-		handler();
+	public async terminate(): Promise<void> {
 	}
 
 
@@ -157,38 +153,15 @@ export class ZxNextRemote extends RemoteClass {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @param contStoppedHandler The handler that is called when it's stopped e.g. when a breakpoint is hit.
+	 * @returns A Promise with {reason, tStates, cpuFreq}.
+	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
-	 * tStates contains the number of tStates executed and time is the time it took for execution,
-	 * i.e. tStates multiplied with current CPU frequency.
+	 * tStates contains the number of tStates executed.
+	 * cpuFreq contains the CPU frequency at the end.
  	 */
-	public async continue(contStoppedHandler: (reason: string, tStates?: number, time?: number) => void) {
-		// Change state
-		this.state = EmulatorState.RUNNING;
-		// Reset T-state counter.
-		zSocket.send('reset-tstates-partial', () => {
-			// Run
-			zSocket.sendInterruptableRunCmd(text => {
-				// (could take some time, e.g. until a breakpoint is hit)
-				// get T-State counter
-				zSocket.send('get-tstates-partial', data => {
-					const tStates = parseInt(data);
-					// get clock frequency
-					zSocket.send('get-cpu-frequency', data => {
-						const cpuFreq = parseInt(data);
-						this.state = EmulatorState.IDLE;
-						// Clear register cache
-						this.zxnextRegisters.clearCache();
-						// Handle code coverage
-						this.handleCodeCoverage();
-						// The reason is the 2nd line
-						const reason = this.getBreakReason(text);
-						// Call handler
-						contStoppedHandler(reason, tStates, cpuFreq);
-					});
-				});
-			});
-		});
+	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}>{
+		assert(false);	// override this
+		return {reason: ""};
 	}
 
 
@@ -354,23 +327,17 @@ export class ZxNextRemote extends RemoteClass {
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step is performed.
-	 * 'disasm' is the disassembly of the current line.
+	 * @returns A Promise:
+	 * 'instruction' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
+	 * 'breakReason' Not used.
 	 */
-	public async stepInto(handler: (disasm: string, tStates?: number, time?: number, error?: string) => void) {
-		// Normal step into.
-		this.getRegisters().then(() => {
-			const pc = this.zxnextRegisters.getPC();
-			zSocket.send('disassemble ' + pc, disasm => {
-				// Clear register cache
-				this.zxnextRegisters.clearCache();
-				this.cpuStepGetTime('cpu-step', (tStates, cpuFreq) => {
-					handler(disasm, tStates, cpuFreq);
-				});
-			});
-		});
+	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
+		assert(false);	// override this
+		return {
+			instruction: ""
+		};
 	}
 
 
@@ -471,92 +438,16 @@ export class ZxNextRemote extends RemoteClass {
 		}, true);
 	}
 
-
 	/**
-	 * 'step out' of current call.
-	 * @param handler(tStates, cpuFreq, breakReason) The handler that is called after the step is performed.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
+	 * 'step out' of current subroutine.
+	 * @param handler(tStates, cpuFreq) The handler that is called after the step out is performed.
+	 * 'tStates' contains the number of tStates executed.
+	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * 'breakReason' a possibly text with the break reason.
 	 */
-	public async stepOut(handler: (tStates?: number, cpuFreq?: number, breakReason?: string) => void) {
-
-		// Zesarux does not implement a step-out. Therefore we analyze the call stack to
-		// find the first return address.
-		// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
-		// I.e. when the RET (or (RET cc) gets executed.
-
-		// Make sure that reverse debug stack is cleared
-		this.clearReverseDbgStack();
-		// Get current stackpointer
-		this.getRegisters().then(() => {
-			// Get SP
-			const sp = this.zxnextRegisters.getSP();
-
-			// calculate the depth of the call stack
-			var depth = this.topOfStack - sp;
-			if (depth > ZxNextRemote.MAX_STACK_ITEMS)
-				depth = ZxNextRemote.MAX_STACK_ITEMS;
-			if (depth == 0) {
-				// no call stack, nothing to step out, i.e. immediately return
-				handler(undefined, undefined, "Call stack empty");
-				return;
-			}
-			else if (depth < 0) {
-				// Callstack corrupted?
-				handler(undefined, undefined, "SP above topOfStack. Stack corrupted?");
-				return;
-			}
-
-			// get stack from zesarux
-			zSocket.send('extended-stack get ' + depth, data => {
-				data = data.replace(/\r/gm, "");
-				const zStack = data.split('\n');
-				zStack.splice(zStack.length - 1);	// ignore last (is empty)
-
-				// Loop through stack:
-				let bpSp = sp;
-				for (const addrTypeString of zStack) {
-					// Increase breakpoint address
-					bpSp += 2;
-					// Split address and type
-					const type = addrTypeString.substr(6);
-					if (type == "call" || type == "rst" || type.includes("interrupt")) {
-						//const addr = parseInt(addrTypeString,16);
-						// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
-						// Set action first (no action).
-						const bpId = ZxNextRemote.STEP_BREAKPOINT_ID;
-						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
-							// Set the breakpoint.
-							// Note: PC=PEEKW(SP-2) finds an executed RET.
-							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
-							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
-								// Enable breakpoint
-								zSocket.send('enable-breakpoint ' + bpId, () => {
-
-									// Clear register cache
-									this.zxnextRegisters.clearCache();
-									// Run
-									this.state = EmulatorState.RUNNING;
-									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
-										// Disable breakpoint
-										zSocket.send('disable-breakpoint ' + bpId, () => {
-											this.state = EmulatorState.IDLE;
-											handler(tStates, cpuFreq, breakReason);
-										});
-									});
-
-								});
-							});
-						});
-						// Return on a CALL etc.
-						return;
-					}
-				}
-
-				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-				handler();
-			});
-		});
+	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
+		assert(false);	// override this
+		return {};
 	}
 
 
@@ -571,72 +462,24 @@ export class ZxNextRemote extends RemoteClass {
 		return {instruction: "", breakReason: undefined};
 	}
 
-
 	/**
 	 * Sets the watchpoints in the given list.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
-	 * It uses ZEsarUX new fast 'memory breakpoints' for this if the breakpoint ha no additional condition.
-	 * If it has a condition the (slow) original ZEsarUX breakpoints are used.
+	 * Promises is execute when last watchpoint has been set.
 	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	public setWatchpoints(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints: Array<GenericWatchpoint>) => void) {
-		// Set watchpoints (memory guards)
-		for (let wp of watchPoints) {
-			// Check if condition is used
-			if (wp.conditions.length > 0) {
-				// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
-				// Will most probably never be implemented by Cesar.
-				// I leave this open mainly as a reminder.
-				// At the moment no watchpoint will be set if an additional condition is set.
-			}
-			else {
-				// This is the general case. Just add a breakpoint on memory access.
-				let type = 0;
-				if (wp.access.indexOf('r') >= 0)
-					type |= 0x01;
-				if (wp.access.indexOf('w') >= 0)
-					type |= 0x02;
-
-				// Create watchpoint with range
-				const size = wp.size;
-				let addr = wp.address;
-				zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h ' + type + ' ' + size);
-			}
-		}
-
-		// Call handler
-		if (handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
-				// Copy array
-				const wps = watchPoints.slice(0);
-				handler(wps);
-			});
-		}
+	public async setWatchpoints(watchPoints: Array<GenericWatchpoint>): Promise<void> {
+		assert(false);	// override this
 	}
 
 
 	/**
 	 * Enables/disables all WPMEM watchpoints set from the sources.
+	 * Promise is called when method finishes.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableWPMEM(enable: boolean, handler?: () => void) {
-		if (enable) {
-			this.setWatchpoints(this.watchpoints);
-		}
-		else {
-			// Remove watchpoint(s)
-			//zSocket.send('clear-membreakpoints');
-			for (let wp of this.watchpoints) {
-				// Clear watchpoint with range
-				const size = wp.size;
-				let addr = wp.address;
-				zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h 0 ' + size);
-			}
-		}
-		this.wpmemEnabled = enable;
-		zSocket.executeWhenQueueIsEmpty(handler);
+	public async enableWPMEM(enable: boolean): Promise<void> {
+		assert(false);	// override this
 	}
 
 
@@ -652,15 +495,10 @@ export class ZxNextRemote extends RemoteClass {
 
 	/**
 	 * Enables/disables all assert breakpoints set from the sources.
+	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpoints(enable: boolean, handler?: () => void) {
-		// not supported.
-		if (this.assertBreakpoints.length > 0)
-			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
-		if (handler)
-			handler();
+	public async enableAssertBreakpoints(enable: boolean): Promise<void> {
 	}
 
 
@@ -850,7 +688,7 @@ export class ZxNextRemote extends RemoteClass {
 			super.setBreakpoints(path, givenBps,
 				bps => {
 					// But wait for the socket.
-					zSocket.executeWhenQueueIsEmpty(() => {
+					zSocket.executeWhenQueueIsEmpty().then(() => {
 						handler(bps);
 						// End
 						this.serializer.endExec();
@@ -958,7 +796,7 @@ export class ZxNextRemote extends RemoteClass {
 				size-=chunkSize;
 			}
 			// send data to handler
-			zSocket.executeWhenQueueIsEmpty(() => {
+			zSocket.executeWhenQueueIsEmpty().then(() => {
 				resolve(values);
 			});
 		});
@@ -973,32 +811,27 @@ export class ZxNextRemote extends RemoteClass {
 	 */
 	public writeMemoryDump(address: number, dataArray: Uint8Array, handler: () => void) {
 		// Use chunks
-		const chunkSize = 0x10000; //0x1000;
-		let k = 0;
-		let size = dataArray.length;
-		let chunkCount = 0;
-		while (size > 0) {
-			const sendSize = (size > chunkSize) ? chunkSize : size;
+		const chunkSize=0x10000; //0x1000;
+		let k=0;
+		let size=dataArray.length;
+		let chunkCount=0;
+		while (size>0) {
+			const sendSize=(size>chunkSize)? chunkSize:size;
 			// Convert array to long hex string.
-			let bytes = '';
-			for (let i = 0; i < sendSize; i++) {
-				bytes += Utility.getHexString(dataArray[k++], 2);
+			let bytes='';
+			for (let i=0; i<sendSize; i++) {
+				bytes+=Utility.getHexString(dataArray[k++], 2);
 			}
 			// Send
 			chunkCount++;
-			zSocket.send('write-memory-raw ' + address + ' ' + bytes, () => {
+			zSocket.send('write-memory-raw '+address+' '+bytes, () => {
 				chunkCount--;
-				if (chunkCount == 0)
+				if (chunkCount==0)
 					handler();
 			});
 			// Next chunk
-			size -= chunkSize;
+			size-=chunkSize;
 		}
-		// call when ready
-		//zSocket.executeWhenQueueIsEmpty(() => {
-		//	handler();
-		//});
-
 	}
 
 
@@ -1259,7 +1092,7 @@ export class ZxNextRemote extends RemoteClass {
 
 		// 2 triggers
 		zSocket.on('queueChanged', timer);
-		zSocket.executeWhenQueueIsEmpty(timer);
+		zSocket.executeWhenQueueIsEmpty().then(timer);
 	}
 
 

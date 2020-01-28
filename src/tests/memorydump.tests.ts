@@ -4,14 +4,6 @@ import { MemoryDump } from '../memorydump';
 
 suite('MetaBlocks', () => {
 
-/*
-	setup( () => {
-		return dc.start();
-	});
-
-	teardown( () => dc.disconnect() );
-*/
-
 	suite('1 block', () => {
 
 		test('block creation', () => {

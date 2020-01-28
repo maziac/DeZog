@@ -16,7 +16,7 @@ import { zSocket } from './zesaruxsocket';
  */
 export class ZesaruxExtRemote extends ZesaruxRemote {
 	/// Will be set on initialization if extensions are available.
-	protected extensionsAvailable = false;
+	protected extensionsAvailable=false;
 
 	/**
 	 * Is called right after Zesarux has been connected and the version info was read.
@@ -26,22 +26,22 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 */
 	protected zesaruxConnected() {
 		zSocket.send('check-extensions', data => {
-			if(data == 'Extensions available.') {
-				this.extensionsAvailable = true;
+			if (data=='Extensions available.') {
+				this.extensionsAvailable=true;
 				// Enable additional features
-				ZesaruxExtRemote.prototype.initBreakpoints = ZesaruxExtRemote.prototype.initBreakpointsExt;
+				ZesaruxExtRemote.prototype.initBreakpoints=ZesaruxExtRemote.prototype.initBreakpointsExt;
 
-				ZesaruxExtRemote.prototype.setWatchpoints = ZesaruxExtRemote.prototype.setWatchpointsExt;
-				ZesaruxExtRemote.prototype.enableWPMEM = ZesaruxExtRemote.prototype.enableWPMEMExt;
+				ZesaruxExtRemote.prototype.setWatchpoints=ZesaruxExtRemote.prototype.setWatchpointsExt;
+				ZesaruxExtRemote.prototype.enableWPMEM=ZesaruxExtRemote.prototype.enableWPMEMExt;
 
-				ZesaruxExtRemote.prototype.setAssertBreakpoints = ZesaruxExtRemote.prototype.setAssertBreakpointsExt;
-				ZesaruxExtRemote.prototype.enableAssertBreakpoints = ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
+				ZesaruxExtRemote.prototype.setAssertBreakpoints=ZesaruxExtRemote.prototype.setAssertBreakpointsExt;
+				ZesaruxExtRemote.prototype.enableAssertBreakpoints=ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
 
-				ZesaruxExtRemote.prototype.setLogpoints = ZesaruxExtRemote.prototype.setLogpointsExt;
-				ZesaruxExtRemote.prototype.enableLogpoints = ZesaruxExtRemote.prototype.enableLogpointsExt;
+				ZesaruxExtRemote.prototype.setLogpoints=ZesaruxExtRemote.prototype.setLogpointsExt;
+				ZesaruxExtRemote.prototype.enableLogpoints=ZesaruxExtRemote.prototype.enableLogpointsExt;
 
-				ZesaruxExtRemote.prototype.setBreakpoint = ZesaruxExtRemote.prototype.setBreakpointExt;
-				ZesaruxExtRemote.prototype.removeBreakpoint = ZesaruxExtRemote.prototype.removeBreakpointExt;
+				ZesaruxExtRemote.prototype.setBreakpoint=ZesaruxExtRemote.prototype.setBreakpointExt;
+				ZesaruxExtRemote.prototype.removeBreakpoint=ZesaruxExtRemote.prototype.removeBreakpointExt;
 
 			}
 		});
@@ -67,38 +67,32 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	public setWatchpointsExt(watchPoints: Array<GenericWatchpoint>, handler?: (watchpoints:Array<GenericWatchpoint>) => void) {
+	public async setWatchpointsExt(watchPoints: Array<GenericWatchpoint>): Promise<void> {
 		// Set watchpoints (memory guards)
-		for(let wp of watchPoints) {
+		for (let wp of watchPoints) {
 			// Create watchpoint
-			zSocket.send('set-fast-watchpoint ' + wp.address + ' ' + wp.access + ' ' + wp.size + ' ' + wp.conditions  );
+			zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.conditions);
 		}
 
-		// Call handler
-		if(handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
-				// Copy array
-				const wps = watchPoints.slice(0);
-				handler(wps);
-			});
-		}
+		// Wait on last command
+		await zSocket.executeWhenQueueIsEmpty();
 	}
 
 
 	/**
 	 * Enables/disables all WPMEM watchpoints set from the sources.
+	 * Promise is called when method finishes.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableWPMEMExt(enable: boolean, handler?: () => void) {
-		if(enable)
+	public async enableWPMEMExt(enable: boolean): Promise<void> {
+		if (enable)
 			this.setWatchpointsExt(this.watchpoints);
 		else
-			for(let wp of this.watchpoints)
-				zSocket.send('clear-fast-breakpoint ' + wp.address + ' ' + + wp.size); // 'clear-fast-breakpoint' is correct
+			for (let wp of this.watchpoints)
+				zSocket.send('clear-fast-breakpoint '+wp.address+' '+ + wp.size); // 'clear-fast-breakpoint' is correct
 
-		this.wpmemEnabled = enable;
-		zSocket.executeWhenQueueIsEmpty(handler);
+		this.wpmemEnabled=enable;
+		await zSocket.executeWhenQueueIsEmpty();
 	}
 
 
@@ -120,7 +114,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 		// Call handler
 		if(handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
+			zSocket.executeWhenQueueIsEmpty().then(() => {
 				// Copy array
 				const abps = assertBreakpoints.slice(0);
 				handler(abps);
@@ -132,9 +126,8 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	/**
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableAssertBreakpointsExt(enable: boolean, handler?: () => void) {
+	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
 		if(enable) {
 			this.setAssertBreakpointsExt(this.assertBreakpoints);
 		}
@@ -145,8 +138,9 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 			}
 		}
 		this.assertBreakpointsEnabled = enable;
-		zSocket.executeWhenQueueIsEmpty(handler);
+		await zSocket.executeWhenQueueIsEmpty();
 	}
+
 
 	/*
 	 * Sets breakpoint in the zesarux debugger.
@@ -213,7 +207,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 		}
 		// Call handler
 		if(handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
+			zSocket.executeWhenQueueIsEmpty().then(() => {
 				// Copy array
 				const abps = logpoints.slice(0);
 				handler(abps);
@@ -263,9 +257,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 		}
 		// Call handler
 		if(handler) {
-			zSocket.executeWhenQueueIsEmpty(() => {
-				handler();
-			});
+			zSocket.executeWhenQueueIsEmpty().then(handler);
 		}
 	}
 

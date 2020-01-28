@@ -10,14 +10,6 @@ import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
 
 suite('Utility', () => {
 
-/*
-	setup( () => {
-		return dc.start();
-	});
-
-	teardown( () => dc.disconnect() );
-*/
-
 	suite('calculateTabSize', () => {
 
 		test('no tabs', () => {

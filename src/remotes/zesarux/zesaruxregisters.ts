@@ -1,7 +1,5 @@
 import * as assert from 'assert';
-import { Utility } from '../../utility';
 import {Z80Registers, RegisterData } from '../z80registers';
-
 
 
 
@@ -67,12 +65,13 @@ export class ZesaruxRegisters extends Z80Registers {
 	 * @returns The value.
 	 */
 	public parsePC(data: RegisterData): number {
-		if(this.pcIndex < 0) {
-			this.pcIndex = data.indexOf('PC=');
-			assert(this.pcIndex >= 0);
-			this.pcIndex += 3;
+		// Is 2-3 times faster than a regex
+		if (this.pcIndex<1000) {
+			this.pcIndex=data.indexOf('PC=');
+			assert(this.pcIndex>=0);
+			this.pcIndex+=3;
 		}
-		const res = parseInt(data.substr(this.pcIndex,4),16);
+		const res=parseInt(data.substr(this.pcIndex, 4), 16);
 		return res;
 	}
 
@@ -196,38 +195,13 @@ export class ZesaruxRegisters extends Z80Registers {
 		return res;
 	}
 
-	public RegisterData(data: string): number {
+	public parseR(data: string): number {
 		if(this.rIndex < 0) {
 			this.rIndex = data.indexOf('R=');
 			assert(this.rIndex >= 0);
 			this.rIndex += 2;
 		}
 		const res = parseInt(data.substr(this.rIndex,2),16);
-		return res;
-	}
-
-
-	/**
-	 * Returns the formatted register value.
-	 * @param regIn The name of the register, e.g. "A" or "BC"
-	 * @param formatMap The map with the formattings (hover map or variables map)
-	 * @returns The formatted string.
-	 */
-	protected getFormattedReg(regIn: string, formatMap: any): string {
-		// Every register has a formatting otherwise it's not a valid register name
-		const reg = regIn.toUpperCase();
-		const format = formatMap.get(reg);
-		assert(format != undefined, 'Register ' + reg + ' does not exist.');
-
-		// Get value of register
-		const value = this.getRegValueByName(reg);
-
-		// do the formatting
-		let rLen = reg.length;
-		if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
-
-		assert(this.RegisterCache)
-		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
 		return res;
 	}
 }

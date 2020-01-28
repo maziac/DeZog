@@ -30,9 +30,6 @@ suite('ZesaruxEmulator', () => {
 		Z80Registers.Init();
 	});
 
-/*
-	teardown( () => dc.disconnect() );
-*/
 
 	suite('handleReverseDebugStackForward', () => {
 
