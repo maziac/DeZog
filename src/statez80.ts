@@ -2,11 +2,8 @@ import * as assert from 'assert';
 import { MachineType } from './remotes/remote';
 import { Remote } from './remotes/remotefactory';
 
+import * as fs from 'fs';
 
-/// For saving/restoring the state.
-//import * as fs from 'fs';
-import * as BinaryFile from 'binary-file';
-//var BinaryFile = require('binary-file');
 
 
 export class StateZ80 {
@@ -40,18 +37,16 @@ export class StateZ80 {
 
 	/**
 	 * Stores all registers.
-	 * @param handler(stateData) The handler that is called after saving.
 	 */
-	public stateSave(handler?: (stateData) => void) {
+	public async stateSave(): Promise<void> {
 		// Get registers
-		Remote.getRegisters().then(() => {
-			// Save all registers
-			let i = 0;
-			for (const regName of this.allRegs) {
-				this.registers[i] = Remote.getRegisterValue(regName);
-				i++;
-			}
-		});
+		await Remote.getRegisters();
+		// Save all registers
+		let i = 0;
+		for (const regName of this.allRegs) {
+			this.registers[i] = Remote.getRegisterValue(regName);
+			i++;
+		}
 	}
 
 
@@ -59,13 +54,33 @@ export class StateZ80 {
 	 * Restores all RAM + the registers from a former "-state save".
 	 * @param handler The handler that is called after restoring.
 	 */
-	public stateRestore(handler?: ()=>void) {
+	public async stateRestore(): Promise<void> {
 		// Restore all registers
 		let i = 0;
 		for( const regName of this.allRegs) {
 			const value = this.registers[i++];
-			Remote.setRegisterValue(regName, value);
+			await Remote.setRegisterValue(regName, value);
 		}
+	}
+
+
+	/**
+	 * Writes all data to the binary file.
+	 * Override.
+	 * @param filePath The absolute path to the file.
+	 */
+	public async write(filePath: string) {
+		assert(false);
+	}
+
+
+	/**
+	 * Loads all data from a binary file.
+	 * Override.
+	 * @param filePath The absolute path to the file.
+	 */
+	public async read(filePath: string) {
+		assert(false);
 	}
 };
 
@@ -100,53 +115,73 @@ export class StateZX16K extends StateZ80 {
 
 	/**
 	 * Writes all data to the binary file.
-	 * @param binFile The opened file descriptor.
+	 * @param filePath The absolute path to the file.
 	 */
-	public async write(binFile: BinaryFile) {
-		// Write registers
-		//const bufRegs = new Buffer(this.registers.buffer);
-		const bufRegs = Buffer.from(this.registers.buffer);
-		await binFile.write(bufRegs);
+	public async write(filePath: string) {
+		// Open file
+		const fd=fs.openSync(filePath, "w");
+		try {
+			// Write registers
+			//const bufRegs = new Buffer(this.registers.buffer);
+			fs.writeSync(fd, this.registers.buffer);
 
-		//for(const reg of this.registers)
-		//	await binFile.writeUInt16(reg);
-		// Write count of banks and bank numbers
-		await binFile.writeUInt16(this.bankNrs.length);
-		for(const bankNr of this.bankNrs)
-			await binFile.writeUInt16(bankNr);
-		// Write all mem banks with size
-		for(const bank of this.banks) {
-			// size
-			await binFile.writeUInt16(bank.length);
-			// data
-			//await binFile.write(new Buffer(bank.buffer));
-			await binFile.write(Buffer.from(bank.buffer));
+			//for(const reg of this.registers)
+			// Write count of banks and bank numbers
+			const singleNumberArray=new Uint16Array(1);
+			singleNumberArray[0] = this.bankNrs.length;
+			fs.writeSync(fd, singleNumberArray);
+			const bankNrsBuffer=new Uint8Array(this.bankNrs);
+			fs.writeSync(fd, bankNrsBuffer);
+			// Write all mem banks with size
+			for (const bank of this.banks) {
+				// size
+				singleNumberArray[0]=bank.length;
+				fs.writeSync(fd, singleNumberArray);
+				// data
+				fs.writeSync(fd, bank);
+			}
+		}
+		finally {
+			// Close file
+			fs.closeSync(fd);
 		}
 	}
 
 
 	/**
 	 * Loads all data from a binary file.
-	 * @param binFile The opened file descriptor.
+	 * @param filePath The absolute path to the file.
 	 */
-	public async read(binFile: BinaryFile) {
-		// Read registers
-		const bufRegs = await binFile.read(this.allRegs.length*2);
-		this.registers = new Uint16Array(bufRegs.buffer);
+	public async read(filePath: string) {
+		// Open file
+		const fd=fs.openSync(filePath, "r");
+		try {
+			// Read registers
+			const len=this.allRegs.length;
+			this.registers=new Uint16Array(len);
+			fs.readSync(fd, this.registers, 0, 2*len, null);
 
-		// Read count of banks and bank numbers
-		const count = await binFile.readUInt16();
-		this.bankNrs =  new Array<number>(count);
-		for(let i=0; i<count; i++)
-			this.bankNrs[i] = await binFile.readUInt16();
-		// Write all mem banks with size
-		this.banks =  new Array<Uint8Array>(count);
-		for(let i=0; i<count; i++) {
-			// size
-			const length = await binFile.readUInt16();
-			// data
-			const bufBank = await binFile.read(length);
-			this.banks[i] = new Uint8Array(bufBank.buffer);
+			// Read count of banks and bank numbers
+			const singleNumberArray=new Uint16Array(1);
+			fs.readSync(fd, singleNumberArray, 0, 1, null);
+			const count=singleNumberArray[0];
+			const bankNrsBuffer=new Uint8Array(count);
+			fs.readSync(fd, bankNrsBuffer, 0, count, null);
+			this.bankNrs=new Array<number>(...bankNrsBuffer);
+			// REad all mem banks with size
+			this.banks=new Array<Uint8Array>(count);
+			for (let i=0; i<count; i++) {
+				// Size
+				fs.readSync(fd, singleNumberArray, 0, 1, null);
+				const length=singleNumberArray[0];
+				// Data
+				this.banks[i]=new Uint8Array(length);
+				fs.readSync(fd, this.banks[i], 0, length, null);
+			}
+		}
+		finally {
+			// Close file
+			fs.closeSync(fd);
 		}
 	}
 
@@ -154,28 +189,20 @@ export class StateZX16K extends StateZ80 {
 	/**
 	 * Called from "-state save" command.
 	 * Stores all RAM + the registers.
-	 * @param handler(stateData) The handler that is called after restoring.
 	 */
-	public stateSave(handler?: (stateData) => void) {
+	public async stateSave(): Promise<void> {
 		// Save all registers
-		super.stateSave();
+		await super.stateSave();
 		// Save all RAM, all memory banks (exclude ROM)
-		const count = this.banks.length;
 		let i = 0;
-		const bankNrs = this.bankNrs.slice(0);	// clone
-		for(const bankNr of this.bankNrs) {
+		for (const bankNr of this.bankNrs) {
 			// Get address
-			const address = this.getAddressForBankNr(bankNr);
+			const address=this.getAddressForBankNr(bankNr);
 			// Get data
-			Remote.getMemoryDump(address, 0x4000).then(data => {
-				const bnr = bankNrs.shift();
-				if(bnr != undefined)	// calm the transpiler
-					this.banks[i] = data;
-				// Call handler
-				i ++;
-				if(i >= count && handler)
-					handler(this);
-			});
+			const data=await Remote.getMemoryDump(address, 0x4000);
+			// Store
+			this.banks[i]=data;
+			i++;
 		}
 	}
 
@@ -183,28 +210,20 @@ export class StateZX16K extends StateZ80 {
 	/**
 	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param handler The handler that is called after restoring.
 	 */
-	public stateRestore(handler?: ()=>void) {
+	public async stateRestore(): Promise<void> {
 		// Restore registers
-		super.stateRestore(handler);
+		await super.stateRestore();
 //return; // REMOVE
 
 		// Restore all RAM (exclude ROM)
-		const count = this.banks.length;
-		let i = 0;
 		let k = 0;
 		for(const bankNr of this.bankNrs) {
 			// Get address
 			const address = this.getAddressForBankNr(bankNr);
 			// Get data
 			const bankData = this.banks[k++];
-			Remote.writeMemoryDump(address, bankData, () => {
-				// Call handler
-				i ++;
-				if(i >= count && handler)
-					handler();
-			});
+			await Remote.writeMemoryDump(address, bankData);
 		}
 	}
 };
@@ -316,11 +335,10 @@ class StateTBBlue extends StateZX128K {
 		/**
 	 * Called from "-state save" command.
 	 * Stores all RAM + the registers.
-	 * @param handler(stateData) The handler that is called after restoring.
 	 */
-	public stateSave(handler?: (stateData) => void) {
+	public async stateSave(): Promise<void> {
 		// Save all memory and registers
-		super.stateSave(handler);
+		await super.stateSave();
 /*
 		// Setup data
 		const nextRegs = new Uint8Array(256);
@@ -391,10 +409,9 @@ Dann wird zxstate eigentlich nicht mehr gebraucht.
 	/**
 	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param handler The handler that is called after restoring.
 	 */
-	public stateRestore(handler?: ()=>void) {
+	public async stateRestore(): Promise<void> {
 		// Restore registers
-		super.stateRestore(handler);
+		await super.stateRestore();
 	}
 };

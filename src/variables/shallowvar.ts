@@ -319,10 +319,9 @@ export class StackVar extends ShallowVar {
 			data[0] = value & 0xFF;
 			data[1] = value >> 8;
 
-			serializer.exec(() => {
-				Remote.writeMemoryDump(address, data, () => {
-					serializer.endExec();
-				});
+			serializer.exec(async () => {
+				await Remote.writeMemoryDump(address, data);
+				serializer.endExec();
 			});
 		}
 

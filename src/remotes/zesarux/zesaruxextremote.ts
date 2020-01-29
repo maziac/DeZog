@@ -195,24 +195,20 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param logpoints A list of addresses to put a guard on.
 	 * @param handler(bpIds) Is called after the last watchpoint is set.
 	 */
-	protected setLogpointsExt(logpoints: Array<GenericBreakpoint>, handler?: (logpoints: Array<GenericBreakpoint>) => void) {
-		// Set logpoints
-		for(let lp of logpoints) {
-			// Create logpoint (normally there is no condition)
-			const zesaruxCondition = this.convertCondition(lp.conditions) || '';
-			let logMsg = '';
-			if(lp.log)
-				logMsg = ',' + lp.log;
-			zSocket.send('set-fast-breakpoint ' + (lp.address) + ' ' + zesaruxCondition + logMsg);
-		}
-		// Call handler
-		if(handler) {
-			zSocket.executeWhenQueueIsEmpty().then(() => {
-				// Copy array
-				const abps = logpoints.slice(0);
-				handler(abps);
-			});
-		}
+	protected async setLogpointsExt(logpoints: Array<GenericBreakpoint>): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Set logpoints
+			for (let lp of logpoints) {
+				// Create logpoint (normally there is no condition)
+				const zesaruxCondition=this.convertCondition(lp.conditions)||'';
+				let logMsg='';
+				if (lp.log)
+					logMsg=','+lp.log;
+				zSocket.send('set-fast-breakpoint '+(lp.address)+' '+zesaruxCondition+logMsg);
+			}
+			// Call handler
+			zSocket.executeWhenQueueIsEmpty().then(resolve);
+		});
 	}
 
 
@@ -223,42 +219,40 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
 	 */
-	public enableLogpointsExt(group: string, enable: boolean, handler?: () => void) {
-		// Function execute for one group or for all groups:
-		const f = (grp, arr) => {
-			if(enable) {
+	public async enableLogpointsExt(group: string, enable: boolean): Promise<void> {
+		let lPoints;
+
+		// Check if one group or all
+		if (group) {
+			// 1 group:
+			const array=this.logpoints.get(group);
+			if (!array)
+				throw Error("Group '"+group+"' unknown.");
+			lPoints=new Map<string, GenericBreakpoint[]>([[group, array]]);
+		}
+		else {
+			// All groups:
+			lPoints=this.logpoints;
+		}
+
+		// Loop over all selected groups
+		for (const [grp, arr] of lPoints) {
+			if (enable) {
 				// Add logpoints
-				this.setLogpointsExt(arr);
+				await this.setLogpointsExt(arr);
 			}
 			else {
 				// Remove breakpoints
-				for(let lp of arr) {
-					zSocket.send('clear-fast-breakpoint ' + lp.address + ' 1');
+				for (let lp of arr) {
+					zSocket.send('clear-fast-breakpoint '+lp.address+' 1');
 				}
 			}
 			// Set group state
 			this.logpointsEnabled.set(grp, enable);
-		};
+		}
 
-		// Check if one group or all
-		if(group) {
-			// 1 group:
-			const array = this.logpoints.get(group);
-			if(!array)
-				throw Error("Group '" + group + "' unknown.");
-			//assert(array);
-			f(group, array);
-		}
-		else {
-			// All groups:
-			for (const [group, array] of this.logpoints) {
-				f(group, array);
-			}
-		}
-		// Call handler
-		if(handler) {
-			zSocket.executeWhenQueueIsEmpty().then(handler);
-		}
+		// Wait
+		await zSocket.executeWhenQueueIsEmpty();
 	}
 
 }

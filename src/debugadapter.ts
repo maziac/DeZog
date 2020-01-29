@@ -23,9 +23,9 @@ import { ZxNextSpritePatternsView } from './views/zxnextspritepatternsview';
 import { Disassembler } from './disassembler/disasm';
 import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
-import * as BinaryFile from 'binary-file';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
+
 
 
 
@@ -369,19 +369,21 @@ export class DebugSessionClass extends DebugSession {
 		this.setupDisassembler();
 
 		// Start the emulator and the connection.
-		this.startEmulator(msg => {
-			response.message = msg;
-			response.success = (msg == undefined);
-			this.sendResponse(response);
-		});
+		const msg = await this.startEmulator();
+		if (msg) {
+			response.message=msg;
+			response.success=(msg==undefined);
+		}
+		this.sendResponse(response);
 	}
 
 
 	/**
 	 * Starts the emulator and sets up everything for setup after
 	 * connection is up and running.
+	 * @returns A Promise with an error text or undefined if no error.
 	 */
-	protected startEmulator(handler: (msg?: string)=>void) {
+	protected async startEmulator(): Promise<string|undefined> {
 		try {
 			// init labels
 			Labels.init();
@@ -389,8 +391,7 @@ export class DebugSessionClass extends DebugSession {
 		catch(e) {
 			// Some error occurred
 			this.terminate('Labels: ' + e.message);
-			handler("Error while initializing labels.");
-			return;
+			return "Error while initializing labels.";
 		}
 
 		// Call the unit test handler. It will subscribe on events.
@@ -414,71 +415,8 @@ export class DebugSessionClass extends DebugSession {
 		catch(err) {
 			// Some error occurred during loading, e.g. file not found.
 			this.terminate(err.message);
-			return;
+			return undefined;
 		}
-
-		Remote.init();
-		Remote.once('initialized', () => {
-			// Create memory/register dump view
-			let registerMemoryView = new MemoryRegisterView(this);
-			const regs = Settings.launch.memoryViewer.registersMemoryView;
-			registerMemoryView.addRegisters(regs);
-			registerMemoryView.update();
-
-			// Run user commands after load.
-			for(const cmd of Settings.launch.commandsAfterLaunch) {
-				this.serializer.exec(() => {
-					vscode.debug.activeDebugConsole.appendLine(cmd);
-					try	{
-						this.evaluateCommand(cmd, text => {
-							vscode.debug.activeDebugConsole.appendLine(text);
-							// "Return"
-							this.serializer.endExec();
-						});
-					}
-					catch(err) {
-						// Some problem occurred
-						const output = "Error while executing '" + cmd + "' in 'commandsAfterLaunch': " + err.message;
-						this.showWarning(output);
-						// "Return"
-						this.serializer.endExec();
-					}
-				});
-			}
-
-			this.serializer.exec(() => {
-				// Socket is connected, allow setting breakpoints
-				this.sendEvent(new InitializedEvent());
-				this.serializer.endExec();
-				// Respond
-				handler();
-			});
-
-			this.serializer.exec(() => {
-				// Check if program should be automatically started
-				Remote.clearInstructionHistory();
-				if(DebugSessionClass.unitTestHandler) {
-					// Handle continue/stop in the z80unittests.
-					this.emit("initialized");
-				}
-				else {
-					if(Settings.launch.startAutomatically ) {
-						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-						this.sendEventContinued();
-						setTimeout(() => {
-							// Delay call because the breakpoints are set afterwards.
-							this.remoteContinue();
-						}, 500);
-					}
-					else {
-						// Break
-						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
-					}
-				}
-				DebugSessionClass.unitTestHandler = undefined;
-				this.serializer.endExec();
-			});
-		});
 
 		Remote.on('coverage', coveredAddresses => {
 			// Covered addresses (since last break) have been sent
@@ -516,6 +454,69 @@ export class DebugSessionClass extends DebugSession {
 			this.terminate();
 		});
 
+		Remote.init();
+		return new Promise<string|undefined>(resolve => {
+			Remote.once('initialized', () => {
+				// Create memory/register dump view
+				let registerMemoryView=new MemoryRegisterView(this);
+				const regs=Settings.launch.memoryViewer.registersMemoryView;
+				registerMemoryView.addRegisters(regs);
+				registerMemoryView.update();
+
+				// Run user commands after load.
+				for (const cmd of Settings.launch.commandsAfterLaunch) {
+					this.serializer.exec(async () => {  // TODO: Try removing all serializer calls in this function.
+						vscode.debug.activeDebugConsole.appendLine(cmd);
+						try {
+							const text=await this.evaluateCommand(cmd);
+							vscode.debug.activeDebugConsole.appendLine(text);
+							// "Return"
+							this.serializer.endExec();
+						}
+						catch (err) {
+							// Some problem occurred
+							const output="Error while executing '"+cmd+"' in 'commandsAfterLaunch': "+err.message;
+							this.showWarning(output);
+							// "Return"
+							this.serializer.endExec();
+						}
+					});
+				}
+
+				this.serializer.exec(() => {
+					// Socket is connected, allow setting breakpoints
+					this.sendEvent(new InitializedEvent());
+					this.serializer.endExec();
+					// Respond
+					resolve(undefined);
+				});
+
+				this.serializer.exec(() => {
+					// Check if program should be automatically started
+					Remote.clearInstructionHistory();
+					if (DebugSessionClass.unitTestHandler) {
+						// Handle continue/stop in the z80unittests.
+						this.emit("initialized");
+					}
+					else {
+						if (Settings.launch.startAutomatically) {
+							// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
+							this.sendEventContinued();
+							setTimeout(() => {
+								// Delay call because the breakpoints are set afterwards.
+								this.remoteContinue();
+							}, 500);
+						}
+						else {
+							// Break
+							this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
+						}
+					}
+					DebugSessionClass.unitTestHandler=undefined;
+					this.serializer.endExec();
+				});
+			});
+		});
 	}
 
 
@@ -529,7 +530,7 @@ export class DebugSessionClass extends DebugSession {
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 
 		// Serialize
-		this.serializer.exec(() => {
+		this.serializer.exec(async () => {
 
 			const path = <string>args.source.path;
 
@@ -558,69 +559,45 @@ export class DebugSessionClass extends DebugSession {
 
 
 			// Set breakpoints for the file.
-			Remote.setBreakpoints(path, bps,
-				currentBreakpoints => {
-					/*
-					// Go through original list of vscode breakpoints and check if they are verified or not
-					let source = this.createSource(path);
-					const vscodeBreakpoints = givenBps.map(gbp => {
-						let verified = false;
-						// Check if breakpoint is present in currentBreakpoints
-						const lineNr = this.convertClientLineToDebugger(gbp.line);
-						for(let cbp of currentBreakpoints) {
-							if(cbp.lineNr == lineNr && cbp.filePath == path) {
-								verified = true;
-								break;
-							}
-						}
-						// Create new breakpoint
-						let bp = new Breakpoint(verified, gbp.line, gbp.column, source);
-						return bp;
-					});
-					*/
-
-					const source = this.createSource(path);
-					const vscodeBreakpoints = currentBreakpoints.map(cbp => {
-						const lineNr = this.convertDebuggerLineToClient(cbp.lineNr);
-						const verified = (cbp.address >= 0);	// Is not verified if no address is set
-						let bp = new Breakpoint(verified, lineNr, 0, source);
-						return bp;
-					});
-
-
-					// send back the actual breakpoint positions
-					response.body = {
-						breakpoints: vscodeBreakpoints
-					};
-					this.sendResponse(response);
-					this.serializer.endExec();
-				},
-
+			const currentBreakpoints=await Remote.setBreakpoints(path, bps,
 				// Handle temporary disassembler breakpoints
 				(bp: EmulatorBreakpoint) => {
 					// Check if it is the right path
-					const relFilePath = Utility.getRelTmpDisasmFilePath();
-					const absFilePath = Utility.getAbsFilePath(relFilePath);
-					if(bp.filePath == absFilePath) {
+					const relFilePath=Utility.getRelTmpDisasmFilePath();
+					const absFilePath=Utility.getAbsFilePath(relFilePath);
+					if (bp.filePath==absFilePath) {
 						// Get address from line number
-						const lines = this.dasm.getDisassemblyLines();
-						const lineCount = lines.length;
-						let lineNr = bp.lineNr;
-						while(lineNr < lineCount) {
-							const line = lines[lineNr];
-							const addr = parseInt(line, 16);
-							if(!isNaN(addr)) {
+						const lines=this.dasm.getDisassemblyLines();
+						const lineCount=lines.length;
+						let lineNr=bp.lineNr;
+						while (lineNr<lineCount) {
+							const line=lines[lineNr];
+							const addr=parseInt(line, 16);
+							if (!isNaN(addr)) {
 								// create breakpoint object
-								const ebp = { bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log };
+								const ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log};
 								return ebp;
 							}
 							lineNr++;
 						}
 					}
 					return undefined;
-				}
+				});
 
-			);
+			const source=this.createSource(path);
+			const vscodeBreakpoints=currentBreakpoints.map(cbp => {
+				const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
+				const verified=(cbp.address>=0);	// Is not verified if no address is set
+				let bp=new Breakpoint(verified, lineNr, 0, source);
+				return bp;
+			});
+
+			// send back the actual breakpoint positions
+			response.body={
+				breakpoints: vscodeBreakpoints
+			};
+			this.sendResponse(response);
+			this.serializer.endExec();
 		});
 
 	}
@@ -1402,52 +1379,52 @@ export class DebugSessionClass extends DebugSession {
 	 * Evaluates the command and executes it.
 	 * The method might throw an exception if it cannot parse the command.
 	 * @param command E.g. "-exec tbblue-get-register 57" or "-wpmem disable".
-	 * @param handler A handler that is called after the execution. Can be omitted.
+	 * @returns A Promise<string> with an text to output (e.g. an error).
 	 */
-	protected evaluateCommand(command: string, handler = (text)=>{}) {
+	protected async evaluateCommand(command: string): Promise<string> {
 		const expression = command.trim();
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
 		// All commands start with "-"
 		if(cmd == '-help' || cmd == '-h') {
-			this.evalHelp(tokens, handler);
+			return await this.evalHelp(tokens);
 		}
 		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
-			this.evalLOGPOINT(tokens, handler);
+			return await this.evalLOGPOINT(tokens);
 		}
 		else if (cmd == '-ASSERT' || cmd == '-assert') {
-			this.evalASSERT(tokens, handler);
+			return await this.evalASSERT(tokens);
 		}
 		else if (cmd == '-eval') {
-			this.evalEval(tokens, handler);
+			return await this.evalEval(tokens);
 		}
 		else if (cmd == '-exec' || cmd == '-e') {
-			this.evalExec(tokens, handler);
+			return await this.evalExec(tokens);
 		}
 		else if (cmd == '-label' || cmd == '-l') {
-			this.evalLabel(tokens, handler);
+			return await this.evalLabel(tokens);
 		}
 		else if (cmd == '-md') {
-			this.evalMemDump(tokens, handler);
+			return await this.evalMemDump(tokens);
 		}
 		else if (cmd == '-patterns') {
-			this.evalSpritePatterns(tokens, handler);
+			return await this.evalSpritePatterns(tokens);
 		}
 		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
-			this.evalWPMEM(tokens, handler);
+			return await this.evalWPMEM(tokens);
 		}
 		else if (cmd == '-sprites') {
-			this.evalSprites(tokens, handler);
+			return await this.evalSprites(tokens);
 		}
 		else if (cmd == '-state') {
-			this.evalStateSaveRestore(tokens, handler);
+			return await this.evalStateSaveRestore(tokens);
 		}
 		else if (cmd == '-unittests') {
-			this.evalStateSaveRestore(tokens, handler);
+			return await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
 		else if (cmd == '-dbg') {
-			this.evalDebug(tokens, handler);
+			return await this.evalDebug(tokens);
 		}
 		//
 		else {
@@ -1461,26 +1438,23 @@ export class DebugSessionClass extends DebugSession {
 	 * Is called when hovering or when an expression is added to the watches.
 	 * Or if commands are input in the debug console.
 	 */
-	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
+	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		// Check if its a debugger command
 		const expression = args.expression.trim();
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
-		if(cmd) {
+		if (cmd) {
 			try {
-				if(expression.startsWith('-')) {
-					this.evaluateCommand(expression, text => {
-						this.sendEvalResponse(text, response);
-					});
-					// End
-					return;
+				if (expression.startsWith('-')) {
+					const text=await this.evaluateCommand(expression);
+					this.sendEvalResponse(text, response);
 				}
 			}
-			catch(err) {
-				const output = "Error: " + err.message;
+			catch (err) {
+				const output="Error: "+err.message;
 				this.sendEvalResponse(output, response);
-				return;
 			}
+			return;
 		}
 
 		Log.log('evaluate.expression: ' + args.expression);
@@ -1587,9 +1561,9 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Prints a help text for the debug console commands.
 	 * @param tokens The arguments. Unused.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @param A Promise with a text to print.
 	 */
-	protected evalHelp(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalHelp(tokens: Array<string>): Promise<string> {
 		const output =
 `Allowed commands are:
 "-ASSERT enable|disable|status":
@@ -1607,12 +1581,12 @@ the value correspondends to a label.
 "-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 Without any parameter it will show all sprite patterns.
-You can concat several ranges with a ",".
+You can concat several ranges.
 Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-WPMEM enable|disable|status":
 	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
 	- status: Shows enable status of WPMEM watchpoints.
-"-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges with a ",".
+"-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
 Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 Without any parameter it will show all visible sprites automatically.
 "-state save|restore": Saves/restores the current state. I.e. the complete RAM + the registers.
@@ -1633,16 +1607,16 @@ For debugging purposes there are a few more:
 -dbg serializer print: Prints the current function. Use this to see where
 it hangs if it hangs. (Use 'setProgress' to debug.)
 */
-		handler(output);
+		return output;
 	}
 
 
 	/**
 	 * Evaluates a given expression.
 	 * @param tokens The arguments. I.e. the expression to evaluate.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise with a text to print.
 	 */
-	protected evalEval(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalEval(tokens: Array<string>): Promise<string> {
 		const expr = tokens.join(' ').trim();	// restore expression
 		if(expr.length == 0) {
 			// Error Handling: No arguments
@@ -1664,59 +1638,49 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			result += ', ' + labels.join(', ');
 		}
 
-		handler(result);
+		return result;
 	}
 
 
 	/**
 	 * Executes a command in the emulator.
 	 * @param tokens The arguments. I.e. the command for the emulator.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise with a text to print.
 	 */
-	protected evalExec(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalExec(tokens: Array<string>): Promise<string> {
 		// Check for "-view"
-		let redirectToView = false;
-		if(tokens[0] == '-view') {
-			redirectToView = true;
+		let redirectToView=false;
+		if (tokens[0]=='-view') {
+			redirectToView=true;
 			tokens.shift();
 		}
 		// Execute
-		const machineCmd = tokens.join(' ');
-		if(machineCmd.length == 0) {
-			// No command given
-			throw new Error('No command given.');
+		const machineCmd=tokens.join(' ');
+		const textData=await Remote.dbgExec(machineCmd);
+		if (redirectToView) {
+			// Create new view
+			const panel=new TextView(this, "exec: "+machineCmd, textData);
+			panel.update();
+			// Send response
+			return 'OK';
 		}
-		else {
-			Remote.dbgExec(machineCmd, (data) => {
-				if(redirectToView) {
-					// Create new view
-					const panel = new TextView(this, "exec: "+machineCmd, data);
-					panel.update();
-					// Send response
-					handler('OK');
-				}
-				else {
-					// Print to console
-					handler(data);
-				}
-			});
-		}
+		// Print to console
+		return textData;
 	}
 
 
 	/**
 	 * Evaluates a label.
 	 * @param tokens The arguments. I.e. the label.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise with a text to print.
 	 */
-	protected evalLabel(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalLabel(tokens: Array<string>): Promise<string> {
 		const expr = tokens.join(' ').trim();	// restore expression
 		if(expr.length == 0) {
 			// Error Handling: No arguments
-			const output = "Label expected.";
-			handler(output);
-			return;
+			return "Label expected.";
 		}
+
 		// Find labelwith regex, every star is translated into ".*"
 		const rString = '^' + Utility.replaceAll(expr, '*', '.*?') + '$';
 		// Now search all labels
@@ -1733,16 +1697,16 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			result = 'No label matches.';
 		}
 		// return result
-		handler(result);
+		return result;
 	}
 
 
 	/**
 	 * Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise with a text to print.
 	 */
-	protected evalMemDump(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalMemDump(tokens: Array<string>): Promise<string> {
 		// check count of arguments
 		if(tokens.length == 0) {
 			// Error Handling: No arguments
@@ -1776,44 +1740,42 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		panel.update();
 
 		// Send response
-		handler('OK');
+		return 'OK';
 	}
 
 
 	/**
 	 * LOGPOINTS. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a probably error text.
 	 */
-	protected evalLOGPOINT(tokens: Array<string>, handler: (text:string)=>void) {
-		const show = () => {
+	protected async evalLOGPOINT(tokens: Array<string>): Promise<string> {
+			const show=() => {
 			// Always show enable status of all Logpoints
-			const enableMap = Remote.logpointsEnabled;
+			const enableMap=Remote.logpointsEnabled;
 			// All groups:
-			let text = 'LOGPOINT groups:';
+			let text='LOGPOINT groups:';
 			for (const [group, enable] of enableMap) {
-				text += '\n  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled');
+				text+='\n  '+group+': '+((enable)? 'enabled':'disabled');
 			}
-			handler(text);
+			return text;
 		}
 
-		const param = tokens[0] || '';
-		const group = tokens[1];
-		if(param == 'enable' || param == 'disable') {
+		const param=tokens[0]||'';
+		const group=tokens[1];
+		if (param=='enable'||param=='disable') {
 			// enable or disable all logpoints
-			const enable = (param == 'enable');
-			Remote.enableLogpoints(group, enable, () => {
-				// Print to console
-				show();
-			});
+			const enable=(param=='enable');
+			await Remote.enableLogpoints(group, enable);
+			return show();	// Print to console
 		}
-		else if(param == 'status') {
+		else if (param=='status') {
 			// just show
-			show();
+			return show();
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
+			throw new Error("Unknown argument: '"+param+"'");
 		}
 	}
 
@@ -1821,26 +1783,26 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	/**
 	 * ASSERT. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a probably error text.
 	 */
-	protected evalASSERT(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalASSERT(tokens: Array<string>): Promise<string> {
 		const show = () => {
 			// Always show enable status of all ASSERT breakpoints
 			const enable = Remote.assertBreakpointsEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
-			handler('ASSERT breakpoints are ' + enableString + '.');
+			return 'ASSERT breakpoints are ' + enableString + '.';
 		}
 
 		const param = tokens[0] || '';
 		if(param == 'enable' || param == 'disable') {
 			// enable or disable all assert breakpoints
 			const enable = (param == 'enable');
-			Remote.enableAssertBreakpoints(enable)
-				.then(show);	// Print to console
+			await Remote.enableAssertBreakpoints(enable);
+			return show();	// Print to console
 		}
 		else if(param == 'status') {
-			// just show
-			show();
+			// Just show
+			return show();
 		}
 		else {
 			// Unknown argument
@@ -1852,26 +1814,26 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	/**
 	 * WPMEM. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a text to print.
 	 */
-	protected evalWPMEM(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalWPMEM(tokens: Array<string>): Promise<string> {
 		const show = () => {
 			// Always show enable status of all WPMEM watchpoints
 			const enable = Remote.wpmemEnabled;
 			const enableString = (enable) ? 'enabled' : 'disabled';
-			handler('WPMEM watchpoints are ' + enableString + '.');
+			return 'WPMEM watchpoints are ' + enableString + '.';
 		}
 
 		const param = tokens[0] || '';
 		if (param=='enable'||param=='disable') {
 			// enable or disable all WPMEM watchpoints
 			const enable=(param=='enable');
-			Remote.enableWPMEM(enable)
-				.then(show);  // Print to console
+			await  Remote.enableWPMEM(enable)
+			return show();  // Print to console
 		}
 		else if(param == 'status') {
 			// just show
-			show();
+			return show();
 		}
 		else {
 			// Unknown argument
@@ -1883,9 +1845,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	/**
 	 * Show the sprite patterns in a view.
 	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a text to print.
 	 */
-	protected evalSpritePatterns(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalSpritePatterns(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
 		if(Remote.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
@@ -1919,7 +1881,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				let count = 1;
 				if(match[3]) {
 					count = Utility.parseValue(match[4]);
-					if(isNaN(start))	// Error Handling
+					if (isNaN(count))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
 					if(match[3] == "-")	// turn range into count
 						count += 1 - start;
@@ -1951,16 +1913,16 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		panel.update();
 
 		// Send response
-		handler('OK');
+		return 'OK';
 	}
 
 
 	/**
 	 * Show the sprites in a view.
 	 * @param tokens The arguments.
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a text to print.
 	 */
-	protected evalSprites(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalSprites(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
 		if(Remote.machineType != MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
@@ -1993,7 +1955,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				let count = 1;
 				if(match[3]) {
 					count = Utility.parseValue(match[4]);
-					if(isNaN(start))	// Error Handling
+					if (isNaN(count))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
 					if(match[3] == "-")	// turn range into count
 						count += 1 - start;
@@ -2025,16 +1987,16 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		panel.update();
 
 		// Send response
-		handler('OK');
+		return 'OK';
 	}
 
 
 	/**
 	 * Save/restore the state.
 	 * @param tokens The arguments. 'save'/'restore'
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a text to print.
 	 */
-	protected evalStateSaveRestore(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalStateSaveRestore(tokens: Array<string>): Promise<string> {
 		const stateName = tokens[1];
 		if(!stateName)
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
@@ -2042,24 +2004,17 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		const param = tokens[0] || '';
 		if(param == 'save') {
 			// Save current state
-			this.stateSave(stateName, text => {
-				if(!text)	// Error text ?
-					text = 'OK';
-				// Send response
-				handler('OK');
-			});
+			await this.stateSave(stateName);
+			// Send response
+			return 'OK';
 		}
 		else if(param == 'restore') {
 			// Restores the state
-			this.stateRestore(stateName, text => {
-				if(!text)	// Error text ?
-					text = 'OK';
-				// Send response
-				handler(text);
-				// Reload register values etc.
-				this.sendEventContinued();
-				this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
-			});
+			await this.stateRestore(stateName);
+			// Reload register values etc.
+			this.sendEventContinued();
+			this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
+			return "OK";
 		}
 		else {
 			// Unknown argument
@@ -2071,9 +2026,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	/**
 	 * Debug commands. Not shown publicly.
 	 * @param tokens The arguments. 'serializer clear'|'serializer print'
- 	 * @param handler(text) A handler that is called after the execution.
+ 	 * @returns A Promise<string> with a text to print.
 	 */
-	protected evalDebug(tokens: Array<string>, handler: (text:string)=>void) {
+	protected async evalDebug(tokens: Array<string>): Promise<string> {
 		const param1 = tokens[0] || '';
 		let unknownArg = param1;
 		if(param1 == 'serializer') {
@@ -2082,16 +2037,14 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			if(param2 == 'clear') {
 				// Clear the call serializer queue
 				this.serializer.clrQueue();
-				handler('OK');
-				return;
+				return 'OK';
 			}
 			else if(param2 == 'print') {
 				// Print the current function.
 				const current = this.serializer.getCurrentFunction();
 				const text = 'Progress: ' + current.progress +'\n' +
 				'Func: ' + current.func;
-				handler(text);
-				return;
+				return text;
 			}
 		}
 		// Unknown argument
@@ -2216,29 +2169,20 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * Called from "-state save N" command.
 	 * Stores all RAM + the registers.
 	 * @param stateName A state name (or number) can be appended, so that different states might be saved.
-	 * @param handler(errorText?) Is called when data was saved. errorText is undefined if
-	 * successful, otherwise it contains the error description.
 	 */
-	protected stateSave(stateName: string, handler:(errorText?: string) => void) {
+	protected async stateSave(stateName: string): Promise<void> {
 		// Save state
-		Remote.stateSave(stateData => {
-			let filePath;
-			try {
-				// Save data to temp directory
-				filePath = Utility.getAbsStateFileName(stateName);
-				const binFile = new BinaryFile(filePath, "w");
-				(async function () {
-					await binFile.open();
-					await stateData.write(binFile);
-					await binFile.close();
-					handler();
-				}) ();
-			}
-			catch(e) {
-				const errTxt = "Can't save '" + filePath + "': " + e.message;
-				handler(errTxt);
-			}
-		});
+		const stateData=await Remote.stateSave();
+		let filePath;
+		try {
+			// Save data to temp directory
+			filePath=Utility.getAbsStateFileName(stateName);
+			await stateData.write(filePath);
+		}
+		catch (e) {
+			const errTxt="Can't save '"+filePath+"': "+e.message;
+			throw new Error(errTxt);
+		}
 	}
 
 
@@ -2246,31 +2190,21 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * Called from "-state restore N" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * @param stateName A state name (or number) can be appended, so that different states might be saved.
-	 * @param handler(errorText?) Is called when data was saved. errorText is undefined if
-	 * successful, otherwise it contains the error description.
 	 */
-	protected stateRestore(stateName: string, handler:(errorText?: string) => void) {
+	protected async stateRestore(stateName: string): Promise<void> {
 		// Load data from temp directory
 		let filePath;
-		let errTxt;
 		try {
 			// Read data
-			filePath = Utility.getAbsStateFileName(stateName);
-			const binFile = new BinaryFile(filePath, "r");
-			const stateData = new StateZX16K();
-			(async function () {
-				await binFile.open();
-				await stateData.read(binFile);
-				await binFile.close();
-				// Restore state
-				Remote.stateRestore(stateData, () => {
-					handler();
-				});
-			}) ();
+			filePath=Utility.getAbsStateFileName(stateName);
+			const stateData=new StateZX16K();
+			await stateData.read(filePath);
+			// Restore state
+			await Remote.stateRestore(stateData);
 		}
-		catch(e) {
-			errTxt = "Can't load '" + filePath + "': " + e.message;
-			handler(errTxt);
+		catch (e) {
+			const errTxt="Can't load '"+filePath+"': "+e.message;
+			throw new Error(errTxt);
 		}
 	}
 

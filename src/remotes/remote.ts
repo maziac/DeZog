@@ -1,7 +1,6 @@
 
 import * as assert from 'assert';
 import {Z80Registers, Z80_REG} from './z80registers';
-import {StateZ80} from '../statez80';
 import {RefList} from '../reflist';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
@@ -9,6 +8,7 @@ import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels} from '../labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../utility';
+import {StateZ80} from '../statez80';
 
 
 
@@ -952,21 +952,21 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Set all log points.
 	 * Called only once.
+	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
-	 * @param handler() Is called after the last logpoint is set.
 	 */
-	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: (logpoints: Array<GenericBreakpoint>) => void) {
+	public async setLogpoints(logpoints: Array<GenericBreakpoint>): Promise<void> {
 		assert(false);	// override this
 	}
 
 
 	/**
 	 * Enables/disables all logpoints for a given group.
+	 * Promise is called all logpoints are set.
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableLogpoints(group: string, enable: boolean, handler?: () => void) {
+	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -985,23 +985,6 @@ export class RemoteClass extends EventEmitter {
 
 
 	/**
-	 * Set all ASSERT breakpoints.
-	 * Called only once.
-	 * @param asserts A list of addresses with asserts (conditions). If the condition is not true the
-	 * breakpoint will fire.
-	 * Note: the emulator will change the generic condition format into a proprietary one
-	 * on its own.
-	 * @param handler() Is called after the last asssert is set.
-	 * @param errorHandler(errText) Is called if an error occurs. E.g.
-	 * if a condition cannot be parsed.
-	 */
-	/*
-	public setASSERTs(asserts: Array<EmulatorBreakpoint>, finalHandler: () => void, errorHandler: (errText: string) => void) {
-		assert(false);	// override this
-	}
-	*/
-
-	/**
 	 * Clears one breakpoint.
 	 */
 	protected removeBreakpoint(bp: EmulatorBreakpoint) {
@@ -1016,14 +999,12 @@ export class RemoteClass extends EventEmitter {
 	 * But, because the run-handler is not known here, the 'run' is not continued afterwards.
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
-	 * @param handler(bps) On return the handler is called with all breakpoints.
 	 * @param tmpDisasmFileHandler(bp) If a line cannot be determined then this handler
 	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
 	 * an EmulatorBreakpoint.
+	 * @returns A Promise with all breakpoints.
 	 */
-	public setBreakpoints(path: string, givenBps: Array<EmulatorBreakpoint>,
-		handler: (bps: Array<EmulatorBreakpoint>) => void,
-		tmpDisasmFileHandler: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined) {
+	public async setBreakpoints(path: string, givenBps: Array<EmulatorBreakpoint>, tmpDisasmFileHandler?: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined): Promise<Array<EmulatorBreakpoint>> {
 
 		try {
 			// get all old breakpoints for the path
@@ -1047,7 +1028,7 @@ export class RemoteClass extends EventEmitter {
 				}
 				else {
 					// Check if there is a routine for the temporary disassembly file
-					ebp=tmpDisasmFileHandler(bp);
+					ebp=tmpDisasmFileHandler?.(bp);
 				}
 
 				// add to array
@@ -1078,10 +1059,10 @@ export class RemoteClass extends EventEmitter {
 			//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
 
 			// call handler
-			handler(currentBps);
+			return currentBps;
 		}
 		catch (e) {
-			console.log("Error: ", e);
+			throw e;
 		}
 	}
 
@@ -1089,10 +1070,11 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Sends a command to the emulator.
 	 * @param cmd E.g. 'get-registers'.
-	 * @param handler The response (data) is returned.
+	 * @returns A Promise in remote (emulator) dependend format.
 	 */
-	public dbgExec(cmd: string, handler: (data) => void) {
+	public async dbgExec(cmd: string): Promise<string> {
 		assert(false);	// override this
+		return "";
 	}
 
 
@@ -1112,9 +1094,8 @@ export class RemoteClass extends EventEmitter {
 	 * Writes a memory dump.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
-	 * @param handler(response) The handler that is called when zesarux has received the data.
 	 */
-	public writeMemoryDump(address: number, dataArray: Uint8Array, handler: () => void) {
+	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -1229,10 +1210,11 @@ export class RemoteClass extends EventEmitter {
 	 * Called from "-state save" command.
 	 * Stores all RAM + the registers.
 	 * Override.
-	 * @param handler(stateData) The handler that is called after restoring.
+	  * @returns State data.
 	 */
-	public stateSave(handler: (stateData) => void) {
-
+	public async stateSave(): Promise<StateZ80> {
+		assert(false);
+		return null as any;
 	}
 
 
@@ -1240,10 +1222,10 @@ export class RemoteClass extends EventEmitter {
 	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * Override.
-	 * @param stateData Pointer to the data to restore.
-	 * @param handler The handler that is called after restoring.
+	 * @param state Pointer to the data to restore.
 	 */
-	public stateRestore(stateData: StateZ80, handler?: () => void) {
+	public async stateRestore(state: StateZ80): Promise<void> {
+		assert(false);
 	}
 
 

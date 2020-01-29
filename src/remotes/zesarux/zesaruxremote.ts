@@ -1617,26 +1617,22 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Set all log points.
 	 * Called only once.
+	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
-	 * @param handler() Is called after the last logpoint is set.
 	 */
-	public setLogpoints(logpoints: Array<GenericBreakpoint>, handler: (logpoints: Array<GenericBreakpoint>) => void) {
-		// not supported.
+	public async setLogpoints(logpoints: Array<GenericBreakpoint>): Promise<void> {
+		assert(false);	// override this
 	}
 
 
 	/**
 	 * Enables/disables all logpoints for a given group.
-	 * @param group The group to enable/disable. If undefined: all groups.
+	 * Promise is called all logpoints are set.
+	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
-	 * @param handler Is called when ready.
 	 */
-	public enableLogpoints(group: string, enable: boolean, handler?: () => void) {
-		// not supported.
-		if(this.logpoints.size > 0)
-			this.emit('warning', 'ZEsarUX does not support LOGPOINTs in the sources.');
-		if(handler)
-			handler();
+	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
+		assert(false);	// override this
 	}
 
 
@@ -1786,29 +1782,24 @@ export class ZesaruxRemote extends RemoteClass {
 	 * But, because the run-handler is not known here, the 'run' is not continued afterwards.
 	 * @param path The file (which contains the breakpoints).
 	 * @param givenBps The breakpoints in the file.
-	 * @param handler(bps) On return the handler is called with all breakpoints.
 	 * @param tmpDisasmFileHandler(bpr) If a line cannot be determined then this handler
 	 * is called to check if the breakpoint was set in the temporary disassembler file. Returns
 	 * an EmulatorBreakpoint.
+	 * @returns A Promise with all breakpoints.
 	 */
-	public setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
-		handler:(bps: Array<EmulatorBreakpoint>)=>void,
-		tmpDisasmFileHandler:(bp: EmulatorBreakpoint)=>EmulatorBreakpoint) {
-
-		this.serializer.exec(() => {
+	public async setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
+		tmpDisasmFileHandler: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined): Promise<Array<EmulatorBreakpoint>> {
+// TODO:Testen!!!!!
+		// TODO: Kann das weg?
+	//	this.serializer.exec(async () => {
 			// Do most of the work
-			super.setBreakpoints(path, givenBps,
-				bps => {
-					// But wait for the socket.
-					zSocket.executeWhenQueueIsEmpty().then(() => {
-						handler(bps);
-						// End
-						this.serializer.endExec();
-					});
-				},
-				tmpDisasmFileHandler
-			);
-		});
+			const bps = super.setBreakpoints(path, givenBps, tmpDisasmFileHandler);
+			// But wait for the socket.
+			await zSocket.executeWhenQueueIsEmpty();
+			// End
+	//		this.serializer.endExec();
+			return bps;
+	//	});
 	}
 
 
@@ -1864,18 +1855,23 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Sends a command to ZEsarUX.
 	 * @param cmd E.g. 'get-registers'.
-	 * @param handler The response (data) is returned.
+	 * @returns A Promise with the result of the command.
 	 */
-	public dbgExec(cmd: string, handler:(data)=>void) {
-		cmd = cmd.trim();
-		if(cmd.length == 0)	return;
+	public async dbgExec(cmd: string): Promise<string> {
+		cmd=cmd.trim();
+		if (cmd.length==0) {
+			// No command given
+			throw new Error('No command given.');
+		}
 
 		// Check if we need a break
 		this.breakIfRunning();
 		// Send command to ZEsarUX
-		zSocket.send(cmd, data => {
-			// Call handler
-			handler(data);
+		return new Promise<string>(resolve => {
+			zSocket.send(cmd, data => {
+				// Call handler
+				resolve(data);
+			});
 		});
 	}
 
@@ -1919,31 +1915,32 @@ export class ZesaruxRemote extends RemoteClass {
 	 * Writes a memory dump to zesarux.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
-	 * @param handler(response) The handler that is called when zesarux has received the data.
 	 */
-	public writeMemoryDump(address: number, dataArray: Uint8Array, handler:() => void) {
-		// Use chunks
-		const chunkSize = 0x10000; //0x1000;
-		let k = 0;
-		let size = dataArray.length;
-		let chunkCount = 0;
-		while(size > 0) {
-			const sendSize = (size > chunkSize) ? chunkSize : size;
-			// Convert array to long hex string.
-			let bytes = '';
-			for(let i=0; i<sendSize; i++) {
-				bytes += Utility.getHexString(dataArray[k++], 2);
+	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Use chunks
+			const chunkSize=0x10000; //0x1000;
+			let k=0;
+			let size=dataArray.length;
+			let chunkCount=0;
+			while (size>0) {
+				const sendSize=(size>chunkSize)? chunkSize:size;
+				// Convert array to long hex string.
+				let bytes='';
+				for (let i=0; i<sendSize; i++) {
+					bytes+=Utility.getHexString(dataArray[k++], 2);
+				}
+				// Send
+				chunkCount++;
+				zSocket.send('write-memory-raw '+address+' '+bytes, () => {
+					chunkCount--;
+					if (chunkCount==0)
+						resolve();
+				});
+				// Next chunk
+				size-=chunkSize;
 			}
-			// Send
-			chunkCount ++;
-			zSocket.send( 'write-memory-raw ' + address + ' ' + bytes, () => {
-				chunkCount --;
-				if(chunkCount == 0)
-					handler();
-			});
-			// Next chunk
-			size -= chunkSize;
-		}
+		});
 	}
 
 
@@ -2037,29 +2034,29 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Called from "-state save" command.
 	 * Stores all RAM + the registers.
-	 * @param handler(stateData) The handler that is called after restoring.
+	 * @returns State data.
 	 */
-	public stateSave(handler: (stateData) => void) {
+	public async stateSave(): Promise<StateZ80> {
 		// Create state variable
 		const state = StateZ80.createState(this.machineType);
 		if (!state)
 			throw new Error("Machine unknown. Can't save the state.")
 		// Get state
-		state.stateSave(handler);
+		await state.stateSave();
+		return state;
 	}
 
 
 	/**
 	 * Called from "-state load" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param stateData Pointer to the data to restore.
-	 * @param handler The handler that is called after restoring.
+	 * @param state Pointer to the data to restore.
 	 */
-	public stateRestore(stateData: StateZ80, handler?: () => void) {
+	public async stateRestore(state: StateZ80): Promise<void> {
 		// Clear register cache
 		this.z80Registers.clearCache();
 		// Restore state
-		stateData.stateRestore(handler);
+		await state.stateRestore();
 	}
 
 

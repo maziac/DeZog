@@ -640,18 +640,18 @@ export class Z80UnitTests {
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
-		Remote.writeMemoryDump(this.addrCall, callAddr, () => {
+		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setProgramCounter(this.addrTestWrapper, () => {
 				// Run
-				if(Z80UnitTests.utLabels)
-					Z80UnitTests.dbgOutput('UnitTest: ' + Z80UnitTests.utLabels[0] + ' da.emulatorContinue()');
+				if (Z80UnitTests.utLabels)
+					Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
 
 				// Remove instruction history log.
 				Remote.clearInstructionHistory();
 
 				// Run or Debug
-				if(da) {
+				if (da) {
 					// Debug: Continue
 					da.remoteContinue();
 					// With vscode UI
