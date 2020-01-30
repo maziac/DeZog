@@ -642,28 +642,29 @@ export class Z80UnitTests {
 		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
-			Remote.setProgramCounter(this.addrTestWrapper, () => {
-				// Run
-				if (Z80UnitTests.utLabels)
-					Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
+			Remote.setProgramCounter(this.addrTestWrapper)
+				.then(() => {
+					// Run
+					if (Z80UnitTests.utLabels)
+						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
 
-				// Remove instruction history log.
-				Remote.clearInstructionHistory();
+					// Remove instruction history log.
+					Remote.clearInstructionHistory();
 
-				// Run or Debug
-				if (da) {
-					// Debug: Continue
-					da.remoteContinue();
-					// With vscode UI
-					da.sendEventContinued();
-				}
-				else {
-					// Run: Continue
-					Remote.continue().then(() => {
-						Z80UnitTests.onBreak();
-					});
-				}
-			});
+					// Run or Debug
+					if (da) {
+						// Debug: Continue
+						da.remoteContinue();
+						// With vscode UI
+						da.sendEventContinued();
+					}
+					else {
+						// Run: Continue
+						Remote.continue().then(() => {
+							Z80UnitTests.onBreak();
+						});
+					}
+				});
 		});
 	}
 

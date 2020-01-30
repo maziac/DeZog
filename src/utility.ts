@@ -354,70 +354,71 @@ export class Utility {
 	 * $(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC
 	 * ${labels} = value as label (or several labels)"
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
-	 * @param handler A function that is called with the formatted string as argument.
-	 * It is required because it might be that for formatting it is required to
-	 * get more data from the socket.
 	 * @param undefText Text to use if value is undefined. Defaults to "undefined".
+	 * @returns A Promised with the formatted string.
+	 * A Promise is required because it might be that for formatting it is required to
+	 * get more data from the socket.
 	 */
-	public static numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, handler: (formattedString: string) => void, undefText = "undefined") {
+	public static async numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, undefText = "undefined"): Promise<string> {
 		// Safety check
 		if(value == undefined) {
-			handler(undefText);
-			return;
+			return undefText;
 		}
 
 		// Variables
 		var memWord = 0;
 		let regsAsWell = false;
 
-		// Serialize calls
-		CallSerializer.execAll(
+		return new Promise<string>(resolve => {
+			// Serialize calls
+			CallSerializer.execAll(
 
-			// Check if registers might be returned as well. In that
-			(cs) => {
-				// case asynchronously retrieve the register values.
-				// Return registers only if 'name' itself is not a register.
-				if (!Z80Registers.isRegister(name)) {
-					regsAsWell = true;
-					Remote.getRegisters().then(() => {
+				// Check if registers might be returned as well. In that
+				(cs) => {
+					// case asynchronously retrieve the register values.
+					// Return registers only if 'name' itself is not a register.
+					if (!Z80Registers.isRegister(name)) {
+						regsAsWell=true;
+						Remote.getRegisters().then(() => {
+							cs.endExec();
+						});
+					}
+					else
 						cs.endExec();
-					});
-				}
-				else
-					cs.endExec();
-			},
+				},
 
-			// Memory dump retrieving
-			(cs) => {
-				// Check first if we need to retrieve address values
-				const matchAddr = /(\${b@:|\${w@:)/.exec(format);
-				if(matchAddr) {
-					// Retrieve memory values
-					Remote.getMemoryDump(value, 2).then(data => {
-						const b1 = data[0]
-						const b2 = data[1];
-						memWord = (b2 << 8) + b1;
+				// Memory dump retrieving
+				(cs) => {
+					// Check first if we need to retrieve address values
+					const matchAddr=/(\${b@:|\${w@:)/.exec(format);
+					if (matchAddr) {
+						// Retrieve memory values
+						Remote.getMemoryDump(value, 2).then(data => {
+							const b1=data[0]
+							const b2=data[1];
+							memWord=(b2<<8)+b1;
+							cs.endExec();
+						});
+					}
+					else {
+						// End directly
 						cs.endExec();
-					});
-				}
-				else {
-					// End directly
+					}
+				},
+
+				// Formatting
+				(cs) => {
+					// Format
+					var valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
+
+					// Call handler with the result string
+					resolve(valString);
+
+					// End
 					cs.endExec();
 				}
-			},
-
-			// Formatting
-			(cs) => {
-				// Format
-				var valString = Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
-
-				// Call handler with the result string
-				handler(valString);
-
-				// End
-				cs.endExec();
-			}
-		);
+			);
+		});
 	}
 
 
@@ -585,34 +586,33 @@ export class Utility {
 	 * Returns the formatted register value. Does a request to zesarux to obtain the register value.
 	 * @param regIn The name of the register, e.g. "A" or "BC"
 	 * @param formatMap The map with the formattings (hover map or variables map)
-	 * @param handler A function that is called with the formatted string as argument.
-	 * It is required because it might be that for formatting it is required to
-	 * get more data from the socket.
+	 * @returns A Promise with the formatted string.
 	 */
-	public static getFormattedRegister(regIn: string, formatMap: any, handler: {(formattedString: string)} = (data) => {}) {
+	public static async getFormattedRegister(regIn: string, formatMap: any): Promise<string> {
 		// Every register has a formatting otherwise it's not a valid register name
-		const reg = regIn.toUpperCase();
-		const format = formatMap.get(reg);
-		assert(format != undefined, 'Register ' + reg + ' does not exist.');
+		const reg=regIn.toUpperCase();
+		const format=formatMap.get(reg);
+		assert(format!=undefined, 'Register '+reg+' does not exist.');
 
-		Remote.getRegisters().then(() => {
-			// Get value of register
-			const value = Remote.getRegisterValue(reg);
+		await Remote.getRegisters();
+		// Get value of register
+		const value=Remote.getRegisterValue(reg);
 
-			// do the formatting
-			let rLen;
-			if(reg == "IXH" || reg == "IXL" || reg == "IYH" || reg == "IYL") {
-				// Value length = 1 byte
-				rLen = 1;
-			}
-			else {
-				rLen = reg.length;
-				if(reg[rLen-1] == '\'') --rLen;	// Don't count the "'" in the register name
-			}
+		// do the formatting
+		let rLen;
+		if (reg=="IXH"||reg=="IXL"||reg=="IYH"||reg=="IYL") {
+			// Value length = 1 byte
+			rLen=1;
+		}
+		else {
+			rLen=reg.length;
+			if (reg[rLen-1]=='\'')--rLen;	// Don't count the "'" in the register name
+		}
 
-			Utility.numberFormatted(reg, value, rLen, format, undefined, handler);
-		});
+		const formattedRegister=await Utility.numberFormatted(reg, value, rLen, format, undefined);
+		return formattedRegister;
 	}
+
 
 	/**
 	 * If absFilePath starts with vscode.workspace.rootPath

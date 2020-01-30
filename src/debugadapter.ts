@@ -1037,12 +1037,12 @@ export class DebugSessionClass extends DebugSession {
 				return;
 			}
 			// Get contents
-			varObj.getContent(varList => {
+			varObj.getContent(args.start, args.count).then(varList => {
 				response.body = {variables: varList};
 				this.sendResponse(response);
 				// end the serialized call:
 				this.serializer.endExec();
-			}, args.start, args.count);
+			});
 		});
 	}
 
@@ -1442,8 +1442,13 @@ export class DebugSessionClass extends DebugSession {
 		// Check if its a debugger command
 		const expression = args.expression.trim();
 		const tokens = expression.split(' ');
-		const cmd = tokens.shift();
-		if (cmd) {
+		const cmd=tokens.shift();
+		if (cmd == undefined) {
+			this.sendResponse(response);
+			return;
+		}
+
+		if (expression.startsWith('-')) {
 			try {
 				if (expression.startsWith('-')) {
 					const text=await this.evaluateCommand(expression);
@@ -1464,15 +1469,13 @@ export class DebugSessionClass extends DebugSession {
 		// get the name
 		const name = expression;
 		// Check if it is a register
-		if(Z80Registers.isRegister(name)) {
-			const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
-			Utility.getFormattedRegister(name, formatMap, (formattedValue) => {
-				response.body = {
-					result: formattedValue,
-					variablesReference: 0
-				};
-				this.sendResponse(response);
-			});
+		if (Z80Registers.isRegister(name)) {
+			const formatMap=(args.context=='hover')? Z80RegisterHoverFormat:Z80RegisterVarFormat;
+			const formattedValue=await Utility.getFormattedRegister(name, formatMap); response.body={
+				result: formattedValue,
+				variablesReference: 0
+			};
+			this.sendResponse(response);
 			return;
 		}
 
@@ -1519,7 +1522,7 @@ export class DebugSessionClass extends DebugSession {
 						byteWord = "bw";	// both byte and word
 					// Now create a "variable" for the bigValues or small values
 					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
-					Utility.numberFormatted(name, labelValue, 2, format, undefined, (formattedValue) => {
+					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
 						if (labelValue <= Settings.launch.smallValuesMaximum) {
 							// small value
 							// Response
@@ -2108,15 +2111,16 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if( addr < 0 )
 			return;
 		// Now change Program Counter
-		Remote.setProgramCounter(addr, () => {
-			// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
-			//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
-			this.sendEventContinued();
-			this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
-			// Handle decorations
-			Remote.emitRevDbgHistory();
-			Remote.handleHistorySpot();
-		});
+		Remote.setProgramCounter(addr)
+			.then(() => {
+				// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
+				//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
+				this.sendEventContinued();
+				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
+				// Handle decorations
+				Remote.emitRevDbgHistory();
+				Remote.handleHistorySpot();
+			});
 	}
 
 

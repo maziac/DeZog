@@ -1950,15 +1950,18 @@ export class ZesaruxRemote extends RemoteClass {
 	 * in the handler.
 	 * @param address The address to change.
 	 * @param value The new value. (byte)
+	 * @returns A Promise with the real value.
 	 */
-	public writeMemory(address:number, value:number, handler:(realValue: number) => void) {
-		// Write byte
-		zSocket.send( 'write-memory ' + address + ' ' + value, data => {
-			// read byte
-			zSocket.send( 'read-memory ' + address + ' 1', data => {
-				// call handler
-				const readValue = parseInt(data,16);
-				handler(readValue);
+	public async writeMemory(address: number, value: number): Promise<number> {
+		return new Promise<number>(resolve => {
+			// Write byte
+			zSocket.send('write-memory '+address+' '+value, data => {
+				// read byte
+				zSocket.send('read-memory '+address+' 1', data => {
+					// call handler
+					const readValue=parseInt(data, 16);
+					resolve(readValue);
+				});
 			});
 		});
 	}
@@ -1967,9 +1970,9 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
 	 * and converts it to an arry of MemoryPages.
-	 * @param handler(memoryPages) The handler that receives the memory pages list.
+	 * @returns A Promise with an array with the available memory pages.
 	 */
-	public getMemoryPages(handler:(memoryPages: MemoryPage[])=>void) {
+	public async getMemoryPages(): Promise<MemoryPage[]> {
 		/* Read data from zesarux has the following format:
 		Segment 1
 		Long name: ROM 0
@@ -1991,27 +1994,29 @@ export class ZesaruxRemote extends RemoteClass {
 		...
 		*/
 
-		zSocket.send( 'get-memory-pages verbose', data => {
-			const pages: Array<MemoryPage> = [];
-			const lines = data.split('\n');
-			const len = lines.length;
-			let i = 0;
-			while(i+4 < len) {
-				// Read data
-				let name = lines[i+2].substr(12);
-				name += ' (' + lines[i+1].substr(11) + ')';
-				const startStr = lines[i+3].substr(7);
-				const start = Utility.parseValue(startStr);
-				const endStr = lines[i+4].substr(5);
-				const end = Utility.parseValue(endStr);
-				// Save in array
-				pages.push({start, end, name});
-				// Next
-				i += 6;
-			}
+		return new Promise<MemoryPage[]>(resolve => {
+			zSocket.send('get-memory-pages verbose', data => {
+				const pages: Array<MemoryPage>=[];
+				const lines=data.split('\n');
+				const len=lines.length;
+				let i=0;
+				while (i+4<len) {
+					// Read data
+					let name=lines[i+2].substr(12);
+					name+=' ('+lines[i+1].substr(11)+')';
+					const startStr=lines[i+3].substr(7);
+					const start=Utility.parseValue(startStr);
+					const endStr=lines[i+4].substr(5);
+					const end=Utility.parseValue(endStr);
+					// Save in array
+					pages.push({start, end, name});
+					// Next
+					i+=6;
+				}
 
-			// send data to handler
-			handler(pages);
+				// send data to handler
+				resolve(pages);
+			});
 		});
 	}
 
@@ -2021,12 +2026,13 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param address The new address for the program counter.
 	 * @param handler that is called when the PC has been set.
 	 */
-	public setProgramCounter(address: number, handler?:() => void) {
+	public async setProgramCounter(address: number): Promise<void> {
 		this.z80Registers.clearCache();
 		this.clearReverseDbgStack();
-		zSocket.send( 'set-register PC=' + address.toString(16) + 'h', data => {
-			if(handler)
-				handler();
+		return new Promise<void>(resolve => {
+			zSocket.send('set-register PC='+address.toString(16)+'h', data => {
+				resolve();
+			});
 		});
 	}
 

@@ -145,7 +145,7 @@ export class MemoryDumpView extends BaseView {
 	 * @param value The new value.
 	 */
 	protected changeMemory(address: number, value: number) {
-		Remote.writeMemory(address, value, (realValue) => {
+		Remote.writeMemory(address, value).then(realValue => {
 			// Also update the value and the hovertext in all webviews
 			for(let mdv of MemoryDumpView.MemoryViews) {
 				// check first if address included at all
@@ -174,30 +174,32 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected getValueInfoText(address: number) {
 		// Value
-		const value = this.memDump.getValueFor(address);
-		Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined, (formattedString) => {
-			var text = formattedString + '\n';
-			// Address
-			Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined, (formattedString) => {
-				text += formattedString;
-				// Check for last value
-				const prevValue = this.memDump.getValueFor(address, true /*previous*/);
-				if(!isNaN(prevValue)) {
-					if(prevValue != value) {
-						// has changed so add the last value to the hover text
-						text += '\nPrevious value: ' + prevValue.toString(16) + 'h';
-					}
-				}
-				// Now send the formatted text to the web view for display.
-				const msg = {
-					command: 'valueInfoText',
-					address: address.toString(),
-					text: text
-				};
-				this.sendMessageToWebView(msg);
-				//this.vscodePanel.webview.postMessage(msg);
+		const value=this.memDump.getValueFor(address);
+		Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined)
+			.then(formattedString => {
+				var text=formattedString+'\n';
+				// Address
+				Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined)
+					.then(formattedString => {
+						text+=formattedString;
+						// Check for last value
+						const prevValue=this.memDump.getValueFor(address, true /*previous*/);
+						if (!isNaN(prevValue)) {
+							if (prevValue!=value) {
+								// has changed so add the last value to the hover text
+								text+='\nPrevious value: '+prevValue.toString(16)+'h';
+							}
+						}
+						// Now send the formatted text to the web view for display.
+						const msg={
+							command: 'valueInfoText',
+							address: address.toString(),
+							text: text
+						};
+						this.sendMessageToWebView(msg);
+						//this.vscodePanel.webview.postMessage(msg);
+					});
 			});
-		});
 	}
 
 
@@ -207,16 +209,17 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected getAddressInfoText(address: number) {
 		// Address
-		Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined, (formattedString) => {
-			// Now send the formatted text to the web view for display.
-			const msg = {
-				command: 'addressInfoText',
-				address: address.toString(),
-				text: formattedString
-			};
-			this.sendMessageToWebView(msg);
-			//this.vscodePanel.webview.postMessage(msg);
-		});
+		Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined)
+			.then(formattedString => {
+				// Now send the formatted text to the web view for display.
+				const msg={
+					command: 'addressInfoText',
+					address: address.toString(),
+					text: formattedString
+				};
+				this.sendMessageToWebView(msg);
+				//this.vscodePanel.webview.postMessage(msg);
+			});
 	}
 
 

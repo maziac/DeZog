@@ -1103,31 +1103,34 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Writes one memory value to the emulator.
 	 * The write is followed by a read and the read value is returned
-	 * in the handler.
+	 * by tehe Promise.
 	 * @param address The address to change.
-	 * @param value The new value.
+	 * @param value The new (byte) value.
+	 * @returns A Promise with the real value.
 	 */
-	public writeMemory(address, value, handler: (realValue: number) => void) {
+	public async writeMemory(address: number, value: number): Promise<number> {
 		assert(false);	// override this
+		return 0;
 	}
 
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
 	 * and converts it to an arry of MemoryPages.
-	 * @param handler(memoryPages) The handler that receives the memory pages list.
+	 * @returns A Promise with an array with the available memory pages.
 	 */
-	public getMemoryPages(handler: (memoryPages: MemoryPage[]) => void) {
+	public async getMemoryPages(): Promise<MemoryPage[]> {
 		assert(false);	// override this
+		return [];
 	}
 
 
 	/**
 	 * Change the program counter.
 	 * @param address The new address for the program counter.
-	 * @param handler That is called when the PC has been set.
+	 * @param handler that is called when the PC has been set.
 	 */
-	public setProgramCounter(address: number, handler?: () => void) {
+	public async  setProgramCounter(address: number): Promise<void> {
 		assert(false);	// override this
 	}
 
