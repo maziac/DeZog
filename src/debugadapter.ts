@@ -675,11 +675,7 @@ export class DebugSessionClass extends DebugSession {
 					const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
 					const sf=new StackFrame(index+1, frame.name, src, lineNr);
 					sfrs.push(sf);
-				}
-
-				// Create array with addresses that need to be fetched for disassembly
-				for (let index=frameCount-1; index>=0; index--) {
-					const sf=sfrs[index];
+					// Create array with addresses that need to be fetched for disassembly
 					if (!sf.source) {
 						const frame=callStack[index];
 						fetchAddresses.push(frame.addr);
