@@ -4,6 +4,8 @@
 - Added remoteType to package.json.
 - Fixed bug with callstack and RST.
 - Fixed bug with stack for pushed values on top level.
+- Fixed bug if no unit tests were configured.
+- Label evaluation: Allow and evaluate "$" in EQU.
 
 # 0.11.2
 - More refactoring.

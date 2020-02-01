@@ -259,9 +259,16 @@ export class LabelsClass {
 					if(equ) {
 						if(equ.toLowerCase().startsWith('equ')) {
 							// EQU: add to label array
-							const valueString = match[4];
+							let valueString = match[4];
 							// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 							try {
+								// Check for any '$', i.e. current address
+								if (valueString.indexOf('$')>=0) {
+									// Replace $ with current address
+									const addressString=address.toString();
+									const cAddrString=valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+									valueString=cAddrString;
+								}
 								// Evaluate
 								const value = Utility.evalExpression(valueString, false);
 								//const entry = { value, file: fileName, line: lineNr};
