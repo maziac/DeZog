@@ -972,7 +972,7 @@ export class RemoteClass extends EventEmitter {
 
 
 	/*
-	 * Sets breakpoint in the zesarux debugger.
+	 * Sets breakpoint in the Remote..
 	 * Sets the breakpoint ID (bpId) in bp.
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
@@ -1130,7 +1130,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param address The new address for the program counter.
 	 * @param handler that is called when the PC has been set.
 	 */
-	public async  setProgramCounter(address: number): Promise<void> {
+	public async setProgramCounter(address: number): Promise<void> {
 		assert(false);	// override this
 	}
 

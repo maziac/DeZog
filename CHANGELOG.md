@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.11.4
+- Design document added to describe the process of adding a new Remote.
+
 # 0.11.3
 - Added remoteType to package.json.
 - Fixed bug with callstack and RST.
@@ -7,6 +10,7 @@
 - Fixed bug if no unit tests were configured.
 - Label evaluation: Allow and evaluate "$" in EQU.
 - Fixed bug with wrong order in call stack when disassembling.
+- A lot of refactoring (handler -> Promises).
 
 # 0.11.2
 - More refactoring.
