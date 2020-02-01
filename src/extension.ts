@@ -88,8 +88,15 @@ export function activate(context: vscode.ExtensionContext) {
 	*/
 
 	// Command to get a list of all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', () => {
-		return Z80UnitTests.getAllUnitTests();
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', async () => {
+		try {
+			return await Z80UnitTests.getAllUnitTests();
+		}
+		catch (e) {
+			// Error in case no unit tests are configured.
+			vscode.window.showErrorMessage(e);
+			return [];
+		}
 	}));
 
 	// Command to initialize partial unit testing
