@@ -2072,15 +2072,17 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Retrieves the TBBlue register value from the emulator.
 	 * @param registerNr The number of the register.
-	 * @param value(value) Calls 'handler' with the value of the register.
+	 * @returns A promise with the value of the register.
 	 */
-	public getTbblueRegister(registerNr: number, handler: (value)=>void) {
-		zSocket.send('tbblue-get-register ' + registerNr, data => {
-			// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
-			const valueString = data.substr(0,2);
-			const value = parseInt(valueString,16);
-			// Call handler
-			handler(value);
+	public async getTbblueRegister(registerNr: number): Promise<number> {
+		return new Promise<number>(resolve => {
+			zSocket.send('tbblue-get-register '+registerNr, data => {
+				// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
+				const valueString=data.substr(0, 2);
+				const value=parseInt(valueString, 16);
+				// Call handler
+				resolve(value);
+			});
 		});
 	}
 
@@ -2088,39 +2090,43 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Retrieves the sprites palette from the emulator.
 	 * @param paletteNr 0 or 1.
-	 * @param handler(paletteArray) Calls 'handler' with a 256 byte Array<number> with the palette values.
+	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
 	 */
-	public getTbblueSpritesPalette(paletteNr: number, handler: (paletteArray)=>void) {
-		const paletteNrString = (paletteNr == 0) ? 'first' : 'second';
-		zSocket.send('tbblue-get-palette sprite ' + paletteNrString + ' 0 256', data => {
-			// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
-			const palette = new Array<number>(256);
-			for(let i=0; i<256; i++) {
-				const colorString = data.substr(i*4,3);
-				const color = parseInt(colorString,16);
-				palette[i] = color;
-			}
-			// Call handler
-			handler(palette);
+	public getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
+		return new Promise<Array<number>>(resolve => {
+			const paletteNrString=(paletteNr==0)? 'first':'second';
+			zSocket.send('tbblue-get-palette sprite '+paletteNrString+' 0 256', data => {
+				// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
+				const palette=new Array<number>(256);
+				for (let i=0; i<256; i++) {
+					const colorString=data.substr(i*4, 3);
+					const color=parseInt(colorString, 16);
+					palette[i]=color;
+				}
+				// Call handler
+				resolve(palette);
+			});
 		});
 	}
 
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @param handler(xl, xr, yt, yb) Calls 'handler' with the clipping dimensions.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
 	 */
-	public getTbblueSpritesClippingWindow(handler: (xl: number, xr: number, yt: number, yb: number)=>void) {
-		zSocket.send('tbblue-get-clipwindow sprite', data => {
-			// Returns 4 decimal numbers, e.g. "0 175 0 192 "
-			const clip = data.split(' ');
-			const xl = parseInt(clip[0]);
-			const xr = parseInt(clip[1]);
-			const yt = parseInt(clip[2]);
-			const yb = parseInt(clip[3]);
-			// Call handler
-			handler(xl, xr, yt, yb);
-		});
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+		return new Promise<{xl: number, xr: number, yt: number, yb: number}>(resolve => {
+			zSocket.send('tbblue-get-clipwindow sprite', data => {
+				// Returns 4 decimal numbers, e.g. "0 175 0 192 "
+				const clip=data.split(' ');
+				const xl=parseInt(clip[0]);
+				const xr=parseInt(clip[1]);
+				const yt=parseInt(clip[2]);
+				const yb=parseInt(clip[3]);
+				// Call handler
+				resolve({xl, xr, yt, yb});
+			});
+		})
 	}
 
 
@@ -2128,28 +2134,30 @@ export class ZesaruxRemote extends RemoteClass {
 	 * Retrieves the sprites from the emulator.
 	 * @param slot The start slot.
 	 * @param count The number of slots to retrieve.
-	 * @param handler(sprites) Calls 'handler' with an array of sprite data (an array of an array of 4 bytes, the 4 attribute bytes).
+	 * @returns A Promise with an array of sprite data.
 	 */
-	public getTbblueSprites(slot: number, count: number, handler: (sprites)=>void) {
-		zSocket.send('tbblue-get-sprite ' + slot + ' ' + count, data => {
-			// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
-			// "00 00 00 00"
-			// "00 00 00 00"
-			const spriteLines = data.split('\n');
-			const sprites = new Array<Uint8Array>();
-			for(const line of spriteLines) {
-				if(line.length == 0)
-					continue;
-				const sprite = new Uint8Array(4);
-				for(let i=0; i<4; i++) {
-					const attrString = line.substr(i*3,2);
-					const attribute = parseInt(attrString,16);
-					sprite[i] = attribute;
+	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
+		return new Promise<Array<Uint8Array>>(resolve => {
+			zSocket.send('tbblue-get-sprite '+slot+' '+count, data => {
+				// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
+				// "00 00 00 00"
+				// "00 00 00 00"
+				const spriteLines=data.split('\n');
+				const sprites=new Array<Uint8Array>();
+				for (const line of spriteLines) {
+					if (line.length==0)
+						continue;
+					const sprite=new Uint8Array(4);
+					for (let i=0; i<4; i++) {
+						const attrString=line.substr(i*3, 2);
+						const attribute=parseInt(attrString, 16);
+						sprite[i]=attribute;
+					}
+					sprites.push(sprite);
 				}
-				sprites.push(sprite);
-			}
-			// Call handler
-			handler(sprites);
+				// Call handler
+				resolve(sprites);
+			});
 		});
 	}
 
@@ -2158,28 +2166,31 @@ export class ZesaruxRemote extends RemoteClass {
 	 * Retrieves the sprite patterns from the emulator.
 	 * @param index The start index.
 	 * @param count The number of patterns to retrieve.
-	 * @param handler(patterns) Calls 'handler' with an array of sprite pattern data.
+	 * @preturns A Promise with an array of sprite pattern data.
 	 */
-	public getTbblueSpritePatterns(index: number, count: number, handler: (patterns)=>void) {
-		zSocket.send('tbblue-get-pattern ' + index + ' ' + count, data => {
-			// Sprite patterns are returned one line per pattern, each line consist of
-			// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
-			const patternLines = data.split('\n');
-			patternLines.pop();	// Last element is a newline only
-			const patterns = new Array<Array<number>>();
-			for(const line of patternLines) {
-				const pattern = new Array<number>(256);
-				for(let i=0; i<256; i++) {
-					const attrString = line.substr(i*3,2);
-					const attribute = parseInt(attrString,16);
-					pattern[i] = attribute;
+	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
+		return new Promise<Array<Array<number>>>(resolve => {
+			zSocket.send('tbblue-get-pattern '+index+' '+count, data => {
+				// Sprite patterns are returned one line per pattern, each line consist of
+				// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
+				const patternLines=data.split('\n');
+				patternLines.pop();	// Last element is a newline only
+				const patterns=new Array<Array<number>>();
+				for (const line of patternLines) {
+					const pattern=new Array<number>(256);
+					for (let i=0; i<256; i++) {
+						const attrString=line.substr(i*3, 2);
+						const attribute=parseInt(attrString, 16);
+						pattern[i]=attribute;
+					}
+					patterns.push(pattern);
 				}
-				patterns.push(pattern);
-			}
-			// Call handler
-			handler(patterns);
+				// Call handler
+				resolve(patterns);
+			});
 		});
 	}
+
 
 	// ------------------------------------
 
@@ -2190,24 +2201,26 @@ export class ZesaruxRemote extends RemoteClass {
 	 * But there is no signal to tell when all are sent.
 	 * So this function waits as long as there is still traffic to the emulator.
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
-	 * @param handler This handler is called after being quiet for the given timeout.
+	 * @returns A Promise called after being quiet for the given timeout.
 	 */
-	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
-		let timerId;
-		const timer = () => {
-			clearTimeout(timerId);
-			timerId = setTimeout(() => {
-				// Now there is at least 100ms quietness:
-				// Stop listening
-				zSocket.removeListener('queueChanged', timer);
-				// Load the initial unit test routine (provided by the user)
-				handler();
-			}, timeout);
-		};
+	public async executeAfterBeingQuietFor(timeout: number): Promise<void>{
+		return new Promise<void>(resolve => {
+			let timerId;
+			const timer=() => {
+				clearTimeout(timerId);
+				timerId=setTimeout(() => {
+					// Now there is at least 100ms quietness:
+					// Stop listening
+					zSocket.removeListener('queueChanged', timer);
+					// Load the initial unit test routine (provided by the user)
+					resolve();
+				}, timeout);
+			};
 
-		// 2 triggers
-		zSocket.on('queueChanged', timer);
-		zSocket.executeWhenQueueIsEmpty().then(timer);
+			// 2 triggers
+			zSocket.on('queueChanged', timer);
+			zSocket.executeWhenQueueIsEmpty().then(timer);
+		});
 	}
 
 

@@ -191,7 +191,7 @@ export class RemoteClass extends EventEmitter {
 
 			try {
 				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-				const match=/;.*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+				const match=/;\s*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 				if (match) {
 					// get arguments
 					let addressString=match[1];
@@ -233,7 +233,7 @@ export class RemoteClass extends EventEmitter {
 				}
 			}
 			catch (e) {
-				throw "Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"";
+				throw "Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e+"";
 			}
 		}
 
@@ -348,7 +348,7 @@ export class RemoteClass extends EventEmitter {
 				}
 				catch (e) {
 					// Show error
-					console.log(e);
+					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e+"");
 				}
 			}
 		}
@@ -1140,29 +1140,32 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Retrieves the TBBlue register value from the emulator.
 	 * @param registerNr The number of the register.
-	 * @param value(value) Calls 'handler' with the value of the register.
+	 * @returns A promise with the value of the register.
 	 */
-	public getTbblueRegister(registerNr: number, handler: (value) => void) {
+	public async getTbblueRegister(registerNr: number): Promise<number> {
 		assert(false);	// override this
+		return 0;
 	}
 
 
 	/**
 	 * Retrieves the sprites palette from the emulator.
 	 * @param paletteNr 0 or 1.
-	 * @param handler(paletteArray) Calls 'handler' with a 256 byte Array<number> with the palette values.
+	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
 	 */
-	public getTbblueSpritesPalette(paletteNr: number, handler: (paletteArray) => void) {
+	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
 		assert(false);	// override this
+		return [];
 	}
 
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @param handler(xl, xr, yt, yb) Calls 'handler' with the clipping dimensions.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
 	 */
-	public getTbblueSpritesClippingWindow(handler: (xl: number, xr: number, yt: number, yb: number) => void) {
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
 		assert(false);	// override this
+		return {xl: 0, xr: 0, yt: 0, yb: 0};
 	}
 
 
@@ -1170,20 +1173,22 @@ export class RemoteClass extends EventEmitter {
 	 * Retrieves the sprites from the emulator.
 	 * @param slot The start slot.
 	 * @param count The number of slots to retrieve.
-	 * @param handler(sprites) Calls 'handler' with an array of sprite data.
+	 * @returns A Promise with an array of sprite data.
 	 */
-	public getTbblueSprites(slot: number, count: number, handler: (sprites) => void) {
+	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
 		assert(false);	// override this
+		return [];
 	}
 
 	/**
 	 * Retrieves the sprite patterns from the emulator.
 	 * @param index The start index.
 	 * @param count The number of patterns to retrieve.
-	 * @param handler(patterns) Calls 'handler' with an array of sprite pattern data.
+	 * @preturns A Promise with an array of sprite pattern data.
 	 */
-	public getTbblueSpritePatterns(index: number, count: number, handler: (patterns) => void) {
+	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		assert(false);	// override this
+		return [];
 	}
 
 
@@ -1193,9 +1198,9 @@ export class RemoteClass extends EventEmitter {
 	 * But there is no signal to tell when all are sent.
 	 * So this function waits as long as there is still traffic to the emulator.
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
-	 * @param handler This handler is called after being quiet for the given timeout.
+	 * @returns A Promise called after being quiet for the given timeout.
 	 */
-	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
+	public async executeAfterBeingQuietFor(timeout: number): Promise<void> {
 		assert(false);	// override this
 	}
 

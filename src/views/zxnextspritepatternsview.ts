@@ -324,74 +324,61 @@ export class ZxNextSpritePatternsView extends BaseView {
 	/**
 	 * First checks which palette is in use, then loads it from the emulator.
 	 */
-	protected getSpritesPalette() {
-		// Retrieve from emulator
-		this.serializer.exec(() => {
-			if(ZxNextSpritePatternsView.currentPaletteNumber >= 0) {
-				// End
+	protected async getSpritesPalette(): Promise<void> {
+		if (ZxNextSpritePatternsView.currentPaletteNumber>=0) {
+			return;
+		}
+
+		// Get the transparent index
+		let value = await Remote.getTbblueRegister(75);
+		ZxNextSpritePatternsView.spritesPaletteTransparentIndex=value;
+
+		// Get in use palette number
+		value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
+		ZxNextSpritePatternsView.currentPaletteNumber=(value>>3)&0x01;
+
+		// Check if already existing
+		if(ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
+			return;
+		}
+
+		// Get in use palette number
+		// TODO: Value is not used. Is this correct?, see https://wiki.specnext.dev/Enhanced_ULA_Control_Register
+		value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
+		let paletteNumber;
+		// Check palette selection and maybe override this number
+		const usedPal = this.usedPalette;
+		switch(usedPal) {
+			case PaletteSelection.DEFAULT:
+				// Create default palette
+				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createDefaultPalette());
 				this.serializer.endExec();
 				return;
-			}
-			// Get the transparent index
-			Remote.getTbblueRegister(75, value => {
-				ZxNextSpritePatternsView.spritesPaletteTransparentIndex = value;
-			});
-			// Get in use palette number
-			Remote.getTbblueRegister(0x43, value => {	// ULANextControlRegister
-				ZxNextSpritePatternsView.currentPaletteNumber = (value>>3) & 0x01;
-				// End
-				this.serializer.endExec();
-			});
-		});
-
-		this.serializer.exec(() => {
-			// Check if already existing
-			if(ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
+			case PaletteSelection.GRAYSCALE:
+				// Create grayscale palette
+				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createGrayscalePalette());
 				this.serializer.endExec();
 				return;
-			}
-
-			// Get in use palette number
-			Remote.getTbblueRegister(0x43, value => {	// ULANextControlRegister
-				let paletteNumber;
-				// Check palette selection and maybe override this number
-				const usedPal = this.usedPalette;
-				switch(usedPal) {
-					case PaletteSelection.DEFAULT:
-						// Create default palette
-						ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createDefaultPalette());
-						this.serializer.endExec();
-						return;
-					case PaletteSelection.GRAYSCALE:
-						// Create grayscale palette
-						ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createGrayscalePalette());
-						this.serializer.endExec();
-						return;
-					default:
-						paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);
-						break;
-				}
-				// Get palette
-				Remote.getTbblueSpritesPalette(paletteNumber, paletteArray => {
-					// Convert bits to single numbers
-					const loadedPalette = new Array<number>(3*256);
-					// 3 colors
-					let k = 0;
-					for(const color of paletteArray) {
-						// Red
-						loadedPalette[k++] = color & 0b11100000;
-						// Green
-						loadedPalette[k++] = (color << 3) & 0b11100000;
-						// Blue
-						loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >> 3) & 0b00100000);
-					}
-					// Store
-					ZxNextSpritePatternsView.staticSetPaletteForPaletteNumber(paletteNumber, loadedPalette);
-					// End
-					this.serializer.endExec();
-				});
-			});
-		});
+			default:
+				paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);
+				break;
+		}
+			// Get palette
+		const paletteArray=await Remote.getTbblueSpritesPalette(paletteNumber);
+		// Convert bits to single numbers
+		const loadedPalette = new Array<number>(3*256);
+		// 3 colors
+		let k = 0;
+		for(const color of paletteArray) {
+			// Red
+			loadedPalette[k++] = color & 0b11100000;
+			// Green
+			loadedPalette[k++] = (color << 3) & 0b11100000;
+			// Blue
+			loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >> 3) & 0b00100000);
+		}
+		// Store
+		ZxNextSpritePatternsView.staticSetPaletteForPaletteNumber(paletteNumber, loadedPalette);
 	}
 
 
@@ -400,39 +387,25 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * It knows which patterns to request from the loaded sprites.
 	 * And it requests only that data that has not been requested before.
 	  */
-	protected getSpritePatterns() {
-		this.serializer.exec(() => {
-			// Check if a pattern needs to be requested
-			if(this.patternIds.length == 0) {
-				this.serializer.endExec();
-				return;
-			}
+	protected async getSpritePatterns(): Promise<void> {
+		// Check if a pattern needs to be requested
+		if (this.patternIds.length==0) {
+			return;
+		}
 
-			const usedIndex = new Array<number>();
-			let count = this.patternIds.length;
-			for(const index of this.patternIds) {
-				// Check if it exists already
-				const pattern = ZxNextSpritePatternsView.spritePatterns.get(index);
-				if(pattern) {
-					// Already exists, simply count down.
-					count --;
-					if(count == 0)
-						this.serializer.endExec();
-				}
-				else {
-					// Get pattern from emulator
-					usedIndex.push(index);
-					Remote.getTbblueSpritePatterns(index, 1, spritePatterns => {
-						const indexPop = usedIndex.shift() || 0;	// calm the transpiler
-						ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
-						// end
-						count --;
-						if(count == 0)
-							this.serializer.endExec();
-					});
-				}
+		const usedIndex=new Array<number>();
+		for (const index of this.patternIds) {
+			// Check if it exists already
+			const pattern=ZxNextSpritePatternsView.spritePatterns.get(index);
+			if (!pattern) {
+				// Pattern does not exists yet.
+				// Get pattern from emulator
+				usedIndex.push(index);
+				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
+				const indexPop=usedIndex.shift() as number;	// calm the transpiler
+				ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
-		});
+		}
 	}
 
 
@@ -444,22 +417,18 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * If 'step' not defined then all required sprite patterns will be retrieved from the
 	 * emulator. I.e. if you do a "break" after letting the program run.
 	 */
-	public update(reason?: any) {
+	public async update(reason?: any): Promise<void> {
 		// Mark as invalid until pattern have been loaded.
 		this.patternDataValid = (!reason || reason.step != true);
 
 		// Load palette if not available
-		this.getSpritesPalette();
+		await this.getSpritesPalette();
 
 		// Get patterns
-		this.getSpritePatterns();
+		await this.getSpritePatterns();
 
 		// Create a new web view html code
-		this.serializer.exec(() => {
-			this.setHtml();
-			// end
-			this.serializer.endExec();
-		});
+		this.setHtml();
 	}
 
 

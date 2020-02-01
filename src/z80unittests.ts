@@ -174,39 +174,39 @@ export class Z80UnitTests {
 	 * @param debug false: unit tests are run without debugger,
 	 * true: unit tests are run with debugger.
 	 */
-	protected static terminateEmulatorAndStartTests(debug: boolean) {
-		Z80UnitTests.debug = debug;
-		// Wait until vscode debugger has stopped.
-		// (Unfortunately there is no event for this, so we need to wait)
-		const f = () => {
+	protected static terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
+		Z80UnitTests.debug=debug;
+		return new Promise<void>(async resolve => {
+			// Wait until vscode debugger has stopped.
+			if (Remote) {
+				// Terminate emulator
+				await Remote.terminate();
+			}
+			// (Unfortunately there is no event for this, so we need to wait)
 			Utility.delayedCall(time => {
 				// After 5 secs give up
-				if(time >= 5.0) {
+				if (time>=5.0) {
 					// Give up
 					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+					resolve();
 					return true;
 				}
 				// New coverage set
-				this.allCoveredAddresses = new Set<number>();
+				this.allCoveredAddresses=new Set<number>();
 				// Check for active debug session
-				if(vscode.debug.activeDebugSession)
+				if (vscode.debug.activeDebugSession)
 					return false;  // Try again
 				// Debugger not active anymore, start tests
-				if(debug)
+				if (debug)
 					this.debugTests();
 				else
 					this.runTests();
+				resolve();
 				return true;  // Stop
 			});
-		}
+		});
+	}
 
-		if(Remote) {
-			// Terminate emulator
-			Remote.terminate().then(f);
-		}
-		else
-			f();
-}
 
 	/**
 	 * Checks first if a debug session is active, terminates it
@@ -624,7 +624,9 @@ export class Z80UnitTests {
 	 * @param da The debug emulator.
 	 */
 	protected static startUnitTestsWhenQuiet(da: DebugSessionClass) {
-		da.executeAfterBeingQuietFor(1000, () => {
+		// Wait
+		da.executeAfterBeingQuietFor(1000)
+		.then(() => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
 		});
@@ -894,39 +896,39 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string) {
-		// Clear timeout
-		clearTimeout(Z80UnitTests.timeoutHandle);
-		Z80UnitTests.timeoutHandle = undefined;
-		// Clear remaining test cases
-		Z80UnitTests.CancelAllRemainingResults();
-		// Show coverage
-		Decoration.showCodeCoverage(Z80UnitTests.allCoveredAddresses);
-		Z80UnitTests.lastCoveredAddresses = undefined as any;
+	protected static stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string): Promise<void> {
+		// Async
+		return new Promise<void>(async resolve => {
+			// Clear timeout
+			clearTimeout(Z80UnitTests.timeoutHandle);
+			Z80UnitTests.timeoutHandle=undefined;
+			// Clear remaining test cases
+			Z80UnitTests.CancelAllRemainingResults();
+			// Show coverage
+			Decoration.showCodeCoverage(Z80UnitTests.allCoveredAddresses);
+			Z80UnitTests.lastCoveredAddresses=undefined as any;
 
-		// Delay this:
-		const f = () => {
+			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
+			if (debugAdapter)
+				await debugAdapter.executeAfterBeingQuietFor(300);
+
 			// Remove event handling for the emulator
 			Remote.removeAllListeners();
 			// For reverse debugging.
 			Remote.clearInstructionHistory();
 
 			// Exit
-			if(debugAdapter)
+			if (debugAdapter)
 				debugAdapter.terminate(errMessage);
 			else {
 				// Stop emulator
-				Remote.disconnect();
+				await Remote.disconnect();
 				// Show error
-				if(errMessage)
+				if (errMessage)
 					vscode.window.showErrorMessage(errMessage);
 			}
-		};
-		// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
-		if(debugAdapter)
-			debugAdapter.executeAfterBeingQuietFor(300, f);
-		else
-			f();
+			resolve();
+		});
 	}
 
 

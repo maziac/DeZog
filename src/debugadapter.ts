@@ -2217,8 +2217,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @param handler This handler is called after being quiet for the given timeout.
 	 */
-	public executeAfterBeingQuietFor(timeout: number, handler: () => void) {
-		Remote.executeAfterBeingQuietFor(timeout, handler);
+	public async executeAfterBeingQuietFor(timeout: number): Promise<void> {
+		await Remote.executeAfterBeingQuietFor(timeout);
 	}
 
 

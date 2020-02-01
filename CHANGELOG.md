@@ -6,6 +6,7 @@
 - Fixed bug with stack for pushed values on top level.
 - Fixed bug if no unit tests were configured.
 - Label evaluation: Allow and evaluate "$" in EQU.
+- Fixed bug with wrong order in call stack when disassembling.
 
 # 0.11.2
 - More refactoring.

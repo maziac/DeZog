@@ -93,8 +93,8 @@ export function activate(context: vscode.ExtensionContext) {
 			return await Z80UnitTests.getAllUnitTests();
 		}
 		catch (e) {
-			// Error in case no unit tests are configured.
-			vscode.window.showErrorMessage(e);
+			// Return empty list in case no unit tests are configured.
+			//vscode.window.showErrorMessage(e); // This is not an error!
 			return [];
 		}
 	}));

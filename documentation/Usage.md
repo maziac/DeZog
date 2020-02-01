@@ -1,6 +1,6 @@
-# Usage of the VS Code Z80 Debug Adapter
+# Usage of DeZog - the VS Code Z80 Debug Adapter
 
-This document describes the feature of DeZog and how they can be used.
+This document describes the features of DeZog and how they can be used.
 
 
 ## Sample Program

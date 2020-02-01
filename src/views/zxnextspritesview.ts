@@ -173,23 +173,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Retrieves all sprites info from the emulator.
 	 * Then sets the slotIndices accordingly: with only the visible slots.
 	 */
-	protected getAllVisibleSprites() {
-		this.serializer.exec(() => {
-			// Get sprites
-			Remote.getTbblueSprites(0, 64, sprites => {
-				// Loop over all sprites
-				for(let k=0; k<64; k++) {
-					const attrs = sprites[k];
-					// Check if visible
-					let sprite;
-					if(attrs[3] & 0b10000000)
-						sprite = new SpriteData(attrs);
-					this.sprites[k] = sprite;
-				}
-				// end
-				this.serializer.endExec();
-			});
-		});
+	protected async getAllVisibleSprites(): Promise<void> {
+		// Get sprites
+		const sprites=await Remote.getTbblueSprites(0, 64);
+		// Loop over all sprites
+		for (let k=0; k<64; k++) {
+			const attrs=sprites[k];
+			// Check if visible
+			let sprite;
+			if (attrs[3]&0b10000000)
+				sprite=new SpriteData(attrs);
+			this.sprites[k]=sprite;
+		}
 	}
 
 
@@ -197,33 +192,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Retrieves the sprites info from the emulator.
 	 * @param slotIndices Array with all the slots to retrieve.
 	 */
-	protected getSprites(slotIndices: Array<number>) {
-		// Get sprites
-		this.serializer.exec(() => {
-			// Clear all sprites
-			for(let k=0; k<64; k++)
-				this.sprites[k] = undefined;
-			const func = (k) => {
-				// Get slot
-				const slot = this.slotIndices[k];
-				if(slot == undefined) {
-					// end
-					this.serializer.endExec();
-					return;
-				}
-				// Execute
-				Remote.getTbblueSprites(slot, 1, sprites => {
-					const attrs = sprites[0];
-					const sprite = new SpriteData(attrs);
-					this.sprites[slot] = sprite;
-					// Next
-					func(k+1);
-				});
-			};
+	protected async getSprites(slotIndices: Array<number>): Promise<void> {
+		// Clear all sprites
+		for(let k=0; k<64; k++)
+			this.sprites[k]=undefined;
 
-			// Start recursive function
-			func(0);
-		});
+		// Loop over all slots
+		for (const slot of this.slotIndices) {
+			const sprites=await Remote.getTbblueSprites(slot, 1);
+			const attrs=sprites[0];
+			const sprite=new SpriteData(attrs);
+			this.sprites[slot]=sprite;
+		}
 	}
 
 
@@ -231,28 +211,19 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Check if clipping window is set.
 	 * If YES it also retrieves the sprite clipping coordinates.
 	 */
-	protected getSpritesClippingWindow() {
-		this.serializer.exec(() => {
-			// Check if clippping is set (Layer priority)
-			Remote.getTbblueRegister(21, value => {
-				this.clippingEnabled = (value & 0x02) == 0;
-				if(!this.clippingEnabled) {
-					// end
-					this.serializer.endExec();
-					return;
-				}
-				// Get clipping
-				Remote.getTbblueSpritesClippingWindow( (xl, xr, yt, yb) => {
-					this.clipXl = xl;
-					this.clipXr = xr;
-					this.clipYt = yt;
-					this.clipYb = yb;
-					// end
-					this.serializer.endExec();
-					return;
-				});
-			});
-		});
+	protected async getSpritesClippingWindow(): Promise<void> {
+		// Check if clippping is set (Layer priority)
+		const value=await Remote.getTbblueRegister(21);
+		this.clippingEnabled=(value&0x02)==0;
+		if (!this.clippingEnabled) {
+			return;
+		}
+		// Get clipping
+		const clip=await Remote.getTbblueSpritesClippingWindow();
+		this.clipXl=clip.xl;
+		this.clipXr=clip.xr;
+		this.clipYt=clip.yt;
+		this.clipYb=clip.yb;
 	}
 
 
@@ -261,52 +232,44 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * It knows which patterns to request from the loaded sprites.
 	 * And it requests only that data that has not been requested before.
 	 */
-	protected getSpritePatterns() {
-		this.serializer.exec(() => {
-			// Get all unique patterns (do not request the same pattern twice)
-			let patternSet = new Set<number>();
-			for(const sprite of this.sprites) {
-				if(sprite && sprite.visible) {
-					const index = sprite.patternIndex;
-					patternSet.add(index);
-				}
+	protected async getSpritePatterns(): Promise<void> {
+		// Get all unique patterns (do not request the same pattern twice)
+		let patternSet = new Set<number>();
+		for(const sprite of this.sprites) {
+			if(sprite && sprite.visible) {
+				const index = sprite.patternIndex;
+				patternSet.add(index);
 			}
-			// Change to array
-			this.patternIds = Array.from(patternSet);
-			// end
-			this.serializer.endExec();
-		});
+		}
+		// Change to array
+		this.patternIds = Array.from(patternSet);
 
 		// Call super
-		super.getSpritePatterns();
+		await super.getSpritePatterns();
 
 		// Set the sprite bitmaps according to pattern, palette offset, mirroring and rotation.
-		this.serializer.exec(() => {
-			const palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
-			assert(palette);
-			for(const sprite of this.sprites) {
-				if(!sprite)
-					continue;
-				const pattern = ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex);
-				if(pattern) { // Calm the transpiler
-					// Get palette with offset
-					const offs = sprite.paletteOffset
-					let usedPalette;
-					if(offs == 0)
-						usedPalette = palette;
-					else {
-						const index = 3*offs;
-						const firstPart = palette.slice(index);
-						const secondPart = palette.slice(0, index);
-						usedPalette = firstPart;
-						usedPalette.push(...secondPart);
-					}
-					sprite.createImageFromPattern(pattern, usedPalette,ZxNextSpritePatternsView.spritesPaletteTransparentIndex);
+		const palette=ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
+		assert(palette);
+		for (const sprite of this.sprites) {
+			if (!sprite)
+				continue;
+			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex);
+			if (pattern) { // Calm the transpiler
+				// Get palette with offset
+				const offs=sprite.paletteOffset
+				let usedPalette;
+				if (offs==0)
+					usedPalette=palette;
+				else {
+					const index=3*offs;
+					const firstPart=palette.slice(index);
+					const secondPart=palette.slice(0, index);
+					usedPalette=firstPart;
+					usedPalette.push(...secondPart);
 				}
+				sprite.createImageFromPattern(pattern, usedPalette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex);
 			}
-			// end
-			this.serializer.endExec();
-		});
+		}
 	}
 
 
@@ -318,7 +281,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * If 'step' not defined then all required sprite patterns will be retrieved from the
 	 * emulator. I.e. if you do a "break" after letting the program run.
 	 */
-	public update(reason?: any) {
+	public async update(reason?: any): Promise<void> {
 		// Save previous data
 		this.previousSprites = this.sprites;
 		this.sprites = new Array<SpriteData|undefined>(64);
@@ -326,18 +289,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		// Check if all visible sprites should be shown automatically
 		if(this.slotIndices) {
 			// Reload sprites given by user
-			this.getSprites(this.slotIndices);
+			await this.getSprites(this.slotIndices);
 		}
 		else {
 			// Get all sprites to check which are visible
-			this.getAllVisibleSprites();
+			await this.getAllVisibleSprites();
 		}
 
 		// Get clipping window
-		this.getSpritesClippingWindow();
+		await this.getSpritesClippingWindow();
 
 		// Call super
-		super.update(reason);
+		await super.update(reason);
 	}
 
 
