@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { ZxNextRemote } from './zxnext/zxnextremote';
-import { RemoteClass } from './remote';
+import { RemoteClass } from './remoteclass';
 
 
 

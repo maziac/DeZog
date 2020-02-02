@@ -1,15 +1,14 @@
 
 import * as assert from 'assert';
-import {Z80Registers} from './z80registers';
 import {RefList} from '../reflist';
 import {CallStackFrame} from '../callstackframe';
-import {RemoteBase, MachineType, EmulatorState, RemoteBreakpoint, MemoryPage} from './remotebase';
+import {RemoteBase, MachineType, RemoteState, RemoteBreakpoint, MemoryPage} from './remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {StateZ80} from '../statez80';
 
 
 // Re-export
-export {MachineType, EmulatorState, RemoteBreakpoint, MemoryPage};
+export {MachineType, RemoteState as EmulatorState, RemoteBreakpoint, MemoryPage};
 
 /**
  * The Remote class definition to derive from.

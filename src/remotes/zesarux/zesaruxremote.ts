@@ -6,7 +6,7 @@ import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
 import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteClass, MachineType, RemoteBreakpoint, EmulatorState, MemoryPage } from '../remote';
+import {RemoteClass, MachineType, RemoteBreakpoint, EmulatorState, MemoryPage } from '../remoteclass';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';

@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log, LogSocket } from './log';
-import { RemoteBreakpoint, MachineType } from './remotes/remote';
+import { RemoteBreakpoint, MachineType, RemoteClass } from './remotes/remoteclass';
 import { MemoryDumpView } from './views/memorydumpview';
 import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
@@ -25,6 +25,7 @@ import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
+import {ZesaruxRemote} from './remotes/zesarux/zesaruxremote';
 
 
 
@@ -139,6 +140,23 @@ export class DebugSessionClass extends DebugSession {
 		vscode.debug.startDebugging(wsFolder, configName);
 
 		return true;
+	}
+
+	/**
+	 * Checks if the method (functionality) is implemented by the Remote.
+	 */
+	protected RemoteHasMethod(name: string): boolean {
+		let remote=Remote;
+		let found=false;
+		while (remote=Object.getPrototypeOf(remote)) {
+			const className=remote.constructor.name;
+			if (className=="RemoteClass")
+				break;	// Stop at RemoteClass
+			const methodNames=Object.getOwnPropertyNames(remote);
+			found=(methodNames.indexOf(name)>=0);
+			if (found) break;
+		}
+		return found;
 	}
 
 
@@ -949,11 +967,14 @@ export class DebugSessionClass extends DebugSession {
 			scopes.push(new Scope("Disassembly", ref));
 		}
 
-		// Create variable object for MemoryPages
-		const varMemoryPages = new MemoryPagesVar();
-		// Add to list and get reference ID
-		ref = this.listVariables.addObject(varMemoryPages);
-		scopes.push(new Scope("Memory Pages", ref));
+		// Check if memory pages are suported by Remote
+		if (this.RemoteHasMethod('getMemoryPages')) {
+			// Create variable object for MemoryPages
+			const varMemoryPages=new MemoryPagesVar();
+			// Add to list and get reference ID
+			ref=this.listVariables.addObject(varMemoryPages);
+			scopes.push(new Scope("Memory Pages", ref));
+		}
 
 		// Create variable object for the stack
 		const varStack = new StackVar(frame.stack, frame.stackStartAddress);

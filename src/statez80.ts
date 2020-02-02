@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { MachineType } from './remotes/remote';
+import { MachineType } from './remotes/remoteclass';
 import { Remote } from './remotes/remotefactory';
 
 import * as fs from 'fs';

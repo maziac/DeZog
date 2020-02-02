@@ -79,7 +79,7 @@ export enum MachineType {
 
 
 /// The internal machine state.
-export enum EmulatorState {
+export enum RemoteState {
 	UNINITIALIZED=0,	///< before connection to ZEsarUX.
 	IDLE,				///< The normal state. Waiting for a new command.
 	RUNNING,			///< When a 'continue' or 'stepOut' has been requested. Until the next break.
@@ -115,7 +115,7 @@ export class RemoteBase extends EventEmitter {
 	public machineType=MachineType.UNKNOWN;
 
 	/// Current state, e.g. RUNNING
-	protected state=EmulatorState.UNINITIALIZED;
+	protected state=RemoteState.UNINITIALIZED;
 
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack: number;
@@ -870,7 +870,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected breakIfRunning() {
 		// Break if currently running
-		if (this.state==EmulatorState.RUNNING||this.state==EmulatorState.RUNNING_REVERSE) {
+		if (this.state==RemoteState.RUNNING||this.state==RemoteState.RUNNING_REVERSE) {
 			// Break
 			this.pause();
 		}

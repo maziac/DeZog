@@ -1,6 +1,6 @@
 
 //import * as assert from 'assert';
-import { RemoteBreakpoint } from '../remote';
+import { RemoteBreakpoint } from '../remoteclass';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { ZesaruxRemote } from './zesaruxremote';
 import { zSocket } from './zesaruxsocket';
@@ -42,7 +42,6 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 				ZesaruxExtRemote.prototype.setBreakpoint=ZesaruxExtRemote.prototype.setBreakpointExt;
 				ZesaruxExtRemote.prototype.removeBreakpoint=ZesaruxExtRemote.prototype.removeBreakpointExt;
-
 			}
 		});
 	}
