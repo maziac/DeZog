@@ -440,7 +440,7 @@ export class ZxNextRemote extends RemoteClass {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step out is performed.
+	 * @param A Promise that returns {tStates, cpuFreq, breakReason}
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReason' a possibly text with the break reason.
@@ -796,16 +796,6 @@ export class ZxNextRemote extends RemoteClass {
 	public async getMemoryPages(): Promise<MemoryPage[]> {
 		assert(false);	// override this
 		return [];
-	}
-
-
-	/**
-	 * Change the program counter.
-	 * @param address The new address for the program counter.
-	 * @param handler that is called when the PC has been set.
-	 */
-	public async setProgramCounter(address: number): Promise<void> {
-		assert(false);
 	}
 
 

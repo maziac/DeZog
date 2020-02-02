@@ -18,11 +18,15 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 
 To add a new Remote it need to derive from the RemoteClass.
 The RemoteClass defines an API that is used by DeZog to communicate with the real Remote.
+RemoteClass includes all methods that you might or must override.
+All must overrides include an 'assert' in the RemoteClass.
+The other are simply empty.
+If you decide to override some of the non-assert methods you can offer additional functionality.
+The debug adapter will check by itself which of the functions have been overwritten.
 
 Since you also need a transport layer to communicate with Remote it is normally wise to separate it in an own class.
 (This also makes it possible to implement different transports for the same Remote.)
 
-The 3rd class you need is a class derived from Z80Registers that deals with the decoding of the register data received from the Remote.
 
 <!-- TODO: Z80State ?) -->
 

@@ -5,8 +5,8 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
 import { CallStackFrame } from '../../callstackframe';
-import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { RemoteClass, MachineType, RemoteBreakpoint, EmulatorState, MemoryPage,  } from '../remote';
+import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
+import {RemoteClass, MachineType, RemoteBreakpoint, EmulatorState, MemoryPage } from '../remote';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -1323,8 +1323,7 @@ export class ZesaruxRemote extends RemoteClass {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param handler(tStates, cpuFreq) The handler that is called after the step out is performed.
-	 * 'tStates' contains the number of tStates executed.
+	 * @param A Promise that returns {tStates, cpuFreq, breakReason}	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReason' a possibly text with the break reason.
 	 */
@@ -2004,22 +2003,6 @@ export class ZesaruxRemote extends RemoteClass {
 
 				// send data to handler
 				resolve(pages);
-			});
-		});
-	}
-
-
-	/**
-	 * Change the program counter.
-	 * @param address The new address for the program counter.
-	 * @param handler that is called when the PC has been set.
-	 */
-	public async setProgramCounter(address: number): Promise<void> {
-		this.z80Registers.clearCache();
-		this.clearReverseDbgStack();
-		return new Promise<void>(resolve => {
-			zSocket.send('set-register PC='+address.toString(16)+'h', data => {
-				resolve();
 			});
 		});
 	}
