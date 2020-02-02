@@ -131,3 +131,48 @@ This example shows how the ZX Next Remote has been implemented.
 ~~~
 
 
+## "Hello World"
+
+This is the absolute minimum implementation for a new Remote so that DeZog at least starts up.
+
+~~~ts
+export class MyFirstRemote extends RemoteClass {
+  constructor() {
+    super();
+    this.z80Registers=new Z80Registers();
+  }
+
+  public init() {
+    super.init();
+
+    // 'Ready'
+    this.emit('initialized');
+  }
+
+  public async getRegisters(): Promise<void> {
+    const regData=Z80Registers.getRegisterData(0x8122, 0x8418,
+			0, 0, 0, 0,
+			0, 0,
+			0, 0, 0, 0,
+			0, 0);
+    this.z80Registers.setCache(regData);
+  }
+
+  public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+    const data=new Uint8Array(size);
+    return data;
+  }
+}
+~~~
+
+DeZog will show a (fake) stack and fake register values and finishes initialization.
+The SP is set to 0x8418 and the PC to 0x8122. If you have sources for that address then DeZog will show the source file. If not DeZog will try to disassemble.
+Since getMemoryDump will not return anything useful the disassembly will only show NOPs.
+
+So DeZog is basically doing 2 calls up to this point:
+1. It reads the register values (through getRegisters)
+2. It reads the stack (through getMemeoryDump)
+
+Of course, you can't do anything useful from here because 'stepOver' and the other debugger features are not yet implemented in the Remote.
+
+

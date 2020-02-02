@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log, LogSocket } from './log';
-import { RemoteBreakpoint, MachineType, RemoteClass } from './remotes/remoteclass';
+import { RemoteBreakpoint, MachineType } from './remotes/remoteclass';
 import { MemoryDumpView } from './views/memorydumpview';
 import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
@@ -25,7 +25,6 @@ import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
-import {ZesaruxRemote} from './remotes/zesarux/zesaruxremote';
 
 
 
@@ -146,6 +145,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Checks if the method (functionality) is implemented by the Remote.
 	 */
 	protected RemoteHasMethod(name: string): boolean {
+		assert(Remote);
 		let remote=Remote;
 		let found=false;
 		while (remote=Object.getPrototypeOf(remote)) {
@@ -366,12 +366,6 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
-		// Check if reverse debugging is enabled and send capabilities
-		if(Settings.launch.history.reverseDebugInstructionCount > 0) {
-			// Enable reverse debugging
-			this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
-		}
-
 		// Launch emulator
 		this.launch(response);
 	}
@@ -382,7 +376,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
-		DebugSessionClass.state = DbgAdaperState.NORMAL;
+		DebugSessionClass.state=DbgAdaperState.NORMAL;
 		// Setup the disassembler
 		this.setupDisassembler();
 
@@ -391,6 +385,16 @@ export class DebugSessionClass extends DebugSession {
 		if (msg) {
 			response.message=msg;
 			response.success=(msg==undefined);
+		}
+		else {
+			// Check if Remote supports reverse debugging.
+			if (this.RemoteHasMethod('stepBack')||this.RemoteHasMethod('reverseContinue')) {
+				// Check if reverse debugging is enabled and send capabilities
+				if (Settings.launch.history.reverseDebugInstructionCount>0) {
+					// Enable reverse debugging
+					this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
+				}
+			}
 		}
 		this.sendResponse(response);
 	}
@@ -472,7 +476,6 @@ export class DebugSessionClass extends DebugSession {
 			this.terminate();
 		});
 
-		Remote.init();
 		return new Promise<undefined>(resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async () => {
 				// Create memory/register dump view
@@ -522,6 +525,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 				DebugSessionClass.unitTestHandler=undefined;
 			});
+			Remote.init();
 		});
 	}
 

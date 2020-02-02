@@ -8,7 +8,10 @@ import {StateZ80} from '../statez80';
 
 
 // Re-export
-export {MachineType, RemoteState as EmulatorState, RemoteBreakpoint, MemoryPage};
+export {MachineType, RemoteState, RemoteBreakpoint, MemoryPage};
+export {RefList, CallStackFrame, GenericBreakpoint, GenericWatchpoint};
+export {StateZ80};
+
 
 /**
  * The Remote class definition to derive from.
@@ -22,6 +25,10 @@ export {MachineType, RemoteState as EmulatorState, RemoteBreakpoint, MemoryPage}
 export class RemoteClass extends RemoteBase {
 
 	/// Constructor.
+	/// You need to create a Z80Registers instance here.
+	/// ~~~
+	/// this.z80Registers=new Z80Registers();
+	/// ~~~
 	/// Override this.
 	constructor() {
 		super();
@@ -29,34 +36,16 @@ export class RemoteClass extends RemoteBase {
 
 
 	/// Initializes the machine.
+	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
+	/// You need to override this and call super.init().
+	/// Take care to implement the emits otherwise the system will hang on a start.
 	public init() {
+		super.init();
 	}
 
 
 	/**
-	 * Stops a remote.
-	 * This will e.g. disconnect the socket and un-use all data.
-	 * Called e.g. when vscode sends a disconnectRequest
-	 * Very much like 'terminate' but does not send the 'terminated' event.
-	 */
-	public async disconnect(): Promise<void> {
-		// please override.
-	}
-
-
-	/**
-	 * Terminates the remote.
-	 * This should disconnect the socket and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
-	 * Has to emit the "this.emit('terminated')".
-	 */
-	public async terminate(): Promise<void> {
-		// please override.
-	}
-
-
-	/**
-	* Gets the registers from cache. If cache is empty retrieves the registers from
+	* If cache is empty retrieves the registers from
 	* the emulator.
     * Override.
 	*/
@@ -80,15 +69,6 @@ export class RemoteClass extends RemoteBase {
 
 
 	/**
-	 * Returns the stack frames.
-	 */
-	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
-		assert(false);	// override this
-		return new RefList<CallStackFrame>();
-	}
-
-
-	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
@@ -107,17 +87,6 @@ export class RemoteClass extends RemoteBase {
 	 */
 	public pause(): void {
 		assert(false);	// override this
-	}
-
-
-	/**
-	 * 'reverse continue' debugger program execution.
-	 * The Promise resolves when it's stopped e.g. when a breakpoint is hit.
-	 * @returns A string with the break reason. (Never undefined)
-	 */
-	public async reverseContinue(): Promise<string> {
-		assert(false);	// override this
-		return "";
 	}
 
 
@@ -165,18 +134,6 @@ export class RemoteClass extends RemoteBase {
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
 		return {};
-	}
-
-
-/**
-  * 'step backwards' the program execution in the debugger.
-  * @returns {instruction, breakReason} Promise.
-  * instruction: e.g. "081C NOP"
-  * breakReason: If not undefined it holds the break reason message.
-  */
-	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
-		assert(false);	// override this
-		return {instruction: "", breakReason: undefined};
 	}
 
 
@@ -265,16 +222,6 @@ export class RemoteClass extends RemoteBase {
 
 
 	/**
-	 * Sends a command to the emulator.
-	 * @param cmd E.g. 'get-registers'.
-	 * @returns A Promise in remote (emulator) dependent format.
-	 */
-	public async dbgExec(cmd: string): Promise<string> {
-		return "";
-	}
-
-
-	/**
 	 * Reads a memory dump and converts it to a number array.
 	 * @param address The memory start address.
 	 * @param size The memory size.
@@ -311,12 +258,75 @@ export class RemoteClass extends RemoteBase {
 
 
 	/**
+	 * Stops a remote.
+	 * This will e.g. disconnect the socket and un-use all data.
+	 * Called e.g. when vscode sends a disconnectRequest
+	 * Very much like 'terminate' but does not send the 'terminated' event.
+	 */
+	public async disconnect(): Promise<void> {
+		// please override.
+	}
+
+
+	/**
+	 * Terminates the remote.
+	 * This should disconnect the socket and un-use all data.
+	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
+	 * Has to emit the "this.emit('terminated')".
+	 */
+	public async terminate(): Promise<void> {
+		// please override.
+	}
+
+
+	/**
+	 * Sends a command to the emulator.
+	 * @param cmd E.g. 'get-registers'.
+	 * @returns A Promise in remote (emulator) dependent format.
+	 */
+	public async dbgExec(cmd: string): Promise<string> {
+		return "";
+	}
+
+
+	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
 	 * and converts it to an arry of MemoryPages.
 	 * @returns A Promise with an array with the available memory pages.
 	 */
 	public async getMemoryPages(): Promise<MemoryPage[]> {
 		return [];
+	}
+
+
+	// Reverse debugging
+
+	/**
+	 * 'reverse continue' debugger program execution.
+	 * The Promise resolves when it's stopped e.g. when a breakpoint is hit.
+	 * @returns A string with the break reason. (Never undefined)
+	 */
+	public async reverseContinue(): Promise<string> {
+		return "";
+	}
+
+
+	/**
+	 * 'step backwards' the program execution in the debugger.
+	 * @returns {instruction, breakReason} Promise.
+	 * instruction: e.g. "081C NOP"
+	 * breakReason: If not undefined it holds the break reason message.
+	 */
+	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
+		return {instruction: "", breakReason: undefined};
+	}
+
+
+	/**
+	 * Returns true if in reverse debugging mode.
+	 */
+	protected isInStepBackMode(): boolean {
+		return false;
 	}
 
 

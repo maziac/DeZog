@@ -14,7 +14,7 @@ export let Z80RegisterHoverFormat: Map<string, string>;
 export enum Z80_REG {
 	PC, SP,
 	AF, BC, DE, HL, IX, IY,
-	AF2, BC2, DE2, HL2,
+	AF2, BC2, DE2, HL2, IR,
 	A, F, B, C, D, E, H, L, I, R,
 	A2, F2, B2, C2, D2, E2, H2, L2,
 	IXH, IXL, IYH, IYL
@@ -112,73 +112,59 @@ export class Z80Registers {
 	 * @returns The value.
 	 */
 	public parsePC(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.PC];
 	}
 
 	public parseSP(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.SP];
 	}
 
 	public parseAF(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.AF];
 	}
 
 	public parseBC(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.BC];
 	}
 
 	public parseHL(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.HL];
 	}
 
 	public parseDE(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.DE];
 	}
 
 	public parseIX(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.IX];
 	}
 
 	public parseIY(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.IY];
 	}
 
 	public parseAF2(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.AF2];
 	}
 
 	public parseBC2(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.BC2];
 	}
 
 	public parseHL2(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.HL2];
 	}
 
 	public parseDE2(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.DE2];
 	}
 
 	public parseI(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.IR]>>8;
 	}
 
 	public parseR(data: RegisterData): number {
-		assert(false);
-		return 0;
+		return data[Z80_REG.IR]&0xFF;
 	}
 
 
@@ -271,6 +257,34 @@ export class Z80Registers {
 		// Formatting
 		Z80RegisterVarFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerVar);
 		Z80RegisterHoverFormat = Z80Registers.createFormattingMap(Settings.launch.formatting.registerHover);
+	}
+
+
+	/**
+	 * Creates a RegisterData object from the given registers.
+	 */
+	public static getRegisterData(PC: number, SP: number,
+		AF: number, BC: number, DE: number, HL: number,
+		IX: number, IY: number,
+		AF2: number, BC2: number, DE2: number, HL2: number,
+		I: number, R: number): Uint16Array {
+		assert(Z80_REG.IR+1==13);
+		// Store data in word array to save space
+		const regData=Uint16Array[Z80_REG.IR+1];
+		regData[Z80_REG.PC]=PC;
+		regData[Z80_REG.SP]=SP;
+		regData[Z80_REG.AF]=AF;
+		regData[Z80_REG.BC]=BC;
+		regData[Z80_REG.DE]=DE;
+		regData[Z80_REG.HL]=HL;
+		regData[Z80_REG.IX]=IX;
+		regData[Z80_REG.IY]=IY;
+		regData[Z80_REG.AF2]=AF2;
+		regData[Z80_REG.BC2]=BC2;
+		regData[Z80_REG.DE2]=DE2;
+		regData[Z80_REG.HL2]=HL2;
+		regData[Z80_REG.IR]=(I<<8)|R;
+		return regData;
 	}
 
 

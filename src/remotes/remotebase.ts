@@ -139,6 +139,9 @@ export class RemoteBase extends EventEmitter {
 	/// The addresses of the revision history in the right order.
 	protected revDbgHistory=new Array<number>();
 
+	/// The virtual stack used during reverse debugging.
+	protected reverseDbgStack: RefList<CallStackFrame>;
+
 	/// Stores the wpmem watchpoints
 	protected watchpoints=new Array<GenericWatchpoint>();
 
@@ -754,12 +757,24 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+
 	/**
 	 * Returns the stack frames.
+	 * Either the "real" ones from Remote or the virtual ones during reverse debugging.
+	 * @returns A Promise with an array with call stack frames.
 	 */
 	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
-		assert(false);	// override this
-		return new RefList<CallStackFrame>();
+		// Check for reverse debugging.
+		if (this.isInStepBackMode()) {
+			// Return virtual stack
+			assert(this.reverseDbgStack);
+			return this.reverseDbgStack;
+		}
+		else {
+			// "real" stack trace
+			const callStack=await this.getCallStack();
+			return callStack;
+		}
 	}
 
 
@@ -1146,6 +1161,15 @@ export class RemoteBase extends EventEmitter {
 	 * Called when leaving the reverse debug mode.
 	 */
 	protected clearReverseDbgStack() {
+	}
+
+
+	/**
+	 * Returns true if in reverse debugging mode.
+	 */
+	protected isInStepBackMode(): boolean {
+		assert(false);
+		return false;
 	}
 
 

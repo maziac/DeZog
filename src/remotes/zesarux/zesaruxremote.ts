@@ -3,10 +3,9 @@ import { zSocket, ZesaruxSocket } from './zesaruxsocket';
 import { Utility } from '../../utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
-import { RefList } from '../../reflist';
 import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteClass, MachineType, RemoteBreakpoint, EmulatorState, MemoryPage } from '../remoteclass';
+import {RemoteClass, MachineType, RemoteBreakpoint, RemoteState, MemoryPage } from '../remoteclass';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -50,9 +49,6 @@ export class ZesaruxRemote extends RemoteClass {
 
 	/// Handles the cpu history for reverse debugging
 	protected cpuHistory: ZesaruxCpuHistory;
-
-	/// The virtual stack used during reverse debugging.
-	protected reverseDbgStack: RefList<any>;	// TODO: use real type instead of any
 
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
@@ -281,7 +277,7 @@ export class ZesaruxRemote extends RemoteClass {
 					}
 					else {
 						// Send 'initialize' to Machine.
-						this.state = EmulatorState.IDLE;
+						this.state = RemoteState.IDLE;
 						this.emit('initialized');
 					}
 				});
@@ -462,25 +458,6 @@ export class ZesaruxRemote extends RemoteClass {
 	}
 
 
-	/**
-	 * Returns the stack frames.
-	 * Either the "real" ones from ZEsarUX or the virtual ones during reverse debugging.
-	 * @param handler The handler to call when ready.
-	 */
-	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
-		// Check for reverse debugging.
-		if (this.cpuHistory.isInStepBackMode()) {
-			// Return virtual stack
-			assert(this.reverseDbgStack);
-			return this.reverseDbgStack;
-		}
-		else {
-			// "real" stack trace
-			const callStack=await this.getCallStack();
-			return callStack;
-		}
-	}
-
 
 	/**
 	 * 'continue' debugger program execution.
@@ -500,8 +477,8 @@ export class ZesaruxRemote extends RemoteClass {
 			let nextLine;
 			let reason;
 			try {
-				//this.state = EmulatorState.RUNNING;
-				//this.state = EmulatorState.IDLE;
+				//this.state = RemoteState.RUNNING;
+				//this.state = RemoteState.IDLE;
 
 				// Get current line
 				let currentLine: string=this.z80Registers.getCache();
@@ -550,7 +527,7 @@ export class ZesaruxRemote extends RemoteClass {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
 			// Change state
-			this.state=EmulatorState.RUNNING;
+			this.state=RemoteState.RUNNING;
 			// Reset T-state counter.
 			zSocket.send('reset-tstates-partial', () => {
 				// Run
@@ -562,7 +539,7 @@ export class ZesaruxRemote extends RemoteClass {
 						// get clock frequency
 						zSocket.send('get-cpu-frequency', data => {
 							const cpuFreq=parseInt(data);
-							this.state=EmulatorState.IDLE;
+							this.state=RemoteState.IDLE;
 							// Clear register cache
 							this.z80Registers.clearCache();
 							// Handle code coverage
@@ -613,6 +590,14 @@ export class ZesaruxRemote extends RemoteClass {
 		this.reverseDbgStack = undefined as any;
 		this.revDbgHistory.length = 0;
 		this.cpuHistory.clearCache();
+	}
+
+
+	/**
+	 * Returns true if in reverse debugging mode.
+	 */
+	protected isInStepBackMode(): boolean {
+		return this.cpuHistory.isInStepBackMode();
 	}
 
 
@@ -1127,11 +1112,11 @@ export class ZesaruxRemote extends RemoteClass {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
 									// Run
-									this.state=EmulatorState.RUNNING;
+									this.state=RemoteState.RUNNING;
 									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 										// Disable breakpoint
 										zSocket.send('disable-breakpoint '+bpId, () => {
-											this.state=EmulatorState.IDLE;
+											this.state=RemoteState.IDLE;
 											resolve({instruction: disasm, tStates, cpuFreq, breakReason});
 										});
 									});
@@ -1458,11 +1443,11 @@ export class ZesaruxRemote extends RemoteClass {
 										// Clear register cache
 										this.z80Registers.clearCache();
 										// Run
-										this.state=EmulatorState.RUNNING;
+										this.state=RemoteState.RUNNING;
 										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 											// Disable breakpoint
 											zSocket.send('disable-breakpoint '+bpId, () => {
-												this.state=EmulatorState.IDLE;
+												this.state=RemoteState.IDLE;
 												resolve({tStates, cpuFreq, breakReason});
 											});
 										});
