@@ -678,8 +678,6 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param regs The registers as string, e.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
 	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
-	// TODO: da ich RegisterCache soweoso vorher setze, kann ich mir "regs" sparen.
-	// Vielleicht kann ich sogar auf die ganzen parseXX Funktionen verzichten, bzw. auf den data parameter.
 	protected checkPcBreakpoints(regs: string): string | undefined {
 		assert(this.zxnextRegisters.getCache());
 		let condition;

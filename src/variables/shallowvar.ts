@@ -2,7 +2,6 @@ import * as assert from 'assert';
 //import { Log } from './log';
 import { Labels } from '../labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { CallSerializer } from '../callserializer';
 import { Settings } from '../settings'
 import { Utility } from '../utility';
 import { RefList } from '../reflist';
@@ -25,14 +24,13 @@ export class ShallowVar {
 	/**
 	 * Override if the variable or its properties can be set.
 	 * Sets the value of the variable.
-	 * @param name The name of the variable, e.g. for registers "HL" or "A"
+	 * The formatted read data is returned in the Promise.
+	 * @param name The name of data.
 	 * @param value The value to set.
-	 * @param handler The handler gets the resulting (formatted) string with the value.
-	 * If the variable is readonly or for some other reason could not be set
-	 * then an 'undefined' is passed instead of a string.
+	 * @returns A Promise with the formatted string. undefined if not implemented.
 	 */
-	public setValue(name: string, value: number, handler: (formattedString: string|undefined) => {}) {
-		handler(undefined);
+	public async setValue(name: string, value: number): Promise<string> {
+		return undefined as any;
 	};
 
 }
@@ -176,30 +174,21 @@ export class RegistersMainVar extends ShallowVar {
 	}
 
 
+
 	/**
 	 * Sets the value of the variable.
+	 * The formatted read data is returned in the Promise.
 	 * @param name The name of the register, e.g. "HL" or "A"
 	 * @param value The value to set.
-	 * @param handler The handler gets the resulting (formatted) string with the value.
+	 * @returns A Promise with the formatted string.
 	 */
-	public setValue(name: string, value: number, handler: (formattedString) => {}) {
-		// Check if value is valid
-		if(isNaN(value)) {
-			// Get old value and send it back
-			Remote.getRegisters()
-			.then(() => {
-				const formatted = Remote.getVarFormattedReg(name);
-				handler(formatted);
-			});
-			return;
-		}
-
-		// Set value
-		Remote.setRegisterValue(name, value)
-		.then(() => {
-			const formatted = Remote.getVarFormattedReg(name);
-			handler(formatted);
-		});
+	public async setValue(name: string, value: number): Promise<string> {
+		// Set value (works always for registers.
+		if (!isNaN(value))
+			await Remote.setRegisterValue(name, value);
+		await Remote.getRegisters()
+		const formatted = Remote.getVarFormattedReg(name);
+		return formatted;
 	}
 
 
@@ -302,15 +291,13 @@ export class StackVar extends ShallowVar {
 
 	/**
 	 * Sets the value of the pushed stack data.
+	 * Value is set and afterwards read.
+	 * The formatted read data is returned in the Promise.
 	 * @param name The 'name', the address as hex value, e.g. "041Ah".
 	 * @param value The value to set.
-	 * @param handler The handler gets the resulting (formatted) string with the value.
+	 * @returns A Promise with the formatted string.
 	 */
-	// TODO: change to Promise
-	public setValue(name: string, value: number, handler: (formattedString) => {}) {
-		// Serializer
-		const serializer = new CallSerializer("StackVar");
-
+	public async setValue(name: string, value: number): Promise<string> {
 		// Check if address and value are valid
 		const address = Utility.parseValue(name+'h');
 		if(!isNaN(address) && !isNaN(value)) {
@@ -320,26 +307,15 @@ export class StackVar extends ShallowVar {
 			const data = new Uint8Array(2);
 			data[0] = value & 0xFF;
 			data[1] = value >> 8;
-
-			serializer.exec(async () => {
-				await Remote.writeMemoryDump(address, data);
-				serializer.endExec();
-			});
+			await Remote.writeMemoryDump(address, data);
 		}
 
-		serializer.exec(() => {
-			// Retrieve memory values, to see if they really have been set.
-			Remote.getMemoryDump(address, 2).then(data => {
-				const memWord = data[0] + (data[1]<<8);
-				// Pass formatted string to vscode
-				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined)
-					.then(handler);
-				// Pass formatted string to vscode
-				Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined)
-					.then(handler);
-				serializer.endExec();
-			});
-		});
+		// Retrieve memory values, to see if they really have been set.
+		const data=await Remote.getMemoryDump(address, 2);
+		const memWord = data[0] + (data[1]<<8);
+		// Pass formatted string to vscode
+		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined)
+		return formattedString;
 	}
 }
 

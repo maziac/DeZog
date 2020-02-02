@@ -436,7 +436,7 @@ export class MemoryDumpView extends BaseView {
 			const c = clmStart+k;
 			table += '<th>' + c.toString(16).toUpperCase() + '</th>';
 		}
-		table += '\n</th>';  // TODO: IS this wrong? Should it be "</tr>"?
+		table += '\n</tr>';
 
 		// Table contents
 		let ascii = '';

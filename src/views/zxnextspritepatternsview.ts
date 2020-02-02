@@ -343,8 +343,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		}
 
 		// Get in use palette number
-		// TODO: Value is not used. Is this correct?, see https://wiki.specnext.dev/Enhanced_ULA_Control_Register
-		value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
+		///value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
 		let paletteNumber;
 		// Check palette selection and maybe override this number
 		const usedPal = this.usedPalette;

@@ -2021,34 +2021,25 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
     /**
 	* Called eg. if user changes a register value.
 	*/
-	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
+	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
 		const ref = args.variablesReference;
 		const name = args.name;
 		const value = Utility.parseValue(args.value);
 
-		// Serialize
-		this.serializer.exec( () => {
-			// Get variable object
-			const varObj = this.listVariables.getObject(ref);
-			response.success = false;	// will be changed if successful.
-			// Safety check
-			if(varObj) {
-				// Set value
-				varObj.setValue(name, value, (formattedString) => {
-					// Send response
-					if(formattedString) {
-						response.body = {value: formattedString};
-						response.success = true;
-					}
-					this.sendResponse(response);
-				});
+		// Get variable object
+		const varObj=this.listVariables.getObject(ref);
+		response.success=false;	// will be changed if successful.
+		// Safety check
+		if (varObj) {
+			// Set value
+			const formattedString=await varObj.setValue(name, value);
+			// Send response
+			if (formattedString) {
+				response.body={value: formattedString};
+				response.success=true;
 			}
-			else {
-				this.sendResponse(response);
-			}
-			// End serializer
-			this.serializer.endExec();
-		});
+		}
+		this.sendResponse(response);
 	}
 
 	/**
