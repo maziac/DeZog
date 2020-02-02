@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.0
+-
+
 # 0.11.4
 - Design document added to describe the process of adding a new Remote.
 

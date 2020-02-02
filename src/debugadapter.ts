@@ -369,7 +369,7 @@ export class DebugSessionClass extends DebugSession {
 		this.setupDisassembler();
 
 		// Start the emulator and the connection.
-		const msg = await this.startEmulator();
+		const msg=await this.startEmulator();
 		if (msg) {
 			response.message=msg;
 			response.success=(msg==undefined);
@@ -414,8 +414,8 @@ export class DebugSessionClass extends DebugSession {
 		}
 		catch(err) {
 			// Some error occurred during loading, e.g. file not found.
-			this.terminate(err.message);
-			return undefined;
+		//	this.terminate(err.message);
+			return err.message;
 		}
 
 		Remote.on('coverage', coveredAddresses => {
@@ -455,8 +455,8 @@ export class DebugSessionClass extends DebugSession {
 		});
 
 		Remote.init();
-		return new Promise<string|undefined>(resolve => {
-			Remote.once('initialized', () => {
+		return new Promise<undefined>(resolve => {	// For now there is no unsuccessful (reject) execution
+			Remote.once('initialized', async () => {
 				// Create memory/register dump view
 				let registerMemoryView=new MemoryRegisterView(this);
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
@@ -465,56 +465,44 @@ export class DebugSessionClass extends DebugSession {
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
-					this.serializer.exec(async () => {  // TODO: Try removing all serializer calls in this function.
-						vscode.debug.activeDebugConsole.appendLine(cmd);
-						try {
-							const text=await this.evaluateCommand(cmd);
-							vscode.debug.activeDebugConsole.appendLine(text);
-							// "Return"
-							this.serializer.endExec();
-						}
-						catch (err) {
-							// Some problem occurred
-							const output="Error while executing '"+cmd+"' in 'commandsAfterLaunch': "+err.message;
-							this.showWarning(output);
-							// "Return"
-							this.serializer.endExec();
-						}
-					});
+					vscode.debug.activeDebugConsole.appendLine(cmd);
+					try {
+						const text=await this.evaluateCommand(cmd);
+						vscode.debug.activeDebugConsole.appendLine(text);
+					}
+					catch (err) {
+						// Some problem occurred
+						const output="Error while executing '"+cmd+"' in 'commandsAfterLaunch': "+err.message;
+						this.showWarning(output);
+					}
 				}
 
-				this.serializer.exec(() => {
-					// Socket is connected, allow setting breakpoints
-					this.sendEvent(new InitializedEvent());
-					this.serializer.endExec();
-					// Respond
-					resolve(undefined);
-				});
+				// Socket is connected, allow setting breakpoints
+				this.sendEvent(new InitializedEvent());
+				// Respond
+				resolve(undefined);
 
-				this.serializer.exec(() => {
-					// Check if program should be automatically started
-					Remote.clearInstructionHistory();
-					if (DebugSessionClass.unitTestHandler) {
-						// Handle continue/stop in the z80unittests.
-						this.emit("initialized");
+				// Check if program should be automatically started
+				Remote.clearInstructionHistory();
+				if (DebugSessionClass.unitTestHandler) {
+					// Handle continue/stop in the z80unittests.
+					this.emit("initialized");
+				}
+				else {
+					if (Settings.launch.startAutomatically) {
+						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
+						this.sendEventContinued();
+						setTimeout(() => {
+							// Delay call because the breakpoints are set afterwards.
+							this.remoteContinue();
+						}, 500);
 					}
 					else {
-						if (Settings.launch.startAutomatically) {
-							// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-							this.sendEventContinued();
-							setTimeout(() => {
-								// Delay call because the breakpoints are set afterwards.
-								this.remoteContinue();
-							}, 500);
-						}
-						else {
-							// Break
-							this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
-						}
+						// Break
+						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
 					}
-					DebugSessionClass.unitTestHandler=undefined;
-					this.serializer.endExec();
-				});
+				}
+				DebugSessionClass.unitTestHandler=undefined;
 			});
 		});
 	}
