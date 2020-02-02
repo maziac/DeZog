@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
-import { EmulatorBreakpoint } from './remotes/remote';
+import { RemoteBreakpoint } from './remotes/remote';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels';
 import { Settings } from './settings';
@@ -542,9 +542,9 @@ export class Z80UnitTests {
 		Z80UnitTests.utLabels = undefined as unknown as Array<string>;
 
 		// Success and failure breakpoints
-		const successBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
+		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
 		Remote.setBreakpoint(successBp);
-		const failureBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
+		const failureBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
 		Remote.setBreakpoint(failureBp);
 
 		// Stack watchpoints
@@ -765,7 +765,7 @@ export class Z80UnitTests {
 					Z80UnitTests.stopUnitTests(da, "Couldn't find address for first unit test label '" + firstLabel + "'.");
 					return;
 				}
-				const firstUtBp: EmulatorBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
+				const firstUtBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
 				Remote.setBreakpoint(firstUtBp);
 			}
 

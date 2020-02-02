@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log, LogSocket } from './log';
-import { EmulatorBreakpoint, MachineType } from './remotes/remote';
+import { RemoteBreakpoint, MachineType } from './remotes/remote';
 import { MemoryDumpView } from './views/memorydumpview';
 import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
@@ -524,11 +524,11 @@ export class DebugSessionClass extends DebugSession {
 
 			// convert breakpoints
 			const givenBps = args.breakpoints || [];
-			const bps = new Array<EmulatorBreakpoint>();
+			const bps = new Array<RemoteBreakpoint>();
 			for(const bp of givenBps) {
 				try {
 					const log = Remote.evalLogMessage(bp.logMessage);
-					var mbp: EmulatorBreakpoint;
+					var mbp: RemoteBreakpoint;
 					mbp = {
 						bpId: 0,
 						filePath: path,
@@ -549,7 +549,7 @@ export class DebugSessionClass extends DebugSession {
 			// Set breakpoints for the file.
 			const currentBreakpoints=await Remote.setBreakpoints(path, bps,
 				// Handle temporary disassembler breakpoints
-				(bp: EmulatorBreakpoint) => {
+				(bp: RemoteBreakpoint) => {
 					// Check if it is the right path
 					const relFilePath=Utility.getRelTmpDisasmFilePath();
 					const absFilePath=Utility.getAbsFilePath(relFilePath);

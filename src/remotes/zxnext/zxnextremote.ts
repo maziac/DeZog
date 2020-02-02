@@ -5,7 +5,7 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { RefList } from '../../reflist';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
-import { RemoteClass, EmulatorBreakpoint, MemoryPage } from '../remote';
+import { RemoteClass, RemoteBreakpoint, MemoryPage } from '../remote';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from '../zesarux/zesaruxcpuhistory';
 import { Z80Registers } from '../z80registers';
@@ -571,7 +571,7 @@ export class ZxNextRemote extends RemoteClass {
 	 * @param bp The breakpoint. If bp.address is >= 0 then it adds the condition "PC=address".
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	public setBreakpoint(bp: EmulatorBreakpoint): number {
+	public setBreakpoint(bp: RemoteBreakpoint): number {
 		// Check for logpoint (not supported)
 		if (bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
@@ -629,7 +629,7 @@ export class ZxNextRemote extends RemoteClass {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpoint(bp: EmulatorBreakpoint) {
+	protected removeBreakpoint(bp: RemoteBreakpoint) {
 		// set breakpoint with no condition = disable/remove
 		//zSocket.send('set-breakpoint ' + bp.bpId);
 
@@ -667,7 +667,7 @@ export class ZxNextRemote extends RemoteClass {
 	 * an EmulatorBreakpoint.
 	 * @returns A Promise with all breakpoints.
 	 */
-	public async setBreakpoints(path: string, givenBps: Array<EmulatorBreakpoint>, tmpDisasmFileHandler?: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined): Promise<Array<EmulatorBreakpoint>> {
+	public async setBreakpoints(path: string, givenBps: Array<RemoteBreakpoint>, tmpDisasmFileHandler?: (bp: RemoteBreakpoint) => RemoteBreakpoint|undefined): Promise<Array<RemoteBreakpoint>> {
 		return [];
 	}
 

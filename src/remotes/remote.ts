@@ -16,7 +16,7 @@ import {StateZ80} from '../statez80';
 /**
  * The breakpoint representation.
  */
-export interface EmulatorBreakpoint {
+export interface RemoteBreakpoint {
 	bpId: number;	///< The breakpoint ID/number (>0)
 	filePath: string;	///< The file to which the breakpoint belongs
 	lineNr: number;	///< The line number in the file starting at 0
@@ -123,7 +123,7 @@ export class RemoteClass extends EventEmitter {
 	protected listFrames=new RefList<CallStackFrame>();
 
 	/// Mirror of the emulator's breakpoints.
-	protected breakpoints=new Array<EmulatorBreakpoint>();
+	protected breakpoints=new Array<RemoteBreakpoint>();
 
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled=false;
@@ -977,7 +977,7 @@ export class RemoteClass extends EventEmitter {
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	public setBreakpoint(bp: EmulatorBreakpoint): number {
+	public setBreakpoint(bp: RemoteBreakpoint): number {
 		assert(false);	// override this
 		// return
 		return 0;
@@ -987,7 +987,7 @@ export class RemoteClass extends EventEmitter {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpoint(bp: EmulatorBreakpoint) {
+	protected removeBreakpoint(bp: RemoteBreakpoint) {
 	}
 
 
@@ -1004,14 +1004,14 @@ export class RemoteClass extends EventEmitter {
 	 * an EmulatorBreakpoint.
 	 * @returns A Promise with all breakpoints.
 	 */
-	public async setBreakpoints(path: string, givenBps: Array<EmulatorBreakpoint>, tmpDisasmFileHandler?: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined): Promise<Array<EmulatorBreakpoint>> {
+	public async setBreakpoints(path: string, givenBps: Array<RemoteBreakpoint>, tmpDisasmFileHandler?: (bp: RemoteBreakpoint) => RemoteBreakpoint|undefined): Promise<Array<RemoteBreakpoint>> {
 
 		try {
 			// get all old breakpoints for the path
 			const oldBps=this.breakpoints.filter(bp => bp.filePath==path);
 
 			// Create new breakpoints
-			const currentBps=new Array<EmulatorBreakpoint>();
+			const currentBps=new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
 				let ebp;
 				// get PC value of that line

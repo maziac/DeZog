@@ -1,6 +1,6 @@
 
 //import * as assert from 'assert';
-import { EmulatorBreakpoint } from '../remote';
+import { RemoteBreakpoint } from '../remote';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { ZesaruxRemote } from './zesaruxremote';
 import { zSocket } from './zesaruxsocket';
@@ -148,7 +148,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param bp The breakpoint.
 	 * @returns The internal breakpoint ID. (Just the index to the array).
 	 */
-	public setBreakpointExt(bp: EmulatorBreakpoint): number {
+	public setBreakpointExt(bp: RemoteBreakpoint): number {
 		// Get condition
 		const zesaruxCondition = this.convertCondition(bp.condition);
 		if(zesaruxCondition == undefined) {
@@ -180,7 +180,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpointExt(bp: EmulatorBreakpoint) {
+	protected removeBreakpointExt(bp: RemoteBreakpoint) {
 		// remove the breakpoint
 		zSocket.send('clear-fast-breakpoint ' + bp.address);
 		// Remove from list
