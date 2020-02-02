@@ -915,87 +915,55 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-		this.serializer.exec(() => {
+		const scopes = new Array<Scope>();
+		const frameId = args.frameId;
+		//const frame = this.listFrames.getObject(frameId);
+		const frame = Remote.getFrame(frameId);
+		if(!frame) {
+			// No frame found, send empty response
+			response.body = {scopes: scopes};
+			this.sendResponse(response);
+			return;
+		}
 
-			const scopes = new Array<Scope>();
-			const frameId = args.frameId;
-			//const frame = this.listFrames.getObject(frameId);
-			const frame = Remote.getFrame(frameId);
-			if(!frame) {
-				// No frame found, send empty response
-				response.body = {scopes: scopes};
-				this.sendResponse(response);
-				this.serializer.endExec();
-				return;
-			}
+		// Create variable object for Registers
+		const varRegistersMain = new RegistersMainVar();
+		// Add to list and get reference ID
+		let ref = this.listVariables.addObject(varRegistersMain);
+		scopes.push(new Scope("Registers", ref));
 
-			// More serialization
-			const innerSerializer = new CallSerializer("innerScopesRequest");
+		// Create variable object for secondary Registers
+		const varRegisters2 = new RegistersSecondaryVar();
+		// Add to list and get reference ID
+		const ref2 = this.listVariables.addObject(varRegisters2);
+		scopes.push(new Scope("Registers 2", ref2));
 
-			// Serialize main Registers
-			innerSerializer.exec(() => {
-				// TODO: later (with change in zesarux) I need to include the frame ID/callstack address as well
-				// Create variable object for Registers
-				const varRegistersMain = new RegistersMainVar();
-				// Add to list and get reference ID
-				const ref = this.listVariables.addObject(varRegistersMain);
-				scopes.push(new Scope("Registers", ref));
+		// get address
+		if(frame) {
+			// use address
+			const addr = frame.addr;
+			// Create variable object for Disassembly
+			const varDisassembly = new DisassemblyVar(addr, 8);
+			// Add to list and get reference ID
+			const ref = this.listVariables.addObject(varDisassembly);
+			scopes.push(new Scope("Disassembly", ref));
+		}
 
-				// TODO: later (with change in zesarux) I need to include the frame ID/callstack address as well
-				// Create variable object for secondary Registers
-				const varRegisters2 = new RegistersSecondaryVar();
-				// Add to list and get reference ID
-				const ref2 = this.listVariables.addObject(varRegisters2);
-				scopes.push(new Scope("Registers 2", ref2));
+		// Create variable object for MemoryPages
+		const varMemoryPages = new MemoryPagesVar();
+		// Add to list and get reference ID
+		ref = this.listVariables.addObject(varMemoryPages);
+		scopes.push(new Scope("Memory Pages", ref));
 
-				// Return
-				innerSerializer.endExec();
-			});
+		// Create variable object for the stack
+		const varStack = new StackVar(frame.stack, frame.stackStartAddress);
+		// Add to list and get reference ID
+		ref = this.listVariables.addObject(varStack);
+		scopes.push(new Scope("Stack", ref));
 
-			// Serialize Disassembly
-			innerSerializer.exec(() => {
-				// get address
-				if(frame) {
-					// use address
-					const addr = frame.addr;
-					// Create variable object for Disassembly
-					const varDisassembly = new DisassemblyVar(addr, 8);
-					// Add to list and get reference ID
-					const ref = this.listVariables.addObject(varDisassembly);
-					scopes.push(new Scope("Disassembly", ref));
-				}
-				// Return
-				innerSerializer.endExec();
-			});
-
-			// Serialize MemoryPages
-			innerSerializer.exec(() => {
-				// Create variable object for MemoryPages
-				const varMemoryPages = new MemoryPagesVar();
-				// Add to list and get reference ID
-				const ref = this.listVariables.addObject(varMemoryPages);
-				scopes.push(new Scope("Memory Pages", ref));
-				// Return
-				innerSerializer.endExec();
-			});
-
-			// Serialize the Stack
-			innerSerializer.exec(() => {
-				// Create variable object for the stack
-				const varStack = new StackVar(frame.stack, frame.stackStartAddress);
-				// Add to list and get reference ID
-				const ref = this.listVariables.addObject(varStack);
-				scopes.push(new Scope("Stack", ref));
-
-				// Send response
-				response.body = {scopes: scopes};
-				this.sendResponse(response);
-
-				// Return
-				innerSerializer.endExec();
-				this.serializer.endExec();
-			});
-		});
+		// Send response
+		response.body = {scopes: scopes};
+		this.sendResponse(response);
 	}
 
 

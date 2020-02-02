@@ -272,10 +272,6 @@ export class ZesaruxRemote extends RemoteClass {
 					// Enable extended stack
 					zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
 					zSocket.send('extended-stack enabled yes');
-
-
-					// TODO: Ignore repetition of 'HALT'
-
 				});
 
 				zSocket.executeWhenQueueIsEmpty().then(() => {
@@ -1789,17 +1785,11 @@ export class ZesaruxRemote extends RemoteClass {
 	 */
 	public async setBreakpoints(path: string, givenBps:Array<EmulatorBreakpoint>,
 		tmpDisasmFileHandler: (bp: EmulatorBreakpoint) => EmulatorBreakpoint|undefined): Promise<Array<EmulatorBreakpoint>> {
-// TODO:Testen!!!!!
-		// TODO: Kann das weg?
-	//	this.serializer.exec(async () => {
-			// Do most of the work
-			const bps = super.setBreakpoints(path, givenBps, tmpDisasmFileHandler);
-			// But wait for the socket.
-			await zSocket.executeWhenQueueIsEmpty();
-			// End
-	//		this.serializer.endExec();
-			return bps;
-	//	});
+		// Do most of the work
+		const bps = super.setBreakpoints(path, givenBps, tmpDisasmFileHandler);
+		// But wait for the socket.
+		await zSocket.executeWhenQueueIsEmpty();
+		return bps;
 	}
 
 
