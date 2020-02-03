@@ -120,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
 		Z80UnitTests.debugPartialUnitTests();
 	}));
 
-	// Register a configuration provider for 'zesarux' debug type
+	// Register a configuration provider for 'zrcp' debug type
 	const provider = new ZesaruxConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', provider));
 	context.subscriptions.push(provider);

@@ -81,7 +81,7 @@ suite('Utility', () => {
 
 		setup(() => {
 			const cfg: any = {
-				remoteType: 'zesarux'
+				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
 			RemoteFactory.createRemote(cfg.remoteType);
@@ -292,7 +292,7 @@ suite('Utility', () => {
 
 		suite('breakpoints', () => {
 			setup(() => {
-				RemoteFactory.createRemote('zesarux');
+				RemoteFactory.createRemote('zrcp');
 			});
 
 			test('simple', () => {

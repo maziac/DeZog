@@ -7,7 +7,7 @@ suite('Labels', () => {
 
 	setup(() => {
 		const cfg: any = {
-			remoteType: 'zesarux'
+			remoteType: 'zrcp'
 		};
 		Settings.Init(cfg, '');
 		Labels.init();

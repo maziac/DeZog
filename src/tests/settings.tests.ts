@@ -29,7 +29,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - remoteType=zesarux', () => {
 			const cfg: any = {
-				remoteType: 'zesarux'
+				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
@@ -51,7 +51,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - Default', () => {
 			const cfg: any = {
-				remoteType: 'zesarux'
+				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
@@ -62,7 +62,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - listFiles 1', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				listFiles: [
 					{ path: "./src/tests/data/settings/filenotexists.list" }
 				]
@@ -78,7 +78,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - listFiles 2', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				listFiles: [
 					{ path: "./src/tests/data/settings/file.list" }
 				]
@@ -94,7 +94,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - load 1', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				load: "./src/tests/data/settings/filenotexists.sna"
 			};
 
@@ -108,7 +108,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - load 2', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				load: "./src/tests/data/settings/file.sna"
 			};
 
@@ -122,7 +122,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - load and execAddress', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				load: "./src/tests/data/settings/file.sna",
 				execAddress: "1234"
 			};
@@ -137,7 +137,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - loadObj 1', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2notexists.obj", start: "1234" }
@@ -154,7 +154,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - loadObj 2', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2.obj", start: "1234" }
@@ -172,7 +172,7 @@ suite('Settings', () => {
 
 		test('CheckSettings - loadObj start', () => {
 			const cfg: any = {
-				remoteType: 'zesarux',
+				remoteType: 'zrcp',
 				loadObjs: [
 					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
 					{ path: "./src/tests/data/settings/file2.obj" }

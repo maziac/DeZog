@@ -12,12 +12,12 @@ import { RemoteClass } from './remoteclass';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zesarux' or 'zxnext'. For 'zesarux' always the ZesaruxExtEmulator is created.
+	 * @param remoteType 'zrcp' or 'zxnext'. For 'zrcp' always the ZesaruxExtEmulator is created.
 	 * It will fallback to Zesarux if no ZesaruxExt is connected.
 	 */
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
-			case 'zesarux':
+			case 'zrcp':
 				RemoteFactory.setEmulator(new ZesaruxExtRemote());
 				break;
 			case 'zxnext':

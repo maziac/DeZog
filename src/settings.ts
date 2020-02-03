@@ -393,7 +393,7 @@ export class Settings {
 	public static CheckSettings() {
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zesarux', 'zxnext'];
+		const allowedTypes=['zrcp', 'zxnext'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

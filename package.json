@@ -235,8 +235,8 @@
 						"properties": {
 							"remoteType": {
 								"type": "string",
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zesarux' or 'zxnext'. Note: Certain features or properties are not available in all types.",
-								"default": "zesarux"
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' or 'zxnext'. Note: Certain features or properties are not available in all types.",
+								"default": "zrcp"
 							},
 							"unitTests": {
 								"type": "boolean",
