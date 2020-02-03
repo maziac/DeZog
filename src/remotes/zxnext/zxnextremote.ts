@@ -37,7 +37,7 @@ export class ZxNextRemote extends RemoteClass {
 		});
 
 		// Create parser
-		const parser=this.serialPort.pipe(new ZxNextParser({delimiter: '\n'}))
+		const parser=this.serialPort.pipe(new ZxNextParser());
 
 		// Install listener
 		parser.on('data', data => {

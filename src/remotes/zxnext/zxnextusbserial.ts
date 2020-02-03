@@ -1,42 +1,63 @@
 const {Transform}=require('stream')
 
 /**
- * A transform stream that emits data each time a byte sequence is received.
- * @extends Transform
- * @summary To use the `Delimiter` parser, provide a delimiter as a string, buffer, or array of bytes. Runs in O(n) time.
- * @example
-const SerialPort = require('serialport')
-const Delimiter = require('@serialport/parser-delimiter')
-const port = new SerialPort('/dev/tty-usbserial1')
-const parser = port.pipe(new Delimiter({ delimiter: '\n' }))
-parser.on('data', console.log)
+ * This parser reads the first 4 bytes and interpretes it as (little endian) length.
+ * Then it collects 'length' further bytes.
+ * When all bytes have been received the data is emitted.
  */
 export class ZxNextParser extends Transform {
-	constructor(options: any = {}) {
-		super(options)
+	/// State: Either waiting for length (false) or collecting data (true).
+	protected collectingData: boolean;
 
-		if (options.delimiter===undefined) {
-			throw new TypeError('"delimiter" is not a bufferable object')
-		}
+	/// The number of remaining bytes to collect.
+	protected remainingLength: number;
 
-		if (options.delimiter.length===0) {
-			throw new TypeError('"delimiter" has a 0 or undefined length')
-		}
 
-		this.includeDelimiter=options.includeDelimiter!==undefined? options.includeDelimiter:false
-		this.delimiter=Buffer.from(options.delimiter)
-		this.buffer=Buffer.alloc(0)
+	/// The constructor.
+	constructor() {
+		super({encoding: 'binary'});
+
+		this.collectingData=false;
+		this.buffer=Buffer.alloc(0);
 	}
 
+
+	/**
+	 *  Read chunks of data until a complete message has been received.
+	 */
 	_transform(chunk, encoding, cb) {
+		// Concat data
 		let data=Buffer.concat([this.buffer, chunk])
-		let position
-		while ((position=data.indexOf(this.delimiter))!==-1) {
-			this.push(data.slice(0, position+(this.includeDelimiter? this.delimiter.length:0)))
-			data=data.slice(position+this.delimiter.length)
+		while (true) {
+			// Check state
+			if (!this.collectingData) {
+				// Check if all 4 bytes have been received
+				const count=data.length;
+				if (count<4)
+					return;
+				this.remainingLength=data[0]+(data[1]<<8)+(data[2]<<16)+(data[3]<<24);
+				data=data.subarray(4);
+				this.collectingData=true;
+			}
+
+			// Collect until all remaining bytes received
+			const count=data.length;
+			if (count<this.remainingLength)
+				return;
+
+			// Enough data
+			this.collectingData=false;
+
+			// Check if there was too many data received
+			this.buffer=data.subarray(this.remainingLength);
+			if (count>this.remainingLength) {
+				data=data.subarray(0, this.remainingLength);
+			}
+			// Enough data collected
+			this.push(data);
+			cb();
+			data=this.buffer;
 		}
-		this.buffer=data
-		cb()
 	}
 
 	_flush(cb) {
