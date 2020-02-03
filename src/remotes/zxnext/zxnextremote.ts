@@ -2,8 +2,9 @@ import * as assert from 'assert';
 import {RemoteClass, RemoteBreakpoint, GenericBreakpoint, GenericWatchpoint} from '../remoteclass';
 import {Z80Registers} from '../z80registers';
 //import {MemoryPage} from '../remoteclass';
-
-
+import * as SerialPort from 'serialport';
+import {ZxNextParser} from './zxnextusbserial';
+//const SerialPort=require('serialport')
 
 /**
  * The representation of the ZX Next HW.
@@ -11,6 +12,10 @@ import {Z80Registers} from '../z80registers';
  * the USB serial connection with the ZX Next HW.
  */
 export class ZxNextRemote extends RemoteClass {
+
+	// The serial port. https://serialport.io/docs/guide-usage
+	public serialPort;
+
 
 	/// Constructor.
 	/// Override this.
@@ -26,8 +31,48 @@ export class ZxNextRemote extends RemoteClass {
 	public init() {
 		super.init();
 
+		// Open the serial port
+		this.serialPort=new SerialPort("/dev/cu.usbserial", {
+			baudRate: 115200, autoOpen: false
+		});
+
+		// Create parser
+		const parser=this.serialPort.pipe(new ZxNextParser({delimiter: '\n'}))
+
+		// Install listener
+		parser.on('data', data => {
+			this.receivedMsg(data);
+		});
+
+		// React on-open
+		this.serialPort.on('open', () => {
+			console.log('Open');
+		});
+
+		// Handle errors
+		this.serialPort.on('error', err => {
+			console.log('Error: ', err.message);
+		});
+
+		// Open the serial port
+		this.serialPort.open(() => {
+			console.log('Open');
+			this.serialPort.write('Hello Serial\n');
+			this.serialPort.write('2-mal\n');
+		});
+
+
 		// Fake 'Ready'
-		this.emit('initialized');
+	//	this.emit('initialized');
+	}
+
+
+	/**
+	 * Called when new data was received through the serial interface.
+	 * @param data The received block of bytes.
+	 */
+	protected receivedMsg(data: any) {
+
 	}
 
 

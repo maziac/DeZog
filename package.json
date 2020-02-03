@@ -47,13 +47,15 @@
 		"glob": "^7.1.6",
 		"jsonc-parser": "^2.2.0",
 		"mocha": "^6.2.2",
-		"ts-node": "^8.5.4",
+		"serialport": "^8.0.7",
+		"ts-node": "^8.6.2",
 		"vscode-debugadapter": "1.37.1",
 		"vscode-debugprotocol": "1.37.0"
 	},
 	"devDependencies": {
 		"@types/mocha": "5.2.7",
 		"@types/node": "12.12.17",
+		"electron-rebuild": "^1.10.0",
 		"tslint": "5.20.1",
 		"typescript": "3.7.3",
 		"vsce": "1.71.0",
