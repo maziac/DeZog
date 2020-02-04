@@ -4,7 +4,7 @@ import {Z80Registers} from '../z80registers';
 //import {MemoryPage} from '../remoteclass';
 import * as SerialPort from 'serialport';
 import {ZxNextParser} from './zxnextusbserial';
-//const SerialPort=require('serialport')
+
 
 /**
  * The representation of the ZX Next HW.
