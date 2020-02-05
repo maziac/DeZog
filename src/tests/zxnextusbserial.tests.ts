@@ -131,7 +131,7 @@ suite('ZxNextParser', () => {
 			assert.equal('123456789012345678901', recData);
 		});
 
-		test('timeout error 1', done => {
+		test('timeout: error occurred', done => {
 			let buf=createLengthBuffer(4, '123');
 
 			// "Receive" too less -> Should result in a timeout
@@ -139,11 +139,21 @@ suite('ZxNextParser', () => {
 				assert.equal(undefined, error);
 				done();
 			});
+		});
 
-			// Read
-			//let recData=parserBuffer.shift();
-			//assert.equal('abcd', recData);
+		test('timeout: no error occurred', done => {
+			let buf=createLengthBuffer(4, '1234');
 
+			// "Receive" no error
+			parser._transform(buf, undefined, error => {
+				assert.equal(undefined, error);
+			});
+
+			// Wait a little time to make sure that no timeout occurs
+			// after the data has been received.
+			setTimeout(() => {
+				done();	// Ready no error
+			}, 400);	// 400ms: 4x 100ms, should be enough
 		});
 
 	});
