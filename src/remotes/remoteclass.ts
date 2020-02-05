@@ -282,17 +282,6 @@ export class RemoteClass extends RemoteBase {
 
 
 	/**
-	 * Terminates the remote.
-	 * This should disconnect the socket and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
-	 * Has to emit the "this.emit('terminated')".
-	 */
-	public async terminate(): Promise<void> {
-		// please override.
-	}
-
-
-	/**
 	 * Sends a command to the emulator.
 	 * @param cmd E.g. 'get-registers'.
 	 * @returns A Promise in remote (emulator) dependent format.

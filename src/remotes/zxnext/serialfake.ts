@@ -52,6 +52,9 @@ export class SerialFake {
 				resolve();
 			});
 
+			this.serialPort.on('close', async () => {
+			});
+
 			// Handle errors
 			this.serialPort.on('error', err => {
 				console.log('Error SerialFake: ', err.message);
@@ -64,6 +67,17 @@ export class SerialFake {
 		});
 	}
 
+
+	/**
+	 * Closes the serial port.
+	 */
+	public async close(): Promise<void> {
+		return new Promise<void>(resolve => {
+			this.serialPort.close(() => {
+				resolve();
+			});
+		});
+	}
 
 	/**
 	 * Sends a DZP command and waits for the response.
@@ -93,14 +107,14 @@ export class SerialFake {
 		if (data)
 			length+=data.length;
 		// Put length in buffer
-		const header=Buffer.alloc(5);
+		const header=Buffer.alloc(4);
 		// Encode length
 		header[0]=length&0xFF;
 		header[1]=(length>>8)&0xFF;
 		header[2]=(length>>16)&0xFF;
 		header[3]=(length>>24)&0xFF;
 		// Put command in buffer
-		header[4]=cmd;
+		//header[4]=cmd;
 		// Send header
 		this.serialPort.write(header);
 

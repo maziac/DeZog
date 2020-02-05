@@ -28,7 +28,7 @@ export class ZxNextParser extends Transform {
 	protected remainingLength: number;
 
 	/// Timeout. Max time between chunks.
-	protected timeout=2000;	// ms
+	protected timeout=1000;	// ms
 
 	/// The timer.
 	protected timer;
@@ -46,6 +46,17 @@ export class ZxNextParser extends Transform {
 		// Alloc buffer
 		this.collectingData=false;
 		this.buffer=Buffer.alloc(0);
+	}
+
+
+	/**
+	 * Should be started a soon as a response is expected.
+	 * @param errorText The text that is emitted if the timer expires.
+	 */
+	public startTimer(errorText: string) {
+		this.timer=setTimeout(() => {
+			this.emit('error', Error('Serial communication timeout: ' + errorText));
+		}, this.timeout);
 	}
 
 
@@ -70,7 +81,7 @@ export class ZxNextParser extends Transform {
 			// Collect until all remaining bytes received
 			const count=this.buffer.length;
 			if (count<this.remainingLength)
-				break;;
+				break;
 
 			// Enough data
 			this.collectingData=false;
@@ -83,18 +94,16 @@ export class ZxNextParser extends Transform {
 			// Enough data collected
 			this.push(data);
 			this.buffer=this.buffer.subarray(this.remainingLength);	// Normally clears the buffer
+			this.remainingLength=this.buffer.length;
 		}
 		// Ready, no error
 		cb();
 		// Start timeout
 		clearTimeout(this.timer);
-		if (this.buffer.length==0)
+		if (this.remainingLength==0)
 			this.timer=undefined;
-		else {
-			this.timer=setTimeout(() => {
-				cb('Timeout: too much time between too data chunks.');
-			}, this.timeout);
-		}
+		else
+			this.startTimer('Too much time between too data chunks.');
 	}
 
 

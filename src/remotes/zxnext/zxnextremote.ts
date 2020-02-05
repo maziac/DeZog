@@ -7,6 +7,9 @@ import {ZxNextParser, DZP} from './zxnextusbserial';
 import {FakeSerial} from './serialfake';
 
 
+// If enabled a faked serial connection will be used (for debugging/testing purposes):
+let fakeSerial=true;
+
 
 /**
  * The representation of the ZX Next HW.
@@ -19,7 +22,7 @@ export class ZxNextRemote extends RemoteClass {
 	public serialPort;
 
 	// The read parser for the serial port.
-	public parser;
+	public parser: ZxNextParser;
 
 
 	/// Constructor.
@@ -32,10 +35,18 @@ export class ZxNextRemote extends RemoteClass {
 
 
 	/// Initializes the machine.
-	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
+	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	public async doInitialization() {
 		// Do Fake Serial Port
-		await FakeSerial.doInitialization();
+		if (fakeSerial) {
+			try {
+				await FakeSerial.doInitialization();
+			}
+			catch (err) {
+				this.emit('error', err);
+				return;
+			}
+		}
 
 		// Open the serial port
 		this.serialPort=new SerialPort("/dev/cu.usbserial", {
@@ -48,22 +59,63 @@ export class ZxNextRemote extends RemoteClass {
 		// React on-open
 		this.serialPort.on('open', async () => {
 			console.log('Open');
-			// Get configuration
-			const resp=await this.sendDzpCmd(DZP.CMD_GET_CONFIG);
-
-			// Ready
-			this.emit('initialized')
+			try {
+				// Get configuration
+				const resp=await this.sendDzpCmd(DZP.CMD_GET_CONFIG);
+				// Ready
+				this.emit('initialized')
+			}
+			catch (err) {
+				this.emit('error', err);
+			}
 		});
 
 		// Handle errors
-		this.serialPort.on('error', err => {
-			console.log('Error: ', err.message);
+		this.parser.on('error', err => {
+			console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
 		});
 
 		// Open the serial port
 		this.serialPort.open();
+	}
+
+
+
+	/**
+	 * Stops the emulator.
+	 * This will disconnect the socket to zesarux and un-use all data.
+	 * Called e.g. when vscode sends a disconnectRequest
+	 * @param handler is called after the connection is disconnected.
+	 */
+	public async disconnect(): Promise<void> {
+		return new Promise<void>(resolve => {
+			this.serialPort.close(async () => {
+				if (fakeSerial)
+					await FakeSerial.close();
+				resolve();
+			});
+		});
+	}
+
+
+	/**
+	 * Terminates the emulator.
+	 * This will disconnect the socket to zesarux and un-use all data.
+	 * Called e.g. when the unit tests want to terminate the emulator.
+	 * This will also send a 'terminated' event. I.e. the vscode debugger
+	 * will also be terminated.
+	 */
+	public async terminate(): Promise<void> {
+		return new Promise<void>(resolve => {
+			this.serialPort.close(async () => {
+				if (fakeSerial)
+					await FakeSerial.close();
+				this.emit('terminated');
+				resolve();
+			});
+		});
 	}
 
 
@@ -78,7 +130,7 @@ export class ZxNextRemote extends RemoteClass {
 			this.parser.once('data', data => {
 				// Check response
 				if ((data[0]&0x7F)!=cmd) {
-					const error="Wrong response "+data[0]+" received for command "+cmd;
+					const error=Error("Serial communication: Wrong response "+data[0]+" received for command "+cmd);
 					//this.parser.emit('error', error);
 					reject(error);
 					return;
@@ -100,7 +152,14 @@ export class ZxNextRemote extends RemoteClass {
 			// Put command in buffer
 			header[4]=cmd;
 			// Send header
-			this.serialPort.write(header);
+			this.serialPort.write(header, error => {
+				if (error) {
+					this.emit('error', error);
+					return;
+				}
+				// Start timer to wait on response
+				this.parser.startTimer('Remote side did not respond.');
+			});
 
 			// Send data
 			if (data&&data.length>0)
