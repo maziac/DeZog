@@ -69,9 +69,7 @@ export class ZesaruxRemote extends RemoteClass {
 
 
 	/// Initializes the machine.
-	public init() {
-		super.init();
-
+	public doInitialization() {
 		// Create the socket for communication (not connected yet)
 		this.setupSocket();
 

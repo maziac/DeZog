@@ -1,6 +1,20 @@
 import * as assert from 'assert';
 const{Transform}=require('stream')
 
+
+
+
+/**
+ * The DZP commands and responses.
+ * The response contains the command with the bit 7 set.
+ */
+export enum DZP {
+	CMD_GET_CONFIG=1,
+};
+
+
+
+
 /**
  * This parser reads the first 4 bytes and interpretes it as (little endian) length.
  * Then it collects 'length' further bytes.
@@ -22,7 +36,7 @@ export class ZxNextParser extends Transform {
 
 	/// The constructor.
 	constructor(options={}) {
-		super({...options, ...{encoding: 'binary'}});
+		super(options);
 		assert(options);
 
 		// Timeout

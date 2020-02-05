@@ -37,10 +37,23 @@ export class RemoteClass extends RemoteBase {
 
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
-	/// You need to override this and call super.init().
+	/// Don't override this, override 'doInitialization' instead.
 	/// Take care to implement the emits otherwise the system will hang on a start.
 	public init() {
 		super.init();
+		// Call custom initialization
+		this.doInitialization();
+	}
+
+
+	/// Do initialization.
+	/// E.g. create a socket or allocate memory.
+	/// This is called when the Remote is started by the debugger. I.e. at the start
+	/// of a debugging session..
+	/// When ready do a this.emit('initialized') or this.emit('error', exception);
+	/// Take care to implement the emits otherwise the system will hang on a start.
+	/// Please override.
+	public doInitialization() {
 	}
 
 

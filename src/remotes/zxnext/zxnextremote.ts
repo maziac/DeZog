@@ -3,7 +3,9 @@ import {RemoteClass, RemoteBreakpoint, GenericBreakpoint, GenericWatchpoint} fro
 import {Z80Registers} from '../z80registers';
 //import {MemoryPage} from '../remoteclass';
 import * as SerialPort from 'serialport';
-import {ZxNextParser} from './zxnextusbserial';
+import {ZxNextParser, DZP} from './zxnextusbserial';
+import {FakeSerial} from './serialfake';
+
 
 
 /**
@@ -15,6 +17,9 @@ export class ZxNextRemote extends RemoteClass {
 
 	// The serial port. https://serialport.io/docs/guide-usage
 	public serialPort;
+
+	// The read parser for the serial port.
+	public parser;
 
 
 	/// Constructor.
@@ -28,8 +33,9 @@ export class ZxNextRemote extends RemoteClass {
 
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
-	public init() {
-		super.init();
+	public async doInitialization() {
+		// Do Fake Serial Port
+		await FakeSerial.doInitialization();
 
 		// Open the serial port
 		this.serialPort=new SerialPort("/dev/cu.usbserial", {
@@ -37,42 +43,69 @@ export class ZxNextRemote extends RemoteClass {
 		});
 
 		// Create parser
-		const parser=this.serialPort.pipe(new ZxNextParser());
-
-		// Install listener
-		parser.on('data', data => {
-			this.receivedMsg(data);
-		});
+		this.parser=this.serialPort.pipe(new ZxNextParser());
 
 		// React on-open
-		this.serialPort.on('open', () => {
+		this.serialPort.on('open', async () => {
 			console.log('Open');
+			// Get configuration
+			const resp=await this.sendDzpCmd(DZP.CMD_GET_CONFIG);
+
+			// Ready
+			this.emit('initialized')
 		});
 
 		// Handle errors
 		this.serialPort.on('error', err => {
 			console.log('Error: ', err.message);
+			// Error
+			this.emit('error', err);
 		});
 
 		// Open the serial port
-		this.serialPort.open(() => {
-			console.log('Open');
-			this.serialPort.write('Hello Serial\n');
-			this.serialPort.write('2-mal\n');
-		});
-
-
-		// Fake 'Ready'
-	//	this.emit('initialized');
+		this.serialPort.open();
 	}
 
 
 	/**
-	 * Called when new data was received through the serial interface.
-	 * @param data The received block of bytes.
+	 * Sends a DZP command and waits for the response.
+	 * @param cmd The command.
+	 * @param data A buffer containing the data.
 	 */
-	protected receivedMsg(data: any) {
+	protected async sendDzpCmd(cmd: number, data?: Buffer): Promise<Buffer> {
+		return new Promise<Buffer>((resolve, reject) => {
+			// Wait on response
+			this.parser.once('data', data => {
+				// Check response
+				if ((data[0]&0x7F)!=cmd) {
+					const error="Wrong response "+data[0]+" received for command "+cmd;
+					//this.parser.emit('error', error);
+					reject(error);
+					return;
+				}
+				resolve(data);
+			});
 
+			// Calculate length
+			let length=1;
+			if (data)
+				length+=data.length;
+			// Put length in buffer
+			const header=Buffer.alloc(5);
+			// Encode length
+			header[0]=length&0xFF;
+			header[1]=(length>>8)&0xFF;
+			header[2]=(length>>16)&0xFF;
+			header[3]=(length>>24)&0xFF;
+			// Put command in buffer
+			header[4]=cmd;
+			// Send header
+			this.serialPort.write(header);
+
+			// Send data
+			if (data&&data.length>0)
+				this.serialPort.write(data);
+		});
 	}
 
 

@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import {ZxNextParser } from '../remotes/zxnext/zxnextusbserial';
 
-import * as SerialPort from 'serialport';
 
 
 suite('ZxNextParser', () => {
