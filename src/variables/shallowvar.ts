@@ -70,7 +70,7 @@ export class DisassemblyVar extends ShallowVar {
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		// Get code memory
 		const size=4*this.count;	// 4 is the max size of an opcode
-		const data=await Remote.getMemoryDump(this.addr, size)
+		const data=await Remote.readMemoryDump(this.addr, size)
 		// convert hex values to bytes
 		const buffer=new BaseMemory(this.addr, size);
 		for (let i=0; i<size; i++) {
@@ -311,7 +311,7 @@ export class StackVar extends ShallowVar {
 		}
 
 		// Retrieve memory values, to see if they really have been set.
-		const data=await Remote.getMemoryDump(address, 2);
+		const data=await Remote.readMemoryDump(address, 2);
 		const memWord = data[0] + (data[1]<<8);
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined)

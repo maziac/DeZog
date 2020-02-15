@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {ZxNextParser } from '../remotes/zxnext/zxnextusbserial';
+import {DzrpParser } from '../remotes/zxnext/dzrpparser';
 
 
 
@@ -11,7 +11,7 @@ suite('ZxNextParser', () => {
 		let parserBuffer;
 
 		setup(() => {
-			parser=new ZxNextParser({timeout: 100});
+			parser=new DzrpParser({timeout: 100});
 			parserBuffer=parser._readableState.buffer;
 		});
 

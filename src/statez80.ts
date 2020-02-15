@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import { MachineType } from './remotes/remoteclass';
 import { Remote } from './remotes/remotefactory';
-
 import * as fs from 'fs';
 
 
@@ -199,7 +198,7 @@ export class StateZX16K extends StateZ80 {
 			// Get address
 			const address=this.getAddressForBankNr(bankNr);
 			// Get data
-			const data=await Remote.getMemoryDump(address, 0x4000);
+			const data=await Remote.readMemoryDump(address, 0x4000);
 			// Store
 			this.banks[i]=data;
 			i++;

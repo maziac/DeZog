@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
-import { ZxNextRemote } from './zxnext/zxnextremote';
 import { RemoteClass } from './remoteclass';
+import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
 
 
 
@@ -21,7 +21,7 @@ export class RemoteFactory {
 				RemoteFactory.setEmulator(new ZesaruxExtRemote());
 				break;
 			case 'zxnext':
-				RemoteFactory.setEmulator(new ZxNextRemote());
+				RemoteFactory.setEmulator(new ZxNextUsbSerialRemote());
 				break;
 			case 'mame':
 				assert(false);	// needs to be implemented

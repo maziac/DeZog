@@ -1,5 +1,3 @@
-'use strict';
-
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { CallSerializer } from '../callserializer';
@@ -69,9 +67,11 @@ export class BaseView {
 
 	// DYNAMIC:
 
-	protected vscodePanel: vscode.WebviewPanel;	///< The panel to show the base view in vscode.
+	/// The panel to show the base view in vscode.
+	protected vscodePanel: vscode.WebviewPanel;
 
-	protected parent: EventEmitter;	///< We listen for 'update' on this emitter to update the html.
+	/// We listen for 'update' on this emitter to update the html.
+	protected parent: EventEmitter;
 
 	protected serializer = new CallSerializer('ViewUpdate');
 
@@ -81,6 +81,7 @@ export class BaseView {
 	 * @param handler Thhandler is called before the 'update' function is registered.
 	 * The purpose is to register a static 'update' funtion before the dynamic ones.
 	 */
+	// TODO: Remove handler
 	constructor(parent: EventEmitter, handler?: ()=>void) {
 		// Init
 		this.parent = parent;

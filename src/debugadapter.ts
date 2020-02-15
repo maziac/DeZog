@@ -144,6 +144,7 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Checks if the method (functionality) is implemented by the Remote.
 	 */
+	/*
 	protected RemoteHasMethod(name: string): boolean {
 		assert(Remote);
 		let remote=Remote;
@@ -158,7 +159,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		return found;
 	}
-
+	*/
 
 	/**
 	 * Creates a new disassembler and configures it.
@@ -343,7 +344,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Called after 'initialize' request.
 	 * Loads the list file and connects the socket to the zesarux debugger.
 	 * Initializes zesarux.
-	 * When zesarux is connected and initialized an 'InitializedEvent'
+	 * When zesarux is connected and initialized an 'initialized' event
 	 * is sent.
 	 * @param response
 	 * @param args
@@ -387,13 +388,10 @@ export class DebugSessionClass extends DebugSession {
 			response.success=(msg==undefined);
 		}
 		else {
-			// Check if Remote supports reverse debugging.
-			if (this.RemoteHasMethod('stepBack')||this.RemoteHasMethod('reverseContinue')) {
-				// Check if reverse debugging is enabled and send capabilities
-				if (Settings.launch.history.reverseDebugInstructionCount>0) {
-					// Enable reverse debugging
-					this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
-				}
+			// Check if reverse debugging is enabled and send capabilities
+			if (Settings.launch.history.reverseDebugInstructionCount>0) {
+				// Enable reverse debugging
+				this.sendEvent(new CapabilitiesEvent({supportsStepBack: true}));
 			}
 		}
 		this.sendResponse(response);
@@ -706,7 +704,7 @@ export class DebugSessionClass extends DebugSession {
 					// So fetch a memory dump
 					const fetchAddress=fetchAddresses[index];
 					const fetchSize=100;	// N bytes
-					Remote.getMemoryDump(fetchAddress, fetchSize)
+					Remote.readMemoryDump(fetchAddress, fetchSize)
 						.then(data => {
 						// Save data for later writing
 						fetchData.push(data);
@@ -972,7 +970,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check if memory pages are suported by Remote
-		if (this.RemoteHasMethod('getMemoryPages')) {
+		if (Remote.supportsZxNextRegisters) {
 			// Create variable object for MemoryPages
 			const varMemoryPages=new MemoryPagesVar();
 			// Add to list and get reference ID

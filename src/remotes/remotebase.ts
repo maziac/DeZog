@@ -9,6 +9,8 @@ import {Labels} from '../labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../utility';
 import {StateZ80} from '../statez80';
+import {BaseMemory} from '../disassembler/basememory';
+import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 
 
 
@@ -154,6 +156,11 @@ export class RemoteBase extends EventEmitter {
 
 	// The Z80 registers. Should be initialized with a specialized version for the given emulator.
 	protected z80Registers: Z80Registers;
+
+	// Supported features:
+
+	// E.g. enables display of "Memory Pages"
+	public supportsZxNextRegisters: boolean=false;
 
 
 	/// Constructor.
@@ -597,7 +604,7 @@ export class RemoteBase extends EventEmitter {
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get the 3 bytes before address.
 		const addr=parseInt(stackEntryValue, 16);
-		const data=await this.getMemoryDump(addr-3, 3);
+		const data=await this.readMemoryDump(addr-3, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call
@@ -671,7 +678,7 @@ export class RemoteBase extends EventEmitter {
 		const zStack: Array<string>=[];
 		if (depth>0) {
 			// Get stack
-			const data=await this.getMemoryDump(sp, depth);
+			const data=await this.readMemoryDump(sp, depth);
 
 			// Create stack
 			for (let i=depth-2; i>=0; i-=2) {
@@ -805,7 +812,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * 'pause' the debugger.
 	 */
-	public pause(): void {
+	public async pause(): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -883,11 +890,11 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * If system state is running, a break is done.
 	 */
-	protected breakIfRunning() {
+	protected async breakIfRunning(): Promise<void> {
 		// Break if currently running
 		if (this.state==RemoteState.RUNNING||this.state==RemoteState.RUNNING_REVERSE) {
 			// Break
-			this.pause();
+			await this.pause();
 		}
 	}
 
@@ -987,13 +994,13 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
-	/*
-	 * Sets breakpoint in the Remote..
+	/**
+	 * Sets breakpoint in the Remote.
 	 * Sets the breakpoint ID (bpId) in bp.
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	public setBreakpoint(bp: RemoteBreakpoint): number {
+	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 		assert(false);	// override this
 		// return
 		return 0;
@@ -1003,7 +1010,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpoint(bp: RemoteBreakpoint) {
+	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -1061,15 +1068,15 @@ export class RemoteBase extends EventEmitter {
 			const removedBps=oldBps.filter(bp => bp.address>=0&&currentBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 
 			// remove old breakpoints
-			removedBps.forEach(bp => {
+			removedBps.forEach(async bp => {
 				// from zesarux
-				this.removeBreakpoint(bp);
+				await this.removeBreakpoint(bp);
 			});
 
 			// Add new breakpoints and find free breakpoint ids
-			newBps.forEach(bp => {
+			newBps.forEach(async bp => {
 				// set breakpoint
-				this.setBreakpoint(bp);
+				await this.setBreakpoint(bp);
 			});
 
 			// get all breakpoints for the path
@@ -1101,7 +1108,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
 		assert(false);	// override this
 		return new Uint8Array();
 	}
@@ -1118,16 +1125,34 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Writes one memory value to the emulator.
+	 * Gets one memory value from the remote.
 	 * The write is followed by a read and the read value is returned
-	 * by tehe Promise.
+	 * by the Promise.
+	 * @param address The address to change.
+	 * @returns A Promise with the value.
+	 */
+	public async readMemory(address: number): Promise<number> {
+		// Read
+		const realValue=await this.readMemoryDump(address, 1);
+		return realValue[0];
+	}
+
+
+	/**
+	 * Writes one memory value to the remote.
+	 * The write is followed by a read and the read value is returned
+	 * by the Promise.
 	 * @param address The address to change.
 	 * @param value The new (byte) value.
 	 * @returns A Promise with the real value.
 	 */
 	public async writeMemory(address: number, value: number): Promise<number> {
-		assert(false);	// override this
-		return 0;
+		// Write
+		const data=new Uint8Array([value]);
+		await this.writeMemoryDump(address, data);
+		// Read
+		const realValue=await this.readMemory(address);
+		return realValue;
 	}
 
 
@@ -1291,6 +1316,158 @@ export class RemoteBase extends EventEmitter {
 	 * Default implementation does nothing. Is implemented only by ZesaruxEmulator.
 	 */
 	public handleHistorySpot() {
+	}
+
+
+	/**
+	 * Calculates the step-over/into breakpoint(s) for an instruction.
+	 * I.e. it normally calculates the address after the current instruction (pc).
+	 * DeZog will set a breakpoint there and execute a 'continue' to simulate
+	 * a 'step'.
+	 * But for branching or conditional branching instructions this is different.
+	 * DeZog will then use up to 2 breakpoints to catch up after the instruction is executed.
+	 * The method is async, i.e. it fetches the required registers and memory on it's own.
+	 * @param stepOver true if breakpoint address should be calculate for a step-over.
+	 * In this case the branching is ignored for CALL and RST.
+	 * @returns A Promise with the opcode and 2 breakpoint
+	 * addresses. The 2nd of these bp addresses can be undefined.
+	 */
+	// TODO: Unit test this.
+	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
+		// Make sute the registers are there
+		await this.getRegisters();
+		const pc=this.getPC();
+		// Get opcodes
+		const opcodes=await this.readMemoryDump(pc, 4);
+
+		// Get opcode length and calculate "normal" breakpoint address
+		const buffer=new BaseMemory(pc, opcodes);
+		const opcode=Opcode.getOpcodeAt(buffer, pc);
+		let bpAddr1=pc+opcode.length;
+		let bpAddr2;
+		const ocFlags=opcode.flags;
+
+		// Check for RET
+		if (ocFlags&OpcodeFlag.RET) {
+			const sp=this.z80Registers.getRegValue(Z80_REG.SP);;
+			// Get return address
+			const retArr=await this.readMemoryDump(sp, 2);
+			const retAddr=retArr[0]+(retArr[1]<<8);
+			// If unconditional only one breakpoint is required
+			if (ocFlags&OpcodeFlag.CONDITIONAL)
+				bpAddr2=retAddr;
+			else
+				bpAddr1=retAddr;
+		}
+		// Check for stepIver and CALL/RST
+		else if (stepOver&&(ocFlags&OpcodeFlag.CALL)) {
+			// If call and step over we don't need to check the additional
+			// branch address.
+		}
+		// Check for branches (JP, JR, CALL, RST, DJNZ)
+		else if (ocFlags&OpcodeFlag.BRANCH_ADDRESS) {
+			if (ocFlags&OpcodeFlag.CONDITIONAL) {
+				// No step over or no CALL/RST
+				bpAddr2=opcode.value;
+			}
+			else {
+				// Unconditional branch:
+				// Check for special branches JP (HL), JP (IX), JP (IY)
+				if (opcodes[0]==0xE9) {
+					// JP (HL)
+					bpAddr1=this.z80Registers.getRegValue(Z80_REG.HL);
+				}
+				else if (opcodes[0]==0xDD&&opcodes[1]==0xE9) {
+					// JP (IX)
+					bpAddr1=this.z80Registers.getRegValue(Z80_REG.IX);
+				}
+				else if (opcodes[0]==0xFD&&opcodes[1]==0xE9) {
+					// JP (IY)
+					bpAddr1=this.z80Registers.getRegValue(Z80_REG.IY);
+				}
+				else {
+					// All others:
+					bpAddr1=opcode.value;
+				}
+			}
+		}
+
+		// Return either 1 or 2 breakpoints
+		return [opcode, bpAddr1, bpAddr2];
+	}
+
+
+	/**
+	 * Tests if the opcode is a CALL instruction and if it is
+	 * conditional it tests if the condition was true.
+	 * @param opcodes An array of opcodes. Only the first is checked.
+	 * @param flags The flags.
+	 * @returns false=if not CALL or condition of CALL cc is not met.
+	 */
+	public isCallAndExecuted(opcodes: Uint8Array, flags: number): boolean {
+		// Check for CALL
+		const opcode0=opcodes[0];
+		if (0xCD==opcode0)
+			return true;
+
+		// Now check for CALL cc
+		const mask=0b11000111;
+		if ((opcode0&mask)==0b11000100) {
+			// RET cc, get cc
+			const cc=(opcode0&~mask)>>3;
+			// Check condition
+			const condMet=Z80Registers.isCcMetByFlag(cc, flags);
+			return condMet;
+		}
+
+		// No CALL or condition not met
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a RST.
+	 * @param opcodes An array of opcodes. Only the first is checked.
+	 * @returns true if "RST".
+	 */
+	public isRstOpcode(opcodes: Uint8Array): boolean {
+		const opcode0=opcodes[0];
+		const mask=0b11000111;
+		if ((opcode0&mask)==0b11000111)
+			return true;
+
+		// No RST
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode byte is from a HALT.
+	 * @param opcodes An array of opcodes. Only the first is checked.
+	 * @returns true if "HALT".
+	 */
+	public isHaltOpcode(opcodes: Uint8Array): boolean {
+		if (opcodes[0]=0x76)
+			return true;
+		// No HALT
+		return false;
+	}
+
+
+	/**
+	 * Tests if the opcode is from a LDDR, LDIR, CPDR or CPIR.
+	 * @param opcodes An array of opcodes. Only the first two are checked.
+	 * @returns true if LDDR, LDIR, CPDR or CPIR..
+	 */
+	public isRepetitiveOpcode(opcodes: Uint8Array): boolean {
+		if (opcodes[0] != 0xED)
+			return false;
+		const opcode1=opcodes[1];
+		const mask=0b11110110;
+		if ((opcode1&mask)!=mask)
+			return false;
+		// Yes it is a repetitive instruction
+		return true;
 	}
 }
 

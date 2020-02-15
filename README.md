@@ -113,10 +113,15 @@ dezog is licensed under the [MIT license](https://github.com/maziac/dezog/blob/m
 
 The source code is available on [github](https://github.com/maziac/dezog).
 
+DeZog also includes a Z80/48k ZX Spectrum simulator. For this the original 48k ROM code is included and here is the copyright notice:
+"Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
+See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-roms.txt).
+
+
 
 # Extras
 
-Here is also a great tutorial from Cesar Wagener Moriana (not to confuse with Cesar Hernandez bano, the autor of ZEsarUX).
+Here is a great tutorial from Cesar Wagener Moriana (not to confuse with Cesar Hernandez bano, the autor of ZEsarUX).
 He documented how he put all things together. If you are new to DeZog this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
 It deals with setting up
 - sjasmplus
@@ -125,9 +130,10 @@ It deals with setting up
 
 and is available in English, Spain and German [here](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/).
 
-Please note: The tutorial uses the bleeding edge sources and therefore shows how to build ZEsarUX. It also uses a previous beta release of z80-debug. As a rule of thumb: if you use the latest ZEsarUX sources or beta releases you should also use the latest z80-debug release from github.
-
-If you instead use the stable release for z80-debug from the market place then you can also use latest stable release for ZEsarUX.
+Please note: The tutorial uses 'z80-debug'. This was the former name of the project. It has been renamed to 'dezog'. This means especially that in the launch.json files you need to change 'z80-debug' to 'dezog'.
 
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug so that it is a great advice to get you started.
+
+
+And here is another shorter tutorial by Dean Belfield ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
 

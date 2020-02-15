@@ -9,6 +9,7 @@ import * as assert from 'assert';
 import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
 import Lg = require("./log")
+import {Utility} from './utility';
 
 
 /// Config section in the settings.
@@ -19,6 +20,10 @@ const CONFIG_SECTION = 'dezog';
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
+
+	// Get and store the extension's path
+	const extPath=vscode.extensions.getExtension("maziac.dezog")?.extensionPath as string;
+	Utility.setExtensionPath(extPath);
 
 	// Enable logging.
 	configureLogging();

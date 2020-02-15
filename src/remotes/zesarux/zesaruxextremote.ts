@@ -147,7 +147,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param bp The breakpoint.
 	 * @returns The internal breakpoint ID. (Just the index to the array).
 	 */
-	public setBreakpointExt(bp: RemoteBreakpoint): number {
+	public async setBreakpointExt(bp: RemoteBreakpoint): Promise<number> {
 		// Get condition
 		const zesaruxCondition = this.convertCondition(bp.condition);
 		if(zesaruxCondition == undefined) {
@@ -179,7 +179,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpointExt(bp: RemoteBreakpoint) {
+	protected async removeBreakpointExt(bp: RemoteBreakpoint): Promise<void> {
 		// remove the breakpoint
 		zSocket.send('clear-fast-breakpoint ' + bp.address);
 		// Remove from list

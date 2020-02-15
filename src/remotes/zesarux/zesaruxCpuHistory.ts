@@ -526,8 +526,9 @@ export class ZesaruxCpuHistory {
 	/**
 	 * Tests if the opcode byte is from a CALL.
 	 * @param opcode0 The first byte of an instruction.
-	 * @returns true if "CALL" or "CALL cc". Does nto matter if call was executed or not.
+	 * @returns true if "CALL" or "CALL cc". Does not matter if call was executed or not.
 	 */
+	// TODO: Use the function in "Remote" instead.
 	public isCallOpcode(opcode0: number): boolean {
 		// Check for CALL
 		if(0xCD == opcode0)
@@ -548,6 +549,7 @@ export class ZesaruxCpuHistory {
 	 * @param opcode0 The first byte of an instruction.
 	 * @returns true if "RST".
 	 */
+	// TODO: Use the function in "Remote" instead.
 	public isRstOpcode(opcode0: number): boolean {
 		const mask = 0b11000111;
 		if((opcode0 & mask) == 0b11000111)

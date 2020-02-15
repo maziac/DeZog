@@ -13,11 +13,13 @@ export let Z80RegisterHoverFormat: Map<string, string>;
 /// Enums for all Z80 Registers.
 export enum Z80_REG {
 	PC, SP,
-	AF, BC, DE, HL, IX, IY,
+	AF, BC, DE, HL,
+	IX, IY,
 	AF2, BC2, DE2, HL2, IR,
-	A, F, B, C, D, E, H, L, I, R,
-	A2, F2, B2, C2, D2, E2, H2, L2,
-	IXH, IXL, IYH, IYL
+	F, A, C, B, E, D, L, H,
+	IXL, IXH, IYL, IYH,
+	F2, A2, C2, B2, E2, D2, L2, H2,
+	R, I,
 };
 
 
@@ -270,7 +272,7 @@ export class Z80Registers {
 		I: number, R: number): Uint16Array {
 		assert(Z80_REG.IR+1==13);
 		// Store data in word array to save space
-		const regData=Uint16Array[Z80_REG.IR+1];
+		const regData=new Uint16Array(Z80_REG.IR+1);
 		regData[Z80_REG.PC]=PC;
 		regData[Z80_REG.SP]=SP;
 		regData[Z80_REG.AF]=AF;
@@ -351,7 +353,7 @@ export class Z80Registers {
 	 * @param reg E.g. "HL" (case insensitive)
 	 * @returns E.g. Z80_REG.HL
 	 */
-	protected static getEnumFromName(reg: string): Z80_REG|undefined {
+	public static getEnumFromName(reg: string): Z80_REG|undefined {
 		const regUpper = reg.toUpperCase();
 		const index = Z80Registers.registerNames.indexOf(regUpper);
 		if (index < 0)

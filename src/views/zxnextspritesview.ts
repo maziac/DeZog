@@ -3,7 +3,8 @@ import * as assert from 'assert';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { EventEmitter } from 'events';
-import { ZxNextSpritePatternsView, PatternGif } from './zxnextspritepatternsview';
+import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
+import {ImageConvert} from '../imageconvert';
 
 
 
@@ -94,7 +95,7 @@ class SpriteData {
 		}
 
 		// Convert to gif
-		this.image = PatternGif.createGifFromPattern(usedPattern, palette, transparentIndex);
+		this.image = ImageConvert.createGifFromArray(16, 16, usedPattern, palette, transparentIndex);
 	}
 }
 

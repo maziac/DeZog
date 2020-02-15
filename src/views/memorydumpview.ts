@@ -1,5 +1,3 @@
-'use strict';
-
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { Remote } from '../remotes/remotefactory';
@@ -232,7 +230,7 @@ export class MemoryDumpView extends BaseView {
 		for(let metaBlock of this.memDump.metaBlocks) {
 			this.serializer.exec(() => {
 				// Updates the shown memory dump.
-				Remote.getMemoryDump(metaBlock.address, metaBlock.size).then(data => {
+				Remote.readMemoryDump(metaBlock.address, metaBlock.size).then(data => {
 					// Store data
 					metaBlock.prevData = metaBlock.data;
 					metaBlock.data = data;
@@ -561,6 +559,7 @@ export class MemoryDumpView extends BaseView {
 			this.setColorsForRegisterPointers();
 		});
 	}
+
 
 	/**
 	 * Set colors for register pointers.

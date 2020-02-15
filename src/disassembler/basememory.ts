@@ -18,13 +18,21 @@ export class BaseMemory {
 	/**
 	 * Constructor: Initializes memory.
 	 * @param startAddress The start address of the memory area.
-	 * @param size The size of the memory area.
+	 * @param sizeOrArr The size of the memory area or an Uint8Array.
+	 * If array the array is used as is. i.e. it is not copied.
 	 */
-	constructor (startAddress: number, size: number) {
-		this.memory = new Uint8Array(size);
-		this.startAddress = startAddress;
-		this.size = size;
+	constructor(startAddress: number, sizeOrArr: number|Uint8Array) {
+		if (typeof sizeOrArr=='number') {
+			const size=sizeOrArr as number;
+			this.memory=new Uint8Array(size);
+		}
+		else {
+			this.memory=sizeOrArr as Uint8Array;
+		}
+		this.startAddress=startAddress;
+		this.size=this.memory.length;;
 	}
+
 
 	/**
 	 * Sets a value at an index.

@@ -1,55 +1,9 @@
-
 import * as assert from 'assert';
 import * as util from 'util';
-import * as gw from "gif-writer";
 import { Remote } from '../remotes/remotefactory';
 import { EventEmitter } from 'events';
 import { BaseView } from './baseview';
-
-
-/**
- * Class which holds the gif image used for the sprite pattern.
- */
-export class PatternGif implements gw.IOutputStream {
-    buffer: number[] = [];
-    writeByte(b: number): void {
-        this.buffer.push(b);
-    }
-    writeBytes(bb: number[]): void {
-        Array.prototype.push.apply(this.buffer, bb);
-	}
-
-	/**
-	 * Creates an image from the given pattern.
-	 * Static function.
-	 * @param pattern 256 bytes, 16x16 pattern.
-	 * @param palette 256 bytes, colors: rrrgggbbb
-	 * @param transparentIndex The index used for transparency.
-	 */
-	public static createGifFromPattern(pattern: Array<number>, palette: Array<number>, transparentIndex: number): number[]  {
-		// Do not allow palette with any other size than 256 colors
-		assert(palette.length == 3*256);
-		// Convert to color with offset
-		let indexedImage = new gw.IndexedColorImage(
-			{width: 16, height: 16},
-			// Indexed colors
-			pattern,
-			// Palette
-			palette);
-		// Create image
-		const gifImage = new PatternGif();
-		const gifWriter = new gw.GifWriter(gifImage);
-		gifWriter.writeHeader();
-		gifWriter.writeLogicalScreenInfo({
-			width: indexedImage.width,
-			height: indexedImage.height,
-		});
-		gifWriter.writeTableBasedImageWithGraphicControl(indexedImage, {transparentColorIndex: transparentIndex});
-		gifWriter.writeTrailer();
-		// The image is now in gifImage.buffer
-		return gifImage.buffer;
-	}
-}
+import {ImageConvert} from '../imageconvert';
 
 
 /**
@@ -563,7 +517,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// The cells
 			table += '<tr>\n<td>' + patternId + '</td>\n'
 			// Sprite image - convert to base64
-			const buf = Buffer.from(PatternGif.createGifFromPattern(pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const buf = Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
 			// Convert to base64
 			const base64String = buf.toString('base64');
 			table += ' <td class="classPattern"><img src="data:image/gif;base64,' + base64String + '"></td>\n</tr>\n\n';

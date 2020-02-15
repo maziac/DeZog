@@ -65,6 +65,8 @@ export class ZesaruxRemote extends RemoteClass {
 		this.z80Registers=new ZesaruxRegisters();
 		// Reverse debugging / CPU history
 		this.cpuHistory=new ZesaruxCpuHistory(this.z80Registers);
+		// Supported features
+		this.supportsZxNextRegisters=true;
 	}
 
 
@@ -574,7 +576,7 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	  * 'pause' the debugger.
 	  */
-	 public pause(): void {
+	public async pause(): Promise<void> {
 		// Send anything through the socket
 		zSocket.sendBlank();
 	}
@@ -1671,7 +1673,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param bp The breakpoint. If bp.address is >= 0 then it adds the condition "PC=address".
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	public setBreakpoint(bp: RemoteBreakpoint): number {
+	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 		// Check for logpoint (not supported)
 		if(bp.log) {
 			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
@@ -1712,6 +1714,7 @@ export class ZesaruxRemote extends RemoteClass {
 		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
 	//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
 		// set the breakpoint
+			// TODO: Should await here
 			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + condition, () => {
 				// enable the breakpoint
 				zSocket.send('enable-breakpoint ' + bp.bpId);
@@ -1729,15 +1732,16 @@ export class ZesaruxRemote extends RemoteClass {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpoint(bp: RemoteBreakpoint) {
+	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		// set breakpoint with no condition = disable/remove
 		//zSocket.send('set-breakpoint ' + bp.bpId);
 
 		// disable breakpoint
+			// TODO: Should await here
 		zSocket.send('disable-breakpoint ' + bp.bpId);
 
 		// Remove from list
-		var index = this.breakpoints.indexOf(bp);
+		let index = this.breakpoints.indexOf(bp);
 		assert(index !== -1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
 		this.freeBreakpointIds.push(index);
@@ -1835,7 +1839,7 @@ export class ZesaruxRemote extends RemoteClass {
 		}
 
 		// Check if we need a break
-		this.breakIfRunning();
+		await this.breakIfRunning();
 		// Send command to ZEsarUX
 		return new Promise<string>(resolve => {
 			zSocket.send(cmd, data => {
@@ -1852,7 +1856,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
 		return new Promise<Uint8Array>(resolve => {
 			// Use chunks
 			const chunkSize=0x10000;// 0x1000;

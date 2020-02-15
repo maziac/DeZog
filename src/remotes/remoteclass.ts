@@ -98,7 +98,7 @@ export class RemoteClass extends RemoteBase {
 	/**
 	 * 'pause' the debugger.
 	 */
-	public pause(): void {
+	public async pause(): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -219,7 +219,7 @@ export class RemoteClass extends RemoteBase {
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
-	public setBreakpoint(bp: RemoteBreakpoint): number {
+	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 		assert(false);	// override this
 		// return
 		return 0;
@@ -229,7 +229,7 @@ export class RemoteClass extends RemoteBase {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected removeBreakpoint(bp: RemoteBreakpoint) {
+	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -240,7 +240,7 @@ export class RemoteClass extends RemoteBase {
 	 * @param size The memory size.
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
-	public async getMemoryDump(address: number, size: number): Promise<Uint8Array> {
+	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
 		assert(false);	// override this
 		return new Uint8Array();
 	}
@@ -253,20 +253,6 @@ export class RemoteClass extends RemoteBase {
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
 		assert(false);	// override this
-	}
-
-
-	/**
-	 * Writes one memory value to the emulator.
-	 * The write is followed by a read and the read value is returned
-	 * by tehe Promise.
-	 * @param address The address to change.
-	 * @param value The new (byte) value.
-	 * @returns A Promise with the real value.
-	 */
-	public async writeMemory(address: number, value: number): Promise<number> {
-		assert(false);	// override this
-		return 0;
 	}
 
 

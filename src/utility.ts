@@ -22,6 +22,8 @@ export class Utility {
 	/// The rootpath to the project. Used in abs and relative filename functions.
 	protected static rootPath: string;
 
+	/// The extension's path.
+	protected static extensionPath: string;
 
 	/**
 	 * Returns a value shrinked to a boundary.
@@ -393,7 +395,7 @@ export class Utility {
 					const matchAddr=/(\${b@:|\${w@:)/.exec(format);
 					if (matchAddr) {
 						// Retrieve memory values
-						Remote.getMemoryDump(value, 2).then(data => {
+						Remote.readMemoryDump(value, 2).then(data => {
 							const b1=data[0]
 							const b2=data[1];
 							memWord=(b2<<8)+b1;
@@ -627,16 +629,6 @@ export class Utility {
 
 
 	/**
-	 * Sets the root path or absolute and relative file functions.
-	 * @param rootPath What e.g. vscode.workspace.rootPath would return
-	 */
-	public static setRootPath(rootPath: string|undefined) {
-		assert(rootPath);
-		(Utility.rootPath as any) = rootPath;
-	}
-
-
-	/**
 	 * If relFilePath is a relative path the vscode.workspace.rootPath
 	 * path is added.
 	 * @param relFilePath A relative path
@@ -707,6 +699,35 @@ export class Utility {
 
 
 	/**
+	 * Sets the root path or absolute and relative file functions.
+	 * @param rootPath What e.g. vscode.workspace.rootPath would return
+	 */
+	// TODO: It seems that rootPath==undefined is not allowed.
+	public static setRootPath(rootPath: string|undefined) {
+		assert(rootPath);
+		(Utility.rootPath as any)=rootPath;
+	}
+
+
+	/**
+	 * Sets the extension's path.
+	 * @param extPath Use what vscode.extensions.getExtension("maziac").extensionPath returns.
+	 */
+	public static setExtensionPath(extPath: string) {
+		Utility.extensionPath=extPath;
+	}
+
+
+	/**
+	 * Retruns the extension's path.
+	 * @return The path.
+	 */
+	public static getExtensionPath() {
+		return Utility.extensionPath;
+	}
+
+
+	/**
 	 * Removes all files in tmpDir that start with "TMP_".
 	 */
 	public static removeAllTmpFiles() {
@@ -755,6 +776,18 @@ export class Utility {
 
 		// Start waiting
 		f();
+	}
+
+	/**
+	 * Helper method to return a WORD from two successing indices in the
+	 * given buffer. (Little endian)
+	 * @param buffer The buffer to use.
+	 * @param index The index into the buffer.
+	 * @return buffer[index] + (buffer[index+1]<<8)
+	 */
+	public static getWord(buffer: Buffer, index: number): number {
+		const value=buffer[index]+(buffer[index+1]<<8);
+		return value;
 	}
 
 
