@@ -1,7 +1,10 @@
 # Changelog
 
 # 0.12.0
--
+- Added a Z80 simulator to fake the serial connection.
+- Added remoteType 'zxnext' (not usable yet)
+- Changed remoteType 'zesarux' to 'zrcp'.
+
 
 # 0.11.4
 - Design document added to describe the process of adding a new Remote.
