@@ -252,8 +252,10 @@ Notification:
 | 4     | 1    | 0     | Instead of Seq No. |
 | 5     | 1    | 1-255 | Notification seq no |
 | 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 255 = some other error |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 255 = some other error, the error string might have useful information for the user |
 | 8     | 2    | 0-65535 | Additional info: E.g. breakpoint number |
+| 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
+If error string is empty it will contain at least a 0. |
 
 
 

@@ -197,7 +197,7 @@ export class ZxMemory {
 		for (let y=0; y<ZxMemory.SCREEN_HEIGHT; y++) {
 			// Calculate offset in ZX Spectrum screen
 			inIndex=((y&0b111)<<8)|((y&0b1100_0000)<<5)|((y&0b11_1000)<<2);
-			colorIndex=(y&0b111_1000)<<2;	// y/8*32;
+			colorIndex=(y&0b1111_1000)<<2;	// y/8*32;
 			for (let x=0; x<ZxMemory.SCREEN_WIDTH/8; x++) {
 				const byteValue=screenMem[inIndex];
 				// Get color

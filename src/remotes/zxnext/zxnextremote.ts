@@ -189,7 +189,26 @@ export class ZxNextRemote extends DzrpRemote {
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
-				continueHandler({reason: "", tStates: undefined, cpuFreq: undefined});
+				// Get reason string
+				let reason='';
+				for (let i=6; i<data.length; i++) {
+					const char=data[i];
+					if (i==0)
+						break;
+					reason+=String.fromCharCode(char);
+				}
+				// If no error text ...
+				if (reason.length==0) {
+					// Add generic error text
+					const breakReason=data[2];
+					switch (breakReason) {
+						case 1:
+							reason="Breakpoint hit"
+							break;
+					}
+				}
+
+				continueHandler({reason, tStates: undefined, cpuFreq: undefined});
 			}
 		}
 		else {

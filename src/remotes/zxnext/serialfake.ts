@@ -409,12 +409,14 @@ export class SerialFake {
 		// Run the Z80-CPU in a loop
 		let breakReason=0;
 		let counter=100000;
+		let error_string='';
 		for (; counter>0; counter--) {
 			try {
 				this.z80Cpu.execute();
 			}
 			catch (errorText) {
-				console.log("Z80CPU Error: "+errorText);
+				error_string="Z80CPU Error: "+errorText;
+				console.log(error_string);
 				breakReason=255;
 				break;
 			};
@@ -451,7 +453,8 @@ export class SerialFake {
 
 			// Send Notification
 			const ntfSeqNo=this.parser.getNextSeqNo();
-			this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakReason, 0, 0]);
+			const strArr=error_string.split('').map(char => char.codePointAt(0) as number);
+			this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakReason, 0, 0, ...strArr]);
 		}
 	}
 
