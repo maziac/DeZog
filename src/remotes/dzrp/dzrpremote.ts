@@ -16,7 +16,10 @@ import * as path from 'path';
 export class DzrpRemote extends RemoteClass {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({reason, tStates, cpuFreq}) => void;
+	protected continueResolve?: ({breakReason, tStates, cpuFreq}) => void;
+
+	// Used to handle the notification during step-out.
+	//protected stepOutHandler?: (breakReason: number) => void;
 
 
 	/// Constructor.
@@ -125,12 +128,12 @@ export class DzrpRemote extends RemoteClass {
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
-	 * reason contains the stop reason as string.
+	 * breakReason contains the stop reason as string.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{reason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
+		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Save resolve function when break-response is received
 			this.continueResolve=resolve;
 			// Clear registers
@@ -169,20 +172,15 @@ export class DzrpRemote extends RemoteClass {
 			const opCodeDescription=opcode.disassemble();
 			const instruction=opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
-			this.continueResolve=() => {
+			this.continueResolve=({breakReason}) => {
 				// Clear register cache
 				this.z80Registers.clearCache();
 				// return
-				resolve({instruction});
+				resolve({instruction, breakReason});
 			};
 
 			// Send command to 'continue'
 			this.sendDzrpCmdContinue(bp1, bp2);
-
-			// TODO: Das hier drunter muss geändert werden: Das Program läuft bis zur PAUSE notification.
-
-			// Im Moment sende ich noch PAUSE um die Notification zu faken.
-			await this.sendDzrpCmdPause();
 		});
 	}
 
@@ -204,14 +202,48 @@ export class DzrpRemote extends RemoteClass {
 
 	/**
 	 * 'step out' of current subroutine.
+	 * The step-out uses normal step (into) funcionality and check
+	 * after each step if the last instruction was some RET and
+	 * the stackpointer is bigger that at the beginning.
 	 * @param A Promise that returns {tStates, cpuFreq, breakReason}
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReason' a possibly text with the break reason.
 	 */
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		assert(false);	// override this
-		return {};
+		return new Promise<{tStates, cpuFreq, breakReason}>(async resolve => {
+			// Get current SP
+			const startSp=this.z80Registers.getRegValue(Z80_REG.SP);
+
+			// Loop
+			while (true) {
+				// Get current SP
+				const prevSp=this.z80Registers.getRegValue(Z80_REG.SP);
+				// Do next step
+				const stepResult=await this.stepInto();
+				// Check if real breakpoint reached, i.e. breakReason.length!=0
+				if (stepResult.breakReason) {
+					// End reached
+					const result={tStates: stepResult.tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
+					resolve(result);
+					break;
+				}
+
+				// Check if instruction was a RET(I/N)
+				await this.getRegisters();
+				const currSp=this.z80Registers.getRegValue(Z80_REG.SP);
+				if (currSp>startSp && currSp>prevSp) {
+					// Something has been popped. This is to exclude unexecuted RET cc.
+					const instr=stepResult.instruction.toUpperCase();
+					if (instr.startsWith("RET")) {
+						// Stop here
+						const result={tStates: stepResult.tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
+						resolve(result);
+						break;
+					}
+				}
+			}
+		});
 	}
 
 

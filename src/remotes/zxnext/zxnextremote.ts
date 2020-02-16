@@ -185,30 +185,44 @@ export class ZxNextRemote extends DzrpRemote {
 		// Check for notification
 		if (recSeqno==0) {
 			// Notification.
+			const breakReasonNumber=data[3];
+			/*
+			// Check if called by step-out.
+			if (this.stepOutHandler) {
+				this.stepOutHandler(breakReasonNumber);
+			}
+			*/
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
 				// Get reason string
-				let reason='';
+				let breakReason='';
 				for (let i=6; i<data.length; i++) {
 					const char=data[i];
 					if (i==0)
 						break;
-					reason+=String.fromCharCode(char);
+					breakReason+=String.fromCharCode(char);
 				}
+				if (breakReason.length==0)
+					breakReason=undefined as any;
 				// If no error text ...
-				if (reason.length==0) {
+				if (!breakReason) {
 					// Add generic error text
-					const breakReason=data[2];
-					switch (breakReason) {
+					switch (breakReasonNumber) {
 						case 1:
-							reason="Breakpoint hit"
+							breakReason="Manual break"
+							break;
+						case 2:
+							breakReason="Breakpoint hit"
 							break;
 					}
 				}
 
-				continueHandler({reason, tStates: undefined, cpuFreq: undefined});
+				// Adds breakReasonNumber (as number) if consumer is step-out.
+				assert((breakReasonNumber==0&&breakReason==undefined)
+					|| (breakReasonNumber!=0&&breakReason!=undefined));
+				continueHandler({breakReason, tStates: undefined, cpuFreq: undefined});
 			}
 		}
 		else {

@@ -1066,12 +1066,12 @@ export class DebugSessionClass extends DebugSession {
 			// Display T-states and time
 			this.showUsedTStates('Continue. ', result.tStates, result.cpuFreq);
 
-			if (result.reason) {
+			if (result.breakReason) {
 				// Send output event to inform the user about the reason
-				vscode.debug.activeDebugConsole.appendLine(result.reason);
+				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 
 				// Use reason for break-decoration.
-				this.decorateBreak(result.reason);
+				this.decorateBreak(result.breakReason);
 			}
 
 			// React depending on internal state.
@@ -1114,13 +1114,13 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	 protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
 		// Serialize
-		this.serializer.exec(() => {
+		//this.serializer.exec(() => {
 			// Pause the debugger
 			Remote.pause();
 			// Response is sent immediately
 			this.sendResponse(response);
-			this.serializer.endExec();
-		});
+		//	this.serializer.endExec();
+		//});
 	}
 
 
@@ -1200,13 +1200,13 @@ export class DebugSessionClass extends DebugSession {
 	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
 		Decoration.clearBreak();
 		// Serialize
-		this.serializer.exec(() => {
+		//this.serializer.exec(() => {
 			// Step-Over
 			this.emulatorStepOver(() => {
 				this.sendResponse(response);
-				this.serializer.endExec();
+		//		this.serializer.endExec();
 			})
-		});
+		//});
 	}
 
 
@@ -1288,7 +1288,7 @@ export class DebugSessionClass extends DebugSession {
 	 protected stepOutRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		Decoration.clearBreak();
 		// Serialize
-		this.serializer.exec(() => {
+//		this.serializer.exec(() => {
 			// Step-Out
 			Remote.stepOut().then(result => {
 				// Display T-states and time
@@ -1310,8 +1310,8 @@ export class DebugSessionClass extends DebugSession {
 
 			// Response is sent immediately
 			this.sendResponse(response);
-			this.serializer.endExec();
-		});
+//			this.serializer.endExec();
+//		});
 	}
 
 

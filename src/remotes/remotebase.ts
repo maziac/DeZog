@@ -84,7 +84,7 @@ export enum MachineType {
 export enum RemoteState {
 	UNINITIALIZED=0,	///< before connection to ZEsarUX.
 	IDLE,				///< The normal state. Waiting for a new command.
-	RUNNING,			///< When a 'continue' or 'stepOut' has been requested. Until the next break.
+	RUNNING,			///< When a 'continue', 'stepOver' or 'stepOut' has been requested. Until the next break.
 	RUNNING_REVERSE,	///< Not yet used. Same as 'RUNNING' but in reverse direction.
 };
 
@@ -803,9 +803,9 @@ export class RemoteBase extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
 		assert(false);	// override this
-		return {reason: ""};
+		return {breakReason: ""};
 	}
 
 

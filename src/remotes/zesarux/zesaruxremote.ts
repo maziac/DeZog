@@ -467,7 +467,7 @@ export class ZesaruxRemote extends RemoteClass {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
 		// Check for reverse debugging.
 		if (this.cpuHistory.isInStepBackMode()) {
 			// Continue in reverse debugging
@@ -475,7 +475,7 @@ export class ZesaruxRemote extends RemoteClass {
 			// or until a breakpoint condition is true.
 
 			let nextLine;
-			let reason;
+			let breakReason;
 			try {
 				//this.state = RemoteState.RUNNING;
 				//this.state = RemoteState.IDLE;
@@ -497,7 +497,7 @@ export class ZesaruxRemote extends RemoteClass {
 					this.z80Registers.setCache(nextLine);
 					const condition=this.checkPcBreakpoints(nextLine);
 					if (condition!=undefined) {
-						reason=condition;
+						breakReason=condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -506,7 +506,7 @@ export class ZesaruxRemote extends RemoteClass {
 				}
 			}
 			catch (e) {
-				reason='Error occurred: '+e;
+				breakReason='Error occurred: '+e;
 			}
 
 			// Decoration
@@ -518,12 +518,12 @@ export class ZesaruxRemote extends RemoteClass {
 				this.z80Registers.clearCache();
 				await this.getRegisters();
 				const pc=this.getPC();
-				reason='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
+				breakReason='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
 			}
-			return {reason};
+			return {breakReason};
 		}
 
-		return new Promise<{reason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
 			// Change state
@@ -545,9 +545,9 @@ export class ZesaruxRemote extends RemoteClass {
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// The reason is the 2nd line
-							const reason=this.getBreakReason(text);
+							const breakReason=this.getBreakReason(text);
 							// Call handler
-							resolve({reason, tStates, cpuFreq});
+							resolve({breakReason, tStates, cpuFreq});
 						});
 					});
 				});

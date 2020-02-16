@@ -89,9 +89,9 @@ export class RemoteClass extends RemoteBase {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{reason: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
 		assert(false);	// override this
-		return {reason: ""};
+		return {breakReason: ""};
 	}
 
 

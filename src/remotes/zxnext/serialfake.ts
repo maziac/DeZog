@@ -420,19 +420,22 @@ export class SerialFake {
 				breakReason=255;
 				break;
 			};
-			// Check if breakpoints are hit
-			const pc=this.z80Cpu.pc;
-			if (pc==bp1||pc==bp2)
-				break;
-			// Check if stopped from outside
-			if (!this.cpuRunning)
-				break;
 			// Check if any real breakpoint is hit
+			// Note: Because of step-out this needs to be done before the other check.
+			const pc=this.z80Cpu.pc;
 			const bpHit=this.breakpoints.includes(pc);
 			if (bpHit) {
-				breakReason=1;
+				breakReason=2;
 				break;
 			}
+			// Check if stopped from outside
+			if (!this.cpuRunning) {
+				breakReason=1;	// Manual break
+				break;
+			}
+			// Check if breakpoints are hit
+			if (pc==bp1||pc==bp2)
+				break;
 		}
 //		const time=Utility.timeDiff();
 //		console.log("Time="+time+" ms");
