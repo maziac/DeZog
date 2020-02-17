@@ -18,9 +18,8 @@ export class DzrpRemote extends RemoteClass {
 	// The function to hold the Promise's resolve function for a continue request.
 	protected continueResolve?: ({breakReason, tStates, cpuFreq}) => void;
 
-	// Used to handle the notification during step-out.
-	//protected stepOutHandler?: (breakReason: number) => void;
-
+	// This flag is used to pause a step-out.
+	protected pauseStepOut=false;
 
 	/// Constructor.
 	/// Override this.
@@ -148,6 +147,8 @@ export class DzrpRemote extends RemoteClass {
 	 * 'pause' the debugger.
 	 */
 	public async pause(): Promise<void> {
+		// Set this flag to pause a stepOut
+		this.pauseStepOut=true;
 		// Send 'run' command
 		await this.sendDzrpCmdPause();
 	}
@@ -212,20 +213,27 @@ export class DzrpRemote extends RemoteClass {
 	 */
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{tStates, cpuFreq, breakReason}>(async resolve => {
+			// Reset flag
+			this.pauseStepOut=false;
 			// Get current SP
 			const startSp=this.z80Registers.getRegValue(Z80_REG.SP);
+			// Count tStates
+			let tStates=0;
+			let stepResult;
 
 			// Loop
 			while (true) {
 				// Get current SP
 				const prevSp=this.z80Registers.getRegValue(Z80_REG.SP);
 				// Do next step
-				const stepResult=await this.stepInto();
+				stepResult=await this.stepInto();
+
+				// tStates
+				tStates+=stepResult.tStates||0;
+
 				// Check if real breakpoint reached, i.e. breakReason.length!=0
 				if (stepResult.breakReason) {
 					// End reached
-					const result={tStates: stepResult.tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
-					resolve(result);
 					break;
 				}
 
@@ -237,12 +245,23 @@ export class DzrpRemote extends RemoteClass {
 					const instr=stepResult.instruction.toUpperCase();
 					if (instr.startsWith("RET")) {
 						// Stop here
-						const result={tStates: stepResult.tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
-						resolve(result);
 						break;
 					}
 				}
+
+				// Check if user breaked
+				if (this.pauseStepOut) {
+					// User pressed pause
+					stepResult.breakReason="Manual break";
+					break;
+				}
 			}
+
+			// Return
+			if (tStates==0)
+				tStates==undefined;
+			const result={tStates: tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
+			resolve(result);
 		});
 	}
 

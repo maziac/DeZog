@@ -91,6 +91,13 @@ Supported features are bitwise:
 | 1-7 | not used |
 
 
+Other features could be:
+- Supports stepOut
+- Supports coverage
+- Supports cpu history
+- Supports extended call stack
+
+
 # CMD_READ_REGS
 
 Command:
