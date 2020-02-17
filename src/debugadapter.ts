@@ -1160,9 +1160,8 @@ export class DebugSessionClass extends DebugSession {
 	/**
 		* Step over.
 		* Called from UI (vscode) and from the unit tests.
-		* @param handler Is called after successful step-over.
 	  */
-	 public emulatorStepOver(handler?: () => void): void {
+	 public emulatorStepOver() {
 		Decoration.clearBreak();
 		// Step-Over
 		 Remote.stepOver().then(result => {
@@ -1174,10 +1173,6 @@ export class DebugSessionClass extends DebugSession {
 
 			// Update memory dump etc.
 			this.update({step: true});
-
-			// Response
-			if(handler)
-				handler();
 
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
@@ -1199,14 +1194,11 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
 		Decoration.clearBreak();
-		// Serialize
-		//this.serializer.exec(() => {
-			// Step-Over
-			this.emulatorStepOver(() => {
-				this.sendResponse(response);
-		//		this.serializer.endExec();
-			})
-		//});
+		// Step-Over
+		this.emulatorStepOver();	// Sends stopped request.
+
+		 // Response is sent immediately
+		 this.sendResponse(response);
 	}
 
 
@@ -1269,13 +1261,14 @@ export class DebugSessionClass extends DebugSession {
 					vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 
 				// Response
-				this.sendResponse(response);
 				this.serializer.endExec();
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 			});
 
+			// Response is sent immediately
+			this.sendResponse(response);
 		});
 	}
 
