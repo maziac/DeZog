@@ -5,7 +5,7 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteClass, MachineType, RemoteBreakpoint, RemoteState, MemoryPage } from '../remoteclass';
+import {RemoteClass, MachineType, RemoteBreakpoint, MemoryPage } from '../remoteclass';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -277,7 +277,6 @@ export class ZesaruxRemote extends RemoteClass {
 					}
 					else {
 						// Send 'initialize' to Machine.
-						this.state = RemoteState.IDLE;
 						this.emit('initialized');
 					}
 				});
@@ -526,8 +525,6 @@ export class ZesaruxRemote extends RemoteClass {
 		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
-			// Change state
-			this.state=RemoteState.RUNNING;
 			// Reset T-state counter.
 			zSocket.send('reset-tstates-partial', () => {
 				// Run
@@ -539,7 +536,6 @@ export class ZesaruxRemote extends RemoteClass {
 						// get clock frequency
 						zSocket.send('get-cpu-frequency', data => {
 							const cpuFreq=parseInt(data);
-							this.state=RemoteState.IDLE;
 							// Clear register cache
 							this.z80Registers.clearCache();
 							// Handle code coverage
@@ -1112,11 +1108,9 @@ export class ZesaruxRemote extends RemoteClass {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
 									// Run
-									this.state=RemoteState.RUNNING;
 									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 										// Disable breakpoint
 										zSocket.send('disable-breakpoint '+bpId, () => {
-											this.state=RemoteState.IDLE;
 											resolve({instruction: disasm, tStates, cpuFreq, breakReason});
 										});
 									});
@@ -1443,11 +1437,9 @@ export class ZesaruxRemote extends RemoteClass {
 										// Clear register cache
 										this.z80Registers.clearCache();
 										// Run
-										this.state=RemoteState.RUNNING;
 										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 											// Disable breakpoint
 											zSocket.send('disable-breakpoint '+bpId, () => {
-												this.state=RemoteState.IDLE;
 												resolve({tStates, cpuFreq, breakReason});
 											});
 										});
@@ -1838,8 +1830,6 @@ export class ZesaruxRemote extends RemoteClass {
 			throw new Error('No command given.');
 		}
 
-		// Check if we need a break
-		await this.breakIfRunning();
 		// Send command to ZEsarUX
 		return new Promise<string>(resolve => {
 			zSocket.send(cmd, data => {

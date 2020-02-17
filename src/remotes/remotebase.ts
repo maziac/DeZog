@@ -80,15 +80,6 @@ export enum MachineType {
 }
 
 
-/// The internal machine state.
-export enum RemoteState {
-	UNINITIALIZED=0,	///< before connection to ZEsarUX.
-	IDLE,				///< The normal state. Waiting for a new command.
-	RUNNING,			///< When a 'continue', 'stepOver' or 'stepOut' has been requested. Until the next break.
-	RUNNING_REVERSE,	///< Not yet used. Same as 'RUNNING' but in reverse direction.
-};
-
-
 /// Definition of one memory page, i.e. memory slot/bank relationship.
 export interface MemoryPage {
 	/// Z80 start address of page.
@@ -115,9 +106,6 @@ export class RemoteBase extends EventEmitter {
 
 	/// The machine type, e.g. 48k or 128k etc.
 	public machineType=MachineType.UNKNOWN;
-
-	/// Current state, e.g. RUNNING
-	protected state=RemoteState.UNINITIALIZED;
 
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack: number;
@@ -884,18 +872,6 @@ export class RemoteBase extends EventEmitter {
 	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
 		assert(false);	// override this
 		return {instruction: "", breakReason: undefined};
-	}
-
-
-	/**
-	 * If system state is running, a break is done.
-	 */
-	protected async breakIfRunning(): Promise<void> {
-		// Break if currently running
-		if (this.state==RemoteState.RUNNING||this.state==RemoteState.RUNNING_REVERSE) {
-			// Break
-			await this.pause();
-		}
 	}
 
 

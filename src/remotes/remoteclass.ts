@@ -2,13 +2,13 @@
 import * as assert from 'assert';
 import {RefList} from '../reflist';
 import {CallStackFrame} from '../callstackframe';
-import {RemoteBase, MachineType, RemoteState, RemoteBreakpoint, MemoryPage} from './remotebase';
+import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage} from './remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {StateZ80} from '../statez80';
 
 
 // Re-export
-export {MachineType, RemoteState, RemoteBreakpoint, MemoryPage};
+export {MachineType, RemoteBreakpoint, MemoryPage};
 export {RefList, CallStackFrame, GenericBreakpoint, GenericWatchpoint};
 export {StateZ80};
 
