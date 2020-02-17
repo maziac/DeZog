@@ -1,10 +1,10 @@
 # Changelog
 
 # 0.12.0
-- Added a Z80 simulator to fake the serial connection.
-- Added remoteType 'zxnext' (not usable yet)
 - Changed remoteType 'zesarux' to 'zrcp'.
-
+- Fixed bug "Debugging with source files is impossible when there are ORGs with non-increasing addresses"
+- Added a Z80 simulator to fake the serial connection (not usable yet).
+- Added remoteType 'zxnext' (not usable yet).
 
 # 0.11.4
 - Design document added to describe the process of adding a new Remote.

@@ -181,7 +181,7 @@ export class LabelsClass {
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
 		let base = 0;
-		let prev = -1;
+		//let prev = -1;
 		let line;
 		let lineNumber = 0;
 		let labelPrefix;	// Only used for sjasmplus
@@ -207,10 +207,15 @@ export class LabelsClass {
 			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
+
+				// 17.2.2020: I disabled this check now. because of issue Debugging with source files is impossible when there are ORGs with non-increasing addresses, https://github.com/maziac/DeZog/issues/8.
+				// I can't remember what the use of this was. Could be that it was not for sjasmplus.
+				/*
 				if(address < prev) {
 					base += 0x10000;
 					address += 0x10000;
 				}
+				*/
 
 				// Check for MODULE (sjasmplus)
 				if(sjasmplus) {
@@ -325,7 +330,7 @@ export class LabelsClass {
 			}
 
 			// next
-			prev = address
+			//prev = address
 			lineNumber ++;
 		}  // for listLines
 
