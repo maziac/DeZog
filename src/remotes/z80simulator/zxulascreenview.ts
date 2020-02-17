@@ -1,7 +1,7 @@
 //import * as assert from 'assert';
 import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
-import {Utility} from '../../utility';
+//import {Utility} from '../../utility';
 import {ZxMemory} from './zxmemory';
 import {BaseView} from '../../views/baseview';
 
@@ -10,11 +10,6 @@ import {BaseView} from '../../views/baseview';
  * A Webview that shows the simulated ZX Spectrum screen.
  */
 export class ZxSimulationView extends BaseView {
-	/// The screen file name
-	protected static zxUlaScreenFileName='zxulascreen.gif';// TODO: Remove
-
-	// The screen path.
-	protected zxUlaScreenPath; // TODO: Remove
 
 	// Holds the gif image a string.
 	protected screenGifString;
@@ -34,12 +29,10 @@ export class ZxSimulationView extends BaseView {
 	 * @param memory The memory of the CPU.
 	 */
 	constructor(memory: ZxMemory) {
-		super();
+		super(false);
 		// Init
 		this.zxMemory=memory;
 
-		// Screen gif path
-		this.zxUlaScreenPath=Utility.getRelTmpFilePath(ZxSimulationView.zxUlaScreenFileName);
 		// create vscode panel view
 		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true});
 		this.vscodePanel.title='Z80/ZX Spectrum Simulator';
@@ -99,7 +92,7 @@ export class ZxSimulationView extends BaseView {
 			// Create gif
 			const gif=this.zxMemory.getUlaScreen();
 			const buf=Buffer.from(gif);
-			const screenGifString=buf.toString('base64');
+			const screenGifString='data:image/gif;base64,'+buf.toString('base64');
 			// Create message
 			const message={
 				command: 'updateScreen',
@@ -125,10 +118,28 @@ export class ZxSimulationView extends BaseView {
 			<title>Dump</title>
 		</head>
 
+		<script>
+		const vscode = acquireVsCodeApi();
+
+		//---- Handle Messages from vscode extension --------
+		window.addEventListener('message', event => {
+			const message = event.data;
+
+            switch (message.command) {
+				case 'updateScreen':
+				{
+					screenString = message.value;
+					document.getElementById("screen_img_id").src=screenString;
+				}   break;
+           }
+        });
+
+		</script>
+
 		<body style="font-family: Courier">
 
 		<!-- Display the screen gif -->
-		<img src="data:image/gif;base64,${this.screenGifString}" width="100%"">
+		<img id="screen_img_id" width="100%"">
 
 		${keyboard}
 
