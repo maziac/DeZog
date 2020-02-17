@@ -3,12 +3,13 @@ import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
 import {Utility} from '../../utility';
 import {ZxMemory} from './zxmemory';
+import {BaseView} from '../../views/baseview';
 
 
 /**
  * A Webview that shows the simulated ZX Spectrum screen.
  */
-export class ZxSimulationView {
+export class ZxSimulationView extends BaseView {
 	/// The screen file name
 	protected static zxUlaScreenFileName='zxulascreen.gif';// TODO: Remove
 
@@ -33,6 +34,7 @@ export class ZxSimulationView {
 	 * @param memory The memory of the CPU.
 	 */
 	constructor(memory: ZxMemory) {
+		super();
 		// Init
 		this.zxMemory=memory;
 
@@ -52,6 +54,10 @@ export class ZxSimulationView {
 			console.log("webView command '"+message.command+"':", message);
 			this.webViewMessageReceived(message);
 		});
+
+
+		// Initial html page.
+		this.setHtml();
 	}
 
 
@@ -93,9 +99,13 @@ export class ZxSimulationView {
 			// Create gif
 			const gif=this.zxMemory.getUlaScreen();
 			const buf=Buffer.from(gif);
-			this.screenGifString=buf.toString('base64');
-			// Now combine all data and create the html.
-			this.setHtml();
+			const screenGifString=buf.toString('base64');
+			// Create message
+			const message={
+				command: 'updateScreen',
+				value: screenGifString
+			};
+			this.sendMessageToWebView(message);
 		}
 		catch {}
 	}

@@ -2,7 +2,6 @@
 import * as assert from 'assert';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
-import { EventEmitter } from 'events';
 import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
 import {ImageConvert} from '../imageconvert';
 
@@ -140,12 +139,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 	/**
 	 * Creates the basic panel.
-	 * @param parent The parent which may send 'update' notifications.
 	 * @param title The title to use for this view.
 	 * @param slotRanges Pairs of start slot/count. If undefined all visible sprites will be chosen (on each update).
 	 */
-	constructor(parent: EventEmitter, title: string, slotRanges: Array<number>|undefined) {
-		super(parent, title, []);
+	constructor(title: string, slotRanges: Array<number>|undefined) {
+		super(title, []);
 
 		if(slotRanges) {
 			// Create array with slots

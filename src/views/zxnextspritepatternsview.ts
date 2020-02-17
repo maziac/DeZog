@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import * as util from 'util';
 import { Remote } from '../remotes/remotefactory';
-import { EventEmitter } from 'events';
 import { BaseView } from './baseview';
 import {ImageConvert} from '../imageconvert';
 
@@ -87,9 +86,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @param title The title to use for this view.
 	 * @param indexRanges Pairs of start index/count..
 	 */
-	constructor(parent: EventEmitter, title: string, indexRanges: Array<number>) {
-		// call super
-		super(parent);
+	constructor(title: string, indexRanges: Array<number>) {
+		super();
 
 		// Create array with slots
 		this.patternIds = new Array<number>();
@@ -109,22 +107,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		// Title
 		this.vscodePanel.title = title;
-	}
-
-
-	/**
-	 * Called e.g. on close.
-	 * Clean up the event registration if all ZxNextSpritePatternsViews have
-	 * been closed.
-	 */
-	public disposeView() {
-		// Get all pattern views
-		const patternViews = BaseView.staticGetAllViews(ZxNextSpritePatternsView);
-		// Check count
-		if(patternViews.length == 0) {
-			// Remove listening for updates for static function.
-			this.parent.removeListener('update', ZxNextSpritePatternsView.staticUpdate);
-		}
 	}
 
 

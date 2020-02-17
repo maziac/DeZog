@@ -477,7 +477,7 @@ export class DebugSessionClass extends DebugSession {
 		return new Promise<undefined>(resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async () => {
 				// Create memory/register dump view
-				let registerMemoryView=new MemoryRegisterView(this);
+				let registerMemoryView=new MemoryRegisterView();
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
 				registerMemoryView.update();
@@ -1630,7 +1630,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		const textData=await Remote.dbgExec(machineCmd);
 		if (redirectToView) {
 			// Create new view
-			const panel=new TextView(this, "exec: "+machineCmd, textData);
+			const panel=new TextView("exec: "+machineCmd, textData);
 			panel.update();
 			// Send response
 			return 'OK';
@@ -1704,7 +1704,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		}
 
 		// Create new view
-		const panel = new MemoryDumpView(this);
+		const panel = new MemoryDumpView();
 		for(let k=0; k<tokens.length; k+=2)
 			panel.addBlock(addrSizes[k], addrSizes[k+1]);
 		panel.mergeBlocks();
@@ -1880,7 +1880,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		}
 
 		// Create new view
-		const panel = new ZxNextSpritePatternsView(this, title, params);
+		const panel = new ZxNextSpritePatternsView(title, params);
 		panel.update();
 
 		// Send response
@@ -1954,7 +1954,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		}
 
 		// Create new view
-		const panel = new ZxNextSpritesView(this, title, params);
+		const panel = new ZxNextSpritesView(title, params);
 		panel.update();
 
 		// Send response

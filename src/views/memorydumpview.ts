@@ -5,7 +5,6 @@ import * as util from 'util';
 import { Utility } from '../utility';
 import { Labels } from '../labels';
 import { MetaBlock, MemoryDump } from '../memorydump';
-import { EventEmitter } from 'events';
 import { Settings } from '../settings';
 import { Z80Registers } from '../remotes/z80registers';
 import { BaseView } from './baseview';
@@ -52,8 +51,8 @@ export class MemoryDumpView extends BaseView {
 	/**
 	 * Creates the basic panel.
 	 */
-	constructor(parent: EventEmitter) {
-		super(parent);
+	constructor() {
+		super();
 		MemoryDumpView.MemoryViews.push(this);
 
 		// Handle hide/unhide -> update the register pointers.

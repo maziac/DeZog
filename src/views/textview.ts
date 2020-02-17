@@ -1,7 +1,6 @@
 
 //import * as assert from 'assert';
 import * as util from 'util';
-import { EventEmitter } from 'events';
 import { BaseView } from './baseview';
 
 //import { Utility } from './utility';
@@ -15,12 +14,11 @@ export class TextView extends BaseView {
 
 	/**
 	 * Creates the text view.
-	 * @param parent The parent which may send 'update' notifications.
 	 * @param title The title to use for this view.
 	 * @param text The static text to show.
 	 */
-	constructor(parent: EventEmitter, title: string, text: string) {
-		super(parent);
+	constructor(title: string, text: string) {
+		super();
 		// Title
 		this.vscodePanel.title = title;
 		// Use the text

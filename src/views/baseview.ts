@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { CallSerializer } from '../callserializer';
-import { EventEmitter } from 'events';
 
 
 
@@ -23,7 +22,7 @@ export class BaseView {
 	/**
 	 * Is called on 'update' event.
 	 * First calls the static update functions.
-	 * Afterwards the update funcions of all views.
+	 * Afterwards the update functions of all views.
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
@@ -70,24 +69,18 @@ export class BaseView {
 	/// The panel to show the base view in vscode.
 	protected vscodePanel: vscode.WebviewPanel;
 
-	/// We listen for 'update' on this emitter to update the html.
-	protected parent: EventEmitter;
-
 	protected serializer = new CallSerializer('ViewUpdate');
 
 	/**
 	 * Creates the basic view.
-	 * @param parent The parent which may send 'update' notifications.
-	 * @param handler Thhandler is called before the 'update' function is registered.
-	 * The purpose is to register a static 'update' funtion before the dynamic ones.
+	 * @param addToStaticViews Adds the view to the static views list so that
+	 * it will get an update event. This is the default for debug windows.
+	 * Other (independent) views can set this to false.
 	 */
-	// TODO: Remove handler
-	constructor(parent: EventEmitter, handler?: ()=>void) {
-		// Init
-		this.parent = parent;
-
+	constructor(addToStaticViews = true) {
 		// Add to view list
-		BaseView.staticViews.push(this);
+		if (addToStaticViews)
+			BaseView.staticViews.push(this);
 
 		// create vscode panel view
 		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true});
@@ -101,10 +94,6 @@ export class BaseView {
 			// Call overwritable function
 			this.disposeView();
 		});
-
-		// Handle hide/unhide.
-//        this.vscodePanel.onDidChangeViewState(e => {
-//        });
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(message => {

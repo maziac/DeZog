@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.1
+
+
 # 0.12.0
 - Changed remoteType 'zesarux' to 'zrcp'.
 - Fixed bug "Debugging with source files is impossible when there are ORGs with non-increasing addresses"
