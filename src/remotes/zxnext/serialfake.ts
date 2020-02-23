@@ -3,10 +3,10 @@
 import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
 import {Z80_REG} from '../z80registers';
-import {ZxMemory} from '../z80simulator/zxmemory';
-import {ZxPorts} from '../z80simulator/zxports';
-import {Z80Cpu} from '../z80simulator/z80cpu';
-import {ZxSimulationView} from '../z80simulator/zxulascreenview';
+import {ZxMemory} from '../zxsimulator/zxmemory';
+import {ZxPorts} from '../zxsimulator/zxports';
+import {Z80Cpu} from '../zxsimulator/z80cpu';
+import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
 //import {Utility} from '../../utility';
 
@@ -26,11 +26,6 @@ export class SerialFake {
 
 	// The read parser for the serial port.
 	public parser;
-
-	// Holds the register values.
-	//protected registers: Buffer;
-
-
 
 	// For emulation of the CPU.
 	protected z80Cpu: any;	// Z80Cpu
@@ -247,7 +242,7 @@ export class SerialFake {
 	/**
 	 * Returns all registers from the CPU in an array.
 	 */
-	protected getRegisters(): number[] {
+	protected getRegValues(): number[] {
 		const regs=[
 			this.z80Cpu.pc&0xFF,
 			this.z80Cpu.pc>>8,
@@ -287,7 +282,7 @@ export class SerialFake {
 	 * @param reg E.g. Z80_REG.PC or Z80_REG.A
 	 * @param value The value to set.
 	 */
-	protected setRegister(reg: Z80_REG, value: number) {
+	protected setRegValue(reg: Z80_REG, value: number) {
 		// Set register in z80 cpu
 		switch (reg) {
 			case Z80_REG.PC:
@@ -480,12 +475,12 @@ export class SerialFake {
 				this.sendDzrpResp(seqno, [0]);
 				break;
 			case DZRP.CMD_GET_REGISTERS:
-				this.sendDzrpResp(seqno, this.getRegisters());
+				this.sendDzrpResp(seqno, this.getRegValues());
 				break;
 			case DZRP.CMD_SET_REGISTER:
 				const reg=data[2];
 				let value=data[3]|(data[4]<<8);
-				this.setRegister(reg, value);
+				this.setRegValue(reg, value);
 				this.sendDzrpResp(seqno);
 				break;
 			case DZRP.CMD_WRITE_BANK:

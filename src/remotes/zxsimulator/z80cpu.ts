@@ -1,6 +1,6 @@
 import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
-import {ZxPorts} from '../z80simulator/zxports';
+import {ZxPorts} from './zxports';
 
 
 export class Z80Cpu extends Z80js {

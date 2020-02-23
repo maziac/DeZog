@@ -1,8 +1,7 @@
 import * as assert from 'assert';
-import {DZRP} from './dzrpparser';
+import {DZRP, DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {DzrpParser} from './dzrpparser';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {Utility} from '../../utility';
 
@@ -35,7 +34,6 @@ export class ZxNextRemote extends DzrpRemote {
 
 
 	/// Constructor.
-	/// Override this.
 	constructor() {
 		super();
 		// Instantiate the message queue
