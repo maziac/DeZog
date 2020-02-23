@@ -35,7 +35,7 @@ export class SerialFake {
 	// For emulation of the CPU.
 	protected z80Cpu: any;	// Z80Cpu
 	protected zxMemory: ZxMemory;
-	protected ports: ZxPorts;
+	protected zxPorts: ZxPorts;
 	protected zxSimulationView: ZxSimulationView;
 
 	// A map with breakpoint ID as key and breakpoint address as value.
@@ -54,8 +54,8 @@ export class SerialFake {
 	constructor() {
 		// Create a Z80 CPU to emulate Z80 behaviour
 		this.zxMemory=new ZxMemory();
-		this.ports=new ZxPorts();
-		this.z80Cpu=new Z80Cpu(this.zxMemory, this.ports, false);
+		this.zxPorts=new ZxPorts();
+		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 		this.cpuRunning=false;
 		this.breakpointsMap=new Map<number, number>();
 		this.lastBpId=0;
@@ -96,7 +96,7 @@ export class SerialFake {
 			this.serialPort.on('open', async () => {
 				console.log('Open SerialFake');
 				// Open the ZX screen simulation view
-				this.zxSimulationView=new ZxSimulationView(this.zxMemory);
+				this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
 				this.zxSimulationView.update();
 				// Ready for first command
 				resolve();

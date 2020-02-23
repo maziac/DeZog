@@ -208,7 +208,7 @@ export class LabelsClass {
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
 
-				// 17.2.2020: I disabled this check now. because of issue Debugging with source files is impossible when there are ORGs with non-increasing addresses, https://github.com/maziac/DeZog/issues/8.
+				// 17.2.2020: I disabled this check now because of issue "Debugging with source files is impossible when there are ORGs with non-increasing addresses", https://github.com/maziac/DeZog/issues/8.
 				// I can't remember what the use of this was. Could be that it was not for sjasmplus.
 				/*
 				if(address < prev) {

@@ -1,9 +1,10 @@
-//import * as assert from 'assert';
+import * as assert from 'assert';
 import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {ZxMemory} from './zxmemory';
 import {BaseView} from '../../views/baseview';
+import {ZxPorts} from './zxports';
 
 
 /**
@@ -23,15 +24,29 @@ export class ZxSimulationView extends BaseView {
 	// A pointer to the memory which holds the screen.
 	protected zxMemory: ZxMemory;
 
+	// A pointer to the ports for the keyboards.
+	protected zxPorts: ZxPorts;
+
 
 	/**
 	 * Creates the basic view.
 	 * @param memory The memory of the CPU.
 	 */
-	constructor(memory: ZxMemory) {
+	constructor(memory: ZxMemory, ports: ZxPorts) {
 		super(false);
 		// Init
 		this.zxMemory=memory;
+		this.zxPorts=ports;
+
+		// Set all ports
+		ports.setPortValue(0xFEFE, 0xFF);
+		ports.setPortValue(0xFDFE, 0xFF);
+		ports.setPortValue(0xFBFE, 0xFF);
+		ports.setPortValue(0xF7FE, 0xFF);
+		ports.setPortValue(0xEFFE, 0xFF);
+		ports.setPortValue(0xDFFE, 0xFF);
+		ports.setPortValue(0xBFFE, 0xFF);
+		ports.setPortValue(0x7FFE, 0xFF);
 
 		// create vscode panel view
 		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true});
@@ -47,7 +62,6 @@ export class ZxSimulationView extends BaseView {
 			console.log("webView command '"+message.command+"':", message);
 			this.webViewMessageReceived(message);
 		});
-
 
 		// Initial html page.
 		this.setHtml();
@@ -74,12 +88,172 @@ export class ZxSimulationView extends BaseView {
 
 	/**
 	 * The web view posted a message to this view.
-	 * @param message The message. message.command contains the command as a string.
-	 * This needs to be created inside the web view.
+	 * @param message The message. message.command contains the command as a string. E.g. 'keyChanged'
 	 */
 	protected webViewMessageReceived(message: any) {
 		switch (message.command) {
+			case 'keyChanged':
+				this.keyChanged(message.key, message.value);
+				break;
+			default:
+				assert(false);
 		}
+	}
+
+
+	/**
+	 * Called on key press or key release.
+	 * Sets/clears the corresponding port bits.
+	 * @param key E.g. "key_Digit2", "key_KeyQ", "key_Enter", "key_Space", "key_ShiftLeft" (CAPS) or "key_ShiftRight" (SYMBOL).
+	 * @param on true=pressed, false=released
+	 */
+	protected keyChanged(key: string, on: boolean) {
+		// Determine port
+		let port;
+		switch (key) {
+			case 'key_Digit1':
+			case 'key_Digit2':
+			case 'key_Digit3':
+			case 'key_Digit4':
+			case 'key_Digit5':
+				port=0xF7FE;
+				break;
+			case 'key_Digit6':
+			case 'key_Digit7':
+			case 'key_Digit8':
+			case 'key_Digit9':
+			case 'key_Digit0':
+				port=0xEFFE;
+				break;
+			case 'key_KeyQ':
+			case 'key_KeyW':
+			case 'key_KeyE':
+			case 'key_KeyR':
+			case 'key_KeyT':
+				port=0xFBFE;
+				break;
+			case 'key_KeyY':
+			case 'key_KeyU':
+			case 'key_KeyI':
+			case 'key_KeyO':
+			case 'key_KeyP':
+				port=0xDFFE;
+				break;
+			case 'key_KeyA':
+			case 'key_KeyS':
+			case 'key_KeyD':
+			case 'key_KeyF':
+			case 'key_KeyG':
+				port=0xFDFE;
+				break;
+			case 'key_KeyH':
+			case 'key_KeyJ':
+			case 'key_KeyK':
+			case 'key_KeyL':
+			case 'key_Enter':
+				port=0xBFFE;
+				break;
+			case 'key_ShiftLeft':	// CAPS
+			case 'key_KeyZ':
+			case 'key_KeyX':
+			case 'key_KeyC':
+			case 'key_KeyV':
+				port=0xFEFE;
+				break;
+			case 'key_KeyB':
+			case 'key_KeyN':
+			case 'key_KeyM':
+			case 'key_ShiftRight':	// SYMBOL
+			case 'key_Space':
+				port=0x7FFE;
+				break;
+			default:
+				assert(false);
+		}
+		assert(port);
+
+		// Determine bit
+		let bit;
+		switch (key) {
+			case 'key_ShiftLeft':	// CAPS
+			case 'key_KeyA':
+			case 'key_KeyQ':
+			case 'key_Digit1':
+			case 'key_Digit0':
+			case 'key_KeyP':
+			case 'key_Enter':
+			case 'key_Space':
+				bit=0b00001;
+				break;
+			case 'key_KeyZ':
+			case 'key_KeyS':
+			case 'key_KeyW':
+			case 'key_Digit2':
+			case 'key_Digit9':
+			case 'key_KeyO':
+			case 'key_KeyL':
+			case 'key_ShiftRight':	// SYMBOL
+				bit=0b00010;
+				break;
+			case 'key_KeyX':
+			case 'key_KeyD':
+			case 'key_KeyE':
+			case 'key_Digit3':
+			case 'key_Digit8':
+			case 'key_KeyI':
+			case 'key_KeyK':
+			case 'key_KeyM':
+				bit=0b00100;
+				break;
+			case 'key_KeyC':
+			case 'key_KeyF':
+			case 'key_KeyR':
+			case 'key_Digit4':
+			case 'key_Digit7':
+			case 'key_KeyU':
+			case 'key_KeyJ':
+			case 'key_KeyN':
+				bit=0b01000;
+				break;
+			case 'key_Keyv':
+			case 'key_KeyG':
+			case 'key_KeyT':
+			case 'key_Digit5':
+			case 'key_Digit6':
+			case 'key_KeyY':
+			case 'key_KeyH':
+			case 'key_KeyB':
+				bit=0b10000;
+				break;
+			default:
+				assert(false);
+		}
+		assert(bit);
+
+		// Get port value
+		let value=this.zxPorts.getPortValue(port);
+		if (on)
+			value&=~bit;
+		else
+			value|=bit;
+		// And set
+		this.zxPorts.setPortValue(port, value);
+	}
+
+
+	/**
+	 * Retrieves the screen memory content and returns it as base64 string.
+	 */
+	public createScreenString(): string {
+		let screenGifString='';
+		try {
+			// Create gif
+			const gif=this.zxMemory.getUlaScreen();
+			const buf=Buffer.from(gif);
+			screenGifString='data:image/gif;base64,'+buf.toString('base64');
+		}
+		catch {}
+		return screenGifString;
 	}
 
 
@@ -90,9 +264,7 @@ export class ZxSimulationView extends BaseView {
 	public update() {
 		try {
 			// Create gif
-			const gif=this.zxMemory.getUlaScreen();
-			const buf=Buffer.from(gif);
-			const screenGifString='data:image/gif;base64,'+buf.toString('base64');
+			const screenGifString=this.createScreenString();
 			// Create message
 			const message={
 				command: 'updateScreen',
@@ -108,6 +280,7 @@ export class ZxSimulationView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
+		const screenGifString=this.createScreenString();
 		const html=
 `<html>
 
@@ -159,13 +332,20 @@ color:black;
 
 	// Set cell to selected or unselected.
     function cellSelect(cell, on) {
-      cell.tag=on;
-      if(on) {
-        cell.className="td_on";
-      }
-      else {
-        cell.className="td_off";
-      }
+		cell.tag=on;
+		if(on) {
+		cell.className="td_on";
+		}
+		else {
+		cell.className="td_off";
+		}
+
+		// Send request to vscode
+		vscode.postMessage({
+			command: 'keyChanged',
+			value: on,
+			key: cell.id
+		});
     }
 
 
@@ -209,7 +389,7 @@ color:black;
 <body>
 
 <!-- Display the screen gif -->
-<img id="screen_img_id" width="100%"">
+<img id="screen_img_id" width="100%" src="${screenGifString}">
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
