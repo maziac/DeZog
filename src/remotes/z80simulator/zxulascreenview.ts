@@ -108,44 +108,181 @@ export class ZxSimulationView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
-		const keyboard='';
+		const html=
+`<html>
 
-		const html=`<!DOCTYPE html>
-		<html lang="en">
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Dump</title>
-		</head>
+<style>
+.td_on {border: 3px solid;
+margin:0em;
+padding:0em;
+text-align:center;
+border-color:black;
+background:red;
+width:70px;
+}
 
-		<script>
-		const vscode = acquireVsCodeApi();
+.td_off {border: 3px solid;
+margin:0em;
+padding:0em;
+text-align:center;
+border-color:black;
+width:70px;
+}
 
-		//---- Handle Messages from vscode extension --------
-		window.addEventListener('message', event => {
-			const message = event.data;
 
-            switch (message.command) {
-				case 'updateScreen':
-				{
-					screenString = message.value;
-					document.getElementById("screen_img_id").src=screenString;
-				}   break;
-           }
-        });
+.div_on {
+color:white;
+}
 
-		</script>
+.div_off {
+color:black;
+}
+</style>
 
-		<body style="font-family: Courier">
 
-		<!-- Display the screen gif -->
-		<img id="screen_img_id" width="100%"">
+  <script>
 
-		${keyboard}
+	const vscode = acquireVsCodeApi();
 
-		</body>
-		</html>`;
+	//---- Handle Messages from vscode extension --------
+	window.addEventListener('message', event => {
+		const message = event.data;
+
+		switch (message.command) {
+			case 'updateScreen':
+			{
+				screenImg.src = message.value;
+			}   break;
+		}
+	});
+
+
+	// Set cell to selected or unselected.
+    function cellSelect(cell, on) {
+      cell.tag=on;
+      if(on) {
+        cell.className="td_on";
+      }
+      else {
+        cell.className="td_off";
+      }
+    }
+
+
+    // Toggle the cell.
+    function cellClicked(cell) {
+      	//log.textContent += "clicked ";
+      	cell.tag=!cell.tag;
+      	cellSelect(cell, cell.tag);
+    }
+
+
+    // Find right cell for keycode.
+	function findCell(keyCode) {
+    	// Find correspondent cell
+        cell=document.getElementById("key_"+keyCode);
+     	return cell;
+    }
+
+
+	// Handle key down presses.
+	document.addEventListener('keydown', keydown);
+	function keydown(e) {
+       	// Find correspondent cell
+        cell=findCell(e.code);
+        cellSelect(cell, true);
+       	//log.textContent += e.code + ", ";
+    }
+
+
+	// Handle key up presses.
+	document.addEventListener('keyup', keyup);
+	function keyup(e) {
+    	// Find correspondent cell
+        cell=findCell(e.code);
+        cellSelect(cell, false);
+    }
+
+
+  </script>
+
+<body>
+
+<!-- Display the screen gif -->
+<img id="screen_img_id" width="100%"">
+<script>
+	<!-- Store the screen image source -->
+	var screenImg=document.getElementById("screen_img_id");
+</script>
+
+<!-- Keyboard -->
+<table style="width:100%">
+
+  <tr>
+    <td id="key_Digit1" class="td_off" onClick="cellClicked(this)">1</td>
+    <td id="key_Digit2" class="td_off" onClick="cellClicked(this)">2</td>
+    <td id="key_Digit3" class="td_off" onClick="cellClicked(this)">3</td>
+    <td id="key_Digit4" class="td_off" onClick="cellClicked(this)">4</td>
+    <td id="key_Digit5" class="td_off" onClick="cellClicked(this)">5</td>
+    <td id="key_Digit6" class="td_off" onClick="cellClicked(this)">6</td>
+    <td id="key_Digit7" class="td_off" onClick="cellClicked(this)">7</td>
+    <td id="key_Digit8" class="td_off" onClick="cellClicked(this)">8</td>
+    <td id="key_Digit9" class="td_off" onClick="cellClicked(this)">9</td>
+    <td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
+  </tr>
+
+
+  <tr>
+    <td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
+    <td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
+    <td id="key_KeyE" class="td_off" onClick="cellClicked(this)">E</td>
+    <td id="key_KeyR" class="td_off" onClick="cellClicked(this)">R</td>
+    <td id="key_KeyT" class="td_off" onClick="cellClicked(this)">T</td>
+    <td id="key_KeyY" class="td_off" onClick="cellClicked(this)">Y</td>
+    <td id="key_KeyU" class="td_off" onClick="cellClicked(this)">U</td>
+    <td id="key_KeyI" class="td_off" onClick="cellClicked(this)">I</td>
+    <td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
+    <td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
+  </tr>
+
+
+  <tr>
+    <td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
+    <td id="key_KeyS" class="td_off" onClick="cellClicked(this)">S</td>
+    <td id="key_KeyD" class="td_off" onClick="cellClicked(this)">D</td>
+    <td id="key_KeyF" class="td_off" onClick="cellClicked(this)">F</td>
+    <td id="key_KeyG" class="td_off" onClick="cellClicked(this)">G</td>
+    <td id="key_KeyH" class="td_off" onClick="cellClicked(this)">H</td>
+    <td id="key_KeyJ" class="td_off" onClick="cellClicked(this)">J</td>
+    <td id="key_KeyK" class="td_off" onClick="cellClicked(this)">K</td>
+    <td id="key_KeyL" class="td_off" onClick="cellClicked(this)">L</td>
+    <td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
+  </tr>
+
+
+  <tr>
+    <td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
+    <td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
+    <td id="key_KeyX" class="td_off" onClick="cellClicked(this)">X</td>
+    <td id="key_KeyC" class="td_off" onClick="cellClicked(this)">C</td>
+    <td id="key_KeyV" class="td_off" onClick="cellClicked(this)">V</td>
+    <td id="key_KeyB" class="td_off" onClick="cellClicked(this)">B</td>
+    <td id="key_KeyN" class="td_off" onClick="cellClicked(this)">N</td>
+    <td id="key_KeyM" class="td_off" onClick="cellClicked(this)">M</td>
+    <td id="key_ShiftRight" class="td_off" onClick="cellClicked(this)">SYMB. S.</td>
+    <td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
+  </tr>
+
+
+</table>
+
+<p id="log"></p>
+
+</body>
+</html>
+`;
 
 		this.vscodePanel.webview.html=html;
 	}
 }
+
