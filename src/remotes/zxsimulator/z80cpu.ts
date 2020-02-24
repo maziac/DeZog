@@ -3,6 +3,22 @@ import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 
 
+const signed8=(val) => {
+	if (val<128)
+		return val;
+	else
+		return val-256;
+}
+
+/*
+Z80js.Z80.prototype.$0=function () {
+	this.tStates+=5
+	let offset=signed8(this.read8(this.pc++))
+	this.write8(this.$2+offset, this.r1.$1)
+}
+*/
+
+
 export class Z80Cpu extends Z80js {
 
 	// Easier access to 'this'
@@ -34,7 +50,7 @@ export class Z80Cpu extends Z80js {
 		const tstatesPrev=self.tStates;
 		self.deferInt=false;
 
-		// Workaround error: https://github.com/viert/z80js/issues/2
+		// Workaround for error: https://github.com/viert/z80js/issues/2
 		const opcode2=self.read16(self.pc);
 
 		super.execute();
@@ -99,4 +115,94 @@ export class Z80Cpu extends Z80js {
 		//console.log(logstring);
 	}
 
+
+	/**
+	 * ld__[ix,iy]_d__[a,b,c,d,e,h,l]
+	 * Workaround for error:  "ld (ix+0),l not working", https://github.com/viert/z80js/issues/3
+	 */
+	protected ld__ix_d__a() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.a);
+	}
+	protected ld__ix_d__b() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.b);
+	}
+	protected ld__ix_d__c() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.c);
+	}
+	protected ld__ix_d__d() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.d);
+	}
+	protected ld__ix_d__e() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.e);
+	}
+	protected ld__ix_d__h() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.h);
+	}
+	protected ld__ix_d__l() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.ix+offset, self.r1.l);
+	}
+
+	protected ld__iy_d__a() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.a);
+	}
+	protected ld__iy_d__b() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.b);
+	}
+	protected ld__iy_d__c() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.c);
+	}
+	protected ld__iy_d__d() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.d);
+	}
+	protected ld__iy_d__e() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.e);
+	}
+	protected ld__iy_d__h() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.h);
+	}
+	protected ld__iy_d__l() {
+		const self=this as any;
+		self.tStates+=5;
+		let offset=signed8(self.read8(self.pc++));
+		self.write8(self.r1.iy+offset, self.r1.l);
+	}
 }
