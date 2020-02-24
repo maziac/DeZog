@@ -778,6 +778,20 @@ export class Utility {
 		f();
 	}
 
+
+	/**
+	 * Helper method to set a WORD from two successing indices in the
+	 * given buffer. (Little endian)
+	 * @param buffer The buffer to use.
+	 * @param index The index into the buffer.
+	 * @param value buffer[index] = value&0xFF; buffer[index+1] = value>>8;
+	 */
+	public static setWord(buffer: Buffer, index: number, value: number) {
+		buffer[index]=value&0xFF;
+		buffer[index+1]=value>>8;
+	}
+
+
 	/**
 	 * Helper method to return a WORD from two successing indices in the
 	 * given buffer. (Little endian)

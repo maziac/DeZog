@@ -23,9 +23,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected zxPorts: ZxPorts;
 	protected zxSimulationView: ZxSimulationView;
 
-	// A map with breakpoint ID as key and breakpoint address/condition as value.
-	//protected breakpointsMap: Map<number, GenericBreakpoint>;
-
 
 	// The last used breakpoint ID.
 	protected lastBpId: number;
@@ -47,7 +44,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 		this.cpuRunning=false;
-		//this.breakpointsMap=new Map<number, GenericBreakpoint>();
 		this.lastBpId=0;
 	}
 

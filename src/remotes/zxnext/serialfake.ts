@@ -131,115 +131,6 @@ export class SerialFake {
 
 
 	/**
-	 * Helper method to set a WORD from two successing indices in the
-	 * given buffer. (Little endian)
-	 * @param buffer The buffer to use.
-	 * @param index The index into the buffer.
-	 * @param value buffer[index] = value&0xFF; buffer[index+1] = value>>8;
-	 */
-	protected setWord(buffer: Buffer, index: number, value: number) {
-		buffer[index]=value&0xFF;
-		buffer[index+1]=value>>8;
-	}
-
-
-	/**
-	 * Helper method to return a WORD from two successing indices in the
-	 * given buffer. (Little endian)
-	 * @param buffer The buffer to use.
-	 * @param index The index into the buffer.
-	 * @return buffer[index] + (buffer[index+1]<<8)
-	 */
-	protected getWord(buffer: Buffer, index: number): number {
-		const value=buffer[index]+(buffer[index+1]<<8);
-		return value;
-	}
-
-
-	/**
-	 * Gets a specific register value.
-	 * @param reg E.g. Z80_REG.PC or Z80_REG.A
-	 * @return The value of the register.
-	 */
-	/*
-	protected getRegister(reg: Z80_REG) {
-		// Set register in z80 cpu
-		switch (reg) {
-			case Z80_REG.PC:
-				return this.z80Cpu.pc;
-			case Z80_REG.SP:
-				return this.z80Cpu.sp;
-			case Z80_REG.AF:
-				return this.z80Cpu.r1.af;
-			case Z80_REG.BC:
-				return this.z80Cpu.r1.bc;
-			case Z80_REG.DE:
-				return this.z80Cpu.r1.de;
-			case Z80_REG.HL:
-				return this.z80Cpu.r1.hl;
-			case Z80_REG.IX:
-				return this.z80Cpu.r1.ix;
-			case Z80_REG.IY:
-				return this.z80Cpu.r1.iy;
-			case Z80_REG.AF2:
-				return this.z80Cpu.r2.af;
-			case Z80_REG.BC2:
-				return this.z80Cpu.r2.bc;
-			case Z80_REG.DE2:
-				return this.z80Cpu.r2.de;
-			case Z80_REG.HL2:
-				return this.z80Cpu.r2.hl;
-
-			case Z80_REG.F:
-				return this.z80Cpu.r1.f;
-			case Z80_REG.A:
-				return this.z80Cpu.r1.a;
-			case Z80_REG.C:
-				return this.z80Cpu.r1.c;
-			case Z80_REG.B:
-				return this.z80Cpu.r1.b;
-			case Z80_REG.E:
-				return this.z80Cpu.r1.e;
-			case Z80_REG.D:
-				return this.z80Cpu.r1.d;
-			case Z80_REG.L:
-				return this.z80Cpu.r1.l;
-			case Z80_REG.H:
-				return this.z80Cpu.r1.h;
-			case Z80_REG.IXL:
-				return this.z80Cpu.r1.ixl;
-			case Z80_REG.IXH:
-				return this.z80Cpu.r1.ixh;
-			case Z80_REG.IYL:
-				return this.z80Cpu.r1.iyl;
-			case Z80_REG.IYH:
-				return this.z80Cpu.r1.iyh;
-
-			case Z80_REG.F2:
-				return this.z80Cpu.r2.f;
-			case Z80_REG.A2:
-				return this.z80Cpu.r2.a;
-			case Z80_REG.C2:
-				return this.z80Cpu.r2.c;
-			case Z80_REG.B2:
-				return this.z80Cpu.r2.b;
-			case Z80_REG.E2:
-				return this.z80Cpu.r2.e;
-			case Z80_REG.D2:
-				return this.z80Cpu.r2.d;
-			case Z80_REG.L2:
-				return this.z80Cpu.r2.l;
-			case Z80_REG.H2:
-				return this.z80Cpu.r2.h;
-			case Z80_REG.R:
-				return this.z80Cpu.r;
-			case Z80_REG.I:
-				return this.z80Cpu.i;
-		}
-	}
-*/
-
-	/**
 	 * Returns all registers from the CPU in an array.
 	 */
 	protected getRegValues(): number[] {
@@ -542,8 +433,8 @@ export class SerialFake {
 			case DZRP.CMD_READ_MEM:
 				{
 					// Get address and size
-					const addr=this.getWord(data, 3);
-					const size=this.getWord(data, 5);
+					const addr=Utility.getWord(data, 3);
+					const size=Utility.getWord(data, 5);
 					// Return memory data
 					const mem=this.zxMemory.readBlock(addr, size);
 					// Respond
@@ -553,7 +444,7 @@ export class SerialFake {
 			case DZRP.CMD_WRITE_MEM:
 				{
 					// Get address
-					const addr=this.getWord(data, 3);
+					const addr=Utility.getWord(data, 3);
 					//const size=length-5;
 					// Set memory data
 					const mem: Uint8Array=data.slice(5);
