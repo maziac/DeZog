@@ -816,7 +816,7 @@ export class Utility {
 		const len=data.length;
 		for (let i=startIndex; i<len; i++) {
 			const char=data[i];
-			if (i==0)
+			if (char==0)
 				break;
 			result+=String.fromCharCode(char);
 		}

@@ -1,13 +1,13 @@
 //import * as assert from 'assert';
 import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
-import {FakeSerial} from './serialfake';
+import {SerialFake} from './serialfake';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 
 
 // If enabled a faked serial connection will be used (for debugging/testing purposes):
-let fakeSerial=true;
+let FakeSerial;
 
 
 
@@ -28,7 +28,8 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization() {
 		// Do Fake Serial Port
-		if (fakeSerial) {
+		FakeSerial=new SerialFake();
+		if (FakeSerial) {
 			try {
 				await FakeSerial.doInitialization();
 			}
@@ -92,8 +93,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	public async disconnect(): Promise<void> {
 		return new Promise<void>(resolve => {
 			this.serialPort.close(async () => {
-				if (fakeSerial)
-					await FakeSerial.close();
+				await FakeSerial?.close();
 				resolve();
 			});
 		});
@@ -110,8 +110,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	public async terminate(): Promise<void> {
 		return new Promise<void>(resolve => {
 			this.serialPort.close(async () => {
-				if (fakeSerial)
-					await FakeSerial.close();
+				await FakeSerial?.close();
 				this.emit('terminated');
 				resolve();
 			});

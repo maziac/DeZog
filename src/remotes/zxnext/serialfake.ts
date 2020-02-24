@@ -1,15 +1,10 @@
 //import * as assert from 'assert';
-//import {Z80Registers} from '../z80registers';
 import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
-import {Z80_REG} from '../z80registers';
-import {ZxMemory} from '../zxsimulator/zxmemory';
-import {ZxPorts} from '../zxsimulator/zxports';
-import {Z80Cpu} from '../zxsimulator/z80cpu';
 import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
 import {GenericBreakpoint} from '../remoteclass';
-//import {Utility} from '../../utility';
+import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 
 
 
@@ -20,7 +15,7 @@ import {GenericBreakpoint} from '../remoteclass';
  * and connect RX with TX and TX with RX. I.e. loop the output of one to
  * the input of the other.
  */
-export class SerialFake {
+export class SerialFake extends ZxSimulatorRemote {
 
 	// The serial port. https://serialport.io/docs/guide-usage
 	public serialPort;
@@ -28,33 +23,14 @@ export class SerialFake {
 	// The read parser for the serial port.
 	public parser;
 
-	// For emulation of the CPU.
-	protected z80Cpu: any;	// Z80Cpu
-	protected zxMemory: ZxMemory;
-	protected zxPorts: ZxPorts;
-	protected zxSimulationView: ZxSimulationView;
-
 	// A map with breakpoint ID as key and breakpoint address/condition as value.
 	protected breakpointsMap: Map<number, GenericBreakpoint>;
 
-	// A temporary array with the set breakpoints.
-	protected tmpBreakpoints: Array<string>;
-
-	// The last used breakpoint ID.
-	protected lastBpId: number;
-
-	// Set to true as long as the CPU is running.
-	protected cpuRunning: boolean;
 
 	/// Constructor.
 	constructor() {
-		// Create a Z80 CPU to emulate Z80 behaviour
-		this.zxMemory=new ZxMemory();
-		this.zxPorts=new ZxPorts();
-		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
-		this.cpuRunning=false;
+		super();
 		this.breakpointsMap=new Map<number, GenericBreakpoint>();
-		this.lastBpId=0;
 	}
 
 
@@ -91,10 +67,10 @@ export class SerialFake {
 			// React on-open
 			this.serialPort.on('open', async () => {
 				console.log('Open SerialFake');
-				// Ready for first command
-				resolve();
 				// Open the ZX screen simulation view
 				this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
+				// Ready for first command
+				resolve();
 			});
 
 			this.serialPort.on('close', async () => {
@@ -169,186 +145,6 @@ export class SerialFake {
 
 
 	/**
-	 * Sets a specific register value.
-	 * @param reg E.g. Z80_REG.PC or Z80_REG.A
-	 * @param value The value to set.
-	 */
-	protected setRegValue(reg: Z80_REG, value: number) {
-		// Set register in z80 cpu
-		switch (reg) {
-			case Z80_REG.PC:
-				this.z80Cpu.pc=value;
-				break;
-			case Z80_REG.SP:
-				this.z80Cpu.sp=value;
-				break;
-			case Z80_REG.AF:
-				this.z80Cpu.r1.af=value;
-				break;
-			case Z80_REG.BC:
-				this.z80Cpu.r1.bc=value;
-				break;
-			case Z80_REG.DE:
-				this.z80Cpu.r1.de=value;
-				break;
-			case Z80_REG.HL:
-				this.z80Cpu.r1.hl=value;
-				break;
-			case Z80_REG.IX:
-				this.z80Cpu.r1.ix=value;
-				break;
-			case Z80_REG.IY:
-				this.z80Cpu.r1.iy=value;
-				break;
-			case Z80_REG.AF2:
-				this.z80Cpu.r2.af=value;
-				break;
-			case Z80_REG.BC2:
-				this.z80Cpu.r2.bc=value;
-				break;
-			case Z80_REG.DE2:
-				this.z80Cpu.r2.de=value;
-				break;
-			case Z80_REG.HL2:
-				this.z80Cpu.r2.hl=value;
-				break;
-
-			case Z80_REG.F:
-				this.z80Cpu.r1.f=value;
-				break;
-			case Z80_REG.A:
-				this.z80Cpu.r1.a=value;
-				break;
-			case Z80_REG.C:
-				this.z80Cpu.r1.c=value;
-				break;
-			case Z80_REG.B:
-				this.z80Cpu.r1.b=value;
-				break;
-			case Z80_REG.E:
-				this.z80Cpu.r1.e=value;
-				break;
-			case Z80_REG.D:
-				this.z80Cpu.r1.d=value;
-				break;
-			case Z80_REG.L:
-				this.z80Cpu.r1.l=value;
-				break;
-			case Z80_REG.H:
-				this.z80Cpu.r1.h=value;
-				break;
-			case Z80_REG.IXL:
-				this.z80Cpu.r1.ixl=value;
-				break;
-			case Z80_REG.IXH:
-				this.z80Cpu.r1.ixh=value;
-				break;
-			case Z80_REG.IYL:
-				this.z80Cpu.r1.iyl=value;
-				break;
-			case Z80_REG.IYH:
-				this.z80Cpu.r1.iyh=value;
-				break;
-
-			case Z80_REG.F2:
-				this.z80Cpu.r2.f=value;
-				break;
-			case Z80_REG.A2:
-				this.z80Cpu.r2.a=value;
-				break;
-			case Z80_REG.C2:
-				this.z80Cpu.r2.c=value;
-				break;
-			case Z80_REG.B2:
-				this.z80Cpu.r2.b=value;
-				break;
-			case Z80_REG.E2:
-				this.z80Cpu.r2.e=value;
-				break;
-			case Z80_REG.D2:
-				this.z80Cpu.r2.d=value;
-				break;
-			case Z80_REG.L2:
-				this.z80Cpu.r2.l=value;
-				break;
-			case Z80_REG.H2:
-				this.z80Cpu.r2.h=value;
-				break;
-			case Z80_REG.R:
-				this.z80Cpu.r=value;
-				break;
-			case Z80_REG.I:
-				this.z80Cpu.i=value;
-				break;
-		}
-	}
-
-
-	/**
-	 * Runs the cpu in time chunks in order to give tiem to other
-	 * processes. E.g. to receive a pause command.
-	 * @param bp1 Breakpoint 1 address or -1 if not used.
-	 * @param bp2 Breakpoint 2 address or -1 if not used.
-	 */
-	protected z80CpuContinue(bp1: number, bp2: number) {
-//		Utility.timeDiff();
-		// Run the Z80-CPU in a loop
-		let breakReason=0;
-		let counter=100000;
-		let error_string='';
-		for (; counter>0; counter--) {
-			try {
-				this.z80Cpu.execute();
-			}
-			catch (errorText) {
-				error_string="Z80CPU Error: "+errorText;
-				console.log(error_string);
-				breakReason=255;
-				break;
-			};
-			// Check if any real breakpoint is hit
-			// Note: Because of step-out this needs to be done before the other check.
-			const pc=this.z80Cpu.pc;
-			const bpHit=(this.tmpBreakpoints[pc]!=undefined);
-			if (bpHit) {
-				breakReason=2;
-				break;
-			}
-			// Check if stopped from outside
-			if (!this.cpuRunning) {
-				breakReason=1;	// Manual break
-				break;
-			}
-			// Check if breakpoints are hit
-			if (pc==bp1||pc==bp2)
-				break;
-		}
-//		const time=Utility.timeDiff();
-//		console.log("Time="+time+" ms");
-
-		// Update the screen
-		this.zxSimulationView.update();
-
-		// Check if stopped or just the counter elapsed
-		if (counter==0) {
-			// Restart
-			setTimeout(() => {
-				this.z80CpuContinue(bp1, bp2);
-			}, 10);
-		}
-		else {
-			// Otherwise stop
-			this.cpuRunning=false;
-
-			// Send Notification
-			const ntfSeqNo=this.parser.getNextSeqNo();
-			const strArr=error_string.split('').map(char => char.codePointAt(0) as number);
-			this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakReason, 0, 0, ...strArr]);
-		}
-	}
-
-
-	/**
 	 * A DZRP command has been received and the response is sent.
 	 */
 	protected receivedMsg(data: Buffer) {
@@ -398,6 +194,21 @@ export class SerialFake {
 					const pcBps=Array.from(this.breakpointsMap.values());
 					this.tmpBreakpoints=new Array<string>(0x10000);
 					pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.conditions||'');
+					// Function called after a break
+					this.continueResolve=({breakReason, tStates, cpuFreq}) => {
+						// Reconstruct breakReasonNumber from text
+						let breakReasonNumber=255;
+						switch (breakReason) {
+							case undefined: breakReasonNumber=0; breakReason=''; break;
+							case "Manual break": breakReasonNumber=1; breakReason=''; break;
+							case "Breakpoint hit": breakReasonNumber=2; breakReason=''; break;
+						}
+						// Send Notification
+						const ntfSeqNo=this.parser.getNextSeqNo();
+						const breakBuffer=Utility.getBufferFromString(breakReason);
+						this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakReasonNumber, 0, 0, ...breakBuffer]);
+						this.continueResolve=undefined;
+					};
 					// Run the Z80-CPU in a loop
 					this.cpuRunning=true;
 					this.z80CpuContinue(bp1, bp2);
@@ -426,7 +237,7 @@ export class SerialFake {
 					// Get breakpoint ID
 					const bpId=Utility.getWord(data, 2);
 					// Remove it
-					this.removeBreakpoint(bpId);
+					this.breakpointsMap.delete(bpId);
 					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
 				}
 				break;
@@ -533,18 +344,5 @@ export class SerialFake {
 		this.breakpointsMap.set(this.lastBpId, gbp);
 		return this.lastBpId;
 	}
-
-
-	/**
-	 * Removes a breakpoint.
-	 * @param bpId The breakpoint ID to delete.
-	 */
-	protected removeBreakpoint(bpId: number) {
-		this.breakpointsMap.delete(bpId);
-	}
 }
-
-
-// Comment this if SerialFake should not be started.
-export var FakeSerial = new SerialFake();
 

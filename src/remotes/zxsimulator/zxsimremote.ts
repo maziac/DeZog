@@ -269,10 +269,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			if (!breakReason) {
 				switch (breakReasonNumber) {
 					case 1:
-						breakReason="Manual break"
+						breakReason="Manual break";
 						break;
 					case 2:
-						breakReason="Breakpoint hit"
+						breakReason="Breakpoint hit";
 						break;
 				}
 			}
