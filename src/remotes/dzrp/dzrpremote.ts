@@ -352,7 +352,7 @@ export class DzrpRemote extends RemoteClass {
 		}
 
 		// Set breakpoint
-		const bpId=await this.sendDzrpCmdAddBreakpoint(bp.address);
+		const bpId=await this.sendDzrpCmdAddBreakpoint(bp.address, bp.condition);
 
 		// Add to list
 		bp.bpId=bpId;
@@ -545,10 +545,12 @@ export class DzrpRemote extends RemoteClass {
 	 * Override.
 	 * Sends the command to add a breakpoint.
 	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
+	 * @param condition The breakpoint condition as string. If there is n condition
+	 * 'condition' may be undefined or an empty string ''.
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
 		assert(false);
 		return 0;
 	}

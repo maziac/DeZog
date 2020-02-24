@@ -221,6 +221,7 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x07  | CMD_ADD_BREAKPOINT |
 | 6     | 2    | 0-65535 | Breakpoint address |
+| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
 
 
 Response:

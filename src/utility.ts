@@ -792,6 +792,39 @@ export class Utility {
 
 
 	/**
+	 * Returns a string (0-terminated) from the buffer.
+	 * @param data The buffer.
+	 * @param startIndex String conversion starts here (and ends at the next found 0.
+	 */
+	public static getStringFromBuffer(data: Buffer, startIndex: number): string {
+		// Get string
+		let result='';
+		const len=data.length;
+		for (let i=startIndex; i<len; i++) {
+			const char=data[i];
+			if (i==0)
+				break;
+			result+=String.fromCharCode(char);
+		}
+		return result;
+	}
+
+
+	/**
+	 * Returns a Buffer from a string. The buffer is 0-terminated.
+	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
+	 * @returns A Buffer (0-terminated)
+	 */
+	public static getBufferFromString(text: string|undefined): Buffer {
+		if (text==undefined)
+			text='';
+		const zeroText=text+String.fromCharCode(0);
+		const buf=Buffer.from(zeroText, 'ascii');
+		return buf;
+	}
+
+
+	/**
 	 * Returns the time since the last call to this method.
 	 * If you want to measure the time some algorithm takes
 	 * simply surround the algorithm by 2 calls of 'timeDiff'.

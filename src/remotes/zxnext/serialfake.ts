@@ -8,6 +8,7 @@ import {ZxPorts} from '../zxsimulator/zxports';
 import {Z80Cpu} from '../zxsimulator/z80cpu';
 import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
+import {GenericBreakpoint} from '../remoteclass';
 //import {Utility} from '../../utility';
 
 
@@ -33,11 +34,11 @@ export class SerialFake {
 	protected zxPorts: ZxPorts;
 	protected zxSimulationView: ZxSimulationView;
 
-	// A map with breakpoint ID as key and breakpoint address as value.
-	protected breakpointsMap: Map<number, number>;
+	// A map with breakpoint ID as key and breakpoint address/condition as value.
+	protected breakpointsMap: Map<number, GenericBreakpoint>;
 
 	// A temporary array with the set breakpoints.
-	protected breakpoints: Array<number>;
+	protected tmpBreakpoints: Array<string>;
 
 	// The last used breakpoint ID.
 	protected lastBpId: number;
@@ -52,7 +53,7 @@ export class SerialFake {
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 		this.cpuRunning=false;
-		this.breakpointsMap=new Map<number, number>();
+		this.breakpointsMap=new Map<number, GenericBreakpoint>();
 		this.lastBpId=0;
 	}
 
@@ -418,7 +419,7 @@ export class SerialFake {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			const bpHit=this.breakpoints.includes(pc);
+			const bpHit=this.tmpBreakpoints.includes(pc);
 			if (bpHit) {
 				breakReason=2;
 				break;
@@ -504,7 +505,9 @@ export class SerialFake {
 					this.sendDzrpResp(seqno);
 
 					// Set the breakpoints array
-					this.breakpoints=Array.from(this.breakpointsMap.values());
+					const pcBps=Array.from(this.breakpointsMap.values());
+					this.tmpBreakpoints=new Array<string>(0x10000);
+					pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.conditions||'');
 					// Run the Z80-CPU in a loop
 					this.cpuRunning=true;
 					this.z80CpuContinue(bp1, bp2);
@@ -522,7 +525,8 @@ export class SerialFake {
 				{
 					// Create a new breakpoint
 					const bpAddress=Utility.getWord(data, 2);
-					const bpId=this.createNewBreakpoint(bpAddress);
+					const bpCondition=Utility.getStringFromBuffer(data, 4);
+					const bpId=this.createNewBreakpoint(bpAddress, bpCondition);
 					// Respond
 					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
 				}
@@ -633,9 +637,10 @@ export class SerialFake {
 	 * @param bpAddress The address to use for the breakpoint.
 	 * @returns The new breakpoint ID.
 	 */
-	protected createNewBreakpoint(bpAddress: number): number {
+	protected createNewBreakpoint(bpAddress: number, condition: string): number {
+		const gbp: GenericBreakpoint={address: bpAddress, conditions: condition, log: undefined};
 		this.lastBpId++;
-		this.breakpointsMap.set(this.lastBpId, bpAddress);
+		this.breakpointsMap.set(this.lastBpId, gbp);
 		return this.lastBpId;
 	}
 

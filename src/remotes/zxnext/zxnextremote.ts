@@ -195,13 +195,7 @@ export class ZxNextRemote extends DzrpRemote {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
 				// Get reason string
-				let breakReason='';
-				for (let i=6; i<data.length; i++) {
-					const char=data[i];
-					if (i==0)
-						break;
-					breakReason+=String.fromCharCode(char);
-				}
+				let breakReason=Utility.getStringFromBuffer(data, 6);
 				if (breakReason.length==0)
 					breakReason=undefined as any;
 				// If no error text ...
@@ -339,11 +333,15 @@ export class ZxNextRemote extends DzrpRemote {
 	/**
 	 * Sends the command to add a breakpoint.
 	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
+	 * @param condition The breakpoint condition as string. If there is n condition
+	 * 'condition' may be undefined or an empty string ''.
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number): Promise<number> {
-		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>8]);
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
+		// Convert condition string to Buffer
+		const condBuf=Utility.getBufferFromString(condition);
+		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>8, ...condBuf]);
 		const bpId=Utility.getWord(data, 0);
 		return bpId;
 	}

@@ -7,6 +7,7 @@ import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
+import {GenericBreakpoint} from '../remoteclass';
 
 
 
@@ -24,8 +25,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected zxPorts: ZxPorts;
 	protected zxSimulationView: ZxSimulationView;
 
-	// A map with breakpoint ID as key and breakpoint address as value.
-	protected breakpointsMap: Map<number, number>;
+	// A map with breakpoint ID as key and breakpoint address/condition as value.
+	protected breakpointsMap: Map<number, GenericBreakpoint>;
 
 
 	// The last used breakpoint ID.
@@ -33,6 +34,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// Set to true as long as the CPU is running.
 	protected cpuRunning: boolean;
+
+	// A temporary array with the set breakpoints and conditions.
+	// Undefined=no breakpoint is set.
+	// At the moment conditions are not supported. A BP is an empty string ''
+	protected tmpBreakpoints: Array<string>;
+
 
 	/// Constructor.
 	constructor() {
@@ -42,7 +49,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 		this.cpuRunning=false;
-		this.breakpointsMap=new Map<number, number>();
+		this.breakpointsMap=new Map<number, GenericBreakpoint>();
 		this.lastBpId=0;
 	}
 
@@ -258,7 +265,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			const bpHit=this.breakpoints.includes(pc);
+			const bpHit=(this.tmpBreakpoints[pc]!=undefined);
 			if (bpHit) {
 				breakReasonNumber=2;
 				break;
@@ -307,6 +314,28 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	}
 
 
+	/**
+	 * Creates a new breakpoint.
+	 * @param bpAddress The address to use for the breakpoint.
+	 * @returns The new breakpoint ID.
+	 */
+	protected createNewBreakpoint(bpAddress: number, condition: string): number {
+		const gbp: GenericBreakpoint={address: bpAddress, conditions: condition, log: undefined};
+		this.lastBpId++;
+		this.breakpointsMap.set(this.lastBpId, gbp);
+		return this.lastBpId;
+	}
+
+
+	/**
+	 * Removes a breakpoint.
+	 * @param bpId The breakpoint ID to delete.
+	 */
+	protected removeBreakpoint(bpId: number) {
+		this.breakpointsMap.delete(bpId);
+	}
+
+
 	//------- Send Commands -------
 
 	/**
@@ -348,8 +377,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
 		// Set the breakpoints array
-
-		this.breakpoints=Array.from(this.breakpointsMap.values());
+		const pcBps=Array.from(this.breakpointsMap.values());
+		this.tmpBreakpoints=new Array<string>(0x10000);
+		pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.conditions||'');
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.z80CpuContinue(bp1Address, bp2Address);
@@ -360,19 +390,21 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Sends the command to pause a running program.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
+		// If running then pause
+		this.cpuRunning=false;
 	}
 
 
 	/**
 	 * Sends the command to add a breakpoint.
 	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
+	 * @param condition The breakpoint condition as string. If there is n condition
+	 * 'condition' may be undefined or an empty string ''.
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number): Promise<number> {
-		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>8]);
-		const bpId=Utility.getWord(data, 0);
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
+		const bpId=this.createNewBreakpoint(bpAddress, condition);
 		return bpId;
 	}
 
@@ -382,7 +414,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId]);
+		this.removeBreakpoint(bpId);
 	}
 
 
