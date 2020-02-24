@@ -161,7 +161,23 @@ export class RemoteBase extends EventEmitter {
 
 
 	/// Initializes the machine.
+	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
+	/// Don't override this, override 'doInitialization' instead.
+	/// Take care to implement the emits otherwise the system will hang on a start.
 	public init() {
+		// Call custom initialization
+		this.doInitialization();
+	}
+
+
+	/// Do initialization.
+	/// E.g. create a socket or allocate memory.
+	/// This is called when the Remote is started by the debugger. I.e. at the start
+	/// of a debugging session..
+	/// When ready do a this.emit('initialized') or this.emit('error', exception);
+	/// Take care to implement the emits otherwise the system will hang on a start.
+	/// Please override.
+	public doInitialization() {
 	}
 
 
@@ -1138,7 +1154,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with an array with the available memory pages.
 	 */
 	public async getMemoryPages(): Promise<MemoryPage[]> {
-		assert(false);	// override this
 		return [];
 	}
 
@@ -1169,7 +1184,6 @@ export class RemoteBase extends EventEmitter {
 	 * Returns true if in reverse debugging mode.
 	 */
 	protected isInStepBackMode(): boolean {
-		assert(false);
 		return false;
 	}
 
@@ -1182,7 +1196,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A promise with the value of the register.
 	 */
 	public async getTbblueRegister(registerNr: number): Promise<number> {
-		assert(false);	// override this
 		return 0;
 	}
 
@@ -1193,7 +1206,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
 	 */
 	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
-		assert(false);	// override this
 		return [];
 	}
 
@@ -1203,7 +1215,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
 	 */
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
-		assert(false);	// override this
 		return {xl: 0, xr: 0, yt: 0, yb: 0};
 	}
 
@@ -1215,7 +1226,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with an array of sprite data.
 	 */
 	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
-		assert(false);	// override this
 		return [];
 	}
 
@@ -1226,7 +1236,6 @@ export class RemoteBase extends EventEmitter {
 	 * @preturns A Promise with an array of sprite pattern data.
 	 */
 	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
-		assert(false);	// override this
 		return [];
 	}
 
@@ -1260,7 +1269,6 @@ export class RemoteBase extends EventEmitter {
 	  * @returns State data.
 	 */
 	public async stateSave(): Promise<StateZ80> {
-		assert(false);
 		return null as any;
 	}
 
@@ -1272,7 +1280,6 @@ export class RemoteBase extends EventEmitter {
 	 * @param state Pointer to the data to restore.
 	 */
 	public async stateRestore(state: StateZ80): Promise<void> {
-		assert(false);
 	}
 
 

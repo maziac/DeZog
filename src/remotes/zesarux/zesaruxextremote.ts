@@ -1,6 +1,6 @@
 
 //import * as assert from 'assert';
-import { RemoteBreakpoint } from '../remoteclass';
+import { RemoteBreakpoint } from '../remotebase';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { ZesaruxRemote } from './zesaruxremote';
 import { zSocket } from './zesaruxsocket';

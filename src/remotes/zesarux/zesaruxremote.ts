@@ -5,7 +5,7 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteClass, MachineType, RemoteBreakpoint, MemoryPage } from '../remoteclass';
+import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
 import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
@@ -33,7 +33,7 @@ class Zesarux {
  * It receives the requests from the DebugAdapter and communicates with
  * the ZesaruxSocket.
  */
-export class ZesaruxRemote extends RemoteClass {
+export class ZesaruxRemote extends RemoteBase {
 
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;

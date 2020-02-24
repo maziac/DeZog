@@ -28,7 +28,7 @@ export class Z80Cpu extends Z80js {
 	protected remaingInterruptTstates: number;
 
 	// Time for interrupt in T-States
-	protected INTERRUPT_TIME=0.02*3500000.0;  // 20MS * 3.5 MHz
+	protected INTERRUPT_TIME=0.02*3500000.0;  // 20ms * 3.5 MHz
 
 
 	/// Constructor.

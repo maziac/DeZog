@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
-import { RemoteBreakpoint } from './remotes/remoteclass';
+import { RemoteBreakpoint } from './remotes/remotebase';
 import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels';
 import { Settings } from './settings';

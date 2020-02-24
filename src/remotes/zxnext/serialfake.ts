@@ -3,7 +3,7 @@ import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
 import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
-import {GenericBreakpoint} from '../remoteclass';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 
 

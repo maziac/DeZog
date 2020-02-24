@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { CallSerializer } from './callserializer';
 import { Labels } from './labels';
 import { Log, LogSocket } from './log';
-import { RemoteBreakpoint, MachineType } from './remotes/remoteclass';
+import { RemoteBreakpoint, MachineType } from './remotes/remotebase';
 import { MemoryDumpView } from './views/memorydumpview';
 import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
@@ -151,8 +151,8 @@ export class DebugSessionClass extends DebugSession {
 		let found=false;
 		while (remote=Object.getPrototypeOf(remote)) {
 			const className=remote.constructor.name;
-			if (className=="RemoteClass")
-				break;	// Stop at RemoteClass
+			if (className=="RemoteBase")
+				break;	// Stop at RemoteBase
 			const methodNames=Object.getOwnPropertyNames(remote);
 			found=(methodNames.indexOf(name)>=0);
 			if (found) break;

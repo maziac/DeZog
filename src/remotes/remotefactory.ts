@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
-import { RemoteClass } from './remoteclass';
+import { RemoteBase } from './remotebase';
 import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
 import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
 
@@ -40,11 +40,11 @@ export class RemoteFactory {
 	/**
 	 * Sets the emulator variable.
 	 */
-	protected static setEmulator(emulator: RemoteClass) {
+	protected static setEmulator(emulator: RemoteBase) {
 		Remote = emulator;
 	}
 
 }
 
 
-export var Remote: RemoteClass;
+export var Remote: RemoteBase;

@@ -27,6 +27,7 @@ A typical configuration looks like this:
             "type": "dezog",
             "request": "launch",
             "name": "DeZog",
+            "remoteType": "zxsim",
             "zhostname": "localhost",
             "zport": 10000,
             "listFiles": [
@@ -67,8 +68,12 @@ A typical configuration looks like this:
 
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
-- zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
-- zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+- remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal ZX simulator or real ZX NExt HW connected via serial interface (Note: the serial interface is currently under evelopment).
+    - "zxsim": Use the internal simulator. See [Internal Simulator](#internal-simulator).
+    - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
+    - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
+- zhostname: The host's name. Only required for "remoteType": "zrcp".
+- zport: The port. Required for "remoteType": "zrcp".
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -94,8 +99,7 @@ In your launch.json:
 
 Note: instead of a label you can also use a fixed number.
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
-Note 1: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set. This can be useful to e.g. debug dot commands, i.e. programs that are started on the ZX Next command line.
-Note 2: If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
+Note: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files.
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
@@ -109,6 +113,7 @@ Big values are typically addresses. Here you can give the boundary between these
 	- registerPointerColors: An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear. E.g. ["HL", "darkgreen", "DE", "darkcyan", "BC", "darkgray" ]
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
 - unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
+
 
 
 ### Listfile
@@ -246,42 +251,79 @@ DeZog supports most of them but with some restrictions:
 - sjasmplus: labels inside macros are not supported.
 
 
-### Usage
+## Remote Types
 
-Before you start DeZog in vscode make sure that you have started ZEsarUX.
-In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
+With DeZog you have the option to use different remotes.
+They are distinguished via teh "remoteType":
+- "zxsim"
+- "zrcp"
+- "serial"
+
+### What is a 'Remote'?
+
+A Remote is normally an external emulator that is running independently of DeZog.
+ZesarUX e.g is such a Remote.
+It is connected via some interface (for ZEsarUX this is a socket) and a protocol (for ZEsarUX ZRCP - ZEsarUX Remote Communication Protocol).
+
+But a Remote could also be real HW. E.g. real ZX Next hardware.
+The ZX Next can be connected via a serial interface to the PC.
+Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbserial (macOS).
+
+
+### ZX Simulator
+
+This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever. i.e. 'zhostname' and 'zport' are not used.
+
+The remote type 'zxsim' a very simple Z80/ZX Spectrum simulator.
+
+It allows to test simple programs like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+It supports:
+- ZX Spectrum screen
+- The ports of the keys
+- The memory banks (including ZX Next)
+- Loading of .sna and .nex files
+
+It specificly does not support:
+- ZX Next instructions or registers/HW
+- Loading of .tap/.tzx files
+
+Performance:
+- Don't expect accurate timings.
+The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
+- Simulation speed, of course, depends on your PC but don't expect it to run at the normal speed of a ZX Spectrum. You can expect something about 10x slower.
+
+One thing to mention that can be an advantage during development:
+
+Emulators (like ZEsarUX) normally try to accurately emulate the exact behaviour.
+The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the raybeam has passed the position on the screen. I.e. you normally donT see directly what's happenign on the screen.
+The simulator on the other hand immediately displays any changeto the screen while stepping.
+
+
+
+### ZEsarUX
+
+The remote type is "zrcp".
+ZEsarUX needs to run before the debug session starts and needs to be connected via a socket interface (ZRCP).
+You need to enable the ZRCP in ZEsarUX. In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
-Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode.
+- zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
+- zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+
+
+Notes:
+- If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
+- Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode.
 Sometimes it works but sometimes ZEsarUX will not connect.
 You might get an error like "ZEsarUX did not communicate!" in vscode.
-
-Now start DeZog by pressing the green arrow in the debug pane (make sure that you chose the right debugger, i.e. "Z80 Debug").
-
-DeZog will now
-
-- open the socket connection to ZEsarUX
-- instruct ZEsarUX to load the nex, snapshot file or tap file
-- set breakpoints (if there are breakpoints set in vscode)
-- put ZEsarUX into step mode ('enter-cpu-step') and stop/break the just started assembler program
-
-DeZog/vscode will now display the opcode of the current PC (program counter) in the right position in your .asm file.
-At the left side you see the disassembly and the registers in the VARIABLES section and the
-call stack in the CALL STACK section.
-
-You can now try the following:
-
-- hover over registers in your source code -> should display the value of the register
-- step-over, step-in etc.
-- click in the call stack -> will navigate you directly to the file
-- set breakpoints, press continue to run to the breakpoints
-
-If that is not enough you also have full access to the ZEsarUX zrcp through vscode's debug console.
+- If the DeZog functionality is not sufficient for you, you also have have full access to the ZEsarUX ZRCP through vscode's debug console.
 Enter "-help" in the debug console to see all available commands.
 Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 
-#### Useful ZEsarUX command-line options.
+
+
+### Useful ZEsarUX command-line options.
 
 To ease the usage of ZEsarUX and the Z80 Debug Adapter you can use several ZEsarUX command line options.
 I have collected a few that I found useful:
@@ -306,6 +348,42 @@ I have collected a few that I found useful:
 # Rename back to .mmc (optional).
 ./zesarux --machine tbblue --sna-no-change-machine --enable-mmc --enable-divmmc-ports --mmc-file "<your-mmc-image>"  --enable-remoteprotocol &
 ```
+
+
+### Serial Interface
+
+The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
+In order to communicate with the ZX Next special SW needs to run on the Next.
+
+Note: This does not work currently.
+
+
+
+## Usage
+
+If you use any Remote other than the internal Simulator please make sure that it is started before you start the debug session with DeZog.
+
+Now start DeZog by pressing the green arrow in the debug pane.
+
+DeZog will now
+
+- connect to the remote (e.g. open the socket connection to ZEsarUX)
+- instruct the Remote (e.g. ZEsarUX) to load the nex, snapshot file or tap file
+- set breakpoints (if there are breakpoints set in vscode)
+- stop/break the just started assembler program
+
+DeZog/vscode will now display the current PC (program counter) with a yellow arrow in the left side of your .asm file.
+Left to that you see the VARIABLES section and the
+call stack in the CALL STACK section.
+
+You can now try the following:
+
+- hover over registers in your source code -> should display the value of the register
+- step-over, step-in etc.
+- click in the call stack -> will navigate you directly to the file
+- set breakpoints, press continue to run to the breakpoints
+
+
 
 
 ### Reverse Debugging

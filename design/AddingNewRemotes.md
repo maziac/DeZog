@@ -7,7 +7,7 @@ This document will describe but needs to be done (implemented) in order to suppo
 
 A Remote is normally an external emulator that is running independently of DeZog.
 ZesarUX e.g is such a Remote.
-It is conencteed via some interface (for ZEsarUX this is a socket) and a protocol (for ZEsarUX ZRCP - ZEsarUX Remote Communication Protocol).
+It is connected via some interface (for ZEsarUX this is a socket) and a protocol (for ZEsarUX ZRCP - ZEsarUX Remote Communication Protocol).
 
 But a Remote could also be real HW. E.g. real ZX Next hardware.
 The ZX Next can be connected via a serial interface to the PC.
@@ -16,10 +16,10 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 
 # Required Classes
 
-To add a new Remote it need to derive from the RemoteClass.
-The RemoteClass defines an API that is used by DeZog to communicate with the real Remote.
-RemoteClass includes all methods that you might or must override.
-All must overrides include an 'assert' in the RemoteClass.
+To add a new Remote it need to derive from the RemoteBase.
+The RemoteBase defines an API that is used by DeZog to communicate with the real Remote.
+RemoteBase includes all methods that you might or must override.
+All must overrides include an 'assert' in the RemoteBase.
 The other are simply empty.
 If you decide to override some of the non-assert methods you can offer additional functionality.
 The debug adapter will check by itself which of the functions have been overwritten.
@@ -106,14 +106,13 @@ This example shows how the ZX Next Remote has been implemented.
                                                         ┌─────────────────────────────┐
                                                         │            Dezog            │
                                                         │        DebugAdapter         │
-                                                        │                             │
                                                         └─────────────────────────────┘
                                                                        △
                                                                        │
                                                                        │
                                                            ┌──────────────────────┐
                                                            │                      │
-                                                           │RemoteBase/RemoteClass│
+                                                           │      RemoteBase      │
                                                            │                      │
                                                            └──────────────────────┘
                                                                        △
@@ -125,50 +124,50 @@ This example shows how the ZX Next Remote has been implemented.
          ┌──────▶│   ZesaruxRemote    │                             │                    │                                │            │
          │       │                    │                             └────────────────────┘                           ┌─────────┐  ┌─────────┐
          ▼       └────────────────────┘                                        △                                     │ NexFile │  │ SnaFile │
-┌─────────────────┐         ▲                             ┌────────────────────┴────────────────────────┐            └─────────┘  └─────────┘
-│ZesaruxRegisters │         │                             │                                             │
-└─────────────────┘         ▼                  ┌────────────────────┐                        ┌────────────────────┐
-                    ┌───────────────┐          │                    │                        │                    │
-                    │ ZesaruxSocket │          │ Z80SimulatorRemote │                        │    ZXNextRemote    │◆─────────────────────┐
-                    └───────────────┘          │                    │                        │                    │                      │
-                            ▲                  └────────────────────┘                        └────────────────────┘                ┌──────────┐
-                            │                             ◆                                             △                          │DzrpParser│
-                            ▼                             │                                ┌────────────┴─────────────────┐        └──────────┘
-                    ┌──────────────┐               ┌─────────────┐                         │                              │
-                    │    socket    │               │   Z80Cpu    │              ┌─────────────────────┐        ┌────────────────────┐
-                    └──────────────┘               └─────────────┘              │                     │        │                    │
-                                                          ◆                     │ZXNextUsbSerialRemote│        │ ZXNextSocketRemote │
-                                                 ┌────────┴──────┐              │                     │        │                    │
-                                                 │               │              └─────────────────────┘        └────────────────────┘
-                                           ┌──────────┐    ┌──────────┐                    ◆                              ▲
-                                           │ ZxMemory │    │ ZxPorts  │                    │                              │
-                                           └──────────┘    └──────────┘            ┌──────────────┐                       ▼
-                                                                                   │  SerialPort  │               ┌──────────────┐
-                                                                                   └──────────────┘               │    socket    │
-                                                                                           ▲                      └──────────────┘
-
-                                                                                           │
-                                                                                             HW Serial
-                                                                                           │ Connection
-
-                                                                                           ▼
-                                                                                   ┌──────────────┐
-                                                                                   │  /dev/tty2   │
-                                                                                   └──────────────┘
-                                                                                           ▲
-                                                                                           │
-                                                                                           ▼
-                                                                                ┌─────────────────────┐
-                                                                                │                     │
-                                                                                │     FakeSerial      │
-                                                                                │                     │
-                                                                                └─────────────────────┘
+┌─────────────────┐         ▲                               ┌──────────────────┴────────────────────────┐            └─────────┘  └─────────┘
+│ZesaruxRegisters │         │                               │                                           │
+└─────────────────┘         ▼                  ┌─────────────────────────┐                   ┌────────────────────┐
+                    ┌───────────────┐          │                         │                   │                    │
+                    │ ZesaruxSocket │          │   Z80SimulatorRemote    │                   │    ZXNextRemote    │◆─────────────────────┐
+                    └───────────────┘          │                         │                   │                    │                      │
+                            ▲                  └─────────────────────────┘                   └────────────────────┘                ┌──────────┐
+                            │                             ◆          △                                  △                          │DzrpParser│
+                            ▼                             │          │                     ┌────────────┴─────────────────┐        └──────────┘
+                    ┌──────────────┐               ┌─────────────┐   │                     │                              │
+                    │    socket    │               │   Z80Cpu    │   └─────┐    ┌─────────────────────┐        ┌────────────────────┐
+                    └──────────────┘               └─────────────┘         │    │                     │        │                    │
+                                                          ◆                │    │ZXNextUsbSerialRemote│        │ ZXNextSocketRemote │
+                                                 ┌────────┴──────┐         │    │                     │        │                    │
+                                                 │               │         │    └─────────────────────┘        └────────────────────┘
+                                           ┌──────────┐    ┌──────────┐    │               ◆                              ▲
+                                           │ ZxMemory │    │ ZxPorts  │    │               │                              │
+                                           └──────────┘    └──────────┘    │       ┌──────────────┐                       ▼
+                                                                           │       │  SerialPort  │               ┌──────────────┐
+                                                                           │       └──────────────┘               │    socket    │
+                                                                           │               ▲                      └──────────────┘
+                                                                           │
+                                                                           │               │
+                                                                           │                 HW Serial
+                                                                           │               │ Connection
+                                                                           │
+                                                                           │               ▼
+                                                                           │       ┌──────────────┐
+                                                                           │       │  /dev/tty2   │
+                                                                           │       └──────────────┘
+                                                                           │               ▲
+                                                                           │               │
+                                                                           │               ▼
+                                                                      ┌────────────────────────────────────────┐
+                                                                      │                                        │
+                                                                      │               FakeSerial               │
+                                                                      │                                        │
+                                                                      └────────────────────────────────────────┘
                                                                                            ◆
                                                                                            │
                                                                                     ┌─────────────┐
                                                                                     │   Z80Cpu    │
                                                                                     └─────────────┘
-~~~
+                                                                                    ~~~
 
 
 ## "Hello World"
@@ -176,7 +175,7 @@ This example shows how the ZX Next Remote has been implemented.
 This is the absolute minimum implementation for a new Remote so that DeZog at least starts up.
 
 ~~~ts
-export class MyFirstRemote extends RemoteClass {
+export class MyFirstRemote extends RemoteBase {
   constructor() {
     super();
     this.z80Registers=new Z80Registers();

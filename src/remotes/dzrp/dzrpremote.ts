@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import {RemoteClass, RemoteBreakpoint, GenericBreakpoint, GenericWatchpoint} from '../remoteclass';
+import {RemoteBase, RemoteBreakpoint} from '../remotebase';
+import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
@@ -13,7 +14,7 @@ import * as path from 'path';
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.
  */
-export class DzrpRemote extends RemoteClass {
+export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
 	protected continueResolve?: ({breakReason, tStates, cpuFreq}) => void;
