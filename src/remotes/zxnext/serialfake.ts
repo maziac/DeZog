@@ -91,11 +91,10 @@ export class SerialFake {
 			// React on-open
 			this.serialPort.on('open', async () => {
 				console.log('Open SerialFake');
-				// Open the ZX screen simulation view
-				this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
-				this.zxSimulationView.update();
 				// Ready for first command
 				resolve();
+				// Open the ZX screen simulation view
+				this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
 			});
 
 			this.serialPort.on('close', async () => {
@@ -419,7 +418,7 @@ export class SerialFake {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			const bpHit=this.tmpBreakpoints.includes(pc);
+			const bpHit=(this.tmpBreakpoints[pc]!=undefined);
 			if (bpHit) {
 				breakReason=2;
 				break;

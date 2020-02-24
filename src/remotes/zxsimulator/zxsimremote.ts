@@ -1,9 +1,11 @@
+import * as assert from 'assert';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80_REG} from '../z80registers';
+import {Z80_REG, Z80Registers} from '../z80registers';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
+import {Settings} from '../../settings';
 
 
 
@@ -56,6 +58,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization() {
+		// Simulator capabilities
+		this.supportsZxNextRegisters=false;
+		// Load sna or nex file
+		const loadPath=Settings.launch.load;
+		if (loadPath)
+			await this.loadBin(loadPath);
+		// Ready
+		this.emit('initialized')
+		// Open the ZX screen simulation view
+		this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
 	}
 
 
@@ -67,6 +79,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		this.zxSimulationView?.close();
+		this.zxSimulationView=undefined as any;
 	}
 
 
@@ -79,44 +93,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * will also be terminated.
 	 */
 	public async terminate(): Promise<void> {
-	}
-
-
-	/**
-	 * Returns all registers from the CPU in an array.
-	 */
-	protected getRegValues(): number[] {
-		const regs=[
-			this.z80Cpu.pc&0xFF,
-			this.z80Cpu.pc>>8,
-			this.z80Cpu.sp&0xFF,
-			this.z80Cpu.sp>>8,
-
-			this.z80Cpu.r1.f,
-			this.z80Cpu.r1.a,
-			this.z80Cpu.r1.c,
-			this.z80Cpu.r1.b,
-			this.z80Cpu.r1.e,
-			this.z80Cpu.r1.d,
-			this.z80Cpu.r1.l,
-			this.z80Cpu.r1.h,
-			this.z80Cpu.r1.ixl,
-			this.z80Cpu.r1.ixh,
-			this.z80Cpu.r1.iyl,
-			this.z80Cpu.r1.iyh,
-
-			this.z80Cpu.r2.f,
-			this.z80Cpu.r2.a,
-			this.z80Cpu.r2.c,
-			this.z80Cpu.r2.b,
-			this.z80Cpu.r2.e,
-			this.z80Cpu.r2.d,
-			this.z80Cpu.r2.l,
-			this.z80Cpu.r2.h,
-			this.z80Cpu.r,
-			this.z80Cpu.i,
-		];
-		return regs;
+		this.zxSimulationView?.close();
+		this.zxSimulationView=undefined as any;
 	}
 
 
@@ -261,7 +239,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			const bpHit=(this.tmpBreakpoints[pc]!=undefined);
+			const bpHit=(this.tmpBreakpoints[pc]!=undefined);	 // TODO: Check also the condition.
 			if (bpHit) {
 				breakReasonNumber=2;
 				break;
@@ -313,10 +291,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	//------- Send Commands -------
 
 	/**
-	 * Sends the command to get the configuration.
-	 * @returns The configuration, e.g. '{xNextRegs: true}'
+	 * Not used.
 	 */
 	protected async sendDzrpCmdGetconfig(): Promise<{zxNextRegs: boolean}> {
+		assert(false);	// Not used
 		return {zxNextRegs: false};
 	}
 
@@ -327,8 +305,17 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * 'Z80Registers.getRegisterData'.
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
-		const regBuf=this.getRegValues();
-		return new Uint16Array(regBuf);
+		const cpu=this.z80Cpu;
+		const r1=cpu.r1;
+		const r2=cpu.r2;
+		// Convert regs
+		const regData=Z80Registers.getRegisterData(
+			cpu.pc, cpu.sp,
+			r1.af, r1.bc, r1.de, r1.hl,
+			r1.ix, r1.iy,
+			r2.af, r2.bc, r2.de, r2.hl,
+			cpu.i, cpu.r);
+		return new Uint16Array(regData);
 	}
 
 
