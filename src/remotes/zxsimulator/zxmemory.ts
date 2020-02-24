@@ -79,14 +79,14 @@ export class ZxMemory {
 
 	/**
 	 * Reads a block of bytes.
-	 * @param start Start address.
+	 * @param startAddress Start address.
 	 * @param size The size of the block.
 	 */
-	public readBlock(start: number, size: number): Uint8Array {
+	public readBlock(startAddress: number, size: number): Uint8Array {
 		const totalBlock=new Uint8Array(size);
 		let offset=0;
 		// The block may span several banks.
-		let addr=start;
+		let addr=startAddress;
 		while (size>0) {
 			// Get memory bank
 			const [bankAddr, bankMem]=this.getBankForAddr(addr);
@@ -109,13 +109,15 @@ export class ZxMemory {
 
 	/**
 	 * Writes a block of bytes.
-	 * @param start Start address.
+	 * @param startAddress Start address.
 	 * @param totalBlock The block to write.
 	 */
-	public writeBlock(start: number, totalBlock: Uint8Array) {
+	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
+		if (!(totalBlock instanceof Uint8Array))
+			totalBlock=new Uint8Array(totalBlock);
 		let offset=0;
 		// The block may span several banks.
-		let addr=start;
+		let addr=startAddress;
 		let size=totalBlock.length;
 		while (size>0) {
 			// Get memory bank
@@ -143,8 +145,10 @@ export class ZxMemory {
 	 * @param bank The bank number.
 	 * @param block The block to write.
 	 */
-	public writeBank(bank: number, block: Uint8Array) {
+	public writeBank(bank: number, block: Buffer|Uint8Array) {
 		assert(block.length==ZxMemory.MEMORY_BANK_SIZE);
+		if (!(block instanceof Uint8Array))
+			block=new Uint8Array(block);
 		const memBank=this.banks[bank];
 		memBank.set(block);
 	}

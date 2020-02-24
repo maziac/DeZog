@@ -1,7 +1,9 @@
 # Changelog
 
 # 0.12.1
-
+- Added simulator remoteType: 'zxsim'.
+- Changed remoteType 'zxnext' to 'serial'.
+- Ssimulation of ZX Spectrum keys.
 
 # 0.12.0
 - Changed remoteType 'zesarux' to 'zrcp'.

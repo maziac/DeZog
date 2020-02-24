@@ -1,13 +1,9 @@
-import * as assert from 'assert';
-import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80Registers, Z80_REG} from '../z80registers';
-import {Utility} from '../../utility';
+import {Z80_REG} from '../z80registers';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
-import {GenericBreakpoint} from '../remoteclass';
 
 
 
@@ -26,7 +22,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected zxSimulationView: ZxSimulationView;
 
 	// A map with breakpoint ID as key and breakpoint address/condition as value.
-	protected breakpointsMap: Map<number, GenericBreakpoint>;
+	//protected breakpointsMap: Map<number, GenericBreakpoint>;
 
 
 	// The last used breakpoint ID.
@@ -49,7 +45,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 		this.cpuRunning=false;
-		this.breakpointsMap=new Map<number, GenericBreakpoint>();
+		//this.breakpointsMap=new Map<number, GenericBreakpoint>();
 		this.lastBpId=0;
 	}
 
@@ -314,28 +310,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	}
 
 
-	/**
-	 * Creates a new breakpoint.
-	 * @param bpAddress The address to use for the breakpoint.
-	 * @returns The new breakpoint ID.
-	 */
-	protected createNewBreakpoint(bpAddress: number, condition: string): number {
-		const gbp: GenericBreakpoint={address: bpAddress, conditions: condition, log: undefined};
-		this.lastBpId++;
-		this.breakpointsMap.set(this.lastBpId, gbp);
-		return this.lastBpId;
-	}
-
-
-	/**
-	 * Removes a breakpoint.
-	 * @param bpId The breakpoint ID to delete.
-	 */
-	protected removeBreakpoint(bpId: number) {
-		this.breakpointsMap.delete(bpId);
-	}
-
-
 	//------- Send Commands -------
 
 	/**
@@ -377,9 +351,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
 		// Set the breakpoints array
-		const pcBps=Array.from(this.breakpointsMap.values());
+		const pcBps=Array.from(this.breakpoints.values());
 		this.tmpBreakpoints=new Array<string>(0x10000);
-		pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.conditions||'');
+		pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.condition||'');
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.z80CpuContinue(bp1Address, bp2Address);
@@ -404,8 +378,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * no breakpoint is available anymore.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
-		const bpId=this.createNewBreakpoint(bpAddress, condition);
-		return bpId;
+		this.lastBpId++;
+		this.cpuRunning=false;	// Break if running
+		return this.lastBpId;
 	}
 
 
@@ -414,7 +389,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		this.removeBreakpoint(bpId);
+		// Does nothing.
+		this.cpuRunning=false;	// Break if running
 	}
 
 
@@ -425,12 +401,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @returns A promise with an Uint8Array.
 	 */
 	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		// Send command to get memory dump
-		const data=await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
-			address&0xFF, address>>8,
-			size&0xFF, size>>8]);
-		// Create UInt8array
-		const buffer=new Uint8Array(data);
+		const buffer = this.zxMemory.readBlock(address, size);
 		return buffer;
 	}
 
@@ -441,10 +412,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		const data=Buffer.from(dataArray);
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_MEM, [0,
-			address&0xFF, address>>8,
-			...data]);
+		this.zxMemory.writeBlock(address, dataArray);
 	}
 
 
@@ -454,7 +422,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array) {
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
+		this.zxMemory.writeBank(bank, dataArray);
 	}
 
 }
