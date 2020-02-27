@@ -98,7 +98,7 @@ Other features could be:
 - Supports extended call stack
 
 
-# CMD_READ_REGS
+## CMD_READ_REGS
 
 Command:
 | Index | Size | Value |Description |
@@ -128,7 +128,7 @@ Response:
 | 30    | 1    | R    |   |
 
 
-# CMD_WRITE_REG
+## CMD_WRITE_REG
 
 Command:
 | Index | Size | Value |Description |
@@ -147,7 +147,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-# CMD_WRITE_BANK
+## CMD_WRITE_BANK
 
 Command:
 | Index | Size | Value |Description |
@@ -168,7 +168,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-# CMD_CONTINUE
+## CMD_CONTINUE
 
 Command:
 | Index | Size | Value |Description |
@@ -195,7 +195,7 @@ Notes:
 - When the continue command finishes, e.g. because one of the 2 breakpoints (or any other breakpoint) was hit, the breakpoints are automatically removed.
 
 
-# CMD_PAUSE
+## CMD_PAUSE
 
 Command:
 | Index | Size | Value |Description |
@@ -212,7 +212,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-# CMD_ADD_BREAKPOINT
+## CMD_ADD_BREAKPOINT
 
 Command:
 | Index | Size | Value |Description |
@@ -233,7 +233,7 @@ Response:
 
 
 
-# CMD_REMOVE_BREAKPOINT
+## CMD_REMOVE_BREAKPOINT
 
 Command:
 | Index | Size | Value |Description |
@@ -251,30 +251,55 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-# NTF_PAUSE
+<!--
+## CMD_ADD_WATCHPOINT
 
-Notification:
+Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 6     | Length     |
-| 4     | 1    | 0     | Instead of Seq No. |
-| 5     | 1    | 1-255 | Notification seq no |
-| 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 255 = some other error, the error string might have useful information for the user |
-| 8     | 2    | 0-65535 | Additional info: E.g. breakpoint number |
-| 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
-If error string is empty it will contain at least a 0. |
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x09  | CMD_ADD_WATCHPOINT |
+| 6     | 2    | 0-65535 | Breakpoint address |
+| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
 
 
-# CMD_READ_MEM
+## CMD_REMOVE_WATCHPOINT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x0A  | CMD_REMOVE_WATCHPOINT |
+| 6     | 2    | 1-65535 | Breakpoint ID |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+-->
+
+
+## CMD_READ_MEM
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 8     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x09  | CMD_READ_MEM |
+| 5     | 1    | 0x0B  | CMD_READ_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 2    | n     | Size of the memory block |
@@ -290,14 +315,14 @@ Response:
 | 5+n-1 | 1    | addr[n-1] | Last byte of memory block |
 
 
-# CMD_WRITE_MEM
+## CMD_WRITE_MEM
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0A  | CMD_WRITE_MEM |
+| 5     | 1    | 0x0C  | CMD_WRITE_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 1    | addr[0] | First byte of memory block |
@@ -313,4 +338,18 @@ Response:
 
 
 # Notifications
+
+## NTF_PAUSE
+
+Notification:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 6     | Length     |
+| 4     | 1    | 0     | Instead of Seq No. |
+| 5     | 1    | 1-255 | Notification seq no |
+| 6     | 1    | 1     | NTF_PAUSE  |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 255 = some other error, the error string might have useful information for the user |
+| 8     | 2    | 0/1-65535 | Breakpoint ID or 0 if no breakpoint hit |
+| 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
+If error string is empty it will contain at least a 0. |
 

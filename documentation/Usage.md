@@ -69,7 +69,7 @@ A typical configuration looks like this:
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal ZX simulator or real ZX NExt HW connected via serial interface (Note: the serial interface is currently under evelopment).
-    - "zxsim": Use the internal simulator. See [Internal Simulator](#internal-simulator).
+    - "zxsim": Use the internal simulator. See [Internal ZX Simulator](#internal-zx-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - zhostname: The host's name. Only required for "remoteType": "zrcp".
@@ -254,10 +254,11 @@ DeZog supports most of them but with some restrictions:
 ## Remote Types
 
 With DeZog you have the option to use different remotes.
-They are distinguished via teh "remoteType":
-- "zxsim"
-- "zrcp"
-- "serial"
+They are distinguished via the "remoteType":
+- "zxsim": Internal ZX Simulator
+- "zrcp": ZEsarUx (or ZesaruxExt)
+- "serial": ZX Next connected via serial.
+
 
 ### What is a 'Remote'?
 
@@ -270,13 +271,44 @@ The ZX Next can be connected via a serial interface to the PC.
 Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbserial (macOS).
 
 
-### ZX Simulator
+### Remote capabilities
+
+The different Remotes have different capabilities in conjunction with DeZog.
+The following table gives an overview.
+
+|                      | Internal Zx Simulator | ZEsarUX | ZesaruxExt | ZX Next | CSpect |
+|-------------------------|--------------------|---------|------------|---------|--------|
+| State                   | experimental       | stable  | stable     | started | planned |
+| Breakpoints             | yes                | yes     | fast       | yes1    | yes1   |
+| Conditional Breakpoints | yes1               | yes     | fast       | slow    | slow   |
+| Watchpoints             | fast1              | yes     | fast       | -       | -      |
+| Asserts                 | fast1              | -       | fast       | slow    | slow   |
+| Logpoints               | fast1              | -       | fast       | slow    | slow   |
+| Extended callstack      | yes1               | yes     | yes        | -       | -      |
+| Code coverage           | yes1               | yes     | yes        | -       | -      |
+| Full reverse debugging  | yes1               | yes     | yes        | -       | -      |
+| Lite reverse debugging  | -                  | -       | -          | yes1    | yes1   |
+| ZX Next capable         | -                  | yes     | yes        | yes1    | yes1   |
+| Comments                | About 10x slower   |         | Breakpoints are faster than in ZEsarUX |         |
+
+Notes:
+- State:
+    - stable: Works reliable
+    - experimental: Should work, but not very well tested
+    - started: Development has started but is not ready, i.e. not usable.
+    - planned: Development has not yet started.
+- ZesaruxExt, ZX Next and CSpect are not available at the moment.
+- yes1/fast1: means: not yet
+
+
+### Internal ZX Simulator
 
 This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever. i.e. 'zhostname' and 'zport' are not used.
 
 The remote type 'zxsim' a very simple Z80/ZX Spectrum simulator.
 
 It allows to test simple programs like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+
 It supports:
 - ZX Spectrum screen
 - The ports of the keys
@@ -286,6 +318,8 @@ It supports:
 It specificly does not support:
 - ZX Next instructions or registers/HW
 - Loading of .tap/.tzx files
+- Audio
+
 
 Performance:
 - Don't expect accurate timings.
@@ -295,10 +329,13 @@ The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
 One thing to mention that can be an advantage during development:
 
 Emulators (like ZEsarUX) normally try to accurately emulate the exact behaviour.
-The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the raybeam has passed the position on the screen. I.e. you normally donT see directly what's happenign on the screen.
-The simulator on the other hand immediately displays any changeto the screen while stepping.
+The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the raybeam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
+The simulator on the other hand immediately displays any change to the screen while stepping.
 
-
+Example launch.json configuration:
+~~~
+    "remoteType": "zxsim"
+~~~
 
 ### ZEsarUX
 
@@ -310,6 +347,12 @@ or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 - zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
 - zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 
+Example launch.json configuration:
+~~~
+    "remoteType": "zrcp",
+    "zhostname": "localhost",
+    "zport": 10000,
+~~~
 
 Notes:
 - If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
@@ -357,7 +400,11 @@ In order to communicate with the ZX Next special SW needs to run on the Next.
 
 Note: This does not work currently.
 
-
+Example launch.json configuration:
+~~~
+    "remoteType": "serial",
+    ???
+~~~
 
 ## Usage
 
@@ -531,7 +578,7 @@ scratch_area:
 ~~~
 In this example it is assumed that your algorithm uses the 'scratch_area' to write some data. You defined that this area is 10 bytes in size. Thus if someone would write after
 these 10 bytes it would mean that the algorithm is wrong.
-Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and teh program will break if this happens.
+Please note that we waste 1 byte (defb 1) for this safety check. This byte is not to be used by any pointer in our program. So writing/reading to it is a failure and the program will break if this happens.
 
 Another useful scenario is to secure the stack for over- or underrun:
 

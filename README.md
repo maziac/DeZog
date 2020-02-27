@@ -2,15 +2,14 @@
 
 ![](documentation/images/main.gif)
 
-**Note: you need to install at least ZEsarUX version 8.0**
+**Note: you need to install at least ZEsarUX version 8.1**
 
-DeZog lets you use Visual Studio Code (vscode) as IDE for ZEsarUX (ZX Spectrum emulator).
-With this extension it is possible to debug assembler programs built for the ZX Spectrum.
+DeZog lets you use Visual Studio Code (vscode) as development environment for debugging your Z80 assembler programs.
 It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
-(It may also be used without source code to debug binaries but in that case the support is very limited and you could probably better directly debug with ZEsarUX.)
-The biggest help it offers is that you are able to step through your sources and that  DeZog is aware of all labels and can give hints to what label a number resolves.
+(It may also be used without source code to debug binaries but in that case the support is limited and you could probably better directly debug with ZEsarUX.)
+The biggest help it offers is that you are able to step through your sources and that DeZog is aware of all labels and can give hints to what label a number resolves.
 
-DeZog connects to ZEsarUX via a socket connection. ZEsarUX offers quite a few commands accessible via socket according to the so-called zrcp (ZEsarUX Remote Control Protocol). See [ZEsarUX](https://github.com/chernandezba/zesarux) for more information.
+DeZog needs a Remote to  execute the Z80 binaries. You can either use the buil-in Z80/ZX simulator or connect to ZEsarUX via a socket connection for more advanced projects.
 
 Note: DeZog does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
 
@@ -36,9 +35,11 @@ Note: DeZog does not include any support for building from assembler sources. Fo
 
 
 
+
 ## Features
 
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.0)
+- can be used with the internal simulator (instead of e.g. ZEsarUX)
 - reads .list files
 	- supports stepping through source code
 	- either in .list file or in .asm files
@@ -70,11 +71,19 @@ Note: DeZog does not include any support for building from assembler sources. Fo
 
 ## Constraints
 
-- supports only ZEsarUX emulator
+- supports only ZEsarUX emulator and internal simulator at the moment
 - build output must
 	- create a .list file (support for sjasmplus, Savannah's z80asm, z88dk).
 	- _alternatively you can use other list files with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
-	- create a .sna file containing the binary
+	- create a .sna, .nex or .tap file containing the binary
+
+
+# Roadmap
+
+Next to implement:
+- Serial interface: Allows remote debugging via a serial connection on a real ZX Spectrum Next with breakpoints etc.
+- CSpect interfacing: Allows debugging with the CSpect emulator.
+- ZesarusExt: Make ZesarusExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 
 
 ## Installation
@@ -83,7 +92,8 @@ Note: DeZog does not include any support for building from assembler sources. Fo
 
 In order to use DeZog you need
 - vscode (of course)
-- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.0 is required.
+- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required
+- or the internal Z80/ZX simulator
 
 
 ### DeZog
