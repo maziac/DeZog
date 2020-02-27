@@ -548,8 +548,8 @@ export class Z80UnitTests {
 		Remote.setBreakpoint(failureBp);
 
 		// Stack watchpoints
-		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', conditions: '' };
-		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', conditions: '' };
+		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
+		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', condition: '' };
 		Remote.setWatchpoints([stackMinWp, stackMaxWp]);
 	}
 

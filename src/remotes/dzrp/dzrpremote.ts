@@ -6,6 +6,7 @@ import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
 import {Settings} from '../../settings';
+import {Utility} from '../../utility';
 import * as path from 'path';
 
 
@@ -17,7 +18,7 @@ import * as path from 'path';
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({breakReason, tStates, cpuFreq}) => void;
+	protected continueResolve?: ({bpId, breakReason, tStates, cpuFreq}) => void;
 
 	// This flag is used to pause a step-out.
 	protected pauseStepOut=false;
@@ -125,6 +126,31 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Searches the 'breakpoints', the 'assertBreakpoints' and the
+	 * 'logpoints' arrays for the given breakpoint ID.
+	 * @param bpId the breakpoint ID to search (!=0).
+	 * @returns The found GenericBreakpoint (or RemoteBreakPoint) or
+	 * undefined if not breakpoint found.
+	 */
+	protected getBreakpointById(bpId: number): GenericBreakpoint|undefined {
+		// Search vscode breakpoints
+		const foundBp = this.breakpoints.find(bp => bp.bpId==bpId);
+		if (foundBp)
+			return foundBp;
+		// Search asserts
+		const foundAssertBp=this.assertBreakpoints.find(bp => bp.bpId==bpId);
+		if (foundAssertBp)
+			return foundAssertBp;
+		// Search log breakpoints
+		const foundLogBp=this.assertBreakpoints.find(bp => bp.bpId==bpId);
+		if (foundLogBp)
+			return foundLogBp;
+		// Nothing found
+		return undefined;
+	}
+
+
+	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
@@ -135,7 +161,47 @@ export class DzrpRemote extends RemoteBase {
 	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
 		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Save resolve function when break-response is received
-			this.continueResolve=resolve;
+			this.continueResolve=async ({bpId, breakReason}) => {
+				// Get corresponding breakpoint
+				const bp=this.getBreakpointById(bpId);
+				// Check for condition
+				let continueValid=false;
+				if (bp) {
+					if (bp.condition) {
+						// Check if condition is true
+						continueValid = !Utility.evalExpression(bp.condition, true);
+					}
+					else {
+						// No condition
+						if (bp.log) {
+							// Continue if a log is available.
+							continueValid=true;
+						}
+					}
+
+					// Emit log?
+					if (bp.log && continueValid) {
+						// Get log string
+						const log=await Utility.evalLogString(bp.log);
+						// Print
+						this.emit('log', log);
+					}
+				}
+
+				// Check for continue
+				if (continueValid) {
+					// Continue
+					this.sendDzrpCmdContinue();
+				}
+				else {
+					// Stop
+					// Clear register cache
+					this.z80Registers.clearCache();
+					// return
+					resolve({breakReason});
+				}
+			};
+
 			// Clear registers
 			this.z80Registers.clearCache();
 			// Send 'run' command
@@ -310,23 +376,60 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Set all log points.
-	 * Called only once.
+	 * Called at startup and once by enableLogPoints (to turn a group on or off).
 	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param enable Enable or disable the logpoints.
+	 * @returns A promise that is called after the last watchpoint is set.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>): Promise<void> {
-		assert(false);	// override this
+	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
+		// Logpoints are treated as normal breakpoints but without a reference to the source file.
+		// This is not necessary as on a logpoint the execution simply continues after
+		// logging.
+		for (let lp of logpoints) {
+			// Turn into RemoteBreakpoint without source file location.
+			const rbp: RemoteBreakpoint={bpId: lp.bpId as number, filePath: '', lineNr: -1, address: lp.address, condition: lp.condition, log: lp.log};
+			if (enable) {
+				this.setBreakpoint(rbp);
+				lp.bpId=rbp.bpId;
+			}
+			else {
+				this.removeBreakpoint(rbp);
+				lp.bpId=undefined;
+			}
+		}
 	}
 
 
 	/**
 	 * Enables/disables all logpoints for a given group.
+	 * Throws an exception if the group is unknown.
 	 * Promise is called all logpoints are set.
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
-		assert(false);	// override this
+		let lPoints;
+
+		// Check if one group or all
+		if (group) {
+			// 1 group:
+			const array=this.logpoints.get(group);
+			if (!array)
+				throw Error("Group '"+group+"' unknown.");
+			lPoints=new Map<string, GenericBreakpoint[]>([[group, array]]);
+		}
+		else {
+			// All groups:
+			lPoints=this.logpoints;
+		}
+
+		// Loop over all selected groups
+		for (const [grp, arr] of lPoints) {
+			await this.setLogpoints(arr, enable);
+			// Set group state
+			this.logpointsEnabled.set(grp, enable);
+		}
 	}
 
 
@@ -337,13 +440,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
-		// Check for logpoint (not supported)
-		if (bp.log) {
-			this.emit('warning', 'DZRP does not support logpoints ("'+bp.log+'").');
-			// set to unverified
-			bp.address=-1;
-			return 0;
-		}
+
 		// Check if "real" PC breakpoint
 		if (bp.address<0) {
 			this.emit('warning', 'DZRP does only support PC breakpoints.');
@@ -551,7 +648,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		assert(false);
 		return 0;
 	}

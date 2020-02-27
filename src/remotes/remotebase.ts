@@ -18,13 +18,13 @@ import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 /**
  * The breakpoint representation.
  */
-export interface RemoteBreakpoint {
+export interface RemoteBreakpoint extends GenericBreakpoint {
 	bpId: number;	///< The breakpoint ID/number (>0)
-	filePath: string;	///< The file to which the breakpoint belongs
+	filePath?: string;	///< The file to which the breakpoint belongs
 	lineNr: number;	///< The line number in the file starting at 0
-	address: number;	///< Usually the pc value  to stop at (e.g. 0A7f)
-	condition: string;	///< An additional condition.
-	log: string|undefined;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
+	address: number;	///< Usually the pc value to stop at (e.g. 0A7f)
+	condition?: string;	///< An additional condition.
+	log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
 }
 
 
@@ -95,9 +95,30 @@ export interface MemoryPage {
 
 /**
  * The Remote's base class.
- * This consists of implementation for all methods that most probably
- * donT need to be overridden.
- * I.e. the common functionality.
+ * It implements, provides stubs or interfaces to deal with:
+ * - step, run (continue), etc.
+ * - reverse debugging
+ * - breakpoints
+ *
+ * Breakpoints:
+ * The 'breakpoints' array contains all breakpoints set by the
+ * vscode UI. I.e. the breakpoints you set manually/the red dot
+ * at the start of the line.
+ * vscode sends a setBreakPointsRequest with the breakpoints, they
+ * are converted into the RemoteBreakpoint type and set with
+ * setBreakPoints. The Remote will now compare the breakpoints with the internal
+ * 'breakpoints' array and set/remove all changed breakpoints.
+ *
+ * The additional 'watchpoints', 'assertBreakpoints' and 'logpoints'
+ * arrays can be enabled/disabled as a group via a debug command.
+ * 'watchPoints': These are associated with the WPMEM keyword and create
+ * a memory watchpoint (a breakpoint that is hit if a memory adress is
+ * accessed).
+ * 'assertBreakpoints': These are very much like conditional breakpoints but associated with the ASSERT keyword.
+ * 'logpoints': These are just like breakpoints with a log message but associated with the LOGPOINT keyword.
+ * Note: The attached emulator may use the same mechanism for all these
+ * kinds of breakpoints but in DeZog they are differentiated.
+ *
  */
 export class RemoteBase extends EventEmitter {
 
@@ -244,7 +265,7 @@ export class RemoteBase extends EventEmitter {
 					else
 						access='rw';
 					// set watchpoint
-					watchpoints.push({address: entryAddress, size: length, access: access, conditions: cond||''});
+					watchpoints.push({address: entryAddress, size: length, access: access, condition: cond||''});
 				}
 			}
 			catch (e) {
@@ -308,11 +329,11 @@ export class RemoteBase extends EventEmitter {
 					let bp=assertMap.get(entry.address);
 					if (bp) {
 						// Already exists: just add condition.
-						bp.conditions='('+bp.conditions+') || ('+conds+')';
+						bp.condition='('+bp.condition+') || ('+conds+')';
 					}
 					else {
 						// Breakpoint for address does not yet exist. Create a new one.
-						const assertBp={address: entry.address, conditions: conds, log: undefined};
+						const assertBp={address: entry.address, condition: conds, log: undefined};
 						assertMap.set(entry.address, assertBp);
 					}
 				}
@@ -359,7 +380,7 @@ export class RemoteBase extends EventEmitter {
 				try {
 					const log=this.evalLogMessage(logMsg);
 					// set watchpoint
-					array.push({address: entry.address, conditions: '', log: log});
+					array.push({address: entry.address, condition: '', log: log});
 				}
 				catch (e) {
 					// Show error
@@ -966,11 +987,13 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Set all log points.
-	 * Called only once.
+	 * Called at startup and once by enableLogPoints (to turn a group on or off).
 	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param enable Enable or disable the logpoints.
+	 * @returns A promise that is called after the last watchpoint is set.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>): Promise<void> {
+	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 

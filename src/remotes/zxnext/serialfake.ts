@@ -3,8 +3,8 @@ import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
 import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
-import {GenericBreakpoint} from '../../genericwatchpoint';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 
 
 
@@ -192,8 +192,8 @@ export class SerialFake extends ZxSimulatorRemote {
 
 					// Set the breakpoints array
 					const pcBps=Array.from(this.breakpointsMap.values());
-					this.tmpBreakpoints=new Array<string>(0x10000);
-					pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.conditions||'');
+					this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
+
 					// Function called after a break
 					this.continueResolve=({breakReason, tStates, cpuFreq}) => {
 						// Reconstruct breakReasonNumber from text
@@ -339,8 +339,8 @@ export class SerialFake extends ZxSimulatorRemote {
 	 * @returns The new breakpoint ID.
 	 */
 	protected createNewBreakpoint(bpAddress: number, condition: string): number {
-		const gbp: GenericBreakpoint={address: bpAddress, conditions: condition, log: undefined};
 		this.lastBpId++;
+		const gbp: GenericBreakpoint={bpId: this.lastBpId, address: bpAddress, condition: condition, log: undefined};
 		this.breakpointsMap.set(this.lastBpId, gbp);
 		return this.lastBpId;
 	}

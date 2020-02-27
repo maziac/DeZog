@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import { Labels } from './labels';
-import { CallSerializer } from './callserializer';
 import { Settings } from './settings';
 import { Z80Registers } from './remotes/z80registers';
 import { Remote } from './remotes/remotefactory';
@@ -248,7 +247,95 @@ export class Utility {
 		if(typeof(result) == 'boolean')
 			return (result) ? 1 : 0;
 
-			// Return normal number
+		// Return normal number
+		return result;
+	}
+
+
+	/**
+	 * Evaluates/fromats a logstring.
+	 * The LOGPOINT syntax is:
+	 * ; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ${b@(reg):unsigned}
+	 * with:
+	 * [group]: (Note: the [ ] are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted  DEFAULT" is used as group.
+	 * reg: a register name, e.g. A, BC, HL, IX, H, IXL.
+	 * var: a label.
+	 * text: A simple text that may include variables. Here are a few examples for variables:
+	 * LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
+	 * LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)} Note: ${(DE)} is equal to ${b@(DE)} and prints the byte value at DE.
+	 *
+	 * The function is asynchronous as it might make calls to the Remote.
+	 * @param logString Starts after the [group].
+	*/
+	public static async evalLogString(logString: string): Promise<string> {
+		// logString e.g. "${b@(HL):hex}"
+		await Remote.getRegisters();	// Make sure that registers are available.
+
+		// Replace does not work asynchrounously, therefore we need to store the results in arrays.
+		const offsets: Array<number>=[];
+		const promises: Array<Promise<string>> = [];
+
+		const regex=/\${(.*?)(:(.*?))?}/g;
+		const reAt=/([bw]@)?\((.*?)\)/i;
+		let offsCorrection=0;
+		logString = logString.replace(regex, (match, statement /*p1*/, p2, format /*p3*/, offset) => {
+			// 'statement' contains the statement, e.g. "b@(HL)".
+			// 'format' contains the formatting, e.g. "hex".
+			let promise;
+			try {
+				let value;
+				const reMatch=reAt.exec(statement);
+				if (reMatch) {
+					// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
+					const size=(reMatch[1].startsWith('w'))? 2:1;
+					// Get value of 'inner'
+					const addrString=match[2];
+					const addr=Utility.evalExpression(addrString);
+					// Get memory contents
+					const memValues=Remote.readMemoryDump(addr, size);
+					value=memValues[0];
+					if (size>1)
+						value+=memValues[1]<<8;
+				}
+				else {
+					// It's a simple value, register or label.
+					value=Utility.evalExpression(statement);
+				}
+
+				// Now format value
+				let formatString=format||'unsigned';
+				formatString='${'+formatString+'}';
+				promise=this.numberFormatted('', value, 2, formatString, undefined);
+			}
+			catch (e) {
+				// Return the error in case of an error.
+				promise=new Promise<string>(resolve => e);
+			}
+			// Store
+			offset-=offsCorrection;
+			offsets.push(offset);
+			promises.push(promise);
+			offsCorrection+=match.length;
+			return '';
+		});
+
+		// Wait on all promises
+		const data=await Promise.all(promises);
+
+		// Create string
+		let result='';
+		let replacement;
+		let i=0;
+		while (replacement=data.shift()) {
+			const offset=offsets.shift() as number;
+			const length=offset-i;
+			result+=logString.substr(i, length);
+			i=offset;
+			result+=replacement;
+		}
+		// Add last
+		result+=logString.substr(i);
+
 		return result;
 	}
 
@@ -369,58 +456,30 @@ export class Utility {
 
 		// Variables
 		var memWord = 0;
-		let regsAsWell = false;
+		let regsAsWell=false;
 
-		return new Promise<string>(resolve => {
-			// Serialize calls
-			CallSerializer.execAll(
+		// Check if registers might be returned as well.
+		// Return registers only if 'name' itself is not a register.
+		if (!Z80Registers.isRegister(name)) {
+			regsAsWell=true;
+			await Remote.getRegisters();
+		}
 
-				// Check if registers might be returned as well. In that
-				(cs) => {
-					// case asynchronously retrieve the register values.
-					// Return registers only if 'name' itself is not a register.
-					if (!Z80Registers.isRegister(name)) {
-						regsAsWell=true;
-						Remote.getRegisters().then(() => {
-							cs.endExec();
-						});
-					}
-					else
-						cs.endExec();
-				},
+		// Check first if we need to retrieve address values
+		const matchAddr=/(\${b@:|\${w@:)/.exec(format);
+		if (matchAddr) {
+			// Retrieve memory values
+			const data=await Remote.readMemoryDump(value, 2);
+			const b1=data[0]
+			const b2=data[1];
+			memWord=(b2<<8)+b1;
+		}
 
-				// Memory dump retrieving
-				(cs) => {
-					// Check first if we need to retrieve address values
-					const matchAddr=/(\${b@:|\${w@:)/.exec(format);
-					if (matchAddr) {
-						// Retrieve memory values
-						Remote.readMemoryDump(value, 2).then(data => {
-							const b1=data[0]
-							const b2=data[1];
-							memWord=(b2<<8)+b1;
-							cs.endExec();
-						});
-					}
-					else {
-						// End directly
-						cs.endExec();
-					}
-				},
+		// Formatting
+		var valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
 
-				// Formatting
-				(cs) => {
-					// Format
-					var valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
-
-					// Call handler with the result string
-					resolve(valString);
-
-					// End
-					cs.endExec();
-				}
-			);
-		});
+		// Return
+		return valString;
 	}
 
 

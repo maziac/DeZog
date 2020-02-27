@@ -6,6 +6,7 @@ import {ZxPorts} from './zxports';
 import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 
 
 
@@ -32,8 +33,13 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// A temporary array with the set breakpoints and conditions.
 	// Undefined=no breakpoint is set.
-	// At the moment conditions are not supported. A BP is an empty string ''
-	protected tmpBreakpoints: Array<string>;
+	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
+	// as soon as the z80CpuContinue is called.
+	// It allows access of the breakpoint by it's address.
+	// This may happen seldom, but it can happen that 2 breakpoints share
+	// the same address. Therefore the Array contains an Array of GenericBreakpoints.
+	// normally the inner array contains only 1 element.
+	protected tmpBreakpoints: Array<Array<GenericBreakpoint>>;
 
 
 	/// Constructor.
@@ -222,6 +228,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakReasonNumber=0;
 		let counter=100000;
 		let breakReason;
+		let bpInner;
 		for (; counter>0; counter--) {
 			try {
 				this.z80Cpu.execute();
@@ -235,8 +242,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			const bpHit=(this.tmpBreakpoints[pc]!=undefined);	 // TODO: Check also the condition.
-			if (bpHit) {
+			bpInner=this.tmpBreakpoints[pc];
+			if (bpInner) {
 				breakReasonNumber=2;
 				break;
 			}
@@ -277,10 +284,43 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				}
 			}
 
+			// Get breakpoint ID
+			let bpId=0;
+			if (bpInner) {
+				bpId=bpInner[0].bpId;
+			}
+
 			// Send Notification
 			if(this.continueResolve)
-				this.continueResolve({breakReason, tStates: undefined, cpuFreq: undefined});
+				this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
 		}
+	}
+
+
+	/**
+	 * Creates a temporary array from the given array.
+	 * The structure is more performant for use in the Z80 continue
+	 * loop:
+	 * The array contains of 65536 entries, i.e. addresses. If no BP
+	 * is set for an address the entry is undefined.
+	 * If one is set the entry contains a pointer to the breakpoint.
+	 * Or better it contains an array of breakpoints that all share the
+	 * same address.
+	 * Note: normally this array contains only one entry.
+	 */
+	protected createTemporaryBreakpoints(bps: Array<GenericBreakpoint>): Array<Array<GenericBreakpoint>> {
+		const tmpBps=new Array<Array<GenericBreakpoint>>(0x10000);
+		bps.map(bp => {
+			let bpInner=
+				tmpBps[bp.address];
+			if (!bpInner) {
+				// Create new array
+				bpInner=new Array<GenericBreakpoint>();
+				tmpBps[bp.address]=bpInner;
+			}
+			bpInner.push(bp);
+		});
+		return tmpBps;
 	}
 
 
@@ -333,10 +373,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
-		// Set the breakpoints array
+		// Set the temporary breakpoints array
 		const pcBps=Array.from(this.breakpoints.values());
-		this.tmpBreakpoints=new Array<string>(0x10000);
-		pcBps.map(bp => this.tmpBreakpoints[bp.address]=bp.condition||'');
+		this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.z80CpuContinue(bp1Address, bp2Address);
@@ -360,7 +399,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		this.lastBpId++;
 		this.cpuRunning=false;	// Break if running
 		return this.lastBpId;

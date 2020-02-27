@@ -184,6 +184,7 @@ export class ZxNextRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			const breakReasonNumber=data[3];
+			const bpId=Utility.getWord(data, 4);
 			/*
 			// Check if called by step-out.
 			if (this.stepOutHandler) {
@@ -214,7 +215,7 @@ export class ZxNextRemote extends DzrpRemote {
 				// Adds breakReasonNumber (as number) if consumer is step-out.
 				assert((breakReasonNumber==0&&breakReason==undefined)
 					|| (breakReasonNumber!=0&&breakReason!=undefined));
-				continueHandler({breakReason, tStates: undefined, cpuFreq: undefined});
+				continueHandler({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
 			}
 		}
 		else {
@@ -338,8 +339,10 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
 	 * no breakpoint is available anymore.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		// Convert condition string to Buffer
+		if (!condition)
+			condition='';
 		const condBuf=Utility.getBufferFromString(condition);
 		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>8, ...condBuf]);
 		const bpId=Utility.getWord(data, 0);

@@ -370,4 +370,17 @@ suite('Utility', () => {
 
 	});
 
+
+	suite('evalLogString', () => {
+
+		test('todo', () => {
+			// TODO: implement test.
+			//Test:
+			const logString=' text ${(LABEL):signed} ${(0x1234):hex} text ${DE:hex} text ${w@(IX+1)} text ${b@(HL):signed}';
+			logString;
+			assert.fail("Add tests");
+		});
+	});
+
+
 });

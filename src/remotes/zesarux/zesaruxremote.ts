@@ -1510,7 +1510,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Set watchpoints (memory guards)
 			for (let wp of watchPoints) {
 				// Check if condition is used
-				if (wp.conditions.length>0) {
+				if (wp.condition.length>0) {
 					// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
 					// Will most probably never be implemented by Cesar.
 					// I leave this open mainly as a reminder.
@@ -1591,8 +1591,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Called only once.
 	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
+	 * @param enable Enable or disable the logpoints.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>): Promise<void> {
+	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -1616,13 +1617,13 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Furthermore "b@(...)" and "w@(...)" are converted to "peek(...)" and "peekw(...)".
 	 * And "!(...)" is converted to "not(...)" (only with brackets).
 	 * Note: The original ZEsarUX operators are not forbidden. E.g. "A=1" is allowed as well as "A==1".
-	 * Labels: ZESarUX does not not the labels only addresses. Therefore all
+	 * Labels: ZESarUX does not know the labels only addresses. Therefore all
 	 * labels need to be evaluated first and converted to addresses.
 	 * @param condition The general condition format, e.g. "A < 10 && HL != 0".
 	 * Even complex parenthesis forms are supported, e.g. "(A & 0x7F) == 127".
-	 * @returns The zesarux format
+	 * @returns The zesarux format.
 	 */
-	protected convertCondition(condition: string): string|undefined {
+	protected convertCondition(condition?: string): string|undefined {
 		if(!condition || condition.length == 0)
 			return '';	// No condition
 

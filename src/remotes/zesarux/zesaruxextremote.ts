@@ -70,7 +70,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 		// Set watchpoints (memory guards)
 		for (let wp of watchPoints) {
 			// Create watchpoint
-			zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.conditions);
+			zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.condition);
 		}
 
 		// Wait on last command
@@ -106,10 +106,9 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 		// Set breakpoints
 		for(let abp of assertBreakpoints) {
 			// Create breakpoint
-			const zesaruxCondition = this.convertCondition(abp.conditions) || '';
+			const zesaruxCondition = this.convertCondition(abp.condition) || '';
 			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
 		}
-		//this.assertBreakpoints = assertBreakpoints;	// superfluous?
 
 		// Call handler
 		if(handler) {
@@ -192,18 +191,26 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * Sets the log points in the given list.
 	 * Logpoints print a log instead of stopping the execution.
 	 * @param logpoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 * @param enable Enable or disable the logpoints.
+	 * @returns A promise that is called after the last watchpoint is set.
 	 */
-	protected async setLogpointsExt(logpoints: Array<GenericBreakpoint>): Promise<void> {
+	public async setLogpointsExt(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Set logpoints
-			for (let lp of logpoints) {
-				// Create logpoint (normally there is no condition)
-				const zesaruxCondition=this.convertCondition(lp.conditions)||'';
-				let logMsg='';
-				if (lp.log)
-					logMsg=','+lp.log;
-				zSocket.send('set-fast-breakpoint '+(lp.address)+' '+zesaruxCondition+logMsg);
+			if (enable) {
+				for (let lp of logpoints) {
+					// Create logpoint (normally there is no condition)
+					const zesaruxCondition=this.convertCondition(lp.condition)||'';
+					let logMsg='';
+					if (lp.log)
+						logMsg=','+lp.log;
+					zSocket.send('set-fast-breakpoint '+(lp.address)+' '+zesaruxCondition+logMsg);
+				}
+			}
+			else {
+				for (let lp of logpoints) {
+					zSocket.send('clear-fast-breakpoint '+lp.address+' 1');
+				}
 			}
 			// Call handler
 			zSocket.executeWhenQueueIsEmpty().then(resolve);
@@ -214,6 +221,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	/**
 	 * Enables/disables all logpoints for a given group.
 	 * Throws an exception if the group is unknown.
+	 * Promise is called all logpoints are set.
 	 * @param group The group to enable/disable. If undefined: all groups.
 	 * @param enable true=enable, false=disable.
 	 * @param handler Is called when ready.
@@ -236,22 +244,11 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 		// Loop over all selected groups
 		for (const [grp, arr] of lPoints) {
-			if (enable) {
-				// Add logpoints
-				await this.setLogpointsExt(arr);
-			}
-			else {
-				// Remove breakpoints
-				for (let lp of arr) {
-					zSocket.send('clear-fast-breakpoint '+lp.address+' 1');
-				}
-			}
+			// Add logpoints
+			await this.setLogpointsExt(arr, enable);
 			// Set group state
 			this.logpointsEnabled.set(grp, enable);
 		}
-
-		// Wait
-		await zSocket.executeWhenQueueIsEmpty();
 	}
 
 }
