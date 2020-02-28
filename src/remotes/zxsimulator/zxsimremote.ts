@@ -8,6 +8,7 @@ import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Utility} from '../../utility';
+import * as fs from 'fs';
 //import {LogGlobal} from '../../log';
 
 
@@ -47,12 +48,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// Constructor.
 	constructor() {
 		super();
+		this.cpuRunning=false;
+		this.lastBpId=0;
 		// Create a Z80 CPU to emulate Z80 behaviour
 		this.zxMemory=new ZxMemory();
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
-		this.cpuRunning=false;
-		this.lastBpId=0;
 	}
 
 
@@ -64,6 +65,25 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public async doInitialization() {
 		// Simulator capabilities
 		this.supportsZxNextRegisters=false;
+
+		// For now only one machine is supported
+		if (Settings.launch.zxsim.machine=="48k") {
+			// Load the rom
+			try {
+				const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+				const romBuffer=fs.readFileSync(romFilePath);
+				const rom1=new Uint8Array(0x2000);
+				const rom2=new Uint8Array(0x2000);
+				romBuffer.copy(rom1, 0, 0, 0x2000);
+				romBuffer.copy(rom2, 0, 0x2000, 0x4000);
+				this.zxMemory.writeBank(254, rom1);
+				this.zxMemory.writeBank(255, rom2);
+			}
+			catch (e) {
+				this.emit('warning', e.message);
+			}
+		}
+
 		// Load sna or nex file
 		const loadPath=Settings.launch.load;
 		if (loadPath)

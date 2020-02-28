@@ -783,7 +783,7 @@ export class Utility {
 
 
 	/**
-	 * Retruns the extension's path.
+	 * Returns the extension's path.
 	 * @return The path.
 	 */
 	public static getExtensionPath() {
