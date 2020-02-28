@@ -45,12 +45,12 @@
 		"binary-file": "^0.2.1",
 		"gif-writer": "^0.9.3",
 		"glob": "^7.1.6",
-		"jsonc-parser": "^2.2.0",
-		"mocha": "^7.0.1",
+		"jsonc-parser": "^2.2.1",
+		"mocha": "^7.1.0",
 		"serialport": "^8.0.7",
 		"ts-node": "^8.6.2",
-		"vscode-debugadapter": "1.38.0",
-		"vscode-debugprotocol": "1.38.0",
+		"vscode-debugadapter": "1.39.0",
+		"vscode-debugprotocol": "1.39.0",
 		"z80js": "^0.9.4"
 	},
 	"devDependencies": {
@@ -58,10 +58,10 @@
 		"@types/node": "13.7.1",
 		"electron-rebuild": "^1.10.0",
 		"tslint": "6.0.0",
-		"typescript": "3.7.5",
-		"vsce": "1.73.0",
+		"typescript": "3.8.2",
+		"vsce": "1.74.0",
 		"vscode": "^1.1.36",
-		"vscode-debugadapter-testsupport": "1.40.1"
+		"vscode-debugadapter-testsupport": "1.40.2"
 	},
 	"main": "./out/extension",
 	"activationEvents": [
