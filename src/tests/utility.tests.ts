@@ -390,9 +390,9 @@ suite('Utility', () => {
 			let evalString=await Utility.evalLogString(log);
 			assert.equal('129', evalString);
 
-			log=' start ${A} ende ';
+			log=' start ${A} end ';
 			evalString=await Utility.evalLogString(log);
-			assert.equal(' start 129 ende ', evalString);
+			assert.equal(' start 129 end ', evalString);
 
 			log='${DE:hex}';
 			evalString=await Utility.evalLogString(log);
@@ -402,9 +402,9 @@ suite('Utility', () => {
 			evalString=await Utility.evalLogString(log);
 			assert.equal('ABCD', evalString);
 
-			log=' start A=${A:signed} DE=${DE:unsigned} ende ';
+			log=' start A=${A:signed} DE=${DE:unsigned} end ';
 			evalString=await Utility.evalLogString(log);
-			assert.equal(' start A=-127 DE=43981 ende ', evalString);
+			assert.equal(' start A=-127 DE=43981 end ', evalString);
 
 		});
 
@@ -443,6 +443,38 @@ suite('Utility', () => {
 			log='${w@(hl):hex}';
 			evalString=await Utility.evalLogString(log);
 			assert.equal('5BFF', evalString);
+		});
+
+
+		test('Register relative memory', async () => {
+			const remote=Remote as any;
+			const cpu=remote.z80Cpu;
+			cpu.r1.bc=0x8000;
+			let regs=cpu.getRegisterData();
+			remote.z80Registers.setCache(regs);
+			Remote.writeMemoryDump(0x8000, new Uint8Array([212]));
+
+			let log='${(BC)}';
+			let evalString=await Utility.evalLogString(log);
+			assert.equal('212', evalString);
+
+			log='${(BC+0)}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('212', evalString);
+
+			cpu.r1.bc-=1000;
+			regs=cpu.getRegisterData();
+			remote.z80Registers.setCache(regs);
+			log='${(BC+1000)}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('212', evalString);
+
+			cpu.r1.bc+=1000+2345;
+			regs=cpu.getRegisterData();
+			remote.z80Registers.setCache(regs);
+			log='${(BC-2345)}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('212', evalString);
 		});
 
 
