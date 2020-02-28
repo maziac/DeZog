@@ -6,6 +6,7 @@ import { Z80Registers } from '../remotes/z80registers';
 import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
 import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
+import {Labels} from '../labels';
 
 
 suite('Utility', () => {
@@ -373,13 +374,98 @@ suite('Utility', () => {
 
 	suite('evalLogString', () => {
 
-		test('todo', () => {
-			// TODO: implement test.
-			//Test:
-			const logString=' text ${(LABEL):signed} ${(0x1234):hex} text ${DE:hex} text ${w@(IX+1)} text ${b@(HL):signed}';
-			logString;
-			assert.fail("Add tests");
+		setup(() => {
+			RemoteFactory.createRemote('zxsim');
 		});
+
+		test('Register', async () => {
+			const remote=Remote as any;
+			const cpu=remote.z80Cpu;
+			cpu.r1.a=129;
+			cpu.r1.de=0xABCD;
+			const regs=cpu.getRegisterData();
+			remote.z80Registers.setCache(regs);
+
+			let log='${A}';
+			let evalString=await Utility.evalLogString(log);
+			assert.equal('129', evalString);
+
+			log=' start ${A} ende ';
+			evalString=await Utility.evalLogString(log);
+			assert.equal(' start 129 ende ', evalString);
+
+			log='${DE:hex}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('ABCD', evalString);
+
+			log='${de:hex}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('ABCD', evalString);
+
+			log=' start A=${A:signed} DE=${DE:unsigned} ende ';
+			evalString=await Utility.evalLogString(log);
+			assert.equal(' start A=-127 DE=43981 ende ', evalString);
+
+		});
+
+
+		test('Error', async () => {
+			let log='${(A}';	// incomplete -> creates an error
+			let evalString=await Utility.evalLogString(log);;
+			assert.equal('SyntaxError: Unexpected end of input', evalString);
+		});
+
+
+		test('Memory', async () => {
+			const remote=Remote as any;
+			const cpu=remote.z80Cpu;
+			cpu.r1.hl=0x8000;
+			Remote.writeMemoryDump(0x8000, new Uint8Array([0xFF, 0x5B]));
+			const regs=cpu.getRegisterData();
+			remote.z80Registers.setCache(regs);
+
+			let log='${(8000h)}';
+			let evalString=await Utility.evalLogString(log);
+			assert.equal('255', evalString);
+
+			log='${(0x8000):signed}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('-1', evalString);
+
+			log='${(32768):hex}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('FF', evalString);
+
+			log='${b@(32768):hex}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('FF', evalString);
+
+			log='${w@(hl):hex}';
+			evalString=await Utility.evalLogString(log);
+			assert.equal('5BFF', evalString);
+		});
+
+
+		test('Label', async () => {
+			const cfg: any={
+				remoteType: 'zrcp'
+			};
+			Settings.Init(cfg, '');
+			Labels.init();
+			const labels=Labels;
+			labels.loadAsmListFile('./src/tests/data/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.finish();
+
+			// Prepare memory
+			Remote.writeMemoryDump(0x80cb, new Uint8Array([0xFE]));
+
+			let log='${b@(screen_top):signed}';
+			let evalString=await Utility.evalLogString(log);
+			assert.equal('-2', evalString);
+		});
+
+
+
 	});
 
 

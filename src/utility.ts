@@ -253,7 +253,7 @@ export class Utility {
 
 
 	/**
-	 * Evaluates/fromats a logstring.
+	 * Evaluates/formats a logstring.
 	 * The LOGPOINT syntax is:
 	 * ; LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ${b@(reg):unsigned}
 	 * with:
@@ -281,36 +281,41 @@ export class Utility {
 		logString = logString.replace(regex, (match, statement /*p1*/, p2, format /*p3*/, offset) => {
 			// 'statement' contains the statement, e.g. "b@(HL)".
 			// 'format' contains the formatting, e.g. "hex".
-			let promise;
-			try {
-				let value;
-				const reMatch=reAt.exec(statement);
-				if (reMatch) {
-					// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
-					const size=(reMatch[1].startsWith('w'))? 2:1;
-					// Get value of 'inner'
-					const addrString=match[2];
-					const addr=Utility.evalExpression(addrString);
-					// Get memory contents
-					const memValues=Remote.readMemoryDump(addr, size);
-					value=memValues[0];
-					if (size>1)
-						value+=memValues[1]<<8;
-				}
-				else {
-					// It's a simple value, register or label.
-					value=Utility.evalExpression(statement);
-				}
+			let promise=new Promise<string>(async resolve => {
+				let size=1;
+				try {
+					let value;
+					const reMatch=reAt.exec(statement);
+					if (reMatch) {
+						// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
+						size=(reMatch[1]?.startsWith('w'))? 2:1;
+						// Get value of 'inner'
+						const addrString=reMatch[2];
+						const addr=Utility.evalExpression(addrString);
+						// Get memory contents
+						const memValues=await Remote.readMemoryDump(addr, size);
+						value=memValues[0];
+						if (size>1)
+							value+=memValues[1]<<8;
+					}
+					else {
+						// It's a simple value, register or label.
+						value=Utility.evalExpression(statement, true);
+						if (Z80Registers.isRegister(statement)&&statement.length>1)
+							size=2;	// Two byte register, e.g. "DE"
+					}
 
-				// Now format value
-				let formatString=format||'unsigned';
-				formatString='${'+formatString+'}';
-				promise=this.numberFormatted('', value, 2, formatString, undefined);
-			}
-			catch (e) {
-				// Return the error in case of an error.
-				promise=new Promise<string>(resolve => e);
-			}
+					// Now format value
+					let formatString=format||'unsigned';
+					formatString='${'+formatString+'}';
+					const result=await this.numberFormatted('', value, size, formatString, undefined);
+					resolve(result);
+				}
+				catch (e) {
+					// Return the error in case of an error.
+					resolve(e);
+				}
+			});
 			// Store
 			offset-=offsCorrection;
 			offsets.push(offset);
