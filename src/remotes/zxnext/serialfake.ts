@@ -1,5 +1,5 @@
 //import * as assert from 'assert';
-import * as SerialPort from 'serialport';
+//import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
 import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
@@ -7,6 +7,7 @@ import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 
 
+let SerialPort;
 
 /**
  * This class fakes the responses from real HW.

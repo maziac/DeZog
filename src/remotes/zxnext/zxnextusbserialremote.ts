@@ -1,9 +1,12 @@
 //import * as assert from 'assert';
-import * as SerialPort from 'serialport';
+//import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
 import {SerialFake} from './serialfake';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
+
+
+let SerialPort;
 
 
 // If enabled a faked serial connection will be used (for debugging/testing purposes):

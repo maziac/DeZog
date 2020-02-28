@@ -47,7 +47,6 @@
 		"glob": "^7.1.6",
 		"jsonc-parser": "^2.2.1",
 		"mocha": "^7.1.0",
-		"serialport": "^8.0.7",
 		"ts-node": "^8.6.2",
 		"vscode-debugadapter": "1.39.0",
 		"vscode-debugprotocol": "1.39.0",
