@@ -7,6 +7,7 @@ import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Utility} from '../../utility';
 //import {LogGlobal} from '../../log';
 
 
@@ -223,13 +224,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param bp1 Breakpoint 1 address or -1 if not used.
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
 	 */
-	protected z80CpuContinue(bp1: number, bp2: number) {
+	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		//		Utility.timeDiff();
 		// Run the Z80-CPU in a loop
 		let breakReasonNumber=0;
-		let counter=100000;
+		let counter=10000;
 		let breakReason;
-		let bpInner;
+		let breakCondition;
+		let bp;
 		for (; counter>0; counter--) {
 			try {
 				this.z80Cpu.execute();
@@ -243,10 +245,42 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;
-			bpInner=this.tmpBreakpoints[pc];
+			const bpInner=this.tmpBreakpoints[pc];
 			if (bpInner) {
-				breakReasonNumber=2;
-				break;
+				// Get registers
+				const regs=this.z80Cpu.getRegisterData(); // TODO: Wieder rückbauen und ann mit "await".
+				this.z80Registers.setCache(regs);
+				// Now check if condition met or if logpoint
+				for (const bpElem of bpInner) {
+					try {
+						const {condition, log}=this.checkConditionAndLog(bpElem);
+						// Emit log?
+						if (log) {
+							// Convert and print
+							const evalLog = await Utility.evalLogString(log)
+							this.emit('log', evalLog);
+						}
+						else {
+							// Not a logpoint.
+							// Condition met?
+							if (condition!=undefined) {
+								bp=bpElem;
+								breakCondition=condition;
+							}
+						}
+					}
+					catch (e) {
+						bp=bpElem;
+						breakCondition=e;
+					}
+				}
+
+				// Check if at least one breakpoint for this address has a condition that
+				// evaluates to true.
+				if (bp) {
+					breakReasonNumber=2;
+					break;
+				}
 			}
 			// Check if stopped from outside
 			if (!this.cpuRunning) {
@@ -262,12 +296,13 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 		//LogGlobal.log("cpuContinue, counter="+counter);
 
+		// Update the screen
+		this.zxSimulationView.update();
+
 		// Give other tasks a little time
 		setTimeout(() => {
 			// Check if stopped or just the counter elapsed
 			if (counter==0) {
-				// Update the screen
-				this.zxSimulationView.update();
 				// Continue
 				this.z80CpuContinue(bp1, bp2);
 			}
@@ -282,22 +317,41 @@ export class ZxSimulatorRemote extends DzrpRemote {
 							break;
 						case 2:
 							breakReason="Breakpoint hit";
+							if (breakCondition)
+								breakReason+=', '+breakCondition;
 							break;
 					}
 				}
 
 				// Get breakpoint ID
-				let bpId=0;
-				if (bpInner) {
-					bpId=bpInner[0].bpId;
-				}
+				let bpId=bp?.bpId;
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
+				assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
 			}
 		}, 100);
+	}
+
+
+
+	/**
+	 * This is an 'intelligent' remote that does evaluate the breakpoint
+	 * conditions on it's own.
+	 * This is done primarily for performance reasons.
+	 */
+	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
+		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+			// Save resolve function when break-response is received
+			this.continueResolve=resolve;
+
+			// Clear registers
+			this.z80Registers.clearCache();
+			// Send 'run' command
+			this.sendDzrpCmdContinue();
+		});
 	}
 
 

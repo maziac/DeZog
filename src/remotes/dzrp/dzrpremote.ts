@@ -152,51 +152,72 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Takes a breakpoint and checks if it'S condition is true and if
+	 * log needs to be done.
+	 * @param bp The GenericBreakpoint.
+	 * @returns [condition, log]
+	 * condition:
+	 * - undefined = Condition not met
+	 * - otherwise: The condition text or '' if no condition was set.
+	 * log:
+	 * - undefined: No log breakpoint or condition not met
+	 * - otherwise: The logpoint text (and condition met).
+	 */
+	protected checkConditionAndLog(bp: GenericBreakpoint|undefined): {condition: string|undefined, log: string|undefined} {
+		if (bp) {
+			if (bp.condition) {
+				// Check if condition is true
+				const evalCond=Utility.evalExpression(bp.condition, true);
+				if (evalCond!=0)
+					return {condition: bp.condition, log: bp.log};
+			}
+			else {
+				// No condition
+				return {condition: '', log: bp.log};
+			}
+		}
+		return {condition: undefined, log: undefined};
+	}
+
+
+	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * breakReason contains the stop reason as string.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
+	 *
+	 * This method assumes a 'stupid' external remote that does not evaluate the
+	 * breakpoint's log string or condition.
+	 * Instead evaluation is done here and if e.g. the condition is not met
+	 * than anouther 'continue' is sent.
 	 */
 	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
 		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
-			// Save resolve function when break-response is received
+			// Use a custom function here to evaluate breakpoint condition and log string.
 			this.continueResolve=async ({bpId, breakReason}) => {
 				try {
-					// Clear registers
+					// Get registers
 					this.z80Registers.clearCache();
 					await Remote.getRegisters();
+
 					// Get corresponding breakpoint
 					const bp=this.getBreakpointById(bpId);
-					// Check for condition
-					let continueValid=false;
-					if (bp) {
-						if (bp.condition) {
-							// Check if condition is true
-							continueValid=Utility.evalExpression(bp.condition, true)==0;
-							if (!continueValid)
-								breakReason+=", "+bp.condition;
-						}
-						else {
-							// No condition
-							if (bp.log) {
-								// Continue if a log is available.
-								continueValid=true;
-							}
-						}
 
-						// Emit log?
-						if (bp.log&&continueValid) {
-							// Get log string
-							const log=await Utility.evalLogString(bp.log);
-							// Print
-							this.emit('log', log);
-						}
+					// Check for condition
+					const {condition, log}=this.checkConditionAndLog(bp);
+
+					// Emit log?
+					if (log) {
+						// Convert
+						const evalLog=await Utility.evalLogString(log);
+						// Print
+						this.emit('log', evalLog);
 					}
 
 					// Check for continue
-					if (continueValid) {
+					if (condition == undefined) {
 						// Continue
 						this.sendDzrpCmdContinue();
 					}
@@ -205,6 +226,8 @@ export class DzrpRemote extends RemoteBase {
 						// Clear register cache
 						this.z80Registers.clearCache();
 						// return
+						if(condition.length>0)
+							breakReason+=", "+condition;
 						resolve({breakReason});
 					}
 				}

@@ -1,6 +1,7 @@
 import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
+import {Z80Registers} from '../z80registers';
 
 
 const signed8=(val) => {
@@ -113,6 +114,24 @@ export class Z80Cpu extends Z80js {
 
 		//const logstring="PC="+pc.toString(16)+" pushed to SP="+self.sp.toString(16);
 		//console.log(logstring);
+	}
+
+
+	/**
+	 * Returns the register data in the Z80Registers format.
+	 */
+	protected getRegisterData(): Uint16Array {
+		const self=this as any;
+		const r1=self.r1;
+		const r2=self.r2;
+		// Convert regs
+		const regData=Z80Registers.getRegisterData(
+			self.pc, self.sp,
+			r1.af, r1.bc, r1.de, r1.hl,
+			r1.ix, r1.iy,
+			r2.af, r2.bc, r2.de, r2.hl,
+			self.i, self.r);
+		return regData;
 	}
 
 
