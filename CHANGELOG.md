@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.2
+- Package 'SerialPort' removed temporarily.
+
 # 0.12.1
 - Added simulator remoteType: 'zxsim'.
 - Changed remoteType 'zxnext' to 'serial'.
