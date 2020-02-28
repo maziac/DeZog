@@ -280,7 +280,14 @@ export class ZesaruxSocket extends Socket {
 		// normal processing
 		let command = cmd.command + '\n';
 		this.log('=>', cmd.command);
-		this.write(command);
+
+/*
+		//Pause for testing zesarux stability on Windows:
+		setTimeout(() => {
+			this.write(command);
+		}, 100);
+*/
+
 		// Log only commands
 		if(LogSocketCommands)
 			LogSocketCommands.appendLine('>' + command + '<');
