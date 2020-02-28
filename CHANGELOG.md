@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.12.3
+- launch.json changes:
+	- "zhostname" and "zport" removed. Use "hostname" and "port" under "zrcp" instead.
+	- Configurations for "zxsim" ("machine") and "serial" ("baudrate", "port") added.
+
 # 0.12.2
 - Package 'SerialPort' removed temporarily.
 

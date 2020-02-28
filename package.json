@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "0.12.2",
+	"version": "0.12.3",
 	"publisher": "maziac",
 	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
 	"author": {
@@ -231,26 +231,47 @@
 					"launch": {
 						"required": [
 							"remoteType",
-							"zport",
-							"zhostname"
+							"rootFolder",
+							"listFiles"
 						],
 						"properties": {
 							"remoteType": {
 								"type": "string",
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp', 'serial' or 'zxsim'. Note: Certain features or properties are not available in all types.",
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'serial' or 'zxsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zrcp"
+							},
+							"zrcp": {
+								"hostname": {
+									"type": "string",
+									"description": "The hostname/IP address of the ZEsarUX Emulator."
+								},
+								"port": {
+									"type": "number",
+									"description": "The port of tthe ZEsarUX Emulator."
+								}
+							},
+							"zxsim": {
+								"machine": {
+									"type": "string",
+									"description": "The machine type. At the moment only '48k'.",
+									"default": "48k"
+								}
+							},
+							"serial": {
+								"baudrate": {
+									"type": "number",
+									"description": "The baudrate. Note: If you change the baudrate here you also need to change the baudrate at the remote.",
+									"default": 230400
+								},
+								"port": {
+									"type": "string",
+									"description": "The COM port. Nowadays this is normally USB/serial connection. E.g. /dev/tty.usbserial-#### on a Mac or COM1/COM2 etc. on Windows.",
+									"default": "/dev/tty.usbserial"
+								}
 							},
 							"unitTests": {
 								"type": "boolean",
 								"description": "Whether the configuration contains the unit tests or not. Default: false."
-							},
-							"zhostname": {
-								"type": "string",
-								"description": "The hostname/IP address of the Zesarux Debugger."
-							},
-							"zport": {
-								"type": "number",
-								"description": "The port of the Zesarux Debugger."
 							},
 							"rootFolder": {
 								"type": "string",
@@ -491,8 +512,18 @@
 							"type": "dezog",
 							"request": "launch",
 							"name": "DeZog",
-							"zhostname": "localhost",
-							"zport": 10000,
+							"remoteType": "zxsim",
+							"zrcp": {
+								"hostname": "localhost",
+								"port": 10000
+							},
+							"zxsim": {
+								"machine": "48k"
+							},
+							"serial": {
+								"baudrate": 230400,
+								"port": "/dev/tty.usbserial"
+							},
 							"topOfStack": "stack_top",
 							"listFiles": [
 								{

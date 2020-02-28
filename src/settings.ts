@@ -71,6 +71,33 @@ export interface LoadObj {
 }
 
 
+/// Definitions for the 'zrcp' remote type.
+export interface ZrcpType {
+	/// The Zesarux ZRCP telnet host name/IP address
+	hostname: string;
+
+	/// The Zesarux ZRCP telnet port
+	port: number;
+}
+
+
+/// Definitions for the 'zxsim' remote type.
+export interface ZxSimType {
+	/// At the moment only "48k"
+	machine: string;
+}
+
+
+/// Definitions for the 'serial' remote type.
+export interface SerialType {
+	/// The baudrate to use.
+	baudrate: number;
+
+	/// The port, e.g.  "/dev/tty.usbserial-####" or "COM1"/"COM2"
+	port: string;
+}
+
+
 /**
  * See also package.json.
  * The configuration parameters for the zesarux debugger.
@@ -79,14 +106,17 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The remote type: zesarux or zxnext.
 	remoteType: string;
 
+	// The special settings for zrcp (ZEsarux).
+	zrcp: ZrcpType;
+
+	// The special settings for the onternal Z80 simulator.
+	zxsim: ZxSimType;
+
+	// The special settings for the serial connection.
+	serial: SerialType;
+
 	/// true if the configuration is for unit tests.
 	unitTests: false;
-
-	/// The Zesarux ZRCP telnet host name/IP address
-	zhostname: string;
-
-	/// The Zesarux ZRCP telnet port
-	zport: number;
 
 	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
 	rootFolder: string;
@@ -189,9 +219,10 @@ export class Settings {
 		if(!Settings.launch) {
 			Settings.launch = {
 				remoteType: <any>undefined,
+				zrcp: <any>undefined,
+				zxsim: <any>undefined,
+				serial: <any>undefined,
 				unitTests: <any>undefined,
-				zhostname: <any>undefined,
-				zport: <any>undefined,
 				rootFolder: <any>undefined,
 				listFiles: <any>undefined,
 //				labelsFiles: <any>undefined,
@@ -220,10 +251,28 @@ export class Settings {
 			Settings.launch.unitTests = false;
 		const unitTests = Settings.launch.unitTests;
 
-		if(!Settings.launch.zhostname)
-			Settings.launch.zhostname = 'localhost';
-		if(!Settings.launch.zport)
-			Settings.launch.zport = 10000;
+		// zrcp
+		if (!Settings.launch.zrcp)
+			Settings.launch.zrcp={} as ZrcpType;
+		if (Settings.launch.zrcp.hostname==undefined)
+			Settings.launch.zrcp.hostname = 'localhost';
+		if (Settings.launch.zrcp.port==undefined)
+			Settings.launch.zrcp.port=10000;
+
+		// zxsim
+		if (!Settings.launch.zxsim)
+			Settings.launch.zxsim={} as ZxSimType;
+		if (!Settings.launch.zxsim.machine)
+			Settings.launch.zxsim.machine='48k';
+
+		// serial
+		if (!Settings.launch.serial)
+			Settings.launch.serial={} as SerialType;
+		if (Settings.launch.serial.baudrate==undefined)
+			Settings.launch.serial.baudrate=230400;
+		if (!Settings.launch.serial.port==undefined)
+			Settings.launch.serial.port="/dev/tty.usbserial";
+
 		if(!Settings.launch.rootFolder)
 			Settings.launch.rootFolder = rootFolder;
 		if(Settings.launch.listFiles)
