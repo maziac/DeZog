@@ -461,7 +461,6 @@ export class DebugSessionClass extends DebugSession {
 		Remote.on('log', message => {
 			// Show the log (from the socket/ZEsarUX) in the debug console
 			vscode.debug.activeDebugConsole.appendLine("Log: " + message);
-
 		});
 
 		Remote.once('error', err => {

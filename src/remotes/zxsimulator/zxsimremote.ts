@@ -7,6 +7,7 @@ import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+//import {LogGlobal} from '../../log';
 
 
 
@@ -259,41 +260,44 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		//		const time=Utility.timeDiff();
 		//		console.log("Time="+time+" ms");
 
-		// Update the screen
-		this.zxSimulationView.update();
+		//LogGlobal.log("cpuContinue, counter="+counter);
 
-		// Check if stopped or just the counter elapsed
-		if (counter==0) {
-			// Restart
-			setTimeout(() => {
+		// Give other tasks a little time
+		setTimeout(() => {
+			// Check if stopped or just the counter elapsed
+			if (counter==0) {
+				// Update the screen
+				this.zxSimulationView.update();
+				// Continue
 				this.z80CpuContinue(bp1, bp2);
-			}, 10);
-		}
-		else {
-			// Otherwise stop
-			this.cpuRunning=false;
-			// If no error text ...
-			if (!breakReason) {
-				switch (breakReasonNumber) {
-					case 1:
-						breakReason="Manual break";
-						break;
-					case 2:
-						breakReason="Breakpoint hit";
-						break;
+			}
+			else {
+				// Otherwise stop
+				this.cpuRunning=false;
+				// If no error text ...
+				if (!breakReason) {
+					switch (breakReasonNumber) {
+						case 1:
+							breakReason="Manual break";
+							break;
+						case 2:
+							breakReason="Breakpoint hit";
+							break;
+					}
 				}
-			}
 
-			// Get breakpoint ID
-			let bpId=0;
-			if (bpInner) {
-				bpId=bpInner[0].bpId;
-			}
+				// Get breakpoint ID
+				let bpId=0;
+				if (bpInner) {
+					bpId=bpInner[0].bpId;
+				}
 
-			// Send Notification
-			if(this.continueResolve)
-				this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
-		}
+				// Send Notification
+				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
+				if (this.continueResolve)
+					this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
+			}
+		}, 100);
 	}
 
 

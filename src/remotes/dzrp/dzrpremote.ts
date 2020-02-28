@@ -8,6 +8,7 @@ import {NexFile} from './nexfile';
 import {Settings} from '../../settings';
 import {Utility} from '../../utility';
 import * as path from 'path';
+import {Remote} from '../remotefactory';
 
 
 /**
@@ -162,43 +163,53 @@ export class DzrpRemote extends RemoteBase {
 		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Save resolve function when break-response is received
 			this.continueResolve=async ({bpId, breakReason}) => {
-				// Get corresponding breakpoint
-				const bp=this.getBreakpointById(bpId);
-				// Check for condition
-				let continueValid=false;
-				if (bp) {
-					if (bp.condition) {
-						// Check if condition is true
-						continueValid = !Utility.evalExpression(bp.condition, true);
-					}
-					else {
-						// No condition
-						if (bp.log) {
-							// Continue if a log is available.
-							continueValid=true;
+				try {
+					// Clear registers
+					this.z80Registers.clearCache();
+					await Remote.getRegisters();
+					// Get corresponding breakpoint
+					const bp=this.getBreakpointById(bpId);
+					// Check for condition
+					let continueValid=false;
+					if (bp) {
+						if (bp.condition) {
+							// Check if condition is true
+							continueValid=Utility.evalExpression(bp.condition, true)==0;
+							if (!continueValid)
+								breakReason+=", "+bp.condition;
+						}
+						else {
+							// No condition
+							if (bp.log) {
+								// Continue if a log is available.
+								continueValid=true;
+							}
+						}
+
+						// Emit log?
+						if (bp.log&&continueValid) {
+							// Get log string
+							const log=await Utility.evalLogString(bp.log);
+							// Print
+							this.emit('log', log);
 						}
 					}
 
-					// Emit log?
-					if (bp.log && continueValid) {
-						// Get log string
-						const log=await Utility.evalLogString(bp.log);
-						// Print
-						this.emit('log', log);
+					// Check for continue
+					if (continueValid) {
+						// Continue
+						this.sendDzrpCmdContinue();
+					}
+					else {
+						// Stop
+						// Clear register cache
+						this.z80Registers.clearCache();
+						// return
+						resolve({breakReason});
 					}
 				}
-
-				// Check for continue
-				if (continueValid) {
-					// Continue
-					this.sendDzrpCmdContinue();
-				}
-				else {
-					// Stop
-					// Clear register cache
-					this.z80Registers.clearCache();
-					// return
-					resolve({breakReason});
+				catch (e) {
+					resolve({breakReason: e});
 				}
 			};
 
