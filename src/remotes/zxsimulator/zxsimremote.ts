@@ -3,7 +3,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
-import {ZxSimulationView} from './zxulascreenview';
+//import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -22,9 +22,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
 	protected z80Cpu: any;	// Z80Cpu
-	protected zxMemory: ZxMemory;
-	protected zxPorts: ZxPorts;
-	protected zxSimulationView: ZxSimulationView;
+	public zxMemory: ZxMemory;
+	public zxPorts: ZxPorts;
+	//protected zxSimulationView: ZxSimulationView;
 
 
 	// The last used breakpoint ID.
@@ -71,7 +71,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Ready
 		this.emit('initialized')
 		// Open the ZX screen simulation view
-		this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
+		//this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
 	}
 
 
@@ -83,8 +83,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
-		this.zxSimulationView?.close();
-		this.zxSimulationView=undefined as any;
+		//this.zxSimulationView?.close();
+		//this.zxSimulationView=undefined as any;
+		this.emit('closed')
 	}
 
 
@@ -97,8 +98,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * will also be terminated.
 	 */
 	public async terminate(): Promise<void> {
-		this.zxSimulationView?.close();
-		this.zxSimulationView=undefined as any;
+		//this.zxSimulationView?.close();
+		//this.zxSimulationView=undefined as any;
+		this.emit('closed')
 	}
 
 
@@ -297,7 +299,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		//LogGlobal.log("cpuContinue, counter="+counter);
 
 		// Update the screen
-		this.zxSimulationView.update();
+		//this.zxSimulationView.update();
+		this.emit('update')
 
 		// Give other tasks a little time
 		setTimeout(() => {

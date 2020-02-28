@@ -1,7 +1,7 @@
 //import * as assert from 'assert';
 //import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
-import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
+//import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../utility';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -69,7 +69,8 @@ export class SerialFake extends ZxSimulatorRemote {
 			this.serialPort.on('open', async () => {
 				console.log('Open SerialFake');
 				// Open the ZX screen simulation view
-				this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
+				//this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
+				this.emit('initialized')
 				// Ready for first command
 				resolve();
 			});
@@ -99,7 +100,8 @@ export class SerialFake extends ZxSimulatorRemote {
 	 */
 	public async close(): Promise<void> {
 		return new Promise<void>(resolve => {
-			this.zxSimulationView.close();
+			//this.zxSimulationView.close();
+			this.emit('closed')
 			this.serialPort.close(() => {
 				resolve();
 			});

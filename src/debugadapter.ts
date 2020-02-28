@@ -25,7 +25,14 @@ import { MemAttribute } from './disassembler/memory';
 import { Opcode, Opcodes } from './disassembler/opcode';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
+import {SerialFake} from './remotes/zxnext/serialfake';
+import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
+import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 
+
+
+// If enabled a faked serial connection will be used (for debugging/testing purposes):
+let FakeSerial;
 
 
 
@@ -277,6 +284,7 @@ export class DebugSessionClass extends DebugSession {
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
+		FakeSerial?.close();
 		Remote.disconnect().then(() => {
 			this.removeAllListeners();
 			this.sendResponse(response);
@@ -333,6 +341,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
 		// Stop machine
+		FakeSerial?.close();
 		Remote.disconnect().then(() => {
 			// And setup a new one
 			this.launch(response);
@@ -495,6 +504,22 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 
+				// At the end, if remote type == ZX simulator, open its window.
+				// Note: it was done this way and not in the Remote itself, otherwise
+				// there would be a dependency in RemoteFactory to vscode which in turn /// makes problems for the Unittests.
+				if (Settings.launch.remoteType=="zxsim") {
+					// Adds a window that displays the ZX screen.
+					const remote=Remote as ZxSimulatorRemote;
+					let zxview: ZxSimulationView|undefined=new ZxSimulationView(remote.zxMemory, remote.zxPorts);
+					remote.once('closed', () => {
+						zxview?.close();
+						zxview=undefined;
+					});
+					remote.on('update', () => {
+						zxview?.update();
+					});
+				}
+
 				// Socket is connected, allow setting breakpoints
 				this.sendEvent(new InitializedEvent());
 				// Respond
@@ -522,11 +547,17 @@ export class DebugSessionClass extends DebugSession {
 				}
 				DebugSessionClass.unitTestHandler=undefined;
 			});
+
+			// Fake the serial connection!
+			if (Settings.launch.remoteType=="serial") {
+				FakeSerial=new SerialFake();	// comment this line if no fake is wanted.
+				FakeSerial.doInitialization();
+				ZxSimulationView.SimulationViewFactory(FakeSerial);
+			}
+
 			Remote.init();
 		});
 	}
-
-
 
 
 	/**

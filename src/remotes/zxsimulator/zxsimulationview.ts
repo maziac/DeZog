@@ -5,6 +5,7 @@ import {EventEmitter} from 'events';
 import {ZxMemory} from './zxmemory';
 import {BaseView} from '../../views/baseview';
 import {ZxPorts} from './zxports';
+import {ZxSimulatorRemote} from './zxsimremote';
 
 
 /**
@@ -26,6 +27,28 @@ export class ZxSimulationView extends BaseView {
 
 	// A pointer to the ports for the keyboards.
 	protected zxPorts: ZxPorts;
+
+
+	/**
+	 * Factory method which creates a new view and handles it's lifecycle.
+	 * I.e. the events.
+	 * @param simulator The simulator Remote which emits the signals.
+	 */
+	public static SimulationViewFactory(simulator: ZxSimulatorRemote) {
+		// Safe ty check
+		if (!simulator)
+			return;
+
+		// Create new instance
+		let zxview: ZxSimulationView|undefined = new ZxSimulationView(simulator.zxMemory, simulator.zxPorts);
+		simulator.once('closed', () => {
+			zxview?.close();
+			zxview=undefined;
+		});
+		simulator.on('update', () => {
+			zxview?.update();
+		});
+	}
 
 
 	/**

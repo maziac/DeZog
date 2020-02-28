@@ -1,16 +1,12 @@
 //import * as assert from 'assert';
 //import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
-import {SerialFake} from './serialfake';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 
 
 let SerialPort;
 
-
-// If enabled a faked serial connection will be used (for debugging/testing purposes):
-let FakeSerial;
 
 
 
@@ -30,18 +26,6 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization() {
-		// Do Fake Serial Port
-		FakeSerial=new SerialFake();
-		if (FakeSerial) {
-			try {
-				await FakeSerial.doInitialization();
-			}
-			catch (err) {
-				this.emit('error', err);
-				return;
-			}
-		}
-
 		// Just in case
 		if (this.serialPort&&this.serialPort.isOpen)
 			this.serialPort.close();
@@ -95,8 +79,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	 */
 	public async disconnect(): Promise<void> {
 		return new Promise<void>(resolve => {
-			this.serialPort.close(async () => {
-				await FakeSerial?.close();
+			this.serialPort.close(() => {
 				resolve();
 			});
 		});
@@ -112,8 +95,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	 */
 	public async terminate(): Promise<void> {
 		return new Promise<void>(resolve => {
-			this.serialPort.close(async () => {
-				await FakeSerial?.close();
+			this.serialPort.close(() => {
 				this.emit('terminated');
 				resolve();
 			});
