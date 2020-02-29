@@ -33,6 +33,7 @@ export class ZesaruxRegisters extends Z80Registers {
 	protected de2Index: number;
 	protected iIndex: number;
 	protected rIndex: number;
+	protected imIndex: number;
 
 
 	/**
@@ -55,7 +56,8 @@ export class ZesaruxRegisters extends Z80Registers {
 		this.hl2Index = -1;
 		this.de2Index = -1;
 		this.iIndex = -1;
-		this.rIndex = -1;
+		this.rIndex=-1;
+		this.imIndex=-1;
 	}
 
 
@@ -196,12 +198,23 @@ export class ZesaruxRegisters extends Z80Registers {
 	}
 
 	public parseR(data: string): number {
-		if(this.rIndex < 0) {
-			this.rIndex = data.indexOf('R=');
-			assert(this.rIndex >= 0);
-			this.rIndex += 2;
+		if (this.rIndex<0) {
+			this.rIndex=data.indexOf('R=');
+			assert(this.rIndex>=0);
+			this.rIndex+=2;
 		}
-		const res = parseInt(data.substr(this.rIndex,2),16);
+		const res=parseInt(data.substr(this.rIndex, 2), 16);
+		return res;
+	}
+
+	public parseIM(data: string): number {
+		if (this.imIndex<0) {
+			this.imIndex=data.indexOf('IM');
+			assert(this.imIndex>=0);
+			this.imIndex+=2;
+		}
+		const char=data.codePointAt(this.imIndex) as number;
+		const res: number=char-48;
 		return res;
 	}
 }

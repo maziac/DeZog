@@ -43,8 +43,7 @@ export class Z80Cpu extends Z80js {
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
-		self.im=2;	// ZX Spectrum
-		//this.remaingInterruptTstates=2;
+		self.im=0;	// Just as after interrupt.
 	}
 
 
