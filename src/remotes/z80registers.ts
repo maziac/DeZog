@@ -16,6 +16,8 @@ export enum Z80_REG {
 	AF, BC, DE, HL,
 	IX, IY,
 	AF2, BC2, DE2, HL2, IR,
+
+	IM,
 	F, A, C, B, E, D, L, H,
 	IXL, IXH, IYL, IYH,
 	F2, A2, C2, B2, E2, D2, L2, H2,
@@ -98,6 +100,9 @@ export class Z80Registers {
 		this.regMap.set("L", this.parseL.bind(this));
 		this.regMap.set("I", this.parseI.bind(this));
 		this.regMap.set("R", this.parseR.bind(this));
+
+		this.regMap.set("IM", this.parseIM.bind(this));
+
 		this.regMap.set("A'", this.parseA2.bind(this));
 		this.regMap.set("F'", this.parseF2.bind(this));
 
@@ -242,6 +247,10 @@ export class Z80Registers {
 	}
 
 
+	public parseIM(data: RegisterData): number {
+		return data[Z80_REG.IM]>>8;
+	}
+
 	/**
 	 * Called during the launchRequest.
 	 */
@@ -322,14 +331,14 @@ export class Z80Registers {
 		}
 
 		// All unset registers get a default formatting
-		for (let [regName,] of Z80Registers.registerNames) {
+		for (let regName of Z80Registers.registerNames) {
 			// get format
 			const format = formattingMap.get(regName);
 			if (format != undefined)
 				continue;	// has already a format string
 			// set default format
 			let rLen;
-			if (regName == "IXH" || regName == "IXL" || regName == "IYH" || regName == "IYL") {
+			if (regName == "IXH" || regName == "IXL" || regName == "IYH" || regName == "IYL" || regName=="IM") {
 				// Value length = 1 byte
 				rLen = 1;
 			}

@@ -136,8 +136,8 @@ Command:
 | 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x03  | CMD_SET_REGISTER |
-| 6     | 1    | i  | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6 = IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=F, 14=A, 15=C, 16=B, 17=E, 18=D, 19=L, 20=H, 21=IXL, 22=IXH, 23=IYL, 24=IYH, 25=F', 26=A', 27=C', 28=B', 29=E', 30=D', 31=L', 32=L' |
-| 7     | 2    | n  | The value to set. Little endian. If register is one byte only only the lower byte is used. |
+| 6     | 1    | i  | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6 = IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13,=IM, 13=F, 14=A, 15=C, 16=B, 17=E, 18=D, 19=L, 20=H, 21=IXL, 22=IXH, 23=IYL, 24=IYH, 25=F', 26=A', 27=C', 28=B', 29=E', 30=D', 31=L', 32=H' |
+| 7     | 1-2    | n  | The value to set. Little endian. If register is one byte  only the lower byte is used. |
 
 
 Response:

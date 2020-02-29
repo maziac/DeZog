@@ -38,6 +38,11 @@ export class Z80Cpu extends Z80js {
 		//this.self=this;
 		this.remaingInterruptTstates=this.INTERRUPT_TIME;
 		const self=this as any;
+		/*
+		IM 0: Executes an instruction that is placed on the data bus by a peripheral.
+		IM 1: Jumps to address &0038
+		IM 2: Uses an interrupt vector table, indexed by value on data bus.
+		*/
 		self.im=2;	// ZX Spectrum
 		//this.remaingInterruptTstates=2;
 	}

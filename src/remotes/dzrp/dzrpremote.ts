@@ -592,6 +592,7 @@ export class DzrpRemote extends RemoteBase {
 		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
 		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
 		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
 	}
 
 

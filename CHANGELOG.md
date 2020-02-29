@@ -4,6 +4,7 @@
 - launch.json changes:
 	- "zhostname" and "zport" removed. Use "hostname" and "port" under "zrcp" instead.
 	- Configurations for "zxsim" ("machine") and "serial" ("baudrate", "port") added.
+- Included rom in simulator.
 
 # 0.12.2
 - Package 'SerialPort' removed temporarily.
