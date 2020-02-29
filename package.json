@@ -3,7 +3,7 @@
 	"displayName": "DeZog",
 	"version": "0.12.3",
 	"publisher": "maziac",
-	"description": "A debug adapter for use with the ZEsarUX ZX Spectrum Emulator.",
+	"description": "Visual Studio Code Debug Adapter for Z80/ZX Spectrum.",
 	"author": {
 		"name": "Thomas Busse"
 	},
