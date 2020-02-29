@@ -135,7 +135,7 @@ export class Z80Cpu extends Z80js {
 			r1.af, r1.bc, r1.de, r1.hl,
 			r1.ix, r1.iy,
 			r2.af, r2.bc, r2.de, r2.hl,
-			self.i, self.r);
+			self.i, self.r, self.im);
 		return regData;
 	}
 

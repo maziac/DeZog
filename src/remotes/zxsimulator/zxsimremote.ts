@@ -169,6 +169,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				this.z80Cpu.r2.hl=value;
 				break;
 
+			case Z80_REG.IM:
+				this.z80Cpu.im=value;
+				break;
+
 			case Z80_REG.F:
 				this.z80Cpu.r1.f=value;
 				break;
@@ -431,7 +435,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			r1.af, r1.bc, r1.de, r1.hl,
 			r1.ix, r1.iy,
 			r2.af, r2.bc, r2.de, r2.hl,
-			cpu.i, cpu.r);
+			cpu.i, cpu.r, cpu.im);
 		return new Uint16Array(regData);
 	}
 

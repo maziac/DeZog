@@ -275,8 +275,9 @@ export class ZxNextRemote extends DzrpRemote {
 		const bc2=Utility.getWord(regs, 18);
 		const de2=Utility.getWord(regs, 20);
 		const hl2=Utility.getWord(regs, 22);
-		const i=regs[24];
-		const r=regs[25];
+		const im=regs[24];
+		const i=regs[26];
+		const r=regs[27];
 
 		// Convert regs
 		const regData=Z80Registers.getRegisterData(
@@ -284,7 +285,7 @@ export class ZxNextRemote extends DzrpRemote {
 			af, bc, de, hl,
 			ix, iy,
 			af2, bc2, de2, hl2,
-			i, r);
+			i, r, im);
 
 		return regData;
 	}

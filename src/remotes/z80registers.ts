@@ -16,8 +16,8 @@ export enum Z80_REG {
 	AF, BC, DE, HL,
 	IX, IY,
 	AF2, BC2, DE2, HL2, IR,
-
 	IM,
+
 	F, A, C, B, E, D, L, H,
 	IXL, IXH, IYL, IYH,
 	F2, A2, C2, B2, E2, D2, L2, H2,
@@ -248,7 +248,7 @@ export class Z80Registers {
 
 
 	public parseIM(data: RegisterData): number {
-		return data[Z80_REG.IM]>>8;
+		return data[Z80_REG.IM];
 	}
 
 	/**
@@ -278,10 +278,10 @@ export class Z80Registers {
 		AF: number, BC: number, DE: number, HL: number,
 		IX: number, IY: number,
 		AF2: number, BC2: number, DE2: number, HL2: number,
-		I: number, R: number): Uint16Array {
-		assert(Z80_REG.IR+1==13);
+		I: number, R: number,
+		IM: number): Uint16Array {
 		// Store data in word array to save space
-		const regData=new Uint16Array(Z80_REG.IR+1);
+		const regData=new Uint16Array(Z80_REG.IM+1);
 		regData[Z80_REG.PC]=PC;
 		regData[Z80_REG.SP]=SP;
 		regData[Z80_REG.AF]=AF;
@@ -295,6 +295,7 @@ export class Z80Registers {
 		regData[Z80_REG.DE2]=DE2;
 		regData[Z80_REG.HL2]=HL2;
 		regData[Z80_REG.IR]=(I<<8)|R;
+		regData[Z80_REG.IM]=IM;
 		return regData;
 	}
 
