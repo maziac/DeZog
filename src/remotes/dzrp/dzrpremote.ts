@@ -9,6 +9,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
+import {CommentThreadCollapsibleState} from 'vscode';
 
 
 /**
@@ -203,19 +204,30 @@ export class DzrpRemote extends RemoteBase {
 					// Get registers
 					this.z80Registers.clearCache();
 					await Remote.getRegisters();
+					let condition;
 
-					// Get corresponding breakpoint
-					const bp=this.getBreakpointById(bpId);
+					// Check breakReason, i.e. check if it was a watchpoint.
+					if (breakReason==3||breakReason==4) {
+						// Watchpoint
 
-					// Check for condition
-					const {condition, log}=this.checkConditionAndLog(bp);
+						// Condition not ued at the moment
+						condition='';
+					}
+					else {
+						// Get corresponding breakpoint
+						const bp=this.getBreakpointById(bpId);
 
-					// Emit log?
-					if (log) {
-						// Convert
-						const evalLog=await Utility.evalLogString(log);
-						// Print
-						this.emit('log', evalLog);
+						// Check for condition
+						const {condition: cond, log}=this.checkConditionAndLog(bp);
+						condition=cond;
+
+						// Emit log?
+						if (log) {
+							// Convert
+							const evalLog=await Utility.evalLogString(log);
+							// Print
+							this.emit('log', evalLog);
+						}
 					}
 
 					// Check for continue

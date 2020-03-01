@@ -258,6 +258,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakReason;
 		let breakCondition;
 		let bp;
+		let bpId;
 		for (; counter>0; counter--) {
 			try {
 				this.z80Cpu.execute();
@@ -310,9 +311,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			}
 
 			// Check if watchpoint is hit
-			if (this.zxMemory.watchpointHit) {
+			if (this.zxMemory.hitAddress>=0) {
 				// Yes, read or write access
-				breakReasonNumber=(this.zxMemory.wpReadAddresses.length>0) ? 3 : 4;
+				breakReasonNumber=(this.zxMemory.hitAccess=='r')? 3:4;
+				bpId=this.zxMemory.hitAddress;
 				break;
 			}
 
@@ -366,11 +368,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				}
 
 				// Get breakpoint ID
-				let bpId=bp?.bpId;
+				if (bp)
+					bpId=bp.bpId;
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				assert(this.continueResolve);
+				// Note: bpID is the break address in case of a watchpoint.
+
+Das geht nicht mit addr und bpId, es wird die breakreson nicht weitergegeben.
+
 				if (this.continueResolve)
 					this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
 			}
@@ -479,6 +486,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.tmpBreakpoints=this.createTemporaryBreakpoints([...this.breakpoints, ...enabledLogPoints, ...this.assertBreakpoints]);
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
+		this.zxMemory.clearHit();
 		this.z80CpuContinue(bp1Address, bp2Address);
 	}
 

@@ -28,10 +28,12 @@ export class WatchpointZxMemory extends ZxMemory {
 	// Has to be reset manually before the next turn.
 	public watchpointHit: boolean;
 
-	// If watchpointHit was set the address where the hit occurred is stored
-	// in one of the 2 arrays.
-	public wpReadAddresses: Array<number>;
-	public wpWriteAddresses: Array<number>;
+	// If watchpointHit was set the address where the hit occurred.
+	// -1 if no hit.
+	public hitAddress: number;
+
+	// The kind of access, 'r'ead or 'w'rite.
+	public hitAccess: string;
 
 	// An array of 0-0xFFFF entries, one for each address.
 	// If an address has no watchpoint it is undefined.
@@ -87,10 +89,10 @@ export class WatchpointZxMemory extends ZxMemory {
 	 * Clears the hit flag and the arrays.
 	 */
 	public clearHit() {
-		this.watchpointHit=false;
-		this.wpReadAddresses=new Array<number>();
-		this.wpWriteAddresses=new Array<number>();
+		this.hitAddress=-1;
+		this.hitAccess='';
 	}
+
 
 	// Overwrite 'read' to check for watchpoint.
 	public read8(addr: number): number {
@@ -98,10 +100,10 @@ export class WatchpointZxMemory extends ZxMemory {
 		const wp=this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if (wp.access.includes('r')) {
+			if ((this.hitAddress<0) && wp.access.includes('r')) {
 				// Read access
-				this.wpReadAddresses.push(addr);
-				this.watchpointHit=true;
+				this.hitAddress=addr;
+				this.hitAccess='r';
 			}
 		}
 		return super.read8(addr);
@@ -114,10 +116,10 @@ export class WatchpointZxMemory extends ZxMemory {
 		const wp=this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if (wp.access.includes('w')) {
+			if ((this.hitAddress<0) && wp.access.includes('w')) {
 				// Write access
-				this.wpWriteAddresses.push(addr);
-				this.watchpointHit=true;
+				this.hitAddress=addr;
+				this.hitAccess='r';
 			}
 		}
 		super.write8(addr, val);

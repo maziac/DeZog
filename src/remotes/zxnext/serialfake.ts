@@ -244,6 +244,25 @@ export class SerialFake extends ZxSimulatorRemote {
 					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
 				}
 				break;
+			case DZRP.CMD_ADD_WATCHPOINT:
+				{ TODO
+					// Create a new breakpoint
+					const bpAddress=Utility.getWord(data, 2);
+					const bpCondition=Utility.getStringFromBuffer(data, 4);
+					const bpId=this.createNewBreakpoint(bpAddress, bpCondition);
+					// Respond
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+				}
+				break;
+			case DZRP.CMD_REMOVE_WATCHPOINT:
+				{
+					// Get breakpoint ID
+					const bpId=Utility.getWord(data, 2);
+					// Remove it
+					this.breakpointsMap.delete(bpId);
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+				}
+				break;
 			case DZRP.CMD_READ_MEM:
 				{
 					// Get address and size
