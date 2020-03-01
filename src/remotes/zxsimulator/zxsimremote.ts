@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
-import {ZxMemory} from './zxmemory';
+import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
 //import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
@@ -23,7 +23,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
 	protected z80Cpu: any;	// Z80Cpu
-	public zxMemory: ZxMemory;
+	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
 	//protected zxSimulationView: ZxSimulationView;
 
@@ -51,7 +51,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.cpuRunning=false;
 		this.lastBpId=0;
 		// Create a Z80 CPU to emulate Z80 behaviour
-		this.zxMemory=new ZxMemory();
+		this.zxMemory=new WatchpointZxMemory();
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
 	}
@@ -308,11 +308,20 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					break;
 				}
 			}
+
+			// Check if watchpoint is hit
+			if (this.zxMemory.watchpointHit) {
+				// Yes, read or write access
+				breakReasonNumber=(this.zxMemory.wpReadAddresses.length>0) ? 3 : 4;
+				break;
+			}
+
 			// Check if stopped from outside
 			if (!this.cpuRunning) {
 				breakReasonNumber=1;	// Manual break
 				break;
 			}
+
 			// Check if breakpoints are hit
 			if (pc==bp1||pc==bp2)
 				break;
@@ -346,6 +355,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 							breakReason="Breakpoint hit";
 							if (breakCondition)
 								breakReason+=', '+breakCondition;
+							break;
+						case 3:
+							breakReason="Watchpoint hit (read)";
+							break;
+						case 4:
+							breakReason="Watchpoint hit (write)";
 							break;
 					}
 				}
@@ -494,12 +509,26 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Sends the command to remove a breakpoint.
-	 * @param bpId The breakpoint ID to remove.
+	 * Sends the command to add a watchpoint.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * I.e. you can watch whole memory areas.
+	 * @param condition The watchpoint condition as string. If there is n0 condition
+	 * 'condition' may be undefined or an empty string ''.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		// Does nothing.
-		this.cpuRunning=false;	// Break if running
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition?: string): Promise<void> {
+		this.zxMemory.setWatchpoint(address, size, access, condition);
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to remove a watchpoint for an address range.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 */
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
+		this.zxMemory.removeWatchpoint(address, size);
 	}
 
 

@@ -134,6 +134,8 @@ export class DzrpRemote extends RemoteBase {
 	 * undefined if not breakpoint found.
 	 */
 	protected getBreakpointById(bpId: number): GenericBreakpoint|undefined {
+		if (bpId)	// undefined or 0
+			return undefined;
 		// Search vscode breakpoints
 		const foundBp = this.breakpoints.find(bp => bp.bpId==bpId);
 		if (foundBp)
@@ -176,7 +178,7 @@ export class DzrpRemote extends RemoteBase {
 				return {condition: '', log: bp.log};
 			}
 		}
-		return {condition: undefined, log: undefined};
+		return {condition: '', log: undefined};
 	}
 
 
@@ -368,33 +370,47 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Enables/disables all WPMEM watchpoints set from the sources.
-	 * Promise is called when method finishes.
-	 * @param enable true=enable, false=disable.
+	 * Sets one watchpoint in the remote.
+	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * Promises is execute when last watchpoint has been set.
+	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
-	public async enableWPMEM(enable: boolean): Promise<void> {
-		assert(false);	// override this
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
+		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.condition);
 	}
 
 
 	/**
-	 * Sets the watchpoints in the given list.
-	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * Removes one watchpoint from the remote.
 	 * Promises is execute when last watchpoint has been set.
-	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param wp The watchpoint to renove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
-	public async setWatchpoints(watchPoints: Array<GenericWatchpoint>): Promise<void> {
-		assert(false);	// override this
+	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
+		await this.sendDzrpCmdRemoveWatchpoint(wp.address, wp.size);
 	}
 
 
 	/**
 	 * Enables/disables all assert breakpoints set from the sources.
-	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpoints(enable: boolean): Promise<void> {
-		assert(false);	// override this
+	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
+		for (let abp of this.assertBreakpoints) {
+			if (enable) {
+				// Set breakpoint
+				if (!abp.bpId) {
+					const bpId=await this.sendDzrpCmdAddBreakpoint(abp.address);
+					abp.bpId=bpId;
+				}
+			}
+			else {
+				// Remove breakpoint
+				if (abp.bpId) {
+					await await this.sendDzrpCmdRemoveBreakpoint(abp.bpId);
+					abp.bpId=undefined;
+				}
+			}
+		}
 	}
 
 
@@ -657,6 +673,31 @@ export class DzrpRemote extends RemoteBase {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+		assert(false);
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to add a watchpoint.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * I.e. you can watch whole memory areas.
+	 * @param condition The watchpoint condition as string. If there is n0 condition
+	 * 'condition' may be undefined or an empty string ''.
+	 */
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, condition?: string): Promise<void> {
+		assert(false);
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to remove a watchpoint for an address range.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 */
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
 		assert(false);
 	}
 

@@ -2,12 +2,14 @@
 /**
  * Represents a watchpoint used byDebugAdapter in a very generic form,
  * i.e. not machine specific.
+ * Watchpoints are NOT identiifed by an ID but instead by the address and size.
+ *
  */
 export interface GenericWatchpoint {
 	address: number; ///< The start address
 	size: number;	///< The length of the area to watch
 	access: string;	///< The way of access, e.g. read='r', write='w', readwrite='rw'
-	condition: string;	///< The additional conditions. '' if no condition set.
+	condition: string;	///< The additional condition. undefined or '' if no condition set.
 }
 
 

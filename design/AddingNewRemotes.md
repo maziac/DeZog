@@ -58,7 +58,6 @@ The following methods need to be overwritten:
 The following methods might be overwritten for extra functionality:
 - Watchpoints
 	- enableWPMEM: Enable/disable the watchpoints.
-***?	- setWatchpoints: Sets the watchpoints.
 - Asserts
 	- setASSERT: Sets the given assert array.
   - enableAssertBreakpoints: Enable/disable all ASSERTs.

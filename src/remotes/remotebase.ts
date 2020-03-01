@@ -134,7 +134,7 @@ export class RemoteBase extends EventEmitter {
 	/// A list for the frames (call stack items)
 	protected listFrames=new RefList<CallStackFrame>();
 
-	/// Mirror of the emulator's breakpoints.
+	/// Mirror of the remote's breakpoints.
 	protected breakpoints=new Array<RemoteBreakpoint>();
 
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
@@ -146,8 +146,9 @@ export class RemoteBase extends EventEmitter {
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
 
-	/// Stores the wpmem watchpoints
-	protected watchpoints=new Array<GenericWatchpoint>();
+
+	/// Stores the wpmem watchpoints (this is a smaller list, if watchpoints can be given manually)
+	protected wpmemWatchpoints=new Array<GenericWatchpoint>();
 
 
 	/// Stores the assert breakpoints
@@ -917,7 +918,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 */
 	public setWPMEMArray(watchPoints: Array<GenericWatchpoint>) {
-		this.watchpoints=[...watchPoints];
+		this.wpmemWatchpoints=[...watchPoints];
 	}
 
 
@@ -927,17 +928,33 @@ export class RemoteBase extends EventEmitter {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableWPMEM(enable: boolean): Promise<void> {
+		for (let wp of this.wpmemWatchpoints) {
+			if (enable)
+				await this.setWatchpoint(wp);
+			else
+				await this.removeWatchpoint(wp);
+		}
+		this.wpmemEnabled=enable;
+	}
+
+
+	/**
+	 * Sets one watchpoint in the remote.
+	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * Promises is execute when last watchpoint has been set.
+	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
+	 */
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		assert(false);	// override this
 	}
 
 
 	/**
-	 * Sets the watchpoints in the given list.
-	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
+	 * Removes one watchpoint from the remote.
 	 * Promises is execute when last watchpoint has been set.
-	 * @param watchPoints A list of addresses to put a guard on.
+	 * @param wp The watchpoint to renove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
-	public async setWatchpoints(watchPoints: Array<GenericWatchpoint>): Promise<void> {
+	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		assert(false);	// override this
 	}
 

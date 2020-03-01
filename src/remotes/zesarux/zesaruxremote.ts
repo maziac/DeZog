@@ -1499,36 +1499,33 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Sets the watchpoints in the given list.
+	 * Sets one watchpoint in the remote.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
-	 * It uses ZEsarUX new fast 'memory breakpoints' for this if the breakpoint ha no additional condition.
-	 * If it has a condition the (slow) original ZEsarUX breakpoints are used.
-	 * @param watchPoints A list of addresses to put a guard on.
+	 * It uses ZEsarUX new fast 'memory breakpoints' for this if the breakpoint has no additional condition.
+	 * If it has a condition: not implemented.
+	 * @param wp The watchpoint to set.
 	 */
-	public setWatchpoints(watchPoints: Array<GenericWatchpoint>): Promise<void> {
+	public setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		return new Promise<void>(resolve => {
-			// Set watchpoints (memory guards)
-			for (let wp of watchPoints) {
-				// Check if condition is used
-				if (wp.condition.length>0) {
-					// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
-					// Will most probably never be implemented by Cesar.
-					// I leave this open mainly as a reminder.
-					// At the moment no watchpoint will be set if an additional condition is set.
-				}
-				else {
-					// This is the general case. Just add a breakpoint on memory access.
-					let type=0;
-					if (wp.access.indexOf('r')>=0)
-						type|=0x01;
-					if (wp.access.indexOf('w')>=0)
-						type|=0x02;
+			// Check if condition is used
+			if (wp.condition && wp.condition.length>0) {
+				// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
+				// Will most probably never be implemented by Cesar.
+				// I leave this open mainly as a reminder.
+				// At the moment no watchpoint will be set if an additional condition is set.
+			}
+			else {
+				// This is the general case. Just add a breakpoint on memory access.
+				let type=0;
+				if (wp.access.indexOf('r')>=0)
+					type|=0x01;
+				if (wp.access.indexOf('w')>=0)
+					type|=0x02;
 
-					// Create watchpoint with range
-					const size=wp.size;
-					let addr=wp.address;
-					zSocket.send('set-membreakpoint '+addr.toString(16)+'h '+type+' '+size);
-				}
+				// Create watchpoint with range
+				const size=wp.size;
+				let addr=wp.address;
+				zSocket.send('set-membreakpoint '+addr.toString(16)+'h '+type+' '+size);
 			}
 
 			// Return promise after last watchpoint set
@@ -1538,26 +1535,17 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Enables/disables all WPMEM watchpoints set from the sources.
-	 * Promise is called when method finishes.
-	 * @param enable true=enable, false=disable.
+	 * Removes one watchpoint from the remote and removes it from the 'watchpoints' list.
+	 * Promises is execute when last watchpoint has been set.
+	 * @param wp The watchpoint to remove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
-	public async enableWPMEM(enable: boolean): Promise<void> {
+	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		return new Promise<void>(resolve => {
-			if (enable) {
-				this.setWatchpoints(this.watchpoints);
-			}
-			else {
-				// Remove watchpoint(s)
-				//zSocket.send('clear-membreakpoints');
-				for (let wp of this.watchpoints) {
-					// Clear watchpoint with range
-					const size=wp.size;
-					let addr=wp.address;
-					zSocket.send('set-membreakpoint '+addr.toString(16)+'h 0 '+size);
-				}
-			}
-			this.wpmemEnabled=enable;
+			// Clear watchpoint with range
+			const size=wp.size;
+			let addr=wp.address;
+			zSocket.send('set-membreakpoint '+addr.toString(16)+'h 0 '+size);
+			// Return promise after last watchpoint set
 			zSocket.executeWhenQueueIsEmpty().then(resolve);
 		});
 	}

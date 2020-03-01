@@ -31,8 +31,8 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 				// Enable additional features
 				ZesaruxExtRemote.prototype.initBreakpoints=ZesaruxExtRemote.prototype.initBreakpointsExt;
 
-				ZesaruxExtRemote.prototype.setWatchpoints=ZesaruxExtRemote.prototype.setWatchpointsExt;
-				ZesaruxExtRemote.prototype.enableWPMEM=ZesaruxExtRemote.prototype.enableWPMEMExt;
+				ZesaruxExtRemote.prototype.setWatchpoint=ZesaruxExtRemote.prototype.setWatchpointExt;
+				ZesaruxExtRemote.prototype.removeWatchpoint=ZesaruxExtRemote.prototype.removeWatchpointExt;
 
 				ZesaruxExtRemote.prototype.enableAssertBreakpoints=ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
 
@@ -60,17 +60,13 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 
 	/**
-	 * Sets the watchpoints in the given list.
+	 * Sets one watchpoint in the remote.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
-	 * @param watchPoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
+	 * @param wp The watchpoint to set.
 	 */
-	public async setWatchpointsExt(watchPoints: Array<GenericWatchpoint>): Promise<void> {
-		// Set watchpoints (memory guards)
-		for (let wp of watchPoints) {
-			// Create watchpoint
-			zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.condition);
-		}
+	public async setWatchpointExt(wp: GenericWatchpoint): Promise<void> {
+		// Set watchpoint
+		zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.condition);
 
 		// Wait on last command
 		await zSocket.executeWhenQueueIsEmpty();
@@ -78,18 +74,14 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 
 	/**
-	 * Enables/disables all WPMEM watchpoints set from the sources.
-	 * Promise is called when method finishes.
-	 * @param enable true=enable, false=disable.
+	 * Removes one watchpoint from the remote and removes it from the 'watchpoints' list.
+	 * Promises is execute when last watchpoint has been set.
+	 * @param wp The watchpoint to remove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
-	public async enableWPMEMExt(enable: boolean): Promise<void> {
-		if (enable)
-			this.setWatchpointsExt(this.watchpoints);
-		else
-			for (let wp of this.watchpoints)
-				zSocket.send('clear-fast-breakpoint '+wp.address+' '+ + wp.size); // 'clear-fast-breakpoint' is correct
-
-		this.wpmemEnabled=enable;
+	public async removeWatchpointExt(wp: GenericWatchpoint): Promise<void> {
+		// Clear watchpoint with range
+		zSocket.send('clear-fast-breakpoint '+wp.address+' '+ + wp.size);
+		// Return promise after last watchpoint set
 		await zSocket.executeWhenQueueIsEmpty();
 	}
 
@@ -99,18 +91,15 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
-		if(enable) {
-			// Set breakpoints
-			for (let abp of this.assertBreakpoints) {
+		for (let abp of this.assertBreakpoints) {
+			if (enable) {
 				// Create breakpoint
 				const zesaruxCondition=this.convertCondition(abp.condition)||'';
 				zSocket.send('set-fast-breakpoint '+(abp.address)+' '+zesaruxCondition);
 			}
-		}
-		else {
-			// Remove breakpoints
-			for(let wp of this.assertBreakpoints) {
-				zSocket.send('clear-fast-breakpoint ' + wp.address + ' 1');
+			else {
+				// Remove breakpoints
+				zSocket.send('clear-fast-breakpoint '+abp.address+' 1');
 			}
 		}
 		this.assertBreakpointsEnabled = enable;

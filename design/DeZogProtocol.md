@@ -253,7 +253,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-<!--
+
 ## CMD_ADD_WATCHPOINT
 
 Command:
@@ -262,7 +262,8 @@ Command:
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x09  | CMD_ADD_WATCHPOINT |
-| 6     | 2    | 0-65535 | Breakpoint address |
+| 6     | 2    | 0-65535 | Start of watchpoint address range |
+| 6     | 2    | 0-65535 | Size of watchpoint address range |
 | 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
 
 
@@ -271,7 +272,7 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
-| 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
+| 5     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
 
 
 
@@ -283,7 +284,8 @@ Command:
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x0A  | CMD_REMOVE_WATCHPOINT |
-| 6     | 2    | 1-65535 | Breakpoint ID |
+| 6     | 2    | 0-65535 | Start of watchpoint address range |
+| 6     | 2    | 0-65535 | Size of watchpoint address range |
 
 
 Response:
@@ -291,7 +293,7 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
--->
+
 
 
 ## CMD_READ_MEM
@@ -350,7 +352,7 @@ Notification:
 | 4     | 1    | 0     | Instead of Seq No. |
 | 5     | 1    | 1-255 | Notification seq no |
 | 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 255 = some other error, the error string might have useful information for the user |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other error, the error string might have useful information for the user |
 | 8     | 2    | 0/1-65535 | Breakpoint ID or 0 if no breakpoint hit |
 | 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
