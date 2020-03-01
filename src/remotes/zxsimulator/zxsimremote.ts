@@ -257,7 +257,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=10000;
 		let breakReasonString;
-		let breakCondition;
 		let bp;
 		let breakData;
 		for (; counter>0; counter--) {
@@ -293,13 +292,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 							// Condition met?
 							if (condition!=undefined) {
 								bp=bpElem;
-								breakCondition=condition;
 							}
 						}
 					}
 					catch (e) {
 						bp=bpElem;
-						breakCondition=e;
 					}
 				}
 
@@ -339,7 +336,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.emit('update')
 
 		// Give other tasks a little time
-		setTimeout(() => {
+		setTimeout(async () => {
 			// Check if stopped or just the counter elapsed
 			if (counter==0) {
 				// Continue
@@ -347,24 +344,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			}
 			else {
 				// Otherwise stop
+				let condition='';
 				this.cpuRunning=false;
-				// If no error text ...
-				if (!breakReasonString) {
-					switch (breakNumber) {
-						case 1:
-							breakReasonString="Manual break";
-							break;
-						case 2:
-							breakReasonString="Breakpoint hit";
-							if (breakCondition)
-								breakReasonString+=', '+breakCondition;
-							break;
-					}
+				// Get breakpoint ID
+				if (bp) {
+					breakData=bp.bpId;
+					condition=bp.condition;
 				}
 
-				// Get breakpoint ID
-				if (bp)
-					breakData=bp.bpId;
+				// Create reason string
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));

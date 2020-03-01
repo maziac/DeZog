@@ -183,6 +183,49 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Constructs a human readable break-reason-string from the break number, data and
+	 * an already existing reason string.
+	 * @param breakNumber E.g. BREAK_REASON_NUMBER.WATCHPOINT_READ.
+	 * @param breakData E.g. the breakpoint ID or the watchpoint address.
+	 * @param condition An additional condition or '' if no condition.
+	 * @param breakReasonString An already existing (part of the) reason string.
+	 * The string transmitted from the remote.
+	 * @returns A Promise to the reason string, e.g. "Breakpoint hit. A==4."
+	 */
+	protected async constructBreakReasonString(breakNumber: number, breakData: number, condition: string, breakReasonString: string): Promise<string> {
+		assert(condition != undefined);
+
+		// Generate reason text
+		let reasonString='';
+		switch (breakNumber) {
+			case BREAK_REASON_NUMBER.MANUAL_BREAK:
+				reasonString="Manual break. ";
+				break;
+			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
+				// Check if it was an ASSERT.
+				const abp = this.assertBreakpoints.find(abp => abp.bpId==breakData);
+				if (abp)
+					reasonString="ASSERT. ";
+				else
+					reasonString="Breakpoint. ";
+				break;
+			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
+			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
+				// Watchpoint
+				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+"access at address 0x"+Utility.getHexString(breakData, 4)+" ("+breakData+"). "+breakReasonString;
+				break;
+		}
+		if (!breakReasonString)
+			breakReasonString='';
+		// condition
+		if (condition.length>0)
+			reasonString+=condition+'. ';
+		breakReasonString=reasonString+((breakReasonString.length>0)? breakReasonString:'');
+		return breakReasonString;
+	}
+
+
+	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
@@ -203,12 +246,10 @@ export class DzrpRemote extends RemoteBase {
 					// Get registers
 					this.z80Registers.clearCache();
 					await Remote.getRegisters();
-					let condition;
 
 					// Check breakReason, i.e. check if it was a watchpoint.
+					let condition;
 					if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
-						// Watchpoint
-						breakReasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+"access at address 0x"+Utility.getHexString(breakData, 4)+" ("+breakData+")."+breakReasonString;
 						// Condition not used at the moment
 						condition='';
 					}
@@ -232,17 +273,15 @@ export class DzrpRemote extends RemoteBase {
 					}
 
 					// Check for continue
-					if (condition == undefined) {
+					if (condition==undefined) {
 						// Continue
 						this.sendDzrpCmdContinue();
 					}
 					else {
-						// Stop
-						// Clear register cache
-						this.z80Registers.clearCache();
+						// Construct break resaon string to report
+						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+
 						// return
-						if(condition.length>0)
-							breakReasonString+=", "+condition;
 						resolve({breakReasonString});
 					}
 				}
