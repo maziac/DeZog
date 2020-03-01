@@ -61,8 +61,7 @@ The following methods might be overwritten for extra functionality:
 ***?	- setWatchpoints: Sets the watchpoints.
 - Asserts
 	- setASSERT: Sets the given assert array.
-	- setAssertBreakpoints: Set all assert breakpoints.
-***?	- enableAssertBreakpoints: Enable/disable all ASSERTs.
+  - enableAssertBreakpoints: Enable/disable all ASSERTs.
 - Logpoints
 	- setLOGPOINT: Sets the logpoint array.
 	- setLogpoints: Set all logpoints.

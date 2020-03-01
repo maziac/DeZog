@@ -34,7 +34,6 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 				ZesaruxExtRemote.prototype.setWatchpoints=ZesaruxExtRemote.prototype.setWatchpointsExt;
 				ZesaruxExtRemote.prototype.enableWPMEM=ZesaruxExtRemote.prototype.enableWPMEMExt;
 
-				ZesaruxExtRemote.prototype.setAssertBreakpoints=ZesaruxExtRemote.prototype.setAssertBreakpointsExt;
 				ZesaruxExtRemote.prototype.enableAssertBreakpoints=ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
 
 				ZesaruxExtRemote.prototype.enableLogpoints=ZesaruxExtRemote.prototype.setLogpointsExt;
@@ -96,38 +95,17 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 
 	/**
-	 * Sets the assert breakpoints in the given list.
-	 * Asserts result in a break in the program run if the PC is hit and
-	 * the condition is met.
-	 * @param assertBreakpoints A list of addresses to put a guard on.
-	 * @param handler(bpIds) Is called after the last watchpoint is set.
-	 */
-	protected setAssertBreakpointsExt(assertBreakpoints: Array<GenericBreakpoint>, handler?: (assertBreakpoints:Array<GenericBreakpoint>) => void) {
-		// Set breakpoints
-		for(let abp of assertBreakpoints) {
-			// Create breakpoint
-			const zesaruxCondition = this.convertCondition(abp.condition) || '';
-			zSocket.send('set-fast-breakpoint ' + (abp.address) + ' ' + zesaruxCondition  );
-		}
-
-		// Call handler
-		if(handler) {
-			zSocket.executeWhenQueueIsEmpty().then(() => {
-				// Copy array
-				const abps = assertBreakpoints.slice(0);
-				handler(abps);
-			});
-		}
-	}
-
-
-	/**
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
 		if(enable) {
-			this.setAssertBreakpointsExt(this.assertBreakpoints);
+			// Set breakpoints
+			for (let abp of this.assertBreakpoints) {
+				// Create breakpoint
+				const zesaruxCondition=this.convertCondition(abp.condition)||'';
+				zSocket.send('set-fast-breakpoint '+(abp.address)+' '+zesaruxCondition);
+			}
 		}
 		else {
 			// Remove breakpoints

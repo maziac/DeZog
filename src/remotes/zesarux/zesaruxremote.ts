@@ -1564,17 +1564,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Set all assert breakpoints.
-	 * Called only once.
-	 * @param assertBreakpoints A list of addresses to put an assert breakpoint on.
-	 */
-	public setAssertBreakpoints(assertBreakpoints: Array<GenericBreakpoint>) {
-		// not supported.
-	}
-
-
-
-	/**
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
