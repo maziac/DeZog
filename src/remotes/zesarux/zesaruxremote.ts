@@ -1593,7 +1593,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param enable Enable or disable the logpoints.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
+	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 
@@ -1604,7 +1604,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
+	public async enableLogpointGroup(group: string, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 

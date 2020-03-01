@@ -140,13 +140,6 @@ export class RemoteBase extends EventEmitter {
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled=false;
 
-	/// The assert breakpoints can only be enabled/disabled alltogether.
-	public assertBreakpointsEnabled=false;
-
-	/// The logpoints can be enabled/disabled per group.
-	public logpointsEnabled=new Map<string, boolean>();
-
-
 	/// The addresses of the revision history in the right order.
 	protected revDbgHistory=new Array<number>();
 
@@ -160,8 +153,15 @@ export class RemoteBase extends EventEmitter {
 	/// Stores the assert breakpoints
 	protected assertBreakpoints=new Array<GenericBreakpoint>();
 
+	/// The assert breakpoints can only be enabled/disabled alltogether.
+	public assertBreakpointsEnabled=false;
+
 	/// Stores the log points
 	protected logpoints=new Map<string, Array<GenericBreakpoint>>();
+
+	/// The logpoints can be enabled/disabled per group.
+	public logpointsEnabled=new Map<string, boolean>();
+
 
 	// The Z80 registers. Should be initialized with a specialized version for the given emulator.
 	protected z80Registers: Z80Registers;
@@ -498,16 +498,16 @@ export class RemoteBase extends EventEmitter {
 
 		// Set watchpoints (memory guards)
 		const watchpoints=this.createWatchPoints(watchPointLines);
-		this.setWPMEM(watchpoints);
+		this.setWPMEMArray(watchpoints);
 
 		// ASSERTs
 		// Set assert breakpoints
 		const assertsArray=this.createAsserts(assertLines);
-		this.setASSERT(assertsArray);
+		this.setASSERTArray(assertsArray);
 
 		// LOGPOINTs
 		const logPointsMap=this.createLogPoints(logPointLines);
-		this.setLOGPOINT(logPointsMap);
+		this.setLOGPOINTArray(logPointsMap);
 	}
 
 
@@ -916,7 +916,7 @@ export class RemoteBase extends EventEmitter {
 	 * Sets the watchpoint array.
 	 * @param watchPoints A list of addresses to put a guard on.
 	 */
-	public setWPMEM(watchPoints: Array<GenericWatchpoint>) {
+	public setWPMEMArray(watchPoints: Array<GenericWatchpoint>) {
 		this.watchpoints=[...watchPoints];
 	}
 
@@ -946,7 +946,7 @@ export class RemoteBase extends EventEmitter {
 	 * Sets the ASSERTs array.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
-	public setASSERT(assertBreakpoints: Array<GenericBreakpoint>) {
+	public setASSERTArray(assertBreakpoints: Array<GenericBreakpoint>) {
 		this.assertBreakpoints=[...assertBreakpoints];
 	}
 
@@ -975,7 +975,7 @@ export class RemoteBase extends EventEmitter {
 	 * Sets the LOGPOINTs array.
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
-	public setLOGPOINT(logpoints: Map<string, Array<GenericBreakpoint>>) {
+	public setLOGPOINTArray(logpoints: Map<string, Array<GenericBreakpoint>>) {
 		this.logpoints=logpoints;
 		this.logpointsEnabled=new Map<string, boolean>();
 		// All groups:
@@ -993,19 +993,59 @@ export class RemoteBase extends EventEmitter {
 	 * @param enable Enable or disable the logpoints.
 	 * @returns A promise that is called after the last watchpoint is set.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
+	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		assert(false);	// override this
 	}
 
 
+
 	/**
 	 * Enables/disables all logpoints for a given group.
+	 * Throws an exception if the group is unknown.
 	 * Promise is called all logpoints are set.
+	 * Override and assert if logpoints are not supported.
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
-		assert(false);	// override this
+	public async enableLogpointGroup(group: string, enable: boolean): Promise<void> {
+		let lPoints;
+
+		// Check if one group or all
+		if (group) {
+			// 1 group:
+			const array=this.logpoints.get(group);
+			if (!array)
+				throw Error("Group '"+group+"' unknown.");
+			lPoints=new Map<string, GenericBreakpoint[]>([[group, array]]);
+		}
+		else {
+			// All groups:
+			lPoints=this.logpoints;
+		}
+
+		// Loop over all selected groups
+		for (const [grp, arr] of lPoints) {
+			await this.enableLogpoints(arr, enable);
+			// Set group state
+			this.logpointsEnabled.set(grp, enable);
+		}
+	}
+
+
+	/**
+	 * @returns Returns a list of all enabled lopgoints from all groups.
+	 */
+	protected getEnabledLogpoints(): Array<GenericBreakpoint> {
+		const result=new Array<GenericBreakpoint>();
+		// Loop over all selected groups
+		for (const [grp, arr] of this.logpoints) {
+			// Set group state
+			const enabled=this.logpointsEnabled.get(grp);
+			// Add
+			if (enabled)
+				result.push(...arr);
+		}
+		return result;
 	}
 
 

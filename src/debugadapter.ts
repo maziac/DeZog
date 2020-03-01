@@ -1767,7 +1767,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		if (param=='enable'||param=='disable') {
 			// enable or disable all logpoints
 			const enable=(param=='enable');
-			await Remote.enableLogpoints(group, enable);
+			await Remote.enableLogpointGroup(group, enable);
 			return show();	// Print to console
 		}
 		else if (param=='status') {

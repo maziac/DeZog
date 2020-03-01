@@ -409,14 +409,14 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Set all log points.
-	 * Called at startup and once by enableLogPoints (to turn a group on or off).
+	 * Enables/disable all given points.
+	 * Called at startup and once by enableLogpointGroup (to turn a group on or off).
 	 * Promise is called after the last logpoint is set.
 	 * @param logpoints A list of addresses to put a log breakpoint on.
 	 * @param enable Enable or disable the logpoints.
 	 * @returns A promise that is called after the last watchpoint is set.
 	 */
-	public async setLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
+	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		// Logpoints are treated as normal breakpoints but without a reference to the source file.
 		// This is not necessary as on a logpoint the execution simply continues after
 		// logging.
@@ -436,55 +436,6 @@ export class DzrpRemote extends RemoteBase {
 				}
 			}
 		}
-	}
-
-
-	/**
-	 * Enables/disables all logpoints for a given group.
-	 * Throws an exception if the group is unknown.
-	 * Promise is called all logpoints are set.
-	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
-	 * @param enable true=enable, false=disable.
-	 */
-	public async enableLogpoints(group: string, enable: boolean): Promise<void> {
-		let lPoints;
-
-		// Check if one group or all
-		if (group) {
-			// 1 group:
-			const array=this.logpoints.get(group);
-			if (!array)
-				throw Error("Group '"+group+"' unknown.");
-			lPoints=new Map<string, GenericBreakpoint[]>([[group, array]]);
-		}
-		else {
-			// All groups:
-			lPoints=this.logpoints;
-		}
-
-		// Loop over all selected groups
-		for (const [grp, arr] of lPoints) {
-			await this.setLogpoints(arr, enable);
-			// Set group state
-			this.logpointsEnabled.set(grp, enable);
-		}
-	}
-
-
-	/**
-	 * @returns Returns a list of all enabled lopgoints.
-	 */
-	protected getEnabledLogpoints(): Array<GenericBreakpoint> {
-		const result=new Array<GenericBreakpoint>();
-		// Loop over all selected groups
-		for (const [grp, arr] of this.logpoints) {
-			// Set group state
-			const enabled=this.logpointsEnabled.get(grp);
-			// Add
-			if (enabled)
-				result.push(...arr);
-		}
-		return result;
 	}
 
 

@@ -37,8 +37,8 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 				ZesaruxExtRemote.prototype.setAssertBreakpoints=ZesaruxExtRemote.prototype.setAssertBreakpointsExt;
 				ZesaruxExtRemote.prototype.enableAssertBreakpoints=ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
 
-				ZesaruxExtRemote.prototype.setLogpoints=ZesaruxExtRemote.prototype.setLogpointsExt;
-				ZesaruxExtRemote.prototype.enableLogpoints=ZesaruxExtRemote.prototype.enableLogpointsExt;
+				ZesaruxExtRemote.prototype.enableLogpoints=ZesaruxExtRemote.prototype.setLogpointsExt;
+				ZesaruxExtRemote.prototype.enableLogpointGroup=ZesaruxExtRemote.prototype.enableLogpointsExt;
 
 				ZesaruxExtRemote.prototype.setBreakpoint=ZesaruxExtRemote.prototype.setBreakpointExt;
 				ZesaruxExtRemote.prototype.removeBreakpoint=ZesaruxExtRemote.prototype.removeBreakpointExt;

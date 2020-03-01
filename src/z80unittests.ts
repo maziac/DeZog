@@ -258,7 +258,7 @@ export class Z80UnitTests {
 					Remote.enableAssertBreakpoints(true);
 					Remote.enableWPMEM(true);
 					try {
-						Remote.enableLogpoints('UNITTEST', true);
+						Remote.enableLogpointGroup('UNITTEST', true);
 					}
 					catch {}	// Just in case the group is undefined
 
