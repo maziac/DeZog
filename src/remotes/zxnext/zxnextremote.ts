@@ -4,6 +4,7 @@ import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {Utility} from '../../utility';
+import {BREAK_REASON_NUMBER} from '../remotebase';
 
 
 
@@ -183,8 +184,8 @@ export class ZxNextRemote extends DzrpRemote {
 		// Check for notification
 		if (recSeqno==0) {
 			// Notification.
-			const breakReasonNumber=data[3];
-			const bpId=Utility.getWord(data, 4);
+			const breakNumber=data[3];
+			const breakData=Utility.getWord(data, 4);
 			/*
 			// Check if called by step-out.
 			if (this.stepOutHandler) {
@@ -196,26 +197,26 @@ export class ZxNextRemote extends DzrpRemote {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
 				// Get reason string
-				let breakReason=Utility.getStringFromBuffer(data, 6);
-				if (breakReason.length==0)
-					breakReason=undefined as any;
+				let breakReasonString=Utility.getStringFromBuffer(data, 6);
+				if (breakReasonString.length==0)
+					breakReasonString=undefined as any;
 				// If no error text ...
-				if (!breakReason) {
+				if (!breakReasonString) {
 					// Add generic error text
-					switch (breakReasonNumber) {
+					switch (breakNumber) {
 						case 1:
-							breakReason="Manual break"
+							breakReasonString="Manual break"
 							break;
 						case 2:
-							breakReason="Breakpoint hit"
+							breakReasonString="Breakpoint hit"
 							break;
 					}
 				}
 
 				// Adds breakReasonNumber (as number) if consumer is step-out.
-				assert((breakReasonNumber==0&&breakReason==undefined)
-					|| (breakReasonNumber!=0&&breakReason!=undefined));
-				continueHandler({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
+				assert((breakNumber==BREAK_REASON_NUMBER.NO_REASON&&breakReasonString==undefined)
+					||(breakNumber!=BREAK_REASON_NUMBER.NO_REASON&&breakReasonString!=undefined));
+				continueHandler({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
 			}
 		}
 		else {

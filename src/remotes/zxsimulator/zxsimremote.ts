@@ -9,6 +9,7 @@ import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Utility} from '../../utility';
 import * as fs from 'fs';
+import {BREAK_REASON_NUMBER} from '../remotebase';
 //import {LogGlobal} from '../../log';
 
 
@@ -253,20 +254,20 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		//		Utility.timeDiff();
 		// Run the Z80-CPU in a loop
-		let breakReasonNumber=0;
+		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=10000;
-		let breakReason;
+		let breakReasonString;
 		let breakCondition;
 		let bp;
-		let bpId;
+		let breakData;
 		for (; counter>0; counter--) {
 			try {
 				this.z80Cpu.execute();
 			}
 			catch (errorText) {
-				breakReason="Z80CPU Error: "+errorText;
-				console.log(breakReason);
-				breakReasonNumber=255;
+				breakReasonString="Z80CPU Error: "+errorText;
+				console.log(breakReasonString);
+				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 				break;
 			};
 			// Check if any real breakpoint is hit
@@ -305,7 +306,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Check if at least one breakpoint for this address has a condition that
 				// evaluates to true.
 				if (bp) {
-					breakReasonNumber=2;
+					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
 					break;
 				}
 			}
@@ -313,14 +314,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Check if watchpoint is hit
 			if (this.zxMemory.hitAddress>=0) {
 				// Yes, read or write access
-				breakReasonNumber=(this.zxMemory.hitAccess=='r')? 3:4;
-				bpId=this.zxMemory.hitAddress;
+				breakNumber=(this.zxMemory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+				breakData=this.zxMemory.hitAddress;
 				break;
 			}
 
 			// Check if stopped from outside
 			if (!this.cpuRunning) {
-				breakReasonNumber=1;	// Manual break
+				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
 				break;
 			}
 
@@ -348,35 +349,28 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Otherwise stop
 				this.cpuRunning=false;
 				// If no error text ...
-				if (!breakReason) {
-					switch (breakReasonNumber) {
+				if (!breakReasonString) {
+					switch (breakNumber) {
 						case 1:
-							breakReason="Manual break";
+							breakReasonString="Manual break";
 							break;
 						case 2:
-							breakReason="Breakpoint hit";
+							breakReasonString="Breakpoint hit";
 							if (breakCondition)
-								breakReason+=', '+breakCondition;
-							break;
-						case 3:
-							breakReason="Watchpoint hit (read)";
-							break;
-						case 4:
-							breakReason="Watchpoint hit (write)";
+								breakReasonString+=', '+breakCondition;
 							break;
 					}
 				}
 
 				// Get breakpoint ID
 				if (bp)
-					bpId=bp.bpId;
+					breakData=bp.bpId;
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				assert(this.continueResolve);
-				// Note: bpID is the break address in case of a watchpoint.
 				if (this.continueResolve)
-					this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
+					this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
 			}
 		}, 100);
 	}
@@ -388,8 +382,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
-	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+	public async continue(): Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}> {
+		return new Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Save resolve function when break-response is received
 			this.continueResolve=resolve;
 

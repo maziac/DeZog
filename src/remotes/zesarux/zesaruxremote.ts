@@ -466,7 +466,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
 		// Check for reverse debugging.
 		if (this.cpuHistory.isInStepBackMode()) {
 			// Continue in reverse debugging
@@ -474,7 +474,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// or until a breakpoint condition is true.
 
 			let nextLine;
-			let breakReason;
+			let breakReasonString;
 			try {
 				//this.state = RemoteState.RUNNING;
 				//this.state = RemoteState.IDLE;
@@ -496,7 +496,7 @@ export class ZesaruxRemote extends RemoteBase {
 					this.z80Registers.setCache(nextLine);
 					const condition=this.checkPcBreakpoints(nextLine);
 					if (condition!=undefined) {
-						breakReason=condition;
+						breakReasonString=condition;
 						break;	// BP hit and condition met.
 					}
 
@@ -505,7 +505,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 			}
 			catch (e) {
-				breakReason='Error occurred: '+e;
+				breakReasonString='Error occurred: '+e;
 			}
 
 			// Decoration
@@ -517,12 +517,12 @@ export class ZesaruxRemote extends RemoteBase {
 				this.z80Registers.clearCache();
 				await this.getRegisters();
 				const pc=this.getPC();
-				breakReason='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
+				breakReasonString='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
 			}
-			return {breakReason};
+			return {breakReasonString};
 		}
 
-		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
 			// Reset T-state counter.
@@ -541,9 +541,9 @@ export class ZesaruxRemote extends RemoteBase {
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// The reason is the 2nd line
-							const breakReason=this.getBreakReason(text);
+							const breakReasonString=this.getBreakReason(text);
 							// Call handler
-							resolve({breakReason, tStates, cpuFreq});
+							resolve({breakReasonString, tStates, cpuFreq});
 						});
 					});
 				});

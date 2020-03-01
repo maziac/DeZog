@@ -16,6 +16,20 @@ import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 
 
 /**
+ * Breakpoint reason numbers.
+ * Are used in DZRP as well, so be autious when changing values.
+ */
+export enum BREAK_REASON_NUMBER {
+	NO_REASON=0,		// 0=no break reason (e.g.a step-over)
+	MANUAL_BREAK=1,		// 1=User (manual) break
+	BREAKPOINT_HIT=2,	// 2=breakpoint hit
+	WATCHPOINT_READ=3,	// 3=watchpoint hit read access
+	WATCHPOINT_WRITE=4,	// 4=watchpoint hit write access
+	UNKNOWN = 255		// 255=some other error
+};
+
+
+/**
  * The breakpoint representation.
  */
 export interface RemoteBreakpoint extends GenericBreakpoint {
@@ -829,9 +843,9 @@ export class RemoteBase extends EventEmitter {
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
 		assert(false);	// override this
-		return {breakReason: ""};
+		return {breakReasonString: ''};
 	}
 
 

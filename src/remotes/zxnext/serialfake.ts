@@ -198,18 +198,11 @@ export class SerialFake extends ZxSimulatorRemote {
 					this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
 
 					// Function called after a break
-					this.continueResolve=({breakReason, tStates, cpuFreq}) => {
-						// Reconstruct breakReasonNumber from text
-						let breakReasonNumber=255;
-						switch (breakReason) {
-							case undefined: breakReasonNumber=0; breakReason=''; break;
-							case "Manual break": breakReasonNumber=1; breakReason=''; break;
-							case "Breakpoint hit": breakReasonNumber=2; breakReason=''; break;
-						}
+					this.continueResolve=({breakNumber, breakData, breakReasonString, tStates, cpuFreq}) => {
 						// Send Notification
 						const ntfSeqNo=this.parser.getNextSeqNo();
-						const breakBuffer=Utility.getBufferFromString(breakReason);
-						this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakReasonNumber, 0, 0, ...breakBuffer]);
+						const breakBuffer=Utility.getBufferFromString(breakReasonString);
+						this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakNumber, breakData&0xFF, breakData>>8, ...breakBuffer]);
 						this.continueResolve=undefined;
 					};
 					// Run the Z80-CPU in a loop

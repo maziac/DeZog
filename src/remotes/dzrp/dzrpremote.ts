@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {RemoteBase, RemoteBreakpoint} from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {MemBank16k} from './membank16k';
@@ -19,7 +19,7 @@ import {Remote} from '../remotefactory';
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({bpId, breakReason, tStates, cpuFreq}) => void;
+	protected continueResolve?: ({breakNumber, breakData, breakReasonString, tStates, cpuFreq}) => void;
 
 	// This flag is used to pause a step-out.
 	protected pauseStepOut=false;
@@ -195,10 +195,10 @@ export class DzrpRemote extends RemoteBase {
 	 * Instead evaluation is done here and if e.g. the condition is not met
 	 * than anouther 'continue' is sent.
 	 */
-	public async continue(): Promise<{breakReason: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{breakReason: string, tStates?: number, cpuFreq?: number}>(resolve => {
+	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
+		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			this.continueResolve=async ({bpId, breakReason}) => {
+			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
 				try {
 					// Get registers
 					this.z80Registers.clearCache();
@@ -206,14 +206,16 @@ export class DzrpRemote extends RemoteBase {
 					let condition;
 
 					// Check breakReason, i.e. check if it was a watchpoint.
-					if (breakReason==3||breakReason==4) {
+					if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
 						// Watchpoint
-
-						// Condition not ued at the moment
+						breakReasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+"access at address 0x"+Utility.getHexString(breakData, 4)+" ("+breakData+")."+breakReasonString;
+						// Condition not used at the moment
 						condition='';
 					}
 					else {
 						// Get corresponding breakpoint
+						const bpId=breakData as number;
+						assert(bpId)
 						const bp=this.getBreakpointById(bpId);
 
 						// Check for condition
@@ -240,12 +242,12 @@ export class DzrpRemote extends RemoteBase {
 						this.z80Registers.clearCache();
 						// return
 						if(condition.length>0)
-							breakReason+=", "+condition;
-						resolve({breakReason});
+							breakReasonString+=", "+condition;
+						resolve({breakReasonString});
 					}
 				}
 				catch (e) {
-					resolve({breakReason: e});
+					resolve({breakReasonString: e});
 				}
 			};
 
@@ -277,8 +279,8 @@ export class DzrpRemote extends RemoteBase {
 	 * 'cpuFreq' undefined.
 	 * 'breakReason' a possibly text with the break reason.
 	 */
-	public async stepOver(stepOver = true): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(async resolve => {
+	public async stepOver(stepOver = true): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(async resolve => {
 			await this.getRegisters();
 			// Calculate the breakpoints to use for step-over
 			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
@@ -287,11 +289,11 @@ export class DzrpRemote extends RemoteBase {
 			const opCodeDescription=opcode.disassemble();
 			const instruction=opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
-			this.continueResolve=({breakReason}) => {
+			this.continueResolve=({breakReasonString}) => {
 				// Clear register cache
 				this.z80Registers.clearCache();
 				// return
-				resolve({instruction, breakReason});
+				resolve({instruction, breakReasonString});
 			};
 
 			// Send command to 'continue'

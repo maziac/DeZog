@@ -1096,12 +1096,12 @@ export class DebugSessionClass extends DebugSession {
 			// Display T-states and time
 			this.showUsedTStates('Continue. ', result.tStates, result.cpuFreq);
 
-			if (result.breakReason) {
+			if (result.breakReasonString) {
 				// Send output event to inform the user about the reason
-				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+				vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
 
 				// Use reason for break-decoration.
-				this.decorateBreak(result.breakReason);
+				this.decorateBreak(result.breakReasonString);
 			}
 
 			// React depending on internal state.
