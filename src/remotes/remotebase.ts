@@ -1042,6 +1042,10 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Sets breakpoint in the Remote.
 	 * Sets the breakpoint ID (bpId) in bp.
+	 * This method is called also each time a breakpoint is manually set via the
+	 * vscode UI.
+	 * If set from UI the breakpoint may contain a condition and also a log.
+	 * After creation the breakpoint is added to the 'breakpoints' array.
 	 * @param bp The breakpoint.
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
@@ -1054,6 +1058,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Clears one breakpoint.
+	 * Breakpoint is removed at the Remote and removed from the 'breakpoints' array.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		assert(false);	// override this
