@@ -458,9 +458,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
+		// Get all breakpoints from the enabled logpoints
+		const enabledLogPoints=this.getEnabledLogpoints();
 		// Set the temporary breakpoints array
-		const pcBps=Array.from(this.breakpoints.values());
-		this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
+		this.tmpBreakpoints=this.createTemporaryBreakpoints([...this.breakpoints, ...enabledLogPoints, ...this.assertBreakpoints]);
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.z80CpuContinue(bp1Address, bp2Address);
@@ -477,7 +478,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Sends the command to add a breakpoint.
+	 * The simulator does not add any breakpoint here becasue it already
+	 * has the breakpoint, logpoint wpmem and assert lists.
 	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
 	 * @param condition The breakpoint condition as string. If there is n condition
 	 * 'condition' may be undefined or an empty string ''.

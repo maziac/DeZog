@@ -421,15 +421,19 @@ export class DzrpRemote extends RemoteBase {
 		// This is not necessary as on a logpoint the execution simply continues after
 		// logging.
 		for (let lp of logpoints) {
-			// Turn into RemoteBreakpoint without source file location.
-			const rbp: RemoteBreakpoint={bpId: lp.bpId as number, filePath: '', lineNr: -1, address: lp.address, condition: lp.condition, log: lp.log};
 			if (enable) {
-				this.setBreakpoint(rbp);
-				lp.bpId=rbp.bpId;
+				// Set breakpoint
+				if (!lp.bpId) {
+					const bpId=await this.sendDzrpCmdAddBreakpoint(lp.address);
+					lp.bpId=bpId;
+				}
 			}
 			else {
-				this.removeBreakpoint(rbp);
-				lp.bpId=undefined;
+				// Remove breakpoint
+				if (lp.bpId) {
+					await await this.sendDzrpCmdRemoveBreakpoint(lp.bpId);
+					lp.bpId=undefined;
+				}
 			}
 		}
 	}
@@ -464,6 +468,23 @@ export class DzrpRemote extends RemoteBase {
 			// Set group state
 			this.logpointsEnabled.set(grp, enable);
 		}
+	}
+
+
+	/**
+	 * @returns Returns a list of all enabled lopgoints.
+	 */
+	protected getEnabledLogpoints(): Array<GenericBreakpoint> {
+		const result=new Array<GenericBreakpoint>();
+		// Loop over all selected groups
+		for (const [grp, arr] of this.logpoints) {
+			// Set group state
+			const enabled=this.logpointsEnabled.get(grp);
+			// Add
+			if (enabled)
+				result.push(...arr);
+		}
+		return result;
 	}
 
 

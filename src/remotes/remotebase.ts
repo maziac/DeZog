@@ -111,11 +111,11 @@ export interface MemoryPage {
  *
  * The additional 'watchpoints', 'assertBreakpoints' and 'logpoints'
  * arrays can be enabled/disabled as a group via a debug command.
- * 'watchPoints': These are associated with the WPMEM keyword and create
+ * - 'watchPoints': These are associated with the WPMEM keyword and create
  * a memory watchpoint (a breakpoint that is hit if a memory adress is
  * accessed).
- * 'assertBreakpoints': These are very much like conditional breakpoints but associated with the ASSERT keyword.
- * 'logpoints': These are just like breakpoints with a log message but associated with the LOGPOINT keyword.
+ * - 'assertBreakpoints': These are very much like conditional breakpoints but associated with the ASSERT keyword.
+ * - 'logpoints': These are just like breakpoints with a log message but associated with the LOGPOINT keyword.
  * Note: The attached emulator may use the same mechanism for all these
  * kinds of breakpoints but in DeZog they are differentiated.
  *

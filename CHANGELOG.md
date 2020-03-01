@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.4
+
+
 # 0.12.3
 - launch.json changes:
 	- "zhostname" and "zport" removed. Use "hostname" and "port" under "zrcp" instead.
