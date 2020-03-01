@@ -375,9 +375,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				assert(this.continueResolve);
 				// Note: bpID is the break address in case of a watchpoint.
-
-Das geht nicht mit addr und bpId, es wird die breakreson nicht weitergegeben.
-
 				if (this.continueResolve)
 					this.continueResolve({bpId, breakReason, tStates: undefined, cpuFreq: undefined});
 			}

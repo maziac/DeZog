@@ -9,7 +9,6 @@ import {Settings} from '../../settings';
 import {Utility} from '../../utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
-import {CommentThreadCollapsibleState} from 'vscode';
 
 
 /**
