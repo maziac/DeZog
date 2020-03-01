@@ -1751,7 +1751,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a probably error text.
 	 */
 	protected async evalLOGPOINT(tokens: Array<string>): Promise<string> {
-			const show=() => {
+		const show=() => {
 			// Always show enable status of all Logpoints
 			const enableMap=Remote.logpointsEnabled;
 			// All groups:

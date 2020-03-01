@@ -204,8 +204,11 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
 				const abp = this.assertBreakpoints.find(abp => abp.bpId==breakData);
-				if (abp)
-					reasonString="ASSERT. ";
+				if (abp) {
+					condition=condition.substr(2);	// cut off "!("
+					condition=condition.substr(0, condition.length-1);	// cut off trailing ")"
+					reasonString="ASSERT ";
+				}
 				else
 					reasonString="Breakpoint. ";
 				break;
@@ -446,7 +449,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
+	public async enableAssertBreakpoints(enable: boolean): Promise<void> {
 		for (let abp of this.assertBreakpoints) {
 			if (enable) {
 				// Set breakpoint
@@ -458,11 +461,12 @@ export class DzrpRemote extends RemoteBase {
 			else {
 				// Remove breakpoint
 				if (abp.bpId) {
-					await await this.sendDzrpCmdRemoveBreakpoint(abp.bpId);
+					await this.sendDzrpCmdRemoveBreakpoint(abp.bpId);
 					abp.bpId=undefined;
 				}
 			}
 		}
+		this.assertBreakpointsEnabled=enable;
 	}
 
 

@@ -462,8 +462,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints=this.getEnabledLogpoints();
+		// Assert breakpoints
+		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
 		// Set the temporary breakpoints array
-		this.tmpBreakpoints=this.createTemporaryBreakpoints([...this.breakpoints, ...enabledLogPoints, ...this.assertBreakpoints]);
+		this.tmpBreakpoints=this.createTemporaryBreakpoints([...this.breakpoints, ...enabledLogPoints, ...assertBps]);
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.zxMemory.clearHit();
@@ -481,8 +483,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * The simulator does not add any breakpoint here becasue it already
-	 * has the breakpoint, logpoint wpmem and assert lists.
+	 * The simulator does not add any breakpoint here because it already
+	 * has the breakpoint, logpoint and assert lists.
 	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
 	 * @param condition The breakpoint condition as string. If there is n condition
 	 * 'condition' may be undefined or an empty string ''.
@@ -491,8 +493,18 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		this.lastBpId++;
-		this.cpuRunning=false;	// Break if running
+		this.cpuRunning=false;
 		return this.lastBpId;
+	}
+
+
+	/**
+	 * The simulator does not remove any breakpoint here because it already
+	 * has the breakpoint, logpoint and assert lists.
+	 * @param bpId The breakpoint ID to remove.
+	 */
+	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+		this.cpuRunning=false;
 	}
 
 
