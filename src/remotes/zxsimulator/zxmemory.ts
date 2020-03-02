@@ -35,7 +35,7 @@ export class ZxMemory {
 	protected visualMemory: Array<number>;
 
 	// The size of the visual memory.
-	protected VISUAL_MEM_SIZE_SHIFT=10;
+	protected VISUAL_MEM_SIZE_SHIFT=8;
 
 	// Colors:
 	protected VISUAL_MEM_COL_READ=1;

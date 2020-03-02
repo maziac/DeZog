@@ -412,6 +412,7 @@ color:black;
 
 
 	// Toggles the visibility of an element.
+	/*
 	function toggleVisibility(id) {
 		var x = document.getElementById(id);
 		if (x.style.display === "none") {
@@ -420,6 +421,7 @@ color:black;
 			x.style.display = "none";
 		}
 	}
+	*/
 
 	// Handle key down presses.
 	document.addEventListener('keydown', keydown);
@@ -457,9 +459,7 @@ color:black;
 
 
 <!-- Visual Memory (memory activity) -->
-<button onclick="toggleVisibility('mem_activity_id')">Memory activity</button>
-
-<div id="mem_activity_id" style="position:relative; width:100%; height:1.5em">
+<div style="position:relative; width:100%; height:1.5em">
 	<label style="position:absolute; left:0%">0x0000</label>
 	<label style="position:absolute; left:25%">0x4000</label>
 	<label style="position:absolute; left:50%">0x8000</label>
@@ -471,7 +471,7 @@ color:black;
 	<hr  style="position:absolute; top: 0.5em; left:75%" width="1" size="10em">
 </div>
 
-<img id="visual_mem_img_id" width="100%" height="10em" src="${visMemGifString}">
+<img id="visual_mem_img_id" style="image-rendering:pixelated" width="100%" height="10em" src="${visMemGifString}">
 <script>
 	<!-- Store the screen image source -->
 	var visualMemImg=document.getElementById("visual_mem_img_id");
@@ -480,7 +480,7 @@ color:black;
 
 
 <!-- Display the screen gif -->
-<img id="screen_img_id" width="100%" src="${screenGifString}">
+<img id="screen_img_id" style="image-rendering:pixelated" width="100%" src="${screenGifString}">
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
