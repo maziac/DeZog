@@ -259,14 +259,13 @@ export class ZxSimulationView extends BaseView {
 
 
 	/**
-	 * Retrieves the screen memory content and returns it as base64 string.
+	 * Converts an image into a base64 string.
 	 */
-	public createScreenString(): string {
+	public createBase64String(imgBuffer: number[]): string {
 		let screenGifString='';
 		try {
 			// Create gif
-			const gif=this.simulator.zxMemory.getUlaScreen();
-			const buf=Buffer.from(gif);
+			const buf=Buffer.from(imgBuffer);
 			screenGifString='data:image/gif;base64,'+buf.toString('base64');
 		}
 		catch {}
@@ -280,18 +279,27 @@ export class ZxSimulationView extends BaseView {
 	 */
 	public update() {
 		try {
-			// Create gif
-			const screenGifString=this.createScreenString();
-			// Create message to update screen
+			// Create message to update cpu load
 			let message={
-				command: 'updateScreen',
-				value: screenGifString
-			};
-			this.sendMessageToWebView(message);
-			// Create message to update screen
-			message={
 				command: 'updateCpuLoad',
 				value: (this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString()
+			};
+			this.sendMessageToWebView(message);
+			// Create gif
+			const visMemGifString=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+			// Create message to update the visual memory
+			message={
+				command: 'updateVisualMem',
+				value: visMemGifString
+			};
+			this.sendMessageToWebView(message);
+			this.simulator.zxMemory.clearVisualMemory();	// Clear for the next time.
+			// Create gif
+			const screenGifString=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+			// Create message to update screen
+			message={
+				command: 'updateScreen',
+				value: screenGifString
 			};
 			this.sendMessageToWebView(message);
 		}
@@ -303,7 +311,9 @@ export class ZxSimulationView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
-		const screenGifString=this.createScreenString();
+		const screenGifString=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+		const visMemGifString=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+
 		const html=
 `<html>
 
@@ -345,15 +355,21 @@ color:black;
 		const message = event.data;
 
 		switch (message.command) {
-			case 'updateScreen':
-			{
-				screenImg.src = message.value;
-			}
-			break;
-
 			case 'updateCpuLoad':
 			{
 				cpuLoad.innerHTML = message.value;
+			}
+			break;
+
+			case 'updateVisualMem':
+			{
+				visualMemImg.src = message.value;
+			}
+			break;
+
+			case 'updateScreen':
+			{
+				screenImg.src = message.value;
 			}
 			break;
 		}
@@ -395,6 +411,16 @@ color:black;
     }
 
 
+	// Toggles the visibility of an element.
+	function toggleVisibility(id) {
+		var x = document.getElementById(id);
+		if (x.style.display === "none") {
+			x.style.display = "block";
+		} else {
+			x.style.display = "none";
+		}
+	}
+
 	// Handle key down presses.
 	document.addEventListener('keydown', keydown);
 	function keydown(e) {
@@ -428,6 +454,29 @@ color:black;
 	<!-- Store the cpu_load_id -->
 	var cpuLoad=document.getElementById("cpu_load_id");
 </script>
+
+
+<!-- Visual Memory (memory activity) -->
+<button onclick="toggleVisibility('mem_activity_id')">Memory activity</button>
+
+<div id="mem_activity_id" style="position:relative; width:100%; height:1.5em">
+	<label style="position:absolute; left:0%">0x0000</label>
+	<label style="position:absolute; left:25%">0x4000</label>
+	<label style="position:absolute; left:50%">0x8000</label>
+	<label style="position:absolute; left:75%">0xC000</label>
+
+	<hr  style="position:absolute; top: 0.5em; left:0%" width="1" size="10em">
+	<hr  style="position:absolute; top: 0.5em; left:25%" width="1" size="10em">
+	<hr  style="position:absolute; top: 0.5em; left:50%" width="1" size="10em">
+	<hr  style="position:absolute; top: 0.5em; left:75%" width="1" size="10em">
+</div>
+
+<img id="visual_mem_img_id" width="100%" height="10em" src="${visMemGifString}">
+<script>
+	<!-- Store the screen image source -->
+	var visualMemImg=document.getElementById("visual_mem_img_id");
+</script>
+<br><br>
 
 
 <!-- Display the screen gif -->

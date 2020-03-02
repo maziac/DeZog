@@ -260,6 +260,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let bp;
 		let breakData;
 		for (; counter>0; counter--) {
+			const prevPc=this.z80Cpu.pc;
 			try {
 				this.z80Cpu.execute();
 			}
@@ -269,6 +270,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 				break;
 			};
+			// Update visual memory
+			this.zxMemory.setVisualProg(prevPc);
+
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
 			const pc=this.z80Cpu.pc;

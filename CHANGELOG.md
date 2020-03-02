@@ -1,7 +1,8 @@
 # Changelog
 
 # 0.12.4
-
+- CPU load for simulator added.
+-
 
 # 0.12.3
 - launch.json changes:

@@ -30,6 +30,19 @@ export class ZxMemory {
 	// The ZXNext defines both at 255.
 	protected slots: number[]=[254, 255, 10, 11, 4, 5, 0, 1];
 
+	// Visual memory: shows the access as an image.
+	// The image is just 1 pixel high.
+	protected visualMemory: Array<number>;
+
+	// The size of the visual memory.
+	protected VISUAL_MEM_SIZE_SHIFT=10;
+
+	// Colors:
+	protected VISUAL_MEM_COL_READ=1;
+	protected VISUAL_MEM_COL_WRITE=2;
+	protected VISUAL_MEM_COL_PROG=3;
+
+
 	/// Constructor.
 	constructor() {
 		// Create memory banks
@@ -41,10 +54,16 @@ export class ZxMemory {
 			for (let i=0; i<ZxMemory.MEMORY_BANK_SIZE; i++)
 				bank[i]=0;//Math.random()*256;
 		}
+		// Create visual memory
+		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
+		this.clearVisualMemory();
 	}
 
 	// Read 1 byte.
 	public read8(addr: number): number {
+		// Visual memory
+		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
+		// Real read access
 		const [bankAddr, bankMem]=this.getBankForAddr(addr);
 		const value=bankMem[bankAddr];
 		return value;
@@ -52,9 +71,20 @@ export class ZxMemory {
 
 	// Write 1 byte.
 	public write8(addr: number, val: number) {
+		// Visual memory
+		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
+		// Real write access
 		const [bankAddr, bankMem]=this.getBankForAddr(addr);
 		bankMem[bankAddr]=val;
 	}
+
+
+	// Write 1 byte.
+	public setVisualProg(addr: number) {
+		// Visual memory
+		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_PROG;
+	}
+
 
 	/**
 	 * Returns the bank memory and the address into it.
@@ -165,6 +195,35 @@ export class ZxMemory {
 		// Split over 2 banks
 		this.writeBank(254, data.slice(0, ZxMemory.MEMORY_BANK_SIZE));
 		this.writeBank(255, data.slice(ZxMemory.MEMORY_BANK_SIZE));
+	}
+
+
+
+	/**
+	 * Clears the visual buffer.
+	 */
+	public clearVisualMemory() {
+		this.visualMemory.fill(0);
+	}
+
+
+	/**
+	 * Converts the visual memory into a gif.
+	 * @returns The visual memory as a gif buffer.
+	 */
+	public getVisualMemoryImage(): number[] {
+		// Get ZX palette
+		const palette=[
+			0x80, 0x80, 0x80,	// Gray (background)
+			0xC0, 0xC0, 0x00,	// Yellow: Read access
+			0xC0, 0x00, 0x00,	// Red: Write access
+			0x00, 0x00, 0xC0,	// Blue: Prog access
+		];
+		// Convert to gif
+		const size=this.visualMemory.length;
+		const gifBuffer=ImageConvert.createGifFromArray(size, 1, this.visualMemory, palette);
+		// Return
+		return gifBuffer;
 	}
 
 
