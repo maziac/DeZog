@@ -2,9 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
-import {ZxMemory} from './zxmemory';
 import {BaseView} from '../../views/baseview';
-import {ZxPorts} from './zxports';
 import {ZxSimulatorRemote} from './zxsimremote';
 
 
@@ -22,12 +20,8 @@ export class ZxSimulationView extends BaseView {
 	/// We listen for 'update' on this emitter to update the html.
 	protected parent: EventEmitter;
 
-	// A pointer to the memory which holds the screen.
-	protected zxMemory: ZxMemory;
-
-	// A pointer to the ports for the keyboards.
-	protected zxPorts: ZxPorts;
-
+	// A pointer to the simulator.
+	protected simulator: ZxSimulatorRemote;
 
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
@@ -35,12 +29,12 @@ export class ZxSimulationView extends BaseView {
 	 * @param simulator The simulator Remote which emits the signals.
 	 */
 	public static SimulationViewFactory(simulator: ZxSimulatorRemote) {
-		// Safe ty check
+		// Safety check
 		if (!simulator)
 			return;
 
 		// Create new instance
-		let zxview: ZxSimulationView|undefined = new ZxSimulationView(simulator.zxMemory, simulator.zxPorts);
+		let zxview: ZxSimulationView|undefined = new ZxSimulationView(simulator);
 		simulator.once('closed', () => {
 			zxview?.close();
 			zxview=undefined;
@@ -55,13 +49,13 @@ export class ZxSimulationView extends BaseView {
 	 * Creates the basic view.
 	 * @param memory The memory of the CPU.
 	 */
-	constructor(memory: ZxMemory, ports: ZxPorts) {
+	constructor(simulator: ZxSimulatorRemote) {
 		super(false);
 		// Init
-		this.zxMemory=memory;
-		this.zxPorts=ports;
+		this.simulator=simulator;
 
 		// Set all ports
+		const ports=simulator.zxPorts;
 		ports.setPortValue(0xFEFE, 0xFF);
 		ports.setPortValue(0xFDFE, 0xFF);
 		ports.setPortValue(0xFBFE, 0xFF);
@@ -254,13 +248,13 @@ export class ZxSimulationView extends BaseView {
 		assert(bit);
 
 		// Get port value
-		let value=this.zxPorts.getPortValue(port);
+		let value=this.simulator.zxPorts.getPortValue(port);
 		if (on)
 			value&=~bit;
 		else
 			value|=bit;
 		// And set
-		this.zxPorts.setPortValue(port, value);
+		this.simulator.zxPorts.setPortValue(port, value);
 	}
 
 
@@ -271,7 +265,7 @@ export class ZxSimulationView extends BaseView {
 		let screenGifString='';
 		try {
 			// Create gif
-			const gif=this.zxMemory.getUlaScreen();
+			const gif=this.simulator.zxMemory.getUlaScreen();
 			const buf=Buffer.from(gif);
 			screenGifString='data:image/gif;base64,'+buf.toString('base64');
 		}
@@ -288,10 +282,16 @@ export class ZxSimulationView extends BaseView {
 		try {
 			// Create gif
 			const screenGifString=this.createScreenString();
-			// Create message
-			const message={
+			// Create message to update screen
+			let message={
 				command: 'updateScreen',
 				value: screenGifString
+			};
+			this.sendMessageToWebView(message);
+			// Create message to update screen
+			message={
+				command: 'updateCpuLoad',
+				value: (this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString()
 			};
 			this.sendMessageToWebView(message);
 		}
@@ -348,7 +348,14 @@ color:black;
 			case 'updateScreen':
 			{
 				screenImg.src = message.value;
-			}   break;
+			}
+			break;
+
+			case 'updateCpuLoad':
+			{
+				cpuLoad.innerHTML = message.value;
+			}
+			break;
 		}
 	});
 
@@ -411,12 +418,25 @@ color:black;
 
 <body>
 
+<!-- Z80 CPU load -->
+<p>
+	<label>Z80 CPU load:</label>
+	<label id="cpu_load_id">100</label>
+	<label>%</label>
+</p>
+<script>
+	<!-- Store the cpu_load_id -->
+	var cpuLoad=document.getElementById("cpu_load_id");
+</script>
+
+
 <!-- Display the screen gif -->
 <img id="screen_img_id" width="100%" src="${screenGifString}">
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
 </script>
+
 
 <!-- Keyboard -->
 <table style="width:100%">

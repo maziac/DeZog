@@ -31,6 +31,13 @@ export class Z80Cpu extends Z80js {
 	// Time for interrupt in T-States
 	protected INTERRUPT_TIME=0.02*3500000.0;  // 20ms * 3.5 MHz
 
+	// For calculation of the CPU load.
+	// Summarizes all instruction besides HALT.
+	protected cpuLoadTstates: number;
+	// Summarizes all instruction includding HALT.
+	protected cpuTotalTstates: number;
+	// cpuLoadTstates divided by cpuTotalTstates.
+	protected cpuLoad: number;
 
 	/// Constructor.
 	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
@@ -44,6 +51,9 @@ export class Z80Cpu extends Z80js {
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
 		self.im=0;	// Just as after interrupt.
+		this.cpuLoadTstates=0;
+		this.cpuTotalTstates=0;
+		this.cpuLoad=1.0;	// Start with full load
 	}
 
 
@@ -64,16 +74,26 @@ export class Z80Cpu extends Z80js {
 		if (opcode2==0xCBFD||opcode2==0xCBDD)
 			self.pc++;	// Correct the PC
 
+		// Statistics
 		const tstatesDiff=self.tStates-tstatesPrev;
+		if ((opcode2&0xFF)!=0x76) {
+			// Count everything beside the HALT instruction
+			this.cpuLoadTstates+=tstatesDiff;
+		}
+		this.cpuTotalTstates+=tstatesDiff;
+		// Interrupt
 		this.remaingInterruptTstates-=tstatesDiff;
-		//this.remaingInterruptTstates--;
 		if (this.remaingInterruptTstates<=0) {
 			// Interrupt
 			this.remaingInterruptTstates=this.INTERRUPT_TIME;
 			//this.remaingInterruptTstates=2;
 			this.injectInterrupt();
+			// Measure CPU load
+			if (this.cpuTotalTstates>0)
+				this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
 		}
 	}
+
 
 	/**
 	 * Simulates an interrupt.
