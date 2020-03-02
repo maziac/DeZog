@@ -23,7 +23,7 @@ import {BREAK_REASON_NUMBER} from '../remotebase';
 export class ZxSimulatorRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
-	protected z80Cpu: any;	// Z80Cpu
+	public z80Cpu: any;	// Z80Cpu
 	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
 	//protected zxSimulationView: ZxSimulationView;
@@ -516,7 +516,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param condition The watchpoint condition as string. If there is n0 condition
 	 * 'condition' may be undefined or an empty string ''.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition?: string): Promise<void> {
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
 		this.zxMemory.setWatchpoint(address, size, access, condition);
 	}
 

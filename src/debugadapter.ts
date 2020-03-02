@@ -510,7 +510,7 @@ export class DebugSessionClass extends DebugSession {
 				if (Settings.launch.remoteType=="zxsim") {
 					// Adds a window that displays the ZX screen.
 					const remote=Remote as ZxSimulatorRemote;
-					let zxview: ZxSimulationView|undefined=new ZxSimulationView(remote.zxMemory, remote.zxPorts);
+					let zxview: ZxSimulationView|undefined=new ZxSimulationView(remote);
 					remote.once('closed', () => {
 						zxview?.close();
 						zxview=undefined;
@@ -1751,33 +1751,28 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a probably error text.
 	 */
 	protected async evalLOGPOINT(tokens: Array<string>): Promise<string> {
-		const show=() => {
-			// Always show enable status of all Logpoints
-			const enableMap=Remote.logpointsEnabled;
-			// All groups:
-			let text='LOGPOINT groups:';
-			for (const [group, enable] of enableMap) {
-				text+='\n  '+group+': '+((enable)? 'enabled':'disabled');
-			}
-			return text;
-		}
-
 		const param=tokens[0]||'';
 		const group=tokens[1];
 		if (param=='enable'||param=='disable') {
-			// enable or disable all logpoints
+			// Enable or disable all WPMEM watchpoints
 			const enable=(param=='enable');
 			await Remote.enableLogpointGroup(group, enable);
-			return show();	// Print to console
 		}
 		else if (param=='status') {
-			// just show
-			return show();
+			// Just show
 		}
 		else {
 			// Unknown argument
 			throw new Error("Unknown argument: '"+param+"'");
 		}
+
+		// Always show enable status of all Logpoints
+		let result='LOGPOINT groups:';
+		const enableMap=Remote.logpointsEnabled;
+		for (const [group, enable] of enableMap) {
+			result+='\n  '+group+': '+((enable)? 'enabled':'disabled');
+		}
+		return result;
 	}
 
 
@@ -1787,28 +1782,25 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a probably error text.
 	 */
 	protected async evalASSERT(tokens: Array<string>): Promise<string> {
-		const show = () => {
-			// Always show enable status of all ASSERT breakpoints
-			const enable = Remote.assertBreakpointsEnabled;
-			const enableString = (enable) ? 'enabled' : 'disabled';
-			return 'ASSERT breakpoints are ' + enableString + '.';
-		}
-
-		const param = tokens[0] || '';
-		if(param == 'enable' || param == 'disable') {
-			// enable or disable all assert breakpoints
-			const enable = (param == 'enable');
+		const param=tokens[0]||'';
+		if (param=='enable'||param=='disable') {
+			// Enable or disable all ASSERT breakpoints
+			const enable=(param=='enable');
 			await Remote.enableAssertBreakpoints(enable);
-			return show();	// Print to console
 		}
-		else if(param == 'status') {
+		else if (param=='status') {
 			// Just show
-			return show();
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
+			throw new Error("Unknown argument: '"+param+"'");
 		}
+
+		// Show enable status of all ASSERT breakpoints
+		const enable=Remote.assertBreakpointsEnabled;
+		const enableString=(enable)? 'enabled':'disabled';
+		let result='ASSERT watchpoints are '+enableString+'.\n';
+		return result;
 	}
 
 
@@ -1818,28 +1810,35 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalWPMEM(tokens: Array<string>): Promise<string> {
-		const show = () => {
-			// Always show enable status of all WPMEM watchpoints
-			const enable = Remote.wpmemEnabled;
-			const enableString = (enable) ? 'enabled' : 'disabled';
-			return 'WPMEM watchpoints are ' + enableString + '.';
-		}
-
-		const param = tokens[0] || '';
+		const param=tokens[0]||'';
 		if (param=='enable'||param=='disable') {
-			// enable or disable all WPMEM watchpoints
+			// Enable or disable all WPMEM watchpoints
 			const enable=(param=='enable');
-			await  Remote.enableWPMEM(enable)
-			return show();  // Print to console
+			await Remote.enableWPMEM(enable);
 		}
-		else if(param == 'status') {
-			// just show
-			return show();
+		else if (param=='status') {
+			// Just show
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
+			throw new Error("Unknown argument: '"+param+"'");
 		}
+
+		// Show enable status of all WPMEM watchpoints
+		const enable=Remote.wpmemEnabled;
+		const enableString=(enable)? 'enabled':'disabled';
+		let result='WPMEM watchpoints are '+enableString+'.\n';
+		if (enable) {
+			// Also list all watchpoints
+			const wps=Remote.getAllWpmemWatchpoints();
+			for (const wp of wps) {
+				const labels=Labels.getLabelsForNumber(wp.address);
+				labels.push(wp.address.toString());	// as decimal number
+				const labelsString=labels.join(', ');
+				result+=Utility.getHexString(wp.address, 4)+'h ('+labelsString+'): '+wp.access+', size='+Utility.getHexString(wp.size, 4)+'h ('+wp.size+')\n';
+			}
+		}
+		return result;
 	}
 
 

@@ -1582,7 +1582,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableLogpointGroup(group: string, enable: boolean): Promise<void> {
-		assert(false);	// override this
+		if(this.logpoints.size>0)
+			this.emit('warning', 'ZEsarUX does not support logpoints.');
 	}
 
 

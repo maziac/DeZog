@@ -974,6 +974,14 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Returns the WPMEM watchpoints.
+	 */
+	public getAllWpmemWatchpoints(): Array<GenericWatchpoint> {
+		return this.wpmemWatchpoints;
+	}
+
+
+	/**
 	 * Sets the ASSERTs array.
 	 * @param assertBreakpoints A list of addresses to put a guard on.
 	 */
@@ -1004,6 +1012,7 @@ export class RemoteBase extends EventEmitter {
 			this.logpointsEnabled.set(group, false);
 		}
 	}
+
 
 
 	/**

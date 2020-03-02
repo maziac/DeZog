@@ -9,6 +9,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
+import {Labels} from '../../labels';
 
 
 /**
@@ -194,6 +195,8 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	protected async constructBreakReasonString(breakNumber: number, breakData: number, condition: string, breakReasonString: string): Promise<string> {
 		assert(condition != undefined);
+		if (!breakReasonString)
+			breakReasonString='';
 
 		// Generate reason text
 		let reasonString='';
@@ -215,11 +218,13 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
-				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+"access at address 0x"+Utility.getHexString(breakData, 4)+" ("+breakData+"). "+breakReasonString;
+				const address=breakData;
+				const labels=Labels.getLabelsForNumber(address);
+				labels.push(address.toString());	// as decimal number
+				const labelsString=labels.join(', ');
+				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getHexString(address, 4)+" ("+labelsString+"). "+breakReasonString;
 				break;
 		}
-		if (!breakReasonString)
-			breakReasonString='';
 		// condition
 		if (condition.length>0)
 			reasonString+=condition+'. ';
@@ -431,7 +436,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.condition);
+		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.access, wp.condition);
 	}
 
 
@@ -742,7 +747,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param condition The watchpoint condition as string. If there is n0 condition
 	 * 'condition' may be undefined or an empty string ''.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, condition?: string): Promise<void> {
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
 		assert(false);
 	}
 

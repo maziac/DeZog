@@ -212,13 +212,6 @@
 					"command": "dezog.initUnitTests",
 					"when": "false"
 				}
-			],
-			"editor/context": [
-				{
-					"when": "resourceLangId == asm-collection && inDebugMode",
-					"command": "dezog.movePCtoCursor",
-					"group": "debug"
-				}
 			]
 		},
 		"debuggers": [
