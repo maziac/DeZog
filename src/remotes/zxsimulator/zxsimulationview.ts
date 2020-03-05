@@ -82,6 +82,7 @@ export class ZxSimulationView extends BaseView {
 
 		// Initial html page.
 		this.setHtml();
+		this.update();
 	}
 
 
@@ -279,29 +280,24 @@ export class ZxSimulationView extends BaseView {
 	 */
 	public update() {
 		try {
-			// Create message to update cpu load
+			// Update values
+			const cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
+			const slots=this.simulator.zxMemory.getSlots();
+			const slotNames=slots.map(slot => (slot >= 254) ? "ROM" : "BANK"+slot);
+			const visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+			const screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+			// Create message to update the webview
 			let message={
-				command: 'updateCpuLoad',
-				value: (this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString()
+				command: 'update',
+				cpuLoad,
+				slotNames,
+				visualMemImg,
+				screenImg
+
 			};
 			this.sendMessageToWebView(message);
-			// Create gif
-			const visMemGifString=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
-			// Create message to update the visual memory
-			message={
-				command: 'updateVisualMem',
-				value: visMemGifString
-			};
-			this.sendMessageToWebView(message);
-			this.simulator.zxMemory.clearVisualMemory();	// Clear for the next time.
-			// Create gif
-			const screenGifString=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
-			// Create message to update screen
-			message={
-				command: 'updateScreen',
-				value: screenGifString
-			};
-			this.sendMessageToWebView(message);
+			// Clear
+			this.simulator.zxMemory.clearVisualMemory();
 		}
 		catch {}
 	}
@@ -311,9 +307,6 @@ export class ZxSimulationView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
-		const screenGifString=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
-		const visMemGifString=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
-
 		const html=
 `<html>
 
@@ -355,21 +348,14 @@ color:black;
 		const message = event.data;
 
 		switch (message.command) {
-			case 'updateCpuLoad':
+			case 'update':
 			{
-				cpuLoad.innerHTML = message.value;
-			}
-			break;
-
-			case 'updateVisualMem':
-			{
-				visualMemImg.src = message.value;
-			}
-			break;
-
-			case 'updateScreen':
-			{
-				screenImg.src = message.value;
+				cpuLoad.innerHTML = message.cpuLoad;
+				i=0;
+				for(slotString of message.slotNames)
+					slots[i++].textContent = slotString;
+				visualMemImg.src = message.visualMemImg;
+				screenImg.src = message.screenImg;
 			}
 			break;
 		}
@@ -459,28 +445,94 @@ color:black;
 
 
 <!-- Visual Memory (memory activity) -->
-<div style="position:relative; width:100%; height:1.5em">
-	<label style="position:absolute; left:0%">0x0000</label>
-	<label style="position:absolute; left:25%">0x4000</label>
-	<label style="position:absolute; left:50%">0x8000</label>
-	<label style="position:absolute; left:75%">0xC000</label>
+<!-- Legend, Slots -->
+<div style="position:relative; width:100%; height:4.5em;">
+    <style>
+        .border {
+            outline: 1px solid var(--vscode-foreground);
+            outline-offset: 0;
+            height:1em;
+            position:absolute;
+            text-align: center;
+		}
+		.slot {
+			height:1.2em;
+			background: gray
+        }
+    </style>
 
-	<hr  style="position:absolute; top: 0.5em; left:0%" width="1" size="10em">
-	<hr  style="position:absolute; top: 0.5em; left:25%" width="1" size="10em">
-	<hr  style="position:absolute; top: 0.5em; left:50%" width="1" size="10em">
-	<hr  style="position:absolute; top: 0.5em; left:75%" width="1" size="10em">
+	<!-- Legend -->
+    <span style="position:absolute; top: 0em; left:0%">
+		<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
+		<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
+		<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
+	</span>
+
+	<!-- Address labels -->
+	<label style="position:absolute; top:2em; left:0%">0x0000</label>
+	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
+	<label style="position:absolute; top:1em; left:25%">0x4000</label>
+	<label style="position:absolute; top:1em; left:35%">0x5B00</label>
+	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
+	<label style="position:absolute; top:2em; left:50%">0x8000</label>
+	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
+	<label style="position:absolute; top:2em; left:75%">0xC000</label>
+	<label style="position:absolute; top:2em; left:87.5%">0xE000</label>
+
+    <!-- Marker ticks -->
+	<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
+	<span class="border" style="top: 3em; left:12.5%;"></span>
+	<span class="border" style="top: 2.0em; left:25%; height:2.5em;"></span>
+	<span class="border" style="top: 2.0em; left:34.4%; height:2.5em;"></span> <!-- 0x5800 -->
+	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->
+	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
+	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
+	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
+	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
+    <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
+
+    <!-- Slots -->
+    <div class="border slot" id="slot0_id" style="top:3.5em; left:0%; width:12.5%;">ROM</div>
+    <div class="border slot" id="slot1_id" style="top:3.5em; left:12.5%; width:12.5%">ROM</div>
+    <div class="border slot" id="slot2_id" style="top:3.5em; left:25%; width:12.5%">BANK5</div>
+    <div class="border slot" id="slot3_id" style="top:3.5em; left:37.5%; width:12.5%;">BANK6</div>
+    <div class="border slot" id="slot4_id" style="top:3.5em; left:50%; width:12.5%;">BANK7</div>
+    <div class="border slot" id="slot5_id" style="top:3.5em; left:62.5%; width:12.5%;">BANK1</div>
+    <div class="border slot" id="slot6_id" style="top:3.5em; left:75%; width:12.5%;">BANK2</div>
+    <div class="border slot" id="slot7_id" style="top:3.5em; left:87.5%; width:12.5%;">BANK3</div>
+
+	<!-- Extra "Screen" range display -->
+    <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
+	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>
+
+	<!-- Visual memory image, is mainly transparent and put on top -->
+	<img id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%; height:1.2em;">
+
+    <script>
+        <!-- Store the visual mem image source -->
+        var visualMemImg=document.getElementById("visual_mem_img_id");
+	    <!-- Store the slots -->
+	    var slots = [
+			document.getElementById("slot0_id"),
+			document.getElementById("slot1_id"),
+			document.getElementById("slot2_id"),
+			document.getElementById("slot3_id"),
+			document.getElementById("slot4_id"),
+			document.getElementById("slot5_id"),
+			document.getElementById("slot6_id"),
+			document.getElementById("slot7_id")
+		];
+ 	</script>
+
+
 </div>
 
-<img id="visual_mem_img_id" style="image-rendering:pixelated" width="100%" height="10em" src="${visMemGifString}">
-<script>
-	<!-- Store the screen image source -->
-	var visualMemImg=document.getElementById("visual_mem_img_id");
-</script>
+
 <br><br>
 
 
 <!-- Display the screen gif -->
-<img id="screen_img_id" style="image-rendering:pixelated" width="100%" src="${screenGifString}">
+<img id="screen_img_id" style="image-rendering:pixelated; width:100%;">
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");

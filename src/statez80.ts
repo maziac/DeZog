@@ -4,7 +4,7 @@ import { Remote } from './remotes/remotefactory';
 import * as fs from 'fs';
 
 
-
+// TODO: REMOVE
 export class StateZ80 {
 	/// Stores all registers.
 	public registers: Uint16Array;

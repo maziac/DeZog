@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { zSocket, ZesaruxSocket } from './zesaruxsocket';
-import { Utility } from '../../utility';
+import { Utility } from '../../misc/utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import { CallStackFrame } from '../../callstackframe';
@@ -1969,14 +1969,24 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Stores all RAM + the registers.
 	 * @returns State data.
 	 */
-	public async stateSave(): Promise<StateZ80> {
-		// Create state variable
-		const state = StateZ80.createState(this.machineType);
-		if (!state)
-			throw new Error("Machine unknown. Can't save the state.")
-		// Get state
-		await state.stateSave();
-		return state;
+	public async stateSave(): Promise<Uint8Array> {
+		return new Promise<Uint8Array>(resolve => {
+			// Get state
+			zSocket.send('get-snapshot', data => {
+				// Convert ASCII HEX data into bytes
+				const len=data.length;
+				assert(len%2==0);
+				const values=new Uint8Array(len/2);
+				let k=0;
+				for (var i=0; i<len; i+=2) {
+					const valueString=data.substr(i, 2);
+					const value=parseInt(valueString, 16);
+					values[k++]=value;
+				}
+				// Return
+				resolve(values);
+			});
+		});
 	}
 
 
@@ -1985,11 +1995,23 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Restores all RAM + the registers from a former "-state save".
 	 * @param state Pointer to the data to restore.
 	 */
-	public async stateRestore(state: StateZ80): Promise<void> {
-		// Clear register cache
-		this.z80Registers.clearCache();
-		// Restore state
-		await state.stateRestore();
+	public async stateRestore(state: Uint8Array): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Prepare data as ASCII HEX
+			let size=state.length;
+			let command='put-snapshot ';
+
+			for (let i=0; i<size; i++)
+				command+=Utility.getHexString(state[i], 2);
+
+			// Get state
+			zSocket.send(command, () => {
+				// Clear register cache
+				this.z80Registers.clearCache();
+				// Return
+				resolve();
+			});
+		});
 	}
 
 

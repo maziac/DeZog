@@ -596,10 +596,12 @@ This will observe 2 addresses at the bottom and 2 addresses at the top.
 Caveats:
 
 - Other than for sjasmplus WPMEMs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
-- The 'memory breakpoints' used in ZEsarUX have a specific limiting behavior:
-Imagine you have set a watchpoint WPMEM at address 4000h.
+- The 'memory breakpoints' used in ZEsarUX have 2 specific limitations:
+    - Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.
 But if a word (i.e. 2 bytes) is written to 4000h like in "LD (4000h),HL" the lower address is not checked. I.e. a break will not happen. Only the upper address is checked. If the word would be written to 3FFFh e.g. with "LD (3FFFh),HL" then a break would happen.
+    - You need to make sure that the debug settings for the memory breakpoints are set to "Settings->Debug->Breakp. behaviour" to "On Change". Otherwise a break will be done on every instructions following the memory access until another different memory access happens.
+    But even if set to "On Change" it's problematic. If afterwards another access to the same address happens no break will occur.
 
 Notes:
 
@@ -771,7 +773,7 @@ You see the result here:
 #### State Save/Restore
 
 It is possible to save/restore the current machine state (mainly RAM, Z80 registers) during a debug session.
-I.e. you can save the state before an errors happens then run the code to see what caused the error. If you then notice that you have gone too far you can restore the previous state and debug again from that point.
+I.e. you can save the state before an  happens then run the code to see what caused the error. If you then notice that you have gone too far you can restore the previous state and debug again from that point.
 
 Use
 

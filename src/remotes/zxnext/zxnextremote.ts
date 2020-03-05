@@ -3,7 +3,7 @@ import {DZRP, DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80_REG} from '../z80registers';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 
 
@@ -400,5 +400,38 @@ export class ZxNextRemote extends DzrpRemote {
 		await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
 	}
 
+
+	/**
+	 * Sends the command to read the slot/bank associations (8k banks).
+	 * @returns A Promise with an number array of 8 slots.
+	 *  Each entry contains the correspondent bank number.
+ 	*/
+	public async sendDzrpCmdGetSlots(): Promise<number[]> {
+		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SLOTS);
+		const slots=[...buffer];
+		return slots;
+	}
+
+
+	/**
+	 * Sends the command to read the current state of the machine.
+	 * I.e. memory, registers etc.
+	 * @returns A Promise with state data. Format is unknown (remote specific).
+	 * Data will just be saved.
+ 	*/
+	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
+		assert(false);
+		return new Uint8Array();
+	}
+
+
+	/**
+	 * Sends the command to wite a previously saved state to the remote.
+	 * I.e. memory, registers etc.
+	 * @param The state data. Format is unknown (remote specific).
+ 	*/
+	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
+		assert(false);
+	}
 }
 

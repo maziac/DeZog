@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { Labels } from '../labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Settings } from '../settings'
-import { Utility } from '../utility';
+import { Utility } from '../misc/utility';
 import { RefList } from '../reflist';
 import { Remote } from '../remotes/remotefactory';
 import { BaseMemory } from '../disassembler/basememory';

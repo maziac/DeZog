@@ -1,6 +1,6 @@
 'use strict';
 
-import { Utility } from './utility';
+import { Utility } from './misc/utility';
 
 
 /// The boundary at which the memory dumps should be shown.

@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
 import { basename } from 'path';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent } from 'vscode-debugadapter/lib/main';
@@ -12,10 +13,9 @@ import { MemoryRegisterView } from './views/memoryregisterview';
 import { RefList } from './reflist';
 import { Settings, SettingsParameters } from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
-import { Utility } from './utility';
+import { Utility } from './misc/utility';
 import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './remotes/z80registers';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
-import { StateZX16K } from './statez80';
 import { ZxNextSpritesView } from './views/zxnextspritesview';
 import { TextView } from './views/textview';
 import { BaseView } from './views/baseview';
@@ -1000,13 +1000,13 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check if memory pages are suported by Remote
-		if (Remote.supportsZxNextRegisters) {
+		//if (Remote.supportsZxNextRegisters) {
 			// Create variable object for MemoryPages
 			const varMemoryPages=new MemoryPagesVar();
 			// Add to list and get reference ID
 			ref=this.listVariables.addObject(varMemoryPages);
 			scopes.push(new Scope("Memory Pages", ref));
-		}
+		//}
 
 		// Create variable object for the stack
 		const varStack = new StackVar(frame.stack, frame.stackStartAddress);
@@ -2006,7 +2006,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Save current state
 			await this.stateSave(stateName);
 			// Send response
-			return 'OK';
+			return "Saved state '"+stateName+"'";
 		}
 		else if(param == 'restore') {
 			// Restores the state
@@ -2014,8 +2014,12 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Reload register values etc.
 			this.sendEventContinued();
 			this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
-			return "OK";
+			return "Restored state '"+stateName+"'";
 		}
+			// TODO:
+			// Speichern in eigenen Ordner 'states' in '.tmp'.
+			// Außerdem Kommandos für: 'list', 'clear' und 'clearall'.
+
 		else {
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
@@ -2169,7 +2173,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		try {
 			// Save data to temp directory
 			filePath=Utility.getAbsStateFileName(stateName);
-			await stateData.write(filePath);
+			fs.writeFileSync(filePath, stateData);
 		}
 		catch (e) {
 			const errTxt="Can't save '"+filePath+"': "+e.message;
@@ -2189,8 +2193,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		try {
 			// Read data
 			filePath=Utility.getAbsStateFileName(stateName);
-			const stateData=new StateZX16K();
-			await stateData.read(filePath);
+			const stateBuffer=fs.readFileSync(filePath);
+			const stateData=Uint8Array.from(stateBuffer);
 			// Restore state
 			await Remote.stateRestore(stateData);
 		}

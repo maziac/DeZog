@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
 import {MemBank16k} from './membank16k';
 
 

@@ -9,7 +9,7 @@ import * as assert from 'assert';
 import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
 import Lg = require("./log")
-import {Utility} from './utility';
+import {Utility} from './misc/utility';
 
 
 /// Config section in the settings.

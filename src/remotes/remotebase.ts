@@ -7,7 +7,7 @@ import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels} from '../labels';
 import {Settings, ListFile} from '../settings';
-import {Utility} from '../utility';
+import {Utility} from '../misc/utility';
 import {StateZ80} from '../statez80';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
@@ -1366,7 +1366,7 @@ export class RemoteBase extends EventEmitter {
 	 * Override.
 	  * @returns State data.
 	 */
-	public async stateSave(): Promise<StateZ80> {
+	public async stateSave(): Promise<Uint8Array> {
 		return null as any;
 	}
 
@@ -1377,7 +1377,7 @@ export class RemoteBase extends EventEmitter {
 	 * Override.
 	 * @param state Pointer to the data to restore.
 	 */
-	public async stateRestore(state: StateZ80): Promise<void> {
+	public async stateRestore(state: Uint8Array): Promise<void> {
 	}
 
 

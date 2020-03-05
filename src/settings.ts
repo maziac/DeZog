@@ -1,5 +1,5 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { Utility } from './utility';
+import { Utility } from './misc/utility';
 import * as path from 'path';
 import * as fs from 'fs';
 

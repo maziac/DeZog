@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
-import { Utility } from '../utility';
+import { Utility } from '../misc/utility';
 import { Labels } from '../labels';
 import { MetaBlock, MemoryDump } from '../memorydump';
 import { Settings } from '../settings';

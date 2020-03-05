@@ -1,15 +1,17 @@
 import * as assert from 'assert';
-import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER} from '../remotebase';
+import * as fs from 'fs';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemoryPage} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80Registers, Z80_REG} from '../z80registers';
 import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
 import {Settings} from '../../settings';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
+import {ZxMemory} from '../zxsimulator/zxmemory';
 
 
 /**
@@ -573,11 +575,22 @@ export class DzrpRemote extends RemoteBase {
 	 * and converts it to an arry of MemoryPages.
 	 * @returns A Promise with an array with the available memory pages.
 	 */
-	/*
 	public async getMemoryPages(): Promise<MemoryPage[]> {
-		return [];
+		// Prepare array
+		const pages: Array<MemoryPage>=[];
+		// Get the data
+		const data=await this.sendDzrpCmdGetSlots();
+		// Save in array
+		let start=0x0000;
+		data.map(slot => {
+			const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
+			const name=(slot>=254)? "ROM":"BANK"+slot;
+			pages.push({start, end, name});
+			start+=ZxMemory.MEMORY_BANK_SIZE-1;
+		});
+		// Return
+		return pages;
 	}
-	*/
 
 
 	/**
@@ -596,6 +609,20 @@ export class DzrpRemote extends RemoteBase {
 		}
 		// Make sure that the registers are reloaded
 		this.z80Registers.clearCache();
+	}
+
+
+	/**
+	 * Loads object file (binary without any meta data).
+	 * @param filePath The absolute path to the file.
+	 * @param startAddress The address where the data should be loaded.
+	 */
+	protected async loadObj(filePath: string, startAddress: number): Promise<void> {
+		// Read file
+		const objBuffer=fs.readFileSync(filePath);
+
+		// Write as memory dump
+		this.sendDzrpCmdWriteMem(startAddress, objBuffer);
 	}
 
 
@@ -798,5 +825,39 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
+	/**
+	 * Override.
+	 * Sends the command to read the slot/bank associations (8k banks).
+	 * @returns A Promise with an number array of 8 slots.
+	 *  Each entry contains the correspondent bank number.
+ 	*/
+	public async sendDzrpCmdGetSlots(): Promise<number[]> {
+		assert(false);
+		return [];
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to read the current state of the machine.
+	 * I.e. memory, registers etc.
+	 * @returns A Promise with state data. Format is unknown (remote specific).
+	 * Data will just be saved.
+ 	*/
+	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
+		assert(false);
+		return new Uint8Array();
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to wite a previously saved state to the remote.
+	 * I.e. memory, registers etc.
+	 * @param The state data. Format is unknown (remote specific).
+ 	*/
+	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
+		assert(false);
+	}
 }
 

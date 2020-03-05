@@ -7,9 +7,10 @@ import {ZxPorts} from './zxports';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
+import {Labels} from '../../labels';
 //import {LogGlobal} from '../../log';
 
 
@@ -64,35 +65,60 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization() {
-		// Simulator capabilities
-		this.supportsZxNextRegisters=false;
+		try {
+			// Simulator capabilities
+			this.supportsZxNextRegisters=false;
 
-		// For now only one machine is supported
-		if (Settings.launch.zxsim.machine=="48k") {
-			// Load the rom
-			try {
-				const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
-				const romBuffer=fs.readFileSync(romFilePath);
-				const rom1=new Uint8Array(0x2000);
-				const rom2=new Uint8Array(0x2000);
-				romBuffer.copy(rom1, 0, 0, 0x2000);
-				romBuffer.copy(rom2, 0, 0x2000, 0x4000);
-				this.zxMemory.writeBank(254, rom1);
-				this.zxMemory.writeBank(255, rom2);
+			// For now only one machine is supported
+			if (Settings.launch.zxsim.machine=="48k") {
+				// Load the rom
+				try {
+					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+					const romBuffer=fs.readFileSync(romFilePath);
+					const rom1=new Uint8Array(0x2000);
+					const rom2=new Uint8Array(0x2000);
+					romBuffer.copy(rom1, 0, 0, 0x2000);
+					romBuffer.copy(rom2, 0, 0x2000, 0x4000);
+					this.zxMemory.writeBank(254, rom1);
+					this.zxMemory.writeBank(255, rom2);
+				}
+				catch (e) {
+					this.emit('warning', e.message);
+				}
 			}
-			catch (e) {
-				this.emit('warning', e.message);
+
+			// Load sna or nex file
+			const loadPath=Settings.launch.load;
+			if (loadPath)
+				await this.loadBin(loadPath);
+
+			// Load obj file(s) unit
+			for (let loadObj of Settings.launch.loadObjs) {
+				if (loadObj.path) {
+					// Convert start address
+					const start=Labels.getNumberFromString(loadObj.start);
+					if (isNaN(start))
+						throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
+					await this.loadObj(loadPath, start);
+				}
 			}
+
+			// Set Program Counter to execAddress
+			if (Settings.launch.execAddress) {
+				const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
+				if (isNaN(execAddress))
+					throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
+				// Set PC
+				this.setProgramCounter(execAddress);
+			}
+
+			// Ready
+			this.emit('initialized')
 		}
-
-		// Load sna or nex file
-		const loadPath=Settings.launch.load;
-		if (loadPath)
-			await this.loadBin(loadPath);
-		// Ready
-		this.emit('initialized')
-		// Open the ZX screen simulation view
-		//this.zxSimulationView=new ZxSimulationView(this.zxMemory, this.zxPorts);
+		catch (e) {
+			// Some error occurred
+			this.emit('error', e);
+		}
 	}
 
 
@@ -567,5 +593,37 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.zxMemory.writeBank(bank, dataArray);
 	}
 
+
+	/**
+	 * Sends the command to read the slot/bank associations (8k banks).
+	 * @returns A Promise with an number array of 8 slots.
+	 *  Each entry contains the correspondent bank number.
+ 	*/
+	public async sendDzrpCmdGetSlots(): Promise<number[]> {
+		const slots=this.zxMemory.getSlots();
+		return slots;
+	}
+
+
+	/**
+	 * Sends the command to read the current state of the machine.
+	 * I.e. memory, registers etc.
+	 * @returns A Promise with state data. Format is unknown (remote specific).
+	 * Data will just be saved.
+ 	*/
+	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
+		assert(false);
+		return new Uint8Array();
+	}
+
+
+	/**
+	 * Sends the command to wite a previously saved state to the remote.
+	 * I.e. memory, registers etc.
+	 * @param The state data. Format is unknown (remote specific).
+ 	*/
+	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
+		assert(false);
+	}
 }
 

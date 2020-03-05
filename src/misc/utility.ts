@@ -1,8 +1,8 @@
 import * as assert from 'assert';
-import { Labels } from './labels';
-import { Settings } from './settings';
-import { Z80Registers } from './remotes/z80registers';
-import { Remote } from './remotes/remotefactory';
+import { Labels } from '../labels';
+import { Settings } from '../settings';
+import { Z80Registers } from '../remotes/z80registers';
+import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';

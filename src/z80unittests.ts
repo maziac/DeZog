@@ -9,7 +9,7 @@ import { LabelsClass } from './labels';
 import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
-import { Utility } from './utility';
+import { Utility } from './misc/utility';
 import { CallSerializer } from './callserializer';
 import { Decoration } from './decoration';
 

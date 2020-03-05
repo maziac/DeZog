@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { Utility } from '../utility';
+import { Utility } from '../misc/utility';
 import { Settings } from '../settings';
 
 

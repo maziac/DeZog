@@ -2,6 +2,7 @@ import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {Z80Registers} from '../z80registers';
+import {MemBuffer} from '../../misc/membuffer'
 
 
 const signed8=(val) => {
@@ -89,8 +90,11 @@ export class Z80Cpu extends Z80js {
 			//this.remaingInterruptTstates=2;
 			this.injectInterrupt();
 			// Measure CPU load
-			if (this.cpuTotalTstates>0)
+			if (this.cpuTotalTstates>0) {
 				this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
+				this.cpuLoadTstates=0;
+				this.cpuTotalTstates=0;
+			}
 		}
 	}
 
@@ -156,6 +160,87 @@ export class Z80Cpu extends Z80js {
 			r2.af, r2.bc, r2.de, r2.hl,
 			self.i, self.r, self.im);
 		return regData;
+	}
+
+
+	/**
+	 * Returns the registers and internal state in a binary blob.
+	 * Use in conjunction with 'writeState'.
+	 */
+	public readState(): Uint8Array {
+		// Save all registers etc.
+		const self=this as any;
+		const r1=self.r1;
+		const r2=self.r2;
+		// Get buffer
+		const mem=MemBuffer.createBuffer(1000);
+		// Store
+		mem.write16(self.pc);
+		mem.write16(self.sp);
+		mem.write16(r1.af);
+		mem.write16(r1.bc);
+		mem.write16(r1.de);
+		mem.write16(r1.hl);
+		mem.write16(r1.ix);
+		mem.write16(r1.iy);
+		mem.write16(r2.af);
+		mem.write16(r2.bc);
+		mem.write16(r2.de);
+		mem.write16(r2.hl);
+		// Also the 1 byte data is stored in 2 bytes for simplicity:
+		mem.write8(self.i);
+		mem.write8(self.r);
+		mem.write8(self.im);
+		mem.write8(self.iff1);
+		mem.write8(self.iff2);
+
+		// Additional state
+		mem.write32(this.remaingInterruptTstates);
+
+		// Return
+		const bytes=mem.getUint8Array();
+		return bytes;
+	}
+
+
+	/**
+	 * Writes the state. I.e. sets the internal state (registers etc.).
+	 * Use in conjunction with 'readState'.
+	 */
+	public writeState(stateData: Uint8Array) {
+		// Restore all registers etc.
+		const self=this as any;
+		const r1=self.r1;
+		const r2=self.r2;
+		// Get buffer
+		const mem=MemBuffer.from(stateData);
+		// Store
+		self.pc=mem.read16();
+		self.sp=mem.read16();
+		r1.af=mem.read16();
+		r1.bc=mem.read16();
+		r1.de=mem.read16();
+		r1.hl=mem.read16();
+		r1.ix=mem.read16();
+		r1.iy=mem.read16();
+		r2.af=mem.read16();
+		r2.bc=mem.read16();
+		r2.de=mem.read16();
+		r2.hl=mem.read16();
+		// Also the 1 byte data is stored in 2 bytes for simplicity:
+		self.i=mem.read8();
+		self.r=mem.read8();
+		self.im=mem.read8();
+		self.iff1=mem.read8();
+		self.iff2=mem.read8();
+
+		// Additional state
+		this.remaingInterruptTstates=mem.read32();
+
+		// Reset statistics
+		this.cpuLoadTstates=0;
+		this.cpuTotalTstates=0;
+		this.cpuLoad=1.0;	// Start with full load
 	}
 
 

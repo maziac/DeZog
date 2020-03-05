@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Utility } from '../utility';
+import { Utility } from '../misc/utility';
 import { Z80Registers } from '../remotes/z80registers';
 //import { EmulatorClass } from '../emulator';
 import { Remote, RemoteFactory } from '../remotes/remotefactory';

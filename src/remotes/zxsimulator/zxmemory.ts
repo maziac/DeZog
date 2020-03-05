@@ -2,7 +2,8 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as fs from 'fs';
 import {ImageConvert} from '../../imageconvert';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
+import {MemBuffer} from '../../misc/membuffer';
 
 
 /**
@@ -22,8 +23,11 @@ export class ZxMemory {
 	// Screen width
 	public static SCREEN_WIDTH=256;
 
-	// Holds the memory banks.
+	// Holds the memory banks. Views to the 'wholeMemory'.
 	protected banks: Array<Uint8Array>;
+
+	// The memory in one big block.
+	protected RAM: ArrayBuffer;
 
 	// Holds the slot assignments to the banks.
 	// Note: I use 254 for ROM 0-0x1FFF and 255 for ROM 0x2000-0x3FFF.
@@ -45,19 +49,69 @@ export class ZxMemory {
 
 	/// Constructor.
 	constructor() {
+		// Create RAM
+		this.RAM=new ArrayBuffer(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
 		// Create memory banks
 		this.banks=new Array<Uint8Array>(ZxMemory.NUMBER_OF_BANKS);
 		for (let b=0; b<ZxMemory.NUMBER_OF_BANKS; b++) {
-			const bank=new Uint8Array(ZxMemory.MEMORY_BANK_SIZE);
+			const bank=new Uint8Array(this.RAM, b*ZxMemory.MEMORY_BANK_SIZE, ZxMemory.MEMORY_BANK_SIZE);
 			this.banks[b]=bank;
-			// Fill RAM randomly
-			for (let i=0; i<ZxMemory.MEMORY_BANK_SIZE; i++)
-				bank[i]=0;//Math.random()*256;
 		}
 		// Create visual memory
 		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
 		this.clearVisualMemory();
 	}
+
+
+	/**
+	 * Returns all the memory of all banks and the slot/bank configuration
+	 * in a Uint8Array blob.
+	 * The visual memory is not returned.
+	 */
+	public readState(): Uint8Array {
+		// Get buffer
+		let size=1000;
+		size+=this.RAM.byteLength;
+		const mem=MemBuffer.createBuffer(size);
+
+		// Get slot/bank mapping
+		mem.write8(this.slots.length);
+		for (const bank of this.slots)
+			mem.write8(bank);
+
+		// Get RAM
+		mem.writeArrayBuffer(this.RAM);
+
+		// Return
+		const bytes=mem.getUint8Array();
+		return bytes;
+	}
+
+
+	/**
+	 * Writes the state. I.e. sets the internal state (registers etc.).
+	 * Use in conjunction with 'readState'.
+	 */
+	public writeState(stateData: Uint8Array) {
+		// Get buffer
+		const mem=MemBuffer.from(stateData);
+
+		// Store slot/bank association
+		const slotLength=mem.read8();
+		this.slots=[];
+		for (let i=0; i<slotLength; i++)
+			this.slots.push(mem.read8());
+
+		// Create memory banks
+		const buffer=mem.readArrayBuffer();
+		assert(buffer.length==this.RAM.byteLength);
+		const dst=new Uint8Array(this.RAM);
+		dst.set(buffer);
+
+		// Clear visual memory
+		this.clearVisualMemory();
+	}
+
 
 	// Read 1 byte.
 	public read8(addr: number): number {
@@ -91,7 +145,7 @@ export class ZxMemory {
 	 * @param addr The ZX spectrum memory address.
 	 * @returns [number, Uint8Array] The address (0-0x1FFF) and the memory bank array.
 	 */
-	protected getBankForAddr(addr: number): [number, Uint8Array] {
+	public getBankForAddr(addr: number): [number, Uint8Array] {
 		const slot=(addr>>13)&0x07;
 		const bankAddr=addr&0x1FFF;
 		const bank=this.slots[slot];
@@ -105,6 +159,13 @@ export class ZxMemory {
 	 */
 	public setSlot(slot: number, bank: number) {
 		this.slots[slot]=bank;
+	}
+
+	/**
+	 * Returns the slots array.
+	 */
+	public getSlots(): number[] {
+		return this.slots;
 	}
 
 	/**
@@ -214,14 +275,14 @@ export class ZxMemory {
 	public getVisualMemoryImage(): number[] {
 		// Get ZX palette
 		const palette=[
-			0x80, 0x80, 0x80,	// Gray (background)
+			0x80, 0x80, 0x80,	// Gray (background)/Transparent
 			0xC0, 0xC0, 0x00,	// Yellow: Read access
 			0xC0, 0x00, 0x00,	// Red: Write access
 			0x00, 0x00, 0xC0,	// Blue: Prog access
 		];
 		// Convert to gif
 		const size=this.visualMemory.length;
-		const gifBuffer=ImageConvert.createGifFromArray(size, 1, this.visualMemory, palette);
+		const gifBuffer=ImageConvert.createGifFromArray(size, 1, this.visualMemory, palette, 0 /*transparent index*/);
 		// Return
 		return gifBuffer;
 	}

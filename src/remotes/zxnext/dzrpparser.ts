@@ -22,7 +22,10 @@ export enum DZRP {
 	CMD_REMOVE_WATCHPOINT=0xA,
 
 	CMD_READ_MEM=0xB,
-	CMD_WRITE_MEM,
+	CMD_WRITE_MEM=0xC,
+
+
+	CMD_GET_SLOTS=0xD,
 };
 
 /**

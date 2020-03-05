@@ -2,7 +2,7 @@
 //import * as SerialPort from 'serialport';
 import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
 //import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
-import {Utility} from '../../utility';
+import {Utility} from '../../misc/utility';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 
@@ -264,7 +264,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					// Return memory data
 					const mem=this.zxMemory.readBlock(addr, size);
 					// Respond
-					this.sendDzrpResp(seqno, new Buffer(mem));
+					this.sendDzrpResp(seqno, Buffer.from(mem));
 				}
 				break;
 			case DZRP.CMD_WRITE_MEM:
@@ -277,6 +277,15 @@ export class SerialFake extends ZxSimulatorRemote {
 					this.zxMemory.writeBlock(addr, mem);
 					// Respond
 					this.sendDzrpResp(seqno);
+				}
+				break;
+			case DZRP.CMD_GET_SLOTS:
+				{
+					// Get slots
+					const slots=this.zxMemory.getSlots();
+					const buffer=Buffer.from(slots);
+					// Respond
+					this.sendDzrpResp(seqno, buffer);
 				}
 				break;
 			default:

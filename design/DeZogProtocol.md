@@ -330,9 +330,69 @@ Command:
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 1    | addr[0] | First byte of memory block |
-| ..    | ..   | ...   | ... |
+| ...   | ...  | ...   | ... |
 | 9+n-1 | 1    | addr[n-1] | Last byte of memory block |
 
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
+
+## CMD_GET_SLOTS
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 5+n   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x0D  | CMD_GET_SLOTS |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | slot[0] | The bank number associated with slot 0 |
+| 6     | 1    | slot[1] | The bank number associated with slot 1 |
+| ...   | ...  | ..      | ... |
+| 5     | 1    | slot[7] | The bank number associated with slot 7 |
+
+Note:
+- ROM0 = 254
+- ROM1 = 255
+
+
+# CMD_READ_STATE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 5+n   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x0E  | CMD_READ_STATE |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | N    |       | Arbitrary data. The format is up to the remote. |
+
+
+# CMD_WRITE_STATE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 5+n   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x0E  | CMD_READ_STATE |
+| 6     | N    |       | Arbitrary data. This is data that has bpreviously been retrieved via CMD_READ_STATE. |
 
 Response:
 | Index | Size | Value |Description |
