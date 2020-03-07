@@ -1,10 +1,12 @@
 
 import * as assert from 'assert';
 import {ZxPorts} from '../remotes/zxsimulator/zxports';
+import {MemBuffer} from '../misc/membuffer';
 
 suite('ZxPorts', () => {
-	test('readState/writeState', () => {
-		let state;
+	test('serialize/deserialize', () => {
+		let memBuffer;
+		let writeSize;
 		{
 			const ports=new ZxPorts();
 
@@ -14,17 +16,21 @@ suite('ZxPorts', () => {
 			ports.setPortValue(0x8000, 102);
 			ports.setPortValue(0xFFFF, 103);
 
-			// Read
-			state=ports.readState();
+			// Get size
+			writeSize=ports.getSerializedSize();
 
-			// Check length
-			let length=0x10000+4;
-			assert.equal(length, state.length);
+			// Serialize
+			memBuffer=new MemBuffer(writeSize);
+			ports.serialize(memBuffer);
 		}
 
 		// Create a new object
 		const rPorts=new ZxPorts();
-		rPorts.writeState(state);
+		rPorts.deserialize(memBuffer);
+
+		// Check size
+		const readSize=(memBuffer as any).readOffset;
+		assert.equal(writeSize, readSize);
 
 		// Test the ports
 		assert.equal(100, rPorts.read(0x0000));

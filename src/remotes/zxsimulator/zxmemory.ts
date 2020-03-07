@@ -63,47 +63,47 @@ export class ZxMemory {
 	}
 
 
+
 	/**
-	 * Returns all the memory of all banks and the slot/bank configuration
-	 * in a Uint8Array blob.
-	 * The visual memory is not returned.
+	 * Returns the size the serialized object would consume.
 	 */
-	public readState(): Uint8Array {
-		// Get buffer
-		let size=1000;
-		size+=this.RAM.byteLength;
-		const mem=MemBuffer.createBuffer(size);
-
-		// Get slot/bank mapping
-		mem.write8(this.slots.length);
-		for (const bank of this.slots)
-			mem.write8(bank);
-
-		// Get RAM
-		mem.writeArrayBuffer(this.RAM);
-
-		// Return
-		const bytes=mem.getUint8Array();
-		return bytes;
+	public getSerializedSize(): number {
+		// Create a MemBuffer to calculate the size.
+		const memBuffer=new MemBuffer();
+		// Serialize object to obtain size
+		this.serialize(memBuffer);
+		// Get size
+		const size=memBuffer.getSize();
+		return size;
 	}
 
 
 	/**
-	 * Writes the state. I.e. sets the internal state (registers etc.).
-	 * Use in conjunction with 'readState'.
+	 * Serializes the object.
 	 */
-	public writeState(stateData: Uint8Array) {
-		// Get buffer
-		const mem=MemBuffer.from(stateData);
+	public serialize(memBuffer: MemBuffer) {
+		// Get slot/bank mapping
+		memBuffer.write8(this.slots.length);
+		for (const bank of this.slots)
+			memBuffer.write8(bank);
 
+		// Get RAM
+		memBuffer.writeArrayBuffer(this.RAM);
+	}
+
+
+	/**
+	 * Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
 		// Store slot/bank association
-		const slotLength=mem.read8();
+		const slotLength=memBuffer.read8();
 		this.slots=[];
 		for (let i=0; i<slotLength; i++)
-			this.slots.push(mem.read8());
+			this.slots.push(memBuffer.read8());
 
 		// Create memory banks
-		const buffer=mem.readArrayBuffer();
+		const buffer=memBuffer.readArrayBuffer();
 		assert(buffer.length==this.RAM.byteLength);
 		const dst=new Uint8Array(this.RAM);
 		dst.set(buffer);

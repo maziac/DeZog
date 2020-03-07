@@ -163,79 +163,84 @@ export class Z80Cpu extends Z80js {
 	}
 
 
+
 	/**
-	 * Returns the registers and internal state in a binary blob.
-	 * Use in conjunction with 'writeState'.
+	 * Returns the size the serialized object would consume.
 	 */
-	public readState(): Uint8Array {
-		// Save all registers etc.
-		const self=this as any;
-		const r1=self.r1;
-		const r2=self.r2;
-		// Get buffer
-		const mem=MemBuffer.createBuffer(1000);
-		// Store
-		mem.write16(self.pc);
-		mem.write16(self.sp);
-		mem.write16(r1.af);
-		mem.write16(r1.bc);
-		mem.write16(r1.de);
-		mem.write16(r1.hl);
-		mem.write16(r1.ix);
-		mem.write16(r1.iy);
-		mem.write16(r2.af);
-		mem.write16(r2.bc);
-		mem.write16(r2.de);
-		mem.write16(r2.hl);
-		// Also the 1 byte data is stored in 2 bytes for simplicity:
-		mem.write8(self.i);
-		mem.write8(self.r);
-		mem.write8(self.im);
-		mem.write8(self.iff1);
-		mem.write8(self.iff2);
-
-		// Additional state
-		mem.write32(this.remaingInterruptTstates);
-
-		// Return
-		const bytes=mem.getUint8Array();
-		return bytes;
+	public getSerializedSize(): number {
+		// Create a MemBuffer to calculate the size.
+		const memBuffer=new MemBuffer();
+		// Serialize object to obtain size
+		this.serialize(memBuffer);
+		// Get size
+		const size=memBuffer.getSize();
+		return size;
 	}
 
 
 	/**
-	 * Writes the state. I.e. sets the internal state (registers etc.).
-	 * Use in conjunction with 'readState'.
+	 * Serializes the object.
 	 */
-	public writeState(stateData: Uint8Array) {
+	public serialize(memBuffer: MemBuffer) {
+		// Save all registers etc.
+		const self=this as any;
+		const r1=self.r1;
+		const r2=self.r2;
+		// Store
+		memBuffer.write16(self.pc);
+		memBuffer.write16(self.sp);
+		memBuffer.write16(r1.af);
+		memBuffer.write16(r1.bc);
+		memBuffer.write16(r1.de);
+		memBuffer.write16(r1.hl);
+		memBuffer.write16(r1.ix);
+		memBuffer.write16(r1.iy);
+		memBuffer.write16(r2.af);
+		memBuffer.write16(r2.bc);
+		memBuffer.write16(r2.de);
+		memBuffer.write16(r2.hl);
+		// Also the 1 byte data is stored in 2 bytes for simplicity:
+		memBuffer.write8(self.i);
+		memBuffer.write8(self.r);
+		memBuffer.write8(self.im);
+		memBuffer.write8(self.iff1);
+		memBuffer.write8(self.iff2);
+
+		// Additional state
+		memBuffer.write32(this.remaingInterruptTstates);
+	}
+
+
+	/**
+	 * Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
 		// Restore all registers etc.
 		const self=this as any;
 		const r1=self.r1;
 		const r2=self.r2;
-		// Get buffer
-		const mem=MemBuffer.from(stateData);
 		// Store
-		self.pc=mem.read16();
-		self.sp=mem.read16();
-		r1.af=mem.read16();
-		r1.bc=mem.read16();
-		r1.de=mem.read16();
-		r1.hl=mem.read16();
-		r1.ix=mem.read16();
-		r1.iy=mem.read16();
-		r2.af=mem.read16();
-		r2.bc=mem.read16();
-		r2.de=mem.read16();
-		r2.hl=mem.read16();
+		self.pc=memBuffer.read16();
+		self.sp=memBuffer.read16();
+		r1.af=memBuffer.read16();
+		r1.bc=memBuffer.read16();
+		r1.de=memBuffer.read16();
+		r1.hl=memBuffer.read16();
+		r1.ix=memBuffer.read16();
+		r1.iy=memBuffer.read16();
+		r2.af=memBuffer.read16();
+		r2.bc=memBuffer.read16();
+		r2.de=memBuffer.read16();
+		r2.hl=memBuffer.read16();
 		// Also the 1 byte data is stored in 2 bytes for simplicity:
-		self.i=mem.read8();
-		self.r=mem.read8();
-		self.im=mem.read8();
-		self.iff1=mem.read8();
-		self.iff2=mem.read8();
+		self.i=memBuffer.read8();
+		self.r=memBuffer.read8();
+		self.im=memBuffer.read8();
+		self.iff1=memBuffer.read8();
+		self.iff2=memBuffer.read8();
 
 		// Additional state
-		this.remaingInterruptTstates=mem.read32();
+		this.remaingInterruptTstates=memBuffer.read32();
 
 		// Reset statistics
 		this.cpuLoadTstates=0;

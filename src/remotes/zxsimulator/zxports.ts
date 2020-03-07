@@ -17,31 +17,34 @@ export class ZxPorts {
 
 
 	/**
-	 * Returns the values of all ports.
+	 * Returns the size the serialized object would consume.
 	 */
-	public readState(): Uint8Array {
-		// Get buffer
-		const mem=MemBuffer.createBuffer(this.ports.length+4);
-
-		// Get ports
-		mem.writeArrayBuffer(this.ports);
-
-		// Return
-		const bytes=mem.getUint8Array();
-		return bytes;
+	public getSerializedSize(): number {
+		// Create a MemBuffer to calculate the size.
+		const memBuffer=new MemBuffer();
+		// Serialize object to obtain size
+		this.serialize(memBuffer);
+		// Get size
+		const size=memBuffer.getSize();
+		return size;
 	}
 
 
 	/**
-	 * Writes the state. I.e. sets the internal state (registers etc.).
-	 * Use in conjunction with 'readState'.
+	 * Serializes the object.
 	 */
-	public writeState(stateData: Uint8Array) {
-		// Get buffer
-		const mem=MemBuffer.from(stateData);
+	public serialize(memBuffer: MemBuffer) {
+		// Get ports
+		memBuffer.writeArrayBuffer(this.ports);
+	}
 
-		// Create ports
-		const buffer=mem.readArrayBuffer();
+
+	/**
+	 * Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
+		// Read ports from buffer
+		const buffer=memBuffer.readArrayBuffer();
 		assert(buffer.length==this.ports.length);
 		this.ports.set(buffer);
 	}

@@ -15,65 +15,87 @@
  *
  * For reading use 'from()' with an already existing Uint8Array.
  */
-export class MemBuffer extends DataView {
+export class MemBuffer {
 
-	protected offset=0;
+	/// The underlying array buffer.
+	public buffer: ArrayBuffer;
+
+	/// The offset into the buffer for writing.
+	protected writeOffset=0;
+
+	/// The offset into the buffer for writing.
+	protected readOffset=0;
+
+	/// A dataview on the buffer.
+	protected dataView: DataView;
 
 	/**
 	 * Static method to construct a MemBuffer.
-	 * @param approxLength Should be bigger or equal to the real used length.
+	 * The idea is to create 2 buffers.
+	 * The first without a length is not really a buffer, each write will not
+	 * write but only increase the offset.
+	 * This buffer is used to calculate the size required.
+	 * Afterwards a new buffer should be created with the calculated length as parameter (or more).
+	 * Then all writes are done a second time but this time the
+	 * values are really written into the buffer.
+	 * @param length Either the length of the buffer or undefined to
+	 * calculate the length.
 	 * @returns A new MemBuffer.
 	 */
-	static createBuffer(approxLength: number): MemBuffer {
-		const arrBuffer=new ArrayBuffer(approxLength);
-		return new MemBuffer(arrBuffer);
+	constructor(length?: number) {
+		if (length) {
+			this.buffer=new ArrayBuffer(length);
+			this.dataView=new DataView(this.buffer);
+		}
 	}
 
+
 	/**
-	 * Static method to construct a MemBuffer.
-	 * @param approxLength Should be bigger or equal to the real used length.
-	 * @returns A new MemBuffer.
+	 * Returns the current size.
 	 */
-	static from(bytes: Uint8Array): MemBuffer {
-		return new MemBuffer(bytes.buffer);
+	public getSize() {
+		return this.writeOffset;
 	}
+
 
 	/**
 	 * Writes a value to the next position (offset).
 	 */
 	public write8(value: number) {
-		this.setUint8(this.offset, value);
-		this.offset++;
+		this.dataView?.setUint8(this.writeOffset, value);
+		this.writeOffset++;
 	}
 
 	/**
 	 * Writes a value to the next position (offset).
 	 */
 	public write16(value: number) {
-		this.setUint16(this.offset, value);
-		this.offset+=2;
+		this.dataView?.setUint16(this.writeOffset, value);
+		this.writeOffset+=2;
 	}
 
 	/**
 	 * Writes a value to the next position (offset).
 	 */
 	public write32(value: number) {
-		this.setUint32(this.offset, value);
-		this.offset+=4;
+		this.dataView?.setUint32(this.writeOffset, value);
+		this.writeOffset+=4;
 	}
 
 	/**
 	 * Writes an array to the next position (offset).
 	 */
 	public writeArrayBuffer(buffer: ArrayBuffer) {
-		const src=new Uint8Array(buffer);
-		const dst=new Uint8Array(this.buffer);
-		// Write length
 		const length=buffer.byteLength;
+		// Write length
 		this.write32(length);
-		// Write buffer
-		dst.set(src, this.offset);
-		this.offset+=length;
+		if (this.dataView) {
+			const src=new Uint8Array(buffer);
+			const dst=new Uint8Array(this.buffer);
+			// Write buffer
+			dst.set(src, this.writeOffset);
+		}
+		this.writeOffset+=length;
 	}
 
 
@@ -81,7 +103,7 @@ export class MemBuffer extends DataView {
 	 * Returns an array of the required length.
 	 */
 	public getUint8Array(): Uint8Array {
-		const view=new Uint8Array(this.buffer, 0, this.offset);
+		const view=new Uint8Array(this.buffer, 0, this.writeOffset);
 		return view;
 	}
 
@@ -90,8 +112,8 @@ export class MemBuffer extends DataView {
 	 * Reads a value from the next position (offset).
 	 */
 	public read8(): number {
-		const value=this.getUint8(this.offset);
-		this.offset++;
+		const value=this.dataView.getUint8(this.readOffset);
+		this.readOffset++;
 		return value;
 	}
 
@@ -99,8 +121,8 @@ export class MemBuffer extends DataView {
 	 * Reads a value from the next position (offset).
 	 */
 	public read16(): number {
-		const value=this.getUint16(this.offset);
-		this.offset+=2;
+		const value=this.dataView.getUint16(this.readOffset);
+		this.readOffset+=2;
 		return value;
 	}
 
@@ -108,8 +130,8 @@ export class MemBuffer extends DataView {
 	 * Reads a value from the next position (offset).
 	 */
 	public read32(): number {
-		const value=this.getUint32(this.offset);
-		this.offset+=4;
+		const value=this.dataView.getUint32(this.readOffset);
+		this.readOffset+=4;
 		return value;
 	}
 
@@ -121,9 +143,9 @@ export class MemBuffer extends DataView {
 		// Read length
 		const length=this.read32();
 		// Read buffer
-		const end=this.offset+length;
-		const buffer=wholeBuffer.subarray(this.offset, end);
-		this.offset=end;
+		const end=this.readOffset+length;
+		const buffer=wholeBuffer.subarray(this.readOffset, end);
+		this.readOffset=end;
 		return buffer;
 	}
 

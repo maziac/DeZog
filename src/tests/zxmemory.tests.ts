@@ -1,10 +1,12 @@
 
 import * as assert from 'assert';
 import {ZxMemory} from '../remotes/zxsimulator/zxmemory';
+import {MemBuffer} from '../misc/membuffer';
 
 suite('ZxMemory', () => {
-	test('readState/writeState', () => {
-		let state;
+	test('serialize/deserialize', () => {
+		let memBuffer;
+		let writeSize;
 		{
 			const mem=new ZxMemory();
 
@@ -31,17 +33,21 @@ suite('ZxMemory', () => {
 			mem.write8(0xE000, 19);
 			mem.write8(0xFFFF, 20);
 
-			state=mem.readState();
+			// Get size
+			writeSize=mem.getSerializedSize();
 
-			// Check length
-			let length=ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE;
-			length+=1+8+4;
-			assert.equal(length, state.length);
+			// Serialize
+			memBuffer=new MemBuffer(writeSize);
+			mem.serialize(memBuffer);
 		}
 
 		// Create a new object
 		const rMem=new ZxMemory();
-		rMem.writeState(state);
+		rMem.deserialize(memBuffer);
+
+		// Check size
+		const readSize=(memBuffer as any).readOffset;
+		assert.equal(writeSize, readSize);
 
 		// Test the slots/banks
 		const slots=rMem.getSlots();

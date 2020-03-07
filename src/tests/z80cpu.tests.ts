@@ -3,10 +3,12 @@ import * as assert from 'assert';
 import {Z80Cpu} from '../remotes/zxsimulator/z80cpu';
 import {ZxMemory} from '../remotes/zxsimulator/zxmemory';
 import {ZxPorts} from '../remotes/zxsimulator/zxports';
+import {MemBuffer} from '../misc/membuffer';
 
 suite('Z80Cpu', () => {
-	test('readState/writeState', () => {
-		let state;
+	test('serialize/deserialize', () => {
+		let memBuffer;
+		let writeSize;
 		{
 			const cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
 			const r1=cpu.r1;
@@ -33,17 +35,23 @@ suite('Z80Cpu', () => {
 
 			cpu.remaingInterruptTstates=65536+12;
 
-			state=cpu.readState();
+			// Get size
+			writeSize=cpu.getSerializedSize();
 
-			// Check length
-			assert.equal(33, state.length);
+			// Serialize
+			memBuffer=new MemBuffer(writeSize);
+			cpu.serialize(memBuffer);
 		}
 
 		// Create a new object
 		const rCpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
 		const rR1=rCpu.r1;
 		const rR2=rCpu.r2;
-		rCpu.writeState(state);
+		rCpu.deserialize(memBuffer);
+
+		// Check size
+		const readSize=(memBuffer as any).readOffset;
+		assert.equal(writeSize, readSize);
 
 		// And test
 		assert.equal(0x1020, rCpu.pc);
