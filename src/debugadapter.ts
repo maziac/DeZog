@@ -1590,7 +1590,7 @@ Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
 Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 Without any parameter it will show all visible sprites automatically.
-"-state save|restore": Saves/restores the current state. I.e. the complete RAM + the registers.
+"-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
 
 Examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -1599,6 +1599,9 @@ Examples:
 "-eval 2+3*5": Results to "17".
 "-md 0 10": Shows the memory at address 0 to address 9.
 "-sprites": Shows all visible sprites.
+"-state save 1": Stores the current state as 'into' 1.
+"-state restore 1": Restores the state 'from' 1.
+
 Notes:
 "-exec run" will not work at the moment and leads to a disconnect.
 `;
@@ -1997,11 +2000,12 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalStateSaveRestore(tokens: Array<string>): Promise<string> {
+		const param=tokens[0]||'';
 		const stateName = tokens[1];
-		if(!stateName)
+		if (!stateName &&
+			(param =='save' || param=='restore' || param == 'clear'))
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
 
-		const param = tokens[0] || '';
 		if(param == 'save') {
 			// Save current state
 			await this.stateSave(stateName);
@@ -2020,6 +2024,41 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Speichern in eigenen Ordner 'states' in '.tmp'.
 			// Außerdem Kommandos für: 'list', 'clear' und 'clearall'.
 
+		else if (param=='list') {
+			// List all files in the state dir.
+			let files;
+			try {
+				const dir=Utility.getAbsStateFileName('');
+				files=fs.readdirSync(dir);
+			}
+			catch {}
+			let text;
+			if (files == undefined || files.length==0)
+				text="No states saved yet.";
+			else
+				text="All states:\n"+files.join('\n');
+			return text;
+		}
+		else if (param=='clearall') {
+			// Removes the states directory
+			try {
+				const dir=Utility.getAbsStateFileName('');
+				fs.rmdirSync(dir);
+			}
+			catch {}
+			return "All states deleted.";
+		}
+		else if (param=='clear') {
+			// Removes one state
+			try {
+				const path=Utility.getAbsStateFileName(stateName);
+				fs.unlinkSync(path);
+			}
+			catch (e) {
+				return e.message;
+			}
+			return "State '"+stateName+"' deleted.";
+		}
 		else {
 			// Unknown argument
 			throw new Error("Unknown argument: '" + param + "'");
@@ -2171,7 +2210,13 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		const stateData=await Remote.stateSave();
 		let filePath;
 		try {
-			// Save data to temp directory
+			// Make sure .tmp/states directory exists
+			try {
+				const dir=Utility.getAbsStateFileName(stateName);
+				fs.mkdirSync(dir);
+			}
+			catch {}
+			// Save data to .tmp/states directory
 			filePath=Utility.getAbsStateFileName(stateName);
 			fs.writeFileSync(filePath, stateData);
 		}

@@ -5,15 +5,12 @@ import { Z80Registers } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as util from 'util';
+
 
 
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
 const TmpDasmFileName = 'disasm.asm';
 
-
-/// The filename(s) used for saving the state.
-const StateFileName = 'state_%s.bin';
 
 
 export class Utility {
@@ -756,8 +753,8 @@ export class Utility {
 	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/state_0.bin".
 	 */
 	public static getAbsStateFileName(stateName: string): string {
-		const fName = util.format(StateFileName, stateName);
-		const relPath = Utility.getRelTmpFilePath(fName);
+		const fPath=path.join('states', stateName)
+		const relPath=Utility.getRelTmpFilePath(fPath);
 		return Utility.getAbsFilePath(relPath);
 	}
 

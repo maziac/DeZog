@@ -6,7 +6,6 @@ import { Settings } from '../../settings';
 import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
-import { StateZ80 } from '../../statez80';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
 import { Z80Registers } from '../z80registers';
