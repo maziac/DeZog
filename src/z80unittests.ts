@@ -838,8 +838,10 @@ export class Z80UnitTests {
 
 		// Collect coverage:
 		// Get covered addresses (since last unit test) and add to collection.
-		const target = Z80UnitTests.allCoveredAddresses;
-		Z80UnitTests.lastCoveredAddresses.forEach(target.add, target);
+		if (Z80UnitTests.lastCoveredAddresses) {
+			const target=Z80UnitTests.allCoveredAddresses;
+			Z80UnitTests.lastCoveredAddresses.forEach(target.add, target);
+		}
 
 		// Next unit test
 		Z80UnitTests.utLabels.shift();
