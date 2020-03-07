@@ -2244,6 +2244,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			const stateData=Uint8Array.from(stateBuffer);
 			// Restore state
 			await Remote.stateRestore(stateData);
+			// Update memory etc.
+			this.update();
 		}
 		catch (e) {
 			const errTxt="Can't load '"+filePath+"': "+e.message;

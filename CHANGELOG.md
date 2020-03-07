@@ -5,6 +5,7 @@
 	- CPU load for simulator added.
 	- Visual memory added.
 	- loadObj supported.
+	- state save/restore added
 
 # 0.12.3
 - launch.json changes:

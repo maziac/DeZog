@@ -3,7 +3,6 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
-//import {ZxSimulationView} from './zxulascreenview';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -12,8 +11,6 @@ import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels';
 import {MemBuffer} from '../../misc/membuffer';
-//import {LogGlobal} from '../../log';
-
 
 
 
@@ -372,8 +369,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 		//LogGlobal.log("cpuContinue, counter="+counter);
 
-		// Update the screen
-		//this.zxSimulationView.update();
+		// Update the screen etc.
 		this.emit('update')
 
 		// Give other tasks a little time
@@ -457,7 +453,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected deserializeState(data: Uint8Array) {
 		// Create mem buffer fro reading
-		const memBuffer=MemBuffer.from(data);
+		const memBuffer=MemBuffer.from(data.buffer);
 		// Deserialize objects
 		for (const obj of this.serializeObjects)
 			obj.deserialize(memBuffer);
@@ -666,6 +662,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		this.deserializeState(stateData);
+		// Update the screen etc.
+		this.emit('update')
 	}
 }
 

@@ -704,6 +704,8 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stateRestore(state: Uint8Array): Promise<void> {
 		await this.sendDzrpCmdWriteState(state);
+		// Clear register cache
+		this.z80Registers.clearCache();
 	}
 
 
