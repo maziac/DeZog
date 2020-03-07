@@ -1143,14 +1143,10 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	 protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
-		// Serialize
-		//this.serializer.exec(() => {
-			// Pause the debugger
-			Remote.pause();
-			// Response is sent immediately
-			this.sendResponse(response);
-		//	this.serializer.endExec();
-		//});
+		// Pause the debugger
+		Remote.pause();
+		// Response is sent immediately
+		this.sendResponse(response);
 	}
 
 

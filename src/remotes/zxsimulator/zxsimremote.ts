@@ -372,32 +372,46 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Update the screen etc.
 		this.emit('update')
 
-		// Give other tasks a little time
-		setTimeout(async () => {
-			// Check if stopped or just the counter elapsed
-			if (counter==0) {
-				// Continue
-				this.z80CpuContinue(bp1, bp2);
+		if (counter!=0) {
+			// Stop immediately
+			let condition='';
+			this.cpuRunning=false;
+			// Get breakpoint ID
+			if (bp) {
+				breakData=bp.bpId;
+				condition=bp.condition;
 			}
-			else {
-				// Otherwise stop
-				let condition='';
-				this.cpuRunning=false;
-				// Get breakpoint ID
-				if (bp) {
-					breakData=bp.bpId;
-					condition=bp.condition;
-				}
 
-				// Create reason string
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+			// Create reason string
+			breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+
+			// Send Notification
+			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
+			assert(this.continueResolve);
+			if (this.continueResolve)
+				this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+			return;
+		}
+
+		// Give other tasks a little time and continue
+		setTimeout(async () => {
+			// Check if meanwhile a manual break happened
+			if (!this.cpuRunning) {
+				// Manual break: Create reason string
+				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
+				breakData=0;
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, '', '');
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+				return;
 			}
+
+			// Otherwise continue
+			this.z80CpuContinue(bp1, bp2);
 		}, 100);
 	}
 

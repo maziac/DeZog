@@ -12,15 +12,6 @@ const signed8=(val) => {
 		return val-256;
 }
 
-/*
-Z80js.Z80.prototype.$0=function () {
-	this.tStates+=5
-	let offset=signed8(this.read8(this.pc++))
-	this.write8(this.$2+offset, this.r1.$1)
-}
-*/
-
-
 export class Z80Cpu extends Z80js {
 
 	// Easier access to 'this'
@@ -139,9 +130,6 @@ export class Z80Cpu extends Z80js {
 		// Disable further interrupts
 		self.iff1=false;
 		self.iff2=false;
-
-		//const logstring="PC="+pc.toString(16)+" pushed to SP="+self.sp.toString(16);
-		//console.log(logstring);
 	}
 
 
