@@ -2020,10 +2020,6 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
 			return "Restored state '"+stateName+"'";
 		}
-			// TODO:
-			// Speichern in eigenen Ordner 'states' in '.tmp'.
-			// Außerdem Kommandos für: 'list', 'clear' und 'clearall'.
-
 		else if (param=='list') {
 			// List all files in the state dir.
 			let files;
@@ -2040,12 +2036,18 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			return text;
 		}
 		else if (param=='clearall') {
-			// Removes the states directory
+			// Removes the files in the states directory
 			try {
 				const dir=Utility.getAbsStateFileName('');
-				fs.rmdirSync(dir);
+				const files=fs.readdirSync(dir);
+				for (const file of files) {
+					const path=Utility.getAbsStateFileName(file);
+					fs.unlinkSync(path);
+				}
 			}
-			catch {}
+			catch (e) {
+				return e.message;
+			}
 			return "All states deleted.";
 		}
 		else if (param=='clear') {
@@ -2212,7 +2214,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		try {
 			// Make sure .tmp/states directory exists
 			try {
-				const dir=Utility.getAbsStateFileName(stateName);
+				const dir=Utility.getAbsStateFileName('');
 				fs.mkdirSync(dir);
 			}
 			catch {}
