@@ -54,7 +54,7 @@ suite('ZxMemory', () => {
 		assert.equal(30, slots[6]);
 		assert.equal(5, slots[7]);
 
-		// Tet the memory
+		// Test the memory
 		assert.equal(10, rMem.read8(0x0000));
 		assert.equal(11, rMem.read8(0x0010));
 		assert.equal(12, rMem.read8(0x1FFF));

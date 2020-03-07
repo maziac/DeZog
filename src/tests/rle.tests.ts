@@ -2,19 +2,19 @@
 import * as assert from 'assert';
 import {ZxPorts} from '../remotes/zxsimulator/zxports';
 
-suite('ZxPorts', () => {
-	test('readState/writeState', () => {
+suite('RLE', () => {
+	test('encode/decode', () => {
 		let state;
 		{
 			const ports=new ZxPorts();
 
-			// Set ports
+			// Set slots
 			ports.setPortValue(0x0000, 100);
 			ports.setPortValue(0x0095, 101);
 			ports.setPortValue(0x8000, 102);
 			ports.setPortValue(0xFFFF, 103);
 
-			// Read
+			// Set some memory
 			state=ports.readState();
 
 			// Check length
@@ -26,7 +26,9 @@ suite('ZxPorts', () => {
 		const rPorts=new ZxPorts();
 		rPorts.writeState(state);
 
-		// Test the ports
+		// Test the slots/banks
+
+		// Tet the memory
 		assert.equal(100, rPorts.read(0x0000));
 		assert.equal(101, rPorts.read(0x0095));
 		assert.equal(102, rPorts.read(0x8000));
