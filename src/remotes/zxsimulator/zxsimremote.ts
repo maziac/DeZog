@@ -11,6 +11,7 @@ import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels';
+import {MemBuffer} from '../../misc/membuffer';
 //import {LogGlobal} from '../../log';
 
 
@@ -46,6 +47,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	// normally the inner array contains only 1 element.
 	protected tmpBreakpoints: Array<Array<GenericBreakpoint>>;
 
+	// Push here all objects that should be serialized.
+	// I.e. that are relevant for the saving/restoring the state.
+	protected serializeObjects: any[];
+
 
 	/// Constructor.
 	constructor() {
@@ -56,6 +61,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.zxMemory=new WatchpointZxMemory();
 		this.zxPorts=new ZxPorts();
 		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
+		// For restoring the state
+		this.serializeObjects=[
+			this.z80Cpu,
+			this.zxMemory,
+			this.zxPorts
+		];
 	}
 
 
@@ -441,6 +452,38 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	}
 
 
+	/**
+	 * Deserializes the CPU, memory etc. to restore the state.
+	 */
+	protected deserializeState(data: Uint8Array) {
+		// Create mem buffer fro reading
+		const memBuffer=MemBuffer.from(data);
+		// Deserialize objects
+		for (const obj of this.serializeObjects)
+			obj.deserialize(memBuffer);
+
+		return memBuffer.getUint8Array();
+	}
+
+
+	/**
+	 * Serializes the CPU, memory etc. to save the state.
+	 */
+	protected serializeState(): Uint8Array {
+		// Get size of all serialized objects
+		let size=0;
+		for (const obj of this.serializeObjects)
+			size+=obj.getSerializedSize();
+		// Allocate memory
+		const memBuffer=new MemBuffer(size);
+		// Serialize objects
+		for (const obj of this.serializeObjects)
+			obj.serialize(memBuffer);
+
+		return memBuffer.getUint8Array();
+	}
+
+
 	//------- Send Commands -------
 
 	/**
@@ -612,8 +655,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Data will just be saved.
  	*/
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
-		assert(false);
-		return new Uint8Array();
+		return this.serializeState();
 	}
 
 
@@ -623,7 +665,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param The state data. Format is unknown (remote specific).
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		assert(false);
+		this.deserializeState(stateData);
 	}
 }
 

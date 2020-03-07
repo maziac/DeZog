@@ -24,19 +24,39 @@ suite('ZxPorts', () => {
 			ports.serialize(memBuffer);
 		}
 
-		// Create a new object
-		const rPorts=new ZxPorts();
-		rPorts.deserialize(memBuffer);
+		{
+			// Create a new object
+			const rPorts=new ZxPorts();
+			rPorts.deserialize(memBuffer);
 
-		// Check size
-		const readSize=(memBuffer as any).readOffset;
-		assert.equal(writeSize, readSize);
+			// Check size
+			const readSize=(memBuffer as any).readOffset;
+			assert.equal(writeSize, readSize);
 
-		// Test the ports
-		assert.equal(100, rPorts.read(0x0000));
-		assert.equal(101, rPorts.read(0x0095));
-		assert.equal(102, rPorts.read(0x8000));
-		assert.equal(103, rPorts.read(0xFFFF));
+			// Test the ports
+			assert.equal(100, rPorts.read(0x0000));
+			assert.equal(101, rPorts.read(0x0095));
+			assert.equal(102, rPorts.read(0x8000));
+			assert.equal(103, rPorts.read(0xFFFF));
+		}
+
+		{
+			// Now create a new buffer and check that the result is the same
+			const memBuffer2=MemBuffer.from(memBuffer.buffer);
+			// Create a new object
+			const rPorts=new ZxPorts();
+			rPorts.deserialize(memBuffer2);
+
+			// Check size
+			const readSize=(memBuffer2 as any).readOffset;
+			assert.equal(writeSize, readSize);
+
+			// Test the ports
+			assert.equal(100, rPorts.read(0x0000));
+			assert.equal(101, rPorts.read(0x0095));
+			assert.equal(102, rPorts.read(0x8000));
+			assert.equal(103, rPorts.read(0xFFFF));
+		}
 	});
 
 });

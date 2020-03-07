@@ -684,6 +684,29 @@ export class DzrpRemote extends RemoteBase {
 
 
 
+	/**
+	 * Called from "-state save" command.
+	 * Stores all RAM + the registers.
+	 * Override.
+	  * @returns State data.
+	 */
+	public async stateSave(): Promise<Uint8Array> {
+		const data=await this.sendDzrpCmdReadState();
+		return data;
+	}
+
+
+	/**
+	 * Called from "-state load" command.
+	 * Restores all RAM + the registers from a former "-state save".
+	 * Override.
+	 * @param state Pointer to the data to restore.
+	 */
+	public async stateRestore(state: Uint8Array): Promise<void> {
+		await this.sendDzrpCmdWriteState(state);
+	}
+
+
 	//------- Send Commands -------
 
 	/**

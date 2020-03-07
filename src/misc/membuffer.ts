@@ -49,6 +49,21 @@ export class MemBuffer {
 		}
 	}
 
+	/**
+	 * Static method to construct a MemBuffer.
+	 * Used for reading from a Membuffer.
+	 * @param data The buffer to use. (Normally a Uint8Array)
+	 * @returns A new MemBuffer.
+	 */
+	static from(data: ArrayBuffer): MemBuffer {
+		// Create new buffer
+		const memBuffer=new MemBuffer();
+		// And change the used buffer
+		memBuffer.buffer=data;
+		memBuffer.dataView=new DataView(memBuffer.buffer);
+		return memBuffer;
+	}
+
 
 	/**
 	 * Returns the current size.
