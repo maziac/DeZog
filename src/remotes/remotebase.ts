@@ -1361,22 +1361,22 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Called from "-state save" command.
-	 * Stores all RAM + the registers.
+	 * Stores all RAM, registers etc.
 	 * Override.
-	  * @returns State data.
+	 * @param filePath The file path to store to.
+	 * @returns State data.
 	 */
-	public async stateSave(): Promise<Uint8Array> {
-		return null as any;
+	public async stateSave(filePath: string): Promise<void> {
 	}
 
 
 	/**
-	 * Called from "-state load" command.
+	 * Called from "-state restore" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * Override.
-	 * @param state Pointer to the data to restore.
+	 * @param filePath The file path to retore from.
 	 */
-	public async stateRestore(state: Uint8Array): Promise<void> {
+	public async stateRestore(filePath: string): Promise<void> {
 	}
 
 

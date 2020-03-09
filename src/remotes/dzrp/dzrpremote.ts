@@ -12,6 +12,8 @@ import * as path from 'path';
 import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
+import {gzip, ungzip} from 'node-gzip';
+
 
 
 /**
@@ -683,27 +685,35 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 
-
 	/**
 	 * Called from "-state save" command.
-	 * Stores all RAM + the registers.
+	 * Stores all RAM, registers etc.
 	 * Override.
-	  * @returns State data.
+	 * @param filePath The file path to store to.
 	 */
-	public async stateSave(): Promise<Uint8Array> {
-		const data=await this.sendDzrpCmdReadState();
-		return data;
+	public async stateSave(filePath: string): Promise<void> {
+		// Get state data
+		const stateData=await this.sendDzrpCmdReadState();
+		// Zip data
+		const zippedData=await gzip(stateData);
+		// Save data to .tmp/states directory
+		fs.writeFileSync(filePath, zippedData);
 	}
 
 
 	/**
-	 * Called from "-state load" command.
+	 * Called from "-state restore" command.
 	 * Restores all RAM + the registers from a former "-state save".
 	 * Override.
-	 * @param state Pointer to the data to restore.
+	 * @param filePath The file path to retore from.
 	 */
-	public async stateRestore(state: Uint8Array): Promise<void> {
-		await this.sendDzrpCmdWriteState(state);
+	public async stateRestore(filePath: string): Promise<void> {
+		// Read state dta
+		const zippedData=fs.readFileSync(filePath);
+		// Unzip data
+		const stateData=await ungzip(zippedData);
+		// Restore data
+		await this.sendDzrpCmdWriteState(stateData);
 		// Clear register cache
 		this.z80Registers.clearCache();
 	}

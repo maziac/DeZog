@@ -2006,7 +2006,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Save current state
 			await this.stateSave(stateName);
 			// Send response
-			return "Saved state '"+stateName+"'";
+			return "Saved state '"+stateName+"'.";
 		}
 		else if(param == 'restore') {
 			// Restores the state
@@ -2014,7 +2014,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			// Reload register values etc.
 			this.sendEventContinued();
 			this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
-			return "Restored state '"+stateName+"'";
+			return "Restored state '"+stateName+"'.";
 		}
 		else if (param=='list') {
 			// List all files in the state dir.
@@ -2205,8 +2205,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected async stateSave(stateName: string): Promise<void> {
 		// Save state
-		const stateData=await Remote.stateSave();
-		let filePath;
+		const filePath=Utility.getAbsStateFileName(stateName);
 		try {
 			// Make sure .tmp/states directory exists
 			try {
@@ -2214,9 +2213,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 				fs.mkdirSync(dir);
 			}
 			catch {}
-			// Save data to .tmp/states directory
-			filePath=Utility.getAbsStateFileName(stateName);
-			fs.writeFileSync(filePath, stateData);
+			// Save state
+			await Remote.stateSave(filePath);
 		}
 		catch (e) {
 			const errTxt="Can't save '"+filePath+"': "+e.message;
@@ -2236,10 +2234,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 		try {
 			// Read data
 			filePath=Utility.getAbsStateFileName(stateName);
-			const stateBuffer=fs.readFileSync(filePath);
-			const stateData=Uint8Array.from(stateBuffer);
 			// Restore state
-			await Remote.stateRestore(stateData);
+			await Remote.stateRestore(filePath);
 			// Update memory etc.
 			this.update();
 		}
