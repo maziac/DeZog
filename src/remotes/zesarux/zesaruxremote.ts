@@ -1965,49 +1965,33 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * Called from "-state save" command.
-	 * Stores all RAM + the registers.
+	 * Stores all RAM, registers etc.
+	 * @param filePath The file path to store to.
 	 * @returns State data.
 	 */
-	public async stateSave(): Promise<Uint8Array> {
-		return new Promise<Uint8Array>(resolve => {
-			// Get state
-			zSocket.send('get-snapshot', data => {
-				// Convert ASCII HEX data into bytes
-				const len=data.length;
-				assert(len%2==0);
-				const values=new Uint8Array(len/2);
-				let k=0;
-				for (var i=0; i<len; i+=2) {
-					const valueString=data.substr(i, 2);
-					const value=parseInt(valueString, 16);
-					values[k++]=value;
-				}
-				// Return
-				resolve(values);
+	public async stateSave(filePath: string): Promise<void> {
+		return new Promise<void>(resolve => {
+			// Save as zsf
+			filePath+=".zsf";
+			zSocket.send('snapshot-save '+filePath, data => {
+				resolve();
 			});
 		});
 	}
 
 
 	/**
-	 * Called from "-state load" command.
+	 * Called from "-state restore" command.
 	 * Restores all RAM + the registers from a former "-state save".
-	 * @param state Pointer to the data to restore.
+	 * @param filePath The file path to retore from.
 	 */
-	public async stateRestore(state: Uint8Array): Promise<void> {
+	public async stateRestore(filePath: string): Promise<void> {
 		return new Promise<void>(resolve => {
-			// Prepare data as ASCII HEX
-			let size=state.length;
-			let command='put-snapshot ';
-
-			for (let i=0; i<size; i++)
-				command+=Utility.getHexString(state[i], 2);
-
-			// Get state
-			zSocket.send(command, () => {
+			// Load as zsf
+			filePath+=".zsf";
+			zSocket.send('snapshot-load '+filePath, data => {
 				// Clear register cache
 				this.z80Registers.clearCache();
-				// Return
 				resolve();
 			});
 		});

@@ -773,23 +773,35 @@ You see the result here:
 #### State Save/Restore
 
 It is possible to save/restore the current machine state (mainly RAM, Z80 registers) during a debug session.
-I.e. you can save the state before an  happens then run the code to see what caused the error. If you then notice that you have gone too far you can restore the previous state and debug again from that point.
+I.e. you can save the state prior to a problem and reload the state to investigate the problem once again.
 
 Use
 
 ~~~
--state save
+-state save state_name
 ~~~
 to save the current state.
 And
 
 ~~~
--state restore
+-state restore state_name
 ~~~
 to restore the state.
 
-Note: Status is only experimental. I.e. it just save/restores the memory contents and max. the 48K RAM. ZX Next support will be added as soon it is available in ZEsarUX.
-Note: The state is stored to RAM only. I.e. it will not persist a relaunch of the debug session.
+
+With state_name being a name or number of your choice, e.g.:
+
+~~~
+-state save 1
+or
+-state save just-before-crash
+~~~
+
+are valid names.
+
+
+Note: What is saved depends solely on the Remote, i.e. ZEsarUx or the internal simulator.
+
 
 
 #### Memory Dumps
