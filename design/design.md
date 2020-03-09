@@ -28,7 +28,6 @@
 - Settings: Singleton to hold the extension's settings.
 - ShallowVar: DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar. Representations of variables. They know how to retrieve the data from zesarux.
 - Z80Registers: Static class to parse (from zesarux) and format registers.
-- StateZ80: Class to get and set the complete machine state.
 - Emulator: Gets requests from vscode and passes them to zesarux (via ZesaruxSocket).
 - ZesaruxSocket: Socket connection and communication to zesarux emulator. Knows about the basic communication, but not the commands.
 

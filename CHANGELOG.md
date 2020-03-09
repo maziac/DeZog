@@ -6,6 +6,7 @@
 	- Visual memory added.
 	- loadObj supported.
 	- state save/restore added
+- ZEsarUX: using zsf for save state/restore.
 
 # 0.12.3
 - launch.json changes:
