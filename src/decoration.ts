@@ -203,13 +203,42 @@ export class DecorationClass {
 	 * @param mapName E.g. COVERAGE, REVERSE_DEBUG, SHORT_HISTORY or BREAK.
 	 */
 	protected clearDecorations(mapName: string) {
-		const map = this.decorationFileMaps.get(mapName) as DecorationFileMap;
+		const map=this.decorationFileMaps.get(mapName) as DecorationFileMap;
 		map.fileMap.clear();
-		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
+		const editors=vscode.window.visibleTextEditors;
+		for (const editor of editors) {
 			editor.setDecorations(map.decoType, []);
 		}
+	}
 
+
+	/**
+	 * Clears all decorations for all editors.
+	 */
+	protected clearAllDecorations() {
+		for (const [, map] of this.decorationFileMaps) {
+			map.fileMap.clear();
+			const editors=vscode.window.visibleTextEditors;
+			for (const editor of editors) {
+				editor.setDecorations(map.decoType, []);
+			}
+		}
+	}
+
+
+	/**
+	 * Clears all decorations but the code coverage decorations for all editors.
+	 */
+	protected clearAllButCodeCoverageDecorations() {
+		for (const [name, map] of this.decorationFileMaps) {
+			if (name!=this.COVERAGE) {
+				map.fileMap.clear();
+				const editors=vscode.window.visibleTextEditors;
+				for (const editor of editors) {
+					editor.setDecorations(map.decoType, []);
+				}
+			}
+		}
 	}
 
 

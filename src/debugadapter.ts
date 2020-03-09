@@ -279,7 +279,12 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		DebugSessionClass.state = DbgAdaperState.NORMAL;
+		// Clear all decorations
+		if(DebugSessionClass.state==DbgAdaperState.UNITTEST)
+			Decoration?.clearAllButCodeCoverageDecorations();
+		else
+			Decoration?.clearAllDecorations();
+		DebugSessionClass.state=DbgAdaperState.NORMAL;
 		// Close register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
