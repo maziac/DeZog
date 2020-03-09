@@ -27,7 +27,7 @@ A typical configuration looks like this:
             "type": "dezog",
             "request": "launch",
             "name": "DeZog",
-            "remoteType": "zxsim",
+            "remoteType": "zsim",
             "zhostname": "localhost",
             "zport": 10000,
             "listFiles": [
@@ -69,7 +69,7 @@ A typical configuration looks like this:
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal ZX simulator or real ZX NExt HW connected via serial interface (Note: the serial interface is currently under evelopment).
-    - "zxsim": Use the internal simulator. See [Internal ZX Simulator](#internal-zx-simulator).
+    - "zsim": Use the internal simulator. See [Internal ZX Simulator](#internal-zx-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - zhostname: The host's name. Only required for "remoteType": "zrcp".
@@ -255,7 +255,7 @@ DeZog supports most of them but with some restrictions:
 
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
-- "zxsim": Internal ZX Simulator
+- "zsim": Internal ZX Simulator
 - "zrcp": ZEsarUx (or ZesaruxExt)
 - "serial": ZX Next connected via serial.
 
@@ -305,7 +305,7 @@ Notes:
 
 This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever. i.e. 'zhostname' and 'zport' are not used.
 
-The remote type 'zxsim' a very simple Z80/ZX Spectrum simulator.
+The remote type 'zsim' a very simple Z80/ZX Spectrum simulator.
 
 It allows to test simple programs like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
 
@@ -334,7 +334,7 @@ The simulator on the other hand immediately displays any change to the screen wh
 
 Example launch.json configuration:
 ~~~
-    "remoteType": "zxsim"
+    "remoteType": "zsim"
 ~~~
 
 ### ZEsarUX

@@ -507,7 +507,7 @@ export class DebugSessionClass extends DebugSession {
 				// At the end, if remote type == ZX simulator, open its window.
 				// Note: it was done this way and not in the Remote itself, otherwise
 				// there would be a dependency in RemoteFactory to vscode which in turn /// makes problems for the Unittests.
-				if (Settings.launch.remoteType=="zxsim") {
+				if (Settings.launch.remoteType=="zsim") {
 					// Adds a window that displays the ZX screen.
 					const remote=Remote as ZxSimulatorRemote;
 					let zxview: ZxSimulationView|undefined=new ZxSimulationView(remote);

@@ -244,7 +244,7 @@
 									"description": "The port of tthe ZEsarUX Emulator."
 								}
 							},
-							"zxsim": {
+							"zsim": {
 								"machine": {
 									"type": "string",
 									"description": "The machine type. At the moment only '48k'.",
@@ -506,12 +506,12 @@
 							"type": "dezog",
 							"request": "launch",
 							"name": "DeZog",
-							"remoteType": "zxsim",
+							"remoteType": "zsim",
 							"zrcp": {
 								"hostname": "localhost",
 								"port": 10000
 							},
-							"zxsim": {
+							"zsim": {
 								"machine": "48k"
 							},
 							"serial": {

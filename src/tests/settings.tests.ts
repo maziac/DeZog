@@ -49,14 +49,14 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - remoteType=zxsim', () => {
+		test('CheckSettings - remoteType=zsim', () => {
 			const cfg: any={
-				remoteType: 'zxsim'
+				remoteType: 'zsim'
 			};
 			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
-			}, "Should not fail with remoteType=zxsim.");
+			}, "Should not fail with remoteType=zsim.");
 		});
 
 

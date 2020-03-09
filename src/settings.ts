@@ -81,7 +81,7 @@ export interface ZrcpType {
 }
 
 
-/// Definitions for the 'zxsim' remote type.
+/// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
 	/// At the moment only "48k"
 	machine: string;
@@ -110,7 +110,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zrcp: ZrcpType;
 
 	// The special settings for the onternal Z80 simulator.
-	zxsim: ZxSimType;
+	zsim: ZxSimType;
 
 	// The special settings for the serial connection.
 	serial: SerialType;
@@ -220,7 +220,7 @@ export class Settings {
 			Settings.launch = {
 				remoteType: <any>undefined,
 				zrcp: <any>undefined,
-				zxsim: <any>undefined,
+				zsim: <any>undefined,
 				serial: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
@@ -259,11 +259,11 @@ export class Settings {
 		if (Settings.launch.zrcp.port==undefined)
 			Settings.launch.zrcp.port=10000;
 
-		// zxsim
-		if (!Settings.launch.zxsim)
-			Settings.launch.zxsim={} as ZxSimType;
-		if (!Settings.launch.zxsim.machine)
-			Settings.launch.zxsim.machine='48k';
+		// zsim
+		if (!Settings.launch.zsim)
+			Settings.launch.zsim={} as ZxSimType;
+		if (!Settings.launch.zsim.machine)
+			Settings.launch.zsim.machine='48k';
 
 		// serial
 		if (!Settings.launch.serial)
@@ -444,7 +444,7 @@ export class Settings {
 	public static CheckSettings() {
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes=['zrcp', 'serial', 'zxsim'];
+		const allowedTypes=['zrcp', 'serial', 'zsim'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

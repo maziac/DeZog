@@ -13,7 +13,7 @@ import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zrcp', 'serial' or 'zxsim'. For 'zrcp' always the ZesaruxExtEmulator is created.
+	 * @param remoteType 'zrcp', 'serial' or 'zsim'. For 'zrcp' always the ZesaruxExtEmulator is created.
 	 * It will fallback to Zesarux if no ZesaruxExt is connected.
 	 */
 	public static createRemote(remoteType: string) {
@@ -24,7 +24,7 @@ export class RemoteFactory {
 			case 'serial':	// USB/serial connection
 				RemoteFactory.setEmulator(new ZxNextUsbSerialRemote());
 				break;
-			case 'zxsim':	// Simulator
+			case 'zsim':	// Simulator
 				RemoteFactory.setEmulator(new ZxSimulatorRemote());
 				break;
 			case 'mame':

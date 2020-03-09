@@ -1,6 +1,7 @@
 # Changelog
 
 # 0.12.4
+- remoteType "zxsim" renamed to "zsim".
 - Simulator:
 	- CPU load for simulator added.
 	- Visual memory added.

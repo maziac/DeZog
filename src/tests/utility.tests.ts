@@ -375,7 +375,7 @@ suite('Utility', () => {
 	suite('evalLogString', () => {
 
 		setup(() => {
-			RemoteFactory.createRemote('zxsim');
+			RemoteFactory.createRemote('zsim');
 		});
 
 		test('Register', async () => {

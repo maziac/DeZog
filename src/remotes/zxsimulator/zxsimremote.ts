@@ -78,7 +78,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.supportsZxNextRegisters=false;
 
 			// For now only one machine is supported
-			if (Settings.launch.zxsim.machine=="48k") {
+			if (Settings.launch.zsim.machine=="48k") {
 				// Load the rom
 				try {
 					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
