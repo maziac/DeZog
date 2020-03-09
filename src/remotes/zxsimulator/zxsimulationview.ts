@@ -82,7 +82,7 @@ export class ZxSimulationView extends BaseView {
 
 		// Initial html page.
 		this.setHtml();
-		this.update();
+		//this.update(); Is done by the webview
 	}
 
 
@@ -110,6 +110,11 @@ export class ZxSimulationView extends BaseView {
 	 */
 	protected webViewMessageReceived(message: any) {
 		switch (message.command) {
+			case 'updateRequest':
+				// The webview requests an update, e.g. because it ha been
+				// moved from background to foreground (vscode does not preserve the state)
+				this.update();
+				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
@@ -342,6 +347,13 @@ color:black;
   <script>
 
 	const vscode = acquireVsCodeApi();
+
+	//---- On start send request to vscode to update itself. --------
+	// Otherwise theimages are empty when switching from back- to foreground.
+	vscode.postMessage({
+		command: 'updateRequest'
+	});
+
 
 	//---- Handle Messages from vscode extension --------
 	window.addEventListener('message', event => {
