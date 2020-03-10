@@ -524,25 +524,27 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
+			zSocket.send('get-breakpoints', () => { // TODO: REMOVE
 			// Reset T-state counter.
-			zSocket.send('reset-tstates-partial', () => {
-				// Run
-				zSocket.sendInterruptableRunCmd(text => {
-					// (could take some time, e.g. until a breakpoint is hit)
-					// get T-State counter
-					zSocket.send('get-tstates-partial', data => {
-						const tStates=parseInt(data);
-						// get clock frequency
-						zSocket.send('get-cpu-frequency', data => {
-							const cpuFreq=parseInt(data);
-							// Clear register cache
-							this.z80Registers.clearCache();
-							// Handle code coverage
-							this.handleCodeCoverage();
-							// The reason is the 2nd line
-							const breakReasonString=this.getBreakReason(text);
-							// Call handler
-							resolve({breakReasonString, tStates, cpuFreq});
+				zSocket.send('reset-tstates-partial', () => {
+					// Run
+					zSocket.sendInterruptableRunCmd(text => {
+						// (could take some time, e.g. until a breakpoint is hit)
+						// get T-State counter
+						zSocket.send('get-tstates-partial', data => {
+							const tStates=parseInt(data);
+							// get clock frequency
+							zSocket.send('get-cpu-frequency', data => {
+								const cpuFreq=parseInt(data);
+								// Clear register cache
+								this.z80Registers.clearCache();
+								// Handle code coverage
+								this.handleCodeCoverage();
+								// The reason is the 2nd line
+								const breakReasonString=this.getBreakReason(text);
+								// Call handler
+								resolve({breakReasonString, tStates, cpuFreq});
+							});
 						});
 					});
 				});
@@ -1504,7 +1506,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * If it has a condition: not implemented.
 	 * @param wp The watchpoint to set.
 	 */
-	public setWatchpoint(wp: GenericWatchpoint): Promise<void> {
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Check if condition is used
 			if (wp.condition && wp.condition.length>0) {

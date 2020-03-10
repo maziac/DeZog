@@ -174,7 +174,7 @@ export class Z80UnitTests {
 	 * @param debug false: unit tests are run without debugger,
 	 * true: unit tests are run with debugger.
 	 */
-	protected static terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
+	protected static async terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
 		Z80UnitTests.debug=debug;
 		return new Promise<void>(async resolve => {
 			// Wait until vscode debugger has stopped.
@@ -252,17 +252,15 @@ export class Z80UnitTests {
 			Remote.readListFiles(listFiles);
 
 			// Events
-			Remote.once('initialized', () => {
+			Remote.once('initialized', async () => {  // TODO: Remove async
 				try {
-					// Enable ASSERTs etc.
-					Remote.enableAssertBreakpoints(true);
-					Remote.enableWPMEM(true);
+					// Enable unit test logpoints
 					try {
-						Remote.enableLogpointGroup('UNITTEST', true);
+						await Remote.enableLogpointGroup('UNITTEST', true);
 					}
 					catch {}	// Just in case the group is undefined
 
-					Z80UnitTests.initUnitTests();
+					await Z80UnitTests.initUnitTests();
 
 					// Load the initial unit test routine (provided by the user)
 					Z80UnitTests.execAddr(Z80UnitTests.addrStart);
@@ -515,7 +513,7 @@ export class Z80UnitTests {
 	/**
 	 * Initializes the unit tests. Is called after the emulator has been setup.
 	 */
-	protected static initUnitTests() {
+	protected static async initUnitTests(): Promise<void> {
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
 		// Now read all the unit tests.
@@ -550,8 +548,8 @@ export class Z80UnitTests {
 		// Stack watchpoints
 		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
 		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', condition: '' };
-		Remote.setWatchpoint(stackMinWp);
-		Remote.setWatchpoint(stackMaxWp);
+		await Remote.setWatchpoint(stackMinWp);
+		await Remote.setWatchpoint(stackMaxWp);
 	}
 
 
@@ -560,7 +558,7 @@ export class Z80UnitTests {
 	 * @param debugAdapter The debug adapter.
 	 */
 	protected static handleDebugAdapter(debugAdapter: DebugSessionClass) {
-		debugAdapter.on('initialized', () => {
+		debugAdapter.on('initialized', async () => {
 			try {
 				// Handle coverage
 				Remote.on('coverage', coveredAddresses => {
@@ -568,7 +566,7 @@ export class Z80UnitTests {
 					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 				});
 				// Init unit tests
-				Z80UnitTests.initUnitTests();
+				await Z80UnitTests.initUnitTests();
 				// Start unit tests after a short while
 				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
 			}
