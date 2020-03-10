@@ -1346,7 +1346,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise called after being quiet for the given timeout.
 	 */
 	public async executeAfterBeingQuietFor(timeout: number): Promise<void> {
-		assert(false);	// override this
+		// This is a hack for ZEsarUX. Not required for the others.
 	}
 
 
