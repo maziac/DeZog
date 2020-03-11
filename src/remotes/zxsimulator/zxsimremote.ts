@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels';
 import {MemBuffer} from '../../misc/membuffer';
+import {CodeCoverageArray} from './codecovarray';
 
 
 
@@ -25,8 +26,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public z80Cpu: any;	// Z80Cpu
 	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
-	//protected zxSimulationView: ZxSimulationView;
 
+	// Stores the code coverage.
+	protected codeCoverage: CodeCoverageArray;
 
 	// The last used breakpoint ID.
 	protected lastBpId: number;
@@ -54,6 +56,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		super();
 		this.cpuRunning=false;
 		this.lastBpId=0;
+		// Code coverage
+		this.codeCoverage=new CodeCoverageArray();
 		// Create a Z80 CPU to emulate Z80 behaviour
 		this.zxMemory=new WatchpointZxMemory();
 		this.zxPorts=new ZxPorts();
@@ -293,8 +297,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakReasonString;
 		let bp;
 		let breakData;
+		this.codeCoverage.clearAll();
 		for (; counter>0; counter--) {
 			const prevPc=this.z80Cpu.pc;
+
+			// Execute an instruction
 			try {
 				this.z80Cpu.execute();
 			}
@@ -304,8 +311,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 				break;
 			};
+
 			// Update visual memory
 			this.zxMemory.setVisualProg(prevPc);
+
+			// Store the pc for coverage
+			this.codeCoverage.storeAddress(prevPc);
 
 			// Check if any real breakpoint is hit
 			// Note: Because of step-out this needs to be done before the other check.
@@ -371,6 +382,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 		// Update the screen etc.
 		this.emit('update')
+
+		// Emit code coverage event
+		this.emit('coverage', this.codeCoverage.getAddresses());
 
 		if (counter!=0) {
 			// Stop immediately
