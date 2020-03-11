@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.13.1
+- Code coverage for internal simulator.
+
 # 0.13.0
 - New command: "clearAllDecorations".
 - Command removed "clearCodeCoverage".
