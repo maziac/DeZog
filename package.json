@@ -1,9 +1,9 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "0.12.4",
+	"version": "0.13.0",
 	"publisher": "maziac",
-	"description": "Visual Studio Code Debug Adapter for Z80/ZX Spectrum.",
+	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
 	"author": {
 		"name": "Thomas Busse"
 	},
@@ -49,16 +49,16 @@
 		"mocha": "^7.1.0",
 		"node-gzip": "^1.1.2",
 		"ts-node": "^8.6.2",
-		"vscode-debugadapter": "1.39.0",
+		"vscode-debugadapter": "1.39.1",
 		"vscode-debugprotocol": "1.39.0",
 		"z80js": "^0.9.4"
 	},
 	"devDependencies": {
-		"@types/mocha": "7.0.1",
-		"@types/node": "13.7.1",
-		"electron-rebuild": "^1.10.0",
+		"@types/mocha": "7.0.2",
+		"@types/node": "13.9.0",
+		"electron-rebuild": "^1.10.1",
 		"tslint": "6.0.0",
-		"typescript": "3.8.2",
+		"typescript": "3.8.3",
 		"vsce": "1.74.0",
 		"vscode": "^1.1.36",
 		"vscode-debugadapter-testsupport": "1.40.2"
@@ -138,8 +138,8 @@
 				"category": "dezog"
 			},
 			{
-				"command": "dezog.clearCodeCoverage",
-				"title": "Clear the current code coverage decoration",
+				"command": "dezog.clearAllDecorations",
+				"title": "Clears all decorations",
 				"category": "dezog"
 			},
 			{
@@ -191,7 +191,7 @@
 					"when": "false"
 				},
 				{
-					"command": "dezog.clearCodeCoverage"
+					"command": "dezog.clearAllDecorations"
 				},
 				{
 					"command": "dezog.getAllUnitTests",

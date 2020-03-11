@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.13.0
+- New command: "clearAllDecorations".
+- Command removed "clearCodeCoverage".
+
 # 0.12.4
 - remoteType "zxsim" renamed to "zsim".
 - Simulator:

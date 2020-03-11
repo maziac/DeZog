@@ -240,9 +240,8 @@ export class Z80UnitTests {
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
-			// Reset the code coverage and history
-			Decoration.clearCodeCoverage();
-			Decoration.clearRevDbgHistory();
+			// Reset all decorations
+			Decoration.clearAllDecorations();
 
 			// Start emulator.
 			RemoteFactory.createRemote(Settings.launch.remoteType);

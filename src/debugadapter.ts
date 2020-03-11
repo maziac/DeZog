@@ -28,6 +28,7 @@ import {ShallowVar} from './variables/shallowvar';
 import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
+import {CodeCoverageArray} from './remotes/zxsimulator/codecovarray';
 
 
 
@@ -418,6 +419,10 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise with an error text or undefined if no error.
 	 */
 	protected async startEmulator(): Promise<string|undefined> {
+
+		CodeCoverageArray.performanceTest();
+
+
 		try {
 			// init labels
 			Labels.init();
@@ -434,9 +439,8 @@ export class DebugSessionClass extends DebugSession {
 			DebugSessionClass.unitTestHandler(this);
 		}
 
-		// Reset the code coverage and history
-		Decoration.clearCodeCoverage();
-		Decoration.clearRevDbgHistory();
+		// Reset all decorations
+		Decoration.clearAllDecorations();
 
 		// Create the machine
 		RemoteFactory.createRemote(Settings.launch.remoteType);

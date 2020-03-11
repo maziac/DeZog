@@ -66,9 +66,9 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to disable code coverage display and analyzes.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.clearCodeCoverage', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.clearAllDecorations', () => {
 		if(Decoration)
-			Decoration.clearCodeCoverage();
+			Decoration.clearAllDecorations();
 	}));
 
 	// Command to execute all unit tests
