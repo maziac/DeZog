@@ -139,7 +139,7 @@
 			},
 			{
 				"command": "dezog.clearAllDecorations",
-				"title": "Clears all decorations",
+				"title": "Clear all decorations",
 				"category": "dezog"
 			},
 			{
