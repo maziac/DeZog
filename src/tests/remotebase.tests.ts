@@ -1,9 +1,19 @@
 
 import * as assert from 'assert';
 import {RemoteBase} from '../remotes/remotebase';
+import {Settings} from '../settings';
 
 
 suite('RemoteBase', () => {
+
+	setup(() => {
+		// Initialize Settings
+		const cfg: any={
+			remoteType: 'zsim'
+		};
+		Settings.Init(cfg, '');
+	});
+
 
 	suite('calcStepBp', () => {
 
@@ -37,6 +47,14 @@ suite('RemoteBase', () => {
 				return undefined as any;
 			}
 		}
+
+
+
+
+		test('ASYNC TEST', async () => {
+			assert.ok(true);
+		});
+
 
 
 		test('RET', async () => {
