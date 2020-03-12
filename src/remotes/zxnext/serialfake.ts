@@ -238,7 +238,7 @@ export class SerialFake extends ZxSimulatorRemote {
 				}
 				break;
 			case DZRP.CMD_ADD_WATCHPOINT:
-				{ //TODO
+				{ // TODO: Needs implementation.
 					// Create a new breakpoint
 					const bpAddress=Utility.getWord(data, 2);
 					const bpCondition=Utility.getStringFromBuffer(data, 4);

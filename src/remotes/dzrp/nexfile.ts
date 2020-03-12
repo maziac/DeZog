@@ -92,9 +92,11 @@ export class NexFile {
 		for (const memBank of this.memBanks) {
 			// Read data
 			const data=memBank.data;
-			for (let i=0; i<MemBank16k.BANK16K_SIZE; i++) {
-				data[i]=nexBuffer[memBankIndex++]; // TODO: USe slice
-			}
+			nexBuffer.copy(data, 0, memBankIndex, memBankIndex+MemBank16k.BANK16K_SIZE);
+			memBankIndex+=MemBank16k.BANK16K_SIZE;
+//			for (let i=0; i<MemBank16k.BANK16K_SIZE; i++) {
+//				data[i]=nexBuffer[memBankIndex++];
+//			}
 		}
 	}
 

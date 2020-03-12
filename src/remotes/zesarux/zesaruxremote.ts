@@ -9,7 +9,7 @@ import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remoteb
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
 import { Z80Registers } from '../z80registers';
-import { ZesaruxRegisters } from './zesaruxregisters';
+import {ZesaruxRegisters} from './zesaruxregisters';
 
 
 
@@ -524,27 +524,25 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
 			// Make sure that reverse debug stack is cleared
 			this.clearReverseDbgStack();
-			zSocket.send('get-breakpoints', () => { // TODO: REMOVE
 			// Reset T-state counter.
-				zSocket.send('reset-tstates-partial', () => {
-					// Run
-					zSocket.sendInterruptableRunCmd(text => {
-						// (could take some time, e.g. until a breakpoint is hit)
-						// get T-State counter
-						zSocket.send('get-tstates-partial', data => {
-							const tStates=parseInt(data);
-							// get clock frequency
-							zSocket.send('get-cpu-frequency', data => {
-								const cpuFreq=parseInt(data);
-								// Clear register cache
-								this.z80Registers.clearCache();
-								// Handle code coverage
-								this.handleCodeCoverage();
-								// The reason is the 2nd line
-								const breakReasonString=this.getBreakReason(text);
-								// Call handler
-								resolve({breakReasonString, tStates, cpuFreq});
-							});
+			zSocket.send('reset-tstates-partial', () => {
+				// Run
+				zSocket.sendInterruptableRunCmd(text => {
+					// (could take some time, e.g. until a breakpoint is hit)
+					// get T-State counter
+					zSocket.send('get-tstates-partial', data => {
+						const tStates=parseInt(data);
+						// get clock frequency
+						zSocket.send('get-cpu-frequency', data => {
+							const cpuFreq=parseInt(data);
+							// Clear register cache
+							this.z80Registers.clearCache();
+							// Handle code coverage
+							this.handleCodeCoverage();
+							// The reason is the 2nd line
+							const breakReasonString=this.getBreakReason(text);
+							// Call handler
+							resolve({breakReasonString, tStates, cpuFreq});
 						});
 					});
 				});
@@ -1647,58 +1645,58 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
-		// Check for logpoint (not supported)
-		if(bp.log) {
-			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
-			// set to unverified
-			bp.address = -1;
-			return 0;
-		}
-
-		// Get condition
-		let zesaruxCondition = this.convertCondition(bp.condition);
-		if(zesaruxCondition == undefined) {
-			this.emit('warning', "Breakpoint: Can't set condition: " + (bp.condition || ''));
-			// set to unverified
-			bp.address = -1;
-			return 0;
-		}
-
-		// get free id
-		if(this.freeBreakpointIds.length == 0)
-			return 0;	// no free ID
-		bp.bpId = this.freeBreakpointIds[0];
-		this.freeBreakpointIds.shift();
-
-		// Create condition from address and bp.condition
-		let condition = '';
-		if(bp.address >= 0) {
-			condition = 'PC=0'+Utility.getHexString(bp.address, 4)+'h';
-			if(zesaruxCondition.length > 0) {
-				condition += ' and ';
-				zesaruxCondition = '(' + zesaruxCondition + ')';
+		return new Promise<number>(resolve => {
+			// Check for logpoint (not supported)
+			if (bp.log) {
+				this.emit('warning', 'ZEsarUX does not support logpoints ("'+bp.log+'").');
+				// set to unverified
+				bp.address=-1;
+				return 0;
 			}
-		}
-		if(zesaruxCondition.length > 0)
-			condition += zesaruxCondition;
 
-		// set action first (no action)
-		const shortCond = (condition.length < 50) ? condition : condition.substr(0,50) + '...';
-		zSocket.send('set-breakpointaction ' + bp.bpId + ' prints breakpoint ' + bp.bpId + ' hit (' + shortCond + ')', () => {
-	//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
-		// set the breakpoint
-			// TODO: Should await here
-			zSocket.send('set-breakpoint ' + bp.bpId + ' ' + condition, () => {
-				// enable the breakpoint
-				zSocket.send('enable-breakpoint ' + bp.bpId);
+			// Get condition
+			let zesaruxCondition=this.convertCondition(bp.condition);
+			if (zesaruxCondition==undefined) {
+				this.emit('warning', "Breakpoint: Can't set condition: "+(bp.condition||''));
+				// set to unverified
+				bp.address=-1;
+				return 0;
+			}
+
+			// get free id
+			if (this.freeBreakpointIds.length==0)
+				return 0;	// no free ID
+			bp.bpId=this.freeBreakpointIds[0];
+			this.freeBreakpointIds.shift();
+
+			// Create condition from address and bp.condition
+			let condition='';
+			if (bp.address>=0) {
+				condition='PC=0'+Utility.getHexString(bp.address, 4)+'h';
+				if (zesaruxCondition.length>0) {
+					condition+=' and ';
+					zesaruxCondition='('+zesaruxCondition+')';
+				}
+			}
+			if (zesaruxCondition.length>0)
+				condition+=zesaruxCondition;
+
+			// set action first (no action)
+			const shortCond=(condition.length<50)? condition:condition.substr(0, 50)+'...';
+			zSocket.send('set-breakpointaction '+bp.bpId+' prints breakpoint '+bp.bpId+' hit ('+shortCond+')', () => {
+				//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+				// set the breakpoint
+				zSocket.send('set-breakpoint '+bp.bpId+' '+condition, () => {
+					// enable the breakpoint
+					zSocket.send('enable-breakpoint '+bp.bpId);
+					// Add to list
+					this.breakpoints.push(bp);
+					// return
+					resolve(bp.bpId);
+				});
 			});
+
 		});
-
-		// Add to list
-		this.breakpoints.push(bp);
-
-		// return
-		return bp.bpId;
 	}
 
 
@@ -1706,18 +1704,16 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Clears one breakpoint.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
-		// set breakpoint with no condition = disable/remove
-		//zSocket.send('set-breakpoint ' + bp.bpId);
-
-		// disable breakpoint
-			// TODO: Should await here
-		zSocket.send('disable-breakpoint ' + bp.bpId);
-
-		// Remove from list
-		let index = this.breakpoints.indexOf(bp);
-		assert(index !== -1, 'Breakpoint should be removed but does not exist.');
-		this.breakpoints.splice(index, 1);
-		this.freeBreakpointIds.push(index);
+		return new Promise<void>(resolve => {
+			// Disable breakpoint
+			zSocket.send('disable-breakpoint '+bp.bpId, () => {
+				// Remove from list
+				let index=this.breakpoints.indexOf(bp);
+				assert(index!==-1, 'Breakpoint should be removed but does not exist.');
+				this.breakpoints.splice(index, 1);
+				this.freeBreakpointIds.push(index);
+			});
+		});
 	}
 
 
