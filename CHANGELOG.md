@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.13.2
+
+
 # 0.13.1
 - Code coverage for internal simulator.
 - Simulator: A StepInto will now do a single step also for LDIR, LDDR, CPIR, CPDR and HALT.
