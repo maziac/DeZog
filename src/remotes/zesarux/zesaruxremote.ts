@@ -820,8 +820,7 @@ export class ZesaruxRemote extends RemoteBase {
 			sp-=2;	// CALL pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
-			const callAddrStr=opcodes.substr(2, 4);
-			const callAddr=this.cpuHistory.parse16Address(callAddrStr);
+			const callAddr=(opcodes>>8)&0xFFFF;
 			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
@@ -995,7 +994,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Check for CALL/RST. If not do a normal step-into.
 				// If YES stop if pc reaches the next instruction.
 				const opcodes=this.cpuHistory.getOpcodes(currentLine);
-				const opcode0=parseInt(opcodes.substr(0, 2), 16);
+				const opcode0=opcodes&0xFF;
 				let pc=this.z80Registers.parsePC(currentLine);
 				let nextPC0;
 				let nextPC1;

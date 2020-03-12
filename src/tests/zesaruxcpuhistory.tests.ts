@@ -19,19 +19,6 @@ suite('ZesaruxCpuHistory', () => {
 
 	suite('disassemble', () => {
 
-		test('parse16Address', () => {
-			const hist = createCpuHistory();
-			let addr = hist.parse16Address("CAD9");
-			assert.equal(0xD9CA, addr);
-
-			addr = hist.parse16Address("123");
-			assert.equal(0x312, addr);
-
-			addr = hist.parse16Address("1");
-			assert.equal(0x1, addr);
-		});
-
-
 		test('getPushedValue', () => {
 			const hist = createCpuHistory();
 

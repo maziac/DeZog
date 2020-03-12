@@ -25,7 +25,7 @@ export enum Z80_REG {
 };
 
 
-/// Used for the data received form the remote.
+/// Used for the data received fom the remote.
 // I.e. holds any data.
 export type RegisterData=any;
 
