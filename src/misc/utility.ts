@@ -762,9 +762,7 @@ export class Utility {
 	/**
 	 * Sets the root path or absolute and relative file functions.
 	 * @param rootPath What e.g. vscode.workspace.rootPath would return
-	 */
-	// TODO: It seems that rootPath==undefined is not allowed.
-	public static setRootPath(rootPath: string|undefined) {
+	 */	public static setRootPath(rootPath: string) {
 		assert(rootPath);
 		(Utility.rootPath as any)=rootPath;
 	}

@@ -303,6 +303,7 @@ export class ZesaruxCpuHistory {
 	}
 
 
+
 	/**
 	 * Tests if the line includes a RST instruction.
 	 * @param opcodes E.g. "e52a785c"
@@ -310,15 +311,14 @@ export class ZesaruxCpuHistory {
 	 */
 	public isRst(opcodes: string): boolean {
 		// Check for RST
-		const opcode0 = parseInt(opcodes.substr(0,2),16);
+		const opcode0=parseInt(opcodes.substr(0, 2), 16);
 		return this.isRstOpcode(opcode0);
 	}
-
 
 	/**
 	 * Returns the RST address. Note: It is not checked if the opcode is
 	 * really a RST instruction.
-	 * @param opcodes A strign of opcodes. Length: at least 2 characters (1 byte)
+	 * @param opcodes A string of opcodes. Length: at least 2 characters (1 byte)
 	 * @returns E.g. 0x48.
 	 */
 	public getRstAddress(opcodes: string): number {
@@ -334,6 +334,7 @@ export class ZesaruxCpuHistory {
 	 * @param opcodes E.g. "e52a785c"
 	 * @returns true=if PUSH
 	 */
+	/*
 	public isPush(opcodes: string): boolean {
 		// Check for PUSH
 		const opcode0 = parseInt(opcodes.substr(0,2),16);
@@ -360,7 +361,7 @@ export class ZesaruxCpuHistory {
 		// No PUSH
 		return false;
 	}
-
+	*/
 
 	/**
 	 * Tests if the opcode is a POP instruction.
@@ -522,7 +523,6 @@ export class ZesaruxCpuHistory {
 		return expectedSp;
 	}
 
-
 	/**
 	 * Tests if the opcode byte is from a CALL.
 	 * @param opcode0 The first byte of an instruction.
@@ -531,12 +531,12 @@ export class ZesaruxCpuHistory {
 	// TODO: Use the function in "Remote" instead.
 	public isCallOpcode(opcode0: number): boolean {
 		// Check for CALL
-		if(0xCD == opcode0)
+		if (0xCD==opcode0)
 			return true;
 
 		// Now check for CALL cc
-		const mask = 0b11000111;
-		if((opcode0 & mask) == 0b11000100)
+		const mask=0b11000111;
+		if ((opcode0&mask)==0b11000100)
 			return true;
 
 		// No CALL
@@ -551,13 +551,12 @@ export class ZesaruxCpuHistory {
 	 */
 	// TODO: Use the function in "Remote" instead.
 	public isRstOpcode(opcode0: number): boolean {
-		const mask = 0b11000111;
-		if((opcode0 & mask) == 0b11000111)
+		const mask=0b11000111;
+		if ((opcode0&mask)==0b11000111)
 			return true;
 
 		// No RST
 		return false;
 	}
-
 }
 

@@ -493,7 +493,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 					// Check for breakpoint
 					this.z80Registers.setCache(nextLine);
-					const condition=this.checkPcBreakpoints(nextLine);
+					const condition=this.checkPcBreakpoints();
 					if (condition!=undefined) {
 						breakReasonString=condition;
 						break;	// BP hit and condition met.
@@ -569,6 +569,7 @@ export class ZesaruxRemote extends RemoteBase {
 			result = reason;
 		return result;
 	}
+
 
 	/**
 	  * 'pause' the debugger.
@@ -664,7 +665,7 @@ export class ZesaruxRemote extends RemoteBase {
 					// Check for CALL and RST
 					const firstByte = parseInt(data.substr(0,2),16);
 					let callAddr;
-					if(this.cpuHistory.isCallOpcode(firstByte)) {
+					if (this.cpuHistory.isCallOpcode(firstByte)) {
 						// Is a CALL or CALL cc, get called address
 						// Get low byte
 						const lowByte = parseInt(data.substr(2,2),16);
@@ -952,7 +953,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Check for breakpoint
 				this.z80Registers.setCache(currentLine);
-				const condition=this.checkPcBreakpoints(currentLine);
+				const condition=this.checkPcBreakpoints();
 				if (condition!=undefined) {
 					breakReason=condition;
 					break;	// BP hit and condition met.
@@ -1035,7 +1036,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for "real" breakpoint
 						this.z80Registers.setCache(nextLine);
-						const condition=this.checkPcBreakpoints(nextLine);
+						const condition=this.checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
 							break;	// BP hit and condition met.
@@ -1351,7 +1352,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for breakpoint
 						this.z80Registers.setCache(nextLine);
-						const condition=this.checkPcBreakpoints(nextLine);
+						const condition=this.checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
 							break;	// BP hit and condition met.
@@ -1754,10 +1755,9 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Returns the breakpoint at the given address.
 	 * Note: Checks only breakpoints with a set 'address'.
-	 * @param regs The registers as string, e.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
 	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
-	protected checkPcBreakpoints(regs: string): string|undefined {
+	protected checkPcBreakpoints(): string|undefined {
 		assert(this.z80Registers.getCache());
 		let condition;
 		const pc = this.z80Registers.getPC();

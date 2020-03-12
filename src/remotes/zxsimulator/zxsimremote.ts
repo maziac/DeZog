@@ -324,7 +324,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			const bpInner=this.tmpBreakpoints[pc];
 			if (bpInner) {
 				// Get registers
-				const regs=this.z80Cpu.getRegisterData(); // TODO: Wieder rückbauen und ann mit "await".
+				const regs=this.z80Cpu.getRegisterData();
 				this.z80Registers.setCache(regs);
 				// Now check if condition met or if logpoint
 				for (const bpElem of bpInner) {

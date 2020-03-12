@@ -251,7 +251,7 @@ export class Z80UnitTests {
 			Remote.readListFiles(listFiles);
 
 			// Events
-			Remote.once('initialized', async () => {  // TODO: Remove async
+			Remote.once('initialized', async () => {
 				try {
 					// Enable unit test logpoints
 					try {

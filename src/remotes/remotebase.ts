@@ -1412,7 +1412,6 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with the opcode and 2 breakpoint
 	 * addresses. The 2nd of these bp addresses can be undefined.
 	 */
-	// TODO: Unit test this.
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sute the registers are there
 		await this.getRegisters();
@@ -1429,7 +1428,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Check for RET
 		if (ocFlags&OpcodeFlag.RET) {
-			const sp=this.z80Registers.getRegValue(Z80_REG.SP);;
+			const sp=this.getRegisterValue("SP");
 			// Get return address
 			const retArr=await this.readMemoryDump(sp, 2);
 			const retAddr=retArr[0]+(retArr[1]<<8);
@@ -1439,7 +1438,7 @@ export class RemoteBase extends EventEmitter {
 			else
 				bpAddr1=retAddr;
 		}
-		// Check for stepIver and CALL/RST
+		// Check for stepOver and CALL/RST
 		else if (stepOver&&(ocFlags&OpcodeFlag.CALL)) {
 			// If call and step over we don't need to check the additional
 			// branch address.
@@ -1451,24 +1450,41 @@ export class RemoteBase extends EventEmitter {
 				bpAddr2=opcode.value;
 			}
 			else {
-				// Unconditional branch:
-				// Check for special branches JP (HL), JP (IX), JP (IY)
-				if (opcodes[0]==0xE9) {
-					// JP (HL)
-					bpAddr1=this.z80Registers.getRegValue(Z80_REG.HL);
+				// All others:
+				bpAddr1=opcode.value;
+			}
+		}
+		else if (ocFlags&OpcodeFlag.STOP) {
+			// In this category there are also the special branches
+			// like:
+			// JP(HL), JP(IX), JP(IY)
+			if (opcodes[0]==0xE9) {
+				// JP (HL)
+				bpAddr1=this.getRegisterValue("HL");;
+			}
+			else if (opcodes[0]==0xDD&&opcodes[1]==0xE9) {
+				// JP (IX)
+				bpAddr1=this.getRegisterValue("IX");;
+			}
+			else if (opcodes[0]==0xFD&&opcodes[1]==0xE9) {
+				// JP (IY)
+				bpAddr1=this.getRegisterValue("IY");
+			}
+		}
+		else {
+			// Other special instructions
+			if (opcodes[0]==0xED) {
+				if (opcodes[1]==0xB0||opcodes[1]==0xB8
+					||opcodes[1]==0xB1||opcodes[1]==0xB9) {
+					// LDIR/LDDR/CPIR/CPDR
+					if (!stepOver)
+						bpAddr2=pc;
 				}
-				else if (opcodes[0]==0xDD&&opcodes[1]==0xE9) {
-					// JP (IX)
-					bpAddr1=this.z80Registers.getRegValue(Z80_REG.IX);
-				}
-				else if (opcodes[0]==0xFD&&opcodes[1]==0xE9) {
-					// JP (IY)
-					bpAddr1=this.z80Registers.getRegValue(Z80_REG.IY);
-				}
-				else {
-					// All others:
-					bpAddr1=opcode.value;
-				}
+			}
+			else if (opcodes[0]==0x76) {
+				// HALT
+				if (!stepOver)
+					bpAddr2=pc;
 			}
 		}
 
@@ -1484,7 +1500,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param flags The flags.
 	 * @returns false=if not CALL or condition of CALL cc is not met.
 	 */
-	public isCallAndExecuted(opcodes: Uint8Array, flags: number): boolean {
+	protected isCallAndExecuted(opcodes: Uint8Array, flags: number): boolean {
 		// Check for CALL
 		const opcode0=opcodes[0];
 		if (0xCD==opcode0)
@@ -1510,7 +1526,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param opcodes An array of opcodes. Only the first is checked.
 	 * @returns true if "RST".
 	 */
-	public isRstOpcode(opcodes: Uint8Array): boolean {
+	protected isRstOpcode(opcodes: Uint8Array): boolean {
 		const opcode0=opcodes[0];
 		const mask=0b11000111;
 		if ((opcode0&mask)==0b11000111)
@@ -1526,7 +1542,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param opcodes An array of opcodes. Only the first is checked.
 	 * @returns true if "HALT".
 	 */
-	public isHaltOpcode(opcodes: Uint8Array): boolean {
+	protected isHaltOpcode(opcodes: Uint8Array): boolean {
 		if (opcodes[0]=0x76)
 			return true;
 		// No HALT
@@ -1539,7 +1555,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param opcodes An array of opcodes. Only the first two are checked.
 	 * @returns true if LDDR, LDIR, CPDR or CPIR..
 	 */
-	public isRepetitiveOpcode(opcodes: Uint8Array): boolean {
+	protected isRepetitiveOpcode(opcodes: Uint8Array): boolean {
 		if (opcodes[0] != 0xED)
 			return false;
 		const opcode1=opcodes[1];

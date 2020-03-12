@@ -254,15 +254,15 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isCallOpcode', () => {
 
 		test('is CALL', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 			// Test
-			const opcode0 = 0xCD;	// Extended code like in PUSH nn
+			const opcode0=0xCD;	// Extended code like in PUSH nn
 			assert.ok(hist.isCallOpcode(opcode0));
 		});
 
 
 		test('is CALL cc', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 			// Test
 			assert.ok(hist.isCallOpcode(0xC4));
 			assert.ok(hist.isCallOpcode(0xD4));
@@ -276,9 +276,9 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not CALL', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 			// Test
-			const opcode0 = 0xED;	// Extended code like in PUSH nn
+			const opcode0=0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isCallOpcode(opcode0));
 		});
 	});
@@ -287,7 +287,7 @@ suite('ZesaruxCpuHistory', () => {
 	suite('isRstOpcode', () => {
 
 		test('is RST', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 			// Test
 			assert.ok(hist.isRstOpcode(0xC7));
 			assert.ok(hist.isRstOpcode(0xD7));
@@ -301,9 +301,9 @@ suite('ZesaruxCpuHistory', () => {
 		});
 
 		test('is not RST', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 			// Test
-			const opcode0 = 0xED;	// Extended code like in PUSH nn
+			const opcode0=0xED;	// Extended code like in PUSH nn
 			assert.ok(!hist.isRstOpcode(opcode0));
 		});
 	});
