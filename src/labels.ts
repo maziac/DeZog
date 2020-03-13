@@ -539,8 +539,9 @@ export class LabelsClass {
 				const matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
 					const fName = matchInclStart[1];
+					const dirName = stack[stack.length - 1].fileName.replace(/(^|\\|\/)[^\\\/]+$/, '$1');
 					const absFName = Utility.getAbsSourceFilePath(fName, sources);
-					const relFName = Utility.getRelFilePath(absFName);
+					const relFName = dirName + Utility.getRelFilePath(absFName);
 					stack.push({fileName: relFName, lineNr: 0});
 					index = stack.length-1;
 					expectedLine = undefined;

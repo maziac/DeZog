@@ -371,6 +371,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Save args
 			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
+			process.chdir(rootFolder);
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
 		}
