@@ -87,10 +87,6 @@ export class BaseView {
 
 		// Handle closing of the view
 		this.vscodePanel.onDidDispose(() => {
-			// Remove from list
-			const index = BaseView.staticViews.indexOf(this);
-    		assert(index !== -1)
-			BaseView.staticViews.splice(index, 1);
 			// Call overwritable function
 			this.disposeView();
 		});
@@ -110,7 +106,10 @@ export class BaseView {
 	 * Normally not required.
 	 */
 	public disposeView() {
-		// Can be overwritten
+		// Remove from list
+		const index=BaseView.staticViews.indexOf(this);
+		assert(index!==-1)
+		BaseView.staticViews.splice(index, 1);
 	}
 
 

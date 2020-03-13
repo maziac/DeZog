@@ -14,9 +14,6 @@ export class ZxSimulationView extends BaseView {
 	// Holds the gif image a string.
 	protected screenGifString;
 
-	/// The panel to show the base view in vscode.
-	protected vscodePanel: vscode.WebviewPanel;
-
 	/// We listen for 'update' on this emitter to update the html.
 	protected parent: EventEmitter;
 
@@ -34,7 +31,8 @@ export class ZxSimulationView extends BaseView {
 			return;
 
 		// Create new instance
-		let zxview: ZxSimulationView|undefined = new ZxSimulationView(simulator);
+		let zxview: ZxSimulationView|undefined=new ZxSimulationView(simulator);
+		/*
 		simulator.once('closed', () => {
 			zxview?.close();
 			zxview=undefined;
@@ -42,6 +40,7 @@ export class ZxSimulationView extends BaseView {
 		simulator.on('update', () => {
 			zxview?.update();
 		});
+		*/
 	}
 
 
@@ -65,20 +64,8 @@ export class ZxSimulationView extends BaseView {
 		ports.setPortValue(0xBFFE, 0xFF);
 		ports.setPortValue(0x7FFE, 0xFF);
 
-		// create vscode panel view
-		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true});
+		// Add title
 		this.vscodePanel.title='Z80/ZX Spectrum Simulator';
-		// Handle closing of the view
-		this.vscodePanel.onDidDispose(() => {
-			// Call overwritable function
-			this.disposeView();
-		});
-
-		// Handle messages from the webview
-		this.vscodePanel.webview.onDidReceiveMessage(message => {
-			console.log("webView command '"+message.command+"':", message);
-			this.webViewMessageReceived(message);
-		});
 
 		// Initial html page.
 		this.setHtml();
