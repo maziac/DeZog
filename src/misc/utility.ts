@@ -712,14 +712,36 @@ export class Utility {
 	 * @param srcDirs The (relative) directories to search in.
 	 */
 	public static getAbsSourceFilePath(srcPath: string, srcDirs: Array<string>) {
-		if(path.isAbsolute(srcPath))
+		if (path.isAbsolute(srcPath))
 			return srcPath;
 		// Check all sources directories and try to locate the srcPath file.
-		for(let srcDir of srcDirs) {
-			const fPath = path.join(srcDir, srcPath);
-			const absFPath = Utility.getAbsFilePath(fPath);
-			if(fs.existsSync(absFPath))
+		for (let srcDir of srcDirs) {
+			const fPath=path.join(srcDir, srcPath);
+			const absFPath=Utility.getAbsFilePath(fPath);
+			if (fs.existsSync(absFPath))
 				return absFPath;
+		}
+		// Not found, return given path
+		return srcPath;
+	}
+
+
+	/**
+	 * Returns the relative path srcPath is found in.
+	 * I.e. searches for srcPath in all srcDirs and returns the path+the src dir.
+	 * @param srcPath E.g. "src/main.asm"
+	 * @param srcDirs E.g. [ "src", "includes" ]
+	 */
+	public static getRelSourceFilePath(srcPath: string, srcDirs: Array<string>) {
+		if (path.isAbsolute(srcPath))
+			return Utility.getRelFilePath(srcPath);
+
+		// Check all sources directories and try to locate the srcPath file.
+		for (let srcDir of srcDirs) {
+			const fPath=path.join(srcDir, srcPath);
+			const absFPath=Utility.getAbsFilePath(fPath);
+			if (fs.existsSync(absFPath))
+				return fPath;
 		}
 		// Not found, return given path
 		return srcPath;

@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { Utility } from './misc/utility';
-import { Settings } from './settings';
-//
+import {Settings} from './settings';
+import * as path from 'path';
 import { Remote } from './remotes/remotefactory';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
@@ -538,9 +538,10 @@ export class LabelsClass {
 				const remainingLine = matchLineNumber[2];
 				const matchInclStart = /^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i.exec(remainingLine);
 				if(matchInclStart) {
-					const fName = matchInclStart[1];
-					const absFName = Utility.getAbsSourceFilePath(fName, sources);
-					const relFName = Utility.getRelFilePath(absFName);
+					const fName=matchInclStart[1];
+					const parentFileName=stack[stack.length-1].fileName;
+					const dirName=path.dirname(parentFileName);
+					const relFName=Utility.getRelSourceFilePath(fName, [ dirName, ...sources]);
 					stack.push({fileName: relFName, lineNr: 0});
 					index = stack.length-1;
 					expectedLine = undefined;
