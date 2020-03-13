@@ -118,7 +118,7 @@ export class CodeCoverageArray {
 	 */
 	public storeAddress(address: number) {
 		// Check if address already exists
-		const reducedAddress=address>>3;	// 2^3=8 bit
+		const reducedAddress=address>>>3;	// 2^3=8 bit
 		const lowAddr=address&0b111;	// last 3 bits
 		const bit=0b1<<lowAddr;	// Get bit position
 		const memValue=this.memoryArea[reducedAddress];

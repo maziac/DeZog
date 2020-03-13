@@ -116,7 +116,7 @@ export class ZxMemory {
 	// Read 1 byte.
 	public read8(addr: number): number {
 		// Visual memory
-		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
+		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
 		// Real read access
 		const [bankAddr, bankMem]=this.getBankForAddr(addr);
 		const value=bankMem[bankAddr];
@@ -126,7 +126,7 @@ export class ZxMemory {
 	// Write 1 byte.
 	public write8(addr: number, val: number) {
 		// Visual memory
-		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
+		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
 		// Real write access
 		const [bankAddr, bankMem]=this.getBankForAddr(addr);
 		bankMem[bankAddr]=val;
@@ -136,7 +136,7 @@ export class ZxMemory {
 	// Write 1 byte.
 	public setVisualProg(addr: number) {
 		// Visual memory
-		this.visualMemory[addr>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_PROG;
+		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_PROG;
 	}
 
 
@@ -146,7 +146,7 @@ export class ZxMemory {
 	 * @returns [number, Uint8Array] The address (0-0x1FFF) and the memory bank array.
 	 */
 	public getBankForAddr(addr: number): [number, Uint8Array] {
-		const slot=(addr>>13)&0x07;
+		const slot=(addr>>>13)&0x07;
 		const bankAddr=addr&0x1FFF;
 		const bank=this.slots[slot];
 		const bankMem=this.banks[bank];
@@ -330,21 +330,21 @@ export class ZxMemory {
 				while (mask) {	// 8x
 					const value=byteValue&mask;
 					// Check if pixel is set
-					let cIndex=(color&0x40)>>3;	// Brightness
+					let cIndex=(color&0x40)>>>3;	// Brightness
 					if (value) {
 						// Set: foreround
 						cIndex|=color&0x07;
 					}
 					else {
 						// Unset: background
-						cIndex|=(color>>3)&0x07;
+						cIndex|=(color>>>3)&0x07;
 					}
 
 					// Save color index
 					pixels[pixelIndex]=cIndex;
 
 					// Next pixel
-					mask>>=1;
+					mask>>>=1;
 					pixelIndex++;
 				}
 				// Next byte

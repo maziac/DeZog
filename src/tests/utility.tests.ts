@@ -272,21 +272,21 @@ suite('Utility', () => {
             assert.equal(2<<3, res, "Wrong eval result");
 		});
 
-		test('shift >>', () => {
-            let res = Utility.evalExpression('0>>3');
+		test('shift >>>', () => {
+            let res = Utility.evalExpression('0>>>3');
 			assert.equal(0, res, "Wrong eval result");
 
-            res = Utility.evalExpression('0x0F>>3');
-            assert.equal(0x0F>>3, res, "Wrong eval result");
+            res = Utility.evalExpression('0x0F>>>3');
+            assert.equal(0x0F>>>3, res, "Wrong eval result");
 
-            res = Utility.evalExpression('0x0F >>3');
-            assert.equal(0x0F>>3, res, "Wrong eval result");
+            res = Utility.evalExpression('0x0F >>>3');
+            assert.equal(0x0F>>>3, res, "Wrong eval result");
 
-			res = Utility.evalExpression('0x0F>> 3');
-			assert.equal(0x0F>>3, res, "Wrong eval result");
+			res = Utility.evalExpression('0x0F>>> 3');
+			assert.equal(0x0F>>>3, res, "Wrong eval result");
 
-			res = Utility.evalExpression('0x0F >> 3');
-            assert.equal(0x0F>>3, res, "Wrong eval result");
+			res = Utility.evalExpression('0x0F >>> 3');
+            assert.equal(0x0F>>>3, res, "Wrong eval result");
 		});
 
 
