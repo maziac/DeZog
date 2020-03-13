@@ -1,7 +1,7 @@
 import * as assert from 'assert';
-import {Opcode} from '../../src/disassembler/opcode';
-import {BaseMemory} from '../../src/disassembler/basememory';
-import {Z80Registers} from '../../src/remotes/z80registers';
+import {Opcode} from '../disassembler/opcode';
+import {BaseMemory} from '../disassembler/basememory';
+import {Z80Registers} from '../remotes/z80registers';
 import {StepHistory, HistoryInstructionInfo} from './stephistory';
 
 /**
@@ -50,7 +50,7 @@ export class CpuHistory extends StepHistory{
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
-	protected async getRegistersPromise(index: number): Promise<HistoryInstructionInfo|undefined> {
+	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		// Override this
 		assert(false);
 	}
@@ -66,7 +66,7 @@ export class CpuHistory extends StepHistory{
 		if(!currentLine)
 		{
 			const index = this.historyIndex + 1;
-			currentLine = await this.getRegistersPromise(index);
+			currentLine = await this.getRemoteHistoryIndex(index);
 			if(currentLine) {
 				this.historyIndex = index;
 				this.history.push(currentLine);
@@ -102,7 +102,7 @@ export class CpuHistory extends StepHistory{
 		for(let i=0; i<4; i++) {
 			const opc=opcodes&0xFF;
 			buffer.setValueAtIndex(i, opc);
-			opcodes>>=8;
+			opcodes>>>=8;
 		}
 		// Get opcode
 		const opcode = Opcode.getOpcodeAt(buffer, pc);
@@ -142,7 +142,7 @@ export class CpuHistory extends StepHistory{
 
 		// Check for RETI or RETN
 		if(0xED == opcode0) {
-			const opcode1=(opcodes>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;
 			if(0x4D == opcode1 || 0x45 == opcode1)
 				return true;
 		}
@@ -151,7 +151,7 @@ export class CpuHistory extends StepHistory{
 		const mask = 0b11000111;
 		if((opcode0 & mask) == 0b11000000) {
 			// RET cc, get cc
-			const cc = (opcode0 & ~mask) >> 3;
+			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
 			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
 			return condMet;
@@ -179,7 +179,7 @@ export class CpuHistory extends StepHistory{
 		const mask = 0b11000111;
 		if((opcode0 & mask) == 0b11000100) {
 			// RET cc, get cc
-			const cc = (opcode0 & ~mask) >> 3;
+			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
 			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
 			return condMet;
@@ -233,14 +233,14 @@ export class CpuHistory extends StepHistory{
 
 		// PUSH IX or IY
 		if(opcode0 == 0xDD || opcode0 == 0xFD) {
-			const opcode1=(opcodes>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;;
 			if(opcode1 == 0xE5)
 				return true;
 		}
 
 		// PUSH nnnn, ZXNext
 		if(opcode0 == 0xED) {
-			const opcode1=(opcodes>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;;
 			if(opcode1 == 0x8A)
 				return true;
 		}
@@ -266,7 +266,7 @@ export class CpuHistory extends StepHistory{
 
 		// POP IX or IY
 		if(opcode0 == 0xDD || opcode0 == 0xFD) {
-			const opcode1=(opcodes>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;;
 			if(opcode1 == 0xE1)
 				return true;
 		}
@@ -304,7 +304,7 @@ export class CpuHistory extends StepHistory{
 			case 0xDD:
 			case 0xFD:
 				{
-					const opcode1=(opcodes>>8)&0xFF;;
+					const opcode1=(opcodes>>>8)&0xFF;;
 					if(opcode1 == 0xE5) {
 						if(opcode0 == 0xDD)
 							value = this.z80Registers.parseIX(line);	// PUSH IX
@@ -316,11 +316,11 @@ export class CpuHistory extends StepHistory{
 
 			case 0xED:
 				{
-					const opcode1=(opcodes>>8)&0xFF;
+					const opcode1=(opcodes>>>8)&0xFF;
 					if (opcode1==0x8A) {
 						// PUSH nn, big endian
-						value=(opcodes>>8)&0xFF00;
-						value|=(opcodes>>24)&0xFF;
+						value=(opcodes>>>8)&0xFF00;
+						value|=(opcodes>>>24)&0xFF;
 					}
 				}
 				break;
@@ -345,7 +345,7 @@ export class CpuHistory extends StepHistory{
 
 		switch(opcode0) {
 			case 0x31:	// LD SP,nnnn
-				expectedSp=(opcodes>>8)&0xFFFF;
+				expectedSp=(opcodes>>>8)&0xFFFF;
 				break;
 
 			case 0x33:	// INC SP
@@ -364,7 +364,7 @@ export class CpuHistory extends StepHistory{
 
 			case 0xED:
 				{
-					const opcode1=(opcodes>>8)&0xFF;
+					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0x7B) {
 						// LD SP,(nnnn)
 						expectedSp = undefined;
@@ -374,7 +374,7 @@ export class CpuHistory extends StepHistory{
 
 			case 0xDD:
 				{
-					const opcode1=(opcodes>>8)&0xFF;
+					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0xF9) {
 						// LD SP,IX
 						const ix = this.z80Registers.parseIX(line);
@@ -385,7 +385,7 @@ export class CpuHistory extends StepHistory{
 
 			case 0xFD:
 				{
-					const opcode1=(opcodes>>8)&0xFF;
+					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0xF9) {
 						// LD SP,IY
 						const iy = this.z80Registers.parseIY(line);

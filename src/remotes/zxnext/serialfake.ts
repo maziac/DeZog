@@ -115,9 +115,9 @@ export class SerialFake extends ZxSimulatorRemote {
 	protected getRegValues(): number[] {
 		const regs=[
 			this.z80Cpu.pc&0xFF,
-			this.z80Cpu.pc>>8,
+			this.z80Cpu.pc>>>8,
 			this.z80Cpu.sp&0xFF,
-			this.z80Cpu.sp>>8,
+			this.z80Cpu.sp>>>8,
 
 			this.z80Cpu.r1.f,
 			this.z80Cpu.r1.a,
@@ -202,7 +202,7 @@ export class SerialFake extends ZxSimulatorRemote {
 						// Send Notification
 						const ntfSeqNo=this.parser.getNextSeqNo();
 						const breakBuffer=Utility.getBufferFromString(breakReasonString);
-						this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakNumber, breakData&0xFF, breakData>>8, ...breakBuffer]);
+						this.sendDzrpNtf(ntfSeqNo, [DZRP_NTF.NTF_PAUSE, breakNumber, breakData&0xFF, breakData>>>8, ...breakBuffer]);
 						this.continueResolve=undefined;
 					};
 					// Run the Z80-CPU in a loop
@@ -225,7 +225,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					const bpCondition=Utility.getStringFromBuffer(data, 4);
 					const bpId=this.createNewBreakpoint(bpAddress, bpCondition);
 					// Respond
-					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>>8]);
 				}
 				break;
 			case DZRP.CMD_REMOVE_BREAKPOINT:
@@ -234,7 +234,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					const bpId=Utility.getWord(data, 2);
 					// Remove it
 					this.breakpointsMap.delete(bpId);
-					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>>8]);
 				}
 				break;
 			case DZRP.CMD_ADD_WATCHPOINT:
@@ -244,7 +244,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					const bpCondition=Utility.getStringFromBuffer(data, 4);
 					const bpId=this.createNewBreakpoint(bpAddress, bpCondition);
 					// Respond
-					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>>8]);
 				}
 				break;
 			case DZRP.CMD_REMOVE_WATCHPOINT:
@@ -253,7 +253,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					const bpId=Utility.getWord(data, 2);
 					// Remove it
 					this.breakpointsMap.delete(bpId);
-					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>8]);
+					this.sendDzrpResp(seqno, [bpId&0xFF, bpId>>>8]);
 				}
 				break;
 			case DZRP.CMD_READ_MEM:
@@ -312,9 +312,9 @@ export class SerialFake extends ZxSimulatorRemote {
 		const buffer=Buffer.alloc(totalLength);
 		// Encode length
 		buffer[0]=len&0xFF;
-		buffer[1]=(len>>8)&0xFF;
-		buffer[2]=(len>>16)&0xFF;
-		buffer[3]=(len>>24)&0xFF;
+		buffer[1]=(len>>>8)&0xFF;
+		buffer[2]=(len>>>16)&0xFF;
+		buffer[3]=(len>>>24)&0xFF;
 		// Notification
 		buffer[4]=0;
 		buffer[5]=seqno;
@@ -344,9 +344,9 @@ export class SerialFake extends ZxSimulatorRemote {
 		const buffer=Buffer.alloc(totalLength);
 		// Encode length
 		buffer[0]=len&0xFF;
-		buffer[1]=(len>>8)&0xFF;
-		buffer[2]=(len>>16)&0xFF;
-		buffer[3]=(len>>24)&0xFF;
+		buffer[1]=(len>>>8)&0xFF;
+		buffer[2]=(len>>>16)&0xFF;
+		buffer[3]=(len>>>24)&0xFF;
 		// Put response ID in buffer
 		buffer[4]=seqno;
 		// Copy data

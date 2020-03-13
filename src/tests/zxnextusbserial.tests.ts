@@ -21,9 +21,9 @@ suite('ZxNextParser', () => {
 			const buffer=Buffer.alloc(4+length);
 			// Encode length
 			buffer[0]=length&0xFF;
-			buffer[1]=(length>>8)&0xFF;
-			buffer[2]=(length>>16)&0xFF;
-			buffer[3]=(length>>24)&0xFF;
+			buffer[1]=(length>>>8)&0xFF;
+			buffer[2]=(length>>>16)&0xFF;
+			buffer[3]=(length>>>24)&0xFF;
 			// Copy data
 			const inpLen=data.length;
 			for (let i=0; i<inpLen; i++) {

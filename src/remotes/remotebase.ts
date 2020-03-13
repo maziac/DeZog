@@ -672,7 +672,7 @@ export class RemoteBase extends EventEmitter {
 				if ((opc12&0b11000111)==0b11000111)
 					break;
 				// Next
-				opc12>>=8;
+				opc12>>>=8;
 				k++;
 			}
 			if (opc12!=0) {

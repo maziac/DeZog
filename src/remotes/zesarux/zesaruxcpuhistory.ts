@@ -68,7 +68,7 @@ export class ZesaruxCpuHistory extends CpuHistory {
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
-	protected async getRegistersPromise(index: number): Promise<HistoryInstructionInfo|undefined> {
+	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		return new Promise<string>(resolve => {
 			assert(index >= 0);
 			zSocket.send('cpu-history get ' + index, data => {
@@ -95,8 +95,8 @@ export class ZesaruxCpuHistory extends CpuHistory {
 		const opcodes=line.substr(this.pcIndex, 8);
 		// Change into number (exchange byte positions)
 		const opc=parseInt(opcodes, 16);
-		let result=opc>>24;
-		result|=(opc>>8)&0xFF00;
+		let result=opc>>>24;
+		result|=(opc>>>8)&0xFF00;
 		result|=(opc<<8)&0xFF0000;
 		result|=(opc<<24)&0xFF000000
 		return result;

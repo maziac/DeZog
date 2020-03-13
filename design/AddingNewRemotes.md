@@ -28,8 +28,6 @@ Since you also need a transport layer to communicate with Remote it is normally 
 (This also makes it possible to implement different transports for the same Remote.)
 
 
-<!-- TODO: Z80State ?) -->
-
 
 # EmulatorClass API
 

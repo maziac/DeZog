@@ -843,11 +843,11 @@ export class Utility {
 	 * given buffer. (Little endian)
 	 * @param buffer The buffer to use.
 	 * @param index The index into the buffer.
-	 * @param value buffer[index] = value&0xFF; buffer[index+1] = value>>8;
+	 * @param value buffer[index] = value&0xFF; buffer[index+1] = value>>>8;
 	 */
 	public static setWord(buffer: Buffer, index: number, value: number) {
 		buffer[index]=value&0xFF;
-		buffer[index+1]=value>>8;
+		buffer[index+1]=value>>>8;
 	}
 
 

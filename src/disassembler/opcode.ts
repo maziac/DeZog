@@ -734,7 +734,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
 				break;
 
 			case 1: // REG_VERSION
-				valuename = Format.getHexString(regValue,2) + 'h (v'; + (regValue>>4) + '.' + (regValue&0x0f) + ')';
+				valuename = Format.getHexString(regValue,2) + 'h (v'; + (regValue>>>4) + '.' + (regValue&0x0f) + ')';
 				break;
 
 			case 2: // REG_RESET
@@ -755,7 +755,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
 				arr = new Array<string>();
 				if(regValue & 0x80)
 					arr.push("lock timing");
-				switch((regValue>>4) & 0x07) {
+				switch((regValue>>>4) & 0x07) {
 					case 0b000:
 					case 0b001:	arr.push("Timing:ZX 48K"); break;
 					case 0b010: arr.push("Timing:ZX 128K"); break;

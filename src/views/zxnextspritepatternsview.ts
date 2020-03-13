@@ -235,7 +235,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			const val = high + offs[j];
 			defaultPalette[k++] = (val & 0b11100000);
 			defaultPalette[k++] = ((val << 3) & 0b11100000);
-			defaultPalette[k++] = ((val << 6) & 0b11000000) | ((val >> 3) & 0b00100000);
+			defaultPalette[k++] = ((val << 6) & 0b11000000) | ((val >>> 3) & 0b00100000);
 		}
 		return defaultPalette;
 	}
@@ -271,7 +271,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		// Get in use palette number
 		value=await Remote.getTbblueRegister(0x43);	// ULANextControlRegister
-		ZxNextSpritePatternsView.currentPaletteNumber=(value>>3)&0x01;
+		ZxNextSpritePatternsView.currentPaletteNumber=(value>>>3)&0x01;
 
 		// Check if already existing
 		if(ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette)) {
@@ -310,7 +310,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Green
 			loadedPalette[k++] = (color << 3) & 0b11100000;
 			// Blue
-			loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >> 3) & 0b00100000);
+			loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >>> 3) & 0b00100000);
 		}
 		// Store
 		ZxNextSpritePatternsView.staticSetPaletteForPaletteNumber(paletteNumber, loadedPalette);

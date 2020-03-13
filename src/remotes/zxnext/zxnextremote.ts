@@ -96,9 +96,9 @@ export class ZxNextRemote extends DzrpRemote {
 			const buffer=Buffer.alloc(totalLength);
 			// Encode length
 			buffer[0]=len&0xFF;
-			buffer[1]=(len>>8)&0xFF;
-			buffer[2]=(len>>16)&0xFF;
-			buffer[3]=(len>>24)&0xFF;
+			buffer[1]=(len>>>8)&0xFF;
+			buffer[2]=(len>>>16)&0xFF;
+			buffer[3]=(len>>>24)&0xFF;
 			// Put sequence number in buffer
 			const seqno=this.parser.getNextSeqNo();
 			buffer[4]=seqno;
@@ -149,7 +149,7 @@ export class ZxNextRemote extends DzrpRemote {
 			const seqno=msg.buffer[4];
 			const cmd: DZRP=msg.buffer[5];
 			const cmdName=DZRP[cmd];
-			LogSocket.log('>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
+			LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
 			await this.sendBuffer(msg.buffer);
 			console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
 		}
@@ -298,7 +298,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @param value A 1 byte or 2 byte value.
 	 */
 	protected async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_SET_REGISTER, [regIndex, value&0xFF, value>>8]);
+		await this.sendDzrpCmd(DZRP.CMD_SET_REGISTER, [regIndex, value&0xFF, value>>>8]);
 	}
 
 
@@ -319,8 +319,8 @@ export class ZxNextRemote extends DzrpRemote {
 			bp2Address=0;
 		}
 		await this.sendDzrpCmd(DZRP.CMD_CONTINUE, [
-			bp1Enabled, bp1Address&0xFF, bp1Address>>8,
-			bp2Enabled, bp2Address&0xFF, bp2Address>>8,
+			bp1Enabled, bp1Address&0xFF, bp1Address>>>8,
+			bp2Enabled, bp2Address&0xFF, bp2Address>>>8,
 		]);
 	}
 
@@ -346,7 +346,7 @@ export class ZxNextRemote extends DzrpRemote {
 		if (!condition)
 			condition='';
 		const condBuf=Utility.getBufferFromString(condition);
-		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>8, ...condBuf]);
+		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>>8, ...condBuf]);
 		const bpId=Utility.getWord(data, 0);
 		return bpId;
 	}
@@ -370,8 +370,8 @@ export class ZxNextRemote extends DzrpRemote {
 	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
 		// Send command to get memory dump
 		const data=await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
-			address&0xFF, address>>8,
-			size&0xFF, size>>8]);
+			address&0xFF, address>>>8,
+			size&0xFF, size>>>8]);
 		// Create UInt8array
 		const buffer=new Uint8Array(data);
 		return buffer;
@@ -386,7 +386,7 @@ export class ZxNextRemote extends DzrpRemote {
 	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		const data=Buffer.from(dataArray);
 		await this.sendDzrpCmd(DZRP.CMD_WRITE_MEM, [0,
-			address&0xFF, address>>8,
+			address&0xFF, address>>>8,
 			...data]);
 	}
 

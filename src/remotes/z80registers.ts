@@ -167,7 +167,7 @@ export class Z80Registers {
 	}
 
 	public parseI(data: RegisterData): number {
-		return data[Z80_REG.IR]>>8;
+		return data[Z80_REG.IR]>>>8;
 	}
 
 	public parseR(data: RegisterData): number {
@@ -177,7 +177,7 @@ export class Z80Registers {
 
 	// Note: No need to override the 1 byte register access functions.
 	public parseA(data: RegisterData): number {
-		const res=this.parseAF(data)>>8;
+		const res=this.parseAF(data)>>>8;
 		return res;
 	}
 
@@ -187,7 +187,7 @@ export class Z80Registers {
 	}
 
 	public parseB(data: RegisterData): number {
-		const res=this.parseBC(data)>>8;
+		const res=this.parseBC(data)>>>8;
 		return res;
 	}
 
@@ -197,7 +197,7 @@ export class Z80Registers {
 	}
 
 	public parseD(data: RegisterData): number {
-		const res=this.parseDE(data)>>8;
+		const res=this.parseDE(data)>>>8;
 		return res;
 	}
 
@@ -207,7 +207,7 @@ export class Z80Registers {
 	}
 
 	public parseH(data: RegisterData): number {
-		const res=this.parseHL(data)>>8;
+		const res=this.parseHL(data)>>>8;
 		return res;
 	}
 
@@ -217,7 +217,7 @@ export class Z80Registers {
 	}
 
 	public parseA2(data: RegisterData): number {
-		const res=this.parseAF2(data)>>8;
+		const res=this.parseAF2(data)>>>8;
 		return res;
 	}
 
@@ -232,7 +232,7 @@ export class Z80Registers {
 	}
 
 	public parseIXH(data: RegisterData): number {
-		const res=this.parseIX(data)>>8;
+		const res=this.parseIX(data)>>>8;
 		return res;
 	}
 
@@ -242,7 +242,7 @@ export class Z80Registers {
 	}
 
 	public parseIYH(data: RegisterData): number {
-		const res=this.parseIY(data)>>8;
+		const res=this.parseIY(data)>>>8;
 		return res;
 	}
 
@@ -390,7 +390,7 @@ export class Z80Registers {
 	public static isCcMetByFlag(cc: number, flags: number): boolean {
 		const testSet=((cc&0x01)!=0);
 		let condTest;
-		cc=(cc>>1)&0x03;
+		cc=(cc>>>1)&0x03;
 		switch (cc) {
 			case 0:	// NZ, Z
 				condTest=((flags&Z80Registers.FLAG_Z)!=0);

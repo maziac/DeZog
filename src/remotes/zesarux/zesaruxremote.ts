@@ -820,7 +820,7 @@ export class ZesaruxRemote extends RemoteBase {
 			sp-=2;	// CALL pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
-			const callAddr=(opcodes>>8)&0xFFFF;
+			const callAddr=(opcodes>>>8)&0xFFFF;
 			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;

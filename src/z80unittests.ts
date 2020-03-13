@@ -639,7 +639,7 @@ export class Z80UnitTests {
 	 */
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
-		const callAddr = new Uint8Array([ address & 0xFF, address >> 8]);
+		const callAddr = new Uint8Array([ address & 0xFF, address >>> 8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setProgramCounter(this.addrTestWrapper)

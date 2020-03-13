@@ -306,7 +306,7 @@ export class StackVar extends ShallowVar {
 				value += 0x10000;
 			const data = new Uint8Array(2);
 			data[0] = value & 0xFF;
-			data[1] = value >> 8;
+			data[1] = value >>> 8;
 			await Remote.writeMemoryDump(address, data);
 		}
 
