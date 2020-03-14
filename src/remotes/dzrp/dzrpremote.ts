@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemoryPage} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {Z80Registers, Z80_REG} from '../z80registers';
+import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
 import {SnaFile} from './snafile';
 import {NexFile} from './nexfile';
@@ -33,8 +33,6 @@ export class DzrpRemote extends RemoteBase {
 	/// Override this.
 	constructor() {
 		super();
-		// Instantiate the registers
-		this.z80Registers=new Z80Registers();
 	}
 
 
@@ -99,13 +97,13 @@ export class DzrpRemote extends RemoteBase {
 	* the Remote.
 	*/
 	public async getRegisters(): Promise<void> {
-		if (this.z80Registers.valid())
+		if (Z80Registers.valid())
 			return;
 
 		// Get regs
 		const regs=await this.sendDzrpCmdGetRegisters();
 		// And set
-		this.z80Registers.setCache(regs);
+		Z80Registers.setCache(regs);
 	}
 
 
@@ -118,15 +116,15 @@ export class DzrpRemote extends RemoteBase {
 	 * @return Promise with the "real" register value.
 	 */
 	public async setRegisterValue(register: string, value: number): Promise<number> {
-		const index=Z80Registers.getEnumFromName(register) as number;
+		const index=Z80RegistersClass.getEnumFromName(register) as number;
 		assert(index!=undefined);
 		// Send command to set register
 		await this.sendDzrpCmdSetRegister(index, value);
 		// Send command to get registers
-		this.z80Registers.clearCache();
+		Z80Registers.clearCache();
 		await this.getRegisters();
 		// Return
-		const realValue=this.z80Registers.getRegValueByName(register);
+		const realValue=Z80Registers.getRegValueByName(register);
 		return realValue;
 	}
 
@@ -256,7 +254,7 @@ export class DzrpRemote extends RemoteBase {
 			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
 				try {
 					// Get registers
-					this.z80Registers.clearCache();
+					Z80Registers.clearCache();
 					await Remote.getRegisters();
 
 					// Check breakReason, i.e. check if it was a watchpoint.
@@ -303,7 +301,7 @@ export class DzrpRemote extends RemoteBase {
 			};
 
 			// Clear registers
-			this.z80Registers.clearCache();
+			Z80Registers.clearCache();
 			// Send 'run' command
 			this.sendDzrpCmdContinue();
 		});
@@ -342,7 +340,7 @@ export class DzrpRemote extends RemoteBase {
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			this.continueResolve=({breakReasonString}) => {
 				// Clear register cache
-				this.z80Registers.clearCache();
+				Z80Registers.clearCache();
 				// return
 				resolve({instruction, breakReasonString});
 			};
@@ -383,7 +381,7 @@ export class DzrpRemote extends RemoteBase {
 			// Reset flag
 			this.pauseStepOut=false;
 			// Get current SP
-			const startSp=this.z80Registers.getRegValue(Z80_REG.SP);
+			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			// Count tStates
 			let tStates=0;
 			let stepResult;
@@ -391,7 +389,7 @@ export class DzrpRemote extends RemoteBase {
 			// Loop
 			while (true) {
 				// Get current SP
-				const prevSp=this.z80Registers.getRegValue(Z80_REG.SP);
+				const prevSp=Z80Registers.getRegValue(Z80_REG.SP);
 				// Do next step
 				stepResult=await this.stepInto();
 
@@ -406,7 +404,7 @@ export class DzrpRemote extends RemoteBase {
 
 				// Check if instruction was a RET(I/N)
 				await this.getRegisters();
-				const currSp=this.z80Registers.getRegValue(Z80_REG.SP);
+				const currSp=Z80Registers.getRegValue(Z80_REG.SP);
 				if (currSp>startSp && currSp>prevSp) {
 					// Something has been popped. This is to exclude unexecuted RET cc.
 					const instr=stepResult.instruction.toUpperCase();
@@ -610,7 +608,7 @@ export class DzrpRemote extends RemoteBase {
 			throw Error("File extension unknown in '"+filePath+"'. Can only load .sna and .nex files.");
 		}
 		// Make sure that the registers are reloaded
-		this.z80Registers.clearCache();
+		Z80Registers.clearCache();
 	}
 
 
@@ -715,7 +713,7 @@ export class DzrpRemote extends RemoteBase {
 		// Restore data
 		await this.sendDzrpCmdWriteState(stateData);
 		// Clear register cache
-		this.z80Registers.clearCache();
+		Z80Registers.clearCache();
 	}
 
 

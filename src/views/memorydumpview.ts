@@ -6,7 +6,7 @@ import { Utility } from '../misc/utility';
 import { Labels } from '../labels';
 import { MetaBlock, MemoryDump } from '../memorydump';
 import { Settings } from '../settings';
-import { Z80Registers } from '../remotes/z80registers';
+import { Z80RegistersClass } from '../remotes/z80registers';
 import { BaseView } from './baseview';
 
 
@@ -569,7 +569,7 @@ export class MemoryDumpView extends BaseView {
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		for(let i=0; i<arr.length-1; i+=2) {
 			const reg = arr[i];
-			if(!Z80Registers.isRegister(reg))
+			if(!Z80RegistersClass.isRegister(reg))
 				continue;
 			// get address = value of reg
 			Remote.getRegisters().then(() => {

@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
-import { Z80Registers } from '../z80registers';
+//import { Z80RegistersClass } from '../z80registers';
 import {CpuHistory} from '../cpuhistory';
 import {HistoryInstructionInfo} from '../stephistory';
 
@@ -37,8 +37,8 @@ export class ZesaruxCpuHistory extends CpuHistory {
 	/**
 	 * Creates the object.
 	 */
-	constructor(regs: Z80Registers) {
-		super(regs);
+	constructor() {
+		super();
 	}
 
 

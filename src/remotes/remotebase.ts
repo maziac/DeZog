@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {Z80Registers, Z80_REG} from './z80registers';
+import {Z80RegistersClass, Z80_REG, Z80Registers} from './z80registers';
 import {RefList} from '../reflist';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
@@ -10,6 +10,7 @@ import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
+import {CpuHistory} from './cpuhistory';
 
 
 
@@ -154,10 +155,15 @@ export class RemoteBase extends EventEmitter {
 	public wpmemEnabled=false;
 
 	/// The addresses of the revision history in the right order.
+	/// Used to show this lines decorated (gray) while stepping backwards.
+	// TODO: Remove (is in cpu history)
 	protected revDbgHistory=new Array<number>();
 
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
+
+	// The cpu history object. If the remote does not support cpu history this is indefined.
+	protected cpuHistory: CpuHistory;
 
 
 	/// Stores the wpmem watchpoints (this is a smaller list, if watchpoints can be given manually)
@@ -177,9 +183,6 @@ export class RemoteBase extends EventEmitter {
 	public logpointsEnabled=new Map<string, boolean>();
 
 
-	// The Z80 registers. Should be initialized with a specialized version for the given emulator.
-	protected z80Registers: Z80Registers;
-
 	// Supported features:
 
 	// E.g. enables display of "Memory Pages"
@@ -191,7 +194,7 @@ export class RemoteBase extends EventEmitter {
 	constructor() {
 		super();
 		// Init the registers
-		Z80Registers.Init();  // Needs to be done here to honor the formatting in the Settings.spec
+		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
 
 
@@ -213,6 +216,14 @@ export class RemoteBase extends EventEmitter {
 	/// Take care to implement the emits otherwise the system will hang on a start.
 	/// Please override.
 	public doInitialization() {
+	}
+
+
+	/**
+	 * @returns The cpu history object. Can be undefined.
+	 */
+	public getCpuHistory(): CpuHistory {
+		return this.cpuHistory;
 	}
 
 
@@ -429,7 +440,7 @@ export class RemoteBase extends EventEmitter {
 			if (addr.length) {
 				const access=matchInner[2]||'';
 				// Check if it is a register
-				if (Z80Registers.isRegister(addr)) {
+				if (Z80RegistersClass.isRegister(addr)) {
 					// e.g. addr == "HL" in "(HL)"
 					return "${"+access+"("+addr+")"+end+"}";
 				}
@@ -449,7 +460,7 @@ export class RemoteBase extends EventEmitter {
 			else {
 				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
 				const reg=matchInner[4];
-				if (!Z80Registers.isRegister(reg))
+				if (!Z80RegistersClass.isRegister(reg))
 					throw "Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'";
 				return "${"+reg+end+"}";
 			}
@@ -561,7 +572,7 @@ export class RemoteBase extends EventEmitter {
 	 * Returns the PC value.
 	 */
 	public getPC(): number {
-		return this.getRegisterValue("PC");
+		return Z80Registers.getRegValueByName("PC");
 	}
 
 
@@ -573,7 +584,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 
 	public getRegisterValue(register: string): number {
-		const value=this.z80Registers.getRegValueByName(register);
+		const value=Z80Registers.getRegValueByName(register);
 		return value;
 	}
 
@@ -586,9 +597,9 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getRegistersEqualTo(value: number): Array<string> {
 		let resRegs: Array<string>=[];
-		if (this.z80Registers.valid()) {
+		if (Z80Registers.valid()) {
 			const regs=["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
-			resRegs=regs.filter(reg => value==this.z80Registers.getRegValueByName(reg));
+			resRegs=regs.filter(reg => value==Z80Registers.getRegValueByName(reg));
 		}
 		return resRegs;
 	}
@@ -600,7 +611,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns The formatted string.
 	 */
 	public getVarFormattedReg(reg: string): string {
-		return this.z80Registers.getVarFormattedReg(reg);
+		return Z80Registers.getVarFormattedReg(reg);
 	}
 
 
@@ -610,7 +621,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns The formatted string.
 	 */
 	public getHoverFormattedReg(reg: string): string {
-		return this.z80Registers.getHoverFormattedReg(reg);
+		return Z80Registers.getHoverFormattedReg(reg);
 	}
 
 
@@ -707,7 +718,7 @@ export class RemoteBase extends EventEmitter {
 	*/
 	public async getStack(): Promise<Array<string>> {
 		await this.getRegisters();
-		const sp=this.z80Registers.getSP();
+		const sp=Z80Registers.getSP();
 		// calculate the depth of the call stack
 		const tos=this.topOfStack;
 		var depth=tos-sp; // 2 bytes per word
@@ -742,7 +753,7 @@ export class RemoteBase extends EventEmitter {
 		// Get normal stack values
 		const stack=await this.getStack();
 		// Start with main
-		const sp=this.z80Registers.getRegValue(Z80_REG.SP);
+		const sp=Z80Registers.getRegValue(Z80_REG.SP);
 		const len=stack.length;
 		const top=sp+2*len;
 		let lastCallStackFrame=new CallStackFrame(0, top-2, this.getMainName(top));
@@ -767,7 +778,7 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Set PC
-		const pc=this.z80Registers.getRegValue(Z80_REG.PC);
+		const pc=Z80Registers.getRegValue(Z80_REG.PC);
 		lastCallStackFrame.addr=pc;
 
 		// Return
@@ -1261,7 +1272,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param handler that is called when the PC has been set.
 	 */
 	public async setProgramCounter(address: number): Promise<void> {
-		this.z80Registers.clearCache();
+		Z80Registers.clearCache();
 		this.clearReverseDbgStack();
 		await this.setRegisterValue("PC", address);
 	}

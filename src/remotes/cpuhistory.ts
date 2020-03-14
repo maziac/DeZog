@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {Opcode} from '../disassembler/opcode';
 import {BaseMemory} from '../disassembler/basememory';
-import {Z80Registers} from '../remotes/z80registers';
+import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistory, HistoryInstructionInfo} from './stephistory';
 
 /**
@@ -30,8 +30,8 @@ export class CpuHistory extends StepHistory{
 	/**
 	 * Creates the object.
 	 */
-	constructor(regs: Z80Registers) {
-		super(regs);
+	constructor() {
+		super();
 	}
 
 
@@ -96,23 +96,21 @@ export class CpuHistory extends StepHistory{
 	 */
 	public getInstruction(line: HistoryInstructionInfo): string {
 		// Prepare bytes to memory
-		let opcodes = this.getOpcodes(line);
-		const pc = this.z80Registers.parsePC(line);
-		const buffer = new BaseMemory(pc, 4);
-		for(let i=0; i<4; i++) {
+		let opcodes=this.getOpcodes(line);
+		const pc=Z80Registers.decoder.parsePC(line);
+		const buffer=new BaseMemory(pc, 4);
+		for (let i=0; i<4; i++) {
 			const opc=opcodes&0xFF;
 			buffer.setValueAtIndex(i, opc);
 			opcodes>>>=8;
 		}
 		// Get opcode
-		const opcode = Opcode.getOpcodeAt(buffer, pc);
+		const opcode=Opcode.getOpcodeAt(buffer, pc);
 		// Disassemble
-		const opCodeDescription = opcode.disassemble();
-		const instr = opCodeDescription.mnemonic;
+		const opCodeDescription=opcode.disassemble();
+		const instr=opCodeDescription.mnemonic;
 		return instr;
 	}
-
-
 
 	/**
 	 * Retrieves the 2 bytes from stack in the HistoryInstructionInfo.
@@ -153,7 +151,7 @@ export class CpuHistory extends StepHistory{
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
-			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
+			const condMet = Z80RegistersClass.isCcMetByFlag(cc, flags);
 			return condMet;
 		}
 
@@ -181,7 +179,7 @@ export class CpuHistory extends StepHistory{
 			// RET cc, get cc
 			const cc = (opcode0 & ~mask) >>> 3;
 			// Check condition
-			const condMet = Z80Registers.isCcMetByFlag(cc, flags);
+			const condMet = Z80RegistersClass.isCcMetByFlag(cc, flags);
 			return condMet;
 		}
 
@@ -289,16 +287,16 @@ export class CpuHistory extends StepHistory{
 		let value;
 		switch(opcode0) {
 			case 0xC5:	// PUSH BC
-				value = this.z80Registers.parseBC(line);
+				value = Z80Registers.decoder.parseBC(line);
 				break;
 			case 0xD5:	// PUSH DE
-				value = this.z80Registers.parseDE(line);
+				value = Z80Registers.decoder.parseDE(line);
 				break;
 			case 0xE5:	// PUSH HL
-				value = this.z80Registers.parseHL(line);
+				value = Z80Registers.decoder.parseHL(line);
 				break;
 			case 0xF5:	// PUSH AF
-				value = this.z80Registers.parseAF(line);
+				value = Z80Registers.decoder.parseAF(line);
 				break;
 
 			case 0xDD:
@@ -307,9 +305,9 @@ export class CpuHistory extends StepHistory{
 					const opcode1=(opcodes>>>8)&0xFF;;
 					if(opcode1 == 0xE5) {
 						if(opcode0 == 0xDD)
-							value = this.z80Registers.parseIX(line);	// PUSH IX
+							value = Z80Registers.decoder.parseIX(line);	// PUSH IX
 						else
-							value = this.z80Registers.parseIY(line);	// PUSH IY
+							value = Z80Registers.decoder.parseIY(line);	// PUSH IY
 					}
 				}
 				break;
@@ -358,7 +356,7 @@ export class CpuHistory extends StepHistory{
 
 			case 0xF9:	// LD SP,HL
 				// Get HL
-				const hl = this.z80Registers.parseHL(line);
+				const hl = Z80Registers.decoder.parseHL(line);
 				expectedSp = hl;
 				break;
 
@@ -377,7 +375,7 @@ export class CpuHistory extends StepHistory{
 					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0xF9) {
 						// LD SP,IX
-						const ix = this.z80Registers.parseIX(line);
+						const ix = Z80Registers.decoder.parseIX(line);
 						expectedSp = ix;
 					}
 				}
@@ -388,7 +386,7 @@ export class CpuHistory extends StepHistory{
 					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0xF9) {
 						// LD SP,IY
-						const iy = this.z80Registers.parseIY(line);
+						const iy = Z80Registers.decoder.parseIY(line);
 						expectedSp = iy;
 					}
 				}

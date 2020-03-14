@@ -2,8 +2,8 @@
 import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
 import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
-import { Z80Registers } from '../remotes/z80registers';
-import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
+import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
+import { DecodeZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
 import { CallStackFrame } from '../callstackframe';
@@ -27,16 +27,18 @@ suite('ZesaruxEmulator', () => {
 	let mockSocket: MockZesaruxSocket;
 
 	setup(() => {
-		Z80Registers.Init();
+		Z80RegistersClass.Init();
 	});
 
 
 	suite('handleReverseDebugStackForward', () => {
 
 		setup(() => {
-			emul = new ZesaruxRemote();
-			const regs = new ZesaruxRegisters();
-			emul.cpuHistory = new ZesaruxCpuHistory(regs);
+			emul=new ZesaruxRemote();
+			Z80RegistersClass.createRegisters();
+			const decoder=new DecodeZesaruxRegisters();
+			Z80Registers.setDecoder(decoder);
+			emul.cpuHistory = new ZesaruxCpuHistory();
 			mockSocket = new MockZesaruxSocket();
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack

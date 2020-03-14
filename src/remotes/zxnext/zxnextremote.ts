@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {DZRP, DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80Registers, Z80_REG} from '../z80registers';
+import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 
@@ -281,7 +281,7 @@ export class ZxNextRemote extends DzrpRemote {
 		const r=regs[27];
 
 		// Convert regs
-		const regData=Z80Registers.getRegisterData(
+		const regData=Z80RegistersClass.getRegisterData(
 			pc, sp,
 			af, bc, de, hl,
 			ix, iy,

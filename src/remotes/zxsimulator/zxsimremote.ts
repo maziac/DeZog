@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80_REG, Z80Registers} from '../z80registers';
+import {Z80_REG, Z80RegistersClass, Z80Registers} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
 import {Z80Cpu} from './z80cpu';
@@ -325,7 +325,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			if (bpInner) {
 				// Get registers
 				const regs=this.z80Cpu.getRegisterData();
-				this.z80Registers.setCache(regs);
+				Z80Registers.setCache(regs);
 				// Now check if condition met or if logpoint
 				for (const bpElem of bpInner) {
 					try {
@@ -442,7 +442,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.continueResolve=resolve;
 
 			// Clear registers
-			this.z80Registers.clearCache();
+			Z80Registers.clearCache();
 			// Send 'run' command
 			this.sendDzrpCmdContinue();
 		});
@@ -529,7 +529,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		const r1=cpu.r1;
 		const r2=cpu.r2;
 		// Convert regs
-		const regData=Z80Registers.getRegisterData(
+		const regData=Z80RegistersClass.getRegisterData(
 			cpu.pc, cpu.sp,
 			r1.af, r1.bc, r1.de, r1.hl,
 			r1.ix, r1.iy,

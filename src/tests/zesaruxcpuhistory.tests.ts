@@ -1,18 +1,20 @@
 
 import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
-import { Z80Registers } from '../remotes/z80registers';
-import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
+import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
+import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
+//import { ZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 
 suite('ZesaruxCpuHistory', () => {
 
 	setup(() => {
-		Z80Registers.Init();
+		Z80RegistersClass.Init();
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {
-		const regs = new ZesaruxRegisters();
-		const hist = new ZesaruxCpuHistory(regs);
+		const decode=new DecodeZesaruxRegisters();
+		Z80Registers.setDecoder(decode);
+		const hist = new ZesaruxCpuHistory();
 		return hist;
 	}
 

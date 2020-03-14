@@ -1,18 +1,22 @@
 
 import * as assert from 'assert';
-import { Z80Registers } from '../remotes/z80registers';
-import { ZesaruxRegisters } from '../remotes/zesarux/zesaruxregisters';
+import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
+import { DecodeZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 
 
 
-suite('ZesaruxRegisters', () => {
+suite('DecodeZesaruxRegisters', () => {
 
 	suite('Register parsing', () => {
 		const line = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0";
-		const ZesRegs = new ZesaruxRegisters() as any;
+		let ZesRegs;
 
 		setup(() => {
-			Z80Registers.Init();
+			Z80RegistersClass.Init();
+			Z80RegistersClass.createRegisters();
+			const decoder=new DecodeZesaruxRegisters();
+			Z80Registers.setDecoder(decoder);
+			ZesRegs=Z80RegistersClass as any;
 		});
 
 		test('PC', () => {

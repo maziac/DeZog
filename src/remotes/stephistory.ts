@@ -1,5 +1,7 @@
 import * as assert from 'assert';
-import {Z80Registers} from '../../src/remotes/z80registers';
+import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
+//import {Remote} from './remotefactory';
+//import {Utility} from '../misc/utility';
 
 
 /// For StepHistory this is the register data only.
@@ -33,6 +35,9 @@ export type HistoryInstructionInfo=any;
  * - Continue: Steps forward until a breakpoint is hit (only breakpoint
  *   that happen to be at the steps) or until the end of the history.
  *
+ * This class also holds the arrays for the 'revDbgHistory' decoration.
+ * And it handles continue, stepOver, stepInto, stepOut, continueReverse
+ * and stepBack while in step-back (reverse debugging mode) mode.
  */
 export class StepHistory {
 
@@ -45,14 +50,19 @@ export class StepHistory {
 	protected historyIndex=-1;
 
 	// Holds a pointer to the registers
-	protected z80Registers: Z80Registers;
+	protected z80Registers: Z80RegistersClass; // TODO: Remove
+
+	/// The addresses of the revision history in the right order.
+	/// Used to show this lines decorated (gray) while stepping backwards.
+	protected revDbgHistory=new Array<number>();
+
+
 
 	/**
 	 * Creates the object.
 	 */
-	constructor(regs: Z80Registers) {
+	constructor() {
 		this.history=Array<HistoryInstructionInfo>();
-		this.z80Registers = regs;
 	}
 
 
@@ -120,7 +130,7 @@ export class StepHistory {
 	 * Or in other words the PC contents.
 	 */
 	public getAddress(line: HistoryInstructionInfo): number {
-		const addr=this.z80Registers.parsePC(line);
+		const addr=Z80Registers.decoder.parsePC(line);
 		return addr;
 	}
 
@@ -130,6 +140,60 @@ export class StepHistory {
 	 */
 	public isInStepBackMode() {
 		return (this.historyIndex >= 0);
+	}
+
+
+
+	/**
+	 * @returns Returns the next line in the cpu history.
+	 * If at start it returns ''.
+	 */
+	protected revDbgNext(): HistoryInstructionInfo|undefined {
+		// Get line
+		let line=this.getNextRegisters() as HistoryInstructionInfo;
+		this.z80Registers.setCache(line);
+		// Remove one address from history
+		this.revDbgHistory.pop();
+		return line;
+	}
+
+
+	/**
+	 * Steps over an instruction.
+	 * Simply returns the next address line.
+	 */
+	public async stepOver(): Promise<void> {
+		// Get current line
+		let currentLine=Z80Registers.getCache();
+		assert(currentLine);
+
+		/*
+		TODO: Ich muss getInstruction und getOpcodes hierhin verschieben.
+
+		// Get next line
+		const nextLine=this.revDbgNext();
+		let breakReason;
+		if (!nextLine) {
+			breakReason='Break: Reached start of instruction history.'
+			break;	// At end of reverse debugging. Simply get the real call stack.
+		}
+
+		// Decoration
+		this.emitRevDbgHistory();
+
+		// Call handler
+		const pc=z80Registers.getPC();
+		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
+		resolve({instruction, tStates: undefined, cpuFreq: undefined, breakReason});
+
+		// Return if next line is available, i.e. as long as we did not reach the start.
+		// Otherwise get the callstack from ZEsarUX.
+		if (!nextLine) {
+			// Get the registers etc. from ZEsarUX
+			this.z80Registers.clearCache();
+			this.getRegisters();
+		}
+		*/
 	}
 }
 

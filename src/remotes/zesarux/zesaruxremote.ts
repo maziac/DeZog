@@ -8,8 +8,7 @@ import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
-import { Z80Registers } from '../z80registers';
-import {ZesaruxRegisters} from './zesaruxregisters';
+import { Z80RegistersClass, Z80Registers } from '../z80registers';
 
 
 
@@ -46,9 +45,6 @@ export class ZesaruxRemote extends RemoteBase {
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
 
-	/// Handles the cpu history for reverse debugging
-	protected cpuHistory: ZesaruxCpuHistory;
-
 	/// We need a serializer for some tasks.
 	protected serializer = new CallSerializer('ZesaruxEmulator');
 
@@ -60,10 +56,8 @@ export class ZesaruxRemote extends RemoteBase {
 	/// Constructor.
 	constructor() {
 		super();
-		// Create z80 registers instance that deals with the ZEsarUX specific format.
-		this.z80Registers=new ZesaruxRegisters();
 		// Reverse debugging / CPU history
-		this.cpuHistory=new ZesaruxCpuHistory(this.z80Registers);
+		this.cpuHistory=new ZesaruxCpuHistory();
 		// Supported features
 		this.supportsZxNextRegisters=true;
 	}
@@ -332,7 +326,7 @@ export class ZesaruxRemote extends RemoteBase {
 			zSocket.send('get-registers', data => {
 				// convert received data to right format ...
 				// data is e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
-				this.z80Registers.setCache(data);
+				Z80Registers.setCache(data);
 				resolve();
 			});
 		});
@@ -346,7 +340,7 @@ export class ZesaruxRemote extends RemoteBase {
 	* @param handler(registersString) Passes 'registersString' to the handler.
 	*/
 	public async getRegisters(): Promise<void> {
-		if (!this.z80Registers.getCache()) {
+		if (!Z80Registers.getCache()) {
 			// Get new data
 			return this.getRegistersFromEmulator();
 		}
@@ -479,7 +473,7 @@ export class ZesaruxRemote extends RemoteBase {
 				//this.state = RemoteState.IDLE;
 
 				// Get current line
-				let currentLine: string=this.z80Registers.getCache();
+				let currentLine: string=Z80Registers.getCache();
 				assert(currentLine);
 
 				// Loop over all lines, reverse
@@ -492,7 +486,7 @@ export class ZesaruxRemote extends RemoteBase {
 					this.handleReverseDebugStackForward(currentLine, nextLine);
 
 					// Check for breakpoint
-					this.z80Registers.setCache(nextLine);
+					Z80Registers.setCache(nextLine);
 					const condition=this.checkPcBreakpoints();
 					if (condition!=undefined) {
 						breakReasonString=condition;
@@ -513,7 +507,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			if (!nextLine) {
 				// Get the registers etc. from ZEsarUX
-				this.z80Registers.clearCache();
+				Z80Registers.clearCache();
 				await this.getRegisters();
 				const pc=this.getPC();
 				breakReasonString='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
@@ -536,7 +530,7 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.send('get-cpu-frequency', data => {
 							const cpuFreq=parseInt(data);
 							// Clear register cache
-							this.z80Registers.clearCache();
+							Z80Registers.clearCache();
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// The reason is the 2nd line
@@ -641,9 +635,9 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<void>( resolve => {
 
 			// Get some values
-			let sp = this.z80Registers.parseSP(currentLine);
+			let sp = Z80Registers.decoder.parseSP(currentLine);
 			const opcodes = this.cpuHistory.getOpcodes(currentLine);
-			const flags = this.z80Registers.parseAF(currentLine);
+			const flags = Z80Registers.decoder.parseAF(currentLine);
 
 			// Check if there is at least one frame
 			let frame = this.reverseDbgStack.last();
@@ -691,14 +685,14 @@ export class ZesaruxRemote extends RemoteBase {
 
 					// Check if there also was an interrupt in previous line
 					const expectedPrevSP = sp + 2;
-					const prevSP = this.z80Registers.parseSP(prevLine);
+					const prevSP = Z80Registers.decoder.parseSP(prevLine);
 					if(expectedPrevSP != prevSP) {
 						// We came from an interrupt. Remove interrupt address from call stack.
 						this.reverseDbgStack.pop();
 					}
 
 					// And push to stack
-					const pc = this.z80Registers.parsePC(currentLine);
+					const pc = Z80Registers.decoder.parsePC(currentLine);
 					const frame = new CallStackFrame(pc, sp, labelCallAddr);
 					this.reverseDbgStack.push(frame);
 
@@ -718,7 +712,7 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// Check if SP has decreased (CALL/PUSH/Interrupt) or increased
-			const spPrev = this.z80Registers.parseSP(prevLine);
+			const spPrev = Z80Registers.decoder.parseSP(prevLine);
 			let count = sp - spPrev;
 			if(count > 0) {
 				// Decreased (CALL/PUSH/Interrupt)
@@ -751,7 +745,7 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// Adjust PC within frame
-			const pc = this.z80Registers.parsePC(currentLine)
+			const pc = Z80Registers.decoder.parsePC(currentLine)
 			assert(frame);
 			frame.addr = pc;
 
@@ -799,12 +793,12 @@ export class ZesaruxRemote extends RemoteBase {
 		//console.log(nextLine);
 
 		// Get some values
-		let sp=this.z80Registers.parseSP(currentLine);
+		let sp=Z80Registers.decoder.parseSP(currentLine);
 		let expectedSP: number|undefined=sp;
 		let expectedPC;
 		const opcodes=this.cpuHistory.getOpcodes(currentLine);
-		const flags=this.z80Registers.parseAF(currentLine);
-		const nextSP=this.z80Registers.parseSP(nextLine);
+		const flags=Z80Registers.decoder.parseAF(currentLine);
+		const nextSP=Z80Registers.decoder.parseSP(nextLine);
 
 		// Check if there is at least one frame
 		let frame=this.reverseDbgStack.last();
@@ -859,7 +853,7 @@ export class ZesaruxRemote extends RemoteBase {
 				if (expectedSP==undefined) {
 					// This means: Opcode was LD SP,(nnnn).
 					// So use PC instead to check.
-					const pc=this.z80Registers.parsePC(currentLine);
+					const pc=Z80Registers.decoder.parsePC(currentLine);
 					expectedPC=pc+4;	// 4 = size of instruction
 				}
 			}
@@ -867,7 +861,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 		// Check for interrupt. Either use SP or use PC to check.
 		let interruptFound=false;
-		const nextPC=this.z80Registers.parsePC(nextLine);
+		const nextPC=Z80Registers.decoder.parsePC(nextLine);
 		if (expectedSP!=undefined) {
 			// Use SP for checking
 			if (nextSP==expectedSP-2)
@@ -883,7 +877,7 @@ export class ZesaruxRemote extends RemoteBase {
 		// Check if SP has increased (POP/RET)
 		let usedSP=expectedSP;
 		if (!usedSP)
-			usedSP=this.z80Registers.parseSP(nextLine);
+			usedSP=Z80Registers.decoder.parseSP(nextLine);
 		let count=usedSP-sp;
 		if (count>0) {
 			while (count>1&&this.reverseDbgStack.length>0) {
@@ -935,7 +929,7 @@ export class ZesaruxRemote extends RemoteBase {
 		let breakReason;
 		try {
 			// Loop over all lines, reverse
-			let prevLine=this.z80Registers.getCache();
+			let prevLine=Z80Registers.getCache();
 			assert(prevLine);
 			while (true) {
 				// Get line
@@ -949,7 +943,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await this.handleReverseDebugStackBack(currentLine, prevLine);
 
 				// Check for breakpoint
-				this.z80Registers.setCache(currentLine);
+				Z80Registers.setCache(currentLine);
 				const condition=this.checkPcBreakpoints();
 				if (condition!=undefined) {
 					breakReason=condition;
@@ -987,7 +981,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Check for reverse debugging.
 			if (this.cpuHistory.isInStepBackMode()) {
 				// Get current line
-				let currentLine=this.z80Registers.getCache();
+				let currentLine=Z80Registers.getCache();
 				assert(currentLine);
 				let nextLine;
 
@@ -995,7 +989,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// If YES stop if pc reaches the next instruction.
 				const opcodes=this.cpuHistory.getOpcodes(currentLine);
 				const opcode0=opcodes&0xFF;
-				let pc=this.z80Registers.parsePC(currentLine);
+				let pc=Z80Registers.decoder.parsePC(currentLine);
 				let nextPC0;
 				let nextPC1;
 				if (this.cpuHistory.isCallOpcode(opcode0)) {
@@ -1026,13 +1020,13 @@ export class ZesaruxRemote extends RemoteBase {
 							break;	// A simple step-into
 
 						// Get PC
-						pc=this.z80Registers.parsePC(nextLine);
+						pc=Z80Registers.decoder.parsePC(nextLine);
 						// Check for "breakpoint"
 						if (pc==nextPC0||pc==nextPC1)
 							break;
 
 						// Check for "real" breakpoint
-						this.z80Registers.setCache(nextLine);
+						Z80Registers.setCache(nextLine);
 						const condition=this.checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
@@ -1058,7 +1052,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Otherwise get the callstack from ZEsarUX.
 				if (!nextLine) {
 					// Get the registers etc. from ZEsarUX
-					this.z80Registers.clearCache();
+					Z80Registers.clearCache();
 					this.getRegisters();
 				}
 				return;
@@ -1081,7 +1075,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// All others are executed with a step-into.
 			// Only exception is LDDR etc. Those are executed as step-over.
 			this.getRegisters().then(() => {
-				const pc=this.z80Registers.getPC();
+				const pc=Z80Registers.getPC();
 				zSocket.send('disassemble '+pc, disasm => {
 					// Check if this was a "CALL something" or "CALL n/z,something"
 					const opcode=disasm.substr(7, 4);
@@ -1093,13 +1087,13 @@ export class ZesaruxRemote extends RemoteBase {
 					// is hit and does not run forever.
 					if (opcode=="RST "||opcode=="CALL") {
 						// Set condition
-						const sp=this.z80Registers.getSP();
+						const sp=Z80Registers.getSP();
 						const condition='SP>='+sp;
 						// We do a "run" instead of a step-into/over
 						// Set action first (no action).
 						const bpId=ZesaruxRemote.STEP_BREAKPOINT_ID;
 						// Clear register cache
-						this.z80Registers.clearCache();
+						Z80Registers.clearCache();
 						// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
 						zSocket.send('set-breakpointaction '+bpId+' prints step-over', () => {
 							// set the breakpoint
@@ -1121,7 +1115,7 @@ export class ZesaruxRemote extends RemoteBase {
 						// "normal" opcode, just check for repetitive ones
 						const cmd=(opcode=="LDIR"||opcode=="LDDR"||opcode=="CPIR"||opcode=="CPDR")? 'cpu-step-over':'cpu-step';
 						// Clear register cache
-						this.z80Registers.clearCache();
+						Z80Registers.clearCache();
 						// Step
 						this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReason) => {
 							// Call handler
@@ -1147,9 +1141,9 @@ export class ZesaruxRemote extends RemoteBase {
 			// Check for reverse debugging.
 			if (this.cpuHistory.isInStepBackMode()) {
 				// Get current line
-				let currentLine=this.z80Registers.getCache();
+				let currentLine=Z80Registers.getCache();
 				assert(currentLine);
-				const pc=this.z80Registers.parsePC(currentLine);
+				const pc=Z80Registers.decoder.parsePC(currentLine);
 				let nextLine;
 
 				let breakReason;
@@ -1177,7 +1171,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Otherwise get the callstack from ZEsarUX.
 				if (!nextLine) {
 					// Get the registers etc. from ZEsarUX
-					this.z80Registers.clearCache();
+					Z80Registers.clearCache();
 					this.getRegisters();
 				}
 				return;
@@ -1188,10 +1182,10 @@ export class ZesaruxRemote extends RemoteBase {
 
 			// Normal step into.
 			this.getRegisters().then(() => {
-				const pc=this.z80Registers.getPC();
+				const pc=Z80Registers.getPC();
 				zSocket.send('disassemble '+pc, instruction => {
 					// Clear register cache
-					this.z80Registers.clearCache();
+					Z80Registers.clearCache();
 					this.cpuStepGetTime('cpu-step', (tStates, cpuFreq) => {
 						resolve({instruction, tStates, cpuFreq: cpuFreq});
 					});
@@ -1317,10 +1311,10 @@ export class ZesaruxRemote extends RemoteBase {
 				// also the SP is lower/equal to when we started.
 
 				// Get current line
-				let currentLine=this.z80Registers.getCache();
+				let currentLine=Z80Registers.getCache();
 				assert(currentLine);
 				let nextLine;
-				const startSP=this.z80Registers.getSP();
+				const startSP=Z80Registers.getSP();
 				let breakReason;
 				try {
 					// Find next line with same SP
@@ -1336,11 +1330,11 @@ export class ZesaruxRemote extends RemoteBase {
 						this.handleReverseDebugStackForward(currentLine, nextLine);
 
 						// Check for RET(I/N)
-						const flags=this.z80Registers.parseAF(currentLine);
+						const flags=Z80Registers.decoder.parseAF(currentLine);
 						const opcodes=this.cpuHistory.getOpcodes(currentLine);
 						if (this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 							// Read SP
-							const sp=this.z80Registers.parseSP(nextLine);
+							const sp=Z80Registers.decoder.parseSP(nextLine);
 							// Check SP
 							if (sp>startSP) {
 								break;
@@ -1348,7 +1342,7 @@ export class ZesaruxRemote extends RemoteBase {
 						}
 
 						// Check for breakpoint
-						this.z80Registers.setCache(nextLine);
+						Z80Registers.setCache(nextLine);
 						const condition=this.checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
@@ -1373,7 +1367,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Otherwise get the callstack from ZEsarUX.
 				if (!nextLine) {
 					// Get the registers etc. from ZEsarUX
-					this.z80Registers.clearCache();
+					Z80Registers.clearCache();
 					this.getRegisters();
 				}
 				return;
@@ -1390,7 +1384,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Get current stackpointer
 			this.getRegisters().then(() => {
 				// Get SP
-				const sp=this.z80Registers.getSP();
+				const sp=Z80Registers.getSP();
 
 				// calculate the depth of the call stack
 				var depth=this.topOfStack-sp;
@@ -1434,7 +1428,7 @@ export class ZesaruxRemote extends RemoteBase {
 									zSocket.send('enable-breakpoint '+bpId, () => {
 
 										// Clear register cache
-										this.z80Registers.clearCache();
+										Z80Registers.clearCache();
 										// Run
 										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
 											// Disable breakpoint
@@ -1472,14 +1466,14 @@ export class ZesaruxRemote extends RemoteBase {
 			let instruction = '';
 			try {
 				// Remember previous line
-				let prevLine = this.z80Registers.getCache();
+				let prevLine = Z80Registers.getCache();
 				assert(prevLine);
 				const currentLine = await this.revDbgPrev();
 				if(currentLine) {
 					// Stack handling:
 					await this.handleReverseDebugStackBack(currentLine, prevLine);
 					// Get instruction
-					const pc = this.z80Registers.getPC();
+					const pc = Z80Registers.getPC();
 					instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
 				}
 				else
@@ -1608,7 +1602,7 @@ export class ZesaruxRemote extends RemoteBase {
 		let regex = /\b[_a-z][\.0-9a-z_]*\b/gi;
 		let conds = condition.replace(regex, label => {
 			// Check if register
-			if(Z80Registers.isRegister(label))
+			if(Z80RegistersClass.isRegister(label))
 				return label;
 			// Convert label to number.
 			const addr = Labels.getNumberForLabel(label);
@@ -1753,9 +1747,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
 	protected checkPcBreakpoints(): string|undefined {
-		assert(this.z80Registers.getCache());
+		assert(Z80Registers.getCache());
 		let condition;
-		const pc = this.z80Registers.getPC();
+		const pc = Z80Registers.getPC();
 		for(const bp of this.breakpoints) {
 			if(bp.address == pc) {
 				// Check for condition
@@ -1988,7 +1982,7 @@ export class ZesaruxRemote extends RemoteBase {
 			filePath+=".zsf";
 			zSocket.send('snapshot-load '+filePath, data => {
 				// Clear register cache
-				this.z80Registers.clearCache();
+				Z80Registers.clearCache();
 				resolve();
 			});
 		});
@@ -2161,9 +2155,9 @@ export class ZesaruxRemote extends RemoteBase {
 		const line = await this.cpuHistory.getPrevRegistersAsync();
 		if(line) {
 			// Add to register cache
-			this.z80Registers.setCache(line);
+			Z80Registers.setCache(line);
 			// Add to history for decoration
-			const addr = this.z80Registers.getPC();
+			const addr = Z80Registers.getPC();
 			this.revDbgHistory.push(addr);
 		}
 		return line;
@@ -2174,10 +2168,11 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns Returns the next line in the cpu history.
 	 * If at start it returns ''.
 	 */
+	// TODO: Remove (is in cpu history)
 	protected revDbgNext(): string|undefined {
 		// Get line
 		let line = this.cpuHistory.getNextRegisters() as string;
-		this.z80Registers.setCache(line);
+		Z80Registers.setCache(line);
 		// Remove one address from history
 		this.revDbgHistory.pop();
 		return line;

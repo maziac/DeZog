@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
-import { Z80Registers } from '../remotes/z80registers';
+import { Z80RegistersClass } from '../remotes/z80registers';
 
 
 suite('ZesaruxEmulator', () => {
@@ -9,7 +9,7 @@ suite('ZesaruxEmulator', () => {
 	let emul: any;
 
 	setup(() => {
-		Z80Registers.Init();
+		Z80RegistersClass.Init();
 	});
 
 

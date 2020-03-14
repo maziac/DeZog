@@ -1,7 +1,7 @@
 import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
-import {Z80Registers} from '../z80registers';
+import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 
 
@@ -141,7 +141,7 @@ export class Z80Cpu extends Z80js {
 		const r1=self.r1;
 		const r2=self.r2;
 		// Convert regs
-		const regData=Z80Registers.getRegisterData(
+		const regData=Z80RegistersClass.getRegisterData(
 			self.pc, self.sp,
 			r1.af, r1.bc, r1.de, r1.hl,
 			r1.ix, r1.iy,

@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import {Z80Registers, RegisterData } from '../z80registers';
+//import {RegisterData } from '../z80registers';
+import {DecodeRegisterData, RegisterData} from '../decodehistinfo';
 
 
 
@@ -10,7 +11,7 @@ import {Z80Registers, RegisterData } from '../z80registers';
  * reverse debugging.
  * This class does not communicate with the zesarux socket on its own.
  */
-export class ZesaruxRegisters extends Z80Registers {
+export class DecodeZesaruxRegisters extends DecodeRegisterData {
 
 	/**
 	 * A Line from ZEsarUX, e.g.

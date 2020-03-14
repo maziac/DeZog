@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import { Labels } from '../labels';
 import { Settings } from '../settings';
-import { Z80Registers } from '../remotes/z80registers';
+import { Z80RegistersClass } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -205,7 +205,7 @@ export class Utility {
 			let res;
 			if(evalRegisters) {
 				// Check if it might be a register name.
-				if(Z80Registers.isRegister(p1)) {
+				if(Z80RegistersClass.isRegister(p1)) {
 					// Note: this is called synchronously because the cached register is available.
 					// If (it should not but if) it would be called asynchronously the
 					// addressString would simply be not decoded.
@@ -298,7 +298,7 @@ export class Utility {
 					else {
 						// It's a simple value, register or label.
 						value=Utility.evalExpression(statement, true);
-						if (Z80Registers.isRegister(statement)&&statement.length>1)
+						if (Z80RegistersClass.isRegister(statement)&&statement.length>1)
 							size=2;	// Two byte register, e.g. "DE"
 					}
 
@@ -462,7 +462,7 @@ export class Utility {
 
 		// Check if registers might be returned as well.
 		// Return registers only if 'name' itself is not a register.
-		if (!Z80Registers.isRegister(name)) {
+		if (!Z80RegistersClass.isRegister(name)) {
 			regsAsWell=true;
 			await Remote.getRegisters();
 		}

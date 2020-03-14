@@ -1,34 +1,36 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
-import { basename } from 'path';
+import {basename} from 'path';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent } from 'vscode-debugadapter/lib/main';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { CallSerializer } from './callserializer';
-import { Labels } from './labels';
-import { Log, LogSocket } from './log';
-import { RemoteBreakpoint, MachineType } from './remotes/remotebase';
-import { MemoryDumpView } from './views/memorydumpview';
-import { MemoryRegisterView } from './views/memoryregisterview';
-import { RefList } from './reflist';
-import { Settings, SettingsParameters } from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar } from './variables/shallowvar';
-import { Utility } from './misc/utility';
-import { Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80Registers } from './remotes/z80registers';
-import { RemoteFactory, Remote } from './remotes/remotefactory';
-import { ZxNextSpritesView } from './views/zxnextspritesview';
-import { TextView } from './views/textview';
-import { BaseView } from './views/baseview';
-import { ZxNextSpritePatternsView } from './views/zxnextspritepatternsview';
-import { Disassembler } from './disassembler/disasm';
-import { MemAttribute } from './disassembler/memory';
-import { Opcode, Opcodes } from './disassembler/opcode';
+import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
+import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {CallSerializer} from './callserializer';
+import {Labels} from './labels';
+import {Log, LogSocket} from './log';
+import {RemoteBreakpoint, MachineType} from './remotes/remotebase';
+import {MemoryDumpView} from './views/memorydumpview';
+import {MemoryRegisterView} from './views/memoryregisterview';
+import {RefList} from './reflist';
+import {Settings, SettingsParameters} from './settings';
+import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
+import {Utility} from './misc/utility';
+import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass,} from './remotes/z80registers';
+import {RemoteFactory, Remote} from './remotes/remotefactory';
+import {ZxNextSpritesView} from './views/zxnextspritesview';
+import {TextView} from './views/textview';
+import {BaseView} from './views/baseview';
+import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
+import {Disassembler} from './disassembler/disasm';
+import {MemAttribute} from './disassembler/memory';
+import {Opcode, Opcodes} from './disassembler/opcode';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
 import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CodeCoverageArray} from './remotes/zxsimulator/codecovarray';
+import {CpuHistory} from './remotes/cpuhistory';
+import {StepHistory} from './remotes/stephistory';
 
 
 
@@ -41,7 +43,7 @@ let FakeSerial;
 enum DbgAdaperState {
 	NORMAL,	// Normal debugging
 	UNITTEST,	// Debugging or running unit tests
-	}
+}
 
 
 /**
@@ -50,13 +52,13 @@ enum DbgAdaperState {
  */
 export class DebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
-	protected static state = DbgAdaperState.NORMAL;
+	protected static state=DbgAdaperState.NORMAL;
 
 	/// The disassembler instance.
 	protected dasm: Disassembler;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
-	protected dasmAddressQueue = new Array<number>();
+	protected dasmAddressQueue=new Array<number>();
 
 	/// The text document used for the temporary disassembly.
 	protected disasmTextDoc: vscode.TextDocument;
@@ -65,17 +67,21 @@ export class DebugSessionClass extends DebugSession {
 	protected listVariables=new RefList<ShallowVar>();
 
 	/// Only one thread is supported.
-	public static THREAD_ID = 1;
+	public static THREAD_ID=1;
 
 	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
-	protected serializer = new CallSerializer("Main", true);
+	protected serializer=new CallSerializer("Main", true);
 
 	/// Counts the number of stackTraceRequests.
-	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
+	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>();
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
 	protected static unitTestHandler: ((da: DebugSessionClass) => void)|undefined;
+
+	/// Pointer to the cpu history object. Either defined by the Remote or (if not)
+	/// the standard (lite) step history is used.
+	protected cpuHistory: CpuHistory|StepHistory;
 
 
 	/**
@@ -133,17 +139,17 @@ export class DebugSessionClass extends DebugSession {
 		assert(handler);
 
 		// Return if currently a debug session is running
-		if(vscode.debug.activeDebugSession)
+		if (vscode.debug.activeDebugSession)
 			return false;
-		if(this.state != DbgAdaperState.NORMAL)
+		if (this.state!=DbgAdaperState.NORMAL)
 			return false;
 
 		// Start debugger
-		this.unitTestHandler = handler;
+		this.unitTestHandler=handler;
 		let wsFolder;
-		if(vscode.workspace.workspaceFolders)
-			wsFolder = vscode.workspace.workspaceFolders[0];
-		this.state = DbgAdaperState.UNITTEST;
+		if (vscode.workspace.workspaceFolders)
+			wsFolder=vscode.workspace.workspaceFolders[0];
+		this.state=DbgAdaperState.UNITTEST;
 		vscode.debug.startDebugging(wsFolder, configName);
 
 		return true;
@@ -175,16 +181,15 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public setupDisassembler() {
 		// Create new disassembler.
-		this.dasm = new Disassembler();
+		this.dasm=new Disassembler();
 		// Configure disassembler.
-		this.dasm.funcAssignLabels = (addr) => {
-			return 'L' + Utility.getHexString(addr,4);
+		this.dasm.funcAssignLabels=(addr) => {
+			return 'L'+Utility.getHexString(addr, 4);
 		};
 		// Restore 'rst 8' opcode
-		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
 		// Setup configuration.
-		if(Settings.launch.disassemblerArgs.esxdosRst)
-		{
+		if (Settings.launch.disassemblerArgs.esxdosRst) {
 			//Extend 'rst 8' opcode for esxdos
 			Opcodes[0xCF].appendToOpcode(",#n");
 		}
@@ -216,8 +221,8 @@ export class DebugSessionClass extends DebugSession {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public terminate(message?: string) {
-		DebugSessionClass.state = DbgAdaperState.NORMAL;
-		if(message)
+		DebugSessionClass.state=DbgAdaperState.NORMAL;
+		if (message)
 			this.showError(message);
 		Log.log("Exit debugger!");
 		// Remove all listeners
@@ -226,7 +231,7 @@ export class DebugSessionClass extends DebugSession {
 		try {
 			this.sendEvent(new TerminatedEvent());
 		}
-		catch(e) {};
+		catch (e) {};
 		//this.sendEvent(new ExitedEvent());
 	}
 
@@ -281,7 +286,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		// Clear all decorations
-		if(DebugSessionClass.state==DbgAdaperState.UNITTEST)
+		if (DebugSessionClass.state==DbgAdaperState.UNITTEST)
 			Decoration?.clearAllButCodeCoverageDecorations();
 		else
 			Decoration?.clearAllDecorations();
@@ -306,32 +311,32 @@ export class DebugSessionClass extends DebugSession {
 
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
-		response.body = response.body || {};
+		response.body=response.body||{};
 
 		// the adapter implements the configurationDoneRequest.
-		response.body.supportsConfigurationDoneRequest = false;
+		response.body.supportsConfigurationDoneRequest=false;
 
 		// Is done in launchRequest:
 		//response.body.supportsStepBack = true;
 
 		// Maybe terminated on error
-		response.body.supportTerminateDebuggee = true;
+		response.body.supportTerminateDebuggee=true;
 
 		// The PC value might be changed.
 		//response.body.supportsGotoTargetsRequest = true;
-		response.body.supportsGotoTargetsRequest = false;	// I use my own "Move Program Counter to Cursor"
+		response.body.supportsGotoTargetsRequest=false;	// I use my own "Move Program Counter to Cursor"
 
 		// Support hovering over values (registers)
-		response.body.supportsEvaluateForHovers = true;
+		response.body.supportsEvaluateForHovers=true;
 
 		// Support changing of variables (e.g. registers)
-		response.body.supportsSetVariable = true;
+		response.body.supportsSetVariable=true;
 
 		// Supports conditional breakpoints
-		response.body.supportsConditionalBreakpoints = true;
+		response.body.supportsConditionalBreakpoints=true;
 
 		// Handles debug 'Restart'
-		response.body.supportsRestartRequest = true;
+		response.body.supportsRestartRequest=true;
 
 		this.sendResponse(response);
 
@@ -367,17 +372,17 @@ export class DebugSessionClass extends DebugSession {
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');
+			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
 
 			// Save args
-			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
+			const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
 		}
-		catch(e) {
+		catch (e) {
 			// Some error occurred
-			response.success = false;
-			response.message = e.message;
+			response.success=false;
+			response.message=e.message;
 			this.sendResponse(response);
 			return;
 		}
@@ -427,32 +432,43 @@ export class DebugSessionClass extends DebugSession {
 			// init labels
 			Labels.init();
 		}
-		catch(e) {
+		catch (e) {
 			// Some error occurred
-			this.terminate('Labels: ' + e.message);
+			this.terminate('Labels: '+e.message);
 			return "Error while initializing labels.";
 		}
 
 		// Call the unit test handler. It will subscribe on events.
-		if(DebugSessionClass.unitTestHandler) {
-			DebugSessionClass.state = DbgAdaperState.UNITTEST;
+		if (DebugSessionClass.unitTestHandler) {
+			DebugSessionClass.state=DbgAdaperState.UNITTEST;
 			DebugSessionClass.unitTestHandler(this);
 		}
 
 		// Reset all decorations
 		Decoration.clearAllDecorations();
 
+		// Create the registers
+		Z80RegistersClass.createRegisters();
+
 		// Create the machine
 		RemoteFactory.createRemote(Settings.launch.remoteType);
+
+		// Check if a cpu history object has been created.
+		this.cpuHistory=Remote.getCpuHistory();
+		if (!this.cpuHistory) {
+			// If not create a lite (step) history
+			this.cpuHistory=new StepHistory();
+			this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+		}
 
 		// Load files
 		try {
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 			Remote.readListFiles(Settings.launch.listFiles);
 		}
-		catch(err) {
+		catch (err) {
 			// Some error occurred during loading, e.g. file not found.
-		//	this.terminate(err.message);
+			//	this.terminate(err.message);
 			return err.message;
 		}
 
@@ -478,7 +494,7 @@ export class DebugSessionClass extends DebugSession {
 
 		Remote.on('log', message => {
 			// Show the log (from the socket/ZEsarUX) in the debug console
-			vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+			vscode.debug.activeDebugConsole.appendLine("Log: "+message);
 		});
 
 		Remote.once('error', err => {
@@ -579,26 +595,26 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(async () => {
 
-			const path = <string>args.source.path;
+			const path=<string>args.source.path;
 
 			// convert breakpoints
-			const givenBps = args.breakpoints || [];
-			const bps = new Array<RemoteBreakpoint>();
-			for(const bp of givenBps) {
+			const givenBps=args.breakpoints||[];
+			const bps=new Array<RemoteBreakpoint>();
+			for (const bp of givenBps) {
 				try {
-					const log = Remote.evalLogMessage(bp.logMessage);
+					const log=Remote.evalLogMessage(bp.logMessage);
 					var mbp: RemoteBreakpoint;
-					mbp = {
+					mbp={
 						bpId: 0,
 						filePath: path,
 						lineNr: this.convertClientLineToDebugger(bp.line),
 						address: -1,	// not known yet
-						condition: (bp.condition) ? bp.condition : '',
+						condition: (bp.condition)? bp.condition:'',
 						log: log
 					};
 					bps.push(mbp);
-					}
-				catch(e) {
+				}
+				catch (e) {
 					// Show error
 					this.showWarning(e);
 				}
@@ -657,7 +673,7 @@ export class DebugSessionClass extends DebugSession {
 		// Serialize
 		this.serializer.exec(() => {
 			// Just return a default thread.
-			response.body = {
+			response.body={
 				threads: [
 					new Thread(DebugSessionClass.THREAD_ID, "thread_default")
 				]
@@ -675,10 +691,10 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns undefined if filePath is ''.
 	 */
 	private createSource(filePath: string): Source|undefined {
-		if(filePath.length == 0)
+		if (filePath.length==0)
 			return undefined;
-		const fname = basename(filePath);
-		const debPath = this.convertDebuggerPathToClient(filePath);
+		const fname=basename(filePath);
+		const debPath=this.convertDebuggerPathToClient(filePath);
 		return new Source(fname, debPath, undefined, undefined, undefined);
 	}
 
@@ -689,17 +705,17 @@ export class DebugSessionClass extends DebugSession {
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
 		this.stackTraceResponses.push(response);
-		if(this.stackTraceResponses.length > 1)
+		if (this.stackTraceResponses.length>1)
 			return;
 
 		// Stack frames
-		const sfrs = new Array<StackFrame>();
+		const sfrs=new Array<StackFrame>();
 
 		// Need to check if disassembly is required.
-		let doDisassembly = false;
-		const fetchAddresses = new Array<number>();
-		const fetchData = new Array<Uint8Array>();
-		let frameCount = 0;
+		let doDisassembly=false;
+		const fetchAddresses=new Array<number>();
+		const fetchData=new Array<Uint8Array>();
+		let frameCount=0;
 
 
 		// Serialize
@@ -745,52 +761,52 @@ export class DebugSessionClass extends DebugSession {
 					const fetchSize=100;	// N bytes
 					Remote.readMemoryDump(fetchAddress, fetchSize)
 						.then(data => {
-						// Save data for later writing
-						fetchData.push(data);
-						// Note: because of self-modifying code it may have changed
-						// since it was fetched at the beginning.
-						// Check if memory changed.
-						if (!doDisassembly) {
-							const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
-							for (let k=0; k<checkSize; k++) {
-								const val=this.dasm.memory.getValueAt(fetchAddress+k);
-								const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
-								if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
-									doDisassembly=true;
-									break;
+							// Save data for later writing
+							fetchData.push(data);
+							// Note: because of self-modifying code it may have changed
+							// since it was fetched at the beginning.
+							// Check if memory changed.
+							if (!doDisassembly) {
+								const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+								for (let k=0; k<checkSize; k++) {
+									const val=this.dasm.memory.getValueAt(fetchAddress+k);
+									const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
+									if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
+										doDisassembly=true;
+										break;
+									}
 								}
 							}
-						}
-						// Check for end
-						fetchCount++;
-						if (fetchCount>=fetchAddressesCount) {
-							// All dumps fetched
-							this.serializer.endExec();
-						}
-					});
+							// Check for end
+							fetchCount++;
+							if (fetchCount>=fetchAddressesCount) {
+								// All dumps fetched
+								this.serializer.endExec();
+							}
+						});
 				}
 			});
 		});
 
 
 		// Create the temporary disassembly file if necessary.
-		if(!this.disasmTextDoc) {
+		if (!this.disasmTextDoc) {
 			this.serializer.exec(() => {
-				if(!doDisassembly) {
+				if (!doDisassembly) {
 					// No disassembly required.
 					this.serializer.endExec();
 					return;
 				}
 				// Create text document
-				const relFilePath = Utility.getRelTmpDisasmFilePath();
-				const absFilePath = Utility.getAbsFilePath(relFilePath);
-				const uri = vscode.Uri.file(absFilePath);
-				const editCreate = new vscode.WorkspaceEdit();
+				const relFilePath=Utility.getRelTmpDisasmFilePath();
+				const absFilePath=Utility.getAbsFilePath(relFilePath);
+				const uri=vscode.Uri.file(absFilePath);
+				const editCreate=new vscode.WorkspaceEdit();
 				editCreate.createFile(uri, {overwrite: true});
 				vscode.workspace.applyEdit(editCreate).then(() => {
 					vscode.workspace.openTextDocument(absFilePath).then(textDoc => {
 						// Store uri
-						this.disasmTextDoc = textDoc;
+						this.disasmTextDoc=textDoc;
 						// End
 						this.serializer.endExec();
 					});
@@ -802,22 +818,22 @@ export class DebugSessionClass extends DebugSession {
 		// Check if disassembly is required.
 		this.serializer.exec(() => {
 			// Check if a new address was used.
-			const fetchAddressesCount = fetchAddresses.length;
-			for(let i=0; i<fetchAddressesCount; i++) {
+			const fetchAddressesCount=fetchAddresses.length;
+			for (let i=0; i<fetchAddressesCount; i++) {
 				// The current PC is for sure a code label.
-				const addr = fetchAddresses[i];
-				if(this.dasmAddressQueue.indexOf(addr) < 0)
+				const addr=fetchAddresses[i];
+				if (this.dasmAddressQueue.indexOf(addr)<0)
 					this.dasmAddressQueue.unshift(addr);
 				// Check if this requires a  disassembly
-				if(!doDisassembly) {
-					const memAttr = this.dasm.memory.getAttributeAt(addr);
-					if(!(memAttr & MemAttribute.CODE_FIRST))
-						doDisassembly = true;	// If memory was not the start of an opcode.
+				if (!doDisassembly) {
+					const memAttr=this.dasm.memory.getAttributeAt(addr);
+					if (!(memAttr&MemAttribute.CODE_FIRST))
+						doDisassembly=true;	// If memory was not the start of an opcode.
 				}
 			}
 
 			// Check if disassembly is required.
-			if(!doDisassembly) {
+			if (!doDisassembly) {
 				// End
 				this.serializer.endExec();
 				return;
@@ -826,8 +842,8 @@ export class DebugSessionClass extends DebugSession {
 			this.serializer.setProgress("Do disassembly");
 			// Do disassembly.
 			// Write new fetched memory
-			const count = fetchAddresses.length;
-			for(let i=0; i<count; i++) {
+			const count=fetchAddresses.length;
+			for (let i=0; i<count; i++) {
 				this.dasm.setMemory(fetchAddresses[i], fetchData[i]);
 			}
 			this.dasm.setAddressQueue(this.dasmAddressQueue);
@@ -836,15 +852,15 @@ export class DebugSessionClass extends DebugSession {
 			this.dasm.initLabels();	// Clear all labels.
 			this.dasm.disassemble();
 			// Read data
-			const text = this.dasm.getDisassemblyText();
+			const text=this.dasm.getDisassemblyText();
 			// Get all source breakpoints of the disassembly file.
-			const bps = vscode.debug.breakpoints;
-			const disSrc = this.disasmTextDoc.uri.toString();
-			const sbps = bps.filter(bp => {
-				if(bp.hasOwnProperty('location')) {
-					const sbp = bp as vscode.SourceBreakpoint;
-					const sbpSrc = sbp.location.uri.toString();
-					if(sbpSrc == disSrc)
+			const bps=vscode.debug.breakpoints;
+			const disSrc=this.disasmTextDoc.uri.toString();
+			const sbps=bps.filter(bp => {
+				if (bp.hasOwnProperty('location')) {
+					const sbp=bp as vscode.SourceBreakpoint;
+					const sbpSrc=sbp.location.uri.toString();
+					if (sbpSrc==disSrc)
 						return true;
 				}
 				return false;
@@ -852,23 +868,23 @@ export class DebugSessionClass extends DebugSession {
 
 			this.serializer.setProgress("Check if any breakpoint");
 			// Check if any breakpoint
-			const changedBps = new Array<vscode.SourceBreakpoint>();
-			if(sbps.length > 0) {
+			const changedBps=new Array<vscode.SourceBreakpoint>();
+			if (sbps.length>0) {
 				// Previous text
-				const prevTextLines = this.disasmTextDoc.getText().split('\n');
+				const prevTextLines=this.disasmTextDoc.getText().split('\n');
 
 				// Loop all source breakpoints to compute changed BPs
-				for(const sbp of sbps) {
-					const lineNr = sbp.location.range.start.line;
-					const line = prevTextLines[lineNr];
-					const addr = parseInt(line, 16);
-					if(!isNaN(addr)) {
+				for (const sbp of sbps) {
+					const lineNr=sbp.location.range.start.line;
+					const line=prevTextLines[lineNr];
+					const addr=parseInt(line, 16);
+					if (!isNaN(addr)) {
 						// Get new line
-						const lines = this.dasm.getDisassemblyLines();
-						const nLineNr = this.searchLines(lines, addr);
+						const lines=this.dasm.getDisassemblyLines();
+						const nLineNr=this.searchLines(lines, addr);
 						// Create breakpoint
-						const nLoc = new vscode.Location(this.disasmTextDoc.uri, new vscode.Position(nLineNr, 0));
-						const cbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
+						const nLoc=new vscode.Location(this.disasmTextDoc.uri, new vscode.Position(nLineNr, 0));
+						const cbp=new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
 						// Store
 						changedBps.push(cbp);
 					}
@@ -880,7 +896,7 @@ export class DebugSessionClass extends DebugSession {
 			vscode.debug.removeBreakpoints(sbps);
 
 			// Create and apply one replace edit
-			const editReplace = new vscode.WorkspaceEdit();
+			const editReplace=new vscode.WorkspaceEdit();
 			editReplace.replace(this.disasmTextDoc.uri, new vscode.Range(0, 0, this.disasmTextDoc.lineCount, 0), text);
 			this.serializer.setProgress("applyEdit");
 			vscode.workspace.applyEdit(editReplace).then(() => {
@@ -900,33 +916,33 @@ export class DebugSessionClass extends DebugSession {
 		// Get lines for addresses and send response.
 		this.serializer.exec(() => {
 			// Determine line numbers (binary search)
-			if(frameCount > 0) {
-				const relFilePath = Utility.getRelTmpDisasmFilePath();
-				const absFilePath = Utility.getAbsFilePath(relFilePath);
-				const src = this.createSource(absFilePath) as Source;
-				const lines = this.dasm.getDisassemblyLines();
-				let indexDump = 0;
-				for(let i=0; i<frameCount; i++) {
-					const sf = sfrs[i];
-					if(sf.source)
+			if (frameCount>0) {
+				const relFilePath=Utility.getRelTmpDisasmFilePath();
+				const absFilePath=Utility.getAbsFilePath(relFilePath);
+				const src=this.createSource(absFilePath) as Source;
+				const lines=this.dasm.getDisassemblyLines();
+				let indexDump=0;
+				for (let i=0; i<frameCount; i++) {
+					const sf=sfrs[i];
+					if (sf.source)
 						continue;
 					// Get line number for stack address
-					const addr = fetchAddresses[indexDump];
-					const foundLine = this.searchLines(lines, addr);
-					const lineNr = this.convertDebuggerLineToClient(foundLine);
+					const addr=fetchAddresses[indexDump];
+					const foundLine=this.searchLines(lines, addr);
+					const lineNr=this.convertDebuggerLineToClient(foundLine);
 					// Store
-					sf.source = src;
-					sf.line = lineNr;
+					sf.source=src;
+					sf.line=lineNr;
 					// Next
-					indexDump ++;
+					indexDump++;
 				}
 			}
 
 			// Send as often as there have been requests
-			while(this.stackTraceResponses.length > 0) {
-				const resp = this.stackTraceResponses[0];
+			while (this.stackTraceResponses.length>0) {
+				const resp=this.stackTraceResponses[0];
 				this.stackTraceResponses.shift();
-				resp.body = {stackFrames: sfrs,	totalFrames: 1};
+				resp.body={stackFrames: sfrs, totalFrames: 1};
 				this.sendResponse(resp);
 			}
 			// end the serialized call:
@@ -955,13 +971,13 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected searchLines(allLines: Array<string>, addr: number) {
 		// find each new line and count the lines
-		let i = allLines.length;
-		while(i > 0) {
-			i --;
-			const line = allLines[i];
-			const la = parseInt(line, 16);
-			if(la == addr)
-				return  i;
+		let i=allLines.length;
+		while (i>0) {
+			i--;
+			const line=allLines[i];
+			const la=parseInt(line, 16);
+			if (la==addr)
+				return i;
 		}
 		// Not found
 		return -1;
@@ -974,57 +990,57 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-		const scopes = new Array<Scope>();
-		const frameId = args.frameId;
+		const scopes=new Array<Scope>();
+		const frameId=args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
-		const frame = Remote.getFrame(frameId);
-		if(!frame) {
+		const frame=Remote.getFrame(frameId);
+		if (!frame) {
 			// No frame found, send empty response
-			response.body = {scopes: scopes};
+			response.body={scopes: scopes};
 			this.sendResponse(response);
 			return;
 		}
 
 		// Create variable object for Registers
-		const varRegistersMain = new RegistersMainVar();
+		const varRegistersMain=new RegistersMainVar();
 		// Add to list and get reference ID
-		let ref = this.listVariables.addObject(varRegistersMain);
+		let ref=this.listVariables.addObject(varRegistersMain);
 		scopes.push(new Scope("Registers", ref));
 
 		// Create variable object for secondary Registers
-		const varRegisters2 = new RegistersSecondaryVar();
+		const varRegisters2=new RegistersSecondaryVar();
 		// Add to list and get reference ID
-		const ref2 = this.listVariables.addObject(varRegisters2);
+		const ref2=this.listVariables.addObject(varRegisters2);
 		scopes.push(new Scope("Registers 2", ref2));
 
 		// get address
-		if(frame) {
+		if (frame) {
 			// use address
-			const addr = frame.addr;
+			const addr=frame.addr;
 			// Create variable object for Disassembly
-			const varDisassembly = new DisassemblyVar(addr, 8);
+			const varDisassembly=new DisassemblyVar(addr, 8);
 			// Add to list and get reference ID
-			const ref = this.listVariables.addObject(varDisassembly);
+			const ref=this.listVariables.addObject(varDisassembly);
 			scopes.push(new Scope("Disassembly", ref));
 		}
 
 		// Check if memory pages are suported by Remote
 		//if (Remote.supportsZxNextRegisters) {
-			// Create variable object for MemoryPages
-			const varMemoryPages=new MemoryPagesVar();
-			// Add to list and get reference ID
-			ref=this.listVariables.addObject(varMemoryPages);
-			scopes.push(new Scope("Memory Pages", ref));
+		// Create variable object for MemoryPages
+		const varMemoryPages=new MemoryPagesVar();
+		// Add to list and get reference ID
+		ref=this.listVariables.addObject(varMemoryPages);
+		scopes.push(new Scope("Memory Pages", ref));
 		//}
 
 		// Create variable object for the stack
-		const varStack = new StackVar(frame.stack, frame.stackStartAddress);
+		const varStack=new StackVar(frame.stack, frame.stackStartAddress);
 		// Add to list and get reference ID
-		ref = this.listVariables.addObject(varStack);
+		ref=this.listVariables.addObject(varStack);
 		scopes.push(new Scope("Stack", ref));
 
 		// Send response
-		response.body = {scopes: scopes};
+		response.body={scopes: scopes};
 		this.sendResponse(response);
 	}
 
@@ -1036,15 +1052,15 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		// Get the associated variable object
-		const ref = args.variablesReference;
-		const varObj = this.listVariables.getObject(ref);
+		const ref=args.variablesReference;
+		const varObj=this.listVariables.getObject(ref);
 		// Serialize
 		this.serializer.exec(() => {
 			// Check if object exists
-			if(!varObj) {
+			if (!varObj) {
 				// Return empty list
-				var variables = new Array<DebugProtocol.Variable>();
-				response.body = {variables: variables};
+				var variables=new Array<DebugProtocol.Variable>();
+				response.body={variables: variables};
 				this.sendResponse(response);
 				// end the serialized call:
 				this.serializer.endExec();
@@ -1052,7 +1068,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			// Get contents
 			varObj.getContent(args.start, args.count).then(varList => {
-				response.body = {variables: varList};
+				response.body={variables: varList};
 				this.sendResponse(response);
 				// end the serialized call:
 				this.serializer.endExec();
@@ -1066,11 +1082,11 @@ export class DebugSessionClass extends DebugSession {
 	 * @oaram "Breakpoint fired: PC=811EH" or undefined (prints nothing)
 	 */
 	public decorateBreak(breakReason: string) {
-		if(!breakReason)
+		if (!breakReason)
 			return;
 		// Get PC
 		Remote.getRegisters().then(() => {
-			const pc = Remote.getPC();
+			const pc=Remote.getPC();
 			Decoration.showBreak(pc, breakReason);
 		});
 	}
@@ -1081,7 +1097,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	 public continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
+	public continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
 		// Serialize
 		this.serializer.exec(() => {
 			// Continue debugger
@@ -1114,7 +1130,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// React depending on internal state.
-			if(DebugSessionClass.state == DbgAdaperState.NORMAL) {
+			if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
 				// Send break
 				this.sendEventBreakAndUpdate();
 			}
@@ -1151,7 +1167,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	 protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
+	protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
 		// Pause the debugger
 		Remote.pause();
 		// Response is sent immediately
@@ -1159,12 +1175,12 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	 /**
-	  * vscode requested 'reverse continue'.
-	  * @param response
-	  * @param args
-	  */
-	 protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments) : void {
+	/**
+	 * vscode requested 'reverse continue'.
+	 * @param response
+	 * @param args
+	 */
+	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): void {
 		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
@@ -1173,7 +1189,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Continue debugger
 			Remote.reverseContinue().then(breakReason => {
-				if(breakReason) {
+				if (breakReason) {
 					// Output a possible problem
 					vscode.debug.activeDebugConsole.appendLine(breakReason);
 					// Show break reason
@@ -1193,18 +1209,19 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-		* Step over.
-		* Called from UI (vscode) and from the unit tests.
-	  */
-	 public emulatorStepOver() {
+	 * Step over.
+	 * Called from UI (vscode) and from the unit tests.
+	 */
+	public emulatorStepOver() {
 		Decoration.clearBreak();
-		// Step-Over
-		 Remote.stepOver().then(result => {
+
+		// Normal Step-Over
+		Remote.stepOver().then(result => {
 			// Display T-states and time
-			 let text=result.instruction || '';
-			 if (result.tStates||result.cpuFreq)
-				text += ' \t; ';
-			 this.showUsedTStates('StepOver: '+text, result.tStates, result.cpuFreq);
+			let text=result.instruction||'';
+			if (result.tStates||result.cpuFreq)
+				text+=' \t; ';
+			this.showUsedTStates('StepOver: '+text, result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
 			this.update({step: true});
@@ -1212,7 +1229,7 @@ export class DebugSessionClass extends DebugSession {
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 
-			 if (result.breakReason) {
+			if (result.breakReason) {
 				// Output a possible problem
 				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
 				// Show break reason
@@ -1224,16 +1241,32 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	  * vscode requested 'step over'.
-	  * @param response	Sends the response. If undefined nothingis sent. USed by Unit Tests.
+	  * @param response	Sends the response. If undefined nothing is sent. Used by Unit Tests.
 	  * @param args
 	  */
-	 protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
+	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
 		Decoration.clearBreak();
-		// Step-Over
+
+/*
+TODO: implement
+
+// Check for reverse debugging.
+		if (this.cpuHistory.isInStepBackMode()) {
+
+			// Immediately invoked function
+			(async () => {
+				this.cpuHistory.stepOver();
+			})();	// End of immediately invoked function
+
+			return;
+		}
+
+*/
+		// Normal Step-Over
 		this.emulatorStepOver();	// Sends stopped request.
 
-		 // Response is sent immediately
-		 this.sendResponse(response);
+		// Response is sent immediately
+		this.sendResponse(response);
 	}
 
 
@@ -1245,26 +1278,26 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected showUsedTStates(disasm: string, tStates?: number, cpuFreq?: number) {
 		// Display T-states and time
-		let output = disasm;
-		if(tStates) {
-			output += 'T-States: ' + tStates;
-			if(cpuFreq) {
+		let output=disasm;
+		if (tStates) {
+			output+='T-States: '+tStates;
+			if (cpuFreq) {
 				// Time
-				let time = tStates/cpuFreq;
-				let unit = 's';
-				if(time < 1e-3) {
-					time *= 1e+6;
-					unit = 'us';
+				let time=tStates/cpuFreq;
+				let unit='s';
+				if (time<1e-3) {
+					time*=1e+6;
+					unit='us';
 				}
-				else if(time < 1) {
-					time *= 1e+3;
-					unit = 'ms';
+				else if (time<1) {
+					time*=1e+3;
+					unit='ms';
 				}
 				// CPU clock
-				let clockStr = (cpuFreq * 1E-6).toPrecision(2);
-				if(clockStr.endsWith('.0'))
-					clockStr = clockStr.substr(0, clockStr.length-2);
-					output += ', time: ' + time.toPrecision(3) + unit + '@' + clockStr + 'MHz';
+				let clockStr=(cpuFreq*1E-6).toPrecision(2);
+				if (clockStr.endsWith('.0'))
+					clockStr=clockStr.substr(0, clockStr.length-2);
+				output+=', time: '+time.toPrecision(3)+unit+'@'+clockStr+'MHz';
 			}
 		}
 		vscode.debug.activeDebugConsole.appendLine(output);
@@ -1308,19 +1341,54 @@ export class DebugSessionClass extends DebugSession {
 	}
 
 
-	 /**
-	  * vscode requested 'step out'.
+	/**
+	 * vscode requested 'step out'.
+	 * @param response
+	 * @param args
+	 */
+	protected stepOutRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+		Decoration.clearBreak();
+		// Serialize
+		//		this.serializer.exec(() => {
+		// Step-Out
+		Remote.stepOut().then(result => {
+			// Display T-states and time
+			this.showUsedTStates('StepOut. ', result.tStates, result.cpuFreq);
+
+			if (result.breakReason) {
+				// Output a possible problem (end of log reached)
+				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+				// Show break reason
+				this.decorateBreak(result.breakReason);
+			}
+
+			// Update memory dump etc.
+			this.update();
+
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		});
+
+		// Response is sent immediately
+		this.sendResponse(response);
+		//			this.serializer.endExec();
+		//		});
+	}
+
+
+	/**
+	  * vscode requested 'step backwards'.
 	  * @param response
 	  * @param args
 	  */
-	 protected stepOutRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		Decoration.clearBreak();
 		// Serialize
-//		this.serializer.exec(() => {
-			// Step-Out
-			Remote.stepOut().then(result => {
-				// Display T-states and time
-				this.showUsedTStates('StepOut. ', result.tStates, result.cpuFreq);
+		this.serializer.exec(() => {
+			// Step-Back
+			Remote.stepBack().then(result => {
+				// Print
+				vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
 
 				if (result.breakReason) {
 					// Output a possible problem (end of log reached)
@@ -1330,51 +1398,16 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Update memory dump etc.
-				this.update();
+				this.update({step: true});
+
+				// Response
+				this.sendResponse(response);
+				this.serializer.endExec();
 
 				// Send event
 				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 			});
-
-			// Response is sent immediately
-			this.sendResponse(response);
-//			this.serializer.endExec();
-//		});
-	}
-
-
-	/**
-	  * vscode requested 'step backwards'.
-	  * @param response
-	  * @param args
-	  */
-	 protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
-		Decoration.clearBreak();
-		// Serialize
-		 this.serializer.exec(() => {
-			 // Step-Back
-			 Remote.stepBack().then(result => {
-				 // Print
-				 vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
-
-				 if (result.breakReason) {
-					 // Output a possible problem (end of log reached)
-					 vscode.debug.activeDebugConsole.appendLine(result.breakReason);
-					 // Show break reason
-					 this.decorateBreak(result.breakReason);
-				 }
-
-				 // Update memory dump etc.
-				 this.update({step: true});
-
-				 // Response
-				 this.sendResponse(response);
-				 this.serializer.endExec();
-
-				 // Send event
-				 this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-			 });
-		 });
+		});
 	}
 
 
@@ -1385,54 +1418,54 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise<string> with an text to output (e.g. an error).
 	 */
 	protected async evaluateCommand(command: string): Promise<string> {
-		const expression = command.trim();
-		const tokens = expression.split(' ');
-		const cmd = tokens.shift();
+		const expression=command.trim();
+		const tokens=expression.split(' ');
+		const cmd=tokens.shift();
 		// All commands start with "-"
-		if(cmd == '-help' || cmd == '-h') {
+		if (cmd=='-help'||cmd=='-h') {
 			return await this.evalHelp(tokens);
 		}
-		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
+		else if (cmd=='-LOGPOINT'||cmd=='-logpoint') {
 			return await this.evalLOGPOINT(tokens);
 		}
-		else if (cmd == '-ASSERT' || cmd == '-assert') {
+		else if (cmd=='-ASSERT'||cmd=='-assert') {
 			return await this.evalASSERT(tokens);
 		}
-		else if (cmd == '-eval') {
+		else if (cmd=='-eval') {
 			return await this.evalEval(tokens);
 		}
-		else if (cmd == '-exec' || cmd == '-e') {
+		else if (cmd=='-exec'||cmd=='-e') {
 			return await this.evalExec(tokens);
 		}
-		else if (cmd == '-label' || cmd == '-l') {
+		else if (cmd=='-label'||cmd=='-l') {
 			return await this.evalLabel(tokens);
 		}
-		else if (cmd == '-md') {
+		else if (cmd=='-md') {
 			return await this.evalMemDump(tokens);
 		}
-		else if (cmd == '-patterns') {
+		else if (cmd=='-patterns') {
 			return await this.evalSpritePatterns(tokens);
 		}
-		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
+		else if (cmd=='-WPMEM'||cmd=='-wpmem') {
 			return await this.evalWPMEM(tokens);
 		}
-		else if (cmd == '-sprites') {
+		else if (cmd=='-sprites') {
 			return await this.evalSprites(tokens);
 		}
-		else if (cmd == '-state') {
+		else if (cmd=='-state') {
 			return await this.evalStateSaveRestore(tokens);
 		}
-		else if (cmd == '-unittests') {
+		else if (cmd=='-unittests') {
 			return await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
-		else if (cmd == '-dbg') {
+		else if (cmd=='-dbg') {
 			return await this.evalDebug(tokens);
 		}
 		//
 		else {
 			// Unknown command
-			throw new Error("Unknown command: '" + expression + "'");
+			throw new Error("Unknown command: '"+expression+"'");
 		}
 	}
 
@@ -1443,10 +1476,10 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		// Check if its a debugger command
-		const expression = args.expression.trim();
-		const tokens = expression.split(' ');
+		const expression=args.expression.trim();
+		const tokens=expression.split(' ');
 		const cmd=tokens.shift();
-		if (cmd == undefined) {
+		if (cmd==undefined) {
 			this.sendResponse(response);
 			return;
 		}
@@ -1465,14 +1498,14 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
-		Log.log('evaluate.expression: ' + args.expression);
-		Log.log('evaluate.context: ' + args.context);
-		Log.log('evaluate.format: ' + args.format);
+		Log.log('evaluate.expression: '+args.expression);
+		Log.log('evaluate.context: '+args.context);
+		Log.log('evaluate.format: '+args.format);
 
 		// get the name
-		const name = expression;
+		const name=expression;
 		// Check if it is a register
-		if (Z80Registers.isRegister(name)) {
+		if (Z80RegistersClass.isRegister(name)) {
 			const formatMap=(args.context=='hover')? Z80RegisterHoverFormat:Z80RegisterVarFormat;
 			const formattedValue=await Utility.getFormattedRegister(name, formatMap); response.body={
 				result: formattedValue,
@@ -1485,28 +1518,28 @@ export class DebugSessionClass extends DebugSession {
 		// Check if it is a label. A label may have a special formatting:
 		// Example: LBL_TEXT 10, b
 		// = Addresse LBL_TEXT, 10 bytes
-		const match = /^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
-		if(match) {
-			let labelString = match[1];
-			let sizeString = match[3];
-			let byteWord = match[5];
+		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
+		if (match) {
+			let labelString=match[1];
+			let sizeString=match[3];
+			let byteWord=match[5];
 			// Defaults
-			if(labelString) {
-				let labelValue = NaN;
+			if (labelString) {
+				let labelValue=NaN;
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
 				Remote.getRegisters().then(() => {
-					const pc = Remote.getPC();
-					const entry = Labels.getFileAndLineForAddress(pc);
+					const pc=Remote.getPC();
+					const entry=Labels.getFileAndLineForAddress(pc);
 					// Local label and prefix
-					lastLabel = entry.lastLabel;
-					modulePrefix = entry.modulePrefix;
+					lastLabel=entry.lastLabel;
+					modulePrefix=entry.modulePrefix;
 
 					// Convert label
 					try {
-						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
-					} catch { }
+						labelValue=Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+					} catch {}
 
 					if (isNaN(labelValue)) {
 						// Return empty response
@@ -1515,22 +1548,22 @@ export class DebugSessionClass extends DebugSession {
 					}
 
 					// Is a number
-					var size = 100;
+					var size=100;
 					if (sizeString) {
-						const readSize = Labels.getNumberFromString(sizeString) || NaN;
+						const readSize=Labels.getNumberFromString(sizeString)||NaN;
 						if (!isNaN(readSize))
-							size = readSize;
+							size=readSize;
 					}
-					if (!byteWord || byteWord.length == 0)
-						byteWord = "bw";	// both byte and word
+					if (!byteWord||byteWord.length==0)
+						byteWord="bw";	// both byte and word
 					// Now create a "variable" for the bigValues or small values
-					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
+					const format=(labelValue<=Settings.launch.smallValuesMaximum)? Settings.launch.formatting.smallValues:Settings.launch.formatting.bigValues;
 					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
-						if (labelValue <= Settings.launch.smallValuesMaximum) {
+						if (labelValue<=Settings.launch.smallValuesMaximum) {
 							// small value
 							// Response
-							response.body = {
-								result: (args.context == 'hover') ? name + ': ' + formattedValue : formattedValue,
+							response.body={
+								result: (args.context=='hover')? name+': '+formattedValue:formattedValue,
 								variablesReference: 0,
 								//type: "data",
 								//amedVariables: 0
@@ -1539,12 +1572,12 @@ export class DebugSessionClass extends DebugSession {
 						else {
 							// big value
 							// Create a label variable
-							const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+							const labelVar=new LabelVar(labelValue, size, byteWord, this.listVariables);
 							// Add to list
-							const ref = this.listVariables.addObject(labelVar);
+							const ref=this.listVariables.addObject(labelVar);
 							// Response
-							response.body = {
-								result: (args.context == 'hover') ? name + ': ' + formattedValue : formattedValue,
+							response.body={
+								result: (args.context=='hover')? name+': '+formattedValue:formattedValue,
 								variablesReference: ref,
 								type: "data",
 								//presentationHint: ,
@@ -1570,8 +1603,8 @@ export class DebugSessionClass extends DebugSession {
  	 * @param A Promise with a text to print.
 	 */
 	protected async evalHelp(tokens: Array<string>): Promise<string> {
-		const output =
-`Allowed commands are:
+		const output=
+			`Allowed commands are:
 "-ASSERT enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTs set in the sources. All ASSERTs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERT breakpoints.
@@ -1610,12 +1643,12 @@ Examples:
 Notes:
 "-exec run" will not work at the moment and leads to a disconnect.
 `;
-/*
-For debugging purposes there are a few more:
--dbg serializer clear: Clears the call serializer queue.
--dbg serializer print: Prints the current function. Use this to see where
-it hangs if it hangs. (Use 'setProgress' to debug.)
-*/
+		/*
+		For debugging purposes there are a few more:
+		-dbg serializer clear: Clears the call serializer queue.
+		-dbg serializer print: Prints the current function. Use this to see where
+		it hangs if it hangs. (Use 'setProgress' to debug.)
+		*/
 		return output;
 	}
 
@@ -1626,25 +1659,25 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalEval(tokens: Array<string>): Promise<string> {
-		const expr = tokens.join(' ').trim();	// restore expression
-		if(expr.length == 0) {
+		const expr=tokens.join(' ').trim();	// restore expression
+		if (expr.length==0) {
 			// Error Handling: No arguments
 			throw new Error("Expression expected.");
 		}
 		// Evaluate expression
 		let result;
 		// Evaluate
-		const value = Utility.evalExpression(expr);
+		const value=Utility.evalExpression(expr);
 		// convert to decimal
-		result = value.toString();
+		result=value.toString();
 		// convert also to hex
-		result += ', ' + value.toString(16).toUpperCase() + 'h';
+		result+=', '+value.toString(16).toUpperCase()+'h';
 		// convert also to bin
-		result += ', ' + value.toString(2) + 'b';
+		result+=', '+value.toString(2)+'b';
 		// check for label
-		const labels = Labels.getLabelsPlusIndexForNumber(value);
-		if(labels.length > 0) {
-			result += ', ' + labels.join(', ');
+		const labels=Labels.getLabelsPlusIndexForNumber(value);
+		if (labels.length>0) {
+			result+=', '+labels.join(', ');
 		}
 
 		return result;
@@ -1684,26 +1717,26 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalLabel(tokens: Array<string>): Promise<string> {
-		const expr = tokens.join(' ').trim();	// restore expression
-		if(expr.length == 0) {
+		const expr=tokens.join(' ').trim();	// restore expression
+		if (expr.length==0) {
 			// Error Handling: No arguments
 			return "Label expected.";
 		}
 
 		// Find labelwith regex, every star is translated into ".*"
-		const rString = '^' + Utility.replaceAll(expr, '*', '.*?') + '$';
+		const rString='^'+Utility.replaceAll(expr, '*', '.*?')+'$';
 		// Now search all labels
-		const labels = Labels.getLabelsForRegEx(rString);
-		let result = '';
-		if(labels.length > 0) {
+		const labels=Labels.getLabelsForRegEx(rString);
+		let result='';
+		if (labels.length>0) {
 			labels.map(label => {
-				const value = Labels.getNumberForLabel(label);
-				result += label +': ' + Utility.getHexString(value, 4) + 'h\n';
+				const value=Labels.getNumberForLabel(label);
+				result+=label+': '+Utility.getHexString(value, 4)+'h\n';
 			})
 		}
 		else {
 			// No label found
-			result = 'No label matches.';
+			result='No label matches.';
 		}
 		// return result
 		return result;
@@ -1717,33 +1750,33 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected async evalMemDump(tokens: Array<string>): Promise<string> {
 		// check count of arguments
-		if(tokens.length == 0) {
+		if (tokens.length==0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
 		}
 
-		if(tokens.length % 2 != 0) {
+		if (tokens.length%2!=0) {
 			// Error Handling: No size given
-			throw new Error("No size given for address '" + tokens[tokens.length-1] + "'.");
+			throw new Error("No size given for address '"+tokens[tokens.length-1]+"'.");
 		}
 
 		// Get all addresses/sizes.
-		const addrSizes = new Array<number>();
-		for(let k=0; k<tokens.length; k+=2) {
+		const addrSizes=new Array<number>();
+		for (let k=0; k<tokens.length; k+=2) {
 			// address
-			const addressString = tokens[k];
-			const address = Utility.evalExpression(addressString);
+			const addressString=tokens[k];
+			const address=Utility.evalExpression(addressString);
 			addrSizes.push(address);
 
 			// size
-			const sizeString = tokens[k+1];
-			const size = Utility.evalExpression(sizeString);
+			const sizeString=tokens[k+1];
+			const size=Utility.evalExpression(sizeString);
 			addrSizes.push(size);
 		}
 
 		// Create new view
-		const panel = new MemoryDumpView();
-		for(let k=0; k<tokens.length; k+=2)
+		const panel=new MemoryDumpView();
+		for (let k=0; k<tokens.length; k+=2)
 			panel.addBlock(addrSizes[k], addrSizes[k+1]);
 		panel.mergeBlocks();
 		panel.update();
@@ -1857,67 +1890,67 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected async evalSpritePatterns(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
-		if(Remote.machineType != MachineType.TBBLUE)
+		if (Remote.machineType!=MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
-		let params: Array<number>|undefined = [];
-		if(tokens.length == 0) {
+		let params: Array<number>|undefined=[];
+		if (tokens.length==0) {
 			// The view should choose the visible sprites automatically
-			title = 'Sprite Patterns: 0-63';
+			title='Sprite Patterns: 0-63';
 			params.push(0);
 			params.push(64);
 		}
 		else {
 			// Create title
-			title = 'Sprite Patterns: ' + tokens.join(' ');
+			title='Sprite Patterns: '+tokens.join(' ');
 			// Get slot and count/endslot
-			while(true) {
+			while (true) {
 				// Get parameter
-				const param = tokens.shift();
-				if(!param)
+				const param=tokens.shift();
+				if (!param)
 					break;
 				// Evaluate
-				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
-				if(!match) // Error Handling
-					throw new Error("Can't parse: '" + param + "'");
+				const match=/([^+-]*)(([-+])(.*))?/.exec(param);
+				if (!match) // Error Handling
+					throw new Error("Can't parse: '"+param+"'");
 				// start slot
-				const start = Utility.parseValue(match[1]);
-				if(isNaN(start))	// Error Handling
-					throw new Error("Expected slot but got: '" + match[1] + "'");
+				const start=Utility.parseValue(match[1]);
+				if (isNaN(start))	// Error Handling
+					throw new Error("Expected slot but got: '"+match[1]+"'");
 				// count
-				let count = 1;
-				if(match[3]) {
-					count = Utility.parseValue(match[4]);
+				let count=1;
+				if (match[3]) {
+					count=Utility.parseValue(match[4]);
 					if (isNaN(count))	// Error Handling
-						throw new Error("Can't parse: '" + match[4] + "'");
-					if(match[3] == "-")	// turn range into count
-						count += 1 - start;
+						throw new Error("Can't parse: '"+match[4]+"'");
+					if (match[3]=="-")	// turn range into count
+						count+=1-start;
 				}
 				// Check
-				if(count <= 0)	// Error Handling
-					throw new Error("Not allowed count: '" + match[0] + "'");
+				if (count<=0)	// Error Handling
+					throw new Error("Not allowed count: '"+match[0]+"'");
 				// Add
 				params.push(start);
 				params.push(count);
 			}
 
-			const slotString = tokens[0] || '0';
-			const slot = Utility.parseValue(slotString);
-			if(isNaN(slot)) {
+			const slotString=tokens[0]||'0';
+			const slot=Utility.parseValue(slotString);
+			if (isNaN(slot)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected slot but got: '" + slotString + "'");
+				throw new Error("Expected slot but got: '"+slotString+"'");
 			}
-			const countString = tokens[1] || '1';
-			const count = Utility.parseValue(countString);
-			if(isNaN(count)) {
+			const countString=tokens[1]||'1';
+			const count=Utility.parseValue(countString);
+			if (isNaN(count)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected count but got: '" + countString + "'");
+				throw new Error("Expected count but got: '"+countString+"'");
 			}
 		}
 
 		// Create new view
-		const panel = new ZxNextSpritePatternsView(title, params);
+		const panel=new ZxNextSpritePatternsView(title, params);
 		panel.update();
 
 		// Send response
@@ -1932,66 +1965,66 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected async evalSprites(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
-		if(Remote.machineType != MachineType.TBBLUE)
+		if (Remote.machineType!=MachineType.TBBLUE)
 			throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
 		let params: Array<number>|undefined;
-		if(tokens.length == 0) {
+		if (tokens.length==0) {
 			// The view should choose the visible sprites automatically
-			title = 'Visible Sprites';
+			title='Visible Sprites';
 		}
 		else {
 			// Create title
-			title = 'Sprites: ' + tokens.join(' ');
+			title='Sprites: '+tokens.join(' ');
 			// Get slot and count/endslot
-			params = [];
-			while(true) {
+			params=[];
+			while (true) {
 				// Get parameter
-				const param = tokens.shift();
-				if(!param)
+				const param=tokens.shift();
+				if (!param)
 					break;
 				// Evaluate
-				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
-				if(!match) // Error Handling
-					throw new Error("Can't parse: '" + param + "'");
+				const match=/([^+-]*)(([-+])(.*))?/.exec(param);
+				if (!match) // Error Handling
+					throw new Error("Can't parse: '"+param+"'");
 				// start slot
-				const start = Utility.parseValue(match[1]);
-				if(isNaN(start))	// Error Handling
-					throw new Error("Expected slot but got: '" + match[1] + "'");
+				const start=Utility.parseValue(match[1]);
+				if (isNaN(start))	// Error Handling
+					throw new Error("Expected slot but got: '"+match[1]+"'");
 				// count
-				let count = 1;
-				if(match[3]) {
-					count = Utility.parseValue(match[4]);
+				let count=1;
+				if (match[3]) {
+					count=Utility.parseValue(match[4]);
 					if (isNaN(count))	// Error Handling
-						throw new Error("Can't parse: '" + match[4] + "'");
-					if(match[3] == "-")	// turn range into count
-						count += 1 - start;
+						throw new Error("Can't parse: '"+match[4]+"'");
+					if (match[3]=="-")	// turn range into count
+						count+=1-start;
 				}
 				// Check
-				if(count <= 0)	// Error Handling
-					throw new Error("Not allowed count: '" + match[0] + "'");
+				if (count<=0)	// Error Handling
+					throw new Error("Not allowed count: '"+match[0]+"'");
 				// Add
 				params.push(start);
 				params.push(count);
 			}
 
-			const slotString = tokens[0] || '0';
-			const slot = Utility.parseValue(slotString);
-			if(isNaN(slot)) {
+			const slotString=tokens[0]||'0';
+			const slot=Utility.parseValue(slotString);
+			if (isNaN(slot)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected slot but got: '" + slotString + "'");
+				throw new Error("Expected slot but got: '"+slotString+"'");
 			}
-			const countString = tokens[1] || '1';
-			const count = Utility.parseValue(countString);
-			if(isNaN(count)) {
+			const countString=tokens[1]||'1';
+			const count=Utility.parseValue(countString);
+			if (isNaN(count)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected count but got: '" + countString + "'");
+				throw new Error("Expected count but got: '"+countString+"'");
 			}
 		}
 
 		// Create new view
-		const panel = new ZxNextSpritesView(title, params);
+		const panel=new ZxNextSpritesView(title, params);
 		panel.update();
 
 		// Send response
@@ -2006,18 +2039,18 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected async evalStateSaveRestore(tokens: Array<string>): Promise<string> {
 		const param=tokens[0]||'';
-		const stateName = tokens[1];
-		if (!stateName &&
-			(param =='save' || param=='restore' || param == 'clear'))
+		const stateName=tokens[1];
+		if (!stateName&&
+			(param=='save'||param=='restore'||param=='clear'))
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
 
-		if(param == 'save') {
+		if (param=='save') {
 			// Save current state
 			await this.stateSave(stateName);
 			// Send response
 			return "Saved state '"+stateName+"'.";
 		}
-		else if(param == 'restore') {
+		else if (param=='restore') {
 			// Restores the state
 			await this.stateRestore(stateName);
 			// Reload register values etc.
@@ -2034,7 +2067,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			}
 			catch {}
 			let text;
-			if (files == undefined || files.length==0)
+			if (files==undefined||files.length==0)
 				text="No states saved yet.";
 			else
 				text="All states:\n"+files.join('\n');
@@ -2066,9 +2099,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 			}
 			return "State '"+stateName+"' deleted.";
 		}
-		else {
+		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '" + param + "'");
+			throw new Error("Unknown argument: '"+param+"'");
 		}
 	}
 
@@ -2079,26 +2112,26 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
  	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalDebug(tokens: Array<string>): Promise<string> {
-		const param1 = tokens[0] || '';
-		let unknownArg = param1;
-		if(param1 == 'serializer') {
-			const param2 = tokens[1] || '';
-			unknownArg = param2;
-			if(param2 == 'clear') {
+		const param1=tokens[0]||'';
+		let unknownArg=param1;
+		if (param1=='serializer') {
+			const param2=tokens[1]||'';
+			unknownArg=param2;
+			if (param2=='clear') {
 				// Clear the call serializer queue
 				this.serializer.clrQueue();
 				return 'OK';
 			}
-			else if(param2 == 'print') {
+			else if (param2=='print') {
 				// Print the current function.
-				const current = this.serializer.getCurrentFunction();
-				const text = 'Progress: ' + current.progress +'\n' +
-				'Func: ' + current.func;
+				const current=this.serializer.getCurrentFunction();
+				const text='Progress: '+current.progress+'\n'+
+					'Func: '+current.func;
 				return text;
 			}
 		}
 		// Unknown argument
-		throw new Error("Unknown argument: '" + unknownArg + "'");
+		throw new Error("Unknown argument: '"+unknownArg+"'");
 	}
 
 
@@ -2107,8 +2140,8 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * @param text The text to display in the debug console.
 	 * @param response The response object.
 	 */
-	protected sendEvalResponse(text: string, response:DebugProtocol.EvaluateResponse) {
-		response.body = { result: text + "\n\n", type: undefined, presentationHint: undefined, variablesReference:0, namedVariables: undefined, indexedVariables: undefined };
+	protected sendEvalResponse(text: string, response: DebugProtocol.EvaluateResponse) {
+		response.body={result: text+"\n\n", type: undefined, presentationHint: undefined, variablesReference: 0, namedVariables: undefined, indexedVariables: undefined};
 		this.sendResponse(response);
 	}
 
@@ -2117,9 +2150,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	* Called eg. if user changes a register value.
 	*/
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
-		const ref = args.variablesReference;
-		const name = args.name;
-		const value = Utility.parseValue(args.value);
+		const ref=args.variablesReference;
+		const name=args.name;
+		const value=Utility.parseValue(args.value);
 
 		// Get variable object
 		const varObj=this.listVariables.getObject(ref);
@@ -2144,9 +2177,9 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 */
 	protected setPcToLine(filename: string, lineNr: number) {
 		// Get address of file/line
-		const realLineNr = lineNr; //this.convertClientLineToDebugger(lineNr);
-		const addr = Labels.getAddrForFileAndLine(filename, realLineNr);
-		if( addr < 0 )
+		const realLineNr=lineNr; //this.convertClientLineToDebugger(lineNr);
+		const addr=Labels.getAddrForFileAndLine(filename, realLineNr);
+		if (addr<0)
 			return;
 		// Now change Program Counter
 		Remote.setProgramCounter(addr)
@@ -2171,10 +2204,10 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 	 * @param args 	The arguments of the command. Usually just 1 text object.
 	 */
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
-		switch(command) {
+		switch (command) {
 			case 'setPcToLine':
-				const filename = args[0];
-				const lineNr = args[1];
+				const filename=args[0];
+				const lineNr=args[1];
 				this.setPcToLine(filename, lineNr);
 				break;
 
@@ -2269,7 +2302,7 @@ it hangs if it hangs. (Use 'setProgress' to debug.)
 
 
 
-    protected terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
+	protected terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
 
 	}
 }
