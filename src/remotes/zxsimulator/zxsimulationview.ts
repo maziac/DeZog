@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
@@ -32,7 +31,6 @@ export class ZxSimulationView extends BaseView {
 
 		// Create new instance
 		let zxview: ZxSimulationView|undefined=new ZxSimulationView(simulator);
-		/*
 		simulator.once('closed', () => {
 			zxview?.close();
 			zxview=undefined;
@@ -40,7 +38,6 @@ export class ZxSimulationView extends BaseView {
 		simulator.on('update', () => {
 			zxview?.update();
 		});
-		*/
 	}
 
 
