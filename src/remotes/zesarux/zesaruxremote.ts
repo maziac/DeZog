@@ -9,6 +9,7 @@ import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remoteb
 import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
+import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 
 
 
@@ -56,6 +57,8 @@ export class ZesaruxRemote extends RemoteBase {
 	/// Constructor.
 	constructor() {
 		super();
+		// Set decoder
+		Z80Registers.setDecoder(new DecodeZesaruxRegisters());
 		// Reverse debugging / CPU history
 		this.cpuHistory=new ZesaruxCpuHistory();
 		// Supported features

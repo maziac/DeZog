@@ -3,12 +3,18 @@ import * as assert from 'assert';
 import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
+import {Settings} from '../settings';
 //import { ZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
+
 
 suite('ZesaruxCpuHistory', () => {
 
 	setup(() => {
-		Z80RegistersClass.Init();
+		const cfg: any={
+			remoteType: 'zrcp'
+		};
+		Settings.Init(cfg, '');
+		Z80RegistersClass.createRegisters();
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {

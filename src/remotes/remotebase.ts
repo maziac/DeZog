@@ -193,8 +193,6 @@ export class RemoteBase extends EventEmitter {
 	/// Override this.
 	constructor() {
 		super();
-		// Init the registers
-		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
 
 

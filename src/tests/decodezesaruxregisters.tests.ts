@@ -1,6 +1,5 @@
 
 import * as assert from 'assert';
-import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import { DecodeZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 
 
@@ -9,140 +8,136 @@ suite('DecodeZesaruxRegisters', () => {
 
 	suite('Register parsing', () => {
 		const line = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0";
-		let ZesRegs;
+		let Decoder: any;
 
 		setup(() => {
-			Z80RegistersClass.Init();
-			Z80RegistersClass.createRegisters();
-			const decoder=new DecodeZesaruxRegisters();
-			Z80Registers.setDecoder(decoder);
-			ZesRegs=Z80RegistersClass as any;
+			Decoder=new DecodeZesaruxRegisters();
 		});
 
 		test('PC', () => {
 			const compValue = 0x80cf;
-			const value = ZesRegs.parsePC(line);
+			const value = Decoder.parsePC(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.pcIndex >= 0);
-			const value2 = ZesRegs.parsePC(line);
+			assert.ok(Decoder.pcIndex >= 0);
+			const value2 = Decoder.parsePC(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('SP', () => {
 			const compValue = 0x83f3;
-			const value = ZesRegs.parseSP(line);
+			const value = Decoder.parseSP(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.spIndex >= 0);
-			const value2 = ZesRegs.parseSP(line);
+			assert.ok(Decoder.spIndex >= 0);
+			const value2 = Decoder.parseSP(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('AF', () => {
 			const compValue = 0x0208;
-			const value = ZesRegs.parseAF(line);
+			const value = Decoder.parseAF(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.afIndex >= 0);
-			const value2 = ZesRegs.parseAF(line);
+			assert.ok(Decoder.afIndex >= 0);
+			const value2 = Decoder.parseAF(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('BC', () => {
 			const compValue = 0x0301;
-			const value = ZesRegs.parseBC(line);
+			const value = Decoder.parseBC(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.bcIndex >= 0);
-			const value2 = ZesRegs.parseBC(line);
+			assert.ok(Decoder.bcIndex >= 0);
+			const value2 = Decoder.parseBC(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('DE', () => {
 			const compValue = 0x2006;
-			const value = ZesRegs.parseDE(line);
+			const value = Decoder.parseDE(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.deIndex >= 0);
-			const value2 = ZesRegs.parseDE(line);
+			assert.ok(Decoder.deIndex >= 0);
+			const value2 = Decoder.parseDE(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('HL', () => {
 			const compValue = 0x4002;
-			const value = ZesRegs.parseHL(line);
+			const value = Decoder.parseHL(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.hlIndex >= 0);
-			const value2 = ZesRegs.parseHL(line);
+			assert.ok(Decoder.hlIndex >= 0);
+			const value2 = Decoder.parseHL(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('IX', () => {
 			const compValue = 0xfffe;
-			const value = ZesRegs.parseIX(line);
+			const value = Decoder.parseIX(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.ixIndex >= 0);
-			const value2 = ZesRegs.parseIX(line);
+			assert.ok(Decoder.ixIndex >= 0);
+			const value2 = Decoder.parseIX(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('IY', () => {
 			const compValue = 0x5c3a;
-			const value = ZesRegs.parseIY(line);
+			const value = Decoder.parseIY(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.iyIndex >= 0);
-			const value2 = ZesRegs.parseIY(line);
+			assert.ok(Decoder.iyIndex >= 0);
+			const value2 = Decoder.parseIY(line);
 			assert.equal(compValue, value2);
 		});
 
 		// E.g. PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=ffff IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0
 		test('AF2', () => {
 			const compValue = 0x1243;
-			const value = ZesRegs.parseAF2(line);
+			const value = Decoder.parseAF2(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.af2Index >= 0);
-			const value2 = ZesRegs.parseAF2(line);
+			assert.ok(Decoder.af2Index >= 0);
+			const value2 = Decoder.parseAF2(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('BC2', () => {
 			const compValue = 0x23fe;
-			const value = ZesRegs.parseBC2(line);
+			const value = Decoder.parseBC2(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.bc2Index >= 0);
-			const value2 = ZesRegs.parseBC2(line);
+			assert.ok(Decoder.bc2Index >= 0);
+			const value2 = Decoder.parseBC2(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('DE2', () => {
 			const compValue = 0xabcd;
-			const value = ZesRegs.parseDE2(line);
+			const value = Decoder.parseDE2(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.de2Index >= 0);
-			const value2 = ZesRegs.parseDE2(line);
+			assert.ok(Decoder.de2Index >= 0);
+			const value2 = Decoder.parseDE2(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('HL2', () => {
 			const compValue = 0xf3da;
-			const value = ZesRegs.parseHL2(line);
+			const value = Decoder.parseHL2(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.hl2Index >= 0);
-			const value2 = ZesRegs.parseHL2(line);
+			assert.ok(Decoder.hl2Index >= 0);
+			const value2 = Decoder.parseHL2(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('I', () => {
 			const compValue = 0x23;
-			const value = ZesRegs.parseI(line);
+			const value = Decoder.parseI(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.iIndex >= 0);
-			const value2 = ZesRegs.parseI(line);
+			assert.ok(Decoder.iIndex >= 0);
+			const value2 = Decoder.parseI(line);
 			assert.equal(compValue, value2);
 		});
 
 		test('R', () => {
 			const compValue = 0x4b;
-			const value = ZesRegs.parseR(line);
+			const value = Decoder.parseR(line);
 			assert.equal(compValue, value);
-			assert.ok(ZesRegs.rIndex >= 0);
-			const value2 = ZesRegs.parseR(line);
+			assert.ok(Decoder.rIndex >= 0);
+			const value2 = Decoder.parseR(line);
 			assert.equal(compValue, value2);
 		});
 

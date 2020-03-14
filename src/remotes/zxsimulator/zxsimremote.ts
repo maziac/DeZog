@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80_REG, Z80RegistersClass, Z80Registers} from '../z80registers';
+import {Z80_REG, Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
 import {Z80Cpu} from './z80cpu';
@@ -54,6 +54,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// Constructor.
 	constructor() {
 		super();
+		// Set decoder
+		Z80Registers.setDecoder(new Z80RegistersStandardDecoder());
 		this.cpuRunning=false;
 		this.lastBpId=0;
 		// Code coverage

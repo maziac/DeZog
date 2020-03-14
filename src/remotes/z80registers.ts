@@ -70,6 +70,8 @@ export class Z80RegistersClass {
 	*/
 	public static createRegisters() {
 		Z80Registers=new Z80RegistersClass();
+		// Init the registers
+		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
 
 
@@ -365,7 +367,7 @@ export class Z80RegistersClass {
  * Can be used if no external remote is involved, e.g. for the internal
  * simulator.
  */
-export class Z80StandardRegisterDecoder extends DecodeRegisterData {
+export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 
 	/**
 	 * Parses the zesarux register output for PC etc.

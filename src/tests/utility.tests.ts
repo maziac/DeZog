@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { Utility } from '../misc/utility';
-import { Z80RegistersClass } from '../remotes/z80registers';
+import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 //import { EmulatorClass } from '../emulator';
 import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
@@ -85,9 +85,9 @@ suite('Utility', () => {
 				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
-			Z80RegistersClass.Init();
-			((Remote as any).z80Registers as Z80RegistersClass).setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
+			Z80Registers.setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 		});
 
 		suite('formats', () => {
@@ -293,11 +293,16 @@ suite('Utility', () => {
 
 		suite('breakpoints', () => {
 			setup(() => {
-				RemoteFactory.createRemote('zrcp');
+				const cfg: any={
+					remoteType: 'zrcp'
+				};
+				Settings.Init(cfg, '');
+				Z80RegistersClass.createRegisters();
+				RemoteFactory.createRemote(cfg.remoteType);
 			});
 
 			test('simple', () => {
-				((Remote as any).z80Registers as Z80RegistersClass).setCache("");
+				Z80Registers.setCache("");
 				let res = Utility.evalExpression('0x1234 == 0x1234', true);
 				assert.equal(1, res, "Wrong eval result");
 
@@ -306,7 +311,7 @@ suite('Utility', () => {
 			});
 
 			test('register SP', () => {
-				((Remote as any).z80Registers as Z80RegistersClass).setCache("PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=0000 HL=4000 DE=2000 IX=ffff IY=5c3a AF'=0044 BC'=0001 HL'=f3f3 DE'=0001 I=00 R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 				let res = Utility.evalExpression('SP == 0x83FB', true);
 				assert.equal(1, res, "Wrong eval result");
 
@@ -321,7 +326,7 @@ suite('Utility', () => {
 			});
 
 			test('All registers', () => {
-				((Remote as any).z80Registers as Z80RegistersClass).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 
 				let res = Utility.evalExpression('PC == 0x80D3', true);
 				assert.equal(1, res, "Wrong eval result");
@@ -359,7 +364,7 @@ suite('Utility', () => {
 
 
 			test('memory (exception)', () => {
-				((Remote as any).z80Registers as Z80RegistersClass).setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
+				Z80Registers.setCache("PC=80d3 SP=83fb AF=3f08 BC=1234 HL=5678 DE=9abc IX=fedc IY=5c3a AF'=0143 BC'=2345 HL'=f4f3 DE'=89ab I=ab R=0d IM0 IFF12 (PC)=3e020603 (SP)=80f5");
 
 				// It is not supported to retrieve memory locations.
 				// Therefore a test is done on an exception.
@@ -375,7 +380,12 @@ suite('Utility', () => {
 	suite('evalLogString', () => {
 
 		setup(() => {
-			RemoteFactory.createRemote('zsim');
+			const cfg: any={
+				remoteType: 'zsim'
+			};
+			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters();
+			RemoteFactory.createRemote(cfg.remoteType);
 		});
 
 		test('Register', async () => {
@@ -384,7 +394,7 @@ suite('Utility', () => {
 			cpu.r1.a=129;
 			cpu.r1.de=0xABCD;
 			const regs=cpu.getRegisterData();
-			remote.z80Registers.setCache(regs);
+			Z80Registers.setCache(regs);
 
 			let log='${A}';
 			let evalString=await Utility.evalLogString(log);
@@ -422,7 +432,7 @@ suite('Utility', () => {
 			cpu.r1.hl=0x8000;
 			Remote.writeMemoryDump(0x8000, new Uint8Array([0xFF, 0x5B]));
 			const regs=cpu.getRegisterData();
-			remote.z80Registers.setCache(regs);
+			Z80Registers.setCache(regs);
 
 			let log='${(8000h)}';
 			let evalString=await Utility.evalLogString(log);
@@ -451,7 +461,7 @@ suite('Utility', () => {
 			const cpu=remote.z80Cpu;
 			cpu.r1.bc=0x8000;
 			let regs=cpu.getRegisterData();
-			remote.z80Registers.setCache(regs);
+			Z80Registers.setCache(regs);
 			Remote.writeMemoryDump(0x8000, new Uint8Array([212]));
 
 			let log='${(BC)}';
@@ -464,14 +474,14 @@ suite('Utility', () => {
 
 			cpu.r1.bc-=1000;
 			regs=cpu.getRegisterData();
-			remote.z80Registers.setCache(regs);
+			Z80Registers.setCache(regs);
 			log='${(BC+1000)}';
 			evalString=await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
 			cpu.r1.bc+=1000+2345;
 			regs=cpu.getRegisterData();
-			remote.z80Registers.setCache(regs);
+			Z80Registers.setCache(regs);
 			log='${(BC-2345)}';
 			evalString=await Utility.evalLogString(log);
 			assert.equal('212', evalString);

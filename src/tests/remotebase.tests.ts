@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import {RemoteBase} from '../remotes/remotebase';
 import {Settings} from '../settings';
+import {Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../remotes/z80registers';
 
 
 suite('RemoteBase', () => {
@@ -12,6 +13,8 @@ suite('RemoteBase', () => {
 			remoteType: 'zsim'
 		};
 		Settings.Init(cfg, '');
+		Z80RegistersClass.createRegisters();
+		Z80Registers.setDecoder(new Z80RegistersStandardDecoder());
 	});
 
 
@@ -26,17 +29,9 @@ suite('RemoteBase', () => {
 			public pcMemory=new Uint8Array(4);
 			public spMemory=new Uint16Array(1);
 			public async getRegisters(): Promise<void> {
-			}
-			public getRegisterValue(register: string): number {
-				switch (register) {
-					case "PC": return this.pc;
-					case "SP": return this.sp;
-					case "HL": return this.hl;
-					case "IX": return this.ix;
-					case "IY": return this.iy;
-				}
-				assert(false);
-				return 0;
+				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0);
+				Z80Registers.setCache(cache);
+
 			}
 			public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
 				switch (address) {
@@ -47,15 +42,6 @@ suite('RemoteBase', () => {
 				return undefined as any;
 			}
 		}
-
-
-
-
-		test('ASYNC TEST', async () => {
-			assert.ok(true);
-		});
-
-
 
 		test('RET', async () => {
 			const remote=new RemoteBaseMock();
