@@ -10,7 +10,6 @@ import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
-import {CpuHistory} from './cpuhistory';
 
 
 
@@ -162,13 +161,8 @@ export class RemoteBase extends EventEmitter {
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
 
-	// The cpu history object. If the remote does not support cpu history this is indefined.
-	protected cpuHistory: CpuHistory;
-
-
 	/// Stores the wpmem watchpoints (this is a smaller list, if watchpoints can be given manually)
 	protected wpmemWatchpoints=new Array<GenericWatchpoint>();
-
 
 	/// Stores the assert breakpoints
 	protected assertBreakpoints=new Array<GenericBreakpoint>();
@@ -214,14 +208,6 @@ export class RemoteBase extends EventEmitter {
 	/// Take care to implement the emits otherwise the system will hang on a start.
 	/// Please override.
 	public doInitialization() {
-	}
-
-
-	/**
-	 * @returns The cpu history object. Can be undefined.
-	 */
-	public getCpuHistory(): CpuHistory {
-		return this.cpuHistory;
 	}
 
 
@@ -1388,15 +1374,6 @@ export class RemoteBase extends EventEmitter {
 	public async stateRestore(filePath: string): Promise<void> {
 	}
 
-
-	/**
-	 * Emits 'revDbgHistory' to signal that the files should be decorated.
-	 */
-	public emitRevDbgHistory() {
-		// Change debug history array into set.
-		const addrSet=new Set(this.revDbgHistory)
-		this.emit('revDbgHistory', addrSet);
-	}
 
 	/**
 	 * Reads the short history and emits it.

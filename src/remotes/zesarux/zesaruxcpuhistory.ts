@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 //import { Z80RegistersClass } from '../z80registers';
-import {CpuHistory} from '../cpuhistory';
+import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo} from '../decodehistinfo';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 
@@ -84,7 +84,7 @@ export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
  * started yes|no        Start recording cpu history. Requires it to be enabled first
  * set-max-size number   Sets maximum allowed elements in history
  */
-export class ZesaruxCpuHistory extends CpuHistory {
+export class ZesaruxCpuHistory extends CpuHistoryClass {
 
 	/**
 	 * Init.

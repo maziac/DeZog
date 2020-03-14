@@ -1,8 +1,11 @@
 import * as assert from 'assert';
-import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
+import {Z80Registers} from '../remotes/z80registers';
 import {HistoryInstructionInfo} from './decodehistinfo';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode} from '../disassembler/opcode';
+import {Utility} from '../misc/utility';
+import {Remote} from './remotefactory';
+import {EventEmitter} from 'events';
 //import {Remote} from './remotefactory';
 //import {Utility} from '../misc/utility';
 
@@ -36,7 +39,7 @@ import {Opcode} from '../disassembler/opcode';
  * And it handles continue, stepOver, stepInto, stepOut, continueReverse
  * and stepBack while in step-back (reverse debugging mode) mode.
  */
-export class StepHistory {
+export class StepHistoryClass extends EventEmitter {
 
 	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
@@ -45,9 +48,6 @@ export class StepHistory {
 
 	// The current history index.
 	protected historyIndex=-1;
-
-	// Holds a pointer to the registers
-	protected z80Registers: Z80RegistersClass; // TODO: Remove
 
 	/// The addresses of the revision history in the right order.
 	/// Used to show this lines decorated (gray) while stepping backwards.
@@ -61,6 +61,7 @@ export class StepHistory {
 	 * Creates the object.
 	 */
 	constructor() {
+		super();
 		this.history=Array<HistoryInstructionInfo>();
 	}
 
@@ -182,7 +183,7 @@ export class StepHistory {
 	protected revDbgNext(): HistoryInstructionInfo|undefined {
 		// Get line
 		let line=this.getNextRegisters() as HistoryInstructionInfo;
-		this.z80Registers.setCache(line);
+		Z80Registers.setCache(line);
 		// Remove one address from history
 		this.revDbgHistory.pop();
 		return line;
@@ -192,39 +193,48 @@ export class StepHistory {
 	/**
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
+	 * @returns instruction=the disassembly of the current instruction
+	 * breakReason=A possibly break reason (e.g. breakpoint) or undefined.
 	 */
-	public async stepOver(): Promise<void> {
+	public stepOver(): {instruction: string, breakReason: string|undefined} {
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		assert(currentLine);
-
-		/*
-		TODO: Ich muss getInstruction und getOpcodes hierhin verschieben.
 
 		// Get next line
 		const nextLine=this.revDbgNext();
 		let breakReason;
 		if (!nextLine) {
 			breakReason='Break: Reached start of instruction history.'
-			break;	// At end of reverse debugging. Simply get the real call stack.
 		}
 
 		// Decoration
 		this.emitRevDbgHistory();
 
 		// Call handler
-		const pc=z80Registers.getPC();
+		const pc=Z80Registers.getPC();
 		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
-		resolve({instruction, tStates: undefined, cpuFreq: undefined, breakReason});
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
-		// Otherwise get the callstack from ZEsarUX.
 		if (!nextLine) {
 			// Get the registers etc. from ZEsarUX
-			this.z80Registers.clearCache();
-			this.getRegisters();
+			Z80Registers.clearCache();
+			Remote.getRegisters();
 		}
-		*/
+
+		return {instruction, breakReason};
 	}
+
+
+
+	/**
+	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 */
+	public emitRevDbgHistory() {
+		// Change debug history array into set.
+		const addrSet=new Set(this.revDbgHistory)
+		this.emit('revDbgHistory', addrSet);
+	}
+
 }
 

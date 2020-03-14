@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
-import {StepHistory} from './stephistory';
+import {StepHistoryClass as StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
 
 /**
@@ -24,15 +24,17 @@ import {HistoryInstructionInfo} from './decodehistinfo';
  * started yes|no        Start recording cpu history. Requires it to be enabled first
  * set-max-size number   Sets maximum allowed elements in history
  */
-export class CpuHistory extends StepHistory{
+export class CpuHistoryClass extends StepHistoryClass{
 
 	/**
-	 * Creates the object.
+	 * Sets the static CpuHistory singleton.
 	 */
-	constructor() {
-		super();
+	public static setCpuHistory(cpuHistory: CpuHistoryClass|StepHistoryClass) {
+		StepHistory=cpuHistory;
+		CpuHistory=undefined as any;
+		if (cpuHistory instanceof CpuHistoryClass)
+			CpuHistory=cpuHistory;
 	}
-
 
 	/**
 	 * Init.
@@ -382,3 +384,7 @@ export class CpuHistory extends StepHistory{
 	}
 }
 
+
+// Refers to the same object but allows easier access.
+export var StepHistory: StepHistoryClass;
+export var CpuHistory: CpuHistoryClass;

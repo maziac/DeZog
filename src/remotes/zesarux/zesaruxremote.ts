@@ -10,6 +10,7 @@ import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
+import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
 
 
 
@@ -60,8 +61,8 @@ export class ZesaruxRemote extends RemoteBase {
 		// Set decoder
 		Z80Registers.setDecoder(new DecodeZesaruxRegisters());
 		// Reverse debugging / CPU history
-		this.cpuHistory=new ZesaruxCpuHistory();
-		this.cpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
+		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
+		CpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
 		// Supported features
 		this.supportsZxNextRegisters=true;
 	}
@@ -260,7 +261,7 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
 
 					// Reverse debugging.
-					this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+					CpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
 
 					// Enable extended stack
 					zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
@@ -322,8 +323,8 @@ export class ZesaruxRemote extends RemoteBase {
 	protected async getRegistersFromEmulator(): Promise<void>  {
 		// Check if in reverse debugging mode
 		// In this mode registersCache should be set and thus this function is never called.
-		assert(this.cpuHistory);
-		assert(!this.cpuHistory.isInStepBackMode());
+		assert(CpuHistory);
+		assert(!CpuHistory.isInStepBackMode());
 
 		return new Promise<void>(resolve => {
 			// Get new (real emulator) data
@@ -465,7 +466,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
 		// Check for reverse debugging.
-		if (this.cpuHistory.isInStepBackMode()) {
+		if (CpuHistory.isInStepBackMode()) {
 			// Continue in reverse debugging
 			// Will run until after the first of the instruction history
 			// or until a breakpoint condition is true.
@@ -506,7 +507,7 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// Decoration
-			this.emitRevDbgHistory();
+			CpuHistory.emitRevDbgHistory();
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			if (!nextLine) {
@@ -583,7 +584,7 @@ export class ZesaruxRemote extends RemoteBase {
 	protected clearReverseDbgStack() {
 		this.reverseDbgStack = undefined as any;
 		this.revDbgHistory.length = 0;
-		this.cpuHistory.clearCache();
+		CpuHistory.clearCache();
 	}
 
 
@@ -591,7 +592,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Returns true if in reverse debugging mode.
 	 */
 	protected isInStepBackMode(): boolean {
-		return this.cpuHistory.isInStepBackMode();
+		return CpuHistory.isInStepBackMode();
 	}
 
 
@@ -601,7 +602,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * (memory) stack values.
 	 */
 	protected async prepareReverseDbgStack(): Promise<void> {
-		if(!this.cpuHistory.isInStepBackMode()) {
+		if(!CpuHistory.isInStepBackMode()) {
 			// Prefill array with current stack
 			this.reverseDbgStack=await this.getCallStack();
 		}
@@ -640,7 +641,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 			// Get some values
 			let sp = Z80Registers.decoder.parseSP(currentLine);
-			const opcodes = this.cpuHistory.decoder.getOpcodes(currentLine);
+			const opcodes = CpuHistory.decoder.getOpcodes(currentLine);
 			const flags = Z80Registers.decoder.parseAF(currentLine);
 
 			// Check if there is at least one frame
@@ -653,15 +654,15 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// Check for RET (RET cc and RETI/N)
-			if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
+			if((CpuHistory as CpuHistoryClass).isRetAndExecuted(opcodes, flags)) {
 				// Get return address
-				const retAddr=this.cpuHistory.decoder.getSPContent(currentLine);
+				const retAddr=CpuHistory.decoder.getSPContent(currentLine);
 				// Get memory at return address
 				zSocket.send( 'read-memory ' + ((retAddr-3)&0xFFFF) + ' 3', data => {
 					// Check for CALL and RST
 					const firstByte = parseInt(data.substr(0,2),16);
 					let callAddr;
-					if (this.cpuHistory.isCallOpcode(firstByte)) {
+					if (CpuHistory.isCallOpcode(firstByte)) {
 						// Is a CALL or CALL cc, get called address
 						// Get low byte
 						const lowByte = parseInt(data.substr(2,2),16);
@@ -670,7 +671,7 @@ export class ZesaruxRemote extends RemoteBase {
 						// Calculate address
 						callAddr = (highByte<<8) + lowByte;
 					}
-					else if(this.cpuHistory.isRstOpcode(firstByte)) {
+					else if(CpuHistory.isRstOpcode(firstByte)) {
 						// Is a Rst, get p
 						callAddr = firstByte & 0b00111000;
 					}
@@ -708,9 +709,9 @@ export class ZesaruxRemote extends RemoteBase {
 
 			// Check if the frame stack needs to be changed, if it's pop.
 			let pushedValue;
-			if(this.cpuHistory.isPop(opcodes)) {
+			if(CpuHistory.isPop(opcodes)) {
 				// Remember to push to stack
-				pushedValue = this.cpuHistory.decoder.getSPContent(currentLine);
+				pushedValue = CpuHistory.decoder.getSPContent(currentLine);
 				// Correct stack (this strange behavior is done to cope with an interrupt)
 				sp += 2;
 			}
@@ -800,7 +801,7 @@ export class ZesaruxRemote extends RemoteBase {
 		let sp=Z80Registers.decoder.parseSP(currentLine);
 		let expectedSP: number|undefined=sp;
 		let expectedPC;
-		const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
+		const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
 		const flags=Z80Registers.decoder.parseAF(currentLine);
 		const nextSP=Z80Registers.decoder.parseSP(nextLine);
 
@@ -814,7 +815,7 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 
 		// Check for CALL (CALL cc)
-		if (this.cpuHistory.isCallAndExecuted(opcodes, flags)) {
+		if (CpuHistory.isCallAndExecuted(opcodes, flags)) {
 			sp-=2;	// CALL pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
@@ -826,11 +827,11 @@ export class ZesaruxRemote extends RemoteBase {
 			this.reverseDbgStack.push(frame);
 		}
 		// Check for RST
-		else if (this.cpuHistory.isRst(opcodes)) {
+		else if (CpuHistory.isRst(opcodes)) {
 			sp-=2;	// RST pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
-			const callAddr=this.cpuHistory.getRstAddress(opcodes);
+			const callAddr=CpuHistory.getRstAddress(opcodes);
 			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
@@ -839,7 +840,7 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 		else {
 			// Check for PUSH
-			const pushedValue=this.cpuHistory.getPushedValue(opcodes, currentLine);
+			const pushedValue=CpuHistory.getPushedValue(opcodes, currentLine);
 			if (pushedValue!=undefined) {	// Is undefined if not a PUSH
 				// Push to frame stack
 				frame.stack.unshift(pushedValue);
@@ -847,13 +848,13 @@ export class ZesaruxRemote extends RemoteBase {
 				expectedSP=sp;
 			}
 			// Check for POP
-			else if (this.cpuHistory.isPop(opcodes)
-				||this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
+			else if (CpuHistory.isPop(opcodes)
+				||CpuHistory.isRetAndExecuted(opcodes, flags)) {
 				expectedSP+=2;	// Pop from the stack
 			}
 			// Otherwise calculate the expected SP
 			else {
-				expectedSP=this.cpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
+				expectedSP=CpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
 				if (expectedSP==undefined) {
 					// This means: Opcode was LD SP,(nnnn).
 					// So use PC instead to check.
@@ -964,7 +965,7 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 
 		// Decoration
-		this.emitRevDbgHistory();
+		CpuHistory.emitRevDbgHistory();
 
 		// Call handler
 		return breakReason;
@@ -983,7 +984,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
 			// Check for reverse debugging.
-			if (this.cpuHistory.isInStepBackMode()) {
+			if (CpuHistory.isInStepBackMode()) {
 				// Get current line
 				let currentLine=Z80Registers.getCache();
 				assert(currentLine);
@@ -991,16 +992,16 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Check for CALL/RST. If not do a normal step-into.
 				// If YES stop if pc reaches the next instruction.
-				const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
+				const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
 				const opcode0=opcodes&0xFF;
 				let pc=Z80Registers.decoder.parsePC(currentLine);
 				let nextPC0;
 				let nextPC1;
-				if (this.cpuHistory.isCallOpcode(opcode0)) {
+				if (CpuHistory.isCallOpcode(opcode0)) {
 					nextPC0=pc+3;
 					nextPC1=nextPC0;
 				}
-				else if (this.cpuHistory.isRstOpcode(opcode0)) {
+				else if (CpuHistory.isRstOpcode(opcode0)) {
 					nextPC0=pc+1;
 					nextPC1=nextPC0+1;	// If return address is adjusted
 				}
@@ -1046,10 +1047,10 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				this.emitRevDbgHistory();
+				CpuHistory.emitRevDbgHistory();
 
 				// Call handler
-				const instruction='  '+Utility.getHexString(pc, 4)+' '+this.cpuHistory.getInstruction(currentLine);
+				const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
 				resolve({instruction, tStates: undefined, cpuFreq: undefined, breakReason});
 
 				// Return if next line is available, i.e. as long as we did not reach the start.
@@ -1143,7 +1144,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
 			// Check for reverse debugging.
-			if (this.cpuHistory.isInStepBackMode()) {
+			if (CpuHistory.isInStepBackMode()) {
 				// Get current line
 				let currentLine=Z80Registers.getCache();
 				assert(currentLine);
@@ -1165,10 +1166,10 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				this.emitRevDbgHistory();
+				CpuHistory.emitRevDbgHistory();
 
 				// Call handler
-				const instruction='  '+Utility.getHexString(pc, 4)+' '+this.cpuHistory.getInstruction(currentLine);
+				const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
 				resolve({instruction, tStates: undefined, cpuFreq: undefined, breakReason});
 
 				// Return if next line is available, i.e. as long as we did not reach the start.
@@ -1270,7 +1271,7 @@ export class ZesaruxRemote extends RemoteBase {
 			return;
 
 		// Get start index
-		let index = this.cpuHistory.getHistoryIndex() + 1;
+		let index = CpuHistory.getHistoryIndex() + 1;
 
 		let startIndex = index - count;
 		if(startIndex < 0)
@@ -1306,7 +1307,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
 			// Check for reverse debugging.
-			if (this.cpuHistory.isInStepBackMode()) {
+			if (CpuHistory.isInStepBackMode()) {
 				// Step out will run until the start of the cpu history
 				// or until a "RETx" is found (one behind).
 				// To make it more complicated: this would falsely find a RETI event
@@ -1335,8 +1336,8 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for RET(I/N)
 						const flags=Z80Registers.decoder.parseAF(currentLine);
-						const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
-						if (this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
+						const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
+						if (CpuHistory.isRetAndExecuted(opcodes, flags)) {
 							// Read SP
 							const sp=Z80Registers.decoder.parseSP(nextLine);
 							// Check SP
@@ -1362,7 +1363,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				this.emitRevDbgHistory();
+				CpuHistory.emitRevDbgHistory();
 
 				// Call handler
 				resolve({breakReason});
@@ -1466,31 +1467,31 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
-			let breakReason;
-			let instruction = '';
-			try {
-				// Remember previous line
-				let prevLine = Z80Registers.getCache();
-				assert(prevLine);
-				const currentLine = await this.revDbgPrev();
-				if(currentLine) {
-					// Stack handling:
-					await this.handleReverseDebugStackBack(currentLine, prevLine);
-					// Get instruction
-					const pc = Z80Registers.getPC();
-					instruction = '  ' + Utility.getHexString(pc, 4) + ' ' + this.cpuHistory.getInstruction(currentLine);
-				}
-				else
-					breakReason = 'Break: Reached end of instruction history.';
+		let breakReason;
+		let instruction='';
+		try {
+			// Remember previous line
+			let prevLine=Z80Registers.getCache();
+			assert(prevLine);
+			const currentLine=await this.revDbgPrev();
+			if (currentLine) {
+				// Stack handling:
+				await this.handleReverseDebugStackBack(currentLine, prevLine);
+				// Get instruction
+				const pc=Z80Registers.getPC();
+				instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
 			}
-			catch(e) {
-				breakReason = e;
-			}
+			else
+				breakReason='Break: Reached end of instruction history.';
+		}
+		catch (e) {
+			breakReason=e;
+		}
 
-			// Decoration
-			this.emitRevDbgHistory();
+		// Decoration
+		CpuHistory.emitRevDbgHistory();
 
-			// Call handler
+		// Call handler
 		return {instruction, breakReason};
 	}
 
@@ -2156,7 +2157,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * If at end it returns undefined.
 	 */
 	protected async revDbgPrev(): Promise<string|undefined> {
-		const line = await this.cpuHistory.getPrevRegistersAsync();
+		const line = await CpuHistory.getPrevRegistersAsync();
 		if(line) {
 			// Add to register cache
 			Z80Registers.setCache(line);
@@ -2175,7 +2176,7 @@ export class ZesaruxRemote extends RemoteBase {
 	// TODO: Remove (is in cpu history)
 	protected revDbgNext(): string|undefined {
 		// Get line
-		let line = this.cpuHistory.getNextRegisters() as string;
+		let line = CpuHistory.getNextRegisters() as string;
 		Z80Registers.setCache(line);
 		// Remove one address from history
 		this.revDbgHistory.pop();

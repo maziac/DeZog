@@ -29,8 +29,8 @@ import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CodeCoverageArray} from './remotes/zxsimulator/codecovarray';
-import {CpuHistory} from './remotes/cpuhistory';
-import {StepHistory} from './remotes/stephistory';
+import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
+import {StepHistoryClass} from './remotes/stephistory';
 
 
 
@@ -79,9 +79,6 @@ export class DebugSessionClass extends DebugSession {
 	/// unit tests are running and to emit events to the caller.
 	protected static unitTestHandler: ((da: DebugSessionClass) => void)|undefined;
 
-	/// Pointer to the cpu history object. Either defined by the Remote or (if not)
-	/// the standard (lite) step history is used.
-	protected cpuHistory: CpuHistory|StepHistory;
 
 
 	/**
@@ -454,12 +451,11 @@ export class DebugSessionClass extends DebugSession {
 		RemoteFactory.createRemote(Settings.launch.remoteType);
 
 		// Check if a cpu history object has been created.
-		this.cpuHistory=Remote.getCpuHistory();
-		if (!this.cpuHistory) {
+		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
-			this.cpuHistory=new StepHistory();
-			this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
-			this.cpuHistory.setDecoder(Z80Registers.decoder);
+			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
+			CpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+			CpuHistory.setDecoder(Z80Registers.decoder);
 		}
 
 		// Load files
@@ -478,7 +474,7 @@ export class DebugSessionClass extends DebugSession {
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
-		Remote.on('revDbgHistory', addresses => {
+		CpuHistory?.on('revDbgHistory', addresses => {
 			// Reverse debugging history addresses
 			Decoration.showRevDbgHistory(addresses);
 		});
@@ -1120,7 +1116,7 @@ export class DebugSessionClass extends DebugSession {
 			// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 			// Display T-states and time
-			this.showUsedTStates('Continue. ', result.tStates, result.cpuFreq);
+			this.showDisassembly('Continue. ', result.tStates, result.cpuFreq);
 
 			if (result.breakReasonString) {
 				// Send output event to inform the user about the reason
@@ -1222,7 +1218,7 @@ export class DebugSessionClass extends DebugSession {
 			let text=result.instruction||'';
 			if (result.tStates||result.cpuFreq)
 				text+=' \t; ';
-			this.showUsedTStates('StepOver: '+text, result.tStates, result.cpuFreq);
+			this.showDisassembly('StepOver: '+text, result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
 			this.update({step: true});
@@ -1249,11 +1245,22 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearBreak();
 
 		// Check for reverse debugging.
-		if (this.cpuHistory.isInStepBackMode()) {
+		if (StepHistory?.isInStepBackMode()) {
 
 			// Immediately invoked function
 			(async () => {
-				this.cpuHistory.stepOver();
+				// Stepover
+				const {instruction, breakReason} = CpuHistory.stepOver();
+				this.showDisassembly(instruction);
+
+				// Check for output.
+				if (breakReason) {
+					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					// Show break reason
+					this.decorateBreak(breakReason);
+				}
+				// Send event
+				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 			})();	// End of immediately invoked function
 
 			return;
@@ -1273,7 +1280,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param tStates The used T-States.
 	 * @param cpuFreq The CPU clock frequency in Hz.
 	 */
-	protected showUsedTStates(disasm: string, tStates?: number, cpuFreq?: number) {
+	protected showDisassembly(disasm: string, tStates?: number, cpuFreq?: number) {
 		// Display T-states and time
 		let output=disasm;
 		if (tStates) {
@@ -1316,7 +1323,7 @@ export class DebugSessionClass extends DebugSession {
 				let text=result.instruction||'';
 				if (result.tStates||result.cpuFreq)
 					text+=' \t; ';
-				this.showUsedTStates('StepInto: '+text, result.tStates, result.cpuFreq);
+				this.showDisassembly('StepInto: '+text, result.tStates, result.cpuFreq);
 
 				// Update memory dump etc.
 				this.update({step: true});
@@ -1350,7 +1357,7 @@ export class DebugSessionClass extends DebugSession {
 		// Step-Out
 		Remote.stepOut().then(result => {
 			// Display T-states and time
-			this.showUsedTStates('StepOut. ', result.tStates, result.cpuFreq);
+			this.showDisassembly('StepOut. ', result.tStates, result.cpuFreq);
 
 			if (result.breakReason) {
 				// Output a possible problem (end of log reached)
@@ -2186,7 +2193,7 @@ Notes:
 				this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
 				// Handle decorations
-				Remote.emitRevDbgHistory();
+				CpuHistory?.emitRevDbgHistory();
 				Remote.handleHistorySpot();
 			});
 	}
