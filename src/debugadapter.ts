@@ -14,7 +14,7 @@ import {RefList} from './reflist';
 import {Settings, SettingsParameters} from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
-import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass,} from './remotes/z80registers';
+import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
@@ -459,6 +459,7 @@ export class DebugSessionClass extends DebugSession {
 			// If not create a lite (step) history
 			this.cpuHistory=new StepHistory();
 			this.cpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+			this.cpuHistory.setDecoder(Z80Registers.decoder);
 		}
 
 		// Load files
@@ -1247,10 +1248,7 @@ export class DebugSessionClass extends DebugSession {
 	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): void {
 		Decoration.clearBreak();
 
-/*
-TODO: implement
-
-// Check for reverse debugging.
+		// Check for reverse debugging.
 		if (this.cpuHistory.isInStepBackMode()) {
 
 			// Immediately invoked function
@@ -1261,7 +1259,6 @@ TODO: implement
 			return;
 		}
 
-*/
 		// Normal Step-Over
 		this.emulatorStepOver();	// Sends stopped request.
 

@@ -7,7 +7,7 @@ import { CallStackFrame } from '../../callstackframe';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
 import { CallSerializer } from '../../callserializer';
-import { ZesaruxCpuHistory } from './zesaruxcpuhistory';
+import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 
@@ -61,6 +61,7 @@ export class ZesaruxRemote extends RemoteBase {
 		Z80Registers.setDecoder(new DecodeZesaruxRegisters());
 		// Reverse debugging / CPU history
 		this.cpuHistory=new ZesaruxCpuHistory();
+		this.cpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
 		// Supported features
 		this.supportsZxNextRegisters=true;
 	}
@@ -639,7 +640,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 			// Get some values
 			let sp = Z80Registers.decoder.parseSP(currentLine);
-			const opcodes = this.cpuHistory.getOpcodes(currentLine);
+			const opcodes = this.cpuHistory.decoder.getOpcodes(currentLine);
 			const flags = Z80Registers.decoder.parseAF(currentLine);
 
 			// Check if there is at least one frame
@@ -654,7 +655,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Check for RET (RET cc and RETI/N)
 			if(this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 				// Get return address
-				const retAddr = this.cpuHistory.getSPContent(currentLine);
+				const retAddr=this.cpuHistory.decoder.getSPContent(currentLine);
 				// Get memory at return address
 				zSocket.send( 'read-memory ' + ((retAddr-3)&0xFFFF) + ' 3', data => {
 					// Check for CALL and RST
@@ -709,7 +710,7 @@ export class ZesaruxRemote extends RemoteBase {
 			let pushedValue;
 			if(this.cpuHistory.isPop(opcodes)) {
 				// Remember to push to stack
-				pushedValue = this.cpuHistory.getSPContent(currentLine);
+				pushedValue = this.cpuHistory.decoder.getSPContent(currentLine);
 				// Correct stack (this strange behavior is done to cope with an interrupt)
 				sp += 2;
 			}
@@ -799,7 +800,7 @@ export class ZesaruxRemote extends RemoteBase {
 		let sp=Z80Registers.decoder.parseSP(currentLine);
 		let expectedSP: number|undefined=sp;
 		let expectedPC;
-		const opcodes=this.cpuHistory.getOpcodes(currentLine);
+		const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
 		const flags=Z80Registers.decoder.parseAF(currentLine);
 		const nextSP=Z80Registers.decoder.parseSP(nextLine);
 
@@ -990,7 +991,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Check for CALL/RST. If not do a normal step-into.
 				// If YES stop if pc reaches the next instruction.
-				const opcodes=this.cpuHistory.getOpcodes(currentLine);
+				const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
 				const opcode0=opcodes&0xFF;
 				let pc=Z80Registers.decoder.parsePC(currentLine);
 				let nextPC0;
@@ -1334,7 +1335,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for RET(I/N)
 						const flags=Z80Registers.decoder.parseAF(currentLine);
-						const opcodes=this.cpuHistory.getOpcodes(currentLine);
+						const opcodes=this.cpuHistory.decoder.getOpcodes(currentLine);
 						if (this.cpuHistory.isRetAndExecuted(opcodes, flags)) {
 							// Read SP
 							const sp=Z80Registers.decoder.parseSP(nextLine);

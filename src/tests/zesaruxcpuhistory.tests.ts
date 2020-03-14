@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
+import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../remotes/zesarux/zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
 import {Settings} from '../settings';
@@ -18,9 +18,10 @@ suite('ZesaruxCpuHistory', () => {
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {
-		const decode=new DecodeZesaruxRegisters();
-		Z80Registers.setDecoder(decode);
-		const hist = new ZesaruxCpuHistory();
+		const decoder=new DecodeZesaruxRegisters();
+		Z80Registers.setDecoder(decoder);
+		const hist=new ZesaruxCpuHistory();
+		hist.setDecoder(new DecodeZesaruxHistoryInfo());
 		return hist;
 	}
 
@@ -98,19 +99,19 @@ suite('ZesaruxCpuHistory', () => {
 
 
 		test('getOpcodes', () => {
-			const hist = createCpuHistory();
+			const hist=createCpuHistory();
 
-			let result = hist.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c");
+			let result = hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c");
 			assert.equal(0x5c782ae5, result);
 
-			result = hist.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=00123456");
+			result=hist.decoder.getOpcodes("PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=00123456");
 			assert.equal(0x56341200, result);
 		});
 
 		test('getInstruction 1-4 bytes', () => {
 			const hist = createCpuHistory();
 
-			const resultn = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=e5000000");
@@ -143,7 +144,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RST', () => {
 			const hist = createCpuHistory();
 
-			const resultn = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=cf000000");
@@ -163,7 +164,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction CALL cc', () => {
 			const hist = createCpuHistory();
 
-			const resultn = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=CD214300");
@@ -198,7 +199,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RET, RETI, RETN', () => {
 			const hist = createCpuHistory();
 
-			const resultn = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=c9000000");
@@ -215,7 +216,7 @@ suite('ZesaruxCpuHistory', () => {
 		test('getInstruction RET cc', () => {
 			const hist = createCpuHistory();
 
-			const resultn = hist.getOpcodes("PC=0039 ... (PC)=e5000000");
+			const resultn=hist.decoder.getOpcodes("PC=0039 ... (PC)=e5000000");
 			assert.equal(0xe5, resultn);
 
 			let result = hist.getInstruction("PC=0039 ... (PC)=c0000000");

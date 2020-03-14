@@ -2,7 +2,65 @@ import * as assert from 'assert';
 import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 //import { Z80RegistersClass } from '../z80registers';
 import {CpuHistory} from '../cpuhistory';
-import {HistoryInstructionInfo} from '../stephistory';
+import {HistoryInstructionInfo} from '../decodehistinfo';
+import {DecodeZesaruxRegisters} from './decodezesaruxdata';
+
+
+
+/**
+ * Use similar data as DecodeRegisterData but with data extension.
+ * This extension is read and parsed as well.
+ * To get the opcodes at the pc and the contents at (SP).
+ * This is required only for true cpu history (not for lite/step history).
+ */
+export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
+
+	// The first time the index is searched. Afterwards the stored one is used.
+	protected pcIndex=-1;
+
+	// The first time the index is searched. Afterwards the stored one is used.
+	protected spIndex=-1;
+
+
+	/**
+	 * Input a line which was retrieved by 'cpu-history get N' and return the opcodes string.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
+	 * @return E.g. 0x5C782AE52 as number
+	 */
+	public getOpcodes(line: HistoryInstructionInfo): number {
+		if (this.pcIndex<0) {
+			this.pcIndex=line.indexOf('(PC)=');
+			assert(this.pcIndex>=0);
+			this.pcIndex+=5;
+		}
+		const opcodes=line.substr(this.pcIndex, 8);
+		// Change into number (exchange byte positions)
+		const opc=parseInt(opcodes, 16);
+		let result=opc>>>24;
+		result|=(opc>>>8)&0xFF00;
+		result|=(opc<<8)&0xFF0000;
+		result|=(opc<<24)&0xFF000000
+		return result;
+	}
+
+
+	/**
+	 * Reads the SP content from a given opcode string.
+	 * Uses '(SP)=xxxx'  from the input string.
+	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
+	 * @returns The (sp), e.g. 0xA2BF
+	 */
+	public getSPContent(line: string): number {
+		if (this.spIndex<0) {
+			this.spIndex=line.indexOf('(SP)=');
+			assert(this.spIndex>=0);
+			this.spIndex+=5;
+		}
+		const spString=line.substr(this.spIndex, 4);
+		const sp=parseInt(spString, 16);
+		return sp;
+	}
+}
 
 
 /**
@@ -27,20 +85,6 @@ import {HistoryInstructionInfo} from '../stephistory';
  * set-max-size number   Sets maximum allowed elements in history
  */
 export class ZesaruxCpuHistory extends CpuHistory {
-	// The first time the index is searched. Afterwards the stored one is used.
-	protected pcIndex = -1;
-
-	// The first time the index is searched. Afterwards the stored one is used.
-	protected spIndex = -1;
-
-
-	/**
-	 * Creates the object.
-	 */
-	constructor() {
-		super();
-	}
-
 
 	/**
 	 * Init.
@@ -61,6 +105,7 @@ export class ZesaruxCpuHistory extends CpuHistory {
 		}
 	}
 
+	// TODO: check if we can remove the complete class.
 
 	/**
 	 * Retrieves the instruction from ZEsarUX cpu history.
@@ -78,46 +123,6 @@ export class ZesaruxCpuHistory extends CpuHistory {
 					resolve(data);
 			});
 		});
-	}
-
-
-	/**
-	 * Input a line which was retrieved by 'cpu-history get N' and return the opcodes string.
-	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c"
-	 * @return E.g. 0x5C782AE52 as number
-	 */
-	public getOpcodes(line: HistoryInstructionInfo): number{
-		if(this.pcIndex < 0) {
-			this.pcIndex = line.indexOf('(PC)=');
-			assert(this.pcIndex >= 0);
-			this.pcIndex += 5;
-		}
-		const opcodes=line.substr(this.pcIndex, 8);
-		// Change into number (exchange byte positions)
-		const opc=parseInt(opcodes, 16);
-		let result=opc>>>24;
-		result|=(opc>>>8)&0xFF00;
-		result|=(opc<<8)&0xFF0000;
-		result|=(opc<<24)&0xFF000000
-		return result;
-	}
-
-
-	/**
-	 * Reads the SP content from a given opcode string.
-	 * Uses '(SP)=xxxx'  from the input string.
-	 * @param line E.g. "PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
-	 * @returns The (sp), e.g. 0xA2BF
-	 */
-	public getSPContent(line: string): number {
-		if(this.spIndex < 0) {
-			this.spIndex = line.indexOf('(SP)=');
-			assert(this.spIndex >= 0);
-			this.spIndex += 5;
-		}
-		const spString = line.substr(this.spIndex, 4);
-		const sp = parseInt(spString,16);
-		return sp;
 	}
 
 

@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory } from '../remotes/zesarux/zesaruxcpuhistory';
+import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../remotes/zesarux/zesaruxcpuhistory';
 import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
 import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
@@ -38,7 +38,8 @@ suite('ZesaruxEmulator', () => {
 			Z80RegistersClass.createRegisters();
 			const decoder=new DecodeZesaruxRegisters();
 			Z80Registers.setDecoder(decoder);
-			emul.cpuHistory = new ZesaruxCpuHistory();
+			emul.cpuHistory=new ZesaruxCpuHistory();
+			emul.cpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
 			mockSocket = new MockZesaruxSocket();
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack

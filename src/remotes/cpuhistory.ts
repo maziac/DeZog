@@ -1,8 +1,7 @@
 import * as assert from 'assert';
-import {Opcode} from '../disassembler/opcode';
-import {BaseMemory} from '../disassembler/basememory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
-import {StepHistory, HistoryInstructionInfo} from './stephistory';
+import {StepHistory} from './stephistory';
+import {HistoryInstructionInfo} from './decodehistinfo';
 
 /**
  * This class takes care of the ZEsarUX cpu history.
@@ -73,55 +72,6 @@ export class CpuHistory extends StepHistory{
 			}
 		}
 		return currentLine;
-	}
-
-
-	/**
-	 * Retrieves the opcodes from the HistoryInstructionInfo.
-	 * @param line One line of history.
-	 * @returns 4 bytes (the opcodes) in one number. little endian,
-	 * i.e. the opcode at PC is at the lowest 8 bits.
-	 */
-	public getOpcodes(line: HistoryInstructionInfo): number {
-		// Override this
-		assert(false);
-		return 0;
-	}
-
-
-	/**
-	 * Disassembles an instruction from the given opcode string.
-	 * @param line One line of history.
-	 * @returns The instruction, e.g. "LD A,1E".
-	 */
-	public getInstruction(line: HistoryInstructionInfo): string {
-		// Prepare bytes to memory
-		let opcodes=this.getOpcodes(line);
-		const pc=Z80Registers.decoder.parsePC(line);
-		const buffer=new BaseMemory(pc, 4);
-		for (let i=0; i<4; i++) {
-			const opc=opcodes&0xFF;
-			buffer.setValueAtIndex(i, opc);
-			opcodes>>>=8;
-		}
-		// Get opcode
-		const opcode=Opcode.getOpcodeAt(buffer, pc);
-		// Disassemble
-		const opCodeDescription=opcode.disassemble();
-		const instr=opCodeDescription.mnemonic;
-		return instr;
-	}
-
-	/**
-	 * Retrieves the 2 bytes from stack in the HistoryInstructionInfo.
-	 * I.e. the potential return address.
-	 * @param line One line of history.
-	 * @returns The (sp), e.g. 0xA2BF
-	 */
-	public getSPContent(line: HistoryInstructionInfo): number {
-		// Override this
-		assert(false);
-		return 0;
 	}
 
 

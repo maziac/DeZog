@@ -1,14 +1,11 @@
 import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
+import {HistoryInstructionInfo} from './decodehistinfo';
+import {BaseMemory} from '../disassembler/basememory';
+import {Opcode} from '../disassembler/opcode';
 //import {Remote} from './remotefactory';
 //import {Utility} from '../misc/utility';
 
-
-/// For StepHistory this is the register data only.
-/// For full cpu history the memory content at PC (the instruction)
-/// and the content at SP (the potential return address)
-/// will be added.
-export type HistoryInstructionInfo=any;
 
 
 /**
@@ -56,7 +53,9 @@ export class StepHistory {
 	/// Used to show this lines decorated (gray) while stepping backwards.
 	protected revDbgHistory=new Array<number>();
 
-
+	/// The decoder of the instruction lines. Is the register encoder
+	/// for Stephistory and an enhanced decoder for CpuHistory.
+	public decoder: HistoryInstructionInfo;
 
 	/**
 	 * Creates the object.
@@ -71,6 +70,15 @@ export class StepHistory {
 	 * @param size The max size of the history.
 	 */
 	public init(maxSize: number) {
+	}
+
+
+	/**
+	 * Sets the decoder to use.
+	 */
+	// TODO: Kann ich auch löschen und direkt drauf zugreifen, oder eine getDecoder Funktion implementieren.
+	public setDecoder(decoder: HistoryInstructionInfo) {
+		this.decoder=decoder;
 	}
 
 
@@ -142,6 +150,29 @@ export class StepHistory {
 		return (this.historyIndex >= 0);
 	}
 
+
+	/**
+	 * Disassembles an instruction from the given opcode string.
+	 * @param line One line of history.
+	 * @returns The instruction, e.g. "LD A,1E".
+	 */
+	public getInstruction(line: HistoryInstructionInfo): string {
+		// Prepare bytes to memory
+		let opcodes=this.decoder.getOpcodes(line);
+		const pc=Z80Registers.decoder.parsePC(line);
+		const buffer=new BaseMemory(pc, 4);
+		for (let i=0; i<4; i++) {
+			const opc=opcodes&0xFF;
+			buffer.setValueAtIndex(i, opc);
+			opcodes>>>=8;
+		}
+		// Get opcode
+		const opcode=Opcode.getOpcodeAt(buffer, pc);
+		// Disassemble
+		const opCodeDescription=opcode.disassemble();
+		const instr=opCodeDescription.mnemonic;
+		return instr;
+	}
 
 
 	/**
