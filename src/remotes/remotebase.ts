@@ -10,6 +10,7 @@ import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
+import {CpuHistory} from './cpuhistory';
 
 
 
@@ -144,8 +145,8 @@ export class RemoteBase extends EventEmitter {
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack: number;
 
-	/// A list for the frames (call stack items)
-	protected listFrames=new RefList<CallStackFrame>();
+	/// A list for the frames (call stack items). Is cached here.
+	protected listFrames: RefList<CallStackFrame>;
 
 	/// Mirror of the remote's breakpoints.
 	protected breakpoints=new Array<RemoteBreakpoint>();
@@ -724,6 +725,15 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+	/**
+	 * Clears the callstack.
+	 * The next call to 'getCallStack' will not return the cached value,
+	 * but will reload the cache.
+	 */
+	public clearCallStack() {
+		this.listFrames=undefined as any;
+	}
+
 
 	/**
 	  * Returns the extended stack as array.
@@ -733,6 +743,10 @@ export class RemoteBase extends EventEmitter {
 	  * But no more than about 100 elements.
 	  */
 	public async getCallStack(): Promise<RefList<CallStackFrame>> {
+		// Check if there are already cached values.
+		if (this.listFrames)
+			return this.listFrames;
+
 		const callStack=new RefList<CallStackFrame>();
 		// Get normal stack values
 		const stack=await this.getStack();
@@ -774,7 +788,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Returns the name of the interrupt.
 	 */
-	protected getInterruptName() {
+	public getInterruptName() {
 		return "__INTERRUPT__";
 	}
 
@@ -784,7 +798,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param sp The current SP value.
 	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
 	 */
-	protected getMainName(sp: number) {
+	public getMainName(sp: number) {
 		let part="";
 		if (this.topOfStack) {
 			const diff=this.topOfStack-sp;
@@ -798,7 +812,6 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
-
 	/**
 	 * Returns the stack frames.
 	 * Either the "real" ones from Remote or the virtual ones during reverse debugging.
@@ -806,7 +819,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
 		// Check for reverse debugging.
-		if (this.isInStepBackMode()) {
+		if (CpuHistory.isInStepBackMode()) {
 			// Return virtual stack
 			assert(this.reverseDbgStack);
 			return this.reverseDbgStack;
@@ -906,18 +919,6 @@ export class RemoteBase extends EventEmitter {
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		assert(false);	// override this
 		return {};
-	}
-
-
-/**
-  * 'step backwards' the program execution in the debugger.
-  * @returns {instruction, breakReason} Promise.
-  * instruction: e.g. "081C NOP"
-  * breakReason: If not undefined it holds the break reason message.
-  */
-	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
-		assert(false);	// override this
-		return {instruction: "", breakReason: undefined};
 	}
 
 
@@ -1262,6 +1263,9 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+
+
+
 	// Reverse Debugging related
 
 	/**
@@ -1269,14 +1273,6 @@ export class RemoteBase extends EventEmitter {
 	 * Called when leaving the reverse debug mode.
 	 */
 	protected clearReverseDbgStack() {
-	}
-
-
-	/**
-	 * Returns true if in reverse debugging mode.
-	 */
-	protected isInStepBackMode(): boolean {
-		return false;
 	}
 
 

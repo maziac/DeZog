@@ -30,7 +30,6 @@ import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
-import {CallStackFrame} from './callstackframe';
 
 
 
@@ -74,10 +73,6 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>();
-
-	/// After a break (after a step etc.) the callstack is retrieved and stored here.
-	/// This is returned when vscode asks for a stackTraceRequest.
-	protected callstackCache: RefList<CallStackFrame>;
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
@@ -564,7 +559,6 @@ export class DebugSessionClass extends DebugSession {
 					}
 					else {
 						// Break
-						this.callstackCache=await Remote.getCallStack();
 						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
 					}
 				}
@@ -700,7 +694,7 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Returns the stack frames.
 	 */
-	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
+	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void { // TODO: remove serializer and stackTraceResponses
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
 		this.stackTraceResponses.push(response);
 		if (this.stackTraceResponses.length>1)
@@ -717,17 +711,16 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Serialize
-		this.serializer.exec(() => {
+		this.serializer.exec(async () => {
 			// Clear all variables
 			this.listVariables.length=0;
 
 			// Get the call stack trace.
-			assert(this.callstackCache);
 			let callStack;
 			if (StepHistory.isInStepBackMode())
 				callStack=StepHistory.getCallStack();
 			else
-				callStack=this.callstackCache;
+				callStack=await Remote.getCallStack();;
 			// Go through complete call stack and get the sources.
 			// If no source exists than get a hexdump and disassembly later.
 			frameCount=callStack.length;
@@ -1217,9 +1210,6 @@ export class DebugSessionClass extends DebugSession {
 	public emulatorStepOver() {
 		Decoration.clearBreak();
 
-		// Set the current callstack for the lite history
-		StepHistory.pushCallStack(this.callstackCache);
-
 		// Normal Step-Over
 		Remote.stepOver().then(async result => {
 			// Display T-states and time
@@ -1227,12 +1217,6 @@ export class DebugSessionClass extends DebugSession {
 			if (result.tStates||result.cpuFreq)
 				text+=' \t; ';
 			this.showDisassembly('StepOver: '+text, result.tStates, result.cpuFreq);
-
-			// Store registers
-			await StepHistory.pushHistoryInfo();
-
-			// Get the call stack
-			this.callstackCache=await Remote.getCallStack();
 
 			// Update memory dump etc.
 			this.update({step: true});
@@ -1331,9 +1315,6 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
-			// Set the current callstack for the lite history
-			StepHistory.pushCallStack(this.callstackCache);
-
 			// Step-Into
 			Remote.stepInto().then(async result => {
 				// Display T-states and time
@@ -1342,14 +1323,8 @@ export class DebugSessionClass extends DebugSession {
 					text+=' \t; ';
 				this.showDisassembly('StepInto: '+text, result.tStates, result.cpuFreq);
 
-				// Store registers
-				await StepHistory.pushHistoryInfo();
-
 				// Update memory dump etc.
 				this.update({step: true});
-
-				// Get the call stack
-				this.callstackCache=await Remote.getCallStack();
 
 				// Output a possible problem ("end of cpu history reached")
 				if (result.breakReason)
@@ -1410,10 +1385,16 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		Decoration.clearBreak();
-		// Step-Back
-		Remote.stepBack().then(result => {
+
+		(async () => {
+			// Step back
+			const result=await StepHistory.stepBack();
+
 			// Print
-			vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
+			let text='StepBack';
+			if (result.instruction)
+				text+=': '+result.instruction;
+			vscode.debug.activeDebugConsole.appendLine(text);
 
 			if (result.breakReason) {
 				// Output a possible problem (end of log reached)
@@ -1427,11 +1408,10 @@ export class DebugSessionClass extends DebugSession {
 
 			// Response
 			this.sendResponse(response);
-			this.serializer.endExec();
 
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-		});
+		})();
 	}
 
 

@@ -13,6 +13,7 @@ import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
+import {StepHistory} from '../cpuhistory';
 
 
 
@@ -236,6 +237,34 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * This method should be called before a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * The idea here is to store the values for the (lite) step history.
+	 * If  true history is used this should be overridden with an empty method.
+	 */
+	protected async preStep(): Promise<void> {
+		// Make sure registers and callstack exist.
+		await this.getRegisters();
+		await this.getCallStack();
+		// Store as (lite step history)
+		StepHistory.pushHistoryInfo(Z80Registers.getCache());
+		StepHistory.pushCallStack(this.listFrames);
+	}
+
+
+	/**
+	 * This method should be called after a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * It will clear e.g. the register and teh call stack cache.
+	 * So that the next time they are accessed they are immediately refreshed.
+	 */
+	protected postStep() {
+		Z80Registers.clearCache();
+		this.clearCallStack();
+	}
+
+
+	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {reason, tStates, cpuFreq}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
@@ -284,11 +313,13 @@ export class DzrpRemote extends RemoteBase {
 
 					// Check for continue
 					if (condition==undefined) {
+						// Pre action
+						await this.preStep();
 						// Continue
 						this.sendDzrpCmdContinue();
 					}
 					else {
-						// Construct break resaon string to report
+						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
 
 						// return
@@ -301,7 +332,7 @@ export class DzrpRemote extends RemoteBase {
 			};
 
 			// Clear registers
-			Z80Registers.clearCache();
+			this.postStep();
 			// Send 'run' command
 			this.sendDzrpCmdContinue();
 		});
@@ -330,8 +361,10 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(async resolve => {
-			await this.getRegisters();
+			// Do pre-step
+			await this.preStep();
 			// Calculate the breakpoints to use for step-over
+			await this.getRegisters();
 			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
 
 			// Disassemble
@@ -339,8 +372,8 @@ export class DzrpRemote extends RemoteBase {
 			const instruction=opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			this.continueResolve=({breakReasonString}) => {
-				// Clear register cache
-				Z80Registers.clearCache();
+				// Clear registers
+				this.postStep();
 				// return
 				resolve({instruction, breakReasonString});
 			};
@@ -378,6 +411,9 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{tStates, cpuFreq, breakReason}>(async resolve => {
+			// Pre action
+			await this.preStep();
+
 			// Reset flag
 			this.pauseStepOut=false;
 			// Get current SP

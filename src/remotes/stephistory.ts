@@ -140,27 +140,22 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
-	 * Pushes a callstack to the array.
-	 * Is called before the next instruction entry is added to history.
+	 * Pushes one history into the array.
+	 * @param line One line of history.
 	 */
-	public pushCallStack(callstack: RefList<CallStackFrame>) {
-		//		assert(this.historyIndex>=0);
-		//		this.liteCallStackHistory[this.historyIndex] = callstack;
-		assert(callstack);
-		assert(this.liteCallStackHistory.length==this.history.length);
-		this.liteCallStackHistory.push(callstack);
+	public async pushHistoryInfo(line: HistoryInstructionInfo): Promise<void> {
+		assert(line);
+		this.history.push(line);
 	}
 
 
 	/**
-	 * Pushes one history into the array.
-	 * Is called after pushCallStack.
+	 * Pushes a callstack to the array.
+	 * If it is called it is called after 'pushHistoryInfo' to check the length correctly.
 	 */
-	public async pushHistoryInfo(): Promise<void> {
-		await Remote.getRegisters();	// Make sure cache is filled
-		const regs=Z80Registers.getCache();
-		assert(regs);
-		this.history.push(regs);
+	public pushCallStack(callstack: RefList<CallStackFrame>) {
+		assert(callstack);
+		this.liteCallStackHistory.push(callstack);
 		assert(this.liteCallStackHistory.length==this.history.length);
 	}
 
@@ -209,12 +204,40 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
+	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 */
+	public emitRevDbgHistory() {
+		// Change debug history array into set.
+		const addrSet=new Set(this.revDbgHistory)
+		this.emit('revDbgHistory', addrSet);
+	}
+
+
+	/**
+	 * @returns Returns the previous line in the cpu history.
+	 * If at end it returns undefined.
+	 */
+	public async revDbgPrev(): Promise<HistoryInstructionInfo|undefined> {
+		const line=await this.getPrevRegistersAsync();
+		if (line) {
+			// Add to register cache
+			Z80Registers.setCache(line);
+			// Add to history for decoration
+			const addr=Z80Registers.getPC();
+			this.revDbgHistory.push(addr);
+		}
+		return line;
+	}
+
+
+	/**
 	 * @returns Returns the next line in the cpu history.
 	 * If at start it returns ''.
+	 * Note: Doesn't need to be async. I.e. doesn't need to communicate with the external remote.
 	 */
-	protected revDbgNext(): HistoryInstructionInfo|undefined {
+	public revDbgNext(): HistoryInstructionInfo|undefined {
 		// Get line
-		let line=this.getNextRegisters() as HistoryInstructionInfo;
+		let line=this.getNextRegisters() as string;
 		Z80Registers.setCache(line);
 		// Remove one address from history
 		this.revDbgHistory.pop();
@@ -258,14 +281,28 @@ export class StepHistoryClass extends EventEmitter {
 	}
 
 
-
 	/**
-	 * Emits 'revDbgHistory' to signal that the files should be decorated.
-	 */
-	public emitRevDbgHistory() {
-		// Change debug history array into set.
-		const addrSet=new Set(this.revDbgHistory)
-		this.emit('revDbgHistory', addrSet);
+	  * 'step backwards' the program execution in the debugger.
+	  * @returns {instruction, breakReason} Promise.
+	  * instruction: e.g. "081C NOP"
+	  * breakReason: If not undefined it holds the break reason message.
+	  */
+	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
+		let breakReason;
+		try {
+			const currentLine=await this.revDbgPrev();
+			if (!currentLine)
+				throw Error('Break: Reached end of instruction history.');
+			}
+		catch (e) {
+			breakReason=e;
+		}
+
+		// Decoration
+		this.emitRevDbgHistory();
+
+		// Call handler
+		return {instruction: undefined as any, breakReason};
 	}
 
 }

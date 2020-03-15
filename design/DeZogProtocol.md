@@ -41,7 +41,7 @@ dezog <- program: 'pause' notification
 dezog -> program: 'continue' command
 dezog <- program: 'continue' response
 ...
-note over program: Brakpoint hit
+note over program: Breakpoint hit
 dezog <- program: 'pause' notification
 ~~~
 
