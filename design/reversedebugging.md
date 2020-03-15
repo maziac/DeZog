@@ -1,9 +1,138 @@
 # Reverse Debugging
 
 The main idea is to support not only the (normal) forward stepping but also stepping backwards in time.
+Reverse Debugging relies on the instruction history. I.e. the executed instruction are recorded and played back when backwards stepping in reverse order.
 
-Due to emulator restrictions a lightweight approach is chosen.
-Fortunately ZEsarUx supports a cpu-history.
+There are 2 basic types of instruction history:
+- the step (or lite) history (base class StepHistory)
+- and the cpu (or true) history (vase class CpuHistory)
+
+The step history works with all kind of remotes. It just records the the instructions where the user stepped or breaked.
+I.e. it basically records your actions in the debugger and you can replay the locations backwards.
+It is not a true instruction history as it misses instructions. E.g. if you press 'continue' and tehn break it records only the start an the end point, not all the instructions in between.
+Although this is less powerful than a true cpu history it has the big advantage that it works without support from the remote.
+
+The cpu history requires support from the remote. In fact the remote does all the recording and DeZog just requests the history entries from the remote.
+ZEsarUX supports such a true cpu history.
+
+During stepping the following main classes (singletons) are involved:
+- DebugAdapter
+- Remote
+- CpuHistory/StepHistory
+- Z80Register
+
+Here is a basic MSC for the lite and true history. One can see that for the lite history the remote is not involved.
+
+```puml
+hide footbox
+title (Lite) Step History
+
+-> DebugAdapter: Step forward
+DebugAdapter -> StepHistory: Store
+note over StepHistory: Store registers and \ncallstack
+DebugAdapter -> Remote: Step forward
+...
+-> DebugAdapter: Step back
+DebugAdapter -> StepHistory: Step back
+note over StepHistory: Recall registers and \ncallstack
+DebugAdapter <-- StepHistory: Instruction, Registers, Callstack
+```
+
+
+```puml
+hide footbox
+title Alternative (Lite) Step History, favorised
+
+participant DebugAdapter
+participant StepHistory
+
+-> DebugAdapter: Step forward
+DebugAdapter -> Remote: Step forward
+Remote -> StepHistory: Store
+note over StepHistory: Store registers and \ncallstack
+...
+-> DebugAdapter: Step back
+DebugAdapter -> StepHistory: Step back
+note over StepHistory: Recall registers and \ncallstack
+DebugAdapter <-- StepHistory: Instruction, Registers, Callstack
+```
+
+```puml
+hide footbox
+title (True) Cpu History
+
+participant DebugAdapter
+participant CpuHistory
+
+-> DebugAdapter: Step forward
+DebugAdapter -> CpuHistory: Store
+note over CpuHistory: Does not store\nanything
+DebugAdapter -> Remote: Step forward
+note over Remote: Store registers and \ninstruction + (SP) for all\nexecuted instructions
+...
+DebugAdapter -> CpuHistory: Step back
+CpuHistory -> Remote: Get History Entry
+note over Remote: Recall registers\n+ instruction + (SP)
+CpuHistory <-- Remote: Instruction, Registers
+note over CpuHistory: Interprete instruction,\nadd to/remove from callstack
+DebugAdapter <-- CpuHistory: Instruction, Registers, Callstack
+```
+
+Paradigm:
+- The Remote takes care of communication with the History for storing the history info.
+- The DebugAdapter communicates with the History for the reverse debugging.
+- The DebugAdapter communicates with the Remote for the forward debugging
+
+<hr>
+
+Nicht so gut: Führt nur einen weiteren Schritt (Remote.stepBack) ein.
+Vielleicht architekturell besser: DebugAdapter redet nur mit Remote nicht mit History.
+
+```puml
+hide footbox
+title B: (Lite) Step History
+
+-> DebugAdapter: Step forward
+DebugAdapter -> Remote: Step forward
+Remote -> StepHistory: Store
+note over StepHistory: Store registers and \ncallstack
+...
+-> DebugAdapter: Step back
+DebugAdapter -> Remote: Step back
+Remote -> StepHistory: Get History Entry
+note over StepHistory: Recall registers and \ncallstack
+Remote <-- StepHistory: Instruction, Registers, Callstack
+DebugAdapter <-- Remote: Instruction, Registers, Callstack
+```
+
+```puml
+hide footbox
+title (True) Cpu History
+
+participant DebugAdapter
+participant Remote
+participant CpuHistory
+participant External as "External remote"
+
+-> DebugAdapter: Step forward
+DebugAdapter -> Remote: Step forward
+Remote -> External: Step forward
+note over External: Store registers and \ninstruction + (SP) for all\nexecuted instructions
+...
+DebugAdapter -> Remote: Step back
+Remote -> CpuHistory: Get History Entry
+CpuHistory -> External: Get History Entry
+note over External: Recall registers\n+ instruction + (SP)
+CpuHistory <-- External: Instruction, Registers, (SP)
+note over CpuHistory: Interprete instruction,\nadd to/remove from callstack
+Remote <-- CpuHistory: Instruction, Registers, Callstack
+DebugAdapter <-- Remote: Instruction, Registers, Callstack
+```
+
+
+# Reverse Debugging with ZEsarUX
+
+ZEsarUx supports a true cpu-history.
 This can record for each executed opcode
 - the address
 - the opcode
@@ -12,8 +141,7 @@ This can record for each executed opcode
 
 I.e. while stepping backwards it is possible to show the correct register contents at that point in time.
 
-The memory contents or other HW states are not recorded.
-Therefore this is a lightweight solution.
+**The memory contents or other HW states are not recorded**.
 
 Anyhow in most cases the reverse debugging feature is used in case we hit a breakpoint and have to step back some opcodes to see why we ended up there.
 Of course, knowing the correct memory contents would be beneficially but also without it will be a good help.
@@ -22,10 +150,12 @@ Of course, knowing the correct memory contents would be beneficially but also wi
 # Design
 
 The whole cpu-history logic is implemented in the ZesaruxEmulator.
-I.e. it is hidden from the Emulator class.
+I.e. it is hidden from the Remote class.
 
-The Emulator/ZesaruxEmulator class has to provide methods for step back and running reverse.
+The Zesarux Remote class has to provide methods for step back and running reverse.
 
+
+TODO: Needs rework: Most of the stuff is not done anymore in the Remote class but in the CpuHistory class.
 
 When the ZesaruxEmulator class receives a stepBack for the first time it will retrieve the youngest item from the ZEsarUX cpu-history and the system is in reverse debugging mode.
 It now reads the last line of the cpu-history and retrieves

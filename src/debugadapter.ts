@@ -28,9 +28,9 @@ import {ShallowVar} from './variables/shallowvar';
 import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
-import {CodeCoverageArray} from './remotes/zxsimulator/codecovarray';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
+import {CallStackFrame} from './callstackframe';
 
 
 
@@ -74,6 +74,10 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>();
+
+	/// After a break (after a step etc.) the callstack is retrieved and stored here.
+	/// This is returned when vscode asks for a stackTraceRequest.
+	protected callstackCache: RefList<CallStackFrame>;
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
@@ -421,10 +425,6 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise with an error text or undefined if no error.
 	 */
 	protected async startEmulator(): Promise<string|undefined> {
-
-		CodeCoverageArray.performanceTest();
-
-
 		try {
 			// init labels
 			Labels.init();
@@ -454,8 +454,8 @@ export class DebugSessionClass extends DebugSession {
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-			CpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
-			CpuHistory.setDecoder(Z80Registers.decoder);
+			StepHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+			StepHistory.setDecoder(Z80Registers.decoder);
 		}
 
 		// Load files
@@ -564,6 +564,7 @@ export class DebugSessionClass extends DebugSession {
 					}
 					else {
 						// Break
+						this.callstackCache=await Remote.getCallStack();
 						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
 					}
 				}
@@ -721,68 +722,72 @@ export class DebugSessionClass extends DebugSession {
 			this.listVariables.length=0;
 
 			// Get the call stack trace.
-			Remote.stackTraceRequest().then(callStack => {
-				// Go through complete call stack and get the sources.
-				// If no source exists than get a hexdump and disassembly later.
-				frameCount=callStack.length;
-				for (let index=frameCount-1; index>=0; index--) {
+			assert(this.callstackCache);
+			let callStack;
+			if (StepHistory.isInStepBackMode())
+				callStack=StepHistory.getCallStack();
+			else
+				callStack=this.callstackCache;
+			// Go through complete call stack and get the sources.
+			// If no source exists than get a hexdump and disassembly later.
+			frameCount=callStack.length;
+			for (let index=frameCount-1; index>=0; index--) {
+				const frame=callStack[index];
+				// Get file for address
+				const addr=frame.addr;
+				const file=Labels.getFileAndLineForAddress(addr);
+				// Store file, if it does not exist the name is empty
+				const src=this.createSource(file.fileName);
+				const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
+				const sf=new StackFrame(index+1, frame.name, src, lineNr);
+				sfrs.push(sf);
+				// Create array with addresses that need to be fetched for disassembly
+				if (!sf.source) {
 					const frame=callStack[index];
-					// Get file for address
-					const addr=frame.addr;
-					const file=Labels.getFileAndLineForAddress(addr);
-					// Store file, if it does not exist the name is empty
-					const src=this.createSource(file.fileName);
-					const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
-					const sf=new StackFrame(index+1, frame.name, src, lineNr);
-					sfrs.push(sf);
-					// Create array with addresses that need to be fetched for disassembly
-					if (!sf.source) {
-						const frame=callStack[index];
-						fetchAddresses.push(frame.addr);
-					}
+					fetchAddresses.push(frame.addr);
 				}
+			}
 
-				// Check if we need to fetch any dump.
-				const fetchAddressesCount=fetchAddresses.length;
-				if (fetchAddressesCount==0) {
-					// No dumps to fetch
-					this.serializer.endExec();
-					return;
-				}
+			// Check if we need to fetch any dump.
+			const fetchAddressesCount=fetchAddresses.length;
+			if (fetchAddressesCount==0) {
+				// No dumps to fetch
+				this.serializer.endExec();
+				return;
+			}
 
-				// Now get hexdumps for all non existing sources.
-				let fetchCount=0;
-				for (let index=0; index<fetchAddressesCount; index++) {
-					// So fetch a memory dump
-					const fetchAddress=fetchAddresses[index];
-					const fetchSize=100;	// N bytes
-					Remote.readMemoryDump(fetchAddress, fetchSize)
-						.then(data => {
-							// Save data for later writing
-							fetchData.push(data);
-							// Note: because of self-modifying code it may have changed
-							// since it was fetched at the beginning.
-							// Check if memory changed.
-							if (!doDisassembly) {
-								const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
-								for (let k=0; k<checkSize; k++) {
-									const val=this.dasm.memory.getValueAt(fetchAddress+k);
-									const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
-									if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
-										doDisassembly=true;
-										break;
-									}
+			// Now get hexdumps for all non existing sources.
+			let fetchCount=0;
+			for (let index=0; index<fetchAddressesCount; index++) {
+				// So fetch a memory dump
+				const fetchAddress=fetchAddresses[index];
+				const fetchSize=100;	// N bytes
+				Remote.readMemoryDump(fetchAddress, fetchSize)
+					.then(data => {
+						// Save data for later writing
+						fetchData.push(data);
+						// Note: because of self-modifying code it may have changed
+						// since it was fetched at the beginning.
+						// Check if memory changed.
+						if (!doDisassembly) {
+							const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+							for (let k=0; k<checkSize; k++) {
+								const val=this.dasm.memory.getValueAt(fetchAddress+k);
+								const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
+								if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
+									doDisassembly=true;
+									break;
 								}
 							}
-							// Check for end
-							fetchCount++;
-							if (fetchCount>=fetchAddressesCount) {
-								// All dumps fetched
-								this.serializer.endExec();
-							}
-						});
-				}
-			});
+						}
+						// Check for end
+						fetchCount++;
+						if (fetchCount>=fetchAddressesCount) {
+							// All dumps fetched
+							this.serializer.endExec();
+						}
+					});
+			}
 		});
 
 
@@ -1212,13 +1217,22 @@ export class DebugSessionClass extends DebugSession {
 	public emulatorStepOver() {
 		Decoration.clearBreak();
 
+		// Set the current callstack for the lite history
+		StepHistory.pushCallStack(this.callstackCache);
+
 		// Normal Step-Over
-		Remote.stepOver().then(result => {
+		Remote.stepOver().then(async result => {
 			// Display T-states and time
 			let text=result.instruction||'';
 			if (result.tStates||result.cpuFreq)
 				text+=' \t; ';
 			this.showDisassembly('StepOver: '+text, result.tStates, result.cpuFreq);
+
+			// Store registers
+			await StepHistory.pushHistoryInfo();
+
+			// Get the call stack
+			this.callstackCache=await Remote.getCallStack();
 
 			// Update memory dump etc.
 			this.update({step: true});
@@ -1250,7 +1264,7 @@ export class DebugSessionClass extends DebugSession {
 			// Immediately invoked function
 			(async () => {
 				// Stepover
-				const {instruction, breakReason} = CpuHistory.stepOver();
+				const {instruction, breakReason} = StepHistory.stepOver();
 				this.showDisassembly(instruction);
 
 				// Check for output.
@@ -1317,16 +1331,25 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearBreak();
 		// Serialize
 		this.serializer.exec(() => {
+			// Set the current callstack for the lite history
+			StepHistory.pushCallStack(this.callstackCache);
+
 			// Step-Into
-			Remote.stepInto().then(result => {
+			Remote.stepInto().then(async result => {
 				// Display T-states and time
 				let text=result.instruction||'';
 				if (result.tStates||result.cpuFreq)
 					text+=' \t; ';
 				this.showDisassembly('StepInto: '+text, result.tStates, result.cpuFreq);
 
+				// Store registers
+				await StepHistory.pushHistoryInfo();
+
 				// Update memory dump etc.
 				this.update({step: true});
+
+				// Get the call stack
+				this.callstackCache=await Remote.getCallStack();
 
 				// Output a possible problem ("end of cpu history reached")
 				if (result.breakReason)
@@ -1387,30 +1410,27 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
 		Decoration.clearBreak();
-		// Serialize
-		this.serializer.exec(() => {
-			// Step-Back
-			Remote.stepBack().then(result => {
-				// Print
-				vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
+		// Step-Back
+		Remote.stepBack().then(result => {
+			// Print
+			vscode.debug.activeDebugConsole.appendLine('StepBack: '+result.instruction);
 
-				if (result.breakReason) {
-					// Output a possible problem (end of log reached)
-					vscode.debug.activeDebugConsole.appendLine(result.breakReason);
-					// Show break reason
-					this.decorateBreak(result.breakReason);
-				}
+			if (result.breakReason) {
+				// Output a possible problem (end of log reached)
+				vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+				// Show break reason
+				this.decorateBreak(result.breakReason);
+			}
 
-				// Update memory dump etc.
-				this.update({step: true});
+			// Update memory dump etc.
+			this.update({step: true});
 
-				// Response
-				this.sendResponse(response);
-				this.serializer.endExec();
+			// Response
+			this.sendResponse(response);
+			this.serializer.endExec();
 
-				// Send event
-				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-			});
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		});
 	}
 

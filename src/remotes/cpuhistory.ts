@@ -2,6 +2,8 @@ import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass as StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
+import {RefList} from '../reflist';
+import {CallStackFrame} from '../callstackframe';
 
 /**
  * This class takes care of the ZEsarUX cpu history.
@@ -42,6 +44,21 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 */
 	public init(maxSize: number) {
 		super.init(maxSize);
+	}
+
+
+
+	/**
+	 * Only used in StepHistory.
+	 */
+	public pushCallStack(callstack: RefList<CallStackFrame>) {
+	}
+
+
+	/**
+	 * Only used in StepHistory.
+	 */
+	public async pushHistoryInfo(): Promise<void> {
 	}
 
 

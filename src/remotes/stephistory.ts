@@ -6,6 +6,8 @@ import {Opcode} from '../disassembler/opcode';
 import {Utility} from '../misc/utility';
 import {Remote} from './remotefactory';
 import {EventEmitter} from 'events';
+import {CallStackFrame} from '../callstackframe';
+import {RefList} from '../reflist';
 //import {Remote} from './remotefactory';
 //import {Utility} from '../misc/utility';
 
@@ -44,7 +46,7 @@ export class StepHistoryClass extends EventEmitter {
 	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
-	protected history: Array<HistoryInstructionInfo>;
+	protected history=Array<HistoryInstructionInfo>();
 
 	// The current history index.
 	protected historyIndex=-1;
@@ -57,13 +59,8 @@ export class StepHistoryClass extends EventEmitter {
 	/// for Stephistory and an enhanced decoder for CpuHistory.
 	public decoder: HistoryInstructionInfo;
 
-	/**
-	 * Creates the object.
-	 */
-	constructor() {
-		super();
-		this.history=Array<HistoryInstructionInfo>();
-	}
+	/// Only used in the StepHistory to store the call stack.
+	protected liteCallStackHistory=Array<RefList<CallStackFrame>>();
 
 
 	/**
@@ -130,6 +127,41 @@ export class StepHistoryClass extends EventEmitter {
 		if(this.historyIndex >= 0)
 			currentLine = this.history[this.historyIndex];
 		return currentLine;
+	}
+
+
+	/**
+	 * Returns the call stack at the historyIndex.
+	 */
+	public getCallStack(): RefList<CallStackFrame> {
+		assert(this.historyIndex>=0);
+		return this.liteCallStackHistory[this.historyIndex];
+	}
+
+
+	/**
+	 * Pushes a callstack to the array.
+	 * Is called before the next instruction entry is added to history.
+	 */
+	public pushCallStack(callstack: RefList<CallStackFrame>) {
+		//		assert(this.historyIndex>=0);
+		//		this.liteCallStackHistory[this.historyIndex] = callstack;
+		assert(callstack);
+		assert(this.liteCallStackHistory.length==this.history.length);
+		this.liteCallStackHistory.push(callstack);
+	}
+
+
+	/**
+	 * Pushes one history into the array.
+	 * Is called after pushCallStack.
+	 */
+	public async pushHistoryInfo(): Promise<void> {
+		await Remote.getRegisters();	// Make sure cache is filled
+		const regs=Z80Registers.getCache();
+		assert(regs);
+		this.history.push(regs);
+		assert(this.liteCallStackHistory.length==this.history.length);
 	}
 
 
