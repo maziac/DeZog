@@ -507,7 +507,7 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 
 			// Decoration
-			CpuHistory.emitRevDbgHistory();
+			(CpuHistory as any).emitRevDbgHistory();
 
 			// Return if next line is available, i.e. as long as we did not reach the start.
 			if (!nextLine) {
@@ -790,7 +790,7 @@ export class ZesaruxRemote extends RemoteBase {
 		}
 
 		// Decoration
-		CpuHistory.emitRevDbgHistory();
+		(CpuHistory as any).emitRevDbgHistory();
 
 		// Call handler
 		return breakReason;
@@ -872,7 +872,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				CpuHistory.emitRevDbgHistory();
+				(CpuHistory as any).emitRevDbgHistory();
 
 				// Call handler
 				const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
@@ -991,7 +991,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				CpuHistory.emitRevDbgHistory();
+				(CpuHistory as any).emitRevDbgHistory();
 
 				// Call handler
 				const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
@@ -1089,8 +1089,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Is used to display short history decoration.
 	 * Is called by the EmulDebugAdapter.
 	 */
+	// Todo: Sollte die CpuHistory stattdessen verwenden.
 	public handleHistorySpot() {
-		// Check if code coverage is enabled
+		// Check if history spot is enabled
 		const count = Settings.launch.history.spotCount;
 		if(count <= 0)
 			return;
@@ -1188,7 +1189,7 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Decoration
-				CpuHistory.emitRevDbgHistory();
+				(CpuHistory as any).emitRevDbgHistory();
 
 				// Call handler
 				resolve({breakReason});

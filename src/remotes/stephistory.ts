@@ -8,6 +8,7 @@ import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../reflist';
 import {Remote} from './remotefactory';
 import {Utility} from '../misc/utility';
+import {Settings} from '../settings';
 //import {Remote} from './remotefactory';
 //import {Utility} from '../misc/utility';
 
@@ -206,10 +207,54 @@ export class StepHistoryClass extends EventEmitter {
 	/**
 	 * Emits 'revDbgHistory' to signal that the files should be decorated.
 	 */
-	public emitRevDbgHistory() {
+	protected emitRevDbgHistory() {
 		// Change debug history array into set.
 		const addrSet=new Set(this.revDbgHistory)
 		this.emit('revDbgHistory', addrSet);
+	}
+
+
+	/**
+	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 * It can happen that this method has to retrieve data from the
+	 * remote.
+	 */
+	// TODO: muss das async sein?
+	protected async emitHistorySpot(): Promise<void> {
+		// Check if history spot is enabled
+		const count=Settings.launch.history.spotCount;
+		if (count<=0)
+			return;
+
+		// Otherwise calculate addresses
+
+		// Get start index
+		let index=this.getHistoryIndex()+1;
+		let startIndex=index-count;
+		if (startIndex<0)
+			startIndex=0;
+
+		const addresses=new Array<number>();
+		let end=index+count;
+		if (end>this.history.length)
+			end=this.history.length;
+		for (let i=startIndex; i<end; i++) {
+			const line=this.history[i];
+			const pc=this.decoder.parsePC(line);
+			addresses.push(pc);
+		}
+
+		// Emit code coverage event
+		this.emit('historySpot', startIndex, addresses);
+	}
+
+
+	/**
+	 * Emits 'revDbgHistory' and 'historySpot' if configured.
+	 */
+	public emitHistory() {
+		this.emitRevDbgHistory();
+		this.emitHistorySpot();
 	}
 
 
@@ -336,7 +381,7 @@ export class StepHistoryClass extends EventEmitter {
 		}
 
 		// Decoration
-		this.emitRevDbgHistory();
+		this.emitHistory();
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
@@ -378,7 +423,7 @@ export class StepHistoryClass extends EventEmitter {
 		}
 
 		// Decoration
-		this.emitRevDbgHistory();
+		this.emitHistory();
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!currentLine) {
@@ -408,7 +453,7 @@ export class StepHistoryClass extends EventEmitter {
 		}
 
 		// Decoration
-		this.emitRevDbgHistory();
+		this.emitHistory();
 
 		// Call handler
 		return {instruction: undefined as any, breakReason};
@@ -458,7 +503,7 @@ export class StepHistoryClass extends EventEmitter {
 		}
 
 		// Decoration
-		this.emitRevDbgHistory();
+		this.emitHistory();
 
 		// Call handler
 		return {instruction: undefined as any, breakReason};

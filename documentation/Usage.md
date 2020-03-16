@@ -483,7 +483,7 @@ If enabled (!= 0) you see the historic indices of the instructions. E.g. here:
 The indices are shown in brackets to the right.
 The PC is currently in line 988.
 The previous executed instruction is at index -1. Before at line 986 is index -2.
-Before that instructuin at index -3 (line 1008) we see that there was a branch. Obviously the flags have been NZ and the branch was taken.
+Before that instrucion at index -3 (line 1008) we see that there was a branch. Obviously the flags have been NZ and the branch was taken.
 
 With the *History Spot* you can see what has just happened before without having to back step.
 

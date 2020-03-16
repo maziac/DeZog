@@ -469,12 +469,12 @@ export class DebugSessionClass extends DebugSession {
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
-		CpuHistory?.on('revDbgHistory', addresses => {
+		StepHistory?.on('revDbgHistory', addresses => {
 			// Reverse debugging history addresses
 			Decoration.showRevDbgHistory(addresses);
 		});
 
-		Remote.on('historySpot', (startIndex, addresses) => {
+		StepHistory?.on('historySpot', (startIndex, addresses) => {
 			// Short history addresses
 			Decoration.showHistorySpot(startIndex, addresses);
 		});
@@ -2255,8 +2255,7 @@ Notes:
 				this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
 				// Handle decorations
-				CpuHistory?.emitRevDbgHistory();
-				Remote.handleHistorySpot();
+				StepHistory?.emitHistory();
 			});
 	}
 
