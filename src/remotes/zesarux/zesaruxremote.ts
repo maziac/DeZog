@@ -492,7 +492,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 					// Check for breakpoint
 					Z80Registers.setCache(nextLine);
-					const condition=this.checkPcBreakpoints();
+					const condition= (CpuHistory as any).checkPcBreakpoints();
 					if (condition!=undefined) {
 						breakReasonString=condition;
 						break;	// BP hit and condition met.
@@ -774,7 +774,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Check for breakpoint
 				Z80Registers.setCache(currentLine);
-				const condition=this.checkPcBreakpoints();
+				const condition=(CpuHistory as any).checkPcBreakpoints();
 				if (condition!=undefined) {
 					breakReason=condition;
 					break;	// BP hit and condition met.
@@ -857,7 +857,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for "real" breakpoint
 						Z80Registers.setCache(nextLine);
-						const condition=this.checkPcBreakpoints();
+						const condition=(CpuHistory as any).checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
 							break;	// BP hit and condition met.
@@ -1173,7 +1173,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 						// Check for breakpoint
 						Z80Registers.setCache(nextLine);
-						const condition=this.checkPcBreakpoints();
+						const condition=(CpuHistory as any).checkPcBreakpoints();
 						if (condition!=undefined) {
 							breakReason=condition;
 							break;	// BP hit and condition met.
@@ -1531,52 +1531,6 @@ export class ZesaruxRemote extends RemoteBase {
 		// But wait for the socket.
 		await zSocket.executeWhenQueueIsEmpty();
 		return bps;
-	}
-
-
-	/**
-	 * Returns the breakpoint at the given address.
-	 * Note: Checks only breakpoints with a set 'address'.
-	 * @returns A string with the reason. undefined if no breakpoint hit.
-	 */
-	protected checkPcBreakpoints(): string|undefined {
-		assert(Z80Registers.getCache());
-		let condition;
-		const pc = Z80Registers.getPC();
-		for(const bp of this.breakpoints) {
-			if(bp.address == pc) {
-				// Check for condition
-				if(!bp.condition) {
-					condition = "";
-					break;
-				}
-
-				// Evaluate condition
-				try {
-					const result = Utility.evalExpression(bp.condition, true);
-					if(result != 0) {
-						condition = bp.condition;
-						break;
-					}
-				}
-				catch(e) {
-					// A problem during evaluation happened,
-					// e.g. a memory location has been tested which is not possible
-					// during reverse debugging.
-					condition = "Could not evaluate: " + bp.condition;
-					break;
-				}
-			}
-		}
-
-		// Text
-		let reason;
-		if(condition != undefined) {
-			reason = 'Breakpoint hit at PC=' + Utility.getHexString(pc,4) + 'h';
-			if(condition != "")
-				reason += ', ' + condition;
-		}
-		return reason;
 	}
 
 

@@ -3,11 +3,11 @@ import {Z80Registers} from '../remotes/z80registers';
 import {HistoryInstructionInfo} from './decodehistinfo';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode} from '../disassembler/opcode';
-import {Utility} from '../misc/utility';
-import {Remote} from './remotefactory';
 import {EventEmitter} from 'events';
 import {CallStackFrame} from '../callstackframe';
 import {RefList} from '../reflist';
+import {Remote} from './remotefactory';
+import {Utility} from '../misc/utility';
 //import {Remote} from './remotefactory';
 //import {Utility} from '../misc/utility';
 
@@ -145,7 +145,7 @@ export class StepHistoryClass extends EventEmitter {
 	 */
 	public async pushHistoryInfo(line: HistoryInstructionInfo): Promise<void> {
 		assert(line);
-		this.history.push(line);
+		this.history.unshift(line);
 	}
 
 
@@ -155,7 +155,7 @@ export class StepHistoryClass extends EventEmitter {
 	 */
 	public pushCallStack(callstack: RefList<CallStackFrame>) {
 		assert(callstack);
-		this.liteCallStackHistory.push(callstack);
+		this.liteCallStackHistory.unshift(callstack);
 		assert(this.liteCallStackHistory.length==this.history.length);
 	}
 
@@ -213,6 +213,55 @@ export class StepHistoryClass extends EventEmitter {
 	}
 
 
+
+
+	/**
+	 * Returns the breakpoint at the given address.
+	 * Note: Checks only breakpoints with a set 'address'.
+	 * @returns A string with the reason. undefined if no breakpoint hit.
+	 */
+	protected checkPcBreakpoints(): string|undefined {
+		assert(Z80Registers.getCache());
+		let condition;
+		const pc=Z80Registers.getPC();
+		const breakpoints=Remote.getBreakpointsArray();
+		for (const bp of breakpoints) {
+			if (bp.address==pc) {
+				// Check for condition
+				if (!bp.condition) {
+					condition="";
+					break;
+				}
+
+				// Evaluate condition
+				try {
+					const result=Utility.evalExpression(bp.condition, true);
+					if (result!=0) {
+						condition=bp.condition;
+						break;
+					}
+				}
+				catch (e) {
+					// A problem during evaluation happened,
+					// e.g. a memory location has been tested which is not possible
+					// during reverse debugging.
+					condition="Could not evaluate: "+bp.condition;
+					break;
+				}
+			}
+		}
+
+		// Text
+		let reason;
+		if (condition!=undefined) {
+			reason='Breakpoint hit at PC='+Utility.getHexString(pc, 4)+'h';
+			if (condition!="")
+				reason+=', '+condition;
+		}
+		return reason;
+	}
+
+
 	/**
 	 * @returns Returns the previous line in the cpu history.
 	 * If at end it returns undefined.
@@ -246,38 +295,148 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
+	 * Continues instruction execution.
+	 * I.e. steps over all history infos until either a breakpoint is hit
+	 * or the start of the instruction is encountered.
+	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 */
+	public continue(): string|undefined {
+		// Continue in reverse debugging
+		// Will run until after the first of the instruction history
+		// or until a breakpoint condition is true.
+
+		let nextLine;
+		let breakReasonString;
+		try {
+			// Get current line
+			let currentLine: string=Z80Registers.getCache();
+			assert(currentLine);
+
+			// Loop over all lines, reverse
+			while (true) {
+				// Handle stack
+				nextLine=this.revDbgNext();
+				if (!nextLine)
+					break;
+
+				// Check for breakpoint
+				Z80Registers.setCache(nextLine);
+				const condition=this.checkPcBreakpoints();
+				if (condition!=undefined) {
+					breakReasonString=condition;
+					break;	// BP hit and condition met.
+				}
+
+				// Next
+				currentLine=nextLine;
+			}
+		}
+		catch (e) {
+			breakReasonString='Error occurred: '+e;
+		}
+
+		// Decoration
+		this.emitRevDbgHistory();
+
+		// Return if next line is available, i.e. as long as we did not reach the start.
+		if (!nextLine) {
+			// Get the registers etc. from ZEsarUX
+			Z80Registers.clearCache();
+			breakReasonString='Break: Reached start of instruction history.';
+		}
+		return breakReasonString;
+	}
+
+
+	/**
+	 * 'reverse continue' debugger program execution.
+	 * The Promise resolves when it's stopped e.g. when a breakpoint is hit.
+	 * @returns A string with the break reason. (Never undefined)
+	 */
+	public async reverseContinue(): Promise<string> {
+		let currentLine;
+		let breakReasonString;
+		try {
+			// Loop over all lines, reverse
+			while (true) {
+				// Get line
+				currentLine=await this.revDbgPrev();
+				if (!currentLine)
+					break;
+
+				// Check for breakpoint
+				Z80Registers.setCache(currentLine);
+				const condition=this.checkPcBreakpoints();
+				if (condition!=undefined) {
+					breakReasonString=condition;
+					break;	// BP hit and condition met.
+				}
+			}
+		}
+		catch (e) {
+			breakReasonString='Error occurred: '+e;
+		}
+
+		// Decoration
+		this.emitRevDbgHistory();
+
+		// Return if next line is available, i.e. as long as we did not reach the start.
+		if (!currentLine) {
+			// Get the registers etc. from ZEsarUX
+			Z80Registers.clearCache();
+			breakReasonString='Break: Reached end of instruction history.';
+		}
+		return breakReasonString;
+	}
+
+
+	/**
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
-	 * @returns instruction=the disassembly of the current instruction
-	 * breakReason=A possibly break reason (e.g. breakpoint) or undefined.
+	 * @returns instruction=undefined
+	 * breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
 	public stepOver(): {instruction: string, breakReason: string|undefined} {
-		// Get current line
-		let currentLine=Z80Registers.getCache();
-		assert(currentLine);
-
-		// Get next line
-		const nextLine=this.revDbgNext();
 		let breakReason;
-		if (!nextLine) {
-			breakReason='Break: Reached start of instruction history.'
+		try {
+			const currentLine=this.revDbgNext();
+			if (!currentLine)
+				throw 'Break: Reached start of instruction history.';
+		}
+		catch (e) {
+			breakReason=e;
 		}
 
 		// Decoration
 		this.emitRevDbgHistory();
 
 		// Call handler
-		const pc=Z80Registers.getPC();
-		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
+		return {instruction: undefined as any, breakReason};
+	}
 
-		// Return if next line is available, i.e. as long as we did not reach the start.
-		if (!nextLine) {
-			// Get the registers etc. from ZEsarUX
-			Z80Registers.clearCache();
-			Remote.getRegisters();
-		}
 
-		return {instruction, breakReason};
+	/**
+	 * Steps into an instruction.
+	 * Is not implemented for StepHistory, only for CpuHistory.
+	 * @returns instruction=undefined
+	 * breakReason='Not supported in lite reverse debugging.'.
+	 */
+	public stepInto(): {instruction: string, breakReason: string|undefined} {
+		// Call handler
+		return {
+			instruction: undefined as any,
+			breakReason: 'StepInto not supported in lite reverse debugging.'
+		};
+	}
+
+
+	/**
+	 * Steps out of an instruction.
+	 * Is not implemented for StepHistory, only for CpuHistory.
+	 * @returns breakReason='Not supported in lite reverse debugging.'.
+	 */
+	public stepOut(): string|undefined {
+		return 'StepOut not supported in lite reverse debugging.';
 	}
 
 

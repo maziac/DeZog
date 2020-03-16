@@ -1177,6 +1177,14 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Returns the remote breakpoints (PC breakpoint) array.
+	 */
+	public getBreakpointsArray(): Array<RemoteBreakpoint> {
+		return this.breakpoints;
+	}
+
+
+	/**
 	 * Sends a command to the emulator.
 	 * @param cmd E.g. 'get-registers'.
 	 * @returns A Promise in remote (emulator) dependend format.
