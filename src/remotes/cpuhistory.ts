@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
-import {StepHistoryClass as StepHistoryClass} from './stephistory';
+import {StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
 import {RefList} from '../reflist';
 import {CallStackFrame} from '../callstackframe';
@@ -600,9 +600,13 @@ export class CpuHistoryClass extends StepHistoryClass{
 		return {instruction, breakReason};
 	}
 
+
+
 }
 
 
-// Refers to the same object but allows easier access.
+// Contains the history singleton.
 export var StepHistory: StepHistoryClass;
+
+// Contains the same object as StepHistory but allows type-safe access.
 export var CpuHistory: CpuHistoryClass;
