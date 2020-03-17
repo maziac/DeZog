@@ -55,7 +55,7 @@ export class StepHistoryClass extends EventEmitter {
 	// The maximum size of the history array.
 	protected maxSize=0;
 
-	/// The addresses of the revision history in the right order.
+	/// The addresses of the reverse history in the right order.
 	/// Used to show this lines decorated (gray) while stepping backwards.
 	protected revDbgHistory=new Array<number>();
 
@@ -89,7 +89,8 @@ export class StepHistoryClass extends EventEmitter {
 	 */
 	public clearCache() {
 		this.history.length = 0;
-		this.historyIndex = -1;
+		this.historyIndex=-1;
+		this.revDbgHistory.length=0;
 	}
 
 
@@ -459,7 +460,6 @@ export class StepHistoryClass extends EventEmitter {
 	 * breakReason='Not supported in lite reverse debugging.'.
 	 */
 	public stepInto(): {instruction: string, breakReason: string|undefined} {
-		// Call handler
 		return {
 			instruction: undefined as any,
 			breakReason: 'StepInto not supported in lite reverse debugging.'

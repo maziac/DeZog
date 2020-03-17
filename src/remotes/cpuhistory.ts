@@ -54,6 +54,16 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 
 	/**
+	 * Clears the stack used for reverse debugging.
+	 * Called when leaving the reverse debug mode.
+	 */
+	public clearCache() {
+		super.clearCache();
+		this.reverseDbgStack=undefined as any;
+	}
+
+
+	/**
 	 * Only used in StepHistory.
 	 */
 	// TODO: die beiden pushes können wahrscheinlich weg. Werden sowieso nicht aufgerufen.
@@ -77,6 +87,14 @@ export class CpuHistoryClass extends StepHistoryClass{
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		// Override this
 		assert(false);
+	}
+
+
+	/**
+	 * Returns the call stack.
+	 */
+	public getCallStack(): RefList<CallStackFrame> {
+		return this.reverseDbgStack;
 	}
 
 
@@ -415,7 +433,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	protected async prepareReverseDbgStack(): Promise<void> {
 		if (!CpuHistory.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.reverseDbgStack=await this.getCallStack();
+			this.reverseDbgStack=await Remote.getCallStack();
 		}
 	}
 
@@ -601,6 +619,283 @@ export class CpuHistoryClass extends StepHistoryClass{
 	}
 
 
+	/**
+	 * Handles the current instruction and the next one and distinguishes what to
+	 * do on the virtual reverse debug stack.
+	 * Note: This function wouldn'T have to be async (Promise) but
+	 * it doesn't hurt and maybe I decide in future to communicate
+	 * with ZEsarUX for some reason.
+	 *
+	 * Algorithm:
+	 * 1. If (executed) CALL/RST
+	 * 1.a 		expectedSP = SP-2
+	 * 1.b		Put called address to callstack and set PC in frame
+	 * 2. else If PUSH
+	 * 2.a		expectedSP = SP-2
+	 * 2.b		Add pushed value to frame stack
+	 * 3. else If POP/RET
+	 * 3.a		expectedSP = SP+2
+	 * 3. else
+	 * 3.a		expectedSP = calcDirectSpChanges
+	 * 4. If nextSP != expectedSP   // Check for interrupt
+	 * 4.a		Put nextPC on callstack
+	 * 5. If SP > previous SP
+	 * 5.a		Remove from frame stack and call stack
+	 * @param currentLine The current line of the cpu history.
+	 * @param nextLine The next line of the cpu history.
+	 */
+	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
+		assert(currentLine);
+		assert(nextLine);
+
+		// Get some values
+		let sp=Z80Registers.decoder.parseSP(currentLine);
+		let expectedSP: number|undefined=sp;
+		let expectedPC;
+		const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
+		const flags=Z80Registers.decoder.parseAF(currentLine);
+		const nextSP=Z80Registers.decoder.parseSP(nextLine);
+
+		// Check if there is at least one frame
+		let frame=this.reverseDbgStack.last();
+		if (!frame) {
+			// Create new stack entry if none exists
+			// (could happen in errorneous situations if there are more RETs then CALLs)
+			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			this.reverseDbgStack.push(frame);
+		}
+
+		// Check for CALL (CALL cc)
+		if (CpuHistory.isCallAndExecuted(opcodes, flags)) {
+			sp-=2;	// CALL pushes to the stack
+			expectedSP=sp;
+			// Now find label for this address
+			const callAddr=(opcodes>>>8)&0xFFFF;
+			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+			const name=labelCallAddr;
+			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
+			this.reverseDbgStack.push(frame);
+		}
+		// Check for RST
+		else if (CpuHistory.isRst(opcodes)) {
+			sp-=2;	// RST pushes to the stack
+			expectedSP=sp;
+			// Now find label for this address
+			const callAddr=CpuHistory.getRstAddress(opcodes);
+			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
+			const name=labelCallAddr;
+			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
+			this.reverseDbgStack.push(frame);
+		}
+		else {
+			// Check for PUSH
+			const pushedValue=CpuHistory.getPushedValue(opcodes, currentLine);
+			if (pushedValue!=undefined) {	// Is undefined if not a PUSH
+				// Push to frame stack
+				frame.stack.unshift(pushedValue);
+				sp-=2;	// PUSH pushes to the stack
+				expectedSP=sp;
+			}
+			// Check for POP
+			else if (CpuHistory.isPop(opcodes)
+				||CpuHistory.isRetAndExecuted(opcodes, flags)) {
+				expectedSP+=2;	// Pop from the stack
+			}
+			// Otherwise calculate the expected SP
+			else {
+				expectedSP=CpuHistory.calcDirectSpChanges(opcodes, sp, currentLine);
+				if (expectedSP==undefined) {
+					// This means: Opcode was LD SP,(nnnn).
+					// So use PC instead to check.
+					const pc=Z80Registers.decoder.parsePC(currentLine);
+					expectedPC=pc+4;	// 4 = size of instruction
+				}
+			}
+		}
+
+		// Check for interrupt. Either use SP or use PC to check.
+		let interruptFound=false;
+		const nextPC=Z80Registers.decoder.parsePC(nextLine);
+		if (expectedSP!=undefined) {
+			// Use SP for checking
+			if (nextSP==expectedSP-2)
+				interruptFound=true;
+		}
+		else {
+			// Use PC for checking
+			assert(expectedPC);
+			if (nextPC!=expectedPC)
+				interruptFound=true;
+		}
+
+		// Check if SP has increased (POP/RET)
+		let usedSP=expectedSP;
+		if (!usedSP)
+			usedSP=Z80Registers.decoder.parseSP(nextLine);
+		let count=usedSP-sp;
+		if (count>0) {
+			while (count>1&&this.reverseDbgStack.length>0) {
+				// First remove the data stack
+				while (count>1&&frame.stack.length>0) {
+					// Pop from stack
+					frame.stack.pop();
+					count-=2;
+				}
+				// Now remove callstack
+				if (count>1) {
+					this.reverseDbgStack.pop();
+					count-=2;
+					// get next frame if countRemove still > 0
+					frame=this.reverseDbgStack.last();
+				}
+			}
+		}
+		else {
+			// Decreased. Put something on the stack
+			while (count<-1) {
+				// Push something unknown to the stack
+				frame.stack.push(undefined);
+				count+=2;
+			}
+		}
+
+		// Interrupt
+		if (interruptFound) {
+			// Put nextPC on callstack
+			const name=Remote.getInterruptName();
+			frame=new CallStackFrame(0, nextSP, name);	// pc is set later anyway
+			this.reverseDbgStack.push(frame);
+		}
+
+		// Adjust PC within frame
+		frame.addr=nextPC;
+	}
+
+
+	/**
+	 * Steps over an instruction.
+	 * Simply returns the next address line.
+	 * @returns instruction=undefined
+	 * breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 */
+	public stepOver(): {instruction: string, breakReason: string|undefined} {
+		/*
+				let breakReason;
+				try {
+					const currentLine=this.revDbgNext();
+					if (!currentLine)
+						throw 'Break: Reached start of instruction history.';
+				}
+				catch (e) {
+					breakReason=e;
+				}
+
+				// Call handler
+				return {instruction: undefined as any, breakReason};
+		*/
+
+		// Get current line
+		let currentLine=Z80Registers.getCache();
+		assert(currentLine);
+		let nextLine;
+
+		// Check for CALL/RST. If not do a normal step-into.
+		// If YES stop if pc reaches the next instruction.
+		const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
+		const opcode0=opcodes&0xFF;
+		let pc=Z80Registers.decoder.parsePC(currentLine);
+		let nextPC0;
+		let nextPC1;
+		if (CpuHistory.isCallOpcode(opcode0)) {
+			nextPC0=pc+3;
+			nextPC1=nextPC0;
+		}
+		else if (CpuHistory.isRstOpcode(opcode0)) {
+			nextPC0=pc+1;
+			nextPC1=nextPC0+1;	// If return address is adjusted
+		}
+
+		let breakReason;
+		try {
+			// Find next line with same SP
+			while (true) {
+				// Get next line
+				nextLine=this.revDbgNext();
+				if (!nextLine) {
+					breakReason='Break: Reached start of instruction history.'
+					break;	// At end of reverse debugging. Simply get the real call stack.
+				}
+
+				// Handle reverse stack
+				this.handleReverseDebugStackForward(currentLine, nextLine);
+
+				// Check if next instruction is required
+				if (nextPC0==undefined)
+					break;	// A simple step-into
+
+				// Get PC
+				pc=Z80Registers.decoder.parsePC(nextLine);
+				// Check for "breakpoint"
+				if (pc==nextPC0||pc==nextPC1)
+					break;
+
+				// Check for "real" breakpoint
+				Z80Registers.setCache(nextLine);
+				const condition=(CpuHistory as any).checkPcBreakpoints();
+				if (condition!=undefined) {
+					breakReason=condition;
+					break;	// BP hit and condition met.
+				}
+
+				// Next
+				currentLine=nextLine as string;
+			}
+		}
+		catch (e) {
+			breakReason=e;
+		}
+
+		// Decoration
+		(CpuHistory as any).emitRevDbgHistory();
+
+		// Call handler
+		const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
+
+		// Get real registers if we reacheed the end.
+		if (!nextLine) {
+			// Make sure that reverse debug stack is cleared
+			this.clearCache();
+			// Clear
+			Z80Registers.clearCache();
+		}
+
+		// Return
+		return {instruction, breakReason};
+	}
+
+
+	/**
+	 * Steps into an instruction.
+	 * Works like the StepOver in StepHistory.
+	 * @returns instruction=undefined
+	 * breakReason='Not supported in lite reverse debugging.'.
+	 */
+	// TODO: Change so that LDDR etc work.
+	public stepInto(): {instruction: string, breakReason: string|undefined} {
+		return super.stepOver();
+	}
+
+
+	/**
+	 * Steps out of an instruction.
+	 * Is not implemented for StepHistory, only for CpuHistory.
+	 * @returns breakReason='Not supported in lite reverse debugging.'.
+	 */
+	public stepOut(): string|undefined {
+		return 'StepOut not supported in lite reverse debugging.';
+	}
 
 }
 

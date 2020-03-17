@@ -31,7 +31,12 @@
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ]
+			"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
+			"smartStep": true,
+			"skipFiles": [
+				"inspector_async_hook.js",
+				"async_hooks.js"
+			],
 		},
 		{
 			"type": "node",
@@ -43,7 +48,12 @@
 				"--server=4711",
 				//"--prof"
 			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ]
+			"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
+			"smartStep": true,
+			"skipFiles": [
+				"inspector_async_hook.js",
+				"async_hooks.js"
+			],
 		},
 
 		{
@@ -66,7 +76,7 @@
 		{
 			"name": "Extension + Server",
 			"configurations": [ "#Extension", "#Server" ],
-			"runtimeExecutable": "/usr/local/bin/node"
+			"runtimeExecutable": "/usr/local/bin/node",
 		}
 
 	]
