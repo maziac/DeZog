@@ -50,7 +50,7 @@ export class DisassemblyVar extends ShallowVar {
 	/// Pointer to the disassembly history.
 	protected disassemblyHistory: Array<{address: number, text: string}>;
 
-/**
+	/**
 	 * Constructor.
 	 * @param addr The address the disassembly should start
 	 * @param count The number of lines for the disassembly

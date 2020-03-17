@@ -52,12 +52,15 @@ export class StepHistoryClass extends EventEmitter {
 	// The current history index.
 	protected historyIndex=-1;
 
+	// The maximum size of the history array.
+	protected maxSize=0;
+
 	/// The addresses of the revision history in the right order.
 	/// Used to show this lines decorated (gray) while stepping backwards.
 	protected revDbgHistory=new Array<number>();
 
 	/// The decoder of the instruction lines. Is the register encoder
-	/// for Stephistory and an enhanced decoder for CpuHistory.
+	/// for StepHistory and an enhanced decoder for CpuHistory.
 	public decoder: HistoryInstructionInfo;
 
 	/// Only used in the StepHistory to store the call stack.
@@ -66,9 +69,9 @@ export class StepHistoryClass extends EventEmitter {
 
 	/**
 	 * Init.
-	 * @param size The max size of the history.
 	 */
-	public init(maxSize: number) {
+	public init() {
+		this.maxSize=Settings.launch.history.reverseDebugInstructionCount;
 	}
 
 
@@ -147,6 +150,8 @@ export class StepHistoryClass extends EventEmitter {
 	public async pushHistoryInfo(line: HistoryInstructionInfo): Promise<void> {
 		assert(line);
 		this.history.unshift(line);
+		if (this.history.length>this.maxSize)
+			this.history.pop();
 	}
 
 
@@ -157,6 +162,8 @@ export class StepHistoryClass extends EventEmitter {
 	public pushCallStack(callstack: RefList<CallStackFrame>) {
 		assert(callstack);
 		this.liteCallStackHistory.unshift(callstack);
+		if (this.liteCallStackHistory.length>this.maxSize)
+			this.liteCallStackHistory.pop();
 		assert(this.liteCallStackHistory.length==this.history.length);
 	}
 
@@ -256,8 +263,6 @@ export class StepHistoryClass extends EventEmitter {
 		this.emitRevDbgHistory();
 		this.emitHistorySpot();
 	}
-
-
 
 
 	/**
@@ -380,9 +385,6 @@ export class StepHistoryClass extends EventEmitter {
 			breakReasonString='Error occurred: '+e;
 		}
 
-		// Decoration
-		this.emitHistory();
-
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
 			// Get the registers etc. from ZEsarUX
@@ -406,8 +408,10 @@ export class StepHistoryClass extends EventEmitter {
 			while (true) {
 				// Get line
 				currentLine=await this.revDbgPrev();
-				if (!currentLine)
+				if (!currentLine) {
+					breakReasonString='Break: Reached end of instruction history.';
 					break;
+				}
 
 				// Check for breakpoint
 				Z80Registers.setCache(currentLine);
@@ -422,15 +426,6 @@ export class StepHistoryClass extends EventEmitter {
 			breakReasonString='Error occurred: '+e;
 		}
 
-		// Decoration
-		this.emitHistory();
-
-		// Return if next line is available, i.e. as long as we did not reach the start.
-		if (!currentLine) {
-			// Get the registers etc. from ZEsarUX
-			Z80Registers.clearCache();
-			breakReasonString='Break: Reached end of instruction history.';
-		}
 		return breakReasonString;
 	}
 
@@ -451,9 +446,6 @@ export class StepHistoryClass extends EventEmitter {
 		catch (e) {
 			breakReason=e;
 		}
-
-		// Decoration
-		this.emitHistory();
 
 		// Call handler
 		return {instruction: undefined as any, breakReason};
@@ -501,9 +493,6 @@ export class StepHistoryClass extends EventEmitter {
 		catch (e) {
 			breakReason=e;
 		}
-
-		// Decoration
-		this.emitHistory();
 
 		// Call handler
 		return {instruction: undefined as any, breakReason};

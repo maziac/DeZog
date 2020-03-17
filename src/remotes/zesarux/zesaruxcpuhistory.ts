@@ -88,13 +88,12 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 
 	/**
 	 * Init.
-	 * @param size The max size of the history.
 	 */
-	public init(maxSize: number) {
-		super.init(maxSize);
-		if(maxSize > 0) {
+	public init() {
+		super.init();
+		if(this.maxSize > 0) {
 			zSocket.send('cpu-history enabled yes', () => {}, true);
-			zSocket.send('cpu-history set-max-size ' + maxSize);
+			zSocket.send('cpu-history set-max-size '+this.maxSize);
 			zSocket.send('cpu-history clear');
 			zSocket.send('cpu-history started yes');
 			zSocket.send('cpu-history ignrephalt yes');

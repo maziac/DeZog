@@ -654,7 +654,7 @@ export class Z80UnitTests {
 					// Run or Debug
 					if (da) {
 						// Debug: Continue
-						da.remoteContinue();
+						da.remoteContinue(); // no await
 						// With vscode UI
 						da.sendEventContinued();
 					}
@@ -800,7 +800,7 @@ export class Z80UnitTests {
 			}
 			// Do a step
 			Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
-			da.emulatorStepOver();
+			da.emulatorStepOver();	// await not needed
 			return;
 		}
 

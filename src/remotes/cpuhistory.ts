@@ -47,26 +47,25 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 	/**
 	 * Init.
-	 * @param size The max size of the history.
 	 */
-	public init(maxSize: number) {
-		super.init(maxSize);
-	}
-
-
-
-	/**
-	 * Only used in StepHistory.
-	 */
-	public pushCallStack(callstack: RefList<CallStackFrame>) {
+	public init() {
+		super.init();
 	}
 
 
 	/**
 	 * Only used in StepHistory.
 	 */
-	public async pushHistoryInfo(): Promise<void> {
-	}
+	// TODO: die beiden pushes können wahrscheinlich weg. Werden sowieso nicht aufgerufen.
+	//public pushCallStack(callstack: RefList<CallStackFrame>) {
+	//}
+
+
+	/**
+	 * Only used in StepHistory.
+	 */
+	//public async pushHistoryInfo(): Promise<void> {
+	//}
 
 
 	/**

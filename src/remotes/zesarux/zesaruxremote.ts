@@ -261,7 +261,7 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
 
 					// Reverse debugging.
-					CpuHistory.init(Settings.launch.history.reverseDebugInstructionCount);
+					CpuHistory.init();
 
 					// Enable extended stack
 					zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
