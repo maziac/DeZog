@@ -2,6 +2,7 @@
 
 # 0.13.2
 - Fix for "Fix including nested directories".
+- Step history.
 
 # 0.13.1
 - Code coverage for internal simulator.

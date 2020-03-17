@@ -32,7 +32,7 @@
 	},
 	"scripts": {
 		"compile": "tsc -p ./src",
-		"tslint": "tslint ./src/**/*.ts",
+		"tslint": "eslint ./src/**/*.ts",
 		"watch": "tsc -w -p ./src",
 		"test": "mocha -u tdd ./out/tests/",
 		"postinstall": "node ./node_modules/vscode/bin/install",
@@ -57,6 +57,7 @@
 		"@types/mocha": "7.0.2",
 		"@types/node": "13.9.0",
 		"electron-rebuild": "^1.10.1",
+		"minimist": "^1.2.3",
 		"tslint": "6.0.0",
 		"typescript": "3.8.3",
 		"vsce": "1.74.0",
