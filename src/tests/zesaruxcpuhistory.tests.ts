@@ -541,11 +541,12 @@ suite('ZesaruxCpuHistory', () => {
 			Z80RegistersClass.Init();
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote('zrcp');
-			Remote.init();
+			//Remote.init();
 			history=CpuHistory;
 			history.decoder=new DecodeZesaruxHistoryInfo();
 			mockSocket=new MockZesaruxSocket();
 			(<any>zSocket)=mockSocket;
+			(zSocket as any).queue=new Array<any>();
 			// Push one frame on the stack
 			history.reverseDbgStack=new RefList();
 			history.reverseDbgStack.push(new CallStackFrame(0, 0, "__TEST_MAIN__"));
@@ -748,7 +749,7 @@ suite('ZesaruxCpuHistory', () => {
 			mockSocket.dataArray.push("AA3412");
 
 			// Handle step back
-			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
 			const frame=history.reverseDbgStack.last();
@@ -768,7 +769,7 @@ suite('ZesaruxCpuHistory', () => {
 			mockSocket.dataArray.push("AA3412");
 
 			// Handle step back
-			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// Value has been pushed to the callstack
 			assert.equal(2, history.reverseDbgStack.length);
 			let frame=history.reverseDbgStack[1];
@@ -788,7 +789,7 @@ suite('ZesaruxCpuHistory', () => {
 			const prevLine="PC=80f7 SP=8402 AF=01c0 BC=0000 HL=8402 DE=2000 IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=00 R=20 IM0 IFF12";	// (PC)=00cdd380 (SP)=0101;
 
 			// Handle step back
-			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// 2 undefined values have been added.
 			assert.equal(1, history.reverseDbgStack.length);
 			frame=history.reverseDbgStack[0];
@@ -812,7 +813,7 @@ suite('ZesaruxCpuHistory', () => {
 			const prevLine="PC=80f7 SP=83fa AF=01d1 BC=0000 HL=83fa DE=2000 IX=003c IY=5c3a AF'=2420 BC'=174b HL'=107f DE'=0006 I=00 R=6f IM0 IFF12";	// (PC)=00cdd380 (SP)=0000"
 
 			// Handle step back
-			(<any>emul).handleReverseDebugStackBack(currentLine, prevLine);
+			await history.handleReverseDebugStackBack(currentLine, prevLine);
 			// 2 values have been pushed to the frame stack
 			assert.equal(1, history.reverseDbgStack.length);
 			frame=history.reverseDbgStack[0];
