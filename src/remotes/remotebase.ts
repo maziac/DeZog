@@ -10,7 +10,7 @@ import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
-import {CpuHistory} from './cpuhistory';
+import {CpuHistory, StepHistory} from './cpuhistory';
 
 
 
@@ -153,11 +153,6 @@ export class RemoteBase extends EventEmitter {
 
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
 	public wpmemEnabled=false;
-
-	/// The addresses of the revision history in the right order.
-	/// Used to show this lines decorated (gray) while stepping backwards.
-	// TODO: Remove (is in cpu history)
-	protected revDbgHistory=new Array<number>();
 
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
@@ -1265,23 +1260,12 @@ export class RemoteBase extends EventEmitter {
 	 * @param handler that is called when the PC has been set.
 	 */
 	public async setProgramCounter(address: number): Promise<void> {
+		StepHistory.clear();
 		Z80Registers.clearCache();
-		this.clearReverseDbgStack();
 		await this.setRegisterValue("PC", address);
 	}
 
 
-
-
-
-	// Reverse Debugging related
-
-	/**
-	 * Clears the stack used for reverse debugging.
-	 * Called when leaving the reverse debug mode.
-	 */
-	protected clearReverseDbgStack() {
-	}
 
 
 	// ZX Next related ---------------------------------
@@ -1350,15 +1334,6 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Clears the instruction history.
-	 * For reverse debugging.
-	 */
-	public clearInstructionHistory() {
-		this.revDbgHistory.length=0;
-	}
-
-
-	/**
 	 * Called from "-state save" command.
 	 * Stores all RAM, registers etc.
 	 * Override.
@@ -1380,16 +1355,6 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Reads the short history and emits it.
-	 * Is used to display short history decoration.
-	 * Is called by the EmulDebugAdapter.
-	 * Default implementation does nothing. Is implemented only by ZesaruxEmulator.
-	 */
-	public handleHistorySpot() {
-	}
-
-
-	/**
 	 * Calculates the step-over/into breakpoint(s) for an instruction.
 	 * I.e. it normally calculates the address after the current instruction (pc).
 	 * DeZog will set a breakpoint there and execute a 'continue' to simulate
@@ -1400,7 +1365,9 @@ export class RemoteBase extends EventEmitter {
 	 * @param stepOver true if breakpoint address should be calculate for a step-over.
 	 * In this case the branching is ignored for CALL and RST.
 	 * @returns A Promise with the opcode and 2 breakpoint
-	 * addresses. The 2nd of these bp addresses can be undefined.
+	 * addresses.
+	 * The first always points directly after the address.
+	 * The 2nd of these bp addresses can be undefined.
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sute the registers are there

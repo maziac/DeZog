@@ -14,6 +14,7 @@ import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
 import {StepHistory} from '../cpuhistory';
+import {Mutex} from 'async-mutex';
 
 
 
@@ -247,7 +248,7 @@ export class DzrpRemote extends RemoteBase {
 		await this.getRegisters();
 		await this.getCallStack();
 		// Store as (lite step history)
-		StepHistory.pushHistoryInfo(Z80Registers.getCache());
+		await StepHistory.pushHistoryInfo(Z80Registers.getCache());
 		StepHistory.pushCallStack(this.listFrames);
 	}
 
@@ -379,7 +380,7 @@ export class DzrpRemote extends RemoteBase {
 			};
 
 			// Send command to 'continue'
-			this.sendDzrpCmdContinue(bp1, bp2);
+			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
 	}
 
@@ -410,60 +411,106 @@ export class DzrpRemote extends RemoteBase {
 	 * 'breakReason' a possibly text with the break reason.
 	 */
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		return new Promise<{tStates, cpuFreq, breakReason}>(async resolve => {
-			// Pre action
-			await this.preStep();
 
+		return new Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}>(async resolve => {
+			// Do pre-step
+			await this.preStep();
 			// Reset flag
 			this.pauseStepOut=false;
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
-			// Count tStates
-			let tStates=0;
-			let stepResult;
+			let prevSp=startSp;
+			let prevPc=0;
+			let breakReason;
 
-			// Loop
+			// Create mutex to wait for the breaks
+			const mutex=new Mutex();
+			let releaseMutex;
+
+			// Prepare for break
+			this.continueResolve=({breakReasonString}) => {
+				breakReason=breakReasonString;
+				Z80Registers.clearCache();
+				releaseMutex();
+			};
+
+			// Loop until SP indicates that we are out of the current subroutine
 			while (true) {
-				// Get current SP
-				const prevSp=Z80Registers.getRegValue(Z80_REG.SP);
-				// Do next step
-				stepResult=await this.stepInto();
+				// Lock mutex
+				releaseMutex=mutex.acquire();
 
-				// tStates
-				tStates+=stepResult.tStates||0;
-
-				// Check if real breakpoint reached, i.e. breakReason.length!=0
-				if (stepResult.breakReason) {
-					// End reached
+				// Check if user breaked
+				if (this.pauseStepOut) {
+					// User pressed pause
+					breakReason="Manual break";
 					break;
 				}
+
+				// Other breakpoint hit
+				if (breakReason)
+					break;
 
 				// Check if instruction was a RET(I/N)
 				await this.getRegisters();
 				const currSp=Z80Registers.getRegValue(Z80_REG.SP);
-				if (currSp>startSp && currSp>prevSp) {
+				if (currSp>startSp&&currSp>prevSp) {
 					// Something has been popped. This is to exclude unexecuted RET cc.
-					const instr=stepResult.instruction.toUpperCase();
-					if (instr.startsWith("RET")) {
+					const bytes=await this.readMemoryDump(prevPc, 2);
+					const opcodes=bytes[0]+(bytes[1]<<8);
+					if (this.isRet(opcodes)) {
 						// Stop here
 						break;
 					}
 				}
 
-				// Check if user breaked
-				if (this.pauseStepOut) {
-					// User pressed pause
-					stepResult.breakReason="Manual break";
-					break;
-				}
+				// Calculate the breakpoints to use for step-over
+				let [, bp1, bp2]=await this.calcStepBp(true);
+
+				// Send command to 'continue'
+				prevPc=Z80Registers.getPC();
+				await this.sendDzrpCmdContinue(bp1, bp2);
+
+				// Next
+				prevSp=currSp;
 			}
 
-			// Return
-			if (tStates==0)
-				tStates==undefined;
-			const result={tStates: tStates, cpuFreq: stepResult.cpuFreq, breakReason: stepResult.breakReason};
-			resolve(result);
+			// Clear registers
+			this.postStep();
+
+			// return
+			resolve({breakReason});
 		});
+
+	}
+
+
+	/**
+	 * Tests if the opcode is a RET instruction.
+	 * @param opcodes E.g. 0xe52a785c
+	 * @returns false=if not RET (or RETI or RETN or RET cc).
+	 */
+	public isRet(opcodes: number): boolean {
+		// Check for RET
+		const opcode0=opcodes&0xFF;
+		if (0xC9==opcode0)
+			return true;
+
+		// Check for RETI or RETN
+		if (0xED==opcode0) {
+			const opcode1=(opcodes>>>8)&0xFF;
+			if (0x4D==opcode1||0x45==opcode1)
+				return true;
+		}
+
+		// Now check for RET cc
+		const mask=0b11000111;
+		if ((opcode0&mask)==0b11000000) {
+			// RET cc
+			return true;
+		}
+
+		// No RET
+		return false;
 	}
 
 

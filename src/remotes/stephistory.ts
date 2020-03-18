@@ -9,8 +9,7 @@ import {RefList} from '../reflist';
 import {Remote} from './remotefactory';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
-//import {Remote} from './remotefactory';
-//import {Utility} from '../misc/utility';
+import {Mutex} from 'async-mutex';
 
 
 
@@ -47,21 +46,20 @@ export class StepHistoryClass extends EventEmitter {
 	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
-	protected history=Array<HistoryInstructionInfo>();
+	protected history=new Array<HistoryInstructionInfo>();
 
 	// The current history index.
 	protected historyIndex=-1;
+
+	// A mutext to coordinate access to the histroy array.
+	protected historyMutex=new Mutex();
 
 	// The maximum size of the history array.
 	protected maxSize=0;
 
 	/// The addresses of the reverse history in the right order.
-	/// Used to show this lines decorated (gray) while stepping backwards.
+	/// Used to show these lines decorated (gray) while stepping backwards.
 	protected revDbgHistory=new Array<number>();
-
-	/// The decoder of the instruction lines. Is the register encoder
-	/// for StepHistory and an enhanced decoder for CpuHistory.
-	public decoder: HistoryInstructionInfo;
 
 	/// Only used in the StepHistory to store the call stack.
 	protected liteCallStackHistory=Array<RefList<CallStackFrame>>();
@@ -76,21 +74,19 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
-	 * Sets the decoder to use.
+	 * Sets/gets the decoder to use.
+	 * The decoder of the instruction lines. Is the register encoder
+     * for StepHistory and an enhanced decoder for CpuHistory.
 	 */
-	// TODO: Kann ich auch löschen und direkt drauf zugreifen, oder eine getDecoder Funktion implementieren.
-	public setDecoder(decoder: HistoryInstructionInfo) {
-		this.decoder=decoder;
-	}
+	private _decoder: HistoryInstructionInfo;
+	public get decoder(): HistoryInstructionInfo {return this._decoder};
+	public set decoder(value: HistoryInstructionInfo) {this._decoder=value;};
 
 
 	/**
-	 * Clears the history cache. Is called on each "normal" step.
+	 * Clears the history cache. Is called on each "normal (forward)" step.
 	 */
-	public clearCache() {
-		this.history.length = 0;
-		this.historyIndex=-1;
-		this.revDbgHistory.length=0;
+	public clear() {
 	}
 
 
@@ -150,9 +146,12 @@ export class StepHistoryClass extends EventEmitter {
 	 */
 	public async pushHistoryInfo(line: HistoryInstructionInfo): Promise<void> {
 		assert(line);
+		// TODO: mutex
+	//	const release=await this.historyMutex.acquire();
 		this.history.unshift(line);
 		if (this.history.length>this.maxSize)
 			this.history.pop();
+	//	release();
 	}
 
 

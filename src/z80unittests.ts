@@ -12,6 +12,7 @@ import { readFileSync } from 'fs';
 import { Utility } from './misc/utility';
 import { CallSerializer } from './callserializer';
 import { Decoration } from './decoration';
+import {StepHistory} from './remotes/cpuhistory';
 
 
 
@@ -649,7 +650,7 @@ export class Z80UnitTests {
 						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
 
 					// Remove instruction history log.
-					Remote.clearInstructionHistory();
+					StepHistory.clear();
 
 					// Run or Debug
 					if (da) {
@@ -915,7 +916,7 @@ export class Z80UnitTests {
 			// Remove event handling for the emulator
 			Remote.removeAllListeners();
 			// For reverse debugging.
-			Remote.clearInstructionHistory();
+			StepHistory.clear();
 
 			// Exit
 			if (debugAdapter)

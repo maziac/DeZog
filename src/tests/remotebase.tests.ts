@@ -14,7 +14,7 @@ suite('RemoteBase', () => {
 		};
 		Settings.Init(cfg, '');
 		Z80RegistersClass.createRegisters();
-		Z80Registers.setDecoder(new Z80RegistersStandardDecoder());
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 	});
 
 

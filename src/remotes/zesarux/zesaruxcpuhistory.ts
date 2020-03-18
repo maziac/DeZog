@@ -16,10 +16,10 @@ import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
 
 	// The first time the index is searched. Afterwards the stored one is used.
-	protected pcIndex=-1;
+	protected pcContentsIndex=-1;
 
 	// The first time the index is searched. Afterwards the stored one is used.
-	protected spIndex=-1;
+	protected spContentsIndex=-1;
 
 
 	/**
@@ -28,12 +28,12 @@ export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
 	 * @return E.g. 0x5C782AE52 as number
 	 */
 	public getOpcodes(line: HistoryInstructionInfo): number {
-		if (this.pcIndex<0) {
-			this.pcIndex=line.indexOf('(PC)=');
-			assert(this.pcIndex>=0);
-			this.pcIndex+=5;
+		if (this.pcContentsIndex<0) {
+			this.pcContentsIndex=line.indexOf('(PC)=');
+			assert(this.pcContentsIndex>=0);
+			this.pcContentsIndex+=5;
 		}
-		const opcodes=line.substr(this.pcIndex, 8);
+		const opcodes=line.substr(this.pcContentsIndex, 8);
 		// Change into number (exchange byte positions)
 		const opc=parseInt(opcodes, 16);
 		let result=opc>>>24;
@@ -51,12 +51,12 @@ export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
 	 * @returns The (sp), e.g. 0xA2BF
 	 */
 	public getSPContent(line: string): number {
-		if (this.spIndex<0) {
-			this.spIndex=line.indexOf('(SP)=');
-			assert(this.spIndex>=0);
-			this.spIndex+=5;
+		if (this.spContentsIndex<0) {
+			this.spContentsIndex=line.indexOf('(SP)=');
+			assert(this.spContentsIndex>=0);
+			this.spContentsIndex+=5;
 		}
-		const spString=line.substr(this.spIndex, 4);
+		const spString=line.substr(this.spContentsIndex, 4);
 		const sp=parseInt(spString, 16);
 		return sp;
 	}
@@ -115,12 +115,12 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		return new Promise<string>(resolve => {
 			assert(index >= 0);
-			zSocket.send('cpu-history get ' + index, data => {
+			zSocket.send('cpu-history get ' + index, data => { // 'cpu-history get' starts at 0 too
 				if(data.substr(0,5).toLowerCase() == 'error')
 					resolve(undefined);
 				else
 					resolve(data);
-			});
+			}, true);
 		});
 	}
 

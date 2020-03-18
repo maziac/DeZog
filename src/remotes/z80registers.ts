@@ -61,11 +61,6 @@ export class Z80RegistersClass {
 	protected RegisterCache: RegisterData;
 
 	/**
-	 * Sets the decoder knows how to decode the RegisterData.
-	 */
-	public decoder: DecodeRegisterData;	// Used as well by Step/CpuHistory
-
-	/**
 	* Called during the launchRequest to create the singleton.
 	*/
 	public static createRegisters() {
@@ -76,12 +71,12 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * Sets the decoder with the knowledge to decode
+	 * Sets/gets the decoder with the knowledge to decode
 	 * the RegisterData.
 	 */
-	public setDecoder(decoder: DecodeRegisterData) {
-		this.decoder=decoder;
-	}
+	private _decoder: DecodeRegisterData;
+	public get decoder(): DecodeRegisterData {return this._decoder};
+	public set decoder(value: DecodeRegisterData) {this._decoder=value;};
 
 	/**
 	 * Called during the launchRequest.

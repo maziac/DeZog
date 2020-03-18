@@ -58,10 +58,10 @@ export class ZesaruxRemote extends RemoteBase {
 	constructor() {
 		super();
 		// Set decoder
-		Z80Registers.setDecoder(new DecodeZesaruxRegisters());
+		Z80Registers.decoder=new DecodeZesaruxRegisters();
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
-		CpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
+		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();
 		// Supported features
 		this.supportsZxNextRegisters=true;
 	}
@@ -102,7 +102,6 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async terminate(): Promise<void> {
 		this.terminating = true;
-		this.clearInstructionHistory();
 		return new Promise<void>(resolve => {
 			// The socket connection must be closed as well.
 			zSocket.quit(() => {
@@ -464,64 +463,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
-		// Check for reverse debugging.
-		if (CpuHistory.isInStepBackMode()) {
-			// Continue in reverse debugging
-			// Will run until after the first of the instruction history
-			// or until a breakpoint condition is true.
-
-			let nextLine;
-			let breakReasonString;
-			try {
-				//this.state = RemoteState.RUNNING;
-				//this.state = RemoteState.IDLE;
-
-				// Get current line
-				let currentLine: string=Z80Registers.getCache();
-				assert(currentLine);
-
-				// Loop over all lines, reverse
-				while (true) {
-					// Handle stack
-					nextLine=this.revDbgNext();
-					if (!nextLine)
-						break;
-
-					(CpuHistory as any).handleReverseDebugStackForward(currentLine, nextLine);
-
-					// Check for breakpoint
-					Z80Registers.setCache(nextLine);
-					const condition= (CpuHistory as any).checkPcBreakpoints();
-					if (condition!=undefined) {
-						breakReasonString=condition;
-						break;	// BP hit and condition met.
-					}
-
-					// Next
-					currentLine=nextLine;
-				}
-			}
-			catch (e) {
-				breakReasonString='Error occurred: '+e;
-			}
-
-			// Decoration
-			(CpuHistory as any).emitRevDbgHistory();
-
-			// Return if next line is available, i.e. as long as we did not reach the start.
-			if (!nextLine) {
-				// Get the registers etc. from ZEsarUX
-				Z80Registers.clearCache();
-				await this.getRegisters();
-				const pc=this.getPC();
-				breakReasonString='Break at PC='+Utility.getHexString(pc, 4)+'h: Reached start of instruction history.';
-			}
-			return {breakReasonString};
-		}
-
 		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
-			// Make sure that reverse debug stack is cleared
-			this.clearReverseDbgStack();
 			// Reset T-state counter.
 			zSocket.send('reset-tstates-partial', () => {
 				// Run
@@ -574,71 +516,6 @@ export class ZesaruxRemote extends RemoteBase {
 		// Send anything through the socket
 		zSocket.sendBlank();
 	}
-
-
-	/**
-	 * Clears the stack used for reverse debugging.
-	 * Called when leaving the reverse debug mode.
-	 */
-	// TODO: remove
-	protected clearReverseDbgStack() {
-		this.reverseDbgStack = undefined as any;
-		this.revDbgHistory.length = 0;
-		(CpuHistory as any).clearCache();
-	}
-
-
-
-
-	/**
-	 * 'reverse continue' debugger program execution.
-	 * The Promise resolves when it's stopped e.g. when a breakpoint is hit.
-	 * @returns A string with the break reason. (Never undefined)
-	 */
-	// TODO: Move to cpuhistory
-	public async reverseContinue(): Promise<string> {
-		// Make sure the call stack exists
-//		await this.prepareReverseDbgStack();
-		let breakReason;
-		try {
-			// Loop over all lines, reverse
-			let prevLine=Z80Registers.getCache();
-			assert(prevLine);
-			while (true) {
-				// Get line
-				const currentLine=await CpuHistory.revDbgPrev();
-				if (!currentLine) {
-					breakReason='Break: Reached end of instruction history.';
-					break;
-				}
-
-				// Stack handling:
-//				await this.handleReverseDebugStackBack(currentLine, prevLine);
-
-				// Check for breakpoint
-				Z80Registers.setCache(currentLine);
-				const condition=(CpuHistory as any).checkPcBreakpoints();
-				if (condition!=undefined) {
-					breakReason=condition;
-					break;	// BP hit and condition met.
-				}
-
-				// Next
-				prevLine=currentLine;
-			}
-
-		}
-		catch (e) {
-			breakReason='Break: Error occurred: '+e;
-		}
-
-		// Decoration
-		(CpuHistory as any).emitRevDbgHistory();
-
-		// Call handler
-		return breakReason;
-	}
-
 
 
 	/**
@@ -728,48 +605,6 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
-			// Check for reverse debugging.
-			if (CpuHistory.isInStepBackMode()) {
-				// Get current line
-				let currentLine=Z80Registers.getCache();
-				assert(currentLine);
-				const pc=Z80Registers.decoder.parsePC(currentLine);
-				let nextLine;
-
-				let breakReason;
-				try {
-					// Get next line
-					nextLine=this.revDbgNext();
-					if (nextLine) {
-						// Handle reverse stack
-						(CpuHistory as any).handleReverseDebugStackForward(currentLine, nextLine);
-					}
-				}
-				catch (e) {
-					// E.g. "End of history reached"
-					breakReason=e;
-				}
-
-				// Decoration
-				(CpuHistory as any).emitRevDbgHistory();
-
-				// Call handler
-				const instruction='  '+Utility.getHexString(pc, 4)+' '+CpuHistory.getInstruction(currentLine);
-				resolve({instruction, tStates: undefined, cpuFreq: undefined, breakReason});
-
-				// Return if next line is available, i.e. as long as we did not reach the start.
-				// Otherwise get the callstack from ZEsarUX.
-				if (!nextLine) {
-					// Get the registers etc. from ZEsarUX
-					Z80Registers.clearCache();
-					this.getRegisters();
-				}
-				return;
-			}
-
-			// Make sure that reverse debug stack is cleared
-			this.clearReverseDbgStack();
-
 			// Normal step into.
 			this.getRegisters().then(() => {
 				const pc=Z80Registers.getPC();
@@ -848,46 +683,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Reads the short history and emits it.
-	 * Is used to display short history decoration.
-	 * Is called by the EmulDebugAdapter.
-	 */
-	// Todo: Sollte die CpuHistory stattdessen verwenden.
-	public handleHistorySpot() {
-		// Check if history spot is enabled
-		const count = Settings.launch.history.spotCount;
-		if(count <= 0)
-			return;
-
-		// Get start index
-		let index = CpuHistory.getHistoryIndex() + 1;
-
-		let startIndex = index - count;
-		if(startIndex < 0)
-			startIndex = 0;
-		const addresses = this.revDbgHistory.slice(startIndex);
-
-		// Get short history
-		zSocket.send('cpu-history get-pc ' + index + ' ' + count, data => {
-			// data e.g. = "80d9 80d7 80d5 80d3 80f5 "
-			// or "80d9 80d7 Error..." if not all data is available.
-			// Parse data and collect addresses
-			const length = data.length;
-			for(let k=0; k<length; k+=5) {
-				const addressString = data.substr(k,4);
-				// Check for error
-				if(addressString.toLowerCase() == 'erro')
-					break;
-				const address = parseInt(addressString, 16);
-				addresses.push(address);
-			}
-			// Emit code coverage event
-			this.emit('historySpot', startIndex, addresses);
-		}, true);
-	}
-
-
-	/**
 	 * 'step out' of current subroutine.
 	 * @param A Promise that returns {tStates, cpuFreq, breakReason}	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
@@ -895,86 +690,11 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
 		return new Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
-			// Check for reverse debugging.
-			if (CpuHistory.isInStepBackMode()) {
-				// Step out will run until the start of the cpu history
-				// or until a "RETx" is found (one behind).
-				// To make it more complicated: this would falsely find a RETI event
-				// if stepout was not started from the ISR.
-				// To overcome this also the SP is observed. And we break only if
-				// also the SP is lower/equal to when we started.
-
-				// Get current line
-				let currentLine=Z80Registers.getCache();
-				assert(currentLine);
-				let nextLine;
-				const startSP=Z80Registers.getSP();
-				let breakReason;
-				try {
-					// Find next line with same SP
-					while (true) {
-						// Get next line
-						nextLine=this.revDbgNext();
-						if (!nextLine) {
-							breakReason='Break: Reached start of instruction history.';
-							break;	// At end of reverse debugging. Simply get the real call stack.
-						}
-
-						// Handle reverse stack
-						(CpuHistory as any).handleReverseDebugStackForward(currentLine, nextLine);
-
-						// Check for RET(I/N)
-						const flags=Z80Registers.decoder.parseAF(currentLine);
-						const opcodes=CpuHistory.decoder.getOpcodes(currentLine);
-						if (CpuHistory.isRetAndExecuted(opcodes, flags)) {
-							// Read SP
-							const sp=Z80Registers.decoder.parseSP(nextLine);
-							// Check SP
-							if (sp>startSP) {
-								break;
-							}
-						}
-
-						// Check for breakpoint
-						Z80Registers.setCache(nextLine);
-						const condition=(CpuHistory as any).checkPcBreakpoints();
-						if (condition!=undefined) {
-							breakReason=condition;
-							break;	// BP hit and condition met.
-						}
-
-						// Next
-						currentLine=nextLine as string;
-					}
-				}
-				catch (e) {
-					breakReason=e;
-				}
-
-				// Decoration
-				(CpuHistory as any).emitRevDbgHistory();
-
-				// Call handler
-				resolve({breakReason});
-
-				// Return if next line is available, i.e. as long as we did not reach the start.
-				// Otherwise get the callstack from ZEsarUX.
-				if (!nextLine) {
-					// Get the registers etc. from ZEsarUX
-					Z80Registers.clearCache();
-					this.getRegisters();
-				}
-				return;
-			}
-
-
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
 			// I.e. when the RET (or (RET cc) gets executed.
 
-			// Make sure that reverse debug stack is cleared
-			this.clearReverseDbgStack();
 			// Get current stackpointer
 			this.getRegisters().then(() => {
 				// Get SP
@@ -1657,19 +1377,5 @@ export class ZesaruxRemote extends RemoteBase {
 		});
 	}
 
-
-	/**
-	 * @returns Returns the next line in the cpu history.
-	 * If at start it returns ''.
-	 */
-	// TODO: Remove (is in cpu history)
-	protected revDbgNext(): string|undefined {
-		// Get line
-		let line = CpuHistory.getNextRegisters() as string;
-		Z80Registers.setCache(line);
-		// Remove one address from history
-		this.revDbgHistory.pop();
-		return line;
-	}
 }
 

@@ -7,6 +7,7 @@ import { DecodeZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 import { ZesaruxSocket, zSocket } from '../remotes/zesarux/zesaruxsocket';
 import { RefList } from '../reflist';
 import { CallStackFrame } from '../callstackframe';
+import {Remote, RemoteFactory} from '../remotes/remotefactory';
 
 
 // Mock for the socket.
@@ -24,6 +25,7 @@ class MockZesaruxSocket extends ZesaruxSocket {
 suite('ZesaruxEmulator', () => {
 
 	let emul: any;
+	let history: any;
 	let mockSocket: MockZesaruxSocket;
 
 	setup(() => {
@@ -34,12 +36,12 @@ suite('ZesaruxEmulator', () => {
 	suite('handleReverseDebugStackForward', () => {
 
 		setup(() => {
-			emul=new ZesaruxRemote();
+			RemoteFactory.createRemote('zrcp');
 			Z80RegistersClass.createRegisters();
 			const decoder=new DecodeZesaruxRegisters();
-			Z80Registers.setDecoder(decoder);
-			emul.cpuHistory=new ZesaruxCpuHistory();
-			emul.cpuHistory.setDecoder(new DecodeZesaruxHistoryInfo());
+			Z80Registers.decoder=decoder;
+			history=new ZesaruxCpuHistory();
+			history.decoder=new DecodeZesaruxHistoryInfo();
 			mockSocket = new MockZesaruxSocket();
 			(<any>zSocket) = mockSocket;
 			// Push one frame on the stack

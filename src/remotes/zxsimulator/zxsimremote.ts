@@ -55,7 +55,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	constructor() {
 		super();
 		// Set decoder
-		Z80Registers.setDecoder(new Z80RegistersStandardDecoder());
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		this.cpuRunning=false;
 		this.lastBpId=0;
 		// Code coverage
