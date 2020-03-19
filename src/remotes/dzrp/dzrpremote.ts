@@ -395,7 +395,7 @@ export class DzrpRemote extends RemoteBase {
 	 * record consistent with stepOver. But it is e.g. used to inform when the
 	 * end of the cpu history is reached.
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
+	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 		return this.stepOver(false);
 	}
 
@@ -405,14 +405,14 @@ export class DzrpRemote extends RemoteBase {
 	 * The step-out uses normal step (into) funcionality and check
 	 * after each step if the last instruction was some RET and
 	 * the stackpointer is bigger that at the beginning.
-	 * @param A Promise that returns {tStates, cpuFreq, breakReason}
+	 * @param A Promise that returns {tStates, cpuFreq, breakReasonString}
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason.
+	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
+	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 
-		return new Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}>(async resolve => {
+		return new Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}>(async resolve => {
 			// Do pre-step
 			await this.preStep();
 			// Reset flag
@@ -478,7 +478,7 @@ export class DzrpRemote extends RemoteBase {
 			this.postStep();
 
 			// return
-			resolve({breakReason});
+			resolve({breakReasonString: breakReason});
 		});
 
 	}

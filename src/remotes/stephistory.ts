@@ -441,21 +441,21 @@ export class StepHistoryClass extends EventEmitter {
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
 	 * @returns instruction=undefined
-	 * breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
-	public stepOver(): {instruction: string, breakReason: string|undefined} {
-		let breakReason;
+	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
+		let breakReasonString;
 		try {
 			const currentLine=this.revDbgNext();
 			if (!currentLine)
 				throw 'Break: Reached start of instruction history.';
 		}
 		catch (e) {
-			breakReason=e;
+			breakReasonString=e;
 		}
 
 		// Call handler
-		return {instruction: undefined as any, breakReason};
+		return {instruction: undefined as any, breakReasonString};
 	}
 
 

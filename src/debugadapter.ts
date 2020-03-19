@@ -1246,11 +1246,11 @@ export class DebugSessionClass extends DebugSession {
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 
-		if (result.breakReason) {
+		if (result.breakReasonString) {
 			// Output a possible problem
-			vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
 			// Show break reason
-			this.decorateBreak(result.breakReason);
+			this.decorateBreak(result.breakReasonString);
 		}
 	}
 
@@ -1270,7 +1270,7 @@ export class DebugSessionClass extends DebugSession {
 		if (StepHistory?.isInStepBackMode()) {
 
 			// Stepover
-			const {instruction, breakReason}=StepHistory.stepOver();
+			const {instruction, breakReasonString}=StepHistory.stepOver();
 			// Print
 			let text='StepOver';
 			if (instruction)
@@ -1278,10 +1278,10 @@ export class DebugSessionClass extends DebugSession {
 			vscode.debug.activeDebugConsole.appendLine(text);
 
 			// Check for output.
-			if (breakReason) {
-				vscode.debug.activeDebugConsole.appendLine(breakReason);
+			if (breakReasonString) {
+				vscode.debug.activeDebugConsole.appendLine(breakReasonString);
 				// Show break reason
-				this.decorateBreak(breakReason);
+				this.decorateBreak(breakReasonString);
 			}
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
@@ -1408,7 +1408,7 @@ export class DebugSessionClass extends DebugSession {
 			// Update memory dump etc.
 			this.update();
 
-			breakReasonString=result.breakReason;
+			breakReasonString=result.breakReasonString;
 		}
 
 		if (breakReasonString) {

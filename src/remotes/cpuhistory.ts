@@ -956,9 +956,9 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
 	 * @returns instruction=undefined
-	 * breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
-	public stepOver(): {instruction: string, breakReason: string|undefined} {
+	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		assert(currentLine);
@@ -980,14 +980,14 @@ export class CpuHistoryClass extends StepHistoryClass{
 			nextPC1=nextPC0+1;	// If return address is adjusted
 		}
 
-		let breakReason;
+		let breakReasonString;
 		try {
 			// Find next line with same SP
 			while (true) {
 				// Get next line
 				nextLine=this.revDbgNext();
 				if (!nextLine) {
-					breakReason='Break: Reached start of instruction history.'
+					breakReasonString='Break: Reached start of instruction history.'
 					break;	// At end of reverse debugging. Simply get the real call stack.
 				}
 
@@ -1008,7 +1008,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 				Z80Registers.setCache(nextLine);
 				const condition=this.checkPcBreakpoints();
 				if (condition!=undefined) {
-					breakReason=condition;
+					breakReasonString=condition;
 					break;	// BP hit and condition met.
 				}
 
@@ -1017,7 +1017,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 			}
 		}
 		catch (e) {
-			breakReason=e;
+			breakReasonString=e;
 		}
 
 		// Get instruction
@@ -1033,7 +1033,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 		}
 
 		// Return
-		return {instruction, breakReason};
+		return {instruction, breakReasonString};
 	}
 
 

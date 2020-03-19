@@ -876,9 +876,9 @@ export class RemoteBase extends EventEmitter {
 	 * 'instruction' is the disassembly of the current line.
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason.
+	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
+	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 		assert(false);	// override this
 		return {
 			instruction: ""
@@ -892,11 +892,11 @@ export class RemoteBase extends EventEmitter {
 	 * 'instruction' is the disassembly of the current line.
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason. This is mainly to keep the
+	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
 	 * record consistent with stepOver. But it is e.g. used to inform when the
 	 * end of the cpu history is reached.
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
+	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 		assert(false);	// override this
 		return {
 			instruction: ""
@@ -906,12 +906,12 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param A Promise that returns {tStates, cpuFreq, breakReason}the step out is performed.
+	 * @param A Promise that returns {tStates, cpuFreq, breakReasonString}the step out is performed.
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason.
+	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
+	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
 		assert(false);	// override this
 		return {};
 	}

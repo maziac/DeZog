@@ -481,7 +481,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public async continue(): Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}> {
 		return new Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}>(async resolve => {
 			// Save resolve function when break-response is received
-			this.continueResolve=resolve;
+			this.continueResolve=({breakNumber, breakData, breakReasonString}) => {
+				// Clear registers
+				this.postStep();
+				resolve({breakNumber, breakData, breakReasonString});
+			}
 
 			// Pre action
 			await this.preStep(); // TODO: Nur solange noch keine true cpu history
@@ -610,7 +614,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.zxMemory.clearHit();
-		this.z80CpuContinue(bp1Address, bp2Address);
+		await this.z80CpuContinue(bp1Address, bp2Address);
 	}
 
 

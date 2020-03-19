@@ -524,10 +524,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'disasm' is the disassembly of the current line.
 	 * 'tStates' contains the number of tStates executed.
 	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason
+	 * 'breakReasonString' a possibly text with the break reason
 	 */
-	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
+	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
 			// Zesarux is very special in the 'step-over' behavior.
 			// In case of e.g a 'jp cc, addr' it will never return
 			// if the condition is met because
@@ -568,10 +568,10 @@ export class ZesaruxRemote extends RemoteBase {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
 									// Run
-									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
+									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReasonString) => {
 										// Disable breakpoint
 										zSocket.send('disable-breakpoint '+bpId, () => {
-											resolve({instruction: disasm, tStates, cpuFreq, breakReason});
+											resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
 										});
 									});
 								});
@@ -584,9 +584,9 @@ export class ZesaruxRemote extends RemoteBase {
 						// Clear register cache
 						Z80Registers.clearCache();
 						// Step
-						this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReason) => {
+						this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReasonString) => {
 							// Call handler
-							resolve({instruction: disasm, tStates, cpuFreq, breakReason});
+							resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
 						});
 					}
 				});
@@ -601,10 +601,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'instruction' is the disassembly of the current line.
 	 * tStates contains the number of tStates executed.
 	 * cpuFreq contains the CPU frequency at the end.
-	 * 'breakReason' E.g. "End of history reached"
+	 * 'breakReasonString' E.g. "End of history reached"
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
+	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
 			// Normal step into.
 			this.getRegisters().then(() => {
 				const pc=Z80Registers.getPC();
@@ -688,8 +688,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReason' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}> {
-		return new Promise<{tStates?: number, cpuFreq?: number, breakReason?: string}>(resolve => {
+	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+		return new Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
@@ -706,12 +706,12 @@ export class ZesaruxRemote extends RemoteBase {
 					depth=ZesaruxRemote.MAX_STACK_ITEMS;
 				if (depth==0) {
 					// no call stack, nothing to step out, i.e. immediately return
-					resolve({breakReason: "Call stack empty"});
+					resolve({breakReasonString: "Call stack empty"});
 					return;
 				}
 				else if (depth<0) {
 					// Callstack corrupted?
-					resolve({breakReason: "SP above topOfStack. Stack corrupted?"});
+					resolve({breakReasonString: "SP above topOfStack. Stack corrupted?"});
 					return;
 				}
 
@@ -744,10 +744,10 @@ export class ZesaruxRemote extends RemoteBase {
 										// Clear register cache
 										Z80Registers.clearCache();
 										// Run
-										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReason) => {
+										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReasonString) => {
 											// Disable breakpoint
 											zSocket.send('disable-breakpoint '+bpId, () => {
-												resolve({tStates, cpuFreq, breakReason});
+												resolve({tStates, cpuFreq, breakReasonString});
 											});
 										});
 
