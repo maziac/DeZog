@@ -58,7 +58,7 @@ export class Z80Cpu extends Z80js {
 		self.deferInt=false;
 
 		// Workaround for error: https://github.com/viert/z80js/issues/2
-		const opcode2=self.read16(self.pc);
+		const opcode2=self.memory.getMemory16(self.pc);
 
 		super.execute();
 
@@ -106,12 +106,12 @@ export class Z80Cpu extends Z80js {
 		// Get PC
 		let pc=self.pc;
 		// Check if PC is on a HALT instruction
-		const opcode=self.read8(pc);
+		const opcode=self.memory.getMemory8(pc);
 		if (opcode==0x76)
 			pc++;	// Step over HALT
 		// put PC on the stack
 		self.sp-=2;
-		self.write16(self.sp, pc);
+		self.memory.setMemory16(self.sp, pc);
 		// Get interrupt mode and next PC value accordingly
 		let intAddr;
 		switch (self.im) {
@@ -120,7 +120,7 @@ export class Z80Cpu extends Z80js {
 				break;
 			case 2:	// IM2
 				const intLocation=self.i<<8;
-				intAddr=self.read16(intLocation);
+				intAddr=self.memory.getMemory16(intLocation);
 				break;
 			default:
 				throw Error("IM "+self.im+" not supported.");
@@ -165,11 +165,13 @@ export class Z80Cpu extends Z80js {
 		histData.set(regData);
 		// Store opcode (4 bytes)
 		const pc=self.pc;
-		histData[startHist]=self.read16(pc);
-		histData[startHist+1]=self.read16(pc+2);
+		const opcodes8=self.memory.getMemory(pc, 4);
+		histData[startHist]=opcodes8[0]+(opcodes8[1]<<8);
+		histData[startHist+1]=opcodes8[2]+(opcodes8[3]<<8);
 		// Store sp contents
 		const sp=self.sp;
-		histData[startHist+2]=self.read16(sp);
+		const spContents8=self.memory.getMemory(sp, 2);
+		histData[startHist+2]=spContents8[0]+(spContents8[1]<<8);
 		// return
 		return histData;
 	}

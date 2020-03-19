@@ -114,6 +114,7 @@ export class ZxMemory {
 
 
 	// Read 1 byte.
+	// This is used by the Z80 CPU.
 	public read8(addr: number): number {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
@@ -124,12 +125,69 @@ export class ZxMemory {
 	}
 
 	// Write 1 byte.
+	// This is used by the Z80 CPU.
 	public write8(addr: number, val: number) {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
 		// Real write access
 		const [bankAddr, bankMem]=this.getBankForAddr(addr);
 		bankMem[bankAddr]=val;
+	}
+
+
+	// Read a memory area.
+	// Used e.g. to read data for the history info.
+	// This is **not** used by the Z80 CPU.
+	public getMemory(addr: number, size: number): Uint8Array {
+		assert(size<=ZxMemory.MEMORY_BANK_SIZE);
+		// Get start address
+		const [bankAddr, bankMem]=this.getBankForAddr(addr);
+		// Check if memory area spans 2 banks
+		const endAddr=bankAddr+size;
+		let mem;
+		if (endAddr<=ZxMemory.MEMORY_BANK_SIZE) {
+			// Within one bank
+			mem=bankMem.subarray(bankAddr, endAddr);
+		}
+		else {
+			// Spans over 2 banks
+			mem=new Uint8Array(size);
+			const len=ZxMemory.MEMORY_BANK_SIZE-bankAddr;
+			const bMemCopy=bankMem.subarray(bankAddr, ZxMemory.MEMORY_BANK_SIZE);
+			mem.set(bMemCopy);
+			const addr2=addr+len;
+			const [bankAddr2, bankMem2]=this.getBankForAddr(addr2);
+			assert(bankAddr2==0);
+			const bMemCopy2=bankMem2.subarray(0, size-len);
+			mem.set(bMemCopy2, len);
+		}
+		// Return
+		return mem;
+	}
+
+	// Read s one byte.
+	// This is **not** used by the Z80 CPU.
+	public getMemory8(addr: number): number {
+		const [bankAddr, bankMem]=this.getBankForAddr(addr);
+		const value=bankMem[bankAddr];
+		return value;
+	}
+
+	// Read s one byte.
+	// This is **not** used by the Z80 CPU.
+	public getMemory16(addr: number): number {
+		const mem=this.getMemory(addr, 2);
+		const value=mem[0]+(mem[1]<<8);
+		return value;
+	}
+
+	// Read s one byte.
+	// This is **not** used by the Z80 CPU.
+	public setMemory16(addr: number, val: number) {
+		const [bankAddr, bankMem]=this.getBankForAddr(addr);
+		bankMem[bankAddr]=val&0xFF;
+		const [bankAddr2, bankMem2]=this.getBankForAddr(addr+1);
+		bankMem2[bankAddr2]=val>>>8;
 	}
 
 
