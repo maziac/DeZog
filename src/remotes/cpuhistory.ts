@@ -8,27 +8,56 @@ import {Remote} from './remotefactory';
 import {Labels} from '../labels';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
+import {DecodeHistoryInfo} from './decodehistinfo';
+
+
 
 /**
- * This class takes care of the ZEsarUX cpu history.
- * Each history instruction can be retrieved from ZEsarUx.
- * The format of each line is:
- * PC=0039 SP=ff44 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c
- * which is very much the same as the line retrieved during each forward step. To compare, forward-step:
- * PC=003a SP=ff42 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=07  F=-Z-H3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0  TSTATES: 46
- *
- * These are the ZEsarUX cpu history zrcp commands:
- * cpu-history ...:
- * clear                 Clear the cpu history
- * enabled yes|no        Enable or disable the cpu history
- * get index             Get registers at position
- * get-max-size          Return maximum allowed elements in history
- * get-pc start end      Return PC register from position start to end
- * get-size              Return total elements in history
- * is-enabled            Tells if the cpu history is enabled or not
- * is-started            Tells if the cpu history is started or not
- * started yes|no        Start recording cpu history. Requires it to be enabled first
- * set-max-size number   Sets maximum allowed elements in history
+ * Use similar data as DecodeRegisterData but with data extension.
+ * This extension is read and parsed as well.
+ * To get the opcodes at the pc and the contents at (SP).
+ * This is required only for true cpu history (not for lite/step history).
+ */
+export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
+
+	/**
+	 * Decodes the opcodes from the HistoryInstructionInfo.
+	 * @param line One line of HistoryInstructionInfo.
+	 * @return E.g. 0x5C782AE52 as number
+	 */
+	public getOpcodes(line: HistoryInstructionInfo): number {
+		/*
+		let result=opc>>>24;
+		result|=(opc>>>8)&0xFF00;
+		result|=(opc<<8)&0xFF0000;
+		result|=(opc<<24)&0xFF000000
+		return result;
+		*/
+		return 0;
+	}
+
+
+	/**
+	 * Decodes the SP contents from the HistoryInstructionInfo.
+	 * @param line One line of HistoryInstructionInfo.
+	 * @returns The (sp), e.g. 0xA2BF
+	 */
+	public getSPContent(line: string): number {
+		/*
+		const spString=line.substr(this.spContentsIndex, 4);
+		const sp=parseInt(spString, 16);
+		return sp;
+		*/
+		return 0;
+	}
+}
+
+
+
+/**
+ * This class takes care of the cpu history.
+ * It is base class for e.g. ZesaruxCpuHistory or used directly by the
+ * ZxSimulatorRemote.
  */
 export class CpuHistoryClass extends StepHistoryClass{
 
@@ -72,12 +101,12 @@ export class CpuHistoryClass extends StepHistoryClass{
 	/**
 	 * Retrieves the instruction from Remote's cpu history.
 	 * Is async.
+	 * Override for a new remote.
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
-		// Override this
-		assert(false);
+		return undefined;
 	}
 
 
@@ -130,7 +159,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
-			const pc=this.decoder.parsePC(line);
+			const pc=Z80Registers.decoder.parsePC(line);
 			addresses.push(pc);
 		}
 
@@ -1027,7 +1056,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 			nextLine=this.revDbgNext();
 			if (nextLine) {
 				// Handle reverse stack
-				(CpuHistory as any).handleReverseDebugStackForward(currentLine, nextLine);
+				this.handleReverseDebugStackForward(currentLine, nextLine);
 			}
 		}
 		catch (e) {
@@ -1074,7 +1103,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 				}
 
 				// Handle reverse stack
-				(CpuHistory as any).handleReverseDebugStackForward(currentLine, nextLine);
+				this.handleReverseDebugStackForward(currentLine, nextLine);
 
 				// Check for RET(I/N)
 				const flags=Z80Registers.decoder.parseAF(currentLine);
@@ -1090,7 +1119,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 				// Check for breakpoint
 				Z80Registers.setCache(nextLine);
-				const condition=(CpuHistory as any).checkPcBreakpoints();
+				const condition=this.checkPcBreakpoints();
 				if (condition!=undefined) {
 					breakReason=condition;
 					break;	// BP hit and condition met.

@@ -12,6 +12,8 @@ import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
+import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
+import {ZxSimCpuHistory} from './zxsimcpuhistory';
 
 
 
@@ -50,6 +52,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	// I.e. that are relevant for the saving/restoring the state.
 	protected serializeObjects: any[];
 
+	// History info will not occupy a new element but replace the old element
+	// if PC does not change. USed for LDIR, HALT.
+	protected previouslyStoredPCHistory=-1;
+
 
 	/// Constructor.
 	constructor() {
@@ -58,6 +64,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		this.cpuRunning=false;
 		this.lastBpId=0;
+		// Reverse debugging / CPU history
+		CpuHistoryClass.setCpuHistory(new ZxSimCpuHistory());
+		CpuHistory.init();
+		CpuHistory.decoder=new DecodeStandardHistoryInfo();
 		// Code coverage
 		this.codeCoverage=new CodeCoverageArray();
 		// Create a Z80 CPU to emulate Z80 behaviour
@@ -286,6 +296,34 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
+	 * This method is called before a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * The idea here is to store the values for the (lite) step history.
+	 * If  true history is used this should be overridden with an empty method.
+	 */
+	protected async preStep(): Promise<void> {
+		// Empty, because true history is used.
+	}
+
+
+	/**
+	 * Stores the current registers, opcode and sp contents
+	 * in the cpu history.
+	 * Called on every executed instruction.
+	 * @param pc The pc for the line.
+	 */
+	protected async storeHistoryInfo(pc: number): Promise<void> {
+		// Get history element
+		const hist=this.z80Cpu.getHistoryData();
+		// Check if pc changed
+		const exchange=(pc==this.previouslyStoredPCHistory);
+		this.previouslyStoredPCHistory=pc;
+		// Store
+		await CpuHistory.pushHistoryInfo(hist, exchange);
+	}
+
+
+	/**
 	 * Runs the cpu in time chunks in order to give tiem to other
 	 * processes. E.g. to receive a pause command.
 	 * @param bp1 Breakpoint 1 address or -1 if not used.
@@ -301,9 +339,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakData;
 		this.codeCoverage.clearAll();
 		for (; counter>0; counter--) {
+			// Store current registers and opcode
 			const prevPc=this.z80Cpu.pc;
+			await this.storeHistoryInfo(prevPc);
 
-			// Execute an instruction
+			// Execute one instruction
 			try {
 				this.z80Cpu.execute();
 			}

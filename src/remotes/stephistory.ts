@@ -143,15 +143,22 @@ export class StepHistoryClass extends EventEmitter {
 	/**
 	 * Pushes one history into the array.
 	 * @param line One line of history.
+	 * @param exchange true if the element should be exchanged rather than added.
 	 */
-	public async pushHistoryInfo(line: HistoryInstructionInfo): Promise<void> {
+	public async pushHistoryInfo(line: HistoryInstructionInfo, exchange = false): Promise<void> {
 		assert(line);
-		// TODO: mutex
-	//	const release=await this.historyMutex.acquire();
-		this.history.unshift(line);
-		if (this.history.length>this.maxSize)
-			this.history.pop();
-	//	release();
+		const release=await this.historyMutex.acquire();
+		if (exchange&&this.history.length>0) {
+			// Exchange
+			this.history[0]=line;
+		}
+		else {
+			// Otherwise add
+			this.history.unshift(line);
+			if (this.history.length>this.maxSize)
+				this.history.pop();
+		}
+		release();
 	}
 
 

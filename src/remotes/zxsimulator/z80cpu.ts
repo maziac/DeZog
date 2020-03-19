@@ -151,6 +151,29 @@ export class Z80Cpu extends Z80js {
 	}
 
 
+	/**
+	 * Returns the register, opcode and sp contents data,
+	 */
+	protected getHistoryData(): Uint16Array {
+		const self=this as any;
+		// Get registers
+		const regData=this.getRegisterData();
+		// Add opcode and sp contents
+		const startHist=regData.length;
+		const histData=new Uint16Array(startHist+3);
+		// Copy registers
+		histData.set(regData);
+		// Store opcode (4 bytes)
+		const pc=self.pc;
+		histData[startHist]=self.read16(pc);
+		histData[startHist+1]=self.read16(pc+2);
+		// Store sp contents
+		const sp=self.sp;
+		histData[startHist+2]=self.read16(sp);
+		// return
+		return histData;
+	}
+
 
 	/**
 	 * Returns the size the serialized object would consume.

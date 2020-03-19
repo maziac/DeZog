@@ -2,18 +2,14 @@ import * as assert from 'assert';
 import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 //import { Z80RegistersClass } from '../z80registers';
 import {CpuHistoryClass} from '../cpuhistory';
-import {HistoryInstructionInfo} from '../decodehistinfo';
-import {DecodeZesaruxRegisters} from './decodezesaruxdata';
+import {HistoryInstructionInfo, DecodeHistoryInfo} from '../decodehistinfo';
 
 
 
 /**
  * Use similar data as DecodeRegisterData but with data extension.
- * This extension is read and parsed as well.
- * To get the opcodes at the pc and the contents at (SP).
- * This is required only for true cpu history (not for lite/step history).
  */
-export class DecodeZesaruxHistoryInfo extends DecodeZesaruxRegisters {
+export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 
 	// The first time the index is searched. Afterwards the stored one is used.
 	protected pcContentsIndex=-1;
@@ -104,7 +100,6 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 		}
 	}
 
-	// TODO: check if we can remove the complete class.
 
 	/**
 	 * Retrieves the instruction from ZEsarUX cpu history.
@@ -123,19 +118,6 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 			}, true);
 		});
 	}
-
-
-	/**
-	 * @returns The address of the current line. Uses the first 4 digits simply.
-	 */
-	/*
-	public getAddress(line: HistoryInstructionInfo): number {
-		line = line.substr(3,4);
-		// Convert address
-		const addr = parseInt(line, 16);
-		return addr;
-	}
-	*/
 
 }
 

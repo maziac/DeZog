@@ -16,8 +16,6 @@ export type HistoryInstructionInfo=any;
 
 /**
  * Parses the register data for PC etc.
- * @param data The output from Remote.
- * @returns The value.
  */
 export class DecodeRegisterData {
 
@@ -255,7 +253,7 @@ export class DecodeRegisterData {
  * To get the opcodes at the pc and the contents at (SP).
  * This is required only for true cpu history (not for lite/step history).
  */
-export class DecodeHistoryInfo extends DecodeRegisterData {
+export class DecodeHistoryInfo {
 	/**
 	 * Retrieves the opcodes from the HistoryInstructionInfo.
 	 * @param line One line of history.
