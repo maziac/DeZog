@@ -437,7 +437,7 @@ export class DzrpRemote extends RemoteBase {
 			// Loop until SP indicates that we are out of the current subroutine
 			while (true) {
 				// Lock mutex
-				releaseMutex=mutex.acquire();
+				releaseMutex=await mutex.acquire();
 
 				// Check if user breaked
 				if (this.pauseStepOut) {

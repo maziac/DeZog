@@ -26,14 +26,14 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 	 * @return E.g. 0x5C782AE52 as number
 	 */
 	public getOpcodes(line: HistoryInstructionInfo): number {
-		/*
-		let result=opc>>>24;
-		result|=(opc>>>8)&0xFF00;
-		result|=(opc<<8)&0xFF0000;
-		result|=(opc<<24)&0xFF000000
-		return result;
-		*/
-		return 0;
+		// 6 bytes at the end contain the additional info:
+		// 4 bytes: opcodes
+		// 2 bytes: SP contents
+		const data=line as Uint16Array;
+		const index=data.length-3;
+		let opcodes = data[index];
+		opcodes|=data[index+1]<<16;
+		return opcodes;
 	}
 
 
@@ -42,13 +42,14 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 	 * @param line One line of HistoryInstructionInfo.
 	 * @returns The (sp), e.g. 0xA2BF
 	 */
-	public getSPContent(line: string): number {
-		/*
-		const spString=line.substr(this.spContentsIndex, 4);
-		const sp=parseInt(spString, 16);
-		return sp;
-		*/
-		return 0;
+	public getSPContent(line: HistoryInstructionInfo): number {
+		// 6 bytes at the end contain the additional info:
+		// 4 bytes: opcodes
+		// 2 bytes: SP contents
+		const data=line as Uint16Array;
+		const index=data.length-1;
+		let spContents=data[index];
+		return spContents;
 	}
 }
 

@@ -167,7 +167,7 @@ export class Z80Cpu extends Z80js {
 		const pc=self.pc;
 		const opcodes8=self.memory.getMemory(pc, 4);
 		histData[startHist]=opcodes8[0]+(opcodes8[1]<<8);
-		histData[startHist+1]=opcodes8[2]+(opcodes8[3]<<8);
+		histData[startHist + 1] = opcodes8[2] + (opcodes8[3] << 8);
 		// Store sp contents
 		const sp=self.sp;
 		const spContents8=self.memory.getMemory(sp, 2);
