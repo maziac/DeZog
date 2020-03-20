@@ -1214,6 +1214,7 @@ export class ZesaruxRemote extends RemoteBase {
 			zSocket.send('snapshot-load '+filePath, data => {
 				// Clear register cache
 				Z80Registers.clearCache();
+				this.clearCallStack();
 				resolve();
 			});
 		});

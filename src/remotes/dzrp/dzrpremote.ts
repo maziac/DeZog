@@ -804,6 +804,7 @@ export class DzrpRemote extends RemoteBase {
 		await this.sendDzrpCmdWriteState(stateData);
 		// Clear register cache
 		Z80Registers.clearCache();
+		this.clearCallStack();
 	}
 
 

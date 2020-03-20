@@ -2322,13 +2322,15 @@ Notes:
 			filePath=Utility.getAbsStateFileName(stateName);
 			// Restore state
 			await Remote.stateRestore(filePath);
-			// Update memory etc.
-			this.update();
 		}
 		catch (e) {
 			const errTxt="Can't load '"+filePath+"': "+e.message;
 			throw new Error(errTxt);
 		}
+		// Update memory etc.
+		this.update();
+		// Send event
+		this.sendEvent(new StoppedEvent('restore', DebugSessionClass.THREAD_ID));
 	}
 
 
