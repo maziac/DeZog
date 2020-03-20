@@ -918,6 +918,14 @@ export class Utility {
 		return buf;
 	}
 
+	/**
+	 * An async function that waits for somee miliseconds.
+	 * @param ms time to wait in ms
+	 */
+	public static async timeout(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
 
 	/**
 	 * Returns the time since the last call to this method.

@@ -4,6 +4,7 @@
 - Fix for "Fix including nested directories".
 - Step history.
 - A lot of refactoring regarding history/reverse debugging.
+- True cpu history for internal simulator.
 
 # 0.13.1
 - Code coverage for internal simulator.

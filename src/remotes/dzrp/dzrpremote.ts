@@ -436,6 +436,10 @@ export class DzrpRemote extends RemoteBase {
 
 			// Loop until SP indicates that we are out of the current subroutine
 			while (true) {
+				// Give vscode some time to show debug controls
+				// (Maybe this is required here because of the mutex)
+				await Utility.timeout(1);
+
 				// Lock mutex
 				releaseMutex=await mutex.acquire();
 
@@ -473,6 +477,9 @@ export class DzrpRemote extends RemoteBase {
 				// Next
 				prevSp=currSp;
 			}
+
+			// Release mutex
+			releaseMutex();
 
 			// Clear registers
 			this.postStep();
