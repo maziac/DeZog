@@ -1503,9 +1503,6 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-state') {
 			return await this.evalStateSaveRestore(tokens);
 		}
-		else if (cmd=='-unittests') {
-			return await this.evalStateSaveRestore(tokens);
-		}
 		// Debug commands
 		else if (cmd=='-dbg') {
 			return await this.evalDebug(tokens);
