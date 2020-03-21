@@ -452,8 +452,12 @@ color:black;
             text-align: center;
 		}
 		.slot {
-			height:1.2em;
+			height:2em;
 			background: gray
+        }
+		.transparent {
+			height:2em;
+			background: transparent
         }
     </style>
 
@@ -468,7 +472,7 @@ color:black;
 	<label style="position:absolute; top:2em; left:0%">0x0000</label>
 	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
 	<label style="position:absolute; top:1em; left:25%">0x4000</label>
-	<label style="position:absolute; top:1em; left:35%">0x5B00</label>
+	<label style="position:absolute; top:1em; left:35.5%">0x5B00</label>
 	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
 	<label style="position:absolute; top:2em; left:50%">0x8000</label>
 	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
@@ -487,22 +491,24 @@ color:black;
 	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
     <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
 
-    <!-- Slots -->
-    <div class="border slot" id="slot0_id" style="top:3.5em; left:0%; width:12.5%;">ROM</div>
-    <div class="border slot" id="slot1_id" style="top:3.5em; left:12.5%; width:12.5%">ROM</div>
-    <div class="border slot" id="slot2_id" style="top:3.5em; left:25%; width:12.5%">BANK5</div>
-    <div class="border slot" id="slot3_id" style="top:3.5em; left:37.5%; width:12.5%;">BANK6</div>
-    <div class="border slot" id="slot4_id" style="top:3.5em; left:50%; width:12.5%;">BANK7</div>
-    <div class="border slot" id="slot5_id" style="top:3.5em; left:62.5%; width:12.5%;">BANK1</div>
-    <div class="border slot" id="slot6_id" style="top:3.5em; left:75%; width:12.5%;">BANK2</div>
-    <div class="border slot" id="slot7_id" style="top:3.5em; left:87.5%; width:12.5%;">BANK3</div>
-
 	<!-- Extra "Screen" range display -->
     <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
 	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>
 
 	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%; height:1.2em;">
+	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%;">
+
+    <!-- Slots  2nd -->
+    <div class="border transparent" id="slot0_id" style="top:3.5em; left:0%; width:12.5%;">ROM</div>
+    <div class="border transparent" id="slot1_id" style="top:3.5em; left:12.5%; width:12.5%">ROM</div>
+    <div class="border transparent" id="slot2_id" style="top:3.5em; left:25%; width:12.5%">M . . . BANK5</div>
+    <div class="border transparent" id="slot3_id" style="top:3.5em; left:37.5%; width:12.5%;">BANK6</div>
+    <div class="border transparent" id="slot4_id" style="top:3.5em; left:50%; width:12.5%;">BANK7</div>
+    <div class="border transparent" id="slot5_id" style="top:3.5em; left:62.5%; width:12.5%;">BANK1</div>
+    <div class="border transparent" id="slot6_id" style="top:3.5em; left:75%; width:12.5%;">BANK2</div>
+    <div class="border transparent" id="slot7_id" style="top:3.5em; left:87.5%; width:12.5%;">BANK3</div>
+
+
 
     <script>
         <!-- Store the visual mem image source -->
