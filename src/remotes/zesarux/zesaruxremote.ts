@@ -477,6 +477,7 @@ export class ZesaruxRemote extends RemoteBase {
 							const cpuFreq=parseInt(data);
 							// Clear register cache
 							Z80Registers.clearCache();
+							this.clearCallStack();
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// The reason is the 2nd line
