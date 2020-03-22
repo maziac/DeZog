@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import {ImageConvert} from '../../imageconvert';
 import {Utility} from '../../misc/utility';
 import {MemBuffer} from '../../misc/membuffer';
+import {start} from 'repl';
 
 
 /**
@@ -132,9 +133,8 @@ export class ZxMemory {
 	public read8(addr: number): number {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
-		// Real read access
-		const [bankAddr, bankMem]=this.getBankForAddr(addr);
-		const value=bankMem[bankAddr];
+		// Read
+		const value=this.z80Memory[addr];
 		return value;
 	}
 
@@ -143,65 +143,44 @@ export class ZxMemory {
 	public write8(addr: number, val: number) {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
-		// Real write access
-		const [bankAddr, bankMem]=this.getBankForAddr(addr);
-		bankMem[bankAddr]=val;
+		// Write
+		this.z80Memory[addr]=val;
 	}
 
 
-	// Read a memory area.
-	// Used e.g. to read data for the history info.
-	// This is **not** used by the Z80 CPU.
-	public getMemory(addr: number, size: number): Uint8Array {
-		assert(size<=ZxMemory.MEMORY_BANK_SIZE);
-		// Get start address
-		const [bankAddr, bankMem]=this.getBankForAddr(addr);
-		// Check if memory area spans 2 banks
-		const endAddr=bankAddr+size;
-		let mem;
-		if (endAddr<=ZxMemory.MEMORY_BANK_SIZE) {
-			// Within one bank
-			mem=bankMem.subarray(bankAddr, endAddr);
-		}
-		else {
-			// Spans over 2 banks
-			mem=new Uint8Array(size);
-			const len=ZxMemory.MEMORY_BANK_SIZE-bankAddr;
-			const bMemCopy=bankMem.subarray(bankAddr, ZxMemory.MEMORY_BANK_SIZE);
-			mem.set(bMemCopy);
-			const addr2=addr+len;
-			const [bankAddr2, bankMem2]=this.getBankForAddr(addr2);
-			assert(bankAddr2==0);
-			const bMemCopy2=bankMem2.subarray(0, size-len);
-			mem.set(bMemCopy2, len);
-		}
-		// Return
-		return mem;
-	}
-
-	// Read s one byte.
+	// Reads one byte.
 	// This is **not** used by the Z80 CPU.
 	public getMemory8(addr: number): number {
-		const [bankAddr, bankMem]=this.getBankForAddr(addr);
-		const value=bankMem[bankAddr];
+		const value=this.z80Memory[addr];
 		return value;
 	}
 
-	// Read s one byte.
+	// Reads 2 bytes.
 	// This is **not** used by the Z80 CPU.
 	public getMemory16(addr: number): number {
-		const mem=this.getMemory(addr, 2);
-		const value=mem[0]+(mem[1]<<8);
+		const mem=this.z80Memory;
+		let value=mem[addr++];
+		value|=mem[addr&0xFFFF]<<8;
+		return value;
+	}
+
+	// Reads 4 bytes.
+	// This is **not** used by the Z80 CPU.
+	public getMemory32(addr: number): number {
+		const mem=this.z80Memory;
+		let value=mem[addr++];
+		value|=mem[(addr++)&0xFFFF]<<8;
+		value|=mem[(addr++)&0xFFFF]<<16;
+		value|=mem[addr&0xFFFF]<<24;
 		return value;
 	}
 
 	// Read s one byte.
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
-		const [bankAddr, bankMem]=this.getBankForAddr(addr);
-		bankMem[bankAddr]=val&0xFF;
-		const [bankAddr2, bankMem2]=this.getBankForAddr(addr+1);
-		bankMem2[bankAddr2]=val>>>8;
+		const mem=this.z80Memory;
+		mem[addr++]=val&0xFF;
+		mem[addr&0xFFFF]=val>>>8;
 	}
 
 
@@ -246,29 +225,27 @@ export class ZxMemory {
 	 * @param size The size of the block.
 	 */
 	public readBlock(startAddress: number, size: number): Uint8Array {
-		const totalBlock=new Uint8Array(size);
-		let offset=0;
-		// The block may span several banks.
-		let addr=startAddress;
-		while (size>0) {
-			// Get memory bank
-			const [bankAddr, bankMem]=this.getBankForAddr(addr);
-			// Get block within one bank
-			let blockEnd=bankAddr+size;
-			if (blockEnd>ZxMemory.MEMORY_BANK_SIZE)
-				blockEnd=ZxMemory.MEMORY_BANK_SIZE;
-			const partBlockSize=blockEnd-bankAddr;
-			// Copy partial block
-			const partBlock=bankMem.subarray(bankAddr, blockEnd);
-			// Add to total block
-			totalBlock.set(partBlock, offset);
-			// Next
-			offset+=partBlockSize;
-			size-=partBlockSize;
-			addr+=partBlockSize;
+		let endAddr=startAddress+size;
+		if (endAddr<=0x10000) {
+			// No overflow
+			const mem=new Uint8Array(this.z80Memory.buffer, startAddress, size);
+			return mem;
 		}
-		return totalBlock;
+
+		// Overflow. Create new block out of 2 parts.
+		const mem=new Uint8Array(size);
+		// First block
+		const firstSize=0x10000-startAddress;
+		const firstBlock=new Uint8Array(this.z80Memory.buffer, startAddress, firstSize);
+		mem.set(firstBlock);
+		// Second block
+		const secondSize=size-firstSize;
+		const secondBlock=new Uint8Array(this.z80Memory.buffer, 0, secondSize);
+		mem.set(secondBlock, firstSize);
+		// Return
+		return mem;
 	}
+
 
 	/**
 	 * Writes a block of bytes.
@@ -276,30 +253,23 @@ export class ZxMemory {
 	 * @param totalBlock The block to write.
 	 */
 	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
-		if (!(totalBlock instanceof Uint8Array))
-			totalBlock=new Uint8Array(totalBlock);
-		let offset=0;
-		// The block may span several banks.
-		let addr=startAddress;
-		let size=totalBlock.length;
-		while (size>0) {
-			// Get memory bank
-			const [bankAddr, bankMem]=this.getBankForAddr(addr);
-			// Get block within one bank
-			let blockEnd=bankAddr+size;
-			if (blockEnd>ZxMemory.MEMORY_BANK_SIZE)
-				blockEnd=ZxMemory.MEMORY_BANK_SIZE;
-			const partBlockSize=blockEnd-bankAddr;
-			// Copy partial block
-			const partBlock=totalBlock.subarray(offset, offset+partBlockSize);
-			// Copy to memory bank
-			bankMem.set(partBlock, bankAddr);
-			// Next
-			offset+=partBlockSize;
-			size-=partBlockSize;
-			addr+=partBlockSize;
+		const size=totalBlock.length;
+		let endAddr=startAddress+size;
+		if (endAddr<=0x10000) {
+			// No overflow
+			this.z80Memory.set(totalBlock);
 		}
-		return totalBlock;
+		else {
+			// Overflow. Copy in 2 parts.
+			// First block
+			const firstSize=0x10000-startAddress;
+			const firstBlock=new Uint8Array(totalBlock, 0, firstSize);
+			this.z80Memory.set(firstBlock, startAddress);
+			// Second block
+			const secondSize=size-firstSize;
+			const secondBlock=new Uint8Array(totalBlock, firstSize, secondSize);
+			this.z80Memory.set(secondBlock);
+		}
 	}
 
 
@@ -402,10 +372,8 @@ export class ZxMemory {
 	 * @returns The screen as a gif buffer.
 	 */
 	public getUlaScreen(): number[] {
-		// Get sceen memory
-		const [, screenMem]=this.getBankForAddr(0x4000);
 		// Create pixels from the screen memory
-		const pixels=this.createPixels(screenMem);
+		const pixels=this.createPixels();
 		// Get ZX palette
 		const zxPalette=ZxMemory.getZxPalette();
 		// Convert to gif
@@ -419,7 +387,8 @@ export class ZxMemory {
 	 * Converts the screen pixels, the bits in the bytes, into pixels
 	 * with a color index.
 	 */
-	protected createPixels(screenMem: Uint8Array): Array<number> {
+	protected createPixels(): Array<number> {
+		const screenMem=new Uint8Array(this.z80Memory.buffer, 0x4000);
 		const colorStart=ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH/8;
 		// Create pixels memory
 		const pixels=new Array<number>(ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH);
