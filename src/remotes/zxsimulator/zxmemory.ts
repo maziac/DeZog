@@ -9,6 +9,10 @@ import {MemBuffer} from '../../misc/membuffer';
 /**
  * Represents the memory, banking and slots of a ZX Spectrum
  * and ZX Next.
+ *
+ * For performance reasons the memory is arranged as 64k continuous block.
+ * Apart from this another memory exists with 256 Banks of 8k.
+ * The banking is realized as mem copies between these 2 memories.
  */
 export class ZxMemory {
 	// The bank size.
@@ -23,16 +27,19 @@ export class ZxMemory {
 	// Screen width
 	public static SCREEN_WIDTH=256;
 
-	// Holds the memory banks. Views to the 'wholeMemory'.
+	// Holds the memory banks. Views to the 'AllBanksRam'.
 	protected banks: Array<Uint8Array>;
 
-	// The memory in one big block.
-	protected RAM: ArrayBuffer;
+	// The memory banks in one big block.
+	protected AllBanksRam: ArrayBuffer;
 
 	// Holds the slot assignments to the banks.
 	// Note: I use 254 for ROM 0-0x1FFF and 255 for ROM 0x2000-0x3FFF.
 	// The ZXNext defines both at 255.
 	protected slots: number[]=[254, 255, 10, 11, 4, 5, 0, 1];
+
+	// The 64k memory that hte Z80 addresses.
+	protected z80Memory: Uint8Array;
 
 	// Visual memory: shows the access as an image.
 	// The image is just 1 pixel high.
@@ -50,11 +57,12 @@ export class ZxMemory {
 	/// Constructor.
 	constructor() {
 		// Create RAM
-		this.RAM=new ArrayBuffer(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
+		this.AllBanksRam=new ArrayBuffer(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
+		this.z80Memory=new Uint8Array(0x10000);
 		// Create memory banks
 		this.banks=new Array<Uint8Array>(ZxMemory.NUMBER_OF_BANKS);
 		for (let b=0; b<ZxMemory.NUMBER_OF_BANKS; b++) {
-			const bank=new Uint8Array(this.RAM, b*ZxMemory.MEMORY_BANK_SIZE, ZxMemory.MEMORY_BANK_SIZE);
+			const bank=new Uint8Array(this.AllBanksRam, b*ZxMemory.MEMORY_BANK_SIZE, ZxMemory.MEMORY_BANK_SIZE);
 			this.banks[b]=bank;
 		}
 		// Create visual memory
@@ -82,13 +90,16 @@ export class ZxMemory {
 	 * Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
+		// Copy Z80 memory to banks before serialization
+		this.copyZ80MemToBanks();
+
 		// Get slot/bank mapping
 		memBuffer.write8(this.slots.length);
 		for (const bank of this.slots)
 			memBuffer.write8(bank);
 
 		// Get RAM
-		memBuffer.writeArrayBuffer(this.RAM);
+		memBuffer.writeArrayBuffer(this.AllBanksRam);
 	}
 
 
@@ -104,9 +115,12 @@ export class ZxMemory {
 
 		// Create memory banks
 		const buffer=memBuffer.readArrayBuffer();
-		assert(buffer.length==this.RAM.byteLength);
-		const dst=new Uint8Array(this.RAM);
+		assert(buffer.length==this.AllBanksRam.byteLength);
+		const dst=new Uint8Array(this.AllBanksRam);
 		dst.set(buffer);
+
+		// Copy from banks to Z80 memory
+		this.copyBanksToZ80Mem();
 
 		// Clear visual memory
 		this.clearVisualMemory();
@@ -300,6 +314,43 @@ export class ZxMemory {
 			block=new Uint8Array(block);
 		const memBank=this.banks[bank];
 		memBank.set(block);
+	}
+
+
+	/**
+	 * Copies the memory banks into the Z80 memory.
+	 * Called e.g. after deserialization or after loading.
+	 */
+	public copyBanksToZ80Mem() {
+		let offset=0;
+		let slotIndex=0;
+		while (offset<0x10000) {
+			const bank=this.slots[slotIndex];
+			const memBank=this.banks[bank];
+			this.z80Memory.set(memBank, offset);
+			// Next
+			offset+=ZxMemory.MEMORY_BANK_SIZE;
+			slotIndex++;
+		}
+	}
+
+
+	/**
+	 * Copies the Z80 memory into the banks.
+	 * Called e.g. before serialization or before saving.
+	 */
+	public copyZ80MemToBanks() {
+		let offset=0;
+		let slotIndex=0;
+		while (offset<0x10000) {
+			const bank=this.slots[slotIndex];
+			const memBank=this.banks[bank];
+			const z80SlotMem=new Uint8Array(this.z80Memory.buffer, offset, ZxMemory.MEMORY_BANK_SIZE);
+			memBank.set(z80SlotMem);
+			// Next
+			offset+=ZxMemory.MEMORY_BANK_SIZE;
+			slotIndex++;
+		}
 	}
 
 

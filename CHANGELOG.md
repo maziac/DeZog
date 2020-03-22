@@ -2,7 +2,7 @@
 
 # 0.13.4
 - Fix: Internal simulator: Write watchpoint was indicated as read watchpoint.
-
+- Fix: Internal simulator: corrected "LD (IX/IY+d),n".
 
 # 0.13.3
 - PC jumps to correct location after state restore.

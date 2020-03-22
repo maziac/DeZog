@@ -175,6 +175,18 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	}
 
 
+
+	/**
+	 * Loads .nex or .sna files.
+	 * Assures that the memory banks are copied to the Z80 memory.
+	 */
+	protected async loadBin(filePath: string): Promise<void> {
+		await super.loadBin(filePath);
+		// Copy memory banks
+		this.zxMemory.copyBanksToZ80Mem();
+	}
+
+
 	/**
 	 * Sets a specific register value.
 	 * @param reg E.g. Z80_REG.PC or Z80_REG.A
@@ -397,15 +409,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
 					break;
 				}
-			}
-
-			// TODO: Remove: check port access
-			if (this.zxPorts.hitAddress>=0) {
-				// Yes, read or write access
-				breakNumber=(false)? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-				breakData=this.zxPorts.hitAddress;
-				this.zxPorts.hitAddress=-1;
-				break;
 			}
 
 			// Check if watchpoint is hit
