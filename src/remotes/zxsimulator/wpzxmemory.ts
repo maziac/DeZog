@@ -119,7 +119,7 @@ export class WatchpointZxMemory extends ZxMemory {
 			if ((this.hitAddress<0) && wp.access.includes('w')) {
 				// Write access
 				this.hitAddress=addr;
-				this.hitAccess='r';
+				this.hitAccess='w';
 			}
 		}
 		super.write8(addr, val);

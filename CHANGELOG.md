@@ -1,6 +1,7 @@
 # Changelog
 
 # 0.13.4
+- Fix: Internal simulator: Write watchpoint was indicated as read watchpoint.
 
 
 # 0.13.3

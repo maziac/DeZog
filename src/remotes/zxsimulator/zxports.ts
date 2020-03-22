@@ -10,6 +10,11 @@ export class ZxPorts {
 	// Holds the memory banks.
 	protected ports: Uint8Array;
 
+
+	// TODO: Remove
+	public hitAddress: number=-1
+		;
+
 	/// Constructor.
 	constructor() {
 		this.ports=new Uint8Array(0x10000);
@@ -60,6 +65,8 @@ export class ZxPorts {
 
 	// Write 1 byte. Used by the CPU.
 	public write(port: number, data: number) {
+		if(port==0x7ffd)
+			this.hitAddress=port;
 	}
 
 	// Change the port value. Simulates HW access.

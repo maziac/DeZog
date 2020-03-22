@@ -268,87 +268,106 @@ export class Z80Cpu extends Z80js {
 	 */
 	protected ld__ix_d__a() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.a);
 	}
 	protected ld__ix_d__b() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.b);
 	}
 	protected ld__ix_d__c() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.c);
 	}
 	protected ld__ix_d__d() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.d);
 	}
 	protected ld__ix_d__e() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.e);
 	}
 	protected ld__ix_d__h() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.h);
 	}
 	protected ld__ix_d__l() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.ix+offset, self.r1.l);
 	}
 
 	protected ld__iy_d__a() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.a);
 	}
 	protected ld__iy_d__b() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.b);
 	}
 	protected ld__iy_d__c() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.c);
 	}
 	protected ld__iy_d__d() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.d);
 	}
 	protected ld__iy_d__e() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.e);
 	}
 	protected ld__iy_d__h() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.h);
 	}
 	protected ld__iy_d__l() {
 		const self=this as any;
-		self.tStates+=5;
+		self.tStates+=19;
 		let offset=signed8(self.read8(self.pc++));
 		self.write8(self.r1.iy+offset, self.r1.l);
+	}
+
+	/**
+	 * LD (IX/IY+d),n
+	 * Workaround for error:  "ld (ix+0),l not working", https://github.com/viert/z80js/issues/3
+	 */
+	protected ld__ix_d__n() {
+		const self=this as any;
+		self.tStates+=19;
+		let offset=signed8(self.read8(self.pc++));	// d
+		let value=signed8(self.read8(self.pc++));	// n
+		self.write8(self.r1.ix+offset, value);
+	}
+	protected ld__iy_d__n() {
+		const self=this as any;
+		self.tStates+=19;
+		let offset=signed8(self.read8(self.pc++));	// d
+		let value=signed8(self.read8(self.pc++));	// n
+		self.write8(self.r1.iy+offset, value);
 	}
 }

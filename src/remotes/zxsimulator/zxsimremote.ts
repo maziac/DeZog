@@ -399,6 +399,15 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				}
 			}
 
+			// TODO: Remove: check port access
+			if (this.zxPorts.hitAddress>=0) {
+				// Yes, read or write access
+				breakNumber=(false)? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+				breakData=this.zxPorts.hitAddress;
+				this.zxPorts.hitAddress=-1;
+				break;
+			}
+
 			// Check if watchpoint is hit
 			if (this.zxMemory.hitAddress>=0) {
 				// Yes, read or write access
