@@ -221,8 +221,10 @@ export class ZesaruxRemote extends RemoteBase {
 
 					// Load sna or tap file
 					const loadPath = Settings.launch.load;
-					if(loadPath)
-						zSocket.send('smartload ' + Settings.launch.load);
+
+					// TODO:
+					//if (loadPath)
+					//	zSocket.send('smartload ' + Settings.launch.load);
 
 					// Load obj file(s) unit
 					for(let loadObj of Settings.launch.loadObjs) {
