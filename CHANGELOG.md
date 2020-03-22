@@ -1,8 +1,12 @@
 # Changelog
 
+# 0.13.4
+
+
 # 0.13.3
 - PC jumps to correct location after state restore.
 - Fixed 'continue' for ZEsarUX.
+- ZEsarUX: automatic loading of the sna file disabled. Use "-e smartload full_path_to_your_sna_file" instead.
 
 # 0.13.2
 - Fix for "Fix including nested directories".

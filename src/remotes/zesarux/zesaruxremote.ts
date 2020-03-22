@@ -220,9 +220,8 @@ export class ZesaruxRemote extends RemoteBase {
 					zSocket.send('enter-cpu-step');
 
 					// Load sna or tap file
-					const loadPath = Settings.launch.load;
-
-					// TODO:
+					// TODO: Re-enable:
+					//const loadPath = Settings.launch.load;
 					//if (loadPath)
 					//	zSocket.send('smartload ' + Settings.launch.load);
 
