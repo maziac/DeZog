@@ -226,8 +226,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
-	// TODO: muss das async sein?
-	protected async emitHistorySpot(): Promise<void> {
+	protected emitHistorySpot() {
 		// Check if history spot is enabled
 		const count=Settings.launch.history.spotCount;
 		if (count<=0)

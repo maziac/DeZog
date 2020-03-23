@@ -499,8 +499,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				resolve({breakNumber, breakData, breakReasonString});
 			}
 
-			// Pre action
-			await this.preStep(); // TODO: Nur solange noch keine true cpu history
 			// Send 'run' command
 			await this.sendDzrpCmdContinue();
 			// Clear registers

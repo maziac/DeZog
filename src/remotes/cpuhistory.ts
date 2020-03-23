@@ -128,7 +128,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
-	protected async emitHistorySpot(): Promise<void> {
+	protected emitHistorySpot() {
 		// Check if history spot is enabled
 		const count=this.spotCount;
 		if (count<=0)
