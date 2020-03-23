@@ -1,5 +1,6 @@
 //import * as assert from 'assert';
 import {CpuHistoryClass} from '../cpuhistory';
+import {HistoryInstructionInfo} from '../decodehistinfo';
 
 
 
@@ -14,13 +15,28 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 	 */
 	public clear() {
 		(async () => {
-			const release=await this.historyMutex.acquire();
 			this.historyIndex=-1;
 			this.revDbgHistory.length=0;
 			this.reverseDbgStack=undefined as any;
-			release();
 		})();
 	}
 
+
+	/**
+	 * Retrieves the registers at the previous instruction from the Remote's cpu history.
+	 * Is async.
+	 * @returns Data with the registers or undefined if at the end of the history.
+	 */
+	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {
+		// Check if item available
+		let index=this.historyIndex+1;
+		if (index>=this.history.length)
+			return undefined;
+
+		// Return an item
+		const currentLine=this.history[index];
+		this.historyIndex=index;
+		return currentLine;
+	}
 }
 

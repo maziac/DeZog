@@ -9,8 +9,6 @@ import {RefList} from '../reflist';
 import {Remote} from './remotefactory';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
-import {Mutex} from 'async-mutex';
-
 
 
 /**
@@ -50,9 +48,6 @@ export class StepHistoryClass extends EventEmitter {
 
 	// The current history index.
 	protected historyIndex=-1;
-
-	// A mutext to coordinate access to the histroy array.
-	protected historyMutex=new Mutex();
 
 	// The maximum size of the history array.
 	protected maxSize=0;
@@ -145,9 +140,8 @@ export class StepHistoryClass extends EventEmitter {
 	 * @param line One line of history.
 	 * @param exchange true if the element should be exchanged rather than added.
 	 */
-	public async pushHistoryInfo(line: HistoryInstructionInfo, exchange = false): Promise<void> {
+	public pushHistoryInfo(line: HistoryInstructionInfo, exchange = false) {
 		assert(line);
-		const release=await this.historyMutex.acquire();
 		if (exchange&&this.history.length>0) {
 			// Exchange
 			this.history[0]=line;
@@ -158,7 +152,6 @@ export class StepHistoryClass extends EventEmitter {
 			if (this.history.length>this.maxSize)
 				this.history.pop();
 		}
-		release();
 	}
 
 

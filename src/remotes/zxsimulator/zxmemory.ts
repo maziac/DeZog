@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import {ImageConvert} from '../../imageconvert';
 import {Utility} from '../../misc/utility';
 import {MemBuffer} from '../../misc/membuffer';
-import {start} from 'repl';
 
 
 /**

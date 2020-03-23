@@ -1,8 +1,12 @@
 # Changelog
 
 # 0.13.4
-- Fix: Internal simulator: Write watchpoint was indicated as read watchpoint.
-- Fix: Internal simulator: corrected "LD (IX/IY+d),n".
+- Internal simulator
+	- Fix: Write-watchpoint was indicated as read-watchpoint.
+	- Fix: corrected "LD (IX/IY+d),n".
+	- Performance improvement
+- ZEsarUX: automatic loading enabled again. But added launch.json parameters to wait before and after loading ("debug_wait_before" and "debug_wait_after" in ms).
+- Visual update corrected after MovePcToCursor.
 
 # 0.13.3
 - PC jumps to correct location after state restore.

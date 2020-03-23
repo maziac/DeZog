@@ -2229,9 +2229,8 @@ Notes:
 		// Now change Program Counter
 		Remote.setProgramCounter(addr)
 			.then(() => {
-				// line is not updated. See https://github.com/Microsoft/vscode/issues/51716
-				//this.sendEvent(new StoppedEvent('PC-change', EmulDebugAdapter.THREAD_ID));
-				this.sendEventContinued();
+				Remote.clearCallStack();
+				//this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
 				// Handle decorations
 				StepHistory?.emitHistory();

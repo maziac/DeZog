@@ -331,7 +331,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		const exchange=(pc==this.previouslyStoredPCHistory);
 		this.previouslyStoredPCHistory=pc;
 		// Store
-		await CpuHistory.pushHistoryInfo(hist, exchange);
+		CpuHistory.pushHistoryInfo(hist, exchange);
 	}
 
 

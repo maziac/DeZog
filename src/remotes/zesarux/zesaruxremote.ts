@@ -167,7 +167,7 @@ export class ZesaruxRemote extends RemoteBase {
 			const err = new Error('ZEsarUX terminated the connection!');
 			this.emit('error', err);
 		});
-		zSocket.on('connected', () => {
+		zSocket.on('connected', async () => {
 			if(this.terminating)
 				return;
 
@@ -208,64 +208,69 @@ export class ZesaruxRemote extends RemoteBase {
 				this.zesaruxConnected();
 
 				// Wait for previous command to finish
-				zSocket.executeWhenQueueIsEmpty().then(() => {
-					var debug_settings = (Settings.launch.skipInterrupt) ? 32 : 0;
-					zSocket.send('set-debug-settings ' + debug_settings);
+				await zSocket.executeWhenQueueIsEmpty();
 
-					// Reset the cpu before loading.
-					if(Settings.launch.resetOnLaunch)
-						zSocket.send('hard-reset-cpu');
+				var debug_settings = (Settings.launch.skipInterrupt) ? 32 : 0;
+				zSocket.send('set-debug-settings ' + debug_settings);
 
-					// Enter step-mode (stop)
-					zSocket.send('enter-cpu-step');
+				// Reset the cpu before loading.
+				if(Settings.launch.resetOnLaunch)
+					zSocket.send('hard-reset-cpu');
 
-					// Load sna or tap file
-					// TODO: Re-enable:
-					//const loadPath = Settings.launch.load;
-					//if (loadPath)
-					//	zSocket.send('smartload ' + Settings.launch.load);
+				// Enter step-mode (stop)
+				zSocket.send('enter-cpu-step');
 
-					// Load obj file(s) unit
-					for(let loadObj of Settings.launch.loadObjs) {
-						if(loadObj.path) {
-							// Convert start address
-							const start = Labels.getNumberFromString(loadObj.start);
-							if(isNaN(start))
-								throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
-							zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
-						}
+				// Load sna, nex or tap file
+				const loadPath = Settings.launch.load;
+				if (loadPath) {
+					const waitBeforeMs=Settings.launch.debug_wait_before;
+					await Utility.timeout(waitBeforeMs);	// TODO: Remove
+					zSocket.send('smartload '+Settings.launch.load);
+					const waitAfterMs=Settings.launch.debug_wait_after;
+					await Utility.timeout(waitAfterMs);	// TODO: Remove
+				}
+
+				// Load obj file(s) unit
+				for(let loadObj of Settings.launch.loadObjs) {
+					if(loadObj.path) {
+						// Convert start address
+						const start = Labels.getNumberFromString(loadObj.start);
+						if(isNaN(start))
+							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+						zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
 					}
+				}
 
-					// Set Program Counter to execAddress
-					if(Settings.launch.execAddress) {
-						const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
-						if(isNaN(execAddress)) {
-							error = new Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
-							return;
-						}
-						// Set PC
-						this.setProgramCounter(execAddress);
+				// Set Program Counter to execAddress
+				if(Settings.launch.execAddress) {
+					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
+					if(isNaN(execAddress)) {
+						error = new Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
+						return;
 					}
+					// Set PC
+					this.setProgramCounter(execAddress);
+				}
 
-					// Initialize breakpoints
-					this.initBreakpoints();
+				// Initialize breakpoints
+				this.initBreakpoints();
 
 
-					// Code coverage
-					if(Settings.launch.history.codeCoverageEnabled) {
-						zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
-						zSocket.send('cpu-code-coverage clear');
-					}
-					else
-						zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
+				// Code coverage
+				if(Settings.launch.history.codeCoverageEnabled) {
+					zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
+					zSocket.send('cpu-code-coverage clear');
+				}
+				else
+					zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
 
-					// Reverse debugging.
-					CpuHistory.init();
+				// Reverse debugging.
+				CpuHistory.init();
 
-					// Enable extended stack
-					zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
-					zSocket.send('extended-stack enabled yes');
-				});
+				// Enable extended stack
+				zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
+				zSocket.send('extended-stack enabled yes');
+
 
 				zSocket.executeWhenQueueIsEmpty().then(() => {
 					// Check for console.error

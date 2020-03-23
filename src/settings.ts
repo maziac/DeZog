@@ -102,7 +102,7 @@ export interface SerialType {
  * See also package.json.
  * The configuration parameters for the zesarux debugger.
  */
-export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments  {
+export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
 	remoteType: string;
 
@@ -192,6 +192,11 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
+
+
+	// TODO: REMOVE
+	debug_wait_before: number,
+	debug_wait_after: number
 }
 
 
@@ -199,6 +204,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 /// A class through which the settings can be accessed.
 /// I.e. the parameters in launch.json.
 export class Settings {
+
+	// Maximum number for history spot count.
+	protected static MAX_HISTORY_SPOT_COUNT=20;
 
 	/// the representation of the launch.json
 	public static launch:  SettingsParameters;
@@ -243,6 +251,10 @@ export class Settings {
 				tabSize: <any>undefined,
 				socketTimeout: <any>undefined,
 				unitTestTimeout: <any>undefined,
+
+				// TODO: REMOVE
+				debug_wait_before: <any>undefined,
+				debug_wait_after: <any>undefined,
 			}
 		}
 
@@ -347,7 +359,9 @@ export class Settings {
 
 		// Short history
 		if(Settings.launch.history.spotCount == undefined)
-			Settings.launch.history.spotCount = 10;
+			Settings.launch.history.spotCount=10;
+		if (Settings.launch.history.spotCount>Settings.MAX_HISTORY_SPOT_COUNT)
+			Settings.launch.history.spotCount=Settings.MAX_HISTORY_SPOT_COUNT;
 		if(Settings.launch.history.spotCount > Settings.launch.history.reverseDebugInstructionCount)
 			Settings.launch.history.spotCount = Settings.launch.history.reverseDebugInstructionCount;
 		if(Settings.launch.history.spotCount > 100)
@@ -432,7 +446,14 @@ export class Settings {
 		}
 
 		if(!Settings.launch.unitTestTimeout)
-			Settings.launch.unitTestTimeout = 1;	///< 1000 ms
+			Settings.launch.unitTestTimeout=1;	///< 1000 ms
+
+
+		// TODO: REMOVE
+		if (Settings.launch.debug_wait_before==undefined)
+			Settings.launch.debug_wait_before=0;
+		if (Settings.launch.debug_wait_after==undefined)
+			Settings.launch.debug_wait_after=0;
 	}
 
 

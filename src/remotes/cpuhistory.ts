@@ -65,6 +65,8 @@ export class CpuHistoryClass extends StepHistoryClass{
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
 
+	// Mirror of the settings historySpotCount.
+	protected spotCount: number;
 
 	/**
 	 * Sets the static CpuHistory singleton.
@@ -81,6 +83,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 */
 	public init() {
 		super.init();
+		this.spotCount=Settings.launch.history.spotCount;
 	}
 
 
@@ -89,12 +92,10 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 */
 	public clear() {
 		(async () => {
-			const release=await this.historyMutex.acquire();
 			this.history.length=0;
 			this.historyIndex=-1;
 			this.revDbgHistory.length=0;
 			this.reverseDbgStack=undefined as any;
-			release();
 		})();
 	}
 
@@ -106,7 +107,9 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
+	// TODO: Maybe change to use index AND length to obtain several items at once.
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
+		assert(false);
 		return undefined;
 	}
 
@@ -127,27 +130,14 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 */
 	protected async emitHistorySpot(): Promise<void> {
 		// Check if history spot is enabled
-		const count=Settings.launch.history.spotCount;
+		const count=this.spotCount;
 		if (count<=0)
 			return;
 
 		// Otherwise calculate addresses.
 
-		// Make sure that this.history is not changed in between
-		const release=await this.historyMutex.acquire();
-
 		// Check how many history entries need to be retrieved from the remote.
 		let index=this.getHistoryIndex()+1;
-		let endHistory=index+count;
-		while (endHistory>this.history.length) {
-			if (this.history.length>this.maxSize)
-				break;
-			// Retrieve items
-			const line=await this.getRemoteHistoryIndex(this.history.length);
-			if (!line)
-				break;
-			this.history.push(line);
-		}
 
 		// Get start index
 		let startIndex=index-count;
@@ -164,8 +154,6 @@ export class CpuHistoryClass extends StepHistoryClass{
 			addresses.push(pc);
 		}
 
-		release();
-
 		// Emit code coverage event
 		this.emit('historySpot', startIndex, addresses);
 	}
@@ -174,21 +162,33 @@ export class CpuHistoryClass extends StepHistoryClass{
 	/**
 	 * Retrieves the registers at the previous instruction from the Remote's cpu history.
 	 * Is async.
-	 * @returns A string with the registers or undefined if at the end of the history.
+	 * @returns Data with the registers or undefined if at the end of the history.
 	 */
 	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {
-		const release=await this.historyMutex.acquire();
-		let currentLine= await super.getPrevRegistersAsync();
-		if(!currentLine)
-		{
-			const index = this.historyIndex + 1;
-			currentLine = await this.getRemoteHistoryIndex(index);
-			if(currentLine) {
-				this.historyIndex = index;
-				this.history.push(currentLine);
-			}
+		// Check if, for the history spot, it is necessary to acquire more items
+		let count=this.spotCount;
+		if (count<1)
+			count=1;	// Get at least one item
+		let index=this.historyIndex+1;
+		const len=this.history.length-index;
+		const additionalItems=count-len;
+		const endIndex=index+additionalItems;
+		for (let i=index; i<endIndex; i++) {
+			// Get new history item from remote
+			const line=await this.getRemoteHistoryIndex(i);
+			if (!line)
+				break;
+			this.historyIndex=index;
+			this.history.push(line);
 		}
-		release();
+
+		// Check if item available
+		if (index>=this.history.length)
+			return undefined;
+
+		// Return an item
+		const currentLine=this.history[index];
+		this.historyIndex=index;
 		return currentLine;
 	}
 
