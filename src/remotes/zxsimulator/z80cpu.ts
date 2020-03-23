@@ -62,14 +62,10 @@ export class Z80Cpu extends Z80js {
 
 		super.execute();
 
-		// Workaround
-		if (opcode2==0xCBFD||opcode2==0xCBDD)
-			self.pc++;	// Correct the PC
-
 		// Statistics
 		const tstatesDiff=self.tStates-tstatesPrev;
 		if ((opcode2&0xFF)!=0x76) {
-			// Count everything beside the HALT instruction
+			// Count everything besides the HALT instruction
 			this.cpuLoadTstates+=tstatesDiff;
 		}
 		this.cpuTotalTstates+=tstatesDiff;
@@ -259,6 +255,18 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
+	}
+
+
+
+	/**
+	 * Workaround for error:  "PC incorrect after FDCB instruction", https://github.com/viert/z80js/issues/2
+	 */
+	protected doBitIndexed(b, addr) {
+		super.doBitIndexed(b, addr);
+		// Workaround
+		const self=this as any;
+		self.pc++;	// Correct the PC
 	}
 
 
