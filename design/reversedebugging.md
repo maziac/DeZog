@@ -21,27 +21,11 @@ During stepping the following main classes (singletons) are involved:
 - CpuHistory/StepHistory
 - Z80Register
 
-Here is a basic MSC for the lite and true history. One can see that for the lite history the remote is not involved.
+Here is a basic MSC for the lite and true history.
 
 ```puml
 hide footbox
 title (Lite) Step History
-
--> DebugAdapter: Step forward
-DebugAdapter -> StepHistory: Store
-note over StepHistory: Store registers and \ncallstack
-DebugAdapter -> Remote: Step forward
-...
--> DebugAdapter: Step back
-DebugAdapter -> StepHistory: Step back
-note over StepHistory: Recall registers and \ncallstack
-DebugAdapter <-- StepHistory: Instruction, Registers, Callstack
-```
-
-
-```puml
-hide footbox
-title Alternative (Lite) Step History, favorised
 
 participant DebugAdapter
 participant StepHistory
@@ -65,7 +49,6 @@ participant DebugAdapter
 participant CpuHistory
 
 -> DebugAdapter: Step forward
-DebugAdapter -> CpuHistory: Store
 note over CpuHistory: Does not store\nanything
 DebugAdapter -> Remote: Step forward
 note over Remote: Store registers and \ninstruction + (SP) for all\nexecuted instructions
@@ -82,52 +65,6 @@ Paradigm:
 - The Remote takes care of communication with the History for storing the history info.
 - The DebugAdapter communicates with the History for the reverse debugging.
 - The DebugAdapter communicates with the Remote for the forward debugging
-
-<hr>
-
-Nicht so gut: Führt nur einen weiteren Schritt (Remote.stepBack) ein.
-Vielleicht architekturell besser: DebugAdapter redet nur mit Remote nicht mit History.
-
-```puml
-hide footbox
-title B: (Lite) Step History
-
--> DebugAdapter: Step forward
-DebugAdapter -> Remote: Step forward
-Remote -> StepHistory: Store
-note over StepHistory: Store registers and \ncallstack
-...
--> DebugAdapter: Step back
-DebugAdapter -> Remote: Step back
-Remote -> StepHistory: Get History Entry
-note over StepHistory: Recall registers and \ncallstack
-Remote <-- StepHistory: Instruction, Registers, Callstack
-DebugAdapter <-- Remote: Instruction, Registers, Callstack
-```
-
-```puml
-hide footbox
-title (True) Cpu History
-
-participant DebugAdapter
-participant Remote
-participant CpuHistory
-participant External as "External remote"
-
--> DebugAdapter: Step forward
-DebugAdapter -> Remote: Step forward
-Remote -> External: Step forward
-note over External: Store registers and \ninstruction + (SP) for all\nexecuted instructions
-...
-DebugAdapter -> Remote: Step back
-Remote -> CpuHistory: Get History Entry
-CpuHistory -> External: Get History Entry
-note over External: Recall registers\n+ instruction + (SP)
-CpuHistory <-- External: Instruction, Registers, (SP)
-note over CpuHistory: Interprete instruction,\nadd to/remove from callstack
-Remote <-- CpuHistory: Instruction, Registers, Callstack
-DebugAdapter <-- Remote: Instruction, Registers, Callstack
-```
 
 
 # Reverse Debugging with ZEsarUX
@@ -149,57 +86,115 @@ Of course, knowing the correct memory contents would be beneficially but also wi
 
 # Design
 
-The whole cpu-history logic is implemented in the ZesaruxEmulator.
-I.e. it is hidden from the Remote class.
+~~~
+                            ┌────────────────────┐
+                            │                    │
+                            │  StepHistoryClass  │
+                            │                    │
+                            └────────────────────┘
+                                       △
+                                       │
+                            ┌────────────────────┐
+                            │                    │
+                            │  CpuHistoryClass   │
+                            │                    │
+                            └────────────────────┘
+                                       △
+           ┌───────────────────────────┼───────────────────────────┐
+           │                           │                           │
+┌────────────────────┐      ┌────────────────────┐      ┌────────────────────┐
+│                    │      │                    │      │                    │
+│ ZesaruxCpuHistory  │      │  ZxSimCpuHistory   │      │        ...         │
+│                    │      │                    │      │                    │
+└────────────────────┘      └────────────────────┘      └────────────────────┘
+~~~
 
-The Zesarux Remote class has to provide methods for step back and running reverse.
+The history is a singleton called StepHistory.
+THere exist a second global variable CpuHistory which points to the same StepHistory instance in case true cpu history is supported.
+This is just for convenience to access the CpuHistoryclass methods easier.
 
+The CpuHistory retrieves the callstack when entering reverse debug mode andthen manipulates it by interpreting the Z80 instructions.
+The StepHistory is simpler, it directly stores the callstack at each step position.
 
-TODO: Needs rework: Most of the stuff is not done anymore in the Remote class but in the CpuHistory class.
-
-When the ZesaruxEmulator class receives a stepBack for the first time it will retrieve the youngest item from the ZEsarUX cpu-history and the system is in reverse debugging mode.
-It now reads the last line of the cpu-history and retrieves
-- the address
-- the registers
-- the opcode (as string)
+The following MSCs show the paths for the cpu history.
 
 ```puml
 hide footbox
-title User pressed "Step Back"
+title User pressed "Step Back or Reverse Continue"
 actor user
 participant vscode
-participant "Emul\nDebug\nSession" as session
-participant "Emulator" as emul
-participant "ZEsarUX" as zesarux
+participant "DebugAdapter" as da
+participant "History" as history
+participant "Remote" as remote
+participant "Z80Registers" as registers
 
-user -> vscode: "Step Back"
-vscode -> session: stepBackRequest
+user -> vscode: "Step Back" etc.
+vscode -> da: stepBackRequest\ncontinueReverseRequest
+vscode <-- da: response
 
-session -> emul: stepBack
-emul -> zesarux: cpu-history get 0
-emul <-- zesarux
-session <-- emul
+da -> history: revDbgPrev
+history -> remote: getHistoryItem
+history <-- remote: history item
+note over history: Manipulate the\ncall stack
+da <-- history: history item
+history -> registers: setCache
+vscode <-- da: StoppedEvent
 
-vscode <-- session: response
-vscode <-- session: StoppedEvent('step')
+vscode -> da: ...
 
-vscode -> session: ...
+vscode -> da: stackTraceRequest
+da -> history: getCallStack
+da <-- history
+vscode <-- da: response
 
-vscode -> session: variablesRequest
+vscode -> da: variablesRequest
 
-session -> emul: getRegisters
-session <-- emul
+da -> registers: getRegisters
+da <-- registers
 
-session -> emul: getMemoryDump
-emul -> zesarux: read-memory
-emul <-- zesarux
-session <-- emul
-
-vscode <-- session: response
+da -> remote: getMemoryDump
+da <-- remote
 ```
-Note: The getRegisters command is caught by the Emulator instance and will return the cached value from the cpu-history command.
-All other requests (like memory dump requests) will still go to the real emulator (ZEsarUX).
-I.e. these values will not change during reverse debugging and may be potentially wrong, or better, they contain the value at the last executed machine cycle.
+
+
+```puml
+hide footbox
+title User pressed "Step forward during reverse debugging"
+actor user
+participant vscode
+participant "DebugAdapter" as da
+participant "History" as history
+participant "Remote" as remote
+participant "Z80Registers" as registers
+
+user -> vscode: "Step" etc.
+vscode -> da: nextRequest\nstepInRequest\nstepOutRequest\ncontinueRequest
+vscode <-- da: response
+
+da -> history: revDbgNext
+note over history: Manipulate the\ncall stack
+da <-- history: history item
+history -> registers: setCache
+vscode <-- da: StoppedEvent
+
+vscode -> da: ...
+
+vscode -> da: stackTraceRequest
+da -> history: getCallStack
+da <-- history
+vscode <-- da: response
+
+vscode -> da: variablesRequest
+
+da -> registers: getRegisters
+da <-- registers
+
+da -> remote: getMemoryDump
+da <-- remote
+
+```
+
+Note: As you can see: the memory is not part of the history. I.e. the memory contents you see is the actual one. There is no history for the memory.
 
 
 # Stepping in Reverse Debugging Mode
@@ -282,5 +277,5 @@ If a breakpoint address is reached "execution" is stopped.
 # Other Requests
 
 - scopesRequest: No special behavior.
-- stackTraceRequest: The stack trace request does not request the stack from ZEsarUX but uses the internal reverse debug stack instead.
-- variablesRequest: No special behavior. The only special variables that change are the registers. These are speciallly treated in the Emulator.
+- stackTraceRequest: The stack trace request does not request the stack from Remote but uses the internal reverse debug stack instead.
+- variablesRequest: No special behavior. The only special variables that change are the registers. These are set by theStep/CpuHistory in the Z80Registers.
