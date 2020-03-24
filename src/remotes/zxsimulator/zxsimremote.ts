@@ -65,9 +65,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.cpuRunning=false;
 		this.lastBpId=0;
 		// Reverse debugging / CPU history
-		CpuHistoryClass.setCpuHistory(new ZxSimCpuHistory());
-		CpuHistory.init();
-		CpuHistory.decoder=new DecodeStandardHistoryInfo();
+		if (Settings.launch.history.reverseDebugInstructionCount>0) {
+			CpuHistoryClass.setCpuHistory(new ZxSimCpuHistory());
+			CpuHistory.init();
+			CpuHistory.decoder=new DecodeStandardHistoryInfo();
+		}
 		// Code coverage
 		this.codeCoverage=new CodeCoverageArray();
 		// Create a Z80 CPU to emulate Z80 behaviour
@@ -324,7 +326,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Called on every executed instruction.
 	 * @param pc The pc for the line.
 	 */
-	protected async storeHistoryInfo(pc: number): Promise<void> {
+	protected storeHistoryInfo(pc: number) {
 		// Get history element
 		const hist=this.z80Cpu.getHistoryData();
 		// Check if pc changed
@@ -343,96 +345,92 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		//		Utility.timeDiff();
-		// Run the Z80-CPU in a loop
+		let breakReasonString;
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=10000;
-		let breakReasonString;
 		let bp;
 		let breakData;
-		this.codeCoverage.clearAll();
-		for (; counter>0; counter--) {
-			// Store current registers and opcode
-			const prevPc=this.z80Cpu.pc;
-			await this.storeHistoryInfo(prevPc);
+		try {
+			// Run the Z80-CPU in a loop
+			this.codeCoverage.clearAll();
+			for (; counter>0; counter--) {
+				// Store current registers and opcode
+				const prevPc=this.z80Cpu.pc;
+				this.storeHistoryInfo(prevPc);
 
-			// Execute one instruction
-			try {
+				// Execute one instruction
 				this.z80Cpu.execute();
-			}
-			catch (errorText) {
-				breakReasonString="Z80CPU Error: "+errorText;
-				console.log(breakReasonString);
-				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
-				break;
-			};
 
-			// Update visual memory
-			this.zxMemory.setVisualProg(prevPc);
+				// Update visual memory
+				this.zxMemory.setVisualProg(prevPc);
 
-			// Store the pc for coverage
-			this.codeCoverage.storeAddress(prevPc);
+				// Store the pc for coverage
+				this.codeCoverage.storeAddress(prevPc);
 
-			// Check if any real breakpoint is hit
-			// Note: Because of step-out this needs to be done before the other check.
-			const pc=this.z80Cpu.pc;
-			const bpInner=this.tmpBreakpoints[pc];
-			if (bpInner) {
-				// Get registers
-				const regs=this.z80Cpu.getRegisterData();
-				Z80Registers.setCache(regs);
-				// Now check if condition met or if logpoint
-				for (const bpElem of bpInner) {
-					try {
-						const {condition, log}=this.checkConditionAndLog(bpElem);
-						// Emit log?
-						if (log) {
-							// Convert and print
-							const evalLog = await Utility.evalLogString(log)
-							this.emit('log', evalLog);
-						}
-						else {
-							// Not a logpoint.
-							// Condition met?
-							if (condition!=undefined) {
-								bp=bpElem;
+				// Check if any real breakpoint is hit
+				// Note: Because of step-out this needs to be done before the other check.
+				const pc=this.z80Cpu.pc;
+				const bpInner=this.tmpBreakpoints[pc];
+				if (bpInner) {
+					// Get registers
+					const regs=this.z80Cpu.getRegisterData();
+					Z80Registers.setCache(regs);
+					// Now check if condition met or if logpoint
+					for (const bpElem of bpInner) {
+						try {
+							const {condition, log}=this.checkConditionAndLog(bpElem);
+							// Emit log?
+							if (log) {
+								// Convert and print
+								const evalLog=await Utility.evalLogString(log)
+								this.emit('log', evalLog);
+							}
+							else {
+								// Not a logpoint.
+								// Condition met?
+								if (condition!=undefined) {
+									bp=bpElem;
+								}
 							}
 						}
+						catch (e) {
+							bp=bpElem;
+						}
 					}
-					catch (e) {
-						bp=bpElem;
+
+					// Check if at least one breakpoint for this address has a condition that
+					// evaluates to true.
+					if (bp) {
+						breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+						break;
 					}
 				}
 
-				// Check if at least one breakpoint for this address has a condition that
-				// evaluates to true.
-				if (bp) {
-					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+				// Check if watchpoint is hit
+				if (this.zxMemory.hitAddress>=0) {
+					// Yes, read or write access
+					breakNumber=(this.zxMemory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+					breakData=this.zxMemory.hitAddress;
 					break;
 				}
+
+				// Check if stopped from outside
+				if (!this.cpuRunning) {
+					breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
+					break;
+				}
+
+				// Check if breakpoints are hit
+				if (pc==bp1||pc==bp2)
+					break;
 			}
 
-			// Check if watchpoint is hit
-			if (this.zxMemory.hitAddress>=0) {
-				// Yes, read or write access
-				breakNumber=(this.zxMemory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-				breakData=this.zxMemory.hitAddress;
-				break;
-			}
-
-			// Check if stopped from outside
-			if (!this.cpuRunning) {
-				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
-				break;
-			}
-
-			// Check if breakpoints are hit
-			if (pc==bp1||pc==bp2)
-				break;
 		}
-		//		const time=Utility.timeDiff();
-		//		console.log("Time="+time+" ms");
-
-		//LogGlobal.log("cpuContinue, counter="+counter);
+		catch (errorText) {
+			breakReasonString="Z80CPU Error: "+errorText;
+			console.log(breakReasonString);
+			breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
+		};
 
 		// Update the screen etc.
 		this.emit('update')

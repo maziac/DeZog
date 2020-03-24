@@ -101,6 +101,14 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 
 	/**
+	 * Not used in cpu history.
+	 */
+	public pushCallStack(callstack: RefList<CallStackFrame>) {
+		assert(false);
+	}
+
+
+	/**
 	 * Retrieves the instruction from Remote's cpu history.
 	 * Is async.
 	 * Override for a new remote.
@@ -137,7 +145,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 		// Otherwise calculate addresses.
 
 		// Check how many history entries need to be retrieved from the remote.
-		let index=this.getHistoryIndex()+1;
+		let index=this.historyIndex+1;
 
 		// Get start index
 		let startIndex=index-count;

@@ -86,15 +86,6 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
-	 * Returns the history index.
-	 * -1 if history is not in use.
-	 */
-	public getHistoryIndex() {
-		return this.historyIndex;
-	}
-
-
-	/**
 	 * Retrieves the registers at the previous step history.
 	 * Is async.
 	 * @returns The registers or undefined if at the end of the history.
@@ -222,7 +213,7 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
-	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 * Emits 'historySpot' to signal that the files should be decorated.
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
@@ -235,7 +226,7 @@ export class StepHistoryClass extends EventEmitter {
 		// Otherwise calculate addresses
 
 		// Get start index
-		let index=this.getHistoryIndex()+1;
+		let index=this.historyIndex+1;
 		let startIndex=index-count;
 		if (startIndex<0)
 			startIndex=0;

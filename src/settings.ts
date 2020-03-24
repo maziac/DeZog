@@ -364,8 +364,6 @@ export class Settings {
 			Settings.launch.history.spotCount=Settings.MAX_HISTORY_SPOT_COUNT;
 		if(Settings.launch.history.spotCount > Settings.launch.history.reverseDebugInstructionCount)
 			Settings.launch.history.spotCount = Settings.launch.history.reverseDebugInstructionCount;
-		if(Settings.launch.history.spotCount > 100)
-			Settings.launch.history.spotCount = 100;
 		if(Settings.launch.history.spotCount < 0)
 			Settings.launch.history.spotCount = 0;
 
