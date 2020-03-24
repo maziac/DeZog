@@ -223,9 +223,11 @@ export class ZesaruxRemote extends RemoteBase {
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
 				if (loadPath) {
+					await zSocket.executeWhenQueueIsEmpty();
 					const waitBeforeMs=Settings.launch.debug_wait_before;
 					await Utility.timeout(waitBeforeMs);	// TODO: Remove
 					zSocket.send('smartload '+Settings.launch.load);
+					await zSocket.executeWhenQueueIsEmpty();
 					const waitAfterMs=Settings.launch.debug_wait_after;
 					await Utility.timeout(waitAfterMs);	// TODO: Remove
 				}
