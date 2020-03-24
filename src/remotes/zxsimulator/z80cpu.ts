@@ -3,6 +3,7 @@ import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
+import {Settings} from '../../settings';
 
 
 const signed8=(val) => {
@@ -30,6 +31,11 @@ export class Z80Cpu extends Z80js {
 	protected cpuTotalTstates: number;
 	// cpuLoadTstates divided by cpuTotalTstates.
 	protected cpuLoad: number;
+	// The number of interrupts to calculate the average from.
+	protected cpuLoadRange: number;
+
+	// Counts the current number of interrupts.
+	protected cpuLoadRangeCounter: number;
 
 	/// Constructor.
 	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
@@ -46,6 +52,8 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
+		this.cpuLoadRangeCounter=0;
+		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
 	}
 
 
@@ -77,10 +85,14 @@ export class Z80Cpu extends Z80js {
 			//this.remaingInterruptTstates=2;
 			this.injectInterrupt();
 			// Measure CPU load
-			if (this.cpuTotalTstates>0) {
-				this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
-				this.cpuLoadTstates=0;
-				this.cpuTotalTstates=0;
+			this.cpuLoadRangeCounter++;
+			if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
+				if (this.cpuTotalTstates>0) {
+					this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
+					this.cpuLoadTstates=0;
+					this.cpuTotalTstates=0;
+					this.cpuLoadRangeCounter=0;
+				}
 			}
 		}
 	}

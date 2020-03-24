@@ -251,6 +251,11 @@
 									"type": "string",
 									"description": "The machine type. At the moment only '48k'.",
 									"default": "48k"
+								},
+								"cpuLoadInterruptRange": {
+									"type": "number",
+									"description": "The number of interrupts to calculate the CPU-load average from.",
+									"default": "1"
 								}
 							},
 							"serial": {

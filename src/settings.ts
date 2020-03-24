@@ -85,6 +85,9 @@ export interface ZrcpType {
 export interface ZxSimType {
 	/// At the moment only "48k"
 	machine: string;
+
+	// The number of interrupts to calculate the average from.
+	cpuLoadInterruptRange: number;
 }
 
 
@@ -276,6 +279,8 @@ export class Settings {
 			Settings.launch.zsim={} as ZxSimType;
 		if (!Settings.launch.zsim.machine)
 			Settings.launch.zsim.machine='48k';
+		if (!Settings.launch.zsim.cpuLoadInterruptRange)
+			Settings.launch.zsim.cpuLoadInterruptRange=1;
 
 		// serial
 		if (!Settings.launch.serial)
