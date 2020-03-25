@@ -4,7 +4,6 @@ import {basename} from 'path';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
-import {CallSerializer} from './callserializer';
 import {Labels} from './labels';
 import {Log, LogSocket} from './log';
 import {RemoteBreakpoint, MachineType} from './remotes/remotebase';
@@ -67,9 +66,6 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Only one thread is supported.
 	public static THREAD_ID=1;
-
-	/// Is responsible to serialize asynchronous calls (e.g. to zesarux).
-	protected serializer=new CallSerializer("Main", true);
 
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>();
@@ -983,30 +979,22 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
+	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): Promise<void> {
 		// Get the associated variable object
 		const ref=args.variablesReference;
 		const varObj=this.listVariables.getObject(ref);
-		// Serialize
-		this.serializer.exec(() => {
-			// Check if object exists
-			if (!varObj) {
-				// Return empty list
-				var variables=new Array<DebugProtocol.Variable>();
-				response.body={variables: variables};
-				this.sendResponse(response);
-				// end the serialized call:
-				this.serializer.endExec();
-				return;
-			}
+		// Check if object exists
+		if (varObj) {
 			// Get contents
-			varObj.getContent(args.start, args.count).then(varList => {
-				response.body={variables: varList};
-				this.sendResponse(response);
-				// end the serialized call:
-				this.serializer.endExec();
-			});
-		});
+			const varList=await varObj.getContent(args.start, args.count);
+			response.body={variables: varList};
+		}
+		else {
+			// Return empty list
+			var variables=new Array<DebugProtocol.Variable>();
+			response.body={variables: variables};
+		}
+		this.sendResponse(response);
 	}
 
 
@@ -2087,28 +2075,12 @@ Notes:
 
 	/**
 	 * Debug commands. Not shown publicly.
-	 * @param tokens The arguments. 'serializer clear'|'serializer print'
+	 * @param tokens The arguments.
  	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalDebug(tokens: Array<string>): Promise<string> {
 		const param1=tokens[0]||'';
 		let unknownArg=param1;
-		if (param1=='serializer') {
-			const param2=tokens[1]||'';
-			unknownArg=param2;
-			if (param2=='clear') {
-				// Clear the call serializer queue
-				this.serializer.clrQueue();
-				return 'OK';
-			}
-			else if (param2=='print') {
-				// Print the current function.
-				const current=this.serializer.getCurrentFunction();
-				const text='Progress: '+current.progress+'\n'+
-					'Func: '+current.func;
-				return text;
-			}
-		}
 		// Unknown argument
 		throw new Error("Unknown argument: '"+unknownArg+"'");
 	}
