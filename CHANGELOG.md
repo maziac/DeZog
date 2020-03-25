@@ -1,7 +1,7 @@
 # Changelog
 
 # 0.13.6
-
+- Refactoring: CallSerializer finally removed (!)
 
 # 0.13.5
 - zsim.cpuLoadInterruptRange introduced. Change the range for the average calculation.

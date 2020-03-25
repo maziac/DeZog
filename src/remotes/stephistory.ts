@@ -5,7 +5,7 @@ import {BaseMemory} from '../disassembler/basememory';
 import {Opcode} from '../disassembler/opcode';
 import {EventEmitter} from 'events';
 import {CallStackFrame} from '../callstackframe';
-import {RefList} from '../reflist';
+import {RefList} from '../misc/refList';
 import {Remote} from './remotefactory';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';

@@ -9,7 +9,7 @@ import {Log, LogSocket} from './log';
 import {RemoteBreakpoint, MachineType} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
-import {RefList} from './reflist';
+import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
 import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';

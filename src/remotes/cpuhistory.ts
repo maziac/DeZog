@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
-import {RefList} from '../reflist';
+import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {Remote} from './remotefactory';
 import {Labels} from '../labels';

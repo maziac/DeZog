@@ -5,7 +5,7 @@ import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
 import {Settings} from '../settings';
 import {ZesaruxSocket, zSocket} from '../remotes/zesarux/zesaruxsocket';
-import {RefList} from '../reflist';
+import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {RemoteFactory} from '../remotes/remotefactory';
 import {CpuHistory} from '../remotes/cpuhistory';

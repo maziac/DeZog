@@ -4,7 +4,7 @@ import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { Utility } from '../misc/utility';
 import { Labels } from '../labels';
-import { MetaBlock, MemoryDump } from '../memorydump';
+import { MetaBlock, MemoryDump } from '../misc/memorydump';
 import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';
 import { BaseView } from './baseview';
