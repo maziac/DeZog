@@ -118,7 +118,7 @@ export class MemBuffer {
 	 * Returns an array of the required length.
 	 */
 	public getUint8Array(): Uint8Array {
-		const view=new Uint8Array(this.buffer, 0, this.writeOffset);
+		const view=new Uint8Array(this.buffer, 0, this.writeOffset);  // this.buffer.byteOffset is 0
 		return view;
 	}
 

@@ -699,6 +699,7 @@ export class DzrpRemote extends RemoteBase {
 		}
 		// Make sure that the registers are reloaded
 		Z80Registers.clearCache();
+		this.clearCallStack();
 	}
 
 
@@ -713,6 +714,10 @@ export class DzrpRemote extends RemoteBase {
 
 		// Write as memory dump
 		this.sendDzrpCmdWriteMem(startAddress, objBuffer);
+
+		// Make sure that the registers are reloaded
+		Z80Registers.clearCache();
+		this.clearCallStack();
 	}
 
 

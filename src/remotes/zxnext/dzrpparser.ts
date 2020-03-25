@@ -136,7 +136,7 @@ export class DzrpParser extends Transform {
 				if (this.buffer.length<4)
 					break;
 				const data=this.buffer;
-				this.remainingLength=data[0]+(data[1]<<8)+(data[2]<<16)+(data[3]<<24);
+				this.remainingLength=data[0]+(data[1]<<8)+(data[2]<<16)+(data[3]*256*65536);	// Note: <<24 might return a negative value
 				console.log(this.name, "0b new message, (remaining)Length=", this.remainingLength);
 				if (this.remainingLength>100||this.remainingLength<0) {
 					console.log("err");

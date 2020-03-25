@@ -35,7 +35,8 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 		let result=opc>>>24;
 		result|=(opc>>>8)&0xFF00;
 		result|=(opc<<8)&0xFF0000;
-		result|=(opc<<24)&0xFF000000
+		//result|=(opc<<24)&0xFF000000
+		result+=(opc&0xFF)*256*65536;	// Otherwise the result might be negative
 		return result;
 	}
 
