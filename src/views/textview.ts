@@ -1,7 +1,8 @@
 
-//import * as assert from 'assert';
+import * as assert from 'assert';
 import * as util from 'util';
 import { BaseView } from './baseview';
+import {WebviewPanel} from 'vscode';
 
 //import { Utility } from './utility';
 
@@ -20,7 +21,8 @@ export class TextView extends BaseView {
 	constructor(title: string, text: string) {
 		super();
 		// Title
-		this.vscodePanel.title = title;
+		assert(this.vscodePanel);
+		(this.vscodePanel as WebviewPanel).title = title;
 		// Use the text
 		this.setHtml(text);
 	}
@@ -32,6 +34,9 @@ export class TextView extends BaseView {
 	 * @param text Text to display.
 	 */
 	protected setHtml(text: string) {
+		if (!this.vscodePanel)
+			return;
+
 		const format = `<!DOCTYPE html>
 		<html lang="en">
 		<head>

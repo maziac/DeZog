@@ -4,6 +4,7 @@ import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
 import {ImageConvert} from '../imageconvert';
+import {WebviewPanel} from 'vscode';
 
 
 
@@ -164,7 +165,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		}
 
 		// Title
-		this.vscodePanel.title = title;
+		assert(this.vscodePanel);
+		(this.vscodePanel as WebviewPanel).title = title;
 	}
 
 
@@ -514,8 +516,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Sets the html code to display the sprites.
 	 */
 	protected setHtml() {
-		const format = this.createHtmlSkeleton();
+		if (!this.vscodePanel)
+			return;
 
+		const format = this.createHtmlSkeleton();
 		// Add content
 		const ui = this.createScriptsAndButtons();
 		const table = this.createHtmlTable();
