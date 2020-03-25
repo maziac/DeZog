@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.13.6
+
+
 # 0.13.5
 - zsim.cpuLoadInterruptRange introduced. Change the range for the average calculation.
 - ZEsarUX: launch.json parameters "debug_wait_before" and "debug_wait_after" (in ms) are more accurate now.

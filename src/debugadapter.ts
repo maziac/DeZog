@@ -72,7 +72,7 @@ export class DebugSessionClass extends DebugSession {
 	protected serializer=new CallSerializer("Main", true);
 
 	/// Counts the number of stackTraceRequests.
-	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>(); // TODO: REMOVE
+	protected stackTraceResponses=new Array<DebugProtocol.StackTraceResponse>();
 
 	/// Will be set by startUnitTests to indicate that
 	/// unit tests are running and to emit events to the caller.
@@ -694,9 +694,9 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Returns the stack frames.
 	 */
-	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void { // TODO: remove serializer and stackTraceResponses
+	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> { // TODO: remove serializer and stackTraceResponses
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
-		this.stackTraceResponses.push(response);	// TODO: remove
+		this.stackTraceResponses.push(response);
 		if (this.stackTraceResponses.length>1)
 			return;
 
@@ -709,132 +709,98 @@ export class DebugSessionClass extends DebugSession {
 		const fetchData=new Array<Uint8Array>();
 		let frameCount=0;
 
+		// Clear all variables
+		this.listVariables.length=0;
 
-		// Serialize
-		this.serializer.exec(async () => {
-			// Clear all variables
-			this.listVariables.length=0;
-
-			// Get the call stack trace.
-			let callStack;
-			if (StepHistory.isInStepBackMode())
-				callStack=StepHistory.getCallStack();
-			else
-				callStack=await Remote.getCallStack();
-			// Go through complete call stack and get the sources.
-			// If no source exists than get a hexdump and disassembly later.
-			frameCount=callStack.length;
-			for (let index=frameCount-1; index>=0; index--) {
+		// Get the call stack trace.
+		let callStack;
+		if (StepHistory.isInStepBackMode())
+			callStack=StepHistory.getCallStack();
+		else
+			callStack=await Remote.getCallStack();
+		// Go through complete call stack and get the sources.
+		// If no source exists than get a hexdump and disassembly later.
+		frameCount=callStack.length;
+		for (let index=frameCount-1; index>=0; index--) {
+			const frame=callStack[index];
+			// Get file for address
+			const addr=frame.addr;
+			const file=Labels.getFileAndLineForAddress(addr);
+			// Store file, if it does not exist the name is empty
+			const src=this.createSource(file.fileName);
+			const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
+			const sf=new StackFrame(index+1, frame.name, src, lineNr);
+			sfrs.push(sf);
+			// Create array with addresses that need to be fetched for disassembly
+			if (!sf.source) {
 				const frame=callStack[index];
-				// Get file for address
-				const addr=frame.addr;
-				const file=Labels.getFileAndLineForAddress(addr);
-				// Store file, if it does not exist the name is empty
-				const src=this.createSource(file.fileName);
-				const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
-				const sf=new StackFrame(index+1, frame.name, src, lineNr);
-				sfrs.push(sf);
-				// Create array with addresses that need to be fetched for disassembly
-				if (!sf.source) {
-					const frame=callStack[index];
-					fetchAddresses.push(frame.addr);
-				}
+				fetchAddresses.push(frame.addr);
 			}
+		}
 
-			// Check if we need to fetch any dump.
-			const fetchAddressesCount=fetchAddresses.length;
-			if (fetchAddressesCount==0) {
-				// No dumps to fetch
-				this.serializer.endExec();
-				return;
-			}
-
+		// Check if we need to fetch any dump.
+		const fetchAddressesCount=fetchAddresses.length;
+		if (fetchAddressesCount>0) {
 			// Now get hexdumps for all non existing sources.
-			let fetchCount=0;
 			for (let index=0; index<fetchAddressesCount; index++) {
 				// So fetch a memory dump
 				const fetchAddress=fetchAddresses[index];
 				const fetchSize=100;	// N bytes
-				Remote.readMemoryDump(fetchAddress, fetchSize)
-					.then(data => {
-						// Save data for later writing
-						fetchData.push(data);
-						// Note: because of self-modifying code it may have changed
-						// since it was fetched at the beginning.
-						// Check if memory changed.
-						if (!doDisassembly) {
-							const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
-							for (let k=0; k<checkSize; k++) {
-								const val=this.dasm.memory.getValueAt(fetchAddress+k);
-								const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
-								if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
-									doDisassembly=true;
-									break;
-								}
-							}
+				const data=await Remote.readMemoryDump(fetchAddress, fetchSize)
+				// Save data for later writing
+				fetchData.push(data);
+				// Note: because of self-modifying code it may have changed
+				// since it was fetched at the beginning.
+				// Check if memory changed.
+				if (!doDisassembly) {
+					const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+					for (let k=0; k<checkSize; k++) {
+						const val=this.dasm.memory.getValueAt(fetchAddress+k);
+						const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
+						if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
+							doDisassembly=true;
+							break;
 						}
-						// Check for end
-						fetchCount++;
-						if (fetchCount>=fetchAddressesCount) {
-							// All dumps fetched
-							this.serializer.endExec();
-						}
-					});
+					}
+				}
 			}
-		});
+		}
 
 
 		// Create the temporary disassembly file if necessary.
 		if (!this.disasmTextDoc) {
-			this.serializer.exec(() => {
-				if (!doDisassembly) {
-					// No disassembly required.
-					this.serializer.endExec();
-					return;
-				}
+			if (doDisassembly) {
 				// Create text document
 				const relFilePath=Utility.getRelTmpDisasmFilePath();
 				const absFilePath=Utility.getAbsFilePath(relFilePath);
 				const uri=vscode.Uri.file(absFilePath);
 				const editCreate=new vscode.WorkspaceEdit();
 				editCreate.createFile(uri, {overwrite: true});
-				vscode.workspace.applyEdit(editCreate).then(() => {
-					vscode.workspace.openTextDocument(absFilePath).then(textDoc => {
-						// Store uri
-						this.disasmTextDoc=textDoc;
-						// End
-						this.serializer.endExec();
-					});
-				});
-			});
+				await vscode.workspace.applyEdit(editCreate);
+				const textDoc=await vscode.workspace.openTextDocument(absFilePath);
+				// Store uri
+				this.disasmTextDoc=textDoc;
+			}
 		}
 
 
-		// Check if disassembly is required.
-		this.serializer.exec(() => {
-			// Check if a new address was used.
-			const fetchAddressesCount=fetchAddresses.length;
-			for (let i=0; i<fetchAddressesCount; i++) {
-				// The current PC is for sure a code label.
-				const addr=fetchAddresses[i];
-				if (this.dasmAddressQueue.indexOf(addr)<0)
-					this.dasmAddressQueue.unshift(addr);
-				// Check if this requires a  disassembly
-				if (!doDisassembly) {
-					const memAttr=this.dasm.memory.getAttributeAt(addr);
-					if (!(memAttr&MemAttribute.CODE_FIRST))
-						doDisassembly=true;	// If memory was not the start of an opcode.
-				}
-			}
-
-			// Check if disassembly is required.
+		// Check if a new address was used.
+		//const fetchAddressesCount=fetchAddresses.length;
+		for (let i=0; i<fetchAddressesCount; i++) {
+			// The current PC is for sure a code label.
+			const addr=fetchAddresses[i];
+			if (this.dasmAddressQueue.indexOf(addr)<0)
+				this.dasmAddressQueue.unshift(addr);
+			// Check if this requires a  disassembly
 			if (!doDisassembly) {
-				// End
-				this.serializer.endExec();
-				return;
+				const memAttr=this.dasm.memory.getAttributeAt(addr);
+				if (!(memAttr&MemAttribute.CODE_FIRST))
+					doDisassembly=true;	// If memory was not the start of an opcode.
 			}
+		}
 
-			this.serializer.setProgress("Do disassembly");
+		// Check if disassembly is required.
+		if (doDisassembly) {
 			// Do disassembly.
 			// Write new fetched memory
 			const count=fetchAddresses.length;
@@ -861,7 +827,6 @@ export class DebugSessionClass extends DebugSession {
 				return false;
 			}) as vscode.SourceBreakpoint[];
 
-			this.serializer.setProgress("Check if any breakpoint");
 			// Check if any breakpoint
 			const changedBps=new Array<vscode.SourceBreakpoint>();
 			if (sbps.length>0) {
@@ -885,72 +850,51 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 			}
-
-			this.serializer.setProgress("Remove all old breakpoints");
 			// Remove all old breakpoints.
 			vscode.debug.removeBreakpoints(sbps);
 
 			// Create and apply one replace edit
 			const editReplace=new vscode.WorkspaceEdit();
 			editReplace.replace(this.disasmTextDoc.uri, new vscode.Range(0, 0, this.disasmTextDoc.lineCount, 0), text);
-			this.serializer.setProgress("applyEdit");
-			vscode.workspace.applyEdit(editReplace).then(() => {
-				// Save after edit (to be able to set breakpoints)
-				this.serializer.setProgress("disasmTextDoc.save");
-				this.disasmTextDoc.save().then(() => {
-					this.serializer.setProgress("debug.addBreakpoints");
-					// Add all new breakpoints.
-					vscode.debug.addBreakpoints(changedBps);
-					// End
-					this.serializer.endExec();
-				});
-			});
-		});
+			await vscode.workspace.applyEdit(editReplace);
+			// Save after edit (to be able to set breakpoints)
+			await this.disasmTextDoc.save();
+			// Add all new breakpoints.
+			vscode.debug.addBreakpoints(changedBps);
+		}
 
 
 		// Get lines for addresses and send response.
-		this.serializer.exec(() => {
-			// Determine line numbers (binary search)
-			if (frameCount>0) {
-				const relFilePath=Utility.getRelTmpDisasmFilePath();
-				const absFilePath=Utility.getAbsFilePath(relFilePath);
-				const src=this.createSource(absFilePath) as Source;
-				const lines=this.dasm.getDisassemblyLines();
-				let indexDump=0;
-				for (let i=0; i<frameCount; i++) {
-					const sf=sfrs[i];
-					if (sf.source)
-						continue;
-					// Get line number for stack address
-					const addr=fetchAddresses[indexDump];
-					const foundLine=this.searchLines(lines, addr);
-					const lineNr=this.convertDebuggerLineToClient(foundLine);
-					// Store
-					sf.source=src;
-					sf.line=lineNr;
-					// Next
-					indexDump++;
-				}
+		// Determine line numbers (binary search)
+		if (frameCount>0) {
+			const relFilePath=Utility.getRelTmpDisasmFilePath();
+			const absFilePath=Utility.getAbsFilePath(relFilePath);
+			const src=this.createSource(absFilePath) as Source;
+			const lines=this.dasm.getDisassemblyLines();
+			let indexDump=0;
+			for (let i=0; i<frameCount; i++) {
+				const sf=sfrs[i];
+				if (sf.source)
+					continue;
+				// Get line number for stack address
+				const addr=fetchAddresses[indexDump];
+				const foundLine=this.searchLines(lines, addr);
+				const lineNr=this.convertDebuggerLineToClient(foundLine);
+				// Store
+				sf.source=src;
+				sf.line=lineNr;
+				// Next
+				indexDump++;
 			}
+		}
 
-			// Send as often as there have been requests
-			while (this.stackTraceResponses.length>0) {
-				const resp=this.stackTraceResponses[0];
-				this.stackTraceResponses.shift();
-				resp.body={stackFrames: sfrs, totalFrames: 1};
-				this.sendResponse(resp);
-			}
-			// end the serialized call:
-			this.serializer.endExec();
-		});
-
-
-		// Get short history decoration.
-		this.serializer.exec(() => {
-			//Remote.handleHistorySpot();
-			// end the serialized call:
-			this.serializer.endExec();
-		});
+		// Send as often as there have been requests
+		while (this.stackTraceResponses.length>0) {
+			const resp=this.stackTraceResponses[0];
+			this.stackTraceResponses.shift();
+			resp.body={stackFrames: sfrs, totalFrames: 1};
+			this.sendResponse(resp);
+		}
 	}
 
 
