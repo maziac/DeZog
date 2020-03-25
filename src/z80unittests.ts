@@ -13,6 +13,7 @@ import { Utility } from './misc/utility';
 import { CallSerializer } from './callserializer';
 import { Decoration } from './decoration';
 import {StepHistory} from './remotes/cpuhistory';
+import {Z80RegistersClass} from './remotes/z80registers';
 
 
 
@@ -243,6 +244,9 @@ export class Z80UnitTests {
 
 			// Reset all decorations
 			Decoration.clearAllDecorations();
+
+			// Create the registers
+			Z80RegistersClass.createRegisters();
 
 			// Start emulator.
 			RemoteFactory.createRemote(Settings.launch.remoteType);
