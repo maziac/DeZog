@@ -46,22 +46,21 @@ export class MemoryRegisterView extends MemoryDumpView {
 	/**
 	 * Retrieves the memory content and displays it.
 	 * @param reason Not used.	 */
-	public update(reason?: any) {
+	public async update(reason?: any): Promise<void> {
 		// Get register values
-		Remote.getRegisters().then(() => {
-			// Recalculate the memory addresses
-			this.memDump.clearBlocks();
-			this.vscodePanel.title = '';
-			for (let reg of this.registers) {
-				// get register value
-				const value = Remote.getRegisterValue(reg);
-				// add memory block
-				this.addBlock(value, 1, '@' + reg);
-			}
+		await Remote.getRegisters();
+		// Recalculate the memory addresses
+		this.memDump.clearBlocks();
+		this.vscodePanel.title='';
+		for (let reg of this.registers) {
+			// get register value
+			const value=Remote.getRegisterValue(reg);
+			// add memory block
+			this.addBlock(value, 1, '@'+reg);
+		}
 
-			// update
-			super.update(reason);
-		});
+		// update
+		await super.update(reason);
 	}
 
 }

@@ -35,8 +35,8 @@ export class ZxSimulationView extends BaseView {
 			zxview?.close();
 			zxview=undefined;
 		});
-		simulator.on('update', () => {
-			zxview?.update();
+		simulator.on('update', async () => {
+			await zxview?.update();
 		});
 	}
 
@@ -97,7 +97,7 @@ export class ZxSimulationView extends BaseView {
 			case 'updateRequest':
 				// The webview requests an update, e.g. because it ha been
 				// moved from background to foreground (vscode does not preserve the state)
-				this.update();
+				this.update();	// No need to call 'await'
 				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
@@ -267,7 +267,7 @@ export class ZxSimulationView extends BaseView {
 	 * Retrieves the screen memory content and displays it.
 	 * @param reason Not used.
 	 */
-	public update() {
+	public async update(): Promise<void> {
 		try {
 			// Update values
 			const cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();

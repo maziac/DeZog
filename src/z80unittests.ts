@@ -725,7 +725,7 @@ export class Z80UnitTests {
 			// Check if in debug or run mode.
 			if(da) {
 				// In debug mode: Send break to give vscode control
-				da.sendEventBreakAndUpdate();
+				da.sendEventBreakAndUpdate();  // No need for 'await'
 				return;
 			}
 			// Count failure

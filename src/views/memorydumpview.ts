@@ -224,27 +224,18 @@ export class MemoryDumpView extends BaseView {
 	 * Retrieves the memory content and displays it.
 	 * @param reason Not used.
 	 */
-	public update(reason?: any) {
+	public async update(reason?: any): Promise<void>{
 		// Loop all memory blocks
-		for(let metaBlock of this.memDump.metaBlocks) {
-			this.serializer.exec(() => {
-				// Updates the shown memory dump.
-				Remote.readMemoryDump(metaBlock.address, metaBlock.size).then(data => {
-					// Store data
-					metaBlock.prevData = metaBlock.data;
-					metaBlock.data = data;
-					// end
-					this.serializer.endExec();
-				});
-			});
+		for (let metaBlock of this.memDump.metaBlocks) {
+			// Updates the shown memory dump.
+			const data=await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
+			// Store data
+			metaBlock.prevData=metaBlock.data;
+			metaBlock.data=data;
 		}
 
-		this.serializer.exec(() => {
-			// Now combine all data and create the html.
-			this.setHtml();
-			// end
-			this.serializer.endExec();
-		});
+		// Now combine all data and create the html.
+		this.setHtml();
 	}
 
 

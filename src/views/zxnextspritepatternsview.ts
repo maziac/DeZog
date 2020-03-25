@@ -287,12 +287,10 @@ export class ZxNextSpritePatternsView extends BaseView {
 			case PaletteSelection.DEFAULT:
 				// Create default palette
 				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createDefaultPalette());
-				this.serializer.endExec();
 				return;
 			case PaletteSelection.GRAYSCALE:
 				// Create grayscale palette
 				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createGrayscalePalette());
-				this.serializer.endExec();
 				return;
 			default:
 				paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);

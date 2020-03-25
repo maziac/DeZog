@@ -501,7 +501,7 @@ export class DebugSessionClass extends DebugSession {
 				let registerMemoryView=new MemoryRegisterView();
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
-				registerMemoryView.update();
+				await registerMemoryView.update();
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
@@ -528,8 +528,8 @@ export class DebugSessionClass extends DebugSession {
 						zxview?.close();
 						zxview=undefined;
 					});
-					remote.on('update', () => {
-						zxview?.update();
+					remote.on('update', async () => {
+						await zxview?.update();
 					});
 				}
 
@@ -1074,7 +1074,7 @@ export class DebugSessionClass extends DebugSession {
 			// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
 			// Send break
-			this.sendEventBreakAndUpdate();
+			await this.sendEventBreakAndUpdate();
 		}
 		else {
 			// For the unit tests
@@ -1086,9 +1086,9 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Is called by unit tests to simulate a 'break'.
 	 */
-	public sendEventBreakAndUpdate() {
+	public async sendEventBreakAndUpdate(): Promise<void> {
 		// Update memory dump etc.
-		this.update();
+		await this.update();
 		// Send event
 		this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
 	}
@@ -1163,7 +1163,7 @@ export class DebugSessionClass extends DebugSession {
 		this.showDisassembly('StepOver: '+text, result.tStates, result.cpuFreq);
 
 		// Update memory dump etc.
-		this.update({step: true});
+		await this.update({step: true});
 
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
@@ -1287,7 +1287,7 @@ export class DebugSessionClass extends DebugSession {
 			this.showDisassembly('StepInto: '+text, result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
-			this.update({step: true});
+			await this.update({step: true});
 		}
 
 		// Check for output.
@@ -1328,7 +1328,7 @@ export class DebugSessionClass extends DebugSession {
 			this.showDisassembly('StepOut. ', result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
-			this.update();
+			await this.update();
 
 			breakReasonString=result.breakReasonString;
 		}
@@ -1669,7 +1669,7 @@ Notes:
 		if (redirectToView) {
 			// Create new view
 			const panel=new TextView("exec: "+machineCmd, textData);
-			panel.update();
+			await panel.update();
 			// Send response
 			return 'OK';
 		}
@@ -1746,7 +1746,7 @@ Notes:
 		for (let k=0; k<tokens.length; k+=2)
 			panel.addBlock(addrSizes[k], addrSizes[k+1]);
 		panel.mergeBlocks();
-		panel.update();
+		await panel.update();
 
 		// Send response
 		return 'OK';
@@ -1918,7 +1918,7 @@ Notes:
 
 		// Create new view
 		const panel=new ZxNextSpritePatternsView(title, params);
-		panel.update();
+		await panel.update();
 
 		// Send response
 		return 'OK';
@@ -1992,7 +1992,7 @@ Notes:
 
 		// Create new view
 		const panel=new ZxNextSpritesView(title, params);
-		panel.update();
+		await panel.update();
 
 		// Send response
 		return 'OK';
@@ -2233,7 +2233,7 @@ Notes:
 			throw new Error(errTxt);
 		}
 		// Update memory etc.
-		this.update();
+		await this.update();
 		// Send event
 		this.sendEvent(new StoppedEvent('restore', DebugSessionClass.THREAD_ID));
 	}

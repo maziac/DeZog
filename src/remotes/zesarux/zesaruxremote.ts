@@ -5,7 +5,6 @@ import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
-import { CallSerializer } from '../../callserializer';
 import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
@@ -45,9 +44,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/// The read ZEsarUx version number as float, e.g. 7.1. Is read directly after socket connection setup.
 	public zesaruxVersion = 0.0;
-
-	/// We need a serializer for some tasks.
-	protected serializer = new CallSerializer('ZesaruxEmulator');
 
 	/// Set to true after 'terminate()' is called. Errors will not be sent
 	/// when terminating.

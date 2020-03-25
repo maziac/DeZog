@@ -33,7 +33,7 @@
 
 
 Helper classes:
-- CallSerializer: Used to queue/serialize function calls from vscode and to the socket.
+- CallSerializer: Used to queue/serialize function calls from vscode and to the socket. Obsolete.
 - Log: Used for logging. Adds the caller and break time to the logs.
 - RefList: List to associate variable references to objects.
 

@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { CallSerializer } from '../callserializer';
 
 
 
@@ -26,14 +25,14 @@ export class BaseView {
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
-	public static staticCallUpdateFunctions(reason?: any) {
+	public static async staticCallUpdateFunctions(reason?: any): Promise<void> {
 		// Loop all view classes
 		for(const viewClass of BaseView.staticViewClasses) {
-			viewClass.staticUpdate(reason);
+			await viewClass.staticUpdate(reason);
 		}
 		// Loop all views
 		for(const view of BaseView.staticViews) {
-			view.update(reason);
+			await view.update(reason);
 		}
 	}
 
@@ -69,7 +68,6 @@ export class BaseView {
 	/// The panel to show the base view in vscode.
 	protected vscodePanel: vscode.WebviewPanel;
 
-	protected serializer = new CallSerializer('ViewUpdate');
 
 	/**
 	 * Creates the basic view.
@@ -139,7 +137,7 @@ export class BaseView {
 	 * @param reason The reason is a data object that contains additional information.
 	 * E.g. for 'step' it contains { step: true };
 	 */
-	public update(reason?: any) {
+	public async update(reason?: any): Promise<void> {
 		// Overwrite this.
 	}
 
