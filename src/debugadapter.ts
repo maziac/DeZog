@@ -582,97 +582,87 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args lines=array with line numbers. source.path=the file path
 	 */
-	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
+	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
 
-		// Serialize
-		this.serializer.exec(async () => {
+		const path=<string>args.source.path;
 
-			const path=<string>args.source.path;
-
-			// convert breakpoints
-			const givenBps=args.breakpoints||[];
-			const bps=new Array<RemoteBreakpoint>();
-			for (const bp of givenBps) {
-				try {
-					const log=Remote.evalLogMessage(bp.logMessage);
-					var mbp: RemoteBreakpoint;
-					mbp={
-						bpId: 0,
-						filePath: path,
-						lineNr: this.convertClientLineToDebugger(bp.line),
-						address: -1,	// not known yet
-						condition: (bp.condition)? bp.condition:'',
-						log: log
-					};
-					bps.push(mbp);
-				}
-				catch (e) {
-					// Show error
-					this.showWarning(e);
-				}
-			};
+		// convert breakpoints
+		const givenBps=args.breakpoints||[];
+		const bps=new Array<RemoteBreakpoint>();
+		for (const bp of givenBps) {
+			try {
+				const log=Remote.evalLogMessage(bp.logMessage);
+				var mbp: RemoteBreakpoint;
+				mbp={
+					bpId: 0,
+					filePath: path,
+					lineNr: this.convertClientLineToDebugger(bp.line),
+					address: -1,	// not known yet
+					condition: (bp.condition)? bp.condition:'',
+					log: log
+				};
+				bps.push(mbp);
+			}
+			catch (e) {
+				// Show error
+				this.showWarning(e);
+			}
+		}
 
 
-			// Set breakpoints for the file.
-			const currentBreakpoints=await Remote.setBreakpoints(path, bps,
-				// Handle temporary disassembler breakpoints
-				(bp: RemoteBreakpoint) => {
-					// Check if it is the right path
-					const relFilePath=Utility.getRelTmpDisasmFilePath();
-					const absFilePath=Utility.getAbsFilePath(relFilePath);
-					if (bp.filePath==absFilePath) {
-						// Get address from line number
-						const lines=this.dasm.getDisassemblyLines();
-						const lineCount=lines.length;
-						let lineNr=bp.lineNr;
-						while (lineNr<lineCount) {
-							const line=lines[lineNr];
-							const addr=parseInt(line, 16);
-							if (!isNaN(addr)) {
-								// create breakpoint object
-								const ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log};
-								return ebp;
-							}
-							lineNr++;
+		// Set breakpoints for the file.
+		const currentBreakpoints=await Remote.setBreakpoints(path, bps,
+			// Handle temporary disassembler breakpoints
+			(bp: RemoteBreakpoint) => {
+				// Check if it is the right path
+				const relFilePath=Utility.getRelTmpDisasmFilePath();
+				const absFilePath=Utility.getAbsFilePath(relFilePath);
+				if (bp.filePath==absFilePath) {
+					// Get address from line number
+					const lines=this.dasm.getDisassemblyLines();
+					const lineCount=lines.length;
+					let lineNr=bp.lineNr;
+					while (lineNr<lineCount) {
+						const line=lines[lineNr];
+						const addr=parseInt(line, 16);
+						if (!isNaN(addr)) {
+							// create breakpoint object
+							const ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log};
+							return ebp;
 						}
+						lineNr++;
 					}
-					return undefined;
-				});
-
-			const source=this.createSource(path);
-			const vscodeBreakpoints=currentBreakpoints.map(cbp => {
-				const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
-				const verified=(cbp.address>=0);	// Is not verified if no address is set
-				let bp=new Breakpoint(verified, lineNr, 0, source);
-				return bp;
+				}
+				return undefined;
 			});
 
-			// send back the actual breakpoint positions
-			response.body={
-				breakpoints: vscodeBreakpoints
-			};
-			this.sendResponse(response);
-			this.serializer.endExec();
+		const source=this.createSource(path);
+		const vscodeBreakpoints=currentBreakpoints.map(cbp => {
+			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
+			const verified=(cbp.address>=0);	// Is not verified if no address is set
+			let bp=new Breakpoint(verified, lineNr, 0, source);
+			return bp;
 		});
 
+		// send back the actual breakpoint positions
+		response.body={
+			breakpoints: vscodeBreakpoints
+		};
+		this.sendResponse(response);
 	}
 
 
 	/**
 	 * Returns the one and only "thread".
 	 */
-	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-		// Serialize
-		this.serializer.exec(() => {
-			// Just return a default thread.
-			response.body={
-				threads: [
-					new Thread(DebugSessionClass.THREAD_ID, "thread_default")
-				]
-			};
-			this.sendResponse(response);
-			this.serializer.endExec();
-		});
+	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
+		// Just return a default thread.
+		response.body={
+			threads: [
+				new Thread(DebugSessionClass.THREAD_ID, "thread_default")
+			]
+		};
+		this.sendResponse(response);
 	}
 
 

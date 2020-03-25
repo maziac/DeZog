@@ -98,6 +98,8 @@ export interface SerialType {
 
 	/// The port, e.g.  "/dev/tty.usbserial-####" or "COM1"/"COM2"
 	port: string;
+
+	/// The load delay. Workaround for using ZEsarUx on Windows.
 }
 
 
