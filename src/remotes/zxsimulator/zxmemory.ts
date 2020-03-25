@@ -62,7 +62,7 @@ export class ZxMemory {
 		// Create memory banks
 		this.banks=new Array<Uint8Array>(ZxMemory.NUMBER_OF_BANKS);
 		for (let b=0; b<ZxMemory.NUMBER_OF_BANKS; b++) {
-			const bank=new Uint8Array(this.AllBanksRam, b*ZxMemory.MEMORY_BANK_SIZE, ZxMemory.MEMORY_BANK_SIZE);
+			const bank=new Uint8Array(this.AllBanksRam, b*ZxMemory.MEMORY_BANK_SIZE, ZxMemory.MEMORY_BANK_SIZE);  // new Uint8Array but bank size works (Uint8Array flaw)
 			this.banks[b]=bank;
 		}
 		// Create visual memory
@@ -170,7 +170,7 @@ export class ZxMemory {
 		let value=mem[addr++];
 		value|=mem[(addr++)&0xFFFF]<<8;
 		value|=mem[(addr++)&0xFFFF]<<16;
-		value|=mem[addr&0xFFFF]<<24;
+		value+=mem[addr&0xFFFF]*256*65536;	// Otherwise the result might be negative
 		return value;
 	}
 
@@ -224,10 +224,13 @@ export class ZxMemory {
 	 * @param size The size of the block.
 	 */
 	public readBlock(startAddress: number, size: number): Uint8Array {
+		startAddress&=0xFFFF;
+		const z80mem=this.z80Memory;
+		const offset=z80mem.byteOffset;
 		let endAddr=startAddress+size;
 		if (endAddr<=0x10000) {
 			// No overflow
-			const mem=new Uint8Array(this.z80Memory.buffer, startAddress, size);
+			const mem=new Uint8Array(z80mem.buffer, offset+startAddress, size);
 			return mem;
 		}
 
@@ -235,11 +238,11 @@ export class ZxMemory {
 		const mem=new Uint8Array(size);
 		// First block
 		const firstSize=0x10000-startAddress;
-		const firstBlock=new Uint8Array(this.z80Memory.buffer, startAddress, firstSize);
+		const firstBlock=new Uint8Array(z80mem.buffer, offset+startAddress, firstSize);
 		mem.set(firstBlock);
 		// Second block
 		const secondSize=size-firstSize;
-		const secondBlock=new Uint8Array(this.z80Memory.buffer, 0, secondSize);
+		const secondBlock=new Uint8Array(z80mem.buffer, offset, secondSize);
 		mem.set(secondBlock, firstSize);
 		// Return
 		return mem;
@@ -252,21 +255,28 @@ export class ZxMemory {
 	 * @param totalBlock The block to write.
 	 */
 	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
+		startAddress&=0xFFFF;
 		const size=totalBlock.length;
 		let endAddr=startAddress+size;
 		if (endAddr<=0x10000) {
 			// No overflow
-			this.z80Memory.set(totalBlock);
+			this.z80Memory.set(totalBlock, startAddress);
 		}
 		else {
 			// Overflow. Copy in 2 parts.
 			// First block
 			const firstSize=0x10000-startAddress;
-			const firstBlock=new Uint8Array(totalBlock, 0, firstSize);
+
+			// Here seems to be an error in the buffer implementation:
+			// new Uint8Array(totalBlock, 0, 1) returns a buffer with length of totalBlock not 1.
+			// Therefore I use totalblock.buffer and byteOffset
+			//const firstBlock=new Uint8Array(totalBlock, 0, firstSize);
+			const offset=totalBlock.byteOffset;
+			const firstBlock=new Uint8Array(totalBlock.buffer, offset, firstSize);
 			this.z80Memory.set(firstBlock, startAddress);
 			// Second block
 			const secondSize=size-firstSize;
-			const secondBlock=new Uint8Array(totalBlock, firstSize, secondSize);
+			const secondBlock=new Uint8Array(totalBlock.buffer, offset+firstSize, secondSize);
 			this.z80Memory.set(secondBlock);
 		}
 	}
@@ -279,8 +289,6 @@ export class ZxMemory {
 	 */
 	public writeBank(bank: number, block: Buffer|Uint8Array) {
 		assert(block.length==ZxMemory.MEMORY_BANK_SIZE);
-		if (!(block instanceof Uint8Array))
-			block=new Uint8Array(block);
 		const memBank=this.banks[bank];
 		memBank.set(block);
 	}
@@ -314,7 +322,7 @@ export class ZxMemory {
 		while (offset<0x10000) {
 			const bank=this.slots[slotIndex];
 			const memBank=this.banks[bank];
-			const z80SlotMem=new Uint8Array(this.z80Memory.buffer, offset, ZxMemory.MEMORY_BANK_SIZE);
+			const z80SlotMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+offset, ZxMemory.MEMORY_BANK_SIZE);
 			memBank.set(z80SlotMem);
 			// Next
 			offset+=ZxMemory.MEMORY_BANK_SIZE;
@@ -387,7 +395,7 @@ export class ZxMemory {
 	 * with a color index.
 	 */
 	protected createPixels(): Array<number> {
-		const screenMem=new Uint8Array(this.z80Memory.buffer, 0x4000);
+		const screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+0x4000);
 		const colorStart=ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH/8;
 		// Create pixels memory
 		const pixels=new Array<number>(ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH);

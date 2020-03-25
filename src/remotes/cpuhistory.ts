@@ -177,16 +177,17 @@ export class CpuHistoryClass extends StepHistoryClass{
 		let count=this.spotCount;
 		if (count<1)
 			count=1;	// Get at least one item
-		let index=this.historyIndex+1;
-		const len=this.history.length-index;
-		const additionalItems=count-len;
-		const endIndex=index+additionalItems;
-		for (let i=index; i<endIndex; i++) {
+		const index=this.historyIndex+1;
+		if (index>=this.maxSize)
+			return undefined;
+		let endIndex=index+count;
+		if (endIndex>this.maxSize)
+			endIndex=this.maxSize;
+		for (let i=this.history.length; i<endIndex; i++) {
 			// Get new history item from remote
 			const line=await this.getRemoteHistoryIndex(i);
 			if (!line)
 				break;
-			this.historyIndex=index;
 			this.history.push(line);
 		}
 
@@ -641,6 +642,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 					count-=2;
 					// get next frame if countRemove still > 0
 					frame=this.reverseDbgStack.last();
+					//assert(frame, 'back last');
 				}
 			}
 		}
@@ -653,9 +655,16 @@ export class CpuHistoryClass extends StepHistoryClass{
 			}
 		}
 
+
+		// Create new stack entry if none exists
+		if (!frame) {
+			// (could happen if SP has been increased)
+			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
+			this.reverseDbgStack.push(frame);
+		}
+
 		// Adjust PC within frame
 		const pc=Z80Registers.decoder.parsePC(currentLine)
-		assert(frame);
 		frame.addr=pc;
 
 		// Add a possibly pushed value
@@ -829,6 +838,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 					count-=2;
 					// get next frame if countRemove still > 0
 					frame=this.reverseDbgStack.last();
+					//assert(frame, 'fwrd last');
 				}
 			}
 		}
@@ -846,6 +856,13 @@ export class CpuHistoryClass extends StepHistoryClass{
 			// Put nextPC on callstack
 			const name=Remote.getInterruptName();
 			frame=new CallStackFrame(0, nextSP, name);	// pc is set later anyway
+			this.reverseDbgStack.push(frame);
+		}
+
+		// Create new stack entry if none exists
+		if (!frame) {
+			// (could happen if SP has been increased)
+			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
 
@@ -904,8 +921,6 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
-			// Make sure that reverse debug stack is cleared
-			this.clear();
 			// Clear
 			Z80Registers.clearCache();
 			Remote.clearCallStack();
@@ -1034,8 +1049,6 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
-			// Make sure that reverse debug stack is cleared
-			this.clear();
 			// Clear
 			Z80Registers.clearCache();
 			Remote.clearCallStack();
@@ -1078,8 +1091,6 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
-			// Make sure that reverse debug stack is cleared
-			this.clear();
 			// Clear
 			Z80Registers.clearCache();
 			Remote.clearCallStack();
@@ -1144,8 +1155,6 @@ export class CpuHistoryClass extends StepHistoryClass{
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
-			// Make sure that reverse debug stack is cleared
-			this.clear();
 			// Clear
 			Z80Registers.clearCache();
 			Remote.clearCallStack();

@@ -356,7 +356,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			for (; counter>0; counter--) {
 				// Store current registers and opcode
 				const prevPc=this.z80Cpu.pc;
-				this.storeHistoryInfo(prevPc);
+				if (CpuHistory)
+					this.storeHistoryInfo(prevPc);
 
 				// Execute one instruction
 				this.z80Cpu.execute();

@@ -74,5 +74,71 @@ suite('ZxMemory', () => {
 		assert.equal(20, rMem.read8(0xFFFF));
 	});
 
+
+	test('writeBlock/readBlock', () => {
+		const mem=new ZxMemory();
+
+		mem.writeBlock(0x0000, new Uint8Array([0xAB]));
+		let result=mem.readBlock(0x0000, 2);
+		assert.equal(0xAB, result[0]);
+		assert.equal(0, result[1]);
+
+		mem.writeBlock(0x1000, new Uint8Array([0xAB, 0x12, 0x13, 0x14, 0x15]));
+		result=mem.readBlock(0x1000, 5);
+		assert.equal(0xAB, result[0]);
+		assert.equal(0x12, result[1]);
+		assert.equal(0x13, result[2]);
+		assert.equal(0x14, result[3]);
+		assert.equal(0x15, result[4]);
+
+		mem.writeBlock(0xFFFF, new Uint8Array([0xC0]));
+		result=mem.readBlock(0xFFFF, 1);
+		assert.equal(0xC0, result[0]);
+		result=mem.readBlock(0x0000, 1);
+		assert.equal(0xAB, result[0]);
+
+		mem.writeBlock(0xFFFF, new Uint8Array([0xD1, 0xD2]));
+		result=mem.readBlock(0xFFFF, 2);
+		assert.equal(0xD1, result[0]);
+		assert.equal(0xD2, result[1]);
+
+		mem.writeBlock(0xFFFF, Buffer.from([0xE1, 0xE2]));
+		result=mem.readBlock(0xFFFF, 2);
+		assert.equal(0xE1, result[0]);
+		assert.equal(0xE2, result[1]);
+	});
+
+
+	test('setMemory/getMemory', () => {
+		const mem=new ZxMemory();
+
+		mem.setMemory16(0x0000, 0x1234);
+		let result=mem.getMemory16(0x0000);
+		assert.equal(0x1234, result);
+		result=mem.getMemory16(0xFFFE);
+		assert.equal(0x0000, result);
+		result=mem.getMemory16(0x0002);
+		assert.equal(0x0000, result);
+
+		result=mem.getMemory8(0x0000);
+		assert.equal(0x34, result);
+		result=mem.getMemory8(0x0001);
+		assert.equal(0x12, result);
+
+		mem.setMemory16(0x0002, 0x5678);
+		result=mem.getMemory32(0x0000);
+		assert.equal(0x56781234, result);
+
+		result=mem.getMemory16(0x0001);
+		assert.equal(0x7812, result);
+
+		mem.setMemory16(0xFFFF, 0xABCD);
+		mem.setMemory16(0x0001, 0xEF01);
+		result=mem.getMemory16(0xFFFF);
+		assert.equal(0xABCD, result);
+		result=mem.getMemory32(0xFFFF);
+		assert.equal(0xEF01ABCD, result);
+	});
+
 });
 
