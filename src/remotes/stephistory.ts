@@ -59,6 +59,9 @@ export class StepHistoryClass extends EventEmitter {
 	/// Only used in the StepHistory to store the call stack.
 	protected liteCallStackHistory=Array<RefList<CallStackFrame>>();
 
+	/// User pressed break (pause). Will interrupt e.g. continueReverse.
+	protected running=false;
+
 
 	/**
 	 * Init.
@@ -341,6 +344,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
 	public continue(): string|undefined {
+		this.running=true;
 		// Continue in reverse debugging
 		// Will run until after the first of the instruction history
 		// or until a breakpoint condition is true.
@@ -353,7 +357,7 @@ export class StepHistoryClass extends EventEmitter {
 			assert(currentLine);
 
 			// Loop over all lines, reverse
-			while (true) {
+			while (this.running) {
 				// Handle stack
 				nextLine=this.revDbgNext();
 				if (!nextLine)
@@ -391,11 +395,12 @@ export class StepHistoryClass extends EventEmitter {
 	 * @returns A string with the break reason. (Never undefined)
 	 */
 	public async reverseContinue(): Promise<string> {
+		this.running=true;
 		let currentLine;
 		let breakReasonString;
 		try {
 			// Loop over all lines, reverse
-			while (true) {
+			while (this.running) {
 				// Get line
 				currentLine=await this.revDbgPrev();
 				if (!currentLine) {
@@ -487,5 +492,13 @@ export class StepHistoryClass extends EventEmitter {
 		return {instruction: undefined as any, breakReason};
 	}
 
+
+	/**
+	 * User pressed break (pause).
+	 * Interrupts a running 'continue', 'continueReverse', 'stepOver' or 'stepOut'.
+	 */
+	public pause() {
+		this.running=false;
+	}
 }
 

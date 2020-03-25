@@ -1071,7 +1071,7 @@ export class DebugSessionClass extends DebugSession {
 			this.decorateBreak(result.breakReasonString);
 		}
 
-			// React depending on internal state.
+		// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
 			// Send break
 			await this.sendEventBreakAndUpdate();
@@ -1109,8 +1109,11 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
-		// Pause the debugger
-		Remote.pause();
+		// Pause the remote or the history
+		if (StepHistory?.isInStepBackMode())
+			StepHistory.pause();
+		else
+			Remote.pause();
 		// Response is sent immediately
 		this.sendResponse(response);
 	}
@@ -1138,7 +1141,7 @@ export class DebugSessionClass extends DebugSession {
 			this.decorateBreak(breakReason);
 		}
 		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
 
 		// Show decorations
 		StepHistory?.emitHistory();

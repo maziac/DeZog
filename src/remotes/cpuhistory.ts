@@ -60,7 +60,7 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
  * It is base class for e.g. ZesaruxCpuHistory or used directly by the
  * ZxSimulatorRemote.
  */
-export class CpuHistoryClass extends StepHistoryClass{
+export class CpuHistoryClass extends StepHistoryClass {
 
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
@@ -878,6 +878,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
 	public continue(): string|undefined {
+		this.running=true;
 		// Continue in reverse debugging
 		// Will run until after the first of the instruction history
 		// or until a breakpoint condition is true.
@@ -893,7 +894,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 			assert(currentLine);
 
 			// Loop over all lines, reverse
-			while (true) {
+			while (this.running) {
 				// Handle stack
 				nextLine=this.revDbgNext();
 				if (!nextLine) {
@@ -936,6 +937,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * @returns A string with the break reason. (Never undefined)
 	 */
 	public async reverseContinue(): Promise<string> {
+		this.running=true;
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
 		let breakReason;
@@ -943,7 +945,10 @@ export class CpuHistoryClass extends StepHistoryClass{
 			// Loop over all lines, reverse
 			let prevLine=Z80Registers.getCache();
 			assert(prevLine);
-			while (true) {
+			while (this.running) {
+				// Give vscode a little time
+				await Utility.timeout(1);
+
 				// Get line
 				const currentLine=await this.revDbgPrev();
 				if (!currentLine) {
@@ -983,6 +988,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
 	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
+		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		assert(currentLine);
@@ -1007,7 +1013,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 		let breakReasonString;
 		try {
 			// Find next line with same SP
-			while (true) {
+			while (this.running) {
 				// Get next line
 				nextLine=this.revDbgNext();
 				if (!nextLine) {
@@ -1106,6 +1112,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 	 * @returns breakReason='Not supported in lite reverse debugging.'.
 	 */
 	public stepOut(): string|undefined {
+		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		assert(currentLine);
@@ -1114,7 +1121,7 @@ export class CpuHistoryClass extends StepHistoryClass{
 		let breakReason;
 		try {
 			// Find next line with same SP
-			while (true) {
+			while (this.running) {
 				// Get next line
 				nextLine=this.revDbgNext();
 				if (!nextLine) {
