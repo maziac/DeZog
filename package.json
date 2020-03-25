@@ -244,6 +244,10 @@
 								"port": {
 									"type": "number",
 									"description": "The port of tthe ZEsarUX Emulator."
+								},
+								"loadDelay": {
+									"type": "number",
+									"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 500ms on Windows, 0ms on other systems."
 								}
 							},
 							"zsim": {

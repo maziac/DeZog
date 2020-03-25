@@ -78,6 +78,9 @@ export interface ZrcpType {
 
 	/// The Zesarux ZRCP telnet port
 	port: number;
+
+	// The delay before loading the Z80 program via smartload.
+	loadDelay: number;
 }
 
 
@@ -275,6 +278,13 @@ export class Settings {
 			Settings.launch.zrcp.hostname = 'localhost';
 		if (Settings.launch.zrcp.port==undefined)
 			Settings.launch.zrcp.port=10000;
+		if (Settings.launch.zrcp.loadDelay==undefined) {
+			const platform=process.platform;
+			let delay=0;
+			if (platform=='win32')
+				delay=500;
+			Settings.launch.zrcp.loadDelay=delay;	// ms
+		}
 
 		// zsim
 		if (!Settings.launch.zsim)
