@@ -10,7 +10,6 @@ import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './misc/utility';
-import { CallSerializer } from './callserializer';
 import { Decoration } from './decoration';
 import {StepHistory} from './remotes/cpuhistory';
 import {Z80RegistersClass} from './remotes/z80registers';
@@ -130,9 +129,6 @@ export class Z80UnitTests {
 
 	/// The handle for the timeout.
 	protected static timeoutHandle;
-
-	/// The call serializer to call the emulator.
-	protected static serializer: CallSerializer;
 
 	/// Debug mode or run mode.
 	protected static debug = false;

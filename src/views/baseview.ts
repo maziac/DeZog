@@ -45,8 +45,9 @@ export class BaseView {
 		// Copy view array
 		const views = BaseView.staticViews.map(view => view);
 		// Dispose/close all views
-		for(const view of views) {
-			view.vscodePanel.dispose();
+		for (const view of views) {
+			if (view.vscodePanel)
+				view.vscodePanel.dispose();
 		}
 	}
 
@@ -66,7 +67,7 @@ export class BaseView {
 	// DYNAMIC:
 
 	/// The panel to show the base view in vscode.
-	protected vscodePanel: vscode.WebviewPanel;
+	protected vscodePanel: vscode.WebviewPanel|undefined;
 
 
 	/**
@@ -108,6 +109,8 @@ export class BaseView {
 		const index=BaseView.staticViews.indexOf(this);
 		assert(index!==-1)
 		BaseView.staticViews.splice(index, 1);
+		// Do not use panel anymore
+		this.vscodePanel=undefined;
 	}
 
 
@@ -128,7 +131,8 @@ export class BaseView {
 	 * @param webview The webview to post to. Can be omitted, default is 'this'.
 	 */
 	protected sendMessageToWebView(message: any, webview: BaseView = this) {
-		webview.vscodePanel.webview.postMessage(message);
+		if (webview.vscodePanel)
+			webview.vscodePanel.webview.postMessage(message);
 	}
 
 

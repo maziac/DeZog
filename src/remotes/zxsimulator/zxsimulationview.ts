@@ -3,6 +3,7 @@ import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
 import {ZxSimulatorRemote} from './zxsimremote';
+import {WebviewPanel} from 'vscode';
 
 
 /**
@@ -62,7 +63,8 @@ export class ZxSimulationView extends BaseView {
 		ports.setPortValue(0x7FFE, 0xFF);
 
 		// Add title
-		this.vscodePanel.title='Z80/ZX Spectrum Simulator';
+		assert(this.vscodePanel);
+		(this.vscodePanel as WebviewPanel).title='Z80/ZX Spectrum Simulator';
 
 		// Initial html page.
 		this.setHtml();
@@ -74,7 +76,8 @@ export class ZxSimulationView extends BaseView {
 	 * Closes the view.
 	 */
 	public close() {
-		this.vscodePanel.dispose();
+		if(this.vscodePanel)
+			this.vscodePanel.dispose();
 	}
 
 
@@ -84,7 +87,8 @@ export class ZxSimulationView extends BaseView {
 	 * Normally not required.
 	 */
 	public disposeView() {
-		// Can be overwritten
+		// Do not use panel anymore
+		this.vscodePanel=undefined;
 	}
 
 
@@ -296,6 +300,9 @@ export class ZxSimulationView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
+		if (!this.vscodePanel)
+			return;
+
 		const html=
 `<html>
 

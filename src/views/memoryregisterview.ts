@@ -47,6 +47,9 @@ export class MemoryRegisterView extends MemoryDumpView {
 	 * Retrieves the memory content and displays it.
 	 * @param reason Not used.	 */
 	public async update(reason?: any): Promise<void> {
+		if (!this.vscodePanel)
+			return;
+
 		// Get register values
 		await Remote.getRegisters();
 		// Recalculate the memory addresses

@@ -56,7 +56,8 @@ export class MemoryDumpView extends BaseView {
 		MemoryDumpView.MemoryViews.push(this);
 
 		// Handle hide/unhide -> update the register pointers.
-        this.vscodePanel.onDidChangeViewState(e => {
+		assert(this.vscodePanel);
+        (this.vscodePanel as vscode.WebviewPanel).onDidChangeViewState(e => {
 			// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
 			this.setColorsForRegisterPointers();
         });
@@ -73,6 +74,8 @@ export class MemoryDumpView extends BaseView {
 		const index = arr.indexOf(this);
 		assert(index >= 0);
 		arr.splice(index, 1);
+		// Do not use panel anymore
+		this.vscodePanel=undefined;
 	}
 
 
@@ -116,7 +119,10 @@ export class MemoryDumpView extends BaseView {
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block.
 	 */
-	public addBlock(startAddress: number, size: number, title: string|undefined = undefined) {
+	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
+		if (!this.vscodePanel)
+			return;
+
 		this.memDump.addBlock(startAddress, size, title);
 		// title
 		if(this.vscodePanel.title.length > 0)
@@ -500,6 +506,9 @@ export class MemoryDumpView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
+		if (!this.vscodePanel)
+			return;
+
 		const format = `<!DOCTYPE html>
 		<html lang="en">
 		<head>
@@ -533,6 +542,9 @@ export class MemoryDumpView extends BaseView {
 
 		// Get register values
 		Remote.getRegisters().then(() => {
+			if (!this.vscodePanel)
+				return;
+
 			// Loop through all metablocks
 			var tables;
 			const vertBreak = this.getHtmlVertBreak();
