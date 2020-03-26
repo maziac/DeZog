@@ -71,7 +71,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			CpuHistory.decoder=new DecodeStandardHistoryInfo();
 		}
 		// Code coverage
-		this.codeCoverage=new CodeCoverageArray();
+		if (Settings.launch.history.codeCoverageEnabled)
+			this.codeCoverage=new CodeCoverageArray();
 		// Create a Z80 CPU to emulate Z80 behaviour
 		this.zxMemory=new WatchpointZxMemory();
 		this.zxPorts=new ZxPorts();
@@ -352,7 +353,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakData;
 		try {
 			// Run the Z80-CPU in a loop
-			this.codeCoverage.clearAll();
+			this.codeCoverage?.clearAll();
 			for (; counter>0; counter--) {
 				// Store current registers and opcode
 				const prevPc=this.z80Cpu.pc;
@@ -366,7 +367,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				this.zxMemory.setVisualProg(prevPc);
 
 				// Store the pc for coverage
-				this.codeCoverage.storeAddress(prevPc);
+				this.codeCoverage?.storeAddress(prevPc);
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
@@ -437,7 +438,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.emit('update')
 
 		// Emit code coverage event
-		this.emit('coverage', this.codeCoverage.getAddresses());
+		if(this.codeCoverage)
+			this.emit('coverage', this.codeCoverage.getAddresses());
 
 		if (counter!=0) {
 			// Stop immediately
