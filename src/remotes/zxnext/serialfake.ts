@@ -44,7 +44,7 @@ export class SerialFake extends ZxSimulatorRemote {
 				this.serialPort.close();
 
 			// Load the roms
-			this.zxMemory.loadRom();
+			this.zxMemory.loadRom();  // TODO: Remove
 
 			// Open the serial port
 			this.serialPort=new SerialPort("/dev/cu.usbserial-14620", {

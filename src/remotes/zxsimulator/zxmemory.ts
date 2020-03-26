@@ -6,6 +6,7 @@ import {Utility} from '../../misc/utility';
 import {MemBuffer} from '../../misc/membuffer';
 
 
+
 /**
  * Represents the memory, banking and slots of a ZX Spectrum
  * and ZX Next.
@@ -41,6 +42,10 @@ export class ZxMemory {
 	// The 64k memory that hte Z80 addresses.
 	protected z80Memory: Uint8Array;
 
+	// The bank used to display the ULA screen.
+	// This is normally bank 5 but could be changed to bank7 in ZX128.
+	protected ulaScreenBank: number;
+
 	// Visual memory: shows the access as an image.
 	// The image is just 1 pixel high.
 	protected visualMemory: Array<number>;
@@ -56,6 +61,7 @@ export class ZxMemory {
 
 	/// Constructor.
 	constructor() {
+		this.ulaScreenBank=5*2;
 		// Create RAM
 		this.AllBanksRam=new ArrayBuffer(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
 		this.z80Memory=new Uint8Array(0x10000);
@@ -70,6 +76,14 @@ export class ZxMemory {
 		this.clearVisualMemory();
 	}
 
+
+	/**
+	 * Sets the bank to use for the screen display.
+	 * @param bankIndex The bank to use. Note that this is an 8k bank, not 16k.
+	 */
+	public setUlaScreenBank(bankIndex: number) {
+		this.ulaScreenBank=bankIndex;
+	}
 
 
 	/**
@@ -332,8 +346,34 @@ export class ZxMemory {
 
 
 	/**
+	 * Restores the Z80 memory slot from the corresponding bank.
+	 * Called e.g. when the banking is done with the ports.
+	 */
+	public restoreSlot(slotIndex: number) {
+		const bank=this.slots[slotIndex];
+		const addr=ZxMemory.MEMORY_BANK_SIZE*slotIndex;
+		const memBank=this.banks[bank];
+		this.z80Memory.set(memBank, addr);
+	}
+
+
+	/**
+	 * Saves the Z80 memory slot into the corresponding bank.
+	 * Called e.g. when the banking is done with the ports.
+	 */
+	public saveSlot(slotIndex: number) {
+		const bank=this.slots[slotIndex];
+		const addr=ZxMemory.MEMORY_BANK_SIZE*slotIndex;
+		const memBank=this.banks[bank];
+		const z80SlotMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+addr, ZxMemory.MEMORY_BANK_SIZE);
+		memBank.set(z80SlotMem);
+	}
+
+
+	/**
 	 * Loads the 48K Spectrum roms in bank 0xFE and 0xFF
 	 */
+	// TODO: Remove
 	public loadRom() {
 		// Load rom
 		let filepath=Utility.getExtensionPath();
@@ -391,11 +431,40 @@ export class ZxMemory {
 
 
 	/**
+	 * Returns the corresponding slot to a bank index.
+	 * @params The slot index or undeifned if not found.
+	 */
+	protected getSlotOfBank(bankIndex: number): number|undefined {
+		let i=0;
+		for (const bank of this.slots) {
+			if (bank==bankIndex)
+				return i;
+			i++;
+		}
+		// Not found
+		return undefined;
+	}
+
+
+	/**
 	 * Converts the screen pixels, the bits in the bytes, into pixels
 	 * with a color index.
 	 */
 	protected createPixels(): Array<number> {
-		const screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+0x4000);
+		//const screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+0x4000);
+		// Find memory to display accordign slot
+		let screenMem;
+		let slotIndex=this.getSlotOfBank(this.ulaScreenBank);
+		if (slotIndex==undefined) {
+			// Use the bank directly
+			screenMem=this.banks[this.ulaScreenBank];
+		}
+		else {
+			// Use the slot directly, the content is more recent
+			screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+slotIndex*ZxMemory.MEMORY_BANK_SIZE);
+		}
+
+
 		const colorStart=ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH/8;
 		// Create pixels memory
 		const pixels=new Array<number>(ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH);

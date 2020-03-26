@@ -83,6 +83,39 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.zxMemory,
 			this.zxPorts
 		];
+
+		// Set the port for changing the memory bank.
+		//this.zxPorts.portBitMask=0b
+		this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+	}
+
+	/**
+	 * Switches the memory bank.
+	 * See https://www.worldofspectrum.org/faq/reference/128kreference.htm
+	 * @param port The written port.
+	 * @param value:
+	 *   bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
+	 *   bit 3: Select normal(0) or shadow(1) screen to be displayed. The normal screen is in bank 5, whilst the shadow screen is in bank 7. Note that this does not affect the memory between 0x4000 and 0x7fff, which is always bank 5.
+	 *   bit 4: ROM select.ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
+	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
+	 */
+	protected zx128BankSwitch(port: number, value: number) {
+		// bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
+	    const mem=this.zxMemory;
+		const ramBank=value&0x07;
+		const ramBank0=ramBank*2;
+		const ramBank1=ramBank0+1
+		// Save current bank
+		mem.saveSlot(6);
+		mem.saveSlot(7);
+		// Change the slots
+		mem.setSlot(6, ramBank0);
+		mem.setSlot(7, ramBank1);
+		// Store new bank
+		mem.restoreSlot(6);
+		mem.restoreSlot(7);
+
+		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 	}
 
 

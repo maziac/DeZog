@@ -7,13 +7,32 @@ import {MemBuffer} from '../../misc/membuffer';
  */
 export class ZxPorts {
 
-	// Holds the memory banks.
+	// Holds the ports for reading.
 	protected ports: Uint8Array;
+
+	// It is possible to add behavior when writing to a port.
+	// This map maps port addresses to functions that are executed on a port write.
+	protected outPortMap: Map<number, (port: number, value: number) => void>;
+
+	// The bitmask for the port. Only 1 bits are used to decode.
+	// E.g. the ZX128 does not use bit 1 and bit 15.
+	public portBitMask=0xFFFF;
 
 
 	/// Constructor.
 	constructor() {
 		this.ports=new Uint8Array(0x10000);
+		this.outPortMap =new Map<number, (port: number, value: number) => void>();
+	}
+
+
+	/**
+	 * Registers a function for a specific port address.
+	 * @param port The port address
+	 * @param func The function to execute if the port is written.
+	 */
+	public registerOutPortFunction(port: number, func: (port: number, value: number) => void) {
+		this.outPortMap.set(port, func);
 	}
 
 
@@ -52,16 +71,27 @@ export class ZxPorts {
 
 
 
-	// Read 1 byte. Used by the CPU.
+	/**
+	 *  Read 1 byte. Used by the CPU.
+	 */
 	public read(port: number): number {
 		assert(port>=0&&port<0x10000);
 		const value=this.ports[port];
 		return value;
 	}
 
-	// Write 1 byte. Used by the CPU.
+
+	/**
+	 * Write 1 byte. Used by the CPU.
+	 * Executes a custom method.
+	 */
 	public write(port: number, data: number) {
+		const func=this.outPortMap.get(port);
+		if (!func)
+			return;
+		func(port, data);
 	}
+
 
 	// Change the port value. Simulates HW access.
 	// Is e.g. called if a key is "pressed".
