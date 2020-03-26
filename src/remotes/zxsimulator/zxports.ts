@@ -31,8 +31,11 @@ export class ZxPorts {
 	 * @param port The port address
 	 * @param func The function to execute if the port is written.
 	 */
-	public registerOutPortFunction(port: number, func: (port: number, value: number) => void) {
-		this.outPortMap.set(port, func);
+	public registerOutPortFunction(port: number, func: ((port: number, value: number) => void)|undefined) {
+		if (func)
+			this.outPortMap.set(port, func);
+		else
+			this.outPortMap.delete(port);
 	}
 
 

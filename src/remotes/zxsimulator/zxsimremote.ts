@@ -14,6 +14,7 @@ import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZxSimCpuHistory} from './zxsimcpuhistory';
+import {ZxMemory} from './zxmemory';
 
 
 
@@ -28,6 +29,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public z80Cpu: any;	// Z80Cpu
 	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
+
+	// The ZX128 stores its ROM here as it has 2.
+	protected romBuffer: Uint8Array;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -83,11 +87,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.zxMemory,
 			this.zxPorts
 		];
-
-		// Set the port for changing the memory bank.
-		//this.zxPorts.portBitMask=0b
-		this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 	}
+
 
 	/**
 	 * Switches the memory bank.
@@ -96,7 +97,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param value:
 	 *   bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
 	 *   bit 3: Select normal(0) or shadow(1) screen to be displayed. The normal screen is in bank 5, whilst the shadow screen is in bank 7. Note that this does not affect the memory between 0x4000 and 0x7fff, which is always bank 5.
-	 *   bit 4: ROM select.ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
+	 *   bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 	 *   bit 5: If set, memory paging will be disabled and further output to this port will be ignored until the computer is reset.
 	 */
 	protected zx128BankSwitch(port: number, value: number) {
@@ -116,6 +117,71 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		mem.restoreSlot(7);
 
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
+		const shadowScreen=value&0b01000;
+		const screenBank=(shadowScreen!=0)? 7:5;
+		this.zxMemory.setUlaScreenBank(2*screenBank);
+
+		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
+		const romIndex=(value&0b010000)? 1:0;
+		const size=ZxMemory.MEMORY_BANK_SIZE;
+		const rom0=new Uint8Array(this.romBuffer.buffer, romIndex*2*size, size);
+		const rom1=new Uint8Array(this.romBuffer.buffer, romIndex*2*size+size, size);
+		this.zxMemory.writeBank(254, rom0);
+		this.zxMemory.writeBank(255, rom1);
+		mem.restoreSlot(0);
+		mem.restoreSlot(1);
+
+		// bit 5: If set, memory paging will be disabled
+		if (value&0b0100000) {
+			// Disable further writes to this port
+			this,this.zxPorts.registerOutPortFunction(0x7FFD, undefined);
+		}
+	}
+
+
+	/**
+	 * Configures the machine. 48k or 128k Spectrum.
+	 * Loads the roms and sets up bank switching.
+	 */
+	protected configureMachine(machine: string) {
+
+		if (machine=="48k") {
+			// Load the rom
+			try {
+				const size=ZxMemory.MEMORY_BANK_SIZE;
+				const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+				const romBuffer=fs.readFileSync(romFilePath);
+				const rom0=new Uint8Array(romBuffer.buffer, 0, size);
+				const rom1=new Uint8Array(romBuffer.buffer, size, size);
+				this.zxMemory.writeBank(254, rom0);
+				this.zxMemory.writeBank(255, rom1);
+			}
+			catch (e) {
+				this.emit('warning', e.message);
+			}
+		}
+		else if (machine=="128k") {
+			// Load the roms
+			try {
+				const size=ZxMemory.MEMORY_BANK_SIZE;
+				const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
+				this.romBuffer=fs.readFileSync(romFilePath);
+				const rom0=new Uint8Array(this.romBuffer.buffer, 0, size);
+				const rom1=new Uint8Array(this.romBuffer.buffer, size, size);
+				this.zxMemory.writeBank(254, rom0);
+				this.zxMemory.writeBank(255, rom1);
+				// Bank switching.
+				//this.zxPorts.portBitMask=0b
+				this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+			}
+			catch (e) {
+				this.emit('warning', e.message);
+			}
+		}
+		else {
+			// Unknown machine
+			this.emit('warning', "The simulator does not support machine '"+machine+"'. Use '48k' or '128k'.");
+		}
 	}
 
 
@@ -129,23 +195,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Simulator capabilities
 			this.supportsZxNextRegisters=false;
 
-			// For now only one machine is supported
-			if (Settings.launch.zsim.machine=="48k") {
-				// Load the rom
-				try {
-					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
-					const romBuffer=fs.readFileSync(romFilePath);
-					const rom1=new Uint8Array(0x2000);
-					const rom2=new Uint8Array(0x2000);
-					romBuffer.copy(rom1, 0, 0, 0x2000);
-					romBuffer.copy(rom2, 0, 0x2000, 0x4000);
-					this.zxMemory.writeBank(254, rom1);
-					this.zxMemory.writeBank(255, rom2);
-				}
-				catch (e) {
-					this.emit('warning', e.message);
-				}
-			}
+			// Decide what machine
+			this.configureMachine(Settings.launch.zsim.machine);
 
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;

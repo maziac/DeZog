@@ -253,7 +253,7 @@
 							"zsim": {
 								"machine": {
 									"type": "string",
-									"description": "The machine type. At the moment only '48k'.",
+									"description": "The machine type. At the moment only '48k' and '128k'. Default is '48k'.",
 									"default": "48k"
 								},
 								"cpuLoadInterruptRange": {
