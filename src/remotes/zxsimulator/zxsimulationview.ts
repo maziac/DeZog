@@ -4,6 +4,7 @@ import {EventEmitter} from 'events';
 import {BaseView} from '../../views/baseview';
 import {ZxSimulatorRemote} from './zxsimremote';
 import {WebviewPanel} from 'vscode';
+import {Settings} from '../../settings';
 
 
 /**
@@ -19,6 +20,7 @@ export class ZxSimulationView extends BaseView {
 
 	// A pointer to the simulator.
 	protected simulator: ZxSimulatorRemote;
+
 
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
@@ -273,12 +275,21 @@ export class ZxSimulationView extends BaseView {
 	 */
 	public async update(): Promise<void> {
 		try {
+			let cpuLoad;
+			let slots;
+			let slotNames;
+			let visualMemImg;
+			let screenImg;
 			// Update values
-			const cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
-			const slots=this.simulator.zxMemory.getSlots();
-			const slotNames=slots.map(slot => (slot >= 254) ? "ROM" : "BANK"+slot);
-			const visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
-			const screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+			if(Settings.launch.zsim.cpuLoadInterruptRange>0)
+				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
+			if (Settings.launch.zsim.visualMemory) {
+				slots=this.simulator.zxMemory.getSlots();
+				slotNames=slots.map(slot => (slot>=254)? "ROM":"BANK"+slot);
+				visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+			}
+			if (Settings.launch.zsim.ulaScreen)
+				screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
 			// Create message to update the webview
 			let message={
 				command: 'update',
@@ -297,13 +308,14 @@ export class ZxSimulationView extends BaseView {
 
 
 	/**
-	 * Sets the html code to display the memory dump.
+	 * Sets the html code to display the ula screen, visual memory etc.
+	 * Depending on the Settings selection.
 	 */
 	protected setHtml() {
 		if (!this.vscodePanel)
 			return;
 
-		const html=
+		let html=
 `<html>
 
 <style>
@@ -353,12 +365,16 @@ color:black;
 		switch (message.command) {
 			case 'update':
 			{
-				cpuLoad.innerHTML = message.cpuLoad;
-				i=0;
-				for(slotString of message.slotNames)
-					slots[i++].textContent = slotString;
-				visualMemImg.src = message.visualMemImg;
-				screenImg.src = message.screenImg;
+				if(message.cpuLoad != undefined)
+					cpuLoad.innerHTML = message.cpuLoad;
+				if(message.slotNames) {
+					i=0;
+					for(slotString of message.slotNames)
+						slots[i++].textContent = slotString;
+					visualMemImg.src = message.visualMemImg;
+				}
+				if(message.screenImg)
+					screenImg.src = message.screenImg;
 			}
 			break;
 		}
@@ -435,7 +451,11 @@ color:black;
 
 <body>
 
-<!-- Z80 CPU load -->
+`;
+
+		if (Settings.launch.zsim.cpuLoadInterruptRange>0) {
+			html+=
+				`<!-- Z80 CPU load -->
 <p>
 	<label>Z80 CPU load:</label>
 	<label id="cpu_load_id">100</label>
@@ -446,8 +466,13 @@ color:black;
 	var cpuLoad=document.getElementById("cpu_load_id");
 </script>
 
+`;
+		}
 
-<!-- Visual Memory (memory activity) -->
+
+		if (Settings.launch.zsim.visualMemory) {
+			html+=
+				`<!-- Visual Memory (memory activity) -->
 <!-- Legend, Slots -->
 <div style="position:relative; width:100%; height:4.5em;">
     <style>
@@ -515,8 +540,6 @@ color:black;
     <div class="border transparent" id="slot6_id" style="top:3.5em; left:75%; width:12.5%;">BANK2</div>
     <div class="border transparent" id="slot7_id" style="top:3.5em; left:87.5%; width:12.5%;">BANK3</div>
 
-
-
     <script>
         <!-- Store the visual mem image source -->
         var visualMemImg=document.getElementById("visual_mem_img_id");
@@ -533,22 +556,29 @@ color:black;
 		];
  	</script>
 
-
 </div>
-
 
 <br><br>
 
+`;
+		}
 
-<!-- Display the screen gif -->
+		if (Settings.launch.zsim.ulaScreen) {
+			html+=
+				`<!-- Display the screen gif -->
 <img id="screen_img_id" style="image-rendering:pixelated; width:100%;">
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
 </script>
 
+`;
+		}
 
-<!-- Keyboard -->
+
+		if (Settings.launch.zsim.zxKeyboard) {
+			html+=
+				`<!-- Keyboard -->
 <table style="width:100%">
 
   <tr>
@@ -564,7 +594,6 @@ color:black;
     <td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
   </tr>
 
-
   <tr>
     <td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
     <td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
@@ -577,7 +606,6 @@ color:black;
     <td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
     <td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
   </tr>
-
 
   <tr>
     <td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
@@ -592,7 +620,6 @@ color:black;
     <td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
   </tr>
 
-
   <tr>
     <td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
     <td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
@@ -606,10 +633,13 @@ color:black;
     <td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
   </tr>
 
-
 </table>
 
-<p id="log"></p>
+`;
+		}
+
+		html+=
+`<p id="log"></p>
 
 </body>
 </html>

@@ -6,7 +6,12 @@
 - debug_wait_before and debug_wait_after removed.
 - zsim:
 	- Code coverage can be disabled now.
-
+	- More configurable. 'machine' removed but added:
+		- loadZxRom
+		- zxKeyboard
+		- visualMemory
+		- ulaScreen
+		- memoryPagingControl
 
 # 0.13.5
 - zsim.cpuLoadInterruptRange introduced. Change the range for the average calculation.

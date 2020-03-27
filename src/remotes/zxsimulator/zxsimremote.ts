@@ -135,44 +135,49 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Configures the machine. 48k or 128k Spectrum.
 	 * Loads the roms and sets up bank switching.
 	 */
-	protected configureMachine(machine: string) {
+	protected configureMachine() {
+		try {
 
-		if (machine=="48k") {
-			// Load the rom
-			try {
-				const size=ZxMemory.MEMORY_BANK_SIZE;
-				const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
-				const romBuffer=fs.readFileSync(romFilePath);
-				const rom0=new Uint8Array(romBuffer.buffer, 0, size);
-				const rom1=new Uint8Array(romBuffer.buffer, size, size);
-				this.zxMemory.writeBank(254, rom0);
-				this.zxMemory.writeBank(255, rom1);
+			// "loadZxRom"
+			if (Settings.launch.zsim.loadZxRom) {
+				// Load the rom
+				if (Settings.launch.zsim.memoryPagingControl) {
+					// ZX 128K
+					const size=ZxMemory.MEMORY_BANK_SIZE;
+					const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
+					this.romBuffer=fs.readFileSync(romFilePath);
+					const rom0=new Uint8Array(this.romBuffer.buffer, 0, size);
+					const rom1=new Uint8Array(this.romBuffer.buffer, size, size);
+					this.zxMemory.writeBank(254, rom0);
+					this.zxMemory.writeBank(255, rom1);
+				}
+				else {
+					// ZX 48K
+					const size=ZxMemory.MEMORY_BANK_SIZE;
+					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+					const romBuffer=fs.readFileSync(romFilePath);
+					const rom0=new Uint8Array(romBuffer.buffer, 0, size);
+					const rom1=new Uint8Array(romBuffer.buffer, size, size);
+					this.zxMemory.writeBank(254, rom0);
+					this.zxMemory.writeBank(255, rom1);
+				}
 			}
-			catch (e) {
-				this.emit('warning', e.message);
+
+			// "memoryPagingControl"
+			if (Settings.launch.zsim.memoryPagingControl) {
+				// Load the roms
+				try {
+					// Bank switching.
+					this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+				}
+				catch (e) {
+					this.emit('warning', e.message);
+				}
 			}
+
 		}
-		else if (machine=="128k") {
-			// Load the roms
-			try {
-				const size=ZxMemory.MEMORY_BANK_SIZE;
-				const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
-				this.romBuffer=fs.readFileSync(romFilePath);
-				const rom0=new Uint8Array(this.romBuffer.buffer, 0, size);
-				const rom1=new Uint8Array(this.romBuffer.buffer, size, size);
-				this.zxMemory.writeBank(254, rom0);
-				this.zxMemory.writeBank(255, rom1);
-				// Bank switching.
-				//this.zxPorts.portBitMask=0b
-				this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
-			}
-			catch (e) {
-				this.emit('warning', e.message);
-			}
-		}
-		else {
-			// Unknown machine
-			this.emit('warning', "The simulator does not support machine '"+machine+"'. Use '48k' or '128k'.");
+		catch (e) {
+			this.emit('warning', e.message);
 		}
 	}
 
@@ -188,7 +193,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.supportsZxNextRegisters=false;
 
 			// Decide what machine
-			this.configureMachine(Settings.launch.zsim.machine);
+			this.configureMachine();
 
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;

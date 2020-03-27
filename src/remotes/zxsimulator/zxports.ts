@@ -16,7 +16,7 @@ export class ZxPorts {
 
 	// The bitmask for the port. Only 1 bits are used to decode.
 	// E.g. the ZX128 does not use bit 1 and bit 15.
-	public portBitMask=0xFFFF;
+	//public portBitMask=0xFFFF;
 
 
 	/// Constructor.

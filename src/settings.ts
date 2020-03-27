@@ -86,11 +86,18 @@ export interface ZrcpType {
 
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
-	/// At the moment only "48k"
-	machine: string;
-
-	// The number of interrupts to calculate the average from.
-	cpuLoadInterruptRange: number;
+	// Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
+	loadZxRom: boolean,
+	// If enabled the simulator shows a keyboard to simulate keypresses.
+	zxKeyboard: boolean,
+	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
+	visualMemory: boolean,
+	// If enabled it shows the contents of the ZX Spectrum screen.
+	ulaScreen: boolean,
+	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
+	memoryPagingControl: boolean,
+	// The number of interrupts to calculate the average from. 0 to disable.
+	cpuLoadInterruptRange: number
 }
 
 
@@ -290,9 +297,17 @@ export class Settings {
 		// zsim
 		if (!Settings.launch.zsim)
 			Settings.launch.zsim={} as ZxSimType;
-		if (!Settings.launch.zsim.machine)
-			Settings.launch.zsim.machine='48k';
-		if (!Settings.launch.zsim.cpuLoadInterruptRange)
+		if (!Settings.launch.zsim.loadZxRom==undefined)
+			Settings.launch.zsim.loadZxRom=true;
+		if (!Settings.launch.zsim.zxKeyboard==undefined)
+			Settings.launch.zsim.zxKeyboard=true;
+		if (!Settings.launch.zsim.visualMemory==undefined)
+			Settings.launch.zsim.visualMemory=true;
+		if (!Settings.launch.zsim.ulaScreen==undefined)
+			Settings.launch.zsim.ulaScreen=true;
+		if (!Settings.launch.zsim.memoryPagingControl==undefined)
+			Settings.launch.zsim.memoryPagingControl=false;
+		if (!Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
 
 		// serial
