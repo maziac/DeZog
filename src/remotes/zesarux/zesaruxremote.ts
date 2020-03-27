@@ -9,6 +9,7 @@ import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
+import {platform} from 'os';
 
 
 
@@ -218,7 +219,9 @@ export class ZesaruxRemote extends RemoteBase {
 
 				await zSocket.executeWhenQueueIsEmpty();
 				const waitBeforeMs=Settings.launch.zrcp.loadDelay;
-				await Utility.timeout(waitBeforeMs);	// TODO: Remove
+				await Utility.timeout(waitBeforeMs);
+
+				this.emit('warning', 'loadDelay='+waitBeforeMs+', platform='+process.platform);
 
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
