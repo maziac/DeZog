@@ -249,25 +249,8 @@ export class ZesaruxRemote extends RemoteBase {
 					this.setProgramCounter(execAddress);
 				}
 
-				// Initialize breakpoints
-				this.initBreakpoints();
-
-
-				// Code coverage
-				if(Settings.launch.history.codeCoverageEnabled) {
-					zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
-					zSocket.send('cpu-code-coverage clear');
-				}
-				else
-					zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
-
-				// Reverse debugging.
-				CpuHistory.init();
-
-				// Enable extended stack
-				zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
-				zSocket.send('extended-stack enabled yes');
-
+				// Initialize more
+				this.initAfterLoad();
 
 				zSocket.executeWhenQueueIsEmpty().then(() => {
 					// Check for console.error
@@ -285,6 +268,30 @@ export class ZesaruxRemote extends RemoteBase {
 				this.emit('error', e);
 			}
 		});
+	}
+
+
+	/**
+	 * Does the initialization necessary after a load or state restore.
+	 */
+	protected initAfterLoad() {
+		// Initialize breakpoints
+		this.initBreakpoints();
+
+		// Code coverage
+		if (Settings.launch.history.codeCoverageEnabled) {
+			zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
+			zSocket.send('cpu-code-coverage clear');
+		}
+		else
+			zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
+
+		// Reverse debugging.
+		CpuHistory.init();
+
+		// Enable extended stack
+		zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
+		zSocket.send('extended-stack enabled yes');
 	}
 
 
@@ -1216,10 +1223,15 @@ export class ZesaruxRemote extends RemoteBase {
 			// Load as zsf
 			filePath+=".zsf";
 			zSocket.send('snapshot-load '+filePath, data => {
-				// Clear register cache
-				Z80Registers.clearCache();
-				this.clearCallStack();
-				resolve();
+				// Initialize more
+				this.initAfterLoad();
+				// At last:
+				zSocket.executeWhenQueueIsEmpty().then(() => {
+					// Clear register cache
+					Z80Registers.clearCache();
+					this.clearCallStack();
+					resolve();
+				});
 			});
 		});
 	}
