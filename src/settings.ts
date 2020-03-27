@@ -282,7 +282,7 @@ export class Settings {
 			const platform=process.platform;
 			let delay=0;
 			if (platform=='win32')
-				delay=500;
+				delay=100;
 			Settings.launch.zrcp.loadDelay=delay;	// ms
 
 		}

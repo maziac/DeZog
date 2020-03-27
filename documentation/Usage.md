@@ -275,19 +275,18 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                      | Internal Zx Simulator | ZEsarUX | ZesaruxExt | ZX Next | CSpect |
-|-------------------------|--------------------|---------|------------|---------|--------|
-| State                   | experimental       | stable  | stable     | started | planned |
-| Breakpoints             | yes                | yes     | fast       | yes1    | yes1   |
-| Conditional Breakpoints | yes1               | yes     | fast       | slow    | slow   |
-| Watchpoints             | fast1              | yes     | fast       | -       | -      |
-| Asserts                 | fast1              | -       | fast       | slow    | slow   |
-| Logpoints               | fast1              | -       | fast       | slow    | slow   |
-| Extended callstack      | yes1               | yes     | yes        | -       | -      |
-| Code coverage           | yes1               | yes     | yes        | -       | -      |
-| Full reverse debugging  | yes1               | yes     | yes        | -       | -      |
-| Lite reverse debugging  | -                  | -       | -          | yes1    | yes1   |
-| ZX Next capable         | -                  | yes     | yes        | yes1    | yes1   |
+|                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
+|-------------------------|--------------------|---------|------------|----------|----------|
+| State                   | stable             | stable  | stable     | started  | planned  |
+| Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
+| Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
+| Watchpoints             | yes                | yes     | yes/fast   | -        | -        |
+| Asserts                 | yes                | -       | yes        | yes/slow | yes/slow |
+| Logpoints               | yes                | -       | yes        | yes/slow | yes/slow |
+| Extended callstack      | no                 | yes     | yes        | -        | -        |
+| Code coverage           | yes                | yes     | yes        | -        | -        |
+| Reverse debugging       | true               | true    | true       | lite     | lite     |
+| ZX Next capable         | -                  | yes     | yes        | yes      | yes      |
 | Comments                | About 10x slower   |         | Breakpoints are faster than in ZEsarUX |         |
 
 Notes:
@@ -297,10 +296,11 @@ Notes:
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
 - ZesaruxExt, ZX Next and CSpect are not available at the moment.
-- yes1/fast1: means: not yet
 
 
-### Internal ZX Simulator
+### The Internal Z80 Simulator
+
+![](images/zsim_starwarrior.gif)
 
 This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever.
 
@@ -308,11 +308,13 @@ The remote type 'zsim' a very simple Z80/ZX Spectrum simulator.
 
 It allows to test simple programs like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
 
-It supports:
-- ZX Spectrum screen
-- The ports of the keys
-- The memory banks (including ZX Next)
-- Loading of .sna and .nex files
+'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum related features so that it is possible to use for debugging ZX48 and ZX128 programs.
+
+'zsim' supports:
+- Display of the ZX Spectrum ULA screen
+- The ports of the keyboard
+- The ZX128 memory banks
+- Loading of (48 and 128) .sna and .nex files
 
 It specificly does not support:
 - ZX Next instructions or registers/HW
@@ -333,8 +335,34 @@ The simulator on the other hand immediately displays any change to the screen wh
 
 Example launch.json configuration:
 ~~~
-    "remoteType": "zsim"
+    "remoteType": "zsim",
+    "zsim": {
+    	"loadZxRom": true,
+        "zxKeyboard": true,
+	    "visualMemory": true,
+	    "ulaScreen": true,
+	    "memoryPagingControl": true,
+        "cpuLoadInterruptRange": 1,
+    }
 ~~~
+
+With all options disabled zsim behaves just as a Z80 CPU with 64k RAM.
+The default configuration enables: loadZxRom, zxKeyboard, visualMemory, ulaScreen and cpuLoadInterruptRange. So in the default configuration this basically simulates a ZX 48K Spectrum.
+For ZX 128K support you should add the memoryPagingControl option.
+
+Here is the explanations of all the options:
+- "loadZxRom": true/false. Defaults to true. Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
+- "zxKeyboard": true/false. Defaults to true. If enabled the simulator shows a keyboard to simulate keypresses.
+![](images/zsim_keyboard.jpg)
+- "visualMemory": true/false. Defaults to true. If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
+![](images/zsim_visual_memory.jpg)
+- "ulaScreen": true/false. Defaults to true. If enabled it shows the contents of the ZX Spectrum screen.
+![](images/zsim_ula_screen.jpg)
+- "memoryPagingControl": true/false. Defaults to true. If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
+- "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
+![](images/zsim_cpu_load.jpg)
+
+
 
 ### ZEsarUX
 
@@ -346,7 +374,7 @@ or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 - "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
-The default for Windows is 500 (ms), others 0 ms. If you run into this problem you can try to increase the value to 1000 or 2000.
+The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 
 
 Example launch.json configuration:

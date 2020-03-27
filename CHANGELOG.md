@@ -2,7 +2,7 @@
 
 # 0.13.6
 - Refactoring: CallSerializer finally removed (!)
-- "zrcp.loadDelay" launch.json parameter added. Default value is 500ms for Windows, 0ms for others. Adds an additional delay before laoding the Z80 program as a workaround for the initial zesarux crash.
+- "zrcp.loadDelay" launch.json parameter added. Default value is 100ms for Windows, 0ms for others. Adds an additional delay before laoding the Z80 program as a workaround for the initial zesarux crash.
 - debug_wait_before and debug_wait_after removed.
 - zsim:
 	- Code coverage can be disabled now.

@@ -220,8 +220,6 @@ export class ZesaruxRemote extends RemoteBase {
 				const waitBeforeMs=Settings.launch.zrcp.loadDelay;
 				await Utility.timeout(waitBeforeMs);
 
-				this.emit('warning', 'loadDelay='+waitBeforeMs+', platform='+process.platform);
-
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
 				if (loadPath) {

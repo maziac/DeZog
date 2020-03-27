@@ -247,19 +247,39 @@
 								},
 								"loadDelay": {
 									"type": "number",
-									"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 500ms on Windows, 0ms on other systems."
+									"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
 								}
 							},
 							"zsim": {
-								"machine": {
-									"type": "string",
-									"description": "The machine type. At the moment only '48k' and '128k'. Default is '48k'.",
-									"default": "48k"
+								"loadZxRom": {
+									"type": "number",
+									"description": "Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.",
+									"default": true
+								},
+								"zxKeyboard": {
+									"type": "number",
+									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+									"default": true
+								},
+								"visualMemory": {
+									"type": "number",
+									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+									"default": true
+								},
+								"ulaScreen": {
+									"type": "number",
+									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+									"default": true
+								},
+								"memoryPagingControl": {
+									"type": "number",
+									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+									"default": true
 								},
 								"cpuLoadInterruptRange": {
 									"type": "number",
-									"description": "The number of interrupts to calculate the CPU-load average from.",
-									"default": "1"
+									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+									"default": 1
 								}
 							},
 							"serial": {

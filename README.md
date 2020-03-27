@@ -16,7 +16,7 @@ Note: DeZog does not include any support for building from assembler sources. Fo
 **Important note for Windows users:**
 Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.
 If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
-The default for Windows is 500 (ms). If you run into this problem you can try to increase the value to 1000 or 2000.
+The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 
 
 ## Gallery
