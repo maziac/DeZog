@@ -59,8 +59,9 @@ export class Z80Cpu extends Z80js {
 
 	/**
 	 * Executes one instruction.
+	 * @returns true if a vertical interrupt happened.
 	 */
-	public execute() {
+	public execute(): boolean {
 		const self=this as any;
 		const tstatesPrev=self.tStates;
 		self.deferInt=false;
@@ -94,7 +95,12 @@ export class Z80Cpu extends Z80js {
 					this.cpuLoadRangeCounter=0;
 				}
 			}
+			// Vert. interrupt
+			return true;
 		}
+
+		// No vert. interrupt
+		return false;
 	}
 
 

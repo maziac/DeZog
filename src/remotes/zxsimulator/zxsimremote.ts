@@ -132,7 +132,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Configures the machine. 48k or 128k Spectrum.
+	 * Configures the machine.
 	 * Loads the roms and sets up bank switching.
 	 */
 	protected configureMachine() {
@@ -427,12 +427,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		//		Utility.timeDiff();
 		let breakReasonString;
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
-		let counter=10000;
+		let counter=5000;
 		let bp;
 		let breakData;
+		let updateCounter=0;
 		try {
-			// Run the Z80-CPU in a loop
 			this.codeCoverage?.clearAll();
+
+			// Run the Z80-CPU in a loop
 			for (; counter>0; counter--) {
 				// Store current registers and opcode
 				const prevPc=this.z80Cpu.pc;
@@ -440,13 +442,23 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					this.storeHistoryInfo(prevPc);
 
 				// Execute one instruction
-				this.z80Cpu.execute();
+				const vertInterrupt=this.z80Cpu.execute();
 
 				// Update visual memory
 				this.zxMemory.setVisualProg(prevPc);
 
 				// Store the pc for coverage
 				this.codeCoverage?.storeAddress(prevPc);
+
+				// Do visual update
+				if (vertInterrupt) {
+					updateCounter--;
+					if (updateCounter<0) {
+						// Update the screen etc.
+						this.emit('update')
+						updateCounter=10;
+					}
+				}
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
@@ -513,9 +525,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 		};
 
-		// Update the screen etc.
-		this.emit('update')
-
 		// Emit code coverage event
 		if(this.codeCoverage)
 			this.emit('coverage', this.codeCoverage.getAddresses());
@@ -538,6 +547,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			assert(this.continueResolve);
 			if (this.continueResolve)
 				this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+
+			// Update the screen etc.
+			this.emit('update')
 			return;
 		}
 
@@ -555,12 +567,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+
+				// Update the screen etc.
+				this.emit('update')
+
 				return;
 			}
 
 			// Otherwise continue
 			this.z80CpuContinue(bp1, bp2);
-		}, 100);
+		}, 10);
 	}
 
 

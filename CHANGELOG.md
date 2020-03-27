@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.13.7
+- zsim: Coupled ula screen update and interrupt.
+
 # 0.13.6
 - Refactoring: CallSerializer finally removed (!)
 - "zrcp.loadDelay" launch.json parameter added. Default value is 100ms for Windows, 0ms for others. Adds an additional delay before laoding the Z80 program as a workaround for the initial zesarux crash.
