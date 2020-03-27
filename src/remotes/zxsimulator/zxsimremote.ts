@@ -106,15 +106,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		const ramBank=value&0x07;
 		const ramBank0=ramBank*2;
 		const ramBank1=ramBank0+1
-		// Save current bank
-		mem.saveSlot(6);
-		mem.saveSlot(7);
 		// Change the slots
 		mem.setSlot(6, ramBank0);
 		mem.setSlot(7, ramBank1);
-		// Store new bank
-		mem.restoreSlot(6);
-		mem.restoreSlot(7);
 
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const shadowScreen=value&0b01000;
@@ -128,13 +122,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		const rom1=new Uint8Array(this.romBuffer.buffer, romIndex*2*size+size, size);
 		this.zxMemory.writeBank(254, rom0);
 		this.zxMemory.writeBank(255, rom1);
-		mem.restoreSlot(0);
-		mem.restoreSlot(1);
 
 		// bit 5: If set, memory paging will be disabled
 		if (value&0b0100000) {
 			// Disable further writes to this port
-			this,this.zxPorts.registerOutPortFunction(0x7FFD, undefined);
+			this.zxPorts.registerOutPortFunction(0x7FFD, undefined);
 		}
 	}
 
@@ -269,8 +261,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected async loadBin(filePath: string): Promise<void> {
 		await super.loadBin(filePath);
-		// Copy memory banks
-		this.zxMemory.copyBanksToZ80Mem();
 	}
 
 

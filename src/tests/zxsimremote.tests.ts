@@ -1,6 +1,4 @@
 import * as assert from 'assert';
-import {ZxPorts} from '../remotes/zxsimulator/zxports';
-import {MemBuffer} from '../misc/membuffer';
 import {ZxSimulatorRemote} from '../remotes/zxsimulator/zxsimremote';
 import {Settings} from '../settings';
 import {Utility} from '../misc/utility';
@@ -31,7 +29,6 @@ suite('ZxSimulatorRemote', () => {
 
 		test('Check ROM', () => {
 			zsim.configureMachine('48k');
-			zsim.zxMemory.copyBanksToZ80Mem();
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
@@ -71,7 +68,6 @@ suite('ZxSimulatorRemote', () => {
 		test('Check ROM 0', () => {
 			// The 128er ROM
 			zsim.configureMachine('128k');
-			zsim.zxMemory.copyBanksToZ80Mem();
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
@@ -104,11 +100,10 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('Check ROM 1', () => {
-			// The 48k ROM
+			// The 128k ROM
 			zsim.configureMachine('128k');
-			zsim.zxMemory.copyBanksToZ80Mem();
 
-			// Do memory switch
+			// Do memory switch to 48k ROM
 			zsim.zxPorts.write(0x7FFD, 0b010000);
 
 			// Check first 2 bytes
@@ -124,26 +119,70 @@ suite('ZxSimulatorRemote', () => {
 			assert.equal(0x3C, value);
 		});
 
+
 		test('bank switching', () => {
-			let memBuffer;
-			let writeSize;
-			{
-				const ports=new ZxPorts();
+			zsim.configureMachine('128k');
 
-				// Set ports
-				ports.setPortValue(0x0000, 100);
-				ports.setPortValue(0x0095, 101);
-				ports.setPortValue(0x8000, 102);
-				ports.setPortValue(0xFFFF, 103);
+			// Address used for writing/reading
+			const address=0xC000;
 
-				// Get size
-				writeSize=ports.getSerializedSize();
-
-				// Serialize
-				memBuffer=new MemBuffer(writeSize);
-				ports.serialize(memBuffer);
+			// Put unique number in each bank
+			for (let bank=0; bank<8; bank++) {
+				// Do memory switch to bank x
+				zsim.zxPorts.write(0x7FFD, bank);
+				// Write unique number
+				zsim.zxMemory.write8(address, 10+bank);
 			}
 
+			// Now read the addresses and check
+			for (let bank=0; bank<8; bank++) {
+				// Do memory switch to bank x
+				zsim.zxPorts.write(0x7FFD, bank);
+				// Read unique number
+				const value=zsim.zxMemory.read8(address);
+				assert.equal(10+bank, value);
+			}
+
+			// Check additionally the screen
+			const value=zsim.zxMemory.read8(address+0x4000-0xC000);
+			assert.equal(10+5, value);
+		});
+
+
+		test('ula switching', () => {
+			zsim.configureMachine('128k');
+
+			// Deault, Bank 5
+			let bank=zsim.zxMemory.ulaScreenBank;
+			assert.equal(2*5, bank);
+
+			// Shadow ULA, Bank 7
+			zsim.zxPorts.write(0x7FFD, 0b01000);
+			bank=zsim.zxMemory.ulaScreenBank;
+			assert.equal(2*7, bank);
+
+			// Normal ULA, Bank 5
+			zsim.zxPorts.write(0x7FFD, 0);
+			bank=zsim.zxMemory.ulaScreenBank;
+			assert.equal(2*5, bank);
+		});
+
+
+		test('paging disable', () => {
+			// 128k
+			zsim.configureMachine('128k');
+
+			// Disable memory paging
+			zsim.zxPorts.write(0x7FFD, 0b0100000);
+
+			// Try a switch to 48k ROM
+			zsim.zxPorts.write(0x7FFD, 0b010000);
+
+			// Check that this did not happen
+			let value=zsim.zxMemory.read8(0x0001);
+			assert.equal(0x01, value);
+			value=zsim.zxMemory.read8(0x3FFF);
+			assert.equal(0x01, value);
 		});
 
 	});

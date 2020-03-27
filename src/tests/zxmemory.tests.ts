@@ -106,6 +106,13 @@ suite('ZxMemory', () => {
 		result=mem.readBlock(0xFFFF, 2);
 		assert.equal(0xE1, result[0]);
 		assert.equal(0xE2, result[1]);
+
+		mem.writeBlock(0x3FFE, Buffer.from([0xF1, 0xF2, 0xF3, 0xF4]));
+		result=mem.readBlock(0x3FFE, 4);
+		assert.equal(0xF1, result[0]);
+		assert.equal(0xF2, result[1]);
+		assert.equal(0xF3, result[2]);
+		assert.equal(0xF4, result[3]);
 	});
 
 
