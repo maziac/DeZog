@@ -108,7 +108,7 @@ export class ZesaruxSocket extends Socket {
 	/**
 	Connects to the Zesarux debug port and initializes it.
 	zhostname: The IP address, e.g. localhost
-	zport: The ZRCP port (usually 10000)
+	port: The ZRCP port (usually 10000)
 	*/
 	public connectDebugger() {
 

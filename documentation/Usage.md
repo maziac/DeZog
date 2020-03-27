@@ -28,8 +28,9 @@ A typical configuration looks like this:
             "request": "launch",
             "name": "DeZog",
             "remoteType": "zsim",
-            "zhostname": "localhost",
-            "zport": 10000,
+            "zsim": {
+                "loadZxRom": true
+            },
             "listFiles": [
                 {
                     "path": "z80-sample-program.list",
@@ -72,8 +73,6 @@ A typical configuration looks like this:
     - "zsim": Use the internal simulator. See [Internal ZX Simulator](#internal-zx-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
-- zhostname: The host's name. Only required for "remoteType": "zrcp".
-- zport: The port. Required for "remoteType": "zrcp".
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -256,7 +255,7 @@ DeZog supports most of them but with some restrictions:
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
 - "zsim": Internal ZX Simulator
-- "zrcp": ZEsarUx (or ZesaruxExt)
+- "zrcp": ZEsarUX (or ZesaruxExt)
 - "serial": ZX Next connected via serial.
 
 
@@ -303,7 +302,7 @@ Notes:
 
 ### Internal ZX Simulator
 
-This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever. i.e. 'zhostname' and 'zport' are not used.
+This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever.
 
 The remote type 'zsim' a very simple Z80/ZX Spectrum simulator.
 
@@ -344,14 +343,19 @@ ZEsarUX needs to run before the debug session starts and needs to be connected v
 You need to enable the ZRCP in ZEsarUX. In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
-- zhostname: The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
-- zport: The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
+- "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+- "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
+The default for Windows is 500 (ms), others 0 ms. If you run into this problem you can try to increase the value to 1000 or 2000.
+
 
 Example launch.json configuration:
 ~~~
     "remoteType": "zrcp",
-    "zhostname": "localhost",
-    "zport": 10000,
+    "zrcp": {
+        "hostname": "localhost",
+        "port": 10000
+    }
 ~~~
 
 Notes:
@@ -362,7 +366,6 @@ You might get an error like "ZEsarUX did not communicate!" in vscode.
 - If the DeZog functionality is not sufficient for you, you also have have full access to the ZEsarUX ZRCP through vscode's debug console.
 Enter "-help" in the debug console to see all available commands.
 Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
-
 
 
 

@@ -284,6 +284,7 @@ export class Settings {
 			if (platform=='win32')
 				delay=500;
 			Settings.launch.zrcp.loadDelay=delay;	// ms
+
 		}
 
 		// zsim

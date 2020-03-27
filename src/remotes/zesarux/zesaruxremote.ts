@@ -9,7 +9,6 @@ import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {platform} from 'os';
 
 
 
