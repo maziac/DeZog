@@ -69,8 +69,8 @@ A typical configuration looks like this:
 
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
-- remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal ZX simulator or real ZX NExt HW connected via serial interface (Note: the serial interface is currently under evelopment).
-    - "zsim": Use the internal simulator. See [Internal ZX Simulator](#internal-zx-simulator).
+- remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface (Note: the serial interface is currently under evelopment).
+    - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
@@ -254,7 +254,7 @@ DeZog supports most of them but with some restrictions:
 
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
-- "zsim": Internal ZX Simulator
+- "zsim": Internal Z80 Simulator
 - "zrcp": ZEsarUX (or ZesaruxExt)
 - "serial": ZX Next connected via serial.
 
@@ -399,11 +399,11 @@ Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 ### Useful ZEsarUX command-line options.
 
-To ease the usage of ZEsarUX and the Z80 Debug Adapter you can use several ZEsarUX command line options.
+To ease the usage of ZEsarUX with DeZog you can use several ZEsarUX command line options.
 I have collected a few that I found useful:
 
 ```bash
-# Start a "normal" ZX Spectrum (48k) and listen for connection from the Z80 Debug Adapter.
+# Start a "normal" ZX Spectrum (48k) and listen for connection from the DeZog.
 ./zesarux --enable-remoteprotocol &
 ```
 
@@ -466,7 +466,7 @@ You can now try the following:
 
 ### Reverse Debugging
 
-A special feature of the Z80 Debug Adapter is the possibility to reverse debug your program.
+A special feature of DeZog is the possibility to reverse debug your program.
 (Sometimes this is referred to as "[Time travel debugging](https://en.wikipedia.org/wiki/Time_travel_debugging)", "Historical debugging" or "Replay debugger".)
 This means you can go "back in time" and inspect program flow and register values from the past.
 
@@ -964,7 +964,7 @@ See [Notes](#Notes).
 
 ## Unittests
 
-You can use the z80 debug adapter to execute unit tests.
+You can use the DeZog to execute unit tests.
 Please see [here](UnitTests.md).
 
 
@@ -974,7 +974,7 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 - step-over: A step-over always returns. step-over should work like you would intuitively expect it to work (at least for me :-) ). You can step-over a 'jp' opcode and it will break on the next opcode, the jump address. DeZog does so by looking at the current opcode: If a 'call' or a 'ldir/lddr' is found a ZEsarUX 'cpu-step-over' is done, in all other case a 'cpu-step' (into) is done.
 
-- step-out: This is not available in ZEsarUX, but in DeZog you can make use of a step-out. z80 debug examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
+- step-out: This is not available in ZEsarUX, but in DeZog you can make use of a step-out. DeZog examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
 
 
 
@@ -982,6 +982,9 @@ Stepping works slightly different to stepping in ZEsarUX.
 
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
 - Hovering does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
+- Windows only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.
+If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
+The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 
 
 ## Notes

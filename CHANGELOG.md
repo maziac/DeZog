@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.0.2
+- Documentation update.
+
 # 1.0.1
 - zsim: USR0 mode for 128K Spectrum.
 
