@@ -51,6 +51,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - step-over, step-in, step-out, continue, pause
 - [reverse debugging](documentation/Usage.md#reverse-debugging) via step back and reverse continue
 - [code coverage](documentation/Usage.md#code-coverage) visualization
+- [state save/retore](documentation/Usage.md#state-save-restore)
 - breakpoints (and breakpoints with conditions)
 - display of
 	- disassembly
