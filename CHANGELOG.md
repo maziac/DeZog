@@ -2,6 +2,7 @@
 
 # 0.13.7
 - zsim: Coupled ula screen update and interrupt.
+- zrcp: fixed timeout for step-over/out.
 
 # 0.13.6
 - Refactoring: CallSerializer finally removed (!)
