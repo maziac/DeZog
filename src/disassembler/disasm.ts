@@ -1927,9 +1927,8 @@ export class Disassembler extends EventEmitter {
 		for(const line of commentsLines) {
 			lineNr ++;
 			// Read in comments "before"
-			const match = /^\s*([^;]+)?(;.*)?(\S+)?/.exec(line);
+			const match = /^\s*([^;]+)?(;.*)?(\S+)?/.exec(line)!;
 			assert(match);
-			if(!match)	continue;	// calm the transpiler
 			const addressPart = match[1];
 			const commentPart = match[2];
 			const misc = match[3];
@@ -2302,10 +2301,8 @@ export class Disassembler extends EventEmitter {
 			else {
 				// A normal label.
 				// Size
-				const stats = this.subroutineStatistics.get(label);
+				const stats = this.subroutineStatistics.get(label)!;
 				assert(stats);
-				if(!stats)
-					continue;	// calm transpiler
 				const fontSize = fontSizeMin + fontSizeFactor*(stats.CyclomaticComplexity-min);
 
 				// Output

@@ -254,22 +254,21 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		for (const sprite of this.sprites) {
 			if (!sprite)
 				continue;
-			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex);
-			if (pattern) { // Calm the transpiler
-				// Get palette with offset
-				const offs=sprite.paletteOffset
-				let usedPalette;
-				if (offs==0)
-					usedPalette=palette;
-				else {
-					const index=3*offs;
-					const firstPart=palette.slice(index);
-					const secondPart=palette.slice(0, index);
-					usedPalette=firstPart;
-					usedPalette.push(...secondPart);
-				}
-				sprite.createImageFromPattern(pattern, usedPalette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex);
+			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
+			assert(pattern);
+			// Get palette with offset
+			const offs=sprite.paletteOffset
+			let usedPalette;
+			if (offs==0)
+				usedPalette=palette;
+			else {
+				const index=3*offs;
+				const firstPart=palette.slice(index);
+				const secondPart=palette.slice(0, index);
+				usedPalette=firstPart;
+				usedPalette.push(...secondPart);
 			}
+			sprite.createImageFromPattern(pattern, usedPalette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex);
 		}
 	}
 

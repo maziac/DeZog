@@ -337,7 +337,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 				// Get pattern from emulator
 				usedIndex.push(index);
 				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
-				const indexPop=usedIndex.shift() as number;	// calm the transpiler
+				const indexPop=usedIndex.shift()!;
+				assert(indexPop);
 				ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
 		}
@@ -470,7 +471,6 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Create a string with the table itself.
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		assert(palette);
-		if(!palette)	palette = [];	// Calm the transpiler
 		let table = '';
 		let k = 0;
 		let count = this.patternIds.length;

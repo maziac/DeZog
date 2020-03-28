@@ -625,8 +625,8 @@ export class Utility {
 				var index = 0;
 				valString += '\t';	// to replace also the last string
 				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
-					if(!tabSizeArr) return p1;	// should not happen, only here to calm the compiler
-					var tabSize = tabSizeArr[index].length;
+					assert(tabSizeArr);
+					var tabSize = tabSizeArr![index].length;
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
 					++index;
