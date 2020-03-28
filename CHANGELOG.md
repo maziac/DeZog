@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.0.1
+- zsim: USR0 mode for 128K Spectrum.
+
 # 1.0.0
 - This release is meant for the market place to substitute z80-debug.
 
