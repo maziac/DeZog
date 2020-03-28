@@ -445,9 +445,10 @@ export class DebugSessionClass extends DebugSession {
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-			StepHistory.init();
 			StepHistory.decoder = Z80Registers.decoder;
 		}
+		// Initialize Cpu- or StepHistory.
+		StepHistory.init();
 
 		// Load files
 		try {
@@ -2235,6 +2236,10 @@ Notes:
 			const errTxt="Can't load '"+filePath+"': "+e.message;
 			throw new Error(errTxt);
 		}
+		// Clear history
+		StepHistory?.init();
+		// Clear decorations
+		Decoration?.clearAllDecorations();
 		// Update memory etc.
 		await this.update();
 		// Send event

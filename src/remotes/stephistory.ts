@@ -44,23 +44,23 @@ export class StepHistoryClass extends EventEmitter {
 	// Contains the cpu instruction (register) history.
 	// Starts with the youngest.
 	// At index 0 the current registers are cached.
-	protected history=new Array<HistoryInstructionInfo>();
+	protected history: Array<HistoryInstructionInfo>;
 
 	// The current history index.
-	protected historyIndex=-1;
+	protected historyIndex: number;
 
 	// The maximum size of the history array.
-	protected maxSize=0;
+	protected maxSize: number;
 
 	/// The addresses of the reverse history in the right order.
 	/// Used to show these lines decorated (gray) while stepping backwards.
-	protected revDbgHistory=new Array<number>();
+	protected revDbgHistory: Array<number>;
 
 	/// Only used in the StepHistory to store the call stack.
-	protected liteCallStackHistory=Array<RefList<CallStackFrame>>();
+	protected liteCallStackHistory: Array<RefList<CallStackFrame>>;
 
 	/// User pressed break (pause). Will interrupt e.g. continueReverse.
-	protected running=false;
+	protected running: boolean;
 
 
 	/**
@@ -68,6 +68,10 @@ export class StepHistoryClass extends EventEmitter {
 	 */
 	public init() {
 		this.maxSize=Settings.launch.history.reverseDebugInstructionCount;
+		this.history=new Array<HistoryInstructionInfo>();
+		this.historyIndex=-1;
+		this.revDbgHistory=new Array<number>();
+		this.liteCallStackHistory=new Array<RefList<CallStackFrame>>();
 	}
 
 

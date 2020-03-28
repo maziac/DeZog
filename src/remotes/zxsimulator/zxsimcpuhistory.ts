@@ -28,7 +28,15 @@ import {Z80Registers} from '../z80registers';
 export class ZxSimCpuHistory extends CpuHistoryClass {
 
 	// The write index.
-	protected historyWriteIndex=-1;
+	protected historyWriteIndex: number;
+
+	/**
+	 * Init.
+	 */
+	public init() {
+		super.init();
+		this.historyWriteIndex=-1;
+	}
 
 
 	/**

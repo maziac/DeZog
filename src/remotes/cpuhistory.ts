@@ -84,6 +84,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	public init() {
 		super.init();
 		this.spotCount=Settings.launch.history.spotCount;
+		this.reverseDbgStack=undefined as any;
 	}
 
 

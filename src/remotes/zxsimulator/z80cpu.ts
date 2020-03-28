@@ -66,14 +66,15 @@ export class Z80Cpu extends Z80js {
 		const tstatesPrev=self.tStates;
 		self.deferInt=false;
 
-		// Workaround for error: https://github.com/viert/z80js/issues/2
-		const opcode2=self.memory.getMemory16(self.pc);
+		// For checking on halt
+		const opcode=self.memory.getMemory8(self.pc);
 
+		// Execute the instruction
 		super.execute();
 
 		// Statistics
 		const tstatesDiff=self.tStates-tstatesPrev;
-		if ((opcode2&0xFF)!=0x76) {
+		if (opcode!=0x76) {
 			// Count everything besides the HALT instruction
 			this.cpuLoadTstates+=tstatesDiff;
 		}

@@ -71,7 +71,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Reverse debugging / CPU history
 		if (Settings.launch.history.reverseDebugInstructionCount>0) {
 			CpuHistoryClass.setCpuHistory(new ZxSimCpuHistory());
-			CpuHistory.init();
 			CpuHistory.decoder=new DecodeStandardHistoryInfo();
 		}
 		// Code coverage
