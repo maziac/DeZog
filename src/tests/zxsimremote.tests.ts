@@ -6,7 +6,7 @@ import {Utility} from '../misc/utility';
 
 
 suite('ZxSimulatorRemote', () => {
-	let zsim: any;
+	let zsim: ZxSimulatorRemote;
 
 	suite('machine 48k', () => {
 
@@ -15,7 +15,12 @@ suite('ZxSimulatorRemote', () => {
 			const cfg: any={
 				remoteType: 'zsim',
 				zsim: {
-					machine: '48k',
+					loadZxRom: true,
+					zxKeyboard: true,
+					visualMemory: true,
+					ulaScreen: true,
+					memoryPagingControl: false,
+					cpuLoadInterruptRange: 1,
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -28,7 +33,8 @@ suite('ZxSimulatorRemote', () => {
 		});
 
 		test('Check ROM', () => {
-			zsim.configureMachine('48k');
+			// @ts-ignore
+			zsim.configureMachine();
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
@@ -51,9 +57,13 @@ suite('ZxSimulatorRemote', () => {
 		setup(() => {
 			Utility.setExtensionPath('.');
 			const cfg: any={
-				remoteType: 'zsim',
 				zsim: {
-					machine: '128k',
+					loadZxRom: true,
+					zxKeyboard: true,
+					visualMemory: true,
+					ulaScreen: true,
+					memoryPagingControl: true,
+					cpuLoadInterruptRange: 1,
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -66,8 +76,8 @@ suite('ZxSimulatorRemote', () => {
 		});
 
 		test('Check ROM 0', () => {
-			// The 128er ROM
-			zsim.configureMachine('128k');
+			// @ts-ignore, The 128er ROM
+			zsim.configureMachine();
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
@@ -100,7 +110,7 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('Check ROM 1', () => {
-			// The 128k ROM
+			// @ts-ignore, The 128k ROM
 			zsim.configureMachine('128k');
 
 			// Do memory switch to 48k ROM
@@ -121,6 +131,7 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('bank switching', () => {
+			// @ts-ignore
 			zsim.configureMachine('128k');
 
 			// Address used for writing/reading
@@ -150,26 +161,29 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('ula switching', () => {
+			// @ts-ignore
 			zsim.configureMachine('128k');
 
-			// Deault, Bank 5
+			// @ts-ignore, Default, Bank 5
 			let bank=zsim.zxMemory.ulaScreenBank;
 			assert.equal(2*5, bank);
 
 			// Shadow ULA, Bank 7
 			zsim.zxPorts.write(0x7FFD, 0b01000);
+			// @ts-ignore
 			bank=zsim.zxMemory.ulaScreenBank;
 			assert.equal(2*7, bank);
 
 			// Normal ULA, Bank 5
 			zsim.zxPorts.write(0x7FFD, 0);
+			// @ts-ignore
 			bank=zsim.zxMemory.ulaScreenBank;
 			assert.equal(2*5, bank);
 		});
 
 
 		test('paging disable', () => {
-			// 128k
+			// @ts-ignore, 128k
 			zsim.configureMachine('128k');
 
 			// Disable memory paging
