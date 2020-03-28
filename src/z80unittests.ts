@@ -11,8 +11,9 @@ import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from './misc/utility';
 import { Decoration } from './decoration';
-import {StepHistory} from './remotes/cpuhistory';
-import {Z80RegistersClass} from './remotes/z80registers';
+import {StepHistory, CpuHistory, CpuHistoryClass} from './remotes/cpuhistory';
+import {Z80RegistersClass, Z80Registers} from './remotes/z80registers';
+import {StepHistoryClass} from './remotes/stephistory';
 
 
 
@@ -246,6 +247,15 @@ export class Z80UnitTests {
 
 			// Start emulator.
 			RemoteFactory.createRemote(Settings.launch.remoteType);
+
+			// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
+			if (!(CpuHistory as any)) {
+				// If not create a lite (step) history
+				CpuHistoryClass.setCpuHistory(new StepHistoryClass());
+				StepHistory.decoder=Z80Registers.decoder;
+			}
+			// Initialize Cpu- or StepHistory.
+			StepHistory.init();
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 			Labels.init();
