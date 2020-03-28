@@ -145,8 +145,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					const size=ZxMemory.MEMORY_BANK_SIZE;
 					const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
 					this.romBuffer=fs.readFileSync(romFilePath);
-					const rom0=new Uint8Array(this.romBuffer.buffer, 0, size);
-					const rom1=new Uint8Array(this.romBuffer.buffer, size, size);
+					const rom0=new Uint8Array(this.romBuffer.buffer, 2*size, size);
+					const rom1=new Uint8Array(this.romBuffer.buffer, 3*size, size);
 					this.zxMemory.writeBank(254, rom0);
 					this.zxMemory.writeBank(255, rom1);
 				}
@@ -155,6 +155,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					const size=ZxMemory.MEMORY_BANK_SIZE;
 					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
 					const romBuffer=fs.readFileSync(romFilePath);
+					// use USR 0 mode, i.e. preload the 48K ROM
 					const rom0=new Uint8Array(romBuffer.buffer, 0, size);
 					const rom1=new Uint8Array(romBuffer.buffer, size, size);
 					this.zxMemory.writeBank(254, rom0);

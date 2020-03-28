@@ -79,6 +79,9 @@ suite('ZxSimulatorRemote', () => {
 			// @ts-ignore, The 128er ROM
 			zsim.configureMachine();
 
+			// Switch to 128k ROM
+			zsim.zxPorts.write(0x7FFD, 0);
+
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
 			assert.equal(0xF3, value);
@@ -91,7 +94,7 @@ suite('ZxSimulatorRemote', () => {
 			value=zsim.zxMemory.read8(0x3FFF);
 			assert.equal(0x01, value);
 
-			// Switch and switch back
+			// Switch and switch back to 128k ROM
 			zsim.zxPorts.write(0x7FFD, 0b010000);
 			zsim.zxPorts.write(0x7FFD, 0);
 
@@ -113,11 +116,26 @@ suite('ZxSimulatorRemote', () => {
 			// @ts-ignore, The 128k ROM
 			zsim.configureMachine('128k');
 
-			// Do memory switch to 48k ROM
-			zsim.zxPorts.write(0x7FFD, 0b010000);
+			// In USR0 mode the 48K rom is enabled by default
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
+			assert.equal(0xF3, value);
+			value=zsim.zxMemory.read8(0x0001);
+			assert.equal(0xAF, value);
+
+			// Check last 2 bytes
+			value=zsim.zxMemory.read8(0x3FFE);
+			assert.equal(0x42, value);
+			value=zsim.zxMemory.read8(0x3FFF);
+			assert.equal(0x3C, value);
+
+			// Switch and switch back to 48K ROM
+			zsim.zxPorts.write(0x7FFD, 0);
+			zsim.zxPorts.write(0x7FFD, 0b010000);
+
+			// Check first 2 bytes
+			value=zsim.zxMemory.read8(0x0000);
 			assert.equal(0xF3, value);
 			value=zsim.zxMemory.read8(0x0001);
 			assert.equal(0xAF, value);
