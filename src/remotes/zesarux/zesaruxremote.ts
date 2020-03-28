@@ -578,11 +578,30 @@ export class ZesaruxRemote extends RemoteBase {
 							zSocket.send('set-breakpoint '+bpId+' '+condition, () => {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
-									// Run
-									this.cpuStepGetTime('run', (tStates, cpuFreq, breakReasonString) => {
-										// Disable breakpoint
-										zSocket.send('disable-breakpoint '+bpId, () => {
-											resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
+									// Reset T-state counter.
+									zSocket.send('reset-tstates-partial', () => {
+										// Run
+										zSocket.sendInterruptableRunCmd(text => {
+											// (could take some time, e.g. until a breakpoint is hit)
+											// get T-State counter
+											zSocket.send('get-tstates-partial', data => {
+												const tStates=parseInt(data);
+												// get clock frequency
+												zSocket.send('get-cpu-frequency', data => {
+													const cpuFreq=parseInt(data);
+													// Clear register cache
+													Z80Registers.clearCache();
+													this.clearCallStack();
+													// Handle code coverage
+													this.handleCodeCoverage();
+													// The reason is the 2nd line
+													const breakReasonString=this.getBreakReason(text);
+													// Disable breakpoint
+													zSocket.send('disable-breakpoint '+bpId, () => {
+														resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
+													});
+												});
+											});
 										});
 									});
 								});
@@ -754,11 +773,30 @@ export class ZesaruxRemote extends RemoteBase {
 
 										// Clear register cache
 										Z80Registers.clearCache();
-										// Run
-										this.cpuStepGetTime('run', (tStates, cpuFreq, breakReasonString) => {
-											// Disable breakpoint
-											zSocket.send('disable-breakpoint '+bpId, () => {
-												resolve({tStates, cpuFreq, breakReasonString});
+										// Reset T-state counter.
+										zSocket.send('reset-tstates-partial', () => {
+											// Run
+											zSocket.sendInterruptableRunCmd(text => {
+												// (could take some time, e.g. until a breakpoint is hit)
+												// get T-State counter
+												zSocket.send('get-tstates-partial', data => {
+													const tStates=parseInt(data);
+													// get clock frequency
+													zSocket.send('get-cpu-frequency', data => {
+														const cpuFreq=parseInt(data);
+														// Clear register cache
+														Z80Registers.clearCache();
+														this.clearCallStack();
+														// Handle code coverage
+														this.handleCodeCoverage();
+														// The reason is the 2nd line
+														const breakReasonString=this.getBreakReason(text);
+														// Disable breakpoint
+														zSocket.send('disable-breakpoint '+bpId, () => {
+															resolve({tStates, cpuFreq, breakReasonString});
+														});
+													});
+												});
 											});
 										});
 
