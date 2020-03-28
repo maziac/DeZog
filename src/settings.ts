@@ -297,17 +297,17 @@ export class Settings {
 		// zsim
 		if (!Settings.launch.zsim)
 			Settings.launch.zsim={} as ZxSimType;
-		if (!Settings.launch.zsim.loadZxRom==undefined)
+		if (Settings.launch.zsim.loadZxRom==undefined)
 			Settings.launch.zsim.loadZxRom=true;
-		if (!Settings.launch.zsim.zxKeyboard==undefined)
+		if (Settings.launch.zsim.zxKeyboard==undefined)
 			Settings.launch.zsim.zxKeyboard=true;
-		if (!Settings.launch.zsim.visualMemory==undefined)
+		if (Settings.launch.zsim.visualMemory==undefined)
 			Settings.launch.zsim.visualMemory=true;
-		if (!Settings.launch.zsim.ulaScreen==undefined)
+		if (Settings.launch.zsim.ulaScreen==undefined)
 			Settings.launch.zsim.ulaScreen=true;
-		if (!Settings.launch.zsim.memoryPagingControl==undefined)
+		if (Settings.launch.zsim.memoryPagingControl==undefined)
 			Settings.launch.zsim.memoryPagingControl=false;
-		if (!Settings.launch.zsim.cpuLoadInterruptRange==undefined)
+		if (Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
 
 		// serial
