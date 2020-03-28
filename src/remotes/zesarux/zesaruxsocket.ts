@@ -87,7 +87,7 @@ export class ZesaruxSocket extends Socket {
 		this.myRemoveAllListeners();
 
 		// Init
-		this.MSG_TIMEOUT = Settings.launch.socketTimeout*1000;
+		this.MSG_TIMEOUT = Settings.launch.zrcp.socketTimeout*1000;
 		this.receivedDataChunk = '';
 		this.state = SocketState.UNCONNECTED;
 		this.queue = new Array<CommandEntry>();
@@ -108,7 +108,7 @@ export class ZesaruxSocket extends Socket {
 	/**
 	Connects to the Zesarux debug port and initializes it.
 	zhostname: The IP address, e.g. localhost
-	port: The ZRCP port (usually 10000)
+	zport: The ZRCP port (usually 10000)
 	*/
 	public connectDebugger() {
 

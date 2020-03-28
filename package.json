@@ -248,6 +248,10 @@
 								"loadDelay": {
 									"type": "number",
 									"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
+								},
+								"socketTimeout": {
+									"type": "number",
+									"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
 								}
 							},
 							"zsim": {
@@ -517,10 +521,6 @@
 										"IY"
 									]
 								}
-							},
-							"socketTimeout": {
-								"type": "number",
-								"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value."
 							},
 							"unitTestTimeout": {
 								"type": "number",

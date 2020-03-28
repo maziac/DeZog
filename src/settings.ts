@@ -81,6 +81,9 @@ export interface ZrcpType {
 
 	// The delay before loading the Z80 program via smartload.
 	loadDelay: number;
+
+	/// The socket timeout in seconds.
+	socketTimeout: number;
 }
 
 
@@ -202,9 +205,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Tab size used in formatting.
 	tabSize: number;
 
-	/// The socket timeout in seconds.
-	socketTimeout: number;
-
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
 
@@ -264,7 +264,6 @@ export class Settings {
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
-				socketTimeout: <any>undefined,
 				unitTestTimeout: <any>undefined,
 
 				// TODO: REMOVE
@@ -291,8 +290,9 @@ export class Settings {
 			if (platform=='win32')
 				delay=100;
 			Settings.launch.zrcp.loadDelay=delay;	// ms
-
 		}
+		if (!Settings.launch.zrcp.socketTimeout)
+			Settings.launch.zrcp.socketTimeout=5;	// 5 secs
 
 		// zsim
 		if (!Settings.launch.zsim)
@@ -452,8 +452,6 @@ export class Settings {
 			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.tabSize)
 			Settings.launch.tabSize = 6;
-		if(!Settings.launch.socketTimeout)
-			Settings.launch.socketTimeout = 5;	///< 5 secs
 
 		// Memory viewer
 		if(!Settings.launch.memoryViewer) {
