@@ -34,7 +34,7 @@ export class Comment {
 	 * @returns E.g. ";comment", "SUB001:\t; comment", ";comment"
 	 */
 	public static getLines(comment: Comment|undefined, statement: string, disableComments: boolean): Array<string> {
-		if (!disableComments && comment) {
+		if (!disableComments&&comment) {
 			const arr = new Array<string>();
 			if(comment.linesBefore)
 				arr.push(...comment.linesBefore);
