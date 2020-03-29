@@ -174,6 +174,7 @@ export class DebugSessionClass extends DebugSession {
 	public setupDisassembler() {
 		// Create new disassembler.
 		this.dasm=new Disassembler();
+		this.dasm.disableCommentsInDisassembly=true;
 		// Configure disassembler.
 		this.dasm.funcAssignLabels=(addr) => {
 			return 'L'+Utility.getHexString(addr, 4);
@@ -790,6 +791,21 @@ export class DebugSessionClass extends DebugSession {
 		// Check if disassembly is required.
 		if (doDisassembly) {
 			// Do disassembly.
+			// Check if history data is available.
+			//if (StepHistory.isInStepBackMode())
+			{
+				// Add a few more previous addresses if available
+				for (let i=1; i<=10; i++) {
+					const addr=StepHistory.getPreviousAddress(i);
+					if (addr==undefined)
+						break;
+					// Add address
+					fetchAddresses.push(addr);
+					const data=await Remote.readMemoryDump(addr, 4);  	// An opcode is max 4 bytes long
+					fetchData.push(data);
+					this.dasmAddressQueue.unshift(addr);
+				}
+			}
 			// Write new fetched memory
 			const count=fetchAddresses.length;
 			for (let i=0; i<count; i++) {
@@ -799,9 +815,12 @@ export class DebugSessionClass extends DebugSession {
 			// Disassemble
 			this.dasm.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory attributes before next disassembly.
 			this.dasm.initLabels();	// Clear all labels.
+
+			// Disassemble
 			this.dasm.disassemble();
 			// Read data
 			const text=this.dasm.getDisassemblyText();
+
 			// Get all source breakpoints of the disassembly file.
 			const bps=vscode.debug.breakpoints;
 			const disSrc=this.disasmTextDoc.uri.toString();

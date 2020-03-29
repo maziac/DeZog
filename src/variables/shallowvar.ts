@@ -6,9 +6,8 @@ import { Settings } from '../settings'
 import { Utility } from '../misc/utility';
 import { RefList } from '../misc/refList';
 import { Remote } from '../remotes/remotefactory';
-import { BaseMemory } from '../disassembler/basememory';
-import { Opcode } from '../disassembler/opcode';
 import { Format } from '../disassembler/format';
+import {Disassembly} from '../misc/disassembly';
 
 
 /**
@@ -70,23 +69,15 @@ export class DisassemblyVar extends ShallowVar {
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		// Get code memory
 		const size=4*this.count;	// 4 is the max size of an opcode
-		const data=await Remote.readMemoryDump(this.addr, size)
-		// convert hex values to bytes
-		const buffer=new BaseMemory(this.addr, size);
-		for (let i=0; i<size; i++) {
-			const value=data[i];
-			buffer.setValueAtIndex(i, value);
-		}
+		const data=await Remote.readMemoryDump(this.addr, size);
 
-		// disassemble all lines
-		let address=this.addr;
+		// Disassemble
+		const dasmArray=Disassembly.get(this.addr, data, this.count);
+
+		// Add extra info
 		const list=new Array<DebugProtocol.Variable>();
-		for (let i=0; i<this.count; i++) {
-			// Get opcode
-			const opcode=Opcode.getOpcodeAt(buffer, address);
-			// disassemble
-			const opCodeDescription=opcode.disassemble();
-			const line=Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic);
+		for (const entry of dasmArray) {
+			const address=entry.address;
 			// Add to list
 			const addrString=Format.getHexString(address).toUpperCase();
 			const labels=Labels.getLabelsForNumber(address);
@@ -96,11 +87,9 @@ export class DisassemblyVar extends ShallowVar {
 			list.push({
 				name: addrString,
 				type: addrLabel,
-				value: line,
+				value: entry.instruction,
 				variablesReference: 0
 			});
-			// Next address
-			address+=opcode.length;
 		}
 
 		// Pass data

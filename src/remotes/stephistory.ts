@@ -220,6 +220,22 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
+	 * Returns the address of the i-th element before the current
+	 * historyIndex.
+	 * 0 = historyIndex.
+	 * @param i The i-th element.
+	 */
+	public getPreviousAddress(i: number) {
+		let k=this.historyIndex+i;
+		if (k>=this.history.length)
+			return undefined;
+		const line=this.history[k];
+		const addr=this.getAddress(line);
+		return addr;
+	}
+
+
+	/**
 	 * Emits 'historySpot' to signal that the files should be decorated.
 	 * It can happen that this method has to retrieve data from the
 	 * remote.

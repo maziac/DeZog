@@ -30,6 +30,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 	// The write index.
 	protected historyWriteIndex: number;
 
+
 	/**
 	 * Init.
 	 */
@@ -51,8 +52,6 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 		})();
 	}
 
-
-	protected getLastWriteIndex
 
 	/**
 	 * Retrieves the registers at the previous instruction from the Remote's cpu history.
@@ -128,6 +127,26 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 		}
 	}
 
+
+	/**
+	 * Returns the address of the i-th element before the current
+	 * historyIndex.
+	 * 0 = historyIndex.
+	 * @param i The i-th element.
+	 */
+	public getPreviousAddress(i: number) {
+		const len=this.history.length;
+		if (len==0)
+			return undefined;
+		let k=this.historyIndex-i;
+		if (k<0)
+			k+=len;
+		if (k==this.historyWriteIndex)
+			return undefined;
+		const line=this.history[k];
+		const addr=this.getAddress(line);
+		return addr;
+	}
 
 
 	/**
