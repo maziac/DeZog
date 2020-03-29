@@ -447,8 +447,6 @@ export class DebugSessionClass extends DebugSession {
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
 			StepHistory.decoder = Z80Registers.decoder;
 		}
-		// Initialize Cpu- or StepHistory.
-		StepHistory.init();
 
 		// Load files
 		try {
@@ -466,12 +464,12 @@ export class DebugSessionClass extends DebugSession {
 			Decoration.showCodeCoverage(coveredAddresses);
 		});
 
-		StepHistory?.on('revDbgHistory', addresses => {
+		StepHistory.on('revDbgHistory', addresses => {
 			// Reverse debugging history addresses
 			Decoration.showRevDbgHistory(addresses);
 		});
 
-		StepHistory?.on('historySpot', (startIndex, addresses) => {
+		StepHistory.on('historySpot', (startIndex, addresses) => {
 			// Short history addresses
 			Decoration.showHistorySpot(startIndex, addresses);
 		});
@@ -498,6 +496,9 @@ export class DebugSessionClass extends DebugSession {
 
 		return new Promise<undefined>(resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async () => {
+				// Initialize Cpu- or StepHistory.
+				StepHistory.init();
+
 				// Create memory/register dump view
 				let registerMemoryView=new MemoryRegisterView();
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
@@ -920,7 +921,7 @@ export class DebugSessionClass extends DebugSession {
 		const frameId=args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
 		let frame;
-		if (StepHistory?.isInStepBackMode())
+		if (StepHistory.isInStepBackMode())
 			frame=StepHistory.getCallStack().getObject(frameId);
 		else
 			frame=Remote.getFrame(frameId);
@@ -1024,7 +1025,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendResponse(response);
 
 		// Check for reverse debugging.
-		if (StepHistory?.isInStepBackMode()) {
+		if (StepHistory.isInStepBackMode()) {
 
 			vscode.debug.activeDebugConsole.appendLine('Continue');
 			// Continue
@@ -1045,7 +1046,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -1111,7 +1112,7 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
 		// Pause the remote or the history
-		if (StepHistory?.isInStepBackMode())
+		if (StepHistory.isInStepBackMode())
 			StepHistory.pause();
 		else
 			Remote.pause();
@@ -1145,7 +1146,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
 
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -1193,7 +1194,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendResponse(response);
 
 		// Check for reverse debugging.
-		if (StepHistory?.isInStepBackMode()) {
+		if (StepHistory.isInStepBackMode()) {
 
 			// Stepover
 			const {instruction, breakReasonString}=StepHistory.stepOver();
@@ -1219,7 +1220,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -1269,7 +1270,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check for reverse debugging.
 		let result;
-		if (StepHistory?.isInStepBackMode()) {
+		if (StepHistory.isInStepBackMode()) {
 
 			// StepInto
 			result=StepHistory.stepInto();
@@ -1303,7 +1304,7 @@ export class DebugSessionClass extends DebugSession {
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -1319,7 +1320,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check for reverse debugging.
 		let breakReasonString;
-		if (StepHistory?.isInStepBackMode()) {
+		if (StepHistory.isInStepBackMode()) {
 			vscode.debug.activeDebugConsole.appendLine('StepOut');
 			// StepOut
 			breakReasonString=StepHistory.stepOut();
@@ -1348,7 +1349,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -1381,7 +1382,7 @@ export class DebugSessionClass extends DebugSession {
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		// Show decorations
-		StepHistory?.emitHistory();
+		StepHistory.emitHistory();
 	}
 
 
@@ -2143,7 +2144,7 @@ Notes:
 				//this.sendEventContinued();
 				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
 				// Handle decorations
-				StepHistory?.emitHistory();
+				StepHistory.emitHistory();
 			});
 	}
 
@@ -2237,7 +2238,7 @@ Notes:
 			throw new Error(errTxt);
 		}
 		// Clear history
-		StepHistory?.init();
+		StepHistory.init();
 		// Clear decorations
 		Decoration?.clearAllDecorations();
 		// Update memory etc.
