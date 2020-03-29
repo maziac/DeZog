@@ -129,6 +129,11 @@ export class Disassembler extends EventEmitter {
 	/// will be set to true automatically if SNA has been selected.
 	protected no_warning_disassemble_unassigned_memory = false;
 
+
+	// For DeZog. Used to turn off any comments in the disassembled text.
+	public disableCommentsInDisassembly=false;
+
+
 	/**
 	 * Initializes the Opcode formatting.
 	 */
@@ -257,7 +262,8 @@ export class Disassembler extends EventEmitter {
 		this.assignLabelNames();
 
 		// Add label comments
-		this.addLabelComments();
+		if (!this.disableCommentsInDisassembly)
+			this.addLabelComments();
 
 		// Disassemble opcode with label names
 		const disLines = this.disassembleMemory();
@@ -347,7 +353,8 @@ export class Disassembler extends EventEmitter {
 		// get new arrays/maps.
 		this.labels = new Map<number,DisLabel>();
 		this.offsetLabels = new Map<number,number>();
-		this.addressParents = new Array<DisLabel>();
+		this.addressParents=new Array<DisLabel>();
+		this.addressComments=new Map<number, Comment>();
 	}
 
 
@@ -519,17 +526,19 @@ export class Disassembler extends EventEmitter {
 		for(let [address, label] of this.labels) {
 			// Check if EQU
 			if(label.isEqu) {
-				if(firstLabel) {
-					// At the start of the EQU area print a comment.
-					lines.push('; EQU:');
-					lines.push('; Data addresses used by the opcodes that point to uninitialized memory areas.');
+				if (firstLabel) {
+					if (!this.disableCommentsInDisassembly) {
+						// At the start of the EQU area print a comment.
+						lines.push('; EQU:');
+						lines.push('; Data addresses used by the opcodes that point to uninitialized memory areas.');
+					}
 					firstLabel = false;
 				}
 				// "Disassemble"
 				const statement =  Format.addSpaces(label.name+':', this.clmnsBytes-1) + ' ' + this.rightCase('EQU ') + Format.fillDigits(Format.getHexString(address,4), ' ', 5) +'h';
 				// Comment
 				const comment = this.addressComments.get(address);
-				const commentLines = Comment.getLines(comment, statement);
+				const commentLines=Comment.getLines(comment, statement, this.disableCommentsInDisassembly);
 				// Store
 				lines.push(...commentLines);
 			}
@@ -1769,6 +1778,7 @@ export class Disassembler extends EventEmitter {
 	 * @param address The address.
 	 */
 	protected getAddressComment(address: number): Comment|undefined {
+		return undefined;
 		let comments = this.addressComments.get(address);
 		if(comments)
 			return comments;
@@ -2014,7 +2024,7 @@ export class Disassembler extends EventEmitter {
 			// Store address, label and comments
 			const addrLabelLine = Format.getHexString(address, 4) + '\t' + label.name;
 			const comment = this.getAddressComment(address);
-			const commentLines = Comment.getLines(comment, addrLabelLine);
+			const commentLines = Comment.getLines(comment, addrLabelLine, this.disableCommentsInDisassembly);
 
 			text += commentLines.join('\n');
 
@@ -2051,7 +2061,9 @@ export class Disassembler extends EventEmitter {
 				// First line
 				// Print "ORG"
 				this.addEmptyLines(lines);
-				const orgLine =  ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr)+'h ; ' + Format.getConversionForAddress(addr);
+				let orgLine=' '.repeat(this.clmnsBytes)+this.rightCase('ORG ')+Format.getHexString(addr)+'h';
+				if (!this.disableCommentsInDisassembly)
+					orgLine+='; ' + Format.getConversionForAddress(addr);
 				lines.push(orgLine);
 			}
 			else {
@@ -2062,7 +2074,9 @@ export class Disassembler extends EventEmitter {
 
 				// Print new "ORG"
 				this.addEmptyLines(lines);
-				const orgLine =  ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr)+'h ; ' + Format.getConversionForAddress(addr);
+				let orgLine=' '.repeat(this.clmnsBytes)+this.rightCase('ORG ')+Format.getHexString(addr)+'h';
+				if (!this.disableCommentsInDisassembly)
+					orgLine+='; '+Format.getConversionForAddress(addr);
 				lines.push(orgLine);
 			}
 
@@ -2109,7 +2123,7 @@ export class Disassembler extends EventEmitter {
 					}
 
 					// Add comments
-					const commentLines = Comment.getLines(comment, labelLine);
+					const commentLines=Comment.getLines(comment, labelLine, this.disableCommentsInDisassembly);
 					lines.push(...commentLines);
 				}
 
@@ -2158,13 +2172,13 @@ export class Disassembler extends EventEmitter {
 				// If not done before, add comments
 				if(!comment || addrLabel) {
 					// main comment already added or no comment present
-					if(commentText && commentText.length > 0)
+					if(!this.disableCommentsInDisassembly && commentText && commentText.length > 0)
 						line += '\t; ' + commentText;
 					lines.push(line);
 				}
 				else {
 					// Add comments
-					const commentLines = Comment.getLines(comment, line);
+					const commentLines=Comment.getLines(comment, line, this.disableCommentsInDisassembly);
 					lines.push(...commentLines);
 				}
 
@@ -2174,7 +2188,7 @@ export class Disassembler extends EventEmitter {
 				// Check if the next address is not assigned and put out a comment
 				let attrEnd = this.memory.getAttributeAt(address);
 				if(address < 0x10000) {
-					if(!(attrEnd & MemAttribute.ASSIGNED)) {
+					if(!this.disableCommentsInDisassembly && !(attrEnd & MemAttribute.ASSIGNED)) {
 						lines.push('; ...');
 						lines.push('; ...');
 						lines.push('; ...');
