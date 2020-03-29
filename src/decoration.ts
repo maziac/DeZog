@@ -461,7 +461,7 @@ export class DecorationClass {
 			const k = locString.indexOf(';');
 			const filename = locString.substr(k+1);
 			if(filename.length == 0)
-				return;
+				break;
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.DecorationOptions>;
 			if(!lines) {
