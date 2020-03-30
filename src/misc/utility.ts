@@ -8,10 +8,6 @@ import * as path from 'path';
 
 
 
-/// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
-const TmpDasmFileName = 'disasm.asm';
-
-
 
 export class Utility {
 
@@ -756,15 +752,6 @@ export class Utility {
 	public static getRelTmpFilePath(fileName: string): string {
 		const relFilePath = path.join(Settings.launch.tmpDir, fileName);
 		return relFilePath;
-	}
-
-
-	/**
-	 * Returns the file path of the temporary disassembly file.
-	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
-	 */
-	public static getRelTmpDisasmFilePath(): string {
-		return Utility.getRelTmpFilePath(TmpDasmFileName);
 	}
 
 

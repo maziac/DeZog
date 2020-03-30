@@ -1057,10 +1057,9 @@ export class ZesaruxRemote extends RemoteBase {
 	 * an EmulatorBreakpoint.
 	 * @returns A Promise with all breakpoints.
 	 */
-	public async setBreakpoints(path: string, givenBps:Array<RemoteBreakpoint>,
-		tmpDisasmFileHandler: (bp: RemoteBreakpoint) => RemoteBreakpoint|undefined): Promise<Array<RemoteBreakpoint>> {
+	public async setBreakpoints(path: string, givenBps:Array<RemoteBreakpoint>): Promise<Array<RemoteBreakpoint>> {
 		// Do most of the work
-		const bps = super.setBreakpoints(path, givenBps, tmpDisasmFileHandler);
+		const bps = super.setBreakpoints(path, givenBps);
 		// But wait for the socket.
 		await zSocket.executeWhenQueueIsEmpty();
 		return bps;

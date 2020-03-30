@@ -11,6 +11,7 @@ import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
+import {Disassembly, DisassemblyClass} from '../misc/disassembly';
 
 
 
@@ -1108,7 +1109,7 @@ export class RemoteBase extends EventEmitter {
 	 * an EmulatorBreakpoint.
 	 * @returns A Promise with all breakpoints.
 	 */
-	public async setBreakpoints(path: string, givenBps: Array<RemoteBreakpoint>, tmpDisasmFileHandler?: (bp: RemoteBreakpoint) => RemoteBreakpoint|undefined): Promise<Array<RemoteBreakpoint>> {
+	public async setBreakpoints(path: string, givenBps: Array<RemoteBreakpoint>): Promise<Array<RemoteBreakpoint>> {
 
 		try {
 			// get all old breakpoints for the path
@@ -1118,7 +1119,7 @@ export class RemoteBase extends EventEmitter {
 			const currentBps=new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
 				let ebp;
-				// get PC value of that line
+				// Get PC value of that line
 				let addr=Labels.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
 				if (addr>=0) {
@@ -1131,8 +1132,18 @@ export class RemoteBase extends EventEmitter {
 					}
 				}
 				else {
-					// Check if there is a routine for the temporary disassembly file
-					ebp=tmpDisasmFileHandler?.(bp);
+					// Check if it is the right path
+					const absFilePath=DisassemblyClass.getAbsFilePath();
+					if (bp.filePath==absFilePath) {
+						// Get address from line number
+						const addr=Disassembly.getAddressForLine(bp.lineNr);
+						if (addr!=undefined) {
+							// Get line number
+							const lineNr=Disassembly.getLineForAddress(addr);
+							// create breakpoint object
+							ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log}
+						}
+					}
 				}
 
 				// add to array

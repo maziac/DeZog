@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Labels } from './labels';
 //import { Settings } from './settings';
 import * as assert from 'assert';
+import {Disassembly, DisassemblyClass} from './misc/disassembly';
 
 
 
@@ -35,6 +36,9 @@ export class DecorationClass {
 
 	// Holds the decorations for coverage, reverse debug and breakpoints.
 	protected decorationFileMaps: Map<string, DecorationFileMap>;
+
+	// Collects the coverage addresses that are not assigned yet to any file.
+	protected unassignedCodeCoverageAddresses: Array<number>;
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
@@ -156,6 +160,8 @@ export class DecorationClass {
 		decoFileMap.fileMap = new Map<string, Array<vscode.DecorationOptions>>();
 		this.decorationFileMaps.set(this.HISTORY_SPOT, decoFileMap);
 
+		this.unassignedCodeCoverageAddresses=new Array<number>();
+
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			// This is called for the editor that is going to hide and for the editor
@@ -254,10 +260,10 @@ export class DecorationClass {
 		const edFilename = editor.document.fileName;
 
 		// Go through all coverage maps
-		for(const [,decoMap] of this.decorationFileMaps) {
+		for (const [, decoMap] of this.decorationFileMaps) {
 			// Get lines
 			const fileMap = decoMap.fileMap;
-			const decorations = fileMap.get(edFilename);
+			let decorations = fileMap.get(edFilename);
 			if(decorations) {
 				// Set all decorations
 				editor.setDecorations(decoMap.decoType, decorations);
@@ -268,8 +274,7 @@ export class DecorationClass {
 
 	/**
 	 * Sets decorations for a specific type.
-	 * Coverage, revers debug, breaks.spec
-	 *
+	 * Coverage, revers debug, breaks.
 	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG, HISTORY_SPOT or BREAK.
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
@@ -285,11 +290,52 @@ export class DecorationClass {
 
 		// Get lines
 		const fileMap = decoMap.fileMap;
-		const decorations = fileMap.get(edFilename);
+		const decorations=fileMap.get(edFilename);
 		if(decorations) {
 			// Set decorations
 			editor.setDecorations(decoMap.decoType, decorations);
 		}
+	}
+
+
+	/**
+	 * Sets the decorations for the disassembler temp file.
+	 */
+	public SetDisasmDecorations(editor: vscode.TextEditor) {
+		// Coverage
+		const lines=Disassembly.getLinesForAddresses(this.unassignedCodeCoverageAddresses);
+		const decorations=lines.map(lineNr => new vscode.Range(lineNr, 0, lineNr, 1000));
+		if (decorations) {
+			// Set decorations
+			const decoMap=this.decorationFileMaps.get(this.COVERAGE) as DecorationFileMap;
+			editor.setDecorations(decoMap.decoType, decorations);
+		}
+	}
+
+
+	/**
+	 * Checks if filename is the disassembly file and retireves the decorations for it.
+	 * @param fileName The filename, e.g. /Volumes/.../.tmp/disasm.asm
+	 * @param fileMapName E.g. COVERAGE, REVERSE_DEBUG, HISTORY_SPOT or BREAK.
+	 */
+// TODO: REMOVE
+	protected getDisasmDecorations(edFilename: string, fileMapName: string): vscode.Range[]|undefined {
+		const disasmFile=DisassemblyClass.getAbsFilePath();
+		if (edFilename!=disasmFile)
+			return undefined;
+
+		// Check decorations according type.
+		let ranges;
+		switch (fileMapName) {
+			case this.COVERAGE:
+				{
+					const lines=Disassembly.getLinesForAddresses(this.unassignedCodeCoverageAddresses);
+					ranges=lines.map(lineNr => new vscode.Range(lineNr, 0, lineNr, 1000));
+				}
+				break;
+		}
+
+		return ranges;
 	}
 
 
@@ -309,10 +355,21 @@ export class DecorationClass {
 		//fileMap.clear();
 		coveredAddresses.forEach(addr => {
 			// Get file location for address
-			const location = Labels.getFileAndLineForAddress(addr);
-			const filename = location.fileName;
-			if(filename.length == 0)
-				return;
+			let location = Labels.getFileAndLineForAddress(addr);
+			let filename = location.fileName;
+			if (filename.length==0) {
+				// Now check disassembly
+				const lineNr=Disassembly.getLineForAddress(addr);
+				if (lineNr==undefined) {
+					// No file found, so remember address
+					this.unassignedCodeCoverageAddresses.push(addr);
+					return;
+				}
+				// Use disassembly file
+				location.fileName=DisassemblyClass.getAbsFilePath();
+				location.lineNr=lineNr;
+				filename=location.fileName;
+			}
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.Range>;
 			if(!lines) {

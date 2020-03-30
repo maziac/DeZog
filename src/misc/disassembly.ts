@@ -1,17 +1,26 @@
+import*as assert from 'assert';
 import {BaseMemory} from "../disassembler/basememory";
-import {Opcode} from "../disassembler/opcode";
+import {Opcode, Opcodes} from "../disassembler/opcode";
 import {Format} from "../disassembler/format";
+import {Disassembler} from "../disassembler/disasm";
+import {Utility} from './utility';
+import {Settings} from '../settings';
+
+
+
+/// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
+const TmpDasmFileName='disasm.asm';
+
 
 
 /**
- * This class allows to disassemble data in a very simple way.
- * I.e. beginning with the starting address the opcodes are decoded.
- * Makes use of the Disassembler class.
+ * This class capsulates a few disassembling functions.
  */
-export class Disassembly {
+export class DisassemblyClass extends Disassembler {
 
 	/**
-	 * Disassembles a given data array.
+	 * Disassembles a given data array in a very simple way.
+	 * I.e. beginning with the starting address the opcodes are decoded.
 	 * @param addr The start address of the data.
 	 * @param data The data to disassemble. All data here is interpreted as code.
 	 * @param count Optional. The number of lines to decode.
@@ -48,4 +57,140 @@ export class Disassembly {
 		return list;
 	}
 
+
+	/**
+	 * Creates the singleton.
+	 */
+	public static createDisassemblyInstance() {
+		Disassembly=new DisassemblyClass();
+		// Configure disassembler.
+		Disassembly.funcAssignLabels=(addr: number) => {
+			return 'L'+Utility.getHexString(addr, 4);
+		};
+		// Restore 'rst 8' opcode
+		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
+		// Setup configuration.
+		if (Settings.launch.disassemblerArgs.esxdosRst) {
+			//Extend 'rst 8' opcode for esxdos
+			Opcodes[0xCF].appendToOpcode(",#n");
+		}
+	}
+
+
+
+
+	/**
+	 * Returns the file path of the temporary disassembly file.
+	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
+	 */
+	public static getAbsFilePath(): string {
+		const relPath=Utility.getRelTmpFilePath(TmpDasmFileName);
+		const absPath=Utility.getAbsFilePath(relPath);
+		return absPath;
+	}
+
+
+	// Map with the address to line number relationship and vice versa.
+	protected addrLineMap=new Map<number, number>();
+	protected lineAddrArray=new Array<number|undefined>();
+
+	/**
+	 * Initiatlizes the memory with the data at the given addresses.
+	 * Additionally puts the addresses in the address queue.
+	 */
+	public initWithCodeAdresses(addresses: number[], data: Uint8Array[]) {
+		// Init
+		this.initLabels();
+		this.addrLineMap=new Map<number, number>();
+		this.lineAddrArray=new Array<number|undefined>();
+		// Write new memory
+		this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
+		const count=addresses.length;
+		assert(count==data.length);
+		for (let i=0; i<count; i++) {
+			this.setMemory(addresses[i], data[i]);
+		}
+		this.setAddressQueue(addresses);
+	}
+
+
+	/**
+	 * Disassembles the memory.
+	 * Additionally keeps the address/line locations.
+	 */
+	public disassemble() {
+		// No comments
+		this.disableCommentsInDisassembly=true;
+		// Disassemble
+		super.disassemble();
+		// Get address/line relationship.
+		let lineNr=0;
+		this.addrLineMap.clear();
+		this.lineAddrArray.length=0;
+		for (const line of this.disassembledLines) {
+			const address=parseInt(line, 16);
+			if (!isNaN(address)) {
+				this.addrLineMap.set(address, lineNr);
+				while (this.lineAddrArray.length<=lineNr)
+					this.lineAddrArray.push(address);
+			}
+			lineNr++;
+		}
+	}
+
+
+	/**
+	 * Returns the line number for a given address.
+	 * @param address The address.
+	 * @returns The corresponding line number (beginning at 0) or undefined if no such line exists.
+	 */
+	public getLineForAddress(address: number): number|undefined {
+		return this.addrLineMap.get(address);
+	}
+
+
+	/**
+	 * Returns the line number for a given address.
+	 * @param addresses An array with addresses.
+	 * @returns An array with corresponding lines.
+	 */
+	public getLinesForAddresses(addresses: number[]): number[] {
+		const lines=new Array<number>();
+		const map=this.addrLineMap;
+		// Check whichever has lower number of elements
+		if (addresses.length>map.size) {
+			// Loop over map
+/*			for (const [address, line] of map) {
+				if (addresses.indexOf(address)>=0)
+					lines.push(line);
+			}
+*/
+			map.forEach((value, key) => {
+				if (addresses.indexOf(key)>=0)
+					lines.push(value);
+			});
+		}
+		else {
+			// Loop over addresses
+			addresses.map(address => {
+				const line=map.get(address);
+				if (line)
+					lines.push(line);
+			});
+		}
+		return lines;
+	}
+
+
+	/**
+	 * Returns the address for a given line number.
+	 * @param lineNr The line number starting at 0.
+	 * @returns The address or undefined if none exists for the line.
+	 */
+	public getAddressForLine(lineNr: number): number|undefined {
+		return this.lineAddrArray[lineNr];
+	}
 }
+
+
+export let Disassembly;

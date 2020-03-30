@@ -124,7 +124,7 @@ Please look at the documentation ['Usage of DeZog'](documentation/Usage.md).
 
 ## License
 
-dezog is licensed under the [MIT license](https://github.com/maziac/dezog/blob/master/LICENSE.txt).
+DeZog is licensed under the [MIT license](https://github.com/maziac/dezog/blob/master/LICENSE.txt).
 
 The source code is available on [github](https://github.com/maziac/dezog).
 
@@ -136,12 +136,12 @@ See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-ro
 
 # Extras
 
-Here is a great tutorial from Cesar Wagener Moriana (not to confuse with Cesar Hernandez bano, the autor of ZEsarUX).
+Here is a great tutorial from Cesar Wagener Moriana.
 He documented how he put all things together. If you are new to DeZog this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
 It deals with setting up
 - sjasmplus
 - ZEsarUX and the
-- DeZog vscode extension
+- DeZog
 
 and is available in English, Spain and German [here](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/).
 

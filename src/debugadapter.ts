@@ -19,9 +19,7 @@ import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
 import {BaseView} from './views/baseview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
-import {Disassembler} from './disassembler/disasm';
 import {MemAttribute} from './disassembler/memory';
-import {Opcode, Opcodes} from './disassembler/opcode';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
 import {SerialFake} from './remotes/zxnext/serialfake';
@@ -29,6 +27,7 @@ import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
+import {DisassemblyClass, Disassembly} from './misc/disassembly';
 
 
 
@@ -51,9 +50,6 @@ enum DbgAdaperState {
 export class DebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
 	protected static state=DbgAdaperState.NORMAL;
-
-	/// The disassembler instance.
-	protected dasm: Disassembler;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
 	protected dasmAddressQueue=new Array<number>();
@@ -166,27 +162,6 @@ export class DebugSessionClass extends DebugSession {
 		return found;
 	}
 	*/
-
-	/**
-	 * Creates a new disassembler and configures it.
-	 * Called on start of connection.
-	 */
-	public setupDisassembler() {
-		// Create new disassembler.
-		this.dasm=new Disassembler();
-		this.dasm.disableCommentsInDisassembly=true;
-		// Configure disassembler.
-		this.dasm.funcAssignLabels=(addr) => {
-			return 'L'+Utility.getHexString(addr, 4);
-		};
-		// Restore 'rst 8' opcode
-		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
-		// Setup configuration.
-		if (Settings.launch.disassemblerArgs.esxdosRst) {
-			//Extend 'rst 8' opcode for esxdos
-			Opcodes[0xCF].appendToOpcode(",#n");
-		}
-	}
 
 
 	/**
@@ -392,7 +367,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		DebugSessionClass.state=DbgAdaperState.NORMAL;
 		// Setup the disassembler
-		this.setupDisassembler();
+		DisassemblyClass.createDisassemblyInstance();
 
 		// Start the emulator and the connection.
 		const msg=await this.startEmulator();
@@ -610,31 +585,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Set breakpoints for the file.
-		const currentBreakpoints=await Remote.setBreakpoints(path, bps,
-			// Handle temporary disassembler breakpoints
-			(bp: RemoteBreakpoint) => {
-				// Check if it is the right path
-				const relFilePath=Utility.getRelTmpDisasmFilePath();
-				const absFilePath=Utility.getAbsFilePath(relFilePath);
-				if (bp.filePath==absFilePath) {
-					// Get address from line number
-					const lines=this.dasm.getDisassemblyLines();
-					const lineCount=lines.length;
-					let lineNr=bp.lineNr;
-					while (lineNr<lineCount) {
-						const line=lines[lineNr];
-						const addr=parseInt(line, 16);
-						if (!isNaN(addr)) {
-							// create breakpoint object
-							const ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log};
-							return ebp;
-						}
-						lineNr++;
-					}
-				}
-				return undefined;
-			});
-
+		const currentBreakpoints=await Remote.setBreakpoints(path, bps);
 		const source=this.createSource(path);
 		const vscodeBreakpoints=currentBreakpoints.map(cbp => {
 			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
@@ -744,8 +695,8 @@ export class DebugSessionClass extends DebugSession {
 				if (!doDisassembly) {
 					const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
 					for (let k=0; k<checkSize; k++) {
-						const val=this.dasm.memory.getValueAt(fetchAddress+k);
-						const memAttr=this.dasm.memory.getAttributeAt(fetchAddress+k);
+						const val=Disassembly.memory.getValueAt(fetchAddress+k);
+						const memAttr=Disassembly.memory.getAttributeAt(fetchAddress+k);
 						if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
 							doDisassembly=true;
 							break;
@@ -760,8 +711,7 @@ export class DebugSessionClass extends DebugSession {
 		if (!this.disasmTextDoc) {
 			if (doDisassembly) {
 				// Create text document
-				const relFilePath=Utility.getRelTmpDisasmFilePath();
-				const absFilePath=Utility.getAbsFilePath(relFilePath);
+				const absFilePath=DisassemblyClass.getAbsFilePath();
 				const uri=vscode.Uri.file(absFilePath);
 				const editCreate=new vscode.WorkspaceEdit();
 				editCreate.createFile(uri, {overwrite: true});
@@ -782,7 +732,7 @@ export class DebugSessionClass extends DebugSession {
 				this.dasmAddressQueue.unshift(addr);
 			// Check if this requires a  disassembly
 			if (!doDisassembly) {
-				const memAttr=this.dasm.memory.getAttributeAt(addr);
+				const memAttr=Disassembly.memory.getAttributeAt(addr);
 				if (!(memAttr&MemAttribute.CODE_FIRST))
 					doDisassembly=true;	// If memory was not the start of an opcode.
 			}
@@ -791,6 +741,8 @@ export class DebugSessionClass extends DebugSession {
 		// Check if disassembly is required.
 		if (doDisassembly) {
 			// Do disassembly.
+			const prevAddresses=new Array<number>();
+			const prevData=new Array<Uint8Array>();
 			// Check if history data is available.
 			//if (StepHistory.isInStepBackMode())
 			{
@@ -800,26 +752,18 @@ export class DebugSessionClass extends DebugSession {
 					if (addr==undefined)
 						break;
 					// Add address
-					fetchAddresses.push(addr);
+					prevAddresses.unshift(addr);
 					const data=await Remote.readMemoryDump(addr, 4);  	// An opcode is max 4 bytes long
-					fetchData.push(data);
-					this.dasmAddressQueue.unshift(addr);
+					prevData.unshift(data);
 				}
 			}
-			// Write new fetched memory
-			const count=fetchAddresses.length;
-			for (let i=0; i<count; i++) {
-				this.dasm.setMemory(fetchAddresses[i], fetchData[i]);
-			}
-			this.dasm.setAddressQueue(this.dasmAddressQueue);
-			// Disassemble
-			this.dasm.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory attributes before next disassembly.
-			this.dasm.initLabels();	// Clear all labels.
 
+			// Initialize disassembly
+			Disassembly.initWithCodeAdresses([...prevAddresses, ...fetchAddresses], [...prevData, ...fetchData]);
 			// Disassemble
-			this.dasm.disassemble();
+			Disassembly.disassemble();
 			// Read data
-			const text=this.dasm.getDisassemblyText();
+			const text=Disassembly.getDisassemblyText();
 
 			// Get all source breakpoints of the disassembly file.
 			const bps=vscode.debug.breakpoints;
@@ -846,9 +790,8 @@ export class DebugSessionClass extends DebugSession {
 					const line=prevTextLines[lineNr];
 					const addr=parseInt(line, 16);
 					if (!isNaN(addr)) {
-						// Get new line
-						const lines=this.dasm.getDisassemblyLines();
-						const nLineNr=this.searchLines(lines, addr);
+						// Get line number
+						const nLineNr=Disassembly.getLineForAddress(addr)||-1;
 						// Create breakpoint
 						const nLoc=new vscode.Location(this.disasmTextDoc.uri, new vscode.Position(nLineNr, 0));
 						const cbp=new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
@@ -868,16 +811,21 @@ export class DebugSessionClass extends DebugSession {
 			await this.disasmTextDoc.save();
 			// Add all new breakpoints.
 			vscode.debug.addBreakpoints(changedBps);
+
+			// Show document and get editor
+			const editor=await vscode.window.showTextDocument(this.disasmTextDoc);
+			// Update decorations
+			if (editor) {
+				Decoration.SetDisasmDecorations(editor);
+			}
 		}
 
 
 		// Get lines for addresses and send response.
 		// Determine line numbers (binary search)
 		if (frameCount>0) {
-			const relFilePath=Utility.getRelTmpDisasmFilePath();
-			const absFilePath=Utility.getAbsFilePath(relFilePath);
+			const absFilePath=DisassemblyClass.getAbsFilePath();
 			const src=this.createSource(absFilePath) as Source;
-			const lines=this.dasm.getDisassemblyLines();
 			let indexDump=0;
 			for (let i=0; i<frameCount; i++) {
 				const sf=sfrs[i];
@@ -885,7 +833,8 @@ export class DebugSessionClass extends DebugSession {
 					continue;
 				// Get line number for stack address
 				const addr=fetchAddresses[indexDump];
-				const foundLine=this.searchLines(lines, addr);
+				// Get line number
+				const foundLine=Disassembly.getLineForAddress(addr)||-1
 				const lineNr=this.convertDebuggerLineToClient(foundLine);
 				// Store
 				sf.source=src;
@@ -902,31 +851,6 @@ export class DebugSessionClass extends DebugSession {
 			resp.body={stackFrames: sfrs, totalFrames: 1};
 			this.sendResponse(resp);
 		}
-	}
-
-
-	/**
-	 * Does a search to find the (last) line that correspondents to the
-	 * given address.
-	 * The array usually contains lines with a starting address.
-	 * But it may also contain empty lines or lines not starting with a number.
-	 * Those lines are skipped.
-	 * @param allLines An array to be searched. Can contain lines without address.
-	 * @param addr The address to find.
-	 * @return -1 if not found, otherwise the line number.
-	 */
-	protected searchLines(allLines: Array<string>, addr: number) {
-		// find each new line and count the lines
-		let i=allLines.length;
-		while (i>0) {
-			i--;
-			const line=allLines[i];
-			const la=parseInt(line, 16);
-			if (la==addr)
-				return i;
-		}
-		// Not found
-		return -1;
 	}
 
 

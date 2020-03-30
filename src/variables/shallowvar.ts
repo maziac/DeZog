@@ -7,7 +7,7 @@ import { Utility } from '../misc/utility';
 import { RefList } from '../misc/refList';
 import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
-import {Disassembly} from '../misc/disassembly';
+import {DisassemblyClass} from '../misc/disassembly';
 
 
 /**
@@ -72,7 +72,7 @@ export class DisassemblyVar extends ShallowVar {
 		const data=await Remote.readMemoryDump(this.addr, size);
 
 		// Disassemble
-		const dasmArray=Disassembly.get(this.addr, data, this.count);
+		const dasmArray=DisassemblyClass.get(this.addr, data, this.count);
 
 		// Add extra info
 		const list=new Array<DebugProtocol.Variable>();
