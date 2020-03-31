@@ -9,6 +9,7 @@ import {Labels} from '../labels';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
 import {DecodeHistoryInfo} from './decodehistinfo';
+import {TimeWait} from '../misc/timewait';
 
 
 
@@ -894,7 +895,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			let currentLine: string=Z80Registers.getCache();
 			assert(currentLine);
 
-			// Loop over all lines, reverse
+			// Loop over all lines
 			while (this.running) {
 				// Handle stack
 				nextLine=this.revDbgNext();
@@ -946,9 +947,10 @@ export class CpuHistoryClass extends StepHistoryClass {
 			// Loop over all lines, reverse
 			let prevLine=Z80Registers.getCache();
 			assert(prevLine);
+			const pause=new TimeWait(1000, 10);
 			while (this.running) {
 				// Give vscode a little time
-				await Utility.timeout(1);
+				await pause.waitAtInterval();
 
 				// Get line
 				const currentLine=await this.revDbgPrev();

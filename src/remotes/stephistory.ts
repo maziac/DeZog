@@ -405,6 +405,7 @@ export class StepHistoryClass extends EventEmitter {
 			Z80Registers.clearCache();
 			breakReasonString='Break: Reached start of instruction history.';
 		}
+
 		return breakReasonString;
 	}
 
