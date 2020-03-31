@@ -1076,7 +1076,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected pauseRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): void {
+	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): void {
 		// Pause the remote or the history
 		if (StepHistory.isInStepBackMode())
 			StepHistory.pause();
@@ -1229,7 +1229,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected async stepInRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
+	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
 		Decoration.clearBreak();
 		// Response is sent immediately
 		this.sendResponse(response);
@@ -1279,7 +1279,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected async stepOutRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
+	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
 		Decoration.clearBreak();
 		// Response is sent immediately
 		this.sendResponse(response);
