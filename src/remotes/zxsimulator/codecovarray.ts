@@ -155,12 +155,4 @@ export class CodeCoverageArray {
 		this.listIndex=0;
 	}
 
-
-	/**
-	 * Clears only the (delta) list, i.e. the address list.
-	 */
-	public clearDelta() {
-		this.listIndex=0;
-	}
-
 }

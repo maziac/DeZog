@@ -62,7 +62,7 @@ export class DecorationClass {
 	protected decorationFileMaps: Map<string, DecorationFileMap>;
 
 	// Collects the coverage addresses that are not assigned yet to any file.
-	protected unassignedCodeCoverageAddresses: Array<number>;
+	protected unassignedCodeCoverageAddresses: Set<number>;
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
@@ -184,7 +184,7 @@ export class DecorationClass {
 		decoFileMap.fileMap = new Map<string, Array<vscode.DecorationOptions>>();
 		this.decorationFileMaps.set(this.HISTORY_SPOT, decoFileMap);
 
-		this.unassignedCodeCoverageAddresses=new Array<number>();
+		this.unassignedCodeCoverageAddresses=new Set<number>();
 
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -242,7 +242,7 @@ export class DecorationClass {
 		}
 		// Additionally clear array
 		if (mapName==this.COVERAGE)
-			this.unassignedCodeCoverageAddresses.length=0;
+			this.unassignedCodeCoverageAddresses.clear();
 	}
 
 
@@ -358,7 +358,7 @@ export class DecorationClass {
 			let filename = location.fileName;
 			if (filename.length==0) {
 				// No file found, so remember address
-				this.unassignedCodeCoverageAddresses.push(addr);
+				this.unassignedCodeCoverageAddresses.add(addr);
 				return;
 			}
 			// Get filename set
@@ -368,7 +368,8 @@ export class DecorationClass {
 				lines = new Array<vscode.Range>();
 				fileMap.set(filename, lines);
 			}
-			const lineNr = location.lineNr;
+			const lineNr=location.lineNr;
+			// TODO: Could be optimized. Here it is possible that coverage for that line already exists and would then be added 2 or more times.
 			const range = new vscode.Range(lineNr,0, lineNr,1000);
 			// Add address to set
 			lines.push(range);

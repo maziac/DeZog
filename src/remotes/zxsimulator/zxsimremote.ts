@@ -547,7 +547,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Emit code coverage event
 			if (this.codeCoverage) {
 				this.emit('coverage', this.codeCoverage.getAddresses());
-				this.codeCoverage.clearDelta();
+				this.codeCoverage.clearAll();
 			}
 			return;
 		}
@@ -572,7 +572,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Emit code coverage event
 				if (this.codeCoverage) {
 					this.emit('coverage', this.codeCoverage.getAddresses());
-					this.codeCoverage.clearDelta();
+					this.codeCoverage.clearAll();
 				}
 				return;
 			}

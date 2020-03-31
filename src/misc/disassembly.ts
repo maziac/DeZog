@@ -154,11 +154,11 @@ export class DisassemblyClass extends Disassembler {
 	 * @param addresses An array with addresses.
 	 * @returns An array with corresponding lines.
 	 */
-	public getLinesForAddresses(addresses: number[]): number[] {
+	public getLinesForAddresses(addresses: Set<number>): number[] {
 		const lines=new Array<number>();
 		const map=this.addrLineMap;
 		// Check whichever has lower number of elements
-		if (addresses.length>map.size) {
+		if (addresses.size>map.size) {
 			// Loop over map
 /*			for (const [address, line] of map) {
 				if (addresses.indexOf(address)>=0)
@@ -166,17 +166,17 @@ export class DisassemblyClass extends Disassembler {
 			}
 */
 			map.forEach((value, key) => {
-				if (addresses.indexOf(key)>=0)
+				if (addresses.has(key))
 					lines.push(value);
 			});
 		}
 		else {
 			// Loop over addresses
-			addresses.map(address => {
+			for (const address of addresses) {
 				const line=map.get(address);
 				if (line)
 					lines.push(line);
-			});
+			}
 		}
 		return lines;
 	}
