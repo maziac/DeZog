@@ -3,6 +3,7 @@
 # 1.0.2
 - Documentation update.
 - Z80 unit tests fixed.
+- Decorations (coverage, history spot, etc.) on disassembly improved.
 
 # 1.0.1
 - zsim: USR0 mode for 128K Spectrum.

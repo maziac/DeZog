@@ -70,7 +70,11 @@ export class DebugSessionClass extends DebugSession {
 	/// unit tests are running and to emit events to the caller.
 	protected static unitTestHandler: ((da: DebugSessionClass) => void)|undefined;
 
-
+	/// This array contains functions which are pushed on an emit (e.g. 'historySpot', not 'codeCoverage')
+	/// and which are executed after a stackTrace.
+	/// The reason is that the disasm.asm file will not exist before and emits
+	/// regarding this file would be lost.
+	protected delayedDecorations=new Array<() => void>();
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -436,18 +440,27 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		Remote.on('coverage', coveredAddresses => {
-			// Covered addresses (since last break) have been sent
-			Decoration.showCodeCoverage(coveredAddresses);
+			// coveredAddresses: Only diff of addresses since last step-command.
+			this.delayedDecorations.push(() => {
+				// Covered addresses (since last break) have been sent
+				Decoration.showCodeCoverage(coveredAddresses);
+			});
 		});
 
 		StepHistory.on('revDbgHistory', addresses => {
-			// Reverse debugging history addresses
-			Decoration.showRevDbgHistory(addresses);
+			// addresses: The addresses (all) of the reverse history in the right order.
+			this.delayedDecorations.push(() => {
+				// Reverse debugging history addresses
+				Decoration.showRevDbgHistory(addresses);
+			});
 		});
 
 		StepHistory.on('historySpot', (startIndex, addresses) => {
-			// Short history addresses
-			Decoration.showHistorySpot(startIndex, addresses);
+			// addresses: All addresses of the history spot.
+			this.delayedDecorations.push(() => {
+				// Short history addresses
+				Decoration.showHistorySpot(startIndex, addresses);
+			});
 		});
 
 		Remote.on('warning', message => {
@@ -708,7 +721,8 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Create the temporary disassembly file if necessary.
-		if (!this.disasmTextDoc) {
+		//if (!this.disasmTextDoc)
+		{
 			if (doDisassembly) {
 				// Create text document
 				const absFilePath=DisassemblyClass.getAbsFilePath();
@@ -816,7 +830,7 @@ export class DebugSessionClass extends DebugSession {
 			const editor=await vscode.window.showTextDocument(this.disasmTextDoc);
 			// Update decorations
 			if (editor) {
-				Decoration.SetDisasmDecorations(editor);
+				Decoration.SetDisasmCoverageDecoration(editor);
 			}
 		}
 
@@ -851,6 +865,15 @@ export class DebugSessionClass extends DebugSession {
 			resp.body={stackFrames: sfrs, totalFrames: 1};
 			this.sendResponse(resp);
 		}
+
+		// At the end of the stack trace request the collected decoration events
+		// are executed. This is because the disasm.asm did not exist before und thus
+		// events like 'historySpot' would be lost.
+		// Note: codeCoverage is handled differently because it is not send during
+		// step-back.
+		for (const func of this.delayedDecorations)
+			func();
+		this.delayedDecorations.length=0;
 	}
 
 

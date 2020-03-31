@@ -432,8 +432,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakData;
 		let updateCounter=0;
 		try {
-			this.codeCoverage?.clearAll();
-
 			// Run the Z80-CPU in a loop
 			for (; counter>0; counter--) {
 				// Store current registers and opcode
@@ -525,10 +523,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 		};
 
-		// Emit code coverage event
-		if(this.codeCoverage)
-			this.emit('coverage', this.codeCoverage.getAddresses());
-
 		if (counter!=0) {
 			// Stop immediately
 			let condition='';
@@ -550,6 +544,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 			// Update the screen etc.
 			this.emit('update')
+			// Emit code coverage event
+			if (this.codeCoverage) {
+				this.emit('coverage', this.codeCoverage.getAddresses());
+				this.codeCoverage.clearDelta();
+			}
 			return;
 		}
 
@@ -570,7 +569,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 				// Update the screen etc.
 				this.emit('update')
-
+				// Emit code coverage event
+				if (this.codeCoverage) {
+					this.emit('coverage', this.codeCoverage.getAddresses());
+					this.codeCoverage.clearDelta();
+				}
 				return;
 			}
 

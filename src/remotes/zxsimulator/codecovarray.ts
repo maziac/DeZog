@@ -19,7 +19,7 @@ import {Utility} from "../../misc/utility";
  * When an address should be stored it is checked if it is already present.
  * If so, nothing is done.
  * If not, the bit in th 8k array is set. Then the address is stored additionally
- * in another array.
+ * in the other array.
  */
 export class CodeCoverageArray {
 
@@ -152,6 +152,14 @@ export class CodeCoverageArray {
 	 */
 	public clearAll() {
 		this.memoryArea.fill(0);
+		this.listIndex=0;
+	}
+
+
+	/**
+	 * Clears only the (delta) list, i.e. the address list.
+	 */
+	public clearDelta() {
 		this.listIndex=0;
 	}
 
