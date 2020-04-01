@@ -74,10 +74,24 @@ export class Z80Cpu extends Z80js {
 
 		// Statistics
 		const tstatesDiff=self.tStates-tstatesPrev;
-		if (opcode!=0x76) {
-			// Count everything besides the HALT instruction
+		if (opcode==0x76) {
+			// HALT instruction
+			if (this.interruptsEnabled()) {
+				// HALT instructions are treated specially:
+				// If a HALT is found the t-states to the next interrupt are calculated.
+				// The t-states are added and the interrupt is executed immediately.
+				// So only one HALT is ever executed, skipping execution of the others
+				// saves processing time.
+				this.cpuTotalTstates+=this.remaingInterruptTstates-tstatesDiff;
+				this.remaingInterruptTstates=0;
+			}
+		}
+		else {
+			// No HALT: Count everything besides the HALT instruction and add to cpu-load.
 			this.cpuLoadTstates+=tstatesDiff;
 		}
+
+		// Add t-states
 		this.cpuTotalTstates+=tstatesDiff;
 		// Interrupt
 		this.remaingInterruptTstates-=tstatesDiff;
@@ -106,14 +120,26 @@ export class Z80Cpu extends Z80js {
 
 
 	/**
-	 * Simulates an interrupt.
+	 * Checks if interrupts are enabled.
 	 */
-	public injectInterrupt() {
+	protected interruptsEnabled(): boolean{
 		const self=this as any;
 		// Check if interrupts enabled
 		if (!self.iff1)
-			return;
+			return false;
 		if (self.deferInt)
+			return false;
+		return true;
+	}
+
+
+	/**
+	 * Simulates an interrupt.
+	 */
+	protected injectInterrupt() {
+		const self=this as any;
+		// Check if interrupts enabled
+		if (!this.interruptsEnabled())
 			return;
 
 		// Interrupts allowed.
