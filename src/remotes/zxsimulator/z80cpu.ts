@@ -37,6 +37,10 @@ export class Z80Cpu extends Z80js {
 	// Counts the current number of interrupts.
 	protected cpuLoadRangeCounter: number;
 
+	// Set to true to enable the Z80N instruction set.
+	protected z80n: boolean;
+
+
 	/// Constructor.
 	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
 		super(memory, ports, debug);
@@ -54,6 +58,7 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoad=1.0;	// Start with full load
 		this.cpuLoadRangeCounter=0;
 		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
+		this.z80n=Settings.launch.zsim.Z80N;
 	}
 
 
@@ -66,11 +71,18 @@ export class Z80Cpu extends Z80js {
 		const tstatesPrev=self.tStates;
 		self.deferInt=false;
 
-		// For checking on halt
+		// For checking on halt and Z80N
 		const opcode=self.memory.getMemory8(self.pc);
 
-		// Execute the instruction
-		super.execute();
+		// Check if it a Z80N instruction
+		if (this.z80n&&opcode==0xED) {
+			// Yes, maybe a Z80N
+			this.executeZ80n();
+		}
+		else {
+			// Normal Z80 instruction
+			super.execute();
+		}
 
 		// Statistics
 		const tstatesDiff=self.tStates-tstatesPrev;
@@ -303,7 +315,6 @@ export class Z80Cpu extends Z80js {
 	}
 
 
-
 	/**
 	 * Workaround for error:  "PC incorrect after FDCB instruction", https://github.com/viert/z80js/issues/2
 	 */
@@ -422,5 +433,31 @@ export class Z80Cpu extends Z80js {
 		let offset=signed8(self.read8(self.pc++));	// d
 		let value=signed8(self.read8(self.pc++));	// n
 		self.write8(self.r1.iy+offset, value);
+	}
+
+
+
+	// Z80N instructions.
+
+	/**
+	 * The first opcode is already decoded as 0xED.
+	 * Now the rest of the opcodes are checked, decoded and executed.
+	 * If it is not found to be a Z80N instruction the original
+	 * parent's class 'execute' is called.
+	 */
+	protected executeZ80n() {
+		const self=this as any;
+		let pc=(self.pc+1)&0xFFFF;
+		const opcode1=self.memory.getMemory8(pc);
+		switch (opcode1) {
+			case 0xA4:	// LDIX
+				break;
+
+
+			default:
+				// No Z80N instruction, use normal execute
+				super.execute();
+				break;
+		}
 	}
 }

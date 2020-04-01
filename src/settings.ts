@@ -108,7 +108,9 @@ export interface ZxSimType {
 	// If enabled the ZX Next memory banking is enabled through registers 0x50-0x57.
 	tbblueMemoryManagementSlots: boolean,
 	// The number of interrupts to calculate the average from. 0 to disable.
-	cpuLoadInterruptRange: number
+	cpuLoadInterruptRange: number,
+	// If enabled the Z80N extended instructions are supported.
+	Z80N: boolean
 }
 
 
@@ -327,6 +329,13 @@ export class Settings {
 				Settings.launch.zsim.visualMemory="ZX48";
 			else
 				Settings.launch.zsim.visualMemory="64K";
+		}
+		if (Settings.launch.zsim.Z80N==undefined) {
+			// try to guess Z80Nvisual memory from the other settings
+			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
+				Settings.launch.zsim.Z80N==true;
+			else
+				Settings.launch.zsim.Z80N==false;
 		}
 
 		// serial
