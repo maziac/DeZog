@@ -90,9 +90,8 @@ export class ZxPorts {
 	 */
 	public write(port: number, data: number) {
 		const func=this.outPortMap.get(port);
-		if (!func)
-			return;
-		func(port, data);
+		if (func)
+			func(port, data);
 	}
 
 

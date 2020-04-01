@@ -342,6 +342,7 @@ Example launch.json configuration:
 	    "visualMemory": true,
 	    "ulaScreen": true,
 	    "memoryPagingControl": true,
+        "tbblueMemoryManagementSlots": true,
         "cpuLoadInterruptRange": 1,
     }
 ~~~
@@ -358,7 +359,8 @@ Here is the explanations of all the options:
 ![](images/zsim_visual_memory.jpg)
 - "ulaScreen": true/false. Defaults to true. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
-- "memoryPagingControl": true/false. Defaults to true. If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K. zsim uses USR0 mode. I.e. at startup the 48K ROM is paged in.
+- "memoryPagingControl": true/false. Defaults to false. If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K. zsim uses USR0 mode. I.e. at startup the 48K ROM is paged in.
+- "tbblueMemoryManagementSlots": true/false. Default to false. If enabled the ZX Next memory banking is enabled through registers 0x50-0x57. Use this to simulate ZX Next memory banking.
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 

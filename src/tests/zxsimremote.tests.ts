@@ -8,7 +8,7 @@ import {Utility} from '../misc/utility';
 suite('ZxSimulatorRemote', () => {
 	let zsim: ZxSimulatorRemote;
 
-	suite('machine 48k', () => {
+	suite('48k', () => {
 
 		setup(() => {
 			Utility.setExtensionPath('.');
@@ -52,7 +52,7 @@ suite('ZxSimulatorRemote', () => {
 	});
 
 
-	suite('machine 128k', () => {
+	suite('memoryPagingControl', () => {
 
 		setup(() => {
 			Utility.setExtensionPath('.');
@@ -114,7 +114,7 @@ suite('ZxSimulatorRemote', () => {
 
 		test('Check ROM 1', () => {
 			// @ts-ignore, The 128k ROM
-			zsim.configureMachine('128k');
+			zsim.configureMachine();
 
 			// In USR0 mode the 48K rom is enabled by default
 
@@ -150,7 +150,7 @@ suite('ZxSimulatorRemote', () => {
 
 		test('bank switching', () => {
 			// @ts-ignore
-			zsim.configureMachine('128k');
+			zsim.configureMachine();
 
 			// Address used for writing/reading
 			const address=0xC000;
@@ -180,7 +180,7 @@ suite('ZxSimulatorRemote', () => {
 
 		test('ula switching', () => {
 			// @ts-ignore
-			zsim.configureMachine('128k');
+			zsim.configureMachine();
 
 			// @ts-ignore, Default, Bank 5
 			let bank=zsim.zxMemory.ulaScreenBank;
@@ -202,7 +202,7 @@ suite('ZxSimulatorRemote', () => {
 
 		test('paging disable', () => {
 			// @ts-ignore, 128k
-			zsim.configureMachine('128k');
+			zsim.configureMachine();
 
 			// Disable memory paging
 			zsim.zxPorts.write(0x7FFD, 0b0100000);
@@ -215,6 +215,120 @@ suite('ZxSimulatorRemote', () => {
 			assert.equal(0x01, value);
 			value=zsim.zxMemory.read8(0x3FFF);
 			assert.equal(0x01, value);
+		});
+
+	});
+
+
+	suite('tbblueMemoryManagementSlots', () => {
+
+		setup(() => {
+			Utility.setExtensionPath('.');
+			const cfg: any={
+				remoteType: 'zsim',
+				zsim: {
+					loadZxRom: true,
+					zxKeyboard: true,
+					visualMemory: true,
+					ulaScreen: true,
+					memoryPagingControl: false,
+					tbblueMemoryManagementSlots: true,
+					cpuLoadInterruptRange: 1,
+				},
+				history: {
+					reverseDebugInstructionCount: 0,
+					spotCount: 0,
+					codeCoverageEnabled: false
+				}
+			};
+			Settings.Init(cfg, '');
+			zsim=new ZxSimulatorRemote();
+		});
+
+		test('bank switching RAM', () => {
+			// @ts-ignore
+			zsim.configureMachine();
+
+			// Put unique number in each bank
+			let bank=0;
+			for (let slot=0; slot<8; slot++) {
+				const address=slot*0x2000;
+				for (let i=0; i<8; i++) {
+					bank++;
+					// Do memory switch to bank x
+					zsim.zxPorts.write(0x243B, 0x50+slot);
+					zsim.zxPorts.write(0x253B, bank);
+					// Write unique number
+					zsim.zxMemory.write8(address, 100+10*slot+bank);
+				}
+			}
+
+			// Now read the addresses and check
+			bank=0;
+			for (let slot=0; slot<8; slot++) {
+				const address=slot*0x2000;
+				for (let i=0; i<8; i++) {
+					bank++;
+					// Do memory switch to bank x
+					zsim.zxPorts.write(0x243B, 0x50+slot);
+					zsim.zxPorts.write(0x253B, bank);
+					// Read unique number
+					const value=zsim.zxMemory.read8(address);
+					assert.equal(100+10*slot+bank, value);
+				}
+			}
+		});
+
+		test('bank switching ROM', () => {
+			// @ts-ignore
+			zsim.configureMachine();
+
+			// Do memory switch to slot0/bank10
+			zsim.zxPorts.write(0x243B, 0x50+0);
+			zsim.zxPorts.write(0x253B, 10);
+				// Do memory switch to slot1/bank11
+			zsim.zxPorts.write(0x243B, 0x50+1);
+			zsim.zxPorts.write(0x253B, 11);
+			// Write unique numbers
+			zsim.zxMemory.write8(0x0000, 100);
+			zsim.zxMemory.write8(0x0001, 101);
+			zsim.zxMemory.write8(0x3FFE, 102);
+			zsim.zxMemory.write8(0x3FFF, 103);
+
+			// Switch to ROM
+			zsim.zxPorts.write(0x243B, 0x50+0);
+			zsim.zxPorts.write(0x253B, 0xFF);
+			zsim.zxPorts.write(0x243B, 0x50+1);
+			zsim.zxPorts.write(0x253B, 0xFF);
+
+			// Check first 2 bytes
+			let value=zsim.zxMemory.read8(0x0000);
+			assert.equal(0xF3, value);
+			value=zsim.zxMemory.read8(0x0001);
+			assert.equal(0xAF, value);
+
+			// Check last 2 bytes
+			value=zsim.zxMemory.read8(0x3FFE);
+			assert.equal(0x42, value);
+			value=zsim.zxMemory.read8(0x3FFF);
+			assert.equal(0x3C, value);
+
+			// Switch back to RAM
+			// Do memory switch to slot0/bank10
+			zsim.zxPorts.write(0x243B, 0x50+0);
+			zsim.zxPorts.write(0x253B, 10);
+			// Do memory switch to slot1/bank11
+			zsim.zxPorts.write(0x243B, 0x50+1);
+			zsim.zxPorts.write(0x253B, 11);
+			// Check bytes
+			value=zsim.zxMemory.read8(0x0000);
+			assert.equal(100, value);
+			value=zsim.zxMemory.read8(0x0001);
+			assert.equal(101, value);
+			value=zsim.zxMemory.read8(0x3FFE);
+			assert.equal(102, value);
+			value=zsim.zxMemory.read8(0x3FFF);
+			assert.equal(103, value);
 		});
 
 	});

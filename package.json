@@ -260,29 +260,34 @@
 							},
 							"zsim": {
 								"loadZxRom": {
-									"type": "number",
+									"type": "boolean",
 									"description": "Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.",
 									"default": true
 								},
 								"zxKeyboard": {
-									"type": "number",
+									"type": "boolean",
 									"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
 									"default": true
 								},
 								"visualMemory": {
-									"type": "number",
-									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
-									"default": true
+									"type": "string",
+									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.\nDifferent views are possible:\n- 'none': no view\n- '64K': One memory area of 64K, no banks.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).",
+									"default": "ZX48K"
 								},
 								"ulaScreen": {
-									"type": "number",
+									"type": "boolean",
 									"description": "If enabled it shows the contents of the ZX Spectrum screen.",
 									"default": true
 								},
 								"memoryPagingControl": {
-									"type": "number",
+									"type": "boolean",
 									"description": "If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.",
-									"default": true
+									"default": false
+								},
+								"tbblueMemoryManagementSlots": {
+									"type": "boolean",
+									"description": "If enabled the ZX Next memory banking is enabled through registers 0x50-0x57.",
+									"default": false
 								},
 								"cpuLoadInterruptRange": {
 									"type": "number",

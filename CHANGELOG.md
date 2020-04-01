@@ -1,7 +1,7 @@
 # Changelog
 
 # 1.0.3
-
+- zsim: optimized handling of HALT instruction.
 
 # 1.0.2
 - Documentation update.

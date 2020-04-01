@@ -99,6 +99,8 @@ export interface ZxSimType {
 	ulaScreen: boolean,
 	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
 	memoryPagingControl: boolean,
+	// If enabled the ZX Next memory banking is enabled through registers 0x50-0x57.
+	tbblueMemoryManagementSlots: boolean,
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number
 }
@@ -307,6 +309,8 @@ export class Settings {
 			Settings.launch.zsim.ulaScreen=true;
 		if (Settings.launch.zsim.memoryPagingControl==undefined)
 			Settings.launch.zsim.memoryPagingControl=false;
+		if (Settings.launch.zsim.tbblueMemoryManagementSlots==undefined)
+			Settings.launch.zsim.tbblueMemoryManagementSlots=false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
 
