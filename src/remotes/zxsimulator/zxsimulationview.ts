@@ -3,7 +3,7 @@ import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
 import {ZxSimulatorRemote} from './zxsimremote';
-import {WebviewPanel, ColorPresentation} from 'vscode';
+import {WebviewPanel} from 'vscode';
 import {Settings} from '../../settings';
 
 
@@ -395,7 +395,7 @@ color:black;
 		switch (message.command) {
 			case 'update':
 			{
-				if(cpuLoad && message.cpuLoad != undefined)
+				if(message.cpuLoad != undefined)
 					cpuLoad.innerHTML = message.cpuLoad;
 
 				if(message.slotNames) {
@@ -407,10 +407,10 @@ color:black;
 					}
 				}
 
-				if(visualMemImg && message.visualMemImg)
+				if(message.visualMemImg)
 					visualMemImg.src = message.visualMemImg;
 
-				if(screenImg && message.screenImg)
+				if(message.screenImg)
 					screenImg.src = message.screenImg;
 			}
 			break;
