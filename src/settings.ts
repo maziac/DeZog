@@ -94,7 +94,13 @@ export interface ZxSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
 	zxKeyboard: boolean,
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
-	visualMemory: boolean,
+	// Different views are possible:
+	// - "none": no view
+	// - "64K": One memory area of 64K, no banks.
+	// - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
+	// - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
+	// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+	visualMemory: string,
 	// If enabled it shows the contents of the ZX Spectrum screen.
 	ulaScreen: boolean,
 	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
@@ -303,8 +309,6 @@ export class Settings {
 			Settings.launch.zsim.loadZxRom=true;
 		if (Settings.launch.zsim.zxKeyboard==undefined)
 			Settings.launch.zsim.zxKeyboard=true;
-		if (Settings.launch.zsim.visualMemory==undefined)
-			Settings.launch.zsim.visualMemory=true;
 		if (Settings.launch.zsim.ulaScreen==undefined)
 			Settings.launch.zsim.ulaScreen=true;
 		if (Settings.launch.zsim.memoryPagingControl==undefined)
@@ -313,6 +317,17 @@ export class Settings {
 			Settings.launch.zsim.tbblueMemoryManagementSlots=false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
+		if (Settings.launch.zsim.visualMemory==undefined) {
+			// try to guess visual memory from the other settings
+			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
+				Settings.launch.zsim.visualMemory="ZXNEXT";
+			else if (Settings.launch.zsim.memoryPagingControl)
+				Settings.launch.zsim.visualMemory="ZX128";
+			else if (Settings.launch.zsim.loadZxRom)
+				Settings.launch.zsim.visualMemory="ZX48";
+			else
+				Settings.launch.zsim.visualMemory="64K";
+		}
 
 		// serial
 		if (!Settings.launch.serial)

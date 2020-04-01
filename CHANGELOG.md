@@ -1,7 +1,10 @@
 # Changelog
 
-# 1.0.3
-- zsim: optimized handling of HALT instruction.
+# 1.1.0
+- zsim:
+	- Optimized handling of HALT instruction.
+	- Added "tbblueMemoryManagementSlots".
+	- New values for "visualMemory": "none", "64K", "ZX48", "ZX128" and "ZXNEXT"
 
 # 1.0.2
 - Documentation update.

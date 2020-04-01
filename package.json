@@ -271,8 +271,8 @@
 								},
 								"visualMemory": {
 									"type": "string",
-									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.\nDifferent views are possible:\n- 'none': no view\n- '64K': One memory area of 64K, no banks.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).",
-									"default": "ZX48K"
+									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.\nDifferent views are possible:\n- 'none': no view\n- '64K': One memory area of 64K, no banks.\n- 'ZX48': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).",
+									"default": "ZX48"
 								},
 								"ulaScreen": {
 									"type": "boolean",
