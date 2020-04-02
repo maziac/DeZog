@@ -333,9 +333,9 @@ export class Settings {
 		if (Settings.launch.zsim.Z80N==undefined) {
 			// try to guess Z80Nvisual memory from the other settings
 			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
-				Settings.launch.zsim.Z80N==true;
+				Settings.launch.zsim.Z80N=true;
 			else
-				Settings.launch.zsim.Z80N==false;
+				Settings.launch.zsim.Z80N=false;
 		}
 
 		// serial

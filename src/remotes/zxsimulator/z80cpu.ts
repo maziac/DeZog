@@ -437,7 +437,7 @@ export class Z80Cpu extends Z80js {
 
 
 
-	// Z80N instructions.
+	// --- Z80N instructions ---------------------------
 
 	/**
 	 * The first opcode is already decoded as 0xED.
@@ -450,14 +450,329 @@ export class Z80Cpu extends Z80js {
 		let pc=(self.pc+1)&0xFFFF;
 		const opcode1=self.memory.getMemory8(pc);
 		switch (opcode1) {
-			case 0xA4:	// LDIX
+			case 0xA4:
+				{	// LDIX
+					this.ldidx(+1);
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
 				break;
 
+			case 0xA5:
+				{	// LDWS
+					self.tStates+=14;
+					const hlContent=self.memory.getMemory8(self.r1.hl);
+					self.memory.writeMemory8(self.r1.de, hlContent);
+					self.r1.l++;
+					self.r1.l&=0xFF;
+					self.r1.d++;
+					self.r1.d&=0xFF;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+			case 0xB4:
+				{	// LDIRX, loop
+					this.ldidx(+1);
+					if (self.r1.bc==0) {
+						// Next
+						self.pc+=2;
+						self.pc&=0xFFFF;
+					}
+					else
+						self.tstates+=5;
+				}
+				break;
+
+			case 0xAC:
+				{	// LDDX
+					this.ldidx(-1);
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0xBC:
+				{	// LDDRX, loop
+					this.ldidx(-1);
+					if (self.r1.bc==0) {
+						// Next
+						self.pc+=2;
+						self.pc&=0xFFFF;
+					}
+					else
+						self.tstates+=5;
+				}
+				break;
+
+			case 0xBC:
+				{	// LDPIRX, loop
+					const addr=(self.r1.hl&0xFFF8)+(self.r1.e&0x07);
+					const t=self.memory.getMemory8(addr);
+					if (t!=self.r1.a)
+						self.memory.writeMemory8(self.r1.de, t);
+					self.r1.de++;
+					self.r1.bc--;
+					// Loop finished
+					if (self.r1.bc==0) {
+						// Next
+						self.pc+=2;
+						self.pc&=0xFFFF;
+					}
+					else
+						self.tstates+=5;
+				}
+				break;
+
+			case 0x90:
+				{	// OUTINB
+					self.tstates+=16;
+					const t=self.memory.getMemory8(self.r1.hl);
+					self.zxports.write(self.r1.bc, t);
+					self.r1.hl++;
+					self.r1.hl&=0xFFFF;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x30:
+				{	// MUL D,E
+					self.tstates+=8;
+					self.r1.de=self.r1.d*self.r1.e;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+
+			case 0x31:
+				{	// ADD HL,A
+					self.tstates+=8;
+					self.r1.hl+=self.r1.a;
+					self.r1.hl&=0xFFFF;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x32:
+				{	// ADD DE,A
+					self.tstates+=8;
+					self.r1.de+=self.r1.a;
+					self.r1.de&=0xFFFF;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x33:
+				{	// ADD BC,A
+					self.tstates+=8;
+					self.r1.bc+=self.r1.a;
+					self.r1.bc&=0xFFFF;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x34:
+				{	// ADD HL,nn
+					self.tstates+=16;
+					const nn=self.zxmemory.read16(self.pc+2);
+					self.r1.hl+=nn;
+					self.r1.hl&=0xFFFF;
+					// Next
+					self.pc+=4;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x35:
+				{	// ADD DE,nn
+					self.tstates+=16;
+					const nn=self.zxmemory.read16(self.pc+2);
+					self.r1.de+=nn;
+					self.r1.de&=0xFFFF;
+					// Next
+					self.pc+=4;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x36:
+				{	// ADD BC,nn
+					self.tstates+=16;
+					const nn=self.zxmemory.read16(self.pc+2);
+					self.r1.bc+=nn;
+					self.r1.bc&=0xFFFF;
+					// Next
+					self.pc+=4;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x23:
+				{	// SWAPNIB
+					self.tstates+=8;
+					const a=self.r1.a;
+					self.r1.a=((a>>>4)+(a<<4))&0xFF;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x24:
+				{	// MIRROR
+					self.tstates+=8;
+					const a=self.r1.a;
+					self.r1.a=
+					((a>>>7)&0b00000001)+
+					((a>>>5)&0b00000010)+
+					((a>>>3)&0b00000100)+
+					((a>>>1)&0b00001000)+
+					((a<<1)&0b00010000)+
+					((a<<3)&0b00100000)+
+					((a<<5)&0b01000000)+
+					((a<<7)&0b10000000);
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x8A:
+				{	// PUSH nn
+					self.tstates+=23;
+					const nnh=self.zxmemory.read8(self.pc+2);
+					const nnl=self.zxmemory.read8(self.pc+3);
+					const nn=nnl+256*nnh;
+					self.zxmemory.write16(self.sp, nn);
+					self.sp-=2;
+					// Next
+					self.pc+=4;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x91:
+				{	// NEXTREG r,n
+					self.tstates+=20;
+					const reg=self.zxmemory.read8(self.pc+2);
+					const val=self.zxmemory.read8(self.pc+3);
+					self.zxports.write(0x243B, reg);
+					self.zxports.write(0x253B, val);
+					// Next
+					self.pc+=4;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x92:
+				{	// NEXTREG r,A
+					self.tstates+=17;
+					const reg=self.zxmemory.read8(self.pc+2);
+					self.zxports.write(0x243B, reg);
+					self.zxports.write(0x253B, self.r1.a);
+					// Next
+					self.pc+=3;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x93:
+				{	// PIXELDN
+					self.tstates+=8;
+					let hl=self.r1.hl;
+					if ((hl&0x0700)!=0x0700)
+						hl+=256;
+					else if ((hl&0xe0)!=0xe0)
+						hl=(hl&0xF8FF)+0x20;
+					else
+						hl=(hl&0xF81F)+0x0800;
+					self.r1.hl=hl;
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x94:
+				{	// PIXELAD
+					self.tstates+=8;
+					const d=self.r1.d;
+					const e=self.r1.e;
+					self.r1.hl=0x4000+((d&0xC0)<<5)+((d&0x07)<<8)+((d&0x38)<<2)+(e>>>3);
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x95:
+				{	// SETAE
+					self.tstates+=8;
+					const e=self.r1.e;
+					self.r1.a=(0x80)>>>(e&0x07)
+					// Next
+					self.pc+=2;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x27:
+				{	// TEST n
+					// Flags:
+					//  7 6 5 4  3  2  1 0
+					//  S Z X H  X P/V N C
+					self.tstates+=11;
+					const n=self.zxmemory.read8(self.pc+2);
+					const result=self.r1.a&n;
+					let flags=self.r1.f;
+					flags&=0b10101010;
+					flags|=result&0x80;	// sign
+					if(result==0)
+						flags|=result&0x40;	// zero
+					// Next
+					self.pc+=3;
+					self.r1.pc&=0xFFFF;
+				}
+				break;
 
 			default:
 				// No Z80N instruction, use normal execute
 				super.execute();
 				break;
 		}
+	}
+
+
+	/**
+	 * function of LDIX, LDDX, LDIRX, LDDRX.
+	 * @param add Use +1 for LDIX and -1 for LDDX.
+	 */
+	protected ldidx(add: number) {
+		const self=this as any;
+		self.tStates+=16;
+		// {if HL*!=A DE*:=HL*;} DE++; HL++; BC--
+		const hlContent=self.memory.getMemory8(self.r1.hl);
+		if (hlContent!=self.r1.a)
+			self.memory.writeMemory8(self.r1.de, hlContent);
+		self.r1.de++;
+		self.r1.de&=0xFFFF;
+		self.r1.hl+=add;
+		self.r1.hl&=0xFFFF;
+		self.r1.bc--;
+		self.r1.bc&=0xFFFF;
 	}
 }
