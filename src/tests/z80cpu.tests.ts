@@ -83,37 +83,54 @@ suite('Z80Cpu', () => {
 
 
 	suite('Z80N instructions', () => {
+		let cpu;
+		let r1;
+		let mem;
+
+
+		// Fills the memory with the given address/value pairs.
+		function setMem(memArray: number[]) {
+			mem.clear();
+			const count=memArray.length;
+			for (let i=0; i<count; i+=2) {
+				const addr=memArray[i];
+				const val=memArray[i+1];
+				mem.setMemory8(addr, val);
+			}
+		}
+
+		setup(() => {
+			cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
+			r1=cpu.r1;
+			mem=cpu.memory;
+		});
 
 		test('LDIX', () => {
-			const cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
-			const r1=cpu.r1;
-			const mem=cpu.memory;
-
 			// PC overflow, A not equal
 			cpu.tStates=0;
-			mem.setMemory8(0x0000, 0xA4);
 			cpu.pc=0xFFFF;
 			r1.hl=0x1000;
 			r1.de=0x2000;
 			r1.a=0x20;
-			mem.setMemory8(0x1000, 0x10);
-			mem.setMemory8(0x2000, 0x00);
+			setMem([0x0000, 0xA4,
+				r1.hl, 0x10,
+				r1.de, 0x00]);
 			cpu.executeZ80n();
 
 			assert.equal(16, cpu.tStates);
 			assert.equal(0x0001, cpu.pc);
 			assert.equal(0x1001, r1.hl);
 			assert.equal(0x2001, r1.de);
-			assert.equal(0x10, mem.read8(0x1000));
+			assert.equal(0x10, mem.read8(0x2000));
 
 			// A equal, hl overflow
-			mem.setMemory8(0x0001, 0xA4);
 			cpu.pc=0x0000;
 			r1.hl=0xFFFF;
 			r1.de=0x1000;
 			r1.a=0x20;
-			mem.setMemory8(0xFFFF, 0x11);
-			mem.setMemory8(0x1000, 0x00);
+			setMem([cpu.pc+1, 0xA4,
+			r1.hl, 0x11,
+			r1.de, 0x00]);
 			cpu.executeZ80n();
 
 			assert.equal(0x0002, cpu.pc);
@@ -122,13 +139,13 @@ suite('Z80Cpu', () => {
 			assert.equal(0x11, mem.read8(0x1000));
 
 			// A equal, de overflow
-			mem.setMemory8(0x0001, 0xA4);
 			cpu.pc=0x0000;
 			r1.hl=0x1000;
 			r1.de=0xFFFF;
 			r1.a=0x20;
-			mem.setMemory8(0x1000, 0x12);
-			mem.setMemory8(0xFFFF, 0x00);
+			setMem([cpu.pc+1, 0xA4,
+			r1.hl, 0x12,
+			r1.de, 0x00]);
 			cpu.executeZ80n();
 
 			assert.equal(0x0002, cpu.pc);
@@ -137,19 +154,78 @@ suite('Z80Cpu', () => {
 			assert.equal(0x12, mem.read8(0xFFFF));
 
 			// A equal
-			mem.setMemory8(0x0001, 0xA4);
 			cpu.pc=0x0000;
 			r1.hl=0x1000;
 			r1.de=0x2000;
 			r1.a=0x20;
-			mem.setMemory8(0x1000, 0x20);
-			mem.setMemory8(0x2000, 0x00);
+			setMem([cpu.pc+1, 0xA4,
+			r1.hl, 0x20,
+			r1.de, 0x00]);
 			cpu.executeZ80n();
 
 			assert.equal(0x0002, cpu.pc);
 			assert.equal(0x1001, r1.hl);
 			assert.equal(0x2001, r1.de);
 			assert.equal(0x00, mem.read8(0x2000));
+		});
+
+		test('LDWS', () => {
+			// PC, D, L overflow
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.hl=0x10FF;
+			r1.de=0xFF00;
+			setMem([0x0000, 0xA5,
+				r1.hl, 0x30,
+				r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(14, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x1000, r1.hl);
+			assert.equal(0x0000, r1.de);
+			assert.equal(0x30, mem.read8(0xFF00));
+		});
+
+
+		test('LDIRX', () => {
+			// BC == 0
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0x1000;
+			r1.de=0x2000;
+			r1.bc=1;
+			r1.a=0x20;
+			setMem([cpu.pc+1, 0xB4,
+				r1.hl, 0x10,
+				r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0x1001, r1.hl);
+			assert.equal(0x2001, r1.de);
+			assert.equal(0, r1.bc);
+			assert.equal(0x10, mem.read8(0x2000));
+
+			// BC != 0
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0xFFFF;
+			r1.de=0x1000;
+			r1.bc=2;
+			r1.a=0x11;
+			setMem([cpu.pc+1, 0xB4,
+			r1.hl, 0x11,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(21, cpu.tStates);
+			assert.equal(0x0000, cpu.pc);
+			assert.equal(0x0000, r1.hl);
+			assert.equal(0x1001, r1.de);
+			assert.equal(1, r1.bc);
+			assert.equal(0x00, mem.read8(0x1000));
 		});
 
 	});

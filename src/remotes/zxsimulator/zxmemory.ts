@@ -66,6 +66,14 @@ export class ZxMemory {
 
 
 	/**
+	 * Clears the whole memory (all banks) with 0s.
+	 */
+	public clear() {
+		this.AllBanksRam.fill(0);
+	}
+
+
+	/**
 	 * Sets the bank to use for the screen display.
 	 * @param bankIndex The bank to use. Note that this is an 8k bank, not 16k.
 	 */
