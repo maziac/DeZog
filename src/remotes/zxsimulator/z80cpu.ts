@@ -462,8 +462,8 @@ export class Z80Cpu extends Z80js {
 			case 0xA5:
 				{	// LDWS
 					self.tStates+=14;
-					const hlContent=self.memory.getMemory8(self.r1.hl);
-					self.memory.writeMemory8(self.r1.de, hlContent);
+					const hlContent=self.memory.read8(self.r1.hl);
+					self.memory.write8(self.r1.de, hlContent);
 					self.r1.l++;
 					self.r1.l&=0xFF;
 					self.r1.d++;
@@ -512,9 +512,9 @@ export class Z80Cpu extends Z80js {
 			case 0xBC:
 				{	// LDPIRX, loop
 					const addr=(self.r1.hl&0xFFF8)+(self.r1.e&0x07);
-					const t=self.memory.getMemory8(addr);
+					const t=self.memory.read8(addr);
 					if (t!=self.r1.a)
-						self.memory.writeMemory8(self.r1.de, t);
+						self.memory.write8(self.r1.de, t);
 					self.r1.de++;
 					self.r1.bc--;
 					// Loop finished
@@ -531,7 +531,7 @@ export class Z80Cpu extends Z80js {
 			case 0x90:
 				{	// OUTINB
 					self.tstates+=16;
-					const t=self.memory.getMemory8(self.r1.hl);
+					const t=self.memory.read8(self.r1.hl);
 					self.zxports.write(self.r1.bc, t);
 					self.r1.hl++;
 					self.r1.hl&=0xFFFF;
@@ -588,7 +588,7 @@ export class Z80Cpu extends Z80js {
 			case 0x34:
 				{	// ADD HL,nn
 					self.tstates+=16;
-					const nn=self.zxmemory.read16(self.pc+2);
+					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.hl+=nn;
 					self.r1.hl&=0xFFFF;
 					// Next
@@ -600,7 +600,7 @@ export class Z80Cpu extends Z80js {
 			case 0x35:
 				{	// ADD DE,nn
 					self.tstates+=16;
-					const nn=self.zxmemory.read16(self.pc+2);
+					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.de+=nn;
 					self.r1.de&=0xFFFF;
 					// Next
@@ -612,7 +612,7 @@ export class Z80Cpu extends Z80js {
 			case 0x36:
 				{	// ADD BC,nn
 					self.tstates+=16;
-					const nn=self.zxmemory.read16(self.pc+2);
+					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.bc+=nn;
 					self.r1.bc&=0xFFFF;
 					// Next
@@ -654,8 +654,8 @@ export class Z80Cpu extends Z80js {
 			case 0x8A:
 				{	// PUSH nn
 					self.tstates+=23;
-					const nnh=self.zxmemory.read8(self.pc+2);
-					const nnl=self.zxmemory.read8(self.pc+3);
+					const nnh=self.zxmemory.getMemory8(self.pc+2);
+					const nnl=self.zxmemory.getMemory8(self.pc+3);
 					const nn=nnl+256*nnh;
 					self.zxmemory.write16(self.sp, nn);
 					self.sp-=2;
@@ -668,8 +668,8 @@ export class Z80Cpu extends Z80js {
 			case 0x91:
 				{	// NEXTREG r,n
 					self.tstates+=20;
-					const reg=self.zxmemory.read8(self.pc+2);
-					const val=self.zxmemory.read8(self.pc+3);
+					const reg=self.zxmemory.getMemory8(self.pc+2);
+					const val=self.zxmemory.getMemory8(self.pc+3);
 					self.zxports.write(0x243B, reg);
 					self.zxports.write(0x253B, val);
 					// Next
@@ -681,7 +681,7 @@ export class Z80Cpu extends Z80js {
 			case 0x92:
 				{	// NEXTREG r,A
 					self.tstates+=17;
-					const reg=self.zxmemory.read8(self.pc+2);
+					const reg=self.zxmemory.getMemory8(self.pc+2);
 					self.zxports.write(0x243B, reg);
 					self.zxports.write(0x253B, self.r1.a);
 					// Next
@@ -736,13 +736,14 @@ export class Z80Cpu extends Z80js {
 					//  7 6 5 4  3  2  1 0
 					//  S Z X H  X P/V N C
 					self.tstates+=11;
-					const n=self.zxmemory.read8(self.pc+2);
+					const n=self.zxmemory.getMemory8(self.pc+2);
 					const result=self.r1.a&n;
 					let flags=self.r1.f;
 					flags&=0b10101010;
 					flags|=result&0x80;	// sign
 					if(result==0)
 						flags|=result&0x40;	// zero
+					self.r1.a=flags;
 					// Next
 					self.pc+=3;
 					self.r1.pc&=0xFFFF;
@@ -765,9 +766,9 @@ export class Z80Cpu extends Z80js {
 		const self=this as any;
 		self.tStates+=16;
 		// {if HL*!=A DE*:=HL*;} DE++; HL++; BC--
-		const hlContent=self.memory.getMemory8(self.r1.hl);
+		const hlContent=self.memory.read8(self.r1.hl);
 		if (hlContent!=self.r1.a)
-			self.memory.writeMemory8(self.r1.de, hlContent);
+			self.memory.write8(self.r1.de, hlContent);
 		self.r1.de++;
 		self.r1.de&=0xFFFF;
 		self.r1.hl+=add;

@@ -219,7 +219,20 @@ export class ZxMemory {
 	}
 
 
-	// Read s one byte.
+	// Sets one byte.
+	// This is **not** used by the Z80 CPU.
+	public setMemory8(addr: number, val: number) {
+		// First byte
+		let address=addr&0x1FFF;
+		let slotIndex=addr>>>13;
+		let bankNr=this.slots[slotIndex];
+		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
+		const mem=this.AllBanksRam;
+		mem[ramAddr]=val&0xFF;
+	}
+
+
+	// Sets one word.
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
 		// First byte
@@ -368,76 +381,6 @@ export class ZxMemory {
 
 
 	/**
-	 * Copies the memory banks into the Z80 memory.
-	 * Called e.g. after deserialization or after loading.
-	 */
-	// TODO: REMOVE
-	/*
-	public copyBanksToZ80Mem() {
-		let offset=0;
-		let slotIndex=0;
-		while (offset<0x10000) {
-			const bank=this.slots[slotIndex];
-			const memBank=this.banks[bank];
-			this.z80Memory.set(memBank, offset);
-			// Next
-			offset+=ZxMemory.MEMORY_BANK_SIZE;
-			slotIndex++;
-		}
-	}
-	*/
-
-	/**
-	 * Copies the Z80 memory into the banks.
-	 * Called e.g. before serialization or before saving.
-	 */
-	// TODO: REMOVE
-	/*
-	public copyZ80MemToBanks() {
-		let offset=0;
-		let slotIndex=0;
-		while (offset<0x10000) {
-			const bank=this.slots[slotIndex];
-			const memBank=this.banks[bank];
-			const z80SlotMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+offset, ZxMemory.MEMORY_BANK_SIZE);
-			memBank.set(z80SlotMem);
-			// Next
-			offset+=ZxMemory.MEMORY_BANK_SIZE;
-			slotIndex++;
-		}
-	}
-	*/
-
-	/**
-	 * Restores the Z80 memory slot from the corresponding bank.
-	 * Called e.g. when the banking is done with the ports.
-	 */
-	// TODO: REMOVE
-	/*
-	public restoreSlot(slotIndex: number) {
-		const bank=this.slots[slotIndex];
-		const addr=ZxMemory.MEMORY_BANK_SIZE*slotIndex;
-		const memBank=this.banks[bank];
-		this.z80Memory.set(memBank, addr);
-	}
-	*/
-
-	/**
-	 * Saves the Z80 memory slot into the corresponding bank.
-	 * Called e.g. when the banking is done with the ports.
-	 */
-	// TODO: REMOVE
-	/*
-	public saveSlot(slotIndex: number) {
-		const bank=this.slots[slotIndex];
-		const addr=ZxMemory.MEMORY_BANK_SIZE*slotIndex;
-		const memBank=this.banks[bank];
-		const z80SlotMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+addr, ZxMemory.MEMORY_BANK_SIZE);
-		memBank.set(z80SlotMem);
-	}
-	*/
-
-	/**
 	 * Loads the 48K Spectrum roms in bank 0xFE and 0xFF
 	 */
 	// TODO: Remove
@@ -496,23 +439,6 @@ export class ZxMemory {
 		return gifBuffer;
 	}
 
-
-	/**
-	 * Returns the corresponding slot to a bank index.
-	 * @params The slot index or undeifned if not found.
-	 */
-	/*
-	protected getSlotOfBank(bankIndex: number): number|undefined {
-		let i=0;
-		for (const bank of this.slots) {
-			if (bank==bankIndex)
-				return i;
-			i++;
-		}
-		// Not found
-		return undefined;
-	}
-	*/
 
 	/**
 	 * Converts the screen pixels, the bits in the bytes, into pixels
