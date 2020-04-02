@@ -483,7 +483,7 @@ export class Z80Cpu extends Z80js {
 						self.pc&=0xFFFF;
 					}
 					else
-						self.tstates+=5;
+						self.tStates+=5;
 				}
 				break;
 
@@ -505,7 +505,7 @@ export class Z80Cpu extends Z80js {
 						self.pc&=0xFFFF;
 					}
 					else
-						self.tstates+=5;
+						self.tStates+=5;
 				}
 				break;
 
@@ -524,13 +524,13 @@ export class Z80Cpu extends Z80js {
 						self.pc&=0xFFFF;
 					}
 					else
-						self.tstates+=5;
+						self.tStates+=5;
 				}
 				break;
 
 			case 0x90:
 				{	// OUTINB
-					self.tstates+=16;
+					self.tStates+=16;
 					const t=self.memory.read8(self.r1.hl);
 					self.zxports.write(self.r1.bc, t);
 					self.r1.hl++;
@@ -543,7 +543,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x30:
 				{	// MUL D,E
-					self.tstates+=8;
+					self.tStates+=8;
 					self.r1.de=self.r1.d*self.r1.e;
 					// Next
 					self.pc+=2;
@@ -554,7 +554,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x31:
 				{	// ADD HL,A
-					self.tstates+=8;
+					self.tStates+=8;
 					self.r1.hl+=self.r1.a;
 					self.r1.hl&=0xFFFF;
 					// Next
@@ -565,7 +565,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x32:
 				{	// ADD DE,A
-					self.tstates+=8;
+					self.tStates+=8;
 					self.r1.de+=self.r1.a;
 					self.r1.de&=0xFFFF;
 					// Next
@@ -576,7 +576,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x33:
 				{	// ADD BC,A
-					self.tstates+=8;
+					self.tStates+=8;
 					self.r1.bc+=self.r1.a;
 					self.r1.bc&=0xFFFF;
 					// Next
@@ -587,7 +587,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x34:
 				{	// ADD HL,nn
-					self.tstates+=16;
+					self.tStates+=16;
 					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.hl+=nn;
 					self.r1.hl&=0xFFFF;
@@ -599,7 +599,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x35:
 				{	// ADD DE,nn
-					self.tstates+=16;
+					self.tStates+=16;
 					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.de+=nn;
 					self.r1.de&=0xFFFF;
@@ -611,7 +611,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x36:
 				{	// ADD BC,nn
-					self.tstates+=16;
+					self.tStates+=16;
 					const nn=self.zxmemory.getMemory16(self.pc+2);
 					self.r1.bc+=nn;
 					self.r1.bc&=0xFFFF;
@@ -623,7 +623,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x23:
 				{	// SWAPNIB
-					self.tstates+=8;
+					self.tStates+=8;
 					const a=self.r1.a;
 					self.r1.a=((a>>>4)+(a<<4))&0xFF;
 					// Next
@@ -634,7 +634,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x24:
 				{	// MIRROR
-					self.tstates+=8;
+					self.tStates+=8;
 					const a=self.r1.a;
 					self.r1.a=
 					((a>>>7)&0b00000001)+
@@ -653,7 +653,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x8A:
 				{	// PUSH nn
-					self.tstates+=23;
+					self.tStates+=23;
 					const nnh=self.zxmemory.getMemory8(self.pc+2);
 					const nnl=self.zxmemory.getMemory8(self.pc+3);
 					const nn=nnl+256*nnh;
@@ -667,7 +667,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x91:
 				{	// NEXTREG r,n
-					self.tstates+=20;
+					self.tStates+=20;
 					const reg=self.zxmemory.getMemory8(self.pc+2);
 					const val=self.zxmemory.getMemory8(self.pc+3);
 					self.zxports.write(0x243B, reg);
@@ -680,7 +680,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x92:
 				{	// NEXTREG r,A
-					self.tstates+=17;
+					self.tStates+=17;
 					const reg=self.zxmemory.getMemory8(self.pc+2);
 					self.zxports.write(0x243B, reg);
 					self.zxports.write(0x253B, self.r1.a);
@@ -709,7 +709,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x94:
 				{	// PIXELAD
-					self.tstates+=8;
+					self.tStates+=8;
 					const d=self.r1.d;
 					const e=self.r1.e;
 					self.r1.hl=0x4000+((d&0xC0)<<5)+((d&0x07)<<8)+((d&0x38)<<2)+(e>>>3);
@@ -721,7 +721,7 @@ export class Z80Cpu extends Z80js {
 
 			case 0x95:
 				{	// SETAE
-					self.tstates+=8;
+					self.tStates+=8;
 					const e=self.r1.e;
 					self.r1.a=(0x80)>>>(e&0x07)
 					// Next
@@ -735,7 +735,7 @@ export class Z80Cpu extends Z80js {
 					// Flags:
 					//  7 6 5 4  3  2  1 0
 					//  S Z X H  X P/V N C
-					self.tstates+=11;
+					self.tStates+=11;
 					const n=self.zxmemory.getMemory8(self.pc+2);
 					const result=self.r1.a&n;
 					let flags=self.r1.f;

@@ -90,6 +90,7 @@ suite('Z80Cpu', () => {
 			const mem=cpu.memory;
 
 			// PC overflow, A not equal
+			cpu.tStates=0;
 			mem.setMemory8(0x0000, 0xA4);
 			cpu.pc=0xFFFF;
 			r1.hl=0x1000;
@@ -99,6 +100,7 @@ suite('Z80Cpu', () => {
 			mem.setMemory8(0x2000, 0x00);
 			cpu.executeZ80n();
 
+			assert.equal(16, cpu.tStates);
 			assert.equal(0x0001, cpu.pc);
 			assert.equal(0x1001, r1.hl);
 			assert.equal(0x2001, r1.de);
