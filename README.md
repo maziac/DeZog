@@ -98,7 +98,7 @@ In order to use DeZog you need
 - vscode (of course)
 - the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required.
 
-Without ZEsarUX you can do some limited simulation with the See [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
+Without ZEsarUX you can do some limited simulation with the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
 
 
 ### DeZog
