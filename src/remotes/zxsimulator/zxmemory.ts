@@ -1,8 +1,5 @@
 import * as assert from 'assert';
-import * as path from 'path';
-import * as fs from 'fs';
 import {ImageConvert} from '../../imageconvert';
-import {Utility} from '../../misc/utility';
 import {MemBuffer} from '../../misc/membuffer';
 
 
