@@ -5,6 +5,7 @@
 	- Optimized handling of HALT instruction.
 	- Added "tbblueMemoryManagementSlots".
 	- New values for "visualMemory": "none", "64K", "ZX48", "ZX128" and "ZXNEXT"
+	- Added "Z80N" instructions.
 
 # 1.0.2
 - Documentation update.

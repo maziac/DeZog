@@ -111,6 +111,7 @@ suite('Z80Cpu', () => {
 			cpu.pc=0xFFFF;
 			r1.hl=0x1000;
 			r1.de=0x2000;
+			r1.bc=0x8000;
 			r1.a=0x20;
 			setMem([0x0000, 0xA4,
 				r1.hl, 0x10,
@@ -121,12 +122,14 @@ suite('Z80Cpu', () => {
 			assert.equal(0x0001, cpu.pc);
 			assert.equal(0x1001, r1.hl);
 			assert.equal(0x2001, r1.de);
+			assert.equal(0x7FFF, r1.bc);
 			assert.equal(0x10, mem.read8(0x2000));
 
-			// A equal, hl overflow
+			// A not equal, hl overflow
 			cpu.pc=0x0000;
 			r1.hl=0xFFFF;
 			r1.de=0x1000;
+			r1.bc=0x0000;
 			r1.a=0x20;
 			setMem([cpu.pc+1, 0xA4,
 			r1.hl, 0x11,
@@ -136,9 +139,10 @@ suite('Z80Cpu', () => {
 			assert.equal(0x0002, cpu.pc);
 			assert.equal(0x0000, r1.hl);
 			assert.equal(0x1001, r1.de);
+			assert.equal(0xFFFF, r1.bc);
 			assert.equal(0x11, mem.read8(0x1000));
 
-			// A equal, de overflow
+			// A not equal, de overflow
 			cpu.pc=0x0000;
 			r1.hl=0x1000;
 			r1.de=0xFFFF;
@@ -197,8 +201,8 @@ suite('Z80Cpu', () => {
 			r1.bc=1;
 			r1.a=0x20;
 			setMem([cpu.pc+1, 0xB4,
-				r1.hl, 0x10,
-				r1.de, 0x00]);
+			r1.hl, 0x10,
+			r1.de, 0x00]);
 			cpu.executeZ80n();
 
 			assert.equal(16, cpu.tStates);
@@ -228,6 +232,509 @@ suite('Z80Cpu', () => {
 			assert.equal(0x00, mem.read8(0x1000));
 		});
 
+
+		test('LDDX', () => {
+			// A not equal, hl decremented
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0x1000;
+			r1.de=0xFFFF;
+			r1.a=0x20;
+			r1.bc=6;
+			setMem([cpu.pc+1, 0xAC,
+			r1.hl, 0x12,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0x0FFF, r1.hl);
+			assert.equal(0x0000, r1.de);
+			assert.equal(5, r1.bc);
+			assert.equal(0x12, mem.read8(0xFFFF));
+
+		});
+
+
+		test('LDDRX', () => {
+			// BC == 0
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0x1000;
+			r1.de=0x2000;
+			r1.bc=1;
+			r1.a=0x20;
+			setMem([cpu.pc+1, 0xBC,
+			r1.hl, 0x10,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0x0FFF, r1.hl);
+			assert.equal(0x2001, r1.de);
+			assert.equal(0, r1.bc);
+			assert.equal(0x10, mem.read8(0x2000));
+
+			// BC != 0
+			cpu.tStates=0;
+			cpu.pc=0x8000;
+			r1.hl=0x0000;
+			r1.de=0x1000;
+			r1.bc=2;
+			r1.a=0x11;
+			setMem([cpu.pc+1, 0xBC,
+			r1.hl, 0x11,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(21, cpu.tStates);
+			assert.equal(0x8000, cpu.pc);
+			assert.equal(0xFFFF, r1.hl);
+			assert.equal(0x1001, r1.de);
+			assert.equal(1, r1.bc);
+			assert.equal(0x00, mem.read8(0x1000));
+		});
+
+
+		test('LDPIRX', () => {
+			// BC == 0, A not equal
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0x1000;
+			r1.de=0x20FF;
+			r1.bc=1;
+			r1.a=0x20;
+			setMem([cpu.pc+1, 0xB7,
+				0x1007, 0x10,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0x1000, r1.hl);
+			assert.equal(0x2100, r1.de);
+			assert.equal(0, r1.bc);
+			assert.equal(0x10, mem.read8(0x20FF));
+
+			// BC == 0, A not equal
+			cpu.tStates=0;
+			cpu.pc=0x0000;
+			r1.hl=0xFFFF;
+			r1.de=0x20F8;
+			r1.bc=1;
+			r1.a=0x20;
+			setMem([cpu.pc+1, 0xB7,
+				0xFFF8, 0x11,
+			r1.de, 0x00]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0xFFFF, r1.hl);
+			assert.equal(0x20F9, r1.de);
+			assert.equal(0, r1.bc);
+			assert.equal(0x11, mem.read8(0x20F8));
+
+			// BC != 0, A equal
+			cpu.tStates=0;
+			cpu.pc=0x8000;
+			r1.hl=0x0000;
+			r1.de=0x1001;
+			r1.bc=2;
+			r1.a=0x13;
+			setMem([cpu.pc+1, 0xB7,
+			0x0001, 0x13,
+			r1.de, 0x01]);
+			cpu.executeZ80n();
+
+			assert.equal(21, cpu.tStates);
+			assert.equal(0x8000, cpu.pc);
+			assert.equal(0x0000, r1.hl);
+			assert.equal(0x1002, r1.de);
+			assert.equal(1, r1.bc);
+			assert.equal(0x01, mem.read8(0x1001));
+		});
+
+
+		test('OUTINB', () => {
+			const outAddr=0xFFFF;
+			let outValue=0;
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.hl=0xFFFF;
+			r1.bc=outAddr;
+			setMem([0x0000, 0x90,
+				r1.hl, 0xAA]);
+			cpu.io.registerOutPortFunction(r1.hl, (port, value) => {
+				if (port==outAddr)
+					outValue=value;
+			});
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x0000, r1.hl);
+			assert.equal(0xAA, outValue);
+		});
+
+		test('MUL D,E', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.d=0;
+			r1.e=0;
+			setMem([0x0000, 0x30]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.d=5;
+			r1.e=0;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.d=5;
+			r1.e=0;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.d=0;
+			r1.e=6;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.d=5;
+			r1.e=7;
+			cpu.executeZ80n();
+			assert.equal(35, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.d=255;
+			r1.e=255;
+			cpu.executeZ80n();
+			assert.equal(65025, r1.de);
+		});
+
+
+		test('ADD HL,A', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.hl=0xFFF0;
+			r1.a=0xFF;
+			setMem([0x0000, 0x31]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x00EF, r1.hl);
+		});
+
+		test('ADD DE,A', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0xFFF0;
+			r1.a=0xFF;
+			setMem([0x0000, 0x32]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x00EF, r1.de);
+		});
+
+		test('ADD BC,A', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.bc=0xFFF0;
+			r1.a=0xFF;
+			setMem([0x0000, 0x33]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x00EF, r1.bc);
+		});
+
+
+		test('ADD HL,nn', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.hl=0xF000;
+			setMem([0x0000, 0x34,
+				0x0001, 0x34,
+				0x0002, 0x12]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0003, cpu.pc);
+			assert.equal(0x0234, r1.hl);
+		});
+
+		test('ADD DE,nn', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0xF000;
+			setMem([0x0000, 0x35,
+				0x0001, 0x34,
+				0x0002, 0x12]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0003, cpu.pc);
+			assert.equal(0x0234, r1.de);
+		});
+
+		test('ADD BC,nn', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.bc=0xF000;
+			setMem([0x0000, 0x36,
+				0x0001, 0x34,
+				0x0002, 0x12]);
+			cpu.executeZ80n();
+
+			assert.equal(16, cpu.tStates);
+			assert.equal(0x0003, cpu.pc);
+			assert.equal(0x0234, r1.bc);
+		});
+
+
+		test('SWAPNIB', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.a=0xA5;
+			setMem([0x0000, 0x23]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x5A, r1.a);
+		});
+
+		test('MIRROR', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.a=0b10000010;
+			setMem([0x0000, 0x24]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b01000001, r1.a);
+
+			let val=0b1000_0000;
+			let expected=0b0000_0001;
+			for (let i=0; i<8; i++) {
+				cpu.pc=0xFFFF;
+				r1.a=val;
+				cpu.executeZ80n();
+				assert.equal(expected, r1.a);
+				// Next
+				val>>>=1;
+				expected<<=1;
+			}
+
+			val=0b1111_1111_0111_1111;
+			expected=0b1111_1110;
+			for (let i=0; i<8; i++) {
+				cpu.pc=0xFFFF;
+				r1.a=val&0xFF;
+				cpu.executeZ80n();
+				assert.equal(expected, r1.a);
+				// Next
+				val>>>=1;
+				expected<<=1;
+				expected|=0b01;
+				expected&=0xFF;
+			}
+		});
+
+
+		test('PUSH nn', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.sp=0x8000;
+			setMem([0x0000, 0x8A,
+				0x0001, 0x12,
+				0x0002, 0x34]);
+			cpu.executeZ80n();
+
+			assert.equal(23, cpu.tStates);
+			assert.equal(0x0003, cpu.pc);
+			assert.equal(0x7FFE, r1.sp);
+			assert.equal(0x1234, mem.getMemory16(0x7FFE));
+
+			cpu.pc=0x1000;
+			r1.sp=0x0001;
+			setMem([0x1001, 0x8A,
+				0x1002, 0x12,
+				0x1003, 0x34]);
+			cpu.executeZ80n();
+
+			assert.equal(0x1004, cpu.pc);
+			assert.equal(0xFFFF, r1.sp);
+			assert.equal(0x1234, mem.getMemory16(0xFFFF));
+		});
+
+
+		test('NEXTREG r,n', () => {
+			const outRegSelect=0x243B;
+			const outRegAccess=0x253B;
+			let outSelectValue=0;
+			let outAccessValue=0;
+			cpu.io.registerOutPortFunction(outRegSelect, (port, value) => {
+				if (port==outRegSelect)
+					outSelectValue=value;
+			});
+			cpu.io.registerOutPortFunction(outRegAccess, (port, value) => {
+				if (port==outRegAccess)
+					outAccessValue=value;
+			});
+
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			setMem([0x0000, 0x91,
+				0x0001, 0xAA,
+				0x0002, 0x55]);
+			cpu.executeZ80n();
+
+			assert.equal(20, cpu.tStates);
+			assert.equal(0x0003, cpu.pc);
+			assert.equal(0xAA, outSelectValue);
+			assert.equal(0x55, outAccessValue);
+		});
+
+		test('NEXTREG r,A', () => {
+			const outRegSelect=0x243B;
+			const outRegAccess=0x253B;
+			let outSelectValue=0;
+			let outAccessValue=0;
+			cpu.io.registerOutPortFunction(outRegSelect, (port, value) => {
+				if (port==outRegSelect)
+					outSelectValue=value;
+			});
+			cpu.io.registerOutPortFunction(outRegAccess, (port, value) => {
+				if (port==outRegAccess)
+					outAccessValue=value;
+			});
+
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.a=0xF5;
+			setMem([0x0000, 0x92,
+				0x0001, 0xAA]);
+			cpu.executeZ80n();
+
+			assert.equal(17, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0xAA, outSelectValue);
+			assert.equal(0xF5, outAccessValue);
+		});
+
+
+		test('PIXELDN', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.hl=0xFEFF;
+			setMem([0x0000, 0x93]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0xFFFF, r1.hl);
+
+			cpu.pc=0xFFFF;
+			r1.hl=0xFF7F;
+			cpu.executeZ80n();
+			assert.equal(0xF87F+0x20, r1.hl);
+
+			cpu.pc=0xFFFF;
+			r1.hl=0xFFFF;
+			cpu.executeZ80n();
+			assert.equal(0x001F, r1.hl);
+		});
+
+		test('PIXELAD', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0x0000;
+			setMem([0x0000, 0x94]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0x4000, r1.hl);
+
+			cpu.pc=0xFFFF;
+			r1.de=0xFFFF;
+			cpu.executeZ80n();
+			assert.equal(0x5F1F+0xE0, r1.hl);
+			assert.equal(0xFFFF, r1.de);
+		});
+
+		test('SETAE', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.e=0x00;
+			setMem([0x0000, 0x95]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b1000_0000, r1.a);
+
+			cpu.pc=0xFFFF;
+			r1.e=0x01;
+			cpu.executeZ80n();
+			assert.equal(0b0100_0000, r1.a);
+
+			cpu.pc=0xFFFF;
+			r1.e=0x07;
+			cpu.executeZ80n();
+			assert.equal(0b0000_0001, r1.a);
+
+			cpu.pc=0xFFFF;
+			r1.e=0xFA;
+			cpu.executeZ80n();
+			assert.equal(0b0010_0000, r1.a);
+		});
+
+
+		test('TEST n', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.a=0xA5;
+			r1.f=0x00;
+			setMem([0x0000, 0x27,
+				0x0001, 0xFF]);
+			cpu.executeZ80n();
+
+			assert.equal(11, cpu.tStates);
+			assert.equal(0x0002, cpu.pc);
+			assert.equal(0b1000_0000, r1.f);
+
+			cpu.pc=0xFFFF;
+			r1.a=0xA5;
+			r1.f=0x00;
+			setMem([0x0000, 0x27,
+				0x0001, 0x5A]);
+			cpu.executeZ80n();
+			assert.equal(0b0100_0000, r1.f);
+
+			cpu.pc=0xFFFF;
+			r1.a=0x75;
+			r1.f=0x00;
+			setMem([0x0000, 0x27,
+				0x0001, 0xFF]);
+			cpu.executeZ80n();
+			assert.equal(0b0000_0000, r1.f);
+		});
 	});
 
 });

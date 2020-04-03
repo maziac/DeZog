@@ -337,9 +337,10 @@ Example launch.json configuration:
 ~~~
     "remoteType": "zsim",
     "zsim": {
+        "Z80N": true,
     	"loadZxRom": true,
         "zxKeyboard": true,
-	    "visualMemory": true,
+	    "visualMemory": "ZXNEXT",
 	    "ulaScreen": true,
 	    "memoryPagingControl": true,
         "tbblueMemoryManagementSlots": true,
@@ -352,6 +353,7 @@ The default configuration enables: loadZxRom, zxKeyboard, visualMemory, ulaScree
 For ZX 128K support you should add the memoryPagingControl option.
 
 Here is the explanations of all the options:
+- "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
 - "loadZxRom": true/false. Defaults to true. Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
 - "zxKeyboard": true/false. Defaults to true. If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
