@@ -58,7 +58,6 @@ export class ZxMemory {
 		this.ulaScreenBank=5*2;
 		// Create RAM
 		this.AllBanksRam=new Uint8Array(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
-		this.AllBanksRam[2072576] = 22; // TODO: REMOVE
 		// Create visual memory
 		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
 		this.clearVisualMemory();
@@ -346,7 +345,7 @@ export class ZxMemory {
 	 */
 	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
 		if (!(totalBlock instanceof Uint8Array))
-			totalBlock=new Uint8Array(totalBlock);		// TODO: REMOVE?
+			totalBlock=new Uint8Array(totalBlock);		// TODO: REMOVE? Used by ZxNextRemote
 		let offset=0;
 		// The block may span several banks.
 		let addr=startAddress;
@@ -386,22 +385,6 @@ export class ZxMemory {
 		let ramAddr=bank*ZxMemory.MEMORY_BANK_SIZE;
 		this.AllBanksRam.set(block, ramAddr);
 	}
-
-
-	/**
-	 * Loads the 48K Spectrum roms in bank 0xFE and 0xFF
-	 */
-	// TODO: Remove
-	public loadRom() {
-		// Load rom
-		let filepath=Utility.getExtensionPath();
-		filepath=path.join(filepath, 'data/48.rom');
-		const data=fs.readFileSync(filepath);
-		// Split over 2 banks
-		this.writeBank(254, data.slice(0, ZxMemory.MEMORY_BANK_SIZE));
-		this.writeBank(255, data.slice(ZxMemory.MEMORY_BANK_SIZE));
-	}
-
 
 
 	/**
