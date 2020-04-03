@@ -336,7 +336,7 @@ export class StepHistoryClass extends EventEmitter {
 			Z80Registers.setCache(line);
 			// Add to history for decoration
 			const addr=Z80Registers.getPC();
-			this.revDbgHistory.push(addr); // TODO: enable
+			this.revDbgHistory.push(addr);
 		}
 		return line;
 	}

@@ -219,11 +219,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
-
-
-	// TODO: REMOVE
-	debug_wait_before: number,
-	debug_wait_after: number
 }
 
 
@@ -277,10 +272,6 @@ export class Settings {
 				memoryViewer: <any>undefined,
 				tabSize: <any>undefined,
 				unitTestTimeout: <any>undefined,
-
-				// TODO: REMOVE
-				debug_wait_before: <any>undefined,
-				debug_wait_after: <any>undefined,
 			}
 		}
 
@@ -517,13 +508,6 @@ export class Settings {
 
 		if(!Settings.launch.unitTestTimeout)
 			Settings.launch.unitTestTimeout=1;	///< 1000 ms
-
-
-		// TODO: REMOVE
-		if (Settings.launch.debug_wait_before==undefined)
-			Settings.launch.debug_wait_before=0;
-		if (Settings.launch.debug_wait_after==undefined)
-			Settings.launch.debug_wait_after=0;
 	}
 
 

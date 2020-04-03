@@ -21,6 +21,8 @@ suite('ZxSimulatorRemote', () => {
 					ulaScreen: true,
 					memoryPagingControl: false,
 					cpuLoadInterruptRange: 1,
+					Z80N: false,
+					vsyncInterrupt: false
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -34,7 +36,7 @@ suite('ZxSimulatorRemote', () => {
 
 		test('Check ROM', () => {
 			// @ts-ignore
-			zsim.configureMachine();
+			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
 
 			// Check first 2 bytes
 			let value=zsim.zxMemory.read8(0x0000);
@@ -73,12 +75,12 @@ suite('ZxSimulatorRemote', () => {
 			};
 			Settings.Init(cfg, '');
 			zsim=new ZxSimulatorRemote();
+			// @ts-ignore, The 128er ROM
+			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
+
 		});
 
 		test('Check ROM 0', () => {
-			// @ts-ignore, The 128er ROM
-			zsim.configureMachine();
-
 			// Switch to 128k ROM
 			zsim.zxPorts.write(0x7FFD, 0);
 
@@ -113,9 +115,6 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('Check ROM 1', () => {
-			// @ts-ignore, The 128k ROM
-			zsim.configureMachine();
-
 			// In USR0 mode the 48K rom is enabled by default
 
 			// Check first 2 bytes
@@ -149,9 +148,6 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('bank switching', () => {
-			// @ts-ignore
-			zsim.configureMachine();
-
 			// Address used for writing/reading
 			const address=0xC000;
 
@@ -179,9 +175,6 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('ula switching', () => {
-			// @ts-ignore
-			zsim.configureMachine();
-
 			// @ts-ignore, Default, Bank 5
 			let bank=zsim.zxMemory.ulaScreenBank;
 			assert.equal(2*5, bank);
@@ -201,9 +194,6 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('paging disable', () => {
-			// @ts-ignore, 128k
-			zsim.configureMachine();
-
 			// Disable memory paging
 			zsim.zxPorts.write(0x7FFD, 0b0100000);
 
@@ -234,6 +224,8 @@ suite('ZxSimulatorRemote', () => {
 					memoryPagingControl: false,
 					tbblueMemoryManagementSlots: true,
 					cpuLoadInterruptRange: 1,
+					Z80N: false,
+					vsyncInterrupt: false
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -243,12 +235,12 @@ suite('ZxSimulatorRemote', () => {
 			};
 			Settings.Init(cfg, '');
 			zsim=new ZxSimulatorRemote();
+			// @ts-ignore
+			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
+
 		});
 
 		test('bank switching RAM', () => {
-			// @ts-ignore
-			zsim.configureMachine();
-
 			// Put unique number in each bank
 			let bank=0;
 			for (let slot=0; slot<8; slot++) {
@@ -280,9 +272,6 @@ suite('ZxSimulatorRemote', () => {
 		});
 
 		test('bank switching ROM', () => {
-			// @ts-ignore
-			zsim.configureMachine();
-
 			// Do memory switch to slot0/bank10
 			zsim.zxPorts.write(0x243B, 0x50+0);
 			zsim.zxPorts.write(0x253B, 10);

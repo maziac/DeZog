@@ -196,13 +196,13 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Configures the machine.
 	 * Loads the roms and sets up bank switching.
 	 */
-	protected configureMachine() {
+	protected configureMachine(loadZxRom: boolean, memoryPagingControl: boolean, tbblueMemoryManagementSlots: boolean) {
 		try {
 
 			// "loadZxRom"
-			if (Settings.launch.zsim.loadZxRom) {
+			if (loadZxRom) {
 				// Load the rom
-				if (Settings.launch.zsim.memoryPagingControl) {
+				if (memoryPagingControl) {
 					// ZX 128K
 					const size=ZxMemory.MEMORY_BANK_SIZE;
 					const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
@@ -226,7 +226,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			}
 
 			// "memoryPagingControl"
-			if (Settings.launch.zsim.memoryPagingControl) {
+			if (memoryPagingControl) {
 				// Bank switching.
 				this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 			}
@@ -234,7 +234,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// TBBlue
 
 			// "tbblueMemoryManagementSlots"
-			if (Settings.launch.zsim.tbblueMemoryManagementSlots) {
+			if (tbblueMemoryManagementSlots) {
 				// Bank switching.
 				for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
 					this.tbblueRegisterHandler.set(tbblueRegister, this.tbblueMemoryManagementSlots.bind(this));
@@ -264,7 +264,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.supportsZxNextRegisters=false;
 
 			// Decide what machine
-			this.configureMachine();
+			this.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
 
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;
