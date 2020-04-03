@@ -298,6 +298,11 @@
 									"type": "boolean",
 									"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
 									"default": false
+								},
+								"vsyncInterrupt": {
+									"type": "boolean",
+									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
+									"default": false
 								}
 							},
 							"serial": {

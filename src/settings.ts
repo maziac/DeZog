@@ -110,7 +110,9 @@ export interface ZxSimType {
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
 	// If enabled the Z80N extended instructions are supported.
-	Z80N: boolean
+	Z80N: boolean,
+	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
+	vsyncInterrupt: boolean,
 }
 
 
@@ -331,11 +333,22 @@ export class Settings {
 				Settings.launch.zsim.visualMemory="64K";
 		}
 		if (Settings.launch.zsim.Z80N==undefined) {
-			// try to guess Z80Nvisual memory from the other settings
+			// try to guess Z80N visual memory from the other settings
 			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
 				Settings.launch.zsim.Z80N=true;
 			else
 				Settings.launch.zsim.Z80N=false;
+		} if (Settings.launch.zsim.vsyncInterrupt==undefined) {
+			// try to guess vsyncInterrupt from the other settings
+			if (Settings.launch.zsim.tbblueMemoryManagementSlots
+				||Settings.launch.zsim.loadZxRom
+				||Settings.launch.zsim.zxKeyboard
+				||Settings.launch.zsim.ulaScreen
+				||Settings.launch.zsim.memoryPagingControl
+			)
+				Settings.launch.zsim.vsyncInterrupt=true;
+			else
+				Settings.launch.zsim.vsyncInterrupt=false;
 		}
 
 		// serial

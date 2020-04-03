@@ -40,6 +40,9 @@ export class Z80Cpu extends Z80js {
 	// Set to true to enable the Z80N instruction set.
 	protected z80n: boolean;
 
+	// Set to true if a ZX Spectrum like interrupt should be generated.
+	protected vsyncInterrupt: boolean;
+
 
 	/// Constructor.
 	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
@@ -59,6 +62,7 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoadRangeCounter=0;
 		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
 		this.z80n=Settings.launch.zsim.Z80N;
+		this.vsyncInterrupt=Settings.launch.zsim.vsyncInterrupt;
 	}
 
 
@@ -106,24 +110,26 @@ export class Z80Cpu extends Z80js {
 		// Add t-states
 		this.cpuTotalTstates+=tstatesDiff;
 		// Interrupt
-		this.remaingInterruptTstates-=tstatesDiff;
-		if (this.remaingInterruptTstates<=0) {
-			// Interrupt
-			this.remaingInterruptTstates=this.INTERRUPT_TIME;
-			//this.remaingInterruptTstates=2;
-			this.injectInterrupt();
-			// Measure CPU load
-			this.cpuLoadRangeCounter++;
-			if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
-				if (this.cpuTotalTstates>0) {
-					this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
-					this.cpuLoadTstates=0;
-					this.cpuTotalTstates=0;
-					this.cpuLoadRangeCounter=0;
+		if (this.vsyncInterrupt) {
+			this.remaingInterruptTstates-=tstatesDiff;
+			if (this.remaingInterruptTstates<=0) {
+				// Interrupt
+				this.remaingInterruptTstates=this.INTERRUPT_TIME;
+				//this.remaingInterruptTstates=2;
+				this.injectInterrupt();
+				// Measure CPU load
+				this.cpuLoadRangeCounter++;
+				if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
+					if (this.cpuTotalTstates>0) {
+						this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
+						this.cpuLoadTstates=0;
+						this.cpuTotalTstates=0;
+						this.cpuLoadRangeCounter=0;
+					}
 				}
+				// Vert. interrupt
+				return true;
 			}
-			// Vert. interrupt
-			return true;
 		}
 
 		// No vert. interrupt
