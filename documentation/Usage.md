@@ -345,6 +345,7 @@ Example launch.json configuration:
 	    "memoryPagingControl": true,
         "tbblueMemoryManagementSlots": true,
         "cpuLoadInterruptRange": 1,
+        "vsyncInterrupt": true
     }
 ~~~
 
@@ -365,6 +366,7 @@ Here is the explanations of all the options:
 - "tbblueMemoryManagementSlots": true/false. Default to false. If enabled the ZX Next memory banking is enabled through registers 0x50-0x57. Use this to simulate ZX Next memory banking.
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
+- "vsyncInterrupt": Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 
 
 
