@@ -58,7 +58,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected serializeObjects: any[];
 
 	// History info will not occupy a new element but replace the old element
-	// if PC does not change. USed for LDIR, HALT.
+	// if PC does not change. Used for LDIR, HALT.
 	protected previouslyStoredPCHistory;
 
 	// TBBlue register handling.
@@ -609,7 +609,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 			assert(this.continueResolve);
 			if (this.continueResolve)
-				this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+				this.continueResolve({breakNumber, breakData, breakReasonString});
 
 			// Update the screen etc.
 			this.emit('update')
@@ -634,7 +634,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				assert(this.continueResolve);
 				if (this.continueResolve)
-					this.continueResolve({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+					this.continueResolve({breakNumber, breakData, breakReasonString});
 
 				// Update the screen etc.
 				this.emit('update')
@@ -658,8 +658,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
-	public async continue(): Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{breakNumber: number, breakData: number, breakReasonString: string, tStates?: number, cpuFreq?: number}>(async resolve => {
+	public async continue(): Promise<{breakNumber: number, breakData: number, breakReasonString: string}> {
+		return new Promise<{breakNumber: number, breakData: number, breakReasonString: string}>(async resolve => {
 			// Save resolve function when break-response is received
 			this.continueResolve=({breakNumber, breakData, breakReasonString}) => {
 				// Clear registers
@@ -735,7 +735,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Resets the T-States counter. USed before stepping to measure the
+	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {

@@ -216,7 +216,7 @@ export class ZxNextRemote extends DzrpRemote {
 				// Adds breakReasonNumber (as number) if consumer is step-out.
 				assert((breakNumber==BREAK_REASON_NUMBER.NO_REASON&&breakReasonString==undefined)
 					||(breakNumber!=BREAK_REASON_NUMBER.NO_REASON&&breakReasonString!=undefined));
-				continueHandler({breakNumber, breakData, breakReasonString, tStates: undefined, cpuFreq: undefined});
+				continueHandler({breakNumber, breakData, breakReasonString});
 			}
 		}
 		else {

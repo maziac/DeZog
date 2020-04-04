@@ -198,7 +198,7 @@ export class SerialFake extends ZxSimulatorRemote {
 					this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
 
 					// Function called after a break
-					this.continueResolve=({breakNumber, breakData, breakReasonString, tStates, cpuFreq}) => {
+					this.continueResolve=({breakNumber, breakData, breakReasonString}) => {
 						// Send Notification
 						const ntfSeqNo=this.parser.getNextSeqNo();
 						const breakBuffer=Utility.getBufferFromString(breakReasonString);

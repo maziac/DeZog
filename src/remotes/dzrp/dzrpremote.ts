@@ -26,7 +26,7 @@ import {Mutex} from 'async-mutex';
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({breakNumber, breakData, breakReasonString, tStates, cpuFreq}) => void;
+	protected continueResolve?: ({breakNumber, breakData, breakReasonString}) => void;
 
 	// This flag is used to pause a step-out.
 	protected pauseStepOut=false;
@@ -267,19 +267,17 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {reason, tStates, cpuFreq}.
+	 * @returns A Promise with {breakReasonString}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * breakReason contains the stop reason as string.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
 	 *
 	 * This method assumes a 'stupid' external remote that does not evaluate the
 	 * breakpoint's log string or condition.
 	 * Instead evaluation is done here and if e.g. the condition is not met
 	 * than anouther 'continue' is sent.
 	 */
-	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
+	public async continue(): Promise<{breakReasonString: string}> {
+		return new Promise<{breakReasonString: string}>(resolve => {
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
 				try {
@@ -355,12 +353,10 @@ export class DzrpRemote extends RemoteBase {
 	 * @param stepOver true=step-over, false=step-into.
 	 * @returns A Promise with:
 	 * 'instruction' is the disassembly of the current line.
-	 * 'tStates' undefined.
-	 * 'cpuFreq' undefined.
-	 * 'breakReason' a possibly text with the break reason.
+	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOver(stepOver = true): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(async resolve => {
+	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
+		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
 			// Do pre-step
 			await this.preStep();
 			// Calculate the breakpoints to use for step-over
@@ -389,13 +385,11 @@ export class DzrpRemote extends RemoteBase {
 	 * 'step into' an instruction in the debugger.
 	 * @returns A Promise:
 	 * 'instruction' is the disassembly of the current line.
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason. This is mainly to keep the
+	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
 	 * record consistent with stepOver. But it is e.g. used to inform when the
 	 * end of the cpu history is reached.
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+	public async stepInto(): Promise<{instruction: string, breakReasonString?: string}> {
 		return this.stepOver(false);
 	}
 
@@ -405,14 +399,12 @@ export class DzrpRemote extends RemoteBase {
 	 * The step-out uses normal step (into) funcionality and check
 	 * after each step if the last instruction was some RET and
 	 * the stackpointer is bigger that at the beginning.
-	 * @param A Promise that returns {tStates, cpuFreq, breakReasonString}
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * @param A Promise that returns {breakReasonString}
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+	public async stepOut(): Promise<{breakReasonString?: string}> {
 
-		return new Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}>(async resolve => {
+		return new Promise<{breakReasonString?: string}>(async resolve => {
 			// Do pre-step
 			await this.preStep();
 			// Reset flag

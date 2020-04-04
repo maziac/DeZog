@@ -840,13 +840,11 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {reason, tStates, cpuFreq}.
+	 * @returns A Promise with {breakReasonString}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
+	public async continue(): Promise<{breakReasonString: string}> {
 		assert(false);	// override this
 		return {breakReasonString: ''};
 	}
@@ -875,11 +873,9 @@ export class RemoteBase extends EventEmitter {
 	 * 'step over' an instruction in the debugger.
 	 * @returns A Promise with:
 	 * 'instruction' is the disassembly of the current line.
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
 		assert(false);	// override this
 		return {
 			instruction: ""
@@ -891,13 +887,11 @@ export class RemoteBase extends EventEmitter {
 	 * 'step into' an instruction in the debugger.
 	 * @returns A Promise:
 	 * 'instruction' is the disassembly of the current line.
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
 	 * record consistent with stepOver. But it is e.g. used to inform when the
 	 * end of the cpu history is reached.
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+	public async stepInto(): Promise<{instruction: string,breakReasonString?: string}> {
 		assert(false);	// override this
 		return {
 			instruction: ""
@@ -907,12 +901,10 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param A Promise that returns {tStates, cpuFreq, breakReasonString}the step out is performed.
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
+	 * @returs A Promise that returns {breakReasonString}.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
+	public async stepOut(): Promise<{breakReasonString?: string}> {
 		assert(false);	// override this
 		return {};
 	}
@@ -1278,7 +1270,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Resets the T-States counter. USed before stepping to measure the
+	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {

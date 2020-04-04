@@ -466,37 +466,24 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {reason, tStates, cpuFreq}.
+	 * @returns A Promise with {breakReasonString}.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
 	 */
-	public async continue(): Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}> {
-		return new Promise<{breakReasonString: string, tStates?: number, cpuFreq?: number}>(resolve => {
-			// Reset T-state counter.
-			zSocket.send('reset-tstates-partial', () => {
-				// Run
-				zSocket.sendInterruptableRunCmd(text => {
-					// (could take some time, e.g. until a breakpoint is hit)
-					// get T-State counter
-					zSocket.send('get-tstates-partial', data => {
-						const tStates=parseInt(data);
-						// get clock frequency
-						zSocket.send('get-cpu-frequency', data => {
-							const cpuFreq=parseInt(data);
-							// Clear register cache
-							Z80Registers.clearCache();
-							this.clearCallStack();
-							// Handle code coverage
-							this.handleCodeCoverage();
-							// The reason is the 2nd line
-							const breakReasonString=this.getBreakReason(text);
-							// Call handler
-							resolve({breakReasonString, tStates, cpuFreq});
-						});
-					});
-				});
+	public async continue(): Promise<{breakReasonString: string}> {
+		return new Promise<{breakReasonString: string}>(resolve => {
+			// Run
+			zSocket.sendInterruptableRunCmd(text => {
+				// (could take some time, e.g. until a breakpoint is hit)
+				// Clear register cache
+				Z80Registers.clearCache();
+				this.clearCallStack();
+				// Handle code coverage
+				this.handleCodeCoverage();
+				// The reason is the 2nd line
+				const breakReasonString=this.getBreakReason(text);
+				// Call handler
+				resolve({breakReasonString});
 			});
 		});
 	}
@@ -533,12 +520,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'step over' an instruction in the debugger.
 	 * @returns A Promise with:
 	 * 'disasm' is the disassembly of the current line.
-	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
 	 * 'breakReasonString' a possibly text with the break reason
 	 */
-	public async stepOver(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
+	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
+		return new Promise<{instruction: string, breakReasonString?: string}>(resolve => {
 			// Zesarux is very special in the 'step-over' behavior.
 			// In case of e.g a 'jp cc, addr' it will never return
 			// if the condition is met because
@@ -578,30 +563,19 @@ export class ZesaruxRemote extends RemoteBase {
 							zSocket.send('set-breakpoint '+bpId+' '+condition, () => {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
-									// Reset T-state counter.
-									zSocket.send('reset-tstates-partial', () => {
-										// Run
-										zSocket.sendInterruptableRunCmd(text => {
-											// (could take some time, e.g. until a breakpoint is hit)
-											// get T-State counter
-											zSocket.send('get-tstates-partial', data => {
-												const tStates=parseInt(data);
-												// get clock frequency
-												zSocket.send('get-cpu-frequency', data => {
-													const cpuFreq=parseInt(data);
-													// Clear register cache
-													Z80Registers.clearCache();
-													this.clearCallStack();
-													// Handle code coverage
-													this.handleCodeCoverage();
-													// The reason is the 2nd line
-													const breakReasonString=this.getBreakReason(text);
-													// Disable breakpoint
-													zSocket.send('disable-breakpoint '+bpId, () => {
-														resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
-													});
-												});
-											});
+									// Run
+									zSocket.sendInterruptableRunCmd(text => {
+										// (could take some time, e.g. until a breakpoint is hit)
+										// Clear register cache
+										Z80Registers.clearCache();
+										this.clearCallStack();
+										// Handle code coverage
+										this.handleCodeCoverage();
+										// The reason is the 2nd line
+										const breakReasonString=this.getBreakReason(text);
+										// Disable breakpoint
+										zSocket.send('disable-breakpoint '+bpId, () => {
+											resolve({instruction: disasm, breakReasonString});
 										});
 									});
 								});
@@ -613,10 +587,16 @@ export class ZesaruxRemote extends RemoteBase {
 						const cmd=(opcode=="LDIR"||opcode=="LDDR"||opcode=="CPIR"||opcode=="CPDR")? 'cpu-step-over':'cpu-step';
 						// Clear register cache
 						Z80Registers.clearCache();
-						// Step
-						this.cpuStepGetTime(cmd, (tStates, cpuFreq, breakReasonString) => {
+						zSocket.send(cmd, result => {
+							// Clear cache
+							Z80Registers.clearCache();
+							this.clearCallStack();
+							// Handle code coverage
+							this.handleCodeCoverage();
 							// Call handler
-							resolve({instruction: disasm, tStates, cpuFreq, breakReasonString});
+							const breakReasonString=this.getBreakReason(result);
+							resolve({instruction: disasm, breakReasonString});
+
 						});
 					}
 				});
@@ -629,20 +609,23 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'step into' an instruction in the debugger.
 	 * @returns A Promise:
 	 * 'instruction' is the disassembly of the current line.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
 	 * 'breakReasonString' E.g. "End of history reached"
 	 */
-	public async stepInto(): Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
-		return new Promise<{instruction: string, tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
+	public async stepInto(): Promise<{instruction: string, breakReasonString?: string}> {
+		return new Promise<{instruction: string, breakReasonString?: string}>(resolve => {
 			// Normal step into.
 			this.getRegisters().then(() => {
 				const pc=Z80Registers.getPC();
 				zSocket.send('disassemble '+pc, instruction => {
 					// Clear register cache
 					Z80Registers.clearCache();
-					this.cpuStepGetTime('cpu-step', (tStates, cpuFreq) => {
-						resolve({instruction, tStates, cpuFreq: cpuFreq});
+					zSocket.send('cpu-step', result => {
+						// Clear cache
+						Z80Registers.clearCache();
+						this.clearCallStack();
+						// Handle code coverage
+						this.handleCodeCoverage();
+						resolve({instruction});
 					});
 				});
 			});
@@ -651,7 +634,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Resets the T-States counter. USed before stepping to measure the
+	 * Resets the T-States counter. Used before stepping to measure the
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {
@@ -692,28 +675,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Executes a step and also returns the T-states and time needed.
-	 * @param cmd Either 'cpu-step' or 'cpu-step-over'.
-	 * @param handler(tStates, cpuFreq, breakReason) The handler that is called after the step is performed.
-	 * tStates contains the number of tStates executed.
-	 * cpuFreq contains the CPU frequency at the end.
-	 */
-	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, breakReason?: string)=>void): void {
-			// Command, e.g. step into
-		zSocket.send(cmd, result => {
-			// Clear cache
-			Z80Registers.clearCache();
-			this.clearCallStack();
-			// Call handler
-			const breakReason=this.getBreakReason(result);
-			handler(1, 1, breakReason); // TODO: remove tstates
-			// Handle code coverage
-			this.handleCodeCoverage();
-		});
-	}
-
-
-	/**
 	 * Reads the coverage addresses and clears them in ZEsarUX.
 	 */
 	protected handleCodeCoverage() {
@@ -744,12 +705,11 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param A Promise that returns {tStates, cpuFreq, breakReason}	 * 'tStates' contains the number of tStates executed.
-	 * 'cpuFreq' contains the CPU frequency at the end.
-	 * 'breakReason' a possibly text with the break reason.
+	 * @param A Promise that returns {breakReasonString}
+	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}> {
-		return new Promise<{tStates?: number, cpuFreq?: number, breakReasonString?: string}>(resolve => {
+	public async stepOut(): Promise<{breakReasonString?: string}> {
+		return new Promise<{breakReasonString?: string}>(resolve => {
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
@@ -803,33 +763,21 @@ export class ZesaruxRemote extends RemoteBase {
 
 										// Clear register cache
 										Z80Registers.clearCache();
-										// Reset T-state counter.
-										zSocket.send('reset-tstates-partial', () => {
-											// Run
-											zSocket.sendInterruptableRunCmd(text => {
-												// (could take some time, e.g. until a breakpoint is hit)
-												// get T-State counter
-												zSocket.send('get-tstates-partial', data => {
-													const tStates=parseInt(data);
-													// get clock frequency
-													zSocket.send('get-cpu-frequency', data => {
-														const cpuFreq=parseInt(data);
-														// Clear register cache
-														Z80Registers.clearCache();
-														this.clearCallStack();
-														// Handle code coverage
-														this.handleCodeCoverage();
-														// The reason is the 2nd line
-														const breakReasonString=this.getBreakReason(text);
-														// Disable breakpoint
-														zSocket.send('disable-breakpoint '+bpId, () => {
-															resolve({tStates, cpuFreq, breakReasonString});
-														});
-													});
-												});
+										// Run
+										zSocket.sendInterruptableRunCmd(text => {
+											// (could take some time, e.g. until a breakpoint is hit)
+											// Clear register cache
+											Z80Registers.clearCache();
+											this.clearCallStack();
+											// Handle code coverage
+											this.handleCodeCoverage();
+											// The reason is the 2nd line
+											const breakReasonString=this.getBreakReason(text);
+											// Disable breakpoint
+											zSocket.send('disable-breakpoint '+bpId, () => {
+												resolve({breakReasonString});
 											});
 										});
-
 									});
 								});
 							});
