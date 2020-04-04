@@ -322,7 +322,6 @@ export class DzrpRemote extends RemoteBase {
 					else {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
-
 						// return
 						resolve({breakReasonString});
 					}
@@ -369,8 +368,9 @@ export class DzrpRemote extends RemoteBase {
 			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
 
 			// Disassemble
+			const pc=this.getPC();
 			const opCodeDescription=opcode.disassemble();
-			const instruction=opCodeDescription.mnemonic;
+			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			this.continueResolve=({breakReasonString}) => {
 				// Clear registers

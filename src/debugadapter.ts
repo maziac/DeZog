@@ -1029,7 +1029,7 @@ export class DebugSessionClass extends DebugSession {
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 		// Display T-states and time
-		this.showDisassembly('Continue. ', result.tStates, result.cpuFreq);
+		this.showStepInfo('Continue. ', result.tStates, result.cpuFreq);
 
 		if (result.breakReasonString) {
 			// Send output event to inform the user about the reason
@@ -1131,7 +1131,7 @@ export class DebugSessionClass extends DebugSession {
 		let text=result.instruction||'';
 		if (result.tStates||result.cpuFreq)
 			text+=' \t; ';
-		this.showDisassembly('StepOver: '+text, result.tStates, result.cpuFreq);
+		this.showStepInfo('StepOver: '+text, result.tStates, result.cpuFreq);
 
 		// Update memory dump etc.
 		await this.update({step: true});
@@ -1196,7 +1196,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param tStates The used T-States.
 	 * @param cpuFreq The CPU clock frequency in Hz.
 	 */
-	protected showDisassembly(disasm: string, tStates?: number, cpuFreq?: number) {
+	protected showStepInfo(disasm: string, tStates?: number, cpuFreq?: number) {
 		// Display T-states and time
 		let output=disasm;
 		if (tStates) {
@@ -1250,12 +1250,18 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Step-Into
 			StepHistory.clear();
+			await Remote.resetTstates();
 			result=await Remote.stepInto();
-			// Display T-states and time
+			// Get used T-states
+			const usedTstates=await Remote.getTstates();
+			// Get frequency
+			const cpuFreq=await Remote.getCpuFrequency();
+
+			// Display info
 			let text=result.instruction||'';
 			if (result.tStates||result.cpuFreq)
 				text+=' \t; ';
-			this.showDisassembly('StepInto: '+text, result.tStates, result.cpuFreq);
+			this.showStepInfo('StepInto: '+text, usedTstates, cpuFreq);
 
 			// Update memory dump etc.
 			await this.update({step: true});
@@ -1296,7 +1302,7 @@ export class DebugSessionClass extends DebugSession {
 			StepHistory.clear();
 			const result=await Remote.stepOut();
 			// Display T-states and time
-			this.showDisassembly('StepOut. ', result.tStates, result.cpuFreq);
+			this.showStepInfo('StepOut. ', result.tStates, result.cpuFreq);
 
 			// Update memory dump etc.
 			await this.update();

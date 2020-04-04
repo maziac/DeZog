@@ -22,13 +22,13 @@ export class Z80Cpu extends Z80js {
 	protected remaingInterruptTstates: number;
 
 	// Time for interrupt in T-States
-	protected INTERRUPT_TIME=0.02*3500000.0;  // 20ms * 3.5 MHz
+	protected INTERRUPT_TIME: number;
 
 	// For calculation of the CPU load.
 	// Summarizes all instruction besides HALT.
 	protected cpuLoadTstates: number;
-	// Summarizes all instruction includding HALT.
-	protected cpuTotalTstates: number;
+	// Summarizes all instruction including HALT.
+	public cpuTotalTstates: number;
 	// cpuLoadTstates divided by cpuTotalTstates.
 	protected cpuLoad: number;
 	// The number of interrupts to calculate the average from.
@@ -43,18 +43,23 @@ export class Z80Cpu extends Z80js {
 	// Set to true if a ZX Spectrum like interrupt should be generated.
 	protected vsyncInterrupt: boolean;
 
+	// At the moment just a constant. CPU frequency.
+	public cpuFreq: number;
+
 
 	/// Constructor.
 	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
 		super(memory, ports, debug);
 		//this.self=this;
+		this.cpuFreq=3500000.0;	// 3.5MHz.
+		this.INTERRUPT_TIME=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
 		this.remaingInterruptTstates=this.INTERRUPT_TIME;
-		const self=this as any;
 		/*
 		IM 0: Executes an instruction that is placed on the data bus by a peripheral.
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
+		const self=this as any;
 		self.im=0;	// Just as after interrupt.
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;

@@ -30,6 +30,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
 
+
 	// The ZX128 stores its ROM here as it has 2.
 	protected romBuffer: Uint8Array;
 
@@ -65,6 +66,11 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// Maps function handlers to registers (the key). As key the tbblueRegisterSelectValue is used.
 	protected tbblueRegisterHandler: Map<number, (port: number, value: number) => void>;
+
+	// To remember the current T-state counter  to measure the number of T-states
+	// of stepping.
+	protected previousTstates: number;
+
 
 	/// Constructor.
 	constructor() {
@@ -485,7 +491,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Runs the cpu in time chunks in order to give tiem to other
+	 * Runs the cpu in time chunks in order to give time to other
 	 * processes. E.g. to receive a pause command.
 	 * @param bp1 Breakpoint 1 address or -1 if not used.
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
@@ -729,6 +735,36 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			obj.serialize(memBuffer);
 
 		return memBuffer.getUint8Array();
+	}
+
+
+	/**
+	 * Resets the T-States counter. USed before stepping to measure the
+	 * time.
+	 */
+	public async resetTstates(): Promise<void> {
+		// Remember T-States
+		this.previousTstates=this.z80Cpu.cpuTotalTstates;
+	}
+
+
+	/**
+	 * Returns the number of T-States (since last reset).
+	 * @returns The number of T-States or 0 if not supported.
+	 */
+	public async getTstates(): Promise<number> {
+		const currentTstates=this.z80Cpu.cpuTotalTstates;
+		const diff=currentTstates-this.previousTstates;
+		return diff;
+	}
+
+
+	/**
+	 * Returns the current CPU frequency
+	 * @returns The CPU frequency in Hz (e.g. 3500000 for 3.5MHz) or 0 if not supported.
+	 */
+	public async getCpuFrequency(): Promise<number> {
+		return this.z80Cpu.cpuFreq;
 	}
 
 

@@ -1277,6 +1277,30 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+	/**
+	 * Resets the T-States counter. USed before stepping to measure the
+	 * time.
+	 */
+	public async resetTstates(): Promise<void> {
+	}
+
+
+	/**
+	 * Returns the number of T-States (since last reset).
+	 * @returns The number of T-States or 0 if not supported.
+	 */
+	public async getTstates(): Promise<number> {
+		return 0;
+	}
+
+
+	/**
+	 * Returns the current CPU frequency
+	 * @returns The CPU frequency in Hz (e.g. 3500000 for 3.5MHz) or 0 if not supported.
+	 */
+	public async getCpuFrequency(): Promise<number> {
+		return 0;
+	}
 
 
 	// ZX Next related ---------------------------------
