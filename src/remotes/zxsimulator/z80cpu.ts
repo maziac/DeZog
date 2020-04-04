@@ -37,6 +37,9 @@ export class Z80Cpu extends Z80js {
 	// Counts the current number of interrupts.
 	protected cpuLoadRangeCounter: number;
 
+	// Used to calculate thenumber of t-states for a step-over or similar.
+	public cpuTstatesCounter: number;
+
 	// Set to true to enable the Z80N instruction set.
 	protected z80n: boolean;
 
@@ -61,6 +64,7 @@ export class Z80Cpu extends Z80js {
 		*/
 		const self=this as any;
 		self.im=0;	// Just as after interrupt.
+		this.cpuTstatesCounter=0
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
@@ -113,6 +117,7 @@ export class Z80Cpu extends Z80js {
 		}
 
 		// Add t-states
+		this.cpuTstatesCounter+=tstatesDiff;
 		this.cpuTotalTstates+=tstatesDiff;
 		// Interrupt
 		if (this.vsyncInterrupt) {

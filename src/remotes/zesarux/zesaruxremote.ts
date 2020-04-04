@@ -651,6 +651,47 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
+	 * Resets the T-States counter. USed before stepping to measure the
+	 * time.
+	 */
+	public async resetTstates(): Promise<void> {
+		return new Promise<void>(resolve => {
+			zSocket.send('reset-tstates-partial', data => {
+				resolve();
+			});
+		});
+	}
+
+
+	/**
+	 * Returns the number of T-States (since last reset).
+	 * @returns The number of T-States or 0 if not supported.
+	 */
+	public async getTstates(): Promise<number> {
+		return new Promise<number>(resolve => {
+			zSocket.send('get-tstates-partial', data => {
+				const tStates=parseInt(data);
+				resolve(tStates);
+			});
+		});
+	}
+
+
+	/**
+	 * Returns the current CPU frequency
+	 * @returns The CPU frequency in Hz (e.g. 3500000 for 3.5MHz) or 0 if not supported.
+	 */
+	public async getCpuFrequency(): Promise<number> {
+		return new Promise<number>(resolve => {
+			zSocket.send('get-cpu-frequency', data => {
+				const cpuFreq=parseInt(data);
+				resolve(cpuFreq);
+			});
+		});
+	}
+
+
+	/**
 	 * Executes a step and also returns the T-states and time needed.
 	 * @param cmd Either 'cpu-step' or 'cpu-step-over'.
 	 * @param handler(tStates, cpuFreq, breakReason) The handler that is called after the step is performed.
@@ -658,27 +699,16 @@ export class ZesaruxRemote extends RemoteBase {
 	 * cpuFreq contains the CPU frequency at the end.
 	 */
 	protected cpuStepGetTime(cmd: string, handler:(tStates: number, cpuFreq: number, breakReason?: string)=>void): void {
-		// Reset T-state counter etc.
-		zSocket.send('reset-tstates-partial', data => {
 			// Command, e.g. step into
-			zSocket.send(cmd, result => {
-				// get T-State counter
-				zSocket.send('get-tstates-partial', data => {
-					const tStates = parseInt(data);
-					// get clock frequency
-					zSocket.send('get-cpu-frequency', data => {
-						const cpuFreq = parseInt(data);
-						// Clear cache
-						Z80Registers.clearCache();
-						this.clearCallStack();
-						// Call handler
-						const breakReason = this.getBreakReason(result);
-						handler(tStates, cpuFreq, breakReason);
-						// Handle code coverage
-						this.handleCodeCoverage();
-					});
-				});
-			});
+		zSocket.send(cmd, result => {
+			// Clear cache
+			Z80Registers.clearCache();
+			this.clearCallStack();
+			// Call handler
+			const breakReason=this.getBreakReason(result);
+			handler(1, 1, breakReason); // TODO: remove tstates
+			// Handle code coverage
+			this.handleCodeCoverage();
 		});
 	}
 

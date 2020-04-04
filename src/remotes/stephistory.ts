@@ -477,7 +477,7 @@ export class StepHistoryClass extends EventEmitter {
 	public stepInto(): {instruction: string, breakReason: string|undefined} {
 		return {
 			instruction: undefined as any,
-			breakReason: 'StepInto not supported in lite reverse debugging.'
+			breakReason: 'Step-into not supported in lite reverse debugging.'
 		};
 	}
 
@@ -488,7 +488,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * @returns breakReason='Not supported in lite reverse debugging.'.
 	 */
 	public stepOut(): string|undefined {
-		return 'StepOut not supported in lite reverse debugging.';
+		return 'Step-out not supported in lite reverse debugging.';
 	}
 
 

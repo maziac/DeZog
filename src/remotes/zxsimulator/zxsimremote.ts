@@ -67,10 +67,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	// Maps function handlers to registers (the key). As key the tbblueRegisterSelectValue is used.
 	protected tbblueRegisterHandler: Map<number, (port: number, value: number) => void>;
 
-	// To remember the current T-state counter  to measure the number of T-states
-	// of stepping.
-	protected previousTstates: number;
-
 
 	/// Constructor.
 	constructor() {
@@ -743,8 +739,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {
-		// Remember T-States
-		this.previousTstates=this.z80Cpu.cpuTotalTstates;
+		this.z80Cpu.cpuTstatesCounter = 0;
 	}
 
 
@@ -753,9 +748,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @returns The number of T-States or 0 if not supported.
 	 */
 	public async getTstates(): Promise<number> {
-		const currentTstates=this.z80Cpu.cpuTotalTstates;
-		const diff=currentTstates-this.previousTstates;
-		return diff;
+		return this.z80Cpu.cpuTstatesCounter;
 	}
 
 

@@ -425,7 +425,7 @@ export class DebugSessionClass extends DebugSession {
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-			StepHistory.decoder = Z80Registers.decoder;
+			StepHistory.decoder=Z80Registers.decoder;
 		}
 
 		// Load files
@@ -1025,11 +1025,12 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearBreak();
 		StepHistory.clear();
 
+		await this.startStepInfo('Continue');
 		const result=await Remote.continue();
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 		// Display T-states and time
-		this.showStepInfo('Continue. ', result.tStates, result.cpuFreq);
+		await this.endStepInfo();
 
 		if (result.breakReasonString) {
 			// Send output event to inform the user about the reason
@@ -1125,13 +1126,11 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.clear();
 
 		// Normal Step-Over
+		await this.startStepInfo('Step-over');
 		const result=await Remote.stepOver();
 
 		// Display T-states and time
-		let text=result.instruction||'';
-		if (result.tStates||result.cpuFreq)
-			text+=' \t; ';
-		this.showStepInfo('StepOver: '+text, result.tStates, result.cpuFreq);
+		await this.endStepInfo(result.instruction);
 
 		// Update memory dump etc.
 		await this.update({step: true});
@@ -1165,7 +1164,7 @@ export class DebugSessionClass extends DebugSession {
 			// Stepover
 			const {instruction, breakReasonString}=StepHistory.stepOver();
 			// Print
-			let text='StepOver';
+			let text='Step-over';
 			if (instruction)
 				text+=': '+instruction;
 			vscode.debug.activeDebugConsole.appendLine(text);
@@ -1191,16 +1190,36 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Prints the used T-states and time to the debug console.
+	 * Prints a text, the disassembly and the used T-states and time to the debug console.
+	 * Assumes that something like "StepInto" has been printed before.
+	 * If text is available output will start with a ":".
+	 * If not it will end with a ".".
 	 * @param disasm The corresponding disassembly.
-	 * @param tStates The used T-States.
-	 * @param cpuFreq The CPU clock frequency in Hz.
 	 */
-	protected showStepInfo(disasm: string, tStates?: number, cpuFreq?: number) {
+	protected async startStepInfo(mainText?: string): Promise<void> {
+		if(mainText)
+			vscode.debug.activeDebugConsole.append(mainText);
+		// Reset t-states counter
+		await Remote.resetTstates();
+	}
+
+
+	/**
+	 * Prints a text, the disassembly and the used T-states and time to the debug console.
+	 * Assumes that something like "StepInto" has been printed before.
+	 * If text is available output will start with a ":".
+	 * If not it will end with a ".".
+	 * @param disasm The corresponding disassembly.
+	 */
+	protected async endStepInfo(disasm?: string): Promise<void> {
+		// Get used T-states
+		const tStates=await Remote.getTstates();
+		// Get frequency
+		const cpuFreq=await Remote.getCpuFrequency();
 		// Display T-states and time
-		let output=disasm;
+		let tStatesText;
 		if (tStates) {
-			output+='T-States: '+tStates;
+			tStatesText='T-States: '+tStates;
 			if (cpuFreq) {
 				// Time
 				let time=tStates/cpuFreq;
@@ -1217,9 +1236,20 @@ export class DebugSessionClass extends DebugSession {
 				let clockStr=(cpuFreq*1E-6).toPrecision(2);
 				if (clockStr.endsWith('.0'))
 					clockStr=clockStr.substr(0, clockStr.length-2);
-				output+=', time: '+time.toPrecision(3)+unit+'@'+clockStr+'MHz';
+				tStatesText+=', time: '+time.toPrecision(3)+unit+'@'+clockStr+'MHz';
 			}
 		}
+		let output=disasm;
+		if (tStatesText) {
+			if (output)
+				output+='\t; '+tStatesText;
+			else
+				output=tStatesText;
+		}
+		if (output)
+			output=': '+output;
+		else
+			output='.';
 		vscode.debug.activeDebugConsole.appendLine(output);
 	}
 
@@ -1241,7 +1271,7 @@ export class DebugSessionClass extends DebugSession {
 			// StepInto
 			result=StepHistory.stepInto();
 			// Print
-			let text='StepInto';
+			let text='Step-into';
 			if (result.instruction)
 				text+=': '+result.instruction;
 			vscode.debug.activeDebugConsole.appendLine(text);
@@ -1249,19 +1279,12 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else {
 			// Step-Into
+			await this.startStepInfo('Step-into');
 			StepHistory.clear();
 			await Remote.resetTstates();
 			result=await Remote.stepInto();
-			// Get used T-states
-			const usedTstates=await Remote.getTstates();
-			// Get frequency
-			const cpuFreq=await Remote.getCpuFrequency();
-
 			// Display info
-			let text=result.instruction||'';
-			if (result.tStates||result.cpuFreq)
-				text+=' \t; ';
-			this.showStepInfo('StepInto: '+text, usedTstates, cpuFreq);
+			await this.endStepInfo(result.instruction);
 
 			// Update memory dump etc.
 			await this.update({step: true});
@@ -1293,16 +1316,17 @@ export class DebugSessionClass extends DebugSession {
 		// Check for reverse debugging.
 		let breakReasonString;
 		if (StepHistory.isInStepBackMode()) {
-			vscode.debug.activeDebugConsole.appendLine('StepOut');
+			vscode.debug.activeDebugConsole.appendLine('Step-out');
 			// StepOut
 			breakReasonString=StepHistory.stepOut();
 		}
 		else {
 			// Normal Step-Out
+			await this.startStepInfo('Step-out');
 			StepHistory.clear();
 			const result=await Remote.stepOut();
 			// Display T-states and time
-			this.showStepInfo('StepOut. ', result.tStates, result.cpuFreq);
+			await this.endStepInfo(undefined);
 
 			// Update memory dump etc.
 			await this.update();
@@ -1339,7 +1363,7 @@ export class DebugSessionClass extends DebugSession {
 		const result=await StepHistory.stepBack();
 
 		// Print
-		let text='StepBack';
+		let text='Step-back';
 		if (result.instruction)
 			text+=': '+result.instruction;
 		vscode.debug.activeDebugConsole.appendLine(text);
