@@ -409,6 +409,11 @@ To ease the usage of ZEsarUX with DeZog you can use several ZEsarUX command line
 I have collected a few that I found useful:
 
 ```bash
+# Try this if the ZEsarUX screen is not updated during debugging.
+./zesarux --disable-autoframeskip &
+```
+
+```bash
 # Start a "normal" ZX Spectrum (48k) and listen for connection from the DeZog.
 ./zesarux --enable-remoteprotocol &
 ```
@@ -428,6 +433,8 @@ I have collected a few that I found useful:
 # Rename back to .mmc (optional).
 ./zesarux --machine tbblue --sna-no-change-machine --enable-mmc --enable-divmmc-ports --mmc-file "<your-mmc-image>"  --enable-remoteprotocol &
 ```
+
+Please note: Normally you can set the commandline option also directly in the ZEsarUX Settings GUI.
 
 
 ### Serial Interface
