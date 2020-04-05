@@ -578,8 +578,7 @@
 							"topOfStack": "stack_top",
 							"listFiles": [
 								{
-									"path": "path_to_your_assembler_file.list",
-									"sources": ""
+									"path": "path_to_your_assembler_file.list"
 								}
 							],
 							"disassemblerArgs": {
