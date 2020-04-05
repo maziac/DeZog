@@ -28,15 +28,14 @@
 
 ## Main Classes
 
-
-- DebugAdapter: Just runs Z80Debug.
+- DebugSessionClass: Just runs DeZog. I s the main class to communicate with vscode.
 - Extension: The extension class. Activates the extension and registers commands.
 - Frame: Represents a Z80 StackObject, i.e. caller address and objects on stack.
 - Labels: Singleton which reads the .list and .labels file and associates addresses, labels, filenames and line numbers.
 - Settings: Singleton to hold the extension's settings.
 - ShallowVar: DisassemblyVar, RegistersMainVar, RegistersSecondaryVar, StackVar, LabelVar. Representations of variables. They know how to retrieve the data from zesarux.
 - Z80Registers: Static class to parse (from zesarux) and format registers.
-- Emulator: Gets requests from vscode and passes them to zesarux (via ZesaruxSocket).
+- Remote: Gets requests from the DebugSessionClass and passes them to e.g. ZEsarUX (via ZesaruxSocket). There are several Remote classes e.g. Zesaruxremote or ZxSimulatorRemote.
 - ZesaruxSocket: Socket connection and communication to zesarux emulator. Knows about the basic communication, but not the commands.
 
 
@@ -49,22 +48,22 @@ Helper classes:
 ~~~
 ┌─────────┐      ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐        ┌──────────────────┐
 │         │      │                                                                                                        │        │Helper            │
-│         │      │                                              DebugAdapter                                              │        │                  │
+│         │      │                                           DebugSessionClass                                            │        │                  │
 │         │      │                                                                                                        │        │                  │
 │         │      └────────────────────────────────────────────────────────────────────────────────────────────────────────┘        │┌─────────┐       │
 │         │         ▲                         ▲                          ▲                                       ▲                 ││Utility  │       │
 │         │         │                         │                          │                                       │                 │└─────────┘       │
 │Settings │         ▼                         │                          ▼                                       ▼                 │                  │
 │         │    ┌───────────────┐              ▼               ┌────────────────────┐                   ┌──────────────────────┐    │┌─────────┐       │
-│         │    │TextView       │         ┌─────────┐          │RemoteClass         │                   │Variables             │    ││RefList  │       │
+│         │    │TextView       │         ┌─────────┐          │RemoteBase          │                   │Variables             │    ││RefList  │       │
 │         │    │ ┌─────────────┴─┐       │         │          │  ┌─────────────────┴──┐                │┌───────────┐         │    │└─────────┘       │
-│         │    │ │MemoryDumpView │       │ Labels  │◀────────▶│  │ZesaruxEmulator     │                ││ShallowVar │         │    │                  │
+│         │    │ │MemoryDumpView │       │ Labels  │◀────────▶│  │ZesaruxRemote       │                ││ShallowVar │         │    │                  │
 │         │    │ │ ┌─────────────┴─┐     │         │  ┌──────▶│  │  ┌─────────────────┴──┐             │└───────────┘         │    │┌─────────┐       │
-│         │    │ │ │MemoryReg.View │     └─────────┘  │       │  │  │ZesaruxExtEmulator  │             │┌────────────────┐    │    ││MemBuffer│       │
+│         │    │ │ │MemoryReg.View │     └─────────┘  │       │  │  │ZesaruxExtRemote    │             │┌────────────────┐    │    ││MemBuffer│       │
 └─────────┘    │ │ │ ┌─────────────┴─┐        ▲       │       │  │  │  ┌─────────────────┴──┐     ◀──▶ ││DisassemblyVar  │    │    │└─────────┘       │
-               └─┤ │ │ZxN.SpritesView│        │       │       └──┤  │  │MameEmulator        │          │└────────────────┘    │    │                  │
+               └─┤ │ │ZxN.SpritesView│        │       │       └──┤  │  │MameRemote          │          │└────────────────┘    │    │                  │
                  │ │ │               │        ▼       │          │  │  │  ┌─────────────────┴──┐       │┌────────────────┐    │    │┌────────────────┐│
-                 └─┤ │               │  ┌ ─ ─ ─ ─ ─ ┐ │          └──┤  │  │CSpectEmulator      │       ││MemoryPagesVar  │    │    ││DisassemblyClass││
+                 └─┤ │               │  ┌ ─ ─ ─ ─ ─ ┐ │          └──┤  │  │CSpectRemote        │       ││MemoryPagesVar  │    │    ││DisassemblyClass││
                    │ │               │      Files     │             │  │  │  ┌─────────────────┴──┐    │└────────────────┘    │    │└────────────────┘│
                    └─┤               │  └ ─ ─ ─ ─ ─ ┘ │             └──┤  │  │ZXNextRemote        │    │┌────────────────┐    │    │                  │
                      │               │                │                │  │  │  ┌─────────────────┴──┐ ││RegisterMainVar │    │    │┌────┐            │
@@ -96,12 +95,12 @@ Helper classes:
 
 Communication:
 
-DebugAdapter <-> Emulator:
-DebugAdapter takes care of association of vscode references and objects.
+DebugSessionClass <-> Remote:
+DebugSessionClass takes care of association of vscode references and objects.
 - Commands: step-over, step-into, step-out
 - Data: Frames (call stack), Registers/Frame, expressions, breakpoints, Labels.
 
-Emulator <-> Socket:
+Remote <-> Socket:
 - Commands: run, step-over, step-into, step-out, breakpoints
 - Data: registers, memory dump, call stack
 
@@ -119,19 +118,6 @@ and started as server (socket). In the same function the server (socket) is also
 Although the same process is used and therefore it is technically possible to directly call methods of the 'ZesaruxDebugSession' it is not done.
 Instead the intended way (through 'customRequest' which uses sockets) is chosen.
 
-
-## Asynchronicity
-
-vscode is highly asynchronous. All requests start with the 'request' and end with a 'response'. The 'response' would be typically generated in another function e.g. as a response from the zesarux socket answer.
-Meanwhile vscode could have sent another request either for the same
-(see stackTraceRequest) or for something else.
-
-Since this debug adapter has to maintain a reference/object map/list it is
-necessary to reset this list sometimes (to free the objects).
-This list is global whcih leads to asynchronicity problems.
-
-Therefore all requests (next, scopesRequest, stackTraceRequest, variablesRequest etc.) from vscode are added to a queue the so-called
-CallSerializer (this.serializer). So that they are executed and responded to in exactly the order they come in.
 
 
 ## Showing variables, call stacks etc.
@@ -224,7 +210,7 @@ Examples:
 If the variable is opened in the WATCH area a variable request is done for that ID. The corresponding object's function is executed and the data is retrieved and returned in the response.
 
 
-# Problems / Decisions needed
+# Problems / Decisions needed (old unsolved, but not so important)
 
 vscode is highly asynchronous. All requests start with the 'request' and end with a 'response'. The 'response' would be typically generated in another function e.g. as a response from the zesarux socket answer.
 Meanwhile vscode could have sent another request either for the same
@@ -261,10 +247,10 @@ hide footbox
 title Step
 actor User
 User -> vscode: Step
-vscode -> EmulDebugAdapter: stepXxxRequest
-EmulDebugAdapter -> MemoryDumpView: update
-MemoryDumpView -> Emulator: getMemoryDump(s)
-MemoryDumpView <-- Emulator: Data
+vscode -> DebugSessionClass: stepXxxRequest
+DebugSessionClass -> MemoryDumpView: update
+MemoryDumpView -> Remote: getMemoryDump(s)
+MemoryDumpView <-- Remote: Data
 note over MemoryDumpView: create html+js
 MemoryDumpView -> webView: Set webview.html
 ```
@@ -285,7 +271,7 @@ actor User
 User -> webView: DoubleClick
 webView -> MemoryDumpView: valueChanged
 MemoryDumpView -> MemoryDumpView: changeMemory
-MemoryDumpView -> Emulator: writeMemory
+MemoryDumpView -> Remote: writeMemory
 webView <- MemoryDumpView: changeValue
 ```
 
@@ -297,22 +283,22 @@ hide footbox
 title Step
 actor User
 User -> vscode: Step
-vscode -> EmulDebugAdapter: stepXxxRequest
-EmulDebugAdapter -> ZXNextSpritesView: update
+vscode -> DebugSessionClass: stepXxxRequest
+DebugSessionClass -> ZXNextSpritesView: update
 ZXNextSpritesView -> ZXNextSpritesView: getSprites
-ZXNextSpritesView -> Emulator: getTbblueSprite(s)
-ZXNextSpritesView <-- Emulator: Data
+ZXNextSpritesView -> Remote: getTbblueSprite(s)
+ZXNextSpritesView <-- Remote: Data
 alt palette empty
     ZXNextSpritesView -> ZXNextSpritesView: getSpritePalette
-    ZXNextSpritesView -> Emulator: getTbblueRegister(whichPaletteXXX)
-    ZXNextSpritesView <-- Emulator: Used palette
-    ZXNextSpritesView -> Emulator: getTbbluePalette
-    ZXNextSpritesView <-- Emulator: Data
+    ZXNextSpritesView -> Remote: getTbblueRegister(whichPaletteXXX)
+    ZXNextSpritesView <-- Remote: Used palette
+    ZXNextSpritesView -> Remote: getTbbluePalette
+    ZXNextSpritesView <-- Remote: Data
 end
 alt patterns empty
     ZXNextSpritesView -> ZXNextSpritesView: getSpritePatterns
-    ZXNextSpritesView -> Emulator: getTbbluePattern(s)
-    ZXNextSpritesView <-- Emulator: Data
+    ZXNextSpritesView -> Remote: getTbbluePattern(s)
+    ZXNextSpritesView <-- Remote: Data
 end
 note over ZXNextSpritesView: create html+js
 ZXNextSpritesView -> webView: Set webview.html
@@ -325,14 +311,14 @@ actor User
 User -> webView: Click "Reload"
 
 webView -> ZXNextSpritesView: getSpritePalette
-    ZXNextSpritesView -> Emulator: getTbblueRegister(whichPaletteXXX)
-    ZXNextSpritesView <-- Emulator: Used palette
-    ZXNextSpritesView -> Emulator: getTbbluePalette
-    ZXNextSpritesView <-- Emulator: Data
+    ZXNextSpritesView -> Remote: getTbblueRegister(whichPaletteXXX)
+    ZXNextSpritesView <-- Remote: Used palette
+    ZXNextSpritesView -> Remote: getTbbluePalette
+    ZXNextSpritesView <-- Remote: Data
 
 webView -> ZXNextSpritesView: getSpritePatterns
-    ZXNextSpritesView -> Emulator: getTbbluePattern(s)
-    ZXNextSpritesView <-- Emulator: Data
+    ZXNextSpritesView -> Remote: getTbbluePattern(s)
+    ZXNextSpritesView <-- Remote: Data
 
 note over ZXNextSpritesView: create html+js
 ZXNextSpritesView -> webView: Set webview.html
@@ -353,7 +339,7 @@ title User initiated
 actor user
 participant vscode
 participant "Emul\nDebug\nSession" as session
-participant "Emulator" as emul
+participant "Remote" as emul
 participant "Socket" as socket
 participant "ZEsarUX" as zesarux
 
@@ -390,7 +376,7 @@ title Error
 'actor user
 participant vscode
 participant "Emul\nDebug\nSession" as session
-participant "Emulator" as emul
+participant "Remote" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
 
@@ -420,7 +406,7 @@ actor user
 participant Z80UnitTests as unittest
 participant vscode
 participant "Emul\nDebug\nSession" as session
-participant "Emulator" as emul
+participant "Remote" as emul
 participant "Socket" as socket
 'participant "ZEsarUX" as zesarux
 
@@ -461,25 +447,25 @@ note over unittest: Start unit tests
 ## Code Coverage
 
 Code coverage can be enabled in the launch settings.
-Everytime the program is stopped the "Emulator" will send information about the executed addresses.
+Everytime the program is stopped the "Remote" will send information about the executed addresses.
 DeZog will then highlight the covered lines.
 This is available everywhere (e.g. during debugging or during execution of unit tests).
 
-xxx is either the EmulDebugAdapter or the Z80UnitTests.
+xxx is either the DebugSessionClass or the Z80UnitTests.
 
 ```puml
 hide footbox
 title Coverage new
 participant xxx
-Emulator -> ZEsarUX: cpu-code-coverage enabled yes
+Remote -> ZEsarUX: cpu-code-coverage enabled yes
 ...
-xxx -> Emulator: Step/Continue
-Emulator -> ZEsarUX: cpu-step/run
+xxx -> Remote: Step/Continue
+Remote -> ZEsarUX: cpu-step/run
 note over ZEsarUX: stopped
-Emulator <-- ZEsarUX
-Emulator -> ZEsarUX: cpu-code-coverage get
-Emulator <-- ZEsarUX: Executed addresses
-xxx <-- Emulator: Event: 'coverage'
+Remote <-- ZEsarUX
+Remote -> ZEsarUX: cpu-code-coverage get
+Remote <-- ZEsarUX: Executed addresses
+xxx <-- Remote: Event: 'coverage'
 note over xxx: Convert addresses to\nsource file locations.
 ```
 

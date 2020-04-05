@@ -31,7 +31,7 @@ Since you also need a transport layer to communicate with Remote it is normally 
 
 # RemoteBase API
 
-The following methods need to be overwritten:
+Here are some exemplary methods that need to be overwritten:
 - Lifecycle
 	- init: Initialization of the Remote. Called by ... when ... TODO
 	- disconnect: Disconnects the Remote. E.g. diconnect the Transport. Called by ... when ... TODO
