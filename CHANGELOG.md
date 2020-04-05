@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.1
+- 'movePCtoCursor' back in right-click menu.
+
 # 1.1.0
 - zsim:
 	- Optimized handling of HALT instruction.
