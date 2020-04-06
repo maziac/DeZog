@@ -298,7 +298,7 @@ export class LabelsClass {
 						// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
 						const realAddress=this.z88dkMappings.get(label);
 						if (realAddress!=undefined) {
-							console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
+							//console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
 							// Label/symbol found
 							z88dkMapOffset=realAddress-readAddress;
 							address=realAddress;
@@ -380,7 +380,7 @@ export class LabelsClass {
 				// Set address
 				if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
 					lineArray[realLineNr]=entry.addr;
-					console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));  // TODO: Comment
+					//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));  // TODO: Comment
 				}
 			}
 			return;
