@@ -34,7 +34,6 @@ A typical configuration looks like this:
             "listFiles": [
                 {
                     "path": "z80-sample-program.list",
-                    "useFiles": true,
                     "asm": "sjasmplus",
                     "mainFile": "main.asm"
                 },
@@ -163,7 +162,8 @@ You need to enter the list files under
 - filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
 E.g. ```"/^[0-9]+\\s+//"```: This is a sed-like regular expression that removes the first number from all lines.
 Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
-- addOffset: (default=0): The number given here is added to all addresses in the list file. Useful for z88dk format.
+- addOffset: (default=0): The number given here is added to all addresses in the list file. (Note: this was used in the past to get correct addresses for z88dk. Nowadays you should use the "z88dkMapFile" parameter instead and remove "addOffset".)
+- z88dkMapFile: Is **required only for z88dk**. The map file is required to correctly parse the label values and to get correct file/line to address associations.
 
 
 Here is an example to use for the **z88dk-z80asm**:
@@ -173,7 +173,7 @@ Here is an example to use for the **z88dk-z80asm**:
     "path": "currah_uspeech_tests.lis",
     "srcDirs": [],
     "asm": "z88dk",
-    "addOffset": 32768
+    "z88dkMapFile": "currah_uspeech_tests.map"
 }
 ~~~
 Explanation:

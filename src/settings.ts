@@ -31,6 +31,9 @@ export interface ListFile {
 
 	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	addOffset: number;
+
+	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
+	z88dkMapFile: string;
 }
 
 
@@ -361,7 +364,8 @@ export class Settings {
 					srcDirs: fp.srcDirs || [""],
 					filter: fp.filter,
 					asm: fp.asm || "sjasmplus",
-					addOffset: fp.addOffset || 0
+					addOffset: fp.addOffset||0,
+					z88dkMapFile: fp.z88dkMapFile
 				};
 				// Add the root folder path to each.
 				const srcds = file.srcDirs.map(srcPath => path.join(Settings.launch.rootFolder, srcPath));

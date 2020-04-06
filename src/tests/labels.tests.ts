@@ -277,22 +277,41 @@ suite('Labels', () => {
 			Labels.finish();
 
 			// Checks
-			let res = Labels.getNumberForLabel("ct_ui_first_table");
+			let res=Labels.getNumberForLabel("ct_ui_first_table");
 			assert.equal(0x000B, res, "Label wrong.");
 
-			res = Labels.getNumberForLabel("display_hor_zero_markers");
+			res=Labels.getNumberForLabel("display_hor_zero_markers");
 			assert.equal(0x09A7, res, "Label wrong.");
 
-			res = Labels.getNumberForLabel("display_hor_a_address");
+			res=Labels.getNumberForLabel("display_hor_a_address");
 			assert.equal(0x09A1, res, "Label wrong.");
 
 			// defc (=equ) is not supported
-			res = Labels.getNumberForLabel("MAGENTA");
+			res=Labels.getNumberForLabel("MAGENTA");
 			assert.notEqual(3, res, "Label wrong.");
 
 			// defc (=equ) is not supported
-			res = Labels.getNumberForLabel("CS_ROM_VALUE");
+			res=Labels.getNumberForLabel("CS_ROM_VALUE");
 			assert.notEqual(0xF1, res, "Label wrong.");
+		});
+
+		test('z88dk map file (currah)', () => {
+			Labels.loadAsmListFile('./src/tests/data/currah_uspeech_tests.lis', undefined, [""], undefined, "z88dk", 0, undefined, './src/tests/data/currah_uspeech_tests.map');
+			Labels.finish();
+
+			// Checks
+			let res=Labels.getNumberForLabel("ct_input_l2");
+			assert.equal(0x80A6, res, "Label wrong.");
+
+			res=Labels.getNumberForLabel("main");
+			assert.equal(0x8000, res, "Label wrong.");
+
+			// defc (=equ) is not supported
+			res=Labels.getNumberForLabel("print_number_address");
+			assert.equal(undefined, res, "Label wrong.");
+
+			res=Labels.getNumberForLabel("SCREEN_COLOR");
+			assert.equal(undefined, res, "Label wrong.");
 		});
 
 

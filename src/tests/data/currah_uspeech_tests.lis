@@ -1,0 +1,1751 @@
+1     0000              ; currah_uspeech_test.asm
+2     0000              ; Includes all other files.
+3     0000              
+4     0000              include "constants.inc"
+1     0000              ; Constant definitions.
+2     0000              
+3     0000              ; Printing text
+4     0000              defc print_string_address = 8252
+5     0000              defc print_number_address = 6683
+6     0000              defc AT	= 016h ; ZX Spectrum ASCII Control code: AT, y, x
+7     0000              defc INK = 010h ; ZX Spectrum ASCII Control code: INK, color (Bits 0-2)
+8     0000              defc PAPER = 011h
+9     0000              
+10    0000              ; Screen
+11    0000              defc SCREEN_COLOR = 05800h
+12    0000              defc SCREEN_COLOR_SIZE	= 0300h   ; =768
+13    0000              defc SCREEN	= 04000h
+14    0000              defc SCREEN_WIDTH_IN_BYTES = 32
+15    0000              defc SCREEN_HEIGHT 	= 192
+16    0000              defc SCREEN_SIZE	= 01800h
+17    0000              defc TRANSPARENT	= 8
+18    0000              
+19    0000              ; Colors
+20    0000              defc BLACK	= 00h
+21    0000              defc BLUE	= 01h
+22    0000              defc RED	= 02h
+23    0000              defc MAGENTA= 03h
+24    0000              defc GREEN	= 04h
+25    0000              defc CYAN	= 05h
+26    0000              defc YELLOW	= 06h
+27    0000              defc WHITE	= 07h
+28    0000              defc BRIGHT	= 01000000b
+29    0000              
+30    0000              ; Keyboard ports: Bits 0-4. Bit is low if pressed.
+31    0000              ; Example: in PORT_KEYB_54321, 2 is bit 1. in PORT_KEYB_67890, 0 is bit 0
+32    0000              defc PORT_KEYB_54321	= 0f7feh ; 5, 4, 3, 2, 1
+33    0000              defc PORT_KEYB_67890	= 0effeh ; 6, 7, 8, 9, 0
+34    0000              defc PORT_KEYB_BNMSHIFTSPACE	= 0x7FFE ; B, N, M, Symbol Shift, Space
+35    0000              
+36    0000              ; Constants for the currah uspeech.
+37    0000              ; Note: in the Currah ROM there is a 'pop af' (f1h).
+38    0000              ; In the spectrum ROM there is a 'push hl' (0e5h).
+39    0000              defc CS_ROM_VALUE=0f1h	; ROM value at 0039h
+40    0000              defc CS_ROM_SIZE=0800h
+41    0000              defc CS_ROM_VALUE_ADDRESS=0039h
+42    0000              
+5     0000              include "ui.asm"
+1     0000              ; User Interface.
+2     0000              ; Prints the text and observes the keyboard.
+3     0000              ; Calls the test according the pressed key.
+4     0000              ; Shows several screens with different tests.
+5     0000              ; Use SPACE to cycle through the screens.
+6     0000              
+7     0000              
+8     0000              
+9     0000              ; START
+10    0000              main:
+11    0000              	; do not disturb tests with interrupts.
+12    0000  F3          	di
+13    0001              
+14    0001              	; prepare printing
+15    0001  3E 02       	ld a,2              ; upper screen
+16    0003  CD 01 16        call 5633           ; open channel
+17    0006              
+18    0006              	; load screen-1
+19    0006  3E FF       	ld a,-1
+20    0008  32 DA 00    	ld (test_screen_index),a
+21    000B              
+22    000B              ct_ui_first_table:
+23    000B  21 C9 00    	ld hl,screen_table - 10*2	; 10 jump table entries
+24    000E  22 DB 00    	ld (screen_table_ptr),hl
+25    0011              
+26    0011              ct_ui_show_screen:
+27    0011              	; black border
+28    0011  AF          	xor a
+29    0012  D3 FE       	out (0xfe),a
+30    0014              	; clear screen
+31    0014  AF          	xor a
+32    0015  CD D0 00    	call clear_screen
+33    0018              
+34    0018              	; next test screen
+35    0018  2A DB 00    	ld hl,(screen_table_ptr)
+36    001B  11 14 00    	ld de,10*2	; 10 jump table entries
+37    001E  19          	add hl,de
+38    001F              	; get text
+39    001F  5E          	ld e,(hl)
+40    0020  23          	inc hl
+41    0021  7E          	ld a,(hl)
+42    0022  B7          	or a	; If upper part of the address is 0 start all over again
+43    0023  28 E6       	jr z,ct_ui_first_table
+44    0025  57          	ld d,a
+45    0026              
+46    0026              	; get length
+47    0026  23          	inc hl
+48    0027  4E          	ld c,(hl)
+49    0028  23          	inc hl
+50    0029  46          	ld b,(hl)
+51    002A  23          	inc hl
+52    002B  22 DB 00    	ld (screen_table_ptr),hl
+53    002E              
+54    002E              	; de now points to the text of the screen
+55    002E              	; bc contains the size
+56    002E  CD A7 08    	call print_string
+57    0031              
+58    0031              	; clear colors
+59    0031  3E 07       	ld a,WHITE
+60    0033  CD C7 00    	call fill_screen_with_color
+61    0036              
+62    0036              ct_ui_loop:
+63    0036              	; wait until key has been released
+64    0036  CD B8 00    	call ct_wait_on_key_release
+65    0039              
+66    0039              	; Select test case
+67    0039              ct_wait_on_input:
+68    0039  CD 81 00    	call ct_input
+69    003C  B7          	or a
+70    003D  28 FA       	jr z,ct_wait_on_input
+71    003F              
+72    003F              	; Check for SPACE
+73    003F  FE 20       	cp ' '
+74    0041  28 CE       	jr z,ct_ui_show_screen
+75    0043              
+76    0043              	; Check key
+77    0043  D6 30       	sub '0'
+78    0045  38 F2       	jr c,ct_wait_on_input
+79    0047  FE 0A       	cp 9+1
+80    0049  30 EE       	jr nc,ct_wait_on_input
+81    004B              
+82    004B              	; Get pointer to test
+83    004B  6F          	ld l,a
+84    004C  26 00       	ld h,0
+85    004E  29          	add hl,hl	; *2
+86    004F  ED 5B DB 00 	ld de,(screen_table_ptr)
+87    0053  19          	add hl,de
+88    0054  5E          	ld e,(hl)
+89    0055  23          	inc hl
+90    0056  66          	ld h,(hl)
+91    0057  6B          	ld l,e
+92    0058              
+93    0058              	; Get  line of text
+94    0058  C6 03       	add ct_start_y
+95    005A  4F          	ld c,a
+96    005B              
+97    005B              	; save registers
+98    005B  E5          	push hl
+99    005C  C5          	push bc
+100   005D              
+101   005D              	; clear colors
+102   005D  3E 07       	ld a,WHITE
+103   005F  CD C7 00    	call fill_screen_with_color
+104   0062              
+105   0062              	; select line
+106   0062              	; calculate color screen position
+107   0062  E1          	pop hl	; get y-position in l
+108   0063  26 00       	ld h,0
+109   0065              	; multiply with 32 (screen width
+110   0065  29          	add hl,hl
+111   0066  29          	add hl,hl
+112   0067  29          	add hl,hl
+113   0068  29          	add hl,hl
+114   0069  29          	add hl,hl
+115   006A              	; draw a yellow color line
+116   006A  3E 30       	ld a,YELLOW<<3	; Yellow background
+117   006C  11 01 58    	ld de,SCREEN_COLOR+1
+118   006F  19          	add hl,de
+119   0070  01 1F 00    	ld bc,SCREEN_WIDTH_IN_BYTES-1
+120   0073  CD BF 00    	call fill_memory
+121   0076              
+122   0076              	; run test
+123   0076  E1          	pop hl	; hl points to the test case subroutine
+124   0077  CD 7D 00    	call ct_call_test
+125   007A              
+126   007A  C3 36 00    	jp ct_ui_loop
+127   007D              
+128   007D              
+129   007D              ; A subroutine to make a call to hl.
+130   007D              ct_call_test:
+131   007D              	; check if valid test address is available
+132   007D  7C          	ld a,h
+133   007E  B7          	or a
+134   007F  C8          	ret z	; if not just return
+135   0080              	; jump to test routine
+136   0080  E9          	jp (hl)
+137   0081              
+138   0081              
+139   0081              ; Scans the keyboard for input.
+140   0081              ; Returns: a contains the ASCII code.
+141   0081              ; 0 if no key pressed.
+142   0081              ct_input:
+143   0081  C5          	push bc
+144   0082  CD 87 00    	call ct_input_bc
+145   0085  C1          	pop bc
+146   0086  C9          	ret
+147   0087              ct_input_bc:
+148   0087              	; 1 - 5
+149   0087  01 FE F7    	ld bc,PORT_KEYB_54321
+150   008A  ED 78       	in a,(c)
+151   008C  4F          	ld c,a
+152   008D  3E 31       	ld a,'1'
+153   008F  06 05       	ld b,5
+154   0091              ct_input_l1:
+155   0091  CB 39       	srl c
+156   0093  D0          	ret nc	; return if pressed
+157   0094  3C          	inc a
+158   0095  10 FA       	djnz ct_input_l1
+159   0097              
+160   0097              	; 6 - 0
+161   0097  01 FE EF    	ld bc,PORT_KEYB_67890
+162   009A  ED 78       	in a,(c)
+163   009C  4F          	ld c,a
+164   009D  3E 30       	ld a,'0'
+165   009F  CB 39       	srl c
+166   00A1  D0          	ret nc	; return if '0' pressed
+167   00A2  06 04       	ld b,4
+168   00A4  3E 39       	ld a,'9'
+169   00A6              ct_input_l2:
+170   00A6  CB 39       	srl c
+171   00A8  D0          	ret nc	; return if pressed
+172   00A9  3D          	dec a
+173   00AA  10 FA       	djnz ct_input_l2
+174   00AC              
+175   00AC              	; SPACE
+176   00AC  01 FE 7F    	ld bc,PORT_KEYB_BNMSHIFTSPACE
+177   00AF  ED 78       	in a,(c)
+178   00B1  CB 47       	bit 0,a	; SPACE
+179   00B3  3E 20       	ld a,' '
+180   00B5  C8          	ret z
+181   00B6              
+182   00B6              	; no key pressed
+183   00B6  AF          	xor a
+184   00B7  C9          	ret
+185   00B8              
+186   00B8              
+187   00B8              ; Waits until key has been released.
+188   00B8              ct_wait_on_key_release:
+189   00B8  CD 81 00    	call ct_input
+190   00BB  B7          	or a
+191   00BC  20 FA       	jr nz,ct_wait_on_key_release
+192   00BE  C9          	ret
+193   00BF              
+194   00BF              
+195   00BF              ; Subroutine to fill a memory area.
+196   00BF              ; bc = size
+197   00BF              ; hl = destination
+198   00BF              ; a = value to fill
+199   00BF              fill_memory:
+200   00BF  77          	ld (hl),a
+201   00C0  5D          	ld e,l
+202   00C1  54          	ld d,h
+203   00C2  13          	inc de
+204   00C3  0B          	dec bc
+205   00C4  ED B0       	ldir
+206   00C6  C9          	ret
+207   00C7              
+208   00C7              ; Fills the color screen with a value.
+209   00C7              ; Leaves out the space for the mirror test.
+210   00C7              ; a = color to fill
+211   00C7              fill_screen_with_color:
+212   00C7  21 08 58    	ld hl,SCREEN_COLOR+4000h/CS_ROM_SIZE
+213   00CA  01 F8 02    	ld bc,SCREEN_COLOR_SIZE-4000h/CS_ROM_SIZE
+214   00CD  C3 BF 00    	jp fill_memory
+215   00D0              
+216   00D0              ; Clears the screen (without color attributes)
+217   00D0              clear_screen:
+218   00D0  21 00 40    	ld hl,SCREEN
+219   00D3  01 00 18    	ld bc,SCREEN_SIZE
+220   00D6  AF          	xor a
+221   00D7  C3 BF 00    	jp fill_memory
+222   00DA              
+223   00DA              
+224   00DA              
+225   00DA              
+226   00DA              ; The current shown screen
+227   00DA  00          test_screen_index:	defb 0
+228   00DB              
+229   00DB              ; The pointer to the screen_table.
+230   00DB  DD 00       screen_table_ptr: defw screen_table
+231   00DD              
+232   00DD              ; Contains the start addresses of the text for the screens and the length.
+233   00DD              screen_table:
+234   00DD              	; Text
+235   00DD  27 01 1C 01 	defw currah_tests1_text, currah_tests1_text_end-currah_tests1_text
+236   00E1              	; Tests
+237   00E1  7C 04       	defw ct_test_out_38
+238   00E3  86 04       	defw ct_test_in_38
+239   00E5  8F 04       	defw ct_mem_write_38
+240   00E7  97 04       	defw ct_mem_read_38
+241   00E9  9E 04       	defw ct_spectrum_mem_holes_test
+242   00EB  DD 04       	defw ct_aahh_with_3000
+243   00ED  F4 04       	defw ct_aahh_with_3001
+244   00EF  00 00       	defw 0
+245   00F1  FC 04       	defw ct_test_with_bit_6
+246   00F3  15 05       	defw ct_test_without_bit_6
+247   00F5              
+248   00F5              	; Text
+249   00F5  43 02 26 01 	defw currah_tests2_text, currah_tests2_text_end-currah_tests2_text
+250   00F9              	; Tests
+251   00F9  29 05       	defw ct_aahh_mirror
+252   00FB  9D 05       	defw ct_aahh_3000_mirror
+253   00FD  CD 05       	defw ct_aahh_3001_mirror
+254   00FF  00 06       	defw ct_aahh_at_2000
+255   0101  12 06       	defw ct_aahh_in_out
+256   0103  5E 06       	defw ct_aahh_with_alt_3000_1_mem_write
+257   0105  64 06       	defw ct_aahh_with_alt_3000_1_mem_read
+258   0107  6D 06       	defw ct_aahh_with_alt_3000_1_out
+259   0109  76 06       	defw ct_aahh_with_alt_3000_1_in
+260   010B  7F 06       	defw ct_all_allophones
+261   010D              
+262   010D              	; Text
+263   010D  69 03 E2 00 	defw currah_tests3_text, currah_tests3_text_end-currah_tests3_text
+264   0111              	; Tests
+265   0111  AB 06       	defw ct_test_busy_aa
+266   0113  EA 06       	defw ct_test_busy_sh
+267   0115  F4 06       	defw ct_test_busy_until_key
+268   0117  86 07       	defw ct_test_busy_time_measure_with_aa
+269   0119  8B 07       	defw ct_test_busy_time_measure_with_jh
+270   011B  00 00       	defw 0
+271   011D  00 00       	defw 0
+272   011F  00 00       	defw 0
+273   0121  00 00       	defw 0
+274   0123  00 00       	defw 0
+275   0125              
+276   0125              	; End
+277   0125  00 00       	defw 0
+278   0127              
+279   0127              ; Texts to show as help.
+280   0127              currah_tests1_text:
+281   0127              defc ct_start_y=3
+282   0127              defc ct_start_x=2
+283   0127  11 08       	defb PAPER, TRANSPARENT
+284   0129  10 08       	defb INK, TRANSPARENT
+285   012B  16 00 1D    	defb AT,0,29
+286   012E  28 31 29    	defb "(1)"
+287   0131  16 01 00    	defb AT,1,0
+288   0134  30 31 32 33 34 35 36 37 20 52 4F 4D 
+                        	defb "01234567 ROM"
+289   0140  16 03 02    	defb AT,ct_start_y+0,ct_start_x
+290   0143  30 3A 20 6F 75 74 20 33 38 68 
+                        	defb "0: out 38h"
+291   014D  16 04 02    	defb AT,ct_start_y+1,ct_start_x
+292   0150  31 3A 20 69 6E 20 33 38 68 
+                        	defb "1: in 38h"
+293   0159  16 05 02    	defb AT,ct_start_y+2,ct_start_x
+294   015C  32 3A 20 6D 65 6D 20 77 72 69 74 65 20 33 38 68 
+                        	defb "2: mem write 38h"
+295   016C  16 06 02    	defb AT,ct_start_y+3,ct_start_x
+296   016F  33 3A 20 6D 65 6D 20 72 65 61 64 20 33 38 68 
+                        	defb "3: mem read 38h"
+297   017E  16 07 02    	defb AT,ct_start_y+4,ct_start_x
+298   0181  34 3A 20 6D 65 6D 20 68 6F 6C 65 73 20 74 65 73 74 
+                        	defb "4: mem holes test"
+299   0192  16 08 02    	defb AT,ct_start_y+5,ct_start_x
+300   0195  35 3A 20 2F 41 41 2F 20 77 69 74 68 20 33 30 30 30 68 
+                        	defb "5: /AA/ with 3000h"
+301   01A7  16 09 02    	defb AT,ct_start_y+6,ct_start_x
+302   01AA  36 3A 20 2F 41 41 2F 20 77 69 74 68 20 33 30 30 31 68 
+                        	defb "6: /AA/ with 3001h"
+303   01BC  16 0A 02    	defb AT,ct_start_y+7,ct_start_x
+304   01BF  37 3A 20 2D 	defb "7: -"
+305   01C3  16 0B 02    	defb AT,ct_start_y+8,ct_start_x
+306   01C6  38 3A 20 2F 41 41 2F 20 77 69 74 68 20 62 69 74 20 36 
+                        	defb "8: /AA/ with bit 6"
+307   01D8  16 0C 02    	defb AT,ct_start_y+9,ct_start_x
+308   01DB  39 3A 20 2F 41 41 2F 20 77 69 74 68 6F 75 74 20 62 69 74 20 36 
+                        	defb "9: /AA/ without bit 6"
+309   01F0  16 0D 02    	defb AT,ct_start_y+10,ct_start_x
+310   01F3  3C 53 50 41 43 45 3E 20 2D 20 6E 65 78 74 20 73 63 72 65 65 6E 
+                        	defb "<SPACE> - next screen"
+311   0208  16 14 03    	defb AT,20,3
+312   020B  43 75 72 72 61 68 20 4D 69 63 72 6F 53 70 65 65 63 68 20 54 65 73 74 73 20 76 31 2E 33 
+                        	defb "Currah MicroSpeech Tests v1.3"
+313   0228  16 15 08    	defb AT,21,8
+314   022B  32 30 31 37 2C 20 77 72 69 74 74 65 6E 20 62 79 20 54 2E 42 75 73 73 65 
+                        	defb "2017, written by T.Busse"
+315   0243              currah_tests1_text_end:
+316   0243              
+317   0243              currah_tests2_text:
+318   0243  16 00 1D    	defb AT,0,29
+319   0246  28 32 29    	defb "(2)"
+320   0249  16 03 02    	defb AT,ct_start_y+0,ct_start_x
+321   024C  30 3A 20 2F 41 41 2F 20 61 74 20 31 58 58 58 68 
+                        	defb "0: /AA/ at 1XXXh"
+322   025C  16 04 02    	defb AT,ct_start_y+1,ct_start_x
+323   025F  31 3A 20 2F 41 41 2F 20 77 69 74 68 20 33 58 58 58 68 20 65 76 65 6E 
+                        	defb "1: /AA/ with 3XXXh even"
+324   0276  16 05 02    	defb AT,ct_start_y+2,ct_start_x
+325   0279  32 3A 20 2F 41 41 2F 20 77 69 74 68 20 33 58 58 58 68 20 6F 64 64 
+                        	defb "2: /AA/ with 3XXXh odd"
+326   028F  16 06 02    	defb AT,ct_start_y+3,ct_start_x
+327   0292  33 3A 20 2F 41 41 2F 20 61 74 20 32 30 30 30 68 
+                        	defb "3: /AA/ at 2000h"
+328   02A2  16 07 02    	defb AT,ct_start_y+4,ct_start_x
+329   02A5  34 3A 20 2F 41 41 2F 20 61 74 20 31 30 30 30 68 20 69 6E 2F 6F 75 74 
+                        	defb "4: /AA/ at 1000h in/out"
+330   02BC  16 08 02    	defb AT,ct_start_y+5,ct_start_x
+331   02BF  35 3A 20 2F 41 41 2F 20 61 6C 74 65 72 6E 2E 20 33 30 30 30 2F 31 68 20 77 72 69 74 65 
+                        	defb "5: /AA/ altern. 3000/1h write"
+332   02DC  16 09 02    	defb AT,ct_start_y+6,ct_start_x
+333   02DF  36 3A 20 2F 41 41 2F 20 61 6C 74 65 72 6E 2E 20 33 30 30 30 2F 31 68 20 72 65 61 64 
+                        	defb "6: /AA/ altern. 3000/1h read"
+334   02FB  16 0A 02    	defb AT,ct_start_y+7,ct_start_x
+335   02FE  37 3A 20 2F 41 41 2F 20 61 6C 74 65 72 6E 2E 20 33 30 30 30 2F 31 68 20 6F 75 74 
+                        	defb "7: /AA/ altern. 3000/1h out"
+336   0319  16 0B 02    	defb AT,ct_start_y+8,ct_start_x
+337   031C  38 3A 20 2F 41 41 2F 20 61 6C 74 65 72 6E 2E 20 33 30 30 30 2F 31 68 20 69 6E 
+                        	defb "8: /AA/ altern. 3000/1h in"
+338   0336  16 0C 02    	defb AT,ct_start_y+9,ct_start_x
+339   0339  39 3A 20 41 6C 6C 20 61 6C 6C 6F 70 68 6F 6E 65 73 20 28 35 2D 36 33 29 
+                        	defb "9: All allophones (5-63)"
+340   0351  16 0D 02    	defb AT,ct_start_y+10,ct_start_x
+341   0354  3C 53 50 41 43 45 3E 20 2D 20 6E 65 78 74 20 73 63 72 65 65 6E 
+                        	defb "<SPACE> - next screen"
+342   0369              currah_tests2_text_end:
+343   0369              
+344   0369              currah_tests3_text:
+345   0369  16 00 1D    	defb AT,0,29
+346   036C  28 33 29    	defb "(3)"
+347   036F  16 03 02    	defb AT,ct_start_y+0,ct_start_x
+348   0372  30 3A 20 62 75 73 79 20 66 6C 61 67 20 28 2F 41 41 2F 20 6F 6E 6C 79 20 6F 6E 63 65 29 
+                        	defb "0: busy flag (/AA/ only once)"
+349   038F  16 04 02    	defb AT,ct_start_y+1,ct_start_x
+350   0392  31 3A 20 62 75 73 79 20 66 6C 61 67 20 28 2F 53 48 2F 20 6F 6E 6C 79 20 6F 6E 63 65 29 
+                        	defb "1: busy flag (/SH/ only once)"
+351   03AF  16 05 02    	defb AT,ct_start_y+2,ct_start_x
+352   03B2  32 3A 20 62 75 73 79 20 66 6C 61 67 2C 20 6F 6E 63 65 2F 6B 65 79 20 74 6F 20 73 74 6F 70 
+                        	defb "2: busy flag, once/key to stop"
+353   03D0  16 06 02    	defb AT,ct_start_y+3,ct_start_x
+354   03D3  33 3A 20 74 69 6D 65 20 62 75 73 79 20 62 69 74 2C 20 2F 41 41 2F 20 28 36 34 6D 73 29 
+                        	defb "3: time busy bit, /AA/ (64ms)"
+355   03F0  16 07 02    	defb AT,ct_start_y+4,ct_start_x
+356   03F3  34 3A 20 74 69 6D 65 20 62 75 73 79 20 62 69 74 2C 20 2F 4A 48 2F 20 28 39 38 6D 73 29 
+                        	defb "4: time busy bit, /JH/ (98ms)"
+357   0410  16 08 02    	defb AT,ct_start_y+5,ct_start_x
+358   0413  35 3A 20 2D 	defb "5: -"
+359   0417  16 09 02    	defb AT,ct_start_y+6,ct_start_x
+360   041A  36 3A 20 2D 	defb "6: -"
+361   041E  16 0A 02    	defb AT,ct_start_y+7,ct_start_x
+362   0421  37 3A 20 2D 	defb "7: -"
+363   0425  16 0B 02    	defb AT,ct_start_y+8,ct_start_x
+364   0428  38 3A 20 2D 	defb "8: -"
+365   042C  16 0C 02    	defb AT,ct_start_y+9,ct_start_x
+366   042F  39 3A 20 2D 	defb "9: -"
+367   0433  16 0D 02    	defb AT,ct_start_y+10,ct_start_x
+368   0436  3C 53 50 41 43 45 3E 20 2D 20 6E 65 78 74 20 73 63 72 65 65 6E 
+                        	defb "<SPACE> - next screen"
+369   044B              currah_tests3_text_end:
+370   044B              
+371   044B              
+372   044B              
+373   044B              
+374   044B              
+6     044B              include "tests1.asm"
+1     044B              
+2     044B              ;-------------------------------------------------------------------------
+3     044B              ; currah_uspeech_test.asm
+4     044B              ; This program here is to test the functionality of the Currah uSpeech HW.
+5     044B              ;-------------------------------------------------------------------------
+6     044B              
+7     044B              ; Prints out some text, waits for key input and calls test functionality.
+8     044B              ; Please note that within the tests it should be avoided to call ROM functionality
+9     044B              ; like printing.
+10    044B              ; Tests are:
+11    044B              ; Mirroring with
+12    044B              ; - out 38
+13    044B              ; - in 38
+14    044B              ; - mem write 38
+15    044B              ; - mem read 38
+16    044B              ; Output of "aaaaahhh" with:
+17    044B              ; - 3000
+18    044B              ; - 3001
+19    044B              ; - alternating 3000/3001
+20    044B              ; - bit 6
+21    044B              ; - without bit 6
+22    044B              ; - busy bit after only one allophone
+23    044B              
+24    044B              
+25    044B              ; The different tests:
+26    044B              
+27    044B              ; Writes a color bar in the first line and then
+28    044B              ; the outcome of a comparison of the byte at address (0,800h,1000h,1800h,etc)
+29    044B              ; in the second line.
+30    044B              ; Each column represents the next 800h value.
+31    044B              ; Red means that the byte from the Currah rom has been found.
+32    044B              ; White if not.
+33    044B              ct_currah_mirror_test:
+34    044B  CD 6C 04    	call ct_draw_mirror_bar
+35    044E              	; test memory
+36    044E  DD 21 00 58 	ld ix,SCREEN_COLOR
+37    0452  21 39 00    	ld hl,CS_ROM_VALUE_ADDRESS
+38    0455  06 08       	ld b,4000h/CS_ROM_SIZE
+39    0457  11 00 08    	ld de,CS_ROM_SIZE
+40    045A              ct_mirror_test_loop:
+41    045A              	; compare rom value
+42    045A  7E          	ld a,(hl)
+43    045B  FE F1       	cp CS_ROM_VALUE
+44    045D  3E 38       	ld a,WHITE<<3
+45    045F  20 02       	jr nz,ct_mirror_test_l1
+46    0461  3E 50       	ld a,BRIGHT+(RED<<3)	; value found
+47    0463              ct_mirror_test_l1:
+48    0463  DD 77 00    	ld (ix+0),a
+49    0466              
+50    0466              	; next
+51    0466  DD 23       	inc ix
+52    0468  19          	add hl,de
+53    0469  10 EF       	djnz ct_mirror_test_loop
+54    046B              
+55    046B  C9          	ret
+56    046C              
+57    046C              
+58    046C              ; Draws the mirror bar. Alternating colored blocks.
+59    046C              ct_draw_mirror_bar:
+60    046C              	; draw bar in first line
+61    046C  06 04       	ld b,4000h/CS_ROM_SIZE/2
+62    046E  21 20 58    	ld hl,SCREEN_COLOR+020h
+63    0471  1E 38       	ld e,BLACK+(WHITE<<3)
+64    0473  16 07       	ld d,WHITE+(BLACK<<3)
+65    0475              ct_mirror_bar_l1:
+66    0475  73          	ld (hl),e
+67    0476  23          	inc hl
+68    0477  72          	ld (hl),d
+69    0478  23          	inc hl
+70    0479  10 FA       	djnz ct_mirror_bar_l1
+71    047B  C9          	ret
+72    047C              
+73    047C              
+74    047C              ; out to 38h
+75    047C              ct_test_out_38:
+76    047C  AF          	xor a
+77    047D  01 38 00    	ld bc,0038h
+78    0480  ED 79       	out (c),a
+79    0482              	; do mirror test
+80    0482  CD 4B 04    	call ct_currah_mirror_test
+81    0485  C9          	ret
+82    0486              
+83    0486              ; in to 38h
+84    0486              ct_test_in_38:
+85    0486  01 38 00    	ld bc,0038h
+86    0489  ED 78       	in a,(c)
+87    048B              	; do mirror test
+88    048B  CD 4B 04    	call ct_currah_mirror_test
+89    048E  C9          	ret
+90    048F              
+91    048F              ; memory write to 38h
+92    048F              ct_mem_write_38:
+93    048F  AF          	xor a
+94    0490  32 38 00    	ld (0038h),a
+95    0493              	; do mirror test
+96    0493  CD 4B 04    	call ct_currah_mirror_test
+97    0496  C9          	ret
+98    0497              
+99    0497              ; memory read from 38h
+100   0497              ct_mem_read_38:
+101   0497  3A 38 00    	ld a,(0038h)
+102   049A              	; do mirror test
+103   049A  CD 4B 04    	call ct_currah_mirror_test
+104   049D  C9          	ret
+105   049E              
+106   049E              
+107   049E              ; Test mirroring of the currah rom to see if there are any holes in
+108   049E              ; memory addressing in case the curran rom is activated.
+109   049E              ; Writes a color bar in the first line and then
+110   049E              ; the outcome of a comparison of the byte at address (0,800h,1000h,1800h,etc)
+111   049E              ; in the second line.
+112   049E              ; Each column represents the next 800h value.
+113   049E              ; Red means that the byte from the spectrum rom has been found.
+114   049E              ; White if not.
+115   049E              ct_spectrum_mem_holes_test:
+116   049E  CD 6C 04    	call ct_draw_mirror_bar
+117   04A1              	; test memory
+118   04A1  DD 21 00 58 	ld ix,SCREEN_COLOR
+119   04A5  21 01 00    	ld hl,1
+120   04A8  06 08       	ld b,4000h/CS_ROM_SIZE
+121   04AA  11 00 08    	ld de,CS_ROM_SIZE
+122   04AD              
+123   04AD              ct_holes_test_loop:
+124   04AD              	; switch access
+125   04AD  32 38 00    	ld (0038h),a
+126   04B0              	; get byte from spectrum rom
+127   04B0  7E          	ld a,(hl)
+128   04B1              	; switch access
+129   04B1  32 38 00    	ld (0038h),a
+130   04B4              	; compare byte with switched rom
+131   04B4  BE          	cp (hl)
+132   04B5  3E 38       	ld a,WHITE<<3
+133   04B7  20 02       	jr nz,ct_holes_test_l1
+134   04B9  3E 50       	ld a,BRIGHT+(RED<<3)	; value is the same
+135   04BB              ct_holes_test_l1:
+136   04BB  DD 77 00    	ld (ix+0),a
+137   04BE              
+138   04BE              	; next
+139   04BE  DD 23       	inc ix
+140   04C0  19          	add hl,de
+141   04C1  10 EA       	djnz ct_holes_test_loop
+142   04C3              
+143   04C3  C9          	ret
+144   04C4              
+145   04C4              ; sub routine that does an active wait as long as the
+146   04C4              ; SP0256 is still busy.
+147   04C4              ct_wait_on_sp0256:
+148   04C4  CD 0C 08    	call read_1000h
+149   04C7  CB 47       	bit 0,a	; Bit 0 = LRQ
+150   04C9  C8          	ret z	; ret if not busy
+151   04CA              
+152   04CA              	; return also if there is a key press
+153   04CA  CD 81 00    	call ct_input
+154   04CD  B7          	or a
+155   04CE  C0          	ret nz
+156   04CF              
+157   04CF  18 F3       	jr ct_wait_on_sp0256
+158   04D1              
+159   04D1              ; sub routine to speak an "aa" allophone.
+160   04D1              ; de=should contain 3000h or 3001h for the intonation.
+161   04D1              ct_speak_aa_with_de:
+162   04D1              	; wait on sp0256
+163   04D1  CD C4 04    	call ct_wait_on_sp0256
+164   04D4              	; speak
+165   04D4  3E 18       	ld a,18h	; /AA/
+166   04D6  CD 16 08    	call write_300xh
+167   04D9  CD 05 08    	call write_1000h
+168   04DC  C9          	ret
+169   04DD              
+170   04DD              
+171   04DD              ; speaks "aahh" with a mem write to 3000h on every allophone.
+172   04DD              ; Ends on key press.
+173   04DD              ct_aahh_with_3000:
+174   04DD              	; Initialize test
+175   04DD  CD 48 08    	call set_read_write_defaults
+176   04E0  11 01 08    	ld de,address_3000h
+177   04E3              ct_aahh_with_intonation:
+178   04E3              	; check key release
+179   04E3  CD B8 00    	call ct_wait_on_key_release
+180   04E6              ct_aahh_with_de_l1:
+181   04E6              	; speak "aa"
+182   04E6  CD D1 04    	call ct_speak_aa_with_de
+183   04E9              	; loop as long as no key is pressed
+184   04E9  CD 81 00    	call ct_input
+185   04EC  B7          	or a
+186   04ED  28 F7       	jr z,ct_aahh_with_de_l1
+187   04EF              
+188   04EF              ct_silence:
+189   04EF              	; silence
+190   04EF  AF          	xor a
+191   04F0  32 00 10    	ld (1000h),a
+192   04F3  C9          	ret
+193   04F4              
+194   04F4              ; speaks "aahh" with a mem write to 3001h on every allophone.
+195   04F4              ; Ends on key press.
+196   04F4              ct_aahh_with_3001:
+197   04F4              	; Initialize test
+198   04F4  CD 48 08    	call set_read_write_defaults
+199   04F7  11 03 08    	ld de,address_3001h
+200   04FA  18 E7       	jr ct_aahh_with_intonation
+201   04FC              
+202   04FC              
+203   04FC              
+204   04FC              ; speaks "aahh" with bit 6 set on every allophone.
+205   04FC              ; nothing is written to 3000h or 3001h.
+206   04FC              ct_test_with_bit_6:
+207   04FC              	; Initialize test
+208   04FC  CD 48 08    	call set_read_write_defaults
+209   04FF              
+210   04FF              	; speak "aa"
+211   04FF  1E 18       	ld e,18h	; /AA/
+212   0501  CB F3       	set 6,e		; set bit 6
+213   0503              
+214   0503              ct_bit_6:
+215   0503              	; check key release
+216   0503  CD B8 00    	call ct_wait_on_key_release
+217   0506              
+218   0506              ct_bit_6_loop:
+219   0506              	; wait on sp0256
+220   0506  CD C4 04    	call ct_wait_on_sp0256
+221   0509              	; speak
+222   0509  7B          	ld a,e	; load allophone (with or without bit 6)
+223   050A  CD 05 08    	call write_1000h
+224   050D              	; loop as long as no key is pressed
+225   050D  CD 81 00    	call ct_input
+226   0510  B7          	or a
+227   0511  28 F3       	jr z,ct_bit_6_loop
+228   0513  18 DA       	jr ct_silence
+229   0515              
+230   0515              ; speaks "aahh" with bit 6 being reset on every allophone.
+231   0515              ; nothing is written to 3000h or 3001h.
+232   0515              ct_test_without_bit_6:
+233   0515              	; Initialize test
+234   0515  CD 48 08    	call set_read_write_defaults
+235   0518              
+236   0518              	; speak "aa"
+237   0518  1E 18       	ld e,18h	; /AA/
+238   051A              	; do not set bit 6
+239   051A  18 E7       	jr ct_bit_6
+240   051C              
+241   051C              
+242   051C              
+7     051C              include "tests2.asm"
+1     051C              
+2     051C              ;-------------------------------------------------------------------------
+3     051C              ; currah_uspeech_test.asm
+4     051C              ; 2nd test screen.
+5     051C              ;-------------------------------------------------------------------------
+6     051C              
+7     051C              ; Tests are:
+8     051C              ; - Mirroring with 1000h
+9     051C              ; - /AA/ with in/out
+10    051C              ; - Intonation read
+11    051C              ; - Intonation out
+12    051C              ; - Intonation in
+13    051C              ; - Write/read 2XXXh
+14    051C              ; - All allophones (5-63)
+15    051C              
+16    051C              
+17    051C              ; sub routine to speak an "aa" allophone with intonation.
+18    051C              ct_speak_aa:
+19    051C              	; wait on sp0256
+20    051C  CD C4 04    	call ct_wait_on_sp0256
+21    051F              	; speak
+22    051F  3E 18       	ld a,18h	; /AA/
+23    0521  2A 01 08    	ld hl,(address_3000h)
+24    0524  77          	ld (hl),a
+25    0525  CD 05 08    	call write_1000h
+26    0528  C9          	ret
+27    0529              
+28    0529              
+29    0529              ; speaks "aahh" with a mem write to 1XXXh (i.e. 1001h, 1002h, 1004h, etc).
+30    0529              ; This is to test mirroring.
+31    0529              ; Ends on key press.
+32    0529              ct_aahh_mirror:
+33    0529              	; check key release
+34    0529  CD B8 00    	call ct_wait_on_key_release
+35    052C              	; Reset 3000h
+36    052C  21 00 30    	ld hl,3000h
+37    052F  22 01 08    	ld (address_3000h),hl
+38    0532              	; Test mirror at next address (i.e. shift bits)
+39    0532  ED 5B FF 07 	ld de,(address_1000h)
+40    0536  21 00 10    	ld hl,1000h	; test on overflow
+41    0539  B7          	or a
+42    053A  ED 52       	sbc hl,de
+43    053C  20 03       	jr nz,ct_aahh_mirror_shift
+44    053E  1C          	inc e	; de=1001h, set rightmost bit
+45    053F  18 0A       	jr ct_aahh_mirror_l2
+46    0541              
+47    0541              ct_aahh_mirror_shift:
+48    0541              	; shift
+49    0541  CB 23       	sla e
+50    0543  CB 12       	rl d
+51    0545  7A          	ld a,d
+52    0546  E6 0F       	and 00001111b
+53    0548  F6 10       	or  00010000b
+54    054A  57          	ld d,a
+55    054B              ct_aahh_mirror_l2:
+56    054B  ED 53 FF 07 	ld (address_1000h),de
+57    054F  D5          	push de
+58    0550              
+59    0550              ct_aahh_mirror_l3:
+60    0550              	; print
+61    0550  11 6E 05    	ld de,text_aahh_mirror_address
+62    0553  01 2F 00    	ld bc,text_aahh_mirror_address_end-text_aahh_mirror_address
+63    0556  CD A7 08    	call print_string
+64    0559  C1          	pop bc
+65    055A  CD B3 08    	call print_hex_number
+66    055D              
+67    055D              	; Enable Currah ROM and registers
+68    055D  CD 5E 08    	call turn_currah_on
+69    0560              
+70    0560              ct_aahh_mirror_l1:
+71    0560              	; speak "aa"
+72    0560  CD 1C 05    	call ct_speak_aa
+73    0563              	; loop as long as no key is pressed
+74    0563  CD 81 00    	call ct_input
+75    0566  B7          	or a
+76    0567  28 F7       	jr z,ct_aahh_mirror_l1
+77    0569              
+78    0569              ct_aahh_mirror_silence:
+79    0569              	; silence
+80    0569  AF          	xor a
+81    056A  32 00 10    	ld (1000h),a
+82    056D  C9          	ret
+83    056E              
+84    056E              ; print at left lower corner
+85    056E              text_aahh_mirror_address:
+86    056E  16 14 01    	defb AT,20,1
+87    0571  20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 
+                        	defb "                            "
+88    058D  16 14 01    	defb AT,20,1
+89    0590  55 73 65 64 20 61 64 64 72 65 73 73 3D 
+                        	defb "Used address="
+90    059D              text_aahh_mirror_address_end:
+91    059D              
+92    059D              
+93    059D              ; speaks "aahh" with a mem write to 1000h and intonation set to
+94    059D              ; 3XXXh (i.e. 3001h, 3002h, 3004h, 3008h, etc).
+95    059D              ; Used to test mainly the even addresses.
+96    059D              ; This is to test mirroring.
+97    059D              ; Ends on key press.
+98    059D              ct_aahh_3000_mirror:
+99    059D              	; check key release
+100   059D  CD B8 00    	call ct_wait_on_key_release
+101   05A0              	; Reset 1000h
+102   05A0  21 00 10    	ld hl,1000h
+103   05A3  22 FF 07    	ld (address_1000h),hl
+104   05A6              	; Test mirror at next address (i.e. shift bits)
+105   05A6  ED 5B 01 08 	ld de,(address_3000h)
+106   05AA  B7          	or a
+107   05AB  21 00 30    	ld hl,3000h	; test on overflow
+108   05AE  ED 52       	sbc hl,de
+109   05B0  20 03       	jr nz,ct_aahh_3000_mirror_shift
+110   05B2  1C          	inc e	; de=3001h, set rightmost bit
+111   05B3  18 0A       	jr ct_aahh_3000_mirror_l2
+112   05B5              ct_aahh_3000_mirror_shift:
+113   05B5              	; shift
+114   05B5  CB 23       	sla e
+115   05B7  CB 12       	rl d
+116   05B9  7A          	ld a,d
+117   05BA  E6 0F       	and 00001111b
+118   05BC  F6 30       	or  00110000b
+119   05BE  57          	ld d,a
+120   05BF              ct_aahh_3000_mirror_l2:
+121   05BF  ED 53 01 08 	ld (address_3000h),de
+122   05C3  D5          	push de
+123   05C4              
+124   05C4              	; Set to 3001h for comparison
+125   05C4  CD 5E 08    	call turn_currah_on
+126   05C7  32 01 30    	ld (3001h),a
+127   05CA              
+128   05CA  C3 50 05    	jp ct_aahh_mirror_l3
+129   05CD              
+130   05CD              
+131   05CD              ; speaks "aahh" with a mem write to 1000h and intonation set to
+132   05CD              ; 3XXXh (i.e. 3001h, 3003h, 3005h, 3009h, etc).
+133   05CD              ; Used to test mainly the odd addresses.
+134   05CD              ; This is to test mirroring.
+135   05CD              ; Ends on key press.
+136   05CD              ct_aahh_3001_mirror:
+137   05CD              	; check key release
+138   05CD  CD B8 00    	call ct_wait_on_key_release
+139   05D0              	; Reset 1000h
+140   05D0  21 00 10    	ld hl,1000h
+141   05D3  22 FF 07    	ld (address_1000h),hl
+142   05D6              	; Test mirror at next address (i.e. shift bits)
+143   05D6  ED 5B 01 08 	ld de,(address_3000h)
+144   05DA  B7          	or a
+145   05DB  21 FF 3F    	ld hl,3fffh	; test on overflow
+146   05DE  ED 52       	sbc hl,de
+147   05E0  20 05       	jr nz,ct_aahh_3001_mirror_shift
+148   05E2  11 00 30    	ld de,3000h
+149   05E5  18 0B       	jr ct_aahh_3001_mirror_l2
+150   05E7              ct_aahh_3001_mirror_shift:
+151   05E7              	; shift
+152   05E7  37          	scf	; set carry flag
+153   05E8  CB 13       	rl e
+154   05EA  CB 12       	rl d
+155   05EC  7A          	ld a,d
+156   05ED  E6 0F       	and 00001111b
+157   05EF  F6 30       	or  00110000b
+158   05F1  57          	ld d,a
+159   05F2              ct_aahh_3001_mirror_l2:
+160   05F2  ED 53 01 08 	ld (address_3000h),de
+161   05F6  D5          	push de
+162   05F7              
+163   05F7              	; Set to 3000h for comparison
+164   05F7  CD 5E 08    	call turn_currah_on
+165   05FA  32 00 30    	ld (3000h),a
+166   05FD              
+167   05FD  C3 50 05    	jp ct_aahh_mirror_l3
+168   0600              
+169   0600              
+170   0600              ; speaks "aahh" with a mem write and read to 2000h.
+171   0600              ; Ends on key press.
+172   0600              ct_aahh_at_2000:
+173   0600  CD 5E 08    	call turn_currah_on
+174   0603              	; Initialize test
+175   0603  CD 48 08    	call set_read_write_defaults
+176   0606  21 00 20    	ld hl,2000h
+177   0609  22 FF 07    	ld (address_1000h),hl
+178   060C  11 01 08    	ld de,address_3000h
+179   060F  C3 E3 04    	jp ct_aahh_with_intonation
+180   0612              
+181   0612              ; speaks "aahh" with a out and in to 1000h.
+182   0612              ; Ends on key press.
+183   0612              ct_aahh_in_out:
+184   0612  CD B8 00    	call ct_wait_on_key_release
+185   0615  CD 5E 08    	call turn_currah_on
+186   0618              	; Initialize test
+187   0618  CD 48 08    	call set_read_write_defaults
+188   061B  01 00 10    	ld bc,1000h
+189   061E              
+190   061E              ct_aahh_in_out_loop:
+191   061E              	; check for key press
+192   061E  CD 81 00    	call ct_input
+193   0621  B7          	or a
+194   0622  20 0C       	jr nz,ct_aahh_in_out_end
+195   0624              
+196   0624              	; wait on busy
+197   0624              	;ld a,(bc)
+198   0624  ED 78       	in a,(c)
+199   0626  CB 47       	bit 0,a	; busy
+200   0628  20 F4       	jr nz,ct_aahh_in_out_loop
+201   062A              
+202   062A              	; out to 1000h
+203   062A  3E 18       	ld a,18h	; /AA/
+204   062C              	;ld (bc),a
+205   062C  ED 79       	out (c),a
+206   062E  18 EE       	jr ct_aahh_in_out_loop
+207   0630              
+208   0630              ct_aahh_in_out_end:
+209   0630  C3 EF 04    	jp ct_silence
+210   0633              
+211   0633              
+212   0633              ; speaks /aa/ alternating with 3000h and 30001h.
+213   0633              ; Uses mem write, mem read, out or in.
+214   0633              ; speaks "aahh" with a alternating to 3000h and 3001h alternating
+215   0633              ; about every second.
+216   0633              ; Ends on key press.
+217   0633              ct_aahh_with_alt_3000_1:
+218   0633              	; turn uSpeech on
+219   0633  CD 5E 08    	call turn_currah_on
+220   0636              	; check key release
+221   0636  CD B8 00    	call ct_wait_on_key_release
+222   0639              
+223   0639              ct_aahh_with_3000_1_l1:
+224   0639              	; speak aa with 3000h
+225   0639  11 01 08    	ld de,address_3000h
+226   063C  06 0F       	ld b,15 ; loop count
+227   063E              ct_aahh_with_3000_1_l2:
+228   063E              	; speak allophone
+229   063E  CD D1 04    	call ct_speak_aa_with_de
+230   0641              	; return if key is pressed
+231   0641  CD 81 00    	call ct_input
+232   0644  B7          	or a
+233   0645  C2 EF 04    	jp nz,ct_silence
+234   0648  10 F4       	djnz ct_aahh_with_3000_1_l2
+235   064A              
+236   064A              	; speak aa with 3001h
+237   064A  11 03 08    	ld de,address_3001h
+238   064D  06 0F       	ld b,15 ; loop count
+239   064F              ct_aahh_with_3000_1_l3:
+240   064F              	; speak allophone
+241   064F  CD D1 04    	call ct_speak_aa_with_de
+242   0652              	; return if key is pressed
+243   0652  CD 81 00    	call ct_input
+244   0655  B7          	or a
+245   0656  C2 EF 04    	jp nz,ct_silence
+246   0659  10 F4       	djnz ct_aahh_with_3000_1_l3
+247   065B  C3 39 06    	jp ct_aahh_with_3000_1_l1
+248   065E              
+249   065E              
+250   065E              ; Alternating 3000/1h with mem write.
+251   065E              ct_aahh_with_alt_3000_1_mem_write:
+252   065E              	; Initialize test
+253   065E  CD 48 08    	call set_read_write_defaults
+254   0661  C3 33 06    	jp ct_aahh_with_alt_3000_1
+255   0664              
+256   0664              ; Alternating 3000/1h with mem read.
+257   0664              ct_aahh_with_alt_3000_1_mem_read:
+258   0664              	; Initialize test
+259   0664  CD 48 08    	call set_read_write_defaults
+260   0667  CD 39 08    	call set_300xh_mem_read
+261   066A  C3 33 06    	jp ct_aahh_with_alt_3000_1
+262   066D              
+263   066D              ; Alternating 3000/1h with out.
+264   066D              ct_aahh_with_alt_3000_1_out:
+265   066D              	; Initialize test
+266   066D  CD 48 08    	call set_read_write_defaults
+267   0670  CD 3E 08    	call set_300xh_out
+268   0673  C3 33 06    	jp ct_aahh_with_alt_3000_1
+269   0676              
+270   0676              ; Alternating 3000/1h with in.
+271   0676              ct_aahh_with_alt_3000_1_in:
+272   0676              	; Initialize test
+273   0676  CD 48 08    	call set_read_write_defaults
+274   0679  CD 43 08    	call set_300xh_in
+275   067C  C3 33 06    	jp ct_aahh_with_alt_3000_1
+276   067F              
+277   067F              
+278   067F              
+279   067F              
+280   067F              ; speaks all allophones from 5 to 63, each with a pause afterwards.
+281   067F              ; Used to record the allophones.
+282   067F              ; Intonation 3000h.
+283   067F              ; You can break out with a key press.
+284   067F              ct_all_allophones:
+285   067F              	; check key release
+286   067F  CD B8 00    	call ct_wait_on_key_release
+287   0682              	; turn on
+288   0682  CD 5E 08    	call turn_currah_on
+289   0685              	; Initialize test
+290   0685  CD 48 08    	call set_read_write_defaults
+291   0688              	; Intonation
+292   0688  32 00 30    	ld (3000h),a
+293   068B              
+294   068B              	; Start at allophone 5
+295   068B  1E 05       	ld e,5
+296   068D              
+297   068D              ct_all_allophones_loop:
+298   068D              	; speak allophone
+299   068D  7B          	ld a,e
+300   068E  CD A2 06    	call ct_speak_a
+301   0691              	; pause
+302   0691  3E 04       	ld a,4
+303   0693  CD A2 06    	call ct_speak_a
+304   0696              
+305   0696              	; check for end
+306   0696  3E 41       	ld a,65
+307   0698  BB          	cp e
+308   0699  C8          	ret z
+309   069A              
+310   069A              	; next allophone
+311   069A  1C          	inc e
+312   069B              
+313   069B              	; check if key pressed
+314   069B  CD 81 00    	call ct_input
+315   069E  B7          	or a
+316   069F  28 EC       	jr z,ct_all_allophones_loop
+317   06A1              
+318   06A1  C9          	ret
+319   06A2              
+320   06A2              
+321   06A2              ; sub routine to speak the contents of a.
+322   06A2              ct_speak_a:
+323   06A2  F5          	push af
+324   06A3              	; wait on sp0256
+325   06A3  CD C4 04    	call ct_wait_on_sp0256
+326   06A6              	; speak
+327   06A6  F1          	pop af
+328   06A7  32 00 10    	ld (1000h),a
+329   06AA  C9          	ret
+330   06AB              
+8     06AB              include "tests3.asm"
+1     06AB              
+2     06AB              ;-------------------------------------------------------------------------
+3     06AB              ; currah_uspeech_test.asm
+4     06AB              ; 35r test screen.
+5     06AB              ;-------------------------------------------------------------------------
+6     06AB              
+7     06AB              ; Tests are:
+8     06AB              ; - busy flag once
+9     06AB              ; - busy flag continuously
+10    06AB              ; - time measurement busy after idle
+11    06AB              ; - time measurement busy after allophone
+12    06AB              
+13    06AB              
+14    06AB              ; Test if the busy signal is set even if there is no new allophone written.
+15    06AB              ; With allophone /AA/.
+16    06AB              ct_test_busy_aa:
+17    06AB  3E 0B       	ld a,0bh	; dec bc = 0bh
+18    06AD  32 E2 06    	ld (ct_test_busy_self_modyfying),a
+19    06B0              	; speak one allophone
+20    06B0  3E 18       	ld a,18h	; load allophone /AA/
+21    06B2              
+22    06B2              ct_test_busy_allophone:
+23    06B2  F5          	push af
+24    06B3              
+25    06B3              	; clear part of the screen
+26    06B3  CD EA 08    	call clear_left_and_bottom
+27    06B6              
+28    06B6              	; show markers
+29    06B6  CD A7 09    	call display_hor_zero_markers
+30    06B9              
+31    06B9              	; Enable Currah
+32    06B9  CD 5E 08    	call turn_currah_on
+33    06BC              	; check key release
+34    06BC  CD B8 00    	call ct_wait_on_key_release
+35    06BF              	; Reset horizontal display
+36    06BF  3E 01       	ld a,1
+37    06C1  32 A5 09    	ld (display_hor_a_delay_value),a
+38    06C4  CD 8F 09    	call reset_display_hor_a
+39    06C7              	; wait on sp0256
+40    06C7  CD C4 04    	call ct_wait_on_sp0256
+41    06CA  F1          	pop af
+42    06CB              
+43    06CB  01 F0 00    	ld bc,1*30*8	; display_hor_a_delay_value*(256-16)x
+44    06CE  32 00 10    	ld (1000h),a
+45    06D1              
+46    06D1              ct_test_busy_aa_loop:
+47    06D1              	; check key press
+48    06D1  CD 81 00    	call ct_input
+49    06D4  B7          	or a
+50    06D5  20 10       	jr nz,ct_test_busy_aa_end
+51    06D7              
+52    06D7  C5          	push bc
+53    06D8              	; now visualize the busy bit
+54    06D8  3A 00 10    	ld a,(1000h)
+55    06DB  CD 72 08    	call display_vert_a
+56    06DE  CD 0C 09    	call display_hor_a
+57    06E1              
+58    06E1  C1          	pop bc
+59    06E2              
+60    06E2              ct_test_busy_self_modyfying:
+61    06E2  0B          	dec bc	; dec bc = 0ch
+62    06E3              
+63    06E3  78          	ld a,b
+64    06E4  B1          	or c
+65    06E5  20 EA       	jr nz,ct_test_busy_aa_loop
+66    06E7              
+67    06E7              ct_test_busy_aa_end:
+68    06E7  C3 EF 04    	jp ct_silence
+69    06EA              
+70    06EA              
+71    06EA              
+72    06EA              ; Test if the busy signal is set even if there is no new allophone written.
+73    06EA              ; With allophone /SH/.
+74    06EA              ct_test_busy_sh:
+75    06EA  3E 0B       	ld a,0bh	; dec bc = 0bh
+76    06EC  32 E2 06    	ld (ct_test_busy_self_modyfying),a
+77    06EF              	; speak one allophone
+78    06EF  3E 25       	ld a,25h	; load allophone /SH/
+79    06F1  C3 B2 06    	jp ct_test_busy_allophone
+80    06F4              
+81    06F4              
+82    06F4              ; Like ct_test_busy_aa but doesn't stop automatically.
+83    06F4              ; Stops if another key is pressed.
+84    06F4              ; Used to check LRQ, SBY via a real oscilloscope.
+85    06F4              ct_test_busy_until_key:
+86    06F4  AF          	xor a	; 0 = nop
+87    06F5  32 E2 06    	ld (ct_test_busy_self_modyfying),a
+88    06F8  3E 18       	ld a,18h	; load allophone /AA/
+89    06FA  C3 B2 06    	jp ct_test_busy_allophone
+90    06FD              
+91    06FD              
+92    06FD              
+93    06FD              ; Measures the time of the busy flag.
+94    06FD              ; 2 times are measured:
+95    06FD              ; 1. time between write 1000h and busy=1
+96    06FD              ; 2. time between change busy=1/0 and busy=0/1 if write to 1000h after busy=1/0
+97    06FD              ; a contains the allophone to speak (different allophones need different time)
+98    06FD              ct_test_busy_time_measure:
+99    06FD  32 85 07    	ld (ct_test_busy_time_measure_used_allophone),a
+100   0700  CD EA 08    	call clear_left_and_bottom
+101   0703  CD 5E 08    	call turn_currah_on
+102   0706              	; check that uSpeech is on
+103   0706  3A 39 00    	ld a,(CS_ROM_VALUE_ADDRESS)
+104   0709  FE F1       	cp CS_ROM_VALUE
+105   070B  C0          	ret nz	; avoid executing if uSpeech is not attached.
+106   070C              
+107   070C  01 00 10    	ld bc,1000h
+108   070F  11 01 00    	ld de,1
+109   0712              
+110   0712              	; wait until busy is 0
+111   0712              ct_test_busy_time_measure_wait1:
+112   0712  0A          	ld a,(bc)
+113   0713  CB 47       	bit 0,a
+114   0715  20 FB       	jr nz,ct_test_busy_time_measure_wait1
+115   0717              
+116   0717              	; write allophone
+117   0717  3A 85 07    	ld a,(ct_test_busy_time_measure_used_allophone)
+118   071A  02          	ld (bc),a
+119   071B              
+120   071B              	; check immediately
+121   071B  0A          	ld a,(bc)	; 7 T
+122   071C  1F          	rra
+123   071D  21 10 27    	ld hl,10000		; counter
+124   0720  38 0A       	jr c,ct_test_busy_time_measure_overflow1	; save value 0 (10000-10000) if immediately (7T) set
+125   0722              
+126   0722              	; wait and count until busy is 1
+127   0722  B7          	or a	; clear carry
+128   0723              ct_test_busy_time_measure_wait2:
+129   0723  ED 52       	sbc hl,de
+130   0725  28 05       	jr z,ct_test_busy_time_measure_overflow1
+131   0727  0A          	ld a,(bc)
+132   0728  CB 47       	bit 0,a
+133   072A  28 F7       	jr z,ct_test_busy_time_measure_wait2
+134   072C              
+135   072C              ct_test_busy_time_measure_overflow1:
+136   072C  E5          	push hl	; save value
+137   072D              
+138   072D              	; Loop for a few times
+139   072D  D9          	exx
+140   072E              defc TIME_MEASURE_LOOP_COUNT = 5
+141   072E  06 06       	ld b,TIME_MEASURE_LOOP_COUNT+1
+142   0730              
+143   0730              ct_test_busy_time_measure_loop:
+144   0730  D9          	exx
+145   0731              
+146   0731              	; wait and count until busy is again 0
+147   0731  21 10 27    	ld hl,10000	; counter
+148   0734  B7          	or a	; clear carry
+149   0735              ct_test_busy_time_measure_wait3:
+150   0735  ED 52       	sbc hl,de		; 15 T
+151   0737  28 05       	jr z,ct_test_busy_time_measure_overflow2	; 7 T
+152   0739  0A          	ld a,(bc)	; 7 T
+153   073A  CB 47       	bit 0,a		; 8 T
+154   073C  20 F7       	jr nz,ct_test_busy_time_measure_wait3	; 12 T
+155   073E              	; Total: 49 T = 49 *1/3,5MHz = 14 us
+156   073E              
+157   073E              ct_test_busy_time_measure_overflow2:
+158   073E  E5          	push hl	; save value
+159   073F              
+160   073F              	; speak another allophone
+161   073F  3A 85 07    	ld a,(ct_test_busy_time_measure_used_allophone)
+162   0742  02          	ld (bc),a
+163   0743              
+164   0743              	; wait until busy = 1
+165   0743              ct_test_busy_time_measure_wait4:
+166   0743  0A          	ld a,(bc)
+167   0744  CB 47       	bit 0,a
+168   0746  28 FB       	jr z,ct_test_busy_time_measure_wait4
+169   0748              
+170   0748  D9          	exx
+171   0749  10 E5       	djnz ct_test_busy_time_measure_loop
+172   074B  D9          	exx
+173   074C              
+174   074C              	; print t3
+175   074C  11 DA 07    	ld de,text_duration3
+176   074F  01 25 00    	ld bc,text_duration3_end-text_duration3
+177   0752  CD A7 08    	call print_string
+178   0755              
+179   0755  3E 05       	ld a,TIME_MEASURE_LOOP_COUNT
+180   0757              
+181   0757              ct_test_busy_time_print_loop:
+182   0757              	; print t1
+183   0757  C1          	pop bc
+184   0758  F5          	push af
+185   0759  CD 90 07    	call print_10000_number
+186   075C              	; print space
+187   075C  3E 20       	ld a,' '
+188   075E  D7          	rst 10h
+189   075F              
+190   075F  F1          	pop af
+191   0760  3D          	dec a
+192   0761  20 F4       	jr nz,ct_test_busy_time_print_loop
+193   0763              
+194   0763              	; print t1
+195   0763  11 9B 07    	ld de,text_duration1
+196   0766  01 3A 00    	ld bc,text_duration1_end-text_duration1
+197   0769  CD A7 08    	call print_string
+198   076C              
+199   076C  E1          	pop hl
+200   076D  C1          	pop bc
+201   076E  E5          	push hl
+202   076F              
+203   076F              	; t1
+204   076F  CD 90 07    	call print_10000_number
+205   0772              
+206   0772              	; print t2
+207   0772  11 D5 07    	ld de,text_duration2
+208   0775  01 05 00    	ld bc,text_duration2_end-text_duration2
+209   0778  CD A7 08    	call print_string
+210   077B              
+211   077B              	; t2
+212   077B  C1          	pop bc
+213   077C  CD 90 07    	call print_10000_number
+214   077F              
+215   077F              	; end
+216   077F  CD 5E 08    	call turn_currah_on
+217   0782  C3 EF 04    	jp ct_silence
+218   0785              
+219   0785              ; The used allophone.
+220   0785  00          ct_test_busy_time_measure_used_allophone:	defb 0
+221   0786              
+222   0786              
+223   0786              ; Do the test with /AA/, 63.7ms.
+224   0786              ct_test_busy_time_measure_with_aa:
+225   0786  3E 18       	ld a,18h
+226   0788  C3 FD 06    	jp ct_test_busy_time_measure
+227   078B              
+228   078B              ; Do the test with /JH/, 98.4ms.
+229   078B              ct_test_busy_time_measure_with_jh:
+230   078B  3E 0A       	ld a,0ah
+231   078D  C3 FD 06    	jp ct_test_busy_time_measure
+232   0790              
+233   0790              
+234   0790              ; prints number in bc, but calculates 10000-bc beforehand.
+235   0790              print_10000_number:
+236   0790  21 10 27    	ld hl,10000
+237   0793  B7          	or a
+238   0794  ED 42       	sbc hl,bc
+239   0796  4D          	ld c,l
+240   0797  44          	ld b,h
+241   0798  C3 AD 08    	jp print_number
+242   079B              
+243   079B              
+244   079B              ; print at left lower corner
+245   079B              text_duration1:
+246   079B  16 11 01    	defb AT,17,1
+247   079E  4D 75 6C 74 69 70 6C 79 20 62 79 20 31 34 20 75 73 2E 
+                        	defb "Multiply by 14 us."
+248   07B0  16 12 01    	defb AT,18,1
+249   07B3  20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 
+                        	defb "                            "
+250   07CF  16 12 01    	defb AT,18,1
+251   07D2  74 31 3D    	defb "t1="
+252   07D5              text_duration1_end:
+253   07D5              
+254   07D5              text_duration2:
+255   07D5  2C 20       	defb ", "
+256   07D7  74 32 3D    	defb "t2="
+257   07DA              text_duration2_end:
+258   07DA              
+259   07DA              text_duration3:
+260   07DA  16 13 01    	defb AT,19,1
+261   07DD  20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 
+                        	defb "                            "
+262   07F9  16 13 01    	defb AT,19,1
+263   07FC  74 33 3D    	defb "t3="
+264   07FF              text_duration3_end:
+265   07FF              
+9     07FF              include "common.asm"
+1     07FF              ; Common subroutines.
+2     07FF              
+3     07FF              ; The addresses that shall be used to access the currah HW.
+4     07FF              ; Used for mirroring tests.
+5     07FF  00 10       address_1000h:	defw 1000h
+6     0801  00 30       address_3000h:	defw 3000h
+7     0803  01 30       address_3001h:	defw 3001h
+8     0805              
+9     0805              
+10    0805              ; Access the currah HW always with these routines.
+11    0805              
+12    0805              ; Write to address 1000h.
+13    0805              ; a contains the byte to write.
+14    0805              write_1000h:
+15    0805  E5          	push hl
+16    0806  2A FF 07    	ld hl,(address_1000h)
+17    0809  77          	ld (hl),a
+18    080A  E1          	pop hl
+19    080B  C9          	ret
+20    080C              
+21    080C              
+22    080C              ; Read from address 1000h.
+23    080C              ; Returns: a
+24    080C              read_1000h:
+25    080C  E5          	push hl
+26    080D  2A FF 07    	ld hl,(address_1000h)
+27    0810  7E          	ld a,(hl)
+28    0811  CD 72 08    	call display_vert_a
+29    0814  E1          	pop hl
+30    0815  C9          	ret
+31    0816              
+32    0816              
+33    0816              ; Intonation.
+34    0816              ; Write to address 3000h or 3001h
+35    0816              ; de contains the pointer to address_3000h or address_3001h
+36    0816              write_300xh:
+37    0816  E5          	push hl
+38    0817  EB          	ex de,hl	; ld hl from de
+39    0818  C5          	push bc
+40    0819  4E          	ld c,(hl)
+41    081A  23          	inc hl
+42    081B  46          	ld b,(hl)
+43    081C  2B          	dec hl
+44    081D  F5          	push af
+45    081E              
+46    081E              write_3000xh_self_modifying_code:
+47    081E  02          	ld (bc),a
+48    081F  00          	nop
+49    0820              
+50    0820  F1          	pop af
+51    0821  C1          	pop bc
+52    0822  EB          	ex de,hl
+53    0823  E1          	pop hl
+54    0824  C9          	ret
+55    0825              
+56    0825              write_300xh_mem_write:
+57    0825  02          	ld (bc),a
+58    0826  00          	nop
+59    0827              
+60    0827              write_300xh_mem_read:
+61    0827  0A          	ld a,(bc)
+62    0828  00          	nop
+63    0829              
+64    0829              write_300xh_out:
+65    0829  ED 79       	out (c),a
+66    082B              
+67    082B              write_300xh_in:
+68    082B  ED 78       	in a,(c)
+69    082D              
+70    082D              ; Sets the access to the 300xh addresses.
+71    082D              ; mem write, read on in/out.
+72    082D              set_300xh_mem_write:
+73    082D  21 25 08    	ld hl,write_300xh_mem_write
+74    0830              set_300xh:
+75    0830  01 02 00    	ld bc,2
+76    0833  11 1E 08    	ld de,write_3000xh_self_modifying_code
+77    0836  ED B0       	ldir
+78    0838  C9          	ret
+79    0839              
+80    0839              set_300xh_mem_read:
+81    0839  21 27 08    	ld hl,write_300xh_mem_read
+82    083C  18 F2       	jr set_300xh
+83    083E              
+84    083E              set_300xh_out:
+85    083E  21 29 08    	ld hl,write_300xh_out
+86    0841  18 ED       	jr set_300xh
+87    0843              
+88    0843              set_300xh_in:
+89    0843  21 2B 08    	ld hl,write_300xh_in
+90    0846  18 E8       	jr set_300xh
+91    0848              
+92    0848              
+93    0848              ; Default initialization for the read/write routines.
+94    0848              ; Uses 100h, 3000h and 3001 as addresses and memory read/write
+95    0848              ; to access the addresses.
+96    0848              set_read_write_defaults:
+97    0848              	; Use mem write for intonation
+98    0848  CD 2D 08    	call set_300xh_mem_write
+99    084B              	; Use address 3000h/3001h for intonation
+100   084B  21 00 30    	ld hl,3000h
+101   084E  22 01 08    	ld (address_3000h),hl
+102   0851  21 01 30    	ld hl,3001h
+103   0854  22 03 08    	ld (address_3001h),hl
+104   0857              	; Use address 1000h fo6683r read/write allophone
+105   0857  21 00 10    	ld hl,1000h
+106   085A  22 FF 07    	ld (address_1000h),hl
+107   085D  C9          	ret
+108   085E              
+109   085E              
+110   085E              ; Turns the currah access (to 1000h and 3000/1h) on.
+111   085E              turn_currah_on:
+112   085E              	; check if rom is enabled
+113   085E  3A 39 00    	ld a,(CS_ROM_VALUE_ADDRESS)
+114   0861  FE F1       	cp CS_ROM_VALUE
+115   0863  C8          	ret z	; Return if already enabled
+116   0864              	; enable currah with a mem read
+117   0864  3A 38 00    	ld a,(0038h)
+118   0867  C9          	ret
+119   0868              
+120   0868              ; Turns the currah access (to 1000h and 3000/1h) off.
+121   0868              turn_currah_off:
+122   0868              	; check if rom is enabled
+123   0868  3A 39 00    	ld a,(CS_ROM_VALUE_ADDRESS)
+124   086B  FE F1       	cp CS_ROM_VALUE
+125   086D  C0          	ret nz	; Return if already disabled
+126   086E              	; disable currah with a mem read
+127   086E  3A 38 00    	ld a,(0038h)
+128   0871  C9          	ret
+129   0872              
+130   0872              
+131   0872              ; Writes the output of a as a byte to the screen.
+132   0872              ; Afterwards increases the y-position.
+133   0872              ; Used to output the contents of the byte read from 1000h.
+134   0872              display_vert_a:
+135   0872  E5          	push hl
+136   0873              	; just show in case of a change.
+137   0873  21 A6 08    	ld hl,display_prev_val
+138   0876  BE          	cp (hl)
+139   0877  28 29       	jr z,display_vert_a_end
+140   0879              
+141   0879  F5          	push af
+142   087A              
+143   087A              	; store current value
+144   087A  77          	ld (hl),a
+145   087B              
+146   087B              	; has changed, so display it
+147   087B  2A A4 08    	ld hl,(display_ptr)
+148   087E  77          	ld (hl),a
+149   087F              
+150   087F              	; increment y
+151   087F  24          	inc h
+152   0880  7C          	ld a,h
+153   0881  E6 07       	and 07h
+154   0883  20 0E       	jr nz,display_l1
+155   0885              	; overflow
+156   0885  7C          	ld a,h
+157   0886  D6 08       	sub a,08h	; correct h
+158   0888  67          	ld h,a
+159   0889              	; increment l
+160   0889  7D          	ld a,l
+161   088A  C6 20       	add a,020h
+162   088C  6F          	ld l,a
+163   088D  30 04       	jr nc,display_l1
+164   088F              	; overflow again to h
+165   088F  7C          	ld a,h
+166   0890  C6 08       	add a,08h
+167   0892  67          	ld h,a
+168   0893              display_l1:
+169   0893              	; check if too big
+170   0893  7C          	ld a,h
+171   0894  E6 18       	and 00011000b
+172   0896  EE 18       	xor 00011000b
+173   0898  20 04       	jr nz,display_l2
+174   089A              	; too big
+175   089A  2E 40       	ld l,DISPLAY_START_Y/8*020h
+176   089C  26 41       	ld h,01000000b+(DISPLAY_START_Y & 0111b)
+177   089E              
+178   089E              display_l2:
+179   089E  22 A4 08    	ld (display_ptr),hl
+180   08A1  F1          	pop af
+181   08A2              
+182   08A2              display_vert_a_end:
+183   08A2  E1          	pop hl
+184   08A3  C9          	ret
+185   08A4              
+186   08A4              defc DISPLAY_START_Y = 17
+187   08A4              
+188   08A4  40 41       display_ptr:		defb	DISPLAY_START_Y/8*020h, 01000000b+(DISPLAY_START_Y & 0111b)
+189   08A6  00          display_prev_val:	defb	0
+190   08A7              
+191   08A7              
+192   08A7              ; The print routines call the ZX Spectrum.
+193   08A7              ; Therefore the Currah ROM needs to be turned off.
+194   08A7              print_string:
+195   08A7  CD 68 08    	call turn_currah_off
+196   08AA  C3 3C 20    	jp print_string_address
+197   08AD              
+198   08AD              print_number:
+199   08AD  CD 68 08    	call turn_currah_off
+200   08B0  C3 1B 1A    	jp print_number_address
+201   08B3              
+202   08B3              ; prints a hex number in bc.
+203   08B3              print_hex_number:
+204   08B3  CD 68 08    	call turn_currah_off
+205   08B6  C5          	push bc
+206   08B7  78          	ld a,b
+207   08B8  CB 3F       	srl a
+208   08BA  CB 3F       	srl a
+209   08BC  CB 3F       	srl a
+210   08BE  CB 3F       	srl a
+211   08C0  CD E0 08    	call print_hex_a
+212   08C3  C1          	pop bc
+213   08C4  78          	ld a,b
+214   08C5  E6 0F       	and a,0fh
+215   08C7  C5          	push bc
+216   08C8  CD E0 08    	call print_hex_a
+217   08CB  C1          	pop bc
+218   08CC  C5          	push bc
+219   08CD  79          	ld a,c
+220   08CE  CB 3F       	srl a
+221   08D0  CB 3F       	srl a
+222   08D2  CB 3F       	srl a
+223   08D4  CB 3F       	srl a
+224   08D6  CD E0 08    	call print_hex_a
+225   08D9  C1          	pop bc
+226   08DA  79          	ld a,c
+227   08DB  E6 0F       	and a,0fh
+228   08DD  C3 E0 08    	jp print_hex_a
+229   08E0              
+230   08E0              
+231   08E0              print_hex_a:
+232   08E0  C6 30       	add '0'
+233   08E2  FE 3A       	cp '9'+1
+234   08E4  38 02       	jr c,print_hex_number_l1
+235   08E6  C6 07       	add 'A'-'0'-10
+236   08E8              print_hex_number_l1:
+237   08E8  D7          	rst 10h
+238   08E9  C9          	ret
+239   08EA              
+240   08EA              
+241   08EA              ; Clears left side and bottom 3rd.
+242   08EA              clear_left_and_bottom:
+243   08EA              	; save
+244   08EA  F5          	push af
+245   08EB  E5          	push hl
+246   08EC  D5          	push de
+247   08ED  C5          	push bc
+248   08EE              	; left
+249   08EE  AF          	xor a
+250   08EF  21 00 40    	ld hl,SCREEN
+251   08F2  06 C0       	ld b,SCREEN_HEIGHT
+252   08F4  11 20 00    	ld de,SCREEN_WIDTH_IN_BYTES
+253   08F7              clear_left_and_bottom_loop:
+254   08F7  77          	ld (hl),a
+255   08F8  19          	add hl,de
+256   08F9  10 FC       	djnz clear_left_and_bottom_loop
+257   08FB              	; bottom
+258   08FB  21 00 50    	ld hl,SCREEN+16*SCREEN_WIDTH_IN_BYTES*8
+259   08FE  11 01 50    	ld de,SCREEN+16*SCREEN_WIDTH_IN_BYTES*8+1
+260   0901  01 FF 07    	ld bc,8*SCREEN_WIDTH_IN_BYTES*8-1
+261   0904  77          	ld (hl),a
+262   0905  ED B0       	ldir
+263   0907              	; restore
+264   0907  C1          	pop bc
+265   0908  D1          	pop de
+266   0909  E1          	pop hl
+267   090A  F1          	pop af
+268   090B  C9          	ret
+269   090C              
+270   090C              
+271   090C              ; Displays the contents of all bits of a horizontally.
+272   090C              ; Like an oszilloscope.
+273   090C              ; Bit 0 is the lowest line, bit 7 the topmost.
+274   090C              ; 'display_hor_a_delay_value' should be set to a suitable value.
+275   090C              ; Depending on the caller function the drawn lines might be fast or slow.
+276   090C              ; With this value the drawing speed can be adjusted.
+277   090C              display_hor_a:
+278   090C  32 A6 09    	ld (display_hor_a_value),a
+279   090F              	; check if address needs to be incremented.
+280   090F  21 A4 09    	ld hl,display_hor_a_counter
+281   0912  35          	dec (hl)
+282   0913  20 44       	jr nz,display_hor_a_no_inc
+283   0915  3A A5 09    	ld a,(display_hor_a_delay_value)
+284   0918  77          	ld (hl),a
+285   0919              
+286   0919  3A A3 09    	ld a,(display_hor_a_rotation)
+287   091C              	; rotate
+288   091C  CB 0F       	rrc a
+289   091E  32 A3 09    	ld (display_hor_a_rotation),a
+290   0921  30 36       	jr nc,display_hor_a_no_inc
+291   0923              	; increment screen address
+292   0923  2A A1 09    	ld hl,(display_hor_a_address)
+293   0926  23          	inc hl
+294   0927  22 A1 09    	ld (display_hor_a_address),hl
+295   092A              	; check overflow
+296   092A  7D          	ld a,l
+297   092B  E6 1F       	and 00011111b
+298   092D  CC 8F 09    	call z,reset_display_hor_a
+299   0930              
+300   0930              	; clear all lines
+301   0930  AF          	xor a
+302   0931              
+303   0931  11 E0 FF    	ld de,-(00100000b)
+304   0934  CB D4       	set 2,h
+305   0936  77          	ld (hl),a
+306   0937  24          	inc h
+307   0938  77          	ld (hl),a
+308   0939              
+309   0939  19          	add hl,de
+310   093A  77          	ld (hl),a
+311   093B  25          	dec h
+312   093C  77          	ld (hl),a
+313   093D              
+314   093D  19          	add hl,de
+315   093E  77          	ld (hl),a
+316   093F  24          	inc h
+317   0940  77          	ld (hl),a
+318   0941              
+319   0941  19          	add hl,de
+320   0942  77          	ld (hl),a
+321   0943  25          	dec h
+322   0944  77          	ld (hl),a
+323   0945              
+324   0945  CB 94       	res 2,h
+325   0947  11 20 00    	ld de,00100000b
+326   094A  77          	ld (hl),a
+327   094B  24          	inc h
+328   094C  77          	ld (hl),a
+329   094D              
+330   094D  19          	add hl,de
+331   094E  77          	ld (hl),a
+332   094F  25          	dec h
+333   0950  77          	ld (hl),a
+334   0951              
+335   0951  19          	add hl,de
+336   0952  77          	ld (hl),a
+337   0953  24          	inc h
+338   0954  77          	ld (hl),a
+339   0955              
+340   0955  19          	add hl,de
+341   0956  77          	ld (hl),a
+342   0957  25          	dec h
+343   0958  77          	ld (hl),a
+344   0959              
+345   0959              display_hor_a_no_inc:
+346   0959              
+347   0959  11 E0 FF    	ld de,-(00100000b)
+348   095C              
+349   095C              	; Display 1's in a
+350   095C  2A A1 09    	ld hl,(display_hor_a_address)
+351   095F  3A A6 09    	ld a,(display_hor_a_value)
+352   0962  CD 72 09    	call sub_display_hor_values
+353   0965              
+354   0965              	; Display 0's in a
+355   0965  2A A1 09    	ld hl,(display_hor_a_address)
+356   0968  24          	inc h	; 0's
+357   0969  3A A6 09    	ld a,(display_hor_a_value)
+358   096C  EE FF       	xor 0ffh
+359   096E  CD 72 09    	call sub_display_hor_values
+360   0971  C9          	ret
+361   0972              
+362   0972              
+363   0972              ; Displays either 0 or 1 points.
+364   0972              sub_display_hor_values:
+365   0972  06 04       	ld b,4
+366   0974  4F          	ld c,a
+367   0975              
+368   0975              display_hor_a_loop_ones:
+369   0975  CB D4       	set 2,h
+370   0977  CB 09       	rrc c ; rotate with carry
+371   0979  30 05       	jr nc,display_hor_a_l1
+372   097B              
+373   097B              	; write to screen
+374   097B  3A A3 09    	ld a,(display_hor_a_rotation)
+375   097E  B6          	or (hl)
+376   097F  77          	ld (hl),a
+377   0980              
+378   0980              display_hor_a_l1:
+379   0980              	; next bit, next line
+380   0980  CB 94       	res 2,h
+381   0982  CB 09       	rrc c ; rotate with carry
+382   0984  30 05       	jr nc,display_hor_a_l2
+383   0986              
+384   0986              	; write to screen
+385   0986  3A A3 09    	ld a,(display_hor_a_rotation)
+386   0989  B6          	or (hl)
+387   098A  77          	ld (hl),a
+388   098B              
+389   098B              display_hor_a_l2:
+390   098B              	; next bit, next line
+391   098B  19          	add hl,de
+392   098C  10 E7       	djnz display_hor_a_loop_ones
+393   098E              
+394   098E  C9          	ret
+395   098F              
+396   098F              ; Rests the values for the display_hor_a subroutine, so that it
+397   098F              ; starts again on the left side.
+398   098F              reset_display_hor_a:
+399   098F  21 E1 54    	ld hl,0101010011100001b
+400   0992  22 A1 09    	ld (display_hor_a_address),hl
+401   0995  3E 01       	ld a,00000001b
+402   0997  32 A3 09    	ld (display_hor_a_rotation),a
+403   099A  3A A5 09    	ld a,(display_hor_a_delay_value)
+404   099D  32 A4 09    	ld (display_hor_a_counter),a
+405   09A0  C9          	ret
+406   09A1              
+407   09A1              ; Pointer to current screen address, rotation and delay counter.
+408   09A1  00 00       display_hor_a_address:		defw 0
+409   09A3  00          display_hor_a_rotation:		defb 0
+410   09A4  00          display_hor_a_counter:		defb 0
+411   09A5  00          display_hor_a_delay_value:	defb 0
+412   09A6              ; Temporary store for the bits in a
+413   09A6  00          display_hor_a_value:		defb 0
+414   09A7              
+415   09A7              
+416   09A7              ; Displays for all 8 horizontal lines a marker indicating 0 at the left side.
+417   09A7              display_hor_zero_markers:
+418   09A7  CD 8F 09    	call reset_display_hor_a
+419   09AA  24          	inc h
+420   09AB              
+421   09AB              	; set zero markers
+422   09AB  3E 1C       	ld a,00011100b
+423   09AD              
+424   09AD  11 E0 FF    	ld de,-(00100000b)
+425   09B0  CB D4       	set 2,h
+426   09B2  77          	ld (hl),a	; zero marker
+427   09B3              
+428   09B3  19          	add hl,de
+429   09B4  77          	ld (hl),a	; zero marker
+430   09B5              
+431   09B5  19          	add hl,de
+432   09B6  77          	ld (hl),a	; zero marker
+433   09B7              
+434   09B7  19          	add hl,de
+435   09B8  77          	ld (hl),a	; zero marker
+436   09B9              
+437   09B9  CB 94       	res 2,h
+438   09BB  11 20 00    	ld de,00100000b
+439   09BE  77          	ld (hl),a	; zero marker
+440   09BF              
+441   09BF  19          	add hl,de
+442   09C0  77          	ld (hl),a	; zero marker
+443   09C1              
+444   09C1  19          	add hl,de
+445   09C2  77          	ld (hl),a	; zero marker
+446   09C3              
+447   09C3  19          	add hl,de
+448   09C4  77          	ld (hl),a	; zero marker
+449   09C5              
+450   09C5  C9          	ret
+451   09C6              
+452   09C6              
+10    09C6              
+11    09C6              

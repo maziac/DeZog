@@ -473,7 +473,8 @@ export class RemoteBase extends EventEmitter {
 				srcDirs: listFile.srcDirs||[""],
 				filter: listFile.filter,
 				asm: listFile.asm||"sjasmplus",
-				addOffset: listFile.addOffset||0
+				addOffset: listFile.addOffset||0,
+				z88dkMapFile: listFile.z88dkMapFile
 			};
 			Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
 				// Quick search for WPMEM
@@ -491,7 +492,7 @@ export class RemoteBase extends EventEmitter {
 					// Add assert line at this address
 					logPointLines.push({address: address, line: line});
 				}
-			});
+			}, file.z88dkMapFile);
 		}
 
 		// Finishes off the loading of the list and labels files

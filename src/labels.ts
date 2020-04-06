@@ -82,6 +82,10 @@ export class LabelsClass {
 	/// Map with label / file location association.
 	private labelLocations = new Map<string,{file: string, lineNr: number}>()
 
+	/// Map with the z88dk labels/symbols.
+	private z88dkMappings=new Map<string, number>();
+
+
 	// Constructor.
 	public constructor() {
 	}
@@ -125,11 +129,17 @@ export class LabelsClass {
 	 * @param asm The used compiler. "z80asm", "z88dk" or "sjasmplus" (default). Handles the way the include files ar decoded differently.
 	 * @param addOffset To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	 * @param lineHandler(address, line, lineNumber) Every line of the list file is passed to this handler. Can be omitted.
+	 * @param z88dkMapFile The map file for z88dk. As all addresses in a
+	 * z88dk list file are relative/starting at 0, the map file
+	 * is necessary to obtain right addresses.
 	 */
-	public loadAsmListFile(fileName: string, mainFileName: string|undefined, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler = (address: number, line: string, lineNumber: number) => {}) {
+	public loadAsmListFile(fileName: string, mainFileName: string|undefined, sources: Array<string>, filter: string|undefined, asm: string, addOffset: number, lineHandler=(address: number, line: string, lineNumber: number) => {}, z88dkMapFile?: string) {
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers, module and lastLabel prefixes.
 		const listFile = new Array<ListFileLine>();
+
+		// Read the z88dk map file
+		this.readZ88dkMapFile(z88dkMapFile);
 
 		// Create regex
 		let filterRegEx;
@@ -180,13 +190,12 @@ export class LabelsClass {
 
 		// Read all lines and extract the PC value
 		let listLines = readFileSync(fileName).toString().split('\n');
-		let base = 0;
-		//let prev = -1;
 		let line;
 		let lineNumber = 0;
 		let labelPrefix;	// Only used for sjasmplus
 		let labelPrefixStack = new Array<string>();	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
+		let z88dkMapOffset=0;
 		//let dbgLineNr = 0;
 		let ii = -1;
 		for(let origLine of listLines) {
@@ -204,7 +213,8 @@ export class LabelsClass {
 			if(filterRegEx)
 				line = line.replace(filterRegEx, replace);
 			// Extract address.
-			let address = parseInt(line.substr(0,4), 16) + base + addOffset;
+			const readAddress=parseInt(line.substr(0, 4), 16);
+			let address=readAddress+addOffset+z88dkMapOffset;
 			if(!isNaN(address))	{ // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
 
@@ -285,6 +295,14 @@ export class LabelsClass {
 						}
 					}
 					else {
+						// Special handling for z88dk to overcome the relative addresses (note: the map is empty if no z88dk is used/no map file given)
+						const realAddress=this.z88dkMappings.get(label);
+						if (realAddress!=undefined) {
+							console.log('z88dk: label='+label+', '+Utility.getHexString(realAddress, 4));
+							// Label/symbol found
+							z88dkMapOffset=realAddress-readAddress;
+							address=realAddress;
+						}
 						// Label: add to label array
 						this.numberForLabel.set(label, address);
 						// Add label
@@ -340,13 +358,13 @@ export class LabelsClass {
 		 * b) get list-file line number from file name and file line number
 		 */
 
-		 if(sources.length == 0) {
+		if(sources.length == 0) {
 			// Use list file directly instead of real filenames.
 			const relFileName = Utility.getRelFilePath(fileName);
 			const lineArray = new Array<number>();
 			this.lineArrays.set(relFileName, lineArray);
 			const listLength = listFile.length;
-			let realLineNr = -1;
+			let realLineNr = -1;	// z88dk sometimes suppresses line numbers
 			for(var lineNr=0; lineNr<listLength; lineNr++) {
 				const entry = listFile[lineNr];
 				if(isNaN(entry.addr)) {
@@ -360,8 +378,10 @@ export class LabelsClass {
 				this.fileLineNrs.set(entry.addr, { fileName: relFileName, lineNr: realLineNr, modulePrefix: undefined, lastLabel: undefined });
 
 				// Set address
-				if(!lineArray[realLineNr])	// without the check macros would lead to the last addr being stored.
-					lineArray[realLineNr] = entry.addr;
+				if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
+					lineArray[realLineNr]=entry.addr;
+					console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));  // TODO: Comment
+				}
 			}
 			return;
 		}
@@ -588,8 +608,10 @@ export class LabelsClass {
 			const lineArray = this.lineArrays.get(entry.fileName) || [];
 
 			// Set address
-			if(!lineArray[entry.lineNr])	// without the check macros would lead to the last addr being stored.
-				lineArray[entry.lineNr] = entry.addr;
+			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
+				lineArray[entry.lineNr]=entry.addr;
+				//console.log('filename='+entry.fileName+', lineNr='+entry.lineNr+', addr='+Utility.getHexString(entry.addr, 4));
+			}
 		}
 
 	}
@@ -840,6 +862,31 @@ export class LabelsClass {
 		return addr;
 	}
 
+
+	/**
+	 * As all addresses in a
+	 * z88dk list file are relative/starting at 0, the map file
+	 * is necessary to obtain right addresses.
+	 * @param z88dkMapFile The relative path to the map file.
+	 */
+	protected readZ88dkMapFile(z88dkMapFile) {
+		if (!z88dkMapFile)
+			return;
+		// Get absolute path
+		z88dkMapFile=Utility.getAbsFilePath(z88dkMapFile);
+
+		// Iterate over map file
+		const regex=new RegExp(/^(\w*)\b\s*=\s*\$([0-9a-f]+)/i);
+		let lines=readFileSync(z88dkMapFile).toString().split('\n');
+		for (const line of lines) {
+			const match=regex.exec(line);
+			if (match) {
+				const label=match[1];
+				const addr=parseInt(match[2], 16);
+				this.z88dkMappings.set(label, addr);
+			}
+		}
+	}
 }
 
 
