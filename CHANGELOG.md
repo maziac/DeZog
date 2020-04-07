@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.2
+- Small fix and cleanup.
+
 # 1.1.1
 - 'movePCtoCursor' back in right-click menu.
 - "z88dkMapFile" parameter: better support for z88dk labels.
