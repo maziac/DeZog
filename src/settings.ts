@@ -1,6 +1,6 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './misc/utility';
-import * as path from 'path';
+//import * as path from 'path';
 import * as fs from 'fs';
 
 /**
@@ -367,9 +367,12 @@ export class Settings {
 					addOffset: fp.addOffset||0,
 					z88dkMapFile: fp.z88dkMapFile
 				};
+				/*
 				// Add the root folder path to each.
-				const srcds = file.srcDirs.map(srcPath => path.join(Settings.launch.rootFolder, srcPath));
+				const rootFolder=Settings.launch.rootFolder;
+				const srcds=file.srcDirs.map(srcPath => path.join(rootFolder, srcPath));
 				file.srcDirs = srcds;
+				*/
 				return file;
 			});
 		else
