@@ -679,7 +679,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Creates a temporary array from the given array.
 	 * The structure is more performant for use in the Z80 continue
 	 * loop:
-	 * The array contains of 65536 entries, i.e. addresses. If no BP
+	 * The array contains 65536 entries, i.e. addresses. If no BP
 	 * is set for an address the entry is undefined.
 	 * If one is set the entry contains a pointer to the breakpoint.
 	 * Or better it contains an array of breakpoints that all share the

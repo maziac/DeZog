@@ -533,8 +533,8 @@ export class Z80UnitTests {
 		Z80UnitTests.timeoutHandle = undefined;
 		Z80UnitTests.currentFail = true;
 
-		if(!Z80UnitTests.AreUnitTestsAvailable(Labels))
-			throw Error("Unit tests not enabled in assembler sources.")
+		if (!Z80UnitTests.AreUnitTestsAvailable(Labels))
+			throw Error("Unit tests not enabled in assembler sources.");
 
 		// Get the unit test code
 		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel("UNITTEST_START");
@@ -545,6 +545,13 @@ export class Z80UnitTests {
 		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
 		const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
 		const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
+
+		// Check if code for unit tests is really present
+		// (In case labels are present but the actual code has not been loaded.)
+		const opcode=await Remote.readMemory(Z80UnitTests.addrTestWrapper);
+		// Should start with DI (=0xF3)
+		if (opcode != 0xF3)
+			throw Error("Code for unit tests is not present.");
 
 		// Labels not yet known.
 		Z80UnitTests.utLabels = undefined as unknown as Array<string>;
@@ -718,7 +725,7 @@ export class Z80UnitTests {
 	 * @param da The debug adapter.
 	 * @param pc The program counter to check.
 	 */
-	protected static checkUnitTest(pc: number, da?: DebugSessionClass) {
+	protected static async checkUnitTest(pc: number, da?: DebugSessionClass): Promise<void> {
 		// Check if it was a timeout
 		let timeoutFailure = !Z80UnitTests.debug;
 		if(Z80UnitTests.timeoutHandle) {
@@ -775,7 +782,7 @@ export class Z80UnitTests {
 					return;
 				}
 				const firstUtBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
-				Remote.setBreakpoint(firstUtBp);
+				await Remote.setBreakpoint(firstUtBp);
 			}
 
 			// Start unit tests
