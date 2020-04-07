@@ -380,7 +380,7 @@ export class LabelsClass {
 				// Set address
 				if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
 					lineArray[realLineNr]=entry.addr;
-					//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));  // TODO: Comment
+					//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 				}
 			}
 			return;
@@ -549,8 +549,22 @@ export class LabelsClass {
 						&& lineNumber != expectedLine+1) {
 						// End of include found
 						// Note: this is not 100% error proof.
-						stack.pop();
-						index = stack.length-1;
+						// E.g. if modules are used (speccytron) this happesn also after the MODULE lines:
+						/*
+						1     0000              MODULE efd_c
+						2     0000              LINE 0, "efd.c"
+						0     0000
+						*/
+						// To correctly fix this a MODULE would be need to put on the stack as well.
+						// But this requires 'state' as it spreads over several lines.
+						// The fix here (if(stack.length>0)) just makes sure
+						// that the stack does not get cleared which leads to an
+						// undefined access later.
+						// See https://github.com/maziac/DeZog/issues/17
+						if (stack.length>1) {
+							stack.pop();
+							index=stack.length-1;
+						}
 					}
 				}
 
