@@ -92,7 +92,7 @@ export class BaseView {
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(message => {
-			console.log("webView command '"+message.command+"':", message);
+			//console.log("webView command '"+message.command+"':", message);
 			this.webViewMessageReceived(message);
 		});
 

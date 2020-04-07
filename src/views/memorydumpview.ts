@@ -577,7 +577,7 @@ export class MemoryDumpView extends BaseView {
 			// get address = value of reg
 			Remote.getRegisters().then(() => {
 				const address = Remote.getRegisterValue(reg)
-				console.log( reg + ': ' + address.toString(16));
+				//console.log( reg + ': ' + address.toString(16));
 				// Clear old color
 				const prevAddr=this.prevRegAddr.get(reg) || -1;
 				const msgPrev = {

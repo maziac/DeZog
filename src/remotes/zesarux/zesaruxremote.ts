@@ -930,7 +930,7 @@ export class ZesaruxRemote extends RemoteBase {
 			return valh;
 		});
 
-		console.log('Converted condition "' + condition + '" to "' + conds);
+		//console.log('Converted condition "' + condition + '" to "' + conds);
 		return conds;
 	}
 
