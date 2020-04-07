@@ -193,7 +193,7 @@ And here an example to use for the **sjasmplus**:
 ~~~
 Explanation:
 - "path": is the path to the list file.
-- "mainFile": the name of the file used to create the list file.
+- "mainFile": the relative path of the file used to create the list file.
 - "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
 
 

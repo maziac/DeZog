@@ -680,7 +680,15 @@ export class Utility {
 	 * @returns A relative path
 	 */
 	public static getRelFilePath(absFilePath: string): string {
-		const filePath = path.relative(Utility.rootPath || '', absFilePath);
+		//const filePath = path.relative(Utility.rootPath || '', absFilePath);
+		let filePath=absFilePath;
+		let rootPath=Utility.rootPath;
+		if (rootPath) {
+			if (!rootPath.endsWith('/'))
+				rootPath+='/';
+			if (filePath.startsWith(rootPath))
+				filePath=filePath.substr(rootPath.length);
+		}
 		return filePath;
 	}
 
