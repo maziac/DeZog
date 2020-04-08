@@ -95,7 +95,8 @@ In your launch.json:
 "topOfStack": "stack_top"
 ~~~
 
-Note: instead of a label you can also use a fixed number.
+Note:
+- topOfStack: instead of a label you can also use a fixed number.
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
 Note: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files.
@@ -112,6 +113,14 @@ Big values are typically addresses. Here you can give the boundary between these
 	- registersMemoryView: An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. select [ 'HL', 'DE', 'IX' ].
 - unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
 
+
+If you just restart a debug session with
+![](images/vscode_restart_button.jpg)
+the launch.json is not re-read.
+That means in order to make sure that yor changed launch.json is used, save it and make sure the current debug session is stopped with
+![](images/vscode_stop_button.jpg)
+Then start it via
+![](images/vscode_continue_button.jpg)
 
 
 ### Listfile
