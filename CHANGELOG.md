@@ -2,6 +2,7 @@
 
 # 1.1.2
 - Small fix and cleanup.
+- zsim: "tbblueMemoryManagementSlots": slots can be read now.
 
 # 1.1.1
 - 'movePCtoCursor' back in right-click menu.

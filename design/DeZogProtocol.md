@@ -110,7 +110,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 27    | Length     |
+| 0     | 4    | 29    | Length     |
 | 4     | 1    | 1-255 | Same seq no     |
 | 5     | 2    | PC   | All little endian    |
 | 7     | 2    | SP   |   |
@@ -219,7 +219,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 4+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x07  | CMD_ADD_BREAKPOINT |
 | 6     | 2    | 0-65535 | Breakpoint address |
@@ -229,7 +229,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 3     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
@@ -354,7 +354,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 9     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | slot[0] | The bank number associated with slot 0 |
 | 6     | 1    | slot[1] | The bank number associated with slot 1 |

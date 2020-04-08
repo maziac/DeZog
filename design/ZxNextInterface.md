@@ -35,7 +35,7 @@ So instead of a pressing "break" in the IDE (on the PC) the user could press the
 
 There are other possibilities:
 
-**Cooperation**: The user checks the (RX) UART in the main loop or from an interrupt.
+**Cooperation**: The debugged program checks the (RX) UART in the main loop or from an interrupt.
 Whenever something is received a special routine is called which stops the running program and communicates with the PC until the next "run" command is received.
 
 **DIVMMC interrupt**: When an interrupt (38h) is executed the DIVMMC swaps in the DICMMC memory. At address 38h it would first check the (RX) UART state and if something has been received wait until the next command from the PC.

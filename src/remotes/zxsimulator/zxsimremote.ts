@@ -65,7 +65,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected tbblueRegisterSelectValue;
 
 	// Maps function handlers to registers (the key). As key the tbblueRegisterSelectValue is used.
-	protected tbblueRegisterHandler: Map<number, (port: number, value: number) => void>;
+	protected tbblueRegisterWriteHandler: Map<number, (value: number) => void>;
+
+	// Same for reading the register.
+	protected tbblueRegisterReadHandler: Map<number, () => number>;
 
 
 	/// Constructor.
@@ -74,7 +77,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Init
 		this.previouslyStoredPCHistory=-1;
 		this.tbblueRegisterSelectValue=0;
-		this.tbblueRegisterHandler = new Map<number, (port: number, value: number) => void>();
+		this.tbblueRegisterWriteHandler=new Map<number, (value: number) => void>();
+		this.tbblueRegisterReadHandler=new Map<number, () => number>();
 		// Set decoder
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		this.cpuRunning=false;
@@ -152,19 +156,38 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		this.tbblueRegisterSelectValue=value;
 	}
 
+
 	/**
-	 * Reads and/or writes the selected TBBlue control register.
+	 * Writes the selected TBBlue control register.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Access
 	 * Acts according the value and tbblueRegisterSelectValue,
 	 * i.e. calls the mapped fucntion for the selected register.
 	 * At the moment only the memory slot functions are executed.
-	 * @param port The written port. (0x253B)
+	 * @param port The port.
 	 * @param value The tbblue register to select.
 	 */
-	protected tbblueRegisterAccess(port: number, value: number) {
-		const func=this.tbblueRegisterHandler.get(this.tbblueRegisterSelectValue);
+	protected tbblueRegisterWriteAccess(port: number, value: number) {
+		const func=this.tbblueRegisterWriteHandler.get(this.tbblueRegisterSelectValue);
 		if (func)
-			func(port, value);
+			func(value);
+	}
+
+
+	/**
+	 * Reads the selected TBBlue control register.
+	 * See https://wiki.specnext.dev/TBBlue_Register_Access
+	 * Acts according the value and tbblueRegisterSelectValue,
+	 * i.e. calls the mapped fucntion for the selected register.
+	 * At the moment only the memory slot functions are executed.
+	 * @param port The port.
+	 */
+	protected tbblueRegisterReadAccess(port: number): number {
+		const func=this.tbblueRegisterReadHandler.get(this.tbblueRegisterSelectValue);
+		if (!func)
+			return 0;
+		// Get value
+		const value=func();
+		return value;
 	}
 
 
@@ -173,10 +196,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * See https://wiki.specnext.dev/Memory_management_slot_0_bank
 	 * tbblueRegisterSelectValue contains the register (0x50-0x57) respectively the
 	 * slot.
-	 * @param port The written port.
 	 * @param value The bank to map.
 	 */
-	protected tbblueMemoryManagementSlots(port: number, value: number) {
+	protected tbblueMemoryManagementSlotsWrite(value: number) {
 		const slot=this.tbblueRegisterSelectValue&0x07;
 		if (value==0xFF) {
 			// Handle ROM specially
@@ -186,11 +208,28 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			if (slot==0)
 				value=0xFE;
 		}
-		else if(value>223)
+		else if (value>223)
 			return;	// not existing bank
 
 		// Change the slot/bank
 		this.zxMemory.setSlot(slot, value);
+	}
+
+
+	/**
+	 * Reads the tbblue slot/bank association for slots 0-7.
+	 * See https://wiki.specnext.dev/Memory_management_slot_0_bank
+	 * tbblueRegisterSelectValue contains the register (0x50-0x57) respectively the
+	 * slot.
+	 */
+	protected tbblueMemoryManagementSlotsRead(): number {
+		const slot=this.tbblueRegisterSelectValue&0x07;
+		// Change the slot/bank
+		let bank=this.zxMemory.getSlots()[slot];
+		// Check for ROM = 0xFE
+		if (bank==0xFE)
+			bank=0xFF;
+		return bank;
 	}
 
 
@@ -239,14 +278,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			if (tbblueMemoryManagementSlots) {
 				// Bank switching.
 				for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
-					this.tbblueRegisterHandler.set(tbblueRegister, this.tbblueMemoryManagementSlots.bind(this));
+					this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
+					this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 				}
 			}
 
 			// If any tbblue register is used then enable tbblue ports
-			if (this.tbblueRegisterHandler.size>0) {
+			if (this.tbblueRegisterWriteHandler.size>0) {
 				this.zxPorts.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-				this.zxPorts.registerOutPortFunction(0x253B, this.tbblueRegisterAccess.bind(this));
+				this.zxPorts.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+				this.zxPorts.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 			}
 		}
 		catch (e) {
