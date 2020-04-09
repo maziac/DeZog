@@ -306,7 +306,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * Sends the command to get the configuration.
 	 * @returns The configuration, e.g. '{xNextRegs: true}'
 	 */
-	protected async sendDzrpCmdGetconfig(): Promise<{zxNextRegs: boolean}> {
+	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
 		const resp=await this.sendDzrpCmd(DZRP.CMD_GET_CONFIG);
 		// Check configuration
 		const zxNextRegs: boolean=((resp[0]&0x01)!=0);
@@ -415,7 +415,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId]);
+		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId&0xFF, bpId>>>8]);
 	}
 
 

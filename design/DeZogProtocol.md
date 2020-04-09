@@ -240,7 +240,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x08  | CMD_REMOVE_BREAKPOINT |
 | 6     | 2    | 1-65535 | Breakpoint ID |
@@ -259,7 +259,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 6+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x09  | CMD_ADD_WATCHPOINT |
 | 6     | 2    | 0-65535 | Start of watchpoint address range |
@@ -270,7 +270,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
 
@@ -301,7 +301,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 8     | Length     |
+| 0     | 4    | 7     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x0B  | CMD_READ_MEM |
 | 6     | 1    | 0     | reserved  |
@@ -371,7 +371,7 @@ Note:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n   | Length     |
+| 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x0E  | CMD_READ_STATE |
 
@@ -379,7 +379,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 1+N   | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | N    |       | Arbitrary data. The format is up to the remote. |
 
@@ -389,7 +389,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n   | Length     |
+| 0     | 4    | 2+N   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x0E  | CMD_READ_STATE |
 | 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |

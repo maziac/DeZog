@@ -55,7 +55,7 @@ export class DzrpRemote extends RemoteBase {
 	protected async onConnect(): Promise<void> {
 		try {
 			// Get configuration
-			const resp=await this.sendDzrpCmdGetconfig();
+			const resp=await this.sendDzrpCmdGetConfig();
 			// Check configuration
 			this.supportsZxNextRegisters=(resp.zxNextRegs==true);
 			// Load sna or nex file
@@ -812,7 +812,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Sends the command to get the configuration.
 	 * @returns The configuration, e.g. '{xNextRegs: true}'
 	 */
-	protected async sendDzrpCmdGetconfig(): Promise<{zxNextRegs: boolean}> {
+	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
 		assert(false);
 		return {zxNextRegs: false};
 	}

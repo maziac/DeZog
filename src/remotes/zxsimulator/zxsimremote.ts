@@ -807,7 +807,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/**
 	 * Not used.
 	 */
-	protected async sendDzrpCmdGetconfig(): Promise<{zxNextRegs: boolean}> {
+	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
 		assert(false);	// Not used
 		return {zxNextRegs: false};
 	}
