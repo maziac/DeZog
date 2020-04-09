@@ -392,7 +392,7 @@ Command:
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x0E  | CMD_READ_STATE |
-| 6     | N    |       | Arbitrary data. This is data that has bpreviously been retrieved via CMD_READ_STATE. |
+| 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
 
 Response:
 | Index | Size | Value |Description |

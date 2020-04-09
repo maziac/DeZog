@@ -2,7 +2,9 @@
 
 # 1.1.2
 - Small fix and cleanup.
-- zsim: "tbblueMemoryManagementSlots": slots can be read now.
+- zsim:
+  - "tbblueMemoryManagementSlots": slots can be read now.
+  - Simulator view closed now after stopping debugging a unit test.
 
 # 1.1.1
 - 'movePCtoCursor' back in right-click menu.

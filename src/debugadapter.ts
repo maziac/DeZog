@@ -514,14 +514,7 @@ export class DebugSessionClass extends DebugSession {
 				if (Settings.launch.remoteType=="zsim") {
 					// Adds a window that displays the ZX screen.
 					const remote=Remote as ZxSimulatorRemote;
-					let zxview: ZxSimulationView|undefined=new ZxSimulationView(remote);
-					remote.once('closed', () => {
-						zxview?.close();
-						zxview=undefined;
-					});
-					remote.on('update', async () => {
-						await zxview?.update();
-					});
+					ZxSimulationView.SimulationViewFactory(remote);
 				}
 
 				// Socket is connected, allow setting breakpoints
@@ -604,6 +597,9 @@ export class DebugSessionClass extends DebugSession {
 			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
 			const verified=(cbp.address>=0);	// Is not verified if no address is set
 			let bp=new Breakpoint(verified, lineNr, 0, source);
+			// TODO: REMOVE
+			const text=JSON.stringify(bp);
+			vscode.debug.activeDebugConsole.appendLine(text);
 			return bp;
 		});
 
