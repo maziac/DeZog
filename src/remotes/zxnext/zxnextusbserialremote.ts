@@ -72,8 +72,6 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 
 
 	/**
-	 * Stops the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
 	 */
