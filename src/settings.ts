@@ -90,6 +90,19 @@ export interface ZrcpType {
 }
 
 
+// Definitions for CSpect remote type.
+export interface CSpectType {
+	// The hostname/IP address of the CSpect socket.
+	hostname: string;
+
+	// The port of the CSpect socket.
+	port: number;
+
+	/// The socket timeout in seconds.
+	socketTimeout: number;
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
 	// Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
@@ -142,7 +155,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
 
-	// The special settings for the onternal Z80 simulator.
+	// The special settings for CSpect.
+	cspect: CSpectType;
+
+	// The special settings for the internal Z80 simulator.
 	zsim: ZxSimType;
 
 	// The special settings for the serial connection.
@@ -253,6 +269,7 @@ export class Settings {
 			Settings.launch = {
 				remoteType: <any>undefined,
 				zrcp: <any>undefined,
+				cspect: <any>undefined,
 				zsim: <any>undefined,
 				serial: <any>undefined,
 				unitTests: <any>undefined,
@@ -287,7 +304,7 @@ export class Settings {
 		if (!Settings.launch.zrcp)
 			Settings.launch.zrcp={} as ZrcpType;
 		if (Settings.launch.zrcp.hostname==undefined)
-			Settings.launch.zrcp.hostname = 'localhost';
+			Settings.launch.zrcp.hostname='localhost';
 		if (Settings.launch.zrcp.port==undefined)
 			Settings.launch.zrcp.port=10000;
 		if (Settings.launch.zrcp.loadDelay==undefined) {
@@ -299,6 +316,16 @@ export class Settings {
 		}
 		if (!Settings.launch.zrcp.socketTimeout)
 			Settings.launch.zrcp.socketTimeout=5;	// 5 secs
+
+		// cspect
+		if (!Settings.launch.cspect)
+			Settings.launch.cspect={} as ZrcpType;
+		if (Settings.launch.cspect.hostname==undefined)
+			Settings.launch.cspect.hostname='localhost';
+		if (Settings.launch.cspect.port==undefined)
+			Settings.launch.cspect.port=11000;
+		if (!Settings.launch.cspect.socketTimeout)
+			Settings.launch.cspect.socketTimeout=5;	// 5 secs
 
 		// zsim
 		if (!Settings.launch.zsim)
