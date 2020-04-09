@@ -4,6 +4,7 @@ import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { RemoteBase } from './remotebase';
 import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
 import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
+import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
 
 
 
@@ -20,6 +21,9 @@ export class RemoteFactory {
 		switch (remoteType) {
 			case 'zrcp':	// ZEsarUX Remote Control Protocol
 				RemoteFactory.setEmulator(new ZesaruxExtRemote());
+				break;
+			case 'cspect':	// CSpect socket
+				RemoteFactory.setEmulator(new ZxNextSocketRemote());
 				break;
 			case 'serial':	// USB/serial connection
 				RemoteFactory.setEmulator(new ZxNextUsbSerialRemote());

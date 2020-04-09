@@ -553,7 +553,7 @@ export class Settings {
 	public static CheckSettings() {
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes=['zrcp', 'serial', 'zsim'];
+		const allowedTypes=['zrcp', 'cspect', 'serial', 'zsim'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

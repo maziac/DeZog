@@ -241,6 +241,64 @@ export class ZxNextRemote extends DzrpRemote {
 	}
 
 
+	/**
+	 * Creates a string out of a DZRP command.
+	 * Meant for debugging.
+	 */
+	public dzrpCmdBufferToString(buffer: Buffer, index=0): string {
+		const count=buffer.length-index;
+		let text="";
+		if (count>=6) {
+			const length=buffer[index]+256*buffer[index+1]+256*256*buffer[index+2]+256*256*256*buffer[index+3];
+			const lengthString=""+buffer[index]+" "+buffer[index+1]+" "+buffer[index+2]+" "+buffer[index+3];
+			const seqno=buffer[index+4];
+			const cmd=buffer[index+5];
+			let cmdString
+			try {
+				cmdString=DZRP[cmd];
+			}
+			catch {
+				cmdString="Unknown("+cmd.toString()+")";
+			}
+			text+="Command "+cmdString+"\n";
+			text+="  Length: "+length+" ("+lengthString+")\n";
+			text+="  SeqNo:  "+seqno+"\n";
+			text+="  Cmd:    "+cmd+"\n";
+			index+=6;
+		}
+		// Rest of data
+		const dataString=Utility.getStringFromData(buffer, index);
+		text+="  Data:   "+dataString+"\n";
+		return text;
+	}
+
+
+	/**
+	 * Creates a string out of a DZRP response.
+	 * Also handles the notification.
+	 * Meant for debugging.
+	 */
+	public dzrpRespBufferToString(buffer: Buffer, index=0): string {
+		const count=buffer.length-index;
+		let text="";
+		if (count>=5) {
+			const length=buffer[index]+256*buffer[index+1]+256*256*buffer[index+2]+256*256*256*buffer[index+3];
+			const lengthString=""+buffer[index]+" "+buffer[index+1]+" "+buffer[index+2]+" "+buffer[index+3];
+			const seqno=buffer[index+4];
+			if(seqno==0)
+				text+="Notification:\n";
+			else
+				text+="Response:\n";
+			text+="  Length: "+length+" ("+lengthString+")\n";
+			text+="  SeqNo:  "+seqno+"\n";
+			index+=5;
+		}
+		// Rest of data
+		const dataString=Utility.getStringFromData(buffer, index);
+		text+="  Data:   "+dataString+"\n";
+		return text;
+	}
+
 
 	//------- Send Commands -------
 

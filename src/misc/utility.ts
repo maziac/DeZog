@@ -901,6 +901,32 @@ export class Utility {
 
 
 	/**
+	 * Creates a string from data bytes.
+	 * @param data The data buffer.
+	 * @param start The start index inside the buffer.
+	 * @param count The max. number of data items to show.
+	 */
+	public static getStringFromData(data: Buffer, start=0, count=-1): string {
+		if (count==-1)
+			count=data.length;
+		if (start+count>data.length)
+			count=data.length-start;
+		if (count<=0)
+			return "---";
+
+		let result="";
+		let printCount=count;
+		if (printCount>20)
+			printCount=20;
+		for (let i=0; i<printCount; i++)
+		result+=data[i+start].toString()+" ";
+		if (printCount!=count)
+			result+="...";
+		return result;
+	}
+
+
+	/**
 	 * Returns a Buffer from a string. The buffer is 0-terminated.
 	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
 	 * @returns A Buffer (0-terminated)
