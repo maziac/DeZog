@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.3
+- Preparation for market place release.
+
 # 1.1.2
 - Small fix and cleanup.
 - zsim:

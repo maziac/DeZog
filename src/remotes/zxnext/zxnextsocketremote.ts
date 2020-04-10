@@ -3,7 +3,7 @@ import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
-import {Z80_REG} from '../z80registers';
+//import {Z80_REG} from '../z80registers';
 
 
 /// Timeouts.
@@ -43,7 +43,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 			LogSocket.log('ZxNextSocketRemote: Connected to server!');
 
 			// Test
-
+			/*
 			const regs=await this.sendDzrpCmdGetRegisters();
 			await this.sendDzrpCmdGetConfig();
 			await this.sendDzrpCmdPause();
@@ -56,6 +56,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 			const mem2=await this.sendDzrpCmdReadMem(0xE000, 4);
 			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 0x1234);
 			const regs2=await this.sendDzrpCmdGetRegisters();
+			*/
 
 			this.onConnect();
 		});
@@ -70,6 +71,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 
 		// Receive data
 		this.socket.on('data', data => {
+			// TODO: Need to implement receiveing of small chunks.
 			if (data.length<5)
 				return;
 			// Check which "channel"
