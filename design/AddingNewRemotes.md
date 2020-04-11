@@ -33,9 +33,9 @@ Since you also need a transport layer to communicate with Remote it is normally 
 
 Here are some exemplary methods that need to be overwritten:
 - Lifecycle
-	- init: Initialization of the Remote. Called by ... when ... TODO
-	- disconnect: Disconnects the Remote. E.g. diconnect the Transport. Called by ... when ... TODO
-	- terminate: Terminates the Remote. TODO: difference to disconnect?
+	- init: Initialization of the Remote. Called by DebugSessionclass when launchRequest is received from vscode (also by Z80UnitTests).
+	- disconnect: Disconnects the Remote. E.g. disconnect the Transport. Called by DebugSessionclass when disconnectRequest is received from vscode (also by Z80UnitTests).
+	- terminate: Terminates the Remote. Z80UnitTests uses this to terminate a possibly running Remote instance before starting. Only difference to disconnect is that 'terminated' would be emitted. TODO: Remove?
 - Data
 	- getRegisters: Ask the Transport to get the register values from the external Remote.
 	- setRegisterValue: Communicates with the Transport to set a specific Register value.
