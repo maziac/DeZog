@@ -325,7 +325,8 @@ export class ZxNextRemote extends DzrpRemote {
 	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
 		const resp=await this.sendDzrpCmd(DZRP.CMD_GET_CONFIG);
 		// Check configuration
-		const zxNextRegs: boolean=((resp[0]&0x01)!=0);
+		const value=resp[0];
+		const zxNextRegs: boolean=((value&0x01)!=0);
 		return {zxNextRegs};
 	}
 

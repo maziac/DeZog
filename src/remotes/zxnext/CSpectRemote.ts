@@ -3,6 +3,7 @@ import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
+import {Z80_REG} from '../z80registers';
 //import {Z80_REG} from '../z80registers';
 
 
@@ -40,20 +41,20 @@ export class CSpectRemote extends ZxNextRemote {
 			LogSocket.log('CSpectRemote: Connected to server!');
 
 			// Test
-			/*
+
+			await this.sendDzrpCmdPause();
 			const regs=await this.sendDzrpCmdGetRegisters();
 			await this.sendDzrpCmdGetConfig();
-			await this.sendDzrpCmdPause();
 	//		const regs=await this.sendDzrpCmdGetRegisters();
 			//const slots=await this.sendDzrpCmdGetSlots();
 			const mem=await this.sendDzrpCmdReadMem(0x100, 0x200);
-			await this.sendDzrpCmdAddBreakpoint(0);
-			await this.sendDzrpCmdRemoveBreakpoint(0);
+			const bpId = await this.sendDzrpCmdAddBreakpoint(0);
+			await this.sendDzrpCmdRemoveBreakpoint(bpId);
 			await this.sendDzrpCmdWriteMem(0xE000, new Uint8Array([ 1, 2, 3]));
 			const mem2=await this.sendDzrpCmdReadMem(0xE000, 4);
-			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 0x1234);
+			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 4660);
 			const regs2=await this.sendDzrpCmdGetRegisters();
-			*/
+
 
 			this.onConnect();
 		});
@@ -72,7 +73,11 @@ export class CSpectRemote extends ZxNextRemote {
 
 			const txt=this.dzrpRespBufferToString(data);
 			LogSocket.log('CSpectRemote: Received '+txt);
-			this.receivedMsg(data)
+			// Strip length
+			const length=data.length-4;
+			const strippedBuffer=new Buffer(length);
+			data.copy(strippedBuffer, 0, 4, data.length);
+			this.receivedMsg(strippedBuffer)
 		});
 
 		// Start socket connection

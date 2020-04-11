@@ -98,7 +98,7 @@ Other features could be:
 - Supports extended call stack
 
 
-## CMD_READ_REGS
+## CMD_GET_REGISTERS
 
 Command:
 | Index | Size | Value |Description |
@@ -130,7 +130,7 @@ Response:
 | 31    | 1    | reserved |   |
 
 
-## CMD_WRITE_REG
+## CMD_SET_REGISTER
 
 Command:
 | Index | Size | Value |Description |
@@ -391,7 +391,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2+N   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0E  | CMD_READ_STATE |
+| 5     | 1    | 0x0F  | CMD_WRITE_STATE |
 | 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
 
 Response:

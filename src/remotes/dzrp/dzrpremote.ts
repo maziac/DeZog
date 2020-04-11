@@ -39,8 +39,10 @@ export enum DZRP {
 	CMD_READ_MEM=0xB,
 	CMD_WRITE_MEM=0xC,
 
-
 	CMD_GET_SLOTS=0xD,
+
+	CMD_READ_STATE=0xE,
+	CMD_WRITE_STATE=0xF,
 };
 
 /**

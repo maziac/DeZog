@@ -67,8 +67,8 @@ The following methods might be overwritten for extra functionality:
 
 # Simpler
 
-A simpler implementation can be done if the Remote is derived from DrzpRemote.
-The DrzpRemote defines a clear set of messages that is sent to the (external) remote.
+A simpler implementation can be done if the Remote is derived from DzrpRemote.
+The DzrpRemote defines a clear set of messages that is sent to the (external) remote.
 In your derivate you just need to implement a transport layer (e.g. sockets) to send those messages to the remote.
 
 See ZxNextRemote as an example. It uses a serial connection as transport.
