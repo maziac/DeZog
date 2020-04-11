@@ -1,10 +1,11 @@
 //import * as assert from 'assert';
 //import * as SerialPort from 'serialport';
-import {DzrpParser, DZRP, DZRP_NTF} from './dzrpparser';
+import {DzrpParser} from './dzrpparser';
 //import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../misc/utility';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {DZRP, DZRP_NTF} from '../dzrp/dzrpremote';
 
 
 let SerialPort;

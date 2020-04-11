@@ -19,6 +19,39 @@ import {Mutex} from 'async-mutex';
 
 
 /**
+ * The DZP commands and responses.
+ * The response contains the command with the bit 7 set.
+ */
+export enum DZRP {
+	CMD_GET_CONFIG=1,
+	CMD_GET_REGISTERS=2,
+	CMD_SET_REGISTER=3,
+	CMD_WRITE_BANK=4,
+	CMD_CONTINUE=5,
+	CMD_PAUSE=6,
+
+	CMD_ADD_BREAKPOINT=7,
+	CMD_REMOVE_BREAKPOINT=8,
+
+	CMD_ADD_WATCHPOINT=9,
+	CMD_REMOVE_WATCHPOINT=0xA,
+
+	CMD_READ_MEM=0xB,
+	CMD_WRITE_MEM=0xC,
+
+
+	CMD_GET_SLOTS=0xD,
+};
+
+/**
+ * DZRP notifications.
+ */
+export enum DZRP_NTF {
+	NTF_PAUSE=1
+};
+
+
+/**
  * A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.

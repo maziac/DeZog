@@ -20,6 +20,18 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	// The serial port. https://serialport.io/docs/guide-usage
 	protected serialPort;
 
+	// The read parser for the serial port.
+	protected parser: DzrpParser;
+
+
+	/// Constructor.
+	constructor() {
+		super();
+		// Create parser
+		this.parser=new DzrpParser({}, 'Dezog');
+	}
+
+
 	/// Override.
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));

@@ -3,39 +3,6 @@ const{Transform}=require('stream')
 
 
 
-/**
- * The DZP commands and responses.
- * The response contains the command with the bit 7 set.
- */
-export enum DZRP {
-	CMD_GET_CONFIG=1,
-	CMD_GET_REGISTERS=2,
-	CMD_SET_REGISTER=3,
-	CMD_WRITE_BANK=4,
-	CMD_CONTINUE=5,
-	CMD_PAUSE=6,
-
-	CMD_ADD_BREAKPOINT=7,
-	CMD_REMOVE_BREAKPOINT=8,
-
-	CMD_ADD_WATCHPOINT=9,
-	CMD_REMOVE_WATCHPOINT=0xA,
-
-	CMD_READ_MEM=0xB,
-	CMD_WRITE_MEM=0xC,
-
-
-	CMD_GET_SLOTS=0xD,
-};
-
-/**
- * DZRP notifications.
- */
-export enum DZRP_NTF {
-	NTF_PAUSE = 1
-};
-
-
 
 /**
  * This parser reads the first 4 bytes and interpretes it as (little endian) length.
@@ -54,9 +21,6 @@ export class DzrpParser extends Transform {
 
 	/// The timer.
 	protected timer;
-
-	// Sequence Number 0-255. Used for sending.
-	protected sequenceNumber: number;
 
 	// Name, for debugging purposes.
 	protected name: string|undefined;
@@ -77,19 +41,7 @@ export class DzrpParser extends Transform {
 		this.collectingData=false;
 		this.remainingLength=0;
 		this.timer=undefined;
-		this.sequenceNumber=0;
 		this.name=name;
-	}
-
-
-	/**
-	 * Returns the next sequence number for sending
-	 */
-	public getNextSeqNo(): number {
-		this.sequenceNumber++;
-		if (this.sequenceNumber>255)
-			this.sequenceNumber=1;
-		return this.sequenceNumber;
 	}
 
 

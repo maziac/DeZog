@@ -1,10 +1,10 @@
 import * as assert from 'assert';
-import {DZRP, DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
+import {DZRP} from '../dzrp/dzrpremote';
 
 
 
@@ -22,25 +22,27 @@ class MessageBuffer {
 
 /**
  * The representation of the ZX Next HW.
- * It receives the requests from the DebugAdapter and communicates with
- * the USB serial connection with the ZX Next HW.
+ * It receives the requests from the DebugAdapter and
+ * creates complete DZRP messages in a buffer.
+ * At the end calls sendBuffer which is not implemented.
+ * I.e. this class needs derivation and overriding of method
+ * sendBuffer for the actual transport implementation.
  */
 export class ZxNextRemote extends DzrpRemote {
 
 	// The message queue (used to serialize the sent messages).
 	protected messageQueue: Array<MessageBuffer>;
 
-	// The read parser for the serial port.
-	protected parser: DzrpParser;
+	// Sequence Number 1-255. Used for sending.
+	protected sequenceNumber: number;
 
 
 	/// Constructor.
 	constructor() {
 		super();
+		this.sequenceNumber=0;
 		// Instantiate the message queue
 		this.messageQueue=new Array<MessageBuffer>();
-		// Create parser
-		this.parser=new DzrpParser({}, 'Dezog');
 	}
 
 
@@ -77,6 +79,17 @@ export class ZxNextRemote extends DzrpRemote {
 
 
 	/**
+	 * Returns the next sequence number for sending
+	 */
+	public getNextSeqNo(): number {
+		this.sequenceNumber++;
+		if (this.sequenceNumber>255)
+			this.sequenceNumber=1;
+		return this.sequenceNumber;
+	}
+
+
+	/**
 	 * Sends a DZRP command and waits for the response.
 	 * @param cmd The command.
 	 * @param data A buffer containing the data.
@@ -100,7 +113,7 @@ export class ZxNextRemote extends DzrpRemote {
 			buffer[2]=(len>>>16)&0xFF;
 			buffer[3]=(len>>>24)&0xFF;
 			// Put sequence number in buffer
-			const seqno=this.parser.getNextSeqNo();
+			const seqno=this.getNextSeqNo();
 			buffer[4]=seqno;
 			// Put command in buffer
 			buffer[5]=cmd;
