@@ -3,8 +3,7 @@ import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
-import {Z80_REG} from '../z80registers';
-//import {Z80_REG} from '../z80registers';
+import {Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 
 
 /// Timeouts.
@@ -27,6 +26,14 @@ export class CSpectRemote extends ZxNextRemote {
 	public socket: Socket;
 
 
+	/// Constructor.
+	constructor() {
+		super();
+		// Set decoder
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();
+	}
+
+
 	/// Override.
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
@@ -41,7 +48,7 @@ export class CSpectRemote extends ZxNextRemote {
 			LogSocket.log('CSpectRemote: Connected to server!');
 
 			// Test
-
+			/*
 			await this.sendDzrpCmdPause();
 			const regs=await this.sendDzrpCmdGetRegisters();
 			await this.sendDzrpCmdGetConfig();
@@ -54,9 +61,18 @@ export class CSpectRemote extends ZxNextRemote {
 			const mem2=await this.sendDzrpCmdReadMem(0xE000, 4);
 			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 4660);
 			const regs2=await this.sendDzrpCmdGetRegisters();
-
+			*/
 
 			this.onConnect();
+		});
+
+		// Handle disconnect
+		this.socket.on('close', hadError => {
+			LogSocket.log('CSpectRemote: closed connection: '+hadError);
+			console.log('Close.');
+			// Error
+			const err=new Error('CSpect plugin terminated the connection!');
+			this.emit('error', err);
 		});
 
 		// Handle errors
