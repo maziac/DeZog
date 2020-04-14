@@ -11,7 +11,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, MemoryPagesVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
+import { /*ShallowVar,*/ DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -921,11 +921,11 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check if memory pages are suported by Remote
 		//if (Remote.supportsZxNextRegisters) {
-		// Create variable object for MemoryPages
-		const varMemoryPages=new MemoryPagesVar();
+		// Create variable object for MemorySlots
+		const varMemorySlots=new MemorySlotsVar();
 		// Add to list and get reference ID
-		ref=this.listVariables.addObject(varMemoryPages);
-		scopes.push(new Scope("Memory Pages", ref));
+		ref=this.listVariables.addObject(varMemorySlots);
+		scopes.push(new Scope("Memory Slots", ref));
 		//}
 
 		// Create variable object for the stack

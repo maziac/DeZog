@@ -4,7 +4,7 @@ import { Utility } from '../../misc/utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteBase, MachineType, RemoteBreakpoint, MemoryPage } from '../remotebase';
+import {RemoteBase, MachineType, RemoteBreakpoint, MemoryBank } from '../remotebase';
 import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
@@ -1159,10 +1159,10 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemoryPages.
+	 * and converts it to an arry of MemoryBanks.
 	 * @returns A Promise with an array with the available memory pages.
 	 */
-	public async getMemoryPages(): Promise<MemoryPage[]> {
+	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		/* Read data from zesarux has the following format:
 		Segment 1
 		Long name: ROM 0
@@ -1184,9 +1184,9 @@ export class ZesaruxRemote extends RemoteBase {
 		...
 		*/
 
-		return new Promise<MemoryPage[]>(resolve => {
+		return new Promise<MemoryBank[]>(resolve => {
 			zSocket.send('get-memory-pages verbose', data => {
-				const pages: Array<MemoryPage>=[];
+				const pages: Array<MemoryBank>=[];
 				const lines=data.split('\n');
 				const len=lines.length;
 				let i=0;

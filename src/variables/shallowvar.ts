@@ -99,10 +99,10 @@ export class DisassemblyVar extends ShallowVar {
 
 
 /**
- * The MemoryPagesVar class knows how to retrieve the mapping of
+ * The MemorySlotsVar class knows how to retrieve the mapping of
  * memory slots and banks from zesarux.
  */
-export class MemoryPagesVar extends ShallowVar {
+export class MemorySlotsVar extends ShallowVar {
 	/**
 	 * Constructor.
 	 */
@@ -118,9 +118,9 @@ export class MemoryPagesVar extends ShallowVar {
 	 */
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		// Get code memory
-		const memoryPages=await Remote.getMemoryPages();
+		const memoryBanks=await Remote.getMemoryBanks();
 		// Convert array
-		const segments=memoryPages.map(page => {
+		const segments=memoryBanks.map(page => {
 			const name=Utility.getHexString(page.start, 4)+'-'+Utility.getHexString(page.end, 4);
 			return {
 				name: name,

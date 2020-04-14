@@ -62,7 +62,7 @@ The following methods might be overwritten for extra functionality:
 - Debugger
 	- dbgExec: This will send Remote-specific commands to the Remote by passing DeZog.
 - ZX Next specific
-	- getMemoryPages: Returns the ZX Next memory pages.
+	- getMemoryBanks: Returns the ZX Next memory banks.
 
 
 # Simpler

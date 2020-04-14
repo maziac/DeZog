@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.2.1
+- Renamed "Memory PAges" to "Slots".
+
 # 1.2.0
 - Basic CSpect support.
 

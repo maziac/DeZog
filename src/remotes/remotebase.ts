@@ -95,8 +95,8 @@ export enum MachineType {
 }
 
 
-/// Definition of one memory page, i.e. memory slot/bank relationship.
-export interface MemoryPage {
+/// Definition of one memory bank, i.e. memory slot/bank relationship.
+export interface MemoryBank {
 	/// Z80 start address of page.
 	start: number;
 
@@ -1250,10 +1250,10 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemoryPages.
+	 * and converts it to an arry of MemoryBanks.
 	 * @returns A Promise with an array with the available memory pages.
 	 */
-	public async getMemoryPages(): Promise<MemoryPage[]> {
+	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		return [];
 	}
 

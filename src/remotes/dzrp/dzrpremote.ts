@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
-import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemoryPage} from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemoryBank} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
@@ -694,12 +694,12 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemoryPages.
+	 * and converts it to an array of MemoryBanks.
 	 * @returns A Promise with an array with the available memory pages.
 	 */
-	public async getMemoryPages(): Promise<MemoryPage[]> {
+	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		// Prepare array
-		const pages: Array<MemoryPage>=[];
+		const pages: Array<MemoryBank>=[];
 		// Get the data
 		const data=await this.sendDzrpCmdGetSlots();
 		// Save in array
