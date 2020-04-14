@@ -18,7 +18,7 @@ import {Disassembly, DisassemblyClass} from '../misc/disassembly';
 
 /**
  * Breakpoint reason numbers.
- * Are used in DZRP as well, so be autious when changing values.
+ * Are used in DZRP as well, so be cautious when changing values.
  */
 export enum BREAK_REASON_NUMBER {
 	NO_REASON=0,		// 0=no break reason (e.g.a step-over)

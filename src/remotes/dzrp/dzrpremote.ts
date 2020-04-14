@@ -309,7 +309,7 @@ export class DzrpRemote extends RemoteBase {
 	 * This method assumes a 'stupid' external remote that does not evaluate the
 	 * breakpoint's log string or condition.
 	 * Instead evaluation is done here and if e.g. the condition is not met
-	 * than anouther 'continue' is sent.
+	 * than another 'continue' is sent.
 	 */
 	public async continue(): Promise<{breakReasonString: string}> {
 		return new Promise<{breakReasonString: string}>(resolve => {
@@ -326,7 +326,7 @@ export class DzrpRemote extends RemoteBase {
 						// Condition not used at the moment
 						condition='';
 					}
-					else {
+					else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 						// Get corresponding breakpoint
 						const bpId=breakData as number;
 						assert(bpId)
@@ -343,6 +343,10 @@ export class DzrpRemote extends RemoteBase {
 							// Print
 							this.emit('log', evalLog);
 						}
+					}
+					else {
+						// E.g. manual break
+						condition='';
 					}
 
 					// Check for continue
@@ -431,9 +435,9 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * The step-out uses normal step (into) funcionality and check
+	 * The step-out uses normal step (into) functionality and checks
 	 * after each step if the last instruction was some RET and
-	 * the stackpointer is bigger that at the beginning.
+	 * the stackpointer is bigger than at the beginning.
 	 * @param A Promise that returns {breakReasonString}
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
@@ -453,13 +457,6 @@ export class DzrpRemote extends RemoteBase {
 			// Create mutex to wait for the breaks
 			const mutex=new Mutex();
 			let releaseMutex;
-
-			// Prepare for break
-			this.continueResolve=({breakReasonString}) => {
-				breakReason=breakReasonString;
-				Z80Registers.clearCache();
-				releaseMutex();
-			};
 
 			// Loop until SP indicates that we are out of the current subroutine
 			while (true) {
@@ -496,6 +493,14 @@ export class DzrpRemote extends RemoteBase {
 
 				// Calculate the breakpoints to use for step-over
 				let [, bp1, bp2]=await this.calcStepBp(true);
+
+
+				// Prepare for break
+				this.continueResolve=({breakReasonString}) => {
+					breakReason=breakReasonString;
+					Z80Registers.clearCache();
+					releaseMutex();
+				};
 
 				// Send command to 'continue'
 				prevPc=Z80Registers.getPC();

@@ -408,7 +408,7 @@ Response:
 Notification:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 6     | Length     |
+| 0     | 4    | 6+n     | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
 | 5     | 1    | 1-255 | Notification seq no |
 | 6     | 1    | 1     | NTF_PAUSE  |

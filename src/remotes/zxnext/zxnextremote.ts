@@ -220,18 +220,30 @@ export class ZxNextRemote extends DzrpRemote {
 				if (!breakReasonString) {
 					// Add generic error text
 					switch (breakNumber) {
-						case 1:
+						case BREAK_REASON_NUMBER.NO_REASON:
+							breakReasonString="";
+							break;
+						case BREAK_REASON_NUMBER.MANUAL_BREAK:
 							breakReasonString="Manual break"
 							break;
-						case 2:
+						case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 							breakReasonString="Breakpoint hit"
+							break;
+						case BREAK_REASON_NUMBER.WATCHPOINT_READ:
+							breakReasonString="Read watchpoint hit"
+							break;
+						case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
+							breakReasonString="Write watchpoint hit"
+							break;
+						default:
+							breakReasonString="Unknown reason"
 							break;
 					}
 				}
 
 				// Adds breakReasonNumber (as number) if consumer is step-out.
-				assert((breakNumber==BREAK_REASON_NUMBER.NO_REASON&&breakReasonString==undefined)
-					||(breakNumber!=BREAK_REASON_NUMBER.NO_REASON&&breakReasonString!=undefined));
+				assert(breakReasonString!=undefined);
+				// breakReasonString is aleways defined. The rest is additional info.
 				continueHandler({breakNumber, breakData, breakReasonString});
 			}
 		}
