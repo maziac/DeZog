@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.2.0
+- Basic CSpect support.
+
 # 1.1.3
 - Preparation for market place release.
 

@@ -284,12 +284,12 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
+|                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | started  | planned  |
+| State                   | stable             | stable  | stable     | started  | experimental |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes     | yes/fast   | -        | -        |
+| Watchpoints             | yes                | yes     | yes/fast   | -        | yes      |
 | Asserts                 | yes                | -       | yes        | yes/slow | yes/slow |
 | Logpoints               | yes                | -       | yes        | yes/slow | yes/slow |
 | Extended callstack      | no                 | yes     | yes        | -        | -        |
@@ -304,7 +304,7 @@ Notes:
     - experimental: Should work, but not very well tested
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
-- ZesaruxExt, ZX Next and CSpect are not available at the moment.
+- ZesaruxExt and ZX Next are not available at the moment.
 
 
 ### The Internal Z80 Simulator
@@ -386,20 +386,22 @@ ZEsarUX needs to run before the debug session starts and needs to be connected v
 You need to enable the ZRCP in ZEsarUX. In ZEsarUX enable the socket zrcp protocol either by command-line ("--enable-remoteprotocol")
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: remote debugging would work, but has not been tested yet. There is also no mechanism included to copy the .sna file to a remote computer. So better stick to local debugging for now.
+You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.:
+~~~
+    "remoteType": "zrcp",
+    "zrcp": {
+        "port": 10000
+    }
+~~~
+
+The "zrcp" configuration allows the following additional parameters:
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator runnign on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+You don't have to enter a hostname, the default is "localhost".
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 
 
-Example launch.json configuration:
-~~~
-    "remoteType": "zrcp",
-    "zrcp": {
-        "hostname": "localhost",
-        "port": 10000
-    }
-~~~
 
 Notes:
 - If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
@@ -446,6 +448,45 @@ I have collected a few that I found useful:
 Please note: Normally you can set the commandline option also directly in the ZEsarUX Settings GUI.
 
 
+### CSpect
+
+The remote type is "cspect".
+CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
+CSpect doesnot offer a socket interface to DeZog by itself it needs the help of [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
+
+You need to install it first. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
+
+
+You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:
+~~~
+    "remoteType": "cspect",
+~~~
+
+That should normally do.
+If you need to configure the port use:
+~~~
+    "remoteType": "cspect",
+    "cspect": {
+        "port": 11000
+    }
+~~~
+
+The "zrcp" configuration allows the following additional parameters:
+- "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator runnign on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+You don't have to enter a hostname, the default is "localhost".
+
+
+### macOS
+
+To run CSpect under macOS or Linux you need to install Mono first.
+A typical commandline to start CSpect looks like:
+~~~
+mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv
+~~~
+
+
+
 ### Serial Interface
 
 The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
@@ -458,6 +499,7 @@ Example launch.json configuration:
     "remoteType": "serial",
     ???
 ~~~
+
 
 ## Usage
 

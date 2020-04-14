@@ -224,19 +224,19 @@ export class ZxNextRemote extends DzrpRemote {
 							breakReasonString="";
 							break;
 						case BREAK_REASON_NUMBER.MANUAL_BREAK:
-							breakReasonString="Manual break"
+							breakReasonString="Manual break";
 							break;
 						case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
-							breakReasonString="Breakpoint hit"
+							breakReasonString="Breakpoint hit";
 							break;
 						case BREAK_REASON_NUMBER.WATCHPOINT_READ:
-							breakReasonString="Read watchpoint hit"
+							breakReasonString="Read watchpoint hit";
 							break;
 						case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
-							breakReasonString="Write watchpoint hit"
+							breakReasonString="Write watchpoint hit";
 							break;
 						default:
-							breakReasonString="Unknown reason"
+							breakReasonString="Unknown reason";
 							break;
 					}
 				}
