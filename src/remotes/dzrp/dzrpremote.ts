@@ -43,6 +43,13 @@ export enum DZRP {
 
 	CMD_READ_STATE=0xE,
 	CMD_WRITE_STATE=0xF,
+
+	CMD_GET_TBBLUE_REG=0x10,
+
+	CMD_GET_SPRITES_PALETTE=0x11,
+	CMD_GET_SPRITES=0x12,
+	CMD_READ_SPRITE_PATTERN_MEMORY=0x13,
+	CMD_GET_SPRITES_CLIP_WINDOW=0x14,
 };
 
 /**
@@ -981,7 +988,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array) {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		assert(false);
 	}
 

@@ -63,6 +63,12 @@ export class StepHistoryClass extends EventEmitter {
 	protected running: boolean;
 
 
+	// Constructor
+	constructor() {
+		super();
+	}
+
+
 	/**
 	 * Init.
 	 */

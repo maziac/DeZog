@@ -950,7 +950,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array) {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		this.zxMemory.writeBank(bank, dataArray);
 	}
 

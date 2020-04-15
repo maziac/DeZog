@@ -122,11 +122,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	protected slotIndices: Array<number>;
 
 	/// The sprites, i.e. 64 slots with 4 bytes attributes each
-	protected sprites = Array<SpriteData|undefined>(64);
+	protected sprites = Array<SpriteData|undefined>(128);
 
 	/// The previous sprites, i.e. the values here are used to check which attribute has changed
 	// so it can be printed in bold.
-	protected previousSprites = Array<SpriteData|undefined>(64);
+	protected previousSprites = Array<SpriteData|undefined>(128);
 
 	/// Set if sprite clipping enabled.
 	protected clippingEnabled = false;

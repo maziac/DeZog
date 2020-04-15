@@ -120,12 +120,15 @@ export class MemorySlotsVar extends ShallowVar {
 		// Get code memory
 		const memoryBanks=await Remote.getMemoryBanks();
 		// Convert array
-		const segments=memoryBanks.map(page => {
-			const name=Utility.getHexString(page.start, 4)+'-'+Utility.getHexString(page.end, 4);
+		let slot=-1;
+		const segments=memoryBanks.map(bank => {
+			const name=Utility.getHexString(bank.start, 4)+'-'+Utility.getHexString(bank.end, 4);
+			slot++;
+			const slotString=slot.toString();
 			return {
-				name: name,
-				type: page.name,
-				value: page.name,
+				name: slotString+": "+name,
+				type: "Slot "+slotString,
+				value: bank.name,
 				variablesReference: 0
 			};
 		});

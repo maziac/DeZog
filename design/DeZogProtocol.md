@@ -401,6 +401,105 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
+# CMD_GET_TBBLUE_REG
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 3    | 2+N   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x10  | CMD_GET_TBBLUE_REG |
+| 6     | 1    | 0-255 | The register |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | Value of the register |
+
+
+# CMD_GET_SPRITES_PALETTE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 3    | 2+N   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x11  | CMD_GET_SPRITES_PALETTE |
+| 6     | 1    | 0/1   | Palette number |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian |
+
+
+# CMD_GET_SPRITES
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 3    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x12  | CMD_GET_SPRITES |
+| 6     | 1    | 0-128 | Sprite index |
+| 7     | 1    | 0-128 | N. Count of sprites |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+5*N | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
+
+
+
+# CMD_READ_SPRITE_PATTERN_MEMORY
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x13  | CMD_READ_SPRITE_PATTERN_MEMORY |
+| 6     | 2    | 0-16383 | Address in pattern memory |
+| 7     | 2    | 0-16384 | N. Number of bytes to retrieve |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+N   | Length   |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | N    | 0-255 | Pattern memory data. |
+
+Note: 512 = 16x16x2.
+
+
+
+# CMD_GET_SPRITES_CLIP_WINDOW
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x14  | CMD_GET_SPRITES_CLIP_WINDOW |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 5     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | x-left     |
+| 6     | 1    | 0-255 | x-right    |
+| 7     | 1    | 0-255 | y-top      |
+| 8     | 1    | 0-255 | y-bottom   |
+
+
+
 # Notifications
 
 ## NTF_PAUSE

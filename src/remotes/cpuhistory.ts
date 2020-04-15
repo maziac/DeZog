@@ -69,6 +69,13 @@ export class CpuHistoryClass extends StepHistoryClass {
 	// Mirror of the settings historySpotCount.
 	protected spotCount: number;
 
+
+	// Constructor
+	constructor() {
+		super();
+	}
+
+
 	/**
 	 * Sets the static CpuHistory singleton.
 	 */

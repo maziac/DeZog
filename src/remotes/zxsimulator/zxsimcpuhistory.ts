@@ -31,6 +31,12 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 	protected historyWriteIndex: number;
 
 
+	// Constructor
+	constructor() {
+		super();
+	}
+
+
 	/**
 	 * Init.
 	 */

@@ -1278,7 +1278,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param paletteNr 0 or 1.
 	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
 	 */
-	public getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
+	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
 		return new Promise<Array<number>>(resolve => {
 			const paletteNrString=(paletteNr==0)? 'first':'second';
 			zSocket.send('tbblue-get-palette sprite '+paletteNrString+' 0 256', data => {
@@ -1333,6 +1333,7 @@ export class ZesaruxRemote extends RemoteBase {
 				for (const line of spriteLines) {
 					if (line.length==0)
 						continue;
+					// TODO: What about 5 byte sprite attributes
 					const sprite=new Uint8Array(4);
 					for (let i=0; i<4; i++) {
 						const attrString=line.substr(i*3, 2);

@@ -483,7 +483,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array) {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
 	}
 
@@ -520,5 +520,84 @@ export class ZxNextRemote extends DzrpRemote {
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		assert(false);
 	}
+
+
+	/**
+	 * Returns the value of one TBBlue register.
+	 * @param register  The Tbblue register.
+	 * @returns A promise with the value.
+ 	*/
+	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
+		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_TBBLUE_REG, [register]);
+		return buffer[0];
+	}
+
+
+	/**
+	 * Sends the command to get a sprites palette.
+	 * @param index o/1. The first or the second palette.
+	 * @returns An array with 256 entries with the 9 bit color.
+ 	*/
+	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {
+		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES_PALETTE, [index]);
+		const palette=new Array<number>(256);
+		for (let i=0; i<256; i++) {
+			const color=buffer[2*i+1]+buffer[2*i];
+			palette[i]=color;
+		}
+		return palette;
+	}
+
+
+	/**
+	 * Sends the command to get a number of sprite attributes.
+	 * @param index The index of the sprite.
+	 * @param count The number of sprites to return.
+	 * @returns An array with 5 byte attributes for each sprite.
+ 	*/
+	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
+		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES, [index, count]);
+		assert(count*5==buffer.length);
+		const sprites=new Array<Uint8Array>();
+		let p=0;
+		for (let i=0; i<count; i++) {
+			const sprite=new Uint8Array(5);
+			for (let i=0; i<5; i++) {
+				sprite[i]=buffer[p++];
+			}
+			sprites.push(sprite);
+		}
+		return sprites;
+	}
+
+
+	/**
+	 * Sends the command to retrieve a memory dump.
+	 * @param address The memory start address.
+	 * @param size The memory size.
+	 * @returns A promise with an Uint8Array.
+	 */
+	protected async sendDzrpCmdReadSpritePatternMem(address: number, size: number): Promise<Uint8Array> {
+		// Send command to get memory dump
+		const data=await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
+			address&0xFF, address>>>8,
+			size&0xFF, size>>>8]);
+		// Create UInt8array
+		const buffer=new Uint8Array(data);
+		return buffer;
+	}
+
+
+	/**
+	 * Sends the command to get the sprites clipping window.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+ 	*/
+	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES_CLIP_WINDOW);
+		return {
+			xl: data[0], xr: data[1], yt: data[2], yb: data[3]
+		};
+	}
+
 }
 
