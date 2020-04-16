@@ -46,7 +46,8 @@ class SpriteData {
 		this.rotated = (attributes[2] & 0b00000010) ? 1 : 0;
 		this.paletteOffset = attributes[2] & 0b11110000;
 		this.patternIndex = attributes[3] & 0b00111111;
-		this.visible = ((attributes[3] & 0b10000000) != 0);
+		this.visible=((attributes[3]&0b10000000)!=0);
+		// TODO: Handle Attribute[4]: Anchor sprites.
 	}
 
 	/**
@@ -178,6 +179,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		// Get sprites
 		const sprites=await Remote.getTbblueSprites(0, 64);
 		// Loop over all sprites
+		// TODO: Implement 128 (4bit) sprites
 		for (let k=0; k<64; k++) {
 			const attrs=sprites[k];
 			// Check if visible

@@ -572,19 +572,26 @@ export class ZxNextRemote extends DzrpRemote {
 
 
 	/**
-	 * Sends the command to retrieve a memory dump.
-	 * @param address The memory start address.
-	 * @param size The memory size.
-	 * @returns A promise with an Uint8Array.
+	 * Sends the command to retrieve sprite patterns.
+	 * Retrieves only 256 byte patterns. If a 128 byte patterns is required
+	 * the full 256 bytes are returned.
+	 * @param index The index of the pattern [0-63]
+	 * @param count The number of patterns [0-64]
+	 * @returns A promise with an Array with the sprite pattern for each index.
 	 */
-	protected async sendDzrpCmdReadSpritePatternMem(address: number, size: number): Promise<Uint8Array> {
+	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		// Send command to get memory dump
-		const data=await this.sendDzrpCmd(DZRP.CMD_READ_MEM, [0,
-			address&0xFF, address>>>8,
-			size&0xFF, size>>>8]);
-		// Create UInt8array
-		const buffer=new Uint8Array(data);
-		return buffer;
+		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITE_PATTERNS, [0, index, count]);
+		// Each pattern is 256 bytes, divide
+		assert(data.length==256*count);
+		const array=[...data];	// Convert to number array
+		const patterns=Array<Array<number>>();
+		for (let i=0; i<count; i++) {
+			const start=(i+index)*256;
+			const pattern=array.slice(start, start+256);
+			patterns.push(pattern);
+		}
+		return patterns;
 	}
 
 

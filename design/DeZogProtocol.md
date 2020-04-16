@@ -457,23 +457,25 @@ Response:
 
 
 
-# CMD_READ_SPRITE_PATTERN_MEMORY
+# CMD_GET_SPRITE_PATTERNS
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x13  | CMD_READ_SPRITE_PATTERN_MEMORY |
-| 6     | 2    | 0-16383 | Address in pattern memory |
-| 7     | 2    | 0-16384 | N. Number of bytes to retrieve |
+| 5     | 1    | 0x13  | CMD_GET_SPRITE_PATTERNS |
+| 6     | 2    | 0-63  | index of 256 byte pattern. |
+| 7     | 2    | 0-64  | N. Number of patterns to retrieve |
+
+Note: It is not possible to read just a 128 byte pattern, instead always 256 patterns are read.
 
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1+N   | Length   |
+| 0     | 4    | 1+N*256 | Length   |
 | 4     | 1    | 1-255 | Same seq no |
-| 5     | N    | 0-255 | Pattern memory data. |
+| 5     | N*256| 0-255 | Pattern memory data. |
 
 Note: 512 = 16x16x2.
 

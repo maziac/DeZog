@@ -338,7 +338,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				usedIndex.push(index);
 				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
 				const indexPop=usedIndex.shift()!;
-				assert(indexPop);
+				assert(indexPop != undefined);
 				ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
 		}
@@ -481,7 +481,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			if(!pattern)
 				continue
 
-			// Start of table (note there are several table next to each other).
+			// Start of table (note there are several tables next to each other).
 			if(k % 16 == 0) {
 				table += `<table style="text-align:center; float:left" border="1"
 					cellpadding="0">

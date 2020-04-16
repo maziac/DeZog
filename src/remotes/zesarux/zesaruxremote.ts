@@ -1334,11 +1334,13 @@ export class ZesaruxRemote extends RemoteBase {
 					if (line.length==0)
 						continue;
 					// TODO: What about 5 byte sprite attributes
-					const sprite=new Uint8Array(4);
-					for (let i=0; i<4; i++) {
+					const sprite=new Uint8Array(5);
+					for (let i=0; i<5; i++) {
 						const attrString=line.substr(i*3, 2);
-						const attribute=parseInt(attrString, 16);
-						sprite[i]=attribute;
+						if (attrString.length>0) {
+							const attribute=parseInt(attrString, 16);
+							sprite[i]=attribute;
+						}
 					}
 					sprites.push(sprite);
 				}

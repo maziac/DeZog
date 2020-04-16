@@ -3,6 +3,7 @@
 # 1.2.1
 - Renamed "Memory Pages" to "Slots".
 - Added forgotten Z80N instructions.
+- Fixed bug in sprite patterns display.
 
 # 1.2.0
 - Basic CSpect support.

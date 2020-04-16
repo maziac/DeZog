@@ -48,7 +48,7 @@ export enum DZRP {
 
 	CMD_GET_SPRITES_PALETTE=0x11,
 	CMD_GET_SPRITES=0x12,
-	CMD_READ_SPRITE_PATTERN_MEMORY=0x13,
+	CMD_GET_SPRITE_PATTERNS=0x13,
 	CMD_GET_SPRITES_CLIP_WINDOW=0x14,
 };
 
@@ -695,7 +695,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		return await this.sendDzrpCmdWriteMem(address, dataArray);
+		await this.sendDzrpCmdWriteMem(address, dataArray);
 	}
 
 
@@ -850,6 +850,69 @@ export class DzrpRemote extends RemoteBase {
 		Z80Registers.clearCache();
 		this.clearCallStack();
 	}
+
+
+
+	// ZX Next related ---------------------------------
+
+
+	/**
+	 * Retrieves the TBBlue register value from the emulator.
+	 * @param registerNr The number of the register.
+	 * @returns A promise with the value of the register.
+	 */
+	public async getTbblueRegister(registerNr: number): Promise<number> {
+		const value=await this.sendDzrpCmdGetTbblueReg(registerNr);
+		return value;
+	}
+
+
+	/**
+	 * Retrieves the sprites palette from the emulator.
+	 * @param paletteNr 0 or 1.
+	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
+	 */
+	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
+		const palette=await this.sendDzrpCmdGetSpritesPalette(paletteNr);
+		return palette;
+	}
+
+
+	/**
+	 * Retrieves the sprites clipping window from the emulator.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+	 */
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+		const clip=await this.sendDzrpCmdGetSpritesClipWindow();
+		return clip;
+	}
+
+
+	/**
+	 * Retrieves the sprites from the emulator.
+	 * @param slot The start slot.
+	 * @param count The number of slots to retrieve.
+	 * @returns A Promise with an array of sprite attribute data.
+	 */
+	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
+		const sprites=await this.sendDzrpCmdGetSprites(slot, count);
+		return sprites;
+	}
+
+
+	/**
+	 * Retrieves the sprite patterns from the emulator.
+	 * @param index The start index.
+	 * @param count The number of patterns to retrieve.
+	 * @preturns A Promise with an array of sprite pattern data.
+	 */
+	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
+		const patterns=await this.sendDzrpCmdGetSpritePatterns(index, count);
+		return patterns;
+	}
+
+
+
 
 
 	//------- Send Commands -------
@@ -1027,5 +1090,65 @@ export class DzrpRemote extends RemoteBase {
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		assert(false);
 	}
+
+
+
+	/**
+	 * Returns the value of one TBBlue register.
+	 * @param register  The Tbblue register.
+	 * @returns A promise with the value.
+ 	*/
+	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
+		assert(false);
+		return 0;
+	}
+
+
+	/**
+	 * Sends the command to get a sprites palette.
+	 * @param index o/1. The first or the second palette.
+	 * @returns An array with 256 entries with the 9 bit color.
+ 	*/
+	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {
+		assert(false);
+		return [];
+	}
+
+
+	/**
+	 * Sends the command to get a number of sprite attributes.
+	 * @param index The index of the sprite.
+	 * @param count The number of sprites to return.
+	 * @returns An array with 5 byte attributes for each sprite.
+ 	*/
+	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
+		assert(false);
+		return [];
+	}
+
+
+	/**
+	 * Sends the command to retrieve sprite patterns.
+	 * Retrieves only 256 byte patterns. If a 128 byte patterns is required
+	 * the full 256 bytes are returned.
+	 * @param index The index of the pattern [0-63]
+	 * @param count The number of patterns [0-64]
+	 * @returns A promise with an Array with the sprite pattern for each index.
+	 */
+	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
+		assert(false);
+		return [[]];
+	}
+
+
+	/**
+	 * Sends the command to get the sprites clipping window.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+ 	*/
+	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+		assert(false);
+		return {xl: 0, xr: 0, yt: 0, yb: 0};
+	}
+
 }
 
