@@ -86,6 +86,7 @@ suite('Z80Cpu', () => {
 		let cpu;
 		let r1;
 		let mem;
+		let ports;
 
 
 		// Fills the memory with the given address/value pairs.
@@ -99,10 +100,21 @@ suite('Z80Cpu', () => {
 			}
 		}
 
+		// Fills the ports with the given address/value pairs.
+		function setPorts(portsArray: number[]) {
+			const count=portsArray.length;
+			for (let i=0; i<count; i+=2) {
+				const addr=portsArray[i];
+				const val=portsArray[i+1];
+				ports.setPortValue(addr, val);
+			}
+		}
+
 		setup(() => {
 			cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
 			r1=cpu.r1;
 			mem=cpu.memory;
+			ports=cpu.io;
 		});
 
 		test('LDIX', () => {
@@ -735,6 +747,172 @@ suite('Z80Cpu', () => {
 			cpu.executeZ80n();
 			assert.equal(0b0000_0000, r1.f);
 		});
+
+
+		test('BSLA DE,B', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0b1100_0010_1000_0001;
+			r1.b=0xE1;
+			setMem([0x0000, 0x28]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b1000_0101_0000_0010, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100_0010_1000_0001;
+			r1.b=3;
+			cpu.executeZ80n();
+			assert.equal(0b001_0100_0000_1000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100_0010_1000_0001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+		});
+
+		test('BSRA DE,B', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=0xE1;
+			setMem([0x0000, 0x29]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b1110000101000000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=3;
+			cpu.executeZ80n();
+			assert.equal(0b0000100001010000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0xFFFF, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+		});
+
+		test('BSRL DE,B', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=0xE1;
+			setMem([0x0000, 0x2A]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b0110000101000000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=3;
+			cpu.executeZ80n();
+			assert.equal(0b0000100001010000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0, r1.de);
+		});
+
+		test('BSRF DE,B', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=0xE1;
+			setMem([0x0000, 0x2B]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b1110000101000000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=3;
+			cpu.executeZ80n();
+			assert.equal(0b1110100001010000, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0xFFFF, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0xFFFF, r1.de);
+		});
+
+		test('BRLC DE,B', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=0xE1;
+			setMem([0x0000, 0x2C]);
+			cpu.executeZ80n();
+
+			assert.equal(8, cpu.tStates);
+			assert.equal(0x0001, cpu.pc);
+			assert.equal(0b1000010100000011, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=3;
+			cpu.executeZ80n();
+			assert.equal(0b0001010000001110, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b1100001010000001;
+			r1.b=16;
+			cpu.executeZ80n();
+			assert.equal(0b1100001010000001, r1.de);
+
+			cpu.pc=0xFFFF;
+			r1.de=0b0100001010000001;
+			r1.b=31;
+			cpu.executeZ80n();
+			assert.equal(0b1010000101000000, r1.de);
+		});
+
+
+		test('JP (C)', () => {
+			cpu.tStates=0;
+			cpu.pc=0xFFFF;
+			setMem([0x0000, 0x98]);
+			r1.bc=0x1234;	// port address
+			setPorts([r1.bc, 0xFF]);
+			cpu.executeZ80n();
+
+			assert.equal(13, cpu.tStates);
+			assert.equal(0b0011_1111_1100_0000, cpu.pc);
+
+			cpu.pc=0xC00F;
+			setMem([0xC010, 0x98]);
+			r1.bc=0x1234;	// port address
+			setPorts([r1.bc, 0b11100011]);
+			cpu.executeZ80n();
+
+			assert.equal(0b1111_1000_1100_0000, cpu.pc);
+		});
+
 	});
 
 });

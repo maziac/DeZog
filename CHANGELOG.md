@@ -1,7 +1,8 @@
 # Changelog
 
 # 1.2.1
-- Renamed "Memory PAges" to "Slots".
+- Renamed "Memory Pages" to "Slots".
+- Added forgotten Z80N instructions.
 
 # 1.2.0
 - Basic CSpect support.

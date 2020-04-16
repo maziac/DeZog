@@ -508,7 +508,7 @@ export class Z80Cpu extends Z80js {
 					this.ldidx(-1);
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -554,7 +554,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.hl&=0xFFFF;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -564,7 +564,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.de=self.r1.d*self.r1.e;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -576,7 +576,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.hl&=0xFFFF;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -587,7 +587,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.de&=0xFFFF;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -598,7 +598,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.bc&=0xFFFF;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -610,7 +610,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.hl&=0xFFFF;
 					// Next
 					self.pc+=4;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -622,7 +622,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.de&=0xFFFF;
 					// Next
 					self.pc+=4;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -634,7 +634,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.bc&=0xFFFF;
 					// Next
 					self.pc+=4;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -645,7 +645,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.a=((a>>>4)+(a<<4))&0xFF;
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -664,7 +664,7 @@ export class Z80Cpu extends Z80js {
 					((a<<7)&0b10000000);
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -695,7 +695,7 @@ export class Z80Cpu extends Z80js {
 					self.io.write(0x253B, val);
 					// Next
 					self.pc+=4;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -707,7 +707,7 @@ export class Z80Cpu extends Z80js {
 					self.io.write(0x253B, self.r1.a);
 					// Next
 					self.pc+=3;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -724,7 +724,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.hl=(hl&0xFFFF);
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -736,7 +736,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.hl=0x4000+((d&0xC0)<<5)+((d&0x07)<<8)+((d&0x38)<<2)+(e>>>3);
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -747,7 +747,7 @@ export class Z80Cpu extends Z80js {
 					self.r1.a=(0x80)>>>(e&0x07)
 					// Next
 					self.pc+=2;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
 
@@ -762,14 +762,93 @@ export class Z80Cpu extends Z80js {
 					let flags=self.r1.f;
 					flags&=0b10101010;
 					flags|=result&0x80;	// sign
-					if(result==0)
+					if (result==0)
 						flags|=0x40;	// zero
 					self.r1.f=flags;
 					// Next
 					self.pc+=3;
-					self.r1.pc&=0xFFFF;
+					self.pc&=0xFFFF;
 				}
 				break;
+
+			case 0x28:
+				{	// BSLA DE,B
+					self.tStates+=8;
+					const shifts=self.r1.b&0x1F
+					const result=(self.r1.de<<shifts)&0xFFFF;
+					self.r1.de=result;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x29:
+				{	// BSRA DE,B
+					self.tStates+=8;
+					const shifts=self.r1.b&0x1F
+					// Sticky shift right
+					let dePrev=self.r1.de;
+					if (dePrev&0x8000)
+						dePrev+=0xFFFF0000;
+					const result=(dePrev>>>shifts)&0xFFFF;
+					self.r1.de=result;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x2A:
+				{	// BSRL DE,B
+					self.tStates+=8;
+					const shifts=self.r1.b&0x1F
+					const result=self.r1.de>>>shifts;
+					self.r1.de=result;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x2B:
+				{	// BSRF DE,B
+					self.tStates+=8;
+					const shifts=self.r1.b&0x1F
+					const dePrev=0xFFFF0000+self.r1.de;	// 1-fill right
+					const result=(dePrev>>>shifts)&0xFFFF;
+					self.r1.de=result;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+			case 0x2C:
+				{	// BRLC DE,B
+					self.tStates+=8;
+					const shifts=self.r1.b&0x0F
+					const result=self.r1.de<<shifts;
+					self.r1.de=(result|(result>>>16))&0xFFFF;
+					// Next
+					self.pc+=2;
+					self.pc&=0xFFFF;
+				}
+				break;
+
+
+			case 0x98:
+				{	// JP (C)
+					self.tStates+=13;
+					const inp=self.io.read(self.r1.bc);
+					let pc=(self.pc+2)&0xC000;
+					pc+=(inp<<6);
+					// Next
+					self.pc=pc;
+					self.pc&=0xFFFF;
+				}
+				break;
+
 
 			default:
 				// No Z80N instruction, use normal execute
