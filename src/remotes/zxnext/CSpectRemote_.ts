@@ -4,6 +4,7 @@ import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
+import {MachineType} from '../remotebase';
 
 
 /// Timeouts.
@@ -62,6 +63,9 @@ export class CSpectRemote extends ZxNextRemote {
 			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 4660);
 			const regs2=await this.sendDzrpCmdGetRegisters();
 			*/
+
+			// Assume ZXNext:
+			this.machineType=MachineType.TBBLUE;
 
 			this.onConnect();
 		});
