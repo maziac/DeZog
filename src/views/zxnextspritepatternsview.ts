@@ -475,12 +475,12 @@ export class ZxNextSpritePatternsView extends BaseView {
 <style>
 	.classPattern {
 		width:auto;
-		height:3em;
+		height:2em;
 	}
 	.classImg {
 		image-rendering:pixelated;
 		width:auto;
-		height:3em;
+		height:2em;
 	}
 </style>
 `;
@@ -514,19 +514,32 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 			// The cells
 			table += '<tr>\n<td>' + patternId + '</td>\n'
-			// Sprite image - convert to base64
-			const buf=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
 
 			// Convert 8bit Pattern to base64
-			const base64String8b=buf.toString('base64');
+			const buf8b=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const base64String8b=buf8b.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String8b+'"></td>\n';
 
-			// Convert 8bit Pattern to base64
-			const base64String4b0=buf.toString('base64');
+			// Convert 4bit N6=0 Pattern to base64
+			const pattern4b0=new Array<number>(256);
+			for (let i=0; i<128; i++) {
+				const val=pattern[i];
+				pattern4b0[2*i]=val>>>4;
+				pattern4b0[2*i+1]=val&0x0F;
+			}
+			const buf4b0=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b0, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const base64String4b0=buf4b0.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b0+'"></td>\n';
 
-			// Convert 8bit Pattern to base64
-			const base64String4b1=buf.toString('base64');
+			// Convert 4bit N6=1 Pattern to base64
+			const pattern4b1=new Array<number>(256);
+			for (let i=0; i<128; i++) {
+				const val=pattern[128+i];
+				pattern4b1[2*i]=val>>>4;
+				pattern4b1[2*i+1]=val&0x0F;
+			}
+			const buf4b1=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b1, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const base64String4b1=buf4b1.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b1+'"></td>\n';
 
 			// End of row
