@@ -254,7 +254,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		const palette=ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
 		for (const sprite of this.sprites) {
-			if (!sprite)
+			if ((!sprite)||(!sprite.visible))
 				continue;
 			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
 			Utility.assert(pattern);
