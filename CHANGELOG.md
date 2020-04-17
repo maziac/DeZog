@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.2.2
+- CSpect: timeout error if no response received.
+
 # 1.2.1
 - Renamed "Memory Pages" to "Slots".
 - Added forgotten Z80N instructions.

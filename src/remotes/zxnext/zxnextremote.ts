@@ -38,6 +38,12 @@ export class ZxNextRemote extends DzrpRemote {
 	// Sequence Number 1-255. Used for sending.
 	protected sequenceNumber: number;
 
+	// Timeout between sending command and receiving response.
+	protected cmdRespTimeout?: NodeJS.Timeout;
+
+	// The used timeout time.
+	protected cmdRespTimeoutTime=3000;	// 3000 ms
+
 
 	/// Constructor.
 	constructor() {
@@ -77,6 +83,31 @@ export class ZxNextRemote extends DzrpRemote {
 	 * will also be terminated.
 	 */
 	public async terminate(): Promise<void> {
+	}
+
+
+	/**
+	 * Starts the command/response timeout.
+	 */
+	protected startCmdRespTimeout() {
+		this.stopCmdRespTimeout();
+		this.cmdRespTimeout=setTimeout(() => {
+			const err=new Error('Socket command/response timeout.');
+			// Log
+			LogSocket.log('Error: '+err.message);
+			// Error
+			this.emit('error', err);
+		}, this.cmdRespTimeoutTime);
+	}
+
+
+	/**
+	 * Stops the command/response timeout.
+	 */
+	protected stopCmdRespTimeout() {
+		if (this.cmdRespTimeout)
+			clearTimeout(this.cmdRespTimeout);
+		this.cmdRespTimeout=undefined;
 	}
 
 
@@ -147,7 +178,7 @@ export class ZxNextRemote extends DzrpRemote {
 
 
 	/**
-	 * If messageQueue is empty returnes immediately.
+	 * If messageQueue is empty returns immediately.
 	 * Otherwise the first message in the queue is sent.
 	 */
 	protected async sendNextMessage(): Promise<void> {
@@ -167,6 +198,7 @@ export class ZxNextRemote extends DzrpRemote {
 			//LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
 			await this.sendBuffer(msg.buffer);
 			//console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
+			this.startCmdRespTimeout();
 		}
 		catch (error) {
 			LogSocket.log("SENT ERROR.");
@@ -248,6 +280,8 @@ export class ZxNextRemote extends DzrpRemote {
 			}
 		}
 		else {
+			// Stop timeout
+			this.stopCmdRespTimeout();
 			// Get latest sent message
 			const msg=this.messageQueue[0];
 			Utility.assert(msg);
