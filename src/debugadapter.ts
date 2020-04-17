@@ -890,15 +890,17 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
+	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): Promise<void> {
 		const scopes=new Array<Scope>();
 		const frameId=args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
 		let frame;
 		if (StepHistory.isInStepBackMode())
 			frame=StepHistory.getCallStack().getObject(frameId);
-		else
+		else {
+			await Remote.getCallStack();	// make sure listFrames exist
 			frame=Remote.getFrame(frameId);
+		}
 		if (!frame) {
 			// No frame found, send empty response
 			response.body={scopes: scopes};

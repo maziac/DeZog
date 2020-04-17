@@ -690,7 +690,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	* Returns the stack as array.
+	* Returns the stack as an array.
 	* Oldest element is at index 0.
 	* @returns The stack, i.e. the word values from topOfStack to SP.
 	* But no more than about 100 elements.
@@ -829,7 +829,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * @param The reference number to the frame.
+	 * @param ref The reference number to the frame.
 	 * @returns The associated frame or undefined.
 	 */
 	public getFrame(ref: number): CallStackFrame|undefined {
