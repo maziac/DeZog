@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
@@ -648,7 +647,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 			// Send Notification
 			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-			assert(this.continueResolve);
+			Utility.assert(this.continueResolve);
 			if (this.continueResolve)
 				this.continueResolve({breakNumber, breakData, breakReasonString});
 
@@ -673,7 +672,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-				assert(this.continueResolve);
+				Utility.assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({breakNumber, breakData, breakReasonString});
 
@@ -808,7 +807,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * Not used.
 	 */
 	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
-		assert(false);	// Not used
+		Utility.assert(false);	// Not used
 		return {zxNextRegs: false};
 	}
 

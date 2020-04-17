@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as fs from 'fs';
 import {basename} from 'path';
 import * as vscode from 'vscode';
@@ -139,7 +138,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns If it was not possible to start unit test: false.
 	 */
 	public static unitTests(configName: string, handler: (da: DebugSessionClass) => void): boolean {
-		assert(handler);
+		Utility.assert(handler);
 
 		// Return if currently a debug session is running
 		if (vscode.debug.activeDebugSession)
@@ -163,7 +162,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	/*
 	protected RemoteHasMethod(name: string): boolean {
-		assert(Remote);
+		Utility.assert(Remote);
 		let remote=Remote;
 		let found=false;
 		while (remote=Object.getPrototypeOf(remote)) {

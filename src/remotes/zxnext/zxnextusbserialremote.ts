@@ -1,4 +1,3 @@
-//import * as assert from 'assert';
 //import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';

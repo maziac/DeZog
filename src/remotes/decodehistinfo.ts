@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import {Utility} from '../misc/utility';
 
 
 
@@ -74,8 +74,8 @@ export class DecodeRegisterData {
 	 */
 	public getRegValueByName(regName: string, data: RegisterData): number {
 		let handler=this.regMap.get(regName.toUpperCase())||(data => 0);
-		assert(handler!=undefined, 'Register '+regName+' does not exist.');
-		assert(data);
+		Utility.assert(handler!=undefined, 'Register '+regName+' does not exist.');
+		Utility.assert(data);
 		let value=handler(data);
 		return value;
 	}
@@ -83,91 +83,91 @@ export class DecodeRegisterData {
 
 	public parsePC(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseSP(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseAF(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseBC(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseHL(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseDE(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseIX(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseIY(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseAF2(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseBC2(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseHL2(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseDE2(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseI(data: RegisterData): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseR(data: string): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
 	public parseIM(data: string): number {
 		// Override
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
@@ -262,7 +262,7 @@ export class DecodeHistoryInfo {
 	 */
 	public getOpcodes(line: HistoryInstructionInfo): number {
 		// Override this
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
@@ -274,7 +274,7 @@ export class DecodeHistoryInfo {
 	 */
 	public getSpContent(line: HistoryInstructionInfo): number {
 		// Override this
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 }

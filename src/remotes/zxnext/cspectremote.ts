@@ -1,10 +1,10 @@
-import * as assert from 'assert';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {MachineType} from '../remotebase';
+import {Utility} from '../../misc/utility';
 
 
 /// Timeouts.
@@ -218,7 +218,7 @@ export class CSpectRemote extends ZxNextRemote {
 
 			// Prepare next buffer. Copy to many received bytes.
 			const overLength=this.receivedData.length-this.expectedLength;
-			assert(overLength>=0);
+			Utility.assert(overLength>=0);
 			const nextBuffer=new Buffer(overLength);
 			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
 			this.receivedData=nextBuffer;

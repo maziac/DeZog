@@ -1,8 +1,8 @@
-import * as assert from 'assert';
 import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo} from '../decodehistinfo';
 import {Settings} from '../../settings';
 import {Z80Registers} from '../z80registers';
+import {Utility} from '../../misc/utility';
 
 
 /**
@@ -109,7 +109,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 	 * Note: If you use exchange=true you cannot call 'pushCallStack' afterwards.
 	 */
 	public pushHistoryInfo(line: HistoryInstructionInfo, exchange=false) {
-		//assert(line);
+		//Utility.assert(line);
 		if (exchange&&this.history.length>0) {
 			// Exchange
 			this.history[this.historyWriteIndex]=line;
@@ -171,7 +171,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 
 		// Before historyIndex
 		const len=this.history.length;
-		assert(len>0);
+		Utility.assert(len>0);
 		let startIndex=this.historyIndex;	// historyIndex could be -1
 		if (startIndex<0)
 			startIndex=this.historyWriteIndex;

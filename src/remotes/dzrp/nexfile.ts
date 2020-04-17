@@ -1,4 +1,3 @@
-//import * as assert from 'assert';
 import * as fs from 'fs';
 import {MemBank16k} from './membank16k';
 

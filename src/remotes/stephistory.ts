@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import {Z80Registers} from '../remotes/z80registers';
 import {HistoryInstructionInfo} from './decodehistinfo';
 import {BaseMemory} from '../disassembler/basememory';
@@ -106,7 +105,7 @@ export class StepHistoryClass extends EventEmitter {
 	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {
 		const index=this.historyIndex+1;
 		//console.log("len=" + this.history.length + ", index=" + index);
-		assert(index>=0);
+		Utility.assert(index>=0);
 		if (index>=this.history.length)
 			return undefined;
 		this.historyIndex=index;
@@ -122,7 +121,7 @@ export class StepHistoryClass extends EventEmitter {
 	public getNextRegisters(): HistoryInstructionInfo|undefined {
 		let currentLine;
 		// Get previous item
-		assert(this.historyIndex >= 0);
+		Utility.assert(this.historyIndex >= 0);
 		this.historyIndex --;
 		if(this.historyIndex >= 0)
 			currentLine = this.history[this.historyIndex];
@@ -134,7 +133,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * Returns the call stack at the historyIndex.
 	 */
 	public getCallStack(): RefList<CallStackFrame> {
-		assert(this.historyIndex>=0);
+		Utility.assert(this.historyIndex>=0);
 		return this.liteCallStackHistory[this.historyIndex];
 	}
 
@@ -145,7 +144,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * @param exchange true if the element should be exchanged rather than added.
 	 */
 	public pushHistoryInfo(line: HistoryInstructionInfo, exchange = false) {
-		assert(line);
+		Utility.assert(line);
 		if (exchange&&this.history.length>0) {
 			// Exchange
 			this.history[0]=line;
@@ -164,11 +163,11 @@ export class StepHistoryClass extends EventEmitter {
 	 * If it is called it is called after 'pushHistoryInfo' to check the length correctly.
 	 */
 	public pushCallStack(callstack: RefList<CallStackFrame>) {
-		assert(callstack);
+		Utility.assert(callstack);
 		this.liteCallStackHistory.unshift(callstack);
 		if (this.liteCallStackHistory.length>this.maxSize)
 			this.liteCallStackHistory.pop();
-		assert(this.liteCallStackHistory.length==this.history.length);
+		Utility.assert(this.liteCallStackHistory.length==this.history.length);
 	}
 
 
@@ -290,7 +289,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * @returns A string with the reason. undefined if no breakpoint hit.
 	 */
 	protected checkPcBreakpoints(): string|undefined {
-		assert(Z80Registers.getCache());
+		Utility.assert(Z80Registers.getCache());
 		let condition;
 		const pc=Z80Registers.getPC();
 		const breakpoints=Remote.getBreakpointsArray();
@@ -380,7 +379,7 @@ export class StepHistoryClass extends EventEmitter {
 		try {
 			// Get current line
 			let currentLine: string=Z80Registers.getCache();
-			assert(currentLine);
+			Utility.assert(currentLine);
 
 			// Loop over all lines, reverse
 			while (this.running) {

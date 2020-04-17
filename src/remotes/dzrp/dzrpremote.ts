@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as fs from 'fs';
 import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, MemoryBank} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
@@ -161,7 +160,7 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async setRegisterValue(register: string, value: number): Promise<number> {
 		const index=Z80RegistersClass.getEnumFromName(register) as number;
-		assert(index!=undefined);
+		Utility.assert(index!=undefined);
 		// Send command to set register
 		await this.sendDzrpCmdSetRegister(index, value);
 		// Send command to get registers
@@ -240,7 +239,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise to the reason string, e.g. "Breakpoint hit. A==4."
 	 */
 	protected async constructBreakReasonString(breakNumber: number, breakData: number, condition: string, breakReasonString: string): Promise<string> {
-		assert(condition != undefined);
+		Utility.assert(condition != undefined);
 		if (!breakReasonString)
 			breakReasonString='';
 
@@ -336,7 +335,7 @@ export class DzrpRemote extends RemoteBase {
 					else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 						// Get corresponding breakpoint
 						const bpId=breakData as number;
-						assert(bpId)
+						Utility.assert(bpId)
 						const bp=this.getBreakpointById(bpId);
 
 						// Check for condition
@@ -673,7 +672,7 @@ export class DzrpRemote extends RemoteBase {
 
 		// Remove from list
 		let index=this.breakpoints.indexOf(bp);
-		assert(index!==-1, 'Breakpoint should be removed but does not exist.');
+		Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
 	}
 
@@ -923,7 +922,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns The configuration, e.g. '{xNextRegs: true}'
 	 */
 	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
-		assert(false);
+		Utility.assert(false);
 		return {zxNextRegs: false};
 	}
 
@@ -935,7 +934,7 @@ export class DzrpRemote extends RemoteBase {
 	 * 'Z80Registers.getRegisterData'.
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
-		assert(false);
+		Utility.assert(false);
 		return new Uint16Array(0);
 	}
 
@@ -947,7 +946,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param value A 1 byte or 2 byte value.
 	 */
 	protected async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -958,7 +957,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -967,7 +966,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Sends the command to pause a running program.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -981,7 +980,7 @@ export class DzrpRemote extends RemoteBase {
 	 * no breakpoint is available anymore.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
@@ -992,7 +991,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1006,7 +1005,7 @@ export class DzrpRemote extends RemoteBase {
 	 * 'condition' may be undefined or an empty string ''.
 	 */
 	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1017,7 +1016,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 */
 	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1029,7 +1028,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with an Uint8Array.
 	 */
 	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		assert(false);
+		Utility.assert(false);
 		return new Uint8Array(0);
 	}
 
@@ -1041,7 +1040,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1052,7 +1051,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1063,7 +1062,7 @@ export class DzrpRemote extends RemoteBase {
 	 *  Each entry contains the correspondent bank number.
  	*/
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
-		assert(false);
+		Utility.assert(false);
 		return [];
 	}
 
@@ -1076,7 +1075,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Data will just be saved.
  	*/
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
-		assert(false);
+		Utility.assert(false);
 		return new Uint8Array();
 	}
 
@@ -1088,7 +1087,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param The state data. Format is unknown (remote specific).
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -1099,7 +1098,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with the value.
  	*/
 	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
-		assert(false);
+		Utility.assert(false);
 		return 0;
 	}
 
@@ -1110,7 +1109,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns An array with 256 entries with the 9 bit color.
  	*/
 	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {
-		assert(false);
+		Utility.assert(false);
 		return [];
 	}
 
@@ -1122,7 +1121,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns An array with 5 byte attributes for each sprite.
  	*/
 	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
-		assert(false);
+		Utility.assert(false);
 		return [];
 	}
 
@@ -1136,7 +1135,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with an Array with the sprite pattern for each index.
 	 */
 	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
-		assert(false);
+		Utility.assert(false);
 		return [[]];
 	}
 
@@ -1146,7 +1145,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
  	*/
 	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
-		assert(false);
+		Utility.assert(false);
 		return {xl: 0, xr: 0, yt: 0, yb: 0};
 	}
 

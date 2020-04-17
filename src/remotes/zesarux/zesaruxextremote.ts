@@ -1,5 +1,4 @@
 
-//import * as assert from 'assert';
 import { RemoteBreakpoint } from '../remotebase';
 import { GenericWatchpoint, GenericBreakpoint } from '../../genericwatchpoint';
 import { ZesaruxRemote } from './zesaruxremote';

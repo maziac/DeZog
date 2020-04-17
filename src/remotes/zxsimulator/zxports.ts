@@ -1,5 +1,5 @@
-import * as assert from 'assert';
 import {MemBuffer} from '../../misc/membuffer';
+import {Utility} from '../../misc/utility';
 
 /**
  * Represents the port behaviour of a ZX Spectrum
@@ -85,7 +85,7 @@ export class ZxPorts {
 	public deserialize(memBuffer: MemBuffer) {
 		// Read ports from buffer
 		const buffer=memBuffer.readArrayBuffer();
-		assert(buffer.length==this.ports.length);
+		Utility.assert(buffer.length==this.ports.length);
 		this.ports.set(buffer);
 	}
 
@@ -124,14 +124,14 @@ export class ZxPorts {
 	// Change the port value. Simulates HW access.
 	// Is e.g. called if a key is "pressed".
 	public setPortValue(port: number, data: number) {
-		assert(port>=0&&port<0x10000);
+		Utility.assert(port>=0&&port<0x10000);
 		this.ports[port]=data;
 	}
 
 	// Get a port value.
 	// Is e.g. called if a key is "pressed".
 	public getPortValue(port: number): number {
-		assert(port>=0&&port<0x10000);
+		Utility.assert(port>=0&&port<0x10000);
 		return this.ports[port];
 	}
 }

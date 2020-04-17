@@ -1,9 +1,9 @@
-import * as assert from 'assert';
 import * as util from 'util';
 import { Remote } from '../remotes/remotefactory';
 import { BaseView } from './baseview';
 import {ImageConvert} from '../imageconvert';
 import {WebviewPanel} from 'vscode';
+import {Utility} from '../misc/utility';
 
 
 /**
@@ -97,7 +97,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			if(start == undefined)
 				break;
 			let end = indexRanges.shift() || -1;
-			assert(end >= 0);
+			Utility.assert(end >= 0);
 			end += start;
 			for(let k=start; k<end; k++) {
 				if(k > 63)
@@ -107,7 +107,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		}
 
 		// Title
-		assert(this.vscodePanel);
+		Utility.assert(this.vscodePanel);
 		(this.vscodePanel as WebviewPanel).title = title;
 	}
 
@@ -136,7 +136,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				this.update();
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 				break;
 		}
 	}
@@ -162,7 +162,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				paletteNumber = ZxNextSpritePatternsView.currentPaletteNumber;
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 				break;
 		}
 		return paletteNumber;
@@ -178,7 +178,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		if(paletteNumber == 0)
 			return PaletteSelection.PALETTE_0;
 		else {
-			assert(paletteNumber == 1);
+			Utility.assert(paletteNumber == 1);
 			return PaletteSelection.PALETTE_1;
 		}
 	}
@@ -200,7 +200,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 					paletteSelection = PaletteSelection.PALETTE_1;
 					break;
 				default:
-					assert(false);
+					Utility.assert(false);
 					break;
 			}
 		}
@@ -338,7 +338,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				usedIndex.push(index);
 				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
 				const indexPop=usedIndex.shift()!;
-				assert(indexPop != undefined);
+				Utility.assert(indexPop != undefined);
 				ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
 		}
@@ -470,14 +470,14 @@ export class ZxNextSpritePatternsView extends BaseView {
 	protected createHtmlTable(): string {
 		// Create a string with the table itself.
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
-		assert(palette);
+		Utility.assert(palette);
 		let table = '';
 		let k = 0;
 		let count = this.patternIds.length;
 		for(const patternId of this.patternIds) {
 			count --;
 			const pattern = ZxNextSpritePatternsView.spritePatterns.get(patternId);
-			assert(pattern);
+			Utility.assert(pattern);
 			if(!pattern)
 				continue
 

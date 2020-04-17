@@ -1,10 +1,10 @@
-import * as assert from 'assert';
 import { Labels } from '../labels';
 import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
 import * as path from 'path';
+import {Log} from '../log';
 
 
 
@@ -621,7 +621,7 @@ export class Utility {
 				var index = 0;
 				valString += '\t';	// to replace also the last string
 				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
-					assert(tabSizeArr);
+					Utility.assert(tabSizeArr);
 					var tabSize = tabSizeArr![index].length;
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
@@ -651,7 +651,7 @@ export class Utility {
 		// Every register has a formatting otherwise it's not a valid register name
 		const reg=regIn.toUpperCase();
 		const format=formatMap.get(reg);
-		assert(format!=undefined, 'Register '+reg+' does not exist.');
+		Utility.assert(format!=undefined, 'Register '+reg+' does not exist.');
 
 		await Remote.getRegisters();
 		// Get value of register
@@ -780,7 +780,7 @@ export class Utility {
 	 * Sets the root path or absolute and relative file functions.
 	 * @param rootPath What e.g. vscode.workspace.rootPath would return
 	 */	public static setRootPath(rootPath: string) {
-		assert(rootPath);
+		Utility.assert(rootPath);
 		(Utility.rootPath as any)=rootPath;
 	}
 
@@ -939,6 +939,27 @@ export class Utility {
 		return buf;
 	}
 
+
+
+	/**
+	 * Own assert function that additionally does a log
+	 * in case of a wrong assumption.
+	 */
+	public static assert(test: any, message?: string) {
+		if (!test) {
+			try {
+				throw Error(message);
+			}
+			catch (err) {
+				// Log
+				Log.log(err.stack);
+				// Rethrow
+				throw err;
+			}
+		}
+	}
+
+
 	/**
 	 * An async function that waits for somee miliseconds.
 	 * @param ms time to wait in ms
@@ -997,3 +1018,4 @@ export class Utility {
 		return diffns;
 	}
 }
+

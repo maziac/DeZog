@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import {Utility} from '../../misc/utility';
 const{Transform}=require('stream')
 
 
@@ -30,7 +30,7 @@ export class DzrpParser extends Transform {
 	/// @param name Add a name for debugging purposes.
 	constructor(options={}, name?: string) {
 		super(options);
-		assert(options);
+		Utility.assert(options);
 
 		// Timeout
 		if ((options as any).timeout!=undefined)

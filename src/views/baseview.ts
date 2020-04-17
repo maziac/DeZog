@@ -1,5 +1,5 @@
-import * as assert from 'assert';
 import * as vscode from 'vscode';
+import {Utility} from '../misc/utility';
 
 
 
@@ -107,7 +107,7 @@ export class BaseView {
 	public disposeView() {
 		// Remove from list
 		const index=BaseView.staticViews.indexOf(this);
-		assert(index!==-1)
+		Utility.assert(index!==-1)
 		BaseView.staticViews.splice(index, 1);
 		// Do not use panel anymore
 		this.vscodePanel=undefined;

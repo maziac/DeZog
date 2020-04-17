@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as assert from 'assert';
 import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels';
@@ -699,7 +698,7 @@ export class Z80UnitTests {
 		const label = Z80UnitTests.utLabels[0];
 		// Calculate address
 		const address = Labels.getNumberForLabel(label) as number;
-		assert(address != undefined);
+		Utility.assert(address != undefined);
 
 		// Set timeout
 		if(!Z80UnitTests.debug) {
@@ -890,7 +889,7 @@ export class Z80UnitTests {
 		// Convert to filenames and line numbers.
 		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
 			const location = labels.getLocationOfLabel(label) as {file: string, lineNr: number};
-			assert(location);
+			Utility.assert(location);
 			return {label, file:Utility.getAbsFilePath(location.file), line:location.lineNr};
 		});
 		return labelFilesLines;

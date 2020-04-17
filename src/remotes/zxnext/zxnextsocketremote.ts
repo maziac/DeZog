@@ -1,4 +1,3 @@
-//import * as assert from 'assert';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';

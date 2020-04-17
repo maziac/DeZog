@@ -1,8 +1,8 @@
-import * as assert from 'assert';
 import { zSocket /*, ZesaruxSocket*/ } from './zesaruxsocket';
 //import { Z80RegistersClass } from '../z80registers';
 import {CpuHistoryClass} from '../cpuhistory';
 import {HistoryInstructionInfo, DecodeHistoryInfo} from '../decodehistinfo';
+import {Utility} from '../../misc/utility';
 
 
 
@@ -26,7 +26,7 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 	public getOpcodes(line: HistoryInstructionInfo): number {
 		if (this.pcContentsIndex<0) {
 			this.pcContentsIndex=line.indexOf('(PC)=');
-			assert(this.pcContentsIndex>=0);
+			Utility.assert(this.pcContentsIndex>=0);
 			this.pcContentsIndex+=5;
 		}
 		const opcodes=line.substr(this.pcContentsIndex, 8);
@@ -50,7 +50,7 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 	public getSPContent(line: string): number {
 		if (this.spContentsIndex<0) {
 			this.spContentsIndex=line.indexOf('(SP)=');
-			assert(this.spContentsIndex>=0);
+			Utility.assert(this.spContentsIndex>=0);
 			this.spContentsIndex+=5;
 		}
 		const spString=line.substr(this.spContentsIndex, 4);
@@ -110,7 +110,7 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	 */
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		return new Promise<string>(resolve => {
-			assert(index >= 0);
+			Utility.assert(index >= 0);
 			zSocket.send('cpu-history get ' + index, data => { // 'cpu-history get' starts at 0 too
 				if(data.substr(0,5).toLowerCase() == 'error')
 					resolve(undefined);

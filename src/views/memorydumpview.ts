@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
@@ -56,7 +55,7 @@ export class MemoryDumpView extends BaseView {
 		MemoryDumpView.MemoryViews.push(this);
 
 		// Handle hide/unhide -> update the register pointers.
-		assert(this.vscodePanel);
+		Utility.assert(this.vscodePanel);
         (this.vscodePanel as vscode.WebviewPanel).onDidChangeViewState(e => {
 			// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
 			this.setColorsForRegisterPointers();
@@ -72,7 +71,7 @@ export class MemoryDumpView extends BaseView {
 		// Remove from list
 		const arr = MemoryDumpView.MemoryViews;
 		const index = arr.indexOf(this);
-		assert(index >= 0);
+		Utility.assert(index >= 0);
 		arr.splice(index, 1);
 		// Do not use panel anymore
 		this.vscodePanel=undefined;

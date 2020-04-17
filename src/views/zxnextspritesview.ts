@@ -1,10 +1,10 @@
 
-import * as assert from 'assert';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
 import {ImageConvert} from '../imageconvert';
 import {WebviewPanel} from 'vscode';
+import {Utility} from '../misc/utility';
 
 
 
@@ -155,7 +155,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				if(start == undefined)
 					break;
 				let end = slotRanges.shift() || 0;
-				assert(end>0);
+				Utility.assert(end>0);
 				end += start;
 				for(let k=start; k<end; k++) {
 					if(k > 63)
@@ -166,7 +166,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		}
 
 		// Title
-		assert(this.vscodePanel);
+		Utility.assert(this.vscodePanel);
 		(this.vscodePanel as WebviewPanel).title = title;
 	}
 
@@ -252,12 +252,12 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Set the sprite bitmaps according to pattern, palette offset, mirroring and rotation.
 		const palette=ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
-		assert(palette);
+		Utility.assert(palette);
 		for (const sprite of this.sprites) {
 			if (!sprite)
 				continue;
 			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
-			assert(pattern);
+			Utility.assert(pattern);
 			// Get palette with offset
 			const offs=sprite.paletteOffset
 			let usedPalette;

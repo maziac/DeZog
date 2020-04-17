@@ -1,5 +1,3 @@
-//import * as assert from 'assert';
-//import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
 //import {ZxSimulationView} from '../zxsimulator/zxulascreenview';
 import {Utility} from '../../misc/utility';

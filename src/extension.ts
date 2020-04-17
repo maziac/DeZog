@@ -5,7 +5,6 @@ import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken 
 import { DebugSessionClass } from './debugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
-import * as assert from 'assert';
 import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
 import Lg = require("./log")
@@ -168,7 +167,7 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 
 		// make VS Code connect to debug server instead of launching debug adapter
 		const addrInfo = this._server.address() as Net.AddressInfo;
-		assert(typeof addrInfo != 'string');
+		Utility.assert(typeof addrInfo != 'string');
 		config.debugServer = addrInfo.port;
 
 		return config;

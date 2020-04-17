@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
@@ -113,7 +112,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Not used in cpu history.
 	 */
 	public pushCallStack(callstack: RefList<CallStackFrame>) {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -126,7 +125,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	// TODO: Maybe change to use index AND length to obtain several items at once.
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
-		assert(false);
+		Utility.assert(false);
 		return undefined;
 	}
 
@@ -553,7 +552,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * the first line.
 	 */
 	protected async handleReverseDebugStackBack(currentLine: string, prevLine: string): Promise<void> {
-		assert(currentLine);
+		Utility.assert(currentLine);
 
 		// Get some values
 		let sp=Z80Registers.decoder.parseSP(currentLine);
@@ -651,7 +650,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 					count-=2;
 					// get next frame if countRemove still > 0
 					frame=this.reverseDbgStack.last();
-					//assert(frame, 'back last');
+					//Utility.assert(frame, 'back last');
 				}
 			}
 		}
@@ -696,7 +695,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		try {
 			// Remember previous line
 			let prevLine=Z80Registers.getCache();
-			assert(prevLine);
+			Utility.assert(prevLine);
 			const currentLine=await this.revDbgPrev();
 			if (currentLine) {
 				// Stack handling:
@@ -743,8 +742,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @param nextLine The next line of the cpu history.
 	 */
 	protected handleReverseDebugStackForward(currentLine: string, nextLine: string) {
-		assert(currentLine);
-		assert(nextLine);
+		Utility.assert(currentLine);
+		Utility.assert(nextLine);
 
 		// Get some values
 		let sp=Z80Registers.decoder.parseSP(currentLine);
@@ -823,7 +822,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 		else {
 			// Use PC for checking
-			assert(expectedPC);
+			Utility.assert(expectedPC);
 			if (nextPC!=expectedPC)
 				interruptFound=true;
 		}
@@ -847,7 +846,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 					count-=2;
 					// get next frame if countRemove still > 0
 					frame=this.reverseDbgStack.last();
-					//assert(frame, 'fwrd last');
+					//Utility.assert(frame, 'fwrd last');
 				}
 			}
 		}
@@ -900,7 +899,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 			// Get current line
 			let currentLine: string=Z80Registers.getCache();
-			assert(currentLine);
+			Utility.assert(currentLine);
 
 			// Loop over all lines
 			while (this.running) {
@@ -953,7 +952,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		try {
 			// Loop over all lines, reverse
 			let prevLine=Z80Registers.getCache();
-			assert(prevLine);
+			Utility.assert(prevLine);
 			const pause=new TimeWait(1000, 10);
 			while (this.running) {
 				// Give vscode a little time
@@ -1001,7 +1000,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
-		assert(currentLine);
+		Utility.assert(currentLine);
 		let nextLine;
 
 		// Check for CALL/RST. If not do a normal step-into.
@@ -1084,7 +1083,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	public stepInto(): {instruction: string, breakReason: string|undefined} {		// Check for reverse debugging.
 		// Get current line
 		let currentLine=Z80Registers.getCache();
-		assert(currentLine);
+		Utility.assert(currentLine);
 		const pc=Z80Registers.decoder.parsePC(currentLine);
 		let nextLine;
 
@@ -1125,7 +1124,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
-		assert(currentLine);
+		Utility.assert(currentLine);
 		let nextLine;
 		const startSP=Z80Registers.getSP();
 		let breakReason;

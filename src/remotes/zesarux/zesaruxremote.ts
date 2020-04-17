@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import { zSocket, ZesaruxSocket } from './zesaruxsocket';
 import { Utility } from '../../misc/utility';
 import { Labels } from '../../labels';
@@ -331,8 +330,8 @@ export class ZesaruxRemote extends RemoteBase {
 	protected async getRegistersFromEmulator(): Promise<void>  {
 		// Check if in reverse debugging mode
 		// In this mode registersCache should be set and thus this function is never called.
-		assert(CpuHistory);
-		assert(!CpuHistory.isInStepBackMode());
+		Utility.assert(CpuHistory);
+		Utility.assert(!CpuHistory.isInStepBackMode());
 
 		return new Promise<void>(resolve => {
 			// Get new (real emulator) data
@@ -868,7 +867,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param enable Enable or disable the logpoints.
 	 */
 	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -1006,7 +1005,7 @@ export class ZesaruxRemote extends RemoteBase {
 			zSocket.send('disable-breakpoint '+bp.bpId, () => {
 				// Remove from list
 				let index=this.breakpoints.indexOf(bp);
-				assert(index!==-1, 'Breakpoint should be removed but does not exist.');
+				Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
 				this.breakpoints.splice(index, 1);
 				this.freeBreakpointIds.push(index);
 			});
@@ -1083,7 +1082,7 @@ export class ZesaruxRemote extends RemoteBase {
 				const retrieveSize=(size>chunkSize)? chunkSize:size;
 				zSocket.send('read-memory '+address+' '+retrieveSize, data => {
 					const len=data.length;
-					assert(len/2==retrieveSize);
+					Utility.assert(len/2==retrieveSize);
 					for (var i=0; i<len; i+=2) {
 						const valueString=data.substr(i, 2);
 						const value=parseInt(valueString, 16);

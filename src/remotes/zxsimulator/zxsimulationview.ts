@@ -1,10 +1,10 @@
-import * as assert from 'assert';
 import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
 import {ZxSimulatorRemote} from './zxsimremote';
 import {WebviewPanel} from 'vscode';
 import {Settings} from '../../settings';
+import {Utility} from '../../misc/utility';
 
 
 /**
@@ -65,7 +65,7 @@ export class ZxSimulationView extends BaseView {
 		ports.setPortValue(0x7FFE, 0xFF);
 
 		// Add title
-		assert(this.vscodePanel);
+		Utility.assert(this.vscodePanel);
 		(this.vscodePanel as WebviewPanel).title='Z80/ZX Spectrum Simulator';
 
 		// Initial html page.
@@ -109,7 +109,7 @@ export class ZxSimulationView extends BaseView {
 				this.keyChanged(message.key, message.value);
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 		}
 	}
 
@@ -181,9 +181,9 @@ export class ZxSimulationView extends BaseView {
 				port=0x7FFE;
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 		}
-		assert(port);
+		Utility.assert(port);
 
 		// Determine bit
 		let bit;
@@ -239,9 +239,9 @@ export class ZxSimulationView extends BaseView {
 				bit=0b10000;
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 		}
-		assert(bit);
+		Utility.assert(bit);
 
 		// Get port value
 		let value=this.simulator.zxPorts.getPortValue(port);

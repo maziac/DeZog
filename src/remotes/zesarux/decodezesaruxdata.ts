@@ -1,6 +1,5 @@
-import * as assert from 'assert';
-//import {RegisterData } from '../z80registers';
 import {DecodeRegisterData, RegisterData} from '../decodehistinfo';
+import {Utility} from '../../misc/utility';
 
 
 
@@ -71,7 +70,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		// Is 2-3 times faster than a regex
 		if (this.pcIndex<1000) {
 			this.pcIndex=data.indexOf('PC=');
-			assert(this.pcIndex>=0);
+			Utility.assert(this.pcIndex>=0);
 			this.pcIndex+=3;
 		}
 		const res=parseInt(data.substr(this.pcIndex, 4), 16);
@@ -81,7 +80,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseSP(data: RegisterData): number {
 		if(this.spIndex < 0) {
 			this.spIndex = data.indexOf('SP=');
-			assert(this.spIndex >= 0);
+			Utility.assert(this.spIndex >= 0);
 			this.spIndex += 3;
 		}
 		const res = parseInt(data.substr(this.spIndex,4),16);
@@ -91,7 +90,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseAF(data: RegisterData): number {
 		if(this.afIndex < 0) {
 			this.afIndex = data.indexOf('AF=');
-			assert(this.afIndex >= 0);
+			Utility.assert(this.afIndex >= 0);
 			this.afIndex += 3;
 		}
 		const res = parseInt(data.substr(this.afIndex,4),16);
@@ -101,7 +100,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseBC(data: RegisterData): number {
 		if(this.bcIndex < 0) {
 			this.bcIndex = data.indexOf('BC=');
-			assert(this.bcIndex >= 0);
+			Utility.assert(this.bcIndex >= 0);
 			this.bcIndex += 3;
 		}
 		const res = parseInt(data.substr(this.bcIndex,4),16);
@@ -111,7 +110,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseHL(data: RegisterData): number {
 		if(this.hlIndex < 0) {
 			this.hlIndex = data.indexOf('HL=');
-			assert(this.hlIndex >= 0);
+			Utility.assert(this.hlIndex >= 0);
 			this.hlIndex += 3;
 		}
 		const res = parseInt(data.substr(this.hlIndex,4),16);
@@ -121,7 +120,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseDE(data: RegisterData): number {
 		if(this.deIndex < 0) {
 			this.deIndex = data.indexOf('DE=');
-			assert(this.deIndex >= 0);
+			Utility.assert(this.deIndex >= 0);
 			this.deIndex += 3;
 		}
 		const res = parseInt(data.substr(this.deIndex,4),16);
@@ -131,7 +130,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseIX(data: RegisterData): number {
 		if(this.ixIndex < 0) {
 			this.ixIndex = data.indexOf('IX=');
-			assert(this.ixIndex >= 0);
+			Utility.assert(this.ixIndex >= 0);
 			this.ixIndex += 3;
 		}
 		const res = parseInt(data.substr(this.ixIndex,4),16);
@@ -141,7 +140,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseIY(data: RegisterData): number {
 		if(this.iyIndex < 0) {
 			this.iyIndex = data.indexOf('IY=');
-			assert(this.iyIndex >= 0);
+			Utility.assert(this.iyIndex >= 0);
 			this.iyIndex += 3;
 		}
 		const res = parseInt(data.substr(this.iyIndex,4),16);
@@ -151,7 +150,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseAF2(data: RegisterData): number {
 		if(this.af2Index < 0) {
 			this.af2Index = data.indexOf("AF'=");
-			assert(this.af2Index >= 0);
+			Utility.assert(this.af2Index >= 0);
 			this.af2Index += 4;
 		}
 		const res = parseInt(data.substr(this.af2Index,4),16);
@@ -161,7 +160,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseBC2(data: RegisterData): number {
 		if(this.bc2Index < 0) {
 			this.bc2Index = data.indexOf("BC'=");
-			assert(this.bc2Index >= 0);
+			Utility.assert(this.bc2Index >= 0);
 			this.bc2Index += 4;
 		}
 		const res = parseInt(data.substr(this.bc2Index,4),16);
@@ -171,7 +170,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseHL2(data: RegisterData): number {
 		if(this.hl2Index < 0) {
 			this.hl2Index = data.indexOf("HL'=");
-			assert(this.hl2Index >= 0);
+			Utility.assert(this.hl2Index >= 0);
 			this.hl2Index += 4;
 		}
 		const res = parseInt(data.substr(this.hl2Index,4),16);
@@ -181,7 +180,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseDE2(data: RegisterData): number {
 		if(this.de2Index < 0) {
 			this.de2Index = data.indexOf("DE'=");
-			assert(this.de2Index >= 0);
+			Utility.assert(this.de2Index >= 0);
 			this.de2Index += 4;
 		}
 		const res = parseInt(data.substr(this.de2Index,4),16);
@@ -191,7 +190,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseI(data: RegisterData): number {
 		if(this.iIndex < 0) {
 			this.iIndex = data.indexOf('I=');
-			assert(this.iIndex >= 0);
+			Utility.assert(this.iIndex >= 0);
 			this.iIndex += 2;
 		}
 		const res = parseInt(data.substr(this.iIndex,2),16);
@@ -201,7 +200,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseR(data: string): number {
 		if (this.rIndex<0) {
 			this.rIndex=data.indexOf('R=');
-			assert(this.rIndex>=0);
+			Utility.assert(this.rIndex>=0);
 			this.rIndex+=2;
 		}
 		const res=parseInt(data.substr(this.rIndex, 2), 16);
@@ -211,7 +210,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseIM(data: string): number {
 		if (this.imIndex<0) {
 			this.imIndex=data.indexOf('IM');
-			assert(this.imIndex>=0);
+			Utility.assert(this.imIndex>=0);
 			this.imIndex+=2;
 		}
 		const char=data.codePointAt(this.imIndex) as number;

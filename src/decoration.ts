@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { Labels, SourceFileEntry } from './labels';
 //import { Settings } from './settings';
-import * as assert from 'assert';
 import {Disassembly, DisassemblyClass} from './misc/disassembly';
+import {Utility} from './misc/utility';
 
 
 
@@ -311,7 +311,7 @@ export class DecorationClass {
 
 		// Get file map
 		const decoMap = this.decorationFileMaps.get(fileMapName) as DecorationFileMap;
-		assert(decoMap);
+		Utility.assert(decoMap);
 
 		// Get lines
 		const fileMap = decoMap.fileMap;

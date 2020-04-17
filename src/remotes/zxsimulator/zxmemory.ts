@@ -1,6 +1,6 @@
-import * as assert from 'assert';
 import {ImageConvert} from '../../imageconvert';
 import {MemBuffer} from '../../misc/membuffer';
+import {Utility} from '../../misc/utility';
 
 
 
@@ -118,7 +118,7 @@ export class ZxMemory {
 
 		// Create memory banks
 		const buffer=memBuffer.readArrayBuffer();
-		assert(buffer.length==this.AllBanksRam.byteLength);
+		Utility.assert(buffer.length==this.AllBanksRam.byteLength);
 		this.AllBanksRam.set(buffer);
 
 		// Clear visual memory
@@ -280,7 +280,7 @@ export class ZxMemory {
 		const bankAddr=addr&0x1FFF;
 		const bank=this.slots[slot];
 		const bankMem=this.banks[bank];
-		assert(bankMem);
+		Utility.assert(bankMem);
 		return [bankAddr, bankMem];
 	}
 	*/
@@ -378,7 +378,7 @@ export class ZxMemory {
 	 * @param block The block to write.
 	 */
 	public writeBank(bank: number, block: Buffer|Uint8Array) {
-		assert(block.length==ZxMemory.MEMORY_BANK_SIZE);
+		Utility.assert(block.length==ZxMemory.MEMORY_BANK_SIZE);
 		let ramAddr=bank*ZxMemory.MEMORY_BANK_SIZE;
 		this.AllBanksRam.set(block, ramAddr);
 	}

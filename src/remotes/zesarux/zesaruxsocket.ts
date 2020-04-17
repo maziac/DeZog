@@ -1,8 +1,8 @@
 import { Log, LogSocketCommands } from '../../log';
 import { Socket } from 'net';
 import { Settings } from '../../settings';
-import * as assert from 'assert';
 import { LogSocket } from '../../log';
+import {Utility} from '../../misc/utility';
 
 
 //import { setKeepAliveInterval } from 'net-keepalive';
@@ -256,7 +256,7 @@ export class ZesaruxSocket extends Socket {
 	 * @param handler Called with the response of the 'run' command.
 	 */
 	public sendInterruptableRunCmd(handler: (data) => void) {
-		assert(this.interruptableRunCmd == undefined);	// Only one interruptable
+		Utility.assert(this.interruptableRunCmd == undefined);	// Only one interruptable
 		// Create command entry
 		this.interruptableRunCmd = new CommandEntry('run', handler, false, NO_TIMEOUT);
 		// check if command can be sent right away

@@ -1,5 +1,4 @@
 
-import * as assert from 'assert';
 import {Z80RegistersClass, Z80_REG, Z80Registers} from './z80registers';
 import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
@@ -546,7 +545,7 @@ export class RemoteBase extends EventEmitter {
     * Override.
 	*/
 	public async getRegisters(): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -616,7 +615,7 @@ export class RemoteBase extends EventEmitter {
 	 * @return Promise with the "real" register value.
 	 */
 	public async setRegisterValue(register: string, value: number): Promise<number> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return 0;
 	}
 
@@ -818,7 +817,7 @@ export class RemoteBase extends EventEmitter {
 		// Check for reverse debugging.
 		if (CpuHistory.isInStepBackMode()) {
 			// Return virtual stack
-			assert(this.reverseDbgStack);
+			Utility.assert(this.reverseDbgStack);
 			return this.reverseDbgStack;
 		}
 		else {
@@ -846,7 +845,7 @@ export class RemoteBase extends EventEmitter {
 	 * reason contains the stop reason as string.
 	 */
 	public async continue(): Promise<{breakReasonString: string}> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return {breakReasonString: ''};
 	}
 
@@ -855,7 +854,7 @@ export class RemoteBase extends EventEmitter {
 	 * 'pause' the debugger.
 	 */
 	public async pause(): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -865,7 +864,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A string with the break reason. (Never undefined)
 	 */
 	public async reverseContinue(): Promise<string> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return "";
 	}
 
@@ -877,7 +876,7 @@ export class RemoteBase extends EventEmitter {
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
 	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return {
 			instruction: ""
 		};
@@ -893,7 +892,7 @@ export class RemoteBase extends EventEmitter {
 	 * end of the cpu history is reached.
 	 */
 	public async stepInto(): Promise<{instruction: string,breakReasonString?: string}> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return {
 			instruction: ""
 		};
@@ -906,7 +905,7 @@ export class RemoteBase extends EventEmitter {
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
 	public async stepOut(): Promise<{breakReasonString?: string}> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return {};
 	}
 
@@ -943,7 +942,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -953,7 +952,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param wp The watchpoint to renove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -980,7 +979,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -1008,7 +1007,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A promise that is called after the last watchpoint is set.
 	 */
 	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -1074,7 +1073,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		// return
 		return 0;
 	}
@@ -1085,7 +1084,7 @@ export class RemoteBase extends EventEmitter {
 	 * Breakpoint is removed at the Remote and removed from the 'breakpoints' array.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 
@@ -1189,7 +1188,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise in remote (emulator) dependend format.
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return "";
 	}
 
@@ -1201,7 +1200,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param handler(data, addr) The handler that receives the data. 'addr' gets the value of 'address'.
 	 */
 	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 		return new Uint8Array();
 	}
 
@@ -1212,7 +1211,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
-		assert(false);	// override this
+		Utility.assert(false);	// override this
 	}
 
 

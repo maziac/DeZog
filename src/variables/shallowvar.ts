@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 //import { Log } from './log';
 import { Labels } from '../labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
@@ -392,8 +391,8 @@ export class MemDumpByteVar extends ShallowVar {
 	 * Note: start, count are only used for arrays.
 	 */
 	public async getContent(start?: number, count?: number): Promise<Array<DebugProtocol.Variable>> {
-		assert(start!=undefined);
-		assert(count!=undefined);
+		Utility.assert(start!=undefined);
+		Utility.assert(count!=undefined);
 		var addr=this.addr+(start as number);
 		const size = this.size();
 		const memArray = new Array<DebugProtocol.Variable>();

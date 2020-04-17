@@ -1,5 +1,3 @@
-//import * as assert from 'assert';
-//import { CodeLocation } from './codelocation';
 import { NumberType, getNumberTypeAsString } from './numbertype';
 
 

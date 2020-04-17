@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import { Utility } from '../misc/utility';
 import { Settings } from '../settings';
 import {DecodeRegisterData, RegisterData} from './decodehistinfo';
@@ -232,7 +231,7 @@ export class Z80RegistersClass {
 				condTest=((flags&Z80RegistersClass.FLAG_S)!=0);
 				break;
 			default:
-				assert(false);	// Impossible.
+				Utility.assert(false);	// Impossible.
 		}
 
 		const ccIsTrue=(condTest==testSet);
@@ -284,7 +283,7 @@ export class Z80RegistersClass {
 		// Every register has a formatting otherwise it's not a valid register name
 		const reg = regIn.toUpperCase();
 		const format = formatMap.get(reg);
-		assert(format != undefined, 'Register ' + reg + ' does not exist.');
+		Utility.assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
 		// Get value of register
 		const value = this.decoder.getRegValueByName(reg, this.RegisterCache);
@@ -293,7 +292,7 @@ export class Z80RegistersClass {
 		let rLen = reg.length;
 		if (reg[rLen - 1] == '\'')--rLen;	// Don't count the "'" in the register name
 
-		assert(this.valid());
+		Utility.assert(this.valid());
 		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
 		return res;
 	}

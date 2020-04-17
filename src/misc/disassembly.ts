@@ -1,4 +1,3 @@
-import*as assert from 'assert';
 import {BaseMemory} from "../disassembler/basememory";
 import {Opcode, Opcodes} from "../disassembler/opcode";
 import {Format} from "../disassembler/format";
@@ -106,7 +105,7 @@ export class DisassemblyClass extends Disassembler {
 		// Write new memory
 		this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
 		const count=addresses.length;
-		assert(count==data.length);
+		Utility.assert(count==data.length);
 		for (let i=0; i<count; i++) {
 			this.setMemory(addresses[i], data[i]);
 		}

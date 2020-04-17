@@ -1,9 +1,6 @@
 import { readFileSync } from 'fs';
 import { BaseMemory, MAX_MEM_SIZE } from './basememory';
 
-//import * as util from 'util';
-//import * as assert from 'assert';
-
 
 
 /// Classification of memory addresses.

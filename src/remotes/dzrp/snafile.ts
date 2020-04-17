@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as fs from 'fs';
 import {Utility} from '../../misc/utility';
 import {MemBank16k} from './membank16k';
@@ -87,7 +86,7 @@ export class SnaFile {
 			this.memBanks.push(memBank);
 			index+=MemBank16k.BANK16K_SIZE;
 		}
-		assert(index==49179);
+		Utility.assert(index==49179);
 
 		// Check for 128k
 		if (snaBuffer.length<=index) {
@@ -103,7 +102,7 @@ export class SnaFile {
 		index+=2;
 		this.port7ffd=snaBuffer[index++];
 		this.trdosrom=snaBuffer[index++];
-		assert(index==49183);
+		Utility.assert(index==49183);
 
 		// Correct 3rd bank
 		const pagedInBank=this.port7ffd&0x03;

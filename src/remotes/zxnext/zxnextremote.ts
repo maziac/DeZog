@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
@@ -182,7 +181,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * Writes the buffer to the serial port.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -192,7 +191,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 */
 	protected receivedMsg(data: Buffer) {
 		// Safety check
-		assert(data);
+		Utility.assert(data);
 		// Log
 		const recSeqno=data[0];
 		//const respName=(recSeqno==0)? "Notification":"Response";
@@ -243,7 +242,7 @@ export class ZxNextRemote extends DzrpRemote {
 				}
 
 				// Adds breakReasonNumber (as number) if consumer is step-out.
-				assert(breakReasonString!=undefined);
+				Utility.assert(breakReasonString!=undefined);
 				// breakReasonString is aleways defined. The rest is additional info.
 				continueHandler({breakNumber, breakData, breakReasonString});
 			}
@@ -251,7 +250,7 @@ export class ZxNextRemote extends DzrpRemote {
 		else {
 			// Get latest sent message
 			const msg=this.messageQueue[0];
-			assert(msg);
+			Utility.assert(msg);
 			// Get sequence number
 			const seqno=msg.buffer[4];
 			// Check response
@@ -509,7 +508,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * Data will just be saved.
  	*/
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
-		assert(false);
+		Utility.assert(false);
 		return new Uint8Array();
 	}
 
@@ -520,7 +519,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @param The state data. Format is unknown (remote specific).
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		assert(false);
+		Utility.assert(false);
 	}
 
 
@@ -559,7 +558,7 @@ export class ZxNextRemote extends DzrpRemote {
  	*/
 	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
 		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES, [index, count]);
-		assert(count*5==buffer.length);
+		Utility.assert(count*5==buffer.length);
 		const sprites=new Array<Uint8Array>();
 		let p=0;
 		for (let i=0; i<count; i++) {
@@ -585,7 +584,7 @@ export class ZxNextRemote extends DzrpRemote {
 		// Send command to get memory dump
 		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITE_PATTERNS, [index, count]);
 		// Each pattern is 256 bytes, divide
-		assert(data.length==256*count);
+		Utility.assert(data.length==256*count);
 		const array=[...data];	// Convert to number array
 		const patterns=Array<Array<number>>();
 		for (let i=0; i<count; i++) {

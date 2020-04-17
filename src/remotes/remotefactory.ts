@@ -1,11 +1,10 @@
-
-import * as assert from 'assert';
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { RemoteBase } from './remotebase';
 import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
 import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
 //import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
 import {CSpectRemote} from './zxnext/cspectremote';
+import {Utility} from '../misc/utility';
 
 
 
@@ -33,10 +32,10 @@ export class RemoteFactory {
 				RemoteFactory.setEmulator(new ZxSimulatorRemote());
 				break;
 			case 'mame':
-				assert(false);	// needs to be implemented
+				Utility.assert(false);	// needs to be implemented
 				break;
 			default:
-				assert(false);
+				Utility.assert(false);
 				break;
 		}
 	}
