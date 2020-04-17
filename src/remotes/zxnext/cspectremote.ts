@@ -119,6 +119,7 @@ export class CSpectRemote extends ZxNextRemote {
 	 */
 	public async disconnect(): Promise<void> {
 		return new Promise<void>(resolve => {
+			this.socket.removeAllListeners();
 			this.socket.end(() => {
 				resolve();
 			});
@@ -135,6 +136,7 @@ export class CSpectRemote extends ZxNextRemote {
 	 */
 	public async terminate(): Promise<void> {
 		return new Promise<void>(resolve => {
+			this.socket.removeAllListeners();
 			this.socket.end(() => {
 				this.emit('terminated');
 				resolve();
