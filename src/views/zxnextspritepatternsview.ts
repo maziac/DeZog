@@ -338,8 +338,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 				usedIndex.push(index);
 				const spritePatterns=await Remote.getTbblueSpritePatterns(index, 1);
 				const indexPop=usedIndex.shift()!;
-				Utility.assert(indexPop != undefined);
-				ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
+				Utility.assert(indexPop!=undefined);
+				if(spritePatterns.length>0)
+					ZxNextSpritePatternsView.spritePatterns.set(indexPop, spritePatterns[0]);
 			}
 		}
 	}
@@ -488,10 +489,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 		let count = this.patternIds.length;
 		for(const patternId of this.patternIds) {
 			count --;
-			const pattern = ZxNextSpritePatternsView.spritePatterns.get(patternId);
-			Utility.assert(pattern);
-			if(!pattern)
-				continue
+			let pattern = ZxNextSpritePatternsView.spritePatterns.get(patternId);
+			if (!pattern) {
+				// Use empty image
+				pattern=new Array<number>(16*16);
+			}
 
 			// Start of table (note there are several tables next to each other).
 			if(k % 16 == 0) {

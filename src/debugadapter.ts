@@ -1928,8 +1928,8 @@ Notes:
 	 */
 	protected async evalSpritePatterns(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
-		if (Remote.machineType!=MachineType.TBBLUE)
-			throw new Error("Command is available only on tbblue (ZX Next).");
+	//	if (Remote.machineType!=MachineType.TBBLUE)
+	//		throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
 		let params: Array<number>|undefined=[];
@@ -2003,8 +2003,8 @@ Notes:
 	 */
 	protected async evalSprites(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
-		if (Remote.machineType!=MachineType.TBBLUE)
-			throw new Error("Command is available only on tbblue (ZX Next).");
+		//if (Remote.machineType!=MachineType.TBBLUE)
+		//	throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
 		let params: Array<number>|undefined;

@@ -1262,6 +1262,11 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getTbblueRegister(registerNr: number): Promise<number> {
 		return new Promise<number>(resolve => {
 			zSocket.send('tbblue-get-register '+registerNr, data => {
+				// Check for error
+				if (data.startsWith("ERROR")) {
+					resolve(0);
+					return;
+				}
 				// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
 				const valueString=data.substr(0, 2);
 				const value=parseInt(valueString, 16);
@@ -1281,16 +1286,19 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<Array<number>>(resolve => {
 			const paletteNrString=(paletteNr==0)? 'first':'second';
 			zSocket.send('tbblue-get-palette sprite '+paletteNrString+' 0 256', data => {
-				// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
 				const palette=new Array<number>(256);
-				for (let i=0; i<256; i++) {
-					const colorString=data.substr(i*4, 3);
-					const color=parseInt(colorString, 16);
-					// ZEsarUX sends the data as RRRGGGBBB, we need to
-					// change this first to RRRGGGBB, 0000000B.
-					palette[i]=(color>>>1);
-					if (color&0x01)
-						palette[i]+=0x100;
+				// Check for error
+				if (!data.startsWith("ERROR")) {
+					// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
+					for (let i=0; i<256; i++) {
+						const colorString=data.substr(i*4, 3);
+						const color=parseInt(colorString, 16);
+						// ZEsarUX sends the data as RRRGGGBBB, we need to
+						// change this first to RRRGGGBB, 0000000B.
+						palette[i]=(color>>>1);
+						if (color&0x01)
+							palette[i]+=0x100;
+					}
 				}
 				// Call handler
 				resolve(palette);
@@ -1306,6 +1314,11 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
 		return new Promise<{xl: number, xr: number, yt: number, yb: number}>(resolve => {
 			zSocket.send('tbblue-get-clipwindow sprite', data => {
+				// Check for error
+				if (data.startsWith("ERROR")) {
+					resolve({xl: 0, xr: 0, yt: 0, yb: 0});
+					return;
+				}
 				// Returns 4 decimal numbers, e.g. "0 175 0 192 "
 				const clip=data.split(' ');
 				const xl=parseInt(clip[0]);
@@ -1328,24 +1341,27 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
 		return new Promise<Array<Uint8Array>>(resolve => {
 			zSocket.send('tbblue-get-sprite '+slot+' '+count, data => {
-				// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
-				// "00 00 00 00"
-				// "00 00 00 00"
-				const spriteLines=data.split('\n');
 				const sprites=new Array<Uint8Array>();
-				for (const line of spriteLines) {
-					if (line.length==0)
-						continue;
-					// TODO: What about 5 byte sprite attributes
-					const sprite=new Uint8Array(5);
-					for (let i=0; i<5; i++) {
-						const attrString=line.substr(i*3, 2);
-						if (attrString.length>0) {
-							const attribute=parseInt(attrString, 16);
-							sprite[i]=attribute;
+				// Check for error
+				if (!data.startsWith("ERROR")) {
+					// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
+					// "00 00 00 00"
+					// "00 00 00 00"
+					const spriteLines=data.split('\n');
+					for (const line of spriteLines) {
+						if (line.length==0)
+							continue;
+						// TODO: What about 5 byte sprite attributes
+						const sprite=new Uint8Array(5);
+						for (let i=0; i<5; i++) {
+							const attrString=line.substr(i*3, 2);
+							if (attrString.length>0) {
+								const attribute=parseInt(attrString, 16);
+								sprite[i]=attribute;
+							}
 						}
+						sprites.push(sprite);
 					}
-					sprites.push(sprite);
 				}
 				// Call handler
 				resolve(sprites);
@@ -1363,19 +1379,22 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		return new Promise<Array<Array<number>>>(resolve => {
 			zSocket.send('tbblue-get-pattern '+index+' '+count, data => {
-				// Sprite patterns are returned one line per pattern, each line consist of
-				// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
-				const patternLines=data.split('\n');
-				patternLines.pop();	// Last element is a newline only
 				const patterns=new Array<Array<number>>();
-				for (const line of patternLines) {
-					const pattern=new Array<number>(256);
-					for (let i=0; i<256; i++) {
-						const attrString=line.substr(i*3, 2);
-						const attribute=parseInt(attrString, 16);
-						pattern[i]=attribute;
+				// Check for error
+				if (!data.startsWith("ERROR")) {
+					// Sprite patterns are returned one line per pattern, each line consist of
+					// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
+					const patternLines=data.split('\n');
+					patternLines.pop();	// Last element is a newline only
+					for (const line of patternLines) {
+						const pattern=new Array<number>(256);
+						for (let i=0; i<256; i++) {
+							const attrString=line.substr(i*3, 2);
+							const attribute=parseInt(attrString, 16);
+							pattern[i]=attribute;
+						}
+						patterns.push(pattern);
 					}
-					patterns.push(pattern);
 				}
 				// Call handler
 				resolve(patterns);
