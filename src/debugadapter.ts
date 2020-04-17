@@ -76,6 +76,17 @@ export class DebugSessionClass extends DebugSession {
 	/// regarding this file would be lost.
 	protected delayedDecorations=new Array<() => void>();
 
+	/// With pressing keys for stepping (i.e. F10, F11) it is possible to
+	/// e.g. enter the 'stepInRequest' while the previous stepIntRequest is not yet finished.
+	/// I.e. before a StoppedEvent is sent. With the GUI this is not possible
+	/// since the GUI disables the stepIn button. But it seems that
+	/// key presses are still allowed.
+	/// This variable here is set every time a step (or similar) is done.
+	/// And reset when the function is finished. Should some other similar
+	/// request happen a response is send but the request is ignored otherwise.
+	protected proccessingSteppingRequest=false;
+
+
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
@@ -1188,11 +1199,9 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Prints a text, the disassembly and the used T-states and time to the debug console.
-	 * Assumes that something like "StepInto" has been printed before.
-	 * If text is available output will start with a ":".
-	 * If not it will end with a ".".
-	 * @param disasm The corresponding disassembly.
+	 * Starts to print the step info. USe in conjunction with 'endStepInfo'.
+	 * Resets the t-states.
+	 * @param mainText E.g. "StepInto"
 	 */
 	protected async startStepInfo(mainText?: string): Promise<void> {
 		if(mainText)
@@ -1258,10 +1267,17 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
-		Decoration.clearBreak();
 		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
 
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
 		// Check for reverse debugging.
 		let result;
 		if (StepHistory.isInStepBackMode()) {
@@ -1279,7 +1295,6 @@ export class DebugSessionClass extends DebugSession {
 			// Step-Into
 			await this.startStepInfo('Step-into');
 			StepHistory.clear();
-			await Remote.resetTstates();
 			result=await Remote.stepInto();
 			// Display info
 			await this.endStepInfo(result.instruction);
@@ -1298,6 +1313,8 @@ export class DebugSessionClass extends DebugSession {
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		// Show decorations
 		StepHistory.emitHistory();
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 

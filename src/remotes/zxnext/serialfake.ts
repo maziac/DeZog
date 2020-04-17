@@ -302,7 +302,7 @@ export class SerialFake extends ZxSimulatorRemote {
 	 */
 	protected async sendDzrpNtf(seqno: number, data?: Buffer|Array<number>): Promise<void> {
 		// Calculate length
-		let len=2;
+		let len=1;
 		if (data) {
 			if (Array.isArray(data))
 				data=Buffer.from(data);	// Convert to Buffer if Array
@@ -318,9 +318,8 @@ export class SerialFake extends ZxSimulatorRemote {
 		buffer[3]=(len>>>24)&0xFF;
 		// Notification
 		buffer[4]=0;
-		buffer[5]=seqno;
 		// Copy data
-		data?.copy(buffer, 6);
+		data?.copy(buffer, 5);
 
 		// Send data
 		await this.serialPort.write(buffer);

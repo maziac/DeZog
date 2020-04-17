@@ -162,14 +162,15 @@ export class ZxNextRemote extends DzrpRemote {
 
 		try {
 			// Log
-			const seqno=msg.buffer[4];
-			const cmd: DZRP=msg.buffer[5];
-			const cmdName=DZRP[cmd];
-			LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
+			//const seqno=msg.buffer[4];
+			//const cmd: DZRP=msg.buffer[5];
+			//const cmdName=DZRP[cmd];
+			//LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
 			await this.sendBuffer(msg.buffer);
-			console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
+			//console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
 		}
 		catch (error) {
+			LogSocket.log("SENT ERROR.");
 			console.log("SENT ERROR.");
 			this.emit('error', error);
 		}
@@ -194,8 +195,8 @@ export class ZxNextRemote extends DzrpRemote {
 		assert(data);
 		// Log
 		const recSeqno=data[0];
-		const respName=(recSeqno==0)? "Notification":"Response";
-		LogSocket.log('<< '+respName+' (seqno='+recSeqno+')', data);
+		//const respName=(recSeqno==0)? "Notification":"Response";
+		//LogSocket.log('<<< '+respName+' (seqno='+recSeqno+')', data);
 
 		// Check for notification
 		if (recSeqno==0) {
@@ -256,6 +257,7 @@ export class ZxNextRemote extends DzrpRemote {
 			// Check response
 			if (recSeqno!=seqno) {
 				const error=Error("Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
+				LogSocket.log("Error: "+error);
 				this.emit('error', error);
 				return;
 			}
@@ -581,7 +583,7 @@ export class ZxNextRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		// Send command to get memory dump
-		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITE_PATTERNS, [0, index, count]);
+		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITE_PATTERNS, [index, count]);
 		// Each pattern is 256 bytes, divide
 		assert(data.length==256*count);
 		const array=[...data];	// Convert to number array
@@ -590,6 +592,11 @@ export class ZxNextRemote extends DzrpRemote {
 			const start=(i+index)*256;
 			const pattern=array.slice(start, start+256);
 			patterns.push(pattern);
+
+			for (let k=0; k<256; k++) {
+				if (pattern[k]!=0)
+					console.log("  cxxxxxxx ");
+			}
 		}
 		return patterns;
 	}

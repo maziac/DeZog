@@ -509,9 +509,8 @@ Response:
 Notification:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 6+n     | Length     |
+| 0     | 4    | 5+n     | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
-| 5     | 1    | 1-255 | Notification seq no |
 | 6     | 1    | 1     | NTF_PAUSE  |
 | 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other error, the error string might have useful information for the user |
 | 8     | 2    | 0/1-65535 | For breakpoints: Breakpoint ID or 0 if no breakpoint hit, for watchpoints: the address. |

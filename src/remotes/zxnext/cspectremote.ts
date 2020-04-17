@@ -1,4 +1,4 @@
-//import * as assert from 'assert';
+import * as assert from 'assert';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
@@ -9,6 +9,7 @@ import {MachineType} from '../remotebase';
 
 /// Timeouts.
 const CONNECTION_TIMEOUT=1000;	///< 1 sec
+const CHUNK_TIMEOUT=1000;	///< 1 sec
 //const QUIT_TIMEOUT=1000;	///< 1 sec
 
 
@@ -25,6 +26,14 @@ export class CSpectRemote extends ZxNextRemote {
 
 	// The socket connection.
 	public socket: Socket;
+
+	// To collect received chunks.
+	protected receivedData: Buffer;
+	protected expectedLength: number;
+	protected receivingHeader: boolean;
+
+	// Timeout between data chunks
+	protected chunkTimeout?: NodeJS.Timeout;
 
 
 	/// Constructor.
@@ -47,6 +56,11 @@ export class CSpectRemote extends ZxNextRemote {
 		// React on-open
 		this.socket.on('connect', async () => {
 			LogSocket.log('CSpectRemote: Connected to server!');
+
+			this.receivedData=new Buffer(0);
+			this.expectedLength=4;	// for length
+			this.receivingHeader=true;
+			this.stopChunkTimeout();
 
 			// Test
 			/*
@@ -89,15 +103,7 @@ export class CSpectRemote extends ZxNextRemote {
 
 		// Receive data
 		this.socket.on('data', data => {
-			// TODO: Need to implement receiving of small chunks.
-
-			const txt=this.dzrpRespBufferToString(data);
-			LogSocket.log('CSpectRemote: Received '+txt);
-			// Strip length
-			const length=data.length-4;
-			const strippedBuffer=new Buffer(length);
-			data.copy(strippedBuffer, 0, 4, data.length);
-			this.receivedMsg(strippedBuffer)
+			this.dataReceived(data);
 		});
 
 		// Start socket connection
@@ -136,6 +142,92 @@ export class CSpectRemote extends ZxNextRemote {
 		});
 	}
 
+	/**
+	 * Starts the chunk timeout.
+	 */
+	protected startChunkTimeout() {
+		this.stopChunkTimeout();
+		this.chunkTimeout=setTimeout(() => {
+			const err=new Error('Socket chunk timeout.');
+			// Log
+			LogSocket.log('Error: '+err.message);
+			// Error
+			this.emit('error', err);
+		}, CHUNK_TIMEOUT);
+	}
+
+
+	/**
+	 * Stops the chunk timeout.
+	 */
+	protected stopChunkTimeout() {
+		if (this.chunkTimeout)
+			clearTimeout(this.chunkTimeout);
+		this.chunkTimeout=undefined;
+	}
+
+
+	/**
+	 * Called when data has been received.
+	 */
+	protected dataReceived(data: Buffer) {
+		//LogSocket.log('dataReceived, count='+data.length);
+
+		// Add data to existing buffer
+		this.receivedData=Buffer.concat([this.receivedData, data]);
+
+		// While loop becasue there might be more than 1 message received
+		while (this.receivedData.length>0) {
+			// Check if still data to receive
+			if (this.receivedData.length<this.expectedLength) {
+				this.startChunkTimeout();
+				return;	// Wait for more
+			}
+
+			// Check length
+			if (this.receivingHeader) {
+				// Header has been received, read length
+				const buffer=this.receivedData;
+				let recLength=buffer[0];
+				recLength+=buffer[1]*256;
+				recLength+=buffer[2]*256*256;
+				recLength+=buffer[3]*256*256*256;
+				this.expectedLength=recLength+4;
+				this.receivingHeader=false;
+				// Check if all payload has been received
+				if (this.receivedData.length<this.expectedLength) {
+					this.startChunkTimeout();
+					return;	// Wait for more
+				}
+			}
+
+			// Complete message received.
+			this.stopChunkTimeout();
+
+			// Strip length
+			const length=this.expectedLength-4;
+			const strippedBuffer=new Buffer(length);
+			this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
+
+			// Log
+			const txt=this.dzrpRespBufferToString(this.receivedData);
+			LogSocket.log('<<< CSpectRemote: Received '+txt);
+
+			// Handle received buffer
+			this.receivedMsg(strippedBuffer);
+
+			// Prepare next buffer. Copy to many received bytes.
+			const overLength=this.receivedData.length-this.expectedLength;
+			assert(overLength>=0);
+			const nextBuffer=new Buffer(overLength);
+			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
+			this.receivedData=nextBuffer;
+			// Next header
+			this.expectedLength=4;
+			this.receivingHeader=true;
+		}
+	}
+
 
 	/**
 	 * Writes the buffer to the socket port.
@@ -147,7 +239,7 @@ export class CSpectRemote extends ZxNextRemote {
 			this.socket.setTimeout(3000);	// TODO: make timeout configurable
 			// Send data
 			const txt=this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('CSpectRemote: Sending '+txt);
+			LogSocket.log('>>> CSpectRemote: Sending '+txt);
 			this.socket.write(buffer, () => {
 					resolve();
 			});
