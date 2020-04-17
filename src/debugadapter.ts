@@ -1528,7 +1528,9 @@ export class DebugSessionClass extends DebugSession {
 				}
 			}
 			catch (err) {
-				const output="Error: "+err.message;
+				let output="Error";
+				if (err.message)
+					output+=': '+err.message;
 				this.sendEvalResponse(output, response);
 			}
 			return;

@@ -622,14 +622,9 @@ export class ZxNextRemote extends DzrpRemote {
 		const array=[...data];	// Convert to number array
 		const patterns=Array<Array<number>>();
 		for (let i=0; i<count; i++) {
-			const start=(i+index)*256;
+			const start=i*256;
 			const pattern=array.slice(start, start+256);
 			patterns.push(pattern);
-
-			for (let k=0; k<256; k++) {
-				if (pattern[k]!=0)
-					console.log("  cxxxxxxx ");
-			}
 		}
 		return patterns;
 	}

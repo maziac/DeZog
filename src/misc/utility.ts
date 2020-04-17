@@ -916,8 +916,8 @@ export class Utility {
 
 		let result="";
 		let printCount=count;
-		if (printCount>20)
-			printCount=20;
+		if (printCount>300)
+			printCount=300;
 		for (let i=0; i<printCount; i++)
 		result+=data[i+start].toString()+" ";
 		if (printCount!=count)
@@ -952,7 +952,7 @@ export class Utility {
 			}
 			catch (err) {
 				// Log
-				Log.log(err.stack);
+				Log.log('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n'+err.stack+'\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
 				// Rethrow
 				throw err;
 			}

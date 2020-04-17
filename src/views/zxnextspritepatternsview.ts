@@ -318,7 +318,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 
 	/**
-	 * Retrieves the sprite patterns from the emulator.
+	 * Retrieves the sprite patterns from the Remote.
 	 * It knows which patterns to request from the loaded sprites.
 	 * And it requests only that data that has not been requested before.
 	  */
