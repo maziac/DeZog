@@ -298,7 +298,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);
 				break;
 		}
-			// Get palette
+		// Get palette
 		const paletteArray=await Remote.getTbblueSpritesPalette(paletteNumber);
 		// Convert bits to single numbers
 		const loadedPalette = new Array<number>(3*256);
@@ -310,7 +310,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Green
 			loadedPalette[k++] = (color << 3) & 0b11100000;
 			// Blue
-			loadedPalette[k++] = ((color << 6) & 0b11000000) | ((color >>> 3) & 0b00100000);
+			loadedPalette[k++] = ((color << 6) & 0b11000000) + ((color >>> 3) & 0b00100000);
 		}
 		// Store
 		ZxNextSpritePatternsView.staticSetPaletteForPaletteNumber(paletteNumber, loadedPalette);

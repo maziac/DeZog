@@ -1286,7 +1286,11 @@ export class ZesaruxRemote extends RemoteBase {
 				for (let i=0; i<256; i++) {
 					const colorString=data.substr(i*4, 3);
 					const color=parseInt(colorString, 16);
-					palette[i]=color;
+					// ZEsarUX sends the data as RRRGGGBBB, we need to
+					// change this first to RRRGGGBB, 0000000B.
+					palette[i]=(color>>>1);
+					if (color&0x01)
+						palette[i]+=0x100;
 				}
 				// Call handler
 				resolve(palette);

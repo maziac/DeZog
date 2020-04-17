@@ -3,6 +3,7 @@
 # 1.2.2
 - CSpect: timeout error if no response received.
 - Fixed: "TypeError: cannot read property 'getObject' of undefined"
+- ZEsarUX: Sprite palette colors corrected.
 
 # 1.2.1
 - Renamed "Memory Pages" to "Slots".
