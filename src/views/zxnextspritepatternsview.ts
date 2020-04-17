@@ -471,7 +471,19 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Create a string with the table itself.
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
-		let table = '';
+		let table=`
+<style>
+	.classPattern {
+		width:auto;
+		height:3em;
+	}
+	.classImg {
+		image-rendering:pixelated;
+		width:auto;
+		height:3em;
+	}
+</style>
+`;
 		let k = 0;
 		let count = this.patternIds.length;
 		for(const patternId of this.patternIds) {
@@ -486,12 +498,16 @@ export class ZxNextSpritePatternsView extends BaseView {
 				table += `<table style="text-align:center; float:left" border="1"
 					cellpadding="0">
 					<colgroup>
-						<col width="35em">
-						<col width="35em">
+						<col>
+						<col>
+						<col>
+						<col>
 					</colgroup>
 					<tr>
 						<th>Index</th>
-						<th>Pattern</th>
+						<th>8bit Pattern</th>
+						<th>4bit N6=0</th>
+						<th>4bit N6=1</th>
 					</tr>
 				`;
 			}
@@ -499,10 +515,22 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// The cells
 			table += '<tr>\n<td>' + patternId + '</td>\n'
 			// Sprite image - convert to base64
-			const buf = Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
-			// Convert to base64
-			const base64String = buf.toString('base64');
-			table += ' <td class="classPattern"><img src="data:image/gif;base64,' + base64String + '"></td>\n</tr>\n\n';
+			const buf=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+
+			// Convert 8bit Pattern to base64
+			const base64String8b=buf.toString('base64');
+			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String8b+'"></td>\n';
+
+			// Convert 8bit Pattern to base64
+			const base64String4b0=buf.toString('base64');
+			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b0+'"></td>\n';
+
+			// Convert 8bit Pattern to base64
+			const base64String4b1=buf.toString('base64');
+			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b1+'"></td>\n';
+
+			// End of row
+			table+='</tr>\n\n';
 
 			// end of table
 			if((k % 16 == 15) || (count == 0)) {
