@@ -4,6 +4,8 @@
 - Renamed "Memory Pages" to "Slots".
 - Added forgotten Z80N instructions.
 - Fixed bug in sprite patterns display.
+- Log of assertions now under 'DeZog' output.
+- Fixed bug with repetitive StepIntos (and others) via key (F11).
 
 # 1.2.0
 - Basic CSpect support.

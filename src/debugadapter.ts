@@ -995,8 +995,16 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	public async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): Promise<void> {
-		Decoration.clearBreak();
+		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
 
 		// Check for reverse debugging.
 		if (StepHistory.isInStepBackMode()) {
@@ -1021,6 +1029,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// Show decorations
 		StepHistory.emitHistory();
+
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 
@@ -1102,9 +1113,17 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
-		Decoration.clearBreak();
 		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
+
 		// Output
 		vscode.debug.activeDebugConsole.appendLine('Continue reverse');
 
@@ -1122,6 +1141,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// Show decorations
 		StepHistory.emitHistory();
+
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 
@@ -1161,10 +1183,16 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
-		Decoration.clearBreak();
-
 		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
 
 		// Check for reverse debugging.
 		if (StepHistory.isInStepBackMode()) {
@@ -1194,6 +1222,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// Show decorations
 		StepHistory.emitHistory();
+
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 
@@ -1271,12 +1302,12 @@ export class DebugSessionClass extends DebugSession {
 		// Check if already processing other request
 		if (this.proccessingSteppingRequest)
 			return;
-
 		// Start processing
 		this.proccessingSteppingRequest=true;
 
 		// Clear decorations
 		Decoration.clearBreak();
+
 		// Check for reverse debugging.
 		let result;
 		if (StepHistory.isInStepBackMode()) {
@@ -1312,6 +1343,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		// Show decorations
 		StepHistory.emitHistory();
+
 		// End processing
 		this.proccessingSteppingRequest=false;
 	}
@@ -1323,9 +1355,16 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
-		Decoration.clearBreak();
 		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
 
 		// Check for reverse debugging.
 		let breakReasonString;
@@ -1360,6 +1399,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// Show decorations
 		StepHistory.emitHistory();
+
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 
@@ -1369,9 +1411,16 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
-		Decoration.clearBreak();
-		// Response
+		// Response is sent immediately
 		this.sendResponse(response);
+		// Check if already processing other request
+		if (this.proccessingSteppingRequest)
+			return;
+		// Start processing
+		this.proccessingSteppingRequest=true;
+
+		// Clear decorations
+		Decoration.clearBreak();
 
 		// Step back
 		const result=await StepHistory.stepBack();
@@ -1393,6 +1442,9 @@ export class DebugSessionClass extends DebugSession {
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		// Show decorations
 		StepHistory.emitHistory();
+
+		// End processing
+		this.proccessingSteppingRequest=false;
 	}
 
 
