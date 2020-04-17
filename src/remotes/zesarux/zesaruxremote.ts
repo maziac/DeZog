@@ -3,7 +3,7 @@ import { Utility } from '../../misc/utility';
 import { Labels } from '../../labels';
 import { Settings } from '../../settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
-import {RemoteBase, MachineType, RemoteBreakpoint, MemoryBank } from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, MemoryBank } from '../remotebase';
 import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
@@ -180,23 +180,6 @@ export class ZesaruxRemote extends RemoteBase {
 						this.emit('error', err);
 						return;
 					}
-				});
-
-				zSocket.send('get-current-machine', data => {
-					const machine = data.toLowerCase();
-					// Determine which ZX Spectrum it is, e.g. 48K, 128K
-					if(machine.indexOf('80') >= 0)
-						this.machineType = MachineType.ZX80;
-					else if(machine.indexOf('81') >= 0)
-						this.machineType = MachineType.ZX81;
-					else if(machine.indexOf('16k') >= 0)
-						this.machineType = MachineType.SPECTRUM16K;
-					else if(machine.indexOf('48k') >= 0)
-						this.machineType = MachineType.SPECTRUM48K;
-					else if(machine.indexOf('128k') >= 0)
-						this.machineType = MachineType.SPECTRUM128K;
-					else if(machine.indexOf('tbblue') >= 0)
-						this.machineType = MachineType.TBBLUE;
 				});
 
 				// Allow extensions

@@ -42,57 +42,6 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
 }
 
 
-/// The machine type, e.g. ZX81, Spectrum 16k, Spectrum 128k, etc.
-/// NOT USED:
-export enum MachineType {
-	UNKNOWN=0,
-	ZX80,
-	ZX81,
-	SPECTRUM16K,
-	SPECTRUM48K,
-	SPECTRUM128K,
-	TBBLUE
-
-	/*
-		MK14     MK14
-		ZX80     ZX-80
-		ZX81     ZX-81
-		16k      Spectrum 16k
-		48k      Spectrum 48k
-		128k     Spectrum 128k
-		QL       QL
-		P2       Spectrum +2
-		P2F      Spectrum +2 (French)
-		P2S      Spectrum +2 (Spanish)
-		P2A40    Spectrum +2A (ROM v4.0)
-		P2A41    Spectrum +2A (ROM v4.1)
-		P2AS     Spectrum +2A (Spanish)
-		P340     Spectrum +3 (ROM v4.0)
-		P341     Spectrum +3 (ROM v4.1)
-		P3S      Spectrum +3 (Spanish)
-		TS2068   Timex TS 2068
-		Inves    Inves Spectrum+
-		48ks     Spectrum 48k (Spanish)
-		128ks    Spectrum 128k (Spanish)
-		TK90X    Microdigital TK90X
-		TK90XS   Microdigital TK90X (Spanish)
-		TK95     Microdigital TK95
-		Z88      Cambridge Z88
-		Sam      Sam Coupe
-		Pentagon Pentagon
-		Chloe140 Chloe 140 SE
-		Chloe280 Chloe 280 SE
-		Chrome   Chrome
-		Prism    Prism
-		ZXUNO    ZX-Uno
-		TSConf   ZX-Evolution TS-Conf
-		TBBlue   TBBlue/ZX Spectrum Next
-		ACE      Jupiter Ace
-		CPC464   Amstrad CPC 464
-		*/
-
-}
-
 
 /// Definition of one memory bank, i.e. memory slot/bank relationship.
 export interface MemoryBank {
@@ -138,9 +87,6 @@ export class RemoteBase extends EventEmitter {
 
 	// Maximum stack items to handle.
 	static MAX_STACK_ITEMS=100;
-
-	/// The machine type, e.g. 48k or 128k etc.
-	public machineType=MachineType.UNKNOWN;
 
 	/// The top of the stack. Used to limit the call stack.
 	public topOfStack: number;

@@ -5,7 +5,7 @@ import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEve
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels';
 import {Log, LogSocket} from './log';
-import {RemoteBreakpoint, MachineType} from './remotes/remotebase';
+import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
@@ -1927,9 +1927,6 @@ Notes:
  	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalSpritePatterns(tokens: Array<string>): Promise<string> {
-		// First check for tbblue
-	//	if (Remote.machineType!=MachineType.TBBLUE)
-	//		throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
 		let params: Array<number>|undefined=[];
@@ -2003,8 +2000,6 @@ Notes:
 	 */
 	protected async evalSprites(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
-		//if (Remote.machineType!=MachineType.TBBLUE)
-		//	throw new Error("Command is available only on tbblue (ZX Next).");
 		// Evaluate arguments
 		let title;
 		let params: Array<number>|undefined;
