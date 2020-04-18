@@ -200,7 +200,7 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Takes a breakpoint and checks if it'S condition is true and if
+	 * Takes a breakpoint and checks if it's condition is true and if
 	 * log needs to be done.
 	 * @param bp The GenericBreakpoint.
 	 * @returns [condition, log]
@@ -218,6 +218,7 @@ export class DzrpRemote extends RemoteBase {
 				const evalCond=Utility.evalExpression(bp.condition, true);
 				if (evalCond!=0)
 					return {condition: bp.condition, log: bp.log};
+				return {condition: undefined, log: bp.log};
 			}
 			else {
 				// No condition
@@ -301,7 +302,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * This method should be called after a step (stepOver, stepInto, stepOut,
 	 * continue) is called.
-	 * It will clear e.g. the register and teh call stack cache.
+	 * It will clear e.g. the register and the call stack cache.
 	 * So that the next time they are accessed they are immediately refreshed.
 	 */
 	protected postStep() {
