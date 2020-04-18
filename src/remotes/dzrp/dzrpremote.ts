@@ -323,7 +323,7 @@ export class DzrpRemote extends RemoteBase {
 	 * than another 'continue' is sent.
 	 */
 	public async continue(): Promise<{breakReasonString: string}> {
-		return new Promise<{breakReasonString: string}>(resolve => {
+		return new Promise<{breakReasonString: string}>(async resolve => {
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
 				try {
@@ -370,17 +370,22 @@ export class DzrpRemote extends RemoteBase {
 					else {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+						// Clear registers
+						this.postStep();
 						// return
 						resolve({breakReasonString});
 					}
 				}
 				catch (e) {
+					// Clear registers
+					this.postStep();
 					resolve({breakReasonString: e});
 				}
 			};
 
-			// Clear registers
-			this.postStep();
+			// Pre action
+			await this.preStep();
+
 			// Send 'run' command
 			this.sendDzrpCmdContinue();
 		});
