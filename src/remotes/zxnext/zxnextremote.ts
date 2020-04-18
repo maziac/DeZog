@@ -233,7 +233,7 @@ export class ZxNextRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			const breakNumber=data[2];
-			const breakData=Utility.getWord(data, 4);
+			const breakData=Utility.getWord(data, 3);
 			/*
 			// Check if called by step-out.
 			if (this.stepOutHandler) {

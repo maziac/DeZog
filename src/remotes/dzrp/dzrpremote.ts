@@ -257,8 +257,12 @@ export class DzrpRemote extends RemoteBase {
 					condition=condition.substr(0, condition.length-1);	// cut off trailing ")"
 					reasonString="ASSERT ";
 				}
-				else
-					reasonString="Breakpoint. ";
+				else {
+					if(breakReasonString)
+						reasonString="";
+					else
+						reasonString="Breakpoint. ";
+				}
 				break;
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
