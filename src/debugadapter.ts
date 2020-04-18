@@ -75,6 +75,10 @@ export class DebugSessionClass extends DebugSession {
 	/// regarding this file would be lost.
 	protected delayedDecorations=new Array<() => void>();
 
+	/// Set to true if pause has been requested.
+	/// Used in stepOver.
+	protected pauseRequested=false;
+
 	/// With pressing keys for stepping (i.e. F10, F11) it is possible to
 	/// e.g. enter the 'stepInRequest' while the previous stepIntRequest is not yet finished.
 	/// I.e. before a StoppedEvent is sent. With the GUI this is not possible
@@ -1005,6 +1009,9 @@ export class DebugSessionClass extends DebugSession {
 		// Start processing
 		this.proccessingSteppingRequest=true;
 
+		// Reset pause request
+		this.pauseRequested=false;
+
 		// Clear decorations
 		Decoration.clearBreak();
 
@@ -1099,6 +1106,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): void {
+		this.pauseRequested=true;
 		// Pause the remote or the history
 		if (StepHistory.isInStepBackMode())
 			StepHistory.pause();
@@ -1122,6 +1130,9 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		// Start processing
 		this.proccessingSteppingRequest=true;
+
+		// Reset pause request
+		this.pauseRequested=false;
 
 		// Clear decorations
 		Decoration.clearBreak();
@@ -1151,14 +1162,12 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Step over.
-	 * Called from UI (vscode) and from the unit tests.
+	 * Used only by the unit tests.
 	 */
-	public async emulatorStepOver(): Promise<void> {
-		Decoration.clearBreak();
+	public async emulatorOneStepOver(): Promise<void> {
 		StepHistory.clear();
 
 		// Normal Step-Over
-		await this.startStepInfo('Step-over');
 		const result=await Remote.stepOver();
 
 		// Display T-states and time
@@ -1193,34 +1202,102 @@ export class DebugSessionClass extends DebugSession {
 		// Start processing
 		this.proccessingSteppingRequest=true;
 
+		// Reset pause request
+		this.pauseRequested=false;
+
 		// Clear decorations
 		Decoration.clearBreak();
 
-		// Check for reverse debugging.
-		if (StepHistory.isInStepBackMode()) {
+		// Print
+		vscode.debug.activeDebugConsole.append('Step-over');
 
-			// Stepover
-			const {instruction, breakReasonString}=StepHistory.stepOver();
-			// Print
-			let text='Step-over';
-			if (instruction)
-				text+=': '+instruction;
-			vscode.debug.activeDebugConsole.appendLine(text);
+		// T-states info
+		const stepBackMode=StepHistory.isInStepBackMode();
+		if (!stepBackMode) {
+			await this.startStepInfo();
+		}
 
-			// Check for output.
-			if (breakReasonString) {
-				vscode.debug.activeDebugConsole.appendLine(breakReasonString);
-				// Show break reason
-				this.decorateBreak(breakReasonString);
+		// The stepOver should also step over macros, fake instructions, several instruction on the same line.
+		// Therefore the stepOver is repeated until really a new
+		// file/line correspondents to the PC value.
+		Remote.getRegisters();
+		const prevPc=Remote.getPC();
+		const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
+		let i=0;
+		let instr;
+		let breakReason;
+		while (true) {
+			i++;
+
+			// Check for reverse debugging.
+			if (stepBackMode) {
+				// Stepover
+				const {instruction, breakReasonString}=StepHistory.stepOver();
+				instr=instruction;
+
+				// Check for output.
+				if (breakReasonString) {
+					breakReason=breakReasonString;
+					// Stop
+					break;
+				}
 			}
-			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			else {
+				// Normal Step-Over
+				const result=await Remote.stepOver();
+				instr=result.instruction;
+				// Check for output.
+				if (result.breakReasonString) {
+					breakReason=result.breakReasonString;
+					// Stop
+					break;
+				}
+			}
 
+			// Check for pause request
+			if (this.pauseRequested) {
+				breakReason="Manual break";
+				// Stop
+				break;
+			}
+
+			// Get new file/line location
+			await Remote.getRegisters();
+			const nextPc=Remote.getPC();
+			const nextFileLoc=Labels.getFileAndLineForAddress(nextPc);
+			// Compare with start location
+			if (prevFileLoc.fileName=='')
+				break;
+			if (nextFileLoc.lineNr!=prevFileLoc.lineNr)
+				break;
+			if (nextFileLoc.fileName!=prevFileLoc.fileName)
+				break;
+		}
+
+		// Multiple instructions
+		if (i>1)
+			instr=undefined;
+
+		// PRint instruction
+		if (stepBackMode) {
+			vscode.debug.activeDebugConsole.appendLine(instr||"");
 		}
 		else {
-			// Normal Step-Over
-			await this.emulatorStepOver();	// Sends stopped request.
+			// Display T-states and time
+			await this.endStepInfo(instr);
+			// Update memory dump etc.
+			await this.update({step: true});
 		}
+
+		// Check for output.
+		if (breakReason) {
+			// Show break reason
+			vscode.debug.activeDebugConsole.appendLine(breakReason);
+			this.decorateBreak(breakReason);
+		}
+
+		// Send event
+		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 
 		// Show decorations
 		StepHistory.emitHistory();
@@ -1307,6 +1384,9 @@ export class DebugSessionClass extends DebugSession {
 		// Start processing
 		this.proccessingSteppingRequest=true;
 
+		// Reset pause request
+		this.pauseRequested=false;
+
 		// Clear decorations
 		Decoration.clearBreak();
 
@@ -1365,6 +1445,9 @@ export class DebugSessionClass extends DebugSession {
 		// Start processing
 		this.proccessingSteppingRequest=true;
 
+		// Reset pause request
+		this.pauseRequested=false;
+
 		// Clear decorations
 		Decoration.clearBreak();
 
@@ -1420,6 +1503,9 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		// Start processing
 		this.proccessingSteppingRequest=true;
+
+		// Reset pause request
+		this.pauseRequested=false;
 
 		// Clear decorations
 		Decoration.clearBreak();

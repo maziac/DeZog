@@ -70,7 +70,7 @@ export class DzrpRemote extends RemoteBase {
 	protected continueResolve?: ({breakNumber, breakData, breakReasonString}) => void;
 
 	// This flag is used to pause a step-out.
-	protected pauseStepOut=false;
+	protected pauseStep=false;
 
 	/// Constructor.
 	/// Override this.
@@ -386,8 +386,8 @@ export class DzrpRemote extends RemoteBase {
 	 * 'pause' the debugger.
 	 */
 	public async pause(): Promise<void> {
-		// Set this flag to pause a stepOut
-		this.pauseStepOut=true;
+		// Set this flag to pause a stepOut etc
+		this.pauseStep=true;
 		// Send 'run' command
 		await this.sendDzrpCmdPause();
 	}
@@ -453,7 +453,7 @@ export class DzrpRemote extends RemoteBase {
 			// Do pre-step
 			await this.preStep();
 			// Reset flag
-			this.pauseStepOut=false;
+			this.pauseStep=false;
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp=startSp;
@@ -474,7 +474,7 @@ export class DzrpRemote extends RemoteBase {
 				releaseMutex=await mutex.acquire();
 
 				// Check if user breaked
-				if (this.pauseStepOut) {
+				if (this.pauseStep) {
 					// User pressed pause
 					breakReason="Manual break";
 					break;

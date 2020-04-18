@@ -817,7 +817,7 @@ export class Z80UnitTests {
 			}
 			// Do a step
 			Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
-			da.emulatorStepOver();	// await not needed
+			da.emulatorOneStepOver();	// await not needed
 			return;
 		}
 

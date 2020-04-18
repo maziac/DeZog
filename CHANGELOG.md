@@ -5,6 +5,7 @@
 - Fixed: "TypeError: cannot read property 'getObject' of undefined"
 - ZEsarUX: Sprite palette colors corrected.
 - CSpect: Improved RST 08 StepOver/Into handling.
+- General stepOver improvement: stepOver now steps over whole line, e.g. macros, fake instructions, several instruction on one line.
 
 # 1.2.1
 - Renamed "Memory Pages" to "Slots".
