@@ -4,6 +4,7 @@
 - CSpect: timeout error if no response received.
 - Fixed: "TypeError: cannot read property 'getObject' of undefined"
 - ZEsarUX: Sprite palette colors corrected.
+- CSpect: Improved RST 08 StepOver/Into handling.
 
 # 1.2.1
 - Renamed "Memory Pages" to "Slots".

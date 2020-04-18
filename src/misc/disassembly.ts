@@ -70,7 +70,7 @@ export class DisassemblyClass extends Disassembler {
 		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
 		// Setup configuration.
 		if (Settings.launch.disassemblerArgs.esxdosRst) {
-			//Extend 'rst 8' opcode for esxdos
+			// Extend 'rst 8' opcode for esxdos
 			Opcodes[0xCF].appendToOpcode(",#n");
 		}
 	}

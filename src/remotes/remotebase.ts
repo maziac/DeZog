@@ -1356,8 +1356,25 @@ export class RemoteBase extends EventEmitter {
 		let bpAddr2;
 		const ocFlags=opcode.flags;
 
+		// Special handling for RST 08 (esxdos) as stepInto may not work
+		// if the emulator simulates this.
+		if (opcode.code==0xCF) {
+			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
+			if (stepOver) {
+				// For stepOver nothing is required normally.
+				// However, as we have a spare breakpoint (bpAddr2),
+				// we can set it to the next PC. So that even if
+				// esxdosRst was not set a stepOver would stop.
+				bpAddr1=pc+1;
+				bpAddr2=bpAddr1+1;
+			}
+			else {
+				// If stepInto we need a breakpoint at the jump address 8 (RST 08) but also the bpAddr1 if call is simulated.
+				bpAddr2=0x0008;
+			}
+		}
 		// Check for RET
-		if (ocFlags&OpcodeFlag.RET) {
+		else if (ocFlags&OpcodeFlag.RET) {
 			const sp=this.getRegisterValue("SP");
 			// Get return address
 			const retArr=await this.readMemoryDump(sp, 2);
