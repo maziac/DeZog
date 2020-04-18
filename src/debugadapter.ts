@@ -996,6 +996,23 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Checks if lite history is used.
+	 * If so it stores the history.
+	 */
+	protected async checkAndStoreLiteHistory(): Promise<void> {
+		if (!(CpuHistory as any)) {
+			// Store as (lite step history)
+			// Make sure registers and callstack exist.
+			await Remote.getRegisters();
+			const regsCache=Z80Registers.getCache();
+			StepHistory.pushHistoryInfo(regsCache);
+			const callStack=await Remote.getCallStack();
+			StepHistory.pushCallStack(callStack);
+		}
+	}
+
+
+	/**
 	  * vscode requested 'continue'.
 	  * @param response
 	  * @param args
@@ -1032,6 +1049,8 @@ export class DebugSessionClass extends DebugSession {
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 		}
 		else {
+			// Check if lite history need to be stored.
+			this.checkAndStoreLiteHistory();
 			// Normal operation
 			await this.remoteContinue();
 		}
@@ -1208,14 +1227,21 @@ export class DebugSessionClass extends DebugSession {
 		// Clear decorations
 		Decoration.clearBreak();
 
+		// T-states info and lite history
+		const stepBackMode=StepHistory.isInStepBackMode();
+		if (stepBackMode) {
+			// Check if Lite history then print
+			if (!(CpuHistory as any))
+				vscode.debug.activeDebugConsole.append('Lite ');
+		}
+		else {
+			await this.startStepInfo();
+			// Check if lite history need to be stored.
+			this.checkAndStoreLiteHistory();
+		}
+
 		// Print
 		vscode.debug.activeDebugConsole.append('Step-over');
-
-		// T-states info
-		const stepBackMode=StepHistory.isInStepBackMode();
-		if (!stepBackMode) {
-			await this.startStepInfo();
-		}
 
 		// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 		// Therefore the stepOver is repeated until really a new
@@ -1406,6 +1432,8 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Step-Into
 			await this.startStepInfo('Step-into');
+			// Check if lite history need to be stored.
+			this.checkAndStoreLiteHistory();
 			StepHistory.clear();
 			result=await Remote.stepInto();
 			// Display info
@@ -1461,6 +1489,8 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Normal Step-Out
 			await this.startStepInfo('Step-out');
+			// Check if lite history need to be stored.
+			this.checkAndStoreLiteHistory();
 			StepHistory.clear();
 			const result=await Remote.stepOut();
 			// Display T-states and time

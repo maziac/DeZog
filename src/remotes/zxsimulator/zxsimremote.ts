@@ -499,17 +499,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * This method is called before a step (stepOver, stepInto, stepOut,
-	 * continue) is called.
-	 * The idea here is to store the values for the (lite) step history.
-	 * If  true history is used this should be overridden with an empty method.
-	 */
-	protected async preStep(): Promise<void> {
-		// Empty, because true history is used.
-	}
-
-
-	/**
 	 * Stores the current registers, opcode and sp contents
 	 * in the cpu history.
 	 * Called on every executed instruction.

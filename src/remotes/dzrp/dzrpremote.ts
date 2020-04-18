@@ -12,7 +12,6 @@ import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
-import {StepHistory} from '../cpuhistory';
 import {Mutex} from 'async-mutex';
 
 
@@ -284,22 +283,6 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * This method should be called before a step (stepOver, stepInto, stepOut,
-	 * continue) is called.
-	 * The idea here is to store the values for the (lite) step history.
-	 * If  true history is used this should be overridden with an empty method.
-	 */
-	protected async preStep(): Promise<void> {
-		// Make sure registers and callstack exist.
-		await this.getRegisters();
-		await this.getCallStack();
-		// Store as (lite step history)
-		await StepHistory.pushHistoryInfo(Z80Registers.getCache());
-		StepHistory.pushCallStack(this.listFrames);
-	}
-
-
-	/**
 	 * This method should be called after a step (stepOver, stepInto, stepOut,
 	 * continue) is called.
 	 * It will clear e.g. the register and the call stack cache.
@@ -362,8 +345,6 @@ export class DzrpRemote extends RemoteBase {
 
 					// Check for continue
 					if (condition==undefined) {
-						// Pre action
-						await this.preStep();
 						// Continue
 						this.sendDzrpCmdContinue();
 					}
@@ -382,9 +363,6 @@ export class DzrpRemote extends RemoteBase {
 					resolve({breakReasonString: e});
 				}
 			};
-
-			// Pre action
-			await this.preStep();
 
 			// Send 'run' command
 			this.sendDzrpCmdContinue();
@@ -412,8 +390,6 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
 		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
-			// Do pre-step
-			await this.preStep();
 			// Calculate the breakpoints to use for step-over
 			await this.getRegisters();
 			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
@@ -460,8 +436,6 @@ export class DzrpRemote extends RemoteBase {
 	public async stepOut(): Promise<{breakReasonString?: string}> {
 
 		return new Promise<{breakReasonString?: string}>(async resolve => {
-			// Do pre-step
-			await this.preStep();
 			// Reset flag
 			this.pauseStep=false;
 			// Get current SP

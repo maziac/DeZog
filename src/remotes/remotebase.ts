@@ -678,6 +678,16 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Returns the stored call stack.
+	 */
+	/*
+	public getCallStackCache(): RefList<CallStackFrame> {
+		return this.listFrames;
+	}
+	*/
+
+
+	/**
 	  * Returns the extended stack as array.
 	  * Oldest element is at index 0.
 	  * The extended stack .......
