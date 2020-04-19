@@ -14,6 +14,9 @@ export class NexFile {
 	// The bank to map into slot 3.
 	public slot3Bank: number;
 
+	// The border color
+	public borderColor: number;
+
 	// The SP value.
 	public sp: number;
 
@@ -34,6 +37,7 @@ export class NexFile {
 	 */
 	public readFile(path: string) {
 		const LOADING_SCREENS=10;
+		const BORDER_COLOR=11;
 		const SP=12
 		const PC=14;
 		const USED_BANKS=18;
@@ -68,6 +72,9 @@ export class NexFile {
 		if (loadingScreensFlags&0x40) memBankIndex+=L2B_LOADING_SCREEN_SIZE;
 		const copperFlags=nexBuffer[COPPER_CODE_BLOCK];
 		if (copperFlags&0x01) memBankIndex+=COPPER_CODE_BLOCK_SIZE;
+
+		// Read border color
+		this.borderColor=nexBuffer[BORDER_COLOR];
 
 		// Read SP and PC
 		this.sp=nexBuffer[SP]+(nexBuffer[SP+1]<<8);

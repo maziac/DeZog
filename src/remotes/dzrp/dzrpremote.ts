@@ -744,6 +744,9 @@ export class DzrpRemote extends RemoteBase {
 		const snaFile=new SnaFile();
 		snaFile.readFile(filePath);
 
+		// Set the border
+		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+
 		// Transfer 16k memory banks
 		for (const memBank of snaFile.memBanks) {
 			// As 2x 8k memory banks
@@ -779,6 +782,10 @@ export class DzrpRemote extends RemoteBase {
 		// Load and parse file
 		const nexFile=new NexFile();
 		nexFile.readFile(filePath);
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
+
 		// Transfer 16k memory banks
 		for (const memBank of nexFile.memBanks) {
 			// As 2x 8k memory banks
@@ -786,6 +793,7 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));
 		}
+
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);

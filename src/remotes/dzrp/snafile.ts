@@ -29,7 +29,7 @@ export class SnaFile {
 	public af: number;
 	public sp: number;
 	public im: number;
-	public border: number;
+	public borderColor: number;
 
 	// 128k sna
 	public pc: number;
@@ -73,7 +73,7 @@ export class SnaFile {
 		this.af=Utility.getWord(snaBuffer, 21);
 		this.sp=Utility.getWord(snaBuffer, 23);
 		this.im=snaBuffer[25];
-		this.border=snaBuffer[26];
+		this.borderColor=snaBuffer[26];
 
 		// Read 3 memory banks (48k), bank 5, 2, n (currently paged in)
 		let index=HEADER_LENGTH;

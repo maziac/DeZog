@@ -46,6 +46,10 @@ dezog <- program: 'pause' notification
 ~~~
 
 
+## History
+
+### 0.1.0
+Initial experimental version.
 
 # Data Format
 
