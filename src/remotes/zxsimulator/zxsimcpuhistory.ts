@@ -7,7 +7,7 @@ import {Utility} from '../../misc/utility';
 
 /**
  * This class takes care of the internal simulator history.
- * Pleae note that for performance reasons (push if faster than unshift)
+ * Pleae note that for performance reasons (push is faster than unshift)
  * the history array has been turned around:
  * The oldest item is at 0, the youngest at historyIndex.
  * Please also note that the array is used as a ringbuffer once the
@@ -15,7 +15,6 @@ import {Utility} from '../../misc/utility';
  * Variables:
  * - historyIndex: Read index (in ring buffer). Current position in history.
  * - historyWriteIndex: Write index (in ring buffer). Last written position.
- * - historyWriteLastIndex:
  *
  * If history-buffer <= maxSize:
  * |-----|------------| . . . . . . . . . . . . |
@@ -48,7 +47,6 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 
 	/**
 	 * The internal simulator (because it's internal) has a special way to store the history.
-	 * So, clearing would be counter productive.
 	 */
 	public clear() {
 		(async () => {
@@ -139,8 +137,9 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 	 * historyIndex.
 	 * 0 = historyIndex.
 	 * @param i The i-th element.
+	 * @returns The address or undefined if no previous address exists.
 	 */
-	public getPreviousAddress(i: number) {
+	public getPreviousAddress(i: number): number|undefined {
 		const len=this.history.length;
 		if (len==0)
 			return undefined;

@@ -776,7 +776,7 @@ export class DebugSessionClass extends DebugSession {
 			const prevAddresses=new Array<number>();
 			const prevData=new Array<Uint8Array>();
 			// Check if history data is available.
-			//if (StepHistory.isInStepBackMode())
+			if (StepHistory.isInStepBackMode())
 			{
 				// Add a few more previous addresses if available
 				for (let i=1; i<=10; i++) {
