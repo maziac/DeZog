@@ -7,7 +7,7 @@ hide footbox
 
 
 participant vscode
-participant ZXDebug
+participant ZXDebug as "DebugSessionClass"
 'participant ZXSocket as "Zesarux\nSocket"
 
 == step  ==
@@ -52,5 +52,14 @@ note over vscode, ZXDebug: If the expression/variable is opened in the WATCH are
 
 vscode -> ZXDebug: variablesRequest(varID)
 vscode <-- ZXDebug: response(variables)
+
+
+== disconnect ==
+
+vscode -> ZXDebug: disconnectRequest()
+
+note over ZXDebug: Disconnect socket etc.
+
+vscode <-- ZXDebug: response(result, varID)
 ````
 

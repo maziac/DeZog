@@ -1,7 +1,7 @@
 # Changelog
 
 # 1.2.3
-
+- Fixed: crash when switching form ZEsarUX to CSpect.
 
 # 1.2.2
 - CSpect: timeout error if no response received.

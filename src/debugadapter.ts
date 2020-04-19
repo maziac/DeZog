@@ -284,6 +284,9 @@ export class DebugSessionClass extends DebugSession {
 		FakeSerial?.close();
 		Remote.disconnect().then(() => {
 			this.removeAllListeners();
+			// Clear the history instance
+			CpuHistoryClass.setCpuHistory(undefined);
+			// Send response
 			this.sendResponse(response);
 		});
 	}
@@ -432,7 +435,10 @@ export class DebugSessionClass extends DebugSession {
 		// Create the registers
 		Z80RegistersClass.createRegisters();
 
-		// Create the machine
+		// Make sure the history is cleared
+		//CpuHistoryClass.setCpuHistory(undefined); // TODO: enable
+
+		// Create the Remote
 		RemoteFactory.createRemote(Settings.launch.remoteType);
 
 		// Check if a cpu history object has been created.

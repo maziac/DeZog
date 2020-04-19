@@ -78,8 +78,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 	/**
 	 * Sets the static CpuHistory singleton.
 	 */
-	public static setCpuHistory(cpuHistory: CpuHistoryClass|StepHistoryClass) {
-		StepHistory=cpuHistory;
+	public static setCpuHistory(cpuHistory: CpuHistoryClass|StepHistoryClass|undefined) {
+		StepHistory=cpuHistory as any;
 		CpuHistory=undefined as any;
 		if (cpuHistory instanceof CpuHistoryClass)
 			CpuHistory=cpuHistory;
