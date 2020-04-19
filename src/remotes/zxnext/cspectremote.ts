@@ -124,23 +124,6 @@ export class CSpectRemote extends ZxNextRemote {
 
 
 	/**
-	 * Terminates the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 */
-	public async terminate(): Promise<void> {
-		return new Promise<void>(resolve => {
-			this.socket.removeAllListeners();
-			this.socket.end(() => {
-				this.emit('terminated');
-				resolve();
-			});
-		});
-	}
-
-	/**
 	 * Starts the chunk timeout.
 	 */
 	protected startChunkTimeout() {

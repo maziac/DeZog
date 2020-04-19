@@ -123,18 +123,6 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Override.
-	 * Terminates the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 */
-	public async terminate(): Promise<void> {
-	}
-
-
-	/**
 	* If cache is empty retrieves the registers from
 	* the Remote.
 	*/

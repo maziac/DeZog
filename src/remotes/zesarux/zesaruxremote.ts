@@ -89,26 +89,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Terminates the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 */
-	public async terminate(): Promise<void> {
-		this.terminating = true;
-		return new Promise<void>(resolve => {
-			// The socket connection must be closed as well.
-			zSocket.quit(() => {
-				// Send terminate event (to Debug Session which will send a TerminateEvent to vscode. That in turn will create a 'disconnect')
-				this.emit('terminated');
-				resolve();
-			});
-		});
-	}
-
-
-	/**
 	 * Override removeAllListeners to remove listeners also from socket.
 	 * @param event
 	 */

@@ -66,23 +66,11 @@ export class ZxNextRemote extends DzrpRemote {
 	/**
 	 * Override.
 	 * Stops the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
+	 * This will disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
-	}
-
-
-	/**
-	 * Override.
-	 * Terminates the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 */
-	public async terminate(): Promise<void> {
 	}
 
 

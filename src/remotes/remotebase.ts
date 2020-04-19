@@ -478,10 +478,12 @@ export class RemoteBase extends EventEmitter {
 	 * Terminates the remote.
 	 * This should disconnect the socket and un-use all data.
 	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
-	 * Has to emit the "this.emit('terminated')".
+	 * Emits the "this.emit('terminated')".
+	 * No need to override.
 	 */
 	public async terminate(): Promise<void> {
-		// please override.
+		await this.disconnect();
+		this.emit('terminated');
 	}
 
 

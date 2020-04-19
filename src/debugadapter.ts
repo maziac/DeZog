@@ -436,12 +436,12 @@ export class DebugSessionClass extends DebugSession {
 		Z80RegistersClass.createRegisters();
 
 		// Make sure the history is cleared
-		//CpuHistoryClass.setCpuHistory(undefined); // TODO: enable
+		CpuHistoryClass.setCpuHistory(undefined);
 
 		// Create the Remote
 		RemoteFactory.createRemote(Settings.launch.remoteType);
 
-		// Check if a cpu history object has been created.
+		// Check if a cpu history object has been created by the Remote.
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());

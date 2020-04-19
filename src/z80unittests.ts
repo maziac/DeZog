@@ -178,7 +178,7 @@ export class Z80UnitTests {
 			// Wait until vscode debugger has stopped.
 			if (Remote) {
 				// Terminate emulator
-				await Remote.terminate(); // TODO: Z80UnitTests is the only one who uses this function. Maybe I can change this to 'disconnect'.
+				await Remote.terminate();
 			}
 			// (Unfortunately there is no event for this, so we need to wait)
 			Utility.delayedCall(time => {

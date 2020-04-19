@@ -356,20 +356,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
-	 * Stops the simulator.
-	 * Called e.g. when the unit tests want to terminate the emulator.
-	 * This will also send a 'terminated' event. I.e. the vscode debugger
-	 * will also be terminated.
-	 */
-	public async terminate(): Promise<void> {
-		// Stop running cpu
-		this.cpuRunning=false;
-		this.emit('terminated');
-	}
-
-
-
-	/**
 	 * Loads .nex or .sna files.
 	 * Assures that the memory banks are copied to the Z80 memory.
 	 */
