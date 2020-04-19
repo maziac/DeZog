@@ -16,12 +16,16 @@ import {Mutex} from 'async-mutex';
 
 
 
+// The current implemented version of the protocol.
+export const DZRP_VERSION=[0, 1, 0];
+
+
 /**
  * The DZP commands and responses.
  * The response contains the command with the bit 7 set.
  */
 export enum DZRP {
-	CMD_GET_CONFIG=1,
+	CMD_INIT=1,
 	CMD_GET_REGISTERS=2,
 	CMD_SET_REGISTER=3,
 	CMD_WRITE_BANK=4,
@@ -48,6 +52,8 @@ export enum DZRP {
 	CMD_GET_SPRITES=0x12,
 	CMD_GET_SPRITE_PATTERNS=0x13,
 	CMD_GET_SPRITES_CLIP_WINDOW=0x14,
+
+	CMD_SET_BORDER=0x15,
 };
 
 /**
@@ -95,9 +101,7 @@ export class DzrpRemote extends RemoteBase {
 	protected async onConnect(): Promise<void> {
 		try {
 			// Get configuration
-			const resp=await this.sendDzrpCmdGetConfig();
-			// Check configuration
-			this.supportsZxNextRegisters=(resp.zxNextRegs==true);
+			/*const resp=*/ await this.sendDzrpCmdInit();
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;
 			if (loadPath)
@@ -890,12 +894,12 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Override.
-	 * Sends the command to get the configuration.
+	 * The first command send. Includes the version number.
 	 * @returns The configuration, e.g. '{xNextRegs: true}'
 	 */
-	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
+	protected async sendDzrpCmdInit(): Promise<Array<number>> {
 		Utility.assert(false);
-		return {zxNextRegs: false};
+		return [0,0,0];
 	}
 
 
@@ -1119,6 +1123,15 @@ export class DzrpRemote extends RemoteBase {
 	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
 		Utility.assert(false);
 		return {xl: 0, xr: 0, yt: 0, yb: 0};
+	}
+
+
+	/**
+	 * Sends the command to set the border.
+	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+ 	*/
+	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
+		Utility.assert(false);
 	}
 
 }

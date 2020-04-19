@@ -68,21 +68,31 @@ So in total there are 255 possible commands and notifications.
 
 # Commands and Responses
 
-## CMD_GET_CONFIG
+## CMD_INIT
+
+This is the first command sent after connection.
+The command sender will evaluate the received version and disconnect if versions do not match.
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x01  | CMD_GET_CONFIG |
+| 5     | 1    | 0x01  | CMD_INIT |
+| 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
+
 
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Same seq no     |
-| 5     | 1    | ...   | Supported features    |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
+| 8     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
+
+<!--
+| 9     | 2    | 16 bit | Supported features |
+
 
 Supported features are bitwise:
 | Bit | Description |
@@ -92,11 +102,10 @@ Supported features are bitwise:
 
 
 Other features could be:
-- Supports stepOut
 - Supports coverage
 - Supports cpu history
 - Supports extended call stack
-
+-->
 
 ## CMD_GET_REGISTERS
 
@@ -499,6 +508,25 @@ Response:
 | 6     | 1    | 0-255 | x-right    |
 | 7     | 1    | 0-255 | y-top      |
 | 8     | 1    | 0-255 | y-bottom   |
+
+
+
+# CMD_SET_BORDER
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x15  | CMD_SET_BORDER |
+| 6     | 1    | Bits 0-2: color  | The color for the border |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 5     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
 
 
 

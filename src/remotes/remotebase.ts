@@ -119,12 +119,6 @@ export class RemoteBase extends EventEmitter {
 	public logpointsEnabled=new Map<string, boolean>();
 
 
-	// Supported features:
-
-	// E.g. enables display of "Memory Pages"
-	public supportsZxNextRegisters: boolean=false;
-
-
 	/// Constructor.
 	/// Override this.
 	constructor() {

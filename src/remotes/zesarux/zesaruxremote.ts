@@ -57,8 +57,6 @@ export class ZesaruxRemote extends RemoteBase {
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
 		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();
-		// Supported features
-		this.supportsZxNextRegisters=true;
 	}
 
 

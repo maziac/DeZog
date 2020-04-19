@@ -302,9 +302,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization() {
 		try {
-			// Simulator capabilities
-			this.supportsZxNextRegisters=false;
-
 			// Decide what machine
 			this.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
 
@@ -781,9 +778,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/**
 	 * Not used.
 	 */
-	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
+	protected async sendDzrpCmdInit(): Promise<Array<number>> {
 		Utility.assert(false);	// Not used
-		return {zxNextRegs: false};
+		return [0, 0, 0];
 	}
 
 

@@ -3,7 +3,7 @@ import {DzrpParser} from './dzrpparser';
 import {Utility} from '../../misc/utility';
 import {ZxSimulatorRemote} from '../zxsimulator/zxsimremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {DZRP, DZRP_NTF} from '../dzrp/dzrpremote';
+import {DZRP, DZRP_NTF, DZRP_VERSION} from '../dzrp/dzrpremote';
 
 
 let SerialPort;
@@ -160,8 +160,8 @@ export class SerialFake extends ZxSimulatorRemote {
 		const seqno=data[0];
 		const cmd=data[1];
 		switch (cmd) {
-			case DZRP.CMD_GET_CONFIG:
-				this.sendDzrpResp(seqno, [0]);
+			case DZRP.CMD_INIT:
+				this.sendDzrpResp(seqno, DZRP_VERSION);
 				break;
 			case DZRP.CMD_GET_REGISTERS:
 				this.sendDzrpResp(seqno, this.getRegValues());

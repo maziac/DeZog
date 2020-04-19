@@ -3,7 +3,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {DZRP} from '../dzrp/dzrpremote';
+import {DZRP, DZRP_VERSION} from '../dzrp/dzrpremote';
 
 
 
@@ -354,15 +354,12 @@ export class ZxNextRemote extends DzrpRemote {
 	//------- Send Commands -------
 
 	/**
-	 * Sends the command to get the configuration.
-	 * @returns The configuration, e.g. '{xNextRegs: true}'
+	 * Sends the command to init the remote.
+	 * @returns The version.
 	 */
-	protected async sendDzrpCmdGetConfig(): Promise<{zxNextRegs: boolean}> {
-		const resp=await this.sendDzrpCmd(DZRP.CMD_GET_CONFIG);
-		// Check configuration
-		const value=resp[0];
-		const zxNextRegs: boolean=((value&0x01)!=0);
-		return {zxNextRegs};
+	protected async sendDzrpCmdInit(): Promise<Array<number>> {
+		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, DZRP_VERSION);
+		return Array.from(resp);
 	}
 
 
