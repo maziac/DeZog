@@ -1136,7 +1136,6 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Sends the command to set the border.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
  	*/
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		Utility.assert(false);

@@ -958,5 +958,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Update the screen etc.
 		this.emit('update')
 	}
+
+
+	/**
+	 * Sends the command to set the border.
+ 	*/
+	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
+		// Set port for border
+		this.zxPorts.write(0xFE, borderColor);
+	}
 }
 

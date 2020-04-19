@@ -629,7 +629,6 @@ export class ZxNextRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to set the border.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
  	*/
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_SET_BORDER, [borderColor]);
