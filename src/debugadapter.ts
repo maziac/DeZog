@@ -459,6 +459,12 @@ export class DebugSessionClass extends DebugSession {
 			return err.message;
 		}
 
+		Remote.on('stoppedEvent', reason => {
+			// Remote requests to generate a StoppedEvent e.g. because the PC or the
+			// SP has been changed manually.
+			this.sendEvent(new StoppedEvent(reason, DebugSessionClass.THREAD_ID));
+		});
+
 		Remote.on('coverage', coveredAddresses => {
 			// coveredAddresses: Only diff of addresses since last step-command.
 			this.delayedDecorations.push(() => {
@@ -2314,21 +2320,14 @@ Notes:
 	 * @param filename The absolute file path.
 	 * @param lineNr The lineNr. Starts at 0.
 	 */
-	protected setPcToLine(filename: string, lineNr: number) {
+	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
 		const realLineNr=lineNr; //this.convertClientLineToDebugger(lineNr);
 		const addr=Labels.getAddrForFileAndLine(filename, realLineNr);
 		if (addr<0)
 			return;
 		// Now change Program Counter
-		Remote.setProgramCounter(addr)
-			.then(() => {
-				Remote.clearCallStack();
-				//this.sendEventContinued();
-				this.sendEvent(new StoppedEvent('PC-change', DebugSessionClass.THREAD_ID));
-				// Handle decorations
-				StepHistory.emitHistory();
-			});
+		await Remote.setProgramCounter(addr);
 	}
 
 
@@ -2345,7 +2344,7 @@ Notes:
 			case 'setPcToLine':
 				const filename=args[0];
 				const lineNr=args[1];
-				this.setPcToLine(filename, lineNr);
+				this.setPcToLine(filename, lineNr);	// No need for 'await'
 				break;
 
 			/*

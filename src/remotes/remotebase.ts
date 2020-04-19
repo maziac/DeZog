@@ -1210,14 +1210,27 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Change the program counter.
+	 * Change the program counter and emit 'stoppedEvent'.
 	 * @param address The new address for the program counter.
-	 * @param handler that is called when the PC has been set.
 	 */
 	public async setProgramCounter(address: number): Promise<void> {
 		StepHistory.clear();
 		Z80Registers.clearCache();
+		this.clearCallStack();
 		await this.setRegisterValue("PC", address);
+		this.emit('stoppedEvent', 'PC changed');
+	}
+
+	/**
+	 * Change the SP and emit 'stoppedEvent'.
+	 * @param address The new address for the stack pointer.
+	 */
+	public async setStackPointer(address: number): Promise<void> {
+		StepHistory.clear();
+		Z80Registers.clearCache();
+		this.clearCallStack();
+		await this.setRegisterValue("SP", address);
+		this.emit('stoppedEvent', 'SP changed');
 	}
 
 

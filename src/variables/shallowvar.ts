@@ -175,8 +175,15 @@ export class RegistersMainVar extends ShallowVar {
 	 */
 	public async setValue(name: string, value: number): Promise<string> {
 		// Set value (works always for registers.
-		if (!isNaN(value))
-			await Remote.setRegisterValue(name, value);
+		if (!isNaN(value)) {
+			// Handle PC special
+			if (name=="PC")
+				await Remote.setProgramCounter(value);
+			if (name=="SP")
+				await Remote.setStackPointer(value);
+			else
+				await Remote.setRegisterValue(name, value);
+		}
 		await Remote.getRegisters()
 		const formatted = Remote.getVarFormattedReg(name);
 		return formatted;

@@ -206,7 +206,7 @@ export class ZesaruxRemote extends RemoteBase {
 						return;
 					}
 					// Set PC
-					this.setProgramCounter(execAddress);
+					await this.setRegisterValue("PC", execAddress);
 				}
 
 				// Initialize more

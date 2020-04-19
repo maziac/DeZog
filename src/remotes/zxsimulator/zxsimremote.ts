@@ -327,7 +327,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				if (isNaN(execAddress))
 					throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
 				// Set PC
-				this.setProgramCounter(execAddress);
+				await this.setRegisterValue("PC", execAddress);
 			}
 
 			// Ready

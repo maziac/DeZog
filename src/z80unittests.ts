@@ -659,14 +659,16 @@ export class Z80UnitTests {
 		const callAddr = new Uint8Array([ address & 0xFF, address >>> 8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
-			Remote.setProgramCounter(this.addrTestWrapper)
+			Remote.setRegisterValue("PC", this.addrTestWrapper)
 				.then(() => {
 					// Run
 					if (Z80UnitTests.utLabels)
 						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
 
-					// Remove instruction history log.
+					// Init
 					StepHistory.clear();
+					Z80Registers.clearCache();
+					Remote.clearCallStack();
 
 					// Run or Debug
 					if (da) {
