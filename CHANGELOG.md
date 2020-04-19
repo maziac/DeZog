@@ -2,6 +2,8 @@
 
 # 1.2.3
 - Fixed: crash when switching form ZEsarUX to CSpect.
+- Manual change of PC (or SP) will update the shown file.
+- zsim: cpu writing to ROM does not change the contents anymore.
 
 # 1.2.2
 - CSpect: timeout error if no response received.

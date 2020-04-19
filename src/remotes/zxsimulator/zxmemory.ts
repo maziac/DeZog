@@ -148,7 +148,9 @@ export class ZxMemory {
 		const slotIndex=addr>>>13;
 		const bankNr=this.slots[slotIndex];
 		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
-		this.AllBanksRam[ramAddr]=val;
+		// Only write if not ROM
+		if (ramAddr<0x1FC000)
+			this.AllBanksRam[ramAddr]=val;
 	}
 
 
