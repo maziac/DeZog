@@ -110,10 +110,14 @@ Of course, knowing the correct memory contents would be beneficially but also wi
 ~~~
 
 The history is a singleton called StepHistory.
-THere exist a second global variable CpuHistory which points to the same StepHistory instance in case true cpu history is supported.
-This is just for convenience to access the CpuHistoryclass methods easier.
+There exist a second global variable CpuHistory which points to the same StepHistory instance in case true cpu history is supported.
 
-The CpuHistory retrieves the callstack when entering reverse debug mode andthen manipulates it by interpreting the Z80 instructions.
+CpuHistory is created by the Remote whereas StepHistory is created by the DebugAdapter in case the Remote did not create any CpuHistory.
+Thus, if the Remote does not support true CPU history, it simply does not do anything.
+The DebugAdapter jumps in and handles the StepHistory outside of the Remote.
+If, on the other hand, the Remote did create a CpuHistory then the DebugAdapter does ntohing and the history is handled by the Remote.
+
+The CpuHistory retrieves the callstack when entering reverse debug mode and then manipulates it by interpreting the Z80 instructions.
 The StepHistory is simpler, it directly stores the callstack at each step position.
 
 The following MSCs show the paths for the cpu history.
