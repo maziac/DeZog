@@ -391,8 +391,8 @@ suite('Utility', () => {
 		test('Register', async () => {
 			const remote=Remote as any;
 			const cpu=remote.z80Cpu;
-			cpu.r1.a=129;
-			cpu.r1.de=0xABCD;
+			cpu.a=129;
+			cpu.de=0xABCD;
 			const regs=cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 
