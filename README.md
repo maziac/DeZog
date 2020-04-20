@@ -132,6 +132,7 @@ DeZog also includes a Z80/48k ZX Spectrum simulator. For this the original 48/12
 "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
 See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-roms.txt).
 
+Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
 
 
 # Extras

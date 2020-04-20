@@ -1,22 +1,31 @@
-import * as Z80js from 'z80js';
+//import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
+//import {Utility} from '../../misc/utility';
+
+//import * as zzz80 from '../../3rdparty/z80.js/ZZZ80.js';
+//import * as Z80 from '../../3rdparty/z80.js/ZZZ80.js';
+import Z80 = require('../../3rdparty/z80.js/Z80.js');
+//const zz80=require('../../3rdparty/z80.js/Z80.js');
 
 
+/*
 const signed8=(val) => {
 	if (val<128)
 		return val;
 	else
 		return val-256;
 }
+*/
 
-export class Z80Cpu extends Z80js {
 
-	// Easier access to 'this'
-	//protected self: any;
+export class Z80Cpu {
+
+	// Pointer to the Z80.js (Z80.ts) simulator
+	protected z80: any;
 
 	// Time until next interrupt.
 	protected remaingInterruptTstates: number;
@@ -30,7 +39,7 @@ export class Z80Cpu extends Z80js {
 	// Summarizes all instruction including HALT.
 	public cpuTotalTstates: number;
 	// cpuLoadTstates divided by cpuTotalTstates.
-	protected cpuLoad: number;
+	public cpuLoad: number;
 	// The number of interrupts to calculate the average from.
 	protected cpuLoadRange: number;
 
@@ -49,11 +58,17 @@ export class Z80Cpu extends Z80js {
 	// At the moment just a constant. CPU frequency.
 	public cpuFreq: number;
 
+	// Memory
+	public memory: ZxMemory;
+
+	// Ports
+	public ports: ZxPorts;
+
 
 	/// Constructor.
-	constructor(memory: ZxMemory, ports: ZxPorts, debug = false) {
-		super(memory, ports, debug);
-		//this.self=this;
+	constructor(memory: ZxMemory, ports: ZxPorts) {
+		this.memory=memory;
+		this.ports=ports;
 		this.cpuFreq=3500000.0;	// 3.5MHz.
 		this.INTERRUPT_TIME=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
 		this.remaingInterruptTstates=this.INTERRUPT_TIME;
@@ -62,8 +77,6 @@ export class Z80Cpu extends Z80js {
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
-		const self=this as any;
-		self.im=0;	// Just as after interrupt.
 		this.cpuTstatesCounter=0
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;
@@ -72,6 +85,16 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
 		this.z80n=Settings.launch.zsim.Z80N;
 		this.vsyncInterrupt=Settings.launch.zsim.vsyncInterrupt;
+
+		// Initialize Z80, call constructor
+		this.z80=new (Z80.Z80 as any)(
+			{
+			// TODO: Improve by passing functions directly not lambdas
+			mem_read: (address) => {return memory.read8(address);},
+			mem_write: (address, val) => {memory.write8(address, val);},
+			io_read: (address) => {return ports.read(address);},
+			io_write: (address, val) => {ports.write(address, val);}
+			});
 	}
 
 
@@ -80,28 +103,27 @@ export class Z80Cpu extends Z80js {
 	 * @returns true if a vertical interrupt happened.
 	 */
 	public execute(): boolean {
-		const self=this as any;
-		const tstatesPrev=self.tStates;
-		self.deferInt=false;
+		const z80=this.z80;
+		const pc=z80.pc;
 
 		// For checking on halt and Z80N
-		const opcode=self.memory.getMemory8(self.pc);
+		const opcode=this.memory.getMemory8(pc);
 
 		// Check if it a Z80N instruction
+		let tstatesDiff=0;
 		if (this.z80n&&opcode==0xED) {
 			// Yes, maybe a Z80N
-			this.executeZ80n();
+			this.executeZ80n(); // TODO: Handle Z80N differently
 		}
 		else {
 			// Normal Z80 instruction
-			super.execute();
+			tstatesDiff=z80.run_instruction();
 		}
 
 		// Statistics
-		const tstatesDiff=self.tStates-tstatesPrev;
-		if (opcode==0x76) {
+		if (opcode==0x76) { // TODO: can be done with "halted"
 			// HALT instruction
-			if (this.interruptsEnabled()) {
+			if (z80.interruptsEnabled) {
 				// HALT instructions are treated specially:
 				// If a HALT is found the t-states to the next interrupt are calculated.
 				// The t-states are added and the interrupt is executed immediately.
@@ -126,7 +148,7 @@ export class Z80Cpu extends Z80js {
 				// Interrupt
 				this.remaingInterruptTstates=this.INTERRUPT_TIME;
 				//this.remaingInterruptTstates=2;
-				this.injectInterrupt();
+				z80.interrupt(false, 0);
 				// Measure CPU load
 				this.cpuLoadRangeCounter++;
 				if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
@@ -148,83 +170,240 @@ export class Z80Cpu extends Z80js {
 
 
 	/**
-	 * Checks if interrupts are enabled.
+	 * Properties to set flags.
 	 */
-	protected interruptsEnabled(): boolean{
-		const self=this as any;
-		// Check if interrupts enabled
-		if (!self.iff1)
-			return false;
-		if (self.deferInt)
-			return false;
-		return true;
+	set pc(value) {
+		this.z80.pc=value;
+	}
+	get pc() {return this.z80.pc;}
+	set sp(value) {this.z80.sp=value;}
+	get sp() {return this.z80.sp;}
+
+	set af(value) {
+		const r=this.z80.getState();
+		r.a=value>>>8;
+		r.f=this.revConvertFlags(value&0xFF);
+		this.z80.setState(r);
+	}
+	set bc(value) {
+		const r=this.z80.getState();
+		r.b=value>>>8;
+		r.c=value&0xFF;
+		this.z80.setState(r);
+	}
+	set de(value) {
+		const r=this.z80.getState();
+		r.d=value>>>8;
+		r.e=value&0xFF;
+		this.z80.setState(r);
+	}
+	set hl(value) {
+		const r=this.z80.getState();
+		r.h=value>>>8;
+		r.l=value&0xFF;
+		this.z80.setState(r);
+	}
+
+	set ix(value) {
+		const r=this.z80.getState();
+		r.ix=value;
+		this.z80.setState(r);
+	}
+	set iy(value) {
+		const r=this.z80.getState();
+		r.iy=value;
+		this.z80.setState(r);
+	}
+
+
+	set af2(value) {
+		const r=this.z80.getState();
+		r.a_prime=value>>>8;
+		r.flags_prime=this.revConvertFlags(value&0xFF);
+		this.z80.setState(r);
+	}
+	set bc2(value) {
+		const r=this.z80.getState();
+		r.b_prime=value>>>8;
+		r.c_prime=value&0xFF;
+		this.z80.setState(r);
+	}
+	set de2(value) {
+		const r=this.z80.getState();
+		r.d_prime=value>>>8;
+		r.e_prime=value&0xFF;
+		this.z80.setState(r);
+	}
+	set hl2(value) {
+		const r=this.z80.getState();
+		r.h_prime=value>>>8;
+		r.l_prime=value&0xFF;
+		this.z80.setState(r);
+	}
+
+	set im(value) {
+		const r=this.z80.getState();
+		r.im=value;
+		this.z80.setState(r);
+	}
+	set r(value) {
+		const r=this.z80.getState();
+		r.r=value;
+		this.z80.setState(r);
+	}
+	set i(value) {
+		const r=this.z80.getState();
+		r.i=value;
+		this.z80.setState(r);
+	}
+
+	set a(value) {
+		const r=this.z80.getState();
+		r.a=value;
+		this.z80.setState(r);
+	}
+	set f(value) {
+		const r=this.z80.getState();
+		r.f=this.revConvertFlags(value);
+		this.z80.setState(r);
+	}
+	set b(value) {
+		const r=this.z80.getState();
+		r.b=value;
+		this.z80.setState(r);
+	}
+	set c(value) {
+		const r=this.z80.getState();
+		r.c=value;
+		this.z80.setState(r);
+	}
+	set d(value) {
+		const r=this.z80.getState();
+		r.d=value;
+		this.z80.setState(r);
+	}
+	set e(value) {
+		const r=this.z80.getState();
+		r.e=value;
+		this.z80.setState(r);
+	}
+	set h(value) {
+		const r=this.z80.getState();
+		r.h=value;
+		this.z80.setState(r);
+	}
+	set l(value) {
+		const r=this.z80.getState();
+		r.l=value;
+		this.z80.setState(r);
+	}
+	set ixl(value) {
+		const r=this.z80.getState();
+		r.ix=(r.ix&0xFF00)+value;
+		this.z80.setState(r);
+	}
+	set ixh(value) {
+		const r=this.z80.getState();
+		r.ix=(r.ix&0xFF)+256*value;
+		this.z80.setState(r);
+	}
+	set iyl(value) {
+		const r=this.z80.getState();
+		r.iy=(r.iy&0xFF00)+value;
+		this.z80.setState(r);
+	}
+	set iyh(value) {
+		const r=this.z80.getState();
+		r.iy=(r.iy&0xFF)+256*value;
+		this.z80.setState(r);
+	}
+
+	/**
+	 * Converts the Z80 flags object into a number.
+	 */
+	protected convertFlags(flags: {
+		S: number,
+		Z: number,
+		Y: number,
+		H: number,
+		X: number,
+		P: number,
+		N: number,
+		C: number
+	}): number {
+		const f=128*flags.S+64*flags.Z+32*flags.Y+16*flags.H+8*flags.X+4*flags.P+2*flags.N+flags.C;
+		return f;
 	}
 
 
 	/**
-	 * Simulates an interrupt.
+	 * Returns all registers.
 	 */
-	protected injectInterrupt() {
-		const self=this as any;
-		// Check if interrupts enabled
-		if (!this.interruptsEnabled())
-			return;
-
-		// Interrupts allowed.
-
-		// Get PC
-		let pc=self.pc;
-		// Check if PC is on a HALT instruction
-		const opcode=self.memory.getMemory8(pc);
-		if (opcode==0x76)
-			pc++;	// Step over HALT
-		// put PC on the stack
-		self.sp-=2;
-		self.memory.setMemory16(self.sp, pc);
-		// Get interrupt mode and next PC value accordingly
-		let intAddr;
-		switch (self.im) {
-			case 1:	// IM1
-				intAddr=0x38;
-				break;
-			case 2:	// IM2
-				const intLocation=self.i<<8;
-				intAddr=self.memory.getMemory16(intLocation);
-				break;
-			default:
-				throw Error("IM "+self.im+" not supported.");
-		}
-		// Change PC to interrupt.
-		self.pc=intAddr;
-		// Disable further interrupts
-		self.iff1=false;
-		self.iff2=false;
+	protected getAllRegisters(): {
+		pc: number,
+		sp: number,
+		af: number,
+		bc: number,
+		de: number,
+		hl: number,
+		ix: number,
+		iy: number,
+		af2: number,
+		bc2: number,
+		de2: number,
+		hl2: number,
+		i: number,
+		r: number,
+		im: number,
+		iff1: number,
+		iff2: number,
+	} {
+		const r=this.z80.getState();
+		const flags=this.convertFlags(r.flags);
+		const flags2=this.convertFlags(r.flags_prime);
+		const regs={
+			pc: r.pc,
+			sp: r.sp,
+			af: r.a*256+flags,
+			bc: r.b*256+r.c,
+			de: r.d*256+r.d,
+			hl: r.h*256+r.l,
+			ix: r.ix,
+			iy: r.iy,
+			af2: r.a_prime*256+flags2,
+			bc2: r.b_prime*256+r.c_prime,
+			de2: r.d_prime*256+r.d_prime,
+			hl2: r.h_prime*256+r.l_prime,
+			i: r.i,
+			r: r.r,
+			im: r.imode,
+			iff1: r.iff1,
+			iff2: r.iff2
+		};
+		return regs;
 	}
 
 
 	/**
 	 * Returns the register data in the Z80Registers format.
 	 */
-	protected getRegisterData(): Uint16Array {
-		const self=this as any;
-		const r1=self.r1;
-		const r2=self.r2;
+	public getRegisterData(): Uint16Array {
+		const r=this.getAllRegisters();
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(
-			self.pc, self.sp,
-			r1.af, r1.bc, r1.de, r1.hl,
-			r1.ix, r1.iy,
-			r2.af, r2.bc, r2.de, r2.hl,
-			self.i, self.r, self.im);
-		return regData;
+			r.pc, r.sp,
+			r.af, r.bc, r.de, r.hl,
+			r.ix, r.iy,
+			r.af2, r.bc2, r.de2, r.hl2,
+			r.i, r.r, r.im);
+		return new Uint16Array(regData);;
 	}
 
 
 	/**
 	 * Returns the register, opcode and sp contents data,
 	 */
-	protected getHistoryData(): Uint16Array {
-		const self=this as any;
+	public getHistoryData(): Uint16Array {
 		// Get registers
 		const regData=this.getRegisterData();
 		// Add opcode and sp contents
@@ -233,13 +412,14 @@ export class Z80Cpu extends Z80js {
 		// Copy registers
 		histData.set(regData);
 		// Store opcode (4 bytes)
-		const pc=self.pc;
-		const opcodes=self.memory.getMemory32(pc);
+		const z80=this.z80;
+		const pc=z80.pc;
+		const opcodes=this.memory.getMemory32(pc);
 		histData[startHist]=opcodes&0xFFFF;
 		histData[startHist+1]=opcodes>>>16;
 		// Store sp contents
-		const sp=self.sp;
-		const spContents=self.memory.getMemory16(sp);
+		const sp=z80.sp;
+		const spContents=this.memory.getMemory16(sp);
 		histData[startHist+2]=spContents;
 		// return
 		return histData;
@@ -261,32 +441,64 @@ export class Z80Cpu extends Z80js {
 
 
 	/**
+	 * Converts the Z80 flags object into a number.
+	 */
+	protected revConvertFlags(flags: number): {
+		S: number,
+		Z: number,
+		Y: number,
+		H: number,
+		X: number,
+		P: number,
+		N: number,
+		C: number
+	} {
+		const f={
+			S: (flags>>>7)&0x01,
+			Z: (flags>>>6)&0x01,
+			Y: (flags>>>5)&0x01,
+			H: (flags>>>4)&0x01,
+			X: (flags>>>3)&0x01,
+			P: (flags>>>2)&0x01,
+			N: (flags>>>1)&0x01,
+			C: flags&0x01,
+		};
+		return f;
+	}
+
+
+	/**
 	 * Serializes the object.
 	 */
 	public serialize(memBuffer: MemBuffer) {
 		// Save all registers etc.
-		const self=this as any;
-		const r1=self.r1;
-		const r2=self.r2;
+		const r=this.getAllRegisters();
 		// Store
-		memBuffer.write16(self.pc);
-		memBuffer.write16(self.sp);
-		memBuffer.write16(r1.af);
-		memBuffer.write16(r1.bc);
-		memBuffer.write16(r1.de);
-		memBuffer.write16(r1.hl);
-		memBuffer.write16(r1.ix);
-		memBuffer.write16(r1.iy);
-		memBuffer.write16(r2.af);
-		memBuffer.write16(r2.bc);
-		memBuffer.write16(r2.de);
-		memBuffer.write16(r2.hl);
+		memBuffer.write16(r.pc);
+		memBuffer.write16(r.sp);
+		memBuffer.write16(r.af);
+		memBuffer.write16(r.bc);
+		memBuffer.write16(r.de);
+		memBuffer.write16(r.hl);
+		memBuffer.write16(r.ix);
+		memBuffer.write16(r.iy);
+		memBuffer.write16(r.af2);
+		memBuffer.write16(r.bc2);
+		memBuffer.write16(r.de2);
+		memBuffer.write16(r.hl2);
 		// Also the 1 byte data is stored in 2 bytes for simplicity:
-		memBuffer.write8(self.i);
-		memBuffer.write8(self.r);
-		memBuffer.write8(self.im);
-		memBuffer.write8(self.iff1);
-		memBuffer.write8(self.iff2);
+		memBuffer.write8(r.i);
+		memBuffer.write8(r.r);
+		memBuffer.write8(r.im);
+		memBuffer.write8(r.iff1);
+		memBuffer.write8(r.iff2);
+
+		// Additional
+		const s=this.z80.getState();
+		memBuffer.write8(Number(s.halted));
+		memBuffer.write8(Number(s.do_delayed_di));
+		memBuffer.write8(Number(s.do_delayed_ei));
+		//memBuffer.write8(s.cycle_counter);
 
 		// Additional state
 		memBuffer.write32(this.remaingInterruptTstates);
@@ -297,29 +509,54 @@ export class Z80Cpu extends Z80js {
 	 * Deserializes the object.
 	 */
 	public deserialize(memBuffer: MemBuffer) {
-		// Restore all registers etc.
-		const self=this as any;
-		const r1=self.r1;
-		const r2=self.r2;
 		// Store
-		self.pc=memBuffer.read16();
-		self.sp=memBuffer.read16();
-		r1.af=memBuffer.read16();
-		r1.bc=memBuffer.read16();
-		r1.de=memBuffer.read16();
-		r1.hl=memBuffer.read16();
-		r1.ix=memBuffer.read16();
-		r1.iy=memBuffer.read16();
-		r2.af=memBuffer.read16();
-		r2.bc=memBuffer.read16();
-		r2.de=memBuffer.read16();
-		r2.hl=memBuffer.read16();
+		let r: any;
+		r.pc=memBuffer.read16();
+		r.sp=memBuffer.read16();
+		const af=memBuffer.read16();
+		r.a=af>>>8;
+		r.flags=this.revConvertFlags(af&0xFF);
+		const bc=memBuffer.read16();
+		r.b=bc>>>8;
+		r.c=bc&0xFF;
+		const de=memBuffer.read16();
+		r.d=de>>>8;
+		r.e=de&0xFF;
+		const hl=memBuffer.read16();
+		r.h=hl>>>8;
+		r.l=hl&0xFF;
+		r.ix=memBuffer.read16();
+		r.iy=memBuffer.read16();
+
+		const af2=memBuffer.read16();
+		r.a_prime=af2>>>8;
+		r.flags_prime=this.revConvertFlags(af2&0xFF);
+		const bc2=memBuffer.read16();
+		r.b_prime=bc2>>>8;
+		r.c_prime=bc2&0xFF;
+		const de2=memBuffer.read16();
+		r.d_prime=de2>>>8;
+		r.e_prime=de2&0xFF;
+		const hl2=memBuffer.read16();
+		r.h_prime=hl2>>>8;
+		r.l_prime=hl2&0xFF;
+
 		// Also the 1 byte data is stored in 2 bytes for simplicity:
-		self.i=memBuffer.read8();
-		self.r=memBuffer.read8();
-		self.im=memBuffer.read8();
-		self.iff1=memBuffer.read8();
-		self.iff2=memBuffer.read8();
+		r.i=memBuffer.read8();
+		r.r=memBuffer.read8();
+		r.im=memBuffer.read8();
+		r.iff1=memBuffer.read8();
+		r.iff2=memBuffer.read8();
+
+		// Additional
+		r.halted=(memBuffer.read8()!=0);
+		r.do_delayed_di=(memBuffer.read8()!=0);
+		r.do_delayed_ei=(memBuffer.read8()!=0);
+		r.cycle_counter=0;
+
+		// Restore all registers etc.
+		const z80=this.z80;
+		z80.setState(r);
 
 		// Additional state
 		this.remaingInterruptTstates=memBuffer.read32();
@@ -328,127 +565,6 @@ export class Z80Cpu extends Z80js {
 		this.cpuLoadTstates=0;
 		this.cpuTotalTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
-	}
-
-
-	/**
-	 * Workaround for error:  "PC incorrect after FDCB instruction", https://github.com/viert/z80js/issues/2
-	 */
-	protected doBitIndexed(b, addr) {
-		super.doBitIndexed(b, addr);
-		// Workaround
-		const self=this as any;
-		self.pc++;	// Correct the PC
-	}
-
-
-	/**
-	 * ld__[ix,iy]_d__[a,b,c,d,e,h,l]
-	 * Workaround for error:  "ld (ix+0),l not working", https://github.com/viert/z80js/issues/3
-	 */
-	protected ld__ix_d__a() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.a);
-	}
-	protected ld__ix_d__b() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.b);
-	}
-	protected ld__ix_d__c() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.c);
-	}
-	protected ld__ix_d__d() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.d);
-	}
-	protected ld__ix_d__e() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.e);
-	}
-	protected ld__ix_d__h() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.h);
-	}
-	protected ld__ix_d__l() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.ix+offset, self.r1.l);
-	}
-
-	protected ld__iy_d__a() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.a);
-	}
-	protected ld__iy_d__b() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.b);
-	}
-	protected ld__iy_d__c() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.c);
-	}
-	protected ld__iy_d__d() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.d);
-	}
-	protected ld__iy_d__e() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.e);
-	}
-	protected ld__iy_d__h() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.h);
-	}
-	protected ld__iy_d__l() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));
-		self.write8(self.r1.iy+offset, self.r1.l);
-	}
-
-	/**
-	 * LD (IX/IY+d),n
-	 * Workaround for error:  "ld (ix+0),l not working", https://github.com/viert/z80js/issues/3
-	 */
-	protected ld__ix_d__n() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));	// d
-		let value=signed8(self.read8(self.pc++));	// n
-		self.write8(self.r1.ix+offset, value);
-	}
-	protected ld__iy_d__n() {
-		const self=this as any;
-		self.tStates+=19;
-		let offset=signed8(self.read8(self.pc++));	// d
-		let value=signed8(self.read8(self.pc++));	// n
-		self.write8(self.r1.iy+offset, value);
 	}
 
 
@@ -852,7 +968,7 @@ export class Z80Cpu extends Z80js {
 
 			default:
 				// No Z80N instruction, use normal execute
-				super.execute();
+			//	super.execute();
 				break;
 		}
 	}

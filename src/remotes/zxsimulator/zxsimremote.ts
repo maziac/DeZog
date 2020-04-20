@@ -1,5 +1,5 @@
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80_REG, Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
+import {Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
 import {Z80Cpu} from './z80cpu';
@@ -25,7 +25,7 @@ import {ZxMemory} from './zxmemory';
 export class ZxSimulatorRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
-	public z80Cpu: any;	// Z80Cpu
+	public z80Cpu: Z80Cpu;
 	public zxMemory: WatchpointZxMemory;
 	public zxPorts: ZxPorts;
 
@@ -93,7 +93,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Create a Z80 CPU to emulate Z80 behaviour
 		this.zxMemory=new WatchpointZxMemory();
 		this.zxPorts=new ZxPorts();
-		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts, false);
+		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts);
 		// For restoring the state
 		this.serializeObjects=[
 			this.z80Cpu,
@@ -376,34 +376,34 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				this.z80Cpu.sp=value;
 				break;
 			case Z80_REG.AF:
-				this.z80Cpu.r1.af=value;
+				this.z80Cpu.af=value;
 				break;
 			case Z80_REG.BC:
-				this.z80Cpu.r1.bc=value;
+				this.z80Cpu.bc=value;
 				break;
 			case Z80_REG.DE:
-				this.z80Cpu.r1.de=value;
+				this.z80Cpu.de=value;
 				break;
 			case Z80_REG.HL:
-				this.z80Cpu.r1.hl=value;
+				this.z80Cpu.hl=value;
 				break;
 			case Z80_REG.IX:
-				this.z80Cpu.r1.ix=value;
+				this.z80Cpu.ix=value;
 				break;
 			case Z80_REG.IY:
-				this.z80Cpu.r1.iy=value;
+				this.z80Cpu.iy=value;
 				break;
 			case Z80_REG.AF2:
-				this.z80Cpu.r2.af=value;
+				this.z80Cpu.af2=value;
 				break;
 			case Z80_REG.BC2:
-				this.z80Cpu.r2.bc=value;
+				this.z80Cpu.bc2=value;
 				break;
 			case Z80_REG.DE2:
-				this.z80Cpu.r2.de=value;
+				this.z80Cpu.de2=value;
 				break;
 			case Z80_REG.HL2:
-				this.z80Cpu.r2.hl=value;
+				this.z80Cpu.hl2=value;
 				break;
 
 			case Z80_REG.IM:
@@ -411,65 +411,65 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				break;
 
 			case Z80_REG.F:
-				this.z80Cpu.r1.f=value;
+				this.z80Cpu.f=value;
 				break;
 			case Z80_REG.A:
-				this.z80Cpu.r1.a=value;
+				this.z80Cpu.a=value;
 				break;
 			case Z80_REG.C:
-				this.z80Cpu.r1.c=value;
+				this.z80Cpu.c=value;
 				break;
 			case Z80_REG.B:
-				this.z80Cpu.r1.b=value;
+				this.z80Cpu.b=value;
 				break;
 			case Z80_REG.E:
-				this.z80Cpu.r1.e=value;
+				this.z80Cpu.e=value;
 				break;
 			case Z80_REG.D:
-				this.z80Cpu.r1.d=value;
+				this.z80Cpu.d=value;
 				break;
 			case Z80_REG.L:
-				this.z80Cpu.r1.l=value;
+				this.z80Cpu.l=value;
 				break;
 			case Z80_REG.H:
-				this.z80Cpu.r1.h=value;
+				this.z80Cpu.h=value;
 				break;
 			case Z80_REG.IXL:
-				this.z80Cpu.r1.ixl=value;
+				this.z80Cpu.ixl=value;
 				break;
 			case Z80_REG.IXH:
-				this.z80Cpu.r1.ixh=value;
+				this.z80Cpu.ixh=value;
 				break;
 			case Z80_REG.IYL:
-				this.z80Cpu.r1.iyl=value;
+				this.z80Cpu.iyl=value;
 				break;
 			case Z80_REG.IYH:
-				this.z80Cpu.r1.iyh=value;
+				this.z80Cpu.iyh=value;
 				break;
 
 			case Z80_REG.F2:
-				this.z80Cpu.r2.f=value;
+				this.z80Cpu.f=value;
 				break;
 			case Z80_REG.A2:
-				this.z80Cpu.r2.a=value;
+				this.z80Cpu.a=value;
 				break;
 			case Z80_REG.C2:
-				this.z80Cpu.r2.c=value;
+				this.z80Cpu.c=value;
 				break;
 			case Z80_REG.B2:
-				this.z80Cpu.r2.b=value;
+				this.z80Cpu.b=value;
 				break;
 			case Z80_REG.E2:
-				this.z80Cpu.r2.e=value;
+				this.z80Cpu.e=value;
 				break;
 			case Z80_REG.D2:
-				this.z80Cpu.r2.d=value;
+				this.z80Cpu.d=value;
 				break;
 			case Z80_REG.L2:
-				this.z80Cpu.r2.l=value;
+				this.z80Cpu.l=value;
 				break;
 			case Z80_REG.H2:
-				this.z80Cpu.r2.h=value;
+				this.z80Cpu.h=value;
 				break;
 			case Z80_REG.R:
 				this.z80Cpu.r=value;
@@ -790,17 +790,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * 'Z80Registers.getRegisterData'.
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
-		const cpu=this.z80Cpu;
-		const r1=cpu.r1;
-		const r2=cpu.r2;
-		// Convert regs
-		const regData=Z80RegistersClass.getRegisterData(
-			cpu.pc, cpu.sp,
-			r1.af, r1.bc, r1.de, r1.hl,
-			r1.ix, r1.iy,
-			r2.af, r2.bc, r2.de, r2.hl,
-			cpu.i, cpu.r, cpu.im);
-		return new Uint16Array(regData);
+		return this.z80Cpu.getRegisterData();
 	}
 
 
