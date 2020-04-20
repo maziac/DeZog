@@ -987,6 +987,14 @@ with the same syntax.
 It will display the sprite patterns.
 It is also possible to change the palette if the current palette is not suitable.
 
+For each of the 64 indices 3 patterns are shown:
+- the 8bit color pattern (256 bytes)
+- the 4bit color pattern for N6=0 (128 bytes)
+- the 4bit color pattern for N6=1 (128 bytes)
+
+Note: From the pattern memory it cannot be known if the pattern is used as 8bit or 4bit pattern so all possible patterns are shown in this view.
+This, of course, means that normally only the 8bit or the 4bit color pattern is valid. Decision is done by the sprite.
+
 ![](images/zxnextspritepatternsviewer1.jpg)
 
 
