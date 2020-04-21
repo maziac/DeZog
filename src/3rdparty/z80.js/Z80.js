@@ -3392,9 +3392,12 @@ let cycle_counts_dd = [
       get: () => {return pc;}
    });
 
-
    Object.defineProperty(this, "interruptsEnabled", {
-      get: () => {return iff1!=0;}
+      get: () => {return iff1 != 0;}
+   });
+
+   Object.defineProperty(this, "halted", {
+      get: () => {return halted;}
    });
 
    this.run_instruction = run_instruction;
