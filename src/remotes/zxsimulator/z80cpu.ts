@@ -1,29 +1,13 @@
-//import * as Z80js from 'z80js';
 import {ZxMemory} from './zxmemory';
 import {ZxPorts} from './zxports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
-//import {Utility} from '../../misc/utility';
+import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 
-//import * as zzz80 from '../../3rdparty/z80.js/ZZZ80.js';
-//import * as Z80 from '../../3rdparty/z80.js/ZZZ80.js';
-import Z80 = require('../../3rdparty/z80.js/Z80.js');
-//const zz80=require('../../3rdparty/z80.js/Z80.js');
-
-
-/*
-const signed8=(val) => {
-	if (val<128)
-		return val;
-	else
-		return val-256;
-}
-*/
 
 
 export class Z80Cpu {
-
 	// Pointer to the Z80.js (Z80.ts) simulator
 	protected z80: any;
 
@@ -48,9 +32,6 @@ export class Z80Cpu {
 
 	// Used to calculate thenumber of t-states for a step-over or similar.
 	public cpuTstatesCounter: number;
-
-	// Set to true to enable the Z80N instruction set.
-	protected z80n: boolean;
 
 	// Set to true if a ZX Spectrum like interrupt should be generated.
 	protected vsyncInterrupt: boolean;
@@ -83,17 +64,16 @@ export class Z80Cpu {
 		this.cpuLoad=1.0;	// Start with full load
 		this.cpuLoadRangeCounter=0;
 		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
-		this.z80n=Settings.launch.zsim.Z80N;
 		this.vsyncInterrupt=Settings.launch.zsim.vsyncInterrupt;
 
 		// Initialize Z80, call constructor
-		this.z80=new (Z80.Z80 as any)(
-			{
-			// TODO: Improve by passing functions directly not lambdas
+		const z80n_enabled=Settings.launch.zsim.Z80N;
+		this.z80=new (Z80.Z80 as any)({
 			mem_read: (address) => {return memory.read8(address);},
 			mem_write: (address, val) => {memory.write8(address, val);},
 			io_read: (address) => {return ports.read(address);},
-			io_write: (address, val) => {ports.write(address, val);}
+			io_write: (address, val) => {ports.write(address, val);},
+			z80n_enabled: z80n_enabled
 			});
 	}
 
