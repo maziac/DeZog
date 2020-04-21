@@ -524,7 +524,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				const vertInterrupt=this.z80Cpu.execute();
 
 				// Update visual memory
-				this.zxMemory.setVisualProg(prevPc);
+				this.zxMemory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
 
 				// Store the pc for coverage
 				this.codeCoverage?.storeAddress(prevPc);

@@ -182,7 +182,7 @@ export class Z80Cpu {
 	set af(value) {
 		const r=this.z80.getState();
 		r.a=value>>>8;
-		r.f=this.revConvertFlags(value&0xFF);
+		r.flags=this.revConvertFlags(value&0xFF);
 		this.z80.setState(r);
 	}
 	set bc(value) {
@@ -243,7 +243,17 @@ export class Z80Cpu {
 
 	set im(value) {
 		const r=this.z80.getState();
-		r.im=value;
+		r.imode=value;
+		this.z80.setState(r);
+	}
+	set iff1(value) {
+		const r=this.z80.getState();
+		r.iff1=value;
+		this.z80.setState(r);
+	}
+	set iff2(value) {
+		const r=this.z80.getState();
+		r.iff2=value;
 		this.z80.setState(r);
 	}
 	set r(value) {
@@ -510,7 +520,7 @@ export class Z80Cpu {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Store
-		let r: any;
+		let r=new Object() as any;
 		r.pc=memBuffer.read16();
 		r.sp=memBuffer.read16();
 		const af=memBuffer.read16();
@@ -544,7 +554,7 @@ export class Z80Cpu {
 		// Also the 1 byte data is stored in 2 bytes for simplicity:
 		r.i=memBuffer.read8();
 		r.r=memBuffer.read8();
-		r.im=memBuffer.read8();
+		r.imode=memBuffer.read8();
 		r.iff1=memBuffer.read8();
 		r.iff2=memBuffer.read8();
 

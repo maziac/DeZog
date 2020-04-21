@@ -429,7 +429,7 @@ suite('Utility', () => {
 		test('Memory', async () => {
 			const remote=Remote as any;
 			const cpu=remote.z80Cpu;
-			cpu.r1.hl=0x8000;
+			cpu.hl=0x8000;
 			Remote.writeMemoryDump(0x8000, new Uint8Array([0xFF, 0x5B]));
 			const regs=cpu.getRegisterData();
 			Z80Registers.setCache(regs);
@@ -459,7 +459,8 @@ suite('Utility', () => {
 		test('Register relative memory', async () => {
 			const remote=Remote as any;
 			const cpu=remote.z80Cpu;
-			cpu.r1.bc=0x8000;
+			let bc=0x8000;
+			cpu.bc=bc;
 			let regs=cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 			Remote.writeMemoryDump(0x8000, new Uint8Array([212]));
@@ -472,14 +473,16 @@ suite('Utility', () => {
 			evalString=await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
-			cpu.r1.bc-=1000;
+			bc-=1000;
+			cpu.bc=bc;
 			regs=cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 			log='${(BC+1000)}';
 			evalString=await Utility.evalLogString(log);
 			assert.equal('212', evalString);
 
-			cpu.r1.bc+=1000+2345;
+			bc+=1000+2345;
+			cpu.bc=bc;
 			regs=cpu.getRegisterData();
 			Z80Registers.setCache(regs);
 			log='${(BC-2345)}';

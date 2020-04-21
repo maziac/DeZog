@@ -3379,6 +3379,9 @@ let cycle_counts_dd = [
 ];
 
 
+   // T.Busse, Apr-2020: Modifications to make a few data/methods available to
+   // the outside.
+
    // Make registers and methods available.
    Object.defineProperty(this, "pc", {
       set: (value) => {pc = value;},
@@ -3389,12 +3392,6 @@ let cycle_counts_dd = [
       get: () => {return pc;}
    });
 
-   /*
-   Object.defineProperty(this, "tStates", {
-      set: (value) => {cycle_counter = value;},
-      get: () => {return cycle_counter;}
-   });
-   */
 
    Object.defineProperty(this, "interruptsEnabled", {
       get: () => {return iff1!=0;}
@@ -3404,6 +3401,346 @@ let cycle_counts_dd = [
    this.interrupt = interrupt;
    this.getState = getState;
    this.setState = setState;
+
+
+   // T.Busse, Apr-2020: Modifications to allow Z80N instructions
+
+   // 0xA4: LDIX
+   ed_instructions[0xA4] = () => {ldidx(+1);};
+
+   // 0xA5: LDWS
+   ed_instructions[0xA5] = () => {
+      const hlContent = core.mem_read(l + (h << 8));
+      core.mem_write(e + (d << 8), hlContent);
+      l = (l + 1) & 0xFF;
+      d = (d + 1) & 0xFF;
+   };
+
+   // 0xB4: LDIRX, loop
+   ed_instructions[0xB4] = () => {
+      ldidx(+1);
+      if (b || c) {
+         pc = (pc - 2) & 0xffff;
+         cycle_counter += 5;
+      }
+   };
+
+   // 0xAC: LDDX
+   ed_instructions[0xAC] = () => {ldidx(-1);};
+
+   // 0xBC: LDDRX, loop
+   ed_instructions[0xBC] = () => {
+      ldidx(-1);
+      if (b || c) {
+         pc = (pc - 2) & 0xffff;
+         cycle_counter += 5;
+      }
+   };
+
+   // 0xB7: LDPIRX, loop
+   ed_instructions[0xB7] = () => {
+      const addr = ((l + (h << 8)) & 0xFFF8) + (e & 0x07);
+      const t = core.mem_read(addr);
+      let r_de = e + (d << 8);
+      if (t != a)
+         core.mem_write(r_de, t);
+
+      r_de++;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+
+      let r_bc = c + (b << 8);
+      r_bc --;
+      c = r_bc & 0xff;
+      b = (r_bc & 0xff00) >>> 8;
+
+      // Loop finished?
+      if (b || c) {
+         pc = (pc - 2) & 0xffff;
+         cycle_counter += 5;
+      }
+   };
+
+   let ldidx = function (add) {
+      // {if HL*!=A DE*:=HL*;} DE++; HL++; BC--
+      const hlContent = core.mem_read(l + (h << 8));
+      let result = e + (d << 8);
+      if (hlContent != a)
+         core.mem_write(result, hlContent);
+
+      result ++;
+      e = result & 0xff;
+      d = (result & 0xff00) >>> 8;
+
+      result = l + (h << 8);
+      result += add;
+      l = result & 0xff;
+      h = (result & 0xff00) >>> 8;
+
+      result = c + (b << 8);
+      result --;
+      c = result & 0xff;
+      b = (result & 0xff00) >>> 8;
+   };
+
+
+   // 0x90: OUTINB
+   ed_instructions[0x90] = () => {
+      let r_hl = l + (h << 8);
+      const t = core.mem_read(r_hl);
+      core.io_write(c + (b << 8), t);
+      r_hl++;
+      l = r_hl & 0xff;
+      h = (r_hl & 0xff00) >>> 8;
+   };
+
+   // 0x30: MUL D,E
+   ed_instructions[0x30] = () => {
+      let r_de = d * e;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x31: ADD HL,A
+   ed_instructions[0x31] = () => {
+      let r_hl = l + (h << 8);
+      r_hl += a;
+      l = r_hl & 0xff;
+      h = (r_hl & 0xff00) >>> 8;
+   };
+
+   // 0x32: ADD DE,A
+   ed_instructions[0x32] = () => {
+      let r_de = e + (d << 8);
+      r_de += a;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x33: ADD BC,A
+   ed_instructions[0x33] = () => {
+      let r_bc = c + (b << 8);
+      r_bc += a;
+      c = r_bc & 0xff;
+      b = (r_bc & 0xff00) >>> 8;
+   };
+
+   // 0x31: ADD HL,nn
+   ed_instructions[0x34] = () => {
+      let r_hl = l + (h << 8);
+      pc = (pc + 1) & 0xFFFF;
+      let n1 = core.mem_read(pc);
+      pc = (pc + 1) & 0xFFFF;
+      let n2 = core.mem_read(pc);
+      r_hl += n1 + n2*256;
+      l = r_hl & 0xff;
+      h = (r_hl & 0xff00) >>> 8;
+   };
+
+   // 0x32: ADD DE,A
+   ed_instructions[0x35] = () => {
+      let r_de = e + (d << 8);
+      pc = (pc + 1) & 0xFFFF;
+      let n1 = core.mem_read(pc);
+      pc = (pc + 1) & 0xFFFF;
+      let n2 = core.mem_read(pc);
+      r_de += n1 + n2 * 256;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x33: ADD BC,A
+   ed_instructions[0x36] = () => {
+      let r_bc = c + (b << 8);
+      pc = (pc + 1) & 0xFFFF;
+      let n1 = core.mem_read(pc);
+      pc = (pc + 1) & 0xFFFF;
+      let n2 = core.mem_read(pc);
+      r_bc += n1 + n2 * 256;
+      c = r_bc & 0xff;
+      b = (r_bc & 0xff00) >>> 8;
+   };
+
+   // 0x23: SWAPNIB
+   ed_instructions[0x23] = () => {
+      a = ((a >>> 4) + (a << 4)) & 0xFF;
+   };
+
+   // 0x24: MIRROR
+   ed_instructions[0x24] = () => {
+      a =
+         ((a >>> 7) & 0b00000001) +
+         ((a >>> 5) & 0b00000010) +
+         ((a >>> 3) & 0b00000100) +
+         ((a >>> 1) & 0b00001000) +
+         ((a << 1) & 0b00010000) +
+         ((a << 3) & 0b00100000) +
+         ((a << 5) & 0b01000000) +
+         ((a << 7) & 0b10000000);
+   };
+
+   // 0x8A: PUSH nn
+   ed_instructions[0x8A] = () => {
+      pc = (pc + 1) & 0xFFFF;
+      const nnh = core.mem_read(pc);
+      pc = (pc + 1) & 0xFFFF;
+      const nnl = core.mem_read(pc);
+      const nn = nnl + 256 * nnh;
+      // Write
+      sp = (sp - 1) & 0xFFFF;
+      core.mem_write(sp, nn >>> 8);
+      sp = (sp - 1) & 0xFFFF;
+      core.mem_write(sp, nn & 0xFF);
+   };
+
+   // 0x91: NEXTREG r,n
+   ed_instructions[0x91] = () => {
+      pc = (pc + 1) & 0xFFFF;
+      const reg = core.mem_read(pc);
+      pc = (pc + 1) & 0xFFFF;
+      const val = core.mem_read(pc);
+      // Write
+      core.io_write(0x243B, reg);
+      core.io_write(0x253B, val);
+   };
+
+   // 0x92: NEXTREG r,A
+   ed_instructions[0x92] = () => {
+      pc = (pc + 1) & 0xFFFF;
+      const reg = core.mem_read(pc);
+      // Write
+      core.io_write(0x243B, reg);
+      core.io_write(0x253B, a);
+   };
+
+   // 0x93: PIXELDN
+   ed_instructions[0x93] = () => {
+      let r_hl = l + (h << 8);
+      if ((r_hl & 0x0700) != 0x0700)
+         r_hl += 256;
+      else if ((r_hl & 0xe0) != 0xe0)
+         r_hl = (r_hl & 0xF8FF) + 0x20;
+      else
+         r_hl = (r_hl & 0xF81F) + 0x0800;
+      r_hl = (r_hl & 0xFFFF);
+      l = r_hl & 0xff;
+      h = (r_hl & 0xff00) >>> 8;
+   };
+
+   // 0x94: PIXELAD
+   ed_instructions[0x94] = () => {
+      let r_hl = 0x4000 + ((d & 0xC0) << 5) + ((d & 0x07) << 8) + ((d & 0x38) << 2) + (e >>> 3);
+      l = r_hl & 0xff;
+      h = (r_hl & 0xff00) >>> 8;
+   };
+
+   // 0x95: SETAE
+   ed_instructions[0x95] = () => {
+      a = (0x80) >>> (e & 0x07)
+   };
+
+   // 0x27: TEST n
+   ed_instructions[0x27] = () => {
+      pc = (pc + 1) & 0xFFFF;
+      const n = core.mem_read(pc);
+      const result = a & n;
+      flags.S = (result >= 0x80) ? 1 : 0;
+      flags.Z = (result != 0) ? 0 : 1;
+      //flags.Y
+      flags.H = 0;
+      //flags.X
+      flags.P = 0;
+      //flags.N
+      flags.C = 0;
+   };
+
+   // 0x28: BSLA DE,B
+   ed_instructions[0x28] = () => {
+      const shifts = b & 0x1F
+      let r_de = e + (d << 8);
+      r_de = (r_de << shifts) & 0xFFFF;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x29: BSRA DE,B
+   ed_instructions[0x29] = () => {
+      const shifts = b & 0x1F
+      let r_de = e + (d << 8);
+      if (r_de >= 0x8000)
+         r_de += 0xFFFF0000;
+      r_de = (r_de >>> shifts) & 0xFFFF;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x2A: BSRL DE,B
+   ed_instructions[0x2A] = () => {
+      const shifts = b & 0x1F
+      const r_de = ((e + (d << 8)) >>> shifts) & 0xFFFF;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x2B: BSRF DE,B
+   ed_instructions[0x2B] = () => {
+      const shifts = b & 0x1F
+      const r_de = (0xFFFF0000 + ((e + (d << 8))) >>> shifts) & 0xFFFF;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x2C: BRLC DE,B
+   ed_instructions[0x2C] = () => {
+      const shifts = b & 0x0F
+      let p_de = e + (d << 8);
+      let r_de = p_de << shifts;
+      r_de = (r_de | (r_de >>> 16)) & 0xFFFF;
+      e = r_de & 0xff;
+      d = (r_de & 0xff00) >>> 8;
+   };
+
+   // 0x98: JP (C)
+   ed_instructions[0x98] = () => {
+      const inp = core.io_read(c + (b << 8));
+      pc = (pc + 2) & 0xC000;
+      pc += (inp << 6);
+      // Decrement because PC is incremented afterwards
+      pc--;
+   };
+
+   // Correct cycle counts
+   cycle_counts_ed[0xA4] = 16;
+   cycle_counts_ed[0xA5] = 14;
+   cycle_counts_ed[0xB4] = 16;
+   cycle_counts_ed[0xAC] = 16;
+   cycle_counts_ed[0xBC] = 16;
+   cycle_counts_ed[0xB7] = 16;
+   cycle_counts_ed[0x90] = 16;
+   cycle_counts_ed[0x30] = 8;
+   cycle_counts_ed[0x31] = 8;
+   cycle_counts_ed[0x32] = 8;
+   cycle_counts_ed[0x33] = 8;
+   cycle_counts_ed[0x34] = 16;
+   cycle_counts_ed[0x35] = 16;
+   cycle_counts_ed[0x36] = 16;
+
+
+   cycle_counts_ed[0x23] = 8;
+   cycle_counts_ed[0x24] = 8;
+   cycle_counts_ed[0x8A] = 23;
+   cycle_counts_ed[0x91] = 20;
+   cycle_counts_ed[0x92] = 17;
+   cycle_counts_ed[0x93] = 8;
+   cycle_counts_ed[0x94] = 8;
+   cycle_counts_ed[0x95] = 8;
+   cycle_counts_ed[0x27] = 11;
+   cycle_counts_ed[0x28] = 8;
+   cycle_counts_ed[0x29] = 8;
+   cycle_counts_ed[0x2A] = 8;
+   cycle_counts_ed[0x2B] = 8;
+   cycle_counts_ed[0x2C] = 8;
+   cycle_counts_ed[0x98] = 13;
 
    return this;
 }

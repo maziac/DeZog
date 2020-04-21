@@ -111,7 +111,7 @@ suite('Z80Cpu', () => {
 			cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
 			z80=cpu.z80;
 			mem=cpu.memory;
-			ports=cpu.io;
+			ports=cpu.ports;
 			// Make sure whole memory is RAM
 			for (let i=0; i<8;i++)
 				mem.setSlot(i, i);
@@ -222,7 +222,6 @@ suite('Z80Cpu', () => {
 
 			test('LDIRX', () => {
 				// BC == 0
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0x1000;
 				cpu.de=0x2000;
@@ -244,7 +243,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x10, mem.read8(0x2000));
 
 				// BC != 0, PC overflow
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0x1000;
 				cpu.de=0x2000;
@@ -266,7 +264,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x10, mem.read8(0x2000));
 
 				// BC != 0, HL overflow
-				cpu.tStates=0;
 				cpu.pc=0x0000;
 				cpu.hl=0xFFFF;
 				cpu.de=0x1000;
@@ -291,7 +288,6 @@ suite('Z80Cpu', () => {
 
 			test('LDDX', () => {
 				// A not equal, hl decremented
-				cpu.tStates=0;
 				cpu.pc=0x0000;
 				cpu.hl=0x1000;
 				cpu.de=0xFFFF;
@@ -316,7 +312,6 @@ suite('Z80Cpu', () => {
 
 			test('LDDRX', () => {
 				// BC == 0
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0x1000;
 				cpu.de=0x2000;
@@ -338,7 +333,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x10, mem.read8(0x2000));
 
 				// BC != 0, PC overflow
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0x1000;
 				cpu.de=0x2000;
@@ -360,7 +354,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x10, mem.read8(0x2000));
 
 				// BC != 0, HL overflow
-				cpu.tStates=0;
 				cpu.pc=0x0010;
 				cpu.hl=0x0000;
 				cpu.de=0x1000;
@@ -385,7 +378,6 @@ suite('Z80Cpu', () => {
 
 			test('LDPIRX', () => {
 				// BC == 0, A not equal
-				cpu.tStates=0;
 				cpu.pc=0x0000;
 				cpu.hl=0x1000;
 				cpu.de=0x20FF;
@@ -407,7 +399,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x10, mem.read8(0x20FF));
 
 				// BC == 0, A not equal
-				cpu.tStates=0;
 				cpu.pc=0x0000;
 				cpu.hl=0xFFFF;
 				cpu.de=0x20F8;
@@ -429,7 +420,6 @@ suite('Z80Cpu', () => {
 				assert.equal(0x11, mem.read8(0x20F8));
 
 				// BC != 0, A equal
-				cpu.tStates=0;
 				cpu.pc=0x8000;
 				cpu.hl=0x0000;
 				cpu.de=0x1001;
@@ -476,7 +466,6 @@ suite('Z80Cpu', () => {
 			});
 
 			test('MUL D,E', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.d=0;
 				cpu.e=0;
@@ -528,7 +517,6 @@ suite('Z80Cpu', () => {
 
 
 			test('ADD HL,A', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0xFFF0;
 				cpu.a=0xFF;
@@ -544,7 +532,6 @@ suite('Z80Cpu', () => {
 			});
 
 			test('ADD DE,A', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.de=0xFFF0;
 				cpu.a=0xFF;
@@ -560,7 +547,6 @@ suite('Z80Cpu', () => {
 			});
 
 			test('ADD BC,A', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.bc=0xFFF0;
 				cpu.a=0xFF;
@@ -577,7 +563,6 @@ suite('Z80Cpu', () => {
 
 
 			test('ADD HL,nn', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.hl=0xF000;
 				setMem([
@@ -594,7 +579,6 @@ suite('Z80Cpu', () => {
 			});
 
 			test('ADD DE,nn', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.de=0xF000;
 				setMem([
@@ -611,7 +595,6 @@ suite('Z80Cpu', () => {
 			});
 
 			test('ADD BC,nn', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				cpu.bc=0xF000;
 				setMem([
@@ -629,9 +612,8 @@ suite('Z80Cpu', () => {
 
 
 			test('SWAPNIB', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.a=0xA5;
+				cpu.a=0xA5;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x23]);
@@ -640,13 +622,12 @@ suite('Z80Cpu', () => {
 				let r=cpu.getAllRegisters();
 				assert.equal(8, tStates);
 				assert.equal(0x0001, r.pc);
-				assert.equal(0x5A, r.a);
+				assert.equal(0x5A, r.af>>>8);
 			});
 
 			test('MIRROR', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.a=0b10000010;
+				cpu.a=0b10000010;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x24]);
@@ -655,15 +636,16 @@ suite('Z80Cpu', () => {
 				let r=cpu.getAllRegisters();
 				assert.equal(8, tStates);
 				assert.equal(0x0001, r.pc);
-				assert.equal(0b01000001, r.a);
+				assert.equal(0b01000001, r.af>>>8);
 
 				let val=0b1000_0000;
 				let expected=0b0000_0001;
 				for (let i=0; i<8; i++) {
 					cpu.pc=0xFFFF;
-					r1.a=val;
-					cpu.executeZ80n();
-					assert.equal(expected, r.a);
+					cpu.a=val;
+					z80.run_instruction();
+					r=cpu.getAllRegisters();
+					assert.equal(expected, r.af>>>8);
 					// Next
 					val>>>=1;
 					expected<<=1;
@@ -673,11 +655,10 @@ suite('Z80Cpu', () => {
 				expected=0b1111_1110;
 				for (let i=0; i<8; i++) {
 					cpu.pc=0xFFFF;
-					r1.a=val&0xFF;
+					cpu.a=val&0xFF;
 					z80.run_instruction();
-
-					let r=cpu.getAllRegisters();
-					assert.equal(expected, r.a);
+					r=cpu.getAllRegisters();
+					assert.equal(expected, r.af>>>8);
 					// Next
 					val>>>=1;
 					expected<<=1;
@@ -688,9 +669,8 @@ suite('Z80Cpu', () => {
 
 
 			test('PUSH nn', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.sp=0x8000;
+				cpu.sp=0x8000;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x8A,
@@ -701,20 +681,21 @@ suite('Z80Cpu', () => {
 				let r=cpu.getAllRegisters();
 				assert.equal(23, tStates);
 				assert.equal(0x0003, r.pc);
-				assert.equal(0x7FFE, r1.sp);
+				assert.equal(0x7FFE, r.sp);
 				assert.equal(0x1234, mem.getMemory16(0x7FFE));
 
 				cpu.pc=0x1000;
-				r1.sp=0x0001;
+				cpu.sp=0x0001;
 				setMem([
 					0x1000, 0xED,
 					0x1001, 0x8A,
 					0x1002, 0x12,
 					0x1003, 0x34]);
-				cpu.executeZ80n();
+				z80.run_instruction();
 
+				r=cpu.getAllRegisters();
 				assert.equal(0x1004, r.pc);
-				assert.equal(0xFFFF, r1.sp);
+				assert.equal(0xFFFF, r.sp);
 				assert.equal(0x1234, mem.getMemory16(0xFFFF));
 			});
 
@@ -724,16 +705,15 @@ suite('Z80Cpu', () => {
 				const outRegAccess=0x253B;
 				let outSelectValue=0;
 				let outAccessValue=0;
-				cpu.io.registerOutPortFunction(outRegSelect, (port, value) => {
+				cpu.ports.registerOutPortFunction(outRegSelect, (port, value) => {
 					if (port==outRegSelect)
 						outSelectValue=value;
 				});
-				cpu.io.registerOutPortFunction(outRegAccess, (port, value) => {
+				cpu.ports.registerOutPortFunction(outRegAccess, (port, value) => {
 					if (port==outRegAccess)
 						outAccessValue=value;
 				});
 
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				setMem([
 					0xFFFF, 0xED,
@@ -754,18 +734,17 @@ suite('Z80Cpu', () => {
 				const outRegAccess=0x253B;
 				let outSelectValue=0;
 				let outAccessValue=0;
-				cpu.io.registerOutPortFunction(outRegSelect, (port, value) => {
+				cpu.ports.registerOutPortFunction(outRegSelect, (port, value) => {
 					if (port==outRegSelect)
 						outSelectValue=value;
 				});
-				cpu.io.registerOutPortFunction(outRegAccess, (port, value) => {
+				cpu.ports.registerOutPortFunction(outRegAccess, (port, value) => {
 					if (port==outRegAccess)
 						outAccessValue=value;
 				});
 
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.a=0xF5;
+				cpu.a=0xF5;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x92,
@@ -781,33 +760,34 @@ suite('Z80Cpu', () => {
 
 
 			test('PIXELDN', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.hl=0xFEFF;
+				cpu.hl=0xFEFF;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x93]);
-				cpu.executeZ80n();
+				let tStates=z80.run_instruction();
 
+				let r=cpu.getAllRegisters();
 				assert.equal(8, tStates);
 				assert.equal(0x0001, r.pc);
 				assert.equal(0xFFFF, r.hl);
 
 				cpu.pc=0xFFFF;
-				r1.hl=0xFF7F;
-				cpu.executeZ80n();
+				cpu.hl=0xFF7F;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0xF87F+0x20, r.hl);
 
 				cpu.pc=0xFFFF;
-				r1.hl=0xFFFF;
-				cpu.executeZ80n();
+				cpu.hl=0xFFFF;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0x001F, r.hl);
 			});
 
 			test('PIXELAD', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0x0000;
+				cpu.de=0x0000;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x94]);
@@ -819,16 +799,16 @@ suite('Z80Cpu', () => {
 				assert.equal(0x4000, r.hl);
 
 				cpu.pc=0xFFFF;
-				r1.de=0xFFFF;
-				cpu.executeZ80n();
+				cpu.de=0xFFFF;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0x5F1F+0xE0, r.hl);
 				assert.equal(0xFFFF, r.de);
 			});
 
 			test('SETAE', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.e=0x00;
+				cpu.e=0x00;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x95]);
@@ -837,30 +817,32 @@ suite('Z80Cpu', () => {
 				let r=cpu.getAllRegisters();
 				assert.equal(8, tStates);
 				assert.equal(0x0001, r.pc);
-				assert.equal(0b1000_0000, r.a);
+				assert.equal(0b1000_0000, r.af>>>8);
 
 				cpu.pc=0xFFFF;
-				r1.e=0x01;
-				cpu.executeZ80n();
-				assert.equal(0b0100_0000, r.a);
+				cpu.e=0x01;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
+				assert.equal(0b0100_0000, r.af>>>8);
 
 				cpu.pc=0xFFFF;
-				r1.e=0x07;
-				cpu.executeZ80n();
-				assert.equal(0b0000_0001, r.a);
+				cpu.e=0x07;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
+				assert.equal(0b0000_0001, r.af>>>8);
 
 				cpu.pc=0xFFFF;
-				r1.e=0xFA;
-				cpu.executeZ80n();
-				assert.equal(0b0010_0000, r.a);
+				cpu.e=0xFA;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
+				assert.equal(0b0010_0000, r.af>>>8);
 			});
 
 
 			test('TEST n', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.a=0xA5;
-				r1.f=0x00;
+				cpu.a=0xA5;
+				cpu.f=0x00;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x27,
@@ -870,34 +852,39 @@ suite('Z80Cpu', () => {
 				let r=cpu.getAllRegisters();
 				assert.equal(11, tStates);
 				assert.equal(0x0002, r.pc);
-				assert.equal(0b1000_0000, r1.f);
+				assert.equal(0b1000_0000, r.af&0xFF);
 
 				cpu.pc=0xFFFF;
-				r1.a=0xA5;
-				r1.f=0x00;
-				setMem([0x0000, 0x27,
+				cpu.a=0xA5;
+				cpu.f=0x00;
+				setMem([
+					0xFFFF, 0xED,
+					0x0000, 0x27,
 					0x0001, 0x5A]);
-				cpu.executeZ80n();
-				assert.equal(0b0100_0000, r1.f);
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
+				assert.equal(0b0100_0000, r.af&0xFF);
 
 				cpu.pc=0xFFFF;
-				r1.a=0x75;
-				r1.f=0x00;
+				cpu.a=0x75;
+				cpu.f=0x00;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x27,
 					0x0001, 0xFF]);
-				cpu.executeZ80n();
-				assert.equal(0b0000_0000, r1.f);
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
+				assert.equal(0b0000_0000, r.af&0xFF);
 			});
 
 
 			test('BSLA DE,B', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0b1100_0010_1000_0001;
-				r1.b=0xE1;
-				setMem([0x0000, 0x28]);
+				cpu.de=0b1100_0010_1000_0001;
+				cpu.b=0xE1;
+				setMem([
+					0xFFFF, 0xED,
+					0x0000, 0x28]);
 				let tStates=z80.run_instruction();
 
 				let r=cpu.getAllRegisters();
@@ -906,23 +893,24 @@ suite('Z80Cpu', () => {
 				assert.equal(0b1000_0101_0000_0010, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100_0010_1000_0001;
-				r1.b=3;
-				cpu.executeZ80n();
+				cpu.de=0b1100_0010_1000_0001;
+				cpu.b=3;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b001_0100_0000_1000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100_0010_1000_0001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b1100_0010_1000_0001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0, r.de);
 			});
 
 			test('BSRA DE,B', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=0xE1;
+				cpu.de=0b1100001010000001;
+				cpu.b=0xE1;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x29]);
@@ -934,29 +922,31 @@ suite('Z80Cpu', () => {
 				assert.equal(0b1110000101000000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=3;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=3;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b0000100001010000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b1100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0xFFFF, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0, r.de);
 			});
 
 			test('BSRL DE,B', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=0xE1;
+				cpu.de=0b1100001010000001;
+				cpu.b=0xE1;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x2A]);
@@ -968,23 +958,24 @@ suite('Z80Cpu', () => {
 				assert.equal(0b0110000101000000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=3;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=3;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b0000100001010000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b1100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0, r.de);
 			});
 
 			test('BSRF DE,B', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=0xE1;
+				cpu.de=0b1100001010000001;
+				cpu.b=0xE1;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x2B]);
@@ -996,29 +987,31 @@ suite('Z80Cpu', () => {
 				assert.equal(0b1110000101000000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=3;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=3;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b1110100001010000, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b1100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0xFFFF, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0xFFFF, r.de);
 			});
 
 			test('BRLC DE,B', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=0xE1;
+				cpu.de=0b1100001010000001;
+				cpu.b=0xE1;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x2C]);
@@ -1030,33 +1023,35 @@ suite('Z80Cpu', () => {
 				assert.equal(0b1000010100000011, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=3;
-				cpu.executeZ80n();
+				cpu.de=0b1100001010000001;
+				cpu.b=3;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b0001010000001110, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b1100001010000001;
-				r1.b=16;
-				cpu.executeZ80n();
+				cpu.de=0b1100001010000001;
+				cpu.b=16;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b1100001010000001, r.de);
 
 				cpu.pc=0xFFFF;
-				r1.de=0b0100001010000001;
-				r1.b=31;
-				cpu.executeZ80n();
+				cpu.de=0b0100001010000001;
+				cpu.b=31;
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b1010000101000000, r.de);
 			});
 
 
 			test('JP (C)', () => {
-				cpu.tStates=0;
 				cpu.pc=0xFFFF;
 				setMem([
 					0xFFFF, 0xED,
 					0x0000, 0x98]);
-				r1.bc=0x1234;	// port address
-				setPorts([r1.bc, 0xFF]);
+				cpu.bc=0x1234;	// port address
+				setPorts([0x1234, 0xFF]);
 				let tStates=z80.run_instruction();
 
 				let r=cpu.getAllRegisters();
@@ -1064,11 +1059,13 @@ suite('Z80Cpu', () => {
 				assert.equal(0b0011_1111_1100_0000, r.pc);
 
 				cpu.pc=0xC00F;
-				setMem([0xC010, 0x98]);
-				r1.bc=0x1234;	// port address
-				setPorts([r1.bc, 0b11100011]);
-				cpu.executeZ80n();
-
+				setMem([
+					0xC00F, 0xED,
+					0xC010, 0x98]);
+				cpu.bc=0x1234;	// port address
+				setPorts([0x1234, 0b11100011]);
+				z80.run_instruction();
+				r=cpu.getAllRegisters();
 				assert.equal(0b1111_1000_1100_0000, r.pc);
 			});
 
