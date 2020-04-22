@@ -171,7 +171,7 @@ export class DzrpRemote extends RemoteBase {
 	 * undefined if not breakpoint found.
 	 */
 	protected getBreakpointById(bpId: number): GenericBreakpoint|undefined {
-		if (bpId)	// undefined or 0
+		if (!bpId)	// undefined or 0
 			return undefined;
 		// Search vscode breakpoints
 		const foundBp = this.breakpoints.find(bp => bp.bpId==bpId);
@@ -300,7 +300,7 @@ export class DzrpRemote extends RemoteBase {
 	public async continue(): Promise<{breakReasonString: string}> {
 		return new Promise<{breakReasonString: string}>(async resolve => {
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
+			const funcContinueResolve = async ({breakNumber, breakData, breakReasonString}) => {
 				try {
 					// Get registers
 					Z80Registers.clearCache();
@@ -309,6 +309,7 @@ export class DzrpRemote extends RemoteBase {
 					// Check breakReason, i.e. check if it was a watchpoint.
 					let condition;
 					if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
+						// TODO: evaluate
 						// Condition not used at the moment
 						condition='';
 					}
@@ -338,6 +339,7 @@ export class DzrpRemote extends RemoteBase {
 					// Check for continue
 					if (condition==undefined) {
 						// Continue
+						this.continueResolve=funcContinueResolve;
 						this.sendDzrpCmdContinue();
 					}
 					else {
@@ -357,6 +359,7 @@ export class DzrpRemote extends RemoteBase {
 			};
 
 			// Send 'run' command
+			this.continueResolve=funcContinueResolve;
 			this.sendDzrpCmdContinue();
 		});
 	}
@@ -985,6 +988,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param address The watchpoint address. 0x0000-0xFFFF.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * I.e. you can watch whole memory areas.
+	 * @param access Read "r" or write "w" access, or both "rw".
 	 * @param condition The watchpoint condition as string. If there is n0 condition
 	 * 'condition' may be undefined or an empty string ''.
 	 */

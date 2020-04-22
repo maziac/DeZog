@@ -233,7 +233,7 @@ export class ZxNextRemote extends DzrpRemote {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
 				// Get reason string
-				let breakReasonString=Utility.getStringFromBuffer(data, 6);
+				let breakReasonString=Utility.getStringFromBuffer(data, 5);
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 				// If no error text ...
@@ -465,6 +465,46 @@ export class ZxNextRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId&0xFF, bpId>>>8]);
+	}
+
+
+	/**
+	 * Sends the command to add a watchpoint.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * I.e. you can watch whole memory areas.
+	 * @param condition The watchpoint condition as string. If there is n0 condition
+	 * 'condition' may be undefined or an empty string ''.
+	 */
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
+		// Convert condition string to Buffer
+		if (!condition)
+			condition='';
+		const condBuf=Utility.getBufferFromString(condition);
+		let accessCode=0;
+		if (access.indexOf('r')>=0)
+			accessCode+=0x01;
+		if (access.indexOf('w')>=0)
+			accessCode+=0x02;
+		await this.sendDzrpCmd(DZRP.CMD_ADD_WATCHPOINT, [
+			address&0xFF, address>>>8,
+			size&0xFF, size>>>8,
+			accessCode,
+			...condBuf,
+		]);
+	}
+
+
+	/**
+	 * Sends the command to remove a watchpoint for an address range.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 */
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
+		await this.sendDzrpCmd(DZRP.CMD_REMOVE_WATCHPOINT, [
+			address&0xFF, address>>>8,
+			size&0xFF, size>>>8
+		]);
 	}
 
 

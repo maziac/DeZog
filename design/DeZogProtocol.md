@@ -277,6 +277,7 @@ Command:
 | 5     | 1    | 0x09  | CMD_ADD_WATCHPOINT |
 | 6     | 2    | 0-65535 | Start of watchpoint address range |
 | 6     | 2    | 0-65535 | Size of watchpoint address range |
+| 6     | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
 | 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
 
 
@@ -544,7 +545,7 @@ Notification:
 | 0     | 4    | 5+n     | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
 | 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other error, the error string might have useful information for the user |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason, the error string might have useful information for the user |
 | 8     | 2    | 0/1-65535 | For breakpoints: Breakpoint ID or 0 if no breakpoint hit, for watchpoints: the address. |
 | 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |

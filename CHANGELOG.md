@@ -5,6 +5,9 @@
 - Manual change of PC (or SP) will update the shown file.
 - zsim: cpu writing to ROM does not change the contents anymore.
 - zsim: simulator exchanged. Is less buggy and 30% performance increase.
+- cspect:
+  - conditional breakpoints working.
+  - watchpoints added.
 
 # 1.2.2
 - CSpect: timeout error if no response received.
