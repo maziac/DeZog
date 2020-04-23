@@ -2,7 +2,6 @@ import {LogSocket} from '../../log';
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
-import {BREAK_REASON_NUMBER} from '../remotebase';
 import {DZRP, DZRP_VERSION} from '../dzrp/dzrpremote';
 
 
@@ -236,33 +235,7 @@ export class ZxNextRemote extends DzrpRemote {
 				let breakReasonString=Utility.getStringFromBuffer(data, 5);
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
-				// If no error text ...
-				if (!breakReasonString) {
-					// Add generic error text
-					switch (breakNumber) {
-						case BREAK_REASON_NUMBER.NO_REASON:
-							breakReasonString="";
-							break;
-						case BREAK_REASON_NUMBER.MANUAL_BREAK:
-							breakReasonString="Manual break";
-							break;
-						case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
-							breakReasonString="Breakpoint hit";
-							break;
-						case BREAK_REASON_NUMBER.WATCHPOINT_READ:
-							breakReasonString="Read watchpoint hit";
-							break;
-						case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
-							breakReasonString="Write watchpoint hit";
-							break;
-						default:
-							breakReasonString="Unknown reason";
-							break;
-					}
-				}
 
-				// Adds breakReasonNumber (as number) if consumer is step-out.
-				Utility.assert(breakReasonString!=undefined);
 				// breakReasonString is aleways defined. The rest is additional info.
 				continueHandler({breakNumber, breakData, breakReasonString});
 			}

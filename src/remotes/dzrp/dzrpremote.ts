@@ -256,10 +256,7 @@ export class DzrpRemote extends RemoteBase {
 					reasonString="ASSERT ";
 				}
 				else {
-					if (breakReasonString)
-						reasonString="";
-					else
-						reasonString="Breakpoint. ";
+					reasonString="Breakpoint hit. ";
 				}
 				break;
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
