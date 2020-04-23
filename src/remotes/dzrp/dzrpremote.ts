@@ -436,7 +436,9 @@ export class DzrpRemote extends RemoteBase {
 			const opCodeDescription=opcode.disassemble();
 			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
-			this.continueResolve=({breakReasonString}) => {
+			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
+				// Construct break reason string to report
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, '', breakReasonString);
 				// Clear registers
 				this.postStep();
 				// return
