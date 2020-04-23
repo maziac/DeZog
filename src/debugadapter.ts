@@ -80,7 +80,7 @@ export class DebugSessionClass extends DebugSession {
 	protected pauseRequested=false;
 
 	/// With pressing keys for stepping (i.e. F10, F11) it is possible to
-	/// e.g. enter the 'stepInRequest' while the previous stepIntRequest is not yet finished.
+	/// e.g. enter the 'stepInRequest' while the previous stepInRequest is not yet finished.
 	/// I.e. before a StoppedEvent is sent. With the GUI this is not possible
 	/// since the GUI disables the stepIn button. But it seems that
 	/// key presses are still allowed.
@@ -1253,7 +1253,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Print
-		vscode.debug.activeDebugConsole.append('Step-over');
+		vscode.debug.activeDebugConsole.appendLine('Step-over');
 
 		// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 		// Therefore the stepOver is repeated until really a new
@@ -1316,9 +1316,10 @@ export class DebugSessionClass extends DebugSession {
 		if (i>1)
 			instr=undefined;
 
-		// PRint instruction
+		// Print instruction
 		if (stepBackMode) {
-			vscode.debug.activeDebugConsole.appendLine(instr||"");
+			if(instr)
+				vscode.debug.activeDebugConsole.appendLine(instr);
 		}
 		else {
 			// Display T-states and time
@@ -1346,23 +1347,20 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Starts to print the step info. USe in conjunction with 'endStepInfo'.
+	 * Starts to print the step info. Use in conjunction with 'endStepInfo'.
 	 * Resets the t-states.
 	 * @param mainText E.g. "StepInto"
 	 */
 	protected async startStepInfo(mainText?: string): Promise<void> {
 		if(mainText)
-			vscode.debug.activeDebugConsole.append(mainText);
+			vscode.debug.activeDebugConsole.appendLine(mainText);
 		// Reset t-states counter
 		await Remote.resetTstates();
 	}
 
-
 	/**
 	 * Prints a text, the disassembly and the used T-states and time to the debug console.
 	 * Assumes that something like "StepInto" has been printed before.
-	 * If text is available output will start with a ":".
-	 * If not it will end with a ".".
 	 * @param disasm The corresponding disassembly.
 	 */
 	protected async endStepInfo(disasm?: string): Promise<void> {
@@ -1393,6 +1391,7 @@ export class DebugSessionClass extends DebugSession {
 				tStatesText+=', time: '+time.toPrecision(3)+unit+'@'+clockStr+'MHz';
 			}
 		}
+
 		let output=disasm;
 		if (tStatesText) {
 			if (output)
@@ -1400,11 +1399,9 @@ export class DebugSessionClass extends DebugSession {
 			else
 				output=tStatesText;
 		}
-		if (output)
-			output=': '+output;
-		else
-			output='.';
-		vscode.debug.activeDebugConsole.appendLine(output);
+
+		if(output)
+			vscode.debug.activeDebugConsole.appendLine(output);
 	}
 
 

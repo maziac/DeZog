@@ -133,8 +133,8 @@ Remote <-- Emulator: break
 DebugSessionClass <-- Remote: break
 
 DebugSessionClass -> Remote: Get PC
-Remote -> Emulator: PC
-Remote <-- Emulator: Get PC
+Remote -> Emulator: Get PC
+Remote <-- Emulator: PC
 DebugSessionClass <-- Remote:  PC
 
 note over DebugSessionClass: Lookup file/line from PC

@@ -12,7 +12,6 @@ import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
-import {Mutex} from 'async-mutex';
 
 
 
@@ -174,17 +173,23 @@ export class DzrpRemote extends RemoteBase {
 		if (!bpId)	// undefined or 0
 			return undefined;
 		// Search vscode breakpoints
-		const foundBp = this.breakpoints.find(bp => bp.bpId==bpId);
+		const foundBp=this.breakpoints.find(bp => bp.bpId==bpId);
 		if (foundBp)
 			return foundBp;
 		// Search asserts
 		const foundAssertBp=this.assertBreakpoints.find(bp => bp.bpId==bpId);
 		if (foundAssertBp)
 			return foundAssertBp;
-		// Search log breakpoints
-		const foundLogBp=this.assertBreakpoints.find(bp => bp.bpId==bpId);
-		if (foundLogBp)
-			return foundLogBp;
+		// Search log breakpoints, search all groups
+
+		for (const [group, logpointsArray] of this.logpoints) {
+			const groupEnabled=this.logpointsEnabled.get(group);
+			if (groupEnabled) {
+				const foundLogBp=logpointsArray.find(bp => bp.bpId==bpId);
+				if (foundLogBp)
+					return foundLogBp;
+			}
+		}
 		// Nothing found
 		return undefined;
 	}
@@ -206,6 +211,7 @@ export class DzrpRemote extends RemoteBase {
 		if (bp) {
 			if (bp.condition) {
 				// Check if condition is true
+				// TODO: If I would allow 'await evalExpression' I coould also allow e.g. memory checks
 				const evalCond=Utility.evalExpression(bp.condition, true);
 				if (evalCond!=0)
 					return {condition: bp.condition, log: bp.log};
@@ -231,7 +237,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise to the reason string, e.g. "Breakpoint hit. A==4."
 	 */
 	protected async constructBreakReasonString(breakNumber: number, breakData: number, condition: string, breakReasonString: string): Promise<string> {
-		Utility.assert(condition != undefined);
+		Utility.assert(condition!=undefined);
 		if (!breakReasonString)
 			breakReasonString='';
 
@@ -243,14 +249,14 @@ export class DzrpRemote extends RemoteBase {
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
-				const abp = this.assertBreakpoints.find(abp => abp.bpId==breakData);
+				const abp=this.assertBreakpoints.find(abp => abp.bpId==breakData);
 				if (abp) {
 					condition=condition.substr(2);	// cut off "!("
 					condition=condition.substr(0, condition.length-1);	// cut off trailing ")"
 					reasonString="ASSERT ";
 				}
 				else {
-					if(breakReasonString)
+					if (breakReasonString)
 						reasonString="";
 					else
 						reasonString="Breakpoint. ";
@@ -287,18 +293,81 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Evaluates the breakpoint condition and log (logpoint).
+	 * Checks also pauseStep and returns '' if it is true.
+	 * @param breakNumber The break reason as number, e.g. BREAK_REASON_NUMBER.BREAKPOINT_HIT
+	 * @param breakData The ID of the hit breakpoint. In future this could also be the watchpoint address.
+	 * @returns undefined or the condition text.
+	 * If the breakpoint condition is not true: undefined is returned.
+	 * If the condition is true:
+	 * - If a log is present the logtext is evaluated and a 'log' with the text will be emitted. 'undefined' is returned.
+	 * - If no log is present the condition text is returned.
+	 * All in all:
+	 * If undefined is returned no break should be done.
+	 * If a text is returned the bp condition was true and a break should be done.
+	 */
+	protected async evalBpConditionAndLog(breakNumber: number, breakData: number): Promise<string|undefined> {
+		// Get registers
+		//Z80Registers.clearCache();
+		//await Remote.getRegisters();
+
+		// Check breakReason, i.e. check if it was a watchpoint.
+		let condition;
+		if (breakNumber==BREAK_REASON_NUMBER.NO_REASON) {
+			// Temporary breakpoint hit.
+			return undefined;
+		}
+		else if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
+			// TODO: evaluate
+			// Condition not used at the moment
+			condition='';
+		}
+		else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
+			// Get corresponding breakpoint
+			const bpId=breakData;
+			Utility.assert(bpId)
+			const bp=this.getBreakpointById(bpId);
+
+			// Check for condition
+			const {condition: cond, log}=this.checkConditionAndLog(bp);
+			condition=cond;
+
+			// Emit log?
+			if (condition!=undefined&&log) {
+				// Convert
+				const evalLog=await Utility.evalLogString(log);
+				// Print
+				this.emit('log', evalLog);
+				// Don't eval condition again
+				condition=undefined;
+			}
+		}
+		else {
+			// An other reason, e.g. manual break
+			condition='';	// Do a break.
+		}
+
+		// Check for pause
+		if (condition==undefined) {
+			// Check for manual pause
+			if (this.pauseStep) {
+				condition='';	// Break
+				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
+			}
+		}
+
+		return condition;
+	}
+
+
+	/**
 	 * 'continue' debugger program execution.
 	 * @returns A Promise with {breakReasonString}.
-	 * Is called when it's stopped e.g. when a breakpoint is hit.
-	 * breakReason contains the stop reason as string.
-	 *
-	 * This method assumes a 'stupid' external remote that does not evaluate the
-	 * breakpoint's log string or condition.
-	 * Instead evaluation is done here and if e.g. the condition is not met
-	 * than another 'continue' is sent.
 	 */
 	public async continue(): Promise<{breakReasonString: string}> {
 		return new Promise<{breakReasonString: string}>(async resolve => {
+			// Reset flag
+			this.pauseStep=false;
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve = async ({breakNumber, breakData, breakReasonString}) => {
 				try {
@@ -306,35 +375,8 @@ export class DzrpRemote extends RemoteBase {
 					Z80Registers.clearCache();
 					await Remote.getRegisters();
 
-					// Check breakReason, i.e. check if it was a watchpoint.
-					let condition;
-					if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
-						// TODO: evaluate
-						// Condition not used at the moment
-						condition='';
-					}
-					else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
-						// Get corresponding breakpoint
-						const bpId=breakData as number;
-						Utility.assert(bpId)
-						const bp=this.getBreakpointById(bpId);
-
-						// Check for condition
-						const {condition: cond, log}=this.checkConditionAndLog(bp);
-						condition=cond;
-
-						// Emit log?
-						if (log) {
-							// Convert
-							const evalLog=await Utility.evalLogString(log);
-							// Print
-							this.emit('log', evalLog);
-						}
-					}
-					else {
-						// E.g. manual break
-						condition='';
-					}
+					// Check for break condition
+					const condition=await this.evalBpConditionAndLog(breakNumber, breakData);
 
 					// Check for continue
 					if (condition==undefined) {
@@ -429,82 +471,67 @@ export class DzrpRemote extends RemoteBase {
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
 	public async stepOut(): Promise<{breakReasonString?: string}> {
-
 		return new Promise<{breakReasonString?: string}>(async resolve => {
+
 			// Reset flag
 			this.pauseStep=false;
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp=startSp;
 			let prevPc=0;
-			let breakReason;
 
-			// Create mutex to wait for the breaks
-			const mutex=new Mutex();
-			let releaseMutex;
+			// Use a custom function here to evaluate breakpoint condition and log string.
+			const funcContinueResolve=async ({breakNumber, breakData, breakReasonString}) => {
+				try {
+					// Get registers
+					Z80Registers.clearCache();
+					await Remote.getRegisters();
 
-			// Loop until SP indicates that we are out of the current subroutine
-			while (true) {
-				// Give vscode some time to show debug controls
-				// (Maybe this is required here because of the mutex)
-				await Utility.timeout(1);
+					// Check for break condition
+					let condition=await this.evalBpConditionAndLog(breakNumber, breakData);
 
-				// Lock mutex
-				releaseMutex=await mutex.acquire();
+					// Check if instruction was a RET(I/N)
+					const currSp=Z80Registers.getRegValue(Z80_REG.SP);
+					if (currSp>startSp&&currSp>prevSp) {
+						// Something has been popped. This is to exclude unexecuted RET cc.
+						const bytes=await this.readMemoryDump(prevPc, 2);
+						const opcodes=bytes[0]+(bytes[1]<<8);
+						if (this.isRet(opcodes)) {
+							// Stop here
+							condition='';
+						}
+					}
 
-				// Check if user breaked
-				if (this.pauseStep) {
-					// User pressed pause
-					breakReason="Manual break";
-					break;
-				}
-
-				// Other breakpoint hit
-				if (breakReason)
-					break;
-
-				// Check if instruction was a RET(I/N)
-				await this.getRegisters();
-				const currSp=Z80Registers.getRegValue(Z80_REG.SP);
-				if (currSp>startSp&&currSp>prevSp) {
-					// Something has been popped. This is to exclude unexecuted RET cc.
-					const bytes=await this.readMemoryDump(prevPc, 2);
-					const opcodes=bytes[0]+(bytes[1]<<8);
-					if (this.isRet(opcodes)) {
-						// Stop here
-						break;
+					// Check for continue
+					if (condition==undefined) {
+						// Calculate the breakpoints to use for step-over
+						let [, bp1, bp2]=await this.calcStepBp(true);
+						// Continue
+						this.continueResolve=funcContinueResolve;
+						this.sendDzrpCmdContinue(bp1, bp2);
+					}
+					else {
+						// Construct break reason string to report
+						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+						// Clear registers
+						this.postStep();
+						// return
+						resolve({breakReasonString});
 					}
 				}
+				catch (e) {
+					// Clear registers
+					this.postStep();
+					resolve({breakReasonString: e});
+				}
+			};
 
-				// Calculate the breakpoints to use for step-over
-				let [, bp1, bp2]=await this.calcStepBp(true);
-
-
-				// Prepare for break
-				this.continueResolve=({breakReasonString}) => {
-					breakReason=breakReasonString;
-					Z80Registers.clearCache();
-					releaseMutex();
-				};
-
-				// Send command to 'continue'
-				prevPc=Z80Registers.getPC();
-				await this.sendDzrpCmdContinue(bp1, bp2);
-
-				// Next
-				prevSp=currSp;
-			}
-
-			// Release mutex
-			releaseMutex();
-
-			// Clear registers
-			this.postStep();
-
-			// return
-			resolve({breakReasonString: breakReason});
+			// Calculate the breakpoints to use for step-over
+			let [, bp1, bp2]=await this.calcStepBp(true);
+			// Send 'run' command
+			this.continueResolve=funcContinueResolve;
+			this.sendDzrpCmdContinue(bp1, bp2);
 		});
-
 	}
 
 
