@@ -220,7 +220,7 @@ export class ZxNextRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			const breakNumber=data[2];
-			const breakData=Utility.getWord(data, 3);
+			const breakAddress=Utility.getWord(data, 3);
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
@@ -231,7 +231,7 @@ export class ZxNextRemote extends DzrpRemote {
 					breakReasonString=undefined as any;
 
 				// Handle the break
-				continueHandler({breakNumber, breakData, breakReasonString});
+				continueHandler({breakNumber, breakAddress, breakReasonString});
 			}
 		}
 		else {

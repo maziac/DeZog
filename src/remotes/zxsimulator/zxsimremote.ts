@@ -510,7 +510,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=5000;
 		let bp;
-		let breakData;
+		let breakAddress;
 		let updateCounter=0;
 		try {
 			// Run the Z80-CPU in a loop
@@ -582,7 +582,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				if (this.zxMemory.hitAddress>=0) {
 					// Yes, read or write access
 					breakNumber=(this.zxMemory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-					breakData=this.zxMemory.hitAddress;
+					breakAddress=this.zxMemory.hitAddress;
 					break;
 				}
 
@@ -608,20 +608,20 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Stop immediately
 			let condition='';
 			this.cpuRunning=false;
-			// Get breakpoint ID
+			// Get breakpoint Address
 			if (bp) {
-				breakData=bp.bpId;
+				breakAddress=bp.address;
 				condition=bp.condition;
 			}
 
 			// Create reason string
-			breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+			breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
 
 			// Send Notification
 			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 			Utility.assert(this.continueResolve);
 			if (this.continueResolve)
-				this.continueResolve({breakNumber, breakData, breakReasonString});
+				this.continueResolve({breakNumber, breakAddress, breakReasonString});
 
 			// Update the screen etc.
 			this.emit('update')
@@ -639,14 +639,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			if (!this.cpuRunning) {
 				// Manual break: Create reason string
 				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
-				breakData=0;
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, '', '');
+				breakAddress=0;
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				Utility.assert(this.continueResolve);
 				if (this.continueResolve)
-					this.continueResolve({breakNumber, breakData, breakReasonString});
+					this.continueResolve({breakNumber, breakAddress, breakReasonString});
 
 				// Update the screen etc.
 				this.emit('update')
@@ -670,13 +670,13 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
-	public async continue(): Promise<{breakNumber: number, breakData: number, breakReasonString: string}> {
-		return new Promise<{breakNumber: number, breakData: number, breakReasonString: string}>(async resolve => {
+	public async continue(): Promise<{breakNumber: number, breakAddress: number, breakReasonString: string}> {
+		return new Promise<{breakNumber: number, breakAddress: number, breakReasonString: string}>(async resolve => {
 			// Save resolve function when break-response is received
-			this.continueResolve=({breakNumber, breakData, breakReasonString}) => {
+			this.continueResolve=({breakNumber, breakAddress, breakReasonString}) => {
 				// Clear registers
 				this.postStep();
-				resolve({breakNumber, breakData, breakReasonString});
+				resolve({breakNumber, breakAddress, breakReasonString});
 			}
 
 			// Send 'run' command

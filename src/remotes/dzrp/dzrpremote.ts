@@ -71,7 +71,7 @@ export enum DZRP_NTF {
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({breakNumber, breakData, breakReasonString}) => void;
+	protected continueResolve?: ({breakNumber, breakAddress, breakReasonString}) => void;
 
 	// This flag is used to pause a step-out.
 	protected pauseStep=false;
@@ -165,33 +165,27 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Searches the 'breakpoints', the 'assertBreakpoints' and the
 	 * 'logpoints' arrays for the given breakpoint ID.
-	 * @param bpId the breakpoint ID to search (!=0).
-	 * @returns The found GenericBreakpoint (or RemoteBreakPoint) or
-	 * undefined if not breakpoint found.
+	 * @param bpAddress the breakpoint ID to search (!=0).
+	 * @returns The found GenericBreakpoints (or RemoteBreakPoints) or
+	 * [] if no breakpoint found.
 	 */
-	protected getBreakpointById(bpId: number): GenericBreakpoint|undefined {
-		if (!bpId)	// undefined or 0
-			return undefined;
-		// Search vscode breakpoints
-		const foundBp=this.breakpoints.find(bp => bp.bpId==bpId);
-		if (foundBp)
-			return foundBp;
-		// Search asserts
-		const foundAssertBp=this.assertBreakpoints.find(bp => bp.bpId==bpId);
-		if (foundAssertBp)
-			return foundAssertBp;
-		// Search log breakpoints, search all groups
-
+	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
+		// Create map of all breakpoints
+		// TODO: maybe the array could be built in advance (preStep?)
+		const allBps=[...this.breakpoints, ...this.assertBreakpoints];
+		// Get enabled logpoint groups
 		for (const [group, logpointsArray] of this.logpoints) {
 			const groupEnabled=this.logpointsEnabled.get(group);
 			if (groupEnabled) {
-				const foundLogBp=logpointsArray.find(bp => bp.bpId==bpId);
-				if (foundLogBp)
-					return foundLogBp;
+				allBps.push(...logpointsArray);
 			}
 		}
+
+		// Search breakpoints
+		const foundBps=allBps.filter(bp => bp.address==bpAddress);
+
 		// Nothing found
-		return undefined;
+		return foundBps;
 	}
 
 
@@ -230,13 +224,14 @@ export class DzrpRemote extends RemoteBase {
 	 * Constructs a human readable break-reason-string from the break number, data and
 	 * an already existing reason string.
 	 * @param breakNumber E.g. BREAK_REASON_NUMBER.WATCHPOINT_READ.
-	 * @param breakData E.g. the breakpoint ID or the watchpoint address.
+	 * @param breakAddress E.g. the breakpoint or the watchpoint address.
 	 * @param condition An additional condition or '' if no condition.
 	 * @param breakReasonString An already existing (part of the) reason string.
 	 * The string transmitted from the remote.
 	 * @returns A Promise to the reason string, e.g. "Breakpoint hit. A==4."
 	 */
-	protected async constructBreakReasonString(breakNumber: number, breakData: number, condition: string, breakReasonString: string): Promise<string> {
+
+	protected async constructBreakReasonString(breakNumber: number, breakAddress: number, condition: string, breakReasonString: string): Promise<string> {
 		Utility.assert(condition!=undefined);
 		if (!breakReasonString)
 			breakReasonString='';
@@ -249,7 +244,7 @@ export class DzrpRemote extends RemoteBase {
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
-				const abp=this.assertBreakpoints.find(abp => abp.bpId==breakData);
+				const abp=this.assertBreakpoints.find(abp => abp.bpId==breakAddress);
 				if (abp) {
 					condition=condition.substr(2);	// cut off "!("
 					condition=condition.substr(0, condition.length-1);	// cut off trailing ")"
@@ -262,7 +257,7 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
-				const address=breakData;
+				const address=breakAddress;
 				const labels=Labels.getLabelsForNumber(address);
 				labels.push(address.toString());	// as decimal number
 				const labelsString=labels.join(', ');
@@ -293,7 +288,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Evaluates the breakpoint condition and log (logpoint).
 	 * Checks also pauseStep and returns '' if it is true.
 	 * @param breakNumber The break reason as number, e.g. BREAK_REASON_NUMBER.BREAKPOINT_HIT
-	 * @param breakData The ID of the hit breakpoint. In future this could also be the watchpoint address.
+	 * @param breakAddress The address of the breakpoint (in future this could also be the address of a watchpoint).
 	 * @returns undefined or the condition text.
 	 * If the breakpoint condition is not true: undefined is returned.
 	 * If the condition is true:
@@ -303,7 +298,7 @@ export class DzrpRemote extends RemoteBase {
 	 * If undefined is returned no break should be done.
 	 * If a text is returned the bp condition was true and a break should be done.
 	 */
-	protected async evalBpConditionAndLog(breakNumber: number, breakData: number): Promise<string|undefined> {
+	protected async evalBpConditionAndLog(breakNumber: number, breakAddress: number): Promise<string|undefined> {
 		// Get registers
 		//Z80Registers.clearCache();
 		//await Remote.getRegisters();
@@ -321,22 +316,26 @@ export class DzrpRemote extends RemoteBase {
 		}
 		else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 			// Get corresponding breakpoint
-			const bpId=breakData;
-			Utility.assert(bpId)
-			const bp=this.getBreakpointById(bpId);
+			const bps=this.getBreakpointsByAddress(breakAddress);
 
-			// Check for condition
-			const {condition: cond, log}=this.checkConditionAndLog(bp);
-			condition=cond;
+			// Loop over all matching breakpoints (normally onl one)
+			for (const bp of bps) {
+				// Check for condition
+				const {condition: cond, log}=this.checkConditionAndLog(bp);
+				condition=cond;
 
-			// Emit log?
-			if (condition!=undefined&&log) {
-				// Convert
-				const evalLog=await Utility.evalLogString(log);
-				// Print
-				this.emit('log', evalLog);
-				// Don't eval condition again
-				condition=undefined;
+				// Emit log?
+				if (condition!=undefined&&log) {
+					// Convert
+					const evalLog=await Utility.evalLogString(log);
+					// Print
+					this.emit('log', evalLog);
+					// Don't eval condition again
+					condition=undefined;
+				}
+
+				if (condition!=undefined)
+					break;	// At least one break condition found
 			}
 		}
 		else {
@@ -366,14 +365,14 @@ export class DzrpRemote extends RemoteBase {
 			// Reset flag
 			this.pauseStep=false;
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve = async ({breakNumber, breakData, breakReasonString}) => {
+			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
 					// Get registers
 					Z80Registers.clearCache();
 					await Remote.getRegisters();
 
 					// Check for break condition
-					const condition=await this.evalBpConditionAndLog(breakNumber, breakData);
+					const condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
 
 					// Check for continue
 					if (condition==undefined) {
@@ -383,7 +382,7 @@ export class DzrpRemote extends RemoteBase {
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+						breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						this.postStep();
 						// return
@@ -433,9 +432,9 @@ export class DzrpRemote extends RemoteBase {
 			const opCodeDescription=opcode.disassemble();
 			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
 			// Prepare for break: This function is called by the PAUSE (break) notification:
-			this.continueResolve=async ({breakNumber, breakData, breakReasonString}) => {
+			this.continueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Construct break reason string to report
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, '', breakReasonString);
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', breakReasonString);
 				// Clear registers
 				this.postStep();
 				// return
@@ -480,14 +479,14 @@ export class DzrpRemote extends RemoteBase {
 			let prevPc=0;
 
 			// Use a custom function here to evaluate breakpoint condition and log string.
-			const funcContinueResolve=async ({breakNumber, breakData, breakReasonString}) => {
+			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
 					// Get registers
 					Z80Registers.clearCache();
 					await Remote.getRegisters();
 
 					// Check for break condition
-					let condition=await this.evalBpConditionAndLog(breakNumber, breakData);
+					let condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
 
 					// Check if instruction was a RET(I/N)
 					const currSp=Z80Registers.getRegValue(Z80_REG.SP);
@@ -511,7 +510,7 @@ export class DzrpRemote extends RemoteBase {
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString=await this.constructBreakReasonString(breakNumber, breakData, condition, breakReasonString);
+						breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						this.postStep();
 						// return
