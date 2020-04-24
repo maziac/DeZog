@@ -12,6 +12,7 @@ import {Remote} from '../remotefactory';
 import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
+import {TimeWait} from '../../misc/timewait';
 
 
 
@@ -75,6 +76,10 @@ export class DzrpRemote extends RemoteBase {
 
 	// This flag is used to pause a step-out.
 	protected pauseStep=false;
+
+	// Object to allow to give time to vscode during long running 'steps'.
+	protected timeWait=new TimeWait(1000, 10);	// Every second for 10ms
+
 
 	/// Constructor.
 	/// Override this.
@@ -372,6 +377,9 @@ export class DzrpRemote extends RemoteBase {
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
+					// Give vscode a little time
+					await this.timeWait.waitAtInterval();
+
 					// Get registers
 					Z80Registers.clearCache();
 					await Remote.getRegisters();
@@ -429,24 +437,45 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
 		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
+			// Prepare for break: This function is called by the PAUSE (break) notification:
+			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
+				// Give vscode a little time
+				await this.timeWait.waitAtInterval();
+
+				// Get registers
+				Z80Registers.clearCache();
+				await Remote.getRegisters();
+
+				// Check for break condition
+				let condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
+
+				// Check for continue
+				if (condition==undefined) {
+					// Calculate the breakpoints to use for step-over
+					let [, bp1, bp2]=await this.calcStepBp(true);
+					// Continue
+					this.continueResolve=funcContinueResolve;
+					this.sendDzrpCmdContinue(bp1, bp2);
+				}
+				else {
+					// Construct break reason string to report
+					breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+					// Clear registers
+					this.postStep();
+					// return
+					resolve({instruction, breakReasonString});
+				}
+			};
+
 			// Calculate the breakpoints to use for step-over
 			await this.getRegisters();
-			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
-
+			let [opcode, bp1, bp2]=await this.calcStepBp(true);
 			// Disassemble
 			const pc=this.getPC();
 			const opCodeDescription=opcode.disassemble();
 			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
-			// Prepare for break: This function is called by the PAUSE (break) notification:
-			this.continueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
-				// Construct break reason string to report
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', breakReasonString);
-				// Clear registers
-				this.postStep();
-				// return
-				resolve({instruction, breakReasonString});
-			};
-
+			// Send 'run' command
+			this.continueResolve=funcContinueResolve;
 			// Send command to 'continue'
 			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
@@ -486,6 +515,9 @@ export class DzrpRemote extends RemoteBase {
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
+					// Give vscode a little time
+					await this.timeWait.waitAtInterval();
+
 					// Get registers
 					Z80Registers.clearCache();
 					await Remote.getRegisters();

@@ -17,7 +17,7 @@ export class DzrpParser extends Transform {
 	protected remainingLength: number;
 
 	/// Timeout. Max time between chunks.
-	protected timeout=20000; //1000;	// ms
+	protected timeout=1000;	// ms
 
 	/// The timer.
 	protected timer;

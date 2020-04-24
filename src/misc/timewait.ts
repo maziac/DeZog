@@ -14,7 +14,7 @@ export class TimeWait {
 
 	/**
 	 * Constructor.
-	 * The object should be called periodically. It takes care ofthetime by itself.
+	 * The object should be called periodically. It takes care of the time by itself.
 	 * If the interval time is exceeded. It will execute a wait for 'waitTimeMs'.
 	 * @param intervalMs The time between to waits.
 	 * @param waitTimeMs The wait time.
