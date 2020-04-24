@@ -16,14 +16,15 @@ export class TimeWait {
 	 * Constructor.
 	 * The object should be called periodically. It takes care of the time by itself.
 	 * If the interval time is exceeded. It will execute a wait for 'waitTimeMs'.
+	 * @param startDelayMs The time to wait the first time. This can be higher, e.g. 1 second, because it normally tkaes a human some time to react.
 	 * @param intervalMs The time between to waits.
 	 * @param waitTimeMs The wait time.
 	 */
-	constructor(intervalMs: number, waitTimeMs: number) {
+	constructor(startDelayMs: number, intervalMs: number, waitTimeMs: number) {
 		this.time=Date.now();
 		this.intervalMs=intervalMs;
 		this.waitTimeMs=waitTimeMs;
-		this.time=Date.now(); //+this.intervalMs;
+		this.time=Date.now()+startDelayMs;
 	}
 
 

@@ -685,12 +685,12 @@ export class CpuHistoryClass extends StepHistoryClass {
 	  * 'step backwards' the program execution in the debugger.
 	  * @returns {instruction, breakReason} Promise.
 	  * instruction: e.g. "081C NOP"
-	  * breakReason: If not undefined it holds the break reason message.
+	  * breakReasonString: If not undefined it holds the break reason message.
 	  */
-	public async stepBack(): Promise<{instruction: string, breakReason: string|undefined}> {
+	public async stepBack(): Promise<{instruction: string, breakReasonString: string|undefined}> {
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
-		let breakReason;
+		let breakReasonString;
 		let instruction='';
 		try {
 			// Remember previous line
@@ -705,14 +705,14 @@ export class CpuHistoryClass extends StepHistoryClass {
 				instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
 			}
 			else
-				breakReason='Break: Reached end of instruction history.';
+				breakReasonString='Break: Reached end of instruction history.';
 		}
 		catch (e) {
-			breakReason=e;
+			breakReasonString=e;
 		}
 
 		// Call handler
-		return {instruction, breakReason};
+		return {instruction, breakReasonString};
 	}
 
 
@@ -953,7 +953,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			// Loop over all lines, reverse
 			let prevLine=Z80Registers.getCache();
 			Utility.assert(prevLine);
-			const pause=new TimeWait(1000, 10);
+			const pause=new TimeWait(100, 1000, 10);
 			while (this.running) {
 				// Give vscode a little time
 				await pause.waitAtInterval();
@@ -1078,16 +1078,16 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Steps into an instruction.
 	 * Works like the StepOver in StepHistory.
 	 * @returns instruction=e.g. 'LD A,5'
-	 * breakReason='End of history reached'.
+	 * breakReasonString='End of history reached'.
 	 */
-	public stepInto(): {instruction: string, breakReason: string|undefined} {		// Check for reverse debugging.
+	public stepInto(): {instruction: string, breakReasonString: string|undefined} {		// Check for reverse breakReasonString.
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		Utility.assert(currentLine);
 		const pc=Z80Registers.decoder.parsePC(currentLine);
 		let nextLine;
 
-		let breakReason;
+		let breakReasonString;
 		try {
 			// Get next line
 			nextLine=this.revDbgNext();
@@ -1098,7 +1098,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 		catch (e) {
 			// E.g. "End of history reached"
-			breakReason=e;
+			breakReasonString=e;
 		}
 
 		// Get instruction
@@ -1111,7 +1111,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			Remote.clearCallStack();
 		}
 
-		return {instruction, breakReason};
+		return {instruction, breakReasonString};
 	}
 
 

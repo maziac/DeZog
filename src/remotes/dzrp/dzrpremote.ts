@@ -17,7 +17,7 @@ import {TimeWait} from '../../misc/timewait';
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[0, 1, 0];
+export const DZRP_VERSION=[0, 2, 0];
 
 
 /**
@@ -78,8 +78,19 @@ export class DzrpRemote extends RemoteBase {
 	protected pauseStep=false;
 
 	// Object to allow to give time to vscode during long running 'steps'.
-	protected timeWait=new TimeWait(1000, 10);	// Every second for 10ms
+	protected timeWait: TimeWait;
 
+	// A temporary array with the set breakpoints and conditions.
+	// Undefined=no breakpoint is set.
+	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
+	// as soon as the z80CpuContinue is called.
+	// It allows access of the breakpoint by it's address.
+	// This may happen seldom, but it can happen that 2 breakpoints share
+	// the same address. Therefore the array contains an Array of GenericBreakpoints.
+	// normally the inner array contains only 1 element.
+	// The tmpBreakpoints are created when a Continue, StepOver, Stepinto
+	// or StepOut starts.
+	protected tmpBreakpoints: Array<Array<GenericBreakpoint>>;
 
 	/// Constructor.
 	/// Override this.
@@ -170,27 +181,47 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Searches the 'breakpoints', the 'assertBreakpoints' and the
 	 * 'logpoints' arrays for the given breakpoint ID.
-	 * @param bpAddress the breakpoint ID to search (!=0).
+	 * In fact searches tmpBreakpoints. Therefore make sure you called
+	 * createTemporaryBreakpoints before.
+	 * @param bpAddress the breakpoint address to search (!=0).
 	 * @returns The found GenericBreakpoints (or RemoteBreakPoints) or
 	 * [] if no breakpoint found.
 	 */
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
-		// Create map of all breakpoints
-		// TODO: maybe the array could be built in advance (preStep?)
-		const allBps=[...this.breakpoints, ...this.assertBreakpoints];
-		// Get enabled logpoint groups
-		for (const [group, logpointsArray] of this.logpoints) {
-			const groupEnabled=this.logpointsEnabled.get(group);
-			if (groupEnabled) {
-				allBps.push(...logpointsArray);
-			}
-		}
-
-		// Search breakpoints
-		const foundBps=allBps.filter(bp => bp.address==bpAddress);
-
+		const foundBps=this.tmpBreakpoints[bpAddress]||[];
 		// Nothing found
 		return foundBps;
+	}
+
+	/**
+	 * Creates a temporary array from the given array.
+	 * The structure is more performant for use in a
+	 * loop:
+	 * The array contains 65536 entries, i.e. addresses. If no BP
+	 * is set for an address the entry is undefined.
+	 * If one is set the entry contains a pointer to the breakpoint.
+	 * Or better it contains an array of breakpoints that all share the
+	 * same address.
+	 * Note: normally this array contains only one entry.
+	 */
+	protected createTemporaryBreakpoints() {
+		const tmpBps=new Array<Array<GenericBreakpoint>>(0x10000);
+		// Get all breakpoints from the enabled logpoints
+		const enabledLogPoints=this.getEnabledLogpoints();
+		// Assert breakpoints
+		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
+		const allBps=[...this.breakpoints, ...enabledLogPoints, ...assertBps];
+		allBps.forEach(bp => {
+			let bpInner=
+				tmpBps[bp.address];
+			if (!bpInner) {
+				// Create new array
+				bpInner=new Array<GenericBreakpoint>();
+				tmpBps[bp.address]=bpInner;
+			}
+			bpInner.push(bp);
+		});
+		this.tmpBreakpoints=tmpBps;
 	}
 
 
@@ -238,7 +269,7 @@ export class DzrpRemote extends RemoteBase {
 
 	protected async constructBreakReasonString(breakNumber: number, breakAddress: number, condition: string, breakReasonString: string): Promise<string> {
 		Utility.assert(condition!=undefined);
-		if (!breakReasonString)
+		if (breakReasonString==undefined)
 			breakReasonString='';
 
 		// Generate reason text
@@ -247,6 +278,7 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.MANUAL_BREAK:
 				reasonString="Manual break.";
 				break;
+			case BREAK_REASON_NUMBER.NO_REASON:
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
 				const abps=this.assertBreakpoints.filter(abp => abp.address==breakAddress);
@@ -255,16 +287,22 @@ export class DzrpRemote extends RemoteBase {
 						let assertCond=condition.substr(2);	// cut off "!("
 						assertCond=assertCond.substr(0, assertCond.length-1);	// cut off trailing ")"
 						reasonString="Assertion failed: "+assertCond;
-						break;
+						return reasonString;
 					}
 				}
 				// Or breakpoint
-				if (reasonString==undefined) {
-					reasonString="Breakpoint hit @"+Utility.getHexString(breakAddress,4)+"h.";
-					if (condition)
-						reasonString+=" Condition: "+condition;
+				const bps=this.breakpoints.filter(bp => bp.address==breakAddress);
+				for (const bp of bps) {
+					if (!bp.condition||condition==bp.condition) {
+						reasonString="Breakpoint hit @"+Utility.getHexString(breakAddress, 4)+"h.";
+						if (condition)
+							reasonString+=" Condition: "+condition;
+						return reasonString;
+					}
 				}
-				break;
+				// Otherwise continue-breakpoint
+				return reasonString;	// Should be empty
+
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
@@ -279,6 +317,20 @@ export class DzrpRemote extends RemoteBase {
 		}
 
 		return reasonString;
+	}
+
+
+	/**
+	 * This method is called before a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * It generates the temproary breakpoints array.
+	 */
+	protected preStep() {
+		this.createTemporaryBreakpoints();
+		// Reset flag
+		this.pauseStep=false;
+		// Start timer
+		this.timeWait=new TimeWait(1000, 200, 100);	// Every second for 10ms
 	}
 
 
@@ -315,42 +367,52 @@ export class DzrpRemote extends RemoteBase {
 
 		// Check breakReason, i.e. check if it was a watchpoint.
 		let condition;
-		if (breakNumber==BREAK_REASON_NUMBER.NO_REASON) {
-			// Temporary breakpoint hit.
-			return undefined;
-		}
-		else if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ||breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_WRITE) {
-			// TODO: evaluate
-			// Condition not used at the moment
-			condition='';
-		}
-		else if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
-			// Get corresponding breakpoint
-			const bps=this.getBreakpointsByAddress(breakAddress);
+		switch (breakNumber) {
+			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
+			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
+				// TODO: evaluate condition
+				// Condition not used at the moment
+				condition='';
+				break;
 
-			// Loop over all matching breakpoints (normally onl one)
-			for (const bp of bps) {
-				// Check for condition
-				const {condition: cond, log}=this.checkConditionAndLog(bp);
-				condition=cond;
+			case BREAK_REASON_NUMBER.NO_REASON:
+			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
+				// Get corresponding breakpoint
+				const bps=this.getBreakpointsByAddress(breakAddress);
 
-				// Emit log?
-				if (condition!=undefined&&log) {
-					// Convert
-					const evalLog=await Utility.evalLogString(log);
-					// Print
-					this.emit('log', evalLog);
-					// Don't eval condition again
-					condition=undefined;
+				// Loop over all matching breakpoints (normally only one)
+				for (const bp of bps) {
+					// Check for condition
+					const {condition: cond, log}=this.checkConditionAndLog(bp);
+					condition=cond;
+
+					// Emit log?
+					if (condition!=undefined&&log) {
+						// Convert
+						const evalLog=await Utility.evalLogString(log);
+						// Print
+						this.emit('log', evalLog);
+						// Don't eval condition again
+						condition=undefined;
+					}
+
+					if (condition!=undefined)
+						break;	// At least one break condition found
 				}
 
-				if (condition!=undefined)
-					break;	// At least one break condition found
-			}
-		}
-		else {
-			// An other reason, e.g. manual break
-			condition='';	// Do a break.
+				// Handle continue-breakpoints
+				if (breakNumber==BREAK_REASON_NUMBER.NO_REASON) {
+					// Only if other breakpoints not found or condition is false
+					if (condition==undefined) {
+						// Temporary breakpoint hit.
+						return '';
+					}
+				}
+				break;
+
+			default:
+				// An other reason, e.g. manual break
+				condition='';	// Do a break.
 		}
 
 		// Check for pause
@@ -372,8 +434,8 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async continue(): Promise<string> {
 		return new Promise<string>(async resolve => {
-			// Reset flag
-			this.pauseStep=false;
+			// Start
+			this.preStep();
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
@@ -437,6 +499,8 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
 		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
+			// Start
+			this.preStep();
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Give vscode a little time
@@ -451,8 +515,8 @@ export class DzrpRemote extends RemoteBase {
 
 				// Check for continue
 				if (condition==undefined) {
-					// Calculate the breakpoints to use for step-over
-					let [, bp1, bp2]=await this.calcStepBp(true);
+					// Calculate the breakpoints to use for step-over/step-into
+					let [, bp1, bp2]=await this.calcStepBp(stepOver);
 					// Continue
 					this.continueResolve=funcContinueResolve;
 					this.sendDzrpCmdContinue(bp1, bp2);
@@ -469,7 +533,7 @@ export class DzrpRemote extends RemoteBase {
 
 			// Calculate the breakpoints to use for step-over
 			await this.getRegisters();
-			let [opcode, bp1, bp2]=await this.calcStepBp(true);
+			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
 			// Disassemble
 			const pc=this.getPC();
 			const opCodeDescription=opcode.disassemble();
@@ -504,9 +568,9 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOut(): Promise<string> {
 		return new Promise<string>(async resolve => {
+			// Start
+			this.preStep();
 
-			// Reset flag
-			this.pauseStep=false;
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp=startSp;

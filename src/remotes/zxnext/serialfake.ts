@@ -193,8 +193,9 @@ export class SerialFake extends ZxSimulatorRemote {
 					this.sendDzrpResp(seqno);
 
 					// Set the breakpoints array
-					const pcBps=Array.from(this.breakpointsMap.values());
-					this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
+					//const pcBps=Array.from(this.breakpointsMap.values());
+					//this.tmpBreakpoints=this.createTemporaryBreakpoints(pcBps);
+					this.tmpBreakpoints=[]; // Just changed to make it run
 
 					// Function called after a break
 					this.continueResolve=({breakNumber, breakAddress, breakReasonString}) => {

@@ -4,7 +4,7 @@ import {WatchpointZxMemory} from './wpzxmemory';
 import {ZxPorts} from './zxports';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
-import {GenericBreakpoint} from '../../genericwatchpoint';
+//import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
@@ -41,16 +41,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 	// Set to true as long as the CPU is running.
 	protected cpuRunning: boolean;
-
-	// A temporary array with the set breakpoints and conditions.
-	// Undefined=no breakpoint is set.
-	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
-	// as soon as the z80CpuContinue is called.
-	// It allows access of the breakpoint by it's address.
-	// This may happen seldom, but it can happen that 2 breakpoints share
-	// the same address. Therefore the Array contains an Array of GenericBreakpoints.
-	// normally the inner array contains only 1 element.
-	protected tmpBreakpoints: Array<Array<GenericBreakpoint>>;
 
 	// Push here all objects that should be serialized.
 	// I.e. that are relevant for the saving/restoring the state.
@@ -506,7 +496,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		//		Utility.timeDiff();
-		let breakReasonString;
+		let breakReasonString='';
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=5000;
 		let bp;
@@ -539,10 +529,22 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					}
 				}
 
+				// Check if given breakpoints are hit
+				const pc=this.z80Cpu.pc;
+				if (pc==bp1||pc==bp2) {
+					breakAddress=pc;
+					break;
+				}
+
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
-				const pc=this.z80Cpu.pc;
 				const bpInner=this.tmpBreakpoints[pc];
+				if (bpInner) { // TODO
+					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+					breakAddress=pc;
+					break;
+				}
+				/*
 				if (bpInner) {
 					// Get registers
 					const regs=this.z80Cpu.getRegisterData();
@@ -577,6 +579,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 						break;
 					}
 				}
+				*/
 
 				// Check if watchpoint is hit
 				if (this.zxMemory.hitAddress>=0) {
@@ -591,10 +594,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
 					break;
 				}
-
-				// Check if breakpoints are hit
-				if (pc==bp1||pc==bp2)
-					break;
 			}
 
 		}
@@ -606,16 +605,16 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 		if (counter!=0) {
 			// Stop immediately
-			let condition='';
+			//let condition='';
 			this.cpuRunning=false;
 			// Get breakpoint Address
 			if (bp) {
 				breakAddress=bp.address;
-				condition=bp.condition;
+				//condition=bp.condition;
 			}
 
 			// Create reason string
-			breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+			//breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
 
 			// Send Notification
 			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
@@ -670,6 +669,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
+/*
 	public async continue(): Promise<string> {
 		return new Promise<string>(async resolve => {
 			// Save resolve function when break-response is received
@@ -685,33 +685,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			this.postStep();
 		});
 	}
-
-
-	/**
-	 * Creates a temporary array from the given array.
-	 * The structure is more performant for use in the Z80 continue
-	 * loop:
-	 * The array contains 65536 entries, i.e. addresses. If no BP
-	 * is set for an address the entry is undefined.
-	 * If one is set the entry contains a pointer to the breakpoint.
-	 * Or better it contains an array of breakpoints that all share the
-	 * same address.
-	 * Note: normally this array contains only one entry.
-	 */
-	protected createTemporaryBreakpoints(bps: Array<GenericBreakpoint>): Array<Array<GenericBreakpoint>> {
-		const tmpBps=new Array<Array<GenericBreakpoint>>(0x10000);
-		bps.map(bp => {
-			let bpInner=
-				tmpBps[bp.address];
-			if (!bpInner) {
-				// Create new array
-				bpInner=new Array<GenericBreakpoint>();
-				tmpBps[bp.address]=bpInner;
-			}
-			bpInner.push(bp);
-		});
-		return tmpBps;
-	}
+*/
 
 
 	/**
@@ -812,12 +786,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
-		// Get all breakpoints from the enabled logpoints
-		const enabledLogPoints=this.getEnabledLogpoints();
-		// Assert breakpoints
-		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
 		// Set the temporary breakpoints array
-		this.tmpBreakpoints=this.createTemporaryBreakpoints([...this.breakpoints, ...enabledLogPoints, ...assertBps]);
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
 		this.zxMemory.clearHit();

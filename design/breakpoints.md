@@ -116,12 +116,16 @@ When a breakpoint is hit in the (external) remote the address (instead of the ID
 The reason is:
 Several breakpoints could share the same address. Imagine a LOGPOINT or an ASSERT at address 0x8000. The user might set additionaly a breakpoint (with no or another condition) in the vscode GUI at the same location.
 The DzrpRemote inside DeZog will then find all breakpoints that correspond to that address and check them all. If any's condition is true a break is done otherwise a Continue is sent.
+The break reason inside the remote should be determined in the following order:
+1. Temporary breakpoints (i.e. the 2 breakpoints are checked that come with the Continue command)
+2. The other break reasons.
+
+The reason is: Because the breakpoint condition is not checked it could be that the found breakpoint has a condition which is false. In that case DeZog would decide to continue.
+And a step-over for example could fail.
+
 
 When a Watchpoint is hit the watch address is returned if the remote does know it (e.g. CSpect can detect an access but does not return the address).
 The Remote (in Dezog) has to know about the remote's capability in this respect.
-
-
-
 
 
 

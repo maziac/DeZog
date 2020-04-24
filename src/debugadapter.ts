@@ -1457,10 +1457,10 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check for output.
-		if (result.breakReason) {
-			vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+		if (result.breakReasonString) {
+			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
 			// Show break reason
-			this.decorateBreak(result.breakReason);
+			this.decorateBreak(result.breakReasonString);
 		}
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
@@ -1560,11 +1560,11 @@ export class DebugSessionClass extends DebugSession {
 			text+=': '+result.instruction;
 		vscode.debug.activeDebugConsole.appendLine(text);
 
-		if (result.breakReason) {
+		if (result.breakReasonString) {
 			// Output a possible problem (end of log reached)
-			vscode.debug.activeDebugConsole.appendLine(result.breakReason);
+			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
 			// Show break reason
-			this.decorateBreak(result.breakReason);
+			this.decorateBreak(result.breakReasonString);
 		}
 
 		// Send event
