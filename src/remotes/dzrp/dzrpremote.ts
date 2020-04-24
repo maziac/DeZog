@@ -363,10 +363,10 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {breakReasonString}.
+	 * @returns A Promise with a string containing the break reason.
 	 */
-	public async continue(): Promise<{breakReasonString: string}> {
-		return new Promise<{breakReasonString: string}>(async resolve => {
+	public async continue(): Promise<string> {
+		return new Promise<string>(async resolve => {
 			// Reset flag
 			this.pauseStep=false;
 			// Use a custom function here to evaluate breakpoint condition and log string.
@@ -391,13 +391,14 @@ export class DzrpRemote extends RemoteBase {
 						// Clear registers
 						this.postStep();
 						// return
-						resolve({breakReasonString});
+						resolve(breakReasonString);
 					}
 				}
 				catch (e) {
 					// Clear registers
 					this.postStep();
-					resolve({breakReasonString: e});
+					const reason: string=e;
+					resolve(reason);
 				}
 			};
 
@@ -470,11 +471,10 @@ export class DzrpRemote extends RemoteBase {
 	 * The step-out uses normal step (into) functionality and checks
 	 * after each step if the last instruction was some RET and
 	 * the stackpointer is bigger than at the beginning.
-	 * @param A Promise that returns {breakReasonString}
-	 * 'breakReasonString' a possibly text with the break reason.
+	 * @returns A Promise with a string containing the break reason.
 	 */
-	public async stepOut(): Promise<{breakReasonString?: string}> {
-		return new Promise<{breakReasonString?: string}>(async resolve => {
+	public async stepOut(): Promise<string> {
+		return new Promise<string>(async resolve => {
 
 			// Reset flag
 			this.pauseStep=false;
@@ -519,13 +519,14 @@ export class DzrpRemote extends RemoteBase {
 						// Clear registers
 						this.postStep();
 						// return
-						resolve({breakReasonString});
+						resolve(breakReasonString);
 					}
 				}
 				catch (e) {
 					// Clear registers
 					this.postStep();
-					resolve({breakReasonString: e});
+					const reason: string=e;
+					resolve(reason);
 				}
 			};
 

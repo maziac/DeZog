@@ -1085,18 +1085,18 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.clear();
 
 		await this.startStepInfo('Continue');
-		const result=await Remote.continue();
+		const breakReasonString=await Remote.continue();
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
 		// Display T-states and time
 		await this.endStepInfo();
 
-		if (result.breakReasonString) {
+		if (breakReasonString) {
 			// Send output event to inform the user about the reason
-			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+			vscode.debug.activeDebugConsole.appendLine(breakReasonString);
 
 			// Use reason for break-decoration.
-			this.decorateBreak(result.breakReasonString);
+			this.decorateBreak(breakReasonString);
 		}
 
 		// React depending on internal state.
@@ -1505,14 +1505,12 @@ export class DebugSessionClass extends DebugSession {
 			// Check if lite history need to be stored.
 			this.checkAndStoreLiteHistory();
 			StepHistory.clear();
-			const result=await Remote.stepOut();
+			breakReasonString=await Remote.stepOut();
 			// Display T-states and time
 			await this.endStepInfo(undefined);
 
 			// Update memory dump etc.
 			await this.update();
-
-			breakReasonString=result.breakReasonString;
 		}
 
 		if (breakReasonString) {

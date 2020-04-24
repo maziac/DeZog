@@ -670,13 +670,13 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
-	public async continue(): Promise<{breakNumber: number, breakAddress: number, breakReasonString: string}> {
-		return new Promise<{breakNumber: number, breakAddress: number, breakReasonString: string}>(async resolve => {
+	public async continue(): Promise<string> {
+		return new Promise<string>(async resolve => {
 			// Save resolve function when break-response is received
-			this.continueResolve=({breakNumber, breakAddress, breakReasonString}) => {
+			this.continueResolve=({breakReasonString}) => { // Note: here we need only breakReasonString
 				// Clear registers
 				this.postStep();
-				resolve({breakNumber, breakAddress, breakReasonString});
+				resolve(breakReasonString);
 			}
 
 			// Send 'run' command

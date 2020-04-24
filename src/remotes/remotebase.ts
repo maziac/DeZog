@@ -791,13 +791,13 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {breakReasonString}.
+	 * @returns A Promise with a string.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
 	 */
-	public async continue(): Promise<{breakReasonString: string}> {
+	public async continue(): Promise<string> {
 		Utility.assert(false);	// override this
-		return {breakReasonString: ''};
+		return '';
 	}
 
 
@@ -852,12 +852,12 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @returs A Promise that returns {breakReasonString}.
+	 * @returns A Promise with a string containing the break reason.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<{breakReasonString?: string}> {
+	public async stepOut(): Promise<string> {
 		Utility.assert(false);	// override this
-		return {};
+		return '';
 	}
 
 

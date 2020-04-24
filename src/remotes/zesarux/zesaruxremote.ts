@@ -426,12 +426,12 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'continue' debugger program execution.
-	 * @returns A Promise with {breakReasonString}.
+	 * @returns A Promise with a string containing the break reason.
 	 * Is called when it's stopped e.g. when a breakpoint is hit.
 	 * reason contains the stop reason as string.
 	 */
-	public async continue(): Promise<{breakReasonString: string}> {
-		return new Promise<{breakReasonString: string}>(resolve => {
+	public async continue(): Promise<string> {
+		return new Promise<string>(resolve => {
 			// Run
 			zSocket.sendInterruptableRunCmd(text => {
 				// (could take some time, e.g. until a breakpoint is hit)
@@ -443,7 +443,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// The reason is the 2nd line
 				const breakReasonString=this.getBreakReason(text);
 				// Call handler
-				resolve({breakReasonString});
+				resolve(breakReasonString);
 			});
 		});
 	}
@@ -665,11 +665,10 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'step out' of current subroutine.
-	 * @param A Promise that returns {breakReasonString}
-	 * 'breakReasonString' a possibly text with the break reason.
+	 * @returns A Promise with a string containing the break reason.
 	 */
-	public async stepOut(): Promise<{breakReasonString?: string}> {
-		return new Promise<{breakReasonString?: string}>(resolve => {
+	public async stepOut(): Promise<string> {
+		return new Promise<string>(resolve => {
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
@@ -686,12 +685,12 @@ export class ZesaruxRemote extends RemoteBase {
 					depth=ZesaruxRemote.MAX_STACK_ITEMS;
 				if (depth==0) {
 					// no call stack, nothing to step out, i.e. immediately return
-					resolve({breakReasonString: "Call stack empty"});
+					resolve("Call stack empty");
 					return;
 				}
 				else if (depth<0) {
 					// Callstack corrupted?
-					resolve({breakReasonString: "SP above topOfStack. Stack corrupted?"});
+					resolve("SP above topOfStack. Stack corrupted?");
 					return;
 				}
 
@@ -735,7 +734,7 @@ export class ZesaruxRemote extends RemoteBase {
 											const breakReasonString=this.getBreakReason(text);
 											// Disable breakpoint
 											zSocket.send('disable-breakpoint '+bpId, () => {
-												resolve({breakReasonString});
+												resolve(breakReasonString);
 											});
 										});
 									});
@@ -747,7 +746,7 @@ export class ZesaruxRemote extends RemoteBase {
 					}
 
 					// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-					resolve({});
+					resolve(undefined);
 				});
 			});
 		});
