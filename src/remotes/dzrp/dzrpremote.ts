@@ -275,10 +275,12 @@ export class DzrpRemote extends RemoteBase {
 		// Generate reason text
 		let reasonString;
 		switch (breakNumber) {
+			case BREAK_REASON_NUMBER.NO_REASON:
+				reasonString="";
+				break;
 			case BREAK_REASON_NUMBER.MANUAL_BREAK:
 				reasonString="Manual break.";
 				break;
-			case BREAK_REASON_NUMBER.NO_REASON:
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
 				const abps=this.assertBreakpoints.filter(abp => abp.address==breakAddress);
@@ -291,17 +293,12 @@ export class DzrpRemote extends RemoteBase {
 					}
 				}
 				// Or breakpoint
-				const bps=this.breakpoints.filter(bp => bp.address==breakAddress);
-				for (const bp of bps) {
-					if (!bp.condition||condition==bp.condition) {
-						reasonString="Breakpoint hit @"+Utility.getHexString(breakAddress, 4)+"h.";
-						if (condition)
-							reasonString+=" Condition: "+condition;
-						return reasonString;
-					}
+				if (reasonString==undefined) {
+					reasonString="Breakpoint hit @"+Utility.getHexString(breakAddress, 4)+"h.";
+					if (condition)
+						reasonString+=" Condition: "+condition;
 				}
-				// Otherwise continue-breakpoint
-				return reasonString;	// Should be empty
+				return reasonString;
 
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
@@ -359,14 +356,19 @@ export class DzrpRemote extends RemoteBase {
 	 * All in all:
 	 * If undefined is returned no break should be done.
 	 * If a text is returned the bp condition was true and a break should be done.
+	 *
+	 * The correctedBreakNumber is normally the breakNumber
+	 * that has been given. But in some cases a NO_REASON
+	 * might be turned into a BREAKPOINT_HIT.
 	 */
-	protected async evalBpConditionAndLog(breakNumber: number, breakAddress: number): Promise<string|undefined> {
+	protected async evalBpConditionAndLog(breakNumber: number, breakAddress: number): Promise<{condition: string|undefined, correctedBreakNumber: number}> {
 		// Get registers
 		//Z80Registers.clearCache();
 		//await Remote.getRegisters();
 
 		// Check breakReason, i.e. check if it was a watchpoint.
 		let condition;
+		let correctedBreakNumber=breakNumber;
 		switch (breakNumber) {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
@@ -396,8 +398,11 @@ export class DzrpRemote extends RemoteBase {
 						condition=undefined;
 					}
 
-					if (condition!=undefined)
-						break;	// At least one break condition found
+					if (condition!=undefined) {
+						// At least one break condition found
+						correctedBreakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+						break;
+					}
 				}
 
 				// Handle continue-breakpoints
@@ -405,7 +410,7 @@ export class DzrpRemote extends RemoteBase {
 					// Only if other breakpoints not found or condition is false
 					if (condition==undefined) {
 						// Temporary breakpoint hit.
-						return '';
+						condition='';
 					}
 				}
 				break;
@@ -424,7 +429,7 @@ export class DzrpRemote extends RemoteBase {
 			}
 		}
 
-		return condition;
+		return {condition, correctedBreakNumber};
 	}
 
 
@@ -447,7 +452,7 @@ export class DzrpRemote extends RemoteBase {
 					await Remote.getRegisters();
 
 					// Check for break condition
-					const condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
+					const {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
 
 					// Check for continue
 					if (condition==undefined) {
@@ -457,7 +462,7 @@ export class DzrpRemote extends RemoteBase {
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						this.postStep();
 						// return
@@ -511,7 +516,7 @@ export class DzrpRemote extends RemoteBase {
 				await Remote.getRegisters();
 
 				// Check for break condition
-				let condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
+				let {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
 
 				// Check for continue
 				if (condition==undefined) {
@@ -523,7 +528,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 				else {
 					// Construct break reason string to report
-					breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+					breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 					// Clear registers
 					this.postStep();
 					// return
@@ -587,17 +592,23 @@ export class DzrpRemote extends RemoteBase {
 					await Remote.getRegisters();
 
 					// Check for break condition
-					let condition=await this.evalBpConditionAndLog(breakNumber, breakAddress);
+					let {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
+					// For StepOut ignore the stepping tmp breakpoints
+					if (correctedBreakNumber==BREAK_REASON_NUMBER.NO_REASON)
+						condition=undefined;
 
 					// Check if instruction was a RET(I/N)
-					const currSp=Z80Registers.getRegValue(Z80_REG.SP);
-					if (currSp>startSp&&currSp>prevSp) {
-						// Something has been popped. This is to exclude unexecuted RET cc.
-						const bytes=await this.readMemoryDump(prevPc, 2);
-						const opcodes=bytes[0]+(bytes[1]<<8);
-						if (this.isRet(opcodes)) {
-							// Stop here
-							condition='';
+					if (condition==undefined) {
+						const currSp=Z80Registers.getRegValue(Z80_REG.SP);
+						if (currSp>startSp&&currSp>prevSp) {
+							// Something has been popped. This is to exclude unexecuted RET cc.
+							const bytes=await this.readMemoryDump(prevPc, 2);
+							const opcodes=bytes[0]+(bytes[1]<<8);
+							if (this.isRet(opcodes)) {
+								// Stop here
+								condition='';
+								correctedBreakNumber=BREAK_REASON_NUMBER.NO_REASON;
+							}
 						}
 					}
 
@@ -607,11 +618,12 @@ export class DzrpRemote extends RemoteBase {
 						let [, bp1, bp2]=await this.calcStepBp(true);
 						// Continue
 						this.continueResolve=funcContinueResolve;
+						prevPc=Z80Registers.getPC();
 						this.sendDzrpCmdContinue(bp1, bp2);
 					}
 					else {
 						// Construct break reason string to report
-						breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						this.postStep();
 						// return
@@ -630,6 +642,7 @@ export class DzrpRemote extends RemoteBase {
 			let [, bp1, bp2]=await this.calcStepBp(true);
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
+			prevPc=Z80Registers.getPC();
 			this.sendDzrpCmdContinue(bp1, bp2);
 		});
 	}
