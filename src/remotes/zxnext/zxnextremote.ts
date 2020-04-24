@@ -221,12 +221,6 @@ export class ZxNextRemote extends DzrpRemote {
 			// Notification.
 			const breakNumber=data[2];
 			const breakData=Utility.getWord(data, 3);
-			/*
-			// Check if called by step-out.
-			if (this.stepOutHandler) {
-				this.stepOutHandler(breakReasonNumber);
-			}
-			*/
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
@@ -236,7 +230,7 @@ export class ZxNextRemote extends DzrpRemote {
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 
-				// breakReasonString is aleways defined. The rest is additional info.
+				// Handle the break
 				continueHandler({breakNumber, breakData, breakReasonString});
 			}
 		}
