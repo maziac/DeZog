@@ -1392,6 +1392,10 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
+		// Trim
+		if (disasm)
+			disasm=disasm.trim();
+		// Add T-States
 		let output=disasm;
 		if (tStatesText) {
 			if (output)
