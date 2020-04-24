@@ -5,28 +5,35 @@ This document will describe what needs to be done (implemented) in order to supp
 
 # What is a 'Remote'?
 
-A Remote is normally an external emulator that is running independently of DeZog.
-ZesarUX e.g is such a Remote.
+A remote is normally an external emulator that is running independently of DeZog.
+ZesarUX e.g is such a remote.
 It is connected via some interface (for ZEsarUX this is a socket) and a protocol (for ZEsarUX ZRCP - ZEsarUX Remote Communication Protocol).
+For e.g. CSpect a socket is used as well with DZRP as a protocol.
+For CSpect the (external) remote is two-fold: The CSpect itself + the CSpect DeZog Plugin which communicates with DeZog and CSpect.
 
-But a Remote could also be real HW. E.g. real ZX Next hardware.
+But a remote could also be real HW. E.g. real ZX Next hardware.
 The ZX Next can be connected via a serial interface to the PC.
 Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbserial (macOS).
+
+In DeZog a Remote class is derived from RemoteBase and represents the remote (emulator) inside DeZog. The Remote (DeZog) communicates with the remote (emulator).
+
+'Remote' with an uppercase letter is used when talking about the representation (the class) inside DeZog.
+'remote' with a lower case letter refers to the external remote e.g. the emulator.
+
+For the simulator (zsim) both is the same. In that case the capital 'Remote' is used.
 
 
 # Required Classes
 
-To add a new Remote it need to derive from the RemoteBase.
-The RemoteBase defines an API that is used by DeZog to communicate with the real Remote.
+To add a new Remote it needs to derive from the RemoteBase.
+The RemoteBase defines an API that is used by DeZog to communicate with the real remote.
 RemoteBase includes all methods that you might or must override.
 All must overrides include an 'assert' in the RemoteBase.
 The other are simply empty.
 If you decide to override some of the non-assert methods you can offer additional functionality.
 The debug adapter will check by itself which of the functions have been overwritten.
 
-Since you also need a transport layer to communicate with Remote it is normally wise to separate it in an own class.
-(This also makes it possible to implement different transports for the same Remote.)
-
+Since you also need a transport layer to communicate with remote it could be separate it in an own class or could be implemented directly inside the Remote class.
 
 
 # RemoteBase API
@@ -58,9 +65,9 @@ The following methods might be overwritten for extra functionality:
 	- setLOGPOINT: Sets the logpoint array.
 	- setLogpoints: Set all logpoints.
 - Program flow
-	- reverseContinue, stepBack: Special Debug Commands. Only required if the Remote supports real CPU execution history like ZEsarUX.
+	- reverseContinue, stepBack: Special Debug Commands. Only required if the remote supports real CPU execution history like ZEsarUX.
 - Debugger
-	- dbgExec: This will send Remote-specific commands to the Remote by passing DeZog.
+	- dbgExec: This will send remote-specific commands to the remote bypassing DeZog.
 - ZX Next specific
 	- getMemoryBanks: Returns the ZX Next memory banks.
 
@@ -71,13 +78,12 @@ A simpler implementation can be done if the Remote is derived from DzrpRemote.
 The DzrpRemote defines a clear set of messages that is sent to the (external) remote.
 In your derivate you just need to implement a transport layer (e.g. sockets) to send those messages to the remote.
 
-See ZxNextRemote as an example. It uses a serial connection as transport.
-
+See ZxNextRemote or CSpectRemote as an example. ZXNextRemote uses a serial connection as transport. CSpectRemote a socket connection to the CSpect DeZog Plugin.
 
 
 # Selecting The New Remote
 
-The RemoteFactory creates the remoe accordign to the 'remoteType' (e.g. zrcp or zsim).
+The RemoteFactory creates the Remote according to the 'remoteType' (e.g. 'zrcp', 'cspect' or 'zsim').
 
 
 # Example

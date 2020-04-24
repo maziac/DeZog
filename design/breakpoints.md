@@ -94,6 +94,38 @@ end
 ~~~
 
 
+## Breakpoint IDs
+
+Watchpoints (read/write) can be set for whole areas (e.g. 0x1000-0x1FFF). They are not related to any ID but the addresses are used directly.
+
+Breakpoints (including ASSERTs and LOGPOINTs) use IDs. Also at the remote (emulator) side.
+IDs are required at remote side to allow conditional breakpoints also at the external remote.
+I.e. it could happen that there are 2 breakpoints at the same address but with different conditions.
+Still it must be possible to distinguish both to remove one of them but keepingthe other.
+
+The remote's ability to support conditions is optional. As we learned above, DeZog will handle them anyway. But if the remote would support conditions as well the whole handling will become much faster since no communication would be involved to check the condition.
+But note: currently CSpect does not support conditions and for serial/ZXNext it seems also unlikely that conditions will be supported.
+However the DZRP protocol would allow it.
+
+ASSERTs: These are just breakpoints with inverted conditions. They are handled inside DeZog. For the remote they are simply breakpoints (with a condition).
+
+LOGPOINTs: Are handled by DeZog only. Unlike conditions the DZRP does not support logpoints. For the remote a logpoint is just a breakpoint (and could additionally include a condition). The logpoint printing is completely evaluated and done in DeZog.
+
+
+When a breakpoint is hit in the (external) remote the address (instead of the ID) is returned in the pause-notification.
+The reason is:
+Several breakpoints could share the same address. Imagine a LOGPOINT or an ASSERT at address 0x8000. The user might set additionaly a breakpoint (with no or another condition) in the vscode GUI at the same location.
+The DzrpRemote inside DeZog will then find all breakpoints that correspond to that address and check them all. If any's condition is true a break is done otherwise a Continue is sent.
+
+When a Watchpoint is hit the watch address is returned if the remote does know it (e.g. CSpect can detect an access but does not return the address).
+The Remote (in Dezog) has to know about the remote's capability in this respect.
+
+
+
+
+
+
+
 # Improved StepOver handling
 
 For both (ZEsarUX and DZRP) there is an additional handling of the StepOver on top of the already shown behavior.
