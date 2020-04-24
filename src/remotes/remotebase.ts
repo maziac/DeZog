@@ -33,12 +33,12 @@ export enum BREAK_REASON_NUMBER {
  * The breakpoint representation.
  */
 export interface RemoteBreakpoint extends GenericBreakpoint {
-	bpId: number;	///< The breakpoint ID/number (>0)
+	bpId: number;	///< The breakpoint ID/number (>0). Mandatory.
 	filePath?: string;	///< The file to which the breakpoint belongs
 	lineNr: number;	///< The line number in the file starting at 0
-	address: number;	///< Usually the pc value to stop at (e.g. 0A7f)
-	condition?: string;	///< An additional condition.
-	log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
+	// Already defined: address: number;	///< Usually the pc value to stop at (e.g. 0x0A7F)
+	// Already defined: condition?: string;	///< An additional condition.
+	// Already defined: log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
 }
 
 
@@ -1135,12 +1135,12 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Sends a command to the emulator.
+	 * Override if supported.
 	 * @param cmd E.g. 'get-registers'.
 	 * @returns A Promise in remote (emulator) dependend format.
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
-		Utility.assert(false);	// override this
-		return "";
+		return "Error: not supported.";
 	}
 
 
