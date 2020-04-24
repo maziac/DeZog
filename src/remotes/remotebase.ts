@@ -1212,7 +1212,7 @@ export class RemoteBase extends EventEmitter {
 	 * Change the program counter and emit 'stoppedEvent'.
 	 * @param address The new address for the program counter.
 	 */
-	public async setProgramCounter(address: number): Promise<void> {
+	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
 		Z80Registers.clearCache();
 		this.clearCallStack();
@@ -1224,12 +1224,27 @@ export class RemoteBase extends EventEmitter {
 	 * Change the SP and emit 'stoppedEvent'.
 	 * @param address The new address for the stack pointer.
 	 */
-	public async setStackPointer(address: number): Promise<void> {
+	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
 		Z80Registers.clearCache();
 		this.clearCallStack();
 		await this.setRegisterValue("SP", address);
 		this.emit('stoppedEvent', 'SP changed');
+	}
+
+
+	/**
+	 * Sets the value of a register and emits a 'stoppedEvent'
+	 * This is used by the ShallowVariables when a register is changed.
+	 * So that all register values are updated (e.g. in case you change
+	 * register "C" also "BC" should be updated.
+	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
+	 * @param value The new register value.
+	 */
+	public async setRegisterValueWithEmit(register: string, value: number) {
+		this.clearCallStack();
+		await this.setRegisterValue(register, value);
+		this.emit('stoppedEvent', register+' changed');
 	}
 
 

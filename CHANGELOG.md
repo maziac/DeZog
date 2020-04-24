@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.2.4
+- cspect:
+	- Logpoints working.
+	- StepOut correted.
+- Fixed: Update of word register in case of byte register change (and vice versa).
+
 # 1.2.3
 - Fixed: crash when switching form ZEsarUX to CSpect.
 - Manual change of PC (or SP) will update the shown file.

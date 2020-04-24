@@ -2324,7 +2324,7 @@ Notes:
 		if (addr<0)
 			return;
 		// Now change Program Counter
-		await Remote.setProgramCounter(addr);
+		await Remote.setProgramCounterWithEmit(addr);
 	}
 
 

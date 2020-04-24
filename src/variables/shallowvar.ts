@@ -178,11 +178,11 @@ export class RegistersMainVar extends ShallowVar {
 		if (!isNaN(value)) {
 			// Handle PC special
 			if (name=="PC")
-				await Remote.setProgramCounter(value);
+				await Remote.setProgramCounterWithEmit(value);
 			if (name=="SP")
-				await Remote.setStackPointer(value);
+				await Remote.setStackPointerWithEmit(value);
 			else
-				await Remote.setRegisterValue(name, value);
+				await Remote.setRegisterValueWithEmit(name, value);
 		}
 		await Remote.getRegisters()
 		const formatted = Remote.getVarFormattedReg(name);
