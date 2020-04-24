@@ -237,21 +237,27 @@ export class DzrpRemote extends RemoteBase {
 			breakReasonString='';
 
 		// Generate reason text
-		let reasonString='';
+		let reasonString;
 		switch (breakNumber) {
 			case BREAK_REASON_NUMBER.MANUAL_BREAK:
-				reasonString="Manual break. ";
+				reasonString="Manual break.";
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Check if it was an ASSERT.
-				const abp=this.assertBreakpoints.find(abp => abp.bpId==breakAddress);
-				if (abp) {
-					condition=condition.substr(2);	// cut off "!("
-					condition=condition.substr(0, condition.length-1);	// cut off trailing ")"
-					reasonString="ASSERT ";
+				const abps=this.assertBreakpoints.filter(abp => abp.address==breakAddress);
+				for (const abp of abps) {
+					if (condition==abp.condition) {
+						let assertCond=condition.substr(2);	// cut off "!("
+						assertCond=assertCond.substr(0, assertCond.length-1);	// cut off trailing ")"
+						reasonString="Assertion failed: "+assertCond;
+						break;
+					}
 				}
-				else {
-					reasonString="Breakpoint hit. ";
+				// Or breakpoint
+				if (reasonString==undefined) {
+					reasonString="Breakpoint hit @"+Utility.getHexString(breakAddress,4)+"h.";
+					if (condition)
+						reasonString+=" Condition: "+condition;
 				}
 				break;
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
@@ -263,12 +269,11 @@ export class DzrpRemote extends RemoteBase {
 				const labelsString=labels.join(', ');
 				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getHexString(address, 4)+" ("+labelsString+"). "+breakReasonString;
 				break;
+			default:
+				reasonString=breakReasonString;
 		}
-		// condition
-		if (condition.length>0)
-			reasonString+=condition+'. ';
-		breakReasonString=reasonString+((breakReasonString.length>0)? breakReasonString:'');
-		return breakReasonString;
+
+		return reasonString;
 	}
 
 
