@@ -369,7 +369,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Creates one html table out of the sprites data.
 	 */
 	protected createHtmlTable(): string {
-		const format = `
+		const format= `
+		<style>
+			.classPattern {
+				width:auto;
+				height:2em;
+			}
+			.classImg {
+				image-rendering:pixelated;
+				width:auto;
+				height:2em;
+			}
+		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
 			<colgroup>
 			<col width="35em">
@@ -403,7 +414,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Create a string with the table itself.
 		let table = '';
-		for(let k=0; k<64; k++) {
+		for(let k=0; k<64; k++) { // TODO: 128
 			const sprite = this.sprites[k];
 			if(!sprite)
 				continue;
@@ -416,7 +427,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				// Sprite image - convert to base64
 				const buf = Buffer.from(sprite.image);
 				const base64String = buf.toString('base64');
-				table += ' <td class="classPattern"><img src="data:image/gif;base64,' + base64String + '"></td>\n'
+				table+= ' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,' + base64String + '"></td>\n'
 				// Attributes
 				table += this.getTableTdWithBold(sprite.xMirrored, (prevSprite) ? prevSprite.xMirrored : -1);
 				table += this.getTableTdWithBold(sprite.yMirrored, (prevSprite) ? prevSprite.yMirrored : -1);
@@ -443,12 +454,14 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 */
 	protected createHtmlCanvas(): string {
 		const format = `
-		<canvas id="screen" width="320px" height="256px" style="border:1px solid #c3c3c3;">
+		<canvas id="screen" width="640px" height="512px" style="border:1px solid #c3c3c3;">
 
 		<script>
-			function drawScreen() {
+				function drawScreen() {
 				var canvas = document.getElementById("screen");
 				var ctx = canvas.getContext("2d");
+
+				ctx.scale(2, 2);
 
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 
