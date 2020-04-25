@@ -2,6 +2,7 @@
 
 # 1.2.5
 - Improved zsim performance when stepping over macro.
+- sprites view now also able to show 4 bit color pattern sprites.
 
 # 1.2.4
 - cspect:
