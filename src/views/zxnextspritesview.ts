@@ -32,7 +32,17 @@ class SpriteData {
 	public patternIndex = 0;
 
 	/// Visible
-	public visible = false;
+	public visible=false;
+
+	/// 8bit or 4bit color pattern.
+	/// undefined=8bit
+	/// 1 = N6 is 1
+	/// 0 = N6 is 0
+	public N6: number|undefined=undefined;
+
+	/// Anchor sprite
+	public relativeSprite=false;
+
 
 	/// The pngimage created from the pattern.
 	public image:  Array<number>;
@@ -41,13 +51,19 @@ class SpriteData {
 	constructor(attributes: Uint8Array) {
 		this.x = attributes[0] + (attributes[2]&0x01)*256;
 		this.y = attributes[1];
-		this.xMirrored = (attributes[2] & 0b00001000) ? 1 : 0;
-		this.yMirrored = (attributes[2] & 0b00000100) ? 1 : 0;
-		this.rotated = (attributes[2] & 0b00000010) ? 1 : 0;
-		this.paletteOffset = attributes[2] & 0b11110000;
-		this.patternIndex = attributes[3] & 0b00111111;
-		this.visible=((attributes[3]&0b10000000)!=0);
-		// TODO: Handle Attribute[4]: Anchor sprites.
+		this.xMirrored = (attributes[2] & 0b0000_1000) ? 1 : 0;
+		this.yMirrored = (attributes[2] & 0b0000_0100) ? 1 : 0;
+		this.rotated = (attributes[2] & 0b0000_0010) ? 1 : 0;
+		this.paletteOffset = attributes[2] & 0b1111_0000;
+		this.patternIndex = attributes[3] & 0b0011_1111;
+		this.visible=((attributes[3]&0b1000_0000)!=0);
+		// Handle Attribute[4]: Anchor sprites + 4bit sprites.
+		if (attributes.length>4) {
+			//attributes[4]=0b1100_0000;	// TODO: remove
+			if((attributes[4]&0b1000_0000)!=0)
+				this.N6=(attributes[4]&0b0100_0000)>>>6;	// N6
+			this.relativeSprite=((attributes[4]&0b1100_0000)==0b0100_0000);
+		}
 	}
 
 	/**
@@ -57,7 +73,19 @@ class SpriteData {
 	 * @param transparentIndex The index used for transparency.
 	 */
 	public createImageFromPattern(pattern: Array<number>, palette: Array<number>, transparentIndex: number) {
-		let usedPattern = pattern;
+		let usedPattern=pattern;
+		// If 4bit color pattern change to use 1 byte per color
+		if (this.N6 != undefined) {
+			const offset=this.N6*128;	// 0 or 128
+			const np=new Array<number>(256);
+			for (let i=0; i<128; i++) {
+				const val=pattern[i+offset];
+				np[2*i]=val>>>4;
+				np[2*i+1]=val&0x0F;
+			}
+			// Use
+			usedPattern=np;
+		}
 		// Rotate
 		if(this.rotated) {
 			const np = new Array<number>(256);
@@ -358,8 +386,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * @param prevValue The previous value.
 	 */
 	protected getTableTdWithBold(currentValue: any, prevValue: any): string {
+		let convCurrentValue=currentValue;
+		if (convCurrentValue==undefined)
+			convCurrentValue='-';
 		let td = ' <td>';
-		td += (currentValue == prevValue) ? currentValue : '<b>' + currentValue + '</b>';
+		td+=(currentValue==prevValue)? convCurrentValue:'<b>'+convCurrentValue + '</b>';
 		td += '</td>\n';
 		return td;
 	}
@@ -383,15 +414,16 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
 			<colgroup>
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
-			<col width="35em">
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
 			</colgroup>
 
           <tr>
@@ -404,6 +436,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th>Rot.</th>
 			<th>Pal.</th>
 			<th>Pattern</th>
+			<th>N6</th>
 		  </tr>
 
 %s
@@ -433,7 +466,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				table += this.getTableTdWithBold(sprite.yMirrored, (prevSprite) ? prevSprite.yMirrored : -1);
 				table += this.getTableTdWithBold(sprite.rotated, (prevSprite) ? prevSprite.rotated : -1);
 				table += this.getTableTdWithBold(sprite.paletteOffset, (prevSprite) ? prevSprite.paletteOffset : -1);
-				table += this.getTableTdWithBold(sprite.patternIndex, (prevSprite) ? prevSprite.patternIndex : -1);
+				table+=this.getTableTdWithBold(sprite.patternIndex, (prevSprite)? prevSprite.patternIndex:-1);
+				table+=this.getTableTdWithBold(sprite.N6, (prevSprite)? prevSprite.N6:-1);
 			}
 			else {
 				// Invisible
