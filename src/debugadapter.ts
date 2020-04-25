@@ -27,6 +27,7 @@ import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './misc/disassembly';
+import {TimeWait} from './misc/timewait';
 
 
 
@@ -389,6 +390,9 @@ export class DebugSessionClass extends DebugSession {
 		DebugSessionClass.state=DbgAdaperState.NORMAL;
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
+
+		// Init
+		this.proccessingSteppingRequest=false;
 
 		// Start the emulator and the connection.
 		const msg=await this.startEmulator();
@@ -893,7 +897,7 @@ export class DebugSessionClass extends DebugSession {
 		// At the end of the stack trace request the collected decoration events
 		// are executed. This is because the disasm.asm did not exist before und thus
 		// events like 'historySpot' would be lost.
-		// Note: codeCoverage is handled differently because it is not send during
+		// Note: codeCoverage is handled differently because it is not sent during
 		// step-back.
 		for (const func of this.delayedDecorations)
 			func();
@@ -1264,8 +1268,12 @@ export class DebugSessionClass extends DebugSession {
 		let i=0;
 		let instr;
 		let breakReason;
+		const timeWait=new TimeWait(500, 200, 100);
 		while (true) {
 			i++;
+
+			// Give vscode some time for a break
+			await timeWait.waitAtInterval();
 
 			// Check for reverse debugging.
 			if (stepBackMode) {
