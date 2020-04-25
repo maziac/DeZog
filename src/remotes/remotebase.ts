@@ -1274,6 +1274,26 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+	/**
+	 * This method is called by the DebugSessionClass before a step (stepOver, stepInto, stepOut,
+	 * continue, stepBack, etc.) is called.
+	 * It can be overridden e.g. to clear/intialize some stuff
+	 * e.g. coverage.
+	 */
+	public startProcessing() {
+	}
+
+
+	/**
+	 * This method is called by the DebugSessionClass after a step (stepOver, stepInto, stepOut,
+	 * continue, stepBack, etc.) is called.
+	 * It can be overridden e.g. to do something at the end of a step.
+	 * E.g. emit coverage.
+	 */
+	public stopProcessing() {
+	}
+
+
 	// ZX Next related ---------------------------------
 
 	/**

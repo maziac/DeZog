@@ -1029,6 +1029,34 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * This method is called before a step (stepOver, stepInto, stepOut,
+	 * continue, stepBack, etc.) is called.
+	 */
+	protected startProcessing() {
+		// Start processing
+		this.proccessingSteppingRequest=true;
+		// Reset pause request
+		this.pauseRequested=false;
+		// Clear decorations
+		Decoration.clearBreak();
+		// Do the same for the Remote
+		Remote.startProcessing();
+	}
+
+
+	/**
+	 * This method is called after a step (stepOver, stepInto, stepOut,
+	 * continue, stepBack, etc.) is called.
+	 */
+	protected stopProcessing() {
+		// Stop processing
+		this.proccessingSteppingRequest=false;
+		// Do the same for the Remote
+		Remote.stopProcessing();
+	}
+
+
+	/**
 	  * vscode requested 'continue'.
 	  * @param response
 	  * @param args
@@ -1040,13 +1068,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// Check for reverse debugging.
 		if (StepHistory.isInStepBackMode()) {
@@ -1075,7 +1097,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 
@@ -1164,13 +1186,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// Output
 		vscode.debug.activeDebugConsole.appendLine('Continue reverse');
@@ -1191,7 +1207,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 
@@ -1235,13 +1251,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// T-states info and lite history
 		const stepBackMode=StepHistory.isInStepBackMode();
@@ -1350,7 +1360,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 
@@ -1429,13 +1439,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// Check for reverse debugging.
 		let result;
@@ -1476,7 +1480,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 
@@ -1492,13 +1496,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// Check for reverse debugging.
 		let breakReasonString;
@@ -1535,7 +1533,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 
@@ -1551,13 +1549,7 @@ export class DebugSessionClass extends DebugSession {
 		if (this.proccessingSteppingRequest)
 			return;
 		// Start processing
-		this.proccessingSteppingRequest=true;
-
-		// Reset pause request
-		this.pauseRequested=false;
-
-		// Clear decorations
-		Decoration.clearBreak();
+		this.startProcessing();
 
 		// Step back
 		const result=await StepHistory.stepBack();
@@ -1581,7 +1573,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.emitHistory();
 
 		// End processing
-		this.proccessingSteppingRequest=false;
+		this.stopProcessing();
 	}
 
 

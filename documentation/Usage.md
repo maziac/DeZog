@@ -304,6 +304,7 @@ Notes:
     - experimental: Should work, but not very well tested
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
+- slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
 - ZesaruxExt and ZX Next are not available at the moment.
 
 

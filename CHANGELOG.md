@@ -1,9 +1,12 @@
 # Changelog
 
+# 1.2.5
+- Improved zsim performance when stepping over macro.
+
 # 1.2.4
 - cspect:
 	- Logpoints working.
-	- StepOut correted.
+	- StepOut corrected.
 - Fixed: Update of word register in case of byte register change (and vice versa).
 
 # 1.2.3

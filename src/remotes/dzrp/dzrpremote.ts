@@ -90,7 +90,7 @@ export class DzrpRemote extends RemoteBase {
 	// normally the inner array contains only 1 element.
 	// The tmpBreakpoints are created when a Continue, StepOver, Stepinto
 	// or StepOut starts.
-	protected tmpBreakpoints: Array<Array<GenericBreakpoint>>;
+	protected tmpBreakpoints = new Array<Array<GenericBreakpoint>>(0x10000);
 
 	/// Constructor.
 	/// Override this.
@@ -205,7 +205,9 @@ export class DzrpRemote extends RemoteBase {
 	 * Note: normally this array contains only one entry.
 	 */
 	protected createTemporaryBreakpoints() {
-		const tmpBps=new Array<Array<GenericBreakpoint>>(0x10000);
+		const tmpBps=this.tmpBreakpoints;
+		// Clear
+		tmpBps.fill(undefined as any);
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints=this.getEnabledLogpoints();
 		// Assert breakpoints
@@ -221,7 +223,6 @@ export class DzrpRemote extends RemoteBase {
 			}
 			bpInner.push(bp);
 		});
-		this.tmpBreakpoints=tmpBps;
 	}
 
 
@@ -319,10 +320,9 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * This method is called before a step (stepOver, stepInto, stepOut,
-	 * continue) is called.
-	 * It generates the temproary breakpoints array.
+	 * continue, stepBack, etc.) is called.
 	 */
-	protected preStep() {
+	public startProcessing() {
 		this.createTemporaryBreakpoints();
 		// Reset flag
 		this.pauseStep=false;
@@ -332,15 +332,13 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * This method should be called after a step (stepOver, stepInto, stepOut,
-	 * continue) is called.
-	 * It will clear e.g. the register and the call stack cache.
-	 * So that the next time they are accessed they are immediately refreshed.
+	 * This method is called after a step (stepOver, stepInto, stepOut,
+	 * continue, stepBack, etc.) is called.
 	 */
-	protected postStep() {
-		Z80Registers.clearCache();
-		this.clearCallStack();
+	/*
+	public stopProcessing() {
 	}
+	*/
 
 
 	/**
@@ -439,8 +437,6 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async continue(): Promise<string> {
 		return new Promise<string>(async resolve => {
-			// Start
-			this.preStep();
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
@@ -464,14 +460,16 @@ export class DzrpRemote extends RemoteBase {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
-						this.postStep();
+						Z80Registers.clearCache();
+						this.clearCallStack();
 						// return
 						resolve(breakReasonString);
 					}
 				}
 				catch (e) {
 					// Clear registers
-					this.postStep();
+					Z80Registers.clearCache();
+					this.clearCallStack();
 					const reason: string=e;
 					resolve(reason);
 				}
@@ -504,8 +502,6 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
 		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
-			// Start
-			this.preStep();
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Give vscode a little time
@@ -530,7 +526,7 @@ export class DzrpRemote extends RemoteBase {
 					// Construct break reason string to report
 					breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 					// Clear registers
-					this.postStep();
+					this.clearCallStack();
 					// return
 					resolve({instruction, breakReasonString});
 				}
@@ -573,9 +569,6 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOut(): Promise<string> {
 		return new Promise<string>(async resolve => {
-			// Start
-			this.preStep();
-
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp=startSp;
@@ -625,14 +618,16 @@ export class DzrpRemote extends RemoteBase {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
-						this.postStep();
+						Z80Registers.clearCache();
+						this.clearCallStack();
 						// return
 						resolve(breakReasonString);
 					}
 				}
 				catch (e) {
 					// Clear registers
-					this.postStep();
+					Z80Registers.clearCache();
+					this.clearCallStack();
 					const reason: string=e;
 					resolve(reason);
 				}

@@ -80,7 +80,12 @@ export class Z80Cpu {
 
 	/**
 	 * Executes one instruction.
-	 * @returns true if a vertical interrupt happened.
+	 * @returns true if a (vertical) interrupt happened or would have happened.
+	 * Also if interrupts are disabled at the Z80.
+	 * And also if 'vsyncInterrupt' is falsed.
+	 * The return value is used for regularly updating the ZxSimulationView.
+	 * And this is required even if interrupts are off. Or even if
+	 * there is only Z80 simulation without ZX Spectrum.
 	 */
 	public execute(): boolean {
 		const z80=this.z80;
@@ -110,12 +115,12 @@ export class Z80Cpu {
 		this.cpuTstatesCounter+=tStates;
 		this.cpuTotalTstates+=tStates;
 		// Interrupt
-		if (this.vsyncInterrupt) {
 			this.remaingInterruptTstates-=tStates;
-			if (this.remaingInterruptTstates<=0) {
-				// Interrupt
-				this.remaingInterruptTstates=this.INTERRUPT_TIME;
-				//this.remaingInterruptTstates=2;
+		if (this.remaingInterruptTstates<=0) {
+			// Interrupt
+			this.remaingInterruptTstates=this.INTERRUPT_TIME;
+			// Really generate interrupt?
+			if (this.vsyncInterrupt) {
 				z80.interrupt(false, 0);
 				// Measure CPU load
 				this.cpuLoadRangeCounter++;
@@ -127,9 +132,9 @@ export class Z80Cpu {
 						this.cpuLoadRangeCounter=0;
 					}
 				}
-				// Vert. interrupt
-				return true;
 			}
+			// Vert. interrupt
+			return true;
 		}
 
 		// No vert. interrupt

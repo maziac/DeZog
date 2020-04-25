@@ -499,7 +499,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		let breakReasonString='';
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=5000;
-		let bp;
+		//let bp;
 		let breakAddress;
 		let updateCounter=0;
 		try {
@@ -522,10 +522,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Do visual update
 				if (vertInterrupt) {
 					updateCounter--;
-					if (updateCounter<0) {
+					if (updateCounter<=0) {
 						// Update the screen etc.
 						this.emit('update')
-						updateCounter=10;
+						updateCounter=1;
 					}
 				}
 
@@ -608,10 +608,12 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			//let condition='';
 			this.cpuRunning=false;
 			// Get breakpoint Address
+			/*
 			if (bp) {
 				breakAddress=bp.address;
 				//condition=bp.condition;
 			}
+			*/
 
 			// Create reason string
 			//breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
@@ -619,16 +621,8 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			// Send Notification
 			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 			Utility.assert(this.continueResolve);
-			if (this.continueResolve)
-				this.continueResolve({breakNumber, breakAddress, breakReasonString});
+			this.continueResolve!({breakNumber, breakAddress, breakReasonString});
 
-			// Update the screen etc.
-			this.emit('update')
-			// Emit code coverage event
-			if (this.codeCoverage) {
-				this.emit('coverage', this.codeCoverage.getAddresses());
-				this.codeCoverage.clearAll();
-			}
 			return;
 		}
 
@@ -646,14 +640,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				Utility.assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({breakNumber, breakAddress, breakReasonString});
-
-				// Update the screen etc.
-				this.emit('update')
-				// Emit code coverage event
-				if (this.codeCoverage) {
-					this.emit('coverage', this.codeCoverage.getAddresses());
-					this.codeCoverage.clearAll();
-				}
 				return;
 			}
 
@@ -662,6 +648,38 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		}, 10);
 	}
 
+
+
+	/**
+	 * This method is called before a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * Takes care of code coverage.
+	 */
+	public startProcessing() {
+		super.startProcessing();
+		// Clear code coverage
+		this.codeCoverage.clearAll();
+	}
+
+
+	/**
+	 * This method should be called after a step (stepOver, stepInto, stepOut,
+	 * continue) is called.
+	 * It will clear e.g. the register and the call stack cache.
+	 * So that the next time they are accessed they are immediately refreshed.
+	 */
+	public stopProcessing() {
+		super.stopProcessing();
+
+		// Update the screen etc.
+		this.emit('update');
+
+		// Emit code coverage event
+		if (this.codeCoverage) {
+			this.emit('coverage', this.codeCoverage.getAddresses());
+			this.codeCoverage.clearAll();
+		}
+	}
 
 
 	/**
