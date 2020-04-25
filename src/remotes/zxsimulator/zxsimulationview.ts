@@ -21,8 +21,6 @@ export class ZxSimulationView extends BaseView {
 	// A pointer to the simulator.
 	protected simulator: ZxSimulatorRemote;
 
-	protected updateTimer;
-
 
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
@@ -276,76 +274,66 @@ export class ZxSimulationView extends BaseView {
 	 * @param reason Not used.
 	 */
 	public async update(): Promise<void> {
-		/*
-		// Only update at intervals
-		if (this.updateTimer)
-			return;
-		// Start interval
-		this.updateTimer=setTimeout(() => {
-			*/
-			try {
-				let cpuLoad;
-				let slots;
-				let slotNames;
-				let visualMemImg;
-				let screenImg;
-				// Update values
-				if (Settings.launch.zsim.cpuLoadInterruptRange>0)
-					cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
+		try {
+			let cpuLoad;
+			let slots;
+			let slotNames;
+			let visualMemImg;
+			let screenImg;
+			// Update values
+			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
+				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
 
-				if (Settings.launch.zsim.visualMemory=="ZX128") {
-					slots=this.simulator.zxMemory.getSlots();
-					// ZX128 has 16k slots/banks
-					slotNames=new Array<string>();
-					for (let i=0; i<8; i+=2) {
-						const bankA=Math.floor(slots[i]/2);
-						const bankB=Math.floor(slots[i+1]/2);
-						let name;
-						if (bankA==127||bankB==127) {
-							// Use name "ROM"
-							name="ROM";
-							if (bankA<127)
-								name+="/"+bankA;	// pathologic case.
-							if (bankB<127)
-								name+="/"+bankB;	// pathologic case.
-						}
-						else {
-							// Use name "BANKx"
-							name="BANK"+bankB
-							if (bankA!=bankB)
-								name+="/"+bankB;	// This only happens if e.g. ZXNext 8k slots banks are used.
-						}
-						slotNames.push(name);
+			if (Settings.launch.zsim.visualMemory=="ZX128") {
+				slots=this.simulator.zxMemory.getSlots();
+				// ZX128 has 16k slots/banks
+				slotNames=new Array<string>();
+				for (let i=0; i<8; i+=2) {
+					const bankA=Math.floor(slots[i]/2);
+					const bankB=Math.floor(slots[i+1]/2);
+					let name;
+					if (bankA==127||bankB==127) {
+						// Use name "ROM"
+						name="ROM";
+						if (bankA<127)
+							name+="/"+bankA;	// pathologic case.
+						if (bankB<127)
+							name+="/"+bankB;	// pathologic case.
 					}
+					else {
+						// Use name "BANKx"
+						name="BANK"+bankB
+						if (bankA!=bankB)
+							name+="/"+bankB;	// This only happens if e.g. ZXNext 8k slots banks are used.
+					}
+					slotNames.push(name);
 				}
-				else if (Settings.launch.zsim.visualMemory=="ZXNEXT") {
-					slots=this.simulator.zxMemory.getSlots();
-					slotNames=slots.map(bank => (bank>=254)? "ROM":"BANK"+bank);
-				}
-				if (Settings.launch.zsim.visualMemory!="none") {
-					// The same for all
-					visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
-				}
-
-				if (Settings.launch.zsim.ulaScreen)
-					screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
-				// Create message to update the webview
-				let message={
-					command: 'update',
-					cpuLoad,
-					slotNames,
-					visualMemImg,
-					screenImg
-
-				};
-				this.sendMessageToWebView(message);
-				// Clear
-				this.simulator.zxMemory.clearVisualMemory();
 			}
-			catch {}
-			// Wait again
-			this.updateTimer=undefined;
-	//	}, 100);	// Every 100 ms
+			else if (Settings.launch.zsim.visualMemory=="ZXNEXT") {
+				slots=this.simulator.zxMemory.getSlots();
+				slotNames=slots.map(bank => (bank>=254)? "ROM":"BANK"+bank);
+			}
+			if (Settings.launch.zsim.visualMemory!="none") {
+				// The same for all
+				visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+			}
+
+			if (Settings.launch.zsim.ulaScreen)
+				screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+			// Create message to update the webview
+			let message={
+				command: 'update',
+				cpuLoad,
+				slotNames,
+				visualMemImg,
+				screenImg
+
+			};
+			this.sendMessageToWebView(message);
+			// Clear
+			this.simulator.zxMemory.clearVisualMemory();
+		}
+		catch {}
 	}
 
 
