@@ -66,6 +66,7 @@ class SpriteData {
 	/// The pngimage created from the pattern.
 	public image:  Array<number>;
 
+
 	/**
 	 * Constructor
 	 * @param attributes 4-5 bytes attributes
@@ -108,7 +109,8 @@ class SpriteData {
 			}
 			else {
 				// Anchor sprite (normal)
-				this.N6=(attr4&0b0100_0000)>>>6;	// N6
+				if (attr4&0b1000_0000)
+					this.N6=(attr4&0b0100_0000)>>>6;	// N6
 				this.T=(attr4&0b0010_0000)>>>5;	// Anchor for composite or uniform sprites
 				// 9bit y-position
 				this.y+=(attr4&0b01)*256;
@@ -610,18 +612,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th>X</th>
 			<th>Y</th>
 			<th>Image</th>
-			<th>X-Mir.</th>
-			<th>Y-Mir.</th>
-			<th>Rot.</th>
-			<th>Pal.</th>
-			<th>PO</th>
-			<th>Pattern</th>
-			<th>N6</th>
-			<th>X-Scale</th>
-			<th>Y-Scale</th>
-			<th>Visibility</th>
-			<th>T (Type)</th>
-			<th>Anchor</th>
+			<th><span title="XM bit. 1 = mirror horizontally.">X-Mir.</span></th>
+			<th><span title="YM bit. 1 = mirror vertically.">Y-Mir.</span></th>
+			<th><span title="R bit. 1 = rotate 90 degrees clockwise.">Rot.</span></th>
+			<th><span title="P bit. 4 bit palette offset.">Pal.Offs.</span></th>
+			<th><span title="Relative sprites only.\nPO bit (Pattern offset).\n1 = pattern number is relative to anchor's pattern index.">PO</span></th>
+			<th><span title="N5-N0 bits. Pattern index.">Pattern</span></th>
+			<th><span title="7th pattern bit if sprite uses 4-bit color pattern. '-' if sprite uses 8-bit color pattern.">N6</span></th>
+			<th><span title="XX bits. I.e. the sale factor in X direction.">X-Scale</span></th>
+			<th><span title="YY bits. I.e. the sale factor in Y direction.">Y-Scale</span></th>
+			<th><span title="V bit. 1 = visible.">Visibility</span></th>
+			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nA relative sprite can be either Composite or Uniform.\nThe anchor sprite determines the Composite/Uniform type of the following relative sprites.\n'Anchor' = Anchor sprite\n'Composite'=Relative sprite, Composite type\n'Uniform'=Relative sprite, Uniform type">T (Type)<span></th>
+			<th><span title="For a relative sprite this is the index of it's anchor sprite.">Anchor</span></th>
 		  </tr>
 
 %s

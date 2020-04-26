@@ -961,6 +961,8 @@ You can open a view which displays the current sprite slots by entering
 
 This will display all 'visible' sprites in a table with all associated attributes like mirroring, rotation, palette offset and pattern id.
 
+Note: When hovering over a column title you will also get an explanation.
+
 Furthermore it also offers a simplified screen view which displays the border, the screen area and the sprites clipping rectangle (in red if enabled).
 
 ![](images/zxnextspritesviewer1.jpg)
