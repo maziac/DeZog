@@ -991,7 +991,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Retrieves the sprites palette from the emulator.
 	 * @param paletteNr 0 or 1.
-	 * @returns A Promise that returns a 256 byte Array<number> with the palette values.
+	 * @returns A Promise that returns a 256 element Array<number> with the palette values.
 	 */
 	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
 		const palette=await this.sendDzrpCmdGetSpritesPalette(paletteNr);

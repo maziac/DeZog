@@ -562,14 +562,17 @@ export class ZxNextRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to get a sprites palette.
-	 * @param index o/1. The first or the second palette.
+	 * @param index 0/1. The first or the second palette.
 	 * @returns An array with 256 entries with the 9 bit color.
- 	*/
+	 * Each entry is 2 byte.
+	 * 1rst byte: rrrgggbb
+	 * 2nd byte:  0000000b, lowest blue bit.
+ 	 */
 	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {
 		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES_PALETTE, [index]);
 		const palette=new Array<number>(256);
 		for (let i=0; i<256; i++) {
-			const color=buffer[2*i+1]+buffer[2*i];
+			const color=256*buffer[2*i+1]+buffer[2*i];
 			palette[i]=color;
 		}
 		return palette;

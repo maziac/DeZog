@@ -487,8 +487,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				usedPalette=palette;
 			else {
 				// Rotate palette instead of adding somethign to each pixel
-				const firstPart=palette.slice(offs);
-				const secondPart=palette.slice(0, offs);
+				const index=3*offs;	// 3 colors per index
+				const firstPart=palette.slice(index);
+				const secondPart=palette.slice(0, index);
 				usedPalette=firstPart;
 				usedPalette.push(...secondPart);
 			}
