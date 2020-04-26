@@ -104,7 +104,7 @@ export class CSpectRemote extends ZxNextRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port=Settings.launch.cspect.port;	// TODO: Better pass on class creation
+		const port=Settings.launch.cspect.port;
 		const hostname=Settings.launch.cspect.hostname;
 		this.socket.connect(port, hostname);
 	}

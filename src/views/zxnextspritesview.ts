@@ -208,7 +208,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		const sprites=await Remote.getTbblueSprites(0, 64);
 		// Loop over all sprites
 		// TODO: Implement 128 (4bit) sprites
-		for (let k=0; k<64; k++) {
+		for (let k=0; k<128; k++) {
 			const attrs=sprites[k];
 			// Check if visible
 			let sprite;

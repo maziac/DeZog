@@ -344,7 +344,7 @@ export class ZxMemory {
 	 */
 	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
 		if (!(totalBlock instanceof Uint8Array))
-			totalBlock=new Uint8Array(totalBlock);		// TODO: REMOVE? Used by ZxNextRemote
+			totalBlock=new Uint8Array(totalBlock);
 		let offset=0;
 		// The block may span several banks.
 		let addr=startAddress;

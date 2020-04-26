@@ -70,7 +70,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 
 		// Receive data
 		this.socket.on('data', data => {
-			// TODO: Need to implement receiveing of small chunks.
+			// TODO: Need to implement receiving of small chunks.
 			if (data.length<5)
 				return;
 			// Check which "channel"
@@ -90,7 +90,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port=Settings.launch.cspect.port;	// TODO: Better pass on class creation
+		const port=Settings.launch.cspect.port;
 		const hostname=Settings.launch.cspect.hostname;
 		this.socket.connect(port, hostname);
 	}

@@ -539,12 +539,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
 				const bpInner=this.tmpBreakpoints[pc];
-				if (bpInner) { // TODO
+				if (bpInner) {
 					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
 					breakAddress=pc;
 					break;
 				}
 				/*
+				// TODO: to improve performance of condition-breakpoints the condition check can be done additionally here:
+				If condition is not true then don't consider the breakpoint.
 				if (bpInner) {
 					// Get registers
 					const regs=this.z80Cpu.getRegisterData();
