@@ -622,7 +622,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th><span title="XX bits. I.e. the sale factor in X direction.">X-Scale</span></th>
 			<th><span title="YY bits. I.e. the sale factor in Y direction.">Y-Scale</span></th>
 			<th><span title="V bit. 1 = visible.">Visibility</span></th>
-			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nA relative sprite can be either Composite or Uniform.\nThe anchor sprite determines the Composite/Uniform type of the following relative sprites.\n'Anchor' = Anchor sprite\n'Composite'=Relative sprite, Composite type\n'Uniform'=Relative sprite, Uniform type">T (Type)<span></th>
+			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nAn anchor sprite can be either Composite or Uniform.\nThe anchor sprite determines the Composite/Uniform type of the following relative sprites.">T (Type)<span></th>
 			<th><span title="For a relative sprite this is the index of it's anchor sprite.">Anchor</span></th>
 		  </tr>
 
@@ -682,12 +682,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		<canvas id="screen" width="640px" height="512px" style="border:1px solid #c3c3c3;">
 
 		<script>
+			var canvas = document.getElementById("screen");
+			var ctx = canvas.getContext("2d");
+			ctx.scale(2, 2);
+
 				function drawScreen() {
-				var canvas = document.getElementById("screen");
-				var ctx = canvas.getContext("2d");
-
-				ctx.scale(2, 2);
-
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 				ctx.imageSmoothingEnabled = false;
