@@ -37,6 +37,11 @@ class SpriteData {
 	/// Visible
 	public visible=false;
 
+	/// Only for relative sprites:
+	/// 1 = Palette offset is relative to anchor's palette index.
+	/// 0 = Palette offset is absolute.
+	public PR: number=0;
+
 	/// 8bit or 4bit color pattern.
 	/// undefined=8bit
 	/// 1 = N6 is 1
@@ -79,8 +84,9 @@ class SpriteData {
 		this.y = attributes[1];
 		this.xMirrored = (attributes[2] & 0b0000_1000) ? 1 : 0;
 		this.yMirrored = (attributes[2] & 0b0000_0100) ? 1 : 0;
-		this.rotated = (attributes[2] & 0b0000_0010) ? 1 : 0;
-		this.paletteOffset = attributes[2] & 0b1111_0000;
+		this.rotated=(attributes[2]&0b0000_0010)? 1:0;
+		this.paletteOffset=attributes[2]&0b1111_0000;
+		this.PR=attributes[2]&0b0000_0001;
 		this.patternIndex = attributes[3] & 0b0011_1111;
 		this.visible=((attributes[3]&0b1000_0000)!=0);
 		// Handle Attribute[4]: Anchor sprites + 4bit sprites.
@@ -102,10 +108,16 @@ class SpriteData {
 				// Composite sprites:
 				// Use following info from anchor:
 				// visible, x, y, paletteOffset, patternIndex, N6
+				if (this.PR!=0) {
+					this.paletteOffset+=anchorSprite.paletteOffset;
+					this.paletteOffset&=0xFF;
+				}
+
 				// Unified sprites:
 				// Additionally following info is used from anchor:
 				// x/yMirrored, rotated, x/yMagnification
 				// T is left undefined to indicate a relative sprite.
+
 			}
 			else {
 				// Anchor sprite (normal)
@@ -469,14 +481,14 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
 			Utility.assert(pattern);
 			// Get palette with offset
-			const offs=sprite.paletteOffset
+			const offs=sprite.paletteOffset;	// 16-240
 			let usedPalette;
 			if (offs==0)
 				usedPalette=palette;
 			else {
-				const index=3*offs;
-				const firstPart=palette.slice(index);
-				const secondPart=palette.slice(0, index);
+				// Rotate palette instead of adding somethign to each pixel
+				const firstPart=palette.slice(offs);
+				const secondPart=palette.slice(0, offs);
 				usedPalette=firstPart;
 				usedPalette.push(...secondPart);
 			}
@@ -605,6 +617,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				<col>
 				<col>
 				<col>
+				<col>
 			</colgroup>
 
           <tr>
@@ -616,6 +629,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th><span title="YM bit. 1 = mirror vertically.">Y-Mir.</span></th>
 			<th><span title="R bit. 1 = rotate 90 degrees clockwise.">Rot.</span></th>
 			<th><span title="P bit. 4 bit palette offset.">Pal.Offs.</span></th>
+			<th><span title="PR bit (Palette relative).\n Only for relative sprites:\n1 = Palette offset is relative to anchor's palette index.\n0 = Palette offset is absolute.">PR</span></th>
 			<th><span title="Relative sprites only.\nPO bit (Pattern offset).\n1 = pattern number is relative to anchor's pattern index.">PO</span></th>
 			<th><span title="N5-N0 bits. Pattern index.">Pattern</span></th>
 			<th><span title="7th pattern bit if sprite uses 4-bit color pattern. '-' if sprite uses 8-bit color pattern.">N6</span></th>
@@ -656,6 +670,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			table+=this.getTableTdWithBold(sprite.yMirrored, (prevSprite)? prevSprite.yMirrored:-1);
 			table+=this.getTableTdWithBold(sprite.rotated, (prevSprite)? prevSprite.rotated:-1);
 			table+=this.getTableTdWithBold(sprite.paletteOffset, (prevSprite)? prevSprite.paletteOffset:-1);
+			table+=this.getTableTdWithBold(sprite.PR, (prevSprite)? prevSprite.PR:-1);
 			table+=this.getTableTdWithBold(sprite.getPoString(), prevSprite?.getPoString());
 			table+=this.getTableTdWithBold(sprite.patternIndex, (prevSprite)? prevSprite.patternIndex:-1);
 			table+=this.getTableTdWithBold(sprite.getN6String(), prevSprite?.getN6String());
