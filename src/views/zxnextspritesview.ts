@@ -7,6 +7,9 @@ import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 
 
+/// Max. number of sprites.
+const MAX_COUNT_SPRITES=128;
+
 
 /// Contains the sprite attributes in an converted form.
 class SpriteData {
@@ -40,15 +43,37 @@ class SpriteData {
 	/// 0 = N6 is 0
 	public N6: number|undefined=undefined;
 
-	/// Anchor sprite
-	public relativeSprite=false;
+	// If the sprite is an anchor sprite. T contains information
+	// if the following sprites are composite (0) or uniform (1).
+	// undefined if relative sprite.
+	public T: number|undefined = undefined;
 
+	// Palette offset is relative (1) for relative sprites.
+	// undefined for anchor sprites.
+	public PO: number|undefined=undefined;
+
+	/// Anchor sprite. If available it is a relative sprite.
+	public anchorSprite?: SpriteData;
+
+	/// The index of the anchor sprite.
+	public anchorSpriteIndex=-1;
+
+	/// X/Y magnification, 1x, 2x, 4x, 8x
+	/// 0=use the anchor magnification (unified sprites)
+	public xMagnification=1;
+	public yMagnification=1;
 
 	/// The pngimage created from the pattern.
 	public image:  Array<number>;
 
-	/// Constructor
-	constructor(attributes: Uint8Array) {
+	/**
+	 * Constructor
+	 * @param attributes 4-5 bytes attributes
+	 * @param anchorSprite The last anchor sprite. If attributes are from a
+	 * relative sprite a few info is taken from the last anchor sprite.
+	 * @param anchorSpriteIndex The index of the anchor sprite.
+	 */
+	constructor(attributes: Uint8Array, anchorSprite: SpriteData, anchorSpriteIndex: number) {
 		this.x = attributes[0] + (attributes[2]&0x01)*256;
 		this.y = attributes[1];
 		this.xMirrored = (attributes[2] & 0b0000_1000) ? 1 : 0;
@@ -59,15 +84,130 @@ class SpriteData {
 		this.visible=((attributes[3]&0b1000_0000)!=0);
 		// Handle Attribute[4]: Anchor sprites + 4bit sprites.
 		if (attributes.length>4) {
-			//attributes[4]=0b1100_0000;	// TODO: remove
-			if((attributes[4]&0b1000_0000)!=0)
-				this.N6=(attributes[4]&0b0100_0000)>>>6;	// N6
-			this.relativeSprite=((attributes[4]&0b1100_0000)==0b0100_0000);
+			const attr4=attributes[4];
+
+			// Magnification, 00b=1x, 01b=2x, 10b=4x, 11b=8x
+			const xPow=(attr4&0b0001_1000)>>>3;
+			this.xMagnification=2**xPow;
+			const yPow=(attr4&0b0000_0110)>>>1;
+			this.yMagnification=2**yPow;
+
+			const relativeSprite=((attr4&0b1100_0000)==0b0100_0000);
+			if (relativeSprite) {
+				// Relative sprite
+				this.anchorSprite=anchorSprite;
+				this.anchorSpriteIndex=anchorSpriteIndex;
+				this.N6=(attr4&0b0010_0000)>>>5;	// N6
+				// Composite sprites:
+				// Use following info from anchor:
+				// visible, x, y, paletteOffset, patternIndex, N6
+				// Unified sprites:
+				// Additionally following info is used from anchor:
+				// x/yMirrored, rotated, x/yMagnification
+				// T is left undefined to indicate a relative sprite.
+			}
+			else {
+				// Anchor sprite (normal)
+				this.N6=(attr4&0b0100_0000)>>>6;	// N6
+				this.T=(attr4&0b0010_0000)>>>5;	// Anchor for composite or uniform sprites
+				// 9bit y-position
+				this.y+=(attr4&0b01)*256;
+			}
+		}
+	}
+
+
+	/**
+	 * Returns the type as string.
+	 */
+	public getTypeString() {
+		if (this.T == undefined) {
+			return "Relative";
+		}
+		else {
+			if(this.T==0)
+				return "Composite";
+			else
+				return "Uniform"
 		}
 	}
 
 	/**
-	 * Creates an image from the givven pattern.
+	 * Returns the type as string.
+	 */
+	public getAnchorIndexString() {
+		if (this.anchorSpriteIndex<0) {
+			// No relative sprite (or no anchor found)
+			return "-";
+		}
+		return this.anchorSpriteIndex.toString();
+	}
+
+
+	/**
+	 * Returns the X-magnification as string.
+	 */
+	public getXScaleString() {
+		if (this.T==undefined) {
+			// Relative
+			if (this.anchorSprite) {
+				if (this.anchorSprite.T==1)
+					return "-";	 // Uniform
+			}
+			else
+				return "?";	// No anchor given
+		}
+		// Anchor or Uniform (relative)
+		return this.xMagnification.toString()+'x';
+	}
+
+	/**
+	 * Returns the X-magnification as string.
+	 */
+	public getYScaleString() {
+		if (this.T==undefined) {
+			// Relative
+			if (this.anchorSprite) {
+				if (this.anchorSprite.T==1)
+					return "-";	 // Uniform
+			}
+			else
+				return "?";	// No anchor given
+		}
+		// Anchor or Uniform (relative)
+		return this.yMagnification.toString()+'x';
+	}
+
+
+	/**
+	 * Returns if a relative palette index should be used.
+	 */
+	public getPoString() {
+		if (this.T==undefined) {
+			// Relative
+			return this.PO!.toString();
+		}
+		// Anchor
+		return "-";
+	}
+
+
+	/**
+	 * Returns the value of N6.
+	 * Undefined for 8bit patterns
+	 */
+	public getN6String() {
+		if (this.N6==undefined) {
+			// 8Bit
+			return "-";
+		}
+		// Value
+		return this.N6!.toString();
+	}
+
+
+	/**
+	 * Creates an image from the given pattern.
 	 * @param pattern 256 bytes, 16x16 pattern.
 	 * @param palette 256 bytes, colors: rrrgggbbb
 	 * @param transparentIndex The index used for transparency.
@@ -150,21 +290,28 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	/// Contains the sprite slots to display.
 	protected slotIndices: Array<number>;
 
-	/// The sprites, i.e. 64 slots with 4 bytes attributes each
-	protected sprites = Array<SpriteData|undefined>(128);
+	/// The sprites, i.e. 128 slots with 4-5 bytes attributes each
+	protected sprites = Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
+
+	/// The start index and last index (excluding) of sprites to retrieve.
+	protected spriteStartIndex: number;
+	protected spriteLastIndex: number;
 
 	/// The previous sprites, i.e. the values here are used to check which attribute has changed
 	// so it can be printed in bold.
-	protected previousSprites = Array<SpriteData|undefined>(128);
+	protected previousSprites = Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
 
 	/// Set if sprite clipping enabled.
-	protected clippingEnabled = false;
+	protected clippingEnabled: boolean;
 
 	// Sprite clipping dimensions.
 	protected clipXl: number;
 	protected clipXr: number;
 	protected clipYt: number;
 	protected clipYb: number;
+
+	/// true if only visible sprites should be shown.
+	protected showOnlyVisible: boolean;
 
 
 	/**
@@ -175,22 +322,44 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	constructor(title: string, slotRanges: Array<number>|undefined) {
 		super(title, []);
 
-		if(slotRanges) {
+		this.clippingEnabled=false;
+
+		if (slotRanges) {
+			this.showOnlyVisible=false;
 			// Create array with slots
-			this.slotIndices = new Array<number>();
-			while(true) {
-				const start = slotRanges.shift();
-				if(start == undefined)
+			this.slotIndices=new Array<number>();
+			while (true) {
+				const start=slotRanges.shift();
+				if (start==undefined)
 					break;
-				let end = slotRanges.shift() || 0;
+				let end=slotRanges.shift()||0;
 				Utility.assert(end>0);
-				end += start;
-				for(let k=start; k<end; k++) {
-					if(k > 63)
+				end+=start;
+				for (let k=start; k<end; k++) {
+					if (k>=MAX_COUNT_SPRITES)
 						break;
 					this.slotIndices.push(k);
 				}
 			}
+			// Get max. slot
+			let max=-1;
+			let min=MAX_COUNT_SPRITES;
+			for (const k of this.slotIndices) {
+				if (k>max)
+					max=k;
+				if (k<min)
+					min=k;
+			}
+			this.spriteLastIndex=max+1;
+			this.spriteStartIndex=-min;	// Unknown at the moment, therefore negative
+		}
+		else {
+			this.showOnlyVisible=true;
+			this.spriteLastIndex=MAX_COUNT_SPRITES;
+			this.spriteStartIndex=0;
+			this.slotIndices=new Array<number>(MAX_COUNT_SPRITES);
+			for (let i=0; i<MAX_COUNT_SPRITES; i++)
+				this.slotIndices[i]=i;
 		}
 
 		// Title
@@ -200,40 +369,43 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 
 	/**
-	 * Retrieves all sprites info from the emulator.
-	 * Then sets the slotIndices accordingly: with only the visible slots.
-	 */
-	protected async getAllVisibleSprites(): Promise<void> {
-		// Get sprites
-		const sprites=await Remote.getTbblueSprites(0, 64);
-		// Loop over all sprites
-		// TODO: Implement 128 (4bit) sprites
-		for (let k=0; k<128; k++) {
-			const attrs=sprites[k];
-			// Check if visible
-			let sprite;
-			if (attrs[3]&0b10000000)
-				sprite=new SpriteData(attrs);
-			this.sprites[k]=sprite;
-		}
-	}
-
-
-	/**
-	 * Retrieves the sprites info from the emulator.
+	 * Retrieves the sprites info from the Remote.
 	 * @param slotIndices Array with all the slots to retrieve.
 	 */
-	protected async getSprites(slotIndices: Array<number>): Promise<void> {
-		// Clear all sprites
-		for(let k=0; k<64; k++)
-			this.sprites[k]=undefined;
-
-		// Loop over all slots
-		for (const slot of this.slotIndices) {
-			const sprites=await Remote.getTbblueSprites(slot, 1);
-			const attrs=sprites[0];
-			const sprite=new SpriteData(attrs);
-			this.sprites[slot]=sprite;
+	protected async getSprites(): Promise<void> {
+		// Get sprites
+		let index=this.spriteStartIndex;
+		if (index<0)
+			index=0;
+		const spriteCount=this.spriteLastIndex-index;
+		const sprites=await Remote.getTbblueSprites(index, spriteCount);
+		let lastAnchorSprite;
+		let lastAnchorSpriteIndex=-1;
+		for (const attrs of sprites) {
+			// Create sprite
+			const sprite=new SpriteData(attrs, lastAnchorSprite, lastAnchorSpriteIndex);
+			this.sprites[index]=sprite;
+			// Remember last anchor
+			if (sprite.T!=undefined) {
+				lastAnchorSprite=sprite;
+				lastAnchorSpriteIndex=index;
+			}
+			// Next
+			index++;
+		}
+		// Find first required sprite, if not done before
+		if (this.spriteStartIndex<0) {
+			const reqIndex=-this.spriteStartIndex;	// Is negative the first time
+			// Go backwards through list to find the first anchor sprite.
+			let k=reqIndex;
+			for (; k>=0; k--) {
+				const sprite=this.sprites[k];
+				if (sprite!.T!=undefined) {
+					// anchor sprite
+					break;
+				}
+			}
+			this.spriteStartIndex=k;
 		}
 	}
 
@@ -265,12 +437,17 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 */
 	protected async getSpritePatterns(): Promise<void> {
 		// Get all unique patterns (do not request the same pattern twice)
+		const onlyVisible=this.showOnlyVisible;
 		let patternSet = new Set<number>();
-		for(const sprite of this.sprites) {
-			if(sprite && sprite.visible) {
-				const index = sprite.patternIndex;
-				patternSet.add(index);
-			}
+		for (const sprite of this.sprites) {
+			if (!sprite)
+				continue;
+			// Check if visible
+			if (onlyVisible&&!sprite.visible)
+				continue;
+			// Get pattern
+			const index = sprite.patternIndex;
+			patternSet.add(index);
 		}
 		// Change to array
 		this.patternIds = Array.from(patternSet);
@@ -282,7 +459,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		const palette=ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
 		for (const sprite of this.sprites) {
-			if ((!sprite)||(!sprite.visible))
+			if (!sprite)
+				continue;
+			// Check if visible
+			if (onlyVisible&&!sprite.visible)
 				continue;
 			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
 			Utility.assert(pattern);
@@ -314,17 +494,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	public async update(reason?: any): Promise<void> {
 		// Save previous data
 		this.previousSprites = this.sprites;
-		this.sprites = new Array<SpriteData|undefined>(64);
+		this.sprites=new Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
 
-		// Check if all visible sprites should be shown automatically
-		if(this.slotIndices) {
-			// Reload sprites given by user
-			await this.getSprites(this.slotIndices);
-		}
-		else {
-			// Get all sprites to check which are visible
-			await this.getAllVisibleSprites();
-		}
+		// Reload sprites
+		await this.getSprites();
 
 		// Get clipping window
 		await this.getSpritesClippingWindow();
@@ -424,6 +597,12 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				<col>
 				<col>
 				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
+				<col>
 			</colgroup>
 
           <tr>
@@ -431,12 +610,18 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th>X</th>
 			<th>Y</th>
 			<th>Image</th>
-			<th>X-M.</th>
-			<th>Y-M.</th>
+			<th>X-Mir.</th>
+			<th>Y-Mir.</th>
 			<th>Rot.</th>
 			<th>Pal.</th>
+			<th>PO</th>
 			<th>Pattern</th>
 			<th>N6</th>
+			<th>X-Scale</th>
+			<th>Y-Scale</th>
+			<th>Visibility</th>
+			<th>T (Type)</th>
+			<th>Anchor</th>
 		  </tr>
 
 %s
@@ -446,34 +631,38 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		`;
 
 		// Create a string with the table itself.
-		let table = '';
-		for(let k=0; k<64; k++) { // TODO: 128
-			const sprite = this.sprites[k];
-			if(!sprite)
+		const onlyVisible=this.showOnlyVisible;
+		let table='';
+		for(const k of this.slotIndices) {
+			const sprite=this.sprites[k];
+			if (!sprite)
 				continue;
-			const prevSprite = this.previousSprites[k];
-			table += '<tr">\n'
-			table += ' <td>' + k + '</td>\n'
-			if(sprite.visible) {
-				table += this.getTableTdWithBold(sprite.x, (prevSprite) ? prevSprite.x : -1);
-				table += this.getTableTdWithBold(sprite.y, (prevSprite) ? prevSprite.y : -1);
-				// Sprite image - convert to base64
-				const buf = Buffer.from(sprite.image);
-				const base64String = buf.toString('base64');
-				table+= ' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,' + base64String + '"></td>\n'
-				// Attributes
-				table += this.getTableTdWithBold(sprite.xMirrored, (prevSprite) ? prevSprite.xMirrored : -1);
-				table += this.getTableTdWithBold(sprite.yMirrored, (prevSprite) ? prevSprite.yMirrored : -1);
-				table += this.getTableTdWithBold(sprite.rotated, (prevSprite) ? prevSprite.rotated : -1);
-				table += this.getTableTdWithBold(sprite.paletteOffset, (prevSprite) ? prevSprite.paletteOffset : -1);
-				table+=this.getTableTdWithBold(sprite.patternIndex, (prevSprite)? prevSprite.patternIndex:-1);
-				table+=this.getTableTdWithBold(sprite.N6, (prevSprite)? prevSprite.N6:-1);
-			}
-			else {
-				// Invisible
-				table += ' <td> - </td>\n <td> - </td>\n <td> - </td>\n <td> - </td>\n <td> - </td>\n <td> - </td>\n <td> - </td>\n <td> - </td>\n'
-			}
-			table += '</tr>\n\n';
+			// Check if visible
+			if (onlyVisible&&!sprite.visible)
+				continue;
+			const prevSprite=this.previousSprites[k];
+			table+='<tr>\n'
+			table+=' <td>'+k+'</td>\n'
+			table+=this.getTableTdWithBold(sprite.x, (prevSprite)? prevSprite.x:-1);
+			table+=this.getTableTdWithBold(sprite.y, (prevSprite)? prevSprite.y:-1);
+			// Sprite image - convert to base64
+			const buf=Buffer.from(sprite.image);
+			const base64String=buf.toString('base64');
+			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String+'"></td>\n'
+			// Attributes
+			table+=this.getTableTdWithBold(sprite.xMirrored, (prevSprite)? prevSprite.xMirrored:-1);
+			table+=this.getTableTdWithBold(sprite.yMirrored, (prevSprite)? prevSprite.yMirrored:-1);
+			table+=this.getTableTdWithBold(sprite.rotated, (prevSprite)? prevSprite.rotated:-1);
+			table+=this.getTableTdWithBold(sprite.paletteOffset, (prevSprite)? prevSprite.paletteOffset:-1);
+			table+=this.getTableTdWithBold(sprite.getPoString(), prevSprite?.getPoString());
+			table+=this.getTableTdWithBold(sprite.patternIndex, (prevSprite)? prevSprite.patternIndex:-1);
+			table+=this.getTableTdWithBold(sprite.getN6String(), prevSprite?.getN6String());
+			table+=this.getTableTdWithBold(sprite.getXScaleString(), prevSprite?.getXScaleString());
+			table+=this.getTableTdWithBold(sprite.getYScaleString(), prevSprite?.getYScaleString());
+			table+=this.getTableTdWithBold(sprite.visible, prevSprite?.visible);
+			table+=this.getTableTdWithBold(sprite.getTypeString(), prevSprite?.getTypeString());
+			table+=this.getTableTdWithBold(sprite.getAnchorIndexString(), prevSprite?.getAnchorIndexString());
+			table+='</tr>\n\n';
 		}
 
 		const html = util.format(format, table);
@@ -531,7 +720,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Create the sprites
 		let spritesHtml = 'ctx.beginPath();\n';
-		for(let k=0; k<64; k++) {
+		for(let k=0; k<MAX_COUNT_SPRITES; k++) {
 			const sprite = this.sprites[k];
 			if(!sprite)
 				continue;
