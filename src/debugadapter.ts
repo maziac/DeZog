@@ -28,6 +28,7 @@ import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
+import {MemoryArray} from './misc/memoryarray';
 
 
 
@@ -687,7 +688,6 @@ export class DebugSessionClass extends DebugSession {
 		// Need to check if disassembly is required.
 		let doDisassembly=false;
 		const fetchAddresses=new Array<number>();
-		const fetchData=new Array<Uint8Array>();
 		let frameCount=0;
 
 		// Clear all variables
@@ -719,26 +719,48 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
+		// Create memory array.
+		const fetchSize=100;	// N bytes
+		const memArray=new MemoryArray();
+		for (const fetchAddress of fetchAddresses) {
+			memArray.addRange(fetchAddress, fetchSize);	// assume 100 bytes each
+		}
+		// Add some more memory from the history
+		const fetchHistorySize=20;
+		const historyAddresses=new Array<number>();
+		for (let i=1; i<=10; i++) {
+			const addr=StepHistory.getPreviousAddress(i);
+			if (addr==undefined)
+				break;
+			// Add address
+			memArray.addRange(addr, fetchHistorySize);	// assume at least 4 bytes, assume some more to cover small jumps
+			historyAddresses.unshift(addr);
+		}
+
+		// Check if we need to fetch any dump.
+		for (const range of memArray.ranges) {
+			const data=await Remote.readMemoryDump(range.address, range.size);
+			range.data=data;
+		}
+
 		// Check if we need to fetch any dump.
 		const fetchAddressesCount=fetchAddresses.length;
-		if (fetchAddressesCount>0) {
-			// Now get hexdumps for all non existing sources.
-			for (let index=0; index<fetchAddressesCount; index++) {
-				// So fetch a memory dump
-				const fetchAddress=fetchAddresses[index];
-				const fetchSize=100;	// N bytes
-				const data=await Remote.readMemoryDump(fetchAddress, fetchSize)
-				// Save data for later writing
-				fetchData.push(data);
-				// Note: because of self-modifying code it may have changed
-				// since it was fetched at the beginning.
-				// Check if memory changed.
-				if (!doDisassembly) {
-					const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+
+		if (!doDisassembly) {
+			const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+			if (fetchAddressesCount>0) {
+				// Now get hexdumps for all non existing sources.
+				for (let index=0; index<fetchAddressesCount; index++) {
+					// So fetch a memory dump
+					const fetchAddress=fetchAddresses[index];
+					// Note: because of self-modifying code it may have changed
+					// since it was fetched at the beginning.
+					// Check if memory changed.
 					for (let k=0; k<checkSize; k++) {
 						const val=Disassembly.memory.getValueAt(fetchAddress+k);
 						const memAttr=Disassembly.memory.getAttributeAt(fetchAddress+k);
-						if ((val!=data[k])||(memAttr==MemAttribute.UNUSED)) {
+						const newVal=memArray.getValueAtAddress(fetchAddress+k);
+						if ((val!=newVal)||(memAttr==MemAttribute.UNUSED)) {
 							doDisassembly=true;
 							break;
 						}
@@ -747,32 +769,13 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
-
-		// Create the temporary disassembly file if necessary.
-		//if (!this.disasmTextDoc)
-		{
-			if (doDisassembly) {
-				// Create text document
-				const absFilePath=DisassemblyClass.getAbsFilePath();
-				const uri=vscode.Uri.file(absFilePath);
-				const editCreate=new vscode.WorkspaceEdit();
-				editCreate.createFile(uri, {overwrite: true});
-				await vscode.workspace.applyEdit(editCreate);
-				const textDoc=await vscode.workspace.openTextDocument(absFilePath);
-				// Store uri
-				this.disasmTextDoc=textDoc;
-			}
-		}
-
-
 		// Check if a new address was used.
-		//const fetchAddressesCount=fetchAddresses.length;
 		for (let i=0; i<fetchAddressesCount; i++) {
 			// The current PC is for sure a code label.
 			const addr=fetchAddresses[i];
 			if (this.dasmAddressQueue.indexOf(addr)<0)
 				this.dasmAddressQueue.unshift(addr);
-			// Check if this requires a  disassembly
+			// Check if this requires a disassembly
 			if (!doDisassembly) {
 				const memAttr=Disassembly.memory.getAttributeAt(addr);
 				if (!(memAttr&MemAttribute.CODE_FIRST))
@@ -783,6 +786,7 @@ export class DebugSessionClass extends DebugSession {
 		// Check if disassembly is required.
 		if (doDisassembly) {
 			// Do disassembly.
+			/*
 			const prevAddresses=new Array<number>();
 			const prevData=new Array<Uint8Array>();
 			// Check if history data is available.
@@ -799,9 +803,20 @@ export class DebugSessionClass extends DebugSession {
 					prevData.unshift(data);
 				}
 			}
+			*/
+
+			// Create text document
+			const absFilePath=DisassemblyClass.getAbsFilePath();
+			const uri=vscode.Uri.file(absFilePath);
+			const editCreate=new vscode.WorkspaceEdit();
+			editCreate.createFile(uri, {overwrite: true});
+			await vscode.workspace.applyEdit(editCreate);
+			const textDoc=await vscode.workspace.openTextDocument(absFilePath);
+			// Store uri
+			this.disasmTextDoc=textDoc;
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses([...prevAddresses, ...fetchAddresses], [...prevData, ...fetchData]);
+			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges);
 			// Disassemble
 			Disassembly.disassemble();
 			// Read data

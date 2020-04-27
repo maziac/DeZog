@@ -97,18 +97,15 @@ export class DisassemblyClass extends Disassembler {
 	 * Initializes the memory with the data at the given addresses.
 	 * Additionally puts the addresses in the address queue.
 	 */
-	public initWithCodeAdresses(addresses: number[], data: Uint8Array[]) {
+	public initWithCodeAdresses(addresses: number[], mem: Array<{address: number, data: Uint8Array}>) {
 		// Init
 		this.initLabels();
 		this.addrLineMap=new Map<number, number>();
 		this.lineAddrArray=new Array<number|undefined>();
 		// Write new memory
 		this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
-		const count=addresses.length;
-		Utility.assert(count==data.length);
-		for (let i=0; i<count; i++) {
-			this.setMemory(addresses[i], data[i]);
-		}
+		for (const block of mem)
+			this.setMemory(block.address, block.data);
 		this.setAddressQueue(addresses);
 	}
 
@@ -186,6 +183,9 @@ export class DisassemblyClass extends Disassembler {
 			return -1;
 		return this.lineAddrArray[lineNr];
 	}
+
+
+
 }
 
 
