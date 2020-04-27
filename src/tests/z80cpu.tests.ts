@@ -4,6 +4,7 @@ import {Z80Cpu} from '../remotes/zxsimulator/z80cpu';
 import {ZxMemory} from '../remotes/zxsimulator/zxmemory';
 import {ZxPorts} from '../remotes/zxsimulator/zxports';
 import {MemBuffer} from '../misc/membuffer';
+import {Settings} from '../settings';
 
 suite('Z80Cpu', () => {
 
@@ -107,18 +108,25 @@ suite('Z80Cpu', () => {
 			}
 		}
 
-		setup(() => {
-			cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
-			z80=cpu.z80;
-			mem=cpu.memory;
-			ports=cpu.ports;
-			// Make sure whole memory is RAM
-			for (let i=0; i<8;i++)
-				mem.setSlot(i, i);
-		});
-
 
 		suite('Z80N instructions', () => {
+
+			setup(() => {
+				const cfg: any={
+					zsim: {
+						Z80N: true
+					}
+				};
+				Settings.Init(cfg, '');
+				cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
+				z80=cpu.z80;
+				mem=cpu.memory;
+				ports=cpu.ports;
+				// Make sure whole memory is RAM
+				for (let i=0; i<8; i++)
+					mem.setSlot(i, i);
+			});
+
 
 			test('LDIX', () => {
 				// PC overflow, A not equal
