@@ -94,7 +94,7 @@ export class DisassemblyClass extends Disassembler {
 	protected lineAddrArray=new Array<number|undefined>();
 
 	/**
-	 * Initiatlizes the memory with the data at the given addresses.
+	 * Initializes the memory with the data at the given addresses.
 	 * Additionally puts the addresses in the address queue.
 	 */
 	public initWithCodeAdresses(addresses: number[], data: Uint8Array[]) {
@@ -159,11 +159,6 @@ export class DisassemblyClass extends Disassembler {
 		// Check whichever has lower number of elements
 		if (addresses.size>map.size) {
 			// Loop over map
-/*			for (const [address, line] of map) {
-				if (addresses.indexOf(address)>=0)
-					lines.push(line);
-			}
-*/
 			map.forEach((value, key) => {
 				if (addresses.has(key))
 					lines.push(value);
@@ -184,9 +179,11 @@ export class DisassemblyClass extends Disassembler {
 	/**
 	 * Returns the address for a given line number.
 	 * @param lineNr The line number starting at 0.
-	 * @returns The address or undefined if none exists for the line.
+	 * @returns The address or -1 if none exists for the line.
 	 */
 	public getAddressForLine(lineNr: number): number|undefined {
+		if (lineNr>=this.lineAddrArray.length)
+			return -1;
 		return this.lineAddrArray[lineNr];
 	}
 }

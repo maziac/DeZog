@@ -786,7 +786,7 @@ export class DebugSessionClass extends DebugSession {
 			const prevAddresses=new Array<number>();
 			const prevData=new Array<Uint8Array>();
 			// Check if history data is available.
-			if (StepHistory.isInStepBackMode())
+			//if (StepHistory.isInStepBackMode())
 			{
 				// Add a few more previous addresses if available
 				for (let i=1; i<=10; i++) {
@@ -854,12 +854,20 @@ export class DebugSessionClass extends DebugSession {
 			// Add all new breakpoints.
 			vscode.debug.addBreakpoints(changedBps);
 
+			// If disassembly text editor is open, then show decorations
+			const editors=vscode.window.visibleTextEditors;
+			for (const editor of editors) {
+				if(editor.document==this.disasmTextDoc)
+					Decoration.SetDisasmCoverageDecoration(editor);
+			}
+			/*
 			// Show document and get editor
 			const editor=await vscode.window.showTextDocument(this.disasmTextDoc);
 			// Update decorations
 			if (editor) {
 				Decoration.SetDisasmCoverageDecoration(editor);
 			}
+			*/
 		}
 
 
@@ -2322,7 +2330,7 @@ Notes:
 	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
 		const realLineNr=lineNr; //this.convertClientLineToDebugger(lineNr);
-		const addr=Labels.getAddrForFileAndLine(filename, realLineNr);
+		let addr=Remote.getAddrForFileAndLine(filename, realLineNr);
 		if (addr<0)
 			return;
 		// Now change Program Counter

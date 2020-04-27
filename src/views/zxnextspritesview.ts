@@ -105,6 +105,7 @@ class SpriteData {
 				this.anchorSprite=anchorSprite;
 				this.anchorSpriteIndex=anchorSpriteIndex;
 				this.N6=(attr4&0b0010_0000)>>>5;	// N6
+				this.PO=attr4&0b0000_0001;	// PO=Pattern offset is relative
 				// Composite sprites:
 				// Use following info from anchor:
 				// visible, x, y, paletteOffset, patternIndex, N6
@@ -128,6 +129,22 @@ class SpriteData {
 				this.y+=(attr4&0b01)*256;
 			}
 		}
+	}
+
+
+	/**
+	 * Returns the complete pattern index.
+	 * I.e. relative sprites will add the anchor's sprite index
+	 * to the pattern index.
+	 * Other sprites just return the pattern index.
+	 */
+	public getTotalPatternIndex(): number {
+		let patternIndex=this.patternIndex;
+		if (this.PO==1) {
+			patternIndex+=this.anchorSprite!.patternIndex;
+			patternIndex&=0x3F;
+		}
+		return patternIndex;
 	}
 
 
@@ -233,7 +250,7 @@ class SpriteData {
 			const offset=this.N6*128;	// 0 or 128
 			const np=new Array<number>(256);
 			for (let i=0; i<128; i++) {
-				const val=pattern[i+offset];
+				const val=usedPattern[i+offset];
 				np[2*i]=val>>>4;
 				np[2*i+1]=val&0x0F;
 			}
@@ -460,7 +477,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			if (onlyVisible&&!sprite.visible)
 				continue;
 			// Get pattern
-			const index = sprite.patternIndex;
+			const index=sprite.getTotalPatternIndex();
 			patternSet.add(index);
 		}
 		// Change to array
@@ -478,7 +495,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Check if visible
 			if (onlyVisible&&!sprite.visible)
 				continue;
-			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.patternIndex)!;
+			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.getTotalPatternIndex())!;
 			Utility.assert(pattern);
 			// Get palette with offset
 			const offs=sprite.paletteOffset;	// 16-240

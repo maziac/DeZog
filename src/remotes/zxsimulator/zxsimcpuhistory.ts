@@ -144,7 +144,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 		if (len==0)
 			return undefined;
 		let k=this.historyIndex-i;
-		if (k<0)
+		while (k<0)
 			k+=len;
 		if (k==this.historyWriteIndex)
 			return undefined;

@@ -4,7 +4,7 @@ import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
-import {Labels} from '../labels';
+import {Labels, SourceFileEntry} from '../labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
@@ -1063,29 +1063,15 @@ export class RemoteBase extends EventEmitter {
 			givenBps.forEach(bp => {
 				let ebp;
 				// Get PC value of that line
-				let addr=Labels.getAddrForFileAndLine(path, bp.lineNr);
+				let addr=this.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
 				if (addr>=0) {
 					// Now search last line with that pc
-					const file=Labels.getFileAndLineForAddress(addr);
+					const file=this.getFileAndLineForAddress(addr);
 					// Check if right file
 					if (path.valueOf()==file.fileName.valueOf()) {
 						// create breakpoint object
 						ebp={bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log};
-					}
-				}
-				else {
-					// Check if it is the right path
-					const absFilePath=DisassemblyClass.getAbsFilePath();
-					if (bp.filePath==absFilePath) {
-						// Get address from line number
-						const addr=Disassembly.getAddressForLine(bp.lineNr);
-						if (addr!=undefined) {
-							// Get line number
-							const lineNr=Disassembly.getLineForAddress(addr);
-							// create breakpoint object
-							ebp={bpId: 0, filePath: bp.filePath, lineNr: lineNr, address: addr, condition: bp.condition, log: bp.log}
-						}
 					}
 				}
 
@@ -1133,6 +1119,50 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
+	/**
+	 * Returns file name and line number associated with a certain memory address.
+	 * Takes also the disassembled file into account.
+	 * Used e.g.for the call stack.
+	 * @param address The memory address to search for.
+	 * @returns The associated filename and line number(and for sjasmplus the modulePrefix and the lastLabel).
+	 */
+	public getFileAndLineForAddress(address: number): SourceFileEntry {
+		// Now search last line with that pc
+		let file=Labels.getFileAndLineForAddress(address);
+		if (!file.fileName) {
+			// Search also the disassembled file
+			const lineNr=Disassembly.getLineForAddress(address);
+			if (lineNr!=undefined) {
+				file.fileName=DisassemblyClass.getAbsFilePath();
+				file.lineNr=lineNr;
+			}
+		}
+		return file;
+	}
+
+
+	/**
+	 * Returns the memory address associated with a certain file and line number.
+	 * Takes also the disassembled file into account.
+	 * @param fileName The path to the file. Can be an absolute path.
+	 * @param lineNr The line number inside the file.
+	 * @returns The associated address. -1 if file or line does not exist.
+	 */
+	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
+		let addr=Labels.getAddrForFileAndLine(fileName, lineNr);
+		if (addr<0) {
+			// Check disassembly
+			const absFilePath=DisassemblyClass.getAbsFilePath();
+			if (fileName==absFilePath) {
+				// Get address from line number
+				addr=Disassembly.getAddressForLine(lineNr);
+			}
+		}
+		return addr;
+	}
+
+
+	/**
 	/**
 	 * Sends a command to the emulator.
 	 * Override if supported.
