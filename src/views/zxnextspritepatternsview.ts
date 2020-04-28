@@ -415,7 +415,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		%s
 
-		<button onclick="reload()">Reload Patterns</button>
+		<button onclick="reload()">Reload</button>
 
 		<!-- To change the background color of the sprite pattern -->
 		<select id="bckgSelector" onchange="bckgSelected(this);">

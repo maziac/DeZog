@@ -49,7 +49,7 @@ class SpriteData {
 	public N6: number|undefined=undefined;
 
 	// If the sprite is an anchor sprite. T contains information
-	// if the following sprites are composite (0) or uniform (1).
+	// if the following sprites are composite (0) or unified (1).
 	// undefined if relative sprite.
 	public T: number|undefined = undefined;
 
@@ -73,14 +73,24 @@ class SpriteData {
 
 
 	/**
-	 * Constructor
+	 * Constructor.
+	 * The values stored here are the values from the sprite itself.
+	 * I.e. for relative sprites they are not adjusted by the anchor
+	 * sprites values.
+	 * The not adjusted values are displayed in the columns.
+	 * To get the adjusted values use the 'getAbs...' functions.
+	 * These are the ones used by the screen display.
+	 * Also the image (sprite patterns uses the adjusted values. I.e.
+	 * a relative sprite's image in the column is adjusted by all the
+	 * anchor's values (e.g. mirroring/rotating). So that it is easier
+	 * to visualize and see if the sprite is correct.
 	 * @param attributes 4-5 bytes attributes
 	 * @param anchorSprite The last anchor sprite. If attributes are from a
 	 * relative sprite a few info is taken from the last anchor sprite.
 	 * @param anchorSpriteIndex The index of the anchor sprite.
 	 */
 	constructor(attributes: Uint8Array, anchorSprite: SpriteData, anchorSpriteIndex: number) {
-		this.x = attributes[0] + (attributes[2]&0x01)*256;
+		this.x=attributes[0];
 		this.y = attributes[1];
 		this.xMirrored = (attributes[2] & 0b0000_1000) ? 1 : 0;
 		this.yMirrored = (attributes[2] & 0b0000_0100) ? 1 : 0;
@@ -107,45 +117,138 @@ class SpriteData {
 				if(this.anchorSprite.N6!=undefined)
 					this.N6=(attr4&0b0010_0000)>>>5;	// N6
 				this.PO=attr4&0b0000_0001;	// PO=Pattern offset is relative
+
+				// Use relative x/y coordinate
+				if (this.x>=128)
+					this.x-=256;
+				if (this.y>=128)
+					this.y-=256;
+
 				// Composite sprites:
 				// Use following info from anchor:
 				// visible, x, y, paletteOffset, patternIndex, N6
-				if (this.PR!=0) {
-					this.paletteOffset+=anchorSprite.paletteOffset;
-					this.paletteOffset&=0xFF;
-				}
 
 				// Unified sprites:
 				// Additionally following info is used from anchor:
 				// x/yMirrored, rotated, x/yMagnification
 				// T is left undefined to indicate a relative sprite.
-
 			}
 			else {
 				// Anchor sprite (normal)
 				if (attr4&0b1000_0000)
 					this.N6=(attr4&0b0100_0000)>>>6;	// N6
-				this.T=(attr4&0b0010_0000)>>>5;	// Anchor for composite or uniform sprites
+				this.T=(attr4&0b0010_0000)>>>5;	// Anchor for composite or unified sprites
 				// 9bit y-position
-				this.y+=(attr4&0b01)*256;
+				this.x+=(attributes[2]&0x01)*256;
+				this.y+=(attr4&0x01)*256;
 			}
 		}
 	}
 
 
 	/**
-	 * Returns the complete pattern index.
+	 * Returns the absolute pattern index.
 	 * I.e. relative sprites will add the anchor's sprite index
 	 * to the pattern index.
 	 * Other sprites just return the pattern index.
 	 */
-	public getTotalPatternIndex(): number {
+	public getAbsPatternIndex(): number {
 		let patternIndex=this.patternIndex;
 		if (this.PO==1) {
 			patternIndex+=this.anchorSprite!.patternIndex;
 			patternIndex&=0x3F;
 		}
 		return patternIndex;
+	}
+
+	/**
+	 * Returns the absolute palette index.
+	 */
+	public getAbsPaletteOffset(): number {
+		let paletteOffset=this.paletteOffset;
+		if (this.anchorSprite && this.PR!=0) {
+			paletteOffset+=this.anchorSprite!.paletteOffset;
+			paletteOffset&=0xFF;
+		}
+		return paletteOffset;
+	}
+
+
+	/**
+	 * Returns the absolute xMirrored value.
+	 * Takes the anchor into account for unified sprites.
+	 */
+	public getAbsXMirrored(): number {
+		let xMirrored=this.xMirrored;
+		if (this.anchorSprite?.T==1) {
+			// Unified sprite: XOR mirror
+			xMirrored^=this.anchorSprite.xMirrored;
+		}
+		return xMirrored;
+	}
+
+	/**
+	 * Returns the absolute yMirrored value.
+	 * Takes the anchor into account for unified sprites.
+	 */
+	public getAbsYMirrored(): number {
+		let yMirrored=this.yMirrored;
+		if (this.anchorSprite?.T==1) {
+			// Unified sprite: XOR mirror
+			yMirrored^=this.anchorSprite.yMirrored;
+		}
+		return yMirrored;
+	}
+
+
+	/**
+	 * Returns the absolute rotated value.
+	 * Takes the anchor into account for unified sprites.
+	 */
+	public getAbsRotated(): number {
+		let rotated=this.rotated;
+		if (this.anchorSprite?.T==1) {
+			// Unified sprite: XOR mirror
+			rotated^=this.anchorSprite.rotated;
+		}
+		return rotated;
+	}
+
+	/**
+	 * Returns the absolute x/y value.
+	 * Takes the anchor into account for compoiste/unified sprites.
+	 */
+	public getAbsXY(): {x: number, y: number} {
+		let x=this.x;
+		let y=this.y;
+		if (this.anchorSprite) {
+			// Relative sprite
+			if (this.anchorSprite?.T==0) {
+				// Composite sprite.
+				x+=this.anchorSprite.x;
+				y+=this.anchorSprite.y;
+			}
+			else {
+				// Unified sprite. Additionally rotate.
+				let dx=this.x;
+				let dy=this.y;
+				const xMirrored=this.xMirrored^this.anchorSprite.xMirrored;
+				const yMirrored=this.yMirrored^this.anchorSprite.yMirrored;
+				const rotated=this.rotated^this.anchorSprite.rotated;
+				if (xMirrored)
+					dx=-dx;
+				if (yMirrored)
+					dy=-dy;
+				if (rotated) {
+					const tmp=dx;
+					dx=-dy;
+					dy=tmp;
+				}
+				x=this.anchorSprite.x+dx;
+				y=this.anchorSprite.y+dy;
+			}
+		}
+		return {x, y};
 	}
 
 
@@ -160,7 +263,7 @@ class SpriteData {
 			if(this.T==0)
 				return "Composite";
 			else
-				return "Uniform"
+				return "Unified"
 		}
 	}
 
@@ -184,12 +287,12 @@ class SpriteData {
 			// Relative
 			if (this.anchorSprite) {
 				if (this.anchorSprite.T==1)
-					return "-";	 // Uniform
+					return "-";	 // Unified
 			}
 			else
 				return "?";	// No anchor given
 		}
-		// Anchor or Uniform (relative)
+		// Anchor or Unified (relative)
 		return this.xMagnification.toString()+'x';
 	}
 
@@ -201,12 +304,12 @@ class SpriteData {
 			// Relative
 			if (this.anchorSprite) {
 				if (this.anchorSprite.T==1)
-					return "-";	 // Uniform
+					return "-";	 // Unified
 			}
 			else
 				return "?";	// No anchor given
 		}
-		// Anchor or Uniform (relative)
+		// Anchor or Unified (relative)
 		return this.yMagnification.toString()+'x';
 	}
 
@@ -259,20 +362,8 @@ class SpriteData {
 			// Use
 			usedPattern=np;
 		}
-		// Rotate
-		if(this.rotated) {
-			const np = new Array<number>(256);
-			// Mirror
-			let k = 0;
-			for(let y=0; y<16; y++) {
-				for(let x=0; x<16; x++)
-					np[x*16+15-y] = usedPattern[k++];
-			}
-			// Use
-			usedPattern = np;
-		}
 		// X-mirror
-		if(this.xMirrored) {
+		if(this.getAbsXMirrored()) {
 			const np = new Array<number>(256);
 			// Mirror
 			let k = 0;
@@ -284,7 +375,7 @@ class SpriteData {
 			usedPattern = np;
 		}
 		// Y-mirror
-		if(this.yMirrored) {
+		if(this.getAbsYMirrored()) {
 			const np = new Array<number>(256);
 			// Mirror
 			let k = 0;
@@ -294,6 +385,18 @@ class SpriteData {
 			}
 			// Use
 			usedPattern = np;
+		}
+		// Rotate
+		if (this.getAbsRotated()) {
+			const np=new Array<number>(256);
+			// Mirror
+			let k=0;
+			for (let y=0; y<16; y++) {
+				for (let x=0; x<16; x++)
+					np[x*16+15-y]=usedPattern[k++];
+			}
+			// Use
+			usedPattern=np;
 		}
 
 		// Convert to gif
@@ -479,7 +582,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			if (onlyVisible&&!sprite.visible)
 				continue;
 			// Get pattern
-			const index=sprite.getTotalPatternIndex();
+			const index=sprite.getAbsPatternIndex();
 			patternSet.add(index);
 		}
 		// Change to array
@@ -497,10 +600,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Check if visible
 			if (onlyVisible&&!sprite.visible)
 				continue;
-			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.getTotalPatternIndex())!;
+			const pattern=ZxNextSpritePatternsView.spritePatterns.get(sprite.getAbsPatternIndex())!;
 			Utility.assert(pattern);
 			// Get palette with offset
-			const offs=sprite.paletteOffset;	// 16-240
+			const offs=sprite.getAbsPaletteOffset();	// 16-240
 			let usedPalette;
 			if (offs==0)
 				usedPalette=palette;
@@ -642,9 +745,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
           <tr>
 			<th>Slot</th>
-			<th>X</th>
-			<th>Y</th>
-			<th>Image</th>
+			<th><span title="The image takes all mirroring and rotation into account. In case of unified (relative) sprites also the mirror/rotation of the anchor.">Image</span></th>
+
+			<th><span title="For anchor sprites the absolute 9bit value.\nFor relative sprite the signed 8bit relative value.">X</span></th>
+			<th><span title="For anchor sprites the absolute 9bit value.\nFor relative sprite the signed 8bit relative value.">Y</span></th>
+
 			<th><span title="XM bit. 1 = mirror horizontally.">X-Mir.</span></th>
 			<th><span title="YM bit. 1 = mirror vertically.">Y-Mir.</span></th>
 			<th><span title="R bit. 1 = rotate 90 degrees clockwise.">Rot.</span></th>
@@ -656,7 +761,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			<th><span title="XX bits. I.e. the sale factor in X direction.">X-Scale</span></th>
 			<th><span title="YY bits. I.e. the sale factor in Y direction.">Y-Scale</span></th>
 			<th><span title="V bit. 1 = visible.">Visibility</span></th>
-			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nAn anchor sprite can be either Composite or Uniform.\nThe anchor sprite determines the Composite/Uniform type of the following relative sprites.">T (Type)<span></th>
+			<th><span title="The sprite type.\nAnchor sprite or relative sprite.\nAn anchor sprite can be either Composite or Unified.\nThe anchor sprite determines the Composite/Unified type of the following relative sprites.">T (Type)<span></th>
 			<th><span title="For a relative sprite this is the index of it's anchor sprite.">Anchor</span></th>
 		  </tr>
 
@@ -679,12 +784,13 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			const prevSprite=this.previousSprites[k];
 			table+='<tr>\n'
 			table+=' <td>'+k+'</td>\n'
-			table+=this.getTableTdWithBold(sprite.x, (prevSprite)? prevSprite.x:-1);
-			table+=this.getTableTdWithBold(sprite.y, (prevSprite)? prevSprite.y:-1);
 			// Sprite image - convert to base64
 			const buf=Buffer.from(sprite.image);
 			const base64String=buf.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String+'"></td>\n'
+			// X/Y
+			table+=this.getTableTdWithBold(sprite.x, (prevSprite)? prevSprite.x:-1);
+			table+=this.getTableTdWithBold(sprite.y, (prevSprite)? prevSprite.y:-1);
 			// Attributes
 			table+=this.getTableTdWithBold(sprite.xMirrored, (prevSprite)? prevSprite.xMirrored:-1);
 			table+=this.getTableTdWithBold(sprite.yMirrored, (prevSprite)? prevSprite.yMirrored:-1);
@@ -762,15 +868,17 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				continue;
 			if(!sprite.visible)
 				continue;
+			// Get X/Y
+			let pos=sprite.getAbsXY();
 			// Surrounding rectangle
-			spritesHtml += util.format("ctx.rect(%d,%d,%d,%d);\n", sprite.x, sprite.y, 16, 16);
+			spritesHtml+=util.format("ctx.rect(%d,%d,%d,%d);\n", pos.x, pos.y, 16, 16);
 			// The slot index
-			spritesHtml += util.format('ctx.fillText("%d",%d,%d);\n', k, sprite.x+16+2, sprite.y+16);
+			spritesHtml+=util.format('ctx.fillText("%d",%d,%d);\n', k, pos.x+16+2, pos.y+16);
 			// The image
 			const buf = Buffer.from(sprite.image);
 			const base64String = buf.toString('base64');
 			spritesHtml += util.format('var img%d = new Image();\n', k);
-			spritesHtml += util.format('img%d.onload = function() { ctx.drawImage(img%d,%d,%d); };\n', k, k, sprite.x, sprite.y);
+			spritesHtml+=util.format('img%d.onload = function() { ctx.drawImage(img%d,%d,%d); };\n', k, k, pos.x, pos.y);
 			spritesHtml += util.format('img%d.src = "data:image/gif;base64,%s";\n', k, base64String);
 		}
 		spritesHtml += 'ctx.closePath();\n';
