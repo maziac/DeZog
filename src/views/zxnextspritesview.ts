@@ -275,6 +275,15 @@ class SpriteData {
 
 
 	/**
+	 * Returns the palette offset in hex.
+	 */
+	public getPaletteOffsetString() {
+		const hex=Utility.getHexString(this.paletteOffset, 2)+'h';
+		return hex;
+	}
+
+
+	/**
 	 * Returns if a relative palette index should be used.
 	 */
 	public getPoString() {
@@ -793,7 +802,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			table+=this.getTableTdWithBold(sprite.xMirrored, (prevSprite)? prevSprite.xMirrored:-1);
 			table+=this.getTableTdWithBold(sprite.yMirrored, (prevSprite)? prevSprite.yMirrored:-1);
 			table+=this.getTableTdWithBold(sprite.rotated, (prevSprite)? prevSprite.rotated:-1);
-			table+=this.getTableTdWithBold(sprite.paletteOffset, (prevSprite)? prevSprite.paletteOffset:-1);
+			table+=this.getTableTdWithBold(sprite.getPaletteOffsetString(), prevSprite?.getPaletteOffsetString());
 			table+=this.getTableTdWithBold(sprite.PR, (prevSprite)? prevSprite.PR:-1);
 			table+=this.getTableTdWithBold(sprite.getPoString(), prevSprite?.getPoString());
 			table+=this.getTableTdWithBold(sprite.patternIndex, (prevSprite)? prevSprite.patternIndex:-1);
