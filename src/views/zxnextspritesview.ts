@@ -175,46 +175,6 @@ class SpriteData {
 
 
 	/**
-	 * Returns the absolute xMirrored value.
-	 * Takes the anchor into account for unified sprites.
-	 */
-	public getAbsXMirrored(): number {
-		let xMirrored=this.xMirrored;
-		if (this.anchorSprite?.T==1) {
-			// Unified sprite: XOR mirror
-			xMirrored^=this.anchorSprite.xMirrored;
-		}
-		return xMirrored;
-	}
-
-	/**
-	 * Returns the absolute yMirrored value.
-	 * Takes the anchor into account for unified sprites.
-	 */
-	public getAbsYMirrored(): number {
-		let yMirrored=this.yMirrored;
-		if (this.anchorSprite?.T==1) {
-			// Unified sprite: XOR mirror
-			yMirrored^=this.anchorSprite.yMirrored;
-		}
-		return yMirrored;
-	}
-
-
-	/**
-	 * Returns the absolute rotated value.
-	 * Takes the anchor into account for unified sprites.
-	 */
-	public getAbsRotated(): number {
-		let rotated=this.rotated;
-		if (this.anchorSprite?.T==1) {
-			// Unified sprite: XOR mirror
-			rotated^=this.anchorSprite.rotated;
-		}
-		return rotated;
-	}
-
-	/**
 	 * Returns the absolute x/y value.
 	 * Takes the anchor into account for compoiste/unified sprites.
 	 */
@@ -362,8 +322,58 @@ class SpriteData {
 			// Use
 			usedPattern=np;
 		}
+
+		// Get sprite attributes
+		//let scaleX=this.xMagnification;
+		//let scaleY=this.yMagnification;
+		let rotated=this.rotated;
+		let xMirrored=this.xMirrored;
+		let yMirrored=this.yMirrored;
+
+		// Check if it is a unified relative sprite
+		const anchorSprite=this.anchorSprite;
+		if (anchorSprite?.T==1) {
+			// Unified sprite
+			//scaleX=anchorSprite.xMagnification;
+			//scaleY=anchorSprite.yMagnification;
+			if (anchorSprite.rotated) {
+//				const old_x=sprite_x;
+//				sprite_x=-sprite_y;
+//				sprite_y=old_x;
+				const oldX=xMirrored;
+				xMirrored=rotated^yMirrored;
+				yMirrored=rotated ^oldX;
+				rotated^=0x01;
+			}
+			if (anchorSprite.xMirrored) {
+				xMirrored^=0x01;
+//				sprite_x=-sprite_x;
+			}
+			if (anchorSprite.yMirrored) {
+				yMirrored^=0x01;
+//				sprite_y=-sprite_y;
+			}
+//			sprite_x<<=scaleX;
+//			sprite_y<<=scaleY;
+		}
+		// update final relative coordinates
+//		sprite_x+=anchor.x;
+//		sprite_y+=anchor.y;
+
+		// Rotate
+		if (rotated) {
+			const np=new Array<number>(256);
+			// Mirror
+			let k=0;
+			for (let y=0; y<16; y++) {
+				for (let x=0; x<16; x++)
+					np[x*16+15-y]=usedPattern[k++];
+			}
+			// Use
+			usedPattern=np;
+		}
 		// X-mirror
-		if(this.getAbsXMirrored()) {
+		if(xMirrored) {
 			const np = new Array<number>(256);
 			// Mirror
 			let k = 0;
@@ -375,7 +385,7 @@ class SpriteData {
 			usedPattern = np;
 		}
 		// Y-mirror
-		if(this.getAbsYMirrored()) {
+		if(yMirrored) {
 			const np = new Array<number>(256);
 			// Mirror
 			let k = 0;
@@ -385,18 +395,6 @@ class SpriteData {
 			}
 			// Use
 			usedPattern = np;
-		}
-		// Rotate
-		if (this.getAbsRotated()) {
-			const np=new Array<number>(256);
-			// Mirror
-			let k=0;
-			for (let y=0; y<16; y++) {
-				for (let x=0; x<16; x++)
-					np[x*16+15-y]=usedPattern[k++];
-			}
-			// Use
-			usedPattern=np;
 		}
 
 		// Convert to gif

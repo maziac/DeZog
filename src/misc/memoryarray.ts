@@ -14,6 +14,7 @@ export class MemoryArray {
 	// The array.
 	public ranges=new Array<{address: number, size: number, data?: Uint8Array}>();
 
+
 	/**
 	 * Add a range.
 	 */
