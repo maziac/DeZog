@@ -529,7 +529,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				pattern4b0[2*i]=val>>>4;
 				pattern4b0[2*i+1]=val&0x0F;
 			}
-			const buf4b0=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b0, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const buf4b0=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b0, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex&0x0F));
 			const base64String4b0=buf4b0.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b0+'"></td>\n';
 
@@ -540,7 +540,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 				pattern4b1[2*i]=val>>>4;
 				pattern4b1[2*i+1]=val&0x0F;
 			}
-			const buf4b1=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b1, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex));
+			const buf4b1=Buffer.from(ImageConvert.createGifFromArray(16, 16, pattern4b1, palette, ZxNextSpritePatternsView.spritesPaletteTransparentIndex&0x0F));
 			const base64String4b1=buf4b1.toString('base64');
 			table+=' <td class="classPattern"><img class="classImg" src="data:image/gif;base64,'+base64String4b1+'"></td>\n';
 

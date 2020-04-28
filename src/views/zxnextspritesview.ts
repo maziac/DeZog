@@ -104,7 +104,8 @@ class SpriteData {
 				// Relative sprite
 				this.anchorSprite=anchorSprite;
 				this.anchorSpriteIndex=anchorSpriteIndex;
-				this.N6=(attr4&0b0010_0000)>>>5;	// N6
+				if(this.anchorSprite.N6!=undefined)
+					this.N6=(attr4&0b0010_0000)>>>5;	// N6
 				this.PO=attr4&0b0000_0001;	// PO=Pattern offset is relative
 				// Composite sprites:
 				// Use following info from anchor:
@@ -246,7 +247,8 @@ class SpriteData {
 	public createImageFromPattern(pattern: Array<number>, palette: Array<number>, transparentIndex: number) {
 		let usedPattern=pattern;
 		// If 4bit color pattern change to use 1 byte per color
-		if (this.N6 != undefined) {
+		if (this.N6!=undefined) {
+			transparentIndex&=0x0F;
 			const offset=this.N6*128;	// 0 or 128
 			const np=new Array<number>(256);
 			for (let i=0; i<128; i++) {
@@ -503,7 +505,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			if (offs==0)
 				usedPalette=palette;
 			else {
-				// Rotate palette instead of adding somethign to each pixel
+				// Rotate palette instead of adding something to each pixel
 				const index=3*offs;	// 3 colors per index
 				const firstPart=palette.slice(index);
 				const secondPart=palette.slice(0, index);
