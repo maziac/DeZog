@@ -175,40 +175,52 @@ class SpriteData {
 
 
 	/**
-	 * Returns the absolute x/y value.
-	 * Takes the anchor into account for compoiste/unified sprites.
+	 * Returns the absolute x/y value and the scale.
+	 * Takes the anchor into account for composite/unified sprites.
 	 */
-	public getAbsXY(): {x: number, y: number} {
+	public getAbsXYScale(): {x: number, y: number, scaleX: number, scaleY: number} {
+		// Get sprite attributes
 		let x=this.x;
 		let y=this.y;
-		if (this.anchorSprite) {
-			// Relative sprite
-			if (this.anchorSprite?.T==0) {
-				// Composite sprite.
-				x+=this.anchorSprite.x;
-				y+=this.anchorSprite.y;
-			}
-			else {
-				// Unified sprite. Additionally rotate.
-				let dx=this.x;
-				let dy=this.y;
-				const xMirrored=this.xMirrored^this.anchorSprite.xMirrored;
-				const yMirrored=this.yMirrored^this.anchorSprite.yMirrored;
-				const rotated=this.rotated^this.anchorSprite.rotated;
-				if (xMirrored)
-					dx=-dx;
-				if (yMirrored)
-					dy=-dy;
-				if (rotated) {
-					const tmp=dx;
-					dx=-dy;
-					dy=tmp;
+		let scaleX=this.xMagnification;
+		let scaleY=this.yMagnification;
+		//let rotated=this.rotated;
+		//let xMirrored=this.xMirrored;
+		//let yMirrored=this.yMirrored;
+
+		// Check if it is a unified relative sprite
+		const anchorSprite=this.anchorSprite;
+		if (anchorSprite) {
+			if (anchorSprite.T==1) {
+				// Unified sprite
+				scaleX=anchorSprite.xMagnification;
+				scaleY=anchorSprite.yMagnification;
+				if (anchorSprite.rotated) {
+					const old_x=x;
+					x=-y;
+					y=old_x;
+					//const oldX=xMirrored;
+					//xMirrored=rotated^yMirrored;
+					//yMirrored=rotated^oldX;
+					//rotated^=0x01;
 				}
-				x=this.anchorSprite.x+dx;
-				y=this.anchorSprite.y+dy;
+				if (anchorSprite.xMirrored) {
+					//xMirrored^=0x01;
+					x=-x;
+				}
+				if (anchorSprite.yMirrored) {
+					//yMirrored^=0x01;
+					y=-y;
+				}
+				x*=scaleX;
+				y*=scaleY;
 			}
+			// Update final relative coordinates, also for composite sprite
+			x+=anchorSprite.x;
+			y+=anchorSprite.y;
 		}
-		return {x, y};
+
+		return {x, y, scaleX, scaleY};
 	}
 
 
@@ -433,6 +445,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	/// Contains the sprite slots to display.
 	protected slotIndices: Array<number>;
 
+	// An ordered list of this.slotIndices. The order is important
+	// (priorities) when drawing.
+	protected orderedSlotIndices: Array<number>;
+
 	/// The sprites, i.e. 128 slots with 4-5 bytes attributes each
 	protected sprites = Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
 
@@ -495,14 +511,19 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			}
 			this.spriteLastIndex=max+1;
 			this.spriteStartIndex=-min;	// Unknown at the moment, therefore negative
+			// Order the slot list for drawing
+			this.orderedSlotIndices=this.slotIndices.sort((n1, n2) => n1-n2);
 		}
 		else {
 			this.showOnlyVisible=true;
 			this.spriteLastIndex=MAX_COUNT_SPRITES;
 			this.spriteStartIndex=0;
 			this.slotIndices=new Array<number>(MAX_COUNT_SPRITES);
-			for (let i=0; i<MAX_COUNT_SPRITES; i++)
+			this.orderedSlotIndices=new Array<number>(MAX_COUNT_SPRITES);
+			for (let i=0; i<MAX_COUNT_SPRITES; i++) {
 				this.slotIndices[i]=i;
+				this.orderedSlotIndices[i]=i;
+			}
 		}
 
 		// Title
@@ -728,6 +749,12 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				width:auto;
 				height:2em;
 			}
+			.classRow0 {
+
+			}
+			.classRow1 {
+
+			}
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
 			<colgroup>
@@ -781,6 +808,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		// Create a string with the table itself.
 		const onlyVisible=this.showOnlyVisible;
 		let table='';
+		let classRowIndex=1;
+		let lastAnchorspriteIndex=-1;
 		for(const k of this.slotIndices) {
 			const sprite=this.sprites[k];
 			if (!sprite)
@@ -789,7 +818,17 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			if (onlyVisible&&!sprite.visible)
 				continue;
 			const prevSprite=this.previousSprites[k];
-			table+='<tr>\n'
+
+			// Row color, all anchor+relative sprites share teh same row color.
+			// I.e. the next composite/uniform sprite getes an alternate row color.
+			if (sprite.T!=undefined) {
+				// Anchor sprite
+				lastAnchorspriteIndex=k;
+				classRowIndex=(classRowIndex+1)%2;	// Toggle 0/1
+			}
+
+			// Create row and columns
+			table+='<tr class="classRow'+classRowIndex+'">\n'
 			table+=' <td>'+k+'</td>\n'
 			// Sprite image - convert to base64
 			const buf=Buffer.from(sprite.image);
@@ -868,24 +907,26 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		}
 
 		// Create the sprites
-		let spritesHtml = 'ctx.beginPath();\n';
-		for(let k=0; k<MAX_COUNT_SPRITES; k++) {
-			const sprite = this.sprites[k];
-			if(!sprite)
+		let spritesHtml='ctx.beginPath();\n';
+		for (const k of this.orderedSlotIndices) {
+			const sprite=this.sprites[k];
+			if (!sprite)
 				continue;
 			if(!sprite.visible)
 				continue;
 			// Get X/Y
-			let pos=sprite.getAbsXY();
+			let pos=sprite.getAbsXYScale();
+			const width=16*pos.scaleX;
+			const height=16*pos.scaleY;
 			// Surrounding rectangle
-			spritesHtml+=util.format("ctx.rect(%d,%d,%d,%d);\n", pos.x, pos.y, 16, 16);
+			spritesHtml+=util.format("ctx.rect(%d,%d,%d,%d);\n", pos.x, pos.y, width, height);
 			// The slot index
-			spritesHtml+=util.format('ctx.fillText("%d",%d,%d);\n', k, pos.x+16+2, pos.y+16);
+			spritesHtml+=util.format('ctx.fillText("%d",%d,%d);\n', k, pos.x+width+2, pos.y+height);
 			// The image
 			const buf = Buffer.from(sprite.image);
 			const base64String = buf.toString('base64');
 			spritesHtml += util.format('var img%d = new Image();\n', k);
-			spritesHtml+=util.format('img%d.onload = function() { ctx.drawImage(img%d,%d,%d); };\n', k, k, pos.x, pos.y);
+			spritesHtml+=util.format('img%d.onload = function() { ctx.drawImage(img%d,%d,%d,%d,%d); };\n', k, k, pos.x, pos.y, width, height);
 			spritesHtml += util.format('img%d.src = "data:image/gif;base64,%s";\n', k, base64String);
 		}
 		spritesHtml += 'ctx.closePath();\n';

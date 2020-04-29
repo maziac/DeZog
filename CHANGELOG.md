@@ -2,7 +2,9 @@
 
 # 1.2.5
 - Improved zsim performance when stepping over macro.
-- sprites view now also able to show 4 bit color pattern sprites.
+- Sprites/patterns view:
+	- now also able to show 4 bit color pattern sprites.
+	- improvements for relative sprites (but not fully working yet)
 
 # 1.2.4
 - cspect:
