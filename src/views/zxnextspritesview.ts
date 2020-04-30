@@ -155,11 +155,37 @@ class SpriteData {
 	public getAbsPatternIndex(): number {
 		let patternIndex=this.patternIndex;
 		if (this.PO==1) {
-			patternIndex+=this.anchorSprite!.patternIndex;
+			const anchor=this.anchorSprite!;
+			patternIndex+=anchor.patternIndex;
+			// Take also the N6 into account
+			let N6=anchor.N6;
+			if (N6) {
+				N6+=this.N6!;
+				if (N6>1)	// Overflow?
+					patternIndex++;
+			}
 			patternIndex&=0x3F;
 		}
 		return patternIndex;
 	}
+
+
+	/**
+	 * Returns N6 or for relative sprites the N6 + the anchor's N6.
+	 * @returns 0, 1, 2. undefined for 8bit pattern.
+	 */
+	public getAbsN6(): number|undefined {
+		let N6=this.N6!;
+		if (this.PO==1) {
+			const anchor=this.anchorSprite!;
+			// Take the N6 into account
+			if (anchor.N6) {
+				N6+=anchor.N6;
+			}
+		}
+		return N6;
+	}
+
 
 	/**
 	 * Returns the absolute palette index.
@@ -331,9 +357,10 @@ class SpriteData {
 	public createImageFromPattern(pattern: Array<number>, palette: Array<number>, transparentIndex: number) {
 		let usedPattern=pattern;
 		// If 4bit color pattern change to use 1 byte per color
-		if (this.N6!=undefined) {
+		const N6=this.getAbsN6();	// N6=0, 1 or 2
+		if (N6!=undefined) {
 			transparentIndex&=0x0F;
-			const offset=this.N6*128;	// 0 or 128
+			const offset=(N6&0x01)*128;	// 0 or 128
 			const np=new Array<number>(256);
 			for (let i=0; i<128; i++) {
 				const val=usedPattern[i+offset];
