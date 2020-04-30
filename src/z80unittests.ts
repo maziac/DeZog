@@ -267,7 +267,7 @@ export class Z80UnitTests {
 					try {
 						await Remote.enableLogpointGroup('UNITTEST', true);
 					}
-					catch {}	// Just in case the group is undefined
+					catch {}	// Note: This group might be used by teh user. Most probably this group is undefined.
 
 					await Z80UnitTests.initUnitTests();
 
@@ -557,9 +557,9 @@ export class Z80UnitTests {
 
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
-		Remote.setBreakpoint(successBp);
+		await Remote.setBreakpoint(successBp);
 		const failureBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
-		Remote.setBreakpoint(failureBp);
+		await Remote.setBreakpoint(failureBp);
 
 		// Stack watchpoints
 		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
@@ -671,20 +671,35 @@ export class Z80UnitTests {
 					Remote.clearCallStack();
 
 					// Run or Debug
-					if (da) {
-						// Debug: Continue
-						da.remoteContinue(); // no await
-						// With vscode UI
-						da.sendEventContinued();
-					}
-					else {
-						// Run: Continue
-						Remote.continue().then(() => {
-							Z80UnitTests.onBreak();
-						});
-					}
+					Z80UnitTests.RemoteContinue(da);
 				});
 		});
+	}
+
+
+	/**
+	 * Starts Continue directy or through the debug adapter.
+	 */
+	protected static RemoteContinue(da: DebugSessionClass|undefined) {
+		// Start asynchronously
+		(async () => {
+			// Init
+			Remote.startProcessing();
+			// Run or Debug
+			if (da) {
+				// With vscode UI
+				da.sendEventContinued();
+				// Debug: Continue
+				await da.remoteContinue();
+				Remote.stopProcessing();
+			}
+			else {
+				// Run: Continue
+				await Remote.continue();
+				Remote.stopProcessing();
+				Z80UnitTests.onBreak();
+			}
+		})();
 	}
 
 
@@ -705,13 +720,14 @@ export class Z80UnitTests {
 		// Set timeout
 		if(!Z80UnitTests.debug) {
 			clearTimeout(Z80UnitTests.timeoutHandle);
+			const toMs=5000; //1000*Settings.launch.unitTestTimeout; TODO
 			Z80UnitTests.timeoutHandle = setTimeout(() => {
 				// Clear timeout
 				clearTimeout(Z80UnitTests.timeoutHandle);
 				Z80UnitTests.timeoutHandle = undefined;
 				// Failure: Timeout. Send a break.
 				Remote.pause();
-			}, 1000*Settings.launch.unitTestTimeout);
+			}, toMs);
 		}
 
 		// Start at test case address.

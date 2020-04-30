@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.2.6
+- Z80 unit tests fixed.
+
 # 1.2.5
 - Improved zsim performance when stepping over macro.
 - Sprites/patterns view:

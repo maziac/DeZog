@@ -750,10 +750,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				height:2em;
 			}
 			.classRow0 {
-
+				background:yellow;
 			}
 			.classRow1 {
-
+				background:blue;
 			}
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
@@ -821,10 +821,16 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 			// Row color, all anchor+relative sprites share teh same row color.
 			// I.e. the next composite/uniform sprite getes an alternate row color.
-			if (sprite.T!=undefined) {
-				// Anchor sprite
-				lastAnchorspriteIndex=k;
-				classRowIndex=(classRowIndex+1)%2;	// Toggle 0/1
+			let index=k;
+			if (sprite.T==undefined) {
+				// Relative sprite
+				index=sprite.anchorSprite!.anchorSpriteIndex;
+			}
+			// Toggle?
+			if (lastAnchorspriteIndex!=index) {
+				// Toggle 0/1
+				classRowIndex=(classRowIndex+1)%2;
+				lastAnchorspriteIndex=index;
 			}
 
 			// Create row and columns
