@@ -272,7 +272,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Not called:
 	 * - If user presses circled arrow/restart.
 	 */
-	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
+	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
 		// Clear all decorations
 		if (DebugSessionClass.state==DbgAdaperState.UNITTEST)
 			Decoration?.clearAllButCodeCoverageDecorations();
@@ -283,14 +283,15 @@ export class DebugSessionClass extends DebugSession {
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
+		this.removeAllListeners();
 		FakeSerial?.close();
-		Remote.disconnect().then(() => {
-			this.removeAllListeners();
-			// Clear the history instance
-			CpuHistoryClass.setCpuHistory(undefined);
-			// Send response
-			this.sendResponse(response);
-		});
+		await Remote.disconnect();
+		// Clear the history instance
+		CpuHistoryClass.removeCpuHistory();
+		// Clear Remote
+		RemoteFactory.removeRemote();
+		// Send response
+		this.sendResponse(response);
 	}
 
 
@@ -298,7 +299,7 @@ export class DebugSessionClass extends DebugSession {
 	 * 'initialize' request.
 	 * Respond with supported features.
 	 */
-	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+	protected async initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
@@ -341,7 +342,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments) {
+	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Stop machine
 		FakeSerial?.close();
 		Remote.disconnect().then(() => {
@@ -2466,7 +2467,7 @@ Notes:
 
 
 
-	protected terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
+	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
 
 	}
 }

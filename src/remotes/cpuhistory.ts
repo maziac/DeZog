@@ -85,6 +85,15 @@ export class CpuHistoryClass extends StepHistoryClass {
 			CpuHistory=cpuHistory;
 	}
 
+
+	/**
+	 * Removes the CpuHistory singleton.
+	 */
+	public static removeCpuHistory() {
+		CpuHistoryClass.setCpuHistory(undefined);
+	}
+
+
 	/**
 	 * Init.
 	 */

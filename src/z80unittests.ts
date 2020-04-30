@@ -179,6 +179,7 @@ export class Z80UnitTests {
 			if (Remote) {
 				// Terminate emulator
 				await Remote.terminate();
+				RemoteFactory.removeRemote();
 			}
 			// (Unfortunately there is no event for this, so we need to wait)
 			Utility.delayedCall(time => {

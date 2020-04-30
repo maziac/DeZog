@@ -51,7 +51,7 @@ export class RemoteFactory {
 	/**
 	 * Clears the emulator variable.
 	 */
-	protected static clearRemote() {
+	public static removeRemote() {
 		Remote=undefined as any;
 	}
 
