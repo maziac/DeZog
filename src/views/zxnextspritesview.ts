@@ -763,7 +763,6 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				background:var(--vscode-panel-dropBackground);
 				//background:var(--vscode-titleBar-inactiveBackground);
 			}
-			}
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
 			<colgroup>
@@ -877,7 +876,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	/**
 	 * Creates one html canvas to display the sprites on the "screen".
 	 * The screen also shows the border and the clipping rectangle.
-	 * Additionally alls sprites are drawn into together with their slot index.
+	 * Additionally all sprites are drawn into together with their slot index.
 	 */
 	protected createHtmlCanvas(): string {
 		const format = `
@@ -953,10 +952,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		spritesHtml += 'ctx.stroke();\n\n';
 
 		// Put everything together
-		const html = util.format(format,
+		const html=util.format(format,
 			clipHtml,
-			spritesHtml,
-			this.usedBckgColor);
+			spritesHtml);
 		return html;
 	}
 
