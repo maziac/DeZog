@@ -931,7 +931,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			const sprite=this.sprites[k];
 			if (!sprite)
 				continue;
-			if(!sprite.visible)
+			if (!sprite.visible)
+				continue;
+			if (sprite.anchorSprite&&!sprite.anchorSprite.visible)
 				continue;
 			// Get X/Y
 			let pos=sprite.getAbsXYScale();

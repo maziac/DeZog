@@ -5,6 +5,7 @@
 - Sprites/patterns view:
 	- Grayscale palette exchanged by false colors palette.
 	- Alternating colors for rows.
+	- Visibility of anchor sprite is now taken into account.
 
 # 1.2.5
 - Improved zsim performance when stepping over macro.
