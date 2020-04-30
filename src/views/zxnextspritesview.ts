@@ -460,9 +460,6 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	// so it can be printed in bold.
 	protected previousSprites = Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
 
-	/// Set if sprite clipping enabled.
-	protected clippingEnabled: boolean;
-
 	// Sprite clipping dimensions.
 	protected clipXl: number;
 	protected clipXr: number;
@@ -484,7 +481,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	constructor(title: string, slotRanges: Array<number>|undefined) {
 		super(title, []);
 
-		this.clippingEnabled=false;
+		this.control=0;
 
 		if (slotRanges) {
 			this.showOnlyVisible=false;
@@ -582,12 +579,6 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * If YES it also retrieves the sprite clipping coordinates.
 	 */
 	protected async getSpritesClippingWindow(): Promise<void> {
-		// Check if clippping is set (Layer priority)
-		const value=await Remote.getTbblueRegister(21); // TODO, also move in DZRP
-		this.clippingEnabled=(value&0x02)==0;
-		if (!this.clippingEnabled) {
-			return;
-		}
 		// Get clipping
 		const clip=await Remote.getTbblueSpritesClippingWindow();
 		this.clipXl=clip.xl;
@@ -595,6 +586,13 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		this.clipYt=clip.yt;
 		this.clipYb=clip.yb;
 		this.control=clip.control;
+		// Adjust the clipping coordinates according control byte
+		if (this.control&0b0000_0010) { // over border
+			this.clipXl=2*this.clipXl-32;
+			this.clipXr=2*this.clipXr-32;
+			this.clipYt-=32;
+			this.clipYb-=32;
+		}
 	}
 
 
@@ -908,7 +906,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Html text for clipping
 		let clipHtml = '';
-		if(this.clippingEnabled) {
+		//if (this.control&0x02==0)
+		{
 			clipHtml += 'ctx.beginPath();\n';
 			clipHtml += 'ctx.strokeStyle = "red";\n';
 			clipHtml += util.format('ctx.rect(%d,%d,%d,%d);\n', this.clipXl+32, this.clipYt+32, this.clipXr-this.clipXl+1, this.clipYb-this.clipYt+1);
