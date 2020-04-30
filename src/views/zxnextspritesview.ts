@@ -453,7 +453,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	protected sprites = Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
 
 	/// The start index and last index (excluding) of sprites to retrieve.
-	protected spriteStartIndex: number;
+	//protected spriteStartIndex: number;
 	protected spriteLastIndex: number;
 
 	/// The previous sprites, i.e. the values here are used to check which attribute has changed
@@ -502,22 +502,22 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			}
 			// Get max. slot
 			let max=-1;
-			let min=MAX_COUNT_SPRITES;
+			//let min=MAX_COUNT_SPRITES;
 			for (const k of this.slotIndices) {
 				if (k>max)
 					max=k;
-				if (k<min)
-					min=k;
+				//if (k<min)
+				//	min=k;
 			}
-			this.spriteLastIndex=max+1;
-			this.spriteStartIndex=-min;	// Unknown at the moment, therefore negative
+			this.spriteLastIndex=max;
+			//this.spriteStartIndex=-min;	// Unknown at the moment, therefore negative
 			// Order the slot list for drawing
 			this.orderedSlotIndices=this.slotIndices.sort((n1, n2) => n1-n2);
 		}
 		else {
 			this.showOnlyVisible=true;
-			this.spriteLastIndex=MAX_COUNT_SPRITES;
-			this.spriteStartIndex=0;
+			this.spriteLastIndex=MAX_COUNT_SPRITES-1;
+			//this.spriteStartIndex=0;
 			this.slotIndices=new Array<number>(MAX_COUNT_SPRITES);
 			this.orderedSlotIndices=new Array<number>(MAX_COUNT_SPRITES);
 			for (let i=0; i<MAX_COUNT_SPRITES; i++) {
@@ -537,11 +537,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * @param slotIndices Array with all the slots to retrieve.
 	 */
 	protected async getSprites(): Promise<void> {
-		// Get sprites
-		let index=this.spriteStartIndex;
-		if (index<0)
-			index=0;
-		const spriteCount=this.spriteLastIndex-index;
+		// Get sprites. This always starts at 0 because
+		// there might be relative sprites where we need to get
+		// the anchor for (and the anchor might not be given)
+		let index=0;
+		const spriteCount=this.spriteLastIndex+1-index;
 		const sprites=await Remote.getTbblueSprites(index, spriteCount);
 		let lastAnchorSprite;
 		let lastAnchorSpriteIndex=-1;
@@ -557,6 +557,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Next
 			index++;
 		}
+		/* The next time thsi value might have been changed, so this is useless:
 		// Find first required sprite, if not done before
 		if (this.spriteStartIndex<0) {
 			const reqIndex=-this.spriteStartIndex;	// Is negative the first time
@@ -571,6 +572,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			}
 			this.spriteStartIndex=k;
 		}
+		*/
 	}
 
 
@@ -752,10 +754,15 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 				height:2em;
 			}
 			.classRow0 {
-				background:yellow;
+				//background:#2C3E50;
+				background:var(--vscode-panel-background);
+				//background:var(--vscode-titleBar-activeBackground);
 			}
 			.classRow1 {
-				background:blue;
+				//background:#566573;
+				background:var(--vscode-panel-dropBackground);
+				//background:var(--vscode-titleBar-inactiveBackground);
+			}
 			}
 		</style>
 		<table  style="text-align: center" border="1" cellpadding="0">
@@ -822,11 +829,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			const prevSprite=this.previousSprites[k];
 
 			// Row color, all anchor+relative sprites share teh same row color.
-			// I.e. the next composite/uniform sprite getes an alternate row color.
+			// I.e. the next composite/uniform sprite gets an alternate row color.
 			let index=k;
 			if (sprite.T==undefined) {
 				// Relative sprite
-				index=sprite.anchorSprite!.anchorSpriteIndex;
+				index=sprite.anchorSpriteIndex;
 			}
 			// Toggle?
 			if (lastAnchorspriteIndex!=index) {
