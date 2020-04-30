@@ -469,6 +469,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	protected clipYt: number;
 	protected clipYb: number;
 
+	// Sprites control byte (Next register 0x15), e.g. sprite order priority bit 6
+	protected control: number;
+
 	/// true if only visible sprites should be shown.
 	protected showOnlyVisible: boolean;
 
@@ -591,6 +594,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		this.clipXr=clip.xr;
 		this.clipYt=clip.yt;
 		this.clipYb=clip.yb;
+		this.control=clip.control;
 	}
 
 
@@ -914,7 +918,11 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		// Create the sprites
 		let spritesHtml='ctx.beginPath();\n';
-		for (const k of this.orderedSlotIndices) {
+		const lastItem=this.orderedSlotIndices.length-1;
+		const priorityNormal=((this.control&0x40)==0);
+		for (let i=0; i<=lastItem; i++) {
+			const j=(priorityNormal)? i:lastItem-i;
+			const k=this.orderedSlotIndices[j];
 			const sprite=this.sprites[k];
 			if (!sprite)
 				continue;

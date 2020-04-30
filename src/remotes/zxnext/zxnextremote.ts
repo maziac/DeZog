@@ -629,10 +629,10 @@ export class ZxNextRemote extends DzrpRemote {
 	 * Sends the command to get the sprites clipping window.
 	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
  	*/
-	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
-		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES_CLIP_WINDOW);
+	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
+		const data=await this.sendDzrpCmd(DZRP.CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL);
 		return {
-			xl: data[0], xr: data[1], yt: data[2], yb: data[3]
+			xl: data[0], xr: data[1], yt: data[2], yb: data[3], control: data[4]
 		};
 	}
 

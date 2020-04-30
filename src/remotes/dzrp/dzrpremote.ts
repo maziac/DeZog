@@ -51,7 +51,7 @@ export enum DZRP {
 	CMD_GET_SPRITES_PALETTE=0x11,
 	CMD_GET_SPRITES=0x12,
 	CMD_GET_SPRITE_PATTERNS=0x13,
-	CMD_GET_SPRITES_CLIP_WINDOW=0x14,
+	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=0x14,
 
 	CMD_SET_BORDER=0x15,
 };
@@ -1001,9 +1001,9 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+	 * @returns A Promise that returns the clipping dimensions and teh control byte(xl, xr, yt, yb, control).
 	 */
-	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
 		const clip=await this.sendDzrpCmdGetSpritesClipWindow();
 		return clip;
 	}
@@ -1265,11 +1265,11 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Sends the command to get the sprites clipping window.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+	 * @returns A Promise that returns the clipping dimensions and the control byte (xl, xr, yt, yb, control).
  	*/
-	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
+	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
 		Utility.assert(false);
-		return {xl: 0, xr: 0, yt: 0, yb: 0};
+		return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
 	}
 
 

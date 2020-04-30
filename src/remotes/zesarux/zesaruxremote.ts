@@ -1269,14 +1269,14 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+	 * @returns A Promise that returns the clipping dimensions and teh control byte(xl, xr, yt, yb, control).
 	 */
-	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
-		return new Promise<{xl: number, xr: number, yt: number, yb: number}>(resolve => {
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
+		return new Promise<{xl: number, xr: number, yt: number, yb: number, control: number}>(resolve => {
 			zSocket.send('tbblue-get-clipwindow sprite', data => {
 				// Check for error
 				if (data.startsWith("ERROR")) {
-					resolve({xl: 0, xr: 0, yt: 0, yb: 0});
+					resolve({xl: 0, xr: 0, yt: 0, yb: 0, control: 0});
 					return;
 				}
 				// Returns 4 decimal numbers, e.g. "0 175 0 192 "
@@ -1285,8 +1285,12 @@ export class ZesaruxRemote extends RemoteBase {
 				const xr=parseInt(clip[1]);
 				const yt=parseInt(clip[2]);
 				const yb=parseInt(clip[3]);
-				// Call handler
-				resolve({xl, xr, yt, yb});
+
+				// Get the control byte
+				this.getTbblueRegister(0x15).then(control => {
+					// Call handler
+					resolve({xl, xr, yt, yb, control});
+				});
 			});
 		})
 	}

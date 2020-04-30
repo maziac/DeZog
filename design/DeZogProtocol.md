@@ -48,11 +48,14 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 0.3.0
+- CMD_GET_SPRITES_CLIP_WINDOW(_AND_CONTROL) extended to return also the control byte.
+
 ### 0.2.0
-PAUSE notification: returns break address now instead of the breakpoint ID.
+- PAUSE notification: returns break address now instead of the breakpoint ID.
 
 ### 0.1.0
-Initial experimental version.
+- Initial experimental version.
 
 # Data Format
 
@@ -498,24 +501,25 @@ Note: 512 = 16x16x2.
 
 
 
-# CMD_GET_SPRITES_CLIP_WINDOW
+# CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x14  | CMD_GET_SPRITES_CLIP_WINDOW |
+| 5     | 1    | 0x14  | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |
 
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5     | Length     |
+| 0     | 4    | 6     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0-255 | x-left     |
 | 6     | 1    | 0-255 | x-right    |
 | 7     | 1    | 0-255 | y-top      |
 | 8     | 1    | 0-255 | y-bottom   |
+| 9     | 1    | 0-255 | control byte (from register 0x15) |
 
 
 

@@ -1058,6 +1058,7 @@ Stepping works slightly different to stepping in ZEsarUX.
 - DeZog/CSpect (v2.12.22):
   - Watchpoints work unreliable. Under unknown circumstances a watchpoint (aka CSpect read-breakpoint) might prevent simple stepping. In that case do not enable watchpoints (do not use "-wpmem enable".
   - Sometimes step-over does not work. Even at simple Z80 instructions. The PC just stays at its current address. Normally the next step works. This issue seems to be similar to the watchpoints issue but appears only seldom. Due to the way the step-out is implemented this can also happen, with an even higher probability, during a step-out. During step-out you notice this because the step-out breaks before it is completed.
+  - Z80 unit tests do not work. Most probably because of the Watchpoints issue as, even if wpmem is not used, the unit tests use watchpoints internally.
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
 - Hovering does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 - Windows only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.

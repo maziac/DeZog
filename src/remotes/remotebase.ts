@@ -1348,10 +1348,10 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @returns A Promise that returns the clipping dimensions (xl, xr, yt, yb).
+	 * @returns A Promise that returns the clipping dimensions and teh control byte(xl, xr, yt, yb, control).
 	 */
-	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number}> {
-		return {xl: 0, xr: 0, yt: 0, yb: 0};
+	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
+		return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
 	}
 
 
