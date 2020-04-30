@@ -2,6 +2,8 @@
 
 # 1.2.6
 - Z80 unit tests fixed.
+- Sprites/patterns view:
+	- Grayscale palette exchanged by false colors palette.
 
 # 1.2.5
 - Improved zsim performance when stepping over macro.

@@ -4,6 +4,7 @@ import { BaseView } from './baseview';
 import {ImageConvert} from '../imageconvert';
 import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
+import * as Random from 'rng';
 
 
 /**
@@ -14,7 +15,7 @@ enum PaletteSelection {
 	PALETTE_0,		///< The first sprite palette
 	PALETTE_1,		///< The second sprite palette
 	DEFAULT,	///< The default palette. The index is the color value.
-	GRAYSCALE,	///< A grayscale palette
+	FALSE_COLORS,	///< A false color palette
 };
 
 
@@ -244,18 +245,21 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 
 	/**
-	 * Create a grayscale palette.
+	 * Create a false color palette. The purpose is to make
+	 * sprites/patterns visible (although with false color)
+	 * even if the palette is incorrect.
 	 */
-	protected createGrayscalePalette(): Array<number> {
-		// Create grayscale palette
-		const grayscalePalette = new Array<number>(3*256);
-		let k = 0;
+	protected createFalseColorsPalette(): Array<number> {
+		// Create false colors palette
+		const falseColorsPalette = new Array<number>(3*256);
+		let k=0;
+		var rng=new Random.MT(12345);	// Use always teh same seed
 		for(let i=0;i<256; i++) {
-			grayscalePalette[k++] = i;
-			grayscalePalette[k++] = i;
-			grayscalePalette[k++] = i;
+			falseColorsPalette[k++]=rng.range(0, 255);
+			falseColorsPalette[k++]=rng.range(0, 255);
+			falseColorsPalette[k++]=rng.range(0, 255);
 		}
-		return grayscalePalette;
+		return falseColorsPalette;
 	}
 
 
@@ -290,9 +294,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 				// Create default palette
 				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createDefaultPalette());
 				return;
-			case PaletteSelection.GRAYSCALE:
-				// Create grayscale palette
-				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createGrayscalePalette());
+			case PaletteSelection.FALSE_COLORS:
+				// Create false colors palette
+				ZxNextSpritePatternsView.spritePalettes.set(usedPal, this.createFalseColorsPalette());
 				return;
 			default:
 				paletteNumber = ZxNextSpritePatternsView.staticGetPaletteNumberFromSelectedIndex(usedPal);
@@ -430,7 +434,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			<option>Sprite Palette 0</option>
 			<option>Sprite Palette 1</option>
 			<option>Default Palette</option>
-			<option>Grayscale Palette</option>
+			<option>False Colors Palette</option>
 		</select>
 		<br>
 

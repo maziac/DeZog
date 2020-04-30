@@ -583,7 +583,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 */
 	protected async getSpritesClippingWindow(): Promise<void> {
 		// Check if clippping is set (Layer priority)
-		const value=await Remote.getTbblueRegister(21);
+		const value=await Remote.getTbblueRegister(21); // TODO, also move in DZRP
 		this.clippingEnabled=(value&0x02)==0;
 		if (!this.clippingEnabled) {
 			return;
