@@ -36,6 +36,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 	public async doInitialization() {
 		// Init socket
 		this.socket=new Socket();
+		this.socket.unref();
 
 		// React on-open
 		this.socket.on('connect', async () => {

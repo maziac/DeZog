@@ -83,6 +83,8 @@ export class ZesaruxSocket extends Socket {
 	 * Initialize the socket.
 	 */
 	protected init() {
+		this.unref();
+
 		// Remove all previous listeners (in case of a restart)
 		this.myRemoveAllListeners();
 
