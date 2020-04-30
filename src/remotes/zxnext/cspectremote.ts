@@ -116,8 +116,21 @@ export class CSpectRemote extends ZxNextRemote {
 	public async disconnect(): Promise<void> {
 		return new Promise<void>(resolve => {
 			this.socket.removeAllListeners();
+			// Timeout is required because socket.end() does not call the
+			// callback it it is already closed and teh state cannot
+			// reliable be determined.
+			const timeout = setTimeout(() => {
+				if (resolve) {
+					resolve();
+					resolve=undefined as any;
+				}
+			}, 1000);	// 1 sec
 			this.socket.end(() => {
-				resolve();
+				if (resolve) {
+					resolve();
+					resolve=undefined as any;
+					clearTimeout(timeout);
+				}
 			});
 		});
 	}

@@ -20,16 +20,16 @@ export class RemoteFactory {
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
 			case 'zrcp':	// ZEsarUX Remote Control Protocol
-				RemoteFactory.setEmulator(new ZesaruxExtRemote());
+				RemoteFactory.setRemote(new ZesaruxExtRemote());
 				break;
 			case 'cspect':	// CSpect socket
-				RemoteFactory.setEmulator(new CSpectRemote());
+				RemoteFactory.setRemote(new CSpectRemote());
 				break;
 			case 'serial':	// USB/serial connection
-				RemoteFactory.setEmulator(new ZxNextUsbSerialRemote());
+				RemoteFactory.setRemote(new ZxNextUsbSerialRemote());
 				break;
 			case 'zsim':	// Simulator
-				RemoteFactory.setEmulator(new ZxSimulatorRemote());
+				RemoteFactory.setRemote(new ZxSimulatorRemote());
 				break;
 			case 'mame':
 				Utility.assert(false);	// needs to be implemented
@@ -44,8 +44,15 @@ export class RemoteFactory {
 	/**
 	 * Sets the emulator variable.
 	 */
-	protected static setEmulator(emulator: RemoteBase) {
-		Remote = emulator;
+	protected static setRemote(emulator: RemoteBase) {
+		Remote=emulator;
+	}
+
+	/**
+	 * Clears the emulator variable.
+	 */
+	protected static clearRemote() {
+		Remote=undefined as any;
 	}
 
 }
