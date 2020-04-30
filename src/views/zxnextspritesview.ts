@@ -111,10 +111,12 @@ class SpriteData {
 
 			const relativeSprite=((attr4&0b1100_0000)==0b0100_0000);
 			if (relativeSprite) {
+				Utility.assert(anchorSprite);
+
 				// Relative sprite
 				this.anchorSprite=anchorSprite;
 				this.anchorSpriteIndex=anchorSpriteIndex;
-				if(this.anchorSprite.N6!=undefined)
+				if (this.anchorSprite.N6!=undefined)
 					this.N6=(attr4&0b0010_0000)>>>5;	// N6
 				this.PO=attr4&0b0000_0001;	// PO=Pattern offset is relative
 
@@ -570,7 +572,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		let index=0;
 		const spriteCount=this.spriteLastIndex+1-index;
 		const sprites=await Remote.getTbblueSprites(index, spriteCount);
-		let lastAnchorSprite;
+		let lastAnchorSprite = new SpriteData(new Uint8Array(5), undefined as any, -1);
 		let lastAnchorSpriteIndex=-1;
 		for (const attrs of sprites) {
 			// Create sprite
@@ -584,7 +586,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Next
 			index++;
 		}
-		/* The next time thsi value might have been changed, so this is useless:
+		/* The next time this value might have been changed, so this is useless:
 		// Find first required sprite, if not done before
 		if (this.spriteStartIndex<0) {
 			const reqIndex=-this.spriteStartIndex;	// Is negative the first time
