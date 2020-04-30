@@ -248,6 +248,12 @@ class SpriteData {
 			y+=anchorSprite.y;
 		}
 
+		// -127 .. +384 (cover 8x)
+		if (512-128<x)
+			x-=512;
+		if (512-128<y)
+			y-=512;
+
 		return {x, y, scaleX, scaleY};
 	}
 
@@ -852,8 +858,12 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			if (!sprite)
 				continue;
 			// Check if visible
-			if (onlyVisible&&!sprite.visible)
-				continue;
+			if (onlyVisible) {
+				if (!sprite.visible)
+					continue;
+				if (sprite.anchorSprite&&!sprite.anchorSprite.visible)
+					continue;
+			}
 			const prevSprite=this.previousSprites[k];
 
 			// Row color, all anchor+relative sprites share teh same row color.
