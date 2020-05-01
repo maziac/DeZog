@@ -105,11 +105,20 @@ Next to implement:
 
 ### Prerequisites
 
-In order to use DeZog you need
-- vscode (of course)
-- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required.
+In order to use DeZog you need at least vscode (Linux, macOS or Windows).
 
-Without ZEsarUX you can do some limited simulation with the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
+If you are writing pure Z80 programs or simple ZX Spectrum 48K programs this might already be sufficient as you can use the [internal Z80 Simulator](documentation/Usage.md#the-internal-z80-simulator).
+
+For more demanding projects you have the choice to install a real emulator.
+
+These are the options:
+
+- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required.
+- the [CSpect](http://www.cspect.org) emulator. At least version v2.12.22 is required.
+
+The different DeZog/emulator configurations have different advantages.
+But which one you choose mainly depends on your personal preference.
+The table [here](documentation/Usage.md#remote-capabilities) shows a comparison of the features.
 
 
 ### DeZog

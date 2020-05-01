@@ -286,14 +286,14 @@ The following table gives an overview.
 
 |                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | started  | experimental |
+| State                   | stable             | stable  | stable     | started  | stable |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | -        | yes      |
 | Asserts                 | yes                | -       | yes        | yes/slow | yes/slow |
 | Logpoints               | yes                | -       | yes        | yes/slow | yes/slow |
-| Extended callstack      | no                 | yes     | yes        | -        | -        |
-| Code coverage           | yes                | yes     | yes        | -        | -        |
+| Extended callstack      | no                 | yes     | yes        | -        | no        |
+| Code coverage           | yes                | yes     | yes        | -        | no        |
 | Reverse debugging       | true               | true    | true       | lite     | lite     |
 | ZX Next capable         | -                  | yes     | yes        | yes      | yes      |
 | Comments                | About 10x slower   |         | Breakpoints are faster than in ZEsarUX |         |
