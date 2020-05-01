@@ -1,15 +1,25 @@
-# DeZog - Z80 Debugger
+# DeZog - The Z80 Debugger
 
 ![](documentation/images/main.gif)
 
+The goal of this project is to achieve a development environment for Z80 assembler programs much the same as developers are nowadays used to. Similar to what you would expect from Eclipse, Visual Studio or XCode.
+
+As this is a huge goal the focus is here on
+- Easy navigating/stepping through assembler source files with step-over, step-into and step-out
+- Data representation by viewing memory area, adding watches conversion between hex, decimal numbers and labels.
+- Easy access to data: a lot of information is already available by simply hovering over it.
+- Offering a unit test framework.
+- Dispalying ZX Next specific data like sprites.
+
 DeZog lets you use Visual Studio Code (vscode) as development environment for debugging your Z80 assembler programs.
 It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
-(It may also be used without source code to debug binaries but in that case the support is limited and you could probably better directly debug with ZEsarUX.)
+(It may also be used without source code to debug binaries but in that case the support is limited and you could probably better directly debug with ZEsarUX or CSpect.)
 The biggest help it offers is that you are able to step through your sources and that DeZog is aware of all labels and can give hints to what label a number resolves.
 
-DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to ZEsarUX via a socket connection for more advanced projects.
+DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to ZEsarUX or CSpect via a socket connection for more advanced projects.
 
-Note: DeZog does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
+Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
+
 
 **Important note for Windows users:**
 Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.
@@ -42,7 +52,8 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 ## Features
 
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.1)
-- can be used with the internal simulator (instead of ZEsarUX)
+- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.22)
+- can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list files
 	- supports stepping through source code
 	- either in .list file or in .asm files
@@ -73,9 +84,10 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - support for assembler [unit tests](documentation/Unittests.md)
 - Display of ZXNext [sprites and sprite patterns](documentation/Usage.md#sprites--patterns)
 
+
 ## Constraints
 
-- supports only ZEsarUX emulator and internal simulator at the moment
+- supports ZEsarUX, CSpect and the internal simulator
 - build output must
 	- create a .list file (support for sjasmplus, Savannah's z80asm, z88dk).
 	- _alternatively you can use other list files with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
@@ -86,7 +98,6 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 Next to implement:
 - Serial interface: Allows remote debugging via a serial connection on a real ZX Spectrum Next with breakpoints etc.
-- CSpect interfacing: Allows debugging with the CSpect emulator.
 - ZesarusExt: Make ZesarusExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 
 
@@ -135,6 +146,17 @@ See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-ro
 Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
 
 
+## Acknowledgements
+
+I would like to thank a few people for their support
+- Cesar Hernandez Bano for developing the great [ZEsarUX](https://github.com/chernandezba/zesarux) emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
+- Mike Dailly for the wonderful [CSpect](http://www.cspect.org) emulator, for opening the debug interface to plugins and for giving support to use it properly.
+- Cesar Wagener Moriana for writing a great tutorial.
+- Peter Ped Helcmanovsky aka [ped7g](https://github.com/ped7g) for his support. Especially to get the display of the relative-sprites correct.
+- And not to forget: Kris Borowinski (aka bukem) for his tireless efforts testing DeZog.
+
+
+
 # Extras
 
 Here is a great tutorial from Cesar Wagener Moriana.
@@ -146,7 +168,7 @@ It deals with setting up
 
 and is available in English, Spain and German [here](documentation/extras/Tutorial_ZEsarUX_sjasmplus_z80-debug/).
 
-Please note: The tutorial uses 'z80-debug'. This was the former name of the project. It has been renamed to 'dezog'. This means especially that in the launch.json files you need to change 'z80-debug' to 'dezog'.
+Please note: The tutorial is a bit outdated, it uses 'z80-debug'. This was the former name of the project. It has been renamed to 'dezog'. This means especially that in the launch.json files you need to change 'z80-debug' to 'dezog'.
 
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug/DeZog so that it is a great advice to get you started.
 
