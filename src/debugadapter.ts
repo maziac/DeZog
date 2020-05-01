@@ -1270,7 +1270,7 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
 		// Response is sent immediately
-	//	this.sendResponse(response);
+		this.sendResponse(response);
 		// Check if already processing other request
 		if (this.proccessingSteppingRequest)
 			return;
@@ -1385,9 +1385,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// End processing
 		this.stopProcessing();
-
-		this.sendResponse(response);
-
 	}
 
 
