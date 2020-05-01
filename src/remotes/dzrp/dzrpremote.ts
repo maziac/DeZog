@@ -419,11 +419,11 @@ export class DzrpRemote extends RemoteBase {
 		}
 
 		// Check for pause
-		if (breakNumber==BREAK_REASON_NUMBER.NO_REASON||condition==undefined) {
+		if (correctedBreakNumber==BREAK_REASON_NUMBER.NO_REASON||condition==undefined) {
 			// Check for manual pause
 			if (this.pauseStep) {
 				condition='';	// Break
-				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
+				correctedBreakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
 			}
 		}
 

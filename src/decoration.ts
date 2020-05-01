@@ -257,6 +257,8 @@ export class DecorationClass {
 				editor.setDecorations(map.decoType, []);
 			}
 		}
+		// Additionally clear array
+		this.unassignedCodeCoverageAddresses.clear();
 	}
 
 
