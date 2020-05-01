@@ -6,6 +6,7 @@
 	- Grayscale palette exchanged by false colors palette.
 	- Alternating colors for rows.
 	- Visibility of anchor sprite is now taken into account.
+- zrcp: Improved stability of socket connection.
 
 # 1.2.5
 - Improved zsim performance when stepping over macro.

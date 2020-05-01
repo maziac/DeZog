@@ -64,6 +64,10 @@ export class ZesaruxSocket extends Socket {
 	/// A special long lasting command like 'run' that can be interrupted by other commands.
 	private interruptableRunCmd: CommandEntry|undefined;
 
+	/// Is true as long as "Running until" has not been received after a 'run'.
+	/// Other commands are not allowed to interrupt during this short phase.
+	private interruptableRunCmdCriticalPhase: boolean;
+
 	/// This value is set during initialization. It is the time that is
 	/// waited on an answer before the connection is disconnected.
 	/// In ms.
@@ -169,6 +173,7 @@ export class ZesaruxSocket extends Socket {
 		this.connect(port, hostname, () => {
 			// set timeout to receive the welcome message
 			this.setTimeout(this.MSG_TIMEOUT);
+			this.interruptableRunCmdCriticalPhase=false;
 			// almost connected
 			this.state = SocketState.CONNECTED_WAITING_ON_WELCOME_MSG;
 			//this.setKeepAlive(true, 1000);	I would have to enable keep-alive to get notified if the connection closes, but I was not able to change the default interval (2hrs). The package 'net-keepalive' could not be used.
@@ -233,22 +238,24 @@ export class ZesaruxSocket extends Socket {
 		this.queue.push(cEntry);
 		this.emitQueueChanged();
 		// check if command can be sent right away
-		if(this.queue.length == 1) {
-			if(this.interruptableRunCmd) {
-				// Interrupt the command: create an interrupt cmd
-				const cBreak = new CommandEntry('', ()=>{},false, this.MSG_TIMEOUT);
-				// Insert as first command
-				this.queue.unshift(cBreak);
-				this.emitQueueChanged();
+		if (!this.interruptableRunCmdCriticalPhase) {
+			if (this.queue.length==1) {
+				if (this.interruptableRunCmd) {
+					// Interrupt the command: create an interrupt cmd
+					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
+					// Insert as first command
+					this.queue.unshift(cBreak);
+					this.emitQueueChanged();
+				}
+				// Send command
+				this.sendSocket();
 			}
-			// Send command
-			this.sendSocket();
 		}
 	}
 
 
 	/**
-	 * Sends an interruptable 'run' command. I.e. the 'run' command does not immmediately return.
+	 * Sends an interruptable 'run' command. I.e. the 'run' command does not immediately return.
 	 * The interruptable command is not executed as long as there are other commands in the queue
 	 * and it is interrupted by any following command.
 	 * Interruption means: The current execution is stopped (a blank is sent),
@@ -281,20 +288,23 @@ export class ZesaruxSocket extends Socket {
 			return;
 		// normal processing
 		let command = cmd.command + '\n';
-		this.log('=>', cmd.command);
+		this.log('=>', "'"+cmd.command+"'");
 
-/*
-		//Pause for testing zesarux stability on Windows:
-		setTimeout(() => {
-		}, 100);
-*/
+		// Set timeout
+		this.setTimeout(cmd.timeout);
+
+		// If 'run' was sent it is not allowed to interrupt it until "Running until" is received.
+		// Otherwise Dezog will hang.
+		if (cmd==this.interruptableRunCmd) {
+			this.interruptableRunCmdCriticalPhase=true;
+		}
+
+		// Send
 		this.write(command);
 
 		// Log only commands
 		if(LogSocketCommands)
 			LogSocketCommands.appendLine('>' + command + '<');
-		// Set timeout
-		this.setTimeout(cmd.timeout);
 	}
 
 
@@ -365,6 +375,24 @@ export class ZesaruxSocket extends Socket {
 			// Next
 		}
 
+		// Check for response to 'run' command
+		if (this.interruptableRunCmdCriticalPhase) {
+			// If data has been received ("Running until"...)
+			// then the critical phase is over.
+			this.interruptableRunCmdCriticalPhase=false;
+			// Check if command is in the queue
+			if (this.queue.length>0) {
+				// Interrupt the command: create an interrupt cmd
+				const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
+				// Insert as first command
+				this.queue.unshift(cBreak);
+				this.emitQueueChanged();
+				// Send command
+				this.sendSocket();
+			}
+			return;
+		}
+
 		// Check for last line
 		const splitData = this.receivedDataChunk.split('\n');
 		const lastLine = splitData[splitData.length-1];
@@ -412,7 +440,6 @@ export class ZesaruxSocket extends Socket {
 
 			// Save old interruptable (could be that a new one is set in the handlers)
 			const interCmd = this.interruptableRunCmd;
-
 
 			// Check on error from zesarux
 			if(concData.substr(0,5).toLowerCase() == 'error') {
