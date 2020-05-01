@@ -1086,42 +1086,30 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	public async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
+		this.handleRequest(response, async () => {
+			// Check for reverse debugging.
+			if (StepHistory.isInStepBackMode()) {
 
-		// Check for reverse debugging.
-		if (StepHistory.isInStepBackMode()) {
+				vscode.debug.activeDebugConsole.appendLine('Continue');
+				// Continue
+				const breakReason=StepHistory.continue();
 
-			vscode.debug.activeDebugConsole.appendLine('Continue');
-			// Continue
-			const breakReason=StepHistory.continue();
-
-			// Check for output.
-			if (breakReason) {
-				vscode.debug.activeDebugConsole.appendLine(breakReason);
-				// Show break reason
-				this.decorateBreak(breakReason);
+				// Check for output.
+				if (breakReason) {
+					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					// Show break reason
+					this.decorateBreak(breakReason);
+				}
+				// Send event
+				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 			}
-			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-		}
-		else {
-			// Check if lite history need to be stored.
-			this.checkAndStoreLiteHistory();
-			// Normal operation
-			await this.remoteContinue();
-		}
-
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			else {
+				// Check if lite history need to be stored.
+				this.checkAndStoreLiteHistory();
+				// Normal operation
+				await this.remoteContinue();
+			}
+		});
 	}
 
 
@@ -1204,34 +1192,22 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
+		this.handleRequest(response, async () => {
+			// Output
+			vscode.debug.activeDebugConsole.appendLine('Continue reverse');
 
-		// Output
-		vscode.debug.activeDebugConsole.appendLine('Continue reverse');
+			// Reverse continue
+			const breakReason=await StepHistory.reverseContinue();
 
-		// Reverse continue
-		const breakReason=await StepHistory.reverseContinue();
-
-		// Check for output.
-		if (breakReason) {
-			vscode.debug.activeDebugConsole.appendLine(breakReason);
-			// Show break reason
-			this.decorateBreak(breakReason);
-		}
-		// Send event
-		this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
-
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			// Check for output.
+			if (breakReason) {
+				vscode.debug.activeDebugConsole.appendLine(breakReason);
+				// Show break reason
+				this.decorateBreak(breakReason);
+			}
+			// Send event
+			this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
+		});
 	}
 
 
@@ -1264,127 +1240,165 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Is called by all request (step, stepInto, continue, etc.).
+	 * This handles the display in the vscode UI.
+	 * If the command can be handled in a short amount of time (e.g. in 1 sec)
+	 * then the response is sent after the command.
+	 * When teh response is received by vscode it changed the current highlighted line
+	 * into an unhighlighted state and shows the 'pause' button.
+	 * I.e. for short commands this could lead to flickering, but if the
+	 * UI is changed after command no flickering appears.
+	 * On the other hand, if a command takes too long it is necessary to show
+	 * the 'pause' button. So a timer assures that the response is sent after a timeout.
+	 * The function takes care that the response is sent only once.
+	 */
+	protected handleRequest(response: any, command: () => void) {
+		if (this.proccessingSteppingRequest) {
+			// Response is sent immediately if already something else going on
+			this.sendResponse(response);
+			return;
+		}
+
+		// Start processing
+		this.startProcessing();
+
+		// Start timer to send response for long running commands
+		let respTimer:NodeJS.Timeout|undefined = setTimeout(() => {
+			// Send response after a short while so that the vscode UI can show the break button
+			respTimer=undefined;
+			this.sendResponse(response);
+		}, 1000);	// 1 s
+
+		// Start command
+		(async () => {
+			await command();
+
+			// End processing
+			this.stopProcessing();
+
+			// Show decorations
+			StepHistory.emitHistory();
+
+			// Send response
+			if (respTimer) {
+				// If not already done before
+				clearTimeout(respTimer);
+				this.sendResponse(response);
+			}
+		})();
+	}
+
+
+	/**
 	  * vscode requested 'step over'.
 	  * @param response	Sends the response. If undefined nothing is sent. Used by Unit Tests.
 	  * @param args
 	  */
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
-
-		// T-states info and lite history
-		const stepBackMode=StepHistory.isInStepBackMode();
-		if (stepBackMode) {
-			// Check if Lite history then print
-			if (!(CpuHistory as any))
-				vscode.debug.activeDebugConsole.append('Lite ');
-		}
-		else {
-			await this.startStepInfo();
-			// Check if lite history need to be stored.
-			this.checkAndStoreLiteHistory();
-		}
-
-		// Print
-		vscode.debug.activeDebugConsole.appendLine('Step-over');
-
-		// The stepOver should also step over macros, fake instructions, several instruction on the same line.
-		// Therefore the stepOver is repeated until really a new
-		// file/line correspondents to the PC value.
-		Remote.getRegisters();
-		const prevPc=Remote.getPC();
-		const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
-		let i=0;
-		let instr;
-		let breakReason;
-		const timeWait=new TimeWait(500, 200, 100);
-		while (true) {
-			i++;
-
-			// Give vscode some time for a break
-			await timeWait.waitAtInterval();
-
-			// Check for reverse debugging.
+		this.handleRequest(response, async () => {
+			// T-states info and lite history
+			const stepBackMode=StepHistory.isInStepBackMode();
 			if (stepBackMode) {
-				// Stepover
-				const {instruction, breakReasonString}=StepHistory.stepOver();
-				instr=instruction;
-
-				// Check for output.
-				if (breakReasonString) {
-					breakReason=breakReasonString;
-					// Stop
-					break;
-				}
+				// Check if Lite history then print
+				if (!(CpuHistory as any))
+					vscode.debug.activeDebugConsole.append('Lite ');
 			}
 			else {
-				// Normal Step-Over
-				const result=await Remote.stepOver();
-				instr=result.instruction;
-				// Check for output.
-				if (result.breakReasonString) {
-					breakReason=result.breakReasonString;
+				await this.startStepInfo();
+				// Check if lite history need to be stored.
+				this.checkAndStoreLiteHistory();
+			}
+
+			// Print
+			vscode.debug.activeDebugConsole.appendLine('Step-over');
+
+			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
+			// Therefore the stepOver is repeated until really a new
+			// file/line correspondents to the PC value.
+			Remote.getRegisters();
+			const prevPc=Remote.getPC();
+			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
+			let i=0;
+			let instr;
+			let breakReason;
+			const timeWait=new TimeWait(500, 200, 100);
+			while (true) {
+				i++;
+
+				// Give vscode some time for a break
+				await timeWait.waitAtInterval();
+
+				// Check for reverse debugging.
+				if (stepBackMode) {
+					// Stepover
+					const {instruction, breakReasonString}=StepHistory.stepOver();
+					instr=instruction;
+
+					// Check for output.
+					if (breakReasonString) {
+						breakReason=breakReasonString;
+						// Stop
+						break;
+					}
+				}
+				else {
+					// Normal Step-Over
+					const result=await Remote.stepOver();
+					instr=result.instruction;
+					// Check for output.
+					if (result.breakReasonString) {
+						breakReason=result.breakReasonString;
+						// Stop
+						break;
+					}
+				}
+
+				// Check for pause request
+				if (this.pauseRequested) {
+					breakReason="Manual break";
 					// Stop
 					break;
 				}
+
+				// Get new file/line location
+				await Remote.getRegisters();
+				const nextPc=Remote.getPC();
+				const nextFileLoc=Labels.getFileAndLineForAddress(nextPc);
+				// Compare with start location
+				if (prevFileLoc.fileName=='')
+					break;
+				if (nextFileLoc.lineNr!=prevFileLoc.lineNr)
+					break;
+				if (nextFileLoc.fileName!=prevFileLoc.fileName)
+					break;
 			}
 
-			// Check for pause request
-			if (this.pauseRequested) {
-				breakReason="Manual break";
-				// Stop
-				break;
+			// Multiple instructions
+			if (i>1)
+				instr=undefined;
+
+			// Print instruction
+			if (stepBackMode) {
+				if (instr)
+					vscode.debug.activeDebugConsole.appendLine(instr);
+			}
+			else {
+				// Display T-states and time
+				await this.endStepInfo(instr);
+				// Update memory dump etc.
+				await this.update({step: true});
 			}
 
-			// Get new file/line location
-			await Remote.getRegisters();
-			const nextPc=Remote.getPC();
-			const nextFileLoc=Labels.getFileAndLineForAddress(nextPc);
-			// Compare with start location
-			if (prevFileLoc.fileName=='')
-				break;
-			if (nextFileLoc.lineNr!=prevFileLoc.lineNr)
-				break;
-			if (nextFileLoc.fileName!=prevFileLoc.fileName)
-				break;
-		}
+			// Check for output.
+			if (breakReason) {
+				// Show break reason
+				vscode.debug.activeDebugConsole.appendLine(breakReason);
+				this.decorateBreak(breakReason);
+			}
 
-		// Multiple instructions
-		if (i>1)
-			instr=undefined;
-
-		// Print instruction
-		if (stepBackMode) {
-			if(instr)
-				vscode.debug.activeDebugConsole.appendLine(instr);
-		}
-		else {
-			// Display T-states and time
-			await this.endStepInfo(instr);
-			// Update memory dump etc.
-			await this.update({step: true});
-		}
-
-		// Check for output.
-		if (breakReason) {
-			// Show break reason
-			vscode.debug.activeDebugConsole.appendLine(breakReason);
-			this.decorateBreak(breakReason);
-		}
-
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		});
 	}
 
 
@@ -1457,54 +1471,43 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
+		this.handleRequest(response, async () => {
+			// Check for reverse debugging.
+			let result;
+			if (StepHistory.isInStepBackMode()) {
 
-		// Check for reverse debugging.
-		let result;
-		if (StepHistory.isInStepBackMode()) {
+				// StepInto
+				result=StepHistory.stepInto();
+				// Print
+				let text='Step-into';
+				if (result.instruction)
+					text+=': '+result.instruction;
+				vscode.debug.activeDebugConsole.appendLine(text);
 
-			// StepInto
-			result=StepHistory.stepInto();
-			// Print
-			let text='Step-into';
-			if (result.instruction)
-				text+=': '+result.instruction;
-			vscode.debug.activeDebugConsole.appendLine(text);
+			}
+			else {
+				// Step-Into
+				await this.startStepInfo('Step-into');
+				// Check if lite history need to be stored.
+				this.checkAndStoreLiteHistory();
+				StepHistory.clear();
+				result=await Remote.stepInto();
+				// Display info
+				await this.endStepInfo(result.instruction);
 
-		}
-		else {
-			// Step-Into
-			await this.startStepInfo('Step-into');
-			// Check if lite history need to be stored.
-			this.checkAndStoreLiteHistory();
-			StepHistory.clear();
-			result=await Remote.stepInto();
-			// Display info
-			await this.endStepInfo(result.instruction);
+				// Update memory dump etc.
+				await this.update({step: true});
+			}
 
-			// Update memory dump etc.
-			await this.update({step: true});
-		}
-
-		// Check for output.
-		if (result.breakReasonString) {
-			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
-			// Show break reason
-			this.decorateBreak(result.breakReasonString);
-		}
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			// Check for output.
+			if (result.breakReasonString) {
+				vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+				// Show break reason
+				this.decorateBreak(result.breakReasonString);
+			}
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		});
 	}
 
 
@@ -1514,50 +1517,38 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
+		this.handleRequest(response, async () => {
+			// Check for reverse debugging.
+			let breakReasonString;
+			if (StepHistory.isInStepBackMode()) {
+				vscode.debug.activeDebugConsole.appendLine('Step-out');
+				// StepOut
+				breakReasonString=StepHistory.stepOut();
+			}
+			else {
+				// Normal Step-Out
+				await this.startStepInfo('Step-out');
+				// Check if lite history need to be stored.
+				this.checkAndStoreLiteHistory();
+				StepHistory.clear();
+				breakReasonString=await Remote.stepOut();
+				// Display T-states and time
+				await this.endStepInfo(undefined);
 
-		// Check for reverse debugging.
-		let breakReasonString;
-		if (StepHistory.isInStepBackMode()) {
-			vscode.debug.activeDebugConsole.appendLine('Step-out');
-			// StepOut
-			breakReasonString=StepHistory.stepOut();
-		}
-		else {
-			// Normal Step-Out
-			await this.startStepInfo('Step-out');
-			// Check if lite history need to be stored.
-			this.checkAndStoreLiteHistory();
-			StepHistory.clear();
-			breakReasonString=await Remote.stepOut();
-			// Display T-states and time
-			await this.endStepInfo(undefined);
+				// Update memory dump etc.
+				await this.update();
+			}
 
-			// Update memory dump etc.
-			await this.update();
-		}
+			if (breakReasonString) {
+				// Output a possible problem (end of log reached)
+				vscode.debug.activeDebugConsole.appendLine(breakReasonString);
+				// Show break reason
+				this.decorateBreak(breakReasonString);
+			}
 
-		if (breakReasonString) {
-			// Output a possible problem (end of log reached)
-			vscode.debug.activeDebugConsole.appendLine(breakReasonString);
-			// Show break reason
-			this.decorateBreak(breakReasonString);
-		}
-
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		});
 	}
 
 
@@ -1567,37 +1558,26 @@ export class DebugSessionClass extends DebugSession {
 	  * @param args
 	  */
 	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
-		// Response is sent immediately
-		this.sendResponse(response);
-		// Check if already processing other request
-		if (this.proccessingSteppingRequest)
-			return;
-		// Start processing
-		this.startProcessing();
+		this.handleRequest(response, async () => {
+			// Step back
+			const result=await StepHistory.stepBack();
 
-		// Step back
-		const result=await StepHistory.stepBack();
+			// Print
+			let text='Step-back';
+			if (result.instruction)
+				text+=': '+result.instruction;
+			vscode.debug.activeDebugConsole.appendLine(text);
 
-		// Print
-		let text='Step-back';
-		if (result.instruction)
-			text+=': '+result.instruction;
-		vscode.debug.activeDebugConsole.appendLine(text);
+			if (result.breakReasonString) {
+				// Output a possible problem (end of log reached)
+				vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+				// Show break reason
+				this.decorateBreak(result.breakReasonString);
+			}
 
-		if (result.breakReasonString) {
-			// Output a possible problem (end of log reached)
-			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
-			// Show break reason
-			this.decorateBreak(result.breakReasonString);
-		}
-
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-		// Show decorations
-		StepHistory.emitHistory();
-
-		// End processing
-		this.stopProcessing();
+			// Send event
+			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+		});
 	}
 
 
