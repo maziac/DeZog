@@ -856,7 +856,8 @@ The debug console can normally be found in the bottom of vscode after successful
 Withe "-exec" you can directly pass emulator commands to the emulator.
 The response is send to the debug console.
 If you add the argument "-view" the output is redirected into a view.
-E.g. for ZEsarUX you can use
+Currently this is only available to ZEsarUX.
+For ZEsarUX you can e.g. use
 
 ~~~
 -exec -view help
@@ -963,11 +964,24 @@ This will display all 'visible' sprites in a table with all associated attribute
 
 Note: When hovering over a column title you will also get an explanation.
 
-Furthermore it also offers a simplified screen view which displays the border, the screen area and the sprites clipping rectangle (in red if enabled).
+Furthermore it also offers a simplified screen view which displays the border, the screen area and the sprites clipping rectangle.
+Here you can see all sprites from the list above with right offsets and rotation, no matter if they are visible or clipped.
+(Of course, if the list shows only visible sprites, you will also only see visible sprites in the screen view.)
 
 ![](images/zxnextspritesviewer1.jpg)
 
 Each sprite is shown by a rectangle and it's image. Additional you see it's slot number at the right bottom.
+
+The viewer is also capable to display 4 bit color pattern sprites and relative sprites.
+
+Here is an example view from [ped7g's](https://github.com/MrKWatkins/ZXSpectrumNextTests/tree/develop/Tests/Sprites/BigSprite4b) sprite test programs that show anchor and relative uniform sprites in different rotations.
+
+![](images/zxnextspritesviewer2.jpg)
+
+The last 2 columns show the composition: Relative sprites show 'Relative' here and have a reference to the anchor sprite index.
+The anchor sprites are either 'Composite' or 'Uniform' which selects how the following relative sprites are used in respect to mirroring, rotation and scaling.
+All sprites belonging to the same anchor get the same background color so you can easily spot where the next "big" sprite begins.
+![](images/zxnextspritesviewer3.jpg)
 
 If you only want to watch specific sprites you can add the slot numbers as arguments.
 
@@ -1041,16 +1055,6 @@ See [Notes](#Notes).
 
 You can use the DeZog to execute unit tests.
 Please see [here](UnitTests.md).
-
-
-## Differences to ZEsarUX
-
-Stepping works slightly different to stepping in ZEsarUX.
-
-- step-over: A step-over always returns. step-over should work like you would intuitively expect it to work (at least for me :-) ). You can step-over a 'jp' opcode and it will break on the next opcode, the jump address. DeZog does so by looking at the current opcode: If a 'call' or a 'ldir/lddr' is found a ZEsarUX 'cpu-step-over' is done, in all other case a 'cpu-step' (into) is done.
-
-- step-out: This is not available in ZEsarUX, but in DeZog you can make use of a step-out. DeZog examines the call stack and sets a temporary breakpoint to the return address. So step-out should work as expected. Note: if the stack pointer is already at the top of the call stack a step-out will do nothing because there is nothing to step-out from.
-
 
 
 ## Known Issues
