@@ -359,17 +359,20 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * emulator. I.e. if you do a "break" after letting the program run.
 	 */
 	public async update(reason?: any): Promise<void> {
-		// Mark as invalid until pattern have been loaded.
-		this.patternDataValid = (!reason || reason.step != true);
+		try {
+			// Mark as invalid until pattern have been loaded.
+			this.patternDataValid=(!reason||reason.step!=true);
 
-		// Load palette if not available
-		await this.getSpritesPalette();
+			// Load palette if not available
+			await this.getSpritesPalette();
 
-		// Get patterns
-		await this.getSpritePatterns();
+			// Get patterns
+			await this.getSpritePatterns();
 
-		// Create a new web view html code
-		this.setHtml();
+			// Create a new web view html code
+			this.setHtml();
+		}
+		catch {};
 	}
 
 

@@ -419,7 +419,7 @@ export class DzrpRemote extends RemoteBase {
 		}
 
 		// Check for pause
-		if (condition==undefined) {
+		if (breakNumber==BREAK_REASON_NUMBER.NO_REASON||condition==undefined) {
 			// Check for manual pause
 			if (this.pauseStep) {
 				condition='';	// Break
@@ -1128,7 +1128,7 @@ export class DzrpRemote extends RemoteBase {
 	 * 'condition' may be undefined or an empty string ''.
 	 */
 	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
-		Utility.assert(false);
+		throw Error("Watchpoints not supported!");
 	}
 
 
@@ -1139,7 +1139,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 */
 	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
-		Utility.assert(false);
+		throw Error("Watchpoints not supported!");
 	}
 
 
@@ -1198,8 +1198,8 @@ export class DzrpRemote extends RemoteBase {
 	 * Data will just be saved.
  	*/
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
-		Utility.assert(false);
-		return new Uint8Array();
+		throw Error("Read state not supported!");
+		//return new Uint8Array();
 	}
 
 
@@ -1210,7 +1210,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param The state data. Format is unknown (remote specific).
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
-		Utility.assert(false);
+		throw Error("Write state not supported!");
 	}
 
 
@@ -1232,8 +1232,8 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns An array with 256 entries with the 9 bit color.
  	*/
 	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {
-		Utility.assert(false);
-		return [];
+		throw Error("Get sprite palette not supported!");
+		//return [];
 	}
 
 
@@ -1244,8 +1244,8 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns An array with 5 byte attributes for each sprite.
  	*/
 	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
-		Utility.assert(false);
-		return [];
+		throw Error("Get sprites not supported!");
+		//return [];
 	}
 
 
@@ -1258,8 +1258,8 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with an Array with the sprite pattern for each index.
 	 */
 	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
-		Utility.assert(false);
-		return [[]];
+		throw Error("Get sprite patterns not supported!");
+		//return [[]];
 	}
 
 
@@ -1268,8 +1268,8 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise that returns the clipping dimensions and the control byte (xl, xr, yt, yb, control).
  	*/
 	public async sendDzrpCmdGetSpritesClipWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
-		Utility.assert(false);
-		return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
+		throw Error("Get sprites clip window not supported!");
+		//return {xl: 0, xr: 0, yt: 0, yb: 0, control: 0};
 	}
 
 

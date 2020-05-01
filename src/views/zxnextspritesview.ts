@@ -696,18 +696,20 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * emulator. I.e. if you do a "break" after letting the program run.
 	 */
 	public async update(reason?: any): Promise<void> {
-		// Save previous data
-		this.previousSprites = this.sprites;
-		this.sprites=new Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
+		try {
+			// Save previous data
+			this.previousSprites=this.sprites;
+			this.sprites=new Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
+			// Reload sprites
+			await this.getSprites();
 
-		// Reload sprites
-		await this.getSprites();
+			// Get clipping window
+			await this.getSpritesClippingWindow();
 
-		// Get clipping window
-		await this.getSpritesClippingWindow();
-
-		// Call super
-		await super.update(reason);
+			// Call super
+			await super.update(reason);
+		}
+		catch {};
 	}
 
 
