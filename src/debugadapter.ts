@@ -2009,7 +2009,19 @@ Notes:
 		// Show enable status of all ASSERT breakpoints
 		const enable=Remote.assertBreakpointsEnabled;
 		const enableString=(enable)? 'enabled':'disabled';
-		let result='ASSERT watchpoints are '+enableString+'.\n';
+		let result='ASSERT breakpoints are '+enableString+'.\n';;
+		if (enable) {
+			// Also list all assert breakpoints
+			const abps=Remote.getAllAssertBreakpoints();
+			for (const abp of abps) {
+				const labels=Labels.getLabelsForNumber(abp.address);
+				labels.push(abp.address.toString());	// as decimal number
+				const labelsString=labels.join(', ');
+				result+=Utility.getHexString(abp.address, 4)+'h ('+labelsString+'): ';
+				// Condition, remove the brackets
+				result+=Utility.getAssertFromCondition(abp.condition);
+			}
+		}
 		return result;
 	}
 
