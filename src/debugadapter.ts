@@ -1207,7 +1207,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			// Send event
 			this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
-		});
+		}, 100);
 	}
 
 
@@ -1252,7 +1252,7 @@ export class DebugSessionClass extends DebugSession {
 	 * the 'pause' button. So a timer assures that the response is sent after a timeout.
 	 * The function takes care that the response is sent only once.
 	 */
-	protected handleRequest(response: any, command: () => void) {
+	protected handleRequest(response: any, command: () => void, responseTime=1000) {
 		if (this.proccessingSteppingRequest) {
 			// Response is sent immediately if already something else going on
 			this.sendResponse(response);
@@ -1267,7 +1267,7 @@ export class DebugSessionClass extends DebugSession {
 			// Send response after a short while so that the vscode UI can show the break button
 			respTimer=undefined;
 			this.sendResponse(response);
-		}, 1000);	// 1 s
+		}, responseTime);	// 1 s
 
 		// Start command
 		(async () => {
@@ -1398,7 +1398,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Send event
 			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-		});
+		}, 100);
 	}
 
 
