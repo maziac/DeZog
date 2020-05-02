@@ -57,12 +57,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	protected static staticUpdate(reason?: any) {
 		// Reload current palette number and transparent index on every update.
-		ZxNextSpritePatternsView.currentPaletteNumber = -1;
+		ZxNextSpritePatternsView.currentPaletteNumber=-1;
 		// Reload patterns and palettes only if not 'step'
 		if(!reason || reason.step != true) {
 			// Mark 'dirty'
 			ZxNextSpritePatternsView.spritePatterns.clear();
-			ZxNextSpritePatternsView.spritePalettes.clear();
+			ZxNextSpritePatternsView.spritePalettes.delete(PaletteSelection.PALETTE_0);
+			ZxNextSpritePatternsView.spritePalettes.delete(PaletteSelection.PALETTE_1);
 		}
 	}
 
@@ -80,6 +81,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 	/// Is true if data is not valie, i.e. if data has not been updated for a 'step'.
 	protected patternDataValid = false;
+
+	/// prohibits processing a new message from the web view when the previous is not finally processed yet.
+	protected processingWebViewMessage=false;
 
 
 	/**
@@ -118,28 +122,35 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @param message The message. message.command contains the command as a string.
 	 */
 	protected webViewMessageReceived(message: any) {
-		switch (message.command) {
-			case 'reload':
-				ZxNextSpritePatternsView.staticUpdate();
-				const views = BaseView.staticGetAllViews(ZxNextSpritePatternsView);
-				for(const view of views)
-					view.update();
-				break;
-			case 'bckgColor':
-				// Save color
-				this.usedBckgColor = message.value;
-				break;
-			case 'palette':
-				// Save palette
-				this.usedPalette = message.value;
-				// Reload only current view, keep already loaded palettes
-				ZxNextSpritePatternsView.currentPaletteNumber = -1;
-				this.update();
-				break;
-			default:
-				Utility.assert(false);
-				break;
-		}
+		if (this.processingWebViewMessage)
+			return;
+		this.processingWebViewMessage=true;
+		(async () => {
+			switch (message.command) {
+				case 'reload':
+					ZxNextSpritePatternsView.staticUpdate();
+					const views=BaseView.staticGetAllViews(ZxNextSpritePatternsView);
+					for (const view of views) {
+						await view.update();
+					}
+					break;
+				case 'bckgColor':
+					// Save color
+					this.usedBckgColor=message.value;
+					break;
+				case 'palette':
+					// Save palette
+					this.usedPalette=message.value;
+					// Reload only current view, keep already loaded palettes
+					ZxNextSpritePatternsView.currentPaletteNumber=-1;
+					await this.update();
+					break;
+				default:
+					Utility.assert(false);
+					break;
+			}
+			this.processingWebViewMessage=false;
+		})();
 	}
 
 
@@ -188,7 +199,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	/**
 	 * Returns the palette for a given selected index.
 	 * @param selectedIndex The selected ID, e.g. PaletteSelection.PALETTE_1.
-	 * @return A palette array. May return undefined ifno palette is found.
+	 * @return A palette array. May return undefined if no palette is found.
 	 */
 	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
 		let paletteSelection = selectedIndex;
