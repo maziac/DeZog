@@ -287,8 +287,7 @@ export class DzrpRemote extends RemoteBase {
 				const abps=this.assertBreakpoints.filter(abp => abp.address==breakAddress);
 				for (const abp of abps) {
 					if (condition==abp.condition) {
-						let assertCond=condition.substr(2);	// cut off "!("
-						assertCond=assertCond.substr(0, assertCond.length-1);	// cut off trailing ")"
+						const assertCond=Utility.getAssertFromCondition(condition);
 						reasonString="Assertion failed: "+assertCond;
 						return reasonString;
 					}

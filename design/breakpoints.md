@@ -72,7 +72,7 @@ DeZog will then examine the breakpoint condition and/or the log.
 If the condition is not true DeZog will simply send a Continue to the remote.
 If a log is present DeZog will print the log and also send a Continue to the remote.
 
-This algorithm is slower then handling it all at the remote (the emulator) but has the advantage that it works even if the remote does nto support breakpoint conditions or logpoints and that the condition and log syntax is always the same, no matter what remote is used.
+This algorithm is slower then handling it all at the remote (the emulator) but has the advantage that it works even if the remote does not support breakpoint conditions or logpoints and that the condition and log syntax is always the same, no matter what remote is used.
 
 
 ~~~puml
@@ -92,6 +92,11 @@ Remote <-- Emulator: break
 note over Remote: Evaluate breakpoint:\nIf condition is true:\n  - If log then print log and continue\n  - Otherwise break ("real")
 end
 ~~~
+
+
+There might be exceptions. E.g. zsim (ZxSimulatorRemote) does support conditions as well. This is to improve the performance of conditional breakpoints. I.e. if the condition is not met the ZxSimulatorRemote immediately continues instead of stopping, passing the condition evaluation up to the DebugSessionClass and then restarting in case the condition is not met.
+In general also other remotes could do the same optimization.
+For zsim it is especially easy to do so as the evaluation is exactly the same in the both locations, ZxSimulatorRemote and DebugSessionClass.
 
 
 ## Breakpoint IDs

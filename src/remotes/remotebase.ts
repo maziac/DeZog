@@ -267,7 +267,7 @@ export class RemoteBase extends EventEmitter {
 				}
 
 				// Negate the expression
-				conds='!('+conds+')';
+				conds=Utility.getConditionFromAssert(conds);
 
 				// Check if ASSERT for that address already exists.
 				if (conds.length>0) {
@@ -931,6 +931,13 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
 		Utility.assert(false);	// override this
+	}
+
+	/**
+	 * Returns the ASSERT breakpoints.
+	 */
+	public getAllAssertBreakpoints(): Array<GenericBreakpoint> {
+		return this.assertBreakpoints;
 	}
 
 

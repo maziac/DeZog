@@ -927,6 +927,33 @@ export class Utility {
 
 
 	/**
+	 * Builds a condition for a breakpoint from an ASSERT expression.
+	 * Simply inverts the expression by surrounding it with "!(...)".
+	 * @param assertExpression E.g. "A == 7"
+	 * @returns E.g. "!(A == 7)"
+	 */
+	public static getConditionFromAssert(assertExpression: string) {
+		return '!('+assertExpression+')';
+	}
+
+
+	/**
+	 * Strips off the "!(...)" from a breakpoint condition to
+	 * display it as ASSERT expression.
+	 * Does no checking, simply strips away the character position.
+	 * @param bpCondition E.g. "!(A == 7)"
+	 * @returns E.g. "A == 7"
+	 */
+	public static getAssertFromCondition(bpCondition: string|undefined) {
+		if (!bpCondition)
+			return '';
+		let assertCond=bpCondition.substr(2);	// cut off "!("
+		assertCond=assertCond.substr(0, assertCond.length-1);	// cut off trailing ")"
+		return assertCond;
+	}
+
+
+	/**
 	 * Returns a Buffer from a string. The buffer is 0-terminated.
 	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
 	 * @returns A Buffer (0-terminated)

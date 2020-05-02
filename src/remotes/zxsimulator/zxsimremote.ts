@@ -540,18 +540,14 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				// Note: Because of step-out this needs to be done before the other check.
 				const bpInner=this.tmpBreakpoints[pc];
 				if (bpInner) {
-					breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-					breakAddress=pc;
-					break;
-				}
-				/*
-				// TODO: to improve performance of condition-breakpoints the condition check can be done additionally here:
-				If condition is not true then don't consider the breakpoint.
-				if (bpInner) {
+					// To improve performance of condition and log breakpoints the condition check is also done below.
+					// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
+					// If condition is not true then don't consider the breakpoint.
 					// Get registers
 					const regs=this.z80Cpu.getRegisterData();
 					Z80Registers.setCache(regs);
 					// Now check if condition met or if logpoint
+					let bp;
 					for (const bpElem of bpInner) {
 						try {
 							const {condition, log}=this.checkConditionAndLog(bpElem);
@@ -566,22 +562,23 @@ export class ZxSimulatorRemote extends DzrpRemote {
 								// Condition met?
 								if (condition!=undefined) {
 									bp=bpElem;
+									break;
 								}
 							}
 						}
 						catch (e) {
+							// Some problem occurred, pass evaluation to DebugSessionClass
 							bp=bpElem;
+							break;
 						}
 					}
-
-					// Check if at least one breakpoint for this address has a condition that
-					// evaluates to true.
+					// Breakpoint and condition OK
 					if (bp) {
 						breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-						break;
+						breakAddress=pc;
+						break;	// stop loop
 					}
 				}
-				*/
 
 				// Check if watchpoint is hit
 				if (this.zxMemory.hitAddress>=0) {
