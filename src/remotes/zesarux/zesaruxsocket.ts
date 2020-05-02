@@ -375,27 +375,43 @@ export class ZesaruxSocket extends Socket {
 			// Next
 		}
 
+		// Split multiline data
+		const splitData=this.receivedDataChunk.split('\n');
+		// Check if at least a full ine has been received (ending with '\n')
+		if (splitData.length<2)
+			return;
+
 		// Check for response to 'run' command
 		if (this.interruptableRunCmdCriticalPhase) {
 			// If data has been received ("Running until"...)
 			// then the critical phase is over.
 			this.interruptableRunCmdCriticalPhase=false;
-			// Check if command is in the queue
-			if (this.queue.length>0) {
-				// Interrupt the command: create an interrupt cmd
-				const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
-				// Insert as first command
-				this.queue.unshift(cBreak);
-				this.emitQueueChanged();
-				// Send command
-				this.sendSocket();
+			// Check if only one line received or multiple
+			const lineCount=splitData.length;
+			Utility.assert(splitData[0].startsWith("Running until"));
+			if (lineCount>2) {
+				// Remove first line and work on the rest normally
+				splitData.shift();
 			}
-			return;
+			else {
+				// Check if command is in the queue
+				if (this.queue.length>0) {
+					// Interrupt the command: create an interrupt cmd
+					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
+					// Insert as first command
+					this.queue.unshift(cBreak);
+					this.emitQueueChanged();
+					// Send command
+					this.sendSocket();
+				}
+				Utility.assert(lineCount==2);
+				this.receivedDataChunk=splitData[1];
+				return;
+			}
 		}
 
 		// Check for last line
-		const splitData = this.receivedDataChunk.split('\n');
-		const lastLine = splitData[splitData.length-1];
+		const lastLine=splitData[splitData.length-1];
 		const bCommand1 = lastLine.startsWith('command');
 		const bCommand2 = lastLine.endsWith('> ');
 		if(bCommand1 && bCommand2) {
