@@ -65,6 +65,18 @@ export enum DZRP_NTF {
 
 
 /**
+ * Used for the DZRP CMD_CONTINUE alternate command for performance
+ * improvement.
+ * Is not implemented yet in DeZog but the DZRP already defines it.
+ */
+export enum AlternateCommand {
+	CONTINUE=0,   // I.e. no alternate command
+	STEP_OVER=1,
+	STEP_OUT=2
+}
+
+
+/**
  * A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.

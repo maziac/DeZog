@@ -48,6 +48,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 0.4.0
+- Extended CMD_CONTINUE to allow optimizes StepOver and StepOut which also overcomes the CSpect stepping problem.
+
 ### 0.3.0
 - CMD_GET_SPRITES_CLIP_WINDOW(_AND_CONTROL) extended to return also the control byte.
 
@@ -201,6 +204,9 @@ Command:
 | 7     | 2    | 0-0xFFFF | Breakpoint1 address |
 | 9     | 1    | 0/1   | Enable Breakpoint2 |
 | 10    | 2    | 0-0xFFFF | Breakpoint2 address |
+| 12    | 1    | 0/1/2 | Alternate command: 0=no alternate command, 1=step-over, 2=step-out. The following range is only defined for 1 (step-over) |
+| 13    | 2    | 0-0xFFFF | range start (inclusive) for step-over |
+| 15    | 2    | 0-0xFFFF | range end (exclusive) for step-over |
 
 
 Response:
@@ -209,11 +215,22 @@ Response:
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 
-Notes:
+
+Note 1:
+Normally the remote will simply do a Continue (run) when it receives this command unitl one of the breakpoints is hit.
+If an 'alternate command' is given the remote might execute the alternate ommand instead. I.e. in that case the breakpoints are ignored, i.e. not set.
+The alternate commands are optimization to allow to execute the commands more effectively, i.e. faster.
+
+Alternate commands:
+- **1=step-over**: A PC range is given. The remote will carry out a loop of internal step-overs until the PC is not inside the range anymore.
+The idea behind this is to step over e.g. macros or several instructions in one line.
+- **2: step-out**: On start the current SP value is saved. Then a loop of internal step-overs is executed until the current SP value is bigger than the saved one.
+
+
+Note 2:
 - The response is sent immediately.
 - The breakpoints are meant for when the 'continue' commmand is called for step-over, step-into or step-out.
-- The breakpoints have priority, i.e. they will always be set.
-- When the continue command finishes, e.g. because one of the 2 breakpoints (or any other breakpoint) was hit, the breakpoints are automatically removed.
+- The breakpoints are temporary. They will be removed automatically after the command is finished.
 
 
 ## CMD_PAUSE

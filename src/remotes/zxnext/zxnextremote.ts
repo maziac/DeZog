@@ -1,5 +1,5 @@
 import {LogSocket} from '../../log';
-import {DzrpRemote} from '../dzrp/dzrpremote';
+import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION} from '../dzrp/dzrpremote';
@@ -395,6 +395,7 @@ export class ZxNextRemote extends DzrpRemote {
 		await this.sendDzrpCmd(DZRP.CMD_CONTINUE, [
 			bp1Enabled, bp1Address&0xFF, bp1Address>>>8,
 			bp2Enabled, bp2Address&0xFF, bp2Address>>>8,
+			AlternateCommand.CONTINUE, 0 /*unused*/, 0 /*unused*/
 		]);
 	}
 
