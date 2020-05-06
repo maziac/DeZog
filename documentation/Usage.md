@@ -286,7 +286,7 @@ The following table gives an overview.
 
 |                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | started  | stable |
+| State                   | stable             | stable  | stable     | started  | experimental |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | -        | yes      |
@@ -301,11 +301,12 @@ The following table gives an overview.
 Notes:
 - State:
     - stable: Works reliable
-    - experimental: Should work, but not very well tested
+    - experimental: may or may not work
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
 - ZesaruxExt and ZX Next are not available at the moment.
+- CSpect: There are some major problem with interfacing CSpect. Until those are solved it is not recommended to use it.
 
 
 ### The Internal Z80 Simulator
@@ -450,6 +451,9 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 
 ### CSpect
+
+Important note: There are currently some major problem with interfacing CSpect. Until those are solved it is not recommended for use.
+
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
