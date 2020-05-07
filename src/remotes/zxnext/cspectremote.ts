@@ -240,4 +240,17 @@ export class CSpectRemote extends ZxNextRemote {
 			});
 		});
 	}
+
+
+	/**
+	 * Watchpoints and WPMEM is disabled for CSpect for now.
+	 * There is a problem in CSpect: If a read-breakpoint is set it
+	 * can happen that the PC is not incremented anymore or that the
+	 * ISR routine is entered for every instruction. It's not on Mike's priority list, so I disable them here.
+	 * TODO: Enable CSpect watchpoints when problem is solved in CSpect.
+	 */
+	public async enableWPMEM(enable: boolean): Promise<void> {
+		throw Error("There is no support for watchpoints for CSpect.");
+	}
+
 }

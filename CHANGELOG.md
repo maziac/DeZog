@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.2.7
+- Watchpoints disabled for CSpect.
+
 # 1.2.6
 - Z80 unit tests fixed.
 - Sprites/patterns view:
