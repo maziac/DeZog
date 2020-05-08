@@ -296,6 +296,7 @@ The following table gives an overview.
 | Code coverage           | yes                | yes     | yes        | -        | no        |
 | Reverse debugging       | true               | true    | true       | lite     | lite     |
 | ZX Next capable         | -                  | yes     | yes        | yes      | yes      |
+| Save/restore the state | yes                 | yes     | yes        | no       | no       |
 | Comments                | slower than ZEsarUx and CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
 
 Notes:

@@ -253,4 +253,15 @@ export class CSpectRemote extends ZxNextRemote {
 		throw Error("There is no support for watchpoints for CSpect.");
 	}
 
+
+	/**
+	 * State saving is not supported in CSpect.
+	 */
+	public async stateSave(filePath: string): Promise<void> {
+		throw Error("Saving and restoring the state is not supported with CSpect.");
+	}
+	public async stateRestore(filePath: string): Promise<void> {
+		throw Error("Saving and restoring the state is not supported with CSpect.");
+	}
+
 }
