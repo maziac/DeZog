@@ -264,8 +264,11 @@ DeZog supports most of them but with some restrictions:
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
 - "zsim": Internal Z80 Simulator
-- "zrcp": ZEsarUX (or ZesaruxExt)
+- "zrcp": ZEsarUX (or ZesaruxExt) emulator
+- "cspect": CSpect emulator
+<!--
 - "serial": ZX Next connected via serial.
+-->
 
 
 ### What is a 'Remote'?
@@ -454,7 +457,7 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
-CSpect doesnot offer a socket interface to DeZog by itself it needs the help of [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
+CSpect does not offer a socket interface to DeZog by itself it needs the help of [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
 
 You need to install it first. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
 
