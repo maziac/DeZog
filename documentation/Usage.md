@@ -289,14 +289,14 @@ The following table gives an overview.
 | State                   | stable             | stable  | stable     | started  | experimental |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes     | yes/fast   | -        | yes      |
+| Watchpoints             | yes                | yes     | yes/fast   | -        | no      |
 | Asserts                 | yes                | -       | yes        | yes/slow | yes/slow |
 | Logpoints               | yes                | -       | yes        | yes/slow | yes/slow |
 | Extended callstack      | no                 | yes     | yes        | -        | no        |
 | Code coverage           | yes                | yes     | yes        | -        | no        |
 | Reverse debugging       | true               | true    | true       | lite     | lite     |
 | ZX Next capable         | -                  | yes     | yes        | yes      | yes      |
-| Comments                | About 10x slower   |         | Breakpoints are faster than in ZEsarUX |         |
+| Comments                | slower than ZEsarUx and CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
 
 Notes:
 - State:
@@ -306,7 +306,6 @@ Notes:
     - planned: Development has not yet started.
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
 - ZesaruxExt and ZX Next are not available at the moment.
-- CSpect: There are some major problem with interfacing CSpect. Until those are solved it is not recommended to use it.
 
 
 ### The Internal Z80 Simulator
@@ -451,9 +450,6 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 
 ### CSpect
-
-Important note: There are currently some major problem with interfacing CSpect. Until those are solved it is not recommended for use.
-
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
