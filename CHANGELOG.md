@@ -2,6 +2,7 @@
 
 # 1.2.7
 - Watchpoints disabled for CSpect.
+- Enabled "cspect" support.
 
 # 1.2.6
 - Z80 unit tests fixed.
