@@ -83,6 +83,11 @@ export class CSpectRemote extends ZxNextRemote {
 			const regs2=await this.sendDzrpCmdGetRegisters();
 			*/
 
+			// Check for unsupported settings
+			if (Settings.launch.history.codeCoverageEnabled) {
+				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
+			}
+
 			this.onConnect();
 		});
 

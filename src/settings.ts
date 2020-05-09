@@ -466,8 +466,16 @@ export class Settings {
 			Settings.launch.history.spotCount = 0;
 
 		// Code coverage
-		if(Settings.launch.history.codeCoverageEnabled == undefined)
-			Settings.launch.history.codeCoverageEnabled = (unitTests) ? true : true;
+		if (Settings.launch.history.codeCoverageEnabled==undefined) {
+			if (Settings.launch.remoteType=='cspect') {
+				// not supported by cspect
+				Settings.launch.history.codeCoverageEnabled=false;
+			}
+			else {
+				// Otherwise allow, both for normal and unit tests
+				Settings.launch.history.codeCoverageEnabled=true;
+			}
+		}
 
 		if(!Settings.launch.formatting)
 			Settings.launch.formatting = {

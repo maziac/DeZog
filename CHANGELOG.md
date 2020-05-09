@@ -2,7 +2,10 @@
 
 # 1.2.8
 - skipInterrupt setting moved to zrcp.
-- cspect: warning if codeCoverabeEnabled==true.
+- cspect:
+  - warning if codeCoverabeEnabled==true.
+  - error if Z80 unit tests are started with cspect.
+- Fixed ZEsarUX Z80 unit tests.
 
 # 1.2.7
 - Watchpoints disabled for CSpect.

@@ -127,11 +127,6 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	protected async onConnect(): Promise<void> {
 		try {
-			// Check for unsupported settings
-			if (Settings.launch.history.codeCoverageEnabled) {
-				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
-			}
-
 			// Get configuration
 			/*const resp=*/ await this.sendDzrpCmdInit();
 			// Load sna or nex file
