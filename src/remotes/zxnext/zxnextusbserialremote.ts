@@ -36,7 +36,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization() {
+	public async doInitialization(): Promise<void>  {
 		// Just in case
 		if (this.serialPort&&this.serialPort.isOpen)
 			this.serialPort.close();
@@ -87,6 +87,8 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		if (!this.serialPort)
+			return;
 		return new Promise<void>(resolve => {
 			this.serialPort.close(() => {
 				resolve();

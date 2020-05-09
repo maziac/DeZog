@@ -48,7 +48,12 @@ export class CSpectRemote extends ZxNextRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization() {
+	public async doInitialization(): Promise<void>  {
+		// Check for unsupported settings
+		if (Settings.launch.unitTests) {
+			throw Error("launch.json: unitTests==true: CSpect does not support running unit tests at the moment.");
+		}
+
 		// Init socket
 		this.socket=new Socket();
 		this.socket.unref();
@@ -115,6 +120,8 @@ export class CSpectRemote extends ZxNextRemote {
 	 * This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
+		if (!this.socket)
+			return;
 		return new Promise<void>(resolve => {
 			this.socket.removeAllListeners();
 			// Timeout is required because socket.end() does not call the

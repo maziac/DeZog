@@ -285,7 +285,7 @@ export class DebugSessionClass extends DebugSession {
 		// Stop machine
 		this.removeAllListeners();
 		FakeSerial?.close();
-		await Remote.disconnect();
+		await Remote?.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
@@ -515,7 +515,7 @@ export class DebugSessionClass extends DebugSession {
 			this.terminate();
 		});
 
-		return new Promise<undefined>(resolve => {	// For now there is no unsuccessful (reject) execution
+		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async () => {
 				// Initialize Cpu- or StepHistory.
 				StepHistory.init();
@@ -584,7 +584,14 @@ export class DebugSessionClass extends DebugSession {
 				ZxSimulationView.SimulationViewFactory(FakeSerial);
 			}
 
-			Remote.init();
+			// Inititalize Remote
+			try {
+				await Remote.init();
+			}
+			catch (e) {
+				// Some error occurred
+				this.terminate('Init remote: '+e.message);
+			}
 		});
 	}
 

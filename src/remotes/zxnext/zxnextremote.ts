@@ -58,7 +58,7 @@ export class ZxNextRemote extends DzrpRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization() {
+	public async doInitialization(): Promise<void>  {
 	}
 
 

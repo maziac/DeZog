@@ -116,7 +116,7 @@ export class DzrpRemote extends RemoteBase {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization() {
+	public async doInitialization(): Promise<void> {
 	}
 
 
@@ -128,8 +128,9 @@ export class DzrpRemote extends RemoteBase {
 	protected async onConnect(): Promise<void> {
 		try {
 			// Check for unsupported settings
-			if (Settings.launch.history.codeCoverageEnabled)
-				this.emit('warning', "launch.json: codeCoverageEnabled=true: CSpect does not support code coverage.");
+			if (Settings.launch.history.codeCoverageEnabled) {
+				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
+			}
 
 			// Get configuration
 			/*const resp=*/ await this.sendDzrpCmdInit();

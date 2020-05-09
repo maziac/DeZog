@@ -33,7 +33,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization() {
+	public async doInitialization(): Promise<void>  {
 		// Init socket
 		this.socket=new Socket();
 		this.socket.unref();
@@ -101,6 +101,8 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 	 * This will disconnect the socket.
 	 */
 	public async disconnect(): Promise<void> {
+		if (!this.socket)
+			return;
 		return new Promise<void>(resolve => {
 			this.socket.end(() => {
 				resolve();

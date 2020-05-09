@@ -61,7 +61,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/// Initializes the machine.
-	public doInitialization() {
+	public async doInitialization(): Promise<void> {
 		// Create the socket for communication (not connected yet)
 		this.setupSocket();
 
@@ -77,6 +77,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		if (!zSocket)
+			return;
 		return new Promise<void>(resolve => {
 			// Terminate the socket
 			zSocket.quit(() => {
@@ -93,7 +95,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public removeAllListeners(event?: string|symbol|undefined): this {
 		super.removeAllListeners();
 		// Additionally remove listeners from socket.
-		zSocket.removeAllListeners();
+		zSocket?.removeAllListeners();
 		return this;
 	}
 

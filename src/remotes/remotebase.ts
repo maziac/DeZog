@@ -130,9 +130,9 @@ export class RemoteBase extends EventEmitter {
 	/// When ready it emits this.emit('initialized') or this.emit('error', exception);
 	/// Don't override this, override 'doInitialization' instead.
 	/// Take care to implement the emits otherwise the system will hang on a start.
-	public init() {
+	public async init(): Promise<void> {
 		// Call custom initialization
-		this.doInitialization();
+		await this.doInitialization();
 	}
 
 
@@ -143,7 +143,7 @@ export class RemoteBase extends EventEmitter {
 	/// When ready do a this.emit('initialized') or this.emit('error', exception);
 	/// Take care to implement the emits otherwise the system will hang on a start.
 	/// Please override.
-	public doInitialization() {
+	public async doInitialization(): Promise<void> {
 	}
 
 

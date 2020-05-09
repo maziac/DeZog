@@ -254,8 +254,6 @@ export class Z80UnitTests {
 				CpuHistoryClass.setCpuHistory(new StepHistoryClass());
 				StepHistory.decoder=Z80Registers.decoder;
 			}
-			// Initialize Cpu- or StepHistory.
-			StepHistory.init();
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
 			Labels.init();
@@ -264,6 +262,9 @@ export class Z80UnitTests {
 			// Events
 			Remote.once('initialized', async () => {
 				try {
+					// Initialize Cpu- or StepHistory.
+					StepHistory.init();  // might call the socket
+
 					// Enable unit test logpoints
 					try {
 						await Remote.enableLogpointGroup('UNITTEST', true);
@@ -304,7 +305,10 @@ export class Z80UnitTests {
 
 
 			// Connect to debugger.
-			Remote.init();
+			Remote.init().catch(e => {
+				// Some error occurred
+				Z80UnitTests.stopUnitTests(undefined, e.message);
+			});
 		}
 		catch(e) {
 			// Some error occurred
