@@ -290,43 +290,37 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization(): Promise<void>  {
-		try { // TODO: REMOVE try  catch
-			// Decide what machine
-			this.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
+	public async doInitialization(): Promise<void> {
+		// Decide what machine
+		this.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
 
-			// Load sna or nex file
-			const loadPath=Settings.launch.load;
-			if (loadPath)
-				await this.loadBin(loadPath);
+		// Load sna or nex file
+		const loadPath=Settings.launch.load;
+		if (loadPath)
+			await this.loadBin(loadPath);
 
-			// Load obj file(s) unit
-			for (let loadObj of Settings.launch.loadObjs) {
-				if (loadObj.path) {
-					// Convert start address
-					const start=Labels.getNumberFromString(loadObj.start);
-					if (isNaN(start))
-						throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
-					await this.loadObj(loadPath, start);
-				}
+		// Load obj file(s) unit
+		for (let loadObj of Settings.launch.loadObjs) {
+			if (loadObj.path) {
+				// Convert start address
+				const start=Labels.getNumberFromString(loadObj.start);
+				if (isNaN(start))
+					throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
+				await this.loadObj(loadPath, start);
 			}
-
-			// Set Program Counter to execAddress
-			if (Settings.launch.execAddress) {
-				const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
-				if (isNaN(execAddress))
-					throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
-				// Set PC
-				await this.setRegisterValue("PC", execAddress);
-			}
-
-			// Ready
-			this.emit('initialized')
 		}
-		catch (e) {
-			// Some error occurred
-			this.emit('error', e);
+
+		// Set Program Counter to execAddress
+		if (Settings.launch.execAddress) {
+			const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
+			if (isNaN(execAddress))
+				throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
+			// Set PC
+			await this.setRegisterValue("PC", execAddress);
 		}
+
+		// Ready
+		this.emit('initialized')
 	}
 
 
