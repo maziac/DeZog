@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.2.8
+- skipInterrupt setting moved to zrcp.
+- cspect: warning if codeCoverabeEnabled==true.
+
 # 1.2.7
 - Watchpoints disabled for CSpect.
 - Enabled "cspect" support.

@@ -166,7 +166,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Wait for previous command to finish
 				await zSocket.executeWhenQueueIsEmpty();
 
-				var debug_settings = (Settings.launch.skipInterrupt) ? 32 : 0;
+				var debug_settings = (Settings.launch.zrcp.skipInterrupt) ? 32 : 0;
 				zSocket.send('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.

@@ -76,8 +76,6 @@ A typical configuration looks like this:
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
-- skipInterrupt: Is passed to ZEsarUX at the start of the debug session.
-    If true ZEsarUX does not break in interrupts (on manual break)
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
 - codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
@@ -103,7 +101,7 @@ Note: you can also omit this. In that case the DeZog attaches to the emulator wi
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
-- tmpDir: A temporary directory used for files created during the debugging. At the moment this is only used to create the file for the disassembly if the PC reaches areas without any associated assembler listing.
+- tmpDir: A temporary directory used for files created during the debugging. This is e.g. used for the file to show the disassembly PC reaches areas without any associated assembler listing or for the save states.
 - memoryViewer: The following properties configure the memory viewer (used to show memory dumps).
 	- addressColor: The first column shows the address. You can change the color here.
 	- asciiColor: You can change the color of the ascii field here.
@@ -289,7 +287,7 @@ The following table gives an overview.
 
 |                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | started  | experimental |
+| State                   | stable             | stable  | stable     | started  | stable |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | -        | no      |
@@ -403,6 +401,7 @@ The "zrcp" configuration allows the following additional parameters:
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
 - "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator runnign on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
 You don't have to enter a hostname, the default is "localhost".
+- skipInterrupt: Is passed to ZEsarUX at the start of the debug session. If true (default is false) ZEsarUX does not break in interrupts (on manual break).
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
 

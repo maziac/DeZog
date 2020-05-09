@@ -82,6 +82,9 @@ export interface ZrcpType {
 	/// The Zesarux ZRCP telnet port
 	port: number;
 
+	/// If enabled zesarux does not break on manual break in interrupts.
+	skipInterrupt: boolean;
+
 	// The delay before loading the Z80 program via smartload.
 	loadDelay: number;
 
@@ -207,9 +210,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// An array with commands that are executed after the program-to-debug is loaded.
 	commandsAfterLaunch: Array<string>;
 
-	/// ZEsarUX setting. If enabled steps over the interrupt.
-	skipInterrupt: boolean;
-
 	/// If enabled code coverage information is analyzed and displayed.
 	/// Useful especially for unit tests but can be enabled also in "normal" launch configurations.
 	history: {
@@ -286,7 +286,6 @@ export class Settings {
 				startAutomatically: <any>undefined,
 				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
-				skipInterrupt: <any>undefined,
 				history: <any>undefined,
 				formatting: <any>undefined,
 				memoryViewer: <any>undefined,
@@ -447,8 +446,8 @@ export class Settings {
 			Settings.launch.resetOnLaunch = true;
 		if(Settings.launch.commandsAfterLaunch == undefined)
 			Settings.launch.commandsAfterLaunch = [];
-		if(Settings.launch.skipInterrupt == undefined)
-			Settings.launch.skipInterrupt = false;
+		if (Settings.launch.zrcp.skipInterrupt == undefined)
+			Settings.launch.zrcp.skipInterrupt = false;
 
 		// Reverse debugging
 		if(Settings.launch.history == undefined)
