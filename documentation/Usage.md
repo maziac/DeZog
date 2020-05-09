@@ -994,6 +994,9 @@ The view will update the sprite's position and attributes on every 'step' in the
 If a new sprite appears the corresponding  sprite pattern will be loaded as well. But for performance reasons: On a 'step' the sprite patterns for already existing sprites are not updated. On a 'break' the sprite patterns will always be updated.
 So in most of the cases the sprite patterns will show correctly.
 However for special situations it is also possible to reload the patterns with a button.
+If the sprite pattern might be outdated you see a '*' left to the 'Reload' button.
+![](images/zxnextspritesviewer_reload_star.jpg)
+
 
 If the background color does not offer enough contrast for the sprite pattern it is possible to change the background color with the dropdown menu.
 
