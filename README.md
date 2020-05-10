@@ -160,16 +160,25 @@ Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It
 I would like to thank a few people for their support
 - Cesar Hernandez Bano for developing the great [ZEsarUX](https://github.com/chernandezba/zesarux) emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
 - Mike Dailly for the wonderful [CSpect](http://www.cspect.org) emulator, for opening the debug interface to plugins and for giving support to use it properly.
-- Cesar Wagener Moriana for writing a great tutorial.
-- Peter Ped Helcmanovsky aka [ped7g](https://github.com/ped7g) for his support. Especially to get the display of the relative-sprites correct.
-- And not to forget: Kris Borowinski (aka bukem) for his tireless efforts testing DeZog.
+- [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
+- [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support. Especially to get the display of the relative-sprites correct.
+- Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram) and [Daren May](https://github.com/darenm) for writing tutorials.
 
 
+# Tutorials
 
-# Extras
+## CSpect/DeZog
 
-Here is a great tutorial from Cesar Wagener Moriana.
-He documented how he put all things together. If you are new to DeZog this is probably what you want to read to get an integrated development environment for the ZX Spectrum (Next).
+An excellent tutorial by [Daren May](https://github.com/darenm) which shows how to setup [DeZog with CSpect](https://github.com/darenm/SpectrumNextTutorials/blob/master/DeZog%20Setup%20Tutorial.md) on Windows.
+Although it was made for Windows you can easily apply it to macOS or Linux.
+
+Please note: Daren creates an SD card image that is loaded when CSpect is started. For many projects this is not necessary as you can transfer .nex and .sna files directly from DeZog to CSpect.
+
+
+## ZEsarUX/DeZog
+
+Here is an older (but still great) **tutorial from Cesar Wagener Moriana**.
+He documented how he put all things together. It describes how to setup an integrated development environment for ZEsarUX with DeZog.
 It deals with setting up
 - sjasmplus
 - ZEsarUX and the
@@ -182,5 +191,5 @@ Please note: The tutorial is a bit outdated, it uses 'z80-debug'. This was the f
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug/DeZog so that it is a great advice to get you started.
 
 
-And here is another shorter tutorial by Dean Belfield ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
+And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
 
