@@ -858,7 +858,7 @@ export class DzrpRemote extends RemoteBase {
 			await this.loadBinNex(filePath);
 		else {
 			// Error: neither sna nor nex file
-			throw Error("File extension unknown in '"+filePath+"'. Can only load .sna and .nex files.");
+			throw Error("File extension not supported in '"+filePath+"' with remoteType:'"+Settings.launch.remoteType+"'. Can only load .sna and .nex files.");
 		}
 		// Make sure that the registers are reloaded
 		Z80Registers.clearCache();
