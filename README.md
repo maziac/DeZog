@@ -2,14 +2,14 @@
 
 ![](documentation/images/main.gif)
 
-The goal of this project is to achieve a development environment for Z80 assembler programs much the same as developers are nowadays used to. Similar to what you would expect from Eclipse, Visual Studio or XCode.
+The goal of this project is to achieve a development environment for Z80 assembler programs much the same as developers are nowadays used to for other programming languages. An experience similar to what you would expect from Eclipse, Visual Studio or XCode.
 
 As this is a huge goal the focus is here on
 - Easy navigating/stepping through assembler source files with step-over, step-into and step-out
 - Data representation by viewing memory area, adding watches conversion between hex, decimal numbers and labels.
 - Easy access to data: a lot of information is already available by simply hovering over it.
 - Offering a unit test framework.
-- Dispalying ZX Next specific data like sprites.
+- Displaying ZX Next specific data like sprites.
 
 DeZog lets you use Visual Studio Code (vscode) as development environment for debugging your Z80 assembler programs.
 It's primary intention is to support building new programs, i.e. programs with existing assembler source code.
