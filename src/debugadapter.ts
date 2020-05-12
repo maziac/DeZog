@@ -639,7 +639,7 @@ export class DebugSessionClass extends DebugSession {
 			// TODO: REMOVE:
 			if (!verified) {
 				const text=JSON.stringify(bp);
-				vscode.debug.activeDebugConsole.appendLine(text);
+				vscode.debug.activeDebugConsole.appendLine('Unverified breakpoint:' + text);
 			}
 			return bp;
 		});

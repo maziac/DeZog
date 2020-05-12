@@ -6,6 +6,7 @@
   - warning if codeCoverabeEnabled==true.
   - error if Z80 unit tests are started with cspect.
 - Fixed ZEsarUX Z80 unit tests.
+- Fix for cspect HL', I, R and IM registers.
 
 # 1.2.7
 - Watchpoints disabled for CSpect.

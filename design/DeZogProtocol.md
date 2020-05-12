@@ -48,6 +48,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 0.4.1
+- Extended SET_REGISTERS by I and R.
+
 ### 0.4.0
 - Extended CMD_CONTINUE to allow optimizes StepOver and StepOut which also overcomes the CSpect stepping problem.
 
@@ -146,8 +149,8 @@ Response:
 | 23    | 2    | BC2  |   |
 | 25    | 2    | DE2  |   |
 | 27    | 2    | HL2  |   |
-| 28    | 1    | I    |   |
-| 39    | 1    | R    |   |
+| 28    | 1    | R    |   |
+| 39    | 1    | I    |   |
 | 30    | 1    | IM   |   |
 | 31    | 1    | reserved |   |
 
@@ -160,7 +163,7 @@ Command:
 | 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x03  | CMD_SET_REGISTER |
-| 6     | 1    | i  | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H' |
+| 6     | 1    | i  | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
 | 7     | 2  | n  | The value to set. Little endian. If register is one byte only the lower byte is used but both bytes are sent. |
 
 
