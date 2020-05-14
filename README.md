@@ -52,7 +52,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 ## Features
 
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.1)
-- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.22)
+- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.26)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list files
 	- supports stepping through source code
@@ -114,7 +114,7 @@ For more demanding projects you have the choice to install a real emulator.
 These are the options:
 
 - the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required.
-- the [CSpect](http://www.cspect.org) emulator. At least version v2.12.22 is required.
+- the [CSpect](http://www.cspect.org) emulator. At least version v2.12.26 is required.
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.

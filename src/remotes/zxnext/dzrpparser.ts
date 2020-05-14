@@ -1,5 +1,5 @@
 import {Utility} from '../../misc/utility';
-const{Transform}=require('stream')
+const {Transform}=require('stream');
 
 
 

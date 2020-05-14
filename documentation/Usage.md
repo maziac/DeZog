@@ -477,7 +477,7 @@ If you need to configure the port use:
 
 The "zrcp" configuration allows the following additional parameters:
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator runnign on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
 You don't have to enter a hostname, the default is "localhost".
 
 Note: You can start CSpect with the "-remote" option. In that case CSpect will not show it's debugger screen when stopped.
@@ -1067,7 +1067,7 @@ Please see [here](UnitTests.md).
 
 ## Known Issues
 
-- DeZog/CSpect (v2.12.23):
+- DeZog/CSpect (v2.12.26):
   - Watchpoints do not work and are therefore disabled.
   - Z80 unit tests do not work. Because of above watchpoint problem.
 - "ASSERT"s are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.

@@ -48,6 +48,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 1.0.0
+- Officially released.
+
 ### 0.4.1
 - Extended SET_REGISTERS by I and R.
 

@@ -1,5 +1,3 @@
-'use strict';
-
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { DebugSessionClass } from './debugadapter';
@@ -30,8 +28,8 @@ export function activate(context: vscode.ExtensionContext) {
 		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
 			|| event.affectsConfiguration(CONFIG_SECTION + '.logfile')
 			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logpanel')
-			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logfile')) {
-					configureLogging();
+			|| event.affectsConfiguration(CONFIG_SECTION+'.socket.logfile')) {
+			configureLogging();
 		}
 	}));
 
