@@ -566,7 +566,12 @@ export class DebugSessionClass extends DebugSession {
 						this.sendEventContinued();
 						setTimeout(() => {
 							// Delay call because the breakpoints are set afterwards.
-							this.remoteContinue(); // no await
+							this.handleRequest(undefined, async () => {
+								// Check if lite history need to be stored.
+								this.checkAndStoreLiteHistory();
+								// Normal operation
+								await this.remoteContinue();
+							});
 						}, 500);
 					}
 					else {
@@ -1270,11 +1275,14 @@ export class DebugSessionClass extends DebugSession {
 		this.startProcessing();
 
 		// Start timer to send response for long running commands
-		let respTimer:NodeJS.Timeout|undefined = setTimeout(() => {
-			// Send response after a short while so that the vscode UI can show the break button
-			respTimer=undefined;
-			this.sendResponse(response);
-		}, responseTime);	// 1 s
+		let respTimer: NodeJS.Timeout|undefined;
+		if (response) {
+			respTimer=setTimeout(() => {
+				// Send response after a short while so that the vscode UI can show the break button
+				respTimer=undefined;
+				this.sendResponse(response);
+			}, responseTime);	// 1 s
+		}
 
 		// Start command
 		(async () => {
