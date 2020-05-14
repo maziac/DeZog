@@ -462,9 +462,10 @@ export class ZesaruxRemote extends RemoteBase {
 	protected getBreakReason(text: string): string {
 		// The reason is the 2nd line
 		let result;
-		const reason = text.split('\n')[1];
-		if(reason && reason.startsWith('Break'))
-			result = reason;
+		const textArray=text.split('\n');
+		for(const reason of textArray)
+			if(reason.indexOf('point hit')>=0)
+				result = reason;
 		return result;
 	}
 
