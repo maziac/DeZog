@@ -1,5 +1,7 @@
 # DZRP - DeZog Remote Protocol
 
+Note: This document contains [plantuml](https://plantuml.com/de/sequence-diagram) message sequence charts. On github these are not rendered. Use e.g. vscode with a suitable plugin to view the file correctly.
+
 The DZRP, or Dezog Remote Protocol, defines the messages exchanged between DeZog and a remote program.
 The remote program is typically an emulator or e.g. real ZX Next HW.
 It is used to send commands to the remote program to e.g. get the register or memory values or to step through the code.
