@@ -1,11 +1,8 @@
+import * as vscode from 'vscode';
 //import * as SerialPort from 'serialport';
 import {DzrpParser} from './dzrpparser';
 import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
-
-
-let SerialPort;
-
 
 
 
@@ -37,17 +34,13 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void>  {
-		// Just in case
-		if (this.serialPort&&this.serialPort.isOpen)
-			this.serialPort.close();
-
-		// Open the serial port
-		this.serialPort=new SerialPort("/dev/cu.usbserial-14610", {
-			baudRate: 115200, autoOpen: false
-		});
+		// Find the right extension
+		this.serialPort=vscode.extensions.getExtension('maziac.dezog-serial-if"');
+		if (!this.serialPort.isActive)
+			await this.serialPort.activate();
 
 		// Create parser
-		this.parser=this.serialPort.pipe(new DzrpParser({}, 'Serial'));
+		this.parser=new DzrpParser({}, 'Serial');
 
 		// Handle errors
 		this.parser.on('error', err => {
@@ -77,7 +70,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 		});
 
 		// Open the serial port
-		this.serialPort.open();
+		this.serialPort.open(this.parser, "/dev/cu.usbserial-14610", 115200);
 	}
 
 
