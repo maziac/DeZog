@@ -8,7 +8,9 @@ import {Log} from '../log';
 
 
 
-
+/**
+ * A collection of useful functions.
+ */
 export class Utility {
 
 	/// The rootpath to the project. Used in abs and relative filename functions.
