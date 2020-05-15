@@ -160,6 +160,7 @@ Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It
 I would like to thank a few people for their support
 - Cesar Hernandez Bano for developing the great [ZEsarUX](https://github.com/chernandezba/zesarux) emulator which very early offered the possibility to remotely connect to it. And for being patient with all my request for the ZRCP protocol. Without ZEsarUX I wouldn't have started DeZog at all. So, if you like DeZog thank Cesar.
 - Mike Dailly for the wonderful [CSpect](http://www.cspect.org) emulator, for opening the debug interface to plugins and for giving support to use it properly.
+- [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/master/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support. Especially to get the display of the relative-sprites correct.
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram) and [Daren May](https://github.com/darenm) for writing tutorials.
