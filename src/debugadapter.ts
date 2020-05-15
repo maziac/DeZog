@@ -1907,8 +1907,8 @@ Notes:
 			return "Label expected.";
 		}
 
-		// Find labelwith regex, every star is translated into ".*"
-		const rString='^'+Utility.replaceAll(expr, '*', '.*?')+'$';
+		// Find label with regex, every star is translated into ".*"
+		const rString='^'+expr.replace(/\*/g, '.*?')+'$';
 		// Now search all labels
 		const labels=Labels.getLabelsForRegEx(rString);
 		let result='';

@@ -80,19 +80,6 @@ export class Utility {
 
 
 	/**
-	 * Replaces all occurences of a substring in a string.
-	 * @param src The source string.
-	 * @param search The substring that should be replaced.
-	 * @param replacement The replacement for the substring.
-	 * @return A new string with all occurrences of 'search' replaced with 'replacement'.
-	 */
-	public static replaceAll(src: string, search:string, replacement: string): string {
-		const target =  src.split(search).join(replacement);
-		return target;
-	}
-
-
-	/**
 	 * Parses a string and converts it to a number.
 	 * The string might be decimal or in an hex format.
 	 * If the string begins with '0x' or '$' or ends with 'h' or 'H'
