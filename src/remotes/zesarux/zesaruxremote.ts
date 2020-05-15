@@ -463,9 +463,11 @@ export class ZesaruxRemote extends RemoteBase {
 		// The reason is the 2nd line
 		let result;
 		const textArray=text.split('\n');
-		for(const reason of textArray)
-			if(reason.indexOf('point hit')>=0)
-				result = reason;
+		for (const reason of textArray)
+			if ((reason.indexOf('point hit')>=0)||(reason.indexOf('point fired')>=0)) {
+				result=reason;
+				break;
+			}
 		return result;
 	}
 
