@@ -187,8 +187,10 @@ export class CpuHistoryClass extends StepHistoryClass {
 	/**
 	 * Retrieves the data for the history buffer for the history spot.
 	 * history buffer is cleared before.
+	 * Is not called in stepback mode.
 	 */
 	public async getHistorySpotFromRemote(): Promise<void> {
+		Utility.assert(!this.isInStepBackMode());
 		let count=this.spotCount;
 		this.history.length=0;	// clear buffer
 		for (let i=0; i<count; i++) {

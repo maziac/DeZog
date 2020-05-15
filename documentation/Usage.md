@@ -290,15 +290,16 @@ The following table gives an overview.
 | State                   | stable             | stable  | stable     | started  | stable |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes     | yes/fast   | -        | no      |
-| Asserts                 | yes                | -       | yes        | yes/slow | yes/slow |
-| Logpoints               | yes                | -       | yes        | yes/slow | yes/slow |
-| Extended callstack      | no                 | yes     | yes        | -        | no        |
-| Code coverage           | yes                | yes     | yes        | -        | no        |
+| Watchpoints             | yes                | yes     | yes/fast   | no        | no      |
+| Asserts                 | yes                | no       | yes        | yes/slow | yes/slow |
+| Logpoints               | yes                | no       | yes        | yes/slow | yes/slow |
+| Extended callstack      | no                 | yes     | yes        | no        | no        |
+| Code coverage           | yes                | yes     | yes        | no        | no        |
 | Reverse debugging       | true               | true    | true       | lite     | lite     |
-| ZX Next capable         | -                  | yes     | yes        | yes      | yes      |
+| ZX Next capable         | no                  | yes     | yes        | yes      | yes      |
 | Save/restore the state | yes                 | yes     | yes        | no       | no       |
-| Comments                | slower than ZEsarUx and CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
+| Output of T-States | yes                 | yes     | yes        | no       | no       |
+| Comments                | slower than ZEsarUx or CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
 
 Notes:
 - State:
@@ -318,7 +319,7 @@ This is a special remote type as it is not really 'remote' but the simulator is 
 
 The remote type 'zsim' a very simple Z80/ZX Spectrum simulator.
 
-It allows to test simple programs like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
+It allows to test programs that does not make use of special HW features like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
 
 'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum related features so that it is possible to use for debugging ZX48 and ZX128 programs.
 
@@ -329,7 +330,7 @@ It allows to test simple programs like the [z80-sample-program](https://github.c
 - Loading of (48 and 128) .sna and .nex files
 
 It specificly does not support:
-- ZX Next instructions or registers/HW
+- ZX Next HW (other than memory bank switching)
 - Loading of .tap/.tzx files
 - Audio
 
@@ -337,13 +338,13 @@ It specificly does not support:
 Performance:
 - Don't expect accurate timings.
 The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
-- Simulation speed, of course, depends on your PC but don't expect it to run at the normal speed of a ZX Spectrum. You can expect something about 10x slower.
+- Simulation speed, of course, depends on your PC but don't expect it to run at the normal speed of a ZX Spectrum. You can expect something about 5x slower.
 
 One thing to mention that can be an advantage during development:
 
 Emulators (like ZEsarUX) normally try to accurately emulate the exact behaviour.
 The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the raybeam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
-The simulator on the other hand immediately displays any change to the screen while stepping.
+The simulator on the other hand immediately displays any change to the screen while stepping. This can also be an advantage during debugging.
 
 Example launch.json configuration:
 ~~~
