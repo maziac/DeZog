@@ -1,12 +1,7 @@
 # Changelog
 
-Main changes since last marketplace release:
-- **CSpect emulator support.**
-- Sprites display reworked. Support for 4bit patterns and relative sprites.
-- 'zsim' now supporting all Z80N instructions.
-- source-line-step-over:: step-over now steps over whole line, e.g. macros, fake instructions or several instruction on one line.
-- A lot of small corrections and improvements.
-
+# 1.3.1
+- Removed 'replaceAll'.
 
 # 1.3.0
 - Fix for ZEsarUX history spot.
