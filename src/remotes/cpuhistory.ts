@@ -185,8 +185,25 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 	/**
+	 * Retrieves the data for the history buffer for the history spot.
+	 * history buffer is cleared before.
+	 */
+	public async getHistorySpotFromRemote(): Promise<void> {
+		let count=this.spotCount;
+		this.history.length=0;	// clear buffer
+		for (let i=0; i<count; i++) {
+			// Get new history item from remote
+			const line=await this.getRemoteHistoryIndex(i);
+			if (!line)
+				break;
+			this.history.push(line);
+		}
+	}
+
+
+	/**
 	 * Retrieves the registers at the previous instruction from the Remote's cpu history.
-	 * Is async.
+	 * Is async. If data is not available in buffer it is retrieved from the remote.
 	 * @returns Data with the registers or undefined if at the end of the history.
 	 */
 	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {

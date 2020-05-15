@@ -435,7 +435,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async continue(): Promise<string> {
 		return new Promise<string>(resolve => {
 			// Run
-			zSocket.sendInterruptableRunCmd(text => {
+			zSocket.sendInterruptableRunCmd(async text => {
 				// (could take some time, e.g. until a breakpoint is hit)
 				// Clear register cache
 				Z80Registers.clearCache();
@@ -444,6 +444,8 @@ export class ZesaruxRemote extends RemoteBase {
 				this.handleCodeCoverage();
 				// The reason is the 2nd line
 				const breakReasonString=this.getBreakReason(text);
+				// Read the spot history
+				await CpuHistory.getHistorySpotFromRemote();
 				// Call handler
 				resolve(breakReasonString);
 			});
@@ -536,10 +538,13 @@ export class ZesaruxRemote extends RemoteBase {
 										this.clearCallStack();
 										// Handle code coverage
 										this.handleCodeCoverage();
-										// The reason is the 2nd line
+										// The break reason is in the returned text
 										const breakReasonString=this.getBreakReason(text);
 										// Disable breakpoint
-										zSocket.send('disable-breakpoint '+bpId, () => {
+										zSocket.send('disable-breakpoint '+bpId, async () => {
+											// Read the spot history
+											await CpuHistory.getHistorySpotFromRemote();
+
 											resolve({instruction: disasm, breakReasonString});
 										});
 									});
@@ -552,7 +557,7 @@ export class ZesaruxRemote extends RemoteBase {
 						const cmd=(opcode=="LDIR"||opcode=="LDDR"||opcode=="CPIR"||opcode=="CPDR")? 'cpu-step-over':'cpu-step';
 						// Clear register cache
 						Z80Registers.clearCache();
-						zSocket.send(cmd, result => {
+						zSocket.send(cmd, async result => {
 							// Clear cache
 							Z80Registers.clearCache();
 							this.clearCallStack();
@@ -560,6 +565,8 @@ export class ZesaruxRemote extends RemoteBase {
 							this.handleCodeCoverage();
 							// Call handler
 							const breakReasonString=this.getBreakReason(result);
+							// Read the spot history
+							await CpuHistory.getHistorySpotFromRemote();
 							resolve({instruction: disasm, breakReasonString});
 
 						});
@@ -584,12 +591,14 @@ export class ZesaruxRemote extends RemoteBase {
 				zSocket.send('disassemble '+pc, instruction => {
 					// Clear register cache
 					Z80Registers.clearCache();
-					zSocket.send('cpu-step', result => {
+					zSocket.send('cpu-step', async result => {
 						// Clear cache
 						Z80Registers.clearCache();
 						this.clearCallStack();
 						// Handle code coverage
 						this.handleCodeCoverage();
+						// Read the spot history
+						await CpuHistory.getHistorySpotFromRemote();
 						resolve({instruction});
 					});
 				});
@@ -738,7 +747,9 @@ export class ZesaruxRemote extends RemoteBase {
 											// The reason is the 2nd line
 											const breakReasonString=this.getBreakReason(text);
 											// Disable breakpoint
-											zSocket.send('disable-breakpoint '+bpId, () => {
+											zSocket.send('disable-breakpoint '+bpId, async () => {
+												// Read the spot history
+												await CpuHistory.getHistorySpotFromRemote();
 												resolve(breakReasonString);
 											});
 										});
