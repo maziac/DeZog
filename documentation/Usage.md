@@ -115,9 +115,9 @@ Big values are typically addresses. Here you can give the boundary between these
 If you just restart a debug session with
 ![](images/vscode_restart_button.jpg)
 the launch.json is not re-read.
-That means in order to make sure that yor changed launch.json is used, save it and make sure the current debug session is stopped with
+That means in order to make sure that your changed launch.json is used, save it and make sure the current debug session is stopped with
 ![](images/vscode_stop_button.jpg)
-Then start it via
+then start it via
 ![](images/vscode_continue_button.jpg)
 
 
@@ -457,7 +457,7 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
-CSpect does not offer a socket interface to DeZog by itself it needs the help of [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
+CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
 
 You need to install it first. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
 
