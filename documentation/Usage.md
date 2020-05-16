@@ -315,10 +315,23 @@ Notes:
 
 ![](images/zsim_starwarrior.gif)
 
-This is a special remote type as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever.
+This is a special remote type ('zsim') as it is not really 'remote' but the simulator is included in Dezog and thus doesn't need to be connected via sockets or what ever.
+It's the easiest setup. You just need DeZog (and vscode):
 
-The remote type 'zsim' a very simple Z80/ZX Spectrum simulator.
+~~~
+┌───────────────┐              ┌────────────────────┐
+│               │              │DeZog               │
+│               │              │                    │
+│               │              │       ┌───────────┐│
+│    vscode     │              │       │           ││
+│               │◀────────────▶│       │ Internal  ││
+│               │              │       │ Simulator ││
+│               │              │       │           ││
+│               │              │       └───────────┘│
+└───────────────┘              └────────────────────┘
+~~~
 
+'zsim' is a very simple Z80/ZX Spectrum simulator.
 It allows to test programs that does not make use of special HW features like the [z80-sample-program](https://github.com/maziac/z80-sample-program).
 
 'zsim' is basically just a Z80 simulator. But you can add a few ZX Spectrum related features so that it is possible to use for debugging ZX48 and ZX128 programs.
@@ -384,6 +397,29 @@ Here is the explanations of all the options:
 
 
 ### ZEsarUX
+
+The setup is slightly more complicated as it involves communication with another program: the ZEsarUX emulator.
+
+~~~
+┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│    vscode     │              │      DeZog      │          │      ZEsarUX       │
+│               │◀─────────────│                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          └────────────────────┘
+└───────────────┘              └─────────────────┘                     ▲
+                                        ▲                              │
+                                        │                              │
+                               ┌────────▼──────────────────────────────▼─────────┐
+                               │  ┌──────────┐                   ┌──────────┐    │
+                               │  │  Socket  │◀─────────────────▶│  Socket  │    │
+                               │  └──────────┘                   └──────────┘    │
+                               │              macOS, Linux, Windows              │
+                               └─────────────────────────────────────────────────┘
+~~~
 
 The remote type is "zrcp".
 ZEsarUX needs to run before the debug session starts and needs to be connected via a socket interface (ZRCP).
@@ -455,6 +491,32 @@ Please note: Normally you can set the commandline option also directly in the ZE
 
 ### CSpect
 
+For this setup you need 2 additional programs: the CSpect emulator and the DeZog/CSpect Plugin.
+
+~~~
+┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
+│               │              │                 │          │                    │
+│               │              │                 │          │       CSpect       │
+│               │              │                 │          │                    │
+│    vscode     │              │      DeZog      │          │                    │
+│               │◀────────────▶│                 │          └────────────────────┘
+│               │              │                 │                     ▲
+│               │              │                 │                     │
+│               │              │                 │                     ▼
+└───────────────┘              └─────────────────┘          ┌────────────────────┐
+                                        ▲                   │    DeZog Plugin    │
+                                        │                   └────────────────────┘
+                                        │                              ▲
+                                        │                              │
+                               ┌────────▼──────────────────────────────▼─────────┐
+                               │  ┌──────────┐                   ┌──────────┐    │
+                               │  │  Socket  │◀─────────────────▶│  Socket  │    │
+                               │  └──────────┘                   └──────────┘    │
+                               │              macOS, Linux, Windows              │
+                               └─────────────────────────────────────────────────┘
+~~~
+
+
 The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
 CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
@@ -496,10 +558,42 @@ mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv
 
 ### Serial Interface
 
+The serail interface is the most complex setup as it requires communication with a real ZX Spectrum Next (in HW):
+
+~~~
+                                                                                         ┌──────────────────────────┐
+                                                                                         │         ZX Next          │
+                                                                                         │ ┌──────────────────────┐ │
+┌───────────────┐     ┌─────────────────┐                                                │ │   Debugged Program   │ │
+│               │     │                 │                                                │ └──────────▲───────────┘ │
+│               │     │                 │                                                │            │             │
+│               │     │                 │                                                │ ┌──────────▼───────────┐ │
+│    vscode     │     │      DeZog      │                                                │ │     dbg_uart_if      │ │
+│               │◀───▶│                 │                                                │ │          SW          │ │
+│               │     │                 │                                                │ └──────────▲───────────┘ │
+│               │     │                 │                                                │            │             │
+│               │     │                 │     ┌──────────────────────────┐               │          ┌─▼──┐          │
+└───────────────┘     └─────────────────┘     │  DeZog Serial Interface  │               │          │UART│          │
+                               ▲              │            SW            │               │          │HW  │          │
+                               │              └──────────────────────────┘               └──────────┴────┴──────────┘
+                               │                    ▲                ▲                                ▲
+                               │                    │                │                                │
+                      ┌────────▼────────────────────▼────────────────▼───────────────┐                ▼
+                      │  ┌──────────┐         ┌──────────┐     ┌──────────────┐      ├────┐     ┌──────────┐
+                      │  │  Socket  │◀───────▶│  Socket  │     │    Serial    │      │USB │     │USB/Serial│
+                      │  └──────────┘         └──────────┘     │COM, /dev/tty │◀────▶│HW  │◀───▶│Converter │
+                      │                                        └──────────────┘      ├────┘     │HW        │
+                      │                    macOS, Linux, Windows                     │          └──────────┘
+                      └──────────────────────────────────────────────────────────────┘
+~~~
+
+DeZog does not directly talk to the USBUART interface of your OS. Instead it uses another program, the DeZog Serial Interface whcih offers a socket and translates all communication to the serial interface USB/UART.
+(Background: The reason for this additional program is that the node.js serialport binary package tend to break on vscode.)
+
 The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
 In order to communicate with the ZX Next special SW needs to run on the Next.
 
-Note: This does not work currently.
+**Note: This does not work currently. Serial interface is not supported yet.**
 
 Example launch.json configuration:
 ~~~
