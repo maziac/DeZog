@@ -5,6 +5,7 @@ import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 
 
+// TODO: Kann wahrscheinlich weg.
 
 /**
  * The representation of the ZX Next HW.
@@ -35,9 +36,14 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void>  {
 		// Find the right extension
-		this.serialPort=vscode.extensions.getExtension('maziac.dezog-serial-if"');
-		if (!this.serialPort.isActive)
+		const serialPortExtension=vscode.extensions.getExtension('maziac.dezog-serial-if');
+		if (!serialPortExtension) {
+			throw Error('Error: "Dezog Serial Interface" extension (maziac.dezog-serial-if) is not installed.');
+		}
+		if (!serialPortExtension.isActive)
 			await this.serialPort.activate();
+		// Get the serial port
+		this.serialPort=await vscode.commands.executeCommand('dezog-serial-if.create-serialport');
 
 		// Create parser
 		this.parser=new DzrpParser({}, 'Serial');

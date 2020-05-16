@@ -106,6 +106,19 @@ export interface CSpectType {
 }
 
 
+// Definitions for CSpect remote type.
+export interface SerialSocketType {
+	// The hostname/IP address of the socket that connects the serial port.
+	hostname: string;
+
+	// The port of the socket that connects the serial port.
+	port: number;
+
+	/// The socket timeout in seconds.
+	socketTimeout: number;
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
 	// Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
@@ -134,7 +147,7 @@ export interface ZxSimType {
 	vsyncInterrupt: boolean,
 }
 
-
+/*
 /// Definitions for the 'serial' remote type.
 export interface SerialType {
 	/// The baudrate to use.
@@ -145,6 +158,7 @@ export interface SerialType {
 
 	/// The load delay. Workaround for using ZEsarUx on Windows.
 }
+*/
 
 
 /**
@@ -165,7 +179,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zsim: ZxSimType;
 
 	// The special settings for the serial connection.
-	serial: SerialType;
+	serial: SerialSocketType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -373,11 +387,15 @@ export class Settings {
 
 		// serial
 		if (!Settings.launch.serial)
-			Settings.launch.serial={} as SerialType;
-		if (Settings.launch.serial.baudrate==undefined)
-			Settings.launch.serial.baudrate=230400;
-		if (!Settings.launch.serial.port==undefined)
-			Settings.launch.serial.port="/dev/tty.usbserial";
+			Settings.launch.serial={} as SerialSocketType;
+		if (Settings.launch.serial.hostname==undefined)
+			Settings.launch.serial.hostname='localhost';
+		if (Settings.launch.serial.port==undefined)
+			Settings.launch.serial.port=13000;
+		if (!Settings.launch.serial.socketTimeout)
+			Settings.launch.serial.socketTimeout=5;	// 5 secs
+
+
 
 		if(!Settings.launch.rootFolder)
 			Settings.launch.rootFolder = rootFolder;

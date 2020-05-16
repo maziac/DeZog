@@ -19,8 +19,7 @@ enum Channel {
 
 /**
  * A ZX Next remote that is connected via a socket.
- * I.e. this is for CSpect support.
- * But could be used for other emulators as well.
+ * I.e. another program that converts socket to serial.
  */
 export class ZxNextSocketRemote extends ZxNextRemote {
 
@@ -28,7 +27,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 	public socket: Socket;
 
 
-	/// Override.
+
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
@@ -91,8 +90,8 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port=Settings.launch.cspect.port;
-		const hostname=Settings.launch.cspect.hostname;
+		const port=Settings.launch.serial.port;
+		const hostname=Settings.launch.serial.hostname;
 		this.socket.connect(port, hostname);
 	}
 
