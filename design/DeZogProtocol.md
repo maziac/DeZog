@@ -100,7 +100,7 @@ The command sender will evaluate the received version and disconnect if versions
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x01  | CMD_INIT |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
@@ -109,7 +109,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
 | 8     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
