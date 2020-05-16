@@ -50,6 +50,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 1.0.1
+- A lot of size and length values corrected.
+
 ### 1.0.0
 - Officially released.
 
@@ -451,7 +454,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 3    | 2+N   | Length     |
+| 0     | 4    | 3  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x10  | CMD_GET_TBBLUE_REG |
 | 6     | 1    | 0-255 | The register |
@@ -459,7 +462,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0-255 | Value of the register |
 
@@ -469,15 +472,15 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 3    | 2+N   | Length     |
+| 0     | 4    | 3   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x11  | CMD_GET_SPRITES_PALETTE |
-| 6     | 1    | 0/1   | Palette number |
+| 6     | 1    | 0/1   | Palette index |
 
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
+| 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
 
@@ -487,7 +490,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 3    | 4     | Length     |
+| 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x12  | CMD_GET_SPRITES |
 | 6     | 1    | 0-128 | Sprite index |
@@ -507,7 +510,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 4     | Length     |
+| 0     | 4    | 6     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x13  | CMD_GET_SPRITE_PATTERNS |
 | 6     | 2    | 0-63  | index of 256 byte pattern. |
@@ -553,7 +556,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 3     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x15  | CMD_SET_BORDER |
 | 6     | 1    | Bits 0-2: color  | The color for the border |
@@ -562,7 +565,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5     | Length     |
+| 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 
 
