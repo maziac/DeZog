@@ -154,7 +154,7 @@ You need to enter the list files under
 ~~~
 "listFiles": {
     "path": "z80-sample-program.list",
-    "asm": "sjasmplus",
+    "asm": "z80asm",
     "mainFile": "main.asm",
     "srcDirs": [""]
     }
@@ -203,8 +203,12 @@ Explanation:
 - "mainFile": the relative path of the file used to create the list file.
 - "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
 
+Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 
-Other assemblers:
+
+
+
+**Other assemblers:**
 I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use DeZog. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
 The required format for DeZog is that
 - each line starts with the address
@@ -252,7 +256,6 @@ DeZog supports most of them but with some restrictions:
 
 - local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
-- labels with out a trailing ":" are not supported.
 - temporary (number) labels: are not supported.
 - sjasmplus: labels inside macros are not supported.
 

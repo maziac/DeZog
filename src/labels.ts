@@ -196,14 +196,41 @@ export class LabelsClass {
 		let labelPrefixStack = new Array<string>();	// Only used for sjasmplus
 		let lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 		let z88dkMapOffset=0;
+		let sjasmplusLstlabSection=false;
 		//let dbgLineNr = 0;
-		let ii = -1;
 		for(let origLine of listLines) {
 		//	dbgLineNr ++;
-			ii = ii+1
-
 			let countBytes = 1;
-			line = origLine;
+			line=origLine;
+
+			// In sjasmplus labels section?
+			if (sjasmplusLstlabSection) {
+				// Format is (no tabs, only spaces, 'X'=used, without X the label is not used):
+				// 0x60DA X TestSuite_ClearScreen.UT_clear_screen
+				// 0x0008   BLUE
+				if (!line.startsWith('0x'))
+					continue;
+				// Get hex value
+				const valString=line.substr(2, 4);
+				const value=parseInt(valString, 16);
+				// Label
+				const label=line.substr(9).trim();
+				// Label: add to label array
+				this.numberForLabel.set(label, value);
+				// Add label
+				this.addLabelForNumber(value, label);
+				continue;
+			}
+			else {
+				// Check for sjasmplus "--lstlab" section
+				if (sjasmplus&&line.startsWith("Value")) {
+					// The end of the sjasmplus list file has been reached
+					// where the labels start.
+					sjasmplusLstlabSection=true;
+					continue;
+				}
+			}
+
 			// sjasmplus or z88dk
 			if(sjasmZ88dkRegex) {
 				// Replace line number with empty string.
@@ -211,7 +238,9 @@ export class LabelsClass {
 			}
 			// Filter line
 			if(filterRegEx)
-				line = line.replace(filterRegEx, replace);
+				line=line.replace(filterRegEx, replace);
+
+
 			// Extract address.
 			const readAddress=parseInt(line.substr(0, 4), 16);
 			let address=readAddress+addOffset+z88dkMapOffset;
@@ -881,6 +910,9 @@ export class LabelsClass {
 	 * As all addresses in a
 	 * z88dk list file are relative/starting at 0, the map file
 	 * is necessary to obtain right addresses.
+	 * The z88dk map file looks like this:
+	 * print_number_address            = $1A1B ; const, local, , , , constants.inc:5
+	 * AT                              = $0016 ; const, local, , , , constants.inc:6
 	 * @param z88dkMapFile The relative path to the map file.
 	 */
 	protected readZ88dkMapFile(z88dkMapFile) {

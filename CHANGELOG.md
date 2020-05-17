@@ -1,7 +1,7 @@
 # Changelog
 
 # 1.4.0
-
+- sjasmplus "--lstlab" labels are parsed now.
 
 # 1.3.1
 - Removed 'replaceAll'.
