@@ -1,6 +1,7 @@
 # Changelog
 
 # 1.3.1
+- Corrected display of memory slots for zsim and cspect.
 - Removed 'replaceAll'.
 
 # 1.3.0

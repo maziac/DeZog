@@ -839,7 +839,7 @@ export class DzrpRemote extends RemoteBase {
 			const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
 			const name=(slot>=254)? "ROM":"BANK"+slot;
 			pages.push({start, end, name});
-			start+=ZxMemory.MEMORY_BANK_SIZE-1;
+			start+=ZxMemory.MEMORY_BANK_SIZE;
 		});
 		// Return
 		return pages;
