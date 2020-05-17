@@ -29,7 +29,6 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	}
 
 
-	/// Override.
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
