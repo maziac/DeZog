@@ -208,7 +208,7 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 13    | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x05  | CMD_CONTINUE |
 | 6     | 1    | 0/1   | Enable Breakpoint1 |
