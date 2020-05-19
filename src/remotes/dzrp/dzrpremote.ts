@@ -13,6 +13,7 @@ import {Labels} from '../../labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
+import {Log} from '../../log';
 
 
 
@@ -937,6 +938,7 @@ export class DzrpRemote extends RemoteBase {
 
 		// Transfer 16k memory banks
 		for (const memBank of nexFile.memBanks) {
+			Log.log("loadBinNex: Writing 16k bank "+memBank.bank);
 			// As 2x 8k memory banks
 			const bank8=2*memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));

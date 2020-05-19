@@ -391,7 +391,7 @@ export class Settings {
 		if (Settings.launch.serial.hostname==undefined)
 			Settings.launch.serial.hostname='localhost';
 		if (Settings.launch.serial.port==undefined)
-			Settings.launch.serial.port=13000;
+			Settings.launch.serial.port=12000;
 		if (!Settings.launch.serial.socketTimeout)
 			Settings.launch.serial.socketTimeout=5;	// 5 secs
 
