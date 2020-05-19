@@ -74,6 +74,46 @@ export class ZxNextRemote extends DzrpRemote {
 
 
 	/**
+	 * Execute specific commands.
+	 * USed to send (for testing) specific DZRP commands to the ZXNext.
+	 * @param cmd E.g. 'cmd_continue.
+	 * @returns A Promise with a return string, i.e. the decoded response.
+	 */
+	public async dbgExec(cmd: string): Promise<string> {
+		const cmd_array=cmd.split(' ');
+		const cmd_name=cmd_array.shift();
+		if (cmd_name=="help") {
+			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
+		}
+
+		let response="";
+		if (cmd_name=="cmd_init") {
+			const resp=await this.sendDzrpCmdInit();
+			const error=resp.pop();
+			const version=resp.join('.');
+			response="Version: "+version+", Error: "+error;
+		}
+		else if (cmd_name=="cmd_continue") {
+			await this.sendDzrpCmdContinue();
+		}
+		else if (cmd_name=="cmd_pause") {
+			await this.sendDzrpCmdPause();
+		}
+		else {
+			return "Error: not supported.";
+		}
+
+		// Return string
+		let result="Sent "+cmd_name.toUpperCase()+".\nResponse received";
+		if (response)
+			result+=": "+response;
+		else
+			result+=".";
+		return result;
+	}
+
+
+	/**
 	 * Starts the command/response timeout.
 	 */
 	protected startCmdRespTimeout() {
@@ -395,7 +435,9 @@ export class ZxNextRemote extends DzrpRemote {
 		await this.sendDzrpCmd(DZRP.CMD_CONTINUE, [
 			bp1Enabled, bp1Address&0xFF, bp1Address>>>8,
 			bp2Enabled, bp2Address&0xFF, bp2Address>>>8,
-			AlternateCommand.CONTINUE, 0 /*unused*/, 0 /*unused*/
+			AlternateCommand.CONTINUE,
+			0 /*unused*/, 0 /*unused*/,
+			0 /*unused*/, 0 /*unused*/
 		]);
 	}
 

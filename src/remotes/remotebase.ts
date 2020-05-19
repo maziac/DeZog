@@ -1170,7 +1170,6 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	/**
 	 * Sends a command to the emulator.
 	 * Override if supported.
 	 * @param cmd E.g. 'get-registers'.

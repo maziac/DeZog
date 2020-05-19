@@ -1603,7 +1603,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @returns A Promise<string> with an text to output (e.g. an error).
 	 */
 	protected async evaluateCommand(command: string): Promise<string> {
-		const expression=command.trim();
+		const expression=command.trim().replace(/\s+/g, ' ');
 		const tokens=expression.split(' ');
 		const cmd=tokens.shift();
 		// All commands start with "-"
