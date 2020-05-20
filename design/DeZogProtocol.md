@@ -50,6 +50,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 1.1.0
+- CMD_INIT + response now contain string (program name + version).
+
 ### 1.0.1
 - A lot of size and length values corrected.
 
@@ -100,10 +103,11 @@ The command sender will evaluate the received version and disconnect if versions
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5     | Length     |
+| 0     | 4    | 5+n     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x01  | CMD_INIT |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
+| 9     | 1-n  | 0-terminated string | The program name + version as a string. E.g. "DeZog v1.4.0" |
 
 
 Response:
@@ -111,8 +115,9 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
-| 5     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
-| 8     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
+| 5     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
+| 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
+| 9     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
 
 <!--
 | 9     | 2    | 16 bit | Supported features |

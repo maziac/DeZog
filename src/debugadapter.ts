@@ -516,7 +516,12 @@ export class DebugSessionClass extends DebugSession {
 		});
 
 		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
-			Remote.once('initialized', async () => {
+			Remote.once('initialized', async (text) => {
+				// Print text if available, e.g. "dbg_uart_if initilaized".
+				if (text) {
+					vscode.debug.activeDebugConsole.appendLine(text);
+				}
+
 				// Initialize Cpu- or StepHistory.
 				StepHistory.init();
 

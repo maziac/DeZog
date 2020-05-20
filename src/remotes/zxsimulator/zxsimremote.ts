@@ -763,9 +763,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/**
 	 * Not used.
 	 */
-	protected async sendDzrpCmdInit(): Promise<Array<number>> {
-		Utility.assert(false);	// Not used
-		return [0, 0, 0];
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+		Utility.assert(false);
+		return {error: undefined, dzrpVersion: "", programName: ""};
 	}
 
 

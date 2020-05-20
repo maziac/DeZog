@@ -2,7 +2,7 @@ import {LogSocket} from '../../log';
 import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
-import {DZRP, DZRP_VERSION} from '../dzrp/dzrpremote';
+import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 
 
 
@@ -70,46 +70,6 @@ export class ZxNextRemote extends DzrpRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
-	}
-
-
-	/**
-	 * Execute specific commands.
-	 * USed to send (for testing) specific DZRP commands to the ZXNext.
-	 * @param cmd E.g. 'cmd_continue.
-	 * @returns A Promise with a return string, i.e. the decoded response.
-	 */
-	public async dbgExec(cmd: string): Promise<string> {
-		const cmd_array=cmd.split(' ');
-		const cmd_name=cmd_array.shift();
-		if (cmd_name=="help") {
-			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
-		}
-
-		let response="";
-		if (cmd_name=="cmd_init") {
-			const resp=await this.sendDzrpCmdInit();
-			const error=resp.pop();
-			const version=resp.join('.');
-			response="Version: "+version+", Error: "+error;
-		}
-		else if (cmd_name=="cmd_continue") {
-			await this.sendDzrpCmdContinue();
-		}
-		else if (cmd_name=="cmd_pause") {
-			await this.sendDzrpCmdPause();
-		}
-		else {
-			return "Error: not supported.";
-		}
-
-		// Return string
-		let result="Sent "+cmd_name.toUpperCase()+".\nResponse received";
-		if (response)
-			result+=": "+response;
-		else
-			result+=".";
-		return result;
 	}
 
 
@@ -362,11 +322,25 @@ export class ZxNextRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to init the remote.
-	 * @returns The version.
+	 * @returns The error, program name (incl. version) and dzrp version.
+	 * error is 0 on success. 0xFF if version numbers not match.
+	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<Array<number>> {
-		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, DZRP_VERSION);
-		return Array.from(resp);
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+		const nameBuffer=Utility.getBufferFromString(DZRP_PROGRAM_NAME);
+		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer]);
+		let error;
+		if (resp[0]!=0)
+			error="Remote returned an error code: "+resp[0];
+		const dzrp_version=""+resp[1]+"."+resp[2]+"."+resp[3];
+		const program_name=Utility.getStringFromBuffer(resp, 4);
+		// Check version number
+		if (DZRP_VERSION[0]!=resp[1]
+			||DZRP_VERSION[1]!=resp[2]
+			||DZRP_VERSION[2]!=resp[3]) {
+			error="DZRP version do not match.";
+		}
+		return {error, dzrpVersion: dzrp_version, programName: program_name};
 	}
 
 

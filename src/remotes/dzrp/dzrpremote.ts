@@ -18,7 +18,10 @@ import {Log} from '../../log';
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 0, 0];
+export const DZRP_VERSION=[1, 1, 0];
+
+// The program name and version transmitted during CMD_INIT.
+export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
 
 
 /**
@@ -129,13 +132,16 @@ export class DzrpRemote extends RemoteBase {
 	protected async onConnect(): Promise<void> {
 		try {
 			// Get configuration
-			/*const resp=*/ await this.sendDzrpCmdInit();
+			const resp=await this.sendDzrpCmdInit();
+			if (resp.error)
+				throw Error(resp.error);
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;
 			if (loadPath)
 				await this.loadBin(loadPath);
 			// Ready
-			this.emit('initialized')
+			const text="'"+resp.programName+"' initialized.";
+			this.emit('initialized', text)
 		}
 		catch (err) {
 			this.emit('error', err);
@@ -166,6 +172,44 @@ export class DzrpRemote extends RemoteBase {
 		const regs=await this.sendDzrpCmdGetRegisters();
 		// And set
 		Z80Registers.setCache(regs);
+	}
+
+
+	/**
+	 * Execute specific commands.
+	 * USed to send (for testing) specific DZRP commands to the ZXNext.
+	 * @param cmd E.g. 'cmd_continue.
+	 * @returns A Promise with a return string, i.e. the decoded response.
+	 */
+	public async dbgExec(cmd: string): Promise<string> {
+		const cmd_array=cmd.split(' ');
+		const cmd_name=cmd_array.shift();
+		if (cmd_name=="help") {
+			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
+		}
+
+		let response="";
+		if (cmd_name=="cmd_init") {
+			const resp=await this.sendDzrpCmdInit();
+			response="Program: " +resp.programName+", DZRP Version: "+resp.dzrpVersion+", Error: "+resp.error;
+		}
+		else if (cmd_name=="cmd_continue") {
+			await this.sendDzrpCmdContinue();
+		}
+		else if (cmd_name=="cmd_pause") {
+			await this.sendDzrpCmdPause();
+		}
+		else {
+			return "Error: not supported.";
+		}
+
+		// Return string
+		let result="Sent "+cmd_name.toUpperCase()+".\nResponse received";
+		if (response)
+			result+=": "+response;
+		else
+			result+=".";
+		return result;
 	}
 
 
@@ -1054,11 +1098,13 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * The first command send. Includes the version number.
-	 * @returns The configuration, e.g. '{xNextRegs: true}'
+	 * @returns The error, program name (incl. version) and dzrp version.
+	 * error is 0 on success. 0xFF if version numbers not match.
+	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<Array<number>> {
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
 		Utility.assert(false);
-		return [0,0,0];
+		return {error: undefined, dzrpVersion:"", programName: ""};
 	}
 
 
