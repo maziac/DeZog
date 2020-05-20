@@ -210,28 +210,38 @@ export class DzrpRemote extends RemoteBase {
 			}
 		}
 		else if (cmd_name=="cmd_set_register") {
-			const regIndexString=cmdArray.shift();
-			const valueString=cmdArray.shift();
-			if (regIndexString==undefined||valueString==undefined) {
+			if (cmdArray.length<2) {
 				// Error
 				return "Expecting 2 parameters: regIndex and value.";
 			}
-			const regIndex=Utility.parseValue(regIndexString);
-			const value=Utility.parseValue(valueString);
+			const regIndex=Utility.parseValue(cmdArray[0]);
+			const value=Utility.parseValue(cmdArray[1]);
 			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
 		}
 		else if (cmd_name=="cmd_write_bank") {
-			const bankString=cmdArray.shift();
-			if (bankString==undefined) {
+			if (cmdArray.length<1) {
 				// Error
 				return "Expecting 1 parameter: 8k bank number [0-223].";
 			}
-			const bank=Utility.parseValue(bankString);
+			const bank=Utility.parseValue(cmdArray[0]);
 			// Create test data
 			const data=new Uint8Array(0x2000);
 			for (let i=0; i<data.length; i++)
 				data[i]=i&0xFF;
 			await this.sendDzrpCmdWriteBank(bank, data);
+		}
+		else if (cmd_name=="cmd_write_mem") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting at least 2 parameters: address and memory content list.";
+			}
+			const bank=Utility.parseValue(cmdArray.shift()!);
+			// Create test data
+			const length=cmdArray.length;
+			const data=new Uint8Array(length);
+			for (let i=0; i<data.length; i++)
+				data[i]=Utility.parseValue(cmdArray[i])&0xFF;
+			await this.sendDzrpCmdWriteMem(bank, data);
 		}
 		else {
 			return "Error: not supported.";
