@@ -256,6 +256,50 @@ export class DzrpRemote extends RemoteBase {
 				data[i]=Utility.parseValue(cmdArray[i])&0xFF;
 			await this.sendDzrpCmdWriteMem(addr, data);
 		}
+		else if (cmd_name=="cmd_get_slots") {
+			const slots=await this.sendDzrpCmdGetSlots();
+			// Print
+			for (let i=0; i<slots.length; i++)
+				response+="\nSlot["+i+"]: 8k bank "+slots[i];
+		}
+		else if (cmd_name=="cmd_get_tbblue_reg") {
+			if (cmdArray.length<1) {
+				// Error
+				return "Expecting 1 parameter: register.";
+			}
+			const reg=Utility.parseValue(cmdArray[0]);
+			const value=await this.sendDzrpCmdGetTbblueReg(reg);
+			response+="\nReg["+Utility.getHexString(reg, 2)+"h/"+reg+"]: "+Utility.getHexString(value, 2)+"h/"+value;
+		}
+		else if (cmd_name=="cmd_get_sprites_palette") {
+			if (cmdArray.length<1) {
+				// Error
+				return "Expecting 1 parameter: palette number (0 or 1).";
+			}
+			const paltteNumber=Utility.parseValue(cmdArray[0]);
+			const palette=await this.sendDzrpCmdGetSpritesPalette(paltteNumber);
+			// Print
+			for (let i=0; i<palette.length; i++)
+				response+=Utility.getHexString(palette[i], 2)+" ";
+		}
+		else if (cmd_name=="cmd_get_sprites") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting 2 parameters: sprite start index and count.";
+			}
+			const index=Utility.parseValue(cmdArray[0]);
+			const count=Utility.parseValue(cmdArray[1]);
+			const data=await this.sendDzrpCmdGetSprites(index, count);
+			const x =data[0];
+			// Print
+			for (let i=0; i<data.length; i++) {
+				if (i%5==0)
+					response+="\nSprite "+(i/5)+": ";
+				//const value: number=data[0];
+				//response+=Utility.getHexString(value, 2)+" ";
+				response+=data[i]+" ";
+			}
+		}
 		else {
 			return "Error: not supported.";
 		}
