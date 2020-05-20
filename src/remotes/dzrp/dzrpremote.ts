@@ -230,18 +230,31 @@ export class DzrpRemote extends RemoteBase {
 				data[i]=i&0xFF;
 			await this.sendDzrpCmdWriteBank(bank, data);
 		}
+		else if (cmd_name=="cmd_read_mem") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting at least 2 parameters: address and count.";
+			}
+			const addr=Utility.parseValue(cmdArray[0]);
+			const count=Utility.parseValue(cmdArray[1]);
+			const data=await this.sendDzrpCmdReadMem(addr, count);
+			// Print
+			response=Utility.getHexString(addr,4)+"h: ";
+			for (let i=0; i<data.length; i++)
+				response+=Utility.getHexString(data[i], 2)+"h ";
+		}
 		else if (cmd_name=="cmd_write_mem") {
 			if (cmdArray.length<2) {
 				// Error
 				return "Expecting at least 2 parameters: address and memory content list.";
 			}
-			const bank=Utility.parseValue(cmdArray.shift()!);
+			const addr=Utility.parseValue(cmdArray.shift()!);
 			// Create test data
 			const length=cmdArray.length;
 			const data=new Uint8Array(length);
 			for (let i=0; i<data.length; i++)
 				data[i]=Utility.parseValue(cmdArray[i])&0xFF;
-			await this.sendDzrpCmdWriteMem(bank, data);
+			await this.sendDzrpCmdWriteMem(addr, data);
 		}
 		else {
 			return "Error: not supported.";
