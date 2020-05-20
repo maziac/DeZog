@@ -2,6 +2,7 @@
 
 # 1.4.0
 - sjasmplus "--lstlab" labels are parsed now.
+- Support for DZRP 1.1.0
 
 # 1.3.1
 - Corrected display of memory slots for zsim and cspect.

@@ -182,8 +182,8 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A Promise with a return string, i.e. the decoded response.
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
-		const cmd_array=cmd.split(' ');
-		const cmd_name=cmd_array.shift();
+		const cmdArray=cmd.split(' ');
+		const cmd_name=cmdArray.shift();
 		if (cmd_name=="help") {
 			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
 		}
@@ -191,13 +191,47 @@ export class DzrpRemote extends RemoteBase {
 		let response="";
 		if (cmd_name=="cmd_init") {
 			const resp=await this.sendDzrpCmdInit();
-			response="Program: " +resp.programName+", DZRP Version: "+resp.dzrpVersion+", Error: "+resp.error;
+			response="Program: '" +resp.programName+"', DZRP Version: "+resp.dzrpVersion+", Error: "+resp.error;
 		}
 		else if (cmd_name=="cmd_continue") {
 			await this.sendDzrpCmdContinue();
 		}
 		else if (cmd_name=="cmd_pause") {
 			await this.sendDzrpCmdPause();
+		}
+		else if (cmd_name=="cmd_get_registers") {
+			const regs=await this.sendDzrpCmdGetRegisters();
+			const regNames=["PC", "SP", "AF", "BC", "DE", "HL", "IX", "IY", "AF'", "BC'", "DE'", "HL'", "IR", "IM"];
+			let i=0;
+			for (const name of regNames) {
+				const value=regs[i];
+				response+="\n"+name+"("+i+"): 0x"+Utility.getHexString(value, 4)+"/"+value;
+				i++
+			}
+		}
+		else if (cmd_name=="cmd_set_register") {
+			const regIndexString=cmdArray.shift();
+			const valueString=cmdArray.shift();
+			if (regIndexString==undefined||valueString==undefined) {
+				// Error
+				return "Expecting 2 parameters: regIndex and value.";
+			}
+			const regIndex=Utility.parseValue(regIndexString);
+			const value=Utility.parseValue(valueString);
+			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
+		}
+		else if (cmd_name=="cmd_write_bank") {
+			const bankString=cmdArray.shift();
+			if (bankString==undefined) {
+				// Error
+				return "Expecting 1 parameter: 8k bank number [0-223].";
+			}
+			const bank=Utility.parseValue(bankString);
+			// Create test data
+			const data=new Uint8Array(0x2000);
+			for (let i=0; i<data.length; i++)
+				data[i]=i&0xFF;
+			await this.sendDzrpCmdWriteBank(bank, data);
 		}
 		else {
 			return "Error: not supported.";

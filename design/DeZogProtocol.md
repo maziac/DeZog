@@ -195,7 +195,7 @@ Command:
 | 0     | 4    | 8195  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 0x04  | CMD_WRITE_BANK |
-| 6     | 1    | 0-111 | Bank number |
+| 6     | 1    | 0-223 | 8k bank number |
 | 7     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
 | 8194 | 1    | [0x1FFF] | Last byte of memory block |
