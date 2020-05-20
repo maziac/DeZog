@@ -92,6 +92,12 @@ export class DebugSessionClass extends DebugSession {
 	protected proccessingSteppingRequest=false;
 
 
+	/// This is saved text that could notbe printed yet because
+	// the debug console was not there.
+	// It is printed a sson as the console appears.
+	protected debugConsoleSavedText;
+
+
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
@@ -353,6 +359,22 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Prints text to the debug console.
+	 */
+	protected debugConsoleAppend(text: string) {
+		if (vscode.debug.activeDebugSession)
+			vscode.debug.activeDebugConsole.append(text);
+		else {
+			// Save text
+			this.debugConsoleSavedText+=text;
+		}
+	}
+	protected debugConsoleAppendLine(text: string) {
+		this.debugConsoleAppend(text+'\n');
+	}
+
+
+	/**
 	 * Called after 'initialize' request.
 	 * Loads the list file and connects the socket to the zesarux debugger.
 	 * Initializes zesarux.
@@ -378,6 +400,15 @@ export class DebugSessionClass extends DebugSession {
 			this.sendResponse(response);
 			return;
 		}
+
+		// Register to get a note when debug session becomes active
+		this.debugConsoleSavedText='';
+		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
+			if (dbgSession) {
+				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
+				this.debugConsoleSavedText='';
+			}
+		});
 
 		// Launch emulator
 		this.launch(response);
@@ -502,7 +533,7 @@ export class DebugSessionClass extends DebugSession {
 
 		Remote.on('log', message => {
 			// Show the log (from the socket/ZEsarUX) in the debug console
-			vscode.debug.activeDebugConsole.appendLine("Log: "+message);
+			this.debugConsoleAppendLine("Log: "+message);
 		});
 
 		Remote.once('error', err => {
@@ -519,7 +550,7 @@ export class DebugSessionClass extends DebugSession {
 			Remote.once('initialized', async (text) => {
 				// Print text if available, e.g. "dbg_uart_if initilaized".
 				if (text) {
-					vscode.debug.activeDebugConsole.appendLine(text);
+					this.debugConsoleAppendLine(text);
 				}
 
 				// Initialize Cpu- or StepHistory.
@@ -533,10 +564,10 @@ export class DebugSessionClass extends DebugSession {
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
-					vscode.debug.activeDebugConsole.appendLine(cmd);
+					this.debugConsoleAppendLine(cmd);
 					try {
 						const text=await this.evaluateCommand(cmd);
-						vscode.debug.activeDebugConsole.appendLine(text);
+						this.debugConsoleAppendLine(text);
 					}
 					catch (err) {
 						// Some problem occurred
@@ -587,7 +618,7 @@ export class DebugSessionClass extends DebugSession {
 				DebugSessionClass.unitTestHandler=undefined;
 			});
 
-			// Fake the serial connection!
+			// Fake the serial connection! TODO Remove
 			if (Settings.launch.remoteType=="serial") {
 				FakeSerial=new SerialFake();	// comment this line if no fake is wanted.
 				FakeSerial.doInitialization();
@@ -649,7 +680,7 @@ export class DebugSessionClass extends DebugSession {
 			// TODO: REMOVE:
 			if (!verified) {
 				const text=JSON.stringify(bp);
-				vscode.debug.activeDebugConsole.appendLine('Unverified breakpoint:' + text);
+				this.debugConsoleAppendLine('Unverified breakpoint:' + text);
 			}
 			return bp;
 		});
@@ -1107,13 +1138,13 @@ export class DebugSessionClass extends DebugSession {
 			// Check for reverse debugging.
 			if (StepHistory.isInStepBackMode()) {
 
-				vscode.debug.activeDebugConsole.appendLine('Continue');
+				this.debugConsoleAppendLine('Continue');
 				// Continue
 				const breakReason=StepHistory.continue();
 
 				// Check for output.
 				if (breakReason) {
-					vscode.debug.activeDebugConsole.appendLine(breakReason);
+					this.debugConsoleAppendLine(breakReason);
 					// Show break reason
 					this.decorateBreak(breakReason);
 				}
@@ -1148,7 +1179,7 @@ export class DebugSessionClass extends DebugSession {
 
 		if (breakReasonString) {
 			// Send output event to inform the user about the reason
-			vscode.debug.activeDebugConsole.appendLine(breakReasonString);
+			this.debugConsoleAppendLine(breakReasonString);
 
 			// Use reason for break-decoration.
 			this.decorateBreak(breakReasonString);
@@ -1211,14 +1242,14 @@ export class DebugSessionClass extends DebugSession {
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			// Output
-			vscode.debug.activeDebugConsole.appendLine('Continue reverse');
+			this.debugConsoleAppendLine('Continue reverse');
 
 			// Reverse continue
 			const breakReason=await StepHistory.reverseContinue();
 
 			// Check for output.
 			if (breakReason) {
-				vscode.debug.activeDebugConsole.appendLine(breakReason);
+				this.debugConsoleAppendLine(breakReason);
 				// Show break reason
 				this.decorateBreak(breakReason);
 			}
@@ -1249,7 +1280,7 @@ export class DebugSessionClass extends DebugSession {
 
 		if (result.breakReasonString) {
 			// Output a possible problem
-			vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+			this.debugConsoleAppendLine(result.breakReasonString);
 			// Show break reason
 			this.decorateBreak(result.breakReasonString);
 		}
@@ -1321,7 +1352,7 @@ export class DebugSessionClass extends DebugSession {
 			if (stepBackMode) {
 				// Check if Lite history then print
 				if (!(CpuHistory as any))
-					vscode.debug.activeDebugConsole.append('Lite ');
+					this.debugConsoleAppend('Lite ');
 			}
 			else {
 				await this.startStepInfo();
@@ -1330,7 +1361,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Print
-			vscode.debug.activeDebugConsole.appendLine('Step-over');
+			this.debugConsoleAppendLine('Step-over');
 
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
@@ -1400,7 +1431,7 @@ export class DebugSessionClass extends DebugSession {
 			// Print instruction
 			if (stepBackMode) {
 				if (instr)
-					vscode.debug.activeDebugConsole.appendLine(instr);
+					this.debugConsoleAppendLine(instr);
 			}
 			else {
 				// Display T-states and time
@@ -1412,7 +1443,7 @@ export class DebugSessionClass extends DebugSession {
 			// Check for output.
 			if (breakReason) {
 				// Show break reason
-				vscode.debug.activeDebugConsole.appendLine(breakReason);
+				this.debugConsoleAppendLine(breakReason);
 				this.decorateBreak(breakReason);
 			}
 
@@ -1429,7 +1460,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async startStepInfo(mainText?: string): Promise<void> {
 		if(mainText)
-			vscode.debug.activeDebugConsole.appendLine(mainText);
+			this.debugConsoleAppendLine(mainText);
 		// Reset t-states counter
 		await Remote.resetTstates();
 	}
@@ -1481,7 +1512,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		if(output)
-			vscode.debug.activeDebugConsole.appendLine(output);
+			this.debugConsoleAppendLine(output);
 	}
 
 
@@ -1502,7 +1533,7 @@ export class DebugSessionClass extends DebugSession {
 				let text='Step-into';
 				if (result.instruction)
 					text+=': '+result.instruction;
-				vscode.debug.activeDebugConsole.appendLine(text);
+				this.debugConsoleAppendLine(text);
 
 			}
 			else {
@@ -1521,7 +1552,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Check for output.
 			if (result.breakReasonString) {
-				vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+				this.debugConsoleAppendLine(result.breakReasonString);
 				// Show break reason
 				this.decorateBreak(result.breakReasonString);
 			}
@@ -1541,7 +1572,7 @@ export class DebugSessionClass extends DebugSession {
 			// Check for reverse debugging.
 			let breakReasonString;
 			if (StepHistory.isInStepBackMode()) {
-				vscode.debug.activeDebugConsole.appendLine('Step-out');
+				this.debugConsoleAppendLine('Step-out');
 				// StepOut
 				breakReasonString=StepHistory.stepOut();
 			}
@@ -1561,7 +1592,7 @@ export class DebugSessionClass extends DebugSession {
 
 			if (breakReasonString) {
 				// Output a possible problem (end of log reached)
-				vscode.debug.activeDebugConsole.appendLine(breakReasonString);
+				this.debugConsoleAppendLine(breakReasonString);
 				// Show break reason
 				this.decorateBreak(breakReasonString);
 			}
@@ -1586,11 +1617,11 @@ export class DebugSessionClass extends DebugSession {
 			let text='Step-back';
 			if (result.instruction)
 				text+=': '+result.instruction;
-			vscode.debug.activeDebugConsole.appendLine(text);
+			this.debugConsoleAppendLine(text);
 
 			if (result.breakReasonString) {
 				// Output a possible problem (end of log reached)
-				vscode.debug.activeDebugConsole.appendLine(result.breakReasonString);
+				this.debugConsoleAppendLine(result.breakReasonString);
 				// Show break reason
 				this.decorateBreak(result.breakReasonString);
 			}
@@ -1999,8 +2030,12 @@ Notes:
 		// Always show enable status of all Logpoints
 		let result='LOGPOINT groups:';
 		const enableMap=Remote.logpointsEnabled;
-		for (const [group, enable] of enableMap) {
-			result+='\n  '+group+': '+((enable)? 'enabled':'disabled');
+		if (enableMap.size==0)
+			result+=' none';
+		else {
+			for (const [group, enable] of enableMap) {
+				result+='\n  '+group+': '+((enable)? 'enabled':'disabled');
+			}
 		}
 		return result;
 	}
