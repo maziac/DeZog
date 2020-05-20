@@ -333,12 +333,15 @@ export class ZxNextRemote extends DzrpRemote {
 		if (resp[0]!=0)
 			error="Remote returned an error code: "+resp[0];
 		const dzrp_version=""+resp[1]+"."+resp[2]+"."+resp[3];
-		const program_name=Utility.getStringFromBuffer(resp, 4);
-		// Check version number
+		let program_name=Utility.getStringFromBuffer(resp, 4);
+		if (!program_name)
+			program_name="Unknown";
+		// Check version number. Check only major and minor number.
 		if (DZRP_VERSION[0]!=resp[1]
-			||DZRP_VERSION[1]!=resp[2]
-			||DZRP_VERSION[2]!=resp[3]) {
-			error="DZRP version do not match.";
+			||DZRP_VERSION[1]!=resp[2]) {
+			error="DZRP versions do not match.\n";
+			error+="Required: "+DZRP_VERSION[0]+"."+DZRP_VERSION[1]+"\n";
+			error+="Supported by '"+program_name+"': "+resp[1]+"."+resp[2];
 		}
 		return {error, dzrpVersion: dzrp_version, programName: program_name};
 	}
