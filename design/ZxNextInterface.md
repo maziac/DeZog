@@ -99,6 +99,13 @@ Now the debug-program removes the artificial breakpoints and restores the origin
 
 Seems complicated but doable.
 
+The data structure for one breakpoint needs the following fields:
+- instruction length
+- original opcode at breakpoint address
+- breakpoint address (to identify the breakpoint)
+- the branch address
+
+I.e. 6 bytes in total.
 
 ## Breakpoint conditions
 
