@@ -21,7 +21,7 @@ import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {MemAttribute} from './disassembler/memory';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
-import {SerialFake} from './remotes/zxnext/serialfake';
+//import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
@@ -607,6 +607,7 @@ export class DebugSessionClass extends DebugSession {
 								this.checkAndStoreLiteHistory();
 								// Normal operation
 								await this.remoteContinue();
+								return undefined as any;
 							});
 						}, 500);
 					}
@@ -618,12 +619,14 @@ export class DebugSessionClass extends DebugSession {
 				DebugSessionClass.unitTestHandler=undefined;
 			});
 
+			/*
 			// Fake the serial connection! TODO Remove
 			if (Settings.launch.remoteType=="serial") {
 				FakeSerial=new SerialFake();	// comment this line if no fake is wanted.
 				FakeSerial.doInitialization();
 				ZxSimulationView.SimulationViewFactory(FakeSerial);
 			}
+			*/
 
 			// Inititalize Remote
 			try {
@@ -1149,13 +1152,14 @@ export class DebugSessionClass extends DebugSession {
 					this.decorateBreak(breakReason);
 				}
 				// Send event
-				this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+				return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 			}
 			else {
 				// Check if lite history need to be stored.
 				this.checkAndStoreLiteHistory();
 				// Normal operation
-				await this.remoteContinue();
+				const event=await this.remoteContinue();
+				return event;
 			}
 		});
 	}
@@ -1166,7 +1170,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Called at the beginning (startAutomatically) and from the
 	 * vscode UI (continueRequest).
 	 */
-	public async remoteContinue(): Promise<void> {
+	public async remoteContinue(): Promise<StoppedEvent> {
 		Decoration.clearBreak();
 		StepHistory.clear();
 
@@ -1187,12 +1191,15 @@ export class DebugSessionClass extends DebugSession {
 
 		// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
+			// Update memory dump etc.
+			await this.update();
 			// Send break
-			await this.sendEventBreakAndUpdate();
+			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
 		}
 		else {
 			// For the unit tests
 			this.emit("break");
+			return undefined as any;
 		}
 	}
 
@@ -1254,7 +1261,7 @@ export class DebugSessionClass extends DebugSession {
 				this.decorateBreak(breakReason);
 			}
 			// Send event
-			this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
+			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
 		}, 100);
 	}
 
@@ -1263,7 +1270,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Step over.
 	 * Used only by the unit tests.
 	 */
-	public async emulatorOneStepOver(): Promise<void> {
+	public async emulatorOneStepOver(): Promise<StoppedEvent> {
 		StepHistory.clear();
 
 		// Normal Step-Over
@@ -1275,15 +1282,15 @@ export class DebugSessionClass extends DebugSession {
 		// Update memory dump etc.
 		await this.update({step: true});
 
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-
 		if (result.breakReasonString) {
 			// Output a possible problem
 			this.debugConsoleAppendLine(result.breakReasonString);
 			// Show break reason
 			this.decorateBreak(result.breakReasonString);
 		}
+
+		// Send event
+		return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 	}
 
 
@@ -1300,7 +1307,7 @@ export class DebugSessionClass extends DebugSession {
 	 * the 'pause' button. So a timer assures that the response is sent after a timeout.
 	 * The function takes care that the response is sent only once.
 	 */
-	protected handleRequest(response: any, command: () => void, responseTime=1000) {
+	protected handleRequest(response: any, command: () => Promise<StoppedEvent>, responseTime=1000) {
 		if (this.proccessingSteppingRequest) {
 			// Response is sent immediately if already something else going on
 			this.sendResponse(response);
@@ -1317,12 +1324,12 @@ export class DebugSessionClass extends DebugSession {
 				// Send response after a short while so that the vscode UI can show the break button
 				respTimer=undefined;
 				this.sendResponse(response);
-			}, responseTime);	// 1 s
+			}, 10000); // TODO: responseTime);	// 1 s
 		}
 
 		// Start command
 		(async () => {
-			await command();
+			const event = await command();
 
 			// End processing
 			this.stopProcessing();
@@ -1336,6 +1343,10 @@ export class DebugSessionClass extends DebugSession {
 				clearTimeout(respTimer);
 				this.sendResponse(response);
 			}
+
+			// Send event
+			if (event)
+				this.sendEvent(event);
 		})();
 	}
 
@@ -1448,7 +1459,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		}, 100);
 	}
 
@@ -1557,7 +1568,7 @@ export class DebugSessionClass extends DebugSession {
 				this.decorateBreak(result.breakReasonString);
 			}
 			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
 	}
 
@@ -1598,7 +1609,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
 	}
 
@@ -1627,7 +1638,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Send event
-			this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
+			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
 	}
 

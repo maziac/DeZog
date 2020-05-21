@@ -1,6 +1,6 @@
 import {LogSocket} from '../../log';
 import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
-import {Z80RegistersClass, Z80_REG} from '../z80registers';
+import {Z80RegistersClass, Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 
@@ -50,6 +50,8 @@ export class ZxNextRemote extends DzrpRemote {
 		this.sequenceNumber=0;
 		// Instantiate the message queue
 		this.messageQueue=new Array<MessageBuffer>();
+		// Set decoder
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 	}
 
 

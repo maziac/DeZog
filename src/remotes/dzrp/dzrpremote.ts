@@ -401,7 +401,7 @@ export class DzrpRemote extends RemoteBase {
 		if (bp) {
 			if (bp.condition) {
 				// Check if condition is true
-				// TODO: If I would allow 'await evalExpression' I coould also allow e.g. memory checks
+				// TODO: If I would allow 'await evalExpression' I could also allow e.g. memory checks
 				const evalCond=Utility.evalExpression(bp.condition, true);
 				if (evalCond!=0)
 					return {condition: bp.condition, log: bp.log};
