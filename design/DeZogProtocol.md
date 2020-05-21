@@ -485,7 +485,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 513     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
 

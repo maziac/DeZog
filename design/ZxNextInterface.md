@@ -57,22 +57,48 @@ The SW has the following main tasks:
 - set SW breakpoints
 
 
-There is another project [NDS-NextDevSystem](https://github.com/Ckirby101/NDS-NextDevSystem) by Chris Kirby which does already what I would like to achieve as well.
-So I guess I can take that directly.
+There is another project [NDS-NextDevSystem](https://github.com/Ckirby101/NDS-NextDevSystem) by Chris Kirby which also aims at the same goal.
+So I guess I can get some inspiration from it.
 
-From what I have seen from the Z80 sources I need to modify them slightly for my purposes:
+However, from what I have seen so far there are a few challenges for use for my purposes:
 
 - There are only 10 breakpoints available. I probably need to increase this (100?)
-- A breakpoint is cleared when hit. I need to remove this feature.
-- 38h IM1 interrupt is turned off. So not usable with running interrupts (breakpoints use RST 38h). Seems Chris is working on this.
-- No conditional breakpoint. I need to implement this on Z80 side.
+- A breakpoint is cleared when hit. I need to "re-install" the breakpoint after execution. This sounds simpler than it is (!)
+- 38h IM1 interrupt is turned off. So not usable with running interrupts (breakpoints use RST 38h).
+- No conditional breakpoint. Not a real problem as this can be handled inside DeZog nowadays.
 
 
 # SW Breakpoints
 
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
 Chris uses RST 38h which makes the interrupts unusable but if the ROM is exchanged then it should be possible to use also other values.
-If DIVMMC is used it depends on what addresses it reacts.
+If DIVMMC is used it depends on what addresses it reacts on.
+
+So, at the RST position there is code located which jumps into the debug-program and the program informs DeZog via UART, then waits on input from DeZog.
+
+This is the easy part.
+
+Now if DeZog sends a 'continue' command the original breakpoint location is re-stored with the original opcode and the debug-program jumps here.
+
+Now it becomes hairy. Normal program execution would work but what if the program passes the same location again. It should stop there again but instead it does nothing because the breakpoint (the RST opcode) was not restored.
+
+So we need a way to execute the one instruction at the breakpoint location and afterwards restore the breakpoint.
+
+Current idea is to get support from DeZog. For each breakpoint DeZog should add additional info. This info contains:
+- length of the opcode
+- an optional branch address
+
+The 'length' is used to set an artificial breakpoint right after the instruction and is sued for all instruction. for non-branching isntructions this would already do.
+For the branching (and conditional branching) instruction we need also the branch location.
+
+Now the debug-program adds 2 artificial breakpoints. One at the breakpoint address + len and one at the branch address.
+
+So, after our original breakpoint was hit the debug-program restores the original opcode and then adds the 2 temporary artificial breakpoints.
+The debug-program then jumps to the breakpoint location and after the instruction is executed immediately the next RST is done (because of the artificial breakpoints.
+Now the debug-program removes the artificial breakpoints and restores the original breakpoints and then continues.
+
+Seems complicated but doable.
+
 
 ## Breakpoint conditions
 
@@ -82,13 +108,19 @@ Conditions like
 ```(A > 3) AND (PEEKW(SP) != PC)```
 should be allowed.
 
-Here is the algorithm to implement the math expression: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+I don'T need to take care inside the Z80 program. Nowadays DeZog can take care of the conditions without help of the remote.
 
 
 # Reverse Debugging
 
 Real reverse debugging, i.e. collecting a trace of instruction on the ZX Next, is not possible because this would run far too slow.
 
-But it is possible to implement a lite version:
-While steping or running (and break stopping) through the code at each stop the stack is and the register values are saved.
-Then, when back stepping, one can exactly step back through these stored values.
+But still the lite history will work in DeZog.
+
+
+# Code Coverage
+
+Similar to trace history. Is not possible or would be far to slow in SW.
+
+So code coverage is not available.
+

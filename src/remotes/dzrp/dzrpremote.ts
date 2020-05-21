@@ -280,8 +280,9 @@ export class DzrpRemote extends RemoteBase {
 			const palette=await this.sendDzrpCmdGetSpritesPalette(paltteNumber);
 			// Print
 			for (let i=0; i<palette.length; i++)
-				response+=Utility.getHexString(palette[i], 2)+" ";
+				response+=Utility.getHexString(palette[i], 3)+" ";
 		}
+		/*
 		else if (cmd_name=="cmd_get_sprites") {
 			if (cmdArray.length<2) {
 				// Error
@@ -290,7 +291,6 @@ export class DzrpRemote extends RemoteBase {
 			const index=Utility.parseValue(cmdArray[0]);
 			const count=Utility.parseValue(cmdArray[1]);
 			const data=await this.sendDzrpCmdGetSprites(index, count);
-			const x =data[0];
 			// Print
 			for (let i=0; i<data.length; i++) {
 				if (i%5==0)
@@ -300,6 +300,7 @@ export class DzrpRemote extends RemoteBase {
 				response+=data[i]+" ";
 			}
 		}
+		*/
 		else {
 			return "Error: not supported.";
 		}
