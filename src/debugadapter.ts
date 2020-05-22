@@ -611,8 +611,7 @@ export class DebugSessionClass extends DebugSession {
 								// Check if lite history need to be stored.
 								this.checkAndStoreLiteHistory();
 								// Normal operation
-								await this.remoteContinue();
-								return undefined as any;
+								return await this.remoteContinue();
 							});
 						}, 500);
 					}
