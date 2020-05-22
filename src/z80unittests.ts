@@ -133,6 +133,9 @@ export class Z80UnitTests {
 	/// Debug mode or run mode.
 	protected static debug = false;
 
+	/// Set to true if unit tests are cancelled.
+	protected static cancelled=false;
+
 	/// Stroes the covered accresses for all unit tests.
 	protected static allCoveredAddresses: Set<number>;
 
@@ -227,7 +230,8 @@ export class Z80UnitTests {
 			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : ''); //vscode.workspace.rootPath
 
 			// Mode
-			this.debug = false;
+			this.debug=false;
+			this.cancelled=false;
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
@@ -333,13 +337,27 @@ export class Z80UnitTests {
 	 */
 	public static debugPartialUnitTests() {
 		// Mode
-		this.debug = true;
+		this.debug=true;
+		this.cancelled=false;
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
 		// Start
 		Z80UnitTests.debugTestsCheck();
+	}
+
+
+	/**
+	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
+	 */
+	public static cancelUnitTests() {
+		// Cancel the unit tests
+		this.cancelled=true;
+		const text="Unit tests cancelled.";
+		Z80UnitTests.dbgOutput(text);
+		Z80UnitTests.stopUnitTests(undefined);
+		Z80UnitTests.unitTestsFinished();
 	}
 
 
@@ -661,7 +679,7 @@ export class Z80UnitTests {
 	 */
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
-		const callAddr = new Uint8Array([ address & 0xFF, address >>> 8]);
+		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
@@ -683,11 +701,14 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Starts Continue directy or through the debug adapter.
+	 * Starts Continue directly or through the debug adapter.
 	 */
 	protected static RemoteContinue(da: DebugSessionClass|undefined) {
 		// Start asynchronously
 		(async () => {
+			// Check if cancelled
+			if (Z80UnitTests.cancelled)
+				return;
 			// Init
 			Remote.startProcessing();
 			// Run or Debug

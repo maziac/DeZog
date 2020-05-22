@@ -3,6 +3,8 @@
 # 1.4.0
 - sjasmplus "--lstlab" labels are parsed now.
 - Support for DZRP 1.1.0
+- Formatting of Z80 flags changed.
+- Command dezog.cancelUnitTests added.
 
 # 1.3.1
 - Corrected display of memory slots for zsim and cspect.

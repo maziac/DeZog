@@ -158,6 +158,11 @@
 				"category": "dezog"
 			},
 			{
+				"command": "dezog.cancelUnitTests",
+				"title": "Cancels all running unit test cases.",
+				"category": "dezog"
+			},
+			{
 				"command": "dezog.getAllUnitTests",
 				"title": "Get all unit test case labels.",
 				"category": "dezog-partial-unit-testing"

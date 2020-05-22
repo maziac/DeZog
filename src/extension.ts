@@ -105,7 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
 		Z80UnitTests.clearTestCaseList();
 	}));
 
-	// Command to (delayed) execute a single unit test case
+	// Command to (delayed) execution of a single unit test case
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.execUnitTestCase', (tcLabel: string) => {
 		return Z80UnitTests.execUnitTestCase(tcLabel);
 	}));
@@ -119,6 +119,11 @@ export function activate(context: vscode.ExtensionContext) {
 	// Command to run (some) unit tests
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugPartialUnitTests', () => {
 		Z80UnitTests.debugPartialUnitTests();
+	}));
+
+	// Command to cancel the unit tests. E.g. during debugging of one unit test.
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.cancelUnitTests', (tcLabel: string) => {
+		return Z80UnitTests.cancelUnitTests();
 	}));
 
 	// Register a configuration provider for 'zrcp' debug type
