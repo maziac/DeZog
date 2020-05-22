@@ -1328,7 +1328,7 @@ export class DebugSessionClass extends DebugSession {
 				// Send response after a short while so that the vscode UI can show the break button
 				respTimer=undefined;
 				this.sendResponse(response);
-			}, 10000); // TODO: responseTime);	// 1 s
+			}, responseTime);	// 1 s
 		}
 
 		// Start command
