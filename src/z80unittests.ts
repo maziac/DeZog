@@ -688,8 +688,6 @@ export class Z80UnitTests {
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
-		setTimeout(() => {
-
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
@@ -707,8 +705,6 @@ export class Z80UnitTests {
 					Z80UnitTests.RemoteContinue(da);
 				});
 		});
-
-		}, 500);
 	}
 
 
