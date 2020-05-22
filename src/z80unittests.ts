@@ -357,6 +357,14 @@ export class Z80UnitTests {
 		const text="Unit tests cancelled.";
 		Z80UnitTests.dbgOutput(text);
 		Z80UnitTests.stopUnitTests(undefined);
+		// Fail the current test
+		/*
+		Z80UnitTests.countFailed++;
+		if (Z80UnitTests.countFailed>Z80UnitTests.countExecuted)
+			Z80UnitTests.countFailed=Z80UnitTests.countExecuted;
+		*/
+		if (Z80UnitTests.countExecuted>0)
+			Z80UnitTests.countExecuted--;
 		Z80UnitTests.unitTestsFinished();
 	}
 
@@ -680,6 +688,8 @@ export class Z80UnitTests {
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
+		setTimeout(() => {
+
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
@@ -697,6 +707,8 @@ export class Z80UnitTests {
 					Z80UnitTests.RemoteContinue(da);
 				});
 		});
+
+		}, 500);
 	}
 
 
@@ -1030,8 +1042,9 @@ export class Z80UnitTests {
 		this.unitTestOutput.appendLine('');
 		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTests.countExecuted);
 		this.unitTestOutput.appendLine('Passed test cases: ' + countPassed);
-		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: ' + Z80UnitTests.countFailed));
-		this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
+		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: '+Z80UnitTests.countFailed));
+		if (Z80UnitTests.countExecuted>0)
+			this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
 		this.unitTestOutput.appendLine('');
 
 		this.unitTestOutput.appendLine(emphasize);

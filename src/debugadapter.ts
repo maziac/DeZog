@@ -29,6 +29,7 @@ import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
+import {Z80UnitTests} from './z80unittests';
 
 
 
@@ -280,8 +281,12 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
 		// Clear all decorations
-		if (DebugSessionClass.state==DbgAdaperState.UNITTEST)
+		if (DebugSessionClass.state==DbgAdaperState.UNITTEST) {
+			// Cancel unit tests
+			Z80UnitTests.cancelUnitTests();
+			// Clear decoration
 			Decoration?.clearAllButCodeCoverageDecorations();
+		}
 		else
 			Decoration?.clearAllDecorations();
 		DebugSessionClass.state=DbgAdaperState.NORMAL;
