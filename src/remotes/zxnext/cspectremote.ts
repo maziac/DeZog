@@ -2,7 +2,6 @@ import {LogSocket} from '../../log';
 import {ZxNextRemote} from './zxnextremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
-import {Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {Utility} from '../../misc/utility';
 
 
@@ -38,8 +37,6 @@ export class CSpectRemote extends ZxNextRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		// Set decoder
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 	}
 
 
