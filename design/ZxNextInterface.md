@@ -68,6 +68,11 @@ However, from what I have seen so far there are a few challenges for use for my 
 - No conditional breakpoint. Not a real problem as this can be handled inside DeZog nowadays.
 
 
+# DZRPN - DeZog Remote Protocol Next
+
+
+
+
 # SW Breakpoints
 
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
@@ -106,6 +111,105 @@ The data structure for one breakpoint needs the following fields:
 - the branch address
 
 I.e. 6 bytes in total.
+
+
+## More complex
+
+In order to reduce complexity on the ZX Next SW part many of the breakpoint functionality is moved to DeZog.
+
+This reduces the need especially for memory at the ZX next part.
+following functionality is done by DeZog:
+- Calculation of the length of the instruction
+- Storing of the original opcode
+- Taking care of artificial (temporary) breakpoints
+- State management to decide if a breakpoint was hit and if we need to restore the original breakpoint and later restore thebreakpoint itself.
+
+No memory for tables or code is required on ZX side to:
+- calculate the length of an instruction
+- store any breakpoints, i.e. there are up to 655356 (-3) breakpoints possible
+
+Here is asequence hart which helps to explain:
+
+~~~puml
+hide footbox
+title Continue
+participant dezog as "DeZog"
+participant zxnext as "ZXNext"
+
+== Add breakpoint ==
+dezog -> zxnext: CMD_READ_MEM(bp_address)
+dezog <-- zxnext
+note over dezog: Store opcode along\nbreakpoint
+dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
+note over zxnext: Overwrite opcode with RST 0
+...
+
+== Stop at breakpoint ==
+dezog <- zxnext: NTF_PAUSE(bp_address)
+note over dezog: Store state\nENTERED_BREAKPOINT\nand bp_address
+
+== Continue ==
+alt state==ENTERED_BREAKPOINT
+	note over dezog: Get opcode of\nbp_address from list
+	dezog -> zxnext: CMD_WRITE_MEM(bp_address, opcode)
+	note over zxnext: Overwrites the\nRST 0 (breakpoint)
+	dezog <-- zxnext
+
+	note over dezog: Calculate two bp\naddresses for stepping
+	dezog -> zxnext: CMD_CONTINUE(tmp_bp_addr1, tmp_bp_addr2)
+	note over zxnext: Exchange the opcodes at\nthe both addresses\nand store them
+	dezog <-- zxnext
+	note over zxnext: Breakpoint hit:\nRestore the 2 opcodes
+	dezog <- zxnext: NTF_PAUSE(tmp_bp_addr1 || tmp_bp_addr2)
+
+end
+
+dezog -> zxnext: CMD_CONTINUE(next_bp_addr1, next_bp_addr2)
+dezog <-- zxnext
+~~~
+
+
+## Even more complex - DZRPN
+
+To save even more memory on ZX Next side and furthermore be much more flexible with the exchange data and protocol the idea is to use DZRPN.
+
+DZRPN is the "DeZog Remote Protocol Next" and it does not define any commands anymore like DZRP.
+Instead only a wrapper format is defined which carries arbitrary data.
+On ZX Next side the data is written into code memory **and executed**.
+
+I.e. DeZog send sort machine code program to the ZX Next whcih the ZX Next executes.
+
+These short machine code programs do very much what the DZRP Command would do but are, of course, much mire flexible.
+I.e. if I would need to define another parameter with DZRP I can just change the Z80 program  at DeZog. The protocol does not need any change and also the ZX Next program does not need any change.
+
+The ZX Next program basically just does the communication and the basic breakpoint handling (RST 0).
+Everything else is done by DeZog.
+
+Of course, this drastic change need major changes in DeZog:
+- ZXNextRemote and ZXNextSocketRemote cannot be derived from DZRP anymore.
+- CSpectRemote cannot be derived from ZxNextRemote
+- The build process of DeZog need to include (sjasmplus) compilation of the small assembler programs.
+- DeZog needs to read the assembler programs labels to inject parameters (e.g. the breakpoint addresses) in the machine code directly.
+
+Other problems involve:
+- Debugging the assembler source is more difficult. This is only possible at menmonic level, no source code debugging.
+- To see/log the message flow it is necessary to identify each sent block with a number. Otherwise it's completely invisible what is sent. Anyhow, parameters that are sent are mainly invisible at all. But on the other hand it is also not possible to misinterpret them on remote side.
+
+The aproach is complex, demanding, very flexible and interesting.
+I think I shoudl do it but first I need to investigate more on the real serial interfacing with the ZX Next:
+This interface usually needs to send more data per command as DZRP.
+E.g. ADD_BREAKPOINT requires about 30 bytes as program and about only 5 (additional) bytes as DZRP.
+
+At a baudrate of 230400 about 20 bytes can be transferred in a ms.
+I.e. it requires about 1 ms more per message.
+I suspect that not the baudrate but the communication latencies are main repsonsible for the usage speed but anyhow it is most probably wise to test it before I do such significant changes.
+
+I.e. I need to test the serial connection with a real ZX Next and tehn insert e.g. an extra DZRP message to each message just to slow it down and to see if it affects usage speed.
+
+
+
+
+
 
 ## Breakpoint conditions
 
