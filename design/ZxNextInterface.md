@@ -235,3 +235,50 @@ Similar to trace history. Is not possible or would be far to slow in SW.
 
 So code coverage is not available.
 
+
+# ROM vs. DivMMC
+
+Putting the debug code into the ROM area is straightforward.
+The other way is to use DivMMC which can automatically be paged in if e.g. a RST 0, i.e. address 0x0000 is executed.
+If ROM would be used a special code would be required at 0x0000 which switches the banks.
+I.e. at address 0x0000 about 20 bytes of code would be unusable for the debugged program.
+With DivMMC this area can be used by the debugged program.
+Only restrictions (but this is true for ROM as well), the debugged program is not allowed to
+- do a RST 0 (this is reserved for breakpoints)
+- do a CALL 0x0000 (same reason)
+
+Furthermore using DivMMC has the advantage that no memory bank is used, just the one for DivMMC. Obviously no DivMMC prgram could be debugged.
+
+I guess I start with a ROM version without banking and later add the DivMMC version.
+
+
+References:
+https://velesoft.speccy.cz/zx/divide/divide-memory.htm
+https://velesoft.speccy.cz/zx/divide/doc/pgm_model-en.txt
+https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/ports.txt#L370
+
+
+# Memory Bank Switching
+
+If DivMMC or ROM, both get problems with the banking in some cases.
+The debugger program resides in another memory bank than the debugged code but during the debugger program being executed it is difficult to access the memory of a debugged program in the same area.
+
+Particular problematic is
+- setting breakpoints
+- reading memory
+- writing memory
+
+
+## Setting Breakpoints
+
+The debugger program resides in the ROM area at 0x0000-0x3FFF (or maybe 0x1FFF).
+If a breakpoint should be set in this area it would be set in the debugger program.
+Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST 0 opcode. I.e. a memory read and write.
+
+To do this the debugged program memory bank need to be paged in another slot (slot 2-7). Then the memory is read and set. Afterwards the original bank paging is restored.
+
+## Reading/Writing Memory
+
+The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the 0x3FFF and 0x0000 boundaries. So the memory reading/writing need to be partitioned.
+But the principle is the same.
+

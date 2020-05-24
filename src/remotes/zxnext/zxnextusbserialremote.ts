@@ -25,7 +25,7 @@ export class ZxNextUsbSerialRemote extends ZxNextRemote {
 	constructor() {
 		super();
 		// Create parser
-		this.parser=new DzrpParser({}, 'Dezog');
+		this.parser=new DzrpParser({}, 'Dezog');	// TODO: IS done twice, see doInitialization
 	}
 
 

@@ -5,7 +5,7 @@ const {Transform}=require('stream');
 
 
 /**
- * This parser reads the first 4 bytes and interpretes it as (little endian) length.
+ * This parser reads the first 4 bytes and interprets it as (little endian) length.
  * Then it collects 'length' further bytes.
  * When all bytes have been received the data is emitted.
  */
@@ -70,6 +70,7 @@ export class DzrpParser extends Transform {
 		}, this.timeout);
 	}
 
+// TODO: Remove all logs below!
 
 	/**
 	 *  Read chunks of data until a complete message has been received.
