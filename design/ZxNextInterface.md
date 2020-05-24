@@ -22,6 +22,8 @@ The UART can be programmed via port registers 0x133B and 0x143B.
 The baudrate is connected to the video timing. This needs to be taken into account when setting the baudrate.
 Unfortunately there is **no interrupt connected to the UART**. I.e. it is required to poll it.
 
+Nowadays it is also possible to put the UART on pins 7 (Tx) and 9 (Rx) of the joystick port. I.e. no need for soldering or even to open the case.
+Drawback is only that the joystick are not usable anymore.
 
 
 # Break
@@ -282,3 +284,38 @@ To do this the debugged program memory bank need to be paged in another slot (sl
 The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the 0x3FFF and 0x0000 boundaries. So the memory reading/writing need to be partitioned.
 But the principle is the same.
 
+
+# Measurements
+
+I did a few measurements through the Joystick UART interface.
+
+Loopback without ZXNext (directly at the USB serial device) and with ZXNext.
+
+Adafruit Part Number 954, Joy 2:
+
+| baud      | packet size | Bytes/ms wo ZXN | Bytes/ms with ZXN |
+|-----------|-------------|-----------------|-------------------|
+| 230400    | 2000        | 21              | 21                |
+| 230400    | 200         | 16.5            | 15.9              |
+| 230400    | 20          | 4.79            | 4.68              |
+| 230400    | 10          | 2.71            | 2.65              |
+| 460800    | 2000        | 40              | 40                |
+| 460800    | 200         | 25.4            | 25.2              |
+| 460800    | 20          | 5.51            | 5.42              |
+| 460800    | 10          | 2.935           | 2.915             |
+| 614400    | 2000        | 52              | 51                |
+| 614400    | 200         | 30.1            | 29.7              |
+| 614400    | 20          | 5.72            | 5.63              |
+| 614400    | 10          | 3.025           | 2.955             |
+| 921600    | 2000        | 67              | 66                |
+| 921600    | 200         | 34.8            | 34.2              |
+| 921600    | 20          | 5.9             | 5.81              |
+| 921600    | 10          | 3.08            | 3.05              |
+| 1228800   | 2000        | 83              | -                 |
+| 1228800   | 200         | 38.6            | -                 |
+| 1228800   | 20          | 5.87            | -                 |
+| 1228800   | 10          | 3.125           | -                 |
+| 1958400   | 2000        | 140             | -                 |
+| 1958400   | 200         | 48.5            | -                 |
+| 1958400   | 20          | 6.26            | -                 |
+| 1958400   | 10          | 3.2             | -                 |
