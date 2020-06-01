@@ -2,6 +2,9 @@ import {LogSocket} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
+import {Utility} from '../../misc/utility';
+//import {DZRP} from '../dzrp/dzrpremote';
+//import {Utility} from '../../misc/utility';
 //import {Z80_REG} from '../z80registers';
 
 
@@ -18,6 +21,17 @@ enum Channel {
 
 
 /**
+ * Structure to hold the additional info for a breakpoint ID.
+ * I.e. the opcode to restore and the address of
+ * the breakpoint.
+ */
+interface BreakpointExtraInfo {
+	opcode: number,
+	address: number
+}
+
+
+/**
  * A ZX Next remote that is connected via a socket.
  * I.e. another program that converts socket to serial.
  */
@@ -26,6 +40,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	// The socket connection.
 	public socket: Socket;
 
+	// Stores for each breakpoint ID the opcode (the opcode that was exchanged with RST).
+	protected bpExtraInfos: Map<number, BreakpointExtraInfo>;
 
 
 	/// Initializes the machine.
@@ -40,23 +56,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		// React on-open
 		this.socket.on('connect', async () => {
 			LogSocket.log('ZxNextSocketRemote: Connected to server!');
-
-			// Test
-			/*
-			const regs=await this.sendDzrpCmdGetRegisters();
-			await this.sendDzrpCmdGetConfig();
-			await this.sendDzrpCmdPause();
-	//		const regs=await this.sendDzrpCmdGetRegisters();
-			//const slots=await this.sendDzrpCmdGetSlots();
-			const mem=await this.sendDzrpCmdReadMem(0x100, 0x200);
-			await this.sendDzrpCmdAddBreakpoint(0);
-			await this.sendDzrpCmdRemoveBreakpoint(0);
-			await this.sendDzrpCmdWriteMem(0xE000, new Uint8Array([ 1, 2, 3]));
-			const mem2=await this.sendDzrpCmdReadMem(0xE000, 4);
-			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 0x1234);
-			const regs2=await this.sendDzrpCmdGetRegisters();
-			*/
-
+			this.bpExtraInfos=new Map<number, BreakpointExtraInfo>();
 			this.onConnect();
 		});
 
@@ -135,4 +135,42 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			});
 		});
 	}
+
+
+	/**
+	 * When dealing with the HW it is not enough to simply
+	 * set a breakpoint but also teh memory contents
+	 * of the opcode need to be stored to restore
+	 * it if necessary.
+	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
+	 * no breakpoint is available anymore.
+	 */
+	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+		// Get memory at breakpoint address
+		const opcodes=await this.sendDzrpCmdReadMem(bpAddress, 1);
+		const opcode=opcodes[0];
+		// Set breakpoint normally
+		const bpId=await super.sendDzrpCmdAddBreakpoint(bpAddress, condition);
+
+		// For each bp ID it is necessary to store the opcode
+		this.bpExtraInfos.set(bpId, {opcode, address: bpAddress});
+
+		// Return
+		return bpId;
+	}
+
+
+	/**
+	 * Restores the opcode on removal.
+	 * @param bpId The breakpoint ID to remove.
+	 */
+	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+		// Remove breakpoint "normally"
+		await super.sendDzrpCmdRemoveBreakpoint(bpId);
+		// Restore opcode at breakpoint
+		const bpExtraInfo=this.bpExtraInfos.get(bpId)!;
+		Utility.assert(bpExtraInfo);
+		await this.sendDzrpCmdWriteMem(bpExtraInfo.address, new Uint8Array([bpExtraInfo.opcode]));
+	}
+
 }
