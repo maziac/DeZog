@@ -908,6 +908,18 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 
 	/**
+	 * Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error=0 (no error).
+ 	*/
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		this.zxMemory.setSlot(slot, bank);
+		return 0;
+	}
+
+
+	/**
 	 * Sends the command to read the current state of the machine.
 	 * I.e. memory, registers etc.
 	 * @returns A Promise with state data. Format is unknown (remote specific).

@@ -172,7 +172,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
 		// Remove breakpoint "normally"
-		await super.sendDzrpCmdRemoveBreakpoint(bpId);
+		await super.sendDzrpCmdRemoveBreakpoint(bpId);	// TODO: not really required optimize.
 		// Restore opcode at breakpoint
 		await this.restoreOpcodeAtBreakpoint(bpId);
 	}
