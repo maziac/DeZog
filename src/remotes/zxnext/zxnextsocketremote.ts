@@ -63,7 +63,7 @@ export class ZxNextSocketRemote extends ZxNextRemote {
 		// Handle errors
 		this.socket.on('error', err => {
 			LogSocket.log('ZxNextSocketRemote: Error: '+err);
-			console.log('Error: ', err);
+			//console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
 		});

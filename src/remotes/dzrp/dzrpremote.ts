@@ -18,7 +18,7 @@ import {Log} from '../../log';
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 1, 0];
+export const DZRP_VERSION=[1, 2, 0];
 
 // The program name and version transmitted during CMD_INIT.
 export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
@@ -58,6 +58,8 @@ export enum DZRP {
 	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=0x14,
 
 	CMD_SET_BORDER=0x15,
+
+	CMD_SET_SLOT=0x16,
 };
 
 /**
@@ -1051,6 +1053,13 @@ export class DzrpRemote extends RemoteBase {
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));
 		}
 
+		// Set the default slot/bank association
+		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot=0; slot<8; slot++) {
+			const bank8=slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
+		}
+
 		// Set the registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
@@ -1089,6 +1098,13 @@ export class DzrpRemote extends RemoteBase {
 			const bank8=2*memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot=0; slot<8; slot++) {
+			const bank8=slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
 		}
 
 		// Set the SP and PC registers
@@ -1348,6 +1364,19 @@ export class DzrpRemote extends RemoteBase {
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
 		Utility.assert(false);
 		return [];
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error. An error can only occur on real HW if the slot with dezogif is overwritten.
+ 	*/
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		Utility.assert(false);
+		return 0;
 	}
 
 

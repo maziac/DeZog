@@ -66,7 +66,6 @@ export class ZxNextRemote extends DzrpRemote {
 
 	/**
 	 * Override.
-	 * Stops the emulator.
 	 * This will disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
@@ -81,6 +80,7 @@ export class ZxNextRemote extends DzrpRemote {
 	protected startCmdRespTimeout() {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout=setTimeout(() => {
+			this.stopCmdRespTimeout();
 			const err=new Error('Socket command/response timeout.');
 			// Log
 			LogSocket.log('Error: '+err.message);
@@ -550,6 +550,20 @@ export class ZxNextRemote extends DzrpRemote {
 		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SLOTS);
 		const slots=[...buffer];
 		return slots;
+	}
+
+
+	/**
+	 * Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error. An error can only occur on real HW if the slot with dezogif is overwritten.
+ 	*/
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		const buffer=await this.sendDzrpCmd(DZRP.CMD_SET_SLOT,
+			[slot, bank]);
+		const error=buffer[0];
+		return error;
 	}
 
 
