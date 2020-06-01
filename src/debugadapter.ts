@@ -33,10 +33,6 @@ import {Z80UnitTests} from './z80unittests';
 
 
 
-// If enabled a faked serial connection will be used (for debugging/testing purposes):
-let FakeSerial;
-
-
 
 /// State of the debug adapter.
 enum DbgAdaperState {
@@ -295,7 +291,6 @@ export class DebugSessionClass extends DebugSession {
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
 		this.removeAllListeners();
-		FakeSerial?.close();
 		await Remote?.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
@@ -355,7 +350,6 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Stop machine
-		FakeSerial?.close();
 		Remote.disconnect().then(() => {
 			// And setup a new one
 			this.launch(response);
@@ -622,15 +616,6 @@ export class DebugSessionClass extends DebugSession {
 				}
 				DebugSessionClass.unitTestHandler=undefined;
 			});
-
-			/*
-			// Fake the serial connection! TODO Remove
-			if (Settings.launch.remoteType=="serial") {
-				FakeSerial=new SerialFake();	// comment this line if no fake is wanted.
-				FakeSerial.doInitialization();
-				ZxSimulationView.SimulationViewFactory(FakeSerial);
-			}
-			*/
 
 			// Inititalize Remote
 			try {

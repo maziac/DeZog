@@ -83,7 +83,7 @@ So, at the RST position there is code located which jumps into the debug-program
 
 This is the easy part.
 
-Now if DeZog sends a 'continue' command the original breakpoint location is re-stored with the original opcode and the debug-program jumps here.
+Tehn, if DeZog sends a 'continue' command the original breakpoint location is re-stored with the original opcode and the debug-program jumps here.
 
 Now it becomes hairy. Normal program execution would work but what if the program passes the same location again. It should stop there again but instead it does nothing because the breakpoint (the RST opcode) was not restored.
 
@@ -93,7 +93,7 @@ Current idea is to get support from DeZog. For each breakpoint DeZog should add 
 - length of the opcode
 - an optional branch address
 
-The 'length' is used to set an artificial breakpoint right after the instruction and is sued for all instruction. for non-branching isntructions this would already do.
+The 'length' is used to set an artificial breakpoint right after the instruction and is used for all instruction. For non-branching isntructions this would already do.
 For the branching (and conditional branching) instruction we need also the branch location.
 
 Now the debug-program adds 2 artificial breakpoints. One at the breakpoint address + len and one at the branch address.
@@ -115,20 +115,20 @@ I.e. 6 bytes in total.
 
 ## More complex
 
-In order to reduce complexity on the ZX Next SW part many of the breakpoint functionality is moved to DeZog.
+In order to reduce complexity on the ZX Next SW side  many of the breakpoint functionality is moved to DeZog.
 
 This reduces the need especially for memory at the ZX next part.
 following functionality is done by DeZog:
 - Calculation of the length of the instruction
 - Storing of the original opcode
 - Taking care of artificial (temporary) breakpoints
-- State management to decide if a breakpoint was hit and if we need to restore the original breakpoint and later restore thebreakpoint itself.
+- State management to decide if a breakpoint was hit and if we need to restore the original breakpoint and later restore the breakpoint itself.
 
 No memory for tables or code is required on ZX side to:
 - calculate the length of an instruction
 - store any breakpoints, i.e. there are up to 655356 (-3) breakpoints possible
 
-Here is asequence hart which helps to explain:
+Here is a sequence hart which helps to explain:
 
 ~~~puml
 hide footbox
@@ -141,7 +141,7 @@ dezog -> zxnext: CMD_READ_MEM(bp_address)
 dezog <-- zxnext
 note over dezog: Store opcode along\nbreakpoint
 dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
-note over zxnext: Overwrite opcode with RST 0
+note over zxnext: Overwrite opcode with RST
 ...
 
 == Stop at breakpoint ==
@@ -152,7 +152,7 @@ note over dezog: Store state\nENTERED_BREAKPOINT\nand bp_address
 alt state==ENTERED_BREAKPOINT
 	note over dezog: Get opcode of\nbp_address from list
 	dezog -> zxnext: CMD_WRITE_MEM(bp_address, opcode)
-	note over zxnext: Overwrites the\nRST 0 (breakpoint)
+	note over zxnext: Overwrites the\nRST (breakpoint)
 	dezog <-- zxnext
 
 	note over dezog: Calculate two bp\naddresses for stepping
@@ -182,7 +182,7 @@ I.e. DeZog send sort machine code program to the ZX Next whcih the ZX Next execu
 These short machine code programs do very much what the DZRP Command would do but are, of course, much more flexible.
 I.e. if I would need to define another parameter with DZRP I can just change the Z80 program  at DeZog. The protocol does not need any change and also the ZX Next program does not need any change.
 
-The ZX Next program basically just does the communication and the basic breakpoint handling (RST 0).
+The ZX Next program basically just does the communication and the basic breakpoint handling (RST).
 Everything else is done by DeZog.
 
 Of course, this drastic change need major changes in DeZog:
@@ -239,12 +239,12 @@ So code coverage is not available.
 # ROM vs. DivMMC
 
 Putting the debug code into the ROM area is straightforward.
-The other way is to use DivMMC which can automatically be paged in if e.g. a RST 0, i.e. address 0x0000 is executed. (Unfortunately delayed after the next instruction!)
+The other way is to use DivMMC which can automatically be paged in if e.g. a RST, i.e. address 0x0000 is executed. (Unfortunately delayed after the next instruction!)
 If ROM would be used a special code would be required at 0x0000 which switches the banks.
 I.e. at address 0x0000 about 20 bytes of code would be unusable for the debugged program.
 With DivMMC this area can be used by the debugged program.
 Only restrictions (but this is true for ROM as well), the debugged program is not allowed to
-- do a RST 0 (this is reserved for breakpoints)
+- do a RST (this is reserved for breakpoints)
 - do a CALL 0x0000 (same reason)
 
 Furthermore using DivMMC has the advantage that no memory bank is used, just the one for DivMMC. Obviously no DivMMC program could be debugged.
@@ -262,7 +262,7 @@ https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext
 
 My current favorite.
 
-RST 0 is used for breakpoints. With divMMC a trap can be enabled at address 0x0000.
+RST is used for breakpoints. With divMMC a trap can be enabled at address 0x0000.
 I.e. once a breakpoint is hit the DivMMC memory will be enabled automatically.
 Unfortunately this does nto happen immediately but only after one instruction fetch from the original memory paged into slot 0 (normally the ROM).
 If the debugged program has put in here something else than the ROM the instruction could be everything.
@@ -316,7 +316,7 @@ go_on:
 
 
 Problem:
-- The original idea was to use RST 0 for the breakpoints. In the original ROM there is a DI located at 0x0000. Unfortunately I think I need to keep it there because programs may use it as relative backwards jump when using IM2. On the other hand I cannot execute DI first because I need to know the state of the interrupt beforehand.
+- The original idea was to use RST for the breakpoints. In the original ROM there is a DI located at 0x0000. Unfortunately I think I need to keep it there because programs may use it as relative backwards jump when using IM2. On the other hand I cannot execute DI first because I need to know the state of the interrupt beforehand.
 Also if I would use nextreg 0x22 to disable the interrupts, I cannot leave DI at 0x0000 because I wouldn't know if how to restore it.
 So either a different RST address or disallow this special interrupt usage.
 -  I could use **RST 66h instead**. That one will be occupied anyway for the Drive button. I would only need a way to distinguish a RST 66 from the button being pressed...
@@ -337,7 +337,7 @@ Particular problematic is
 
 The debugger program resides in the ROM area at 0x0000-0x3FFF (or maybe 0x1FFF).
 If a breakpoint should be set in this area it would be set in the debugger program.
-Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST 0 opcode. I.e. a memory read and write.
+Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST opcode. I.e. a memory read and write.
 
 To do this the debugged program memory bank need to be paged in another slot (slot 2-7). Then the memory is read and set. Afterwards the original bank paging is restored.
 

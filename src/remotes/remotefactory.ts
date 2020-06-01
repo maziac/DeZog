@@ -3,9 +3,9 @@ import { RemoteBase } from './remotebase';
 //import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
 import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
 //import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
-import {CSpectRemote} from './zxnext/cspectremote';
+import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
-import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
+import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
 
 
 

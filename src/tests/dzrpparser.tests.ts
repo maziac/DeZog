@@ -1,9 +1,9 @@
 import * as assert from 'assert';
-import {DzrpParser } from '../remotes/zxnext/dzrpparser';
+import {DzrpParser } from '../remotes/dzrpbuffer/dzrpparser';
 
 
 
-suite('ZxNextParser', () => {
+suite('DzrpParser', () => {
 
 	suite('_transform', () => {
 

@@ -19,17 +19,27 @@ class MessageBuffer {
 
 
 /**
- * The representation of the ZX Next HW.
- * It receives the requests from the DebugAdapter and
+ * Conversion os SendDzrpCmd... functions as buffer and parsing of received messages.
+ *
+ * All sendDzrpCmd... methods are implemented. I.e. all commands are
+ * create a buffer to send. The buffer sending itself (sendBuffer) is
+ * not implemented. Therefore the class needs to be derived.
+ *
+ * It receives the requests from the DebugSesssionClass and
  * creates complete DZRP messages in a buffer.
  * At the end calls 'sendBuffer' which is not implemented.
  * I.e. this class needs derivation and overriding of method
  * 'sendBuffer' for the actual transport implementation.
+ *
  * In the other direction a derived class needs to receive data
  * and call the 'receivedMsg' method with the data.
  * The rest is handled in this class.
+ *
+ * The class also sets up a message queue for the commands to send.
+ *
+ * This class does not implement any complex flow/state handling.
  */
-export class ZxNextRemote extends DzrpRemote {
+export class DzrpBufferRemote extends DzrpRemote {
 
 	// The message queue (used to serialize the sent messages).
 	protected messageQueue: Array<MessageBuffer>;

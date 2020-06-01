@@ -86,6 +86,12 @@ export enum AlternateCommand {
  * A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.
+ *
+ * All sendDzrpCmd... methods are empty stubs which need to be filled
+ * by the specialized implementation.
+ *
+ * The class also implements flow/state handling for complex tasks
+ * like 'continue'.
  */
 export class DzrpRemote extends RemoteBase {
 

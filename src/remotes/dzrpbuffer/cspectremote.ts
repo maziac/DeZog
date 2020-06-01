@@ -1,5 +1,5 @@
 import {LogSocket} from '../../log';
-import {ZxNextRemote} from './zxnextremote';
+import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
@@ -20,7 +20,7 @@ const CHUNK_TIMEOUT=1000;	///< 1 sec
  * The CSpect DeZog plugin internally communicates with the
  * CSpect debugger.
  */
-export class CSpectRemote extends ZxNextRemote {
+export class CSpectRemote extends DzrpBufferRemote {
 
 	// The socket connection.
 	public socket: Socket;

@@ -1,5 +1,5 @@
 import {LogSocket} from '../../log';
-import {ZxNextRemote} from './zxnextremote';
+import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 //import {Z80_REG} from '../z80registers';
@@ -21,7 +21,7 @@ enum Channel {
  * A ZX Next remote that is connected via a socket.
  * I.e. another program that converts socket to serial.
  */
-export class ZxNextSocketRemote extends ZxNextRemote {
+export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 	// The socket connection.
 	public socket: Socket;
