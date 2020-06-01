@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.4.1
+- Support for DZRP 1.2.0: CMD_SLOT.
+
 # 1.4.0
 - sjasmplus "--lstlab" labels are parsed now.
 - Support for DZRP 1.1.0
