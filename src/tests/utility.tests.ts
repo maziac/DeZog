@@ -95,7 +95,7 @@ suite('Utility', () => {
 			test('formats, size 1', async () => {
 				const format = '${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				const res = await Utility.numberFormatted('myname', 255, 1, format, undefined);
-				assert.equal( res, 'myname,FF,-1,255,11111111,.,SZHPNC', "Unexpected formatting");
+				assert.equal( res, 'myname,FF,-1,255,11111111,.,SZ1H1PNC', "Unexpected formatting");
 			});
 
 			test('formats, size 2', async () => {
@@ -118,7 +118,7 @@ suite('Utility', () => {
 			test('general', async () => {
 				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
 				const res=await Utility.numberFormatted('myname', 65, 1, format, undefined);
-				assert.equal( res, 'myname 41   65  65 01000001 A     ZC ', "Unexpected tab formatting");
+				assert.equal( res, 'myname 41   65  65 01000001 A -Z-----C ', "Unexpected tab formatting");
 			});
 
 			test('use tab array 1', async () => {
