@@ -25,9 +25,9 @@ enum Channel {
  * I.e. the opcode to restore and the address of
  * the breakpoint.
  */
-interface BreakpointExtraInfo {
+interface BreakpointExtraInfo { // TODO: Change structure to simple number.
 	opcode: number,
-	address: number
+	//address: number
 }
 
 
@@ -43,6 +43,11 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	// Stores for each breakpoint ID the opcode (the opcode that was exchanged with RST).
 	protected bpExtraInfos: Map<number, BreakpointExtraInfo>;
 
+	// For restoring the breakpoints it is necessary to determine
+	// if a bp is currently restored or not.
+	// If not undefined it is currently restored.
+	protected restoreBreakpointId: number|undefined;
+
 
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
@@ -57,6 +62,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		this.socket.on('connect', async () => {
 			LogSocket.log('ZxNextSocketRemote: Connected to server!');
 			this.bpExtraInfos=new Map<number, BreakpointExtraInfo>();
+			this.restoreBreakpointId=undefined;
 			this.onConnect();
 		});
 
@@ -153,7 +159,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		const bpId=await super.sendDzrpCmdAddBreakpoint(bpAddress, condition);
 
 		// For each bp ID it is necessary to store the opcode
-		this.bpExtraInfos.set(bpId, {opcode, address: bpAddress});
+		this.bpExtraInfos.set(bpId, {opcode});
 
 		// Return
 		return bpId;
@@ -168,9 +174,84 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		// Remove breakpoint "normally"
 		await super.sendDzrpCmdRemoveBreakpoint(bpId);
 		// Restore opcode at breakpoint
+		await this.restoreOpcodeAtBreakpoint(bpId);
+	}
+
+
+	/**
+	 * Returns the address of a given breakpoint ID.
+	 * @param bpId The breakpoint ID to find.
+	 * @returns The breakpoint address.
+	 */
+	protected getBreakpointAddress(bpId: number): number {
+		// TODO: I can optimize it because the bpId is equal to the address.
+		const bp=this.breakpoints.find(bp => bp.bpId==bpId);
+		Utility.assert(bp);
+		return bp!.address;
+	}
+
+
+	/**
+	 * Restores the opcode of a breakpoint for a given breakpoin
+	 * @param bpId The breakpoint ID to remove.
+	 */
+	protected async restoreOpcodeAtBreakpoint(bpId: number): Promise<void> {
+		// Get breakpoint address
+		const address=this.getBreakpointAddress(bpId);
+		// Get opcode
 		const bpExtraInfo=this.bpExtraInfos.get(bpId)!;
 		Utility.assert(bpExtraInfo);
-		await this.sendDzrpCmdWriteMem(bpExtraInfo.address, new Uint8Array([bpExtraInfo.opcode]));
+		// Restore opcode at breakpoint
+		await this.sendDzrpCmdWriteMem(address, new Uint8Array([bpExtraInfo.opcode]));
+	}
+
+
+
+	/**
+	 * When connected to a ZX Next this method must take
+	 * over intelligence from the remote.
+	 * 2 states are distinugished:
+	 * - enteredBreakpointState=false: The normal one, calls the super class.
+	 *- enteredBreakpointState=true: A breakpoint ahs been hit before.
+	 * On continue it is necessary to restore the opcode first.
+	 *
+	 * Sends the command to continue ('run') the program.
+	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
+	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 */
+	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+		const bpId=this.restoreBreakpointId;
+		if (bpId==undefined) {
+			// "Normal" case
+			await super.sendDzrpCmdContinue(bp1Address, bp2Address);
+		}
+		else {
+			// Continuing from a breakpoint.
+			// Remember old resolve function
+			const originalContinueResolve=this.continueResolve;
+
+			// Setup intermediate resolve function.
+			this.continueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
+				// Restore the breakpoint
+				const bpAddr=this.getBreakpointAddress(bpId);
+				this.sendDzrpCmdAddBreakpoint(bpAddr);
+				this.restoreBreakpointId=undefined;
+				// Restore resolve function
+				this.continueResolve=originalContinueResolve;
+				// Continue
+				await super.sendDzrpCmdContinue(bp1Address, bp2Address);
+			};
+
+			// Overwrite the breakpoint temporarily with the opcode,
+			// to step over it.
+			this.restoreOpcodeAtBreakpoint(bpId);
+
+			// Calculate the 2 temporary bp addresses
+			let [, tmpBp1Addr, tmpBp2Addr]=await this.calcStepBp(false /*step-into*/);
+
+			// Step
+			await super.sendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
+		}
 	}
 
 }

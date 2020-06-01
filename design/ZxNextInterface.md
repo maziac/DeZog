@@ -146,13 +146,13 @@ note over zxnext: Overwrite opcode with RST
 
 == Stop at breakpoint ==
 dezog <- zxnext: NTF_PAUSE(bp_address)
-note over dezog: Store state\nENTERED_BREAKPOINT\nand bp_address
+note over dezog: If BREAK_REASON==HIT then\nset restoreBreakpointId
 
 == Continue ==
-alt state==ENTERED_BREAKPOINT
+alt restoreBreakpointId != undefined
 	note over dezog: Get opcode of\nbp_address from list
 	dezog -> zxnext: CMD_WRITE_MEM(bp_address, opcode)
-	note over zxnext: Overwrites the\nRST (breakpoint)
+	note over zxnext: Overwrites the\nRST (breakpoint),\ni.e. restores the opcode
 	dezog <-- zxnext
 
 	note over dezog: Calculate two bp\naddresses for stepping
@@ -162,6 +162,10 @@ alt state==ENTERED_BREAKPOINT
 	note over zxnext: Breakpoint hit:\nRestore the 2 opcodes
 	dezog <- zxnext: NTF_PAUSE(tmp_bp_addr1 || tmp_bp_addr2)
 
+	note over dezog: Restore breakpoint
+	dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
+	note over zxnext: Sets the breakpoint\n(RST) again
+	dezog <-- zxnext
 end
 
 dezog -> zxnext: CMD_CONTINUE(next_bp_addr1, next_bp_addr2)
