@@ -73,8 +73,6 @@ However, from what I have seen so far there are a few challenges for use for my 
 # DZRPN - DeZog Remote Protocol Next
 
 
-
-
 # SW Breakpoints
 
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
@@ -181,7 +179,7 @@ On ZX Next side the data is written into code memory **and executed**.
 
 I.e. DeZog send sort machine code program to the ZX Next whcih the ZX Next executes.
 
-These short machine code programs do very much what the DZRP Command would do but are, of course, much mire flexible.
+These short machine code programs do very much what the DZRP Command would do but are, of course, much more flexible.
 I.e. if I would need to define another parameter with DZRP I can just change the Z80 program  at DeZog. The protocol does not need any change and also the ZX Next program does not need any change.
 
 The ZX Next program basically just does the communication and the basic breakpoint handling (RST 0).
@@ -206,7 +204,7 @@ At a baudrate of 230400 about 20 bytes can be transferred in a ms.
 I.e. it requires about 1 ms more per message.
 I suspect that not the baudrate but the communication latencies are main repsonsible for the usage speed but anyhow it is most probably wise to test it before I do such significant changes.
 
-I.e. I need to test the serial connection with a real ZX Next and tehn insert e.g. an extra DZRP message to each message just to slow it down and to see if it affects usage speed.
+I.e. I need to test the serial connection with a real ZX Next and then insert e.g. an extra DZRP message to each message just to slow it down and to see if it affects usage speed.
 
 
 
@@ -241,7 +239,7 @@ So code coverage is not available.
 # ROM vs. DivMMC
 
 Putting the debug code into the ROM area is straightforward.
-The other way is to use DivMMC which can automatically be paged in if e.g. a RST 0, i.e. address 0x0000 is executed.
+The other way is to use DivMMC which can automatically be paged in if e.g. a RST 0, i.e. address 0x0000 is executed. (Unfortunately delayed after the next instruction!)
 If ROM would be used a special code would be required at 0x0000 which switches the banks.
 I.e. at address 0x0000 about 20 bytes of code would be unusable for the debugged program.
 With DivMMC this area can be used by the debugged program.
@@ -249,7 +247,7 @@ Only restrictions (but this is true for ROM as well), the debugged program is no
 - do a RST 0 (this is reserved for breakpoints)
 - do a CALL 0x0000 (same reason)
 
-Furthermore using DivMMC has the advantage that no memory bank is used, just the one for DivMMC. Obviously no DivMMC prgram could be debugged.
+Furthermore using DivMMC has the advantage that no memory bank is used, just the one for DivMMC. Obviously no DivMMC program could be debugged.
 
 I guess I start with a ROM version without banking and later add the DivMMC version.
 
@@ -258,6 +256,70 @@ References:
 https://velesoft.speccy.cz/zx/divide/divide-memory.htm
 https://velesoft.speccy.cz/zx/divide/doc/pgm_model-en.txt
 https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/ports.txt#L370
+
+
+# DivMMC
+
+My current favorite.
+
+RST 0 is used for breakpoints. With divMMC a trap can be enabled at address 0x0000.
+I.e. once a breakpoint is hit the DivMMC memory will be enabled automatically.
+Unfortunately this does nto happen immediately but only after one instruction fetch from the original memory paged into slot 0 (normally the ROM).
+If the debugged program has put in here something else than the ROM the instruction could be everything.
+But even with the ROM the first instruction would be "DI", giving me no chance to check the interrupt enable state to restore it later.
+
+I.e. it is necessary to occupy at least a few bytes in the slot 0 area.
+
+The pseudo code would be something like this:
+~~~asm
+	ORG 0x0000
+	Store current interrupt state (e.g. LD A,I)
+	DI
+	Jump to main
+~~~
+~~~asm
+	ORG 0x000?-0x3FFF (somewhere in the DivMMC or ROM area)
+main:
+	Store the registers
+	Setup stack
+.loop:
+	Wait on command
+	Execute command
+	Jump to .loop
+~~~
+
+Whenever a CMD_CONTINUE is executed:
+~~~asm
+cmd_continue:
+	Restore registers
+	Restore interrupt state
+	RET  ; return from RST
+~~~
+
+I.e. the debugged program must make sure that a few bytes are occupied in slot 0 at address 0.
+E.g.
+~~~
+	ORG 0x0000
+	push af
+	ld a,i
+    jp pe,go_on     ; IFF was 1 (interrupts enabled)
+
+	; if P/V read "0", try a 2nd time
+    ld a,i
+
+go_on:
+	di
+    push af	; Store P/V flag
+	jp main
+~~~
+
+
+
+Problem:
+- The original idea was to use RST 0 for the breakpoints. In the original ROM there is a DI located at 0x0000. Unfortunately I think I need to keep it there because programs may use it as relative backwards jump when using IM2. On the other hand I cannot execute DI first because I need to know the state of the interrupt beforehand.
+Also if I would use nextreg 0x22 to disable the interrupts, I cannot leave DI at 0x0000 because I wouldn't know if how to restore it.
+So either a different RST address or disallow this special interrupt usage.
+-  I could use **RST 66h instead**. That one will be occupied anyway for the Drive button. I would only need a way to distinguish a RST 66 from the button being pressed...
 
 
 # Memory Bank Switching
@@ -319,3 +381,44 @@ Adafruit Part Number 954, Joy 2:
 | 1958400   | 200         | 48.5            | -                 |
 | 1958400   | 20          | 6.26            | -                 |
 | 1958400   | 10          | 3.2             | -                 |
+
+
+
+FTDI chip, Joy 2:
+
+| baud      | packet size | Bytes/ms wo ZXN | Bytes/ms with ZXN |
+|-----------|-------------|-----------------|-------------------|
+| 921600    | 2000        | 52.99           | -                 |
+| 921600    | 1500        | 45.9            | 38.65             |
+| 921600    | 200         | 11              | 10.59             |
+| 921600    | 20          | 1.25            | 1.25              |
+| 921600    | 10          | 0.625           | 0.63              |
+| 2000000   | 2000        | 76.99           | -                 |
+| 2000000   | 200         | 11.79           | -                 |
+| 2000000   | 20          | 1.25            | -                 |
+| 2000000   | 10          | 0.625           | -                 |
+
+
+## Direct comparison:
+
+Adafruit:
+| baud      | packet size | Bytes/ms direct loopback |
+|-----------|-------------|-----------------|
+| 921600    | 2000        | 67              |
+| 921600    | 200         | 34.8            |
+| 921600    | 20          | 5.9             |
+| 921600    | 10          | 3.08            |
+
+FTDI-Chip:
+| baud      | packet size | Bytes/ms direct loopback |
+|-----------|-------------|-----------------|
+| 921600    | 2000        | 52.99           |
+| 921600    | 200         | 11              |
+| 921600    | 20          | 1.25            |
+| 921600    | 10          | 0.625           |
+| 2000000   | 2000        | 76.99           |
+| 2000000   | 200         | 11.79           |
+| 2000000   | 20          | 1.25            |
+| 2000000   | 10          | 0.625           |
+
+FTDI slower for small packet sizes.

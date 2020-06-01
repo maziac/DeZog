@@ -50,6 +50,9 @@ dezog <- program: 'pause' notification
 
 ## History
 
+### 1.2.0
+- CMD_SET_SLOT added.
+
 ### 1.1.0
 - CMD_INIT + response now contain string (program name + version).
 
@@ -119,22 +122,6 @@ Response:
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
 | 9     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
 
-<!--
-| 9     | 2    | 16 bit | Supported features |
-
-
-Supported features are bitwise:
-| Bit | Description |
-|-----|-------------|
-| 0   | Supports ZX Next register reading |
-| 1-7 | not used |
-
-
-Other features could be:
-- Supports coverage
-- Supports cpu history
-- Supports extended call stack
--->
 
 ## CMD_GET_REGISTERS
 
@@ -417,9 +404,10 @@ Response:
 Note:
 - ROM0 = 254
 - ROM1 = 255
+On real HW this is the same, 0xFF is returned for both.
 
 
-# CMD_READ_STATE
+## CMD_READ_STATE
 
 Command:
 | Index | Size | Value |Description |
@@ -437,7 +425,7 @@ Response:
 | 5     | N    |       | Arbitrary data. The format is up to the remote. |
 
 
-# CMD_WRITE_STATE
+## CMD_WRITE_STATE
 
 Command:
 | Index | Size | Value |Description |
@@ -454,7 +442,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 
 
-# CMD_GET_TBBLUE_REG
+## CMD_GET_TBBLUE_REG
 
 Command:
 | Index | Size | Value |Description |
@@ -472,7 +460,7 @@ Response:
 | 5     | 1    | 0-255 | Value of the register |
 
 
-# CMD_GET_SPRITES_PALETTE
+## CMD_GET_SPRITES_PALETTE
 
 Command:
 | Index | Size | Value |Description |
@@ -490,7 +478,7 @@ Response:
 | 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
 
 
-# CMD_GET_SPRITES
+## CMD_GET_SPRITES
 
 Command:
 | Index | Size | Value |Description |
@@ -510,7 +498,7 @@ Response:
 
 
 
-# CMD_GET_SPRITE_PATTERNS
+## CMD_GET_SPRITE_PATTERNS
 
 Command:
 | Index | Size | Value |Description |
@@ -534,7 +522,7 @@ Note: 512 = 16x16x2.
 
 
 
-# CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
+## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
 
 Command:
 | Index | Size | Value |Description |
@@ -556,7 +544,7 @@ Response:
 
 
 
-# CMD_SET_BORDER
+## CMD_SET_BORDER
 
 Command:
 | Index | Size | Value |Description |
@@ -572,6 +560,33 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
+
+
+
+## CMD_SET_SLOT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x16  | CMD_SET_SLOT |
+| 6     | 1    | 0-7   | The slot to set. |
+| 7     | 1    | 0-223, 0xFF | The 8k bank to use. |
+
+Note:
+- ROM0 = 254
+- ROM1 = 255
+On real HW this is the same, OXFE and OxFF will both be interpreted as 0xFF.
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot.<br>The only reason for an error is on real HW if the slot is occupied by dezogif. |
+
 
 
 

@@ -1311,7 +1311,7 @@ export class DebugSessionClass extends DebugSession {
 	 * the 'pause' button. So a timer assures that the response is sent after a timeout.
 	 * The function takes care that the response is sent only once.
 	 */
-	protected handleRequest(response: any, command: () => Promise<StoppedEvent>, responseTime=1000) {
+	protected handleRequest(response: any, command: () => Promise<StoppedEvent>, responseTime=750) {
 		if (this.proccessingSteppingRequest) {
 			// Response is sent immediately if already something else going on
 			this.sendResponse(response);
