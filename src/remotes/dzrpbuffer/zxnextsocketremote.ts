@@ -3,6 +3,7 @@ import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
+import {BREAK_REASON_NUMBER} from '../remotebase';
 //import {DZRP} from '../dzrp/dzrpremote';
 //import {Utility} from '../../misc/utility';
 //import {Z80_REG} from '../z80registers';
@@ -192,6 +193,19 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 
 	/**
+	 * Returns the breakpoint ID for a given address.
+	 * @param address The breakpoint address to find.
+	 * @returns The breakpoint ID.
+	 */
+	protected getBreakpointId(address: number): number {
+		// TODO: I can optimize it because the bpId is equal to the address.
+		const bp=this.breakpoints.find(bp => bp.address==address);
+		Utility.assert(bp);
+		return bp!.bpId;
+	}
+
+
+	/**
 	 * Restores the opcode of a breakpoint for a given breakpoin
 	 * @param bpId The breakpoint ID to remove.
 	 */
@@ -220,31 +234,46 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+		// Remember old resolve function
+		const originalContinueResolve=this.continueResolve!;
+		const resolveWithBp = (({breakNumber, breakAddress, breakReasonString}) => {
+			// Store breakpoint if breakpoint was hit
+			this.restoreBreakpointId=undefined;
+			if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT)
+				this.restoreBreakpointId=this.getBreakpointId(breakAddress);
+			// Call original handler
+			originalContinueResolve({breakNumber, breakAddress, breakReasonString});
+		});
+
+		// Handle different states
 		const bpId=this.restoreBreakpointId;
 		if (bpId==undefined) {
-			// "Normal" case
+			// "Normal" case.
+			// Catch resolve method to store the breakpoint ID.
+			Utility.assert(this.continueResolve);
+			this.continueResolve=resolveWithBp;
 			await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 		}
 		else {
 			// Continuing from a breakpoint.
-			// Remember old resolve function
-			const originalContinueResolve=this.continueResolve;
-
 			// Setup intermediate resolve function.
 			this.continueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Restore the breakpoint
 				const bpAddr=this.getBreakpointAddress(bpId);
 				this.sendDzrpCmdAddBreakpoint(bpAddr);
+				// Store breakpoint if breakpoint was hit
 				this.restoreBreakpointId=undefined;
+				if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT)
+					this.restoreBreakpointId=this.getBreakpointId(breakAddress);
 				// Restore resolve function
-				this.continueResolve=originalContinueResolve;
+				this.continueResolve=resolveWithBp;
 				// Continue
 				await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 			};
 
 			// Overwrite the breakpoint temporarily with the opcode,
 			// to step over it.
-			this.restoreOpcodeAtBreakpoint(bpId);
+			await this.restoreOpcodeAtBreakpoint(bpId);
 
 			// Calculate the 2 temporary bp addresses
 			let [, tmpBp1Addr, tmpBp2Addr]=await this.calcStepBp(false /*step-into*/);

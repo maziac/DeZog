@@ -431,9 +431,9 @@ export class Utility {
 	 * ${labels} = value as label (or several labels)"
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
 	 * @param undefText Text to use if value is undefined. Defaults to "undefined".
-	 * @returns A Promised with the formatted string.
+	 * @returns A Promise with the formatted string.
 	 * A Promise is required because it might be that for formatting it is required to
-	 * get more data from the socket.
+	 * get more data from the remote.
 	 */
 	public static async numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, undefText = "undefined"): Promise<string> {
 		// Safety check
