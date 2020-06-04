@@ -47,8 +47,48 @@ note over program: Breakpoint hit
 dezog <- program: 'pause' notification
 ~~~
 
+## Important Note
+
+Beginning with version 1.3.0 the DZRP has become more of a "toolkit" rather than a specific protocol.
+
+I.e. different remotes may use a different subset of commands. For one this is because different remotes do support a different feature set. But this is especially true for the breakpoint implementation which very much differs on a real ZXNext from the ones available in the emulators.
+
+The table below shows which commands are used with what remote:
+
+| Command               | ZEsarUX | CSpect | ZXNext |
+|-----------------------|---------|--------|--------|
+| CMD_INIT              | X       | X      | X      |
+| CMD_GET_REGISTERS     | X       | X      | X      |
+| CMD_SET_REGISTER      | X       | X      | X      |
+| CMD_WRITE_BANK        | X       | X      | X      |
+| CMD_CONTINUE          | X       | X      | X      |
+| CMD_PAUSE             | X       | X      | X      |
+| CMD_ADD_BREAKPOINT    | X       | X      | -      |
+| CMD_REMOVE_BREAKPOINT | X       | X      | -      |
+| CMD_ADD_WATCHPOINT    | X       | -      | -      |
+| CMD_REMOVE_WATCHPOINT | X       | -      | -      |
+| CMD_READ_MEM          | X       | X      | X      |
+| CMD_WRITE_MEM         | X       | X      | X      |
+| CMD_GET_SLOTS         | X       | X      | X      |
+| CMD_READ_STATE        | X       | -      | -      |
+| CMD_WRITE_STATE       | X       | -      | -      |
+| CMD_GET_TBBLUE_REG    | X       | X      | X      |
+| CMD_GET_SPRITES_PALETTE | X     | X      | X      |
+| CMD_GET_SPRITES       | X       | X      | X      |
+| CMD_GET_SPRITE_PATTERNS | X     | X      | X      |
+| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL | X | X | X |
+| CMD_SET_BORDER       | X        | X      | X      |
+| CMD_SET_SLOT         | X        | X      | X      |
+| CMD_SET_BREAKPOINTS  | -        | -      | X      |
+| CMD_RESTORE_MEM      | -        | -      | X      |
+
+DeZog knows with which remote it communicates and chooses the right subset.
+
 
 ## History
+
+### 1.3.0
+- Special breakpoint commands added: CMD_SET_BREAKPOINTS and CMD_RESTORE_MEM.
 
 ### 1.2.0
 - CMD_SET_SLOT added.
@@ -588,6 +628,60 @@ Response:
 | 5     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot.<br>The only reason for an error is on real HW if the slot is occupied by dezogif. |
 
 
+
+## CMD_SET_BREAKPOINTS
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2+2*N | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x17  | CMD_SET_BREAKPOINTS |
+| 6     | 2    | 0-65535 | Breakpoint address[0] |
+| 8     | 2    | 0-65535 | Breakpoint address[1] |
+| ...   | ...  | ...   | ... |
+| 6+2*N | 2    | 0-65535 | Breakpoint address[N-1] |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+N   | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | Memory at breakpoint address[0] |
+| 6     | 1    | 0-255 | Memory at breakpoint address[1] |
+| ...   | ...  | ...   | ... |
+| 5+N   | 1    | 0-255 | Memory at breakpoint address[N-1] |
+
+Note: This command is only used by the ZX Next, not by the emulators.
+
+
+## CMD_RESTORE_MEM
+
+Restores the memory previously overwritten by CMD_SET_BREAKPOINTS.
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2+3*N | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 0x18  | CMD_RESTORE_MEM |
+| 6     | 2    | 0-65535 | Address[0] |
+| 8     | 1    | 0-255 | Value to restore |
+| 9     | 2    | 0-65535 | Address[1] |
+| 11    | 1    | 0-255 | Value to restore |
+| ...   | ...  | ...   | ... |
+| 6+3*N | 2    | 0-65535 | Address[N-1] |
+| 8+3*N | 1    | 0-255 | Value to restore |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
+Note: This command is only used by the ZX Next, not by the emulators.
 
 
 # Notifications

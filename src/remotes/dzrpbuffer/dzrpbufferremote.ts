@@ -6,6 +6,14 @@ import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 
 
 
+/// Timeouts.
+export const CONNECTION_TIMEOUT=1000;	///< 1 sec
+const CHUNK_TIMEOUT=1000;	///< 1 sec
+//const QUIT_TIMEOUT=1000;	///< 1 sec
+
+
+
+
 /**
  * A structure used to serialize the sent messages.
  */
@@ -19,7 +27,7 @@ class MessageBuffer {
 
 
 /**
- * Conversion os SendDzrpCmd... functions as buffer and parsing of received messages.
+ * Conversion of SendDzrpCmd... functions as buffer and parsing of received messages.
  *
  * All sendDzrpCmd... methods are implemented. I.e. all commands are
  * create a buffer to send. The buffer sending itself (sendBuffer) is
@@ -52,6 +60,14 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	// The used timeout time.
 	protected cmdRespTimeoutTime=50000; // TODO: change to 3000;	// 3000 ms
+
+	// To collect received chunks.
+	protected receivedData: Buffer;
+	protected expectedLength: number;
+	protected receivingHeader: boolean;
+
+	// Timeout between data chunks
+	protected chunkTimeout?: NodeJS.Timeout;
 
 
 	/// Constructor.
@@ -217,6 +233,68 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 
 	/**
+	 * Called when data has been received.
+	 */
+	protected dataReceived(data: Buffer) {
+		//LogSocket.log('dataReceived, count='+data.length);
+
+		// Add data to existing buffer
+		this.receivedData=Buffer.concat([this.receivedData, data]);
+
+		// While loop becasue there might be more than 1 message received
+		while (this.receivedData.length>0) {
+			// Check if still data to receive
+			if (this.receivedData.length<this.expectedLength) {
+				this.startChunkTimeout();
+				return;	// Wait for more
+			}
+
+			// Check length
+			if (this.receivingHeader) {
+				// Header has been received, read length
+				const buffer=this.receivedData;
+				let recLength=buffer[0];
+				recLength+=buffer[1]*256;
+				recLength+=buffer[2]*256*256;
+				recLength+=buffer[3]*256*256*256;
+				this.expectedLength=recLength+4;
+				this.receivingHeader=false;
+				// Check if all payload has been received
+				if (this.receivedData.length<this.expectedLength) {
+					this.startChunkTimeout();
+					return;	// Wait for more
+				}
+			}
+
+			// Complete message received.
+			this.stopChunkTimeout();
+
+			// Strip length
+			const length=this.expectedLength-4;
+			const strippedBuffer=new Buffer(length);
+			this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
+
+			// Log
+			const txt=this.dzrpRespBufferToString(this.receivedData);
+			LogSocket.log('<<< Remote: Received '+txt);
+
+			// Handle received buffer
+			this.receivedMsg(strippedBuffer);
+
+			// Prepare next buffer. Copy to many received bytes.
+			const overLength=this.receivedData.length-this.expectedLength;
+			Utility.assert(overLength>=0);
+			const nextBuffer=new Buffer(overLength);
+			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
+			this.receivedData=nextBuffer;
+			// Next header
+			this.expectedLength=4;
+			this.receivingHeader=true;
+		}
+	}
+
+
+	/**
 	 * A DZRP response has been received.
 	 * It there are still messages in the queue the next message is sent.
 	 */
@@ -268,6 +346,31 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Pass received data to right consumer
 			msg.resolve(data);
 		}
+	}
+
+
+	/**
+	 * Starts the chunk timeout.
+	 */
+	protected startChunkTimeout() {
+		this.stopChunkTimeout();
+		this.chunkTimeout=setTimeout(() => {
+			const err=new Error('Socket chunk timeout.');
+			// Log
+			LogSocket.log('Error: '+err.message);
+			// Error
+			this.emit('error', err);
+		}, CHUNK_TIMEOUT);
+	}
+
+
+	/**
+	 * Stops the chunk timeout.
+	 */
+	protected stopChunkTimeout() {
+		if (this.chunkTimeout)
+			clearTimeout(this.chunkTimeout);
+		this.chunkTimeout=undefined;
 	}
 
 

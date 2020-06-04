@@ -83,7 +83,7 @@ So, at the RST position there is code located which jumps into the debug-program
 
 This is the easy part.
 
-Tehn, if DeZog sends a 'continue' command the original breakpoint location is re-stored with the original opcode and the debug-program jumps here.
+Then, if DeZog sends a 'continue' command the original breakpoint location is re-stored with the original opcode and the debug-program jumps here.
 
 Now it becomes hairy. Normal program execution would work but what if the program passes the same location again. It should stop there again but instead it does nothing because the breakpoint (the RST opcode) was not restored.
 
@@ -137,35 +137,58 @@ participant dezog as "DeZog"
 participant zxnext as "ZXNext"
 
 == Add breakpoint ==
-dezog -> zxnext: CMD_READ_MEM(bp_address)
-dezog <-- zxnext
-note over dezog: Store opcode along\nbreakpoint
-dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
-note over zxnext: Overwrite opcode with RST
+
+note over dezog: add breakpoint\nto list
+note over zxnext: No communication with ZXNext
+'dezog -> zxnext: CMD_READ_MEM(bp_address)
+'dezog <-- zxnext
+'note over dezog: Store opcode along\nbreakpoint
+'dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
+'note over zxnext: Overwrite opcode with RST
 ...
 
-== Stop at breakpoint ==
-dezog <- zxnext: NTF_PAUSE(bp_address)
-note over dezog: If BREAK_REASON==HIT then\nset restoreBreakpointId
-
 == Continue ==
-alt restoreBreakpointId != undefined
-	note over dezog: Get opcode of\nbp_address from list
-	dezog -> zxnext: CMD_WRITE_MEM(bp_address, opcode)
-	note over zxnext: Overwrites the\nRST (breakpoint),\ni.e. restores the opcode
+	note over dezog: Set all breakpoints
+	dezog -> zxnext: CMD_SET_BREAKPOINTS(bp_addresses)
+	note over zxnext: Set a RST for every address
+	dezog <-- zxnext: List of opcodes
+	note over dezog: Store the opcodes\nalong with the addresses
+
+	note over dezog: Calculate two bp\naddresses for stepping
+	dezog -> zxnext: CMD_CONTINUE(tmp_bp_addr1, tmp_bp_addr2)
+	note over zxnext: Exchange the opcodes at\nthe both addresses\nand store them
+	dezog <-- zxnext: Response
+	note over zxnext: Breakpoint hit:\nRestore the 2 opcodes
+	dezog <- zxnext: NTF_PAUSE(address)
+
+	note over dezog: Recall addresses\nand opcodes
+	dezog -> zxnext: CMD_RESTORE_MEM(addresses, opcodes)
+	note over zxnext: Restores the memory
 	dezog <-- zxnext
+...
+
+== Stop at breakpoint (generally) ==
+dezog <- zxnext: NTF_PAUSE(bp_address)
+note over dezog: If BREAK_REASON==HIT then\nset breakedAddress
+...
+
+== Continue (from breakpoint) ==
+
+alt restoreBreakpointId != undefined
+	note over dezog: Create list of bp addresses\nwithout the breakedAddress
+	dezog -> zxnext: CMD_SET_BREAKPOINTS(bp_addresses)
+	note over zxnext: Overwrites the\nRST (breakpoint),\ni.e. restores the opcode
+	dezog <-- zxnext: List of opcodes
 
 	note over dezog: Calculate two bp\naddresses for stepping
 	dezog -> zxnext: CMD_CONTINUE(tmp_bp_addr1, tmp_bp_addr2)
 	note over zxnext: Exchange the opcodes at\nthe both addresses\nand store them
 	dezog <-- zxnext
 	note over zxnext: Breakpoint hit:\nRestore the 2 opcodes
-	dezog <- zxnext: NTF_PAUSE(tmp_bp_addr1 || tmp_bp_addr2)
+	dezog <- zxnext: NTF_PAUSE(address)
 
-	note over dezog: Restore breakpoint
-	dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
-	note over zxnext: Sets the breakpoint\n(RST) again
-	dezog <-- zxnext
+	dezog -> zxnext: CMD_SET_BREAKPOINTS(breakedAddress)
+	note over zxnext: Restores the one\nmemory location
 end
 
 dezog -> zxnext: CMD_CONTINUE(next_bp_addr1, next_bp_addr2)

@@ -18,7 +18,7 @@ import {Log} from '../../log';
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 2, 0];
+export const DZRP_VERSION=[1, 3, 0];
 
 // The program name and version transmitted during CMD_INIT.
 export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
@@ -60,6 +60,9 @@ export enum DZRP {
 	CMD_SET_BORDER=0x15,
 
 	CMD_SET_SLOT=0x16,
+
+	CMD_SET_BREAKPOINTS=0x17,
+	CMD_RESTORE_MEM=0x18,
 };
 
 /**
