@@ -653,7 +653,9 @@ Response:
 | ...   | ...  | ...   | ... |
 | 5+N   | 1    | 0-255 | Memory at breakpoint address[N-1] |
 
-Note: This command is only used by the ZX Next, not by the emulators.
+Notes:
+- This command is only used by the ZX Next, not by the emulators.
+- N is max. 21844 ((65536-2)/3)
 
 
 ## CMD_RESTORE_MEM
@@ -681,8 +683,9 @@ Response:
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 
-Note: This command is only used by the ZX Next, not by the emulators.
-
+Notes:
+- This command is only used by the ZX Next, not by the emulators.
+- N is max. 21844 ((65536-2)/3)
 
 # Notifications
 

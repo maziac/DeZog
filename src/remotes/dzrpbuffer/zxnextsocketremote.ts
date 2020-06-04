@@ -1,4 +1,5 @@
 import {LogSocket} from '../../log';
+import {DZRP} from '../dzrp/dzrpremote';
 import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
@@ -210,7 +211,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @returns A Promise with the memory contents from each breakpoint address.
 	 */
 	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
-	return [];
+		const opcodes=await this.sendDzrpCmd(DZRP.CMD_SET_BREAKPOINTS, bpAddresses);
+		return [...opcodes];
 	}
 
 
@@ -223,10 +225,19 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * calculated.
 	 * @param elems The addresses + memory content.
 	 */
-	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<number> {
-		return 0;
+	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
+		// Create buffer from array
+		const count=elems.length;
+		const buffer=Buffer.alloc(3*count);
+		let i=0;
+		for (const elem of elems) {
+			const addr=elem.address;
+			buffer[i++]=addr&0xFF;
+			buffer[i++]=(addr>>>8)&0xFF;
+			buffer[i++]=elem.value;
+		}
+		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
-
 
 
 	/**
