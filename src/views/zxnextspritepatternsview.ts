@@ -383,7 +383,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Create a new web view html code
 			this.setHtml();
 		}
-		catch {};
+		catch (e) {
+			Remote.emit('warning', e.message);
+		};
 	}
 
 

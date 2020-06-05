@@ -709,7 +709,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Call super
 			await super.update(reason);
 		}
-		catch {};
+		catch(e) {
+			Remote.emit('warning', e.message);
+		};
 	}
 
 

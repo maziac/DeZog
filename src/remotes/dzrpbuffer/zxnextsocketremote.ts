@@ -298,4 +298,23 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		return bpFiltered;
 	}
 
+
+	/**
+	 * Not supported.
+	 * The ZX Next can't read the sprite attributes.
+	 * Throws an exception.
+ 	*/
+	public async sendDzrpCmdGetSprites(index: number, count: number): Promise<Array<Uint8Array>> {
+		throw Error("The sprite attributes can't be read on a ZX Next unfortunately.");
+	}
+
+
+	/**
+	* Not supported.
+	* The ZX Next can't read the sprite patterns.
+	* Throws an exception.
+	*/
+	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
+		throw Error("The sprite patterns can't be read on a ZX Next unfortunately.");
+	}
 }

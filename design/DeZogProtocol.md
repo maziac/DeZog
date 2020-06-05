@@ -74,8 +74,8 @@ The table below shows which commands are used with what remote:
 | CMD_WRITE_STATE       | X       | -      | -      |
 | CMD_GET_TBBLUE_REG    | X       | X      | X      |
 | CMD_GET_SPRITES_PALETTE | X     | X      | X      |
-| CMD_GET_SPRITES       | X       | X      | X      |
-| CMD_GET_SPRITE_PATTERNS | X     | X      | X      |
+| CMD_GET_SPRITES       | X       | X      | -      |
+| CMD_GET_SPRITE_PATTERNS | X     | X      | -      |
 | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL | X | X | X |
 | CMD_SET_BORDER       | X        | X      | X      |
 | CMD_SET_SLOT         | X        | X      | X      |
