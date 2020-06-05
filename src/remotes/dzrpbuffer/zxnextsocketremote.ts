@@ -278,6 +278,12 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+		// Get address to check if current breakpoint is removed
+		const bp=this.restorableBreakpoints.get(bpId)!;
+		Utility.assert(bp);
+		if (this.breakedAddress==bp?.address)
+			this.breakedAddress=undefined;
+		// Delete
 		this.restorableBreakpoints.delete(bpId);
 	}
 
