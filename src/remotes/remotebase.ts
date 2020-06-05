@@ -1432,7 +1432,7 @@ export class RemoteBase extends EventEmitter {
 	 * The 2nd of these bp addresses can be undefined.
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
-		// Make sute the registers are there
+		// Make sure the registers are there
 		await this.getRegisters();
 		const pc=this.getPC();
 		// Get opcodes

@@ -144,9 +144,18 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			// Restore breakpoint addresses
 			const count=bpAddresses.length;
 			Utility.assert(count==opcodes.length);
-			const memValues=new Array<{address: number, value: number}>(count);
+			let memCount=count;
+			if (oldOpcode!=undefined)
+				memCount+1;
+			const memValues=new Array<{address: number, value: number}>(memCount);
+			let k=0;
+			if (oldOpcode!=undefined) {
+				// Add the las set breakpoint
+				memValues[k++]={address: oldBreakedAddress!, value: oldOpcode[0]}
+			}
+			// Change the order
 			for (let i=count-1; i>=0; i--) {
-				memValues[i]={address: bpAddresses[i], value: opcodes[i]};
+				memValues[k++]={address: bpAddresses[i], value: opcodes[i]};
 			}
 			await this.sendDzrpCmdRestoreMem(memValues);
 			// Call original handler
@@ -160,6 +169,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 		// Handle different states
 		const oldBreakedAddress=this.breakedAddress;
+		let oldOpcode;
 		if (oldBreakedAddress==undefined) {
 			// "Normal" case.
 			// Catch resolve method to store the breakpoint ID.
@@ -177,8 +187,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					this.breakedAddress=breakAddress;
 
 				// Check if 2nd continue is necessary
-				if (breakAddress==bp1Address
-					||breakAddress==bp2Address
+				if ((breakAddress!=undefined&&
+					(breakAddress==bp1Address||breakAddress==bp2Address))
 					||breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT) {
 					// Either a "real" breakpoint was hit or one of the original temporary breakpoints.
 					// In any case we don't need to continue here.
@@ -188,7 +198,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					// Restore resolve function
 					this.continueResolve=resolveWithBp;
 					// Restore the breakpoint (the other breakpoints are already set)
-					this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
+					oldOpcode=await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue
 					await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 				}
@@ -211,7 +221,15 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @returns A Promise with the memory contents from each breakpoint address.
 	 */
 	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
-		const opcodes=await this.sendDzrpCmd(DZRP.CMD_SET_BREAKPOINTS, bpAddresses);
+		// Create buffer from array
+		const count=bpAddresses.length;
+		const buffer=Buffer.alloc(2*count);
+		let i=0;
+		for (const addr of bpAddresses) {
+			buffer[i++]=addr&0xFF;
+			buffer[i++]=(addr>>>8)&0xFF;
+		}
+		const opcodes=await this.sendDzrpCmd(DZRP.CMD_SET_BREAKPOINTS, buffer);
 		return [...opcodes];
 	}
 
