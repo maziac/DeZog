@@ -924,6 +924,8 @@ export class Utility {
 	 * @returns E.g. "!(A == 7)"
 	 */
 	public static getConditionFromAssert(assertExpression: string) {
+		if (assertExpression.trim().length==0)
+			assertExpression='false';
 		return '!('+assertExpression+')';
 	}
 

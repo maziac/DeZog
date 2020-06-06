@@ -242,6 +242,8 @@ export class RemoteBase extends EventEmitter {
 			// - ASSERT A < 5
 			// - ASSERT HL <= LBL_END+2
 			// - ASSERT B > (MAX_COUNT+1)/2
+			// - ASSERT false
+			// - ASSERT
 
 			// ASSERTs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression

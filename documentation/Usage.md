@@ -846,6 +846,7 @@ instead: The ASSERT is on the next line i.e. at the address after the "LD" instr
 Notes:
 
 - ASSERT is not available in ZEsarUX.
+- you can use "ASSERT" only, which evaluates to "ASSERT false". I.e. this is equivalent to an unconditional break.
 - The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
