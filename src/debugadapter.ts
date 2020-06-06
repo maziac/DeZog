@@ -2073,7 +2073,7 @@ Notes:
 				const labelsString=labels.join(', ');
 				result+=Utility.getHexString(abp.address, 4)+'h ('+labelsString+'): ';
 				// Condition, remove the brackets
-				result+=Utility.getAssertFromCondition(abp.condition);
+				result+=Utility.getAssertFromCondition(abp.condition)+'\n';
 			}
 		}
 		return result;

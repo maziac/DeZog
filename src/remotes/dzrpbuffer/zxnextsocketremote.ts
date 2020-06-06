@@ -317,4 +317,15 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected async sendDzrpCmdGetSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		throw Error("The sprite patterns can't be read on a ZX Next unfortunately.");
 	}
+
+
+	/**
+	 * State saving is not supported with ZX Next.
+	 */
+	public async stateSave(filePath: string): Promise<void> {
+		throw Error("Saving and restoring the state is not supported with the ZX Next.");
+	}
+	public async stateRestore(filePath: string): Promise<void> {
+		throw Error("Saving and restoring the state is not supported with the ZX Next.");
+	}
 }
