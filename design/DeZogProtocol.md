@@ -63,29 +63,32 @@ The table below shows which commands are used with what remote:
 | CMD_WRITE_BANK        | X       | X      | X      |
 | CMD_CONTINUE          | X       | X      | X      |
 | CMD_PAUSE             | X       | X      | X      |
+| CMD_READ_MEM          | X       | X      | X      |
+| CMD_WRITE_MEM         | X       | X      | X      |
+| CMD_GET_SLOTS         | X       | X      | X      |
+| CMD_SET_SLOT          | X        | X      | X      |
+| CMD_GET_TBBLUE_REG    | X       | X      | X      |
+| CMD_SET_BORDER        | X        | X      | X      |
+| CMD_SET_BREAKPOINTS   | -        | -      | X      |
+| CMD_RESTORE_MEM       | -        | -      | X      |
+| CMD_GET_SPRITES_PALETTE | X     | X      | X      |
+| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL | X | X | X |
+| CMD_GET_SPRITES       | X       | X      | -      |
+| CMD_GET_SPRITE_PATTERNS | X     | X      | -      |
 | CMD_ADD_BREAKPOINT    | X       | X      | -      |
 | CMD_REMOVE_BREAKPOINT | X       | X      | -      |
 | CMD_ADD_WATCHPOINT    | X       | -      | -      |
 | CMD_REMOVE_WATCHPOINT | X       | -      | -      |
-| CMD_READ_MEM          | X       | X      | X      |
-| CMD_WRITE_MEM         | X       | X      | X      |
-| CMD_GET_SLOTS         | X       | X      | X      |
 | CMD_READ_STATE        | X       | -      | -      |
 | CMD_WRITE_STATE       | X       | -      | -      |
-| CMD_GET_TBBLUE_REG    | X       | X      | X      |
-| CMD_GET_SPRITES_PALETTE | X     | X      | X      |
-| CMD_GET_SPRITES       | X       | X      | -      |
-| CMD_GET_SPRITE_PATTERNS | X     | X      | -      |
-| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL | X | X | X |
-| CMD_SET_BORDER       | X        | X      | X      |
-| CMD_SET_SLOT         | X        | X      | X      |
-| CMD_SET_BREAKPOINTS  | -        | -      | X      |
-| CMD_RESTORE_MEM      | -        | -      | X      |
 
 DeZog knows with which remote it communicates and chooses the right subset.
 
 
 ## History
+
+### 1.4.0
+- Numbering changed.
 
 ### 1.3.0
 - Special breakpoint commands added: CMD_SET_BREAKPOINTS and CMD_RESTORE_MEM.
@@ -146,9 +149,9 @@ The command sender will evaluate the received version and disconnect if versions
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n     | Length     |
+| 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x01  | CMD_INIT |
+| 5     | 1    | 1     | CMD_INIT |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
 | 9     | 1-n  | 0-terminated string | The program name + version as a string. E.g. "DeZog v1.4.0" |
 
@@ -170,7 +173,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x02  | CMD_GET_REGISTERS |
+| 5     | 1    | 2     | CMD_GET_REGISTERS |
 
 Response:
 | Index | Size | Value |Description |
@@ -202,8 +205,8 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x03  | CMD_SET_REGISTER |
-| 6     | 1    | i  | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
+| 5     | 1    | 3     | CMD_SET_REGISTER |
+| 6     | 1    | i     | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
 | 7     | 2  | n  | The value to set. Little endian. If register is one byte only the lower byte is used but both bytes are sent. |
 
 
@@ -221,7 +224,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 8195  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x04  | CMD_WRITE_BANK |
+| 5     | 1    | 4     | CMD_WRITE_BANK |
 | 6     | 1    | 0-223 | 8k bank number |
 | 7     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
@@ -242,7 +245,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 13    | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x05  | CMD_CONTINUE |
+| 5     | 1    | 5     | CMD_CONTINUE |
 | 6     | 1    | 0/1   | Enable Breakpoint1 |
 | 7     | 2    | 0-0xFFFF | Breakpoint1 address |
 | 9     | 1    | 0/1   | Enable Breakpoint2 |
@@ -283,89 +286,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x06  | CMD_PAUSE    |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-
-
-## CMD_ADD_BREAKPOINT
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 4+n   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x07  | CMD_ADD_BREAKPOINT |
-| 6     | 2    | 0-65535 | Breakpoint address |
-| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 3     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
-
-
-
-## CMD_REMOVE_BREAKPOINT
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 4     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x08  | CMD_REMOVE_BREAKPOINT |
-| 6     | 2    | 1-65535 | Breakpoint ID |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-
-
-
-## CMD_ADD_WATCHPOINT
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 6+n   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x09  | CMD_ADD_WATCHPOINT |
-| 6     | 2    | 0-65535 | Start of watchpoint address range |
-| 6     | 2    | 0-65535 | Size of watchpoint address range |
-| 6     | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
-| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
-
-
-
-## CMD_REMOVE_WATCHPOINT
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0A  | CMD_REMOVE_WATCHPOINT |
-| 6     | 2    | 0-65535 | Start of watchpoint address range |
-| 6     | 2    | 0-65535 | Size of watchpoint address range |
+| 5     | 1    | 6     | CMD_PAUSE    |
 
 
 Response:
@@ -383,7 +304,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 7     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0B  | CMD_READ_MEM |
+| 5     | 1    | 7     | CMD_READ_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 2    | n     | Size of the memory block |
@@ -406,7 +327,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0C  | CMD_WRITE_MEM |
+| 5     | 1    | 8     | CMD_WRITE_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 1    | addr[0] | First byte of memory block |
@@ -428,7 +349,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0D  | CMD_GET_SLOTS |
+| 5     | 1    | 9     | CMD_GET_SLOTS |
 
 
 Response:
@@ -447,162 +368,6 @@ Note:
 On real HW this is the same, 0xFF is returned for both.
 
 
-## CMD_READ_STATE
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0E  | CMD_READ_STATE |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1+N   | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | N    |       | Arbitrary data. The format is up to the remote. |
-
-
-## CMD_WRITE_STATE
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2+N   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x0F  | CMD_WRITE_STATE |
-| 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-
-
-## CMD_GET_TBBLUE_REG
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 3  | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x10  | CMD_GET_TBBLUE_REG |
-| 6     | 1    | 0-255 | The register |
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 1    | 0-255 | Value of the register |
-
-
-## CMD_GET_SPRITES_PALETTE
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 3   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x11  | CMD_GET_SPRITES_PALETTE |
-| 6     | 1    | 0/1   | Palette index |
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 513     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
-
-
-## CMD_GET_SPRITES
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 4     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x12  | CMD_GET_SPRITES |
-| 6     | 1    | 0-128 | Sprite index |
-| 7     | 1    | 0-128 | N. Count of sprites |
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1+5*N | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
-
-
-
-## CMD_GET_SPRITE_PATTERNS
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 6     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x13  | CMD_GET_SPRITE_PATTERNS |
-| 6     | 2    | 0-63  | index of 256 byte pattern. |
-| 7     | 2    | 0-64  | N. Number of patterns to retrieve |
-
-Note: It is not possible to read just a 128 byte pattern, instead always 256 patterns are read.
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1+N*256 | Length   |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | N*256| 0-255 | Pattern memory data. |
-
-Note: 512 = 16x16x2.
-
-
-
-## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x14  | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 6     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 1    | 0-255 | x-left     |
-| 6     | 1    | 0-255 | x-right    |
-| 7     | 1    | 0-255 | y-top      |
-| 8     | 1    | 0-255 | y-bottom   |
-| 9     | 1    | 0-255 | control byte (from register 0x15) |
-
-
-
-## CMD_SET_BORDER
-
-Command:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 3     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x15  | CMD_SET_BORDER |
-| 6     | 1    | Bits 0-2: color  | The color for the border |
-
-
-Response:
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-
-
-
 ## CMD_SET_SLOT
 
 Command:
@@ -610,7 +375,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x16  | CMD_SET_SLOT |
+| 5     | 1    | 10    | CMD_SET_SLOT |
 | 6     | 1    | 0-7   | The slot to set. |
 | 7     | 1    | 0-223, 0xFF | The 8k bank to use. |
 
@@ -628,6 +393,41 @@ Response:
 | 5     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot.<br>The only reason for an error is on real HW if the slot is occupied by dezogif. |
 
 
+## CMD_GET_TBBLUE_REG
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 3  | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 11    | CMD_GET_TBBLUE_REG |
+| 6     | 1    | 0-255 | The register |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | Value of the register |
+
+
+## CMD_SET_BORDER
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 3     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 12    | CMD_SET_BORDER |
+| 6     | 1    | Bits 0-2: color  | The color for the border |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
 
 ## CMD_SET_BREAKPOINTS
 
@@ -636,7 +436,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2+2*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x17  | CMD_SET_BREAKPOINTS |
+| 5     | 1    | 13    | CMD_SET_BREAKPOINTS |
 | 6     | 2    | 0-65535 | Breakpoint address[0] |
 | 8     | 2    | 0-65535 | Breakpoint address[1] |
 | ...   | ...  | ...   | ... |
@@ -667,7 +467,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2+3*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 0x18  | CMD_RESTORE_MEM |
+| 5     | 1    | 14    | CMD_RESTORE_MEM |
 | 6     | 2    | 0-65535 | Address[0] |
 | 8     | 1    | 0-255 | Value to restore |
 | 9     | 2    | 0-65535 | Address[1] |
@@ -686,6 +486,206 @@ Response:
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
 - N is max. 21844 ((65536-2)/3)
+
+
+## CMD_GET_SPRITES_PALETTE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 3     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 15    | CMD_GET_SPRITES_PALETTE |
+| 6     | 1    | 0/1   | Palette index |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 513   | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 512  | 0-255 | The 256 palette values, 9bit values, little endian, the 2nd byte bit 0 contains the lowest bit of the blue 3-bit color. RRRGGGBB, 0000000B |
+
+
+
+## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 16    | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 6     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | x-left     |
+| 6     | 1    | 0-255 | x-right    |
+| 7     | 1    | 0-255 | y-top      |
+| 8     | 1    | 0-255 | y-bottom   |
+| 9     | 1    | 0-255 | control byte (from register 0x15) |
+
+
+
+## CMD_GET_SPRITES
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 30  | CMD_GET_SPRITES |
+| 6     | 1    | 0-128 | Sprite index |
+| 7     | 1    | 0-128 | N. Count of sprites |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+5*N | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
+
+
+## CMD_GET_SPRITE_PATTERNS
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 6     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 31    | CMD_GET_SPRITE_PATTERNS |
+| 6     | 2    | 0-63  | index of 256 byte pattern. |
+| 7     | 2    | 0-64  | N. Number of patterns to retrieve |
+
+Note: It is not possible to read just a 128 byte pattern, instead always 256 patterns are read.
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+N*256 | Length   |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | N*256| 0-255 | Pattern memory data. |
+
+Note: 512 = 16x16x2.
+
+
+## CMD_ADD_BREAKPOINT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4+n   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 40    | CMD_ADD_BREAKPOINT |
+| 6     | 2    | 0-65535 | Breakpoint address |
+| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 3     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
+
+
+
+## CMD_REMOVE_BREAKPOINT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 41    | CMD_REMOVE_BREAKPOINT |
+| 6     | 2    | 1-65535 | Breakpoint ID |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
+
+
+## CMD_ADD_WATCHPOINT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 6+n   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 42    | CMD_ADD_WATCHPOINT |
+| 6     | 2    | 0-65535 | Start of watchpoint address range |
+| 6     | 2    | 0-65535 | Size of watchpoint address range |
+| 6     | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
+| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
+
+
+## CMD_REMOVE_WATCHPOINT
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 43    | CMD_REMOVE_WATCHPOINT |
+| 6     | 2    | 0-65535 | Start of watchpoint address range |
+| 6     | 2    | 0-65535 | Size of watchpoint address range |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
+
+## CMD_READ_STATE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 50    | CMD_READ_STATE |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+N   | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | N    |       | Arbitrary data. The format is up to the remote. |
+
+
+## CMD_WRITE_STATE
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2+N   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 51    | CMD_WRITE_STATE |
+| 6     | N    |       | Arbitrary data. This is data that has previously been retrieved via CMD_READ_STATE. |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
 
 # Notifications
 

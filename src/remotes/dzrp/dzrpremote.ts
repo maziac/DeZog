@@ -18,7 +18,7 @@ import {Log} from '../../log';
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 3, 0];
+export const DZRP_VERSION=[1, 4, 0];
 
 // The program name and version transmitted during CMD_INIT.
 export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
@@ -29,40 +29,38 @@ export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
  * The response contains the command with the bit 7 set.
  */
 export enum DZRP {
+	// ZXNext: All Commands available in ZXNext (need to be consecutive)
 	CMD_INIT=1,
 	CMD_GET_REGISTERS=2,
 	CMD_SET_REGISTER=3,
 	CMD_WRITE_BANK=4,
 	CMD_CONTINUE=5,
 	CMD_PAUSE=6,
+	CMD_READ_MEM=7,
+	CMD_WRITE_MEM=8,
+	CMD_GET_SLOTS=9,
+	CMD_SET_SLOT=10,
+	CMD_GET_TBBLUE_REG=11,
+	CMD_SET_BORDER=12,
+	CMD_SET_BREAKPOINTS=13,
+	CMD_RESTORE_MEM=14,
+	CMD_GET_SPRITES_PALETTE=15,
+	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=16,
 
-	CMD_ADD_BREAKPOINT=7,
-	CMD_REMOVE_BREAKPOINT=8,
+	// Sprites
+	CMD_GET_SPRITES=30,
+	CMD_GET_SPRITE_PATTERNS=31,
 
-	CMD_ADD_WATCHPOINT=9,
-	CMD_REMOVE_WATCHPOINT=0xA,
+	// Breakpoint
+	CMD_ADD_BREAKPOINT=40,
+	CMD_REMOVE_BREAKPOINT=41,
 
-	CMD_READ_MEM=0xB,
-	CMD_WRITE_MEM=0xC,
+	CMD_ADD_WATCHPOINT=42,
+	CMD_REMOVE_WATCHPOINT=43,
 
-	CMD_GET_SLOTS=0xD,
-
-	CMD_READ_STATE=0xE,
-	CMD_WRITE_STATE=0xF,
-
-	CMD_GET_TBBLUE_REG=0x10,
-
-	CMD_GET_SPRITES_PALETTE=0x11,
-	CMD_GET_SPRITES=0x12,
-	CMD_GET_SPRITE_PATTERNS=0x13,
-	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=0x14,
-
-	CMD_SET_BORDER=0x15,
-
-	CMD_SET_SLOT=0x16,
-
-	CMD_SET_BREAKPOINTS=0x17,
-	CMD_RESTORE_MEM=0x18,
+	// State
+	CMD_READ_STATE=50,
+	CMD_WRITE_STATE=51,
 };
 
 /**
