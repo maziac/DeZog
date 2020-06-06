@@ -48,6 +48,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 	/// The currently selected sprite palette.
 	protected static currentPaletteNumber = -1;
 
+	/// String that is shown if retrieving was not possible.
+	protected retrievingError;
 
 	/**
 	 * Static update function. This is called once per update and takes care of the
@@ -377,8 +379,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Load palette if not available
 			await this.getSpritesPalette();
 
-			// Get patterns
-			await this.getSpritePatterns();
+			try {
+				// Get patterns
+				await this.getSpritePatterns();
+			}
+			catch (e) {
+				this.retrievingError=e.message;
+			};
 
 			// Create a new web view html code
 			this.setHtml();
@@ -435,6 +442,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		%s
 
+		<div %s>
 		<button onclick="reload()">Reload</button>
 
 		<!-- To change the background color of the sprite pattern -->
@@ -452,6 +460,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			<option>Default Palette</option>
 			<option>False Colors Palette</option>
 		</select>
+		</div>
+
 		<br>
 
 		<script>
@@ -466,7 +476,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 		`;
 
 		const invalid = (this.patternDataValid) ? "" : "*";
-		const html = util.format(format, invalid, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
+		const hidden=(this.retrievingError)? "hidden":"";
+		const html=util.format(format, invalid, hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
 		return html;
 	}
 
@@ -489,6 +500,9 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * Creates several html table out of the sprite pattern data.
 	 */
 	protected createHtmlTable(): string {
+		if (this.retrievingError)
+			return '<div>'+this.retrievingError+'</div>';
+
 		// Create a string with the table itself.
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);

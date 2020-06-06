@@ -700,8 +700,14 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// Save previous data
 			this.previousSprites=this.sprites;
 			this.sprites=new Array<SpriteData|undefined>(MAX_COUNT_SPRITES);
-			// Reload sprites
-			await this.getSprites();
+
+			try {
+				// Reload sprites
+				await this.getSprites();
+			}
+			catch (e) {
+				this.retrievingError=e.message;
+			};
 
 			// Get clipping window
 			await this.getSpritesClippingWindow();
@@ -781,6 +787,10 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Creates one html table out of the sprites data.
 	 */
 	protected createHtmlTable(): string {
+		if(this.retrievingError) {
+			return '<div>'+this.retrievingError+'</div>';
+		}
+
 		const format= `
 		<style>
 			.classPattern {
@@ -1013,8 +1023,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 
 		const format = this.createHtmlSkeleton();
 		// Add content
-		const ui = this.createScriptsAndButtons();
-		const table = this.createHtmlTable();
+		const ui=this.createScriptsAndButtons();
+		const table=this.createHtmlTable();
 		const canvas = this.createHtmlCanvas();
 		const content = ui + table + '\n<p style="margin-bottom:3em;"></p>\n\n' + canvas;
 		const html = util.format(format, content);

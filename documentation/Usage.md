@@ -290,7 +290,7 @@ The following table gives an overview.
 
 |                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | started  | stable |
+| State                   | stable             | stable  | stable     | experimental  | stable |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | no        | no      |
@@ -302,6 +302,7 @@ The following table gives an overview.
 | ZX Next capable         | no                  | yes     | yes        | yes      | yes      |
 | Save/restore the state | yes                 | yes     | yes        | no       | no       |
 | Output of T-States | yes                 | yes     | yes        | no       | no       |
+| Display of sprite attributes/patterns | yes                 | yes     | yes        | no       | yes       |
 | Comments                | slower than ZEsarUx or CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
 
 Notes:

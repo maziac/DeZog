@@ -49,22 +49,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 			this.receivingHeader=true;
 			this.stopChunkTimeout();
 
-			// Test
-			/*
-			await this.sendDzrpCmdPause();
-			const regs=await this.sendDzrpCmdGetRegisters();
-			await this.sendDzrpCmdGetConfig();
-	//		const regs=await this.sendDzrpCmdGetRegisters();
-			//const slots=await this.sendDzrpCmdGetSlots();
-			const mem=await this.sendDzrpCmdReadMem(0x100, 0x200);
-			const bpId = await this.sendDzrpCmdAddBreakpoint(0);
-			await this.sendDzrpCmdRemoveBreakpoint(bpId);
-			await this.sendDzrpCmdWriteMem(0xE000, new Uint8Array([ 1, 2, 3]));
-			const mem2=await this.sendDzrpCmdReadMem(0xE000, 4);
-			await this.sendDzrpCmdSetRegister(Z80_REG.HL, 4660);
-			const regs2=await this.sendDzrpCmdGetRegisters();
-			*/
-
 			// Check for unsupported settings
 			if (Settings.launch.history.codeCoverageEnabled) {
 				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");

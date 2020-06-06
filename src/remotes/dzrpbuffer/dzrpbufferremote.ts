@@ -552,6 +552,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		// Break because 'Continue' works with a temporary breakpoint list.
+		// TODO: Restart after break.
 		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
 		// Convert condition string to Buffer
 		if (!condition)
@@ -569,6 +570,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
 		// Break because 'Continue' works with a temporary breakpoint list.
+		// TODO: Restart after break.
 		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
 		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId&0xFF, bpId>>>8]);
 	}

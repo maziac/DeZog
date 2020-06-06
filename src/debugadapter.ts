@@ -669,7 +669,6 @@ export class DebugSessionClass extends DebugSession {
 			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
 			const verified=(cbp.address>=0);	// Is not verified if no address is set
 			let bp=new Breakpoint(verified, lineNr, 0, source);
-			// TODO: REMOVE:
 			if (!verified) {
 				const text=JSON.stringify(bp);
 				this.debugConsoleAppendLine('Unverified breakpoint:' + text);

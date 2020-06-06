@@ -188,7 +188,7 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Execute specific commands.
-	 * USed to send (for testing) specific DZRP commands to the ZXNext.
+	 * Used to send (for testing) specific DZRP commands to the ZXNext.
 	 * @param cmd E.g. 'cmd_continue.
 	 * @returns A Promise with a return string, i.e. the decoded response.
 	 */
@@ -287,12 +287,22 @@ export class DzrpRemote extends RemoteBase {
 				// Error
 				return "Expecting 1 parameter: palette number (0 or 1).";
 			}
-			const paltteNumber=Utility.parseValue(cmdArray[0]);
-			const palette=await this.sendDzrpCmdGetSpritesPalette(paltteNumber);
+			const paletteNumber=Utility.parseValue(cmdArray[0]);
+			const palette=await this.sendDzrpCmdGetSpritesPalette(paletteNumber);
 			// Print
 			for (let i=0; i<palette.length; i++)
 				response+=Utility.getHexString(palette[i], 3)+" ";
 		}
+		// TODO: Add missing ones: CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM
+		else if (cmd_name=="cmd_get_sprites_clip_window_and_control") {
+			const clip=await this.sendDzrpCmdGetSpritesClipWindow();
+			response+="xl="+clip.xl+", xr="+clip.xr+", yt="+clip.yt+", yb="+clip.yb+", control="+Utility.getBitsString(clip.control, 8);
+		}
+		else if (cmd_name=="cmd_set_breakpoints") {
+		}
+		else if (cmd_name=="cmd_restore_mem") {
+		}
+
 		/*
 		else if (cmd_name=="cmd_get_sprites") {
 			if (cmdArray.length<2) {
@@ -657,7 +667,7 @@ export class DzrpRemote extends RemoteBase {
 	public async pause(): Promise<void> {
 		// Set this flag to pause a stepOut etc
 		this.pauseStep=true;
-		// Send 'run' command
+		// Send 'pause' command
 		await this.sendDzrpCmdPause();
 	}
 
