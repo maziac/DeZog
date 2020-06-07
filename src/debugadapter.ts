@@ -668,8 +668,17 @@ export class DebugSessionClass extends DebugSession {
 		const vscodeBreakpoints=currentBreakpoints.map(cbp => {
 			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
 			const verified=(cbp.address>=0);	// Is not verified if no address is set
-			let bp=new Breakpoint(verified, lineNr, 0, source);
-			if (!verified) {
+			const bp=new Breakpoint(verified, lineNr, 0, source);
+			if (verified) {
+				// Add address to source name.
+				const addrString=Utility.getHexString(cbp.address, 4)+'h';
+				// Add hover text
+				let txt=addrString;
+				const labels=Labels.getLabelsForNumber(cbp.address);
+				labels.map(lbl => txt+='\n'+lbl);
+				(bp as any).message=txt;
+			}
+			else {
 				const text=JSON.stringify(bp);
 				this.debugConsoleAppendLine('Unverified breakpoint:' + text);
 			}
