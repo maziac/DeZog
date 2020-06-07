@@ -268,7 +268,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		// Check breakpoint address.
-		const bpMin=0x100;	// TODO: Add exact value.
+		const bpMin=0x0038;	// TODO: Add exact value.
 		if (bpAddress<bpMin) {
 			// Some lower breakpoint addresses cannot be used.
 			this.emit('warning', "On the ZXNext you cannot set breakpoint addresses lower than "+Utility.getHexString(bpMin,4)+"h.");
