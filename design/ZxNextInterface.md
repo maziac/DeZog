@@ -291,7 +291,7 @@ My current favorite.
 
 RST is used for breakpoints. With divMMC a trap can be enabled at address 0x0000.
 I.e. once a breakpoint is hit the DivMMC memory will be enabled automatically.
-Unfortunately this does nto happen immediately but only after one instruction fetch from the original memory paged into slot 0 (normally the ROM).
+Unfortunately this does not happen immediately but only after one instruction fetch from the original memory paged into slot 0 (normally the ROM).
 If the debugged program has put in here something else than the ROM the instruction could be everything.
 But even with the ROM the first instruction would be "DI", giving me no chance to check the interrupt enable state to restore it later.
 
@@ -344,9 +344,8 @@ go_on:
 
 Problem:
 - The original idea was to use RST for the breakpoints. In the original ROM there is a DI located at 0x0000. Unfortunately I think I need to keep it there because programs may use it as relative backwards jump when using IM2. On the other hand I cannot execute DI first because I need to know the state of the interrupt beforehand.
-Also if I would use nextreg 0x22 to disable the interrupts, I cannot leave DI at 0x0000 because I wouldn't know if how to restore it.
+Also if I would use nextreg 0x22 to disable the interrupts, I cannot leave DI at 0x0000 because I wouldn't know how to restore it.
 So either a different RST address or disallow this special interrupt usage.
--  I could use **RST 66h instead**. That one will be occupied anyway for the Drive button. I would only need a way to distinguish a RST 66 from the button being pressed...
 
 
 # Memory Bank Switching

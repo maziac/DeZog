@@ -716,7 +716,7 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Returns the stack frames.
 	 */
-	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> { // TODO: remove serializer and stackTraceResponses
+	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
 		this.stackTraceResponses.push(response);
 		if (this.stackTraceResponses.length>1)

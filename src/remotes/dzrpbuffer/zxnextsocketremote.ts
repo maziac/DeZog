@@ -287,6 +287,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		this.restorableBreakpoints.delete(bpId);
 	}
 
+
 	/**
 	 * Returns all breakpoint addresses without the this.breakedAddress.
 	 * @returns Array with breakpoint address.

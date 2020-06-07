@@ -898,8 +898,8 @@ export class LabelsClass {
 		var addr = -1;
 		const lineArray = this.lineArrays.get(filePath);
 		if(lineArray) {
-			addr = lineArray[lineNr];
-			if(!addr)
+			addr=lineArray[lineNr];
+			if(addr==undefined)
 				addr = -1;
 		}
 		return addr;
