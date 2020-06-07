@@ -262,11 +262,18 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * Stores the breakpoints in a list.
 	 * This inlcides the breakpoints set for ASSERTs and LOGPOINTs.
 	 * The breakpoints are later sent all at once with CMS_SET_BREAKPOINTS.
-	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
+	 * @param bpAddress The breakpoint address. 0x00??-0xFFFF.
 	 * @param condition Not used.
-	 * @returns A Promise with the breakpoint ID.
+	 * @returns A Promise with the breakpoint ID or 0 if breakpoint could not be set.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+		// Check breakpoint address.
+		const bpMin=0x100;	// TODO: Add exact value.
+		if (bpAddress<bpMin) {
+			// Some lower breakpoint addresses cannot be used.
+			this.emit('warning', "On the ZXNext you cannot set breakpoint addresses lower than "+Utility.getHexString(bpMin,4)+"h.");
+			return 0;
+		}
 		this.restoreBreakpointIdLastIndex++;
 		this.restorableBreakpoints.set(this.restoreBreakpointIdLastIndex,{address: bpAddress, opcode: 0});
 		return this.restoreBreakpointIdLastIndex;

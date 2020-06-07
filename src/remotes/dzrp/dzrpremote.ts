@@ -945,10 +945,13 @@ export class DzrpRemote extends RemoteBase {
 
 		// Set breakpoint
 		const bpId=await this.sendDzrpCmdAddBreakpoint(bp.address, bp.condition);
+		if (bpId==0)
+			bp.address=-1;
 
 		// Add to list
 		bp.bpId=bpId;
 		this.breakpoints.push(bp);
+
 
 		// return
 		return bpId;
