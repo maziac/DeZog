@@ -134,6 +134,16 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+		// Check breakpoints
+		if (this.checkBreakpoint(bp1Address)||this.checkBreakpoint(bp2Address)) {
+			const breakAddress=this.getPC();
+			const breakReasonString="Cannot step at address "+Utility.getHexString(breakAddress, 4)+"h.";
+			this.emit('warning', breakReasonString);
+			const breakNumber=BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED;
+			this.continueResolve!({breakNumber, breakAddress, breakReasonString});
+			return;
+		}
+
 		// Remember old resolve function
 		const originalContinueResolve=this.continueResolve!;
 		const resolveWithBp = async ({breakNumber, breakAddress, breakReasonString}) => {
@@ -268,10 +278,10 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
 		// Check breakpoint address.
-		const bpMin=0x0038;	// TODO: Add exact value.
-		if (bpAddress<bpMin) {
+		const errText=this.checkBreakpoint(bpAddress);
+		if(errText) {
 			// Some lower breakpoint addresses cannot be used.
-			this.emit('warning', "On the ZXNext you cannot set breakpoint addresses lower than "+Utility.getHexString(bpMin,4)+"h.");
+			this.emit('warning', "On the ZXNext you cannot set breakpoints at "+errText+".");
 			return 0;
 		}
 		this.restoreBreakpointIdLastIndex++;
@@ -304,6 +314,23 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		const breakedAddress=this.breakedAddress;
 		const bpFiltered=bpArray.filter(address => address!=breakedAddress);
 		return bpFiltered;
+	}
+
+
+	/**
+	 * Checks for an allowed breakpoint address.
+	 * @returns If allowed: undefined
+	 * If not allowed: a string with the address range that can be used for
+	 * error output.
+	 */
+	protected checkBreakpoint(addr: number|undefined): string|undefined {
+		/// TODO: Add exact values.
+		if (addr!=undefined&&
+			(addr<0
+			||addr<0x38
+				||addr==0x66))
+			return "addresses 0x0000-0x0037 and 0x0066";
+		return undefined;
 	}
 
 

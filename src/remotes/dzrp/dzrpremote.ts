@@ -590,8 +590,11 @@ export class DzrpRemote extends RemoteBase {
 				}
 				break;
 
+			case BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED:
+				// Flow through
+
 			default:
-				// An other reason, e.g. manual break
+				// Another reason, e.g. manual break
 				condition='';	// Do a break.
 		}
 
