@@ -306,7 +306,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				const start=Labels.getNumberFromString(loadObj.start);
 				if (isNaN(start))
 					throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
-				await this.loadObj(loadPath, start);
+				await this.loadObj(loadObj.path, start);
 			}
 		}
 
