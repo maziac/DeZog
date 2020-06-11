@@ -115,7 +115,7 @@ export class Z80UnitTests {
 	protected static addrTestReadySuccess: number;
 
 	/// The test case would end here if it just returns.
-	/// The UT_END macro should be used instead as 'ret' at the end of a testcase.
+	/// The TC_END macro should be used instead as 'ret' at the end of a testcase.
 	protected static addrTestReadyReturnFailure: number;
 
 	/// At the end of the test this address is reached on failure.
