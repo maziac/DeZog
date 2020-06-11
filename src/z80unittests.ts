@@ -114,6 +114,10 @@ export class Z80UnitTests {
 	/// At the end of the test this address is reached on success.
 	protected static addrTestReadySuccess: number;
 
+	/// The test case would end here if it just returns.
+	/// The UT_END macro should be used instead as 'ret' at the end of a testcase.
+	protected static addrTestReadyReturnFailure: number;
+
 	/// At the end of the test this address is reached on failure.
 	protected static addrTestReadyFailure: number;
 
@@ -572,7 +576,8 @@ export class Z80UnitTests {
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
 		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
-		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		Z80UnitTests.addrTestReadyReturnFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
+		Z80UnitTests.addrTestReadyFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
 		const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
 		const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
 
@@ -589,8 +594,10 @@ export class Z80UnitTests {
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
-		const failureBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
-		await Remote.setBreakpoint(failureBp);
+		const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '', log: undefined};
+		await Remote.setBreakpoint(failureBp1);
+		const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyReturnFailure, condition: '', log: undefined};
+		await Remote.setBreakpoint(failureBp2);
 
 		// Stack watchpoints
 		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
@@ -787,8 +794,9 @@ export class Z80UnitTests {
 		}
 
 		// Check if test case ended successfully or not
-		if(pc != this.addrTestReadySuccess
-			&& pc != this.addrTestReadyFailure) {
+		if (pc!=this.addrTestReadySuccess
+			&& pc!=this.addrTestReadyFailure
+			&& pc!=this.addrTestReadyReturnFailure) {
 			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {
@@ -864,7 +872,8 @@ export class Z80UnitTests {
 			if(Z80UnitTests.utLabels) {
 				if(pc == this.addrTestReadySuccess)
 					Z80UnitTests.dbgOutput(label + ' PASSED.');
-				if(pc == this.addrTestReadyFailure)
+				if (pc==this.addrTestReadyFailure
+					||pc==this.addrTestReadyReturnFailure)
 					Z80UnitTests.dbgOutput(label + ' FAILED.');
 			}
 			// Do a step

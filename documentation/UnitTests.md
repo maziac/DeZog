@@ -39,6 +39,7 @@ to your sources.
 ## Create Unit Tests
 
 Creating a unit test is easy. A subroutine with a label that start with the prefix "UT_" is recognized as unit test case.
+The unit test case ends by using the macro UT_END.
 
 If you use the sjasmplus feature to have hierarchical labels the last part need to start with "UT_".
 
@@ -46,20 +47,20 @@ Here are a few examples of valid unit test label names.
 ~~~
 UT_test1:
 	...
-	ret
+	UT_END
 
 Module1.UT_test2:  ; sjasmplus specific
 	...
-	ret
+	UT_END
 
   MODULE Mod2  ; sjasmplus specific
 UT_test3:
 	...
-	ret
+	UT_END
 
 UT_test4:
 	...
-	ret
+	UT_END
   ENDMODULE
 ~~~
 
@@ -110,7 +111,8 @@ UT_mytest2:
 	ld a,0
 	call multiply_a_by_3
 	TEST_REG C, 0
-	ret
+
+	UT_END
 ~~~
 This simple example test the subroutine 'multiply_a_by_3' which hypothetically takes A, multiplies it by 3 and returns the result in C. If A is 5 it should result in 15 and if A is 0 it should be 0.
 
@@ -133,7 +135,7 @@ UT_mytest2:
 	call my_subroutine
     TEST_UNCHANGED_BC_DE
 	...
-	ret
+	UT_END
 ~~~
 It check that 'my_subroutine' does not change the values of B, C, D, and E.
 It however doesn't care about changing A or HL.
@@ -271,7 +273,7 @@ Example:
 
 # Caveats
 
-If you use a .sna file the inherit start address is simply ignored.
+If you use a .sna file the inherited start address is simply ignored.
 You can use .sna and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
 
 

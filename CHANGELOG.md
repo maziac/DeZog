@@ -4,6 +4,7 @@
 - Support for DZRP 1.4.0: Changed numbering.
 - ZXNext remote debugging working. Major changes to DZRP.
 - Breakpoints at address 0x0000 fixed.
+- Introduced UT_END to end a unit test case (instead of 'ret').
 
 # 1.4.1
 - Support for DZRP 1.2.0: CMD_SLOT.
