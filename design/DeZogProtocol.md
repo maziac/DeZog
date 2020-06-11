@@ -159,7 +159,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5     | Length     |
+| 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
@@ -382,7 +382,7 @@ Command:
 Note:
 - ROM0 = 254
 - ROM1 = 255
-On real HW this is the same, OXFE and OxFF will both be interpreted as 0xFF.
+On real HW this is the same, 0xFE and 0xFF will both be interpreted as 0xFF.
 
 
 Response:

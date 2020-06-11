@@ -1048,7 +1048,7 @@ export class DzrpRemote extends RemoteBase {
 		const objBuffer=fs.readFileSync(filePath);
 
 		// Write as memory dump
-		this.sendDzrpCmdWriteMem(startAddress, objBuffer);
+		await this.sendDzrpCmdWriteMem(startAddress, objBuffer);
 
 		// Make sure that the registers are reloaded
 		Z80Registers.clearCache();
