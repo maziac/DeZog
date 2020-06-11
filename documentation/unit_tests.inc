@@ -14,17 +14,21 @@
 @UNITTEST_TEST_WRAPPER:
         di
         ld sp,UNITTEST_STACK
-@UNITTEST_CALL_ADDR: 
+@UNITTEST_CALL_ADDR:
         call 0x0000 ; Will be changed by the z80 unit tests.
         nop
-        
+
+@UNITTEST_TEST_READY_RETURN_FAILURE:
+        jr UNITTEST_TEST_READY_RETURN_FAILURE	; A breakpoint will be set here. The unit test will normally not return here but at UNITTEST_TEST_READY_SUCCESS
+
+@UNITTEST_TEST_READY_FAILURE:
+        nop
+@UNITTEST_TEST_READY_FAILURE_BREAKPOINT:
+        ret 	; A breakpoint will be set here. The next step will return to the failed test case
+
 @UNITTEST_TEST_READY_SUCCESS:
         jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
 
-@UNITTEST_TEST_READY_FAILURE:
-        nop 
-@UNITTEST_TEST_READY_FAILURE_BREAKPOINT:
-        ret 	; A breakpoint will be set here. The next step will return to the failed test case
 @UNITTEST_MIN_STACK_GUARD:
         defw 0	; A write watchpoint will be set here to guard the stack
         defs 2*50	; Stack depth of 50 should be enough
@@ -35,17 +39,23 @@
 
 @UNITTEST_SAVE_REG:
         defw 0  ; Used to save register values.
-        
+
 
     ; The unit test initialization. Provided by the user.
 @UNITTEST_START:
         ; Disable interrupts
-        di 
+        di
         ; Flow through.
         ; Directly after the UNITTEST_INITIALIZE macro the user
         ; should put his test initialization code.
         ; Note: the stack pointer does not need to be set up.
 
+    ENDM
+
+
+    ; Macro that must be used at the end of the test case (instead of a ret).
+    MACRO TC_END
+        jp UNITTEST_TEST_READY_SUCCESS
     ENDM
 
 
@@ -65,11 +75,16 @@
         push hl
         ld hl,value?
         ld de,(addr?)
-        or a 
-        sbc hl,de 
-        pop hl 
+        or a
+        sbc hl,de
+        pop hl
         call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        pop de 
+        pop de
+    ENDM
+
+    ; Creates a failure when reached.
+    MACRO TEST_FAIL
+        jp UNITTEST_TEST_READY_FAILURE
     ENDM
 
     ; Tests A for a specific value.
@@ -114,12 +129,12 @@
         push dreg?
         pop hl
         ld de,value?
-        or a 
+        or a
         sbc hl,de
-        pop hl 
-        pop de 
+        pop hl
+        pop de
         call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        nop        
+        nop
     ENDM
 
 
@@ -131,12 +146,12 @@
         push dreg?
         pop hl
         ld de,value?
-        or a 
+        or a
         sbc hl,de
-        pop hl 
-        pop de 
+        pop hl
+        pop de
         call z,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        nop        
+        nop
     ENDM
 
 
@@ -149,11 +164,11 @@
         push dreg2?
         pop de
         pop hl
-        or a 
-        sbc hl,de 
-        pop hl 
-        pop de 
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        or a
+        sbc hl,de
+        pop hl
+        pop de
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
@@ -167,41 +182,77 @@
         push dreg2?
         pop de
         pop hl
-        or a 
-        sbc hl,de 
-        pop hl 
-        pop de 
-        call z,UNITTEST_TEST_READY_FAILURE 
+        or a
+        sbc hl,de
+        pop hl
+        pop de
+        call z,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
 
-    ; Tests a memory address for a specific string.
-    ; addr = the tested string
-    ; string = the compared string
-    ; term0 = If 0 it is also tested that the string (addr) is null termiated
-    MACRO TEST_STRING addr?, string?, term0?
+    ; Compares 2 memory areas containing null terminated strings.
+    ; addr1 = the first string
+    ; addr2 = the second string
+    MACRO TEST_STRING_PTR addr1?, addr2?
         push af
         push hl
-        push de 
-        ld de,.comp_string
-        ld hl,addr? 
+        push de
+        ld de,addr2?
+        ld hl,addr1?
 .loop:
         ld a,(de)
         ; Check for null termination
-        or a 
-        jr z,.null_found
         cp (hl)
-        inc de 
+        jr nz,.not_equal
+        or a
+        jr z,.null_found
+        inc de
         inc hl
-        jr z,.loop
-    
+        jr .loop
+
 .not_equal:
         ; Strings are not equal
         pop de
         pop hl
         pop af
-        call UNITTEST_TEST_READY_FAILURE 
+        call UNITTEST_TEST_READY_FAILURE
+        jr .end
+
+.null_found:
+        pop de
+        pop hl
+        pop af
+.end:
+    ENDM
+
+
+    ; Tests a memory address for a specific string.
+    ; addr = the tested string
+    ; string = the compared string, e.g. "STRING"
+    ; term0 = If 0 it is also tested that the string (addr) is null terminated
+    MACRO TEST_STRING addr?, string?, term0?
+        push af
+        push hl
+        push de
+        ld de,.comp_string
+        ld hl,addr?
+.loop:
+        ld a,(de)
+        ; Check for null termination
+        or a
+        jr z,.null_found
+        cp (hl)
+        inc de
+        inc hl
+        jr z,.loop
+
+.not_equal:
+        ; Strings are not equal
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE
         jr .end
 
 .comp_string:
@@ -211,13 +262,52 @@
         ; We are at the end of the compare string.
         ; Check if null termination should be compared with the tested string.
       IF term0? == 0
-        cp (hl) 
+        cp (hl)
         jr nz,.not_equal
       ENDIF
 
         pop de
         pop hl
         pop af
+.end:
+    ENDM
+
+
+    ; Tests a memory address for a specific string.
+    ; addr1 = the tested memory area
+    ; addr2 = the memory area to compare to
+    ; count = the number of elements to compare
+    MACRO TEST_MEM_CMP addr1?, addr2?, count?
+        push af
+        push hl
+        push de
+        push bc
+        ld de,addr2?
+        ld hl,addr1?
+        ld bc,count?
+.loop:
+        ld a,(de)
+        ; Compare
+        cpi      ; cp (hl++); dec bc
+        jr nz,.not_equal
+        inc de
+        jp pe,.loop
+
+        ; Memory is equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        jr .end
+
+.not_equal:
+        ; Memory areas are not equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE
+        jr .end
 .end:
     ENDM
 
@@ -234,33 +324,33 @@
     ENDM
 
     MACRO TEST_UNCHANGED_BC
-        push hl 
+        push hl
         ld hl,0xBBCC
         or a
         sbc hl,bc
         pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
     MACRO TEST_UNCHANGED_DE
-        push hl 
+        push hl
         ld hl,0xDDEE
         or a
         sbc hl,de
         pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
     MACRO TEST_UNCHANGED_HL
-        push de 
+        push de
         ld de,0x8899
         or a
         sbc hl,de
         add hl,de   ; restore hl without affecting the flags
         pop de
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
@@ -302,11 +392,11 @@
         TEST_REG l, 0x99
     ENDM
 
-    
+
     ; Macro to test flags for Z.
     ; Testcase fails for NZ.
     MACRO TEST_FLAG_Z
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
@@ -314,14 +404,14 @@
     ; Macro to test flags for NZ.
     ; Testcase fails for Z.
     MACRO TEST_FLAG_NZ
-        call z,UNITTEST_TEST_READY_FAILURE 
+        call z,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
 
     ; This macro uses all registers, also the shadow registers.
     MACRO USE_ALL_REGS
-        ld a,0xCD 
+        ld a,0xCD
         ld bc,0xBBCC
         ld de,0xDDEE
         ld hl,0xFF11
@@ -341,11 +431,53 @@
 
   ELSE
     ; -----------------------------------------------------------
-    ; Code for other assemblers
+
+    ; -------------------------------------------------------
+    ; Code for e.g. Savannah's z80asm, maybe others.
+
+UNITTEST_INITIALIZE:    MACRO
+
+    ; Called to call each unit test.
+UNITTEST_TEST_WRAPPER:  di
+        ld sp,UNITTEST_STACK
+UNITTEST_CALL_ADDR: call 0x0000 ; Will be changed by the z80 unit tests.
+        nop
+
+UNITTEST_TEST_READY_RETURN_FAILURE: jr UNITTEST_TEST_READY_RETURN_FAILURE	; A breakpoint will be set here. The unit test will normally not return here but at UNITTEST_TEST_READY_SUCCESS
+
+UNITTEST_TEST_READY_FAILURE:    nop
+UNITTEST_TEST_READY_FAILURE_BREAKPOINT: ret 	; A breakpoint will be set here. The next step will return to the failed test case
+
+UNITTEST_TEST_READY_SUCCESS:    jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
+
+
+UNITTEST_MIN_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
+        defs 2*50	; Stack depth of 50 should be enough
+UNITTEST_STACK: defw 0
+UNITTEST_MAX_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
+
+UNITTEST_SAVE_REG:  defw 0  ; Used to save register values.
+
+
+    ; The unit test initialization. Provided by the user.
+UNITTEST_START: di       ; Disable interrupts
+        ; Flow through.
+        ; Directly after the UNITTEST_INITIALIZE macro the user
+        ; should put his test initialization code.
+        ; Note: the stack pointer does not need to be set up.
+
+    ENDM
+
+
+    ; Macro that must be used at the end of the test case (instead of a ret).
+TC_END:    MACRO
+        jp UNITTEST_TEST_READY_SUCCESS
+    ENDM
+
 
 
     ; Tests a memory address for a specific byte value.
-TEST_MEMORY_BYTE:    MACRO addr, value
+TEST_MEMORY_BYTE:    MACRO addr value
         ld (UNITTEST_SAVE_REG),a
         ld a,(addr)
         cp value
@@ -355,16 +487,16 @@ TEST_MEMORY_BYTE:    MACRO addr, value
 
     ; Tests a memory address for a specific word value.
     ; If the test fails the '(addr)' can be found in DE.
-TEST_MEMORY_WORD:    MACRO addr, value
+TEST_MEMORY_WORD:    MACRO addr value
         push de
         push hl
         ld hl,value
         ld de,(addr)
-        or a 
-        sbc hl,de 
-        pop hl 
+        or a
+        sbc hl,de
+        pop hl
         call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        pop de 
+        pop de
     ENDM
 
     ; Tests A for a specific value.
@@ -383,7 +515,7 @@ TEST_A_UNEQUAL:    MACRO value
 
     ; Tests a single register for a specific value.
     ; E.g. TEST_REG b, 6 ; Tests if register b == 6
-TEST_REG:    MACRO reg, value
+TEST_REG:    MACRO reg value
         ld (UNITTEST_SAVE_REG),a
         ld a,reg
         cp value
@@ -393,7 +525,7 @@ TEST_REG:    MACRO reg, value
 
     ; Tests that a single register is not a specific value.
     ; E.g. TEST_REG_UNEQUAL b, 6 ; Tests if register b != 6
-TEST_REG_UNEQUAL:    MACRO reg, value
+TEST_REG_UNEQUAL:    MACRO reg value
         ld (UNITTEST_SAVE_REG),a
         ld a,reg
         cp value
@@ -403,70 +535,105 @@ TEST_REG_UNEQUAL:    MACRO reg, value
 
     ; Tests a double register for a specific value.
     ; E.g. TEST_DREG hl, label1 ; Tests if register hl == label1
-TEST_DREG:    MACRO dreg, value
+TEST_DREG:    MACRO dreg value
         push de
         push hl
         push dreg
         pop hl
         ld de,value
-        or a 
+        or a
         sbc hl,de
-        pop hl 
-        pop de 
-        call nz,UNITTEST_TEST_READY_FAILURE 
-        nop        
+        pop hl
+        pop de
+        call nz,UNITTEST_TEST_READY_FAILURE
+        nop
     ENDM
 
     ; Tests a double register is not a specific value.
     ; E.g. TEST_DREG_UNEQUAL hl, label1 ; Tests if register hl != label1
-TEST_DREG_UNEQUAL:    MACRO dreg, value
+TEST_DREG_UNEQUAL:    MACRO dreg value
         push de
         push hl
         push dreg
         pop hl
         ld de,value
-        or a 
+        or a
         sbc hl,de
-        pop hl 
-        pop de 
-        call z,UNITTEST_TEST_READY_FAILURE 
-        nop        
+        pop hl
+        pop de
+        call z,UNITTEST_TEST_READY_FAILURE
+        nop
     ENDM
 
 
     ; Test two registers for equality.
     ; Testcase fails if registers are not equal.
-TEST_DREGS:    MACRO dreg1, dreg2
+TEST_DREGS:    MACRO dreg1 dreg2
         push de
         push hl
         push dreg1
         push dreg2
         pop de
         pop hl
-        or a 
-        sbc hl,de 
-        pop de 
-        pop hl 
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        or a
+        sbc hl,de
+        pop de
+        pop hl
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
 
     ; Test two registers for unequality.
     ; Testcase fails if registers are equal.
-TEST_DREGS_UNEQUAL:    MACRO dreg1, dreg2
+TEST_DREGS_UNEQUAL:    MACRO dreg1 dreg2
         push de
         push hl
         push dreg1
         push dreg2
         pop de
         pop hl
-        or a 
-        sbc hl,de 
-        pop de 
-        pop hl 
-        call z,UNITTEST_TEST_READY_FAILURE 
+        or a
+        sbc hl,de
+        pop de
+        pop hl
+        call z,UNITTEST_TEST_READY_FAILURE
         nop
+    ENDM
+
+    ; Compares 2 memory areas containing null terminated strings.
+    ; addr1 = the first string
+    ; addr2 = the second string
+TEST_STRING_PTR:    MACRO addr1, addr2
+        push af
+        push hl
+        push de
+        ld de,addr2
+        ld hl,addr1?
+.loop:
+        ld a,(de)
+        ; Check for null termination
+        cp (hl)
+        jr nz,.not_equal
+        or a
+        jr z,.null_found
+        inc de
+        inc hl
+        jr .loop
+
+.not_equal:
+        ; Strings are not equal
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE
+        jr .end
+
+.null_found:
+        pop de
+        pop hl
+        pop af
+.end:
     ENDM
 
 
@@ -474,28 +641,28 @@ TEST_DREGS_UNEQUAL:    MACRO dreg1, dreg2
     ; addr = the tested string
     ; string = the compared string
     ; term0 = If 0 it is also tested that the string (addr) is null terminated
-TEST_STRING:    MACRO addr, string, term0
+TEST_STRING:    MACRO addr string term0
         push af
         push hl
-        push de 
+        push de
         ld de,.comp_string
         ld hl,addr?
 .loop:
         ld a,(de)
         ; Check for null termination
-        or a 
+        or a
         jr z,.null_found
         cp (hl)
-        inc de 
+        inc de
         inc hl
         jr z,.loop
-    
+
 .not_equal:
         ; Strings are not equal
         pop de
         pop hl
         pop af
-        call UNITTEST_TEST_READY_FAILURE 
+        call UNITTEST_TEST_READY_FAILURE
         jr .end
 
 .comp_string:
@@ -505,13 +672,52 @@ TEST_STRING:    MACRO addr, string, term0
         ; We are at the end of the compare string.
         ; Check if null termination should be compared with the tested string.
       IF term0 == 0
-        cp (hl) 
+        cp (hl)
         jr nz,.not_equal
       ENDIF
 
         pop de
         pop hl
         pop af
+.end:
+    ENDM
+
+
+    ; Tests a memory address for a specific string.
+    ; addr1 = the tested memory area
+    ; addr2 = the memory area to compare to
+    ; count = the number of elements to compare
+TEST_MEM_CMP:   MACRO addr1, addr2, count
+        push af
+        push hl
+        push de
+        push bc
+        ld de,addr2
+        ld hl,addr1
+        ld bc,count
+.loop:
+        ld a,(de)
+        ; Compare
+        cpi      ; cp (hl++); dec bc
+        jr nz,.not_equal
+        inc de
+        jp pe,.loop
+
+        ; Memory is equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        jr .end
+
+.not_equal:
+        ; Memory areas are not equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE
+        jr .end
 .end:
     ENDM
 
@@ -528,33 +734,33 @@ DEFAULT_REGS:    MACRO
     ENDM
 
 TEST_UNCHANGED_BC:    MACRO
-        push hl 
+        push hl
         ld hl,0xBBCC
         or a
         sbc hl,bc
         pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
-TEST_UNCHANGED_DE:    MACRO 
-        push hl 
+TEST_UNCHANGED_DE:    MACRO
+        push hl
         ld hl,0xDDEE
         or a
         sbc hl,de
         pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
 TEST_UNCHANGED_HL:    MACRO
-        push de 
+        push de
         ld de,0x8899
         or a
         sbc hl,de
         add hl,de   ; restore hl without affecting the flags
         pop de
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
@@ -596,11 +802,11 @@ TEST_UNCHANGED_L:    MACRO
         TEST_REG l, 0x99
     ENDM
 
-    
+
     ; Macro to test flags for Z.
     ; Testcase fails for NZ.
 TEST_FLAG_Z:    MACRO
-        call nz,UNITTEST_TEST_READY_FAILURE 
+        call nz,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
@@ -608,14 +814,14 @@ TEST_FLAG_Z:    MACRO
     ; Macro to test flags for NZ.
     ; Testcase fails for Z.
 TEST_FLAG_NZ:    MACRO
-        call z,UNITTEST_TEST_READY_FAILURE 
+        call z,UNITTEST_TEST_READY_FAILURE
         nop
     ENDM
 
 
     ; This macro uses all registers, also the shadow registers.
 USE_ALL_REGS:    MACRO
-        ld a,0xCD 
+        ld a,0xCD
         ld bc,0xBBCC
         ld de,0xDDEE
         ld hl,0xFF11
@@ -628,6 +834,7 @@ USE_ALL_REGS:    MACRO
         ld hl,0x5566
         exx
     ENDM
+
 
     ; other assemblers end
     ; -----------------------------------------------------------
