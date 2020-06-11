@@ -353,6 +353,15 @@ export class Z80UnitTests {
 
 
 	/**
+	 * Command execution: Cancel all unit tests.
+	 */
+	public static cmdCancelAllUnitTests() {
+		Remote.emit('terminated');
+		Z80UnitTests.cancelUnitTests();
+	}
+
+
+	/**
 	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
 	 */
 	public static cancelUnitTests() {
@@ -361,6 +370,7 @@ export class Z80UnitTests {
 		const text="Unit tests cancelled.";
 		Z80UnitTests.dbgOutput(text);
 		Z80UnitTests.stopUnitTests(undefined);
+	//	ds.customRequest("terminate");
 		// Fail the current test
 		/*
 		Z80UnitTests.countFailed++;
