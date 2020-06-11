@@ -1267,10 +1267,11 @@ export class DebugSessionClass extends DebugSession {
 	 * Step over.
 	 * Used only by the unit tests.
 	 */
-	public async emulatorOneStepOver(): Promise<StoppedEvent> {
+	public async emulatorOneStepOver(): Promise<void> {
 		StepHistory.clear();
 
 		// Normal Step-Over
+		Z80Registers.clearCache();
 		const result=await Remote.stepOver();
 
 		// Display T-states and time
@@ -1287,7 +1288,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Send event
-		return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
+		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
 	}
 
 

@@ -84,7 +84,7 @@
 
     ; Creates a failure when reached.
     MACRO TEST_FAIL
-        jp UNITTEST_TEST_READY_FAILURE
+        call UNITTEST_TEST_READY_FAILURE
     ENDM
 
     ; Tests A for a specific value.
@@ -497,6 +497,11 @@ TEST_MEMORY_WORD:    MACRO addr value
         pop hl
         call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
         pop de
+    ENDM
+
+   ; Creates a failure when reached.
+TEST_FAIL:  MACRO
+        call UNITTEST_TEST_READY_FAILURE
     ENDM
 
     ; Tests A for a specific value.
