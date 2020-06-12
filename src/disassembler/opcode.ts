@@ -734,7 +734,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
 				break;
 
 			case 1: // REG_VERSION
-				valuename = Format.getHexString(regValue,2) + 'h (v'; + (regValue>>>4) + '.' + (regValue&0x0f) + ')';
+				valuename = Format.getHexString(regValue,2) + 'h (v' + (regValue>>>4) + '.' + (regValue&0x0f) + ')';
 				break;
 
 			case 2: // REG_RESET
