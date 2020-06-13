@@ -267,9 +267,7 @@ They are distinguished via the "remoteType":
 - "zsim": Internal Z80 Simulator
 - "zrcp": ZEsarUX (or ZesaruxExt) emulator
 - "cspect": CSpect emulator
-<!--
 - "serial": ZX Next connected via serial.
--->
 
 
 ### What is a 'Remote'?
@@ -562,7 +560,8 @@ mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -debug
 
 ### Serial Interface
 
-The serail interface is the most complex setup as it requires communication with a real ZX Spectrum Next (in HW):
+#### Overview
+The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
 
 ~~~
                                                                                          ┌──────────────────────────┐
@@ -572,7 +571,7 @@ The serail interface is the most complex setup as it requires communication with
 │               │     │                 │                                                │ └──────────▲───────────┘ │
 │               │     │                 │                                                │            │             │
 │               │     │                 │                                                │ ┌──────────▼───────────┐ │
-│    vscode     │     │      DeZog      │                                                │ │     dbg_uart_if      │ │
+│    vscode     │     │      DeZog      │                                                │ │       dezogif        │ │
 │               │◀───▶│                 │                                                │ │          SW          │ │
 │               │     │                 │                                                │ └──────────▲───────────┘ │
 │               │     │                 │                                                │            │             │
@@ -591,19 +590,102 @@ The serail interface is the most complex setup as it requires communication with
                       └──────────────────────────────────────────────────────────────┘
 ~~~
 
-DeZog does not directly talk to the USBUART interface of your OS. Instead it uses another program, the DeZog Serial Interface whcih offers a socket and translates all communication to the serial interface USB/UART.
+DeZog does not directly talk to the USB/UART interface of your OS. Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
 (Background: The reason for this additional program is that the node.js serialport binary package tend to break on vscode.)
 
 The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
-In order to communicate with the ZX Next special SW needs to run on the Next.
+In order to communicate with the ZX Next special SW needs to run on the Next: [dezogif](https://github.com/maziac/dezogif).
 
-**Note: This does not work currently. Serial interface is not supported yet.**
 
 Example launch.json configuration:
 ~~~
     "remoteType": "serial",
-    ???
+    "serial": {
+        "port": 12000
+    }
 ~~~
+The default port is anyway 12000. So, if you don't change it, you just have to add:
+~~~
+    "remoteType": "serial"
+~~~
+
+
+#### Setup
+
+Prerequisites:
+1. Install at least core 3.1.5 on the ZX Next.
+2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
+
+
+Setup a debug session:
+1. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
+2. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
+3. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface).
+4. On the ZX Next start [dezogif](https://github.com/maziac/dezogif).
+5. In vscode start the debug session.
+6. Step through your code.
+
+You should see that the debugged program is transmitted to the ZX Next: the border colors change similar as when you would load a program from tape.
+![](borders flashing.jpg)
+
+Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program) for your first tries. It already contains a working "ZXNext" launch.json configuration.
+
+You can now step through your code and set breakpoints.
+The debugger will stop at a breakpoint.
+
+But if you start a program without a breakpoint it will not stop anymore and you have to start at 4 again.
+
+This is because the debugged program has full control and the debugger (currently) has no way to interfere.
+
+To allow pausing you need to place some code in your program, i.e. in the main loop of your program.
+You can find the code here: [dezog.asm](dezog.asm).
+If you use the example [z80-sample-program](https://github.com/maziac/z80-sample-program), it's already included.
+
+Just place a call like this in your main loop:
+~~~
+main_loop:
+    call dezog_check_for_message
+    ...
+    jp main_loop
+~~~
+
+If you press "Pause" in vscode your program is paused now with the PC located just after the 'dezog_check_for_message' call.
+
+The call to 'dezog_check_for_message'
+- does not change any register
+- uses a few bytes on the stack (about 8)
+- takes about 80 T-states until it returns (if no "pause")
+- can work with or without interrupts enabled
+
+
+#### HW
+
+**Disclaimer**
+
+**As you will probably have to construct your own cable which involves HW, there is always a small risk that you damage your ZX Next or your PC/Mac.
+You should only try to do this yourself if you already have experience with electronics and at least basically know what you are doing.**
+
+**IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THE HW, SW OR ANYTHING ELSE PRESENTED HERE.**
+
+You require a USB/Serial converter like this one:
+![](images/usb_serial_cable.jpg)
+It needs to be capable of 921600 Baud.
+
+On the other side only 3 wires are required:
+![](images/usb_serial_connectors.jpg)
+- GND
+- TX (TXD)
+- RX (RXD)
+
+These wires have to be connected to a female D-SUB 9 connector:
+![](images/dsub9.jpg)
+
+You need to connect:
+| Serial cable | D-Sub 9 |
+|--------------|---------|
+| GND          | 8 |
+| TX           | 7 |
+| RX           | 9 |
 
 
 ## Usage
@@ -1174,7 +1256,7 @@ Please see [here](UnitTests.md).
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
     - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program](https://github.com/maziac/z80-sample-program) for placing the WPMEM correctly.
-- **CSpect** (found withv2.12.26)
+- **CSpect** (found with v2.12.26)
   - Watchpoints do not work and are therefore disabled.
   - Z80 unit tests do not work. Because of above watchpoint problem.
 
