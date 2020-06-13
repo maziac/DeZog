@@ -1673,6 +1673,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-md') {
 			return await this.evalMemDump(tokens);
 		}
+		else if (cmd=='-dasm') {
+			return await this.evalDasm(tokens);
+		}
 		else if (cmd=='-patterns') {
 			return await this.evalSpritePatterns(tokens);
 		}
@@ -1837,6 +1840,7 @@ export class DebugSessionClass extends DebugSession {
 "-ASSERT enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTs set in the sources. All ASSERTs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERT breakpoints.
+"-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
@@ -2012,6 +2016,53 @@ Notes:
 
 		// Send response
 		return 'OK';
+	}
+
+
+	/**
+	 * Shows a a small disassembly in teh console.
+	 * @param tokens The arguments. I.e. the address and size.
+ 	 * @returns A Promise with a text to print.
+	 */
+	protected async evalDasm(tokens: Array<string>): Promise<string> {
+		// check count of arguments
+		if (tokens.length==0) {
+			// Error Handling: No arguments
+			throw new Error("Address and number of lines expected.");
+		}
+
+		if (tokens.length > 2) {
+			// Error Handling: Too many arguments
+			throw new Error("Too many arguments.");
+		}
+
+		// Get address
+		const addressString=tokens[0];
+		const address=Utility.evalExpression(addressString);
+
+		// Get size
+		const countString=tokens[1];
+		let count=10;	// Default
+		if(tokens.length>1) {
+			// Count given
+			count=Utility.evalExpression(countString);
+		}
+
+
+		// Get memory
+		const data=await Remote.readMemoryDump(address, 4*count);
+
+		// Disassembly
+		const dasmArray=DisassemblyClass.get(address, data, count);
+
+		// Convert to text
+		let txt='';
+		for (const line of dasmArray) {
+			txt+=Utility.getHexString(line.address, 4)+'\t'+line.instruction+'\n';
+		}
+
+		// Send response
+		return txt;
 	}
 
 

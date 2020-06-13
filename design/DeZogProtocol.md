@@ -390,7 +390,7 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
-| 5     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot.<br>The only reason for an error is on real HW if the slot is occupied by dezogif. |
+| 5     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot. At the moment this should return always 0. |
 
 
 ## CMD_GET_TBBLUE_REG
@@ -694,7 +694,7 @@ Response:
 Notification:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n     | Length     |
+| 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
 | 6     | 1    | 1     | NTF_PAUSE  |
 | 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason, the error string might have useful information for the user |

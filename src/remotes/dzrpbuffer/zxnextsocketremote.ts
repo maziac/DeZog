@@ -277,6 +277,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @returns A Promise with the breakpoint ID or 0 if breakpoint could not be set.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+		// TODO: If debugged program is running the additional breakpoint should be sent to the ZXNext.
+
 		// Check breakpoint address.
 		const errText=this.checkBreakpoint(bpAddress);
 		if(errText) {

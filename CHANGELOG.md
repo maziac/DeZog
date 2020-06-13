@@ -4,7 +4,8 @@
 - Support for DZRP 1.4.0: Changed numbering.
 - ZXNext remote debugging working. Major changes to DZRP.
 - Breakpoints at address 0x0000 fixed.
-- Introduced TC_END to end a unit test case (instead of 'ret').
+- Introduced TC_END to
+- New eval '-dasm' command.
 
 # 1.4.1
 - Support for DZRP 1.2.0: CMD_SLOT.
