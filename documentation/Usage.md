@@ -622,8 +622,11 @@ Setup a debug session:
 2. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
 3. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
 ./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
-Note: Change the serial port to your needs. There exist also binaries for Linux and Windows.
-4. On the ZX Next start [dezogif.nex](https://github.com/maziac/dezogif). You find a binary (NEX file) in the releases section.)
+Notes:
+  - Change the serial port to your needs.
+  - There exist also binaries for Linux and Windows.
+  - Check the [DeZogSerialInterface project](https://github.com/maziac/DeZogSerialInterface) for more options to test the connection.
+4. On the ZX Next start [dezogif.nex](https://github.com/maziac/dezogif). (You find the binary (NEX file) in the [releases](https://github.com/maziac/dezogif/releases) section.)
 5. In vscode start the debug session.
 6. Step through your code.
 
