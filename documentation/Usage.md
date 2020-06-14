@@ -620,8 +620,10 @@ Prerequisites:
 Setup a debug session:
 1. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
 2. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
-3. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface).
-4. On the ZX Next start [dezogif](https://github.com/maziac/dezogif).
+3. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
+./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
+Note: Change the serial port to your needs. There exist also binaries for Linux and Windows.
+4. On the ZX Next start [dezogif.nex](https://github.com/maziac/dezogif). You find a binary (NEX file) in the releases section.)
 5. In vscode start the debug session.
 6. Step through your code.
 
@@ -667,9 +669,11 @@ You should only try to do this yourself if you already have experience with elec
 
 **IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THE HW, SW OR ANYTHING ELSE PRESENTED HERE.**
 
-You require a USB/Serial converter like this one:
+You require a USB/Serial converter like this [one](https://www.amazon.com/dp/B07RBK2P47/ref=cm_sw_r_cp_api_i_A.2YEbANE66PG):
 ![](images/usb_serial_cable.jpg)
 It needs to be capable of 921600 Baud.
+
+(Note: I also used a cable from Adafruit. It's working as well. It was faster for small packets but I had to disconnect it physically from my mac more oftenly to get it back working.)
 
 On the other side only 3 wires are required:
 ![](images/usb_serial_connectors.jpg)
@@ -686,6 +690,8 @@ You need to connect:
 | GND          | 8 |
 | TX           | 7 |
 | RX           | 9 |
+
+![](images/dsub9_connected.jpg)
 
 
 ## Usage
