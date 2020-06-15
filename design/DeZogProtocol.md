@@ -55,9 +55,10 @@ I.e. different remotes may use a different subset of commands. For one this is b
 
 The table below shows which commands are used with what remote:
 
-| Command               | ZEsarUX | CSpect | ZXNext |
+| Command               | zsim    | CSpect | ZXNext |
 |-----------------------|---------|--------|--------|
-| CMD_INIT              | X       | X      | X      |
+| CMD_INIT              | -       | X      | X      |
+| CMD_CLOSE             | -       | X      | X      |
 | CMD_GET_REGISTERS     | X       | X      | X      |
 | CMD_SET_REGISTER      | X       | X      | X      |
 | CMD_WRITE_BANK        | X       | X      | X      |
@@ -66,11 +67,12 @@ The table below shows which commands are used with what remote:
 | CMD_READ_MEM          | X       | X      | X      |
 | CMD_WRITE_MEM         | X       | X      | X      |
 | CMD_GET_SLOTS         | X       | X      | X      |
-| CMD_SET_SLOT          | X        | X      | X      |
+| CMD_SET_SLOT          | X       | X      | X      |
 | CMD_GET_TBBLUE_REG    | X       | X      | X      |
-| CMD_SET_BORDER        | X        | X      | X      |
-| CMD_SET_BREAKPOINTS   | -        | -      | X      |
-| CMD_RESTORE_MEM       | -        | -      | X      |
+| CMD_SET_BORDER        | X       | X      | X      |
+| CMD_SET_BREAKPOINTS   | -       | -      | X      |
+| CMD_RESTORE_MEM       | -       | -      | X      |
+| CMD_LOOPBACK	        | -       | -      | X      |
 | CMD_GET_SPRITES_PALETTE | X     | X      | X      |
 | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL | X | X | X |
 | CMD_GET_SPRITES       | X       | X      | -      |
@@ -86,6 +88,12 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 
 ## History
+
+### 1.6.0
+- Added CMD_CLOSE for closing a debug session.
+
+### 1.5.0
+- Added CMD_LOOPBACK for testing the serial connection.
 
 ### 1.4.0
 - Numbering changed.
@@ -128,10 +136,10 @@ The message format is very simple. It starts with the length information followe
 |-------|------|-------------|
 | 0     | 4    | Length of the following data beginning with 'Command ID' (little endian) |
 | 4     | 1    | Sequence number, 1-255. Increased with each command |
-| 4     | 1    | Command ID or Response ID |
-| 5     | 1    | Data[0] |
+| 5     | 1    | Command ID or Response ID |
+| 6     | 1    | Data[0] |
 | ...   | ...  | Data[...] |
-| 5+n-1 | 1    | Data[n-1] |
+| 6+n-1 | 1    | Data[n-1] |
 
 The response ID is the same as the corresponding command ID.
 The numbering for Commands starts at 1. (0 is reserved, i.e. not used).
@@ -151,7 +159,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 1     | CMD_INIT |
+| 5     | 1    | 1     | CMD_INIT   |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
 | 9     | 1-n  | 0-terminated string | The program name + version as a string. E.g. "DeZog v1.4.0" |
 
@@ -166,6 +174,27 @@ Response:
 | 9     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
 
 
+## CMD_CLOSE
+
+This is the flast command. It is sent when the debug session is closed gracefully.
+There is no guarantee that this command is sent at all, e.g. when the connection is disconnected ungracefully.
+But the receiver could use it e.g. to show the (assumed) connection status.
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 2     | CMD_CLOSE  |
+
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1     | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+
+
 ## CMD_GET_REGISTERS
 
 Command:
@@ -173,7 +202,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 2     | CMD_GET_REGISTERS |
+| 5     | 1    | 3     | CMD_GET_REGISTERS |
 
 Response:
 | Index | Size | Value |Description |
@@ -205,7 +234,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 3     | CMD_SET_REGISTER |
+| 5     | 1    | 4     | CMD_SET_REGISTER |
 | 6     | 1    | i     | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
 | 7     | 2  | n  | The value to set. Little endian. If register is one byte only the lower byte is used but both bytes are sent. |
 
@@ -224,7 +253,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 8195  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 4     | CMD_WRITE_BANK |
+| 5     | 1    | 5     | CMD_WRITE_BANK |
 | 6     | 1    | 0-223 | 8k bank number |
 | 7     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
@@ -245,7 +274,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 13    | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 5     | CMD_CONTINUE |
+| 5     | 1    | 6     | CMD_CONTINUE |
 | 6     | 1    | 0/1   | Enable Breakpoint1 |
 | 7     | 2    | 0-0xFFFF | Breakpoint1 address |
 | 9     | 1    | 0/1   | Enable Breakpoint2 |
@@ -286,7 +315,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 6     | CMD_PAUSE    |
+| 5     | 1    | 7     | CMD_PAUSE    |
 
 
 Response:
@@ -304,7 +333,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 7     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 7     | CMD_READ_MEM |
+| 5     | 1    | 8     | CMD_READ_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 2    | n     | Size of the memory block |
@@ -327,7 +356,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 8     | CMD_WRITE_MEM |
+| 5     | 1    | 9     | CMD_WRITE_MEM |
 | 6     | 1    | 0     | reserved  |
 | 7     | 2    | addr  | Start of the memory block |
 | 9     | 1    | addr[0] | First byte of memory block |
@@ -349,7 +378,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 5+n   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 9     | CMD_GET_SLOTS |
+| 5     | 1    | 10    | CMD_GET_SLOTS |
 
 
 Response:
@@ -375,7 +404,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 10    | CMD_SET_SLOT |
+| 5     | 1    | 11    | CMD_SET_SLOT |
 | 6     | 1    | 0-7   | The slot to set. |
 | 7     | 1    | 0-223, 0xFF | The 8k bank to use. |
 
@@ -400,7 +429,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 3  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 11    | CMD_GET_TBBLUE_REG |
+| 5     | 1    | 12    | CMD_GET_TBBLUE_REG |
 | 6     | 1    | 0-255 | The register |
 
 Response:
@@ -418,7 +447,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 3     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 12    | CMD_SET_BORDER |
+| 5     | 1    | 13    | CMD_SET_BORDER |
 | 6     | 1    | Bits 0-2: color  | The color for the border |
 
 
@@ -436,7 +465,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2+2*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 13    | CMD_SET_BREAKPOINTS |
+| 5     | 1    | 14    | CMD_SET_BREAKPOINTS |
 | 6     | 2    | 0-65535 | Breakpoint address[0] |
 | 8     | 2    | 0-65535 | Breakpoint address[1] |
 | ...   | ...  | ...   | ... |
@@ -467,7 +496,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2+3*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 14    | CMD_RESTORE_MEM |
+| 5     | 1    | 15    | CMD_RESTORE_MEM |
 | 6     | 2    | 0-65535 | Address[0] |
 | 8     | 1    | 0-255 | Value to restore |
 | 9     | 2    | 0-65535 | Address[1] |
@@ -488,6 +517,30 @@ Notes:
 - N is max. 21844 ((65536-2)/3)
 
 
+## CMD_LOOPBACK
+
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 2+N   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 16    | CMD_LOOPBACK |
+| 6     | 1    | 0-255 | Data[0] |
+| ...   | ...  | ...   | ...       |
+| 6+N   | 1    | 0-255 | Data[N-1] |
+
+Response:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 1+N   | Length     |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 1    | 0-255 | Data[0]    |
+| ...   | ...  | ...   | ...        |
+| 5+N   | 1    | 0-255 | Data[N-1]  |
+
+N is max. 8192.
+
+
 ## CMD_GET_SPRITES_PALETTE
 
 Command:
@@ -495,7 +548,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 3     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 15    | CMD_GET_SPRITES_PALETTE |
+| 5     | 1    | 17    | CMD_GET_SPRITES_PALETTE |
 | 6     | 1    | 0/1   | Palette index |
 
 Response:
@@ -514,7 +567,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 2     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 16    | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |
+| 5     | 1    | 18    | CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |
 
 Response:
 | Index | Size | Value |Description |
@@ -536,7 +589,7 @@ Command:
 |-------|------|-------|------------|
 | 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 30  | CMD_GET_SPRITES |
+| 5     | 1    | 30    | CMD_GET_SPRITES |
 | 6     | 1    | 0-128 | Sprite index |
 | 7     | 1    | 0-128 | N. Count of sprites |
 

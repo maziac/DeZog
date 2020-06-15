@@ -761,15 +761,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	//------- Send Commands -------
 
 	/**
-	 * Not used.
-	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
-		Utility.assert(false);
-		return {error: undefined, dzrpVersion: "", programName: ""};
-	}
-
-
-	/**
 	 * Sends the command to get all registers.
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.

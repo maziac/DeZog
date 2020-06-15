@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
 	"author": {
@@ -10,12 +10,16 @@
 	"license": "MIT",
 	"keywords": [
 		"debugger",
+		"debug",
 		"z80",
 		"z80-debug",
 		"dezog",
 		"zesarux",
-		"zx spectrum",
-		"assembler"
+		"zx",
+		"spectrum",
+		"assembler",
+		"z80asm",
+		"sjasmplus"
 	],
 	"engines": {
 		"vscode": "^1.35.1",

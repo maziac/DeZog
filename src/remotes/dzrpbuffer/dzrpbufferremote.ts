@@ -91,12 +91,13 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 
 	/**
-	 * Override.
+	 * Override if needed.
 	 * This will disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		await this.sendDzrpCmdClose();
 	}
 
 
@@ -459,6 +460,14 @@ export class DzrpBufferRemote extends DzrpRemote {
 			error+="Supported by '"+program_name+"': "+resp[1]+"."+resp[2];
 		}
 		return {error, dzrpVersion: dzrp_version, programName: program_name};
+	}
+
+
+	/**
+	 * The last command sent. Closes the debug session.
+	 */
+	protected async sendDzrpCmdClose(): Promise<void> {
+		await this.sendDzrpCmd(DZRP.CMD_CLOSE);
 	}
 
 

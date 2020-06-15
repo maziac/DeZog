@@ -95,7 +95,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	public async disconnect(): Promise<void> {
 		if (!this.socket)
 			return;
-		return new Promise<void>(resolve => {
+		return new Promise<void>(async resolve => {
+			await super.disconnect();
 			this.socket.end(() => {
 				resolve();
 			});

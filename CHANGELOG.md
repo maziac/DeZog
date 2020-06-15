@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.4.3
+- Support for DZRP 1.6.0. CMD_CLOSE implemented.
+
 # 1.4.2
 - Support for DZRP 1.4.0: Changed numbering.
 - ZXNext remote debugging working. Major changes to DZRP.
