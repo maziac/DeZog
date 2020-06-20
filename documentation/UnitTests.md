@@ -95,6 +95,8 @@ Here is the complete list:
 - TEST_DREGS dreg1, dreg2: dreg1 == dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_DREGS_UNEQUAL dreg1, dreg2: dreg1 != dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
+- TEST_STRING_PTR addr1, addr2: Compares 2 null-terminated strings strings (addr1 and addr2)
+- TEST_MEM_CMP addr1, addr2, count: Compares to memory area on equality.
 - TEST_FLAG_Z: Z flag is set
 - TEST_FLAG_NZ: Z flag is not set
 

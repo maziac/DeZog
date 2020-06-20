@@ -454,6 +454,62 @@ Particular problematic is
 -->
 
 
+# Multiface
+
+Another possibility for serving the NMI interrupt is to use the [Multiface](https://k1.spdns.de/Vintage/Sinclair/82/Peripherals/Multiface%20I%2C%20128%2C%20and%20%2B3%20(Romantic%20Robot)/).
+On pressing the NMI button the Multiface memory is swapped in and the NMI at 0x0066 is executed.
+It can be  swapped out with
+~~~
+IN A,($bf): pages the MF ROM/RAM out
+IN A,($3f): pages the MF ROM/RAM back in
+If you do an OUT ($3f),A before the IN A,($bf) then the MF is again hidden and can only be paged back by pressing the NMI button.
+~~~
+
+MF is not used before the NMI button is used and cannot be accessed otherwise than giving control to MF via the NMI button.
+I.e. the Multiface ROM/RAM cannot be written by a program. The code need to be included in the MF file on SD card, so it is read during boot (enNextMf.rom).
+
+So the plan is:
+1. Put NMI and all dezog debugger code in enNextMf.rom
+2. To activate user has to press NMI button
+3. The SW will copy itself from MF ROM to a memory bank
+4. The SW is continued in the memory bank and can accept a debugged program through UART
+5. From here normal execution
+6. If the NMI button is pressed again the NMI code will branch into the bank memory and send a pause notfication.
+
+If something goes stuck I could also implement that a long NMI press goes back to 3.
+
+MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
+MF RAM is paged in/out by writing to address $2000 while MF ROM is paged in.
+
+
+
+Note: Need to find out how the Multiface can read/write from different MMU slots.
+
+
+# AltROM
+
+See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L777 .
+
+The Alternate ROM could be used so I don't need to copy the ROM, modify/copy it to another bank.
+I could instead copy/modify the ROM to the AltROM (at least 0x0000-0x1FFF).
+
+The advantage is that the ROM is switched in via bank 0xFF liek the normal ROM.
+The disadvantage is that it is all ROM. I.e. I need to move the data to another bank/slot.
+
+From Discord - z80-hardcore, 18.6.2020:
+
+] Maziac: And how do I write the alternate rom?
+[23:02] AA: The details are on nextreg 0x8c
+[23:02] AA: https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L777
+GitLab
+cores/zxnext/nextreg.txt · master · SpecNext Ltd / ZX_Spectrum_Next...
+Official ZX Spectrum Next FPGA Cores Repository
+
+[23:03] AA: What you do is write 64 to the register to make the altrom visible during memory writes to the bottom 16k.  Then if you write the bottom 16k, it changes the altrom.
+[23:04] AA: When you are done writing the altrom, get it to replace the regular rom by writing 128 to the register.
+[23:05] AA: There is a 48K and 128K rom just like on the 128K machines and which is placed is controlled by port 0x7ffd as usual.  You can also lock one or the other rom in place so the 48K altrom is always there no matter what the paging says.
+
+
 ## Setting Breakpoints
 
 The debugger program resides in the ROM area at 0x0000-0x3FFF (or maybe 0x1FFF).

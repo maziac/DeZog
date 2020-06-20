@@ -556,11 +556,12 @@ export class Settings {
 					"HL", "darkgreen",
 					"DE", "darkcyan",
 					"BC", "dimgray",
+					"SP", "goldenrod",
 					"IX", "darkorange",
 					"IY", "darkviolet"
 				],
 				registersMemoryView: [
-					"HL", "DE", "BC", "IX", "IY"
+					"HL", "DE", "BC", "SP", "IX", "IY"
 				]
 			};
 		}
