@@ -212,18 +212,21 @@ export class DebugSessionClass extends DebugSession {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public terminate(message?: string) {
-		DebugSessionClass.state=DbgAdaperState.NORMAL;
-		if (message)
-			this.showError(message);
-		Log.log("Exit debugger!");
-		// Remove all listeners
-		this.removeAllListeners();
-		// Terminate
-		try {
+		(async () => {
+			DebugSessionClass.state=DbgAdaperState.NORMAL;
+			if (message)
+				this.showError(message);
+			Log.log("Exit debugger!");
+			// Remove all listeners
+			this.removeAllListeners();
+			// Terminate
+			try {
+				await Remote?.disconnect();
+			}
+			catch {};
 			this.sendEvent(new TerminatedEvent());
-		}
-		catch (e) {};
-		//this.sendEvent(new ExitedEvent());
+			//this.sendEvent(new ExitedEvent());
+		})();
 	}
 
 

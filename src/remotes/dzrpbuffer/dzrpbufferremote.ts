@@ -18,11 +18,17 @@ const CHUNK_TIMEOUT=1000;	///< 1 sec
  * A structure used to serialize the sent messages.
  */
 class MessageBuffer {
+	// The response timeout time
+	public respTimeoutTime: number;
+
 	// The buffer to send
 	public buffer: Buffer;
 
 	// The function to call when the response is received.
-	public resolve: (Buffer) => void;
+	public resolve: (buffer) => void;
+
+	// The function to call when the command times out.
+	public reject: (error) => void;
 }
 
 
@@ -59,7 +65,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
 	// The used timeout time.
-	protected cmdRespTimeoutTime=50000; // TODO: change to 3000;	// 3000 ms
+	protected cmdRespTimeoutTime=3000 //50000; // TODO: change to 3000;	// 3000 ms
 
 	// To collect received chunks.
 	protected receivedData: Buffer;
@@ -97,23 +103,31 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
-		await this.sendDzrpCmdClose();
+		try {
+			await this.sendDzrpCmdClose();
+		}
+		catch {};
 	}
 
 
 	/**
 	 * Starts the command/response timeout.
+	 * @param respTimeoutTime The response timeout.
 	 */
-	protected startCmdRespTimeout() {
+	protected startCmdRespTimeout(respTimeoutTime: number) {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout=setTimeout(() => {
 			this.stopCmdRespTimeout();
 			const err=new Error('Socket command/response timeout.');
 			// Log
-			LogSocket.log('Error: '+err.message);
-			// Error
-			this.emit('error', err);
-		}, this.cmdRespTimeoutTime);
+			LogSocket.log('Warning: '+err.message);
+			// Show warning
+			this.emit('warning', err);
+			// Exception
+			const msg=this.messageQueue.shift()!;
+			Utility.assert(msg);
+			msg.reject(err);
+		}, respTimeoutTime);
 	}
 
 
@@ -142,10 +156,11 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * Sends a DZRP command and waits for the response.
 	 * @param cmd The command.
 	 * @param data A buffer containing the data.
+	 * @param respTimeoutTime The response timeout. Undefined=use default.
 	 * @returns The response is returned in the Promise.
 	 */
-	protected async sendDzrpCmd(cmd: number, data?: Buffer|Array<number>): Promise<Buffer> {
-		return new Promise<Buffer>(async resolve => {
+	protected async sendDzrpCmd(cmd: DZRP, data?: Buffer|Array<number>, respTimeoutTime?: number): Promise<Buffer> {
+		return new Promise<Buffer>(async (resolve, reject) => {
 			// Calculate length
 			let len=2;
 			if (data) {
@@ -170,7 +185,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 			data?.copy(buffer, 6);
 
 			// Put into queue
-			this.putIntoQueue(buffer, resolve);
+			if (respTimeoutTime==undefined)
+				respTimeoutTime=this.cmdRespTimeoutTime;
+			this.putIntoQueue(buffer, respTimeoutTime, resolve, reject);
 
 			// Try to send immediately
 			if (this.messageQueue.length==1)
@@ -181,13 +198,19 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Puts a new message into the queue.
+	 * @param buffer The buffer to send.
+	 * @param respTimeoutTime The response timeout.
+	 * @param resolve Called with the data when a response is received.
+	 * @param reject Called when the command/response timeout elapses.
 	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
 	 */
-	protected putIntoQueue(buffer: Buffer, resolve:(Buffer) => void) {
+	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject:(error) => void) {
 		// Create new buffer entry
 		const entry=new MessageBuffer();
 		entry.buffer=buffer;
+		entry.respTimeoutTime=respTimeoutTime;
 		entry.resolve=resolve;
+		entry.reject=reject;
 		// Add to queue
 		this.messageQueue.push(entry);
 	}
@@ -212,9 +235,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 			//const cmd: DZRP=msg.buffer[5];
 			//const cmdName=DZRP[cmd];
 			//LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
+			this.startCmdRespTimeout(msg.respTimeoutTime);
 			await this.sendBuffer(msg.buffer);
 			//console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
-			this.startCmdRespTimeout();
 		}
 		catch (error) {
 			LogSocket.log("SENT ERROR.");
@@ -444,7 +467,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
 		const nameBuffer=Utility.getBufferFromString(DZRP_PROGRAM_NAME);
-		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer]);
+		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], 500);
 		let error;
 		if (resp[0]!=0)
 			error="Remote returned an error code: "+resp[0];
@@ -467,7 +490,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_CLOSE);
+		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, 500);
 	}
 
 
