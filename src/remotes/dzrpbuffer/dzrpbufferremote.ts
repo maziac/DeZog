@@ -65,7 +65,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
 	// The used timeout time.
-	protected cmdRespTimeoutTime=3000 //50000; // TODO: change to 3000;	// 3000 ms
+	protected cmdRespTimeoutTime=3000; //50000; // TODO: change to 3000;	// 3000 ms
+	protected initCloseRespTimeoutTime=900;	// Timeout for CMD_INIT and CMD_CLOSE
 
 	// To collect received chunks.
 	protected receivedData: Buffer;
@@ -467,7 +468,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
 		const nameBuffer=Utility.getBufferFromString(DZRP_PROGRAM_NAME);
-		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], 500);
+		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
 		let error;
 		if (resp[0]!=0)
 			error="Remote returned an error code: "+resp[0];
@@ -490,7 +491,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * The last command sent. Closes the debug session.
 	 */
 	protected async sendDzrpCmdClose(): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, 500);
+		await this.sendDzrpCmd(DZRP.CMD_CLOSE, undefined, this.initCloseRespTimeoutTime);
 	}
 
 

@@ -176,7 +176,7 @@ Response:
 
 ## CMD_CLOSE
 
-This is the flast command. It is sent when the debug session is closed gracefully.
+This is the last command. It is sent when the debug session is closed gracefully.
 There is no guarantee that this command is sent at all, e.g. when the connection is disconnected ungracefully.
 But the receiver could use it e.g. to show the (assumed) connection status.
 

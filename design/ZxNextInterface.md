@@ -494,7 +494,6 @@ The Alternate ROM could be used so I don't need to copy the ROM, modify/copy it 
 I could instead copy/modify the ROM to the AltROM (at least 0x0000-0x1FFF).
 
 The advantage is that the ROM is switched in via bank 0xFF liek the normal ROM.
-The disadvantage is that it is all ROM. I.e. I need to move the data to another bank/slot.
 
 From Discord - z80-hardcore, 18.6.2020:
 
@@ -505,7 +504,7 @@ GitLab
 cores/zxnext/nextreg.txt · master · SpecNext Ltd / ZX_Spectrum_Next...
 Official ZX Spectrum Next FPGA Cores Repository
 
-[23:03] AA: What you do is write 64 to the register to make the altrom visible during memory writes to the bottom 16k.  Then if you write the bottom 16k, it changes the altrom.
+[23:03] AA: What you do is write 64 (sollte 192 sein) to the register to make the altrom visible during memory writes to the bottom 16k.  Then if you write the bottom 16k, it changes the altrom.
 [23:04] AA: When you are done writing the altrom, get it to replace the regular rom by writing 128 to the register.
 [23:05] AA: There is a 48K and 128K rom just like on the 128K machines and which is placed is controlled by port 0x7ffd as usual.  You can also lock one or the other rom in place so the 48K altrom is always there no matter what the paging says.
 

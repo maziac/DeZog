@@ -156,7 +156,7 @@ There are a few macros defined for testing:
 - TEST_UNCHANGED_H
 - TEST_UNCHANGED_L
 
-Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers.
+Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers. (USE_ALL_REGS2 is the same with different values.)
 THis macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
 

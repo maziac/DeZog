@@ -418,12 +418,33 @@
         ld ix,0x7788
         ld iy,0x99AA
         exx
+       	ex af,af'
         ld a,0xDC
         ld bc,0x1122
         ld de,0x3344
         ld hl,0x5566
+       	ex af,af'
         exx
     ENDM
+
+    ; This macro uses all registers with different values, also the shadow registers.
+    MACRO USE_ALL_REGS2
+        ld a,0xC2
+        ld bc,0xB2C2
+        ld de,0xD2E2
+        ld hl,0xF212
+        ld ix,0x7282
+        ld iy,0x92A2
+        exx
+       	ex af,af'
+        ld a,0xD2
+        ld bc,0x1223
+        ld de,0x3242
+        ld hl,0x5262
+       	ex af,af'
+        exx
+    ENDM
+
 
     ; sjasmplus end
     ; -----------------------------------------------------------
@@ -833,10 +854,30 @@ USE_ALL_REGS:    MACRO
         ld ix,0x7788
         ld iy,0x99AA
         exx
+       	ex af,af'
         ld a,0xDC
         ld bc,0x1122
         ld de,0x3344
         ld hl,0x5566
+       	ex af,af'
+        exx
+    ENDM
+
+    ; This macro uses all registers with different values, also the shadow registers.
+USE_ALL_REGS2:  MACRO
+        ld a,0xC2
+        ld bc,0xB2C2
+        ld de,0xD2E2
+        ld hl,0xF212
+        ld ix,0x7282
+        ld iy,0x92A2
+        exx
+       	ex af,af'
+        ld a,0xD2
+        ld bc,0x1223
+        ld de,0x3242
+        ld hl,0x5262
+       	ex af,af'
         exx
     ENDM
 
