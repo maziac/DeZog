@@ -329,10 +329,9 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected checkBreakpoint(addr: number|undefined): string|undefined {
 		/// TODO: Add exact values.
 		if (addr!=undefined&&
-			(addr<0
-			||addr<0x38
-			||addr==0x66))
-			return "addresses 0x0000-0x0037 and 0x0066";
+			((addr>=0 && addr<=0x07)
+			|| (addr>=0x66 && addr<=0x73)))
+			return "addresses 0x0000-0x0007 and 0x0066-0x0073";
 		return undefined;
 	}
 

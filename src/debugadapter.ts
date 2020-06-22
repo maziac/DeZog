@@ -218,12 +218,14 @@ export class DebugSessionClass extends DebugSession {
 				this.showError(message);
 			Log.log("Exit debugger!");
 			// Remove all listeners
-			this.removeAllListeners();
+			this.removeAllListeners();	// Don't react on events anymore
 			// Terminate
+			/* Not necessary: the TerminatedRequest results in a disconnectRequest.
 			try {
 				await Remote?.disconnect();
 			}
 			catch {};
+			*/
 			this.sendEvent(new TerminatedEvent());
 			//this.sendEvent(new ExitedEvent());
 		})();
@@ -293,7 +295,7 @@ export class DebugSessionClass extends DebugSession {
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
-		this.removeAllListeners();
+		this.removeAllListeners();	// Don't react on events anymore
 		await Remote?.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();

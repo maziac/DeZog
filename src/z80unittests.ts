@@ -771,7 +771,7 @@ export class Z80UnitTests {
 		// Set timeout
 		if(!Z80UnitTests.debug) {
 			clearTimeout(Z80UnitTests.timeoutHandle);
-			const toMs=5000; //1000*Settings.launch.unitTestTimeout; TODO
+			const toMs=1000*Settings.launch.unitTestTimeout;
 			Z80UnitTests.timeoutHandle = setTimeout(() => {
 				// Clear timeout
 				clearTimeout(Z80UnitTests.timeoutHandle);
