@@ -13,10 +13,21 @@ export class BaseView {
 
 	/// Holds a list of all derived view classes.
 	/// Used to call the static update functions.
-	public static staticViewClasses = new Array<any>();
+	public static staticViewClasses: Array<any>;
 
 	/// Holds a list of all open views.
-	protected static staticViews = new Array<BaseView>();
+	protected static staticViews: Array<BaseView>;
+
+
+	/**
+	 * Initializes the static variables.
+	 * Called at launchRequest.
+	 */
+	public static staticInit() {
+		BaseView.staticViewClasses=new Array<any>();
+		BaseView.staticViews=new Array<BaseView>();
+	}
+
 
 	/**
 	 * Is called on 'update' event.

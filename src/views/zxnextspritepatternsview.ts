@@ -34,22 +34,37 @@ export class ZxNextSpritePatternsView extends BaseView {
 	// STATIC:
 
 	/// The sprites palette transparent index.
-	protected static spritesPaletteTransparentIndex = 0;
+	protected static spritesPaletteTransparentIndex: number;
 
 	/// The sprite patterns, i.e. max 64 patterns each with 256 bytes describing the pattern.
-	protected static spritePatterns = new Map<number, Array<number>>();
+	protected static spritePatterns: Map<number, Array<number>>;
 
 
 	/// The sprite palettes, first and second sprite palette, but also the
 	/// fixed palettes.
-	protected static spritePalettes = new Map<number, Array<number>>();
+	protected static spritePalettes: Map<number, Array<number>>;
 
 
 	/// The currently selected sprite palette.
-	protected static currentPaletteNumber = -1;
+	protected static currentPaletteNumber: number;
 
 	/// String that is shown if retrieving was not possible.
 	protected retrievingError;
+
+
+	/**
+	 * Initializes the static variables.
+	 * Called at launchRequest.
+	 */
+	public static staticInit() {
+		ZxNextSpritePatternsView.currentPaletteNumber=-1;
+		ZxNextSpritePatternsView.spritesPaletteTransparentIndex=0;
+		ZxNextSpritePatternsView.spritePatterns=new Map<number, Array<number>>();
+		ZxNextSpritePatternsView.spritePalettes=new Map<number, Array<number>>();
+		// Register for static updates.
+		BaseView.staticViewClasses.push(ZxNextSpritePatternsView);
+	}
+
 
 	/**
 	 * Static update function. This is called once per update and takes care of the
@@ -61,7 +76,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Reload current palette number and transparent index on every update.
 		ZxNextSpritePatternsView.currentPaletteNumber=-1;
 		// Reload patterns and palettes only if not 'step'
-		if(!reason || reason.step != true) {
+		if (!reason||reason.step!=true) {
 			// Mark 'dirty'
 			ZxNextSpritePatternsView.spritePatterns.clear();
 			ZxNextSpritePatternsView.spritePalettes.delete(PaletteSelection.PALETTE_0);
@@ -642,9 +657,4 @@ export class ZxNextSpritePatternsView extends BaseView {
 		this.vscodePanel.webview.html = html;
 	}
 }
-
-
-
-// Register for static updates.
-BaseView.staticViewClasses.push(ZxNextSpritePatternsView);
 

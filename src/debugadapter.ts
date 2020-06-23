@@ -389,6 +389,10 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
+			// Init static views
+			BaseView.staticInit();
+			ZxNextSpritePatternsView.staticInit();
+
 			// Set root path
 			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
 
