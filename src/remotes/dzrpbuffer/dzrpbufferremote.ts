@@ -125,9 +125,14 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Show warning
 			this.emit('warning', err);
 			// Exception
-			const msg=this.messageQueue.shift()!;
-			Utility.assert(msg);
-			msg.reject(err);
+//			const msg=this.messageQueue.shift()!;
+//			Utility.assert(msg);
+//			msg.reject(err);
+			// Clear all other mesages from the queue
+			for (const msg of this.messageQueue) {
+				msg.reject(err);
+			}
+			this.messageQueue.length=0;
 		}, respTimeoutTime);
 	}
 

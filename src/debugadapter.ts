@@ -192,7 +192,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param message The message to show.
 	 */
 	private showWarning(message: string) {
-		Log.log(message);
+		Log.log(message)
 		vscode.window.showWarningMessage(message);
 	}
 
@@ -296,7 +296,8 @@ export class DebugSessionClass extends DebugSession {
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
-		await Remote?.disconnect();
+		// Disconnect
+		Remote?.disconnect();	// No await: This may take longer than 1 sec and vscode shows an error after 1 sec.
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
