@@ -697,6 +697,42 @@ You need to connect:
 ![](images/dsub9_connected.jpg)
 
 
+#### Caveats
+
+##### Stack
+
+For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
+Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
+~~~
+		push bc
+		inc sp
+BP->	inc sp
+BP->	do something
+BP->	...
+BP->	...
+BP->	dec sp
+BP->	dec sp
+	pop bc
+~~~
+Placing a BP at any of the above location will destroy the pushed BC value if the BP is hit.
+
+Workaround: Don't place a breakpoint at these locations.
+
+Furthermore the debugger program requires a few bytes on the debugged program's stack.
+This are <TODO: exact number of bytes> bytes.
+
+So take care to use a stack that can hold these additional bytes at any time.
+
+<!-- TODO: make visible
+
+**NMI**
+To interrupt the debugged program an NMI can be used (pressing the red NMI button).
+As an NMI places the current PC on the stack and can occur anytime it will also corrupt the stack if it happens while the debugged program is manipulating the SP.
+There is nothing that can be done about it. Normally this is not a problem as the SP is not manipulated that often. But if you make heavy use of SP manipulation (inc/dec) then you should avoid the NMI button or you should change your code so that it doesn't change SP. E.g. you could load the SP value into IX and then use IX to read/write to values on the stack.
+
+-->
+
+
 ## Usage
 
 If you use any Remote other than the internal Simulator please make sure that it is started before you start the debug session with DeZog.

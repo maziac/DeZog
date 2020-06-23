@@ -493,7 +493,7 @@ See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zx
 The Alternate ROM could be used so I don't need to copy the ROM, modify/copy it to another bank.
 I could instead copy/modify the ROM to the AltROM (at least 0x0000-0x1FFF).
 
-The advantage is that the ROM is switched in via bank 0xFF liek the normal ROM.
+The advantage is that the ROM is switched in via bank 0xFF like the normal ROM.
 
 From Discord - z80-hardcore, 18.6.2020:
 
@@ -509,7 +509,7 @@ Official ZX Spectrum Next FPGA Cores Repository
 [23:05] AA: There is a 48K and 128K rom just like on the 128K machines and which is placed is controlled by port 0x7ffd as usual.  You can also lock one or the other rom in place so the 48K altrom is always there no matter what the paging says.
 
 
-## Setting Breakpoints
+# Setting Breakpoints
 
 The debugger program resides in the ROM area at 0x0000-0x3FFF (or maybe 0x1FFF).
 If a breakpoint should be set in this area it would be set in the debugger program.
@@ -517,10 +517,68 @@ Setting a breakpoint involves to exchange the opcode at the breakpoint address w
 
 To do this the debugged program memory bank need to be paged in another slot (slot 2-7). Then the memory is read and set. Afterwards the original bank paging is restored.
 
-## Reading/Writing Memory
+# Reading/Writing Memory
 
-The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the 0x3FFF and 0x0000 boundaries. So the memory reading/writing need to be partitioned.
+The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the 0x1/3FFF and 0x0000 boundaries. So the memory reading/writing need to be partitioned.
 But the principle is the same.
+
+
+# Stack
+
+As soon as the Z80 debugger program gets control the maskable interrupts are disabled and restored when the debugged program gets back control.
+I.e. the normal (maskable) interrupt cannot change the stack.
+
+This is different for NMI. An NMI can occur anytime and is "non-maskable".
+If an NMI happens during SP manipulation this can result to unpredictable errors.
+
+Consider the following example:
+~~~
+	push bc
+	inc sp
+	inc sp
+	do something
+	dec sp
+	dec sp
+	pop bc
+~~~
+If an NMI occurs during or after manipulation of the SP the PC is written to the stack, overwriting the previous value:
+~~~
+	push bc
+	inc sp
+	inc sp
+NMI--> pushes the PC onto the stack
+	do something
+	dec sp
+	dec sp
+	pop bc
+~~~
+In the example above the pushed BC value is lost and exchanged with the PC value.
+
+There is nothing to do about it other than never increase the SP if the value on the stack is still required.
+
+TODO: need to check dezogif on this.
+
+For the debugged program the same applies: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it.
+For the debugged program this also applies
+- for maskable interrupts if the interrupts are not disabled (but this is a general failure of the program)
+- for SW breakpoints
+
+For SW breakpoints a RST is used. I.e. when a breakpoint is "hit" the PC is also placed on the stack.
+Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted as well.
+~~~
+		push bc
+		inc sp
+BP->	inc sp
+BP->	do something
+BP->	...
+BP->	...
+BP->	dec sp
+BP->	dec sp
+	pop bc
+~~~
+Placing a BP at any of the above location will destroy the pushed BC value if the BP is hit.
+
+
 
 
 # Measurements
