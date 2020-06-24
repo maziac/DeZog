@@ -10,7 +10,7 @@ import {Utility} from '../../misc/utility';
 
 /// Timeouts.
 const CONNECTION_TIMEOUT = 1000;	///< 1 sec
-const QUIT_TIMEOUT = 1000;	///< 1 sec
+const QUIT_TIMEOUT = 800;	///< 0.8 sec
 
 export const NO_TIMEOUT = 0;	///< Can be used as timeout value and has the special meaning: Don't use any timeout
 
@@ -566,7 +566,10 @@ export class ZesaruxSocket extends Socket {
 		*/
 
 		// Terminate if connected
-		if(this.state == SocketState.CONNECTED ) {
+		if (this.state==SocketState.CONNECTED) {
+			//func();
+			//zSocket.destroy();
+			//return;
 			// Terminate connection
 			LogSocket.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
@@ -575,10 +578,12 @@ export class ZesaruxSocket extends Socket {
 			this.send('cpu-code-coverage enabled no', () => {}, true);
 			this.send('extended-stack enabled no', () => {}, true);
 			this.send('clear-membreakpoints');
-			this.send('disable-breakpoints');
-			this.send('quit', data => {
+			this.send('disable-breakpoints', () => {
+				this.send('quit');
 				// Close connection (ZEsarUX also closes the connection)
-				zSocket.end();
+				//zSocket.end(); // "end()" takes too long > 1 s
+				zSocket.destroy();
+
 			});
 			return;
 		}

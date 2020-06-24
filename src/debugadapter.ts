@@ -297,7 +297,7 @@ export class DebugSessionClass extends DebugSession {
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
 		// Disconnect
-		Remote?.disconnect();	// No await: This may take longer than 1 sec and vscode shows an error after 1 sec.
+		await Remote?.disconnect();	// No await: This may take longer than 1 sec and vscode shows an error after 1 sec.
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
