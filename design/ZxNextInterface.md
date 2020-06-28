@@ -418,7 +418,7 @@ dezogif NEX-file bank usage:
 | 5 (standard)     | 0xA000-0xBFFF | Prequel code, i.e. copies the debug program to the right banks/DivMMC memory. | Not used after initialization. |
 
 
-# Memory Bank Switching
+# Memory Bank Switching - DivMMC
 
 The used DivMMC memory is paged in either if the CONMEM bit is set or if CONMEM is off and MAPRAM is set, if automapping occurs.
 Automapping is the memory switching if an instruction fetch occurs on certain addresses (e.g. 0x0000 or 0x0066).
@@ -442,18 +442,6 @@ If using slot/bank paging one memory bank would have to be used but the advantag
 
 
 
-
-<!--
-If DivMMC or ROM, both get problems with the banking in some cases.
-The debugger program resides in another memory bank than the debugged code but during the debugger program being executed it is difficult to access the memory of a debugged program in the same area.
-
-Particular problematic is
-- setting breakpoints
-- reading memory
-- writing memory
--->
-
-
 # Multiface
 
 Another possibility for serving the NMI interrupt is to use the [Multiface](https://k1.spdns.de/Vintage/Sinclair/82/Peripherals/Multiface%20I%2C%20128%2C%20and%20%2B3%20(Romantic%20Robot)/).
@@ -474,7 +462,7 @@ So the plan is:
 3. The SW will copy itself from MF ROM to a memory bank
 4. The SW is continued in the memory bank and can accept a debugged program through UART
 5. From here normal execution
-6. If the NMI button is pressed again the NMI code will branch into the bank memory and send a pause notfication.
+6. If the NMI button is pressed again the NMI code will branch into the bank memory and send a pause notification.
 
 If something goes stuck I could also implement that a long NMI press goes back to 3.
 
@@ -484,6 +472,55 @@ MF RAM is paged in/out by writing to address $2000 while MF ROM is paged in.
 
 
 Note: Need to find out how the Multiface can read/write from different MMU slots.
+
+
+# Memory Bank Switching - Multiface
+
+The table below shows the bank switching in case a breakpoint is hit:
+
+|Slot/L2| Running | BP hit | Enter  | Enter  | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
+|-------|---------|--------|--------|--------|----------|----------|----------|---------|---------|
+| 0     | **XM**  |**MAIN**|**MAIN**|**MAIN**| XM       | XM       | XM       |**XM**   | **XM**  |
+| 1     | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
+| 2-5   | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
+| 6     | **X**   | X      | X      | X      | X        | SWAP     | X        | X       | **X**   |
+| 7     | **X**   | X      | X      |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
+| L2 RW | 0/1     | 0/1    | 0      | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
+| PC    | 0-7     | 0      | 0      | 0->7   | 7        | 7        | 7        | 7->0    | 0-7     |
+
+Slot/Banks/L2:
+X = The bank used by the debugged program
+XM = The modified (alt) ROM or the (modified) bank of the debugged program for slot 0
+MAIN = The main debugger program
+SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/Write the memory.
+L2 RW = Layer 2 read/write enable.
+PC = Slot used for program execution. (Also bold)
+
+States:
+Running = The debugged program being run.
+BP hit = A breakpoint is hit. The program in M switches bank in slot 0 to MAIN.
+Enter = Transition into the debug loop.
+Dbg loop = The debugger loop. The debugger waits for commands from DeZog.
+Dbg exec = The debugger executes a command from DeZog.
+Exit = The debugger is left.
+
+Notes:
+- The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged in to slot 7 as SP might be in slot 7.
+- The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE0000.
+- It's not posisble to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
+
+
+## SP
+
+When entering the debugger the SP can point to any memory location.
+E.g. even slot7 or slot 0.
+If the SP points to memory in the same area as the debugger code is running the wrong values could be pushed/popped.
+
+So, to access the debugged programs stack it is necessary to map the memory area around SP into an unused bank and get/set the values there.
+
+Actually 2 banks/slots are required as the stack could reach over 2 slots. Even one SP address could be on the border so that the low byte is in slot X and the high byte is in slot x+1.
+
+
 
 
 # AltROM
@@ -509,6 +546,7 @@ Official ZX Spectrum Next FPGA Cores Repository
 [23:05] AA: There is a 48K and 128K rom just like on the 128K machines and which is placed is controlled by port 0x7ffd as usual.  You can also lock one or the other rom in place so the 48K altrom is always there no matter what the paging says.
 
 
+
 # Setting Breakpoints
 
 The debugger program resides in the ROM area at 0x0000-0x3FFF (or maybe 0x1FFF).
@@ -516,6 +554,7 @@ If a breakpoint should be set in this area it would be set in the debugger progr
 Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST opcode. I.e. a memory read and write.
 
 To do this the debugged program memory bank need to be paged in another slot (slot 2-7). Then the memory is read and set. Afterwards the original bank paging is restored.
+
 
 # Reading/Writing Memory
 
@@ -528,10 +567,11 @@ But the principle is the same.
 As soon as the Z80 debugger program gets control the maskable interrupts are disabled and restored when the debugged program gets back control.
 I.e. the normal (maskable) interrupt cannot change the stack.
 
-This is different for NMI. An NMI can occur anytime and is "non-maskable".
-If an NMI happens during SP manipulation this can result to unpredictable errors.
+This is different for NMI. An NMI can occur anytime and is "non-maskable" from Z80 perspective.
+But on the ZX Next it is possible to disable the root cause: the M1 button press via register 0x06.
+I.e. the debugger program will also disable the M1 button (NMI) when it gets control.
 
-Consider the following example:
+Here is an example what could happen if the NMI wouldn't be disabled:
 ~~~
 	push bc
 	inc sp
@@ -541,7 +581,7 @@ Consider the following example:
 	dec sp
 	pop bc
 ~~~
-If an NMI occurs during or after manipulation of the SP the PC is written to the stack, overwriting the previous value:
+If an NMI occurs during or after increasing the SP the PC is written to the stack, overwriting the previous value:
 ~~~
 	push bc
 	inc sp
@@ -554,11 +594,8 @@ NMI--> pushes the PC onto the stack
 ~~~
 In the example above the pushed BC value is lost and exchanged with the PC value.
 
-There is nothing to do about it other than never increase the SP if the value on the stack is still required.
+This is true for the debugged program aswell: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it in the debugger.
 
-TODO: need to check dezogif on this.
-
-For the debugged program the same applies: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it.
 For the debugged program this also applies
 - for maskable interrupts if the interrupts are not disabled (but this is a general failure of the program)
 - for SW breakpoints
@@ -576,9 +613,9 @@ BP->	dec sp
 BP->	dec sp
 	pop bc
 ~~~
-Placing a BP at any of the above location will destroy the pushed BC value if the BP is hit.
+Placing a BP at any of the above locations will destroy the pushed BC value if the BP is hit.
 
-
+The user has to take care not to place breakpoints at these locations.
 
 
 # Measurements

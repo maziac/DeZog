@@ -526,13 +526,13 @@ export class Settings {
 				"PC", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"SP", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"IM", "${unsigned}u",
-				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:unsigned}, (${hex}h)w=${w@:unsigned}",
+				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:hex}h, (${hex}h)w=${w@:hex}h",
 				"R", "${name}: ${unsigned}u",
 				"I", "${name}: ${hex}h",
 				".", "${name}: ${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}b"
 			];
 		if(!Settings.launch.formatting.bigValues)
-			Settings.launch.formatting.bigValues = "(${hex}h)b=${b@:unsigned}/'${b@:char}', (${hex}h)w=${w@:unsigned}";
+			Settings.launch.formatting.bigValues= "(${hex}h)=${b@:unsigned}/${b@:hex}h/'${b@:char}' or ${w@:hex}h/${w@:unsigned}";
 		if(!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
 		if(!Settings.launch.formatting.arrayByte)

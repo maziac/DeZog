@@ -277,7 +277,7 @@ export class Z80UnitTests {
 					try {
 						await Remote.enableLogpointGroup('UNITTEST', true);
 					}
-					catch {}	// Note: This group might be used by teh user. Most probably this group is undefined.
+					catch {}	// Note: This group might be used by tee user. Most probably this group is undefined.
 
 					await Z80UnitTests.initUnitTests();
 
@@ -629,6 +629,16 @@ export class Z80UnitTests {
 					// Cache covered addresses (since last unit test)
 					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 				});
+
+				// After initialization vscode might send breakpoint requests
+				// to set the breakpoints.
+				// Unfortunately this request is sent only if breakpoints exist.
+				// I.e. there is no safe way to wait for something to
+				// know when vscode is ready.
+				// So just wait some time:
+				if (Settings.launch.startAutomatically)
+					await Utility.timeout(500);
+
 				// Init unit tests
 				await Z80UnitTests.initUnitTests();
 				// Start unit tests after a short while

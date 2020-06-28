@@ -5,6 +5,7 @@ import {ImageConvert} from '../imageconvert';
 import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
+import {Log} from '../log';
 
 
 /**
@@ -219,6 +220,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @return A palette array. May return undefined if no palette is found.
 	 */
 	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
+
+		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex a, selectedIndex='+selectedIndex+', currentPaletteNumber='+ZxNextSpritePatternsView.currentPaletteNumber);
 		let paletteSelection = selectedIndex;
 		if(selectedIndex == PaletteSelection.CURRENT) {
 			switch(ZxNextSpritePatternsView.currentPaletteNumber) {
@@ -230,11 +233,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 					break;
 				default:
 					Utility.assert(false);
+					//paletteSelection=PaletteSelection.PALETTE_0;
 					break;
 			}
 		}
 
-		const palette = ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		const palette=ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex b');
 		return palette;
 	}
 
@@ -388,22 +393,30 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		try {
+			Log.log('ZxNextSpritePatternView::update a');
 			// Mark as invalid until pattern have been loaded.
 			this.patternDataValid=(!reason||reason.step!=true);
+
+			// TODO: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 
 			// Load palette if not available
 			await this.getSpritesPalette();
 
 			try {
 				// Get patterns
+				Log.log('ZxNextSpritePatternView::update b');
 				await this.getSpritePatterns();
 			}
 			catch (e) {
 				this.retrievingError=e.message;
 			};
 
+			Log.log('ZxNextSpritePatternView::update c');
+
 			// Create a new web view html code
 			this.setHtml();
+			Log.log('ZxNextSpritePatternView::update d');
+
 		}
 		catch (e) {
 			Remote.emit('warning', e.message);
@@ -519,6 +532,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			return '<div>'+this.retrievingError+'</div>';
 
 		// Create a string with the table itself.
+		Log.log('ZxNextSpritePatternView::createHtmlTable a');
+
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
 		let table=`
@@ -605,6 +620,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			k ++;
 		}
 
+
+		Log.log('ZxNextSpritePatternView::createHtmlTable b');
 		return table;
 	}
 

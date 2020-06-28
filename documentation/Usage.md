@@ -642,7 +642,19 @@ But if you start a program without a breakpoint it will not stop anymore and you
 
 This is because the debugged program has full control and the debugger (currently) has no way to interfere.
 
-To allow pausing you need to place some code in your program, i.e. in the main loop of your program.
+See next chapter.
+
+
+#### Pausing the Debugged Program
+
+There are 2 ways to pause the debugged program
+- Pausing from the vscode UI
+- Pausing through the red M1 (NMI) button
+
+
+**Pausing from the vscode UI/cooperative pause:**
+
+To allow pausing from the vscode UI you need to place some code in your program, i.e. in the main loop of your program.
 You can find the code here: [dezog.asm](dezog.asm).
 If you use the example [z80-sample-program](https://github.com/maziac/z80-sample-program), it's already included.
 
@@ -661,6 +673,13 @@ The call to 'dezog_check_for_message'
 - uses a few bytes on the stack (about 8)
 - takes about 80 T-states until it returns (if no "pause")
 - can work with or without interrupts enabled
+
+
+**Pausing through the red M1 (NMI) button**
+
+If the debugged program is running you can press the red M1 button to pause the debugged program.
+For this to work you don't have to place any special code inside your program.
+Just press the button.
 
 
 #### HW
@@ -701,7 +720,9 @@ You need to connect:
 
 ##### Stack
 
-For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
+###### SW Breakpoints
+
+A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
 Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
 ~~~
 		push bc
@@ -723,14 +744,36 @@ This are <TODO: exact number of bytes> bytes.
 
 So take care to use a stack that can hold these additional bytes at any time.
 
-<!-- TODO: make visible
+B) Memory Paging
+The ZX Next SW Breakpoints do not work very well with memory paging.
+If you place a breakpoint in your souce file the address for the source file line is taken and a breakpoint is put at that address.
+If at this moment a bank is paged in that does not correspondend to the the source file a breakpoint is placed in the wrong bank.
+As for the ZX Next a breakpoint means to change the code at the address it means that the code/data in the wrong bank is changed.
+This could either
+- be at instruction start by accident with no further consequences
+- destroying instructions if placed in the middle of a multi-byte instructions
+- corrupt some data
 
-**NMI**
-To interrupt the debugged program an NMI can be used (pressing the red NMI button).
+Therefore you need to place the breakpoints carefully if you are placing them in an area that is shared between different memory banks.
+
+Furthermore you should note that all breakpoints are put in just before a debugger step or continue and removed afterwards.
+I.e. if you have a "stale" breakpoint in some file it could make problems if this location changes the used bank.
+
+
+
+###### NMI
+
+To interrupt the debugged program an NMI can be used (pressing the red M1 button).
 As an NMI places the current PC on the stack and can occur anytime it will also corrupt the stack if it happens while the debugged program is manipulating the SP.
-There is nothing that can be done about it. Normally this is not a problem as the SP is not manipulated that often. But if you make heavy use of SP manipulation (inc/dec) then you should avoid the NMI button or you should change your code so that it doesn't change SP. E.g. you could load the SP value into IX and then use IX to read/write to values on the stack.
 
--->
+There is nothing to do about it other than
+- never increase the SP if the value on the stack is still required
+- disable the M1 (NMI) button via the Next register 0x06 during these critical sections
+
+For the debugged program this means
+- If your program heavily relies on SP manipulation (increasing SP **while values below SP are still required**) then take care to guard the code section with NMI disable/enable via disabling/enabling the M1 button in register 0x06. You could also re-write the code such that it loads the SP into another register (e.g. IX) and access the stack values through that register.
+- If you don't manipulate the SP in that way you don't have to bother with disabling the NMI M1 button.
+- If you only rarely use the SP in that way: the probability for the scenario above is certainly quite low. I.e. you can simply ignore it. But you should keep in mind that if something odd happens when you press the NMI M1 button that it could be the reason described above.
 
 
 ## Usage

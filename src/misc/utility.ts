@@ -504,6 +504,7 @@ export class Utility {
 			// '${...' found now check for } from the left side.
 			// This assures that } can also be used inside a ${...}
 			const k = p.lastIndexOf('}');
+			//const k=p.indexOf('}');
 			if(k < 0) {
 				// Not a ${...} -> continue
 				return p;
@@ -981,7 +982,7 @@ export class Utility {
 
 
 	/**
-	 * An async function that waits for somee miliseconds.
+	 * An async function that waits for some milliseconds.
 	 * @param ms time to wait in ms
 	 */
 	public static async timeout(ms: number): Promise<void> {

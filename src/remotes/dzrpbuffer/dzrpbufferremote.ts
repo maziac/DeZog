@@ -113,6 +113,12 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Starts the command/response timeout.
+	 * If the timer elapses a warning is shown (for some reason vscode swallows it though).
+	 * Important: The message itself stays there and also the message queue is untouched.
+	 * If e.g. an NMI occurs and the ZX works again on the UART the messages
+	 * are processed and the responses occur normally.
+	 * I.e. it can happen that a message response occurs a minute later,
+	 * still it is correctly worked upon.
 	 * @param respTimeoutTime The response timeout.
 	 */
 	protected startCmdRespTimeout(respTimeoutTime: number) {
@@ -124,15 +130,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
 			this.emit('warning', err);
-			// Exception
-//			const msg=this.messageQueue.shift()!;
-//			Utility.assert(msg);
-//			msg.reject(err);
-			// Clear all other mesages from the queue
-			for (const msg of this.messageQueue) {
-				msg.reject(err);
-			}
-			this.messageQueue.length=0;
 		}, respTimeoutTime);
 	}
 
