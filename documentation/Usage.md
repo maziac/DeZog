@@ -649,7 +649,7 @@ See next chapter.
 
 There are 2 ways to pause the debugged program
 - Pausing from the vscode UI
-- Pausing through the red M1 (NMI) button
+- Pausing through the yellow M1 (NMI) button
 
 
 **Pausing from the vscode UI/cooperative pause:**
@@ -675,9 +675,9 @@ The call to 'dezog_check_for_message'
 - can work with or without interrupts enabled
 
 
-**Pausing through the red M1 (NMI) button**
+**Pausing through the yellow M1 (NMI) button**
 
-If the debugged program is running you can press the red M1 button to pause the debugged program.
+If the debugged program is running you can press the yellow M1 button to pause the debugged program.
 For this to work you don't have to place any special code inside your program.
 Just press the button.
 
@@ -763,7 +763,7 @@ I.e. if you have a "stale" breakpoint in some file it could make problems if thi
 
 ###### NMI
 
-To interrupt the debugged program an NMI can be used (pressing the red M1 button).
+To interrupt the debugged program an NMI can be used (pressing the yellow M1 button).
 As an NMI places the current PC on the stack and can occur anytime it will also corrupt the stack if it happens while the debugged program is manipulating the SP.
 
 There is nothing to do about it other than
