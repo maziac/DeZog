@@ -33,7 +33,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	public async doInitialization(): Promise<void>  {
 		// Check for unsupported settings
 		if (Settings.launch.unitTests) {
-			throw Error("launch.json: unitTests==true: CSpect does not support running unit tests at the moment.");
+			throw Error("launch.json: unitTests==true: CSpect does not support running unit tests.");
 		}
 
 		// Init socket

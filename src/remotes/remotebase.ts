@@ -206,6 +206,7 @@ export class RemoteBase extends EventEmitter {
 						}
 					}
 					if (access&&access.length>0) {
+						access=access.toLocaleLowerCase();
 						if (access!='r'&&access!='w'&&access!='rw') {
 							console.log("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '"+access+"' in line: '"+entry.line+"'");
 							continue;
