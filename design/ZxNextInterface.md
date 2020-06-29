@@ -446,15 +446,17 @@ If using slot/bank paging one memory bank would have to be used but the advantag
 
 Another possibility for serving the NMI interrupt is to use the [Multiface](https://k1.spdns.de/Vintage/Sinclair/82/Peripherals/Multiface%20I%2C%20128%2C%20and%20%2B3%20(Romantic%20Robot)/).
 On pressing the NMI button the Multiface memory is swapped in and the NMI at 0x0066 is executed.
-It can be  swapped out with
+It can be swapped out with
 ~~~
 IN A,($bf): pages the MF ROM/RAM out
 IN A,($3f): pages the MF ROM/RAM back in
-If you do an OUT ($3f),A before the IN A,($bf) then the MF is again hidden and can only be paged back by pressing the NMI button.
+OUT ($3f),A : IN A,($bf): The MF is again hidden and can only be paged back by pressing the NMI button.
 ~~~
 
 MF is not used before the NMI button is used and cannot be accessed otherwise than giving control to MF via the NMI button.
 I.e. the Multiface ROM/RAM cannot be written by a program. The code need to be included in the MF file on SD card, so it is read during boot (enNextMf.rom).
+
+The MF M1 button has to be reactivated before the NMI ISR is left by paging out (or hiding) the MF. (I.e. an NMI cannot interrupt an NMI becaue the button is deactivated.)
 
 So the plan is:
 1. Put NMI and all dezog debugger code in enNextMf.rom
@@ -508,6 +510,23 @@ Notes:
 - The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged in to slot 7 as SP might be in slot 7.
 - The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE0000.
 - It's not posisble to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
+
+
+
+This table shows the bank switching in case th M1 MF NMI (yellow) button is pressed:
+
+|Slot/L2| Running | NMI/M1   | Enter    | RETN   | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
+|-------|---------|----------|----------|--------|----------|----------|----------|---------|---------|
+| 0     | **XM**  |**MF ROM**|**MF ROM**| XM     | XM       | XM       | XM       |**XM**   | **XM**  |
+| 1     | **X**   | MF RAM   | MF RAM   | X      | X        | X        | X        | X       | **X**   |
+| 2-5   | **X**   | X        | X        | X      | X        | X        | X        | X       | **X**   |
+| 6     | **X**   | X        | X        | X      | X        | SWAP     | X        | X       | **X**   |
+| 7     | **X**   | X        | **MAIN** |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
+| L2 RW | 0/1     | 0/1      | 0        | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
+| PC    | 0-7     | 0        | 0->7     | 7      | 7        | 7        | 7        | 7->0    | 0-7     |
+
+The debug loop primarily executes the CMD_PAUSE. But if there are any command (from DeZog) pending they are executed beforehand.
+Afterwards the debug loop is exited.
 
 
 ## SP
