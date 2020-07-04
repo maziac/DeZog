@@ -1304,6 +1304,8 @@ This, of course, means that normally only the 8bit or the 4bit color pattern is 
 
 If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
 The dump is updated on each step.
+Example:
+![](images/watches.jpg)
 DeZog cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
 a byte array and a word array, on default.
 However you have a few options if you add more parameters to the label.
@@ -1326,6 +1328,18 @@ Here is an example:
 fill_colors,5,b
 ~~~
 It shows an array of 5 bytes beginning at label fill_colors.
+
+If you like you can also "comment" to your watches which e.g. further explains the use. You can separate it with a e.g. a ";" or a space, e.g.:
+
+~~~
+fill_colors,1,b; Red
+or
+fill_colors Red
+~~~
+
+results in
+
+![](images/watches_comment.jpg)
 
 
 ### Change the Program Counter
