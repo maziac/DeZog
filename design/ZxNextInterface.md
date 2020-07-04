@@ -481,7 +481,7 @@ Note: Need to find out how the Multiface can read/write from different MMU slots
 The table below shows the bank switching in case a breakpoint is hit:
 
 |Slot/L2| Running | BP hit | Enter  | Enter  | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
-|-------|---------|--------|--------|--------|----------|----------|----------|---------|---------|
+|:------|:--------|:-------|:-------|:-------|:---------|:---------|:---------|:--------|:--------|
 | 0     | **XM**  |**MAIN**|**MAIN**|**MAIN**| XM       | XM       | XM       |**XM**   | **XM**  |
 | 1     | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
 | 2-5   | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
@@ -489,6 +489,7 @@ The table below shows the bank switching in case a breakpoint is hit:
 | 7     | **X**   | X      | X      |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
 | L2 RW | 0/1     | 0/1    | 0      | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
 | PC    | 0-7     | 0      | 0      | 0->7   | 7        | 7        | 7        | 7->0    | 0-7     |
+| M1 enabled | 1  | 1->0   | 0      | 0      | 0        | 0        | 0        | 0->1    | 0-7     |
 
 Slot/Banks/L2:
 X = The bank used by the debugged program
@@ -497,6 +498,7 @@ MAIN = The main debugger program
 SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/Write the memory.
 L2 RW = Layer 2 read/write enable.
 PC = Slot used for program execution. (Also bold)
+M1 enabled = 1 if the M1 key is enabled. I.e. the NMI is only allowed during debugged program execution. While the debugger is runnign it is disabled.
 
 States:
 Running = The debugged program being run.
@@ -508,7 +510,7 @@ Exit = The debugger is left.
 
 Notes:
 - The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged in to slot 7 as SP might be in slot 7.
-- The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE0000.
+- The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE000.
 - It's not posisble to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
 
 
@@ -516,7 +518,7 @@ Notes:
 This table shows the bank switching in case th M1 MF NMI (yellow) button is pressed:
 
 |Slot/L2| Running | NMI/M1   | Enter    | RETN   | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
-|-------|---------|----------|----------|--------|----------|----------|----------|---------|---------|
+|:------|:--------|:---------|:---------|:-------|:---------|:---------|:---------|:--------|:--------|
 | 0     | **XM**  |**MF ROM**|**MF ROM**| XM     | XM       | XM       | XM       |**XM**   | **XM**  |
 | 1     | **X**   | MF RAM   | MF RAM   | X      | X        | X        | X        | X       | **X**   |
 | 2-5   | **X**   | X        | X        | X      | X        | X        | X        | X       | **X**   |
@@ -524,9 +526,9 @@ This table shows the bank switching in case th M1 MF NMI (yellow) button is pres
 | 7     | **X**   | X        | **MAIN** |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
 | L2 RW | 0/1     | 0/1      | 0        | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
 | PC    | 0-7     | 0        | 0->7     | 7      | 7        | 7        | 7        | 7->0    | 0-7     |
+| M1 enabled | 1  | 1->0     | 0        | 0      | 0        | 0        | 0        | 0->1    | 0-7     |
 
-The debug loop primarily executes the CMD_PAUSE. But if there are any command (from DeZog) pending they are executed beforehand.
-Afterwards the debug loop is exited.
+The debug loop primarily executes the CMD_PAUSE and then stays in the debug loop until DeZog sends a CMD_CONTINUE.
 
 
 ## SP
