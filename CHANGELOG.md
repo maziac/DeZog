@@ -3,6 +3,7 @@
 # 1.3.1
 - Corrected display of memory slots for zsim and cspect.
 - Removed 'replaceAll'.
+- Fixed issue #24: (sjasmplus) Watch expression evaluates incorrect value for label within IFDEF
 
 # 1.3.0
 - Fix for ZEsarUX history spot.
