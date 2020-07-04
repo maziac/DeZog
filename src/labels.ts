@@ -240,6 +240,13 @@ export class LabelsClass {
 			if(filterRegEx)
 				line=line.replace(filterRegEx, replace);
 
+			// Check if valid line (not "~")
+			if (sjasmplus) {
+				// Search for "~". E.g. "8002 ~            Level   defw 4"
+				const invalidMatch=/^[0-9a-f]+\s+\~/i.exec(line);
+				if (invalidMatch)
+					continue;	// Skip line.
+			}
 
 			// Extract address.
 			const readAddress=parseInt(line.substr(0, 4), 16);
