@@ -716,8 +716,8 @@ You need to connect:
 | Serial cable | D-Sub 9 |
 |--------------|---------|
 | GND          | 8 |
-| TX           | 7 |
-| RX           | 9 |
+| RX           | 7 |
+| TX           | 9 |
 
 ![](images/dsub9_connected.jpg)
 
