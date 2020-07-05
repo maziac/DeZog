@@ -150,7 +150,7 @@ The source code is available on [github](https://github.com/maziac/dezog).
 
 DeZog also includes a Z80/48k ZX Spectrum simulator. For this the original 48/128k ROM code is included and here is the copyright notice:
 "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
-See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-roms.txt).
+See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 
 Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
 
