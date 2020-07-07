@@ -1,7 +1,7 @@
 # Changelog
 
 # 1.4.4
-- remotType: "serial" renamed to "zxnext"
+- remoteType: "serial" renamed to "zxnext"
 
 # 1.4.3
 - Support for DZRP 1.6.0. CMD_CLOSE implemented.

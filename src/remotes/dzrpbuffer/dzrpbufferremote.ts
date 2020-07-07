@@ -586,9 +586,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * no breakpoint is available anymore.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
-		// Break because 'Continue' works with a temporary breakpoint list.
-		// TODO: I should change this when I remove CM_ADD_BREAKPOINT. If the system is running then the one additional breakpoint is sent. If not then nothing happens.
-		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
 		// Convert condition string to Buffer
 		if (!condition)
 			condition='';
@@ -604,9 +601,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * @param bpId The breakpoint ID to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		// Break because 'Continue' works with a temporary breakpoint list.
-		// TODO: I should change this when I remove CMD_REMOVE_BREAKPOINT. If the system is running then the one additional breakpoint is removed. If not then nothing happens.
-		await this.sendDzrpCmd(DZRP.CMD_PAUSE);
 		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId&0xFF, bpId>>>8]);
 	}
 
