@@ -106,8 +106,8 @@ export interface CSpectType {
 }
 
 
-// Definitions for CSpect remote type.
-export interface SerialSocketType {
+// Definitions for ZX Next remote type.
+export interface ZxNextSocketType {
 	// The hostname/IP address of the socket that connects the serial port.
 	hostname: string;
 
@@ -147,19 +147,6 @@ export interface ZxSimType {
 	vsyncInterrupt: boolean,
 }
 
-/*
-/// Definitions for the 'serial' remote type.
-export interface SerialType {
-	/// The baudrate to use.
-	baudrate: number;
-
-	/// The port, e.g.  "/dev/tty.usbserial-####" or "COM1"/"COM2"
-	port: string;
-
-	/// The load delay. Workaround for using ZEsarUx on Windows.
-}
-*/
-
 
 /**
  * See also package.json.
@@ -179,7 +166,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zsim: ZxSimType;
 
 	// The special settings for the serial connection.
-	serial: SerialSocketType;
+	zxnext: ZxNextSocketType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -285,7 +272,7 @@ export class Settings {
 				zrcp: <any>undefined,
 				cspect: <any>undefined,
 				zsim: <any>undefined,
-				serial: <any>undefined,
+				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				listFiles: <any>undefined,
@@ -386,14 +373,14 @@ export class Settings {
 		}
 
 		// serial
-		if (!Settings.launch.serial)
-			Settings.launch.serial={} as SerialSocketType;
-		if (Settings.launch.serial.hostname==undefined)
-			Settings.launch.serial.hostname='localhost';
-		if (Settings.launch.serial.port==undefined)
-			Settings.launch.serial.port=12000;
-		if (!Settings.launch.serial.socketTimeout)
-			Settings.launch.serial.socketTimeout=5;	// 5 secs
+		if (!Settings.launch.zxnext)
+			Settings.launch.zxnext={} as ZxNextSocketType;
+		if (Settings.launch.zxnext.hostname==undefined)
+			Settings.launch.zxnext.hostname='localhost';
+		if (Settings.launch.zxnext.port==undefined)
+			Settings.launch.zxnext.port=12000;
+		if (!Settings.launch.zxnext.socketTimeout)
+			Settings.launch.zxnext.socketTimeout=5;	// 5 secs
 
 
 
@@ -579,8 +566,7 @@ export class Settings {
 	public static CheckSettings() {
 		// Check remote type
 		const rType=Settings.launch.remoteType;
-		const allowedTypes=['zrcp', 'cspect', 'serial', 'zsim'];
-		//const allowedTypes=['zrcp', 'cspect', /*'serial',*/ 'zsim'];
+		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

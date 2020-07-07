@@ -38,14 +38,14 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - remoteType=serial', () => {
+		test('CheckSettings - remoteType=zxnext', () => {
 			const cfg: any={
-				remoteType: 'serial'
+				remoteType: 'zxnext'
 			};
 			Settings.Init(cfg, '');
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
-			}, "Should not fail with remoteType=serial.");
+			}, "Should not fail with remoteType=zxnext.");
 		});
 
 

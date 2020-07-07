@@ -83,8 +83,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port=Settings.launch.serial.port;
-		const hostname=Settings.launch.serial.hostname;
+		const port=Settings.launch.zxnext.port;
+		const hostname=Settings.launch.zxnext.hostname;
 		this.socket.connect(port, hostname);
 	}
 

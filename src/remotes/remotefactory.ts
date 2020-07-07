@@ -15,7 +15,7 @@ import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
 export class RemoteFactory {
 	/**
 	 * Factory method to create an emulator.
-	 * @param remoteType 'zrcp', 'serial' or 'zsim'. For 'zrcp' always the ZesaruxExtEmulator is created.
+	 * @param remoteType 'zrcp', 'zxnext' or 'zsim'. For 'zrcp' always the ZesaruxExtEmulator is created.
 	 * It will fallback to Zesarux if no ZesaruxExt is connected.
 	 */
 	public static createRemote(remoteType: string) {
@@ -26,8 +26,7 @@ export class RemoteFactory {
 			case 'cspect':	// CSpect socket
 				RemoteFactory.setRemote(new CSpectRemote());
 				break;
-			case 'serial':	// USB/serial connection
-				//RemoteFactory.setRemote(new ZxNextUsbSerialRemote());
+			case 'zxnext':	// The ZX Next USB/serial connection
 				RemoteFactory.setRemote(new ZxNextSocketRemote());
 				break;
 			case 'zsim':	// Simulator

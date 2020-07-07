@@ -71,7 +71,7 @@ A typical configuration looks like this:
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface.
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
-    - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
+    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -273,7 +273,7 @@ They are distinguished via the "remoteType":
 - "zsim": Internal Z80 Simulator
 - "zrcp": ZEsarUX (or ZesaruxExt) emulator
 - "cspect": CSpect emulator
-- "serial": ZX Next connected via serial.
+- "zxnext": ZX Next connected via serial cable.
 
 
 ### What is a 'Remote'?
@@ -605,14 +605,14 @@ In order to communicate with the ZX Next special SW needs to run on the Next: [d
 
 Example launch.json configuration:
 ~~~
-    "remoteType": "serial",
-    "serial": {
+    "remoteType": "zxnext",
+    "zxnext": {
         "port": 12000
     }
 ~~~
 The default port is anyway 12000. So, if you don't change it, you just have to add:
 ~~~
-    "remoteType": "serial"
+    "remoteType": "zxnext"
 ~~~
 
 
