@@ -304,19 +304,13 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		this.restoreBreakpointIdLastIndex++; 	// TODO: Use a different name.
 		bp.bpId=this.restoreBreakpointIdLastIndex;
 
-		let opcode=0;
 		// Check if debugged program is running
 		if (this.breakpointsAndOpcodes) {
-			// Get memory at opcode
-			const mem=await this.sendDzrpCmdReadMem(bpAddress, 1);	// TODO: Ich denke ich kann hierauf verzichten und das zusammen mit sendDzrpCmdSetBreakpoints machen
-			opcode=mem[0];
-			// Add to temporary breakpoints
-			this.breakpointsAndOpcodes.push({address: bpAddress, opcode});	// TODO: Brauche ich breakpointsAndOpcodes
-			this.addTmpBreakpoint(bp);
 			// Set the breakpoint
-			await this.sendDzrpCmdSetBreakpoints([bpAddress]);
-			//const opcodes=await this.sendDzrpCmdSetBreakpoints([bpAddress]);
-			//opcode=opcodes[0];
+			const opcodes=await this.sendDzrpCmdSetBreakpoints([bpAddress]);
+			const opcode=opcodes[0];
+			// Add to temporary breakpoints
+			this.breakpointsAndOpcodes.push({address: bpAddress, opcode});
 		}
 	}
 
@@ -326,17 +320,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		/*
-		// Get address to check if current breakpoint is removed
-		const bp=this.restorableBreakpoints.get(bpId)!;
-		Utility.assert(bp);
-		const bpAddress=bp?.address;
-		if (this.breakedAddress==bpAddress)
-			this.breakedAddress=undefined;
-		// Delete
-		this.restorableBreakpoints.delete(bpId);
-		*/
-
 		// Check if breaked address is removed.
 		const bpAddress=bp.address;
 		if (this.breakedAddress==bpAddress)
@@ -353,7 +336,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					await this.sendDzrpCmdRestoreMem([{address: bpAddress, value: opcode}]);
 					// Remove from lists
 					this.breakpointsAndOpcodes.splice(i, 1);
-					this.removeTmpBreakpoint(bp);
 					// Return
 					return;
 				}
