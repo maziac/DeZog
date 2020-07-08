@@ -174,7 +174,7 @@ note over dezog: If BREAK_REASON==HIT then\nset breakedAddress
 
 == Continue (from breakpoint) ==
 
-alt restoreBreakpointId != undefined
+alt oldBreakedAddress != undefined
 	note over dezog: Create list of bp addresses\nwithout the breakedAddress
 	dezog -> zxnext: CMD_SET_BREAKPOINTS(bp_addresses)
 	note over zxnext: Overwrites the\nRST (breakpoint),\ni.e. restores the opcode

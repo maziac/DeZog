@@ -40,9 +40,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected breakedAddress: number|undefined;
 
 
-	// Array of restorable breakpoints which store also the opcode for restoration.
-	//protected restorableBreakpoints: Map<number, RestorableBreakpoint>;
-	protected restoreBreakpointIdLastIndex
+	// Returned breakpoint index.
+	protected breakpointIdLastIndex
 
 	// Array is created temporarily during Continue.
 	// It holds the breakpoints and their prior values.
@@ -69,7 +68,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 			this.breakedAddress=undefined;
 			//this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
-			this.restoreBreakpointIdLastIndex=0;
+			this.breakpointIdLastIndex=0;
 			this.onConnect();
 		});
 
@@ -301,8 +300,8 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		}
 
 		// Add breakpoint
-		this.restoreBreakpointIdLastIndex++; 	// TODO: Use a different name.
-		bp.bpId=this.restoreBreakpointIdLastIndex;
+		this.breakpointIdLastIndex++; 	// TODO: Use a different name.
+		bp.bpId=this.breakpointIdLastIndex;
 
 		// Check if debugged program is running
 		if (this.breakpointsAndOpcodes) {
