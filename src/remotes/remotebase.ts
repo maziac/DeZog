@@ -1435,7 +1435,8 @@ export class RemoteBase extends EventEmitter {
 	 * In this case the branching is ignored for CALL and RST.
 	 * @returns A Promise with the opcode and 2 breakpoint
 	 * addresses.
-	 * The first always points directly after the address.
+	 * The first always points directly after the address or for unconditional jumps/calls
+	 * it points to the jump address.
 	 * The 2nd of these bp addresses can be undefined.
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {

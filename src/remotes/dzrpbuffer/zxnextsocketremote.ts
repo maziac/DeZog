@@ -6,6 +6,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Opcode} from '../../disassembler/opcode';
 //import {DZRP} from '../dzrp/dzrpremote';
 //import {Utility} from '../../misc/utility';
 //import {Z80_REG} from '../z80registers';
@@ -123,6 +124,51 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					resolve();
 			});
 		});
+	}
+
+
+
+	/**
+	 * The implementation of the SW breakpoints as Z80 instruction (RST) requires a modification
+	 * in the calcStep algorithm.
+	 * It is for the pathologic case that a calculated breakpoint would be at the
+	 * same location as the current PC. E.g. for this code examples
+	 * (some senseful some not):
+	 * ~~~
+	 * loop:  djnz loop
+	 *
+	 * recursive: call recursive
+	 *
+	 * endless:  jp endless
+	 * ~~~
+	 * If the breakpoint would be placed at the PC then the instruction would never be executed.
+	 * Therefore
+	 * - a stepInto is changed into a stepOver (e.g. to step after the djnz)
+	 * - the breakpoint at PC location is set to undefined
+	 * @param stepOver true if breakpoint address should be calculate for a step-over.
+	 * In this case the branching is ignored for CALL and RST.
+	 * @returns A Promise with the opcode and 2 breakpoint
+	 * addresses.
+	 * The first always points directly after the address.
+	 * The 2nd of these bp addresses can be undefined.
+	 */
+	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
+		// Get breakpoints
+		let [opcode, bpAddr1, bpAddr2]=await super.calcStepBp(stepOver);
+		// Check if 2nd breakpoint points to PC
+		const pc=this.getPC();
+		if (pc==bpAddr2) {
+			// For djnz
+			bpAddr2=undefined;
+		}
+		/* for 'recursive' and 'endless' there is no good solution
+		if (pc==bpAddr1) {
+			// for 'recursive' and 'endless'
+			bpAddr1=undefined;
+			bpAddr2=undefined;
+		}
+		*/
+		return [opcode, bpAddr1, bpAddr2];
 	}
 
 
