@@ -5,6 +5,7 @@ import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 //import {DZRP} from '../dzrp/dzrpremote';
 //import {Utility} from '../../misc/utility';
 //import {Z80_REG} from '../z80registers';
@@ -39,10 +40,14 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected breakedAddress: number|undefined;
 
 
-	// Array of restorable breakpoints which store alos the opcode for restoration.
-	protected restorableBreakpoints: Map<number, RestorableBreakpoint>;
+	// Array of restorable breakpoints which store also the opcode for restoration.
+	//protected restorableBreakpoints: Map<number, RestorableBreakpoint>;
 	protected restoreBreakpointIdLastIndex
 
+	// Array is created temporarily during Continue.
+	// It holds the breakpoints and their prior values.
+	// During Continue it is increased/decreased if other breakpoints are manually added.
+	protected breakpointsAndOpcodes: Array<RestorableBreakpoint>;
 
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
@@ -63,7 +68,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			this.stopChunkTimeout();
 
 			this.breakedAddress=undefined;
-			this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
+			//this.restorableBreakpoints = new Map<number, RestorableBreakpoint>();
 			this.restoreBreakpointIdLastIndex=0;
 			this.onConnect();
 		});
@@ -125,9 +130,9 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/**
 	 * When connected to a ZX Next this method must take
 	 * over intelligence from the remote.
-	 * 2 states are distinugished:
+	 * 2 states are distinguished:
 	 * - enteredBreakpointState=false: The normal one, calls the super class.
-	 *- enteredBreakpointState=true: A breakpoint ahs been hit before.
+	 * - enteredBreakpointState=true: A breakpoint has been hit before.
 	 * On continue it is necessary to restore the opcode first.
 	 *
 	 * Sends the command to continue ('run') the program.
@@ -153,22 +158,23 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			if (breakNumber==BREAK_REASON_NUMBER.BREAKPOINT_HIT)
 				this.breakedAddress=breakAddress;
 			// Restore breakpoint addresses
-			const count=bpAddresses.length;
-			Utility.assert(count==opcodes.length);
+			const count=this.breakpointsAndOpcodes.length;
 			let memCount=count;
 			if (oldOpcode!=undefined)
 				memCount+1;
 			const memValues=new Array<{address: number, value: number}>(memCount);
 			let k=0;
 			if (oldOpcode!=undefined) {
-				// Add the las set breakpoint
+				// Add the last set breakpoint
 				memValues[k++]={address: oldBreakedAddress!, value: oldOpcode[0]}
 			}
 			// Change the order
 			for (let i=count-1; i>=0; i--) {
-				memValues[k++]={address: bpAddresses[i], value: opcodes[i]};
+				const bp=this.breakpointsAndOpcodes[i];
+				memValues[k++]={address: bp.address, value: bp.opcode};
 			}
 			await this.sendDzrpCmdRestoreMem(memValues);
+			this.breakpointsAndOpcodes=undefined as any;
 			// Call original handler
 			originalContinueResolve({breakNumber, breakAddress, breakReasonString});
 		};
@@ -177,6 +183,14 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		const bpAddresses=this.getBreakpointAddresses();
 		// Set breakpoints and get opcodes
 		const opcodes=await this.sendDzrpCmdSetBreakpoints(bpAddresses);
+		// Combine
+		this.breakpointsAndOpcodes=new Array<RestorableBreakpoint>();
+		let len=bpAddresses.length;
+		for (let i=0; i<len; i++) {
+			const address=bpAddresses[i];
+			const opcode=opcodes[i];
+			this.breakpointsAndOpcodes.push({address, opcode});
+		}
 
 		// Handle different states
 		const oldBreakedAddress=this.breakedAddress;
@@ -271,40 +285,80 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 	/**
 	 * Stores the breakpoints in a list.
-	 * This inlcides the breakpoints set for ASSERTs and LOGPOINTs.
-	 * The breakpoints are later sent all at once with CMS_SET_BREAKPOINTS.
-	 * @param bpAddress The breakpoint address. 0x00??-0xFFFF.
-	 * @param condition Not used.
-	 * @returns A Promise with the breakpoint ID or 0 if breakpoint could not be set.
+	 * This includes the breakpoints set for ASSERTs and LOGPOINTs.
+	 * The breakpoints are later sent all at once with CMD_SET_BREAKPOINTS.
+	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
-		// TODO: If debugged program is running the additional breakpoint should be sent to the ZXNext.
-
+	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		const bpAddress=bp.address;
 		// Check breakpoint address.
 		const errText=this.checkBreakpoint(bpAddress);
 		if(errText) {
 			// Some lower breakpoint addresses cannot be used.
 			this.emit('warning', "On the ZXNext you cannot set breakpoints at "+errText+".");
-			return 0;
+			bp.bpId=0;
 		}
-		this.restoreBreakpointIdLastIndex++;
-		this.restorableBreakpoints.set(this.restoreBreakpointIdLastIndex,{address: bpAddress, opcode: 0});
-		return this.restoreBreakpointIdLastIndex;
+
+		// Add breakpoint
+		this.restoreBreakpointIdLastIndex++; 	// TODO: Use a different name.
+		bp.bpId=this.restoreBreakpointIdLastIndex;
+
+		let opcode=0;
+		// Check if debugged program is running
+		if (this.breakpointsAndOpcodes) {
+			// Get memory at opcode
+			const mem=await this.sendDzrpCmdReadMem(bpAddress, 1);	// TODO: Ich denke ich kann hierauf verzichten und das zusammen mit sendDzrpCmdSetBreakpoints machen
+			opcode=mem[0];
+			// Add to temporary breakpoints
+			this.breakpointsAndOpcodes.push({address: bpAddress, opcode});	// TODO: Brauche ich breakpointsAndOpcodes
+			this.addTmpBreakpoint(bp);
+			// Set the breakpoint
+			await this.sendDzrpCmdSetBreakpoints([bpAddress]);
+			//const opcodes=await this.sendDzrpCmdSetBreakpoints([bpAddress]);
+			//opcode=opcodes[0];
+		}
 	}
 
 
 	/**
 	 * Removes a breakpoint from the list.
-	 * @param bpId The breakpoint ID to remove.
+	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		/*
 		// Get address to check if current breakpoint is removed
 		const bp=this.restorableBreakpoints.get(bpId)!;
 		Utility.assert(bp);
-		if (this.breakedAddress==bp?.address)
+		const bpAddress=bp?.address;
+		if (this.breakedAddress==bpAddress)
 			this.breakedAddress=undefined;
 		// Delete
 		this.restorableBreakpoints.delete(bpId);
+		*/
+
+		// Check if breaked address is removed.
+		const bpAddress=bp.address;
+		if (this.breakedAddress==bpAddress)
+			this.breakedAddress=undefined;
+		// Check if debugged program is running
+		if (this.breakpointsAndOpcodes) {
+			// It is running: remove the breakpoint immediately
+			const bpLen=this.breakpointsAndOpcodes.length;
+			for (let i=bpLen-1; i>=0; i--) {
+				const bp=this.breakpointsAndOpcodes[i];
+				if (bp.address==bpAddress) {
+					// Get opcode and restore memory
+					const opcode=bp.opcode;
+					await this.sendDzrpCmdRestoreMem([{address: bpAddress, value: opcode}]);
+					// Remove from lists
+					this.breakpointsAndOpcodes.splice(i, 1);
+					this.removeTmpBreakpoint(bp);
+					// Return
+					return;
+				}
+			}
+		}
 	}
 
 
@@ -313,10 +367,20 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * @returns Array with breakpoint address.
 	 */
 	protected getBreakpointAddresses(): Array<number> {
-		const bpArray=this.breakpoints.map(bp => bp.address);
+		const bpFiltered=new Array<number>();
+		const tmpBps=this.tmpBreakpoints.keys();
+		for(const addr of tmpBps) {
+			if (addr!=this.breakedAddress)
+				bpFiltered.push(addr);
+		}
+		return bpFiltered;
+
+		/*
+		const bpArray=Array.from(this.restorableBreakpoints.values()).map(bp => bp.address);
 		const breakedAddress=this.breakedAddress;
 		const bpFiltered=bpArray.filter(address => address!=breakedAddress);
 		return bpFiltered;
+		*/
 	}
 
 
@@ -327,7 +391,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * error output.
 	 */
 	protected checkBreakpoint(addr: number|undefined): string|undefined {
-		/// TODO: Add exact values.
 		if (addr!=undefined&&
 			((addr>=0 && addr<=0x07)
 			|| (addr>=0x66 && addr<=0x73)))

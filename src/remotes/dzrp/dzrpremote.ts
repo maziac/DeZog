@@ -112,13 +112,17 @@ export class DzrpRemote extends RemoteBase {
 	// Undefined=no breakpoint is set.
 	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
-	// It allows access of the breakpoint by it's address.
-	// This may happen seldom, but it can happen that 2 breakpoints share
+	// It allows access of the breakpoint by a simple call to one map only.
+	// It may happen seldom, but it can happen that 2 breakpoints share
 	// the same address. Therefore the array contains an Array of GenericBreakpoints.
 	// normally the inner array contains only 1 element.
 	// The tmpBreakpoints are created when a Continue, StepOver, Stepinto
 	// or StepOut starts.
-	protected tmpBreakpoints = new Array<Array<GenericBreakpoint>>(0x10000);
+	// It is used mainly in 'evalBpConditionAndLog()'.
+	// If a breakpoint is set during the debugged program being run
+	// the tmpBreakpoints are updated.
+	protected tmpBreakpoints=new Map<number,Array<GenericBreakpoint>>();
+
 
 	/// Constructor.
 	/// Override this.
@@ -391,7 +395,7 @@ export class DzrpRemote extends RemoteBase {
 	 * [] if no breakpoint found.
 	 */
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
-		const foundBps=this.tmpBreakpoints[bpAddress]||[];
+		const foundBps=this.tmpBreakpoints.get(bpAddress)||[];
 		// Nothing found
 		return foundBps;
 	}
@@ -410,22 +414,59 @@ export class DzrpRemote extends RemoteBase {
 	protected createTemporaryBreakpoints() {
 		const tmpBps=this.tmpBreakpoints;
 		// Clear
-		tmpBps.fill(undefined as any);
+		tmpBps.clear()
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints=this.getEnabledLogpoints();
 		// Assert breakpoints
 		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
 		const allBps=[...this.breakpoints, ...enabledLogPoints, ...assertBps];
 		allBps.forEach(bp => {
-			let bpInner=
-				tmpBps[bp.address];
-			if (!bpInner) {
-				// Create new array
-				bpInner=new Array<GenericBreakpoint>();
-				tmpBps[bp.address]=bpInner;
-			}
-			bpInner.push(bp);
+			this.addTmpBreakpoint(bp);
 		});
+	}
+
+
+	/**
+	 * Adds a breakpoint to the temporary array.
+	 * Is called by createTemporaryBreakpoints or if a BP
+	 * is created during a running debugged program.
+	 */
+	protected addTmpBreakpoint(bp: GenericBreakpoint) {
+		const tmpBps=this.tmpBreakpoints;
+		const bpAddress=bp.address;
+		let bpInner=tmpBps.get(bpAddress);
+		if (!bpInner) {
+			// Create new array
+			bpInner=new Array<GenericBreakpoint>();
+			tmpBps.set(bp.address, bpInner);
+		}
+		bpInner.push(bp);
+	}
+
+
+	/**
+	 * Removes a breakpoint from the temporary array.
+	 * Is called by createTemporaryBreakpoints or if a BP
+	 * is removed during a running debugged program.
+	 */
+	protected removeTmpBreakpoint(bp: GenericBreakpoint) {
+		const bpAddress=bp.address;
+		const bpArray=this.tmpBreakpoints.get(bpAddress)!;
+		Utility.assert(bpArray);
+		const len=bpArray.length;
+		// Find breakpoint ID
+		for (let i=0; i<len; i++) {
+			const bpa=bpArray[i];
+			if (bpa.bpId==bp.bpId) {
+				// Breakpoint found
+				// Remove element
+				bpArray.splice(i, 1);
+				// Check if complete array is empty
+				if (bpArray.length==0)
+					this.tmpBreakpoints.delete(bpAddress);
+				return;
+			}
+		}
 	}
 
 
@@ -908,14 +949,13 @@ export class DzrpRemote extends RemoteBase {
 			if (enable) {
 				// Set breakpoint
 				if (!abp.bpId) {
-					const bpId=await this.sendDzrpCmdAddBreakpoint(abp.address);
-					abp.bpId=bpId;
+					await this.sendDzrpCmdAddBreakpoint(abp);
 				}
 			}
 			else {
 				// Remove breakpoint
 				if (abp.bpId) {
-					await this.sendDzrpCmdRemoveBreakpoint(abp.bpId);
+					await this.sendDzrpCmdRemoveBreakpoint(abp);
 					abp.bpId=undefined;
 				}
 			}
@@ -940,14 +980,13 @@ export class DzrpRemote extends RemoteBase {
 			if (enable) {
 				// Set breakpoint
 				if (!lp.bpId) {
-					const bpId=await this.sendDzrpCmdAddBreakpoint(lp.address);
-					lp.bpId=bpId;
+					await this.sendDzrpCmdAddBreakpoint(lp);
 				}
 			}
 			else {
 				// Remove breakpoint
 				if (lp.bpId) {
-					await await this.sendDzrpCmdRemoveBreakpoint(lp.bpId);
+					await await this.sendDzrpCmdRemoveBreakpoint(lp);
 					lp.bpId=undefined;
 				}
 			}
@@ -972,17 +1011,20 @@ export class DzrpRemote extends RemoteBase {
 		}
 
 		// Set breakpoint
-		const bpId=await this.sendDzrpCmdAddBreakpoint(bp.address, bp.condition);
-		if (bpId==0)
+		await this.sendDzrpCmdAddBreakpoint(bp);
+		if (bp.bpId==0)
 			bp.address=-1;
 
 		// Add to list
-		bp.bpId=bpId;
 		this.breakpoints.push(bp);
 
+		// If running then add also to temporary list
+		if (this.continueResolve) {
+			this.addTmpBreakpoint(bp);
+		}
 
 		// return
-		return bpId;
+		return bp.bpId;
 	}
 
 
@@ -990,12 +1032,18 @@ export class DzrpRemote extends RemoteBase {
 	 * Clears one breakpoint.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
-		await this.sendDzrpCmdRemoveBreakpoint(bp.bpId);
-
 		// Remove from list
 		let index=this.breakpoints.indexOf(bp);
 		Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
+
+		// If running then add remove to temporary list
+		if (this.continueResolve) {
+			this.removeTmpBreakpoint(bp);
+		}
+
+		// Remove
+		await this.sendDzrpCmdRemoveBreakpoint(bp);
 	}
 
 
@@ -1329,24 +1377,21 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to add a breakpoint.
-	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
-	 * @param condition The breakpoint condition as string. If there is n condition
-	 * 'condition' may be undefined or an empty string ''.
-	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
-	 * no breakpoint is available anymore.
+	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		Utility.assert(false);
-		return 0;
 	}
 
 
 	/**
 	 * Override.
-	 * Sends the command to remove a breakpoint.
-	 * @param bpId The breakpoint ID to remove.
+	 * Removes a breakpoint from the list.
+	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+
 		Utility.assert(false);
 	}
 

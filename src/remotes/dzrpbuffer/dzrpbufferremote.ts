@@ -3,6 +3,7 @@ import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 
 
 
@@ -579,28 +580,27 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to add a breakpoint.
-	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
-	 * @param condition The breakpoint condition as string. If there is n condition
-	 * 'condition' may be undefined or an empty string ''.
-	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
-	 * no breakpoint is available anymore.
+	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		const bpAddress=bp.address;
+		let condition=bp.condition;
 		// Convert condition string to Buffer
 		if (!condition)
 			condition='';
 		const condBuf=Utility.getBufferFromString(condition);
 		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>>8, ...condBuf]);
-		const bpId=Utility.getWord(data, 0);
-		return bpId;
+		bp.bpId=Utility.getWord(data, 0);
 	}
 
 
 	/**
 	 * Sends the command to remove a breakpoint.
-	 * @param bpId The breakpoint ID to remove.
+	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		const bpId=bp.bpId!;
 		await this.sendDzrpCmd(DZRP.CMD_REMOVE_BREAKPOINT, [bpId&0xFF, bpId>>>8]);
 	}
 
