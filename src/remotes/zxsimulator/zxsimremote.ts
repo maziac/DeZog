@@ -814,7 +814,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		this.lastBpId++;
-		this.cpuRunning=false;
 		bp.bpId=this.lastBpId;
 	}
 
@@ -825,8 +824,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-
-		this.cpuRunning=false;
 	}
 
 
