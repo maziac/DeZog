@@ -1519,8 +1519,10 @@ export class RemoteBase extends EventEmitter {
 			// Other special instructions
 			if (opcodes[0]==0xED) {
 				if (opcodes[1]==0xB0||opcodes[1]==0xB8
-					||opcodes[1]==0xB1||opcodes[1]==0xB9) {
-					// LDIR/LDDR/CPIR/CPDR
+					||opcodes[1]==0xB1||opcodes[1]==0xB9
+					||opcodes[1]==0xB2||opcodes[1]==0xBA
+					||opcodes[1]==0xB3||opcodes[1]==0xBB) {
+					// LDIR/LDDR/CPIR/CPDR/INIR/INDR/OTIR/OTDR
 					if (!stepOver)
 						bpAddr2=pc;
 				}
