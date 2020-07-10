@@ -300,6 +300,15 @@ export class DzrpRemote extends RemoteBase {
 			for (let i=0; i<slots.length; i++)
 				response+="\nSlot["+i+"]: 8k bank "+slots[i];
 		}
+		else if (cmd_name=="cmd_set_slot") {
+			if (cmdArray.length!=2) {
+				// Error
+				return "Expecting 2 parameters: slot and bank.";
+			}
+			const slot=Utility.parseValue(cmdArray[0]);
+			const bank=Utility.parseValue(cmdArray[1]);
+			await this.sendDzrpCmdSetSlot(slot, bank);
+		}
 		else if (cmd_name=="cmd_get_tbblue_reg") {
 			if (cmdArray.length<1) {
 				// Error

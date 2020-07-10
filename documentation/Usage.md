@@ -564,9 +564,10 @@ mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -debug
 
 
 
-### Serial Interface
+### ZX Next / Serial Interface
 
 #### Overview
+
 The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
 
 ~~~
@@ -726,7 +727,10 @@ You need to connect:
 
 ##### Stack
 
-###### SW Breakpoints
+This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
+
+
+##### SW Breakpoints
 
 A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
 Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
@@ -765,10 +769,15 @@ Therefore you need to place the breakpoints carefully if you are placing them in
 Furthermore you should note that all breakpoints are put in just before a debugger step or continue and removed afterwards.
 I.e. if you have a "stale" breakpoint in some file it could make problems if this location changes the used bank.
 
-C) This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
+
+C) SW breakpoints are internally implemented by pacing a special command, a RST 0 (0xC7) at the address of the breakpoint.
+SW breakpoints are set just before a run or step of the debugged program is done and afterwards removed.
+I.e. while the debugged program is not running you should not see any SW breakpoint substitution in the disassembly or in the memory viewer.
+This is different when the program is running. In that case you could see breakpoint substitutions in the memory viewer. Normally the memory viewer is not updated before the program is stopped, so you will not notice either. But if you open a new memory dump window during the program being run you could see breakpoint substitutions.
+(Of course only in, cooperative mode (```call dezog_check_for_message```). Otherwise the memory dump command is not executed on the ZX Next.)
 
 
-###### NMI
+##### NMI
 
 To interrupt the debugged program an NMI can be used (pressing the yellow M1 button).
 As an NMI places the current PC on the stack and can occur anytime it will also corrupt the stack if it happens while the debugged program is manipulating the SP.

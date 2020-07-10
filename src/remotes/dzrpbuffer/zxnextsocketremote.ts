@@ -350,11 +350,12 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		bp.bpId=this.breakpointIdLastIndex;
 
 		// Check if debugged program is running
-		if (this.breakpointsAndOpcodes) {
+		if (this.breakpointsAndOpcodes && !this.pauseStep) {
 			// Set the breakpoint
 			const opcodes=await this.sendDzrpCmdSetBreakpoints([bpAddress]);
 			const opcode=opcodes[0];
 			// Add to temporary breakpoints
+			//if (this.breakpointsAndOpcodes)	// Could be deleted meanwhile
 			this.breakpointsAndOpcodes.push({address: bpAddress, opcode});
 		}
 	}
@@ -370,7 +371,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		if (this.breakedAddress==bpAddress)
 			this.breakedAddress=undefined;
 		// Check if debugged program is running
-		if (this.breakpointsAndOpcodes) {
+		if (this.breakpointsAndOpcodes && !this.pauseStep) {
 			// It is running: remove the breakpoint immediately
 			const bpLen=this.breakpointsAndOpcodes.length;
 			for (let i=bpLen-1; i>=0; i--) {
@@ -380,6 +381,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					const opcode=bp.opcode;
 					await this.sendDzrpCmdRestoreMem([{address: bpAddress, value: opcode}]);
 					// Remove from lists
+					//if(this.breakpointsAndOpcodes)	// Could be deleted meanwhile
 					this.breakpointsAndOpcodes.splice(i, 1);
 					// Return
 					return;
