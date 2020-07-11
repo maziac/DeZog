@@ -1455,7 +1455,9 @@ export class RemoteBase extends EventEmitter {
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (opcode.code==0xCF) {
+		if (ocFlags&OpcodeFlag.BRANCH_ADDRESS
+			&& (ocFlags&OpcodeFlag.CONDITIONAL)==0
+			&& opcode.code==0xCF) {
 			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
 			if (stepOver) {
 				// For stepOver nothing is required normally.

@@ -6,7 +6,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
-import {Opcode} from '../../disassembler/opcode';
+import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 //import {DZRP} from '../dzrp/dzrpremote';
 //import {Utility} from '../../misc/utility';
 //import {Z80_REG} from '../z80registers';
@@ -168,6 +168,22 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			bpAddr2=undefined;
 		}
 		*/
+
+		// Check for RST: calcStepBp normally calculates 2 breakpoints for a RST:
+		// pc+1 and pc+2.
+		// If we would set a SW BP (RST 0) at pc+1 we would change the RST command.
+		// So we set only one breakpoint relying on the disassembler setting.
+		const ocFlags=opcode.flags;
+		if (ocFlags&OpcodeFlag.BRANCH_ADDRESS
+			&&(ocFlags&OpcodeFlag.CONDITIONAL)==0
+			&&opcode.code==0xCF) {
+			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
+			// Note: Since we cannot step through ROM anyway a stepInto is handled the same
+			// as a stepOver here.
+			bpAddr1=pc+opcode.length;
+			bpAddr2=undefined;
+		}
+
 		return [opcode, bpAddr1, bpAddr2];
 	}
 

@@ -668,14 +668,14 @@ If you use the example [z80-sample-program](https://github.com/maziac/z80-sample
 Just place a call like this in your main loop:
 ~~~
 main_loop:
-    call dezog_check_for_message
+    call dezog_poll
     ...
     jp main_loop
 ~~~
 
-If you press "Pause" in vscode your program is paused now with the PC located just after the 'dezog_check_for_message' call.
+If you press "Pause" in vscode your program is paused now with the PC located just after the 'dezog_poll' call.
 
-The call to 'dezog_check_for_message'
+The call to 'dezog_poll'
 - does not change any register
 - uses a few bytes on the stack (about 8)
 - takes about 80 T-states until it returns (if no "pause")
@@ -756,7 +756,7 @@ So take care to use a stack that can hold these additional bytes at any time.
 
 B) Memory Paging
 The ZX Next SW Breakpoints do not work very well with memory paging.
-If you place a breakpoint in your souce file the address for the source file line is taken and a breakpoint is put at that address.
+If you place a breakpoint in your source file the address for the source file line is taken and a breakpoint is put at that address.
 If at this moment a bank is paged in that does not correspondend to the the source file a breakpoint is placed in the wrong bank.
 As for the ZX Next a breakpoint means to change the code at the address it means that the code/data in the wrong bank is changed.
 This could either
@@ -774,7 +774,18 @@ C) SW breakpoints are internally implemented by pacing a special command, a RST 
 SW breakpoints are set just before a run or step of the debugged program is done and afterwards removed.
 I.e. while the debugged program is not running you should not see any SW breakpoint substitution in the disassembly or in the memory viewer.
 This is different when the program is running. In that case you could see breakpoint substitutions in the memory viewer. Normally the memory viewer is not updated before the program is stopped, so you will not notice either. But if you open a new memory dump window during the program being run you could see breakpoint substitutions.
-(Of course only in, cooperative mode (```call dezog_check_for_message```). Otherwise the memory dump command is not executed on the ZX Next.)
+(Of course only in, cooperative mode (```call dezog_poll```). Otherwise the memory dump command is not executed on the ZX Next.)
+
+
+D) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
+
+E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
+~~~
+"disassemblerArgs": {
+    "esxdosRst": true
+},
+~~~
+
 
 
 ##### NMI
