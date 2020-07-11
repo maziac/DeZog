@@ -625,31 +625,30 @@ Prerequisites:
 
 
 Setup a debug session:
-1. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
-2. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
-3. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with this [one](https://github.com/maziac/dezogif). You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
+(Don't forget to make a backup of the original ```enNextMf.rom```.)
+2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
+3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
+4. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
 ./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
 Notes:
-  - Change the serial port to your needs.
-  - There exist also binaries for Linux and Windows.
-  - Check the [DeZogSerialInterface project](https://github.com/maziac/DeZogSerialInterface) for more options to test the connection.
-4. On the ZX Next start [dezogif.nex](https://github.com/maziac/dezogif). (You find the binary (NEX file) in the [releases](https://github.com/maziac/dezogif/releases) section.)
+    - Change the serial port ("-serial ...") to your needs.
+    - There exist also binaries for Linux and Windows.
+    - Check the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) project for more options to test the connection.
+4. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
+![](images/dezog_zxnext_main.jpg)
+(If you later need to re-initialize press "Symbol Shift", or CTRL on a PS2 keyboard, and while being pressed hit the yellow NMI button.)
 5. In vscode start the debug session.
 6. Step through your code.
 
 You should see that the debugged program is transmitted to the ZX Next: the border colors change similar as when you would load a program from tape.
-![](borders flashing.jpg)
+![](images/dezog_zxnext_loading.jpg)
 
 Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program) for your first tries. It already contains a working "ZXNext" launch.json configuration.
 
 You can now step through your code and set breakpoints.
 The debugger will stop at a breakpoint.
 
-But if you start a program without a breakpoint it will not stop anymore and you have to start at 4 again.
-
-This is because the debugged program has full control and the debugger (currently) has no way to interfere.
-
-See next chapter.
 
 
 #### Pausing the Debugged Program
@@ -673,14 +672,18 @@ main_loop:
     jp main_loop
 ~~~
 
-If you press "Pause" in vscode your program is paused now with the PC located just after the 'dezog_poll' call.
+If you press "Pause" in vscode your program is paused now with the PC located just after the ```dezog_poll``` call.
 
-The call to 'dezog_poll'
+The call to ```dezog_poll```
 - does not change any register
 - uses a few bytes on the stack (about 8)
 - takes about 80 T-states until it returns (if no "pause")
 - can work with or without interrupts enabled
 
+In [dezog.asm](dezog.asm) you find a constant to turn visualization of the polling on or off.
+When you start with DeZog it can help to see when you program is polling for new messages from DeZog. Especially to see if under certain circumstances no polling takes place.
+The constant is ```DEZOG_VISUALIZE_POLL```.
+It will change the border between black and blue randomly everytime ```dezog_poll``` is called.
 
 **Pausing through the yellow M1 (NMI) button**
 
