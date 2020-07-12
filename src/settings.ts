@@ -561,7 +561,7 @@ export class Settings {
 		// Check remote type
 		const rType=Settings.launch.remoteType;
 		//const allowedTypes=['zrcp', 'cspect', 'serial', 'zsim'];
-		const allowedTypes=['zrcp', 'cspect', /*'serial',*/ 'zsim'];
+		const allowedTypes=['zrcp', 'cspect', /*'serial',*/ 'zsim','openmsx'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
