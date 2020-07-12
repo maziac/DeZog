@@ -4,24 +4,17 @@ import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
 import {parseString} from 'xml2js';
-import { LogSocket } from '../../log';
-import { Settings } from '../../settings';
-import { /*Z80RegistersClass, */Z80Registers } from '../z80registers';
+import {Settings} from '../../settings';
+import {Z80Registers} from '../z80registers';
 import {DecodeOpenMSXRegisters} from './decodeopenmsxdata';
-import { Utility } from '../../misc/utility';
+import {Utility} from '../../misc/utility';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint, MemoryBank } from '../remotebase';
-
-enum Status {
-	PAUSE,
-	RUN
-}
 
 export class OpenMSXRemote extends RemoteBase {
 	openmsx:net.Socket;
 	connected:boolean;
 	breakpointmap:string[];
-	status:Status;
 
 	/// Constructor.
 	constructor() {
@@ -68,8 +61,9 @@ export class OpenMSXRemote extends RemoteBase {
     }
     async perform_command (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve,reject) => {
-			//console.log (cmd);
+			console.log (cmd);
 			this.on ('reply', async (r:any) => {
+				console.log (util.inspect(r, { depth: null }));
 				if (r.$!=undefined && r.$.result=="ok") {
 					this.removeAllListeners ("reply");
 					if (r._!=undefined)
@@ -84,12 +78,10 @@ export class OpenMSXRemote extends RemoteBase {
 
     async perform_run_command (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve,reject) => {
-			//console.log (cmd);
-			this.status = Status.RUN;
+			console.log (cmd);
 			this.on ('update', async (u:any) => {
-				//console.log (util.inspect(u, { depth: null }));
+				console.log (util.inspect(u, { depth: null }));
 				if (u._!=undefined && u._ == "suspended") {
-					this.status=Status.PAUSE;
 					this.removeAllListeners ("update");
 					resolve (u._);
 				}
@@ -119,16 +111,13 @@ export class OpenMSXRemote extends RemoteBase {
         }
 
         this.openmsx.on('timeout', () => {
-			LogSocket.log('Socket timeout (should be close).');
 			this.emit('error', new Error ("Timeout connecting to OpenMSX"));
         })
         this.openmsx.on('error', err => {
-			LogSocket.log('Socket error: '+err.message);
 			this.emit('error', err);
         })
         this.openmsx.on('close', () => {
-			LogSocket.log('Socket closed. OK.');
-			this.emit('error', new Error ("OpenMSX closed the connection"));
+			this.emit('log', "Closed the connection to OpenMSX");
         })
         this.openmsx.on ('data', data => {
 			this.handleOpenMSXResponse (data);
@@ -139,14 +128,13 @@ export class OpenMSXRemote extends RemoteBase {
 		// do some inits
 		if(Settings.launch.resetOnLaunch)
 			await this.perform_command ("reset");
-		for (let cmd of Settings.launch.commandsAfterLaunch) {
-			let msg = await this.perform_command (cmd);
-			this.emit("log", msg);
-		}
+		//for (let cmd of Settings.launch.commandsAfterLaunch) {
+		//	let msg = await this.perform_command (cmd);
+		//	this.emit("log", msg);
+		//}
 
 		await this.perform_command ("openmsx_update enable status");
 		await this.perform_command ("debug break");
-		this.status=Status.PAUSE;
 
 		await this.perform_command (
 			"proc debug_bin2hex { input } {\n"+
@@ -172,13 +160,10 @@ export class OpenMSXRemote extends RemoteBase {
 					this.emit ('reply',r);
 				}
 			}
-			else if (v.openmsx.update!=undefined) {
+			if (v.openmsx.update!=undefined) {
 				for (let u of v.openmsx.update) {
 					this.emit ('update',u);
 				}
-			}
-			else {
-				console.log (`Unexpected response: ${util.inspect(v, { depth: null })}`);
 			}
 		}
 	}
@@ -268,9 +253,7 @@ export class OpenMSXRemote extends RemoteBase {
 			this.handleCodeCoverage();
 			// Read the spot history
 			//await CpuHistory.getHistorySpotFromRemote();
-			let PCh:string = await this.perform_command ("debug read {CPU regs} 20");
-			let PCl:string = await this.perform_command ("debug read {CPU regs} 21");
-			let pc:number = Number.parseInt (PCh)*256 + Number.parseInt (PCl);
+			let pc:number = await (this.getCurrentPC ());
 			resolve(`Breakpoint hit @0x${pc.toString (16)}`);
 		});
 	}
@@ -280,8 +263,7 @@ export class OpenMSXRemote extends RemoteBase {
 	 */
 	public async pause(): Promise<void> {
 		return new Promise<void>(async resolve => {
-			let res:string = await this.perform_command ("debug break");
-			console.log (res);
+			await this.perform_command ("debug break");
 			resolve ();
 		});
 	}
@@ -297,7 +279,6 @@ export class OpenMSXRemote extends RemoteBase {
 		return "";
 	}
 
-
 	/**
 	 * 'step over' an instruction in the debugger.
 	 * @returns A Promise with:
@@ -306,7 +287,30 @@ export class OpenMSXRemote extends RemoteBase {
 	 */
 	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
 		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
-			await this.perform_command ("step_over");
+			let oldpc:number = this.getPC ();
+			let disasm:string = await this.perform_command (`debug disasm 0x${oldpc.toString(16)}`);
+			disasm = disasm.toUpperCase ();
+			if (disasm.indexOf ("CALL")>=0 ||
+			    disasm.indexOf ("RST")>=0 ||
+				disasm.indexOf ("LDIR")>=0 ||
+				disasm.indexOf ("CPIR")>=0 ||
+				disasm.indexOf ("INIR")>=0 ||
+				disasm.indexOf ("OTIR")>=0 ||
+				disasm.indexOf ("LDDR")>=0 ||
+				disasm.indexOf ("CPDR")>=0 ||
+				disasm.indexOf ("INDR")>=0 ||
+				disasm.indexOf ("OTDR")>=0 ||
+				disasm.indexOf ("HALT")>=0) {
+				let bytestr = disasm.substr (disasm.indexOf ('}')+1).trim();
+				let bytes = bytestr.split (' ');
+				let newpc = oldpc+bytes.length;
+				await this.perform_command (`debug set_bp 0x${newpc.toString(16)}`);
+				await this.perform_run_command ("debug cont");
+				await this.perform_command (`debug remove_bp 0x${newpc.toString(16)}`);
+			} else {
+				await this.perform_command ("debug step");
+			}
+			//await this.perform_command ("step_over");
 			// Clear register cache
 			Z80Registers.clearCache();
 			this.clearCallStack();
@@ -314,15 +318,20 @@ export class OpenMSXRemote extends RemoteBase {
 			this.handleCodeCoverage();
 			// Read the spot history
 			//await CpuHistory.getHistorySpotFromRemote();
-			let PCh:string = await this.perform_command ("debug read {CPU regs} 20");
-			let PCl:string = await this.perform_command ("debug read {CPU regs} 21");
-			let pc:number = Number.parseInt (PCh)*256 + Number.parseInt (PCl);
+			let pc:number = await (this.getCurrentPC ());
 			let instruction = `Step over to @0x${pc.toString (16)}`;
 			resolve({instruction});
 		});
 	}
 
-
+	private async getCurrentPC (): Promise <number> {
+		return new Promise<number> (async resolve => {
+			let PCh:string = await this.perform_command ("debug read {CPU regs} 20");
+			let PCl:string = await this.perform_command ("debug read {CPU regs} 21");
+			let pc:number = Number.parseInt (PCh)*256 + Number.parseInt (PCl);
+			resolve (pc);
+		});
+	}
 	/**
 	 * 'step into' an instruction in the debugger.
 	 * @returns A Promise:
@@ -341,9 +350,7 @@ export class OpenMSXRemote extends RemoteBase {
 			this.handleCodeCoverage();
 			// Read the spot history
 			//await CpuHistory.getHistorySpotFromRemote();
-			let PCh:string = await this.perform_command ("debug read {CPU regs} 20");
-			let PCl:string = await this.perform_command ("debug read {CPU regs} 21");
-			let pc:number = Number.parseInt (PCh)*256 + Number.parseInt (PCl);
+			let pc:number = await (this.getCurrentPC ());
 			let instruction = `Step to @0x${pc.toString (16)}`;
 			resolve({instruction});
 		});
@@ -375,9 +382,7 @@ export class OpenMSXRemote extends RemoteBase {
 			this.handleCodeCoverage();
 			// Read the spot history
 			//await CpuHistory.getHistorySpotFromRemote();
-			let PCh:string = await this.perform_command ("debug read {CPU regs} 20");
-			let PCl:string = await this.perform_command ("debug read {CPU regs} 21");
-			let pc:number = Number.parseInt (PCh)*256 + Number.parseInt (PCl);
+			let pc:number = await (this.getCurrentPC ());
 			let instruction = `Step out to @0x${pc.toString (16)}`;
 			resolve(instruction);
 		});
@@ -492,7 +497,8 @@ export class OpenMSXRemote extends RemoteBase {
 
 		// Send command to OpenMSX
 		return new Promise<string>(async resolve => {
-			resolve (await this.perform_command (cmd));
+			let result:string = await this.perform_command (cmd);
+			resolve (result);
 		});
 	}
 
@@ -511,24 +517,6 @@ export class OpenMSXRemote extends RemoteBase {
 			for (let i=0;i<size;i++)
 				values[i] = Number.parseInt (str.substr (i*2,2),16);
 			resolve (values);
-			/*
-			// Use chunks
-			const chunkSize=0x10000;// 0x1000;
-			// Retrieve memory values
-			const values=new Uint8Array(size);
-			let k=0;
-			while (size>0) {
-				const retrieveSize=(size>chunkSize)? chunkSize:size;
-				let str = await this.perform_command ("debug read_block memory "+address+" "+retrieveSize);
-				for (let i=0;i<str.length;i++){
-					values[k++]=str.charAt (i);
-				}
-				console.log (str);
-				// Next chunk
-				size-=chunkSize;
-			}
-			// send data to handler
-			resolve(values);*/
 		});
 	}
 
@@ -550,6 +538,7 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @returns State data.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
+		Utility.assert(false);	// override this
 	}
 
 
@@ -560,6 +549,7 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @param filePath The file path to retore from.
 	 */
 	public async stateRestore(filePath: string): Promise<void> {
+		Utility.assert(false);	// override this
 	}
 
 }
