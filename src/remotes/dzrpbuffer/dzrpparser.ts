@@ -9,6 +9,7 @@ const {Transform}=require('stream');
  * Then it collects 'length' further bytes.
  * When all bytes have been received the data is emitted.
  */
+// TODO: Is not used at all: REMOVE
 export class DzrpParser extends Transform {
 	/// State: Either waiting for length (false) or collecting data (true).
 	protected collectingData: boolean;

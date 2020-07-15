@@ -13,6 +13,10 @@ import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 
 
 
+// Each sent message has to start with this byte.
+// The ZX Next transmit a lot of zeroes if the joy port is not configured.
+// Therefore this byte is required to recognize when a message starts.
+const MESSAGE_START_BYTE = 0xA5;
 
 /**
  * Structure to hold the opcode to restore and the address of
@@ -110,6 +114,35 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 
 	/**
+	 * Called when data has been received.
+	 * If not configured for UART the ZX Next emits zeros through the serial cable.
+	 * Therefore we wait until the first indication of a message is received.
+	 * I.e. all received messages start with 0xA5.
+	 */
+	protected dataReceived(data: Buffer) {
+		let nData=data;
+		if (this.receivedData.length==0) {
+			// Swallow everything (zeroes) up to the first 0xA5 found
+			const len=data.length;
+			let i;
+			for (i=0; i<len; i++) {
+				if (data[i]==MESSAGE_START_BYTE) {
+					// Start of message found
+					break;
+				}
+			}
+			// Check if start of message found
+			if(i+1>=len)
+				return;	// Not found
+			// Start of message found, skip up to 0xA5
+			nData=data.subarray(i+1);
+		}
+		// Call super
+		super.dataReceived(nData);
+	}
+
+
+	/**
 	 * Writes the buffer to the socket port.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
@@ -125,7 +158,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			});
 		});
 	}
-
 
 
 	/**

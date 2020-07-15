@@ -269,8 +269,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		// Add data to existing buffer
 		this.receivedData=Buffer.concat([this.receivedData, data]);
 
-		// While loop becasue there might be more than 1 message received
-		while (this.receivedData.length>0) {
+		if (this.receivedData.length>0) {
 			// Check if still data to receive
 			if (this.receivedData.length<this.expectedLength) {
 				this.startChunkTimeout();
@@ -312,12 +311,20 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Prepare next buffer. Copy to many received bytes.
 			const overLength=this.receivedData.length-this.expectedLength;
 			Utility.assert(overLength>=0);
+			this.receivingHeader=true;
+			if (overLength==0) {
+				this.expectedLength=4;
+				this.receivedData=new Buffer(0);
+				return;
+			}
+
+			// More data has been received
 			const nextBuffer=new Buffer(overLength);
 			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
-			this.receivedData=nextBuffer;
-			// Next header
+			this.receivedData=new Buffer(0);
+			// Call again
 			this.expectedLength=4;
-			this.receivingHeader=true;
+			this.dataReceived(nextBuffer);
 		}
 	}
 
