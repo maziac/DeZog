@@ -728,9 +728,23 @@ You need to connect:
 
 #### Caveats
 
+##### Joystick ports
+
+A) If you use any joystick port as UART (serial) interface then this joystick can obviously not be used for a joystick.
+however the other port can still be used for a joystick as long as it is a 1-button joystick like the original Atari joystick.
+If you e.g. use a MD (Sega Master Drive 3-button) controller you shouldn't press button C as it will interfere with the UART communication.
+
+B) If you configured the use of the joystick via next register 0x05 this will block the debugger from using the UART. However, whenever DeZog gets into control it will reconfigure the use as joystick port.
+But in some cases you may encounter that Dezog does not response. E.g. if you start your program from DeZog and then your program reconfigures the port for joystick use.
+Now you cannot reach your program anymore from DeZog.In this case, to pause your program, press the yellow NMI button. It will interrupt and reconfigure the port for UART use.
+
+
 ##### Stack
 
-This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
+A) This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
+
+B) Performance: If you have a large stack or a **wrong topOfStack** setting in the launch.json stepping might become sluggish. This is because DeZog does a lot of analysis on the stack, e.g. it reads not only the stack but also memory that a stack entry points to. If the topOfStack is wrong many false reading is done after each step which slows down the system.
+
 
 
 ##### SW Breakpoints
@@ -789,6 +803,13 @@ E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file
 },
 ~~~
 
+
+##### Layer 2
+
+DeZog can work with "Layer 2 write-only paging", i.e. bit 0 of port 0x123B being set.
+For bit 2, "read-only paging" it is different as DeZog needs a few bytes in the area 0x0000-0x1FFF for execution, i.e. for breakpoints and stepping. If "read-only paging" is enabled this area is blocked for DeZog.
+If you e.g. try to step when "read-only paging" is enabled then the system will crash.
+However, you can still use "read-only paging" in your program, you just shouldn't put a breakpoint somewhere where it is enabled or step in such code.
 
 
 ##### NMI

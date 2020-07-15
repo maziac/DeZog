@@ -11,6 +11,7 @@ Breakpoints don't have HW support so I need to deal with it in SW.
 
 The document deals with the main problems/solutions.
 
+
 # Communication
 
 The ZX Next has a UART, e.g. to connect to Wifi.
@@ -23,7 +24,13 @@ The baudrate is connected to the video timing. This needs to be taken into accou
 Unfortunately there is **no interrupt connected to the UART**. I.e. it is required to poll it.
 
 Nowadays it is also possible to put the UART on pins 7 (Tx) and 9 (Rx) of the joystick port. I.e. no need for soldering or even to open the case.
-Drawback is only that the joystick are not usable anymore.
+
+When a joy port is used for UART the problem is the conflict with the joystick.
+A game would usually initialize the use as joyport, i.e. cutting off the communication with the PC.
+When this happens the ZX Next transmits endless zeroes to the PC.
+Therefore the DZRP protocal was extended by one byte which is sent as first byte of a message (only in direction from ZX Next to PC).
+This is the MESSAGE_START_BYTE (0xA5). DeZog will wait on this byte before it recognizes messages coming from the Next.
+
 
 
 # Break
