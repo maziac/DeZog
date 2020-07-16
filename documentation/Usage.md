@@ -650,46 +650,11 @@ You can now step through your code and set breakpoints.
 The debugger will stop at a breakpoint.
 
 
-
 #### Pausing the Debugged Program
 
-There are 2 ways to pause the debugged program
-- Pausing from the vscode UI
-- Pausing through the yellow M1 (NMI) button
-
-
-**Pausing from the vscode UI/cooperative pause:**
-
-To allow pausing from the vscode UI you need to place some code in your program, i.e. in the main loop of your program.
-You can find the code here: [dezog.asm](dezog.asm).
-If you use the example [z80-sample-program](https://github.com/maziac/z80-sample-program), it's already included.
-
-Just place a call like this in your main loop:
-~~~
-main_loop:
-    call dezog_poll
-    ...
-    jp main_loop
-~~~
-
-If you press "Pause" in vscode your program is paused now with the PC located just after the ```dezog_poll``` call.
-
-The call to ```dezog_poll```
-- does not change any register
-- uses a few bytes on the stack (about 8)
-- takes about 80 T-states until it returns (if no "pause")
-- can work with or without interrupts enabled
-
-In [dezog.asm](dezog.asm) you find a constant to turn visualization of the polling on or off.
-When you start with DeZog it can help to see when you program is polling for new messages from DeZog. Especially to see if under certain circumstances no polling takes place.
-The constant is ```DEZOG_VISUALIZE_POLL```.
-It will change the border between black and blue randomly everytime ```dezog_poll``` is called.
-
-**Pausing through the yellow M1 (NMI) button**
-
-If the debugged program is running you can press the yellow M1 button to pause the debugged program.
-For this to work you don't have to place any special code inside your program.
-Just press the button.
+While the debugged program is running there is no communication between DeZog and the ZX Next.
+I.e. it is also not possible to pause the program through the serial cable.
+For pausing your program you need to press the yellow M1 button at the left side of your ZX Next.
 
 
 #### HW
@@ -705,7 +670,7 @@ You require a USB/Serial converter like this [one](https://www.amazon.com/dp/B07
 ![](images/usb_serial_cable.jpg)
 It needs to be capable of 921600 Baud.
 
-(Note: I also used a cable from Adafruit. It's working as well. It was faster for small packets but I had to disconnect it physically from my mac more oftenly to get it back working.)
+(Note: I also used a cable from Adafruit. It's working as well. It was faster for small packets but I had to disconnect it physically from my mac more often to get it back working.)
 
 On the other side only 3 wires are required:
 ![](images/usb_serial_connectors.jpg)
@@ -713,7 +678,11 @@ On the other side only 3 wires are required:
 - TX (TXD)
 - RX (RXD)
 
-These wires have to be connected to a female D-SUB 9 connector:
+These wires have to be connected to the UART.
+
+Easiest way, without opening the ZX Next case, is to use one of the joy ports of the ZX Next.
+
+You need to attach a female D-SUB 9 connector to your serial cable:
 ![](images/dsub9.jpg)
 
 You need to connect:
@@ -726,17 +695,28 @@ You need to connect:
 ![](images/dsub9_connected.jpg)
 
 
+Alternatively, if you need to use both joysticks while debugging you need to directly to the ESP UART:
+![](images/uart_cn9.jpg)
+
+You need to connect:
+| Serial cable | CN9        |
+|--------------|------------|
+| GND          | 4 GND      |
+| RX           | 1 ESP RX   |
+| TX           | 9 5 ESP_TX |
+
+You can solder it directly or use the socket that is already available on the board:
+![](images/uart_socket.jpg)
+
+![](images/uart_pin_header.jpg)
+
+
 #### Caveats
 
 ##### Joystick ports
 
-A) If you use any joystick port as UART (serial) interface then this joystick can obviously not be used for a joystick.
-however the other port can still be used for a joystick as long as it is a 1-button joystick like the original Atari joystick.
-If you e.g. use a MD (Sega Master Drive 3-button) controller you shouldn't press button C as it will interfere with the UART communication.
-
-B) If you configured the use of the joystick via next register 0x05 this will block the debugger from using the UART. However, whenever DeZog gets into control it will reconfigure the use as joystick port.
-But in some cases you may encounter that Dezog does not response. E.g. if you start your program from DeZog and then your program reconfigures the port for joystick use.
-Now you cannot reach your program anymore from DeZog.In this case, to pause your program, press the yellow NMI button. It will interrupt and reconfigure the port for UART use.
+As the joystick ports are shared by the joysticks and by the UART/serial cable the communication with DeZog can happen only when the debugged program is being paused.
+E.g. you can't set a breakpoint while your program is running. You need to pause it first, set a new breakpoint and then continue the program.
 
 
 ##### Stack
