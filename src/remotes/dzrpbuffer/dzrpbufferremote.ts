@@ -126,7 +126,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout=setTimeout(() => {
 			this.stopCmdRespTimeout();
-			const err=new Error('Socket command/response timeout.');
+			const err=new Error('No response received.');
 			// Log
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
