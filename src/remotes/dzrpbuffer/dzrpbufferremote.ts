@@ -114,12 +114,11 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Starts the command/response timeout.
-	 * If the timer elapses a warning is shown (for some reason vscode swallows it though).
-	 * Important: The message itself stays there and also the message queue is untouched. // TODO: change text.
-	 * If e.g. an NMI occurs and the ZX works again on the UART the messages
-	 * are processed and the responses occur normally.
-	 * I.e. it can happen that a message response occurs a minute later,
-	 * still it is correctly worked upon.
+	 * If the timer elapses a warning is shown.
+	 * The message is removed from the message queue.
+	 * It is normal that this e.g. happens if a ZX Next is connected and has a running
+	 * (non-paused) program. In that case the UART is not configured for the joy ports
+	 * and is not able to receive anything at all.
 	 * @param respTimeoutTime The response timeout.
 	 */
 	protected startCmdRespTimeout(respTimeoutTime: number) {
@@ -131,7 +130,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
 			this.emit('warning', err.message);
-
 			// Remove message / Queue next message
 			const msg=this.messageQueue.shift()!;
 			this.sendNextMessage();
