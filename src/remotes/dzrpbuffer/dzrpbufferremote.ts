@@ -66,7 +66,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
 	// The used timeout time.
-	protected cmdRespTimeoutTime=3000; //50000; // TODO: change to 3000;	// 3000 ms
+	protected cmdRespTimeoutTime=300; //50000; // TODO: change to 3000;	// 3000 ms
 	protected initCloseRespTimeoutTime=900;	// Timeout for CMD_INIT and CMD_CLOSE
 
 	// To collect received chunks.
@@ -115,7 +115,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	/**
 	 * Starts the command/response timeout.
 	 * If the timer elapses a warning is shown (for some reason vscode swallows it though).
-	 * Important: The message itself stays there and also the message queue is untouched.
+	 * Important: The message itself stays there and also the message queue is untouched. // TODO: change text.
 	 * If e.g. an NMI occurs and the ZX works again on the UART the messages
 	 * are processed and the responses occur normally.
 	 * I.e. it can happen that a message response occurs a minute later,
@@ -130,7 +130,13 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Log
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
-			this.emit('warning', err);
+			this.emit('warning', err.message);
+
+			// Remove message / Queue next message
+			const msg=this.messageQueue.shift()!;
+			this.sendNextMessage();
+			// Pass error data to right consumer
+			msg.reject(err);
 		}, respTimeoutTime);
 	}
 

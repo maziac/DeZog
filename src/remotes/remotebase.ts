@@ -1101,16 +1101,23 @@ export class RemoteBase extends EventEmitter {
 			const newBps=currentBps.filter(bp => bp.address>=0&&oldBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 			const removedBps=oldBps.filter(bp => bp.address>=0&&currentBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 
-			// remove old breakpoints
-			for (const bp of removedBps) {
-				// from zesarux
-				await this.removeBreakpoint(bp);
-			}
+			// Catch communication problems
+			try {
+				// remove old breakpoints
+				for (const bp of removedBps) {
+					// from zesarux
+					await this.removeBreakpoint(bp);
+				}
 
-			// Add new breakpoints and find free breakpoint ids
-			for(const bp of newBps) {
-				// set breakpoint
-				await this.setBreakpoint(bp);
+				// Add new breakpoints and find free breakpoint ids
+				for (const bp of newBps) {
+					// set breakpoint
+					await this.setBreakpoint(bp);
+				}
+			}
+			catch {
+				// Error resolution is maybe a little to simple but most probably all commands did fail.
+				return oldBps;
 			}
 
 			// get all breakpoints for the path

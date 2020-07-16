@@ -675,23 +675,38 @@ export class DebugSessionClass extends DebugSession {
 		// Set breakpoints for the file.
 		const currentBreakpoints=await Remote.setBreakpoints(path, bps);
 		const source=this.createSource(path);
-		const vscodeBreakpoints=currentBreakpoints.map(cbp => {
-			const lineNr=this.convertDebuggerLineToClient(cbp.lineNr);
-			const verified=(cbp.address>=0);	// Is not verified if no address is set
+		// Now match all given breakpoints with the available.
+		const vscodeBreakpoints=givenBps.map(gbp => {
+			// Search in current list
+			let foundCbp;
+			const lineNr=gbp.line;
+			for (const cbp of currentBreakpoints) {
+				const cLineNr=this.convertDebuggerLineToClient(cbp.lineNr);
+				if (cLineNr==lineNr) {
+					foundCbp=cbp;
+					break;
+				}
+			}
+
+			// Create vscode breakpoint with verification
+			const verified=(foundCbp!=undefined)&&(foundCbp.address>=0);
 			const bp=new Breakpoint(verified, lineNr, 0, source);
-			if (verified) {
+			if (foundCbp) {
 				// Add address to source name.
-				const addrString=Utility.getHexString(cbp.address, 4)+'h';
+				const addrString=Utility.getHexString(foundCbp.address, 4)+'h';
 				// Add hover text
 				let txt=addrString;
-				const labels=Labels.getLabelsForNumber(cbp.address);
+				const labels=Labels.getLabelsForNumber(foundCbp.address);
 				labels.map(lbl => txt+='\n'+lbl);
 				(bp as any).message=txt;
 			}
-			else {
+
+			// Additional print warning if not verified
+			if (!verified) {
 				const text=JSON.stringify(bp);
-				this.debugConsoleAppendLine('Unverified breakpoint:' + text);
+				this.debugConsoleAppendLine('Unverified breakpoint:'+text);
 			}
+
 			return bp;
 		});
 

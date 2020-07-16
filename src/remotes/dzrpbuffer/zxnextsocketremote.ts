@@ -394,7 +394,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		}
 
 		// Add breakpoint
-		this.breakpointIdLastIndex++; 	// TODO: Use a different name.
+		this.breakpointIdLastIndex++;
 		bp.bpId=this.breakpointIdLastIndex;
 
 		// Check if debugged program is running
