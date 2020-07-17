@@ -266,6 +266,9 @@ Response:
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 
+Note: Maybe I need to add an error code here in case the bank that is used by the DeZogIf on a ZX Next is going to be overwritten.
+At the moment DeZogIf simply restarts itself and does not respond.
+
 
 ## CMD_CONTINUE
 

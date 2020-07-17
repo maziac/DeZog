@@ -66,7 +66,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
 	// The used timeout time.
-	protected cmdRespTimeoutTime=300; //50000; // TODO: change to 3000;	// 3000 ms
+	protected cmdRespTimeoutTime=500;
 	protected initCloseRespTimeoutTime=900;	// Timeout for CMD_INIT and CMD_CLOSE
 
 	// To collect received chunks.

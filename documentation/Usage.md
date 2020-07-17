@@ -719,6 +719,12 @@ As the joystick ports are shared by the joysticks and by the UART/serial cable t
 E.g. you can't set a breakpoint while your program is running. You need to pause it first, set a new breakpoint and then continue the program.
 
 
+##### Memory banks
+
+The DeZog interfancing program on the ZX Next needs some space. It uses the MF ROM/RAM and bank 94.
+For your program it means you mustn't use bank 94 otherwise DeZog will not work.
+
+
 ##### Stack
 
 A) This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
