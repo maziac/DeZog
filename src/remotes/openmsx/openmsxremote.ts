@@ -3,9 +3,10 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
+import {Labels} from '../../labels';
 import {parseString} from 'xml2js';
 import {Settings} from '../../settings';
-import {Z80Registers} from '../z80registers';
+import {Z80RegistersClass,Z80Registers} from '../z80registers';
 import {DecodeOpenMSXRegisters} from './decodeopenmsxdata';
 import {Utility} from '../../misc/utility';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
@@ -144,6 +145,44 @@ export class OpenMSXRemote extends RemoteBase {
 			"  }\n"+
 			"  return $result\n"+
 			"}\n");
+		await this.perform_command(
+			"proc debug_memmapper { } {\n"+
+			"  set result \"\"\n"+
+			"  for { set page 0 } { $page &lt; 4 } { incr page } {\n"+
+			"    set tmp [get_selected_slot $page]\n"+
+			"    append result [lindex $tmp 0] [lindex $tmp 1] \"\\n\"\n"+
+			"    if { [lsearch [debug list] \"MapperIO\"] != -1} {\n"+
+			"      append result [debug read \"MapperIO\" $page] \"\\n\"\n"+
+			"    } else {\n"+
+			"      append result \"0\\n\"\n"+
+			"    }\n"+
+			"  }\n"+
+			"  for { set ps 0 } { $ps &lt; 4 } { incr ps } {\n"+
+			"    if [machine_info issubslotted $ps] {\n"+
+			"      append result \"1\\n\"\n"+
+			"      for { set ss 0 } { $ss &lt; 4 } { incr ss } {\n"+
+			"        append result [get_mapper_size $ps $ss] \"\\n\"\n"+
+			"      }\n"+
+			"    } else {\n"+
+			"      append result \"0\\n\"\n"+
+			"      append result [get_mapper_size $ps 0] \"\\n\"\n"+
+			"    }\n"+
+			"  }\n"+
+			"  for { set page 0 } { $page &lt; 4 } { incr page } {\n"+
+			"    set tmp [get_selected_slot $page]\n"+
+			"    set ss [lindex $tmp 1]\n"+
+			"    if { $ss == \"X\" } { set ss 0 }\n"+
+			"    set device_list [machine_info slot [lindex $tmp 0] $ss $page]\n"+
+			"    set name \"[lindex $device_list 0] romblocks\"\n"+
+			"    if { [lsearch [debug list] $name] != -1} {\n"+
+			"      append result \"[debug read $name [expr {$page * 0x4000}] ]\\n\"\n"+
+			"      append result \"[debug read $name [expr {$page * 0x4000 + 0x2000}] ]\\n\"\n"+
+			"    } else {\n"+
+			"      append result \"X\\nX\\n\"\n"+
+			"    }\n"+
+			"  }\n"+
+			"  return $result\n"+
+			"}\n");
 
 		// Send 'initialize' to Machine.
 		this.emit('initialized');
@@ -231,8 +270,54 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @returns A Promise with an array with the available memory pages.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
-		return new Promise<MemoryBank[]>(resolve => {
-			resolve (new Array<MemoryBank>());
+		return new Promise<MemoryBank[]>(async resolve => {
+			// pages
+			let mbs = new Array<MemoryBank>();
+			let output:string = await this.perform_command ("debug_memmapper");
+			let lines = output.split ("\n");
+			let mappersegment:number[]=[];
+			for (let i=0;i<4;i++) {
+				let mb:MemoryBank = {
+					start: i*0x4000,
+					end:((i+1)*0x4000)-1,
+					name:`slot ${lines[i*2].charAt(0)}:${lines[i*2].charAt(1)}`
+				};
+				mappersegment[i]=Number.parseInt(lines[i*2+1]);
+				mbs.push (mb);
+			}
+			// mappers
+			let l=8;
+			var mappersizes:number[][]=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+			for (let p=0;p<4;p++) {
+				if (lines[l++].charAt(0)=='1') {
+					// subslotted
+					for (let s=0;s<4;s++) {
+						mappersizes[p][s] = Number.parseInt(lines[l++]);
+					}
+				} else {
+					mappersizes[p][0] = Number.parseInt(lines[l++]);
+				}
+			}
+			// romblocks
+			let romblocks:number[]=[];
+			for (let i = 0; i < 8; ++i, ++l) {
+				if (lines[l][0] == 'X') {
+					romblocks[i] = -1;
+					if (mbs[Math.floor(i/2)].name.indexOf (",")<0)
+						mbs[Math.floor(i/2)].name += `, RAM segment: ${mappersegment[Math.floor(i/2)]}`;
+					++i;++l;
+					//else
+					//	mbs[Math.floor(i/2)].name += `/${mappersegment[Math.floor(i/2)]}`;
+				}
+				else {
+					romblocks[i] = Number.parseInt (lines[l]);
+					if (mbs[Math.floor(i/2)].name.indexOf (",")<0)
+						mbs[Math.floor(i/2)].name += `, ROM bank   : ${romblocks[i]}`;
+					else
+						mbs[Math.floor(i/2)].name += `/${romblocks[i]}`;
+				}
+			}
+			resolve (mbs);
 		});
 	}
 
@@ -429,6 +514,38 @@ export class OpenMSXRemote extends RemoteBase {
 		Utility.assert(false);	// override this
 	}
 
+	//BC==0x12FA
+	//DE==HL+1
+	//(A&7Fh) >= 10
+	//D==5 || B==0 && C==1
+	//B >= (MAX_COUNT+1)/2
+	//b@(mylabel) == 50
+	//w@(mylabel) == 0x34BC
+	//b@(mylabel+5) == 50
+	//b@(mylabel+A) == 50
+	//b@(HL) > 10
+	protected convertCondition(condition?: string): string|undefined {
+		if(!condition || condition.length == 0)
+			return '';	// No condition
+
+		// Convert labels
+		let regex = /\b[_a-z][\.0-9a-z_]*\b/gi;
+		let conds = condition.replace(regex, label => {
+			// Check if register
+			if(Z80RegistersClass.isRegister(label))
+				return `[reg ${label}]`;
+			// Convert label to number.
+			const addr = Labels.getNumberForLabel(label);
+			// If undefined, don't touch it.
+			if(addr == undefined)
+				return label;
+			return addr.toString();;
+		});
+
+		console.log('Converted condition "' + condition + '" to "' + conds + '"');
+		return conds;
+	}
+
 	/**
 	 * Sets breakpoint in the Remote.
 	 * Sets the breakpoint ID (bpId) in bp.
@@ -441,6 +558,7 @@ export class OpenMSXRemote extends RemoteBase {
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 		return new Promise<number>(async resolve => {
+			var strcond:string = "";
 			// Check for logpoint (not supported)
 			if (bp.log) {
 				this.emit('warning', 'OpenMSX does not support logpoints ("'+bp.log+'").');
@@ -449,12 +567,11 @@ export class OpenMSXRemote extends RemoteBase {
 				return 0;
 			}
 			if (bp.condition) {
-				this.emit('warning', 'OpenMSX does not support conditions ("'+bp.condition+'").');
-				// set to unverified
-				bp.address=-1;
-				return 0;
+				let tmp = this.convertCondition (bp.condition);
+				if (tmp!=undefined)
+					strcond = ` {${tmp}}`;
 			}
-			let cmd:string = "debug set_bp 0x"+bp.address.toString(16);
+			let cmd:string = "debug set_bp 0x"+bp.address.toString(16)+strcond;
 			let result:string = await this.perform_command (cmd);
 			this.breakpointmap[bp.filePath+"-"+bp.lineNr]=result;
 			// Add to list
@@ -513,6 +630,8 @@ export class OpenMSXRemote extends RemoteBase {
 			const values=new Uint8Array(size);
 			if (address<0)
 				address += 0xffff;
+			if (address+size > 0xffff)
+				size = 0; // should not happen but it does
 			let str = await this.perform_command (`debug_bin2hex [ debug read_block memory 0x${address.toString(16)} ${size} ]`);
 			for (let i=0;i<size;i++)
 				values[i] = Number.parseInt (str.substr (i*2,2),16);
