@@ -16,6 +16,7 @@ export class OpenMSXRemote extends RemoteBase {
 	openmsx:net.Socket;
 	connected:boolean;
 	breakpointmap:string[];
+	asserts:string[];
 
 	/// Constructor.
 	constructor() {
@@ -23,6 +24,7 @@ export class OpenMSXRemote extends RemoteBase {
 
 		this.connected = false;
 		this.breakpointmap = new Array<string>();
+		this.asserts = new Array<string>();
 
 		// Set decoder
 		Z80Registers.decoder=new DecodeOpenMSXRegisters();
@@ -499,7 +501,26 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
-		Utility.assert(false);	// override this
+		for (let abp of this.assertBreakpoints) {
+			if (enable) {
+				// Create breakpoint
+				var strcond:string="";
+				let tmp=this.convertCondition(abp.condition)||'';
+				if (tmp!=undefined)
+						strcond = ` {${tmp}}`;
+				let cmd:string = "debug set_bp 0x"+abp.address.toString(16)+strcond;
+				let result:string = await this.perform_command (cmd);
+				this.asserts.push (result);
+			}
+			else {
+				// Remove breakpoints
+				for (let a of this.asserts) {
+					let cmd:string = "debug remove_bp "+a;
+					await this.perform_command (cmd);
+				}
+			}
+		}
+		this.assertBreakpointsEnabled = enable;
 	}
 
 	/**
@@ -541,6 +562,12 @@ export class OpenMSXRemote extends RemoteBase {
 				return label;
 			return addr.toString();;
 		});
+		// special characters
+		conds = conds.split ("&").join("&amp;");
+		conds = conds.split ("\"").join("&quot;");
+		conds = conds.split ("\'").join("&apos;");
+		conds = conds.split ("<").join("&lt;");
+		conds = conds.split (">").join("&gt;");
 
 		console.log('Converted condition "' + condition + '" to "' + conds + '"');
 		return conds;
@@ -657,7 +684,7 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @returns State data.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
-		Utility.assert(false);	// override this
+		await this.perform_command (`savestate ${filePath}`);
 	}
 
 
@@ -668,7 +695,8 @@ export class OpenMSXRemote extends RemoteBase {
 	 * @param filePath The file path to retore from.
 	 */
 	public async stateRestore(filePath: string): Promise<void> {
-		Utility.assert(false);	// override this
+		await this.perform_command ("debug break");
+		await this.perform_command (`loadstate ${filePath}`);
 	}
 
 }

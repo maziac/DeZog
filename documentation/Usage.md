@@ -71,6 +71,7 @@ A typical configuration looks like this:
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface (Note: the serial interface is currently under evelopment).
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
+    - "openmsx": Use OpenMSX as MSX emulator.
     - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
@@ -288,17 +289,17 @@ The following table gives an overview.
 
 |                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  | OpenMSX |
 |-------------------------|--------------------|---------|------------|----------|----------|---------|
-| State                   | stable             | stable  | stable     | started  | stable | started  |
+| State                   | stable             | stable  | stable     | started  | stable | stable  |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      | yes     |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow | yes     |
 | Watchpoints             | yes                | yes     | yes/fast   | no        | no      | no      |
-| Asserts                 | yes                | no       | yes        | yes/slow | yes/slow | no      |
+| Asserts                 | yes                | no       | yes        | yes/slow | yes/slow | yes     |
 | Logpoints               | yes                | no       | yes        | yes/slow | yes/slow | no      |
 | Extended callstack      | no                 | yes     | yes        | no        | no        | no      |
 | Code coverage           | yes                | yes     | yes        | no        | no        | no      |
 | Reverse debugging       | true               | true    | true       | lite     | lite     | no      |
 | ZX Next capable         | no                  | yes     | yes        | yes      | yes      | N/A     |
-| Save/restore the state | yes                 | yes     | yes        | no       | no       | no      |
+| Save/restore the state | yes                 | yes     | yes        | no       | no       | yes     |
 | Output of T-States | yes                 | yes     | yes        | no       | no       | no      |
 | Comments                | slower than ZEsarUx or CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
 
