@@ -484,7 +484,7 @@ export class Utility {
 	 * ${unsigned} = value as unsigned, e.g. 1234
 	 * $(signed) = value as signed, e.g. -59
 	 * $(bits) = value as bits , e.g. 10011011
-	 * $(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC
+	 * $(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC
 	 * ${labels} = value as label (or several labels)"
 	 * @param regsAsWell If true then also matching register names will be returned.
 	 * @param paramName The name, e.g. a register name "A" etc. or a label name. Can be omitted or undefined or ''.

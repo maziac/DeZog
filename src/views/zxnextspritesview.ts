@@ -2,7 +2,7 @@
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
-import {ImageConvert} from '../imageconvert';
+import {ImageConvert} from '../misc/imageconvert';
 import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 

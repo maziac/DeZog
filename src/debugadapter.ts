@@ -1251,14 +1251,19 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): void {
-		this.pauseRequested=true;
-		// Pause the remote or the history
-		if (StepHistory.isInStepBackMode())
-			StepHistory.pause();
-		else
-			Remote.pause();
-		// Response is sent immediately
+	protected async pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): Promise<void> {
+		try {
+			this.pauseRequested=true;
+			// Pause the remote or the history
+			if (StepHistory.isInStepBackMode())
+				StepHistory.pause();
+			else
+				await Remote.pause();
+		}
+		catch (e) {
+			this.showError(e.message);
+		}
+		// Response
 		this.sendResponse(response);
 	}
 

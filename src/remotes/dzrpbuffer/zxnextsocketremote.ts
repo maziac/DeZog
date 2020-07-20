@@ -7,9 +7,6 @@ import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
-//import {DZRP} from '../dzrp/dzrpremote';
-//import {Utility} from '../../misc/utility';
-//import {Z80_REG} from '../z80registers';
 
 
 
@@ -473,6 +470,14 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			|| (addr>=0x66 && addr<=0x73)))
 			return "addresses 0x0000-0x0007 and 0x0066-0x0073";
 		return undefined;
+	}
+
+
+	/**
+	 * This command is not used anymore. Use the NMI button instead.
+	 */
+	protected async sendDzrpCmdPause(): Promise<void> {
+		throw Error("To pause execution use the yellow NMI button of the ZX Next.");
 	}
 
 

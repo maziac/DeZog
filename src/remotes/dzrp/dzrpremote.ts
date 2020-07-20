@@ -177,6 +177,10 @@ export class DzrpRemote extends RemoteBase {
 				await this.setRegisterValue("PC", execAddress);
 			}
 
+			// Get initial registers
+			Z80Registers.clearCache();
+			await this.getRegisters();
+
 			// Ready
 			const text="'"+resp.programName+"' initialized.";
 			this.emit('initialized', text)

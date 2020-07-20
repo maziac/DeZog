@@ -276,7 +276,7 @@ export class Z80RegistersClass {
 	/**
 	 * Returns the formatted register value.
 	 * @param regIn The name of the register, e.g. "A" or "BC"
-	 * @param formatMap The map with the formattings (hover map or variables map)
+	 * @param formatMap The map with the formats (hover map or variables map)
 	 * @returns The formatted string.
 	 */
 	protected getFormattedReg(regIn: string, formatMap: any): string {
@@ -285,8 +285,15 @@ export class Z80RegistersClass {
 		const format = formatMap.get(reg);
 		Utility.assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
+
 		// Get value of register
 		const value = this.decoder.getRegValueByName(reg, this.RegisterCache);
+
+		// Special handling if IM is not available (e.g. for ZX Next)
+		if (reg=="IM") {
+			if (value==0xFF)
+				return "?";	// Unknown
+		}
 
 		// do the formatting
 		let rLen = reg.length;

@@ -1,4 +1,4 @@
-import {ImageConvert} from '../../imageconvert';
+import {ImageConvert} from '../../misc/imageconvert';
 import {MemBuffer} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 

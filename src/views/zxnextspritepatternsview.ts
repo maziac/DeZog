@@ -1,7 +1,7 @@
 import * as util from 'util';
 import { Remote } from '../remotes/remotefactory';
 import { BaseView } from './baseview';
-import {ImageConvert} from '../imageconvert';
+import {ImageConvert} from '../misc/imageconvert';
 import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
