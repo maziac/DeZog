@@ -391,9 +391,15 @@ export class OpenMSXRemote extends RemoteBase {
 				let bytestr = disasm.substr (disasm.indexOf ('}')+1).trim();
 				let bytes = bytestr.split (' ');
 				let newpc = oldpc+bytes.length;
-				await this.perform_command (`debug set_bp 0x${newpc.toString(16)}`);
+
+				let strcond:string="";
+				if (this.pcInSlot!=undefined && this.pcInSlot.trim().length>0) {
+					strcond = ` {[pc_in_slot ${this.pcInSlot}]}`;
+				}
+
+				let bpid = await this.perform_command (`debug set_bp 0x${newpc.toString(16)} ${strcond}`);
 				await this.perform_run_command ("debug cont");
-				await this.perform_command (`debug remove_bp 0x${newpc.toString(16)}`);
+				await this.perform_command (`debug remove_bp ${bpid}`);
 			} else {
 				await this.perform_command ("debug step");
 			}
@@ -505,9 +511,16 @@ export class OpenMSXRemote extends RemoteBase {
 			if (enable) {
 				// Create breakpoint
 				var strcond:string="";
-				let tmp=this.convertCondition(abp.condition)||'';
-				if (tmp!=undefined)
-						strcond = ` {${tmp}}`;
+				strcond=this.convertCondition(abp.condition)||'';
+				if (this.pcInSlot!=undefined && this.pcInSlot.trim().length>0) {
+					if (strcond.length>0)
+						strcond = ` {[pc_in_slot ${this.pcInSlot}] &amp;&amp; ${strcond}}`;
+					else
+						strcond = ` {[pc_in_slot ${this.pcInSlot}]}`;
+				} else {
+					if (strcond.length>0)
+						strcond = ` {${strcond}}`;
+				}
 				let cmd:string = "debug set_bp 0x"+abp.address.toString(16)+strcond;
 				let result:string = await this.perform_command (cmd);
 				this.asserts.push (result);
@@ -596,7 +609,16 @@ export class OpenMSXRemote extends RemoteBase {
 			if (bp.condition) {
 				let tmp = this.convertCondition (bp.condition);
 				if (tmp!=undefined)
-					strcond = ` {${tmp}}`;
+					strcond = tmp;
+			}
+			if (this.pcInSlot!=undefined && this.pcInSlot.trim().length>0) {
+				if (strcond.length>0)
+					strcond = ` {[pc_in_slot ${this.pcInSlot}] &amp;&amp; ${strcond}}`;
+				else
+					strcond = ` {[pc_in_slot ${this.pcInSlot}]}`;
+			} else {
+				if (strcond.length>0)
+					strcond = ` {${strcond}}`;
 			}
 			let cmd:string = "debug set_bp 0x"+bp.address.toString(16)+strcond;
 			let result:string = await this.perform_command (cmd);

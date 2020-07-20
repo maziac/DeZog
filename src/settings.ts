@@ -34,6 +34,9 @@ export interface ListFile {
 
 	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
 	z88dkMapFile: string;
+
+	/// The default slot,subslot,segment/bank where breakpoints are set for this OpenMSX debug-session
+	pcInSlot: string;
 }
 
 
@@ -391,7 +394,8 @@ export class Settings {
 					filter: fp.filter,
 					asm: fp.asm || "sjasmplus",
 					addOffset: fp.addOffset||0,
-					z88dkMapFile: fp.z88dkMapFile
+					z88dkMapFile: fp.z88dkMapFile,
+					pcInSlot: fp.pcInSlot
 				};
 				/*
 				// Add the root folder path to each.
