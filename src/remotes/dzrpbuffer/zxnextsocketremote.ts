@@ -50,6 +50,9 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	// During Continue it is increased/decreased if other breakpoints are manually added.
 	protected breakpointsAndOpcodes: Array<RestorableBreakpoint>;
 
+	// Value to catch the MESSAGE_START_BYTE if received data was 1 byte only.
+	protected msgStartByteFound: boolean;
+
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
@@ -64,6 +67,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			LogSocket.log('ZxNextSocketRemote: Connected to server!');
 
 			this.receivedData=new Buffer(0);
+			this.msgStartByteFound=false;
 			this.expectedLength=4;	// for length
 			this.receivingHeader=true;
 			this.stopChunkTimeout();
@@ -118,13 +122,18 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected dataReceived(data: Buffer) {
 		let nData=data;
-		if (this.receivedData.length==0) {
+
+		if (this.receivedData.length==0&&!this.msgStartByteFound) {
 			// Swallow everything (zeroes) up to the first 0xA5 found
 			const len=data.length;
 			let i;
 			for (i=0; i<len; i++) {
 				if (data[i]==MESSAGE_START_BYTE) {
 					// Start of message found
+					if (len==1) {
+						this.msgStartByteFound=true;
+						return;
+					}
 					break;
 				}
 			}
@@ -135,6 +144,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			nData=data.subarray(i+1);
 		}
 		// Call super
+		this.msgStartByteFound=false;
 		super.dataReceived(nData);
 	}
 
@@ -477,7 +487,12 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * This command is not used anymore. Use the NMI button instead.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
-		throw Error("To pause execution use the yellow NMI button of the ZX Next.");
+		try {
+			await super.sendDzrpCmdPause();
+		}
+		catch {
+			throw Error("To pause execution use the yellow NMI button of the ZX Next.");
+		}
 	}
 
 
