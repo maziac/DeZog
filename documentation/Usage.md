@@ -732,7 +732,6 @@ A) This is more a note: If you watch the stack while stepping you can see that s
 B) Performance: If you have a large stack or a **wrong topOfStack** setting in the launch.json stepping might become sluggish. This is because DeZog does a lot of analysis on the stack, e.g. it reads not only the stack but also memory that a stack entry points to. If the topOfStack is wrong many false reading is done after each step which slows down the system.
 
 
-
 ##### SW Breakpoints
 
 A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
@@ -782,7 +781,12 @@ This is different when the program is running. In that case you could see breakp
 
 D) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
 
-E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
+
+E) You cannot set a breakpoint while the debugged program is running. This is because no communication between deZog and the debugged program takes place while it is running.
+to set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
+
+
+F) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
 ~~~
 "disassemblerArgs": {
     "esxdosRst": true
