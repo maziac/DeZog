@@ -374,7 +374,7 @@ Example launch.json configuration:
         "Z80N": true,
     	"loadZxRom": true,
         "zxKeyboard": true,
-	    "visualMemory": "ZXNEXT",
+	    "visualMemory": "true",
 	    "ulaScreen": true,
 	    "memoryPagingControl": true,
         "tbblueMemoryManagementSlots": true,
@@ -598,10 +598,10 @@ The serial interface is the most complex setup as it requires communication with
 ~~~
 
 DeZog does not directly talk to the USB/UART interface of your OS. Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
-(Background: The reason for this additional program is that the node.js serialport binary package tend to break on vscode.)
+(Background: The reason for this additional program is that the node.js serialport binary package tends to break with new releases of vscode, see [here](https://cultivatehq.com/posts/how-we-built-a-visual-studio-code-extension-for-iot-prototyping/) for more details.)
 
 The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
-In order to communicate with the ZX Next special SW needs to run on the Next: [dezogif](https://github.com/maziac/dezogif).
+In order to communicate with the ZX Next special SW needs to run on the Next, the [dezogif](https://github.com/maziac/dezogif).
 
 
 Example launch.json configuration:
@@ -625,7 +625,7 @@ Prerequisites:
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with this [one](https://github.com/maziac/dezogif). You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
@@ -695,7 +695,7 @@ You need to connect:
 ![](images/dsub9_connected.jpg)
 
 
-Alternatively, if you need to use both joysticks while debugging you need to directly to the ESP UART:
+Alternatively, if you need to use both joysticks while debugging you directly connect the ESP UART:
 ![](images/uart_cn9.jpg)
 
 You need to connect:
@@ -721,7 +721,7 @@ E.g. you can't set a breakpoint while your program is running. You need to pause
 
 ##### Memory banks
 
-The DeZog interfancing program on the ZX Next needs some space. It uses the MF ROM/RAM and bank 94.
+The dezogif program on the ZX Next needs some space. It uses the MF ROM/RAM and bank 94.
 For your program it means you mustn't use bank 94 otherwise DeZog will not work.
 
 
@@ -759,7 +759,7 @@ So take care to use a stack that can hold these additional bytes at any time.
 B) Memory Paging
 The ZX Next SW Breakpoints do not work very well with memory paging.
 If you place a breakpoint in your source file the address for the source file line is taken and a breakpoint is put at that address.
-If at this moment a bank is paged in that does not correspondend to the the source file a breakpoint is placed in the wrong bank.
+If at this moment a bank is paged in that does not correspondent to the source file a breakpoint is placed in the wrong bank.
 As for the ZX Next a breakpoint means to change the code at the address it means that the code/data in the wrong bank is changed.
 This could either
 - be at instruction start by accident with no further consequences
@@ -772,21 +772,14 @@ Furthermore you should note that all breakpoints are put in just before a debugg
 I.e. if you have a "stale" breakpoint in some file it could make problems if this location changes the used bank.
 
 
-C) SW breakpoints are internally implemented by pacing a special command, a RST 0 (0xC7) at the address of the breakpoint.
-SW breakpoints are set just before a run or step of the debugged program is done and afterwards removed.
-I.e. while the debugged program is not running you should not see any SW breakpoint substitution in the disassembly or in the memory viewer.
-This is different when the program is running. In that case you could see breakpoint substitutions in the memory viewer. Normally the memory viewer is not updated before the program is stopped, so you will not notice either. But if you open a new memory dump window during the program being run you could see breakpoint substitutions.
-(Of course only in, cooperative mode (```call dezog_poll```). Otherwise the memory dump command is not executed on the ZX Next.)
+C) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
 
 
-D) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
+D) You cannot set a breakpoint while the debugged program is running. This is because no communication between deZog and the debugged program takes place while it is running.
+To set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
 
 
-E) You cannot set a breakpoint while the debugged program is running. This is because no communication between deZog and the debugged program takes place while it is running.
-to set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
-
-
-F) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
+E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
 ~~~
 "disassemblerArgs": {
     "esxdosRst": true
@@ -804,8 +797,8 @@ However, you can still use "read-only paging" in your program, you just shouldn'
 
 ##### NMI
 
-To interrupt the debugged program an NMI can be used (pressing the yellow M1 button).
-As an NMI places the current PC on the stack and can occur anytime it will also corrupt the stack if it happens while the debugged program is manipulating the SP.
+To interrupt the debugged program an NMI can be used (pressing the yellow NMI button).
+As an NMI places the current PC on the stack and can occur anytime it can and will corrupt the stack **if** it happens while the debugged program is manipulating the SP.
 
 There is nothing to do about it other than
 - never increase the SP if the value on the stack is still required
