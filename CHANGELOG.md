@@ -1,6 +1,9 @@
 # Changelog
 
 # 1.4.4
+- Version to start beta testing "zxnext".
+
+# 1.4.4
 - remoteType: "serial" renamed to "zxnext".
 - Allowing to set/remove breakpoints during debugged program being run for cspect, zsim and zxnext.
 
