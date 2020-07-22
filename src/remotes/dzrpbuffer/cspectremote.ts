@@ -22,7 +22,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime=Settings.launch.cspect.socketTimeout;
+		this.cmdRespTimeoutTime=Settings.launch.cspect.socketTimeout*1000;
 	}
 
 

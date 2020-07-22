@@ -57,7 +57,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime=Settings.launch.zxnext.socketTimeout;
+		this.cmdRespTimeoutTime=Settings.launch.zxnext.socketTimeout*1000;
 	}
 
 
@@ -480,6 +480,11 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * error output.
 	 */
 	protected checkBreakpoint(addr: number|undefined): string|undefined {
+		/* TODO:
+		if (addr>=0&&addr<0x4000) {
+			// Check for ROM
+		}
+		*/
 		if (addr!=undefined&&
 			((addr>=0 && addr<=0x07)
 			|| (addr>=0x66 && addr<=0x73)))
