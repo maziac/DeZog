@@ -53,6 +53,14 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	// Value to catch the MESSAGE_START_BYTE if received data was 1 byte only.
 	protected msgStartByteFound: boolean;
 
+
+	/// Constructor.
+	constructor() {
+		super();
+		this.cmdRespTimeoutTime=Settings.launch.zxnext.socketTimeout;
+	}
+
+
 	/// Initializes the machine.
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
@@ -81,7 +89,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		// Handle errors
 		this.socket.on('error', err => {
 			LogSocket.log('ZxNextSocketRemote: Error: '+err);
-			//console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
 		});
@@ -155,11 +162,9 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
 		return new Promise<void>(resolve => {
-			// Start timer to wait on response
-			this.socket.setTimeout(3000);	// TODO: make timeout configurable
-				// Send data
+			// Send data
 			const txt=this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('ZxNextSocketRemote: Sending '+txt);
+			LogSocket.log('>>> ZxNextSocketRemote: Sending '+txt);
 			this.socket.write(buffer, () => {
 					resolve();
 			});

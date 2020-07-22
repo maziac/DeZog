@@ -452,6 +452,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 
 
+
 Notes:
 - If ZEsarUX is used with the --tbblue-fast-boot-mode loading of tap files won't work.
 - Important: Make sure that there is no UI window open in ZEsarUX when you try to connect it from vscode.
@@ -546,9 +547,9 @@ If you need to configure the port use:
     }
 ~~~
 
-The "zrcp" configuration allows the following additional parameters:
-- "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+The "cspect" configuration allows the following additional parameters:
+- "port": The CSpect DeZog plugin port. If not changed  this defaults to 10000.
+- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
 You don't have to enter a hostname, the default is "localhost".
 
 Note: You can start CSpect with the "-remote" option. In that case CSpect will not show it's debugger screen when stopped.
@@ -611,6 +612,12 @@ Example launch.json configuration:
         "port": 12000
     }
 ~~~
+
+The "zxnext" configuration allows the following additional parameters:
+- "port": The CSpect DeZog plugin port. If not changed  this defaults to 12000.
+- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
+You don't have to enter a hostname, the default is "localhost".
+
 The default port is anyway 12000. So, if you don't change it, you just have to add:
 ~~~
     "remoteType": "zxnext"

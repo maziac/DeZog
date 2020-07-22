@@ -22,6 +22,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
+		this.cmdRespTimeoutTime=Settings.launch.cspect.socketTimeout;
 	}
 
 
@@ -121,8 +122,6 @@ export class CSpectRemote extends DzrpBufferRemote {
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
 		return new Promise<void>(resolve => {
-			// Start timer to wait on response
-			this.socket.setTimeout(3000);	// TODO: make timeout configurable
 			// Send data
 			const txt=this.dzrpCmdBufferToString(buffer);
 			LogSocket.log('>>> CSpectRemote: Sending '+txt);

@@ -319,7 +319,7 @@ export class Settings {
 
 		// cspect
 		if (!Settings.launch.cspect)
-			Settings.launch.cspect={} as ZrcpType;
+			Settings.launch.cspect={} as CSpectType;
 		if (Settings.launch.cspect.hostname==undefined)
 			Settings.launch.cspect.hostname='localhost';
 		if (Settings.launch.cspect.port==undefined)
@@ -372,7 +372,7 @@ export class Settings {
 				Settings.launch.zsim.vsyncInterrupt=false;
 		}
 
-		// serial
+		// zxnext
 		if (!Settings.launch.zxnext)
 			Settings.launch.zxnext={} as ZxNextSocketType;
 		if (Settings.launch.zxnext.hostname==undefined)
@@ -380,7 +380,7 @@ export class Settings {
 		if (Settings.launch.zxnext.port==undefined)
 			Settings.launch.zxnext.port=12000;
 		if (!Settings.launch.zxnext.socketTimeout)
-			Settings.launch.zxnext.socketTimeout=5;	// 5 secs
+			Settings.launch.zxnext.socketTimeout=0.5;	// 0.5 secs, needs to be short to show a warning fast if debugged program is running.
 
 
 

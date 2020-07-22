@@ -66,8 +66,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected cmdRespTimeout?: NodeJS.Timeout;
 
 	// The used timeout time.
-	protected cmdRespTimeoutTime=500;
-	protected initCloseRespTimeoutTime=900;	// Timeout for CMD_INIT and CMD_CLOSE
+	protected cmdRespTimeoutTime=500;	// Will be overwritten.
+	protected initCloseRespTimeoutTime=900;	// Timeout for CMD_INIT and CMD_CLOSE. This is not configurable and depends on vscode internal times.
 
 	// To collect received chunks.
 	protected receivedData: Buffer;
@@ -238,14 +238,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 			return;
 
 		try {
-			// Log
-			//const seqno=msg.buffer[4];
-			//const cmd: DZRP=msg.buffer[5];
-			//const cmdName=DZRP[cmd];
-			//LogSocket.log('>>> '+cmdName+' (seqno='+seqno+')', msg.buffer[0]);
 			this.startCmdRespTimeout(msg.respTimeoutTime);
 			await this.sendBuffer(msg.buffer);
-			//console.log("SENT ", msg.buffer[5], "SeqNo=", msg.buffer[4]);
 		}
 		catch (error) {
 			LogSocket.log("SENT ERROR.");
