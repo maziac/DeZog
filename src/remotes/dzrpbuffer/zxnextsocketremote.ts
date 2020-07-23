@@ -246,7 +246,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		// Check breakpoints
-		if (this.checkBreakpoint(bp1Address)||this.checkBreakpoint(bp2Address)) {
+		if (await this.checkBreakpoint(bp1Address)||await this.checkBreakpoint(bp2Address)) {
 			const breakAddress=this.getPC();
 			const breakReasonString="Cannot step at address "+Utility.getHexString(breakAddress, 4)+"h.";
 			this.emit('warning', breakReasonString);
@@ -398,7 +398,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		const bpAddress=bp.address;
 		// Check breakpoint address.
-		const errText=this.checkBreakpoint(bpAddress);
+		const errText=await this.checkBreakpoint(bpAddress);
 		if(errText) {
 			// Some lower breakpoint addresses cannot be used.
 			this.emit('warning', "On the ZXNext you cannot set breakpoints at "+errText+".");
@@ -479,16 +479,21 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * If not allowed: a string with the address range that can be used for
 	 * error output.
 	 */
-	protected checkBreakpoint(addr: number|undefined): string|undefined {
-		/* TODO:
-		if (addr>=0&&addr<0x4000) {
+	protected async checkBreakpoint(addr: number|undefined): Promise<string|undefined> {
+		if (addr!=undefined) {
 			// Check for ROM
+			if (addr>=0&&addr<0x4000) {
+				const slots=await this.sendDzrpCmdGetSlots();
+				const slot=addr>>>13;
+				if (slots[slot]>=0xFE)	// ROM
+					return "ROM";
+			}
+
+			// Check for special area
+			if ((addr>=0&&addr<=0x07)
+				||(addr>=0x66&&addr<=0x73))
+				return "addresses 0x0000-0x0007 and 0x0066-0x0073";
 		}
-		*/
-		if (addr!=undefined&&
-			((addr>=0 && addr<=0x07)
-			|| (addr>=0x66 && addr<=0x73)))
-			return "addresses 0x0000-0x0007 and 0x0066-0x0073";
 		return undefined;
 	}
 
