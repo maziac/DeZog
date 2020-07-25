@@ -3,7 +3,7 @@ import {basename} from 'path';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
-import {Labels} from './labels';
+import {Labels} from './labels/labels';
 import {Log, LogSocket} from './log';
 import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';

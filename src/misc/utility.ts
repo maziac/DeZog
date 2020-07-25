@@ -1,4 +1,4 @@
-import { Labels } from '../labels';
+import { Labels } from '../labels/labels';
 import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';

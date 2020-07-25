@@ -9,7 +9,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
-import {Labels} from '../../labels';
+import {Labels} from '../../labels/labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';

@@ -6,7 +6,7 @@ import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
 import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
 //import { ZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
-import {Labels} from '../labels';
+import {Labels} from '../labels/labels';
 
 
 suite('Utility', () => {
