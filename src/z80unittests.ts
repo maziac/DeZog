@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
-import { Labels } from './labels';
+import { Labels } from './labels/labels';
 import { RemoteBreakpoint } from './remotes/remotebase';
 import { GenericWatchpoint } from './genericwatchpoint';
-import { LabelsClass } from './labels';
+import { LabelsClass } from './labels/labels';
 import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';

@@ -8,7 +8,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {Labels} from '../../labels';
+import {Labels} from '../../labels/labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';

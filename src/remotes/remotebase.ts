@@ -4,7 +4,7 @@ import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
-import {Labels, SourceFileEntry} from '../labels';
+import {Labels, SourceFileEntry} from '../labels/labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';

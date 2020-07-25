@@ -1,8 +1,8 @@
 import {readFileSync} from 'fs';
-import {Utility} from './misc/utility';
-import {Settings} from './settings';
+import {Utility} from '../misc/utility';
+import {Settings} from '../settings';
 import * as path from 'path';
-import {Remote} from './remotes/remotefactory';
+import {Remote} from '../remotes/remotefactory';
 //import { Log } from './log';
 //import { AssertionError } from 'assert';
 //import { start } from 'repl';

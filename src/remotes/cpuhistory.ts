@@ -4,7 +4,7 @@ import {HistoryInstructionInfo} from './decodehistinfo';
 import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {Remote} from './remotefactory';
-import {Labels} from '../labels';
+import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
 import {DecodeHistoryInfo} from './decodehistinfo';
