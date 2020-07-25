@@ -46,21 +46,18 @@ interface ValueLocation {
  * possible to load 2 disassemblies for the same area, e.g. for ROM0 and ROM1.
  * The last one would win.
  *
- * This is because it is not clear/easy to distinguish the bank for a lable.
- * Several other problem areay would need to be taken into account:
+ * This is because it is not clear/easy to distinguish the bank for a label.
+ * Several other problem areas would need to be taken into account:
  * - breakpoints for certain memory banks
  * - should a label be displayed even if another memory bank is currently selected (could be valid).
  * - ...
- * Also the benefit is low. So I decided to stack with a memory bank agnostic implementation:
+ * Also the benefit is low. So I decided to stay with a memory bank agnostic implementation:
  * All labels can cover all banks. It is not possible to load 2 disassemblies for the same area for different banks.
  *
  * This also implies that there is no automatic loading e.g. for the ROM. The user
  * has to supply the wanted list file e.g. for the ROM and needs to decide which ROM he wants to see.
  *
  * (Note: this applies only to the labels/list files, the disassembly shown in the VARIABLEs area is always the one from the current bank.)
- *
- *
- *
  */
 export class LabelsClass {
 
