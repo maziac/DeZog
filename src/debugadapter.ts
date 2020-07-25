@@ -1652,6 +1652,10 @@ export class DebugSessionClass extends DebugSession {
 			// Step back
 			const result=await StepHistory.stepBack();
 
+			// Check if Lite history then print
+			if (!(CpuHistory as any))
+				this.debugConsoleAppend('Lite ');
+
 			// Print
 			let text='Step-back';
 			if (result.instruction)

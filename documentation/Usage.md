@@ -694,11 +694,13 @@ You need to attach a female D-SUB 9 connector to your serial cable:
 ![](images/dsub9.jpg)
 
 You need to connect:
-| Serial cable | D-Sub 9 |
-|--------------|---------|
-| GND          | 8 |
-| RX           | 7 |
-| TX           | 9 |
+| Serial cable | connected to | D-Sub 9 |
+|:------------:|:------------:|:-------:|
+| GND          | <->          | 8 (Next GND) |
+| RX           | <->          | 7 (Next Tx) |
+| TX           | <->          | 9 (Next Rx) |
+
+Note: You connect the serial cable's Tx to the Next's Rx and the Rx with the Tx.
 
 ![](images/dsub9_connected.jpg)
 
@@ -707,11 +709,11 @@ Alternatively, if you need to use both joysticks while debugging you directly co
 ![](images/uart_cn9.jpg)
 
 You need to connect:
-| Serial cable | CN9        |
-|--------------|------------|
-| GND          | 4 GND      |
-| RX           | 1 ESP RX   |
-| TX           | 9 5 ESP_TX |
+| Serial cable | connected to | CN9        |
+|:------------:|:------------:|:----------:|
+| GND          | <->          | 4 (GND)    |
+| RX           | <->          | 1 (ESP RX) |
+| TX           | <->          | 5 (ESP_TX) |
 
 You can solder it directly or use the socket that is already available on the board:
 ![](images/uart_socket.jpg)
