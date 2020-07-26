@@ -33,35 +33,73 @@ export class OpenMSXRemote extends RemoteBase {
 	async connectOpenMSX (): Promise <net.Socket> {
         return new Promise <net.Socket>( async (resolve,reject) => {
             try {
-                // Create the socket for communication (not connected yet)
-                var folder:string = os.tmpdir()+"/openmsx-"+os.userInfo().username;
+				// Create the socket for communication (not connected yet)
+				var username;
+				if (os.platform()=="win32")
+					username = "default";
+				else
+					username = os.userInfo().username;
+				var folder:string = path.join (os.tmpdir(),"openmsx-"+username);
+				console.log (folder);
                 const readDir = util.promisify (fs.readdir);
-                const filenames = await readDir (folder);
+				const filenames = await readDir (folder);
+				if (filenames.length==0) {
+					reject (new Error (`OpenMSX not running`));
+				}
                 filenames.forEach( async (filename) => {
-                    var socketpath:string = path.join (folder,filename);
-                    const client = net.createConnection (socketpath)
-                        .on('connect', () => {
-                            console.log('Connected to OpenMSX');
-                            resolve (client);
-                        })
-                        .on('error', (err:Error) => {
-                            fs.unlinkSync (socketpath);
-                            //reject (null);
-                        })
-                    });
+					var socketpath:string = path.join (folder,filename);
+					if (os.platform()!="win32") {
+						const client = net.createConnection (socketpath);
+						var timer  = setTimeout(function () {
+							client.destroy();
+							reject (new Error (`Timeout connecting to OpenMSX`));
+						   }, 15000);
+						client.on('connect', () => {
+							clearTimeout(timer);
+							console.log('Connected to OpenMSX');
+							resolve (client);
+						})
+						client.on('error', (err:Error) => {
+							//clearTimeout(timer);
+							fs.unlinkSync (socketpath);
+							//reject (null);
+						})
+					} else {
+						let ports:Buffer = fs.readFileSync (socketpath);
+						let port = Number.parseInt(ports.toString ());
+						const client = net.createConnection (port);
+						var timer  = setTimeout(function () {
+							client.destroy();
+							reject (new Error (`Timeout connecting to OpenMSX:${port}`));
+						   }, 15000);
+						client.on('connect', () => {
+							clearTimeout(timer);
+							console.log('Connected to OpenMSX');
+							resolve (client);
+						})
+						client.on('error', (err:Error) => {
+							//clearTimeout(timer);
+							fs.unlinkSync (socketpath);
+							//reject (new Error (`Error connecting to OpenMSX:${port}`));
+						})
+					}
+				});
+
             } catch {
                 reject (new Error ("Error connecting to OpenMSX"));
             }
         });
     }
 
-    async receive_response () : Promise <string> {
+	async perform_awake (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve) => {
             this.once ('awake', (str:string) => {
                 resolve (str);
-            });
+			});
+			this.openmsx.write (cmd);
         });
     }
+
     async perform_command (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve,reject) => {
 			console.log (cmd);
@@ -105,7 +143,8 @@ export class OpenMSXRemote extends RemoteBase {
 	/// Initializes the machine.
 	public async doInitialization(): Promise<void> {
 		try {
-			this.openmsx = await this.connectOpenMSX ()
+			this.openmsx = await this.connectOpenMSX ();
+			console.log ("Connected");
 			this.connected = true;
         } catch (error) {
 			console.log (error.message);
@@ -120,13 +159,17 @@ export class OpenMSXRemote extends RemoteBase {
 			this.emit('error', err);
         })
         this.openmsx.on('close', () => {
+			this.connected=false;
+			console.log("Closed the connection to OpenMSX");
 			this.emit('log', "Closed the connection to OpenMSX");
         })
         this.openmsx.on ('data', data => {
+			console.log (data.toString());
 			this.handleOpenMSXResponse (data);
         });
 
-		await this.receive_response ();
+		await this.perform_awake ("<openmsx-control>");
+		//await this.receive_response ();
 
 		// do some inits
 		if(Settings.launch.resetOnLaunch)
@@ -185,6 +228,17 @@ export class OpenMSXRemote extends RemoteBase {
 			"  }\n"+
 			"  return $result\n"+
 			"}\n");
+
+		// Load obj file(s) unit
+		for(let loadObj of Settings.launch.loadObjs) {
+			if(loadObj.path) {
+				// Convert start address
+				const start = Labels.getNumberFromString(loadObj.start);
+				if(isNaN(start))
+					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+				await this.perform_command (`load_debuggable memory ${loadObj.path} ${start}`);
+			}
+		}
 
 		// Send 'initialize' to Machine.
 		this.emit('initialized');

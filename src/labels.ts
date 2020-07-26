@@ -216,7 +216,7 @@ export class LabelsClass {
 					line = line.replace (filterRegEx,replace);
 				} else {
 					line=line.replace(filterRegEx, function (match:string, address:string, bytes:string, mnemonic:string):string {
-						console.log (match);
+						//console.log (match);
 						bytes = bytes.split ('\t').join(' ');
 						bytes = bytes.trim();
 						let bytearray = bytes.split (' ');
