@@ -498,7 +498,7 @@ suite('Utility', () => {
 			Settings.Init(cfg, '');
 			Labels.init();
 			const labels=Labels;
-			labels.loadAsmListFile('./src/tests/data/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.loadAsmListFile('./src/tests/data/labels/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
 			labels.finish();
 
 			// Prepare memory

@@ -17,7 +17,7 @@ suite('Labels', () => {
 	suite('Files/lines vs list file', () => {
 
 		test('getFileAndLineForAddress', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/test1.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// Checks
@@ -78,7 +78,7 @@ suite('Labels', () => {
 
 
 		test('getAddrForFileAndLine', () => {
-			Labels.loadAsmListFile('./src/tests/data/test1.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/test1.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// main.asm
@@ -114,7 +114,7 @@ suite('Labels', () => {
 
 
 		test('get label values from list file', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/test2.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			let value = Labels.getNumberForLabel('screen_top');
@@ -142,7 +142,7 @@ suite('Labels', () => {
 
 
 		test('get labels for a value from list file', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/test2.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			let labels = Labels.getLabelsForNumber(0x6000);
@@ -158,7 +158,7 @@ suite('Labels', () => {
 
 
 		test('address offset', () => {
-			Labels.loadAsmListFile('./src/tests/data/test2.list', undefined, [""], undefined, "z80asm", 0x1000);
+			Labels.loadAsmListFile('./src/tests/data/labels/test2.list', undefined, [""], undefined, "z80asm", 0x1000);
 			Labels.finish();
 
 			let value = Labels.getNumberForLabel('pause_loop_l1');
@@ -171,7 +171,7 @@ suite('Labels', () => {
 
 		test('sjasmplus labels with ":"', () => {
 			const labels = Labels;
-			labels.loadAsmListFile('./src/tests/data/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.loadAsmListFile('./src/tests/data/labels/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
 			labels.finish();
 
 			let value = labels.getNumberForLabel('screen_top');
@@ -205,7 +205,7 @@ suite('Labels', () => {
 
 		test('sjasmplus labels without ":"', () => {
 			const labels = Labels;
-			labels.loadAsmListFile('./src/tests/data/sjasm2_wo_colon.list', undefined, [""], undefined, "sjasmplus", 0x0000);
+			labels.loadAsmListFile('./src/tests/data/labels/sjasm2_wo_colon.list', undefined, [""], undefined, "sjasmplus", 0x0000);
 			labels.finish();
 
 			let value = labels.getNumberForLabel('screen_top');
@@ -242,7 +242,7 @@ suite('Labels', () => {
 	suite('List files', () => {
 
 		test('z80asm.list', () => {
-			Labels.loadAsmListFile('./src/tests/data/z80asm.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/z80asm.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// Checks
@@ -260,7 +260,7 @@ suite('Labels', () => {
 		});
 
 		test('rom.list', () => {
-			Labels.loadAsmListFile('./src/tests/data/rom.list', undefined, [""], undefined, "z80asm", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/rom.list', undefined, [""], undefined, "z80asm", 0);
 			Labels.finish();
 
 			// Checks
@@ -273,7 +273,7 @@ suite('Labels', () => {
 
 
 		test('z88dk.lis', () => {
-			Labels.loadAsmListFile('./src/tests/data/z88dk.lis', undefined, [""], undefined, "z88dk", 0);
+			Labels.loadAsmListFile('./src/tests/data/labels/z88dk.lis', undefined, [""], undefined, "z88dk", 0);
 			Labels.finish();
 
 			// Checks
@@ -296,7 +296,7 @@ suite('Labels', () => {
 		});
 
 		test('z88dk map file (currah)', () => {
-			Labels.loadAsmListFile('./src/tests/data/currah_uspeech_tests.lis', undefined, [""], undefined, "z88dk", 0, undefined, './src/tests/data/currah_uspeech_tests.map');
+			Labels.loadAsmListFile('./src/tests/data/labels/currah_uspeech_tests.lis', undefined, [""], undefined, "z88dk", 0, undefined, './src/tests/data/labels/currah_uspeech_tests.map');
 			Labels.finish();
 
 			// Checks
