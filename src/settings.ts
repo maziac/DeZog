@@ -34,9 +34,6 @@ export interface ListFile {
 
 	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
 	z88dkMapFile: string;
-
-	/// The default slot,subslot,segment/bank where breakpoints are set for this OpenMSX debug-session
-	pcInSlot: string;
 }
 
 
@@ -108,6 +105,10 @@ export interface CSpectType {
 	socketTimeout: number;
 }
 
+export interface OpenMSXType {
+	// Default breakpoint program counter slot, subslot, page/bank of OpenMSX
+	pcInSlot: string;
+}
 
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
@@ -241,6 +242,8 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
+
+	openmsx: OpenMSXType;
 }
 
 
@@ -274,6 +277,7 @@ export class Settings {
 				zrcp: <any>undefined,
 				cspect: <any>undefined,
 				zsim: <any>undefined,
+				openmsx: <any>undefined,
 				serial: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
@@ -374,6 +378,9 @@ export class Settings {
 				Settings.launch.zsim.vsyncInterrupt=false;
 		}
 
+		if (!Settings.launch.openmsx)
+			Settings.launch.openmsx={} as OpenMSXType;
+
 		// serial
 		if (!Settings.launch.serial)
 			Settings.launch.serial={} as SerialType;
@@ -394,8 +401,7 @@ export class Settings {
 					filter: fp.filter,
 					asm: fp.asm || "sjasmplus",
 					addOffset: fp.addOffset||0,
-					z88dkMapFile: fp.z88dkMapFile,
-					pcInSlot: fp.pcInSlot
+					z88dkMapFile: fp.z88dkMapFile
 				};
 				/*
 				// Add the root folder path to each.

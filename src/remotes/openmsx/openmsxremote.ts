@@ -17,6 +17,7 @@ export class OpenMSXRemote extends RemoteBase {
 	connected:boolean;
 	breakpointmap:string[];
 	asserts:string[];
+	pcInSlot:string;
 
 	/// Constructor.
 	constructor() {
@@ -178,6 +179,10 @@ export class OpenMSXRemote extends RemoteBase {
 		//	let msg = await this.perform_command (cmd);
 		//	this.emit("log", msg);
 		//}
+		if (Settings.launch.openmsx != undefined && Settings.launch.openmsx.pcInSlot != undefined) {
+			if (Settings.launch.openmsx.pcInSlot.trim().length>0)
+				this.pcInSlot=Settings.launch.openmsx.pcInSlot;
+		}
 
 		await this.perform_command ("openmsx_update enable status");
 		await this.perform_command ("debug break");
