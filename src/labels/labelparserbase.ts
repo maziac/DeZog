@@ -106,5 +106,18 @@ export class LabelParserBase {
 	}
 
 
+	/**
+	 * Create complete label from module prefix and relative label
+	 * @param modulePrefix The first part of the label, e.g. "math."
+	 * @param label The last part of the label, e.g. "udiv_c_d"
+	 */
+	protected getFullLabel(modulePrefix: string|undefined, label: string) {
+		let result=modulePrefix||'';
+		if (result.length==0)
+			return label;
+		result+=label;
+		return result;
+	}
+
 }
 

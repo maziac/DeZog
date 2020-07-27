@@ -43,6 +43,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 		let listLines=readFileSync(fileName).toString().split('\n');
 		let line;
 		let lineNumber=0;
+		let lastLabel;
 		//let dbgLineNr = 0;
 		for (let origLine of listLines) {
 			//	dbgLineNr ++;
@@ -68,6 +69,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 				const match=labelRegex.exec(line);
 				if (match) {
 					let label=match[2];
+					lastLabel=label;
 					const equ=match[3];
 					if (equ) {
 						if (equ.toLowerCase().startsWith('equ')) {
@@ -120,13 +122,13 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 				// Store address (or several addresses for one line)
 				for (let k=0; k<countBytes; k++) {
-					const entry={fileName: '', lineNr: -1-k, addr: address+k, line: origLine};
+					const entry ={fileName: '', lineNr: -1-k, addr: address+k, line: origLine, lastLabel};
 					listFile.push(entry)
 				}
 			}
 			else {
 				// Store
-				const entry={fileName: '', lineNr: -1, addr: address, line: origLine};
+				const entry={fileName: '', lineNr: -1, addr: address, line: origLine, lastLabel};
 				listFile.push(entry)
 			}
 
@@ -265,6 +267,18 @@ export class Z80asmLabelParser extends LabelParserBase {
 		for (const entry of listFile) {
 			if (entry.fileName.length==0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
+
+			// Create label -> file location association
+			const lastLabel=entry.lastLabel;
+			if (lastLabel) {
+				const fullLabel=this.getFullLabel(entry.modulePrefix, lastLabel);
+				let fileLoc=this.labelLocations.get(fullLabel);
+				if (!fileLoc) {
+					// Add new file location
+					fileLoc={file: entry.fileName, lineNr: entry.lineNr};
+					this.labelLocations.set(fullLabel, fileLoc);
+				}
+			}
 
 			// last address entry wins:
 			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr});

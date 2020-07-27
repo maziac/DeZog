@@ -250,7 +250,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 					realLineNr++;
 				entry.fileName=relFileName;
 				entry.lineNr=realLineNr;
-				this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: realLineNr, modulePrefix: undefined, lastLabel: undefined});
+				this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: realLineNr});
 
 				// Set address
 				if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
@@ -379,22 +379,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		}
 
 	}
-
-
-
-	/**
-	 * Create complete label from module prefix and relative label
-	 * @param modulePrefix The first part of the label, e.g. "math."
-	 * @param label The last part of the label, e.g. "udiv_c_d"
-	 */
-	protected getFullLabel(modulePrefix: string|undefined, label: string) {
-		let result=modulePrefix||'';
-		if (result.length==0)
-			return label;
-		result+=label;
-		return result;
-	}
-
 
 }
 
