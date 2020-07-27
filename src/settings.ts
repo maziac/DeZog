@@ -23,7 +23,7 @@ export interface ListFile {
 	srcDirs: Array<string>;
 
 	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
-	filter:string|undefined;
+	filter: string|undefined;
 
 	/// Used assembler: "z80asm", "z88dk" or "sjasmplus" (default).
 	/// The list file is read differently. Especially the includes are handled differently.
@@ -35,6 +35,58 @@ export interface ListFile {
 	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
 	z88dkMapFile: string;
 }
+
+/**
+ * Declares one list file for one assembler type together with a few
+ * other configuration that might be assembler specific.
+ */
+export interface SjasmplusListFile {
+
+	/// The path to the list file.
+	path: string;
+
+	/// Path to the main assembler source file that was used to produce the .list file.
+	mainFile: string;
+
+	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
+	/// The path(s) here are relative to the 'rootFolder'.
+	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
+	srcDirs: Array<string>;
+}
+
+
+export interface Z80asmListFile {
+
+	/// The path to the listfile.
+	path: string;
+
+	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
+	/// The path(s) here are relative to the 'rootFolder'.
+	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
+	srcDirs: Array<string>;
+}
+
+
+export interface Z88dkListFile {
+
+	/// The path to the file.
+	path: string;
+
+	/// Path to the main assembler source file that was used to produce the .list file.
+	mainFile: string;
+
+	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
+	/// The path(s) here are relative to the 'rootFolder'.
+	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
+	srcDirs: Array<string>;
+
+	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
+	addOffset: number;
+
+	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
+	z88dkMapFile: string;
+}
+
 
 
 export interface Formatting {
@@ -177,6 +229,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The paths to the .list files.
 	listFiles: Array<ListFile>;
 
+	/// The paths to the assembler type .list files.
+	asmListFiles: Array<SjasmplusListFile|Z88dkListFile|Z80asmListFile>;
+
 	/// The paths to the .labels files.
 	//labelsFiles: Array<string>;
 
@@ -276,6 +331,7 @@ export class Settings {
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				listFiles: <any>undefined,
+				asmListFiles: <any>undefined,
 //				labelsFiles: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,

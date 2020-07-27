@@ -460,8 +460,8 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async startEmulator(): Promise<string|undefined> {
 		try {
-			// init labels
-			Labels.init();
+			// Init labels
+			Labels.init(Settings.launch.smallValuesMaximum);
 		}
 		catch (e) {
 			// Some error occurred

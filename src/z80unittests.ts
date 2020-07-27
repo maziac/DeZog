@@ -240,7 +240,7 @@ export class Z80UnitTests {
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 			//const configName: string = configuration.name;
-			const listFiles = configuration.listFiles;
+			//const listFiles = configuration.listFiles;
 
 			// Setup settings
 			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
@@ -254,7 +254,7 @@ export class Z80UnitTests {
 			Z80RegistersClass.createRegisters();
 
 			// Start emulator.
-			RemoteFactory.createRemote(Settings.launch.remoteType);
+			RemoteFactory.createRemote(configuration.remoteType);
 
 			// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
 			if (!(CpuHistory as any)) {
@@ -264,8 +264,8 @@ export class Z80UnitTests {
 			}
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-			Labels.init();
-			Remote.readListFiles(listFiles);
+			Labels.init(configuration.smallValuesMaximum);
+			Remote.readListFiles(configuration);
 
 			// Events
 			Remote.once('initialized', async () => {
@@ -503,7 +503,10 @@ export class Z80UnitTests {
 
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
-		const labels = new LabelsClass();
+		const labels=new LabelsClass();
+		// TODO: Test: getAllUnitTests()
+		labels.readListFiles(configuration);
+		/*
 		const listFiles = configuration.listFiles;
 		for(const listFile of listFiles) {
 			const file = {
@@ -516,6 +519,7 @@ export class Z80UnitTests {
 			};
 			labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
 		}
+		*/
 		return labels;
 	}
 

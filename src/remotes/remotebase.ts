@@ -5,7 +5,7 @@ import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {Settings, ListFile} from '../settings';
+import {Settings/*, ListFile*/} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
@@ -403,10 +403,13 @@ export class RemoteBase extends EventEmitter {
 	 * WPMEM, ASSERT and LOGPOINT.
 	 * Also sets WPMEM, ASSERT and LOGPOINT break/watchpoints.
 	 * May throw an error.
-	 * @param listFiles An array with all list files.
-	 * @param sources An array with directories where the source files are located.
+	 * @param configuration Contains the list files for the different assemblers
 	 */
-	public readListFiles(listFiles: Array<ListFile>) {
+	public readListFiles(configuration: any) {
+		// TODO: Integrate watchpoints etc in LabelParsers
+
+		Labels.readListFiles(configuration);
+		/*
 		// Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
 		const watchPointLines=new Array<{address: number, line: string}>();
 		const assertLines=new Array<{address: number, line: string}>();
@@ -443,24 +446,31 @@ export class RemoteBase extends EventEmitter {
 
 		// Finishes off the loading of the list and labels files
 		Labels.finish();
-
+*/
 		// calculate top of stack, execAddress
 		this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
 
 		// Set watchpoints (memory guards)
+		const watchPointLines=Labels.getWatchPointLines();
 		const watchpoints=this.createWatchPoints(watchPointLines);
 		this.setWPMEMArray(watchpoints);
+		// TODO: Test watchpoints
 
 		// ASSERTs
 		// Set assert breakpoints
+		const assertLines=Labels.getAssertLines();
 		const assertsArray=this.createAsserts(assertLines);
 		this.setASSERTArray(assertsArray);
+		// TODO: Test asserts
 
 		// LOGPOINTs
+		const logPointLines=Labels.getLogPointLines();
 		const logPointsMap=this.createLogPoints(logPointLines);
 		this.setLOGPOINTArray(logPointsMap);
+		// TODO: Test logpoints
+
 	}
 
 
@@ -1145,7 +1155,7 @@ export class RemoteBase extends EventEmitter {
 	 * Takes also the disassembled file into account.
 	 * Used e.g.for the call stack.
 	 * @param address The memory address to search for.
-	 * @returns The associated filename and line number(and for sjasmplus the modulePrefix and the lastLabel).
+	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc
