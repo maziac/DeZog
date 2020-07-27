@@ -3,38 +3,6 @@ import { Utility } from './misc/utility';
 //import * as path from 'path';
 import * as fs from 'fs';
 
-/**
- * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow
- * list files from not supported assemblers.
- */
-export interface ListFile {
-
-	/// The path to the file.
-	path: string;
-
-	/// Path to the main assembler source file that was used to produce the .list file.
-	/// For 'z80asm' the name can be extracted automatically, for 'sjasmplus' and 'z88dk'
-	/// you can provide the source file here.
-	mainFile: string;
-
-	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
-	/// The path(s) here are relative to the 'rootFolder'.
-	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
-	srcDirs: Array<string>;
-
-	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
-	filter: string|undefined;
-
-	/// Used assembler: "z80asm", "z88dk" or "sjasmplus" (default).
-	/// The list file is read differently. Especially the includes are handled differently.
-	asm: string;
-
-	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
-	addOffset: number;
-
-	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
-	z88dkMapFile: string;
-}
 
 /**
  * Declares one list file for one assembler type together with a few
@@ -226,11 +194,11 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
 	rootFolder: string;
 
-	/// The paths to the .list files.
-	listFiles: Array<ListFile>;
+	/// The paths to the .list files / assembler parameters.
+	sjasmplusListFiles: Array<SjasmplusListFile>;
+	z80asmListFiles: Array<Z80asmListFile>;
+	z88dkListFiles: Array<Z88dkListFile>;
 
-	/// The paths to the assembler type .list files.
-	asmListFiles: Array<SjasmplusListFile|Z88dkListFile|Z80asmListFile>;
 
 	/// The paths to the .labels files.
 	//labelsFiles: Array<string>;
@@ -330,8 +298,9 @@ export class Settings {
 				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
-				listFiles: <any>undefined,
-				asmListFiles: <any>undefined,
+				sjasmplusListFiles: <any>undefined,
+				z80asmListFiles: <any>undefined,
+				z88dkListFiles: <any>undefined,
 //				labelsFiles: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
@@ -438,32 +407,48 @@ export class Settings {
 		if (!Settings.launch.zxnext.socketTimeout)
 			Settings.launch.zxnext.socketTimeout=0.5;	// 0.5 secs, needs to be short to show a warning fast if debugged program is running.
 
-
-
 		if(!Settings.launch.rootFolder)
-			Settings.launch.rootFolder = rootFolder;
-		if(Settings.launch.listFiles)
-			Settings.launch.listFiles = Settings.launch.listFiles.map(fp => {
+			Settings.launch.rootFolder=rootFolder;
+
+		// sjasmplus
+		if (Settings.launch.sjasmplusListFiles) {
+			Settings.launch.sjasmplusListFiles=Settings.launch.sjasmplusListFiles.map(fp => {
 				// ListFile structure
-				const file = {
+				const file={
 					path: Utility.getAbsFilePath(fp.path),
 					mainFile: fp.mainFile,
-					srcDirs: fp.srcDirs || [""],
-					filter: fp.filter,
-					asm: fp.asm || "sjasmplus",
+					srcDirs: fp.srcDirs||[""]
+				};
+				return file;
+			});
+		}
+
+		// z80asm
+		if (Settings.launch.z80asmListFiles) {
+			Settings.launch.z80asmListFiles=Settings.launch.z80asmListFiles.map(fp => {
+				// ListFile structure
+				const file={
+					path: Utility.getAbsFilePath(fp.path),
+					srcDirs: fp.srcDirs||[""]
+				};
+				return file;
+			});
+		}
+
+		// z88dk
+		if (Settings.launch.z88dkListFiles) {
+			Settings.launch.z88dkListFiles=Settings.launch.z88dkListFiles.map(fp => {
+				// ListFile structure
+				const file={
+					path: Utility.getAbsFilePath(fp.path),
+					mainFile: fp.mainFile,
+					srcDirs: fp.srcDirs||[""],
 					addOffset: fp.addOffset||0,
 					z88dkMapFile: fp.z88dkMapFile
 				};
-				/*
-				// Add the root folder path to each.
-				const rootFolder=Settings.launch.rootFolder;
-				const srcds=file.srcDirs.map(srcPath => path.join(rootFolder, srcPath));
-				file.srcDirs = srcds;
-				*/
 				return file;
 			});
-		else
-			Settings.launch.listFiles = [];
+		}
 
 		/*
 		if(Settings.launch.labelsFiles)
@@ -623,15 +608,19 @@ export class Settings {
 		// Check remote type
 		const rType=Settings.launch.remoteType;
 		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];
-		const found = (allowedTypes.indexOf(rType) >= 0);
+		const found=(allowedTypes.indexOf(rType)>=0);
 		if (!found) {
-			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
+			throw Error("Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
 		}
 
 		// List files
-		for(let listFile of Settings.launch.listFiles) {
+		const listFiles=[
+			...Settings.launch.sjasmplusListFiles?.map(file => file.path)||[],
+			...Settings.launch.z80asmListFiles?.map(file => file.path)||[],
+			...Settings.launch.z88dkListFiles?.map(file => file.path)||[]
+		];
+		for(let path of listFiles) {
 			// Check that file exists
-			const path = listFile.path;
 			if(!fs.existsSync(path))
 				throw Error("File '" + path + "' does not exist.");
 		}

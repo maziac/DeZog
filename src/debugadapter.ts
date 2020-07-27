@@ -497,7 +497,7 @@ export class DebugSessionClass extends DebugSession {
 		// Load files
 		try {
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-			Remote.readListFiles(Settings.launch.listFiles);
+			Remote.readListFiles(Settings.launch);
 		}
 		catch (err) {
 			// Some error occurred during loading, e.g. file not found.

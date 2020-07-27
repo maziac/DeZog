@@ -24,7 +24,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: any) {
-		const fileName: string=Utility.getAbsFilePath(config.path);
+		//const fileName: string=Utility.getAbsFilePath(config.path);
+		const fileName: string=config.path;
 		const mainFileName: string|undefined=config.mainFile;
 		const sources: Array<string>=config.srcDirs;
 		const addOffset: number=config.addOffset||0;
