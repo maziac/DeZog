@@ -12,7 +12,7 @@ import {ListFileLine} from './labels';
 /**
  * This class parses sjasmplus list files.
  */
-export class Z88dkLabelParser extends LabelParserBase {
+export class Z80asmLabelParser extends LabelParserBase {
 	// Constructor.
 	//public constructor() {
 	//}
