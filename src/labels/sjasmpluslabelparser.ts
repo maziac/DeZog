@@ -5,16 +5,47 @@ import * as path from 'path';
 //import {Remote} from '../remotes/remotefactory';
 //import {LabelsClass, ListFileLine} from './labels';
 import {LabelParserBase} from './labelparserbase';
-import {ListFileLine} from './labels';
-import {readFileSync} from 'fs';
+//import {ListFileLine} from './labels';
+//import {readFileSync} from 'fs';
 
 
 /**
  * This class parses sjasmplus list files.
  */
 export class SjasmplusLabelParser extends LabelParserBase {
+
+	// sjasmplus: The format is line-number++ address opcode.
+	// sjasmplus: The "+" indicate the include level, max 3 "+"s.
+	// I.e. [0-9]+[\s+]+
+	// E.g.
+	//    5+ 0001                include "i2.inc"
+	//	  1++0001
+	//    2++0001              i2:
+	//    3++0001 00               nop
+	// sjasmplus changed the format. Note the spaces in front of the line numbers.
+	protected sjasmRegex=/^ *[0-9]+[\s+]+/;
+
+	// Regex to find labels
+	// Allow labels without ":"
+	protected labelRegex=/^.{18}(@?)([^;:\s0-9][^:;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+
+	// Check if valid line (not "~")
+	// Search for "~". E.g. "8002 ~            Level   defw 4"
+	protected invalidLineRegEx=/^[0-9a-f]+\s+\~/i;
+
+	// RegEx to find a module
+	protected matchModuleStartRegEx=/^[0-9a-f]+\s+module\s+([^\s]+)/i;
+
+	// RegEx to find module end
+	protected matchModuleEndRegEx=/^[0-9a-f]+\s+endmodule\b/i;
+
+	// Find the bytes after the address
+	protected matchBytesRegEx=/^[0-9a-f]+((\s+[0-9a-f][0-9a-f])+)/i;
+
+
 	// Constructor.
 	//public constructor() {
+	//	super();
 	//}
 
 
@@ -28,9 +59,14 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		const fileName: string=config.path;
 		const mainFileName: string|undefined=config.mainFile;
 		const sources: Array<string>=config.srcDirs;
-		const addOffset: number=config.addOffset||0;
-		const lineHandler=(address: number, line: string, lineNumber: number) => {};
+	//	const lineHandler=(address: number, line: string, lineNumber: number) => {};
 
+
+		const listFile=this.listFile;
+		this.config=config;
+		this.parseAllLabelsAndAddresses();
+
+		/*
 		/// Array that contains the list file, the associated memory addresses
 		/// for each line and the associated real filenames/line numbers, module and lastLabel prefixes.
 		const listFile=new Array<ListFileLine>();
@@ -76,8 +112,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 				const value=parseInt(valString, 16);
 				// Label
 				const label=line.substr(9).trim();
-				// Label: add to label array
-				this.numberForLabel.set(label, value);
 				// Add label
 				this.addLabelForNumber(value, label);
 				continue;
@@ -102,19 +136,13 @@ export class SjasmplusLabelParser extends LabelParserBase {
 				continue;	// Skip line.
 
 			// Extract address.
-			const readAddress=parseInt(line.substr(0, 4), 16);
-			let address=readAddress+addOffset;
+			let address=parseInt(line.substr(0, 4), 16);
 			if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
 				// compare with previous to find wrap around (if any)
 
 				// 17.2.2020: I disabled this check now because of issue "Debugging with source files is impossible when there are ORGs with non-increasing addresses", https://github.com/maziac/DeZog/issues/8.
 				// I can't remember what the use of this was. Could be that it was not for sjasmplus.
-				/*
-				if(address < prev) {
-					base += 0x10000;
-					address += 0x10000;
-				}
-				*/
+
 
 				// Check for MODULE
 				var matchModuleStart=/^[0-9a-f]+\s+module\s+([^\s]+)/i.exec(line);
@@ -173,7 +201,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 								// Evaluate
 								const value=Utility.evalExpression(valueString, false);
 								//const entry = { value, file: fileName, line: lineNr};
-								this.numberForLabel.set(label, value);
 								// Add label
 								this.addLabelForNumber(value, label);
 							}
@@ -181,8 +208,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 						}
 					}
 					else {
-						// Label: add to label array
-						this.numberForLabel.set(label, address);
 						// Add label
 						this.addLabelForNumber(address, label);
 					}
@@ -225,6 +250,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			//prev = address
 			lineNumber++;
 		}  // for listLines
+		*/
 
 		// TODO: Try to separate the rest in different functions:
 
@@ -319,8 +345,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			// Get line number
 			const matchLineNumber=/^\s*([0-9]+)[\s\+]+(.*)/.exec(line);
 			if (!matchLineNumber)
-				continue;	// z88dk contains lines without line number.
-			lineNumber=parseInt(matchLineNumber[1]);
+				continue;	// sjasmplus contains lines without line number.
+			const lineNumber=parseInt(matchLineNumber[1]);
 
 			// Check for start of include file (sjasmplus and z88dk)
 			const remainingLine=matchLineNumber[2];
@@ -380,5 +406,169 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 	}
 
+
+	/// Will be set to true when the Lstlab section in the list file is reached.
+	protected sjasmplusLstlabSection=false;
+
+	/// Used for found MODULEs
+	protected labelPrefix;
+
+	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
+	protected labelPrefixStack=new Array<string>();	// Only used for sjasmplus
+	protected lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
+
+	/**
+	 * Parses one line for label and address.
+	 * Finds labels at start of the line and labels as EQUs.
+	 * Also finds the address of the line.
+	 * The function calls addLabelForNumber to add a label or equ and
+	 * addAddressLine to add the line and it's address.
+	 * @param line The current analyzed line of the list file.
+	 */
+	protected parseLabelAndAddress(line: string) {
+		let countBytes=1;
+
+		// In sjasmplus labels section?
+		if (this.sjasmplusLstlabSection) {
+			// Format is (no tabs, only spaces, 'X'=used, without X the label is not used):
+			// 0x60DA X TestSuite_ClearScreen.UT_clear_screen
+			// 0x0008   BLUE
+			if (!line.startsWith('0x'))
+				return;
+			// Get hex value
+			const valString=line.substr(2, 4);
+			const value=parseInt(valString, 16);
+			// Label
+			const label=line.substr(9).trim();
+			// Add label
+			this.addLabelForNumber(value, label);
+			return;
+		}
+
+		// Check for sjasmplus "--lstlab" section
+		if (line.startsWith("Value")) {
+			// The end of the sjasmplus list file has been reached
+			// where the labels start.
+			this.sjasmplusLstlabSection=true;
+			return;
+		}
+
+		// Replace line number with empty string.
+		line=line.replace(this.sjasmRegex, '');
+
+		// Check if valid line (not "~")
+		// Search for "~". E.g. "8002 ~            Level   defw 4"
+		const invalidMatch=this.invalidLineRegEx.exec(line);
+		if (invalidMatch)
+			return;	// Skip line.
+
+		// Extract address.
+		const address=parseInt(line.substr(0, 4), 16);
+		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
+			// compare with previous to find wrap around (if any)
+
+			// 17.2.2020: I disabled this check now because of issue "Debugging with source files is impossible when there are ORGs with non-increasing addresses", https://github.com/maziac/DeZog/issues/8.
+			// I can't remember what the use of this was. Could be that it was not for sjasmplus.
+			/*
+			if(address < prev) {
+				base += 0x10000;
+				address += 0x10000;
+			}
+			*/
+
+			// Check for MODULE
+			var matchModuleStart=this.matchModuleStartRegEx.exec(line);
+			if (matchModuleStart) {
+				const moduleName=matchModuleStart[1];
+				this.labelPrefixStack.push(moduleName);
+				this.labelPrefix=this.labelPrefixStack.join('.')+'.';
+				// Init last label
+				this.lastLabel=undefined;
+			}
+			else {
+				// End
+				var matchModuleEnd=this.matchModuleEndRegEx.exec(line);
+				if (matchModuleEnd) {
+					// Remove last prefix
+					this.labelPrefixStack.pop();
+					if (this.labelPrefixStack.length>0)
+						this.labelPrefix=this.labelPrefixStack.join('.')+'.';
+					else
+						this.labelPrefix=undefined;
+					// Forget last label
+					this.lastLabel=undefined;
+				}
+			}
+
+			// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+			const match=this.labelRegex.exec(line);
+			if (match) {
+				let label=match[2];
+				if (label.startsWith('.')) {
+					// local label
+					if (this.lastLabel) // Add Last label
+						label=this.lastLabel+label;
+				}
+				else {
+					// Remember last label (for local labels)
+					this.lastLabel=label;
+				}
+				const global=match[1];
+				if (global==''&&this.labelPrefix)
+					label=this.labelPrefix+label;	// Add prefix if not global (only sjasmplus)
+				const equ=match[3];
+				if (equ) {
+					if (equ.toLowerCase().startsWith('equ')) {
+						// EQU: add to label array
+						let valueString=match[4];
+						// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+						try {
+							// Check for any '$', i.e. current address
+							if (valueString.indexOf('$')>=0) {
+								// Replace $ with current address
+								const addressString=address.toString();
+								const cAddrString=valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+								valueString=cAddrString;
+							}
+							// Evaluate
+							const value=Utility.evalExpression(valueString, false);
+							//const entry = { value, file: fileName, line: lineNr};
+							// Add label
+							this.addLabelForNumber(value, label);
+						}
+						catch {};	// do nothing in case of an error
+					}
+				}
+				else {
+					// Add label
+					this.addLabelForNumber(address, label);
+				}
+			}
+
+			// Search for bytes after the address:
+			//line = "80F1 D5 C5";
+			const matchBytes=this.matchBytesRegEx.exec(line);
+			//const matchBytes = /^[0-9a-f]+\s+(([0-9a-f][0-9a-f]\s)+|([0-9a-f][0-9a-f])+)/i.exec(line);
+			// Count how many bytes are included in the line.
+			if (matchBytes) {
+				const bytes=matchBytes[1].trim();
+				const lenBytes=bytes.length;
+				countBytes=0;
+				for (let k=0; k<lenBytes; k++) {
+					// Count all characters (chars are hex, so 2 characters equal to 1 byte)
+					if (bytes.charCodeAt(k)>32)
+						countBytes++;
+				}
+				// 2 characters = 1 byte
+				countBytes/=2;
+			}
+		}
+
+		// TODO: Need to check what happens if address isNaN
+		// Store address (or several addresses for one line)
+		this.addAddressLine(address, countBytes, line, this.lastLabel, this.labelPrefix);
+	}
+
 }
+
 

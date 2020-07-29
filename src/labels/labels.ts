@@ -112,6 +112,10 @@ export class LabelsClass {
 		this.lineArrays.clear();
 		this.labelsForNumber.length=0;
 		this.numberForLabel.clear();
+		this.labelLocations.clear();
+		this.watchPointLines.length=0;
+		this.assertLines.length=0;
+		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
 	}
 

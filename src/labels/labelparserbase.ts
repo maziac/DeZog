@@ -1,11 +1,12 @@
-//import {readFileSync} from 'fs';
-//import {Utility} from '../misc/utility';
+import {readFileSync} from 'fs';
+import {Utility} from '../misc/utility';
 //import {Settings} from '../settings';
 //import * as path from 'path';
 //import {Remote} from '../remotes/remotefactory';
 //import {LabelsClass, ListFileLine, SourceFileEntry} from './labels';
-import {SourceFileEntry /*, ListFileLine*/} from './labels';
-import {Utility} from '../misc/utility';
+import {SourceFileEntry, /*, ListFileLine*/
+ListFileLine} from './labels';
+//import {Utility} from '../misc/utility';
 //import {readFileSync} from 'fs';
 
 
@@ -42,6 +43,12 @@ export class LabelParserBase {
 	protected logPointLines: Array<{address: number, line: string}>;
 
 
+	/// The config structure is stored here.
+	protected config: any;
+
+	/// Array used temporary. Holds the converted list file.
+	protected listFile=new Array<ListFileLine>();
+
 
 	// Constructor.
 	public constructor(
@@ -70,16 +77,61 @@ export class LabelParserBase {
 	 * Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
-	 * Fills listLines and listPCs.
 	 */
 	public loadAsmListFile(config: any) {
-		Utility.assert(false, "Overwrite loadAsmListFile");
+		this.config=config;
+		//Utility.assert(false, "Override loadAsmListFile");
+
+		// Phase 1: Parse for labels and addresses
+		this.parseAllLabelsAndAddresses();
+
+		// Check for watchpoints, asserts and logpoints
+		// TODO: parse the this.listFile
+
+		// Check if Listfile-Mode
+		if (config.srcDirs.length==0) {
+			// Listfile-Mode
+
+		}
+
+		// Phase 2: Parse for source files
+
+
+		// Finish: Create fileLineNrs, lineArrays and labelLocations
+
+	}
+
+
+	/**
+	 * Loops all lines of the ist file and parses for labels and the addresses
+	 * for each line.
+	 */
+	protected parseAllLabelsAndAddresses() {
+		const listLines=readFileSync(this.config.path).toString().split('\n');
+		for (const line of listLines) {
+			this.parseLabelAndAddress(line);
+		}
+	}
+
+
+	/**
+	 * Override.
+	 * Parses one line for label and address.
+	 * Finds labels at start of the line and labels as EQUs.
+	 * Also finds the address of the line.
+	 * The function calls addLabelForNumber to add a label or equ and
+	 * addAddressLine to add the line and it's address.
+	 * @param line The current analyzed line of the list file.
+	 */
+	protected parseLabelAndAddress(line: string) {
+		Utility.assert(false, "Override parseLabelAndAddress");
 	}
 
 
 	/**
 	 * Adds a new label to the LabelsForNumber array.
 	 * Creates a new array if required.
+	 * Adds the the label/value pair also to the numberForLabelMap.
 	 * @param value The value for which a new label is to be set.
 	 * @param label The label to add.
 	 */
@@ -87,6 +139,9 @@ export class LabelParserBase {
 		// Safety check
 		if (value<0||value>=0x10000)
 			return;
+
+		// Label: add to label array
+		this.numberForLabel.set(label, value);
 
 		// Add label
 		let labelsArray=this.labelsForNumber[value];
@@ -103,6 +158,27 @@ export class LabelParserBase {
 
 		// Add new label
 		labelsArray.push(label);
+	}
+
+
+	/**
+	 * Adds the address to the list file array.
+	 * Together with the line and the last label string.
+	 * @param address The address of the line. Could be NaN (undefined?)
+	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
+	 * @param line The original line contents.
+	 * @param lastLabel Contains the last found label (of a previous line) or undefined
+	 * @param modulePrefix The prefix for the label. If the assembler supports modules it can be
+	 * added here to the label. Otherwise pass undefined.
+	 */
+	protected addAddressLine(address: number, size: number, line: string, lastLabel: string, modulePrefix?: string) {
+		// Add whole size to list file array.
+		for (let k=0; k<size; k++) {
+			const entry={fileName: '', lineNr: -1-k, addr: address, line: line, modulePrefix: modulePrefix, lastLabel: lastLabel};
+			if (address!=undefined)
+				address++;
+			this.listFile.push(entry)
+		}
 	}
 
 

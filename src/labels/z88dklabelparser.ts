@@ -105,7 +105,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 								// Evaluate
 								const value=Utility.evalExpression(valueString, false);
 								//const entry = { value, file: fileName, line: lineNr};
-								this.numberForLabel.set(label, value);
 								// Add label
 								this.addLabelForNumber(value, label);
 							}
@@ -121,8 +120,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 							z88dkMapOffset=realAddress-readAddress;
 							address=realAddress;
 						}
-						// Label: add to label array
-						this.numberForLabel.set(label, address);
 						// Add label
 						this.addLabelForNumber(address, label);
 					}

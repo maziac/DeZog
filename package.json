@@ -354,7 +354,6 @@
 								"type": "string",
 								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}."
 							},
-
 							"sjasmplusListFiles": {
 								"type": "array",
 								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
@@ -384,8 +383,6 @@
 									}
 								}
 							},
-
-
 							"z80asmListFiles": {
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
@@ -406,8 +403,6 @@
 									}
 								}
 							},
-
-
 							"z88dkListFiles": {
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
@@ -443,8 +438,6 @@
 									}
 								}
 							},
-
-
 							"listFiles": {
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
@@ -673,7 +666,6 @@
 						}
 					}
 				},
-
 				"configurationSnippets": [
 					{
 						"label": "DeZog: Launch",

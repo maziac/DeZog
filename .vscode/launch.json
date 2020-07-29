@@ -61,14 +61,17 @@
 			"request": "launch",
 			"name": "Tests",
 			"cwd": "${workspaceFolder}",
-			"program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+			"program": "${workspaceFolder}/node_modules/mocha/bin/mocha",
 			"args": [
 				"-u", "tdd",
 				"--timeout", "999999",
 				"--colors",
-				"./out/tests/"
+				"./out/tests/**/*.js"
 			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"sourceMaps": true,
 			"internalConsoleOptions": "openOnSessionStart"
 		}
 	],
