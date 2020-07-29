@@ -29,6 +29,7 @@ export interface SourceFileEntry {
 export interface ListFileLine extends SourceFileEntry {
 	addr: number;		/// The corresponding address from the list file
 	line: string;		/// The text of the line of the list file
+	listFileLineNr: number;	/// the line number in the list file
 }
 
 

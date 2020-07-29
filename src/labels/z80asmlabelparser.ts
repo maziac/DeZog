@@ -119,13 +119,13 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 				// Store address (or several addresses for one line)
 				for (let k=0; k<countBytes; k++) {
-					const entry ={fileName: '', lineNr: -1-k, addr: address+k, line: origLine, lastLabel};
+					const entry={fileName: '', listFileLineNr: 0, lineNr: -1-k, addr: address+k, line: origLine, lastLabel};	// listFileLineNr: need to be added.
 					listFile.push(entry)
 				}
 			}
 			else {
 				// Store
-				const entry={fileName: '', lineNr: -1, addr: address, line: origLine, lastLabel};
+				const entry={fileName: '', listFileLineNr: 0, lineNr: -1, addr: address, line: origLine, lastLabel};	// listFileLineNr: need to be added.
 				listFile.push(entry)
 			}
 

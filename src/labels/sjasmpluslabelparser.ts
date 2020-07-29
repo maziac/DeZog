@@ -62,7 +62,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	//	const lineHandler=(address: number, line: string, lineNumber: number) => {};
 
 
-		const listFile=this.listFile;
+		//const listFile=this.listFile;
 		this.config=config;
 		this.parseAllLabelsAndAddresses();
 
@@ -317,10 +317,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		const absFName=Utility.getAbsSourceFilePath(fName, sources);
 		const relFileName=Utility.getRelFilePath(absFName);
 		stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
-		for (var lineNr=0; lineNr<listFile.length; lineNr++) {
-			const line=listFile[lineNr].line;
-			if (line.length==0)
-				continue;
+		for (const entry of this.listFile) {
+			const line=entry.line;
 
 			// Check for text '# file closed'
 			// Check for end of include file
@@ -354,8 +352,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			}
 
 			// Associate with right file
-			listFile[lineNr].fileName=stack[index].fileName;
-			listFile[lineNr].lineNr=(index==0&&!mainFileName)? lineNr:lineNumber-1;
+			entry.fileName=stack[index].fileName;
+			entry.lineNr=(index==0&&!mainFileName)? entry.listFileLineNr:lineNumber-1;
 		}
 
 
@@ -532,8 +530,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			}
 		}
 
-		// TODO: Need to check what happens if address isNaN
-		// Store address (or several addresses for one line)
+		// Store address (or several addresses for one line).
+		// This needs to be called even if address is undefined.
 		this.addAddressLine(address, countBytes, origLine);
 	}
 

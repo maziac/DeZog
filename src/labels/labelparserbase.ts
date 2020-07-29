@@ -59,15 +59,18 @@ export class LabelParserBase {
 
 
 	/// Used for found MODULEs
-	protected modulePrefix;
+	protected modulePrefix: string;
 
 	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
 	protected modulePrefixStack=new Array<string>();	// Only used for sjasmplus
-	protected lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
+	protected lastLabel: string;		// Only used for sjasmplus for local labels (without labelPrefix)
 
 	/// The separator used for local labels and modules.
 	/// Normally a dot, but could also be defined otherwise.
 	protected labelSeparator = '.';
+
+	/// During looping thorugh the list file this vairable holds the current line number starting at 0.
+	protected currentListFileNumber: number;
 
 
 	// Constructor.
@@ -129,8 +132,10 @@ export class LabelParserBase {
 	 */
 	protected parseAllLabelsAndAddresses() {
 		const listLines=readFileSync(this.config.path).toString().split('\n');
+		this.currentListFileNumber=0;
 		for (const line of listLines) {
 			this.parseLabelAndAddress(line);
+			this.currentListFileNumber++;
 		}
 	}
 
@@ -162,23 +167,14 @@ export class LabelParserBase {
 		const relFileName=Utility.getRelFilePath(this.config.path);
 		const lineArray=new Array<number>();
 		this.lineArrays.set(relFileName, lineArray);
-		const listLength=this.listFile.length;
-		let realLineNr=-1;	// z88dk/sjasmplus sometimes suppresses line numbers, therefore do own counting
-		for (var lineNr=0; lineNr<listLength; lineNr++) {
-			const entry=this.listFile[lineNr];
-			if (isNaN(entry.addr)) {
-				realLineNr++;
-				continue;
-			}
-			if (entry.lineNr==-1)
-				realLineNr++;
+		for (const entry of this.listFile) {
 			entry.fileName=relFileName;
-			entry.lineNr=realLineNr;
-			this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: realLineNr});
+			entry.lineNr=entry.listFileLineNr;
+			this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: entry.lineNr});
 
 			// Set address
-			if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
-				lineArray[realLineNr]=entry.addr;
+			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
+				lineArray[entry.lineNr]=entry.addr;
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
@@ -259,7 +255,7 @@ export class LabelParserBase {
 		this.modulePrefixStack.push(moduleName);
 		this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
 		// Init last label
-		this.lastLabel=undefined;
+		this.lastLabel=undefined as any;
 	}
 
 
@@ -272,9 +268,9 @@ export class LabelParserBase {
 		if (this.modulePrefixStack.length>0)
 			this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
 		else
-			this.modulePrefix=undefined;
+			this.modulePrefix=undefined as any;
 		// Forget last label
-		this.lastLabel=undefined;
+		this.lastLabel=undefined as any;
 	}
 
 
@@ -335,18 +331,20 @@ export class LabelParserBase {
 	/**
 	 * Adds the address to the list file array.
 	 * Together with the line and the last label string.
-	 * @param address The address of the line. Could be NaN (undefined?)
+	 * @param address The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
+	 * Has to be 1 if address is undefined.
 	 * @param line The original line contents.
 	 */
 	protected addAddressLine(address: number, size: number, line: string) {
 		// Add whole size to list file array.
 		for (let k=0; k<size; k++) {
-			const entry={fileName: '', lineNr: -1-k, addr: address, line: line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
+			const entry={fileName: '', listFileLineNr: this.currentListFileNumber, lineNr: -1-k, addr: address, line: line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			if (address!=undefined)
 				address++;
 			this.listFile.push(entry)
 		}
+
 	}
 
 
