@@ -4,7 +4,7 @@ import {Utility} from '../misc/utility';
 import * as path from 'path';
 //import {Remote} from '../remotes/remotefactory';
 //import {LabelsClass, ListFileLine} from './labels';
-import {LabelParserBase} from './labelparserbase';
+import {LabelParserBase, LabelType} from './labelparserbase';
 //import {ListFileLine} from './labels';
 //import {readFileSync} from 'fs';
 
@@ -259,6 +259,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		 * a) get file name and file line number from list-file line number
 		 * b) get list-file line number from file name and file line number
 		 */
+		/*
 		if (sources.length==0) {
 			// Use list file directly instead of real filenames.
 			const relFileName=Utility.getRelFilePath(fileName);
@@ -286,7 +287,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			}
 			return;
 		}
-
+		*/
 
 		// sjasmplus (since v1.11.0):
 		// Starts with spaces and the line numbers (plus pluses) of the include file.
@@ -301,14 +302,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		//  333+ 004B
 		//  # file closed: src//zxnext/zxnext_regs.inc
 		//   40  004B
-		//
-		// z88dk:
-		// Starts with the line numbers of the include file.
-		// 3     0000
-		// 4     0000              include "constants.inc"
-		// 1     0000              ; Constant definitions.
-		// 2     0000
-		// 3     0000              ; Printing text
 		//
 		// Note:
 		// a) the text "include" is used as indication that a new include
@@ -370,6 +363,9 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		// a) fileLineNrs: a map with all addresses and the associated filename/lineNr
 		// b) lineArrays: a map of arrays with key=filename+lineNr and value=address
 		// c) labelLocations: A map with key=full label and value=filename/line number.
+
+		this.sourcesModeFinish();
+/*
 		for (const entry of listFile) {
 			if (entry.fileName.length==0)
 				continue;	// Skip lines with no filename (e.g. '# End of file')
@@ -403,19 +399,13 @@ export class SjasmplusLabelParser extends LabelParserBase {
 				//console.log('filename='+entry.fileName+', lineNr='+entry.lineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
+*/
 
 	}
 
 
 	/// Will be set to true when the Lstlab section in the list file is reached.
 	protected sjasmplusLstlabSection=false;
-
-	/// Used for found MODULEs
-	protected labelPrefix;
-
-	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
-	protected labelPrefixStack=new Array<string>();	// Only used for sjasmplus
-	protected lastLabel;		// Only used for sjasmplus for local labels (without labelPrefix)
 
 	/**
 	 * Parses one line for label and address.
@@ -426,6 +416,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	 * @param line The current analyzed line of the list file.
 	 */
 	protected parseLabelAndAddress(line: string) {
+		const origLine=line;
 		let countBytes=1;
 
 		// In sjasmplus labels section?
@@ -441,7 +432,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			// Label
 			const label=line.substr(9).trim();
 			// Add label
-			this.addLabelForNumber(value, label);
+			this.addLabelForNumber(value, label, LabelType.GLOBAL);	// Full labels
 			return;
 		}
 
@@ -465,38 +456,19 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		// Extract address.
 		const address=parseInt(line.substr(0, 4), 16);
 		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
-			// compare with previous to find wrap around (if any)
-
-			// 17.2.2020: I disabled this check now because of issue "Debugging with source files is impossible when there are ORGs with non-increasing addresses", https://github.com/maziac/DeZog/issues/8.
-			// I can't remember what the use of this was. Could be that it was not for sjasmplus.
-			/*
-			if(address < prev) {
-				base += 0x10000;
-				address += 0x10000;
-			}
-			*/
-
 			// Check for MODULE
 			var matchModuleStart=this.matchModuleStartRegEx.exec(line);
 			if (matchModuleStart) {
+				// Push module to stack
 				const moduleName=matchModuleStart[1];
-				this.labelPrefixStack.push(moduleName);
-				this.labelPrefix=this.labelPrefixStack.join('.')+'.';
-				// Init last label
-				this.lastLabel=undefined;
+				this.moduleStart(moduleName);
 			}
 			else {
 				// End
 				var matchModuleEnd=this.matchModuleEndRegEx.exec(line);
 				if (matchModuleEnd) {
-					// Remove last prefix
-					this.labelPrefixStack.pop();
-					if (this.labelPrefixStack.length>0)
-						this.labelPrefix=this.labelPrefixStack.join('.')+'.';
-					else
-						this.labelPrefix=undefined;
-					// Forget last label
-					this.lastLabel=undefined;
+					// Remove module from stack
+					this.moduleEnd();
 				}
 			}
 
@@ -504,18 +476,14 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			const match=this.labelRegex.exec(line);
 			if (match) {
 				let label=match[2];
-				if (label.startsWith('.')) {
-					// local label
-					if (this.lastLabel) // Add Last label
-						label=this.lastLabel+label;
-				}
-				else {
-					// Remember last label (for local labels)
-					this.lastLabel=label;
-				}
+				let labelType=LabelType.NORMAL;
+				// Check for local label
+				if (label.startsWith('.'))
+					labelType=LabelType.LOCAL;
+				// Check for global label
 				const global=match[1];
-				if (global==''&&this.labelPrefix)
-					label=this.labelPrefix+label;	// Add prefix if not global (only sjasmplus)
+				if (global!='')
+					labelType=LabelType.GLOBAL;
 				const equ=match[3];
 				if (equ) {
 					if (equ.toLowerCase().startsWith('equ')) {
@@ -534,14 +502,14 @@ export class SjasmplusLabelParser extends LabelParserBase {
 							const value=Utility.evalExpression(valueString, false);
 							//const entry = { value, file: fileName, line: lineNr};
 							// Add label
-							this.addLabelForNumber(value, label);
+							this.addLabelForNumber(value, label, labelType);
 						}
 						catch {};	// do nothing in case of an error
 					}
 				}
 				else {
 					// Add label
-					this.addLabelForNumber(address, label);
+					this.addLabelForNumber(address, label, labelType);
 				}
 			}
 
@@ -566,7 +534,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 		// TODO: Need to check what happens if address isNaN
 		// Store address (or several addresses for one line)
-		this.addAddressLine(address, countBytes, line, this.lastLabel, this.labelPrefix);
+		this.addAddressLine(address, countBytes, origLine);
 	}
 
 }
