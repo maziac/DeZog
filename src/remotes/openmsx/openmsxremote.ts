@@ -11,6 +11,14 @@ import {DecodeOpenMSXRegisters} from './decodeopenmsxdata';
 import {Utility} from '../../misc/utility';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint, MemoryBank } from '../remotebase';
+import {htonl,ntohl} from 'network-byte-order';
+
+import * as NES from 'node-expose-sspi-strict';
+
+let nes: typeof NES;
+if (os.platform()=="win32") {
+	nes = require ('node-expose-sspi-strict');
+}
 
 export class OpenMSXRemote extends RemoteBase {
 	openmsx:net.Socket;
@@ -140,6 +148,91 @@ export class OpenMSXRemote extends RemoteBase {
           });
         });
 	}
+	async waitResponse () : Promise <ArrayBuffer> {
+        return new Promise <ArrayBuffer> ( async (resolve,reject) => {
+            this.openmsx.once ('readable', () => {
+                let buflen:Buffer;
+                while (null == (buflen = this.openmsx.read(4))) {};
+                let len:number = ntohl (buflen,0);
+                let chunk:Buffer;
+                while (null == (chunk = this.openmsx.read(len))) {};
+                if (len!=chunk.byteLength)
+                    reject (new Error (`Not the expected length ${len}:${chunk.byteLength}`));
+                resolve (chunk.buffer.slice (chunk.byteOffset,chunk.byteOffset+chunk.byteLength));
+            });
+        })
+    }
+	async perform_auth () : Promise <boolean> {
+        return new Promise <boolean> ( async (resolve,reject) => {
+
+            const credInput = {
+                packageName: 'Negotiate',
+                credentialUse: 'SECPKG_CRED_OUTBOUND' as NES.CredentialUseFlag,
+            } as NES.AcquireCredHandleInput;
+
+            const clientCred = nes.sspi.AcquireCredentialsHandle(credInput);
+            const packageInfo = nes.sspi.QuerySecurityPackageInfo("Negotiate");
+
+            ///////////////////////////////////////////////
+            // CHALLENGE
+            var input:NES.InitializeSecurityContextInput = {
+                credential: clientCred.credential,
+                targetName: "",
+                cbMaxToken: packageInfo.cbMaxToken
+            };
+            let clientSecurityContext = nes.sspi.InitializeSecurityContext(input);
+            if (clientSecurityContext.SECURITY_STATUS !== 'SEC_I_CONTINUE_NEEDED') {
+                throw new Error ("Authentication error");
+            }
+            let len:number = clientSecurityContext.SecBufferDesc.buffers[0].byteLength;
+            var blen:Uint8Array = new Uint8Array (4);
+            htonl (blen,0,len);
+            let buffer:Uint8Array = new Uint8Array (clientSecurityContext.SecBufferDesc.buffers[0]);
+
+            this.openmsx.write (blen);
+            this.openmsx.write (buffer);
+            let response:ArrayBuffer;
+            try {
+                response = await this.waitResponse ();
+            } catch (error) {
+				reject (error);
+				return;
+            }
+
+            ////////////////////////////////////////////////
+            // RESPONSE
+            input = {
+                credential: clientCred.credential,
+                targetName: "",
+                serverSecurityContext: {
+                  SecBufferDesc: {
+                    ulVersion: 0,
+                    buffers: [response],
+                  },
+                },
+                cbMaxToken: packageInfo.cbMaxToken,
+                contextHandle: clientSecurityContext.contextHandle,
+                targetDataRep: 'SECURITY_NETWORK_DREP',
+            };
+            clientSecurityContext = nes.sspi.InitializeSecurityContext(input);
+
+            len = clientSecurityContext.SecBufferDesc.buffers[0].byteLength;
+            var blen:Uint8Array = new Uint8Array (4);
+            htonl (blen,0,len);
+            buffer = new Uint8Array (clientSecurityContext.SecBufferDesc.buffers[0]);
+
+            this.openmsx.write (blen);
+            this.openmsx.write (buffer);
+            try {
+                response = await this.waitResponse ();
+            } catch (error) {
+				reject (error);
+				return;
+            }
+
+            resolve (true);
+        });
+	}
 
 	/// Initializes the machine.
 	public async doInitialization(): Promise<void> {
@@ -165,9 +258,13 @@ export class OpenMSXRemote extends RemoteBase {
 			this.emit('log', "Closed the connection to OpenMSX");
         })
         this.openmsx.on ('data', data => {
-			console.log (data.toString());
+			//console.log (data.toString());
 			this.handleOpenMSXResponse (data);
         });
+
+		if (os.platform()=="win32") {
+			await this.perform_auth ();
+		}
 
 		await this.perform_awake ("<openmsx-control>");
 		//await this.receive_response ();

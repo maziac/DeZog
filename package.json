@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.3.4",
+	"version": "1.3.5",
 	"publisher": "S0urceror",
 	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
 	"author": {
@@ -42,12 +42,17 @@
 	},
 	"files": [],
 	"dependencies": {
+		"@types/debug": "^4.1.5",
+		"@types/http-errors": "^1.8.0",
+		"@types/node-fetch": "^2.5.7",
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.3",
 		"gif-writer": "^0.9.3",
 		"glob": "^7.1.6",
 		"jsonc-parser": "^2.3.0",
 		"mocha": "^7.2.0",
+		"network-byte-order": "^0.2.0",
+		"node-expose-sspi-strict": "^0.1.1",
 		"node-gzip": "^1.1.2",
 		"rng": "^0.2.2",
 		"ts-node": "^8.10.2",
