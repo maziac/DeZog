@@ -38,6 +38,8 @@ export class LabelParserBase {
 	protected numberForLabel: Map<string, number>;
 
 	/// Map with label / file location association.
+	/// Does not store local labels.
+	/// Is used only for unit tests.
 	protected labelLocations: Map<string, {file: string, lineNr: number}>;
 
 
@@ -63,7 +65,7 @@ export class LabelParserBase {
 
 	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
 	protected modulePrefixStack=new Array<string>();	// Only used for sjasmplus
-	protected lastLabel: string;		// Only used for sjasmplus for local labels (without labelPrefix)
+	protected lastLabel: string;		// Only used for sjasmplus for local labels (without modulePrefix)
 
 	/// The separator used for local labels and modules.
 	/// Normally a dot, but could also be defined otherwise.

@@ -76,20 +76,10 @@ suite('Labels (sjasmplus)', () => {
 				assert.equal(fname, res.file);
 				assert.equal(69-1, res.lineNr);	// line number starts at 0
 
-				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid.local')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(70-1, res.lineNr);	// line number starts at 0
-
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
 				assert.equal(75-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.fab_label1.local')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(76-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
@@ -157,7 +147,6 @@ suite('Labels (sjasmplus)', () => {
 		suite('Sources-Mode', () => {
 
 			test('Labels location', () => {
-				// TODO: Test does not work if 'Labels location - ListFile-Mode' is run before.
 				// Read the list file
 				const config={
 					sjasmplusListFiles: [{
@@ -189,24 +178,10 @@ suite('Labels (sjasmplus)', () => {
 				assert.equal('filea.asm', res.file);
 				assert.equal(9-1, res.lineNr);	// line number starts at 0
 
-				// TODO: does not work
-				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid.local')!;
-				assert.notEqual(undefined, res);
-				assert.equal('filea.asm', res.file);
-				assert.equal(10-1, res.lineNr);	// line number starts at 0
-
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(2-1, res.lineNr);	// line number starts at 0
-
-				// TODO: does not work
-				res=Labels.getLocationOfLabel('modfilea.fab_label1.local')!;
-				/*
-				assert.notEqual(undefined, res);
-				assert.equal('filea_b.asm', res.file);
-				assert.equal(3-1, res.lineNr);	// line number starts at 0
-				*/
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
