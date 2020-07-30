@@ -259,8 +259,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		 * a) get file name and file line number from list-file line number
 		 * b) get list-file line number from file name and file line number
 		 */
-		/*
 		if (sources.length==0) {
+		/*
 			// Use list file directly instead of real filenames.
 			const relFileName=Utility.getRelFilePath(fileName);
 			const lineArray=new Array<number>();
@@ -285,9 +285,10 @@ export class SjasmplusLabelParser extends LabelParserBase {
 					//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 				}
 			}
+		*/
+			this.listFileModeFinish();
 			return;
 		}
-		*/
 
 		// sjasmplus (since v1.11.0):
 		// Starts with spaces and the line numbers (plus pluses) of the include file.
@@ -317,7 +318,9 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		const absFName=Utility.getAbsSourceFilePath(fName, sources);
 		const relFileName=Utility.getRelFilePath(absFName);
 		stack.push({fileName: relFileName, lineNr: 0});	// Unfortunately the name of the main asm file cannot be determined, so use the list file instead.
+		let lineNr=-1;
 		for (const entry of this.listFile) {
+			lineNr++;
 			const line=entry.line;
 
 			// Check for text '# file closed'
@@ -353,7 +356,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 			// Associate with right file
 			entry.fileName=stack[index].fileName;
-			entry.lineNr=(index==0&&!mainFileName)? entry.listFileLineNr:lineNumber-1;
+			entry.lineNr=(index==0&&!mainFileName)? lineNr:lineNumber-1;
 		}
 
 
@@ -414,8 +417,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	 * @param line The current analyzed line of the list file.
 	 */
 	protected parseLabelAndAddress(line: string) {
-		const origLine=line;
-		let countBytes=1;
+		let countBytes=0;
 
 		// In sjasmplus labels section?
 		if (this.sjasmplusLstlabSection) {
@@ -532,7 +534,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		this.addAddressLine(address, countBytes, origLine);
+		this.addAddressLine(address, countBytes);
 	}
 
 }

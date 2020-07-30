@@ -73,7 +73,7 @@ suite('Labels (sjasmplus)', () => {
 				Labels.readListFiles(config);
 
 				//const res=Labels.getFileAndLineForAddress(0x8000);
-				// TODO: Sollte 15 sein, ist aber 13.
+				// TODO: Sollte 16 sein, ist aber 16.
 
 				// Compare all addresses
 				const count=listFile.length;
@@ -81,7 +81,7 @@ suite('Labels (sjasmplus)', () => {
 				for (let lineNr=count-1; lineNr>=0; lineNr--) {
 					const line=listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match=/^\s*[0-9]+\s+([0-9a-f]+)/i.exec(line);
+					const match=/^\s*[0-9+]+\s+([0-9a-f]+\s[0-9a-f]+)/i.exec(line);
 					if (!match)
 						continue;
 					// Valid address line

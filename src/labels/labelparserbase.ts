@@ -69,8 +69,8 @@ export class LabelParserBase {
 	/// Normally a dot, but could also be defined otherwise.
 	protected labelSeparator = '.';
 
-	/// During looping thorugh the list file this vairable holds the current line number starting at 0.
-	protected currentListFileNumber: number;
+	/// Holds the list file entry for the current line.
+	protected currentFileEntry: ListFileLine;
 
 
 	// Constructor.
@@ -132,10 +132,12 @@ export class LabelParserBase {
 	 */
 	protected parseAllLabelsAndAddresses() {
 		const listLines=readFileSync(this.config.path).toString().split('\n');
-		this.currentListFileNumber=0;
 		for (const line of listLines) {
+			// Prepare an entry
+			this.currentFileEntry={fileName: '', lineNr: 0, addr: undefined, size: 0, line: line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
+			this.listFile.push(this.currentFileEntry);
+			// Parse
 			this.parseLabelAndAddress(line);
-			this.currentListFileNumber++;
 		}
 	}
 
@@ -167,9 +169,14 @@ export class LabelParserBase {
 		const relFileName=Utility.getRelFilePath(this.config.path);
 		const lineArray=new Array<number>();
 		this.lineArrays.set(relFileName, lineArray);
+		let lineNr=-1;
 		for (const entry of this.listFile) {
+			lineNr++;
 			entry.fileName=relFileName;
-			entry.lineNr=entry.listFileLineNr;
+			entry.lineNr=lineNr;
+			if (!entry.addr)
+				continue;
+
 			this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: entry.lineNr});
 
 			// Set address
@@ -202,6 +209,10 @@ export class LabelParserBase {
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
+
+			// Check address
+			if (!entry.addr)
+				continue;
 
 			// last address entry wins:
 			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
@@ -254,8 +265,10 @@ export class LabelParserBase {
 	protected moduleStart(moduleName: string) {
 		this.modulePrefixStack.push(moduleName);
 		this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
+		this.currentFileEntry.modulePrefix=this.modulePrefix;
 		// Init last label
 		this.lastLabel=undefined as any;
+		this.currentFileEntry.lastLabel=this.lastLabel;
 	}
 
 
@@ -269,8 +282,10 @@ export class LabelParserBase {
 			this.modulePrefix=this.modulePrefixStack.join(this.labelSeparator)+this.labelSeparator;
 		else
 			this.modulePrefix=undefined as any;
+		this.currentFileEntry.modulePrefix=this.modulePrefix;
 		// Forget last label
 		this.lastLabel=undefined as any;
+		this.currentFileEntry.lastLabel=this.lastLabel;
 	}
 
 
@@ -291,6 +306,7 @@ export class LabelParserBase {
 			case LabelType.NORMAL:
 				// Remember last label (for local labels)
 				this.lastLabel=label;
+				this.currentFileEntry.lastLabel=this.lastLabel;
 				// Add prefix
 				if (this.modulePrefix)
 					label=this.modulePrefix+label;
@@ -304,6 +320,7 @@ export class LabelParserBase {
 				 // TODO: Test global label
 				// Remember last label (for local labels)
 				this.lastLabel=label;
+				this.currentFileEntry.lastLabel=this.lastLabel;
 				break;
 		}
 
@@ -334,17 +351,12 @@ export class LabelParserBase {
 	 * @param address The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
 	 * Has to be 1 if address is undefined.
-	 * @param line The original line contents.
 	 */
-	protected addAddressLine(address: number, size: number, line: string) {
-		// Add whole size to list file array.
-		for (let k=0; k<size; k++) {
-			const entry={fileName: '', listFileLineNr: this.currentListFileNumber, lineNr: -1-k, addr: address, line: line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
-			if (address!=undefined)
-				address++;
-			this.listFile.push(entry)
-		}
-
+	protected addAddressLine(address: number, size: number) {
+		if (size==0)
+			return;
+		this.currentFileEntry.addr=address;
+		this.currentFileEntry.size=size;
 	}
 
 

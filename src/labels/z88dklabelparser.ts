@@ -145,13 +145,13 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 				// Store address (or several addresses for one line)
 				for (let k=0; k<countBytes; k++) {
-					const entry={fileName: '', listFileLineNr: 0, lineNr: -1-k, addr: address+k, line: origLine, lastLabel};	// listFileLineNr: need to be added.
+					const entry={fileName: '', listFileLineNr: 0, lineNr: -1-k, addr: address+k, size: countBytes, line: origLine, lastLabel};	// listFileLineNr: need to be added.
 					listFile.push(entry)
 				}
 			}
 			else {
 				// Store
-				const entry={fileName: '', listFileLineNr: 0, lineNr: -1, addr: address, line: origLine, lastLabel};	// listFileLineNr: need to be added.
+				const entry={fileName: '', listFileLineNr: 0, lineNr: -1, addr: address, size: 1, line: origLine, lastLabel};	// listFileLineNr: need to be added.
 				listFile.push(entry)
 			}
 
@@ -177,7 +177,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 			let realLineNr=-1;	// z88dk sometimes suppresses line numbers
 			for (var lineNr=0; lineNr<listLength; lineNr++) {
 				const entry=listFile[lineNr];
-				if (isNaN(entry.addr)) {
+				if (isNaN(entry.addr!)) {
 					realLineNr++;
 					continue;
 				}
@@ -185,11 +185,11 @@ export class Z88dkLabelParser extends LabelParserBase {
 					realLineNr++;
 				entry.fileName=relFileName;
 				entry.lineNr=realLineNr;
-				this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: realLineNr});
+				this.fileLineNrs.set(entry.addr!, {fileName: relFileName, lineNr: realLineNr});
 
 				// Set address
 				if (!lineArray[realLineNr]) {	// without the check macros would lead to the last addr being stored.
-					lineArray[realLineNr]=entry.addr;
+					lineArray[realLineNr]=entry.addr!;
 					//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 				}
 			}
@@ -296,7 +296,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 			}
 
 			// last address entry wins:
-			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr});
+			this.fileLineNrs.set(entry.addr!, {fileName: entry.fileName, lineNr: entry.lineNr});
 
 			// Check if a new array need to be created
 			if (!this.lineArrays.get(entry.fileName)) {
@@ -308,7 +308,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-				lineArray[entry.lineNr]=entry.addr;
+				lineArray[entry.lineNr]=entry.addr!;
 				//console.log('filename='+entry.fileName+', lineNr='+entry.lineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}

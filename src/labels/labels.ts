@@ -27,9 +27,13 @@ export interface SourceFileEntry {
  * The representation of the list file.
  */
 export interface ListFileLine extends SourceFileEntry {
-	addr: number;		/// The corresponding address from the list file
+	addr?: number;		/// The corresponding address from the list file
+	size: number;		/// The size of bytes the line extends to. I.e. the line covers addresses [address;address+size-1]
 	line: string;		/// The text of the line of the list file
-	listFileLineNr: number;	/// the line number in the list file
+
+
+	// TODO: wieder raus:
+	//listFileLineNr: number;	/// the line number in the list file
 }
 
 
