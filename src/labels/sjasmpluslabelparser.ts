@@ -433,6 +433,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			const label=line.substr(9).trim();
 			// Add label
 			this.addLabelForNumber(value, label, LabelType.GLOBAL);	// Full labels
+			// Throw line away
+			this.listFile.pop();
 			return;
 		}
 
@@ -441,6 +443,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			// The end of the sjasmplus list file has been reached
 			// where the labels start.
 			this.sjasmplusLstlabSection=true;
+			// Throw line away
+			this.listFile.pop();
 			return;
 		}
 

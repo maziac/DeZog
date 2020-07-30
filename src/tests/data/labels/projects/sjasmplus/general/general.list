@@ -67,13 +67,13 @@
  7+   9001 00           	nop
  8+   9002
  9+   9002 00           fa_label3.mid:	nop
-10+   9003 00           .local:	nop
+10+   9003 00           .locala:	nop
 11+   9004
 12+   9004              	include "filea_b.asm"
 # file opened: filea_b.asm
  1++  9004
  2++  9004 00           fab_label1:	nop
- 3++  9005 00           .local:	nop
+ 3++  9005 00           .localb:	nop
  4++  9006
  5++  9006              fab_label_equ1:		equ 70
  6++  9006
@@ -109,8 +109,8 @@ Value    Label
 0x9000 X fa_label1
 0x9001 X modfilea.fa_label2
 0x9002 X modfilea.fa_label3.mid
-0x9003 X modfilea.fa_label3.mid.local
+0x9003 X modfilea.fa_label3.mid.locala
 0x9004 X modfilea.fab_label1
-0x9005 X modfilea.fab_label1.local
+0x9005 X modfilea.fab_label1.localb
 0x0046 X modfilea.fab_label_equ1
 0x9006 X fa_label3

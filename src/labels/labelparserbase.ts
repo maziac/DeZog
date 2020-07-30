@@ -162,9 +162,7 @@ export class LabelParserBase {
 	 * Finishes the list file mode.
 	 * Puts filename (the list file name) and line numbers into the
 	 * this.fileLineNrs and this.lineArrays structures.
-	 */
-	// TODO: misses labelLocations
-	protected listFileModeFinish() {
+	 */	protected listFileModeFinish() {
 		// Use list file directly instead of real filenames.
 		const relFileName=Utility.getRelFilePath(this.config.path);
 		const lineArray=new Array<number>();
@@ -174,10 +172,24 @@ export class LabelParserBase {
 			lineNr++;
 			entry.fileName=relFileName;
 			entry.lineNr=lineNr;
+
+			// Create label -> file location association
+			const lastLabel=entry.lastLabel;
+			if (lastLabel) {
+				const fullLabel=this.getFullLabel(entry.modulePrefix, lastLabel);
+				let fileLoc=this.labelLocations.get(fullLabel);
+				if (!fileLoc) {
+					// Add new file location
+					fileLoc={file: entry.fileName, lineNr: entry.lineNr};
+					this.labelLocations.set(fullLabel, fileLoc);
+				}
+			}
+
+			// Check address
 			if (!entry.addr)
 				continue;
 
-			this.fileLineNrs.set(entry.addr, {fileName: relFileName, lineNr: entry.lineNr});
+			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
@@ -228,7 +240,6 @@ export class LabelParserBase {
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
 				lineArray[entry.lineNr]=entry.addr;
-				//console.log('filename='+entry.fileName+', lineNr='+entry.lineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}
 	}
@@ -315,6 +326,9 @@ export class LabelParserBase {
 				// local label
 				if (this.lastLabel) // Add Last label
 					label=this.lastLabel+label;
+				// Add prefix
+				if (this.modulePrefix)
+					label=this.modulePrefix+label;
 				break;
 			case LabelType.GLOBAL:
 				 // TODO: Test global label

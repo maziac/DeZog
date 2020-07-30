@@ -7,7 +7,7 @@ fa_label2:
 	nop
 
 fa_label3.mid:	nop
-.local:	nop
+.locala:	nop
 
 	include "filea_b.asm"
 

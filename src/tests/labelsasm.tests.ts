@@ -51,17 +51,50 @@ suite('Labels (sjasmplus)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const config={sjasmplusListFiles: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: []}]};	// ListFile-Mode
+				const fname='./src/tests/data/labels/projects/sjasmplus/general/general.list';
+				const config={sjasmplusListFiles: [{path: fname, srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
-				// TODO: Funktioniert noch nicht weil labelLocations für ListFile-mode noch nicht implementiert sind.
 				// Test
-				const res=Labels.getLocationOfLabel('label1')!;
+				let res=Labels.getLocationOfLabel('label1')!;
 				assert.notEqual(undefined, res);
-				assert.ok(res.file.endsWith('general.list'));
-				assert.equal(15-1, res.lineNr);	// line number starts at 0
+				assert.equal(fname, res.file);
+				assert.equal(16-1, res.lineNr);	// line number starts at 0
 
-				// TODO: Implement same tests as in sources mode.
+				res=Labels.getLocationOfLabel('fa_label1')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(62-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fa_label2')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(66-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(69-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid.local')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(70-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(75-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fab_label1.local')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(76-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(78-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -77,8 +110,7 @@ suite('Labels (sjasmplus)', () => {
 
 				// Compare all addresses
 				const count=listFile.length;
-				let prevAddr;
-				for (let lineNr=count-1; lineNr>=0; lineNr--) {
+				for (let lineNr=0; lineNr<count; lineNr++) {
 					const line=listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
 					const match=/^\s*[0-9+]+\s+([0-9a-f]+\s[0-9a-f]+)/i.exec(line);
@@ -86,14 +118,10 @@ suite('Labels (sjasmplus)', () => {
 						continue;
 					// Valid address line
 					const address=parseInt(match[1], 16);
-					if (address==prevAddr)
-						continue;	// Skip same addresses
 					// Check
 					const res=Labels.getFileAndLineForAddress(address);
 					assert.ok(res.fileName.endsWith('general.list'));
 					assert.equal(lineNr, res.lineNr);
-					// Remember
-					prevAddr=address;
 				}
 			});
 
@@ -109,22 +137,17 @@ suite('Labels (sjasmplus)', () => {
 
 				// Compare all addresses
 				const count=listFile.length;
-				let prevAddr;
-				for (let lineNr=count-1; lineNr>=0; lineNr--) {
+				for (let lineNr=0; lineNr<count; lineNr++) {
 					const line=listFile[lineNr];
 					// A valid line looks like: " 18    8001 3E 05        label2:	ld a,5"
-					const match=/^\s*[0-9]+\s+([0-9a-f]+)/i.exec(line);
+					const match=/^\s*[0-9+]+\s+([0-9a-f]+\s[0-9a-f]+)/i.exec(line);
 					if (!match)
 						continue;
 					// Valid address line
 					const address=parseInt(match[1], 16);
-					if (address==prevAddr)
-						continue;	// Skip same addresses
 					// Check
-					let resultAddr=Labels.getAddrForFileAndLine(filename, 16-1);
+					let resultAddr=Labels.getAddrForFileAndLine(filename, lineNr);
 					assert.equal(address, resultAddr);
-					// Remember
-					prevAddr=address;
 				}
 			});
 
@@ -168,11 +191,9 @@ suite('Labels (sjasmplus)', () => {
 
 				// TODO: does not work
 				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid.local')!;
-				/*
 				assert.notEqual(undefined, res);
 				assert.equal('filea.asm', res.file);
 				assert.equal(10-1, res.lineNr);	// line number starts at 0
-				*/
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);

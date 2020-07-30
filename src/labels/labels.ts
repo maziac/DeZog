@@ -85,7 +85,9 @@ export class LabelsClass {
 	/// Map with all labels (from labels file) and corresponding values.
 	protected numberForLabel=new Map<string, number>();//ValueLocation>();
 
-	/// Map with label / file location association.
+	/// Map with label / file location association. Only used in unit tests to
+	/// point to the unit tests. Direct relationship: The line number of the label is returned.
+	/// Not the line number of the value of the label.
 	protected labelLocations=new Map<string, {file: string, lineNr: number}>()
 
 
