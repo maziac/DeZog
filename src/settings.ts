@@ -13,9 +13,6 @@ export interface SjasmplusListFile {
 	/// The path to the list file.
 	path: string;
 
-	/// Path to the main assembler source file that was used to produce the .list file.
-	mainFile: string;
-
 	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
 	/// The path(s) here are relative to the 'rootFolder'.
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
@@ -416,7 +413,6 @@ export class Settings {
 				// ListFile structure
 				const file={
 					path: Utility.getAbsFilePath(fp.path),
-					mainFile: fp.mainFile,
 					srcDirs: fp.srcDirs||[""]
 				};
 				return file;

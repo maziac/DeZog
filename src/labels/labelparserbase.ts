@@ -1,7 +1,7 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 //import {Settings} from '../settings';
-//import * as path from 'path';
+import * as path from 'path';
 //import {Remote} from '../remotes/remotefactory';
 //import {LabelsClass, ListFileLine, SourceFileEntry} from './labels';
 import {SourceFileEntry, /*, ListFileLine*/
@@ -74,6 +74,9 @@ export class LabelParserBase {
 	/// Holds the list file entry for the current line.
 	protected currentFileEntry: ListFileLine;
 
+	/// The stack of include files. For parsing filenames and line numbers.
+	protected includeFileStack = new Array<{fileName: string, lineNr: number}>();
+
 
 	// Constructor.
 	public constructor(
@@ -133,13 +136,17 @@ export class LabelParserBase {
 	 * for each line.
 	 */
 	protected parseAllLabelsAndAddresses() {
+		const fileName=Utility.getRelFilePath(this.config.path);
 		const listLines=readFileSync(this.config.path).toString().split('\n');
+		let lineNr=0;
 		for (const line of listLines) {
 			// Prepare an entry
-			this.currentFileEntry={fileName: '', lineNr: 0, addr: undefined, size: 0, line: line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
+			this.currentFileEntry={fileName, lineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			this.listFile.push(this.currentFileEntry);
 			// Parse
 			this.parseLabelAndAddress(line);
+			// Next
+			lineNr++;
 		}
 	}
 
@@ -149,13 +156,26 @@ export class LabelParserBase {
 	 * names and line numbers.
 	 */
 	protected parseAllFilesAndLineNumbers() {
-		const count=this.listFile.length;
-		for (var lineNr=0; lineNr<count; lineNr++) {
-			const line=this.listFile[lineNr].line;
+		// Check if there is a amin file given in the config
+		if (this.config.mainFile) {
+			// Set main file
+			const fileName=Utility.getRelFilePath(this.config.mainFile);
+			this.includeStart(fileName);
+		}
+		// Loop all lines
+		for (const entry of this.listFile) {
+			const line=entry.line;
 			if (line.length==0)
 				continue;
-
+			// Let it parse
+			this.currentFileEntry=entry;
 			this.parseFileAndLineNumber(line);
+			// Associate with right file
+			const index=this.includeFileStack.length-1;
+			if (index<0)
+				continue;	// No main file found so far
+				//throw Error("File parsing error: no main file.");
+			entry.fileName=this.includeFileStack[index].fileName;
 		}
 	}
 
@@ -164,17 +184,13 @@ export class LabelParserBase {
 	 * Finishes the list file mode.
 	 * Puts filename (the list file name) and line numbers into the
 	 * this.fileLineNrs and this.lineArrays structures.
-	 */	protected listFileModeFinish() {
+	 */
+	protected listFileModeFinish() {
 		// Use list file directly instead of real filenames.
-		const relFileName=Utility.getRelFilePath(this.config.path);
 		const lineArray=new Array<number>();
-		this.lineArrays.set(relFileName, lineArray);
-		let lineNr=-1;
+		const fileName=Utility.getRelFilePath(this.config.path);
+		this.lineArrays.set(fileName, lineArray);
 		for (const entry of this.listFile) {
-			lineNr++;
-			entry.fileName=relFileName;
-			entry.lineNr=lineNr;
-
 			// Create label -> file location association
 			const lastLabel=entry.lastLabel;
 			if (lastLabel) {
@@ -256,9 +272,10 @@ export class LabelParserBase {
 	 * addAddressLine to add the line and it's address.
 	 * @param line The current analyzed line of the list file.
 	 */
-	protected parseFileAndLineNumber(line: string) {
-		Utility.assert(false, "Override parseFileAndLineNumber");
+	protected parseLabelAndAddress(line: string) {
+		Utility.assert(false, "Override parseLabelAndAddress");
 	}
+
 
 	/**
 	 * Override.
@@ -266,8 +283,8 @@ export class LabelParserBase {
 	 * The function calls.... TODO
 	 * @param line The current analyzed line of the listFile array.
 	 */
-	protected parseLabelAndAddress(line: string) {
-		Utility.assert(false, "Override parseLabelAndAddress");
+	protected parseFileAndLineNumber(line: string) {
+		Utility.assert(false, "Override parseFileAndLineNumber");
 	}
 
 
@@ -387,6 +404,55 @@ export class LabelParserBase {
 			return label;
 		result+=label;
 		return result;
+	}
+
+
+	/**
+	 * Called by the parser if a new include file is found.
+	 * Is also used to set the main file at the beginnign of parsing or before parsing starts.
+	 * @param includeFileName The name of the include file.
+	 */
+	protected includeStart(includeFileName: string) {
+		const index=this.includeFileStack.length-1;
+		let fileName;
+		if (index>=0) {
+			// Include the parent file dir in search
+			const parentFileName=this.includeFileStack[this.includeFileStack.length-1].fileName;
+			const dirName=path.dirname(parentFileName);
+			fileName=Utility.getRelSourceFilePath(includeFileName, [dirName, ...this.config.srcDirs]);
+		}
+		else {
+			// Main file
+			fileName=Utility.getRelSourceFilePath(includeFileName, this.config.srcDirs);
+		}
+
+		this.includeFileStack.push({fileName, lineNr: 0});
+	}
+
+
+	/**
+	 * Called by the parser if the end of an include file is found.
+	 */
+	protected includeEnd() {
+		// Remove last include file
+		this.includeFileStack.pop();
+		if (this.includeFileStack.length<0)
+			throw Error("File parsing error: include file stacking.");
+	}
+
+
+	/**
+	 * Called by the parser to set the line number parsed from teh list file.
+	 * This is the line number inside an include file.
+	 * Should be called before 'includeStart' and 'includeEnd'.
+	 * But is not so important as there is no assembler code in these lines.
+	 * @param lineNr The parsed line number. Note this line number has to start at 0.
+	 */
+	protected setLineNumber(lineNr: number) {
+		this.currentFileEntry.lineNr=lineNr;
+		const index=this.includeFileStack.length-1;
+		if (index>=0)
+			this.currentFileEntry.fileName=this.includeFileStack[index].fileName;
 	}
 
 }

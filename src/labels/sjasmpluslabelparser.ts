@@ -1,7 +1,7 @@
 //import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 //import {Settings} from '../settings';
-import * as path from 'path';
+//import * as path from 'path';
 //import {Remote} from '../remotes/remotefactory';
 //import {LabelsClass, ListFileLine} from './labels';
 import {LabelParserBase, LabelType} from './labelparserbase';
@@ -42,6 +42,12 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	// Find the bytes after the address
 	protected matchBytesRegEx=/^[0-9a-f]+((\s+[0-9a-f][0-9a-f])+)/i;
 
+	// Matches the line number (of the included file(s))
+	protected matchLineNumberRegEx=/^\s*([0-9]+)[\s\+]+(.*)/;
+
+	// Matches the include file text
+	protected matchIncludeFileRegEx=/^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
+
 
 	// Constructor.
 	//public constructor() {
@@ -56,8 +62,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	 */
 	public loadAsmListFile(config: any) {
 		//const fileName: string=Utility.getAbsFilePath(config.path);
-		const fileName: string=config.path;
-		const mainFileName: string|undefined=config.mainFile;
+		//const fileName: string=config.path;
+		//const mainFileName: string|undefined=config.mainFile;
 		const sources: Array<string>=config.srcDirs;
 	//	const lineHandler=(address: number, line: string, lineNumber: number) => {};
 
@@ -290,7 +296,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			return;
 		}
 
-		// sjasmplus (since v1.11.0):
+		// sjasmplus:
 		// Starts with spaces and the line numbers (plus pluses) of the include file.
 		// Indicates start and end of include.
 		//   38  004B
@@ -312,6 +318,8 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		// b2) sjasmplus: the text '# file closed' is used as indication that the
 		// include file ended.
 
+		this.parseAllFilesAndLineNumbers();
+		/*
 		let index=0;
 		const stack=new Array<any>();
 		const fName=mainFileName||fileName;
@@ -358,7 +366,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			entry.fileName=stack[index].fileName;
 			entry.lineNr=(index==0&&!mainFileName)? lineNr:lineNumber-1;
 		}
-
+*/
 
 		// Create 2 maps.
 		// a) fileLineNrs: a map with all addresses and the associated filename/lineNr
@@ -540,6 +548,62 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		// This needs to be called even if address is undefined.
 		this.addAddressLine(address, countBytes);
 	}
+
+
+	/**
+	 * Parses one line for current file name and line number in this file.
+	 * The function calls.... TODO
+	 * @param line The current analyzed line of the listFile array.
+	 */
+	protected parseFileAndLineNumber(line: string) {
+		// sjasmplus:
+		// Starts with spaces and the line numbers (plus pluses) of the include file.
+		// Indicates start and end of include.
+		//   38  004B
+		//   39  004B                  include "zxnext/zxnext_regs.inc"
+		// # file opened: src//zxnext/zxnext_regs.inc
+		//    1+ 004B              ;=================
+		//  ...
+		//  331+ 004B              DMA_LOAD:       equ 11001111b
+		//  332+ 004B              ZXN_DMA_PORT:   equ 0x6b
+		//  333+ 004B
+		//  # file closed: src//zxnext/zxnext_regs.inc
+		//   40  004B
+		//
+		// Note:
+		// a) the text "include" is used as indication that a new include
+		// file started (can be used for both sjasmplus and z88dk).
+		// b1) z88dk: the change of the line number is used as indicator that the
+		// include file ended.
+		// b2) sjasmplus: the text '# file closed' is used as indication that the
+		// include file ended.
+
+		// Check for start of include file
+		if (line.startsWith('# file opened:')) {
+			// Get file name
+			const fname=line.substr(15);
+			// Include file
+			this.includeStart(fname);
+			return;
+		}
+
+		// Check for end of include file
+		if (line.startsWith('# file closed:')) {
+			// Include ended.
+			this.includeEnd();
+			return;
+		}
+
+		// Get line number
+		const matchLineNumber=this.matchLineNumberRegEx.exec(line);
+		if (!matchLineNumber)
+			return;	// sjasmplus contains lines without line number.
+		const lineNumber=parseInt(matchLineNumber[1]);
+
+		// Associate with line number
+		this.setLineNumber(lineNumber-1);	// line numbers start at 0
+	}
+
 
 }
 
