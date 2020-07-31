@@ -154,6 +154,8 @@ See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 
 Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
 
+For the "What's New" feature the [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new) project from Alessandro Fragnani aka [alefragni](https://github.com/alefragnani) has been incorporated. The project is MIT licensed.
+
 
 ## Acknowledgements
 
