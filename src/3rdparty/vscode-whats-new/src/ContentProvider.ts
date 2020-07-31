@@ -17,22 +17,23 @@ export interface Header {
 }
 
 // changelog
-export enum ChangeLogKind { 
-    NEW = "NEW", 
-    CHANGED = "CHANGED", 
-    FIXED = "FIXED", 
+export enum ChangeLogKind {
+    NEW = "NEW",
+    CHANGED = "CHANGED",
+    FIXED = "FIXED",
     VERSION = "VERSION",
     INTERNAL = "INTERNAL"
 }
 
-export enum IssueKind { 
-    Issue = "Issue", 
-    PR = "PR" 
+export enum IssueKind {
+    Issue = "Issue",
+    PR="PR",
+    Other="Other"
 }
 
 export interface ChangeLogIssue {
     message: string;
-    id: number;
+    id?: number;
     kind: IssueKind;
     kudos?: string;
 }

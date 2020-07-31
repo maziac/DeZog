@@ -32,7 +32,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/maziac/dezog"
+		"url": "https://github.com/maziac/DeZog"
 	},
 	"scripts": {
 		"compile": "tsc -p ./src",
@@ -71,6 +71,9 @@
 	},
 	"resolutions": {
 		"minimist": "^1.2.5"
+	},
+	"bugs": {
+		"url": "https://github.com/maziac/DeZog/issues"
 	},
 	"main": "./out/extension",
 	"activationEvents": [
@@ -142,6 +145,11 @@
 		],
 		"commands": [
 			{
+				"command": "dezog.whatsNew",
+				"title": "Show 'What's New' of this DeZog release.",
+				"category": "dezog"
+			},
+			{
 				"command": "dezog.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
 				"category": "dezog"
@@ -194,6 +202,9 @@
 		],
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "dezog.whatsNew"
+				},
 				{
 					"command": "dezog.runAllUnitTests"
 				},

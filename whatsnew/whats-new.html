@@ -1,0 +1,80 @@
+<!-- 
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Eric Amodio & Alessandro Fragnani. All rights reserved.
+*  Licensed under the MIT License. See License.md in the project root for license information.
+*
+*  Original Author: Eric Amodio @ GitLens
+*  Modifications by: Alessandro Fragnani
+*--------------------------------------------------------------------------------------------*/
+-->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+<link href="${cssUrl}" rel="stylesheet"></head>
+
+<body class="preload">
+
+    <div class="container">
+        <div class="content">
+            <header>
+                <a style="text-align: center;" title="Learn more about ${extensionDisplayName}" href="${repositoryUrl}">
+                    <img src="${headerLogo}" width="${headerWidth}%" height="${headerHeight}%"/>
+                </a>
+                <p class="header__blurb">
+                    ${headerMessage}
+                </p>
+            </header>
+
+            <div class="section-groups">
+                <div class="section-group__content">
+
+                        <section id="whats-new" class="changelog">
+                                <h2 class="changelog__title">What's New in <b>${extensionDisplayName} ${extensionVersion}</b></h2>
+                                <div class="changelog__scroller">
+                                    <ul class="changelog__list">
+                                        ${changeLog}
+                                    </ul>
+                                </div>
+                            </section>
+
+                            <h2>Need Help?</h2>
+                            <ul>
+                                <li>
+                                    <a href="${repositoryHomepage}">Homepage</a>
+                                </li>
+                                <li>
+                                    <a href="${repositoryIssues}">Questions &amp; Issues</a>
+                                </li>
+                            </ul>
+                            
+                </div>
+                <div class="section-group__sidebar section-group__sidebar--welcome">
+                    <div class="sidebar-group">
+                        <h2>Show Your Support</h2>
+                        <p>
+                            While <b>${extensionDisplayName}</b> is offered for free, 
+                            if you find it useful, please consider supporting it.
+                        </p>
+                        <div class="button-group button-group--support-alefragnani">
+                            <a class="button button--flat-primary" title="Become a sponsor on Patreon" href="https://www.patreon.com/alefragnani" target="_blank">Become a Sponsor</a>
+                            <a class="button button--flat-primary" title="Donate via PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=EP57F3B6FXKTU&lc=US&item_name=Alessandro%20Fragnani&item_number=vscode%20extensions&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" target="_blank">Donate via PayPal</a>
+                        </div>
+                        <ul>
+                            <li><a title="Write a review" href="https://marketplace.visualstudio.com/items?itemName=alefragnani.${extensionName}#review-details">Write a Review</a></li>
+                            <li><a title="Star or fork me on GitHub" href="${repositoryUrl}">Star or Fork me on GitHub</a></li>
+                            <li><a title="Follow me on Twitter" href="https://twitter.com/alefragnani">Follow me on Twitter</a></li>
+                        </ul>
+                        ${sponsors}
+                    </div>
+                    <div class="sidebar-group">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
