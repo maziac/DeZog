@@ -2,7 +2,7 @@
 
 # 1.4.6
 - Removed double timer for command/response.
-- Added "What's New"
+- Added "What's New".
 
 # 1.4.5
 - Version to start beta testing "zxnext".
