@@ -80,13 +80,14 @@ export class WhatsNewPageBuilder {
             } else {
                 const badge: string = this.getBadgeFromChangeLogKind(cl.kind);
                 const cc: ChangeLogIssue = <ChangeLogIssue>cl.detail;
-                let message: string;
-                if (cc.kind === IssueKind.Issue) {
-                    message = `${cc.message}
+                let message: string=`${cc.message}`;
+                if (cc.kind===IssueKind.Issue) {
+                    message+=`
                         (<a title="Open Issue #${cc.id}"
                         href="${this.repositoryUrl}/issues/${cc.id}">Issue #${cc.id}</a>)`
-                } else {
-                    message = `${cc.message}
+                }
+                else if (cc.kind===IssueKind.PR) {
+                    message+=`
                         (Thanks to ${cc.kudos} - <a title="Open PR #${cc.id}"
                         href="${this.repositoryUrl}/pull/${cc.id}">PR #${cc.id}</a>)`
                 }

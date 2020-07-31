@@ -27,14 +27,13 @@ export enum ChangeLogKind {
 
 export enum IssueKind {
     Issue = "Issue",
-    PR="PR",
-    Other="Other"
+    PR="PR"
 }
 
 export interface ChangeLogIssue {
     message: string;
     id?: number;
-    kind: IssueKind;
+    kind?: IssueKind;
     kudos?: string;
 }
 
