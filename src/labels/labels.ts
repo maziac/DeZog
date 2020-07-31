@@ -19,7 +19,6 @@ export interface SourceFileEntry {
 	lineNr: number;		/// The line number of the associated source file
 	modulePrefix?: string;	/// For sjasmplus: module is an optional module prefix that is added to all labels (e.g. "sprites.sw.").
 	lastLabel?: string;	/// For sjasmplus: lastLabel is the last non-local label that is used as prefix for local labels. modulePrefix and lastLabel are used for hovering.
-// TODO: modulePrefix and lastLabel are used only locally. Remove them from here.
 }
 
 
@@ -30,23 +29,9 @@ export interface ListFileLine extends SourceFileEntry {
 	addr?: number;		/// The corresponding address from the list file
 	size: number;		/// The size of bytes the line extends to. I.e. the line covers addresses [address;address+size-1]
 	line: string;		/// The text of the line of the list file
-
-
-	// TODO: wieder raus:
-	//listFileLineNr: number;	/// the line number in the list file
 }
 
 
-/**
- * The address, filename and line number of the label.
- */
-/*
-interface ValueLocation {
-	value: number;	/// The value of the label (most of the time the address).
-	file: string;	/// The filename.
-	lineNr: number;	/// The line number in the file.
-}
-*/
 
 /**
  * Calculation of the labels from the input list and labels file.
@@ -90,6 +75,7 @@ export class LabelsClass {
 	/// Not the line number of the value of the label.
 	protected labelLocations=new Map<string, {file: string, lineNr: number}>()
 
+	// TODO: Implement watchpoints etc. parsing
 
 	/// Stores the address of the watchpoints together with the line contents.
 	protected watchPointLines=new Array<{address: number, line: string}>();

@@ -4,11 +4,9 @@ import { Utility } from './misc/utility';
 import * as fs from 'fs';
 
 
-/**
- * Declares one list file for one assembler type together with a few
- * other configuration that might be assembler specific.
- */
-export interface SjasmplusListFile {
+
+/// Base for all list files.
+export interface AsmListFileBase {
 
 	/// The path to the list file.
 	path: string;
@@ -20,30 +18,20 @@ export interface SjasmplusListFile {
 }
 
 
-export interface Z80asmListFile {
-
-	/// The path to the listfile.
-	path: string;
-
-	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
-	/// The path(s) here are relative to the 'rootFolder'.
-	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
-	srcDirs: Array<string>;
+/// sjasmplus
+export interface SjasmplusListFile extends AsmListFileBase {
 }
 
 
-export interface Z88dkListFile {
+/// Z80Asm
+export interface Z80asmListFile extends AsmListFileBase {
+}
 
-	/// The path to the file.
-	path: string;
 
+// Z88dk
+export interface Z88dkListFile extends AsmListFileBase {
 	/// Path to the main assembler source file that was used to produce the .list file.
 	mainFile: string;
-
-	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
-	/// The path(s) here are relative to the 'rootFolder'.
-	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
-	srcDirs: Array<string>;
 
 	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
 	addOffset: number;

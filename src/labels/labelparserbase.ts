@@ -6,6 +6,7 @@ import * as path from 'path';
 //import {LabelsClass, ListFileLine, SourceFileEntry} from './labels';
 import {SourceFileEntry, /*, ListFileLine*/
 ListFileLine} from './labels';
+import {AsmListFileBase} from '../settings';
 //import {Utility} from '../misc/utility';
 //import {readFileSync} from 'fs';
 
@@ -54,7 +55,7 @@ export class LabelParserBase {
 
 
 	/// The config structure is stored here.
-	protected config: any;
+	protected config: AsmListFileBase;
 
 	/// Array used temporary. Holds the converted list file.
 	protected listFile=new Array<ListFileLine>();
@@ -106,7 +107,7 @@ export class LabelParserBase {
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 */
-	public loadAsmListFile(config: any) {
+	public loadAsmListFile(config: AsmListFileBase) {
 		this.config=config;
 		//Utility.assert(false, "Override loadAsmListFile");
 
@@ -156,12 +157,16 @@ export class LabelParserBase {
 	 * names and line numbers.
 	 */
 	protected parseAllFilesAndLineNumbers() {
-		// Check if there is a amin file given in the config
+		// TODO: Move to z88dk
+		/*
+		// Check if there is a main file given in the config
 		if (this.config.mainFile) {
 			// Set main file
 			const fileName=Utility.getRelFilePath(this.config.mainFile);
 			this.includeStart(fileName);
 		}
+		*/
+
 		// Loop all lines
 		for (const entry of this.listFile) {
 			const line=entry.line;
