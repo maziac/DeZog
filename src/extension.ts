@@ -7,6 +7,8 @@ import { DecorationClass, Decoration } from './decoration';
 import { LogSocket, Log } from './log';
 import Lg = require("./log")
 import {Utility} from './misc/utility';
+import {WhatsNewContentProvider} from './whatsnew/whatsnewprovider';
+import {DezogWhatsNewMgr} from './whatsnew/dezogwhatsnewmanager';
 
 
 /// Config section in the settings.
@@ -17,6 +19,21 @@ const CONFIG_SECTION = 'dezog';
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
+
+	// Register the "Whatsnew" provider
+	const whatsnewProvider=new WhatsNewContentProvider();
+	const viewer=new DezogWhatsNewMgr(context);
+	viewer.registerContentProvider("dezog", whatsnewProvider);
+	// Show the page (if necessary)
+	if (viewer.checkIfVersionDiffers()) {
+		setTimeout(() => {
+			// Show after 1 s, so that it is shown above other stuff
+			viewer.showPage();
+		}, 1000);
+	}
+	// Register the additional command to view the "Whats' New" page.
+	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => viewer.showPage()));
+
 
 	// Get and store the extension's path
 	const extPath=vscode.extensions.getExtension("maziac.dezog")?.extensionPath as string;
@@ -38,13 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log(version);
 
 	context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(s => {
-
 		console.log(`terminated: ${s.type} ${s.name}`);
-
-		//setTimeout(() => {
-		//	process.exit(0);
-		//}, 100);
-
 	}));
 
 	// Command to change the program counter via menu.
@@ -127,12 +138,13 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Register a configuration provider for 'zrcp' debug type
-	const provider = new ZesaruxConfigurationProvider()
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', provider));
-	context.subscriptions.push(provider);
+	const configProvider = new ZesaruxConfigurationProvider()
+	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
+	context.subscriptions.push(configProvider);
 
 	// Initialize the Coverage singleton.
 	DecorationClass.Initialize(context);
+
 }
 
 
@@ -145,7 +157,7 @@ export function deactivate() {
 
 /**
  * Instantiates the ZesaruxDebugAdapter and sets up the
- * soccket connection to it.
+ * socket connection to it.
  */
 class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider {
 

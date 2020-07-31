@@ -292,22 +292,22 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  |
+|                     | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
 |-------------------------|--------------------|---------|------------|----------|----------|
-| State                   | stable             | stable  | stable     | experimental  | stable |
+| State                   | stable             | stable  | stable     | stable   | stable   |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes     | yes/fast   | no        | no      |
-| Asserts                 | yes                | no       | yes        | yes/slow | yes/slow |
-| Logpoints               | yes                | no       | yes        | yes/slow | yes/slow |
-| Extended callstack      | no                 | yes     | yes        | no        | no        |
-| Code coverage           | yes                | yes     | yes        | no        | no        |
+| Watchpoints             | yes                | yes     | yes/fast   | no       | no       |
+| Asserts                 | yes                | no      | yes        | yes/slow | yes/slow |
+| Logpoints               | yes                | no      | yes        | yes/slow | yes/slow |
+| Extended callstack      | no                 | yes     | yes        | no       | no       |
+| Code coverage           | yes                | yes     | yes        | no       | no       |
 | Reverse debugging       | true               | true    | true       | lite     | lite     |
-| ZX Next capable         | no                  | yes     | yes        | yes      | yes      |
-| Save/restore the state | yes                 | yes     | yes        | no       | no       |
-| Output of T-States | yes                 | yes     | yes        | no       | no       |
-| Display of sprite attributes/patterns | yes                 | yes     | yes        | no       | yes       |
-| Comments                | slower than ZEsarUx or CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
+| ZX Next capable         | no                 | yes     | yes        | yes      | yes      |
+| Save/restore the state  | yes                | yes     | yes        | no       | no       |
+| Output of T-States      | yes                | yes     | yes        | no       | no       |
+| Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
+| Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
 
 Notes:
 - State:
@@ -316,7 +316,7 @@ Notes:
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
-- ZesaruxExt and ZX Next are not available at the moment.
+- ZesaruxExt is not available at the moment.
 
 
 ### The Internal Z80 Simulator
@@ -560,7 +560,7 @@ Note: You can start CSpect with the "-remote" option. In that case CSpect will n
 To run CSpect under macOS or Linux you need to install Mono first.
 A typical commandline to start CSpect looks like:
 ~~~
-mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -debug
+mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -r -v -debug
 ~~~
 
 
