@@ -99,6 +99,11 @@ export class LabelParserBase {
 		this.watchPointLines=watchPointLines;
 		this.assertLines=assertLines;
 		this.logPointLines=logPointLines;
+
+		// TODO: remove:
+		this.currentFileEntry={
+			fileName: "", lineNr: 0, addr: undefined, size: 0, line: "", modulePrefix: undefined
+		};
 	}
 
 
