@@ -488,8 +488,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 		if (DZRP_VERSION[0]!=resp[1]
 			||DZRP_VERSION[1]!=resp[2]) {
 			error="DZRP versions do not match.\n";
-			error+="Required: "+DZRP_VERSION[0]+"."+DZRP_VERSION[1]+"\n";
-			error+="Supported by '"+program_name+"': "+resp[1]+"."+resp[2];
+			error+="Required version is "+DZRP_VERSION[0]+"."+DZRP_VERSION[1]+".\n";
+			error+="But this remote ("+program_name+") supports only version "+resp[1]+"."+resp[2]+".";
 		}
 		return {error, dzrpVersion: dzrp_version, programName: program_name};
 	}

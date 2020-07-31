@@ -22,13 +22,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register the "Whatsnew" provider
 	const whatsnewProvider=new WhatsNewContentProvider();
-	const viewer=new DezogWhatsNewMgr(context).registerContentProvider("dezog", whatsnewProvider);
+	const viewer=new DezogWhatsNewMgr(context);
+	viewer.registerContentProvider("dezog", whatsnewProvider);
 	// Show the page (if necessary)
-	setTimeout(() => {
-		// Show after 1 s, so that it is shown above other stuff
-		viewer.showPageInActivation();
-	}, 1000);
-	// Register the additional command (not really necessary, unless you want a command registered in your extension)
+	if (viewer.checkIfVersionDiffers()) {
+		setTimeout(() => {
+			// Show after 1 s, so that it is shown above other stuff
+			viewer.showPage();
+		}, 1000);
+	}
+	// Register the additional command to view the "Whats' New" page.
 	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => viewer.showPage()));
 
 

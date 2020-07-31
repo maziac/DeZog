@@ -154,4 +154,20 @@ export class CSpectRemote extends DzrpBufferRemote {
 		throw Error("Saving and restoring the state is not supported with CSpect.");
 	}
 
+
+	/**
+	 * Returns a better error in case of CSpect plugin incompability.
+	 * @returns The error, program name (incl. version) and dzrp version.
+	 * error is 0 on success. 0xFF if version numbers not match.
+	 * Other numbers indicate an error on remote side.
+	 */
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+		const result=await super.sendDzrpCmdInit();
+		if (result.error) {
+			// An error occured. Add some help.
+			result.error+="\nTry updating the DeZog (CSpect) Plugin (https://github.com/maziac/DeZogPlugin/releases)."
+		};
+		return result;
+	}
+
 }

@@ -560,7 +560,7 @@ Note: You can start CSpect with the "-remote" option. In that case CSpect will n
 To run CSpect under macOS or Linux you need to install Mono first.
 A typical commandline to start CSpect looks like:
 ~~~
-mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -debug
+mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -r -v -debug
 ~~~
 
 

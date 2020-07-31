@@ -12,14 +12,28 @@ import {WhatsNewManager} from "../3rdparty/vscode-whats-new/src/Manager";
 
 export class DezogWhatsNewMgr extends WhatsNewManager {
 
-	public showPageInActivation() {
+	public checkIfVersionDiffers(): boolean {
 		// load data from extension manifest
 		this.extension=vscode.extensions.getExtension(`maziac.${this.extensionName}`)!;
 
 		const previousExtensionVersion=this.context.globalState.get<string>(`${this.extensionName}.version`)!;
+		const currentVersion=this.extension.packageJSON.version;
+		if (previousExtensionVersion) {
+			const differs: semver.ReleaseType|null=semver.diff(currentVersion, previousExtensionVersion);
 
-		this.showPageIfVersionDiffers(this.extension.packageJSON.version, previousExtensionVersion);
+			// only "patch" should be suppressed
+			if (!differs||differs==="patch") {
+				return false;
+			}
+		}
+
+		// Update version: "major", "minor"
+		this.context.globalState.update(`${this.extensionName}.version`, currentVersion);
+
+		// Versions differ
+		return true;
 	}
+
 
 	public showPage() {
 
@@ -45,21 +59,6 @@ export class DezogWhatsNewMgr extends WhatsNewManager {
 		panel.webview.html=this.getWebviewContentLocal(pageUri.fsPath, cssUri.toString(), logoUri.toString());
 	}
 
-	public showPageIfVersionDiffers(currentVersion: string, previousVersion: string) {
-
-		if (previousVersion) {
-			const differs: semver.ReleaseType|null=semver.diff(currentVersion, previousVersion);
-
-			// only "patch" should be suppressed
-			if (!differs||differs==="patch") {
-				//return;// TODO: ENABLE
-			}
-		}
-
-		// "major", "minor"
-		this.context.globalState.update(`${this.extensionName}.version`, currentVersion);
-		this.showPage();
-	}
 
 	protected getWebviewContentLocal(htmlFile: string, cssUrl: string, logoUrl: string): string {
 		return WhatsNewPageBuilder.newBuilder(htmlFile)
