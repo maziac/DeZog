@@ -14,5 +14,10 @@ modfilea.fa_label3.mid: equ 0x00009002
 modfilea.fa_label3.mid.locala: equ 0x00009003
 modfilea.fab_label1: equ 0x00009004
 modfilea.fab_label1.localb: equ 0x00009005
+modfilea.modfileb.fab_label2: equ 0x00009006
+modfilea.modfileb.fab_label2.local2b: equ 0x00009007
+global_label1: equ 0x00009008
+global_label2: equ 0x00009009
+modfilea.fab_label2: equ 0x0000900A
 modfilea.fab_label_equ1: equ 0x00000046
-fa_label3: equ 0x00009006
+fa_label3: equ 0x0000900B

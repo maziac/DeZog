@@ -72,22 +72,39 @@
 12+   9004              	include "filea_b.asm"
 # file opened: filea_b.asm
  1++  9004
- 2++  9004 00           fab_label1:	nop
- 3++  9005 00           .localb:	nop
- 4++  9006
- 5++  9006              fab_label_equ1:		equ 70
- 6++  9006
+ 2++  9004
+ 3++  9004 00           fab_label1:	nop
+ 4++  9005 00           .localb:	nop
+ 5++  9006
+ 6++  9006              	MODULE modfileb
+ 7++  9006
+ 8++  9006 00           fab_label2:	nop
+ 9++  9007 00           .local2b:	nop
+10++  9008
+11++  9008
+12++  9008              @global_label1
+13++  9008 00           	nop
+14++  9009              @global_label2:
+15++  9009 00           	nop
+16++  900A              	ENDMODULE
+17++  900A
+18++  900A              fab_label2
+19++  900A 00           	nop
+20++  900B
+21++  900B
+22++  900B              fab_label_equ1:		equ 70
+23++  900B
 # file closed: filea_b.asm
-13+   9006
-14+   9006              	ENDMODULE
-15+   9006
-16+   9006              fa_label3:
-17+   9006 00           	nop
-18+   9007
+13+   900B
+14+   900B              	ENDMODULE
+15+   900B
+16+   900B              fa_label3:
+17+   900B 00           	nop
+18+   900C
 # file closed: filea.asm
-47    9007
-48    9007
-49    9007
+47    900C
+48    900C
+49    900C
 # file closed: main.asm
 
 Value    Label
@@ -112,5 +129,10 @@ Value    Label
 0x9003 X modfilea.fa_label3.mid.locala
 0x9004 X modfilea.fab_label1
 0x9005 X modfilea.fab_label1.localb
+0x9006 X modfilea.modfileb.fab_label2
+0x9007 X modfilea.modfileb.fab_label2.local2b
+0x9008 X global_label1
+0x9009 X global_label2
+0x900A X modfilea.fab_label2
 0x0046 X modfilea.fab_label_equ1
-0x9006 X fa_label3
+0x900B X fa_label3

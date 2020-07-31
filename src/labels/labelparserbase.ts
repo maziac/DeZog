@@ -359,6 +359,7 @@ export class LabelParserBase {
 				// Remember last label (for local labels)
 				this.lastLabel=label;
 				this.currentFileEntry.lastLabel=this.lastLabel;
+				this.currentFileEntry.modulePrefix=undefined;
 				break;
 		}
 

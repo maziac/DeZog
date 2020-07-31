@@ -26,7 +26,7 @@ suite('Labels (sjasmplus)', () => {
 				if (labelLine=='')
 					continue;
 				// A line looks like: "modfilea.fa_label3.mid.local: equ 0x00009003"
-				const match=/(.*):\s+equ\s+(.*)/i.exec(labelLine)!;
+				const match=/@?(.*):\s+equ\s+(.*)/i.exec(labelLine)!;
 				assert.notEqual(undefined, match);	// Check that line is parsed correctly
 				const label=match[1];
 				const value=match[2];
@@ -79,12 +79,27 @@ suite('Labels (sjasmplus)', () => {
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(75-1, res.lineNr);	// line number starts at 0
+				assert.equal(76-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(81-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('global_label1')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(85-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('global_label2')!;
+				assert.notEqual(undefined, res);
+				assert.equal(fname, res.file);
+				assert.equal(87-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(78-1, res.lineNr);	// line number starts at 0
+				assert.equal(95-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -181,12 +196,27 @@ suite('Labels (sjasmplus)', () => {
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
-				assert.equal(2-1, res.lineNr);	// line number starts at 0
+				assert.equal(3-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
+				assert.notEqual(undefined, res);
+				assert.equal('filea_b.asm', res.file);
+				assert.equal(8-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('global_label1')!;
+				assert.notEqual(undefined, res);
+				assert.equal('filea_b.asm', res.file);
+				assert.equal(12-1, res.lineNr);	// line number starts at 0
+
+				res=Labels.getLocationOfLabel('global_label2')!;
+				assert.notEqual(undefined, res);
+				assert.equal('filea_b.asm', res.file);
+				assert.equal(14-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
-				assert.equal(5-1, res.lineNr);	// line number starts at 0
+				assert.equal(22-1, res.lineNr);	// line number starts at 0
 			});
 
 
@@ -207,9 +237,9 @@ suite('Labels (sjasmplus)', () => {
 
 				res=Labels.getFileAndLineForAddress(0x9005);
 				assert.ok(res.fileName.endsWith('filea_b.asm'));
-				assert.equal(3-1, res.lineNr);
+				assert.equal(4-1, res.lineNr);
 
-				res=Labels.getFileAndLineForAddress(0x9006);
+				res=Labels.getFileAndLineForAddress(0x900B);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(17-1, res.lineNr);
 			});
@@ -228,11 +258,11 @@ suite('Labels (sjasmplus)', () => {
 				address=Labels.getAddrForFileAndLine('filea.asm', 7-1);
 				assert.equal(0x9001, address);
 
-				address=Labels.getAddrForFileAndLine('filea_b.asm', 3-1);
+				address=Labels.getAddrForFileAndLine('filea_b.asm', 4-1);
 				assert.equal(0x9005, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 17-1);
-				assert.equal(0x9006, address);
+				assert.equal(0x900B, address);
 			});
 
 		});

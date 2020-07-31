@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.4.7
+- New architecture for parsing list files.
+- launch-json:
+	- "listFiles" removed.
+	- "sjasmplusListfiles", "z80asmListfiles" and "z88dkListfiles" added with overworked parameters.
+
 # 1.4.6
 - Removed double timer for command/response.
 - Added "What's New".

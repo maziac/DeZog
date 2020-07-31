@@ -1,9 +1,9 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.4.6",
+	"version": "1.4.7",
 	"publisher": "maziac",
-	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
+	"description": "Visual Studio Code Debugger for the Z80/ZX Spectrum.",
 	"author": {
 		"name": "Thomas Busse"
 	},
@@ -257,8 +257,7 @@
 					"launch": {
 						"required": [
 							"remoteType",
-							"rootFolder",
-							"listFiles"
+							"rootFolder"
 						],
 						"properties": {
 							"remoteType": {
@@ -371,8 +370,7 @@
 								"items": {
 									"type": "object",
 									"required": [
-										"path",
-										"mainFile"
+										"path"
 									],
 									"properties": {
 										"path": {
@@ -394,6 +392,9 @@
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
 									"type": "object",
+									"required": [
+										"path"
+									],
 									"properties": {
 										"path": {
 											"type": "string",
@@ -414,6 +415,9 @@
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
 									"type": "object",
+									"required": [
+										"path"
+									],
 									"properties": {
 										"path": {
 											"type": "string",

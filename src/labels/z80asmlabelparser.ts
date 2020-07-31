@@ -13,10 +13,6 @@ import {ListFileLine} from './labels';
  * This class parses sjasmplus list files.
  */
 export class Z80asmLabelParser extends LabelParserBase {
-	// Constructor.
-	//public constructor() {
-	//}
-
 
 	/**
 	 * Reads the given file (an assembler .list file) and extracts all PC
