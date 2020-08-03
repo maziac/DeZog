@@ -334,27 +334,6 @@ export class LabelsClass {
 
 
 	/**
-	 * Searches for the start of a macro.
-	 * @param macroName The name of the macro to search for.
-	 * @param startSearchLine Here the search begins. Search is done upwards.
-	 * @param listFile Array with lines of the file.
-	 * @return The found line number or startSearchLine if nothing found (should not happen).
-	 */
-	protected searchStartOfMacro(macroName: string, startSearchLine: number, listFile: Array<ListFileLine>): number {
-		const macroRegex=new RegExp("[0-9a-fA-F]+\\s+"+macroName+"\\s+.*");
-		var k=startSearchLine;
-		for (; k>0; --k) {
-			const line2=listFile[k].line;
-			const matchMacroStart=macroRegex.exec(line2);
-			if (matchMacroStart)
-				return k;	// macro start found
-		}
-		// Nothing found (should not happen)
-		return startSearchLine;
-	}
-
-
-	/**
 	 * Returns file name and line number associated with a certain memory address.
 	 * Used e.g. for the call stack.
 	 * @param address The memory address to search for.

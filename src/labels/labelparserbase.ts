@@ -160,8 +160,10 @@ export class LabelParserBase {
 	/**
 	 * Loops all entries of the listFile array and parses for the (include) file
 	 * names and line numbers.
+	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
+	 * beginnign of the list file contains onformation that is parsed differently.
 	 */
-	protected parseAllFilesAndLineNumbers() {
+	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
 		// TODO: Move to z88dk
 		/*
 		// Check if there is a main file given in the config
@@ -173,7 +175,9 @@ export class LabelParserBase {
 		*/
 
 		// Loop all lines
-		for (const entry of this.listFile) {
+		const count=this.listFile.length;
+		for (let listFileNumber=startLineNr; listFileNumber<count; listFileNumber++) {
+			const entry=this.listFile[listFileNumber];
 			const line=entry.line;
 			if (line.length==0)
 				continue;

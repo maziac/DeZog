@@ -14,12 +14,210 @@ import {ListFileLine} from './labels';
  */
 export class Z80asmLabelParser extends LabelParserBase {
 
+
+	// Regex to find labels
+	// Allow labels without ":"
+	protected labelRegEx=/^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+
+	// Find the bytes after the address
+	protected matchBytesRegEx=/^[0-9a-f]+((\s[0-9a-f][0-9a-f])+)/i;
+
+	// RegEx to find the end of a macro
+	protected matchMacroEndRegEx=/^# End of macro\s+(.*)/;
+
+	// RegEx to find the end of a file
+	protected matchFileEndRegEx=/^# End of file\s+(.*)/;
+
+	// RegEx to find an include file
+	protected matchInclStartRegEx=/^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
+
+
+	// Current line number in reverse looping
+	protected lineNr=0;
+
+
+	/**
+	 * Parses one line for label and address.
+	 * Finds labels at start of the line and labels as EQUs.
+	 * Also finds the address of the line.
+	 * The function calls addLabelForNumber to add a label or equ and
+	 * addAddressLine to add the line and it's address.
+	 * @param line The current analyzed line of the list file.
+	 */
+	protected parseLabelAndAddress(line: string) {
+		let countBytes=0;
+
+		// Extract address.
+		const address=parseInt(line.substr(0, 4), 16);
+		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
+
+			// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+			const match=this.labelRegEx.exec(line);
+			if (match) {
+				let label=match[1];
+				const equ=match[2];
+				if (equ) {
+					if (equ.toLowerCase().startsWith('equ')) {
+						// EQU: add to label array
+						let valueString=match[3];
+						// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
+						try {
+							// Check for any '$', i.e. current address
+							if (valueString.indexOf('$')>=0) {
+								// Replace $ with current address
+								const addressString=address.toString();
+								const cAddrString=valueString.replace(/(?<![a-z_0-9\$])\$(?![a-z_0-9\$])/i, addressString);
+								valueString=cAddrString;
+							}
+							// Evaluate
+							const value=Utility.evalExpression(valueString, false);
+							// Add label
+							this.addLabelForNumber(value, label);
+						}
+						catch {};	// do nothing in case of an error
+					}
+				}
+				else {
+					// Add label
+					this.addLabelForNumber(address, label);
+				}
+			}
+
+			// Search for bytes after the address:
+			//line = "80F1 D5 C5";
+			const matchBytes=this.matchBytesRegEx.exec(line);
+			// Count how many bytes are included in the line.
+			if (matchBytes) {
+				const bytes=matchBytes[1].trim();
+				const lenBytes=bytes.length;
+				countBytes=0;
+				for (let k=0; k<lenBytes; k++) {
+					// Count all characters (chars are hex, so 2 characters equal to 1 byte)
+					if (bytes.charCodeAt(k)>32)
+						countBytes++;
+				}
+				// 2 characters = 1 byte
+				countBytes/=2;
+			}
+		}
+
+		// Store address (or several addresses for one line).
+		// This needs to be called even if address is undefined.
+		this.addAddressLine(address, countBytes);
+	}
+
+
+	/**
+	 * Parses one line for current file name and line number in this file.
+	 * The function calls.... TODO
+	 * @param line The current analyzed line of the listFile array.
+	 */
+	protected parseFileAndLineNumber(line: string) {
+		// Increase list file line number
+		this.lineNr++;
+
+		// Check for start of include file
+		const matchInclStart=this.matchInclStartRegEx.exec(line);
+		if (matchInclStart) {
+			const index=this.includeFileStack.length-1;
+			this.includeFileStack[index].lineNr++;
+			const fileName=matchInclStart[1];
+			const absFName=Utility.getAbsSourceFilePath(fileName, this.config.srcDirs);
+			const relFName=Utility.getRelFilePath(absFName);
+			this.includeStart(relFName);
+			return;
+		}
+
+		// Check for end of file (end of include)
+		const matchFileEnd=this.matchFileEndRegEx.exec(line);
+		if (matchFileEnd) {
+			// Could add a safety check for the name here.
+			this.includeEnd();	// Remove from top of stack
+			return;
+		}
+
+		// Check for macro (check for end of macro and search backward for the start of the macro)
+		const matchMacroEnd=this.matchMacroEndRegEx.exec(line);
+		if (matchMacroEnd) {
+			const macroName=matchMacroEnd[1];
+			const startLine=this.searchStartOfMacro(macroName);
+			// Skip all lines, i.e. all lines get same line number
+			const index=this.includeFileStack.length-1;
+			if (index<0)
+				throw Error("Problem with include files in list file.");
+			// Get line number of source file
+			let sourceLineNr=this.includeFileStack[index].lineNr-(this.lineNr-startLine);
+			for (var i=startLine+1; i<=this.lineNr; i++) {
+				// Correct previous lines
+				const entry=this.listFile[i];
+				entry.lineNr=sourceLineNr;
+			}
+			this.includeFileStack[index].lineNr=sourceLineNr+1;
+			return;
+		}
+
+		// Associate with line number
+		const index=this.includeFileStack.length-1;
+		if (index<0)
+			return;	// End of file
+
+		// Increase line number
+		let sourceLineNr=this.includeFileStack[index].lineNr;
+		this.setLineNumber(sourceLineNr);	// line numbers start at 0
+		sourceLineNr++;
+		this.includeFileStack[index].lineNr=sourceLineNr;
+	}
+
+
+	/**
+	 * Loops all entries of the listFile array and parses for the (include) file
+	 * names and line numbers.
+	 */
+	protected parseAllFilesAndLineNumbers(startLineNr=0) {
+		if (this.listFile.length==0)
+			return;
+
+		// Check first line for main file
+		const line=this.listFile[0].line;
+		if (!line.startsWith("# File "))
+			throw Error("Expecting '# File ' at start of list file.");
+
+		// Get file name
+		const fname=line.substr(7);
+		this.includeStart(fname);
+
+		// Parse rest of the lines.
+		this.lineNr=0;
+		super.parseAllFilesAndLineNumbers(1);	// Skip first line
+	}
+
+
+	/**
+	 * Searches for the start of a macro.
+	 * @param macroName The name of the macro to search for.
+	 * @return The found line number or startSearchLine if nothing found (should not happen).
+	 */
+	protected searchStartOfMacro(macroName: string): number {
+		const macroRegex=new RegExp("[0-9a-fA-F]+\\s+"+macroName+"\\s+.*");
+		var k=this.lineNr;
+		for (; k>0; --k) {
+			const line2=this.listFile[k].line;
+			const matchMacroStart=macroRegex.exec(line2);
+			if (matchMacroStart)
+				return k;	// macro start found
+		}
+		// Nothing found (should not happen)
+		return this.lineNr;
+	}
+
+
 	/**
 	 * Reads the given file (an assembler .list file) and extracts all PC
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 */
-	public loadAsmListFile(config: any) {
+	// TODO : Remove
+	public loadAsmListFilex(config: any) {
 		//const fileName: string=Utility.getAbsFilePath(config.path);
 		const fileName: string=config.path;
 		const sources: Array<string>=config.srcDirs;
@@ -178,7 +376,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 			const matchMacroEnd=/^# End of macro\s+(.*)/.exec(line);
 			if (matchMacroEnd) {
 				const macroName=matchMacroEnd[1];
-				const startLine=this.searchStartOfMacro(macroName, lineNr, listFile);
+				const startLine=this.searchStartOfMacroex(macroName, lineNr, listFile);
 				// skip all lines, i.e. all lines get same line number
 				for (var i=startLine; i<lineNr; ++i) {
 					listFile[i].fileName=stack[index].fileName;
@@ -304,7 +502,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 	 * @param listFile Array with lines of the file.
 	 * @return The found line number or startSearchLine if nothing found (should not happen).
 	 */
-	protected searchStartOfMacro(macroName: string, startSearchLine: number, listFile: Array<ListFileLine>): number {
+	protected searchStartOfMacroex(macroName: string, startSearchLine: number, listFile: Array<ListFileLine>): number {
 		const macroRegex=new RegExp("[0-9a-fA-F]+\\s+"+macroName+"\\s+.*");
 		var k=startSearchLine;
 		for (; k>0; --k) {

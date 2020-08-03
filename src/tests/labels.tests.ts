@@ -32,7 +32,8 @@ suite('Labels', () => {
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 1, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x7720);
+
+				var res=Labels.getFileAndLineForAddress(0x7721);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
@@ -40,17 +41,17 @@ suite('Labels', () => {
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x7724);
+				var res=Labels.getFileAndLineForAddress(0x7723);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
 
 
-				var res=Labels.getFileAndLineForAddress(0x7740);
+				var res=Labels.getFileAndLineForAddress(0x8820);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
-				assert.equal(res.lineNr, 0, "Expected line wrong.");
+				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x8830);
+				var res=Labels.getFileAndLineForAddress(0x8831);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 3, "Expected line wrong.");
 

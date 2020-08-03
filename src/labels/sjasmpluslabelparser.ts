@@ -23,11 +23,11 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	//    2++0001              i2:
 	//    3++0001 00               nop
 	// sjasmplus changed the format. Note the spaces in front of the line numbers.
-	protected sjasmRegex=/^ *[0-9]+[\s+]+/;
+	protected sjasmRegEx=/^ *[0-9]+[\s+]+/;
 
 	// Regex to find labels
 	// Allow labels without ":"
-	protected labelRegex=/^.{18}(@?)([^;:\s0-9][^:;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+	protected labelRegEx=/^.{18}(@?)([^;:\s0-9][^:;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
 
 	// Check if valid line (not "~")
 	// Search for "~". E.g. "8002 ~            Level   defw 4"
@@ -93,7 +93,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		}
 
 		// Replace line number with empty string.
-		line=line.replace(this.sjasmRegex, '');
+		line=line.replace(this.sjasmRegEx, '');
 
 		// Check if valid line (not "~")
 		// Search for "~". E.g. "8002 ~            Level   defw 4"
@@ -121,7 +121,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			}
 
 			// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
-			const match=this.labelRegex.exec(line);
+			const match=this.labelRegEx.exec(line);
 			if (match) {
 				let label=match[2];
 				let labelType=LabelType.NORMAL;
@@ -164,7 +164,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			// Search for bytes after the address:
 			//line = "80F1 D5 C5";
 			const matchBytes=this.matchBytesRegEx.exec(line);
-			//const matchBytes = /^[0-9a-f]+\s+(([0-9a-f][0-9a-f]\s)+|([0-9a-f][0-9a-f])+)/i.exec(line);
 			// Count how many bytes are included in the line.
 			if (matchBytes) {
 				const bytes=matchBytes[1].trim();
