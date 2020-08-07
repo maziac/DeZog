@@ -1,0 +1,90 @@
+1     0000              
+2     0000              
+3     0000              label_equ1:		equ 100
+4     0000              
+5     0000              
+6     0000              ;m1:	MACRO
+7     0000              ;	ld c,9
+8     0000              ;.mlocal:
+9     0000              ;	dec a
+10    0000              ;	ENDM
+11    0000              
+12    0000              
+13    0000              	ORG 0x8000
+14    0000              
+15    0000              label1:
+16    0000  00          	nop
+17    0001              
+18    0001  3E 05       label2:	ld a,5
+19    0003              
+20    0003  06 08       _locala:	ld b,8
+21    0005              
+22    0005              _localb:
+23    0005  00          	nop		; ASSERT
+24    0006              
+25    0006              label3:	;m1	; WPMEM
+26    0006               ;m1
+27    0006              label4:
+28    0006               ;	m1
+29    0006              
+30    0006              label4_1:
+31    0006              	; m1	; LOGPOINT
+32    0006              
+33    0006              	IF 0
+34    0006              label5:	nop
+35    0006              	ENDIF
+36    0006              
+37    0006  00          label6:	nop
+38    0007              
+39    0007              _local: ; local label not existing
+40    0007  00          	nop
+41    0008              
+42    0008              
+43    0008              
+44    0008              
+45    0008              	;ORG 0x9000
+46    0008              
+47    0008              	include "filea.asm"
+1     0008              
+2     0008  00          fa_label1:	nop
+3     0009              
+4     0009              
+5     0009              
+6     0009              fa_label2:
+7     0009  00          	nop
+8     000A              
+9     000A  00          fa_label3_mid:	nop
+10    000B              
+11    000B              	include "filea_b.asm"
+1     000B              
+2     000B              
+3     000B  00          fab_label1:	nop
+4     000C              
+5     000C              
+6     000C              
+7     000C  00          fab_label2:	nop
+8     000D              
+9     000D              
+10    000D              global_label1:	; All labels are global
+11    000D  00          	nop
+12    000E              global_label2:	; All labels are global
+13    000E  00          	nop
+14    000F              
+15    000F              
+16    000F              fab_label3:
+17    000F  00          	nop
+18    0010              
+19    0010              
+20    0010              fab_label_equ1:		equ 70
+21    0010              
+12    0010              
+13    0010              
+14    0010              
+15    0010              fa_label3:
+16    0010  00          	nop
+17    0011              
+18    0011              
+48    0011              
+49    0011              
+50    0011              
+51    0011              
