@@ -317,11 +317,17 @@ suite('Labels (z88dk)', () => {
 				address=Labels.getAddrForFileAndLine('filea_b.asm', 4-1);
 				assert.equal(0x800C, address);
 
-				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
+				address=Labels.getAddrForFileAndLine('filea_b.asm', 15-1);
 				assert.equal(0x800F, address);
 
-				address=Labels.getAddrForFileAndLine('filea.asm', 19-1);
+				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
 				assert.equal(0x8010, address);
+
+				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
+				assert.equal(0x8010, address);
+
+				address=Labels.getAddrForFileAndLine('filea.asm', 17-1);
+				assert.equal(0x8011, address);
 			});
 
 		});

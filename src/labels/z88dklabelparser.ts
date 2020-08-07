@@ -193,7 +193,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 			// undefined access later.
 			// See https://github.com/maziac/DeZog/issues/17
 			this.includeEnd();
-			return;
 		}
 
 
