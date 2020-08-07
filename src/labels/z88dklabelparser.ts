@@ -44,7 +44,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	protected addOffset;
 
 	// The current line and the next lines are tested to find the end of an include file-
-	protected expectedLineNr;
+	protected expectedLineNr: number;
 
 
 	/**
@@ -53,7 +53,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmListFileBase) {
-		this.addOffset=(config as Z88dkListFile).addOffset;
+		this.addOffset=(config as Z88dkListFile).addOffset || 0;
 		const z88dkMapFile: string|undefined=(config as Z88dkListFile).z88dkMapFile;
 		this.readZ88dkMapFile(z88dkMapFile);
 		super.loadAsmListFile(config);
@@ -75,6 +75,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 			this.includeStart(fileName);
 		}
 		// Call super
+		this.expectedLineNr=1;
 		super.parseAllFilesAndLineNumbers(startLineNr);
 	}
 
@@ -95,20 +96,20 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 		// Extract address.
 		let address=parseInt(line.substr(0, 4), 16);
-		if (isNaN(address)) // isNaN if e.g. the first line: "# File main.asm"
-			address=undefined!;
+		if (isNaN(address))
+			address=undefined!;	// Should not happen
 		if (address!=undefined) {
 			const readAddress=address;
 			address+=this.addOffset+this.z88dkMapOffset;
-			// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+			// Check for labels and "equ".
 			const match=this.labelRegEx.exec(line);
 			if (match) {
-				let label=match[2];
-				const equ=match[3];
+				let label=match[1];
+				const equ=match[2];
 				if (equ) {
 					if (equ.toLowerCase().startsWith('equ')) {
 						// EQU: add to label array
-						let valueString=match[4];
+						let valueString=match[3];
 						// Only try a simple number conversion, e.g. no label arithmetic (only already known labels)
 						try {
 							// Check for any '$', i.e. current address
@@ -175,12 +176,11 @@ export class Z88dkLabelParser extends LabelParserBase {
 		const lineNumber=parseInt(matchLineNumber[1]);
 
 		// z88dk: Check for end of include file
-		if (this.expectedLineNr!=undefined
-			&&lineNumber!=this.expectedLineNr
+		if (lineNumber!=this.expectedLineNr
 			&&lineNumber!=this.expectedLineNr+1) {
 			// End of include found
 			// Note: this is not 100% error proof.
-			// E.g. if modules are used (speccytron) this happesn also after the MODULE lines:
+			// E.g. if modules are used (speccytron) this happens also after the MODULE lines:
 			/*
 			1     0000              MODULE efd_c
 			2     0000              LINE 0, "efd.c"
@@ -203,11 +203,10 @@ export class Z88dkLabelParser extends LabelParserBase {
 		if (matchInclStart) {
 			const fName=matchInclStart[1];
 			this.includeStart(fName);
-			this.expectedLineNr=undefined;
+			this.expectedLineNr=1;
+			return;
 		}
-		else {
-			this.expectedLineNr=lineNumber;
-		}
+		this.expectedLineNr=lineNumber;
 
 		// Associate with line number
 		this.setLineNumber(lineNumber-1);	// line numbers start at 0

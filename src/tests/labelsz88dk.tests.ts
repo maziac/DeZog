@@ -75,6 +75,26 @@ suite('Labels (z88dk)', () => {
 			}
 		});
 
+		test('Labels equ', () => {
+			// EQUs are not included in mpa file for z88dk
+			// Read the list file
+			const config={
+				z88dkListFiles: [{
+					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+					srcDirs: [""]
+				}]
+			};
+			Labels.readListFiles(config);
+
+			// Check
+			let res=Labels.getNumberForLabel("label_equ1");
+			assert.equal(100, res);
+
+			res=Labels.getNumberForLabel("fab_label_equ1");
+			assert.equal(70, res);
+		});
+
+
 		test('IF 0 Labels', () => {
 			// Read the list file
 			const config={
@@ -101,7 +121,7 @@ suite('Labels (z88dk)', () => {
 				const fname='./src/tests/data/labels/projects/z88dk/general/main.lis';
 				const config={
 					z88dkListFiles: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: fname,
 						srcDirs: [],	// ListFile-Mode
 						z88dkMapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
 					}]
@@ -112,47 +132,22 @@ suite('Labels (z88dk)', () => {
 				let res=Labels.getLocationOfLabel('label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(16-1, res.lineNr);	// line number starts at 0
+				assert.equal(15-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(62-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.fa_label2')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(66-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(69-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(76-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(81-1, res.lineNr);	// line number starts at 0
+				assert.equal(49-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(85-1, res.lineNr);	// line number starts at 0
+				assert.equal(68-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(87-1, res.lineNr);	// line number starts at 0
-
-				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
-				assert.notEqual(undefined, res);
-				assert.equal(fname, res.file);
-				assert.equal(95-1, res.lineNr);	// line number starts at 0
+				assert.equal(70-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -323,9 +318,9 @@ suite('Labels (z88dk)', () => {
 				assert.equal(0x800C, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
-				assert.equal(0x8010, address);
+				assert.equal(0x800F, address);
 
-				address=Labels.getAddrForFileAndLine('filea.asm', 16-1);
+				address=Labels.getAddrForFileAndLine('filea.asm', 19-1);
 				assert.equal(0x8010, address);
 			});
 
