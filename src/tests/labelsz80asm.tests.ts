@@ -44,8 +44,8 @@ suite('Labels (z80asm)', () => {
 			// Test that a label under an IF 0/ENDIF is not defined => not easily possible with
 			// z80asm, so simply allow it.
 			const res=Labels.getNumberForLabel('label5');
-			//assert.equal(undefined, res); // This would be corrct, but is not easily possible with z80asm
-			assert.equal(0x8012, res); // This would be corrct, but is not easily possible with
+			//assert.equal(undefined, res); // This would be correct, but is not easily possible with z80asm
+			assert.equal(0x8012, res);
 		});
 
 

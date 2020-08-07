@@ -93,20 +93,17 @@ suite('Labels', () => {
 				assert.equal(addr, 0x7710, "Expected address wrong.");
 
 				addr=Labels.getAddrForFileAndLine('main.asm', 2);
-				assert.equal(addr, 0x7720, "Expected address wrong.");
+				assert.equal(addr, 0x7721, "Expected address wrong.");
 
 
-				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 0);
-				assert.equal(addr, 0x7740, "Expected address wrong.");
-
-				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 3);
-				assert.equal(addr, 0x8830, "Expected address wrong.");
+				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 2);
+				assert.equal(addr, 0x8820, "Expected address wrong.");
 
 				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 4);
 				assert.equal(addr, 0x8834, "Expected address wrong.");
 
 				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 6);
-				assert.equal(addr, 0x8836, "Expected address wrong.");
+				assert.equal(addr, 0x8837, "Expected address wrong.");
 
 				addr=Labels.getAddrForFileAndLine('zxspectrum.asm', 9);
 				assert.equal(addr, 0x8841, "Expected address wrong.");
@@ -259,7 +256,7 @@ suite('Labels', () => {
 			});
 
 			test('rom.list', () => {
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/rom.list', srcDirs: [""]}]};
+				const config={z80asmListFiles: [{path: './src/tests/data/labels/rom.list', srcDirs: []}]};
 				Labels.readListFiles(config);
 
 				// Checks

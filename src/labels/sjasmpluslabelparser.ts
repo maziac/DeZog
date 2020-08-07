@@ -102,8 +102,10 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			return;	// Skip line.
 
 		// Extract address.
-		const address=parseInt(line.substr(0, 4), 16);
-		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
+		let address=parseInt(line.substr(0, 4), 16);
+		if (isNaN(address)) // isNaN if e.g. the first line: "# File main.asm"
+			address=undefined!;
+		if (address!=undefined) {
 			// Check for MODULE
 			var matchModuleStart=this.matchModuleStartRegEx.exec(line);
 			if (matchModuleStart) {

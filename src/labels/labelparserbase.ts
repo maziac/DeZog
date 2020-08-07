@@ -121,6 +121,7 @@ export class LabelParserBase {
 
 		// Check for watchpoints, asserts and logpoints
 		// TODO: parse the this.listFile
+		// TODO: Test e.g. watchpoint on empty line without label and instruction.
 
 		// Check if Listfile-Mode
 		if (config.srcDirs.length==0) {
@@ -161,19 +162,9 @@ export class LabelParserBase {
 	 * Loops all entries of the listFile array and parses for the (include) file
 	 * names and line numbers.
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
-	 * beginnign of the list file contains onformation that is parsed differently.
+	 * beginning of the list file contains onformation that is parsed differently.
 	 */
 	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
-		// TODO: Move to z88dk
-		/*
-		// Check if there is a main file given in the config
-		if (this.config.mainFile) {
-			// Set main file
-			const fileName=Utility.getRelFilePath(this.config.mainFile);
-			this.includeStart(fileName);
-		}
-		*/
-
 		// Loop all lines
 		const count=this.listFile.length;
 		for (let listFileNumber=startLineNr; listFileNumber<count; listFileNumber++) {
@@ -401,8 +392,8 @@ export class LabelParserBase {
 	 * Has to be 1 if address is undefined.
 	 */
 	protected addAddressLine(address: number, size: number) {
-		if (size==0)
-			return;
+		//if (size==0)
+		//	return;
 		this.currentFileEntry.addr=address;
 		this.currentFileEntry.size=size;
 	}
