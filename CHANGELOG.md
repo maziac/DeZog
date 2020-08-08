@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.4.7
+- Added donate button.
+
 # 1.4.6
 - Removed double timer for command/response.
 - Added "What's New".

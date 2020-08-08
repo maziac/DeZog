@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.4.6",
+	"version": "1.4.7",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
 	"author": {
