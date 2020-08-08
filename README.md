@@ -3,7 +3,7 @@
 If you like Dezog please consider supporting it.
 
 <a title="PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url">
-	<img src="whatsnew/btn_donate_SM.gif" />
+	<img src="images/btn_donate_SM.gif" />
 </a>
 
 
