@@ -146,7 +146,7 @@
 		"commands": [
 			{
 				"command": "dezog.whatsNew",
-				"title": "Show 'What's New' of this DeZog release.",
+				"title": "Show 'What's New' page of this DeZog release.",
 				"category": "dezog"
 			},
 			{
