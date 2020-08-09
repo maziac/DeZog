@@ -105,10 +105,12 @@ export interface CSpectType {
 	socketTimeout: number;
 }
 
+// Definitions for the OpenMSX emulator.
 export interface OpenMSXType {
 	// Default breakpoint program counter slot, subslot, page/bank of OpenMSX
 	pcInSlot: string;
 }
+
 
 // Definitions for ZX Next remote type.
 export interface ZxNextSocketType {
@@ -169,8 +171,12 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	// The special settings for the internal Z80 simulator.
 	zsim: ZxSimType;
 
-	// The special settings for the serial connection.
+	// The special settings for the serial connection to the ZX Next.
 	zxnext: ZxNextSocketType;
+
+	// The settings for the OpenMSX emulator.
+	openmsx: OpenMSXType;
+
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -243,8 +249,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 
 	/// The timeout for any unit test in seconds.
 	unitTestTimeout: number;
-
-	openmsx: OpenMSXType;
 }
 
 
@@ -381,6 +385,8 @@ export class Settings {
 
 		if (!Settings.launch.openmsx)
 			Settings.launch.openmsx={} as OpenMSXType;
+		if (!Settings.launch.openmsx.pcInSlot)
+
 		// TODO MSX: Predefine default values
 
 		// zxnext

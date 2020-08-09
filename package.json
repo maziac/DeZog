@@ -360,6 +360,13 @@
 									"default": "/dev/tty.usbserial"
 								}
 							},
+							"openmsx": {
+								"pcInSlot": {
+									"type": "string",
+									"description": "??? TODO",
+									"default": "??? TODO"
+								}
+							},
 							"unitTests": {
 								"type": "boolean",
 								"description": "Whether the configuration contains the unit tests or not. Default: false."
