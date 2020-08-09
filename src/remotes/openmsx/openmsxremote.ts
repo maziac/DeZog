@@ -62,7 +62,7 @@ export class OpenMSXRemote extends RemoteBase {
 						var timer  = setTimeout(function () {
 							client.destroy();
 							reject (new Error (`Timeout connecting to OpenMSX`));
-						   }, 15000);
+						   }, 15000);  // TODO MSX: 15 secs timeout is too long
 						client.on('connect', () => {
 							clearTimeout(timer);
 							console.log('Connected to OpenMSX');
@@ -80,7 +80,7 @@ export class OpenMSXRemote extends RemoteBase {
 						var timer  = setTimeout(function () {
 							client.destroy();
 							reject (new Error (`Timeout connecting to OpenMSX:${port}`));
-						   }, 15000);
+						}, 15000); // TODO MSX: 15 secs timeout is too long
 						client.on('connect', () => {
 							clearTimeout(timer);
 							console.log('Connected to OpenMSX');
@@ -613,8 +613,9 @@ export class OpenMSXRemote extends RemoteBase {
 		if(!Settings.launch.history.codeCoverageEnabled)
 			return;
 
-
+		// TODO MSX: This function does nothing. Also the description (zesarux) is wrong.
 	}
+
 
 	/**
 	 * 'step out' of current subroutine.
@@ -657,6 +658,7 @@ export class OpenMSXRemote extends RemoteBase {
 		Utility.assert(false);	// override this
 	}
 
+
 	/**
 	 * Enables/disables all assert breakpoints set from the sources.
 	 * Promise is called when ready.
@@ -692,6 +694,7 @@ export class OpenMSXRemote extends RemoteBase {
 		this.assertBreakpointsEnabled = enable;
 	}
 
+
 	/**
 	 * Set all log points.
 	 * Called at startup and once by enableLogPoints (to turn a group on or off).
@@ -703,6 +706,7 @@ export class OpenMSXRemote extends RemoteBase {
 	public async enableLogpoints(logpoints: Array<GenericBreakpoint>, enable: boolean): Promise<void> {
 		Utility.assert(false);	// override this
 	}
+
 
 	//BC==0x12FA
 	//DE==HL+1
@@ -741,6 +745,7 @@ export class OpenMSXRemote extends RemoteBase {
 		console.log('Converted condition "' + condition + '" to "' + conds + '"');
 		return conds;
 	}
+
 
 	/**
 	 * Sets breakpoint in the Remote.
@@ -803,6 +808,8 @@ export class OpenMSXRemote extends RemoteBase {
 			this.breakpoints.splice(index, 1);
 		});
 	}
+
+
 	/**
 	/**
 	 * Sends a command to the emulator.
@@ -823,6 +830,7 @@ export class OpenMSXRemote extends RemoteBase {
 			resolve (result);
 		});
 	}
+
 
 	/**
 	 * Reads a memory dump and converts it to a number array.
@@ -854,7 +862,8 @@ export class OpenMSXRemote extends RemoteBase {
 		Utility.assert(false);	// override this
 	}
 
-		/**
+
+	/**
 	 * Called from "-state save" command.
 	 * Stores all RAM, registers etc.
 	 * Override.
