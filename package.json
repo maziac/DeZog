@@ -42,9 +42,6 @@
 	},
 	"files": [],
 	"dependencies": {
-		"@types/debug": "^4.1.5",
-		"@types/http-errors": "^1.8.0",
-		"@types/node-fetch": "^2.5.7",
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.3",
 		"gif-writer": "^0.9.3",
@@ -63,7 +60,6 @@
 	"devDependencies": {
 		"@types/mocha": "7.0.2",
 		"@types/node": "13.9.5",
-		"@types/xml2js": "^0.4.5",
 		"electron-rebuild": "^1.11.0",
 		"minimist": "^1.2.5",
 		"tslint": "^6.1.2",
