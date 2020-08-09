@@ -57,16 +57,19 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 
 
-
 ## Features
 
-- supports [OpenMSX](https://github.com/openMSX) emulator (>= v0.15)
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.1)
-- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.26)
+- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.34)
+- supports [OpenMSX](https://github.com/openMSX) emulator (>= v0.15)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list files
 	- supports stepping through source code
 	- either in .list file or in .asm files
+- Native support for different assemblers
+	- [sjasmplus](https://github.com/z00m128/sjasmplus)
+	- [Savannah's z80asm](https://savannah.nongnu.org/projects/z80asm)
+	- [z88dk (z80asm)](https://www.z88dk.org)
 - step-over, step-in, step-out, continue, pause
 - [reverse debugging](documentation/Usage.md#reverse-debugging) via step back and reverse continue
 - [code coverage](documentation/Usage.md#code-coverage) visualization
@@ -176,6 +179,7 @@ I would like to thank a few people for their support
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support. Especially to get the display of the relative-sprites correct.
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram) and [Daren May](https://github.com/darenm) for writing tutorials.
+- Mario Smit aka [S0urceror](https://github.com/S0urceror) for the implementation of the OpenMSX Remote. He digged through the DeZog implementation and the documentation and showed that DeZog can also be used for other environments, not only ZX Spectrum.
 
 
 # Tutorials
@@ -205,4 +209,10 @@ Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and 
 
 
 And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
+
+
+## OpenMSX/DeZog
+
+Here is a video tutorial of Mario Smit showing how to use DeZog together with the OpenMSX emulator.
+https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be
 

@@ -510,10 +510,10 @@ export class Settings {
 				"HL", "(${hex}h)b=${b@:unsigned}, ${unsigned}u, ${signed}i${, :labelsplus|, }",
 				"IM", "${unsigned}u",
 				"..", "${hex}h, ${unsigned}u, ${signed}i${, :labelsplus|, }",
-				"F", " ${flags}",
-				"R", " ${unsigned}u",
-				"I", " ${hex}h",
-				".", " ${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}"
+				"F", "${flags}",
+				"R", "${unsigned}u",
+				"I", "${hex}h",
+				".", "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}"
 			];
 		if(!Settings.launch.formatting.registerHover)
 			Settings.launch.formatting.registerHover = [

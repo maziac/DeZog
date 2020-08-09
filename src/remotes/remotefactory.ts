@@ -31,11 +31,11 @@ export class RemoteFactory {
 			case 'zsim':	// Simulator
 				RemoteFactory.setRemote(new ZxSimulatorRemote());
 				break;
+			case 'openmsx':
+				RemoteFactory.setRemote(new OpenMSXRemote());
+				break;
 			case 'mame':
 				Utility.assert(false);	// needs to be implemented
-				break;
-			case 'openmsx':
-				RemoteFactory.setRemote (new OpenMSXRemote());
 				break;
 			default:
 				Utility.assert(false);
