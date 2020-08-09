@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Labels } from '../labels';
+import { Labels } from '../labels/labels';
 import { Settings } from '../settings';
 
 suite('Labels', () => {

@@ -10,12 +10,16 @@
 	"license": "MIT",
 	"keywords": [
 		"debugger",
+		"debug",
 		"z80",
 		"z80-debug",
 		"dezog",
 		"zesarux",
-		"zx spectrum",
-		"assembler"
+		"zx",
+		"spectrum",
+		"assembler",
+		"z80asm",
+		"sjasmplus"
 	],
 	"engines": {
 		"vscode": "^1.35.1",
@@ -28,7 +32,7 @@
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/maziac/dezog"
+		"url": "https://github.com/maziac/DeZog"
 	},
 	"scripts": {
 		"compile": "tsc -p ./src",
@@ -70,6 +74,9 @@
 	},
 	"resolutions": {
 		"minimist": "^1.2.5"
+	},
+	"bugs": {
+		"url": "https://github.com/maziac/DeZog/issues"
 	},
 	"main": "./out/extension",
 	"activationEvents": [
@@ -141,6 +148,11 @@
 		],
 		"commands": [
 			{
+				"command": "dezog.whatsNew",
+				"title": "Show 'What's New' page of this DeZog release.",
+				"category": "dezog"
+			},
+			{
 				"command": "dezog.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
 				"category": "dezog"
@@ -158,6 +170,11 @@
 			{
 				"command": "dezog.debugAllUnitTests",
 				"title": "Run all unit tests in debug mode",
+				"category": "dezog"
+			},
+			{
+				"command": "dezog.cancelUnitTests",
+				"title": "Cancels all running unit test cases.",
 				"category": "dezog"
 			},
 			{
@@ -188,6 +205,9 @@
 		],
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "dezog.whatsNew"
+				},
 				{
 					"command": "dezog.runAllUnitTests"
 				},
@@ -246,7 +266,7 @@
 						"properties": {
 							"remoteType": {
 								"type": "string",
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'serial' or 'zxsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zxsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zrcp"
 							},
 							"zrcp": {
@@ -328,7 +348,7 @@
 									"default": false
 								}
 							},
-							"serial": {
+							"zxnext": {
 								"baudrate": {
 									"type": "number",
 									"description": "The baudrate. Note: If you change the baudrate here you also need to change the baudrate at the remote.",
@@ -594,7 +614,7 @@
 							"zsim": {
 								"machine": "loadZxRom"
 							},
-							"serial": {
+							"zxnext": {
 								"baudrate": 230400,
 								"port": "/dev/tty.usbserial"
 							},

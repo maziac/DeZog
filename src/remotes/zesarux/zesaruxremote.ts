@@ -1,6 +1,6 @@
 import { zSocket, ZesaruxSocket } from './zesaruxsocket';
 import { Utility } from '../../misc/utility';
-import { Labels } from '../../labels';
+import { Labels } from '../../labels/labels';
 import { Settings } from '../../settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint, MemoryBank } from '../remotebase';

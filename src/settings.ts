@@ -110,6 +110,19 @@ export interface OpenMSXType {
 	pcInSlot: string;
 }
 
+// Definitions for ZX Next remote type.
+export interface ZxNextSocketType {
+	// The hostname/IP address of the socket that connects the serial port.
+	hostname: string;
+
+	// The port of the socket that connects the serial port.
+	port: number;
+
+	/// The socket timeout in seconds.
+	socketTimeout: number;
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
 	// Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
@@ -139,18 +152,6 @@ export interface ZxSimType {
 }
 
 
-/// Definitions for the 'serial' remote type.
-export interface SerialType {
-	/// The baudrate to use.
-	baudrate: number;
-
-	/// The port, e.g.  "/dev/tty.usbserial-####" or "COM1"/"COM2"
-	port: string;
-
-	/// The load delay. Workaround for using ZEsarUx on Windows.
-}
-
-
 /**
  * See also package.json.
  * The configuration parameters for the zesarux debugger.
@@ -169,7 +170,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zsim: ZxSimType;
 
 	// The special settings for the serial connection.
-	serial: SerialType;
+	zxnext: ZxNextSocketType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -278,7 +279,7 @@ export class Settings {
 				cspect: <any>undefined,
 				zsim: <any>undefined,
 				openmsx: <any>undefined,
-				serial: <any>undefined,
+				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
 				listFiles: <any>undefined,
@@ -325,7 +326,7 @@ export class Settings {
 
 		// cspect
 		if (!Settings.launch.cspect)
-			Settings.launch.cspect={} as ZrcpType;
+			Settings.launch.cspect={} as CSpectType;
 		if (Settings.launch.cspect.hostname==undefined)
 			Settings.launch.cspect.hostname='localhost';
 		if (Settings.launch.cspect.port==undefined)
@@ -380,14 +381,17 @@ export class Settings {
 
 		if (!Settings.launch.openmsx)
 			Settings.launch.openmsx={} as OpenMSXType;
+		// TODO MSX: Predefine default values
 
-		// serial
-		if (!Settings.launch.serial)
-			Settings.launch.serial={} as SerialType;
-		if (Settings.launch.serial.baudrate==undefined)
-			Settings.launch.serial.baudrate=230400;
-		if (!Settings.launch.serial.port==undefined)
-			Settings.launch.serial.port="/dev/tty.usbserial";
+		// zxnext
+		if (!Settings.launch.zxnext)
+			Settings.launch.zxnext={} as ZxNextSocketType;
+		if (Settings.launch.zxnext.hostname==undefined)
+			Settings.launch.zxnext.hostname='localhost';
+		if (Settings.launch.zxnext.port==undefined)
+			Settings.launch.zxnext.port=12000;
+		if (!Settings.launch.zxnext.socketTimeout)
+			Settings.launch.zxnext.socketTimeout=0.5;	// 0.5 secs, needs to be short to show a warning fast if debugged program is running.
 
 		if(!Settings.launch.rootFolder)
 			Settings.launch.rootFolder = rootFolder;
@@ -518,13 +522,13 @@ export class Settings {
 				"PC", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"SP", "${name}: ${hex}h${\n:labelsplus|\n}",
 				"IM", "${unsigned}u",
-				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:unsigned}, (${hex}h)w=${w@:unsigned}",
+				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:hex}h, (${hex}h)w=${w@:hex}h",
 				"R", "${name}: ${unsigned}u",
 				"I", "${name}: ${hex}h",
 				".", "${name}: ${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}b"
 			];
 		if(!Settings.launch.formatting.bigValues)
-			Settings.launch.formatting.bigValues = "(${hex}h)b=${b@:unsigned}/'${b@:char}', (${hex}h)w=${w@:unsigned}";
+			Settings.launch.formatting.bigValues= "(${hex}h)=${b@:unsigned}/${b@:hex}h/'${b@:char}' or ${w@:hex}h/${w@:unsigned}";
 		if(!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
 		if(!Settings.launch.formatting.arrayByte)
@@ -548,11 +552,12 @@ export class Settings {
 					"HL", "darkgreen",
 					"DE", "darkcyan",
 					"BC", "dimgray",
+					"SP", "goldenrod",
 					"IX", "darkorange",
 					"IY", "darkviolet"
 				],
 				registersMemoryView: [
-					"HL", "DE", "BC", "IX", "IY"
+					"HL", "DE", "BC", "SP", "IX", "IY"
 				]
 			};
 		}
@@ -570,8 +575,7 @@ export class Settings {
 	public static CheckSettings() {
 		// Check remote type
 		const rType=Settings.launch.remoteType;
-		//const allowedTypes=['zrcp', 'cspect', 'serial', 'zsim'];
-		const allowedTypes=['zrcp', 'cspect', /*'serial',*/ 'zsim','openmsx'];
+		const allowedTypes=['zrcp', 'cspect', 'openmsx', 'zxnext', 'zsim'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");

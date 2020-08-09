@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Remote } from '../remotes/remotefactory';
 import * as util from 'util';
 import { Utility } from '../misc/utility';
-import { Labels } from '../labels';
+import { Labels } from '../labels/labels';
 import { MetaBlock, MemoryDump } from '../misc/memorydump';
 import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';

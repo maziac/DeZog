@@ -99,11 +99,25 @@ export class MemoryDump {
 	 */
 	public addBlock(startAddress: number, size: number, title:string|undefined = undefined) {
 		// Create memory block
-		const memBlock = { address: startAddress, size: size, data: [] };
-		// Create one meta block for the memory block
-		const boundAddr = Utility.getBoundary(memBlock.address-MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
-		const boundSize = Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY) + 2*MEM_DUMP_BOUNDARY - boundAddr;
-		const bigBlock =  new MetaBlock(boundAddr, boundSize, [memBlock], title);
+		const memBlock={address: startAddress, size: size, data: []};
+		let bigBlock;
+		// Check for size > 0xFFFF
+		if (size<=0xFFFF-2*(2*MEM_DUMP_BOUNDARY-1)) {
+			// Create one meta block for the memory block
+			const boundAddr=Utility.getBoundary(memBlock.address-MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			const boundSize=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+2*MEM_DUMP_BOUNDARY-boundAddr;
+			bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+		}
+		else {
+			const boundAddr=Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+MEM_DUMP_BOUNDARY;
+			let boundSize=boundEnd-boundAddr+1;
+			if (boundSize>0xFFFF) {
+				boundSize=Math.trunc(0xFFFF/MEM_DUMP_BOUNDARY)*MEM_DUMP_BOUNDARY;
+				memBlock.size=boundAddr+boundSize-startAddress;
+			}
+			bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+		}
 		this.metaBlocks.push(bigBlock);
 	}
 

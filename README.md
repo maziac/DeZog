@@ -1,3 +1,12 @@
+# Support
+
+If you like Dezog please consider supporting it.
+
+<a title="PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url">
+	<img src="images/btn_donate_SM.gif" />
+</a>
+
+
 # DeZog - The Z80 Debugger
 
 ![](documentation/images/main.gif)
@@ -151,9 +160,11 @@ The source code is available on [github](https://github.com/maziac/dezog).
 
 DeZog also includes a Z80/48k ZX Spectrum simulator. For this the original 48/128k ROM code is included and here is the copyright notice:
 "Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
-See [Amstrad ROM permissions](https://www.worldofspectrum.org/permits/amstrad-roms.txt).
+See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
 
 Furthermore DeZog includes slightly modified sources of the Z80.js simulator. It was taken from https://bitbucket.org/DrGoldfire/z80.js/src/master/ which is MIT licensed. Many thanks to Molly Howell.
+
+For the "What's New" feature the [vscode-whats-new](https://github.com/alefragnani/vscode-whats-new) project from Alessandro Fragnani aka [alefragni](https://github.com/alefragnani) has been incorporated. The project is MIT licensed.
 
 
 ## Acknowledgements

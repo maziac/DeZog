@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
-import { Labels } from './labels';
+import { Labels } from './labels/labels';
 import { RemoteBreakpoint } from './remotes/remotebase';
 import { GenericWatchpoint } from './genericwatchpoint';
-import { LabelsClass } from './labels';
+import { LabelsClass } from './labels/labels';
 import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
@@ -114,6 +114,10 @@ export class Z80UnitTests {
 	/// At the end of the test this address is reached on success.
 	protected static addrTestReadySuccess: number;
 
+	/// The test case would end here if it just returns.
+	/// The TC_END macro should be used instead as 'ret' at the end of a testcase.
+	protected static addrTestReadyReturnFailure: number;
+
 	/// At the end of the test this address is reached on failure.
 	protected static addrTestReadyFailure: number;
 
@@ -132,6 +136,9 @@ export class Z80UnitTests {
 
 	/// Debug mode or run mode.
 	protected static debug = false;
+
+	/// Set to true if unit tests are cancelled.
+	protected static cancelled=false;
 
 	/// Stroes the covered accresses for all unit tests.
 	protected static allCoveredAddresses: Set<number>;
@@ -227,7 +234,8 @@ export class Z80UnitTests {
 			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : ''); //vscode.workspace.rootPath
 
 			// Mode
-			this.debug = false;
+			this.debug=false;
+			this.cancelled=false;
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
@@ -269,7 +277,7 @@ export class Z80UnitTests {
 					try {
 						await Remote.enableLogpointGroup('UNITTEST', true);
 					}
-					catch {}	// Note: This group might be used by teh user. Most probably this group is undefined.
+					catch {}	// Note: This group might be used by tee user. Most probably this group is undefined.
 
 					await Z80UnitTests.initUnitTests();
 
@@ -333,13 +341,45 @@ export class Z80UnitTests {
 	 */
 	public static debugPartialUnitTests() {
 		// Mode
-		this.debug = true;
+		this.debug=true;
+		this.cancelled=false;
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
 		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
 		// Start
 		Z80UnitTests.debugTestsCheck();
+	}
+
+
+	/**
+	 * Command execution: Cancel all unit tests.
+	 */
+	public static cmdCancelAllUnitTests() {
+		Remote.emit('terminated');
+		Z80UnitTests.cancelUnitTests();
+	}
+
+
+	/**
+	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
+	 */
+	public static cancelUnitTests() {
+		// Cancel the unit tests
+		this.cancelled=true;
+		const text="Unit tests cancelled.";
+		Z80UnitTests.dbgOutput(text);
+		Z80UnitTests.stopUnitTests(undefined);
+	//	ds.customRequest("terminate");
+		// Fail the current test
+		/*
+		Z80UnitTests.countFailed++;
+		if (Z80UnitTests.countFailed>Z80UnitTests.countExecuted)
+			Z80UnitTests.countFailed=Z80UnitTests.countExecuted;
+		*/
+		if (Z80UnitTests.countExecuted>0)
+			Z80UnitTests.countExecuted--;
+		Z80UnitTests.unitTestsFinished();
 	}
 
 
@@ -546,7 +586,8 @@ export class Z80UnitTests {
 		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
 		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
-		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		Z80UnitTests.addrTestReadyReturnFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
+		Z80UnitTests.addrTestReadyFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
 		const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
 		const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
 
@@ -563,8 +604,10 @@ export class Z80UnitTests {
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
-		const failureBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '',	log: undefined };
-		await Remote.setBreakpoint(failureBp);
+		const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '', log: undefined};
+		await Remote.setBreakpoint(failureBp1);
+		const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyReturnFailure, condition: '', log: undefined};
+		await Remote.setBreakpoint(failureBp2);
 
 		// Stack watchpoints
 		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
@@ -586,6 +629,16 @@ export class Z80UnitTests {
 					// Cache covered addresses (since last unit test)
 					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
 				});
+
+				// After initialization vscode might send breakpoint requests
+				// to set the breakpoints.
+				// Unfortunately this request is sent only if breakpoints exist.
+				// I.e. there is no safe way to wait for something to
+				// know when vscode is ready.
+				// So just wait some time:
+				if (Settings.launch.startAutomatically)
+					await Utility.timeout(500);
+
 				// Init unit tests
 				await Z80UnitTests.initUnitTests();
 				// Start unit tests after a short while
@@ -661,7 +714,7 @@ export class Z80UnitTests {
 	 */
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
-		const callAddr = new Uint8Array([ address & 0xFF, address >>> 8]);
+		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
 			// Set PC
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
@@ -683,11 +736,14 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Starts Continue directy or through the debug adapter.
+	 * Starts Continue directly or through the debug adapter.
 	 */
 	protected static RemoteContinue(da: DebugSessionClass|undefined) {
 		// Start asynchronously
 		(async () => {
+			// Check if cancelled
+			if (Z80UnitTests.cancelled)
+				return;
 			// Init
 			Remote.startProcessing();
 			// Run or Debug
@@ -725,7 +781,7 @@ export class Z80UnitTests {
 		// Set timeout
 		if(!Z80UnitTests.debug) {
 			clearTimeout(Z80UnitTests.timeoutHandle);
-			const toMs=5000; //1000*Settings.launch.unitTestTimeout; TODO
+			const toMs=1000*Settings.launch.unitTestTimeout;
 			Z80UnitTests.timeoutHandle = setTimeout(() => {
 				// Clear timeout
 				clearTimeout(Z80UnitTests.timeoutHandle);
@@ -758,8 +814,9 @@ export class Z80UnitTests {
 		}
 
 		// Check if test case ended successfully or not
-		if(pc != this.addrTestReadySuccess
-			&& pc != this.addrTestReadyFailure) {
+		if (pc!=this.addrTestReadySuccess
+			&& pc!=this.addrTestReadyFailure
+			&& pc!=this.addrTestReadyReturnFailure) {
 			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {
@@ -835,7 +892,8 @@ export class Z80UnitTests {
 			if(Z80UnitTests.utLabels) {
 				if(pc == this.addrTestReadySuccess)
 					Z80UnitTests.dbgOutput(label + ' PASSED.');
-				if(pc == this.addrTestReadyFailure)
+				if (pc==this.addrTestReadyFailure
+					||pc==this.addrTestReadyReturnFailure)
 					Z80UnitTests.dbgOutput(label + ' FAILED.');
 			}
 			// Do a step
@@ -1009,8 +1067,9 @@ export class Z80UnitTests {
 		this.unitTestOutput.appendLine('');
 		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTests.countExecuted);
 		this.unitTestOutput.appendLine('Passed test cases: ' + countPassed);
-		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: ' + Z80UnitTests.countFailed));
-		this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
+		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: '+Z80UnitTests.countFailed));
+		if (Z80UnitTests.countExecuted>0)
+			this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
 		this.unitTestOutput.appendLine('');
 
 		this.unitTestOutput.appendLine(emphasize);

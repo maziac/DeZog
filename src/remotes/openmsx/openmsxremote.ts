@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
-import {Labels} from '../../labels';
+import {Labels} from '../../labels/labels';
 import {parseString} from 'xml2js';
 import {Settings} from '../../settings';
 import {Z80RegistersClass,Z80Registers} from '../z80registers';

@@ -68,11 +68,12 @@ A typical configuration looks like this:
 
 - name: The (human readable) name of DeZog as it appears in vscode.
 - unitTests: Only required if the configuration contains unit tests. Leave empty if you don't provide unit tests. Only one configuration can have this attribute set to true.
-- remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface (Note: the serial interface is currently under evelopment).
+- remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface.
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
-    - "openmsx": Use OpenMSX as MSX emulator.
-    - "serial": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
+    - "cspect": Use the CSpect emulator with the DeZog Plugin via a socket. See [CSpect](#cspect).
+    - "openmsx": Use OpenMSX as MSX emulator. See [OpenMSX](#openmsx).
+    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -98,7 +99,13 @@ Note:
 - topOfStack: instead of a label you can also use a fixed number.
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
 Note: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
-- loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files.
+- loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
+~~~
+"loadObjs": [
+    { "path": "out/main.bin", "start": "0x6000" },
+    { "path": "out/graphics.bin", "start": "0x8000" }
+],
+~~~
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.
@@ -155,7 +162,7 @@ You need to enter the list files under
 ~~~
 "listFiles": {
     "path": "z80-sample-program.list",
-    "asm": "sjasmplus",
+    "asm": "z80asm",
     "mainFile": "main.asm",
     "srcDirs": [""]
     }
@@ -204,8 +211,12 @@ Explanation:
 - "mainFile": the relative path of the file used to create the list file.
 - "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
 
+Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 
-Other assemblers:
+
+
+
+**Other assemblers:**
 I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use DeZog. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
 The required format for DeZog is that
 - each line starts with the address
@@ -253,7 +264,6 @@ DeZog supports most of them but with some restrictions:
 
 - local labels: when hovering above a (local) label the current program counter is used to dissolve the context. I.e. the shown value is only correct if the PC is lower than the associated previous non-local label and no other non-local label is between the PC and the hover location.
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
-- labels with out a trailing ":" are not supported.
 - temporary (number) labels: are not supported.
 - sjasmplus: labels inside macros are not supported.
 
@@ -266,9 +276,7 @@ They are distinguished via the "remoteType":
 - "zrcp": ZEsarUX (or ZesaruxExt) emulator
 - "cspect": CSpect emulator
 - "openmsx": OpenMSX emulator
-<!--
-- "serial": ZX Next connected via serial.
--->
+- "zxnext": ZX Next connected via serial cable.
 
 
 ### What is a 'Remote'?
@@ -287,21 +295,21 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                      | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect  | OpenMSX |
+|                     | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   | OpenMSX |
 |-------------------------|--------------------|---------|------------|----------|----------|---------|
-| State                   | stable             | stable  | stable     | started  | stable | stable  |
+| State                   | stable             | stable  | stable     | started  | stable   | stable  |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      | yes     |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow | yes     |
-| Watchpoints             | yes                | yes     | yes/fast   | no        | no      | no      |
-| Asserts                 | yes                | no       | yes        | yes/slow | yes/slow | yes     |
-| Logpoints               | yes                | no       | yes        | yes/slow | yes/slow | no      |
-| Extended callstack      | no                 | yes     | yes        | no        | no        | no      |
-| Code coverage           | yes                | yes     | yes        | no        | no        | no      |
-| Reverse debugging       | true               | true    | true       | lite     | lite     | no      |
-| ZX Next capable         | no                  | yes     | yes        | yes      | yes      | N/A     |
-| Save/restore the state | yes                 | yes     | yes        | no       | no       | yes     |
-| Output of T-States | yes                 | yes     | yes        | no       | no       | no      |
-| Comments                | slower than ZEsarUx or CSpect   |         | Breakpoints are faster than in ZEsarUX |         |
+| Watchpoints             | yes                | yes     | yes/fast   | no       | no       | no      |
+| Asserts                 | yes                | no       | yes       | yes/slow | yes/slow | yes     |
+| Logpoints               | yes                | no       | yes       | yes/slow | yes/slow | no      |
+| Extended callstack      | no                 | yes     | yes        | no       | no       | no      |
+| Code coverage           | yes                | yes     | yes        | no       | no       | no      |
+| Reverse debugging       | true               | true    | true       | lite     | lite     | lite    |
+| ZX Next capable         | no                 | yes     | yes        | yes      | yes      | N/A     |
+| Save/restore the state  | yes                | yes     | yes        | no       | no       | yes     |
+| Output of T-States      | yes                | yes     | yes        | no       | no       | no      |
+| Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | | | |
 
 Notes:
 - State:
@@ -310,7 +318,7 @@ Notes:
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
-- ZesaruxExt and ZX Next are not available at the moment.
+- ZesaruxExt is not available at the moment.
 
 
 ### The Internal Z80 Simulator
@@ -368,7 +376,7 @@ Example launch.json configuration:
         "Z80N": true,
     	"loadZxRom": true,
         "zxKeyboard": true,
-	    "visualMemory": "ZXNEXT",
+	    "visualMemory": "true",
 	    "ulaScreen": true,
 	    "memoryPagingControl": true,
         "tbblueMemoryManagementSlots": true,
@@ -443,6 +451,7 @@ You don't have to enter a hostname, the default is "localhost".
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session. If true (default is false) ZEsarUX does not break in interrupts (on manual break).
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
+
 
 
 
@@ -540,9 +549,9 @@ If you need to configure the port use:
     }
 ~~~
 
-The "zrcp" configuration allows the following additional parameters:
-- "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+The "cspect" configuration allows the following additional parameters:
+- "port": The CSpect DeZog plugin port. If not changed  this defaults to 10000.
+- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
 You don't have to enter a hostname, the default is "localhost".
 
 Note: You can start CSpect with the "-remote" option. In that case CSpect will not show it's debugger screen when stopped.
@@ -553,55 +562,9 @@ Note: You can start CSpect with the "-remote" option. In that case CSpect will n
 To run CSpect under macOS or Linux you need to install Mono first.
 A typical commandline to start CSpect looks like:
 ~~~
-mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv
+mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -r -v -debug
 ~~~
 
-
-
-### Serial Interface
-
-The serail interface is the most complex setup as it requires communication with a real ZX Spectrum Next (in HW):
-
-~~~
-                                                                                         ┌──────────────────────────┐
-                                                                                         │         ZX Next          │
-                                                                                         │ ┌──────────────────────┐ │
-┌───────────────┐     ┌─────────────────┐                                                │ │   Debugged Program   │ │
-│               │     │                 │                                                │ └──────────▲───────────┘ │
-│               │     │                 │                                                │            │             │
-│               │     │                 │                                                │ ┌──────────▼───────────┐ │
-│    vscode     │     │      DeZog      │                                                │ │     dbg_uart_if      │ │
-│               │◀───▶│                 │                                                │ │          SW          │ │
-│               │     │                 │                                                │ └──────────▲───────────┘ │
-│               │     │                 │                                                │            │             │
-│               │     │                 │     ┌──────────────────────────┐               │          ┌─▼──┐          │
-└───────────────┘     └─────────────────┘     │  DeZog Serial Interface  │               │          │UART│          │
-                               ▲              │            SW            │               │          │HW  │          │
-                               │              └──────────────────────────┘               └──────────┴────┴──────────┘
-                               │                    ▲                ▲                                ▲
-                               │                    │                │                                │
-                      ┌────────▼────────────────────▼────────────────▼───────────────┐                ▼
-                      │  ┌──────────┐         ┌──────────┐     ┌──────────────┐      ├────┐     ┌──────────┐
-                      │  │  Socket  │◀───────▶│  Socket  │     │    Serial    │      │USB │     │USB/Serial│
-                      │  └──────────┘         └──────────┘     │COM, /dev/tty │◀────▶│HW  │◀───▶│Converter │
-                      │                                        └──────────────┘      ├────┘     │HW        │
-                      │                    macOS, Linux, Windows                     │          └──────────┘
-                      └──────────────────────────────────────────────────────────────┘
-~~~
-
-DeZog does not directly talk to the USBUART interface of your OS. Instead it uses another program, the DeZog Serial Interface whcih offers a socket and translates all communication to the serial interface USB/UART.
-(Background: The reason for this additional program is that the node.js serialport binary package tend to break on vscode.)
-
-The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
-In order to communicate with the ZX Next special SW needs to run on the Next.
-
-**Note: This does not work currently. Serial interface is not supported yet.**
-
-Example launch.json configuration:
-~~~
-    "remoteType": "serial",
-    ???
-~~~
 
 ### OpenMSX
 
@@ -638,6 +601,264 @@ If you debug .BIN application do the same with an autoexec.bas file.
 .ROM applications boot automatically of course.
 
 You can use the commandsAfterLaunch property in launch.json to automatically mount a disk or insert a ROM. Please specify it here as you would do it in the Debug Console.
+
+
+
+### ZX Next / Serial Interface
+
+#### Overview
+
+The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
+
+~~~
+                                                                                         ┌──────────────────────────┐
+                                                                                         │         ZX Next          │
+                                                                                         │ ┌──────────────────────┐ │
+┌───────────────┐     ┌─────────────────┐                                                │ │   Debugged Program   │ │
+│               │     │                 │                                                │ └──────────▲───────────┘ │
+│               │     │                 │                                                │            │             │
+│               │     │                 │                                                │ ┌──────────▼───────────┐ │
+│    vscode     │     │      DeZog      │                                                │ │       dezogif        │ │
+│               │◀───▶│                 │                                                │ │          SW          │ │
+│               │     │                 │                                                │ └──────────▲───────────┘ │
+│               │     │                 │                                                │            │             │
+│               │     │                 │     ┌──────────────────────────┐               │          ┌─▼──┐          │
+└───────────────┘     └─────────────────┘     │  DeZog Serial Interface  │               │          │UART│          │
+                               ▲              │            SW            │               │          │HW  │          │
+                               │              └──────────────────────────┘               └──────────┴────┴──────────┘
+                               │                    ▲                ▲                                ▲
+                               │                    │                │                                │
+                      ┌────────▼────────────────────▼────────────────▼───────────────┐                ▼
+                      │  ┌──────────┐         ┌──────────┐     ┌──────────────┐      ├────┐     ┌──────────┐
+                      │  │  Socket  │◀───────▶│  Socket  │     │    Serial    │      │USB │     │USB/Serial│
+                      │  └──────────┘         └──────────┘     │COM, /dev/tty │◀────▶│HW  │◀───▶│Converter │
+                      │                                        └──────────────┘      ├────┘     │HW        │
+                      │                    macOS, Linux, Windows                     │          └──────────┘
+                      └──────────────────────────────────────────────────────────────┘
+~~~
+
+DeZog does not directly talk to the USB/UART interface of your OS. Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
+(Background: The reason for this additional program is that the node.js serialport binary package tends to break with new releases of vscode, see [here](https://cultivatehq.com/posts/how-we-built-a-visual-studio-code-extension-for-iot-prototyping/) for more details.)
+
+The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
+In order to communicate with the ZX Next special SW needs to run on the Next, the [dezogif](https://github.com/maziac/dezogif).
+
+
+Example launch.json configuration:
+~~~
+    "remoteType": "zxnext",
+    "zxnext": {
+        "port": 12000
+    }
+~~~
+
+The "zxnext" configuration allows the following additional parameters:
+- "port": The CSpect DeZog plugin port. If not changed  this defaults to 12000.
+- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
+You don't have to enter a hostname, the default is "localhost".
+
+The default port is anyway 12000. So, if you don't change it, you just have to add:
+~~~
+    "remoteType": "zxnext"
+~~~
+
+
+#### Setup
+
+Prerequisites:
+1. Install at least core 3.1.5 on the ZX Next.
+2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
+
+
+Setup a debug session:
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
+(Don't forget to make a backup of the original ```enNextMf.rom```.)
+2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
+3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
+4. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
+./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
+Notes:
+    - Change the serial port ("-serial ...") to your needs.
+    - There exist also binaries for Linux and Windows.
+    - Check the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) project for more options to test the connection.
+4. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
+![](images/dezog_zxnext_main.jpg)
+(If you later need to re-initialize press "Symbol Shift", or CTRL on a PS2 keyboard, and while being pressed hit the yellow NMI button.)
+5. In vscode start the debug session.
+6. Step through your code.
+
+You should see that the debugged program is transmitted to the ZX Next: the border colors change similar as when you would load a program from tape.
+![](images/dezog_zxnext_loading.jpg)
+
+Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program) for your first tries. It already contains a working "ZXNext" launch.json configuration.
+
+You can now step through your code and set breakpoints.
+The debugger will stop at a breakpoint.
+
+
+#### Pausing the Debugged Program
+
+While the debugged program is running there is no communication between DeZog and the ZX Next.
+I.e. it is also not possible to pause the program through the serial cable.
+For pausing your program you need to press the yellow M1 button at the left side of your ZX Next.
+
+
+#### HW
+
+**Disclaimer**
+
+**As you will probably have to construct your own cable which involves HW, there is always a small risk that you damage your ZX Next or your PC/Mac.
+You should only try to do this yourself if you already have experience with electronics and at least basically know what you are doing.**
+
+**IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THE HW, SW OR ANYTHING ELSE PRESENTED HERE.**
+
+You require a USB/Serial converter like this [one](https://www.amazon.com/Serial-Adapter-Female-FT232RL-Windows/dp/B07R45QJVR/ref=sr_1_1_sspa?__mk_de_DE=ÅMÅŽÕÑ&dchild=1&keywords=Serial+UART-Konverterkabel+USB+TTL+3.3+V&qid=1595515176&sr=8-1-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUEyR1M0VFUzR0tGVkgmZW5jcnlwdGVkSWQ9QTA0Mzk4NDYzVUkySkE0S0ZGS0MwJmVuY3J5cHRlZEFkSWQ9QTA3NzU0NDQzRU85R05FQkJMMEFSJndpZGdldE5hbWU9c3BfYXRmJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ==
+):
+![](images/usb_serial_cable.jpg)
+It needs to be capable of 921600 Baud.
+
+(Note: I also used a cable from Adafruit. It's working as well. It was faster for small packets but I had to disconnect it physically from my mac more often to get it back working.)
+
+On the other side only 3 wires are required:
+![](images/usb_serial_connectors.jpg)
+- GND
+- TX (TXD)
+- RX (RXD)
+
+These wires have to be connected to the UART.
+
+Easiest way, without opening the ZX Next case, is to use one of the joy ports of the ZX Next.
+
+You need to attach a female D-SUB 9 connector to your serial cable:
+![](images/dsub9.jpg)
+
+You need to connect:
+| Serial cable | connected to | D-Sub 9 |
+|:------------:|:------------:|:-------:|
+| GND          | <->          | 8 (Next GND) |
+| RX           | <->          | 7 (Next Tx) |
+| TX           | <->          | 9 (Next Rx) |
+
+Note: You connect the serial cable's Tx to the Next's Rx and the Rx with the Tx.
+
+![](images/dsub9_connected.jpg)
+
+
+Alternatively, if you need to use both joysticks while debugging you directly connect the ESP UART:
+![](images/uart_cn9.jpg)
+
+You need to connect:
+| Serial cable | connected to | CN9        |
+|:------------:|:------------:|:----------:|
+| GND          | <->          | 4 (GND)    |
+| RX           | <->          | 1 (ESP RX) |
+| TX           | <->          | 5 (ESP_TX) |
+
+You can solder it directly or use the socket that is already available on the board:
+![](images/uart_socket.jpg)
+
+![](images/uart_pin_header.jpg)
+
+
+#### Caveats
+
+##### Joystick ports
+
+As the joystick ports are shared by the joysticks and by the UART/serial cable the communication with DeZog can happen only when the debugged program is being paused.
+E.g. you can't set a breakpoint while your program is running. You need to pause it first, set a new breakpoint and then continue the program.
+
+
+##### Memory banks
+
+The dezogif program on the ZX Next needs some space. It uses the MF ROM/RAM and bank 94.
+For your program it means you mustn't use bank 94 otherwise DeZog will not work.
+
+
+##### Stack
+
+A) This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
+
+B) Performance: If you have a large stack or a **wrong topOfStack** setting in the launch.json stepping might become sluggish. This is because DeZog does a lot of analysis on the stack, e.g. it reads not only the stack but also memory that a stack entry points to. If the topOfStack is wrong many false reading is done after each step which slows down the system.
+
+
+##### SW Breakpoints
+
+A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
+Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
+~~~
+		push bc
+		inc sp
+BP->	inc sp
+BP->	do something
+BP->	...
+BP->	...
+BP->	dec sp
+BP->	dec sp
+	pop bc
+~~~
+Placing a BP at any of the above location will destroy the pushed BC value if the BP is hit.
+
+Workaround: Don't place a breakpoint at these locations.
+
+Furthermore the debugger program requires a few bytes on the debugged program's stack.
+This are <TODO: exact number of bytes> bytes.
+
+So take care to use a stack that can hold these additional bytes at any time.
+
+B) Memory Paging
+The ZX Next SW Breakpoints do not work very well with memory paging.
+If you place a breakpoint in your source file the address for the source file line is taken and a breakpoint is put at that address.
+If at this moment a bank is paged in that does not correspondent to the source file a breakpoint is placed in the wrong bank.
+As for the ZX Next a breakpoint means to change the code at the address it means that the code/data in the wrong bank is changed.
+This could either
+- be at instruction start by accident with no further consequences
+- destroying instructions if placed in the middle of a multi-byte instructions
+- corrupt some data
+
+Therefore you need to place the breakpoints carefully if you are placing them in an area that is shared between different memory banks.
+
+Furthermore you should note that all breakpoints are put in just before a debugger step or continue and removed afterwards.
+I.e. if you have a "stale" breakpoint in some file it could make problems if this location changes the used bank.
+
+
+C) As SW breakpoints replace the code at the breakpoint address you cannot place any SW breakpoint inside ROM code.
+
+
+D) You cannot set a breakpoint while the debugged program is running. This is because no communication between deZog and the debugged program takes place while it is running.
+To set a breakpoint first pause your program by pressing the yellow NMI button. Then set the breakpoint and continue.
+
+
+E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
+~~~
+"disassemblerArgs": {
+    "esxdosRst": true
+},
+~~~
+
+
+##### Layer 2
+
+DeZog can work with "Layer 2 write-only paging", i.e. bit 0 of port 0x123B being set.
+For bit 2, "read-only paging" it is different as DeZog needs a few bytes in the area 0x0000-0x1FFF for execution, i.e. for breakpoints and stepping. If "read-only paging" is enabled this area is blocked for DeZog.
+If you e.g. try to step when "read-only paging" is enabled then the system will crash.
+However, you can still use "read-only paging" in your program, you just shouldn't put a breakpoint somewhere where it is enabled or step in such code.
+
+
+##### NMI
+
+To interrupt the debugged program an NMI can be used (pressing the yellow NMI button).
+As an NMI places the current PC on the stack and can occur anytime it can and will corrupt the stack **if** it happens while the debugged program is manipulating the SP.
+
+There is nothing to do about it other than
+- never increase the SP if the value on the stack is still required
+- disable the M1 (NMI) button via the Next register 0x06 during these critical sections
+
+For the debugged program this means
+- If your program heavily relies on SP manipulation (increasing SP **while values below SP are still required**) then take care to guard the code section with NMI disable/enable via disabling/enabling the M1 button in register 0x06. You could also re-write the code such that it loads the SP into another register (e.g. IX) and access the stack values through that register.
+- If you don't manipulate the SP in that way you don't have to bother with disabling the NMI M1 button.
+- If you only rarely use the SP in that way: the probability for the scenario above is certainly quite low. I.e. you can simply ignore it. But you should keep in mind that if something odd happens when you press the NMI M1 button that it could be the reason described above.
+
+
 
 ### Usage
 
@@ -877,6 +1098,7 @@ instead: The ASSERT is on the next line i.e. at the address after the "LD" instr
 Notes:
 
 - ASSERT is not available in ZEsarUX.
+- you can use "ASSERT" only, which evaluates to "ASSERT false". I.e. this is equivalent to an unconditional break.
 - The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
 - ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
 - Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
@@ -1157,6 +1379,8 @@ This, of course, means that normally only the 8bit or the 4bit color pattern is 
 
 If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
 The dump is updated on each step.
+Example:
+![](images/watches.jpg)
 DeZog cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
 a byte array and a word array, on default.
 However you have a few options if you add more parameters to the label.
@@ -1179,6 +1403,18 @@ Here is an example:
 fill_colors,5,b
 ~~~
 It shows an array of 5 bytes beginning at label fill_colors.
+
+If you like you can also "comment" to your watches which e.g. further explains the use. You can separate it with a e.g. a ";" or a space, e.g.:
+
+~~~
+fill_colors,1,b; Red
+or
+fill_colors Red
+~~~
+
+results in
+
+![](images/watches_comment.jpg)
 
 
 ### Change the Program Counter
@@ -1204,7 +1440,7 @@ Please see [here](UnitTests.md).
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
     - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program](https://github.com/maziac/z80-sample-program) for placing the WPMEM correctly.
-- **CSpect** (found withv2.12.26)
+- **CSpect** (found with v2.12.26)
   - Watchpoints do not work and are therefore disabled.
   - Z80 unit tests do not work. Because of above watchpoint problem.
 

@@ -2,7 +2,7 @@
 node_modules/
 out/
 npm-debug.log
-*.vsix
+/*.vsix
 logs/
 /data/
 .vscode/

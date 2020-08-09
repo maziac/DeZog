@@ -39,6 +39,7 @@ to your sources.
 ## Create Unit Tests
 
 Creating a unit test is easy. A subroutine with a label that start with the prefix "UT_" is recognized as unit test case.
+The unit test case ends by using the macro TC_END.
 
 If you use the sjasmplus feature to have hierarchical labels the last part need to start with "UT_".
 
@@ -46,20 +47,20 @@ Here are a few examples of valid unit test label names.
 ~~~
 UT_test1:
 	...
-	ret
+	TC_END
 
 Module1.UT_test2:  ; sjasmplus specific
 	...
-	ret
+	TC_END
 
   MODULE Mod2  ; sjasmplus specific
 UT_test3:
 	...
-	ret
+	TC_END
 
 UT_test4:
 	...
-	ret
+	TC_END
   ENDMODULE
 ~~~
 
@@ -94,6 +95,8 @@ Here is the complete list:
 - TEST_DREGS dreg1, dreg2: dreg1 == dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_DREGS_UNEQUAL dreg1, dreg2: dreg1 != dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
+- TEST_STRING_PTR addr1, addr2: Compares 2 null-terminated strings strings (addr1 and addr2)
+- TEST_MEM_CMP addr1, addr2, count: Compares to memory area on equality.
 - TEST_FLAG_Z: Z flag is set
 - TEST_FLAG_NZ: Z flag is not set
 
@@ -110,7 +113,8 @@ UT_mytest2:
 	ld a,0
 	call multiply_a_by_3
 	TEST_REG C, 0
-	ret
+
+	TC_END
 ~~~
 This simple example test the subroutine 'multiply_a_by_3' which hypothetically takes A, multiplies it by 3 and returns the result in C. If A is 5 it should result in 15 and if A is 0 it should be 0.
 
@@ -133,7 +137,7 @@ UT_mytest2:
 	call my_subroutine
     TEST_UNCHANGED_BC_DE
 	...
-	ret
+	TC_END
 ~~~
 It check that 'my_subroutine' does not change the values of B, C, D, and E.
 It however doesn't care about changing A or HL.
@@ -152,7 +156,7 @@ There are a few macros defined for testing:
 - TEST_UNCHANGED_H
 - TEST_UNCHANGED_L
 
-Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers.
+Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers. (USE_ALL_REGS2 is the same with different values.)
 THis macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
 
@@ -271,7 +275,7 @@ Example:
 
 # Caveats
 
-If you use a .sna file the inherit start address is simply ignored.
+If you use a .sna file the inherited start address is simply ignored.
 You can use .sna and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
 
 

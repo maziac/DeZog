@@ -1,0 +1,98 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Eric Amodio & Alessandro Fragnani. All rights reserved.
+*  Licensed under the MIT License. See License.md in the project root for license information.
+*
+*  Original Author: Eric Amodio @ GitLens
+*  Modifications by: Alessandro Fragnani
+*--------------------------------------------------------------------------------------------*/
+-->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+<link href="${cssUrl}" rel="stylesheet"></head>
+
+<body class="preload">
+
+    <div class="container">
+        <div class="content">
+            <header>
+                <a style="text-align: center;" title="Learn more about ${extensionDisplayName}" href="${repositoryUrl}">
+                    <img src="${headerLogo}" width="${headerWidth}%" height="${headerHeight}%"/>
+                </a>
+                <p class="header__blurb">
+                    ${headerMessage}
+                </p>
+            </header>
+
+            <div class="section-groups">
+                <div class="section-group__content">
+
+                        <section id="whats-new" class="changelog">
+                                <h2 class="changelog__title">What's New in <b>${extensionDisplayName} ${extensionVersion}</b></h2>
+                                <div class="changelog__scroller">
+                                    <ul class="changelog__list">
+                                        ${changeLog}
+                                    </ul>
+                                </div>
+                            </section>
+
+                            <h2>Need Help?</h2>
+                            <ul>
+                                <li>
+                                    <a href="${repositoryHomepage}">Homepage</a>
+                                </li>
+                                <li>
+                                    <a href="${repositoryIssues}">Questions &amp; Issues</a>
+                                </li>
+                            </ul>
+
+                </div>
+                <div class="section-group__sidebar section-group__sidebar--welcome">
+                    <div class="sidebar-group">
+                        <h2>Show Your Support</h2>
+                        <p>
+                            While <b>${extensionDisplayName}</b> is offered for free,
+                            if you find it useful, please consider supporting it.
+                        </p>
+
+                        <div class="button-group button-group--support-alefragnani">
+                            <!--
+                            <a class="button button--flat-primary" title="Become a sponsor on Patreon" href="https://www.patreon.com/alefragnani" target="_blank">Become a Sponsor</a>
+                            -->
+                            <!--
+                            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                                <input type="hidden" name="cmd" value="_s-xclick" />
+                                <input type="hidden" name="hosted_button_id" value="8S4R8HPXVCXUL" />
+                                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" border="0" name="submit"
+                                    title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+                                <img alt="" border="0" src="https://www.paypal.com/en_DE/i/scr/pixel.gif" width="1" height="1" />
+                            </form>
+                            -->
+                            <!--
+                            <a class="button button--flat-primary" title="Donate via PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=EP57F3B6FXKTU&lc=US&item_name=Alessandro%20Fragnani&item_number=vscode%20extensions&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted" target="_blank">Donate via PayPal</a>
+                            -->
+                            <a title="PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url">
+                                <img src="data:image/gif;base64,R0lGODlhSgAVAPfPAP7DOf7DONqnMf7EOSgeCNmmMAgGAeCsMmNMFv/DOfC4NfzBOOqzNP/EOvS7Nv/FPgkGAgEAAAIBAAUDAVlEE+mzNP/GQf7COZx3IiAYB0AxDg4KAwMCAPe9NyIaB//aguGsMv/QYdimMPO6NTYpDPvLWOizN9qoMP/OW9yoMf3CON+rMtyoMPO6NkMzDiogCe21NP/LU+iyM//JSv7TcPC4NlVBExgSBfjCRO64OOKtM2JLFQcFAcucLSEZB0k4EPzJTvvAOCUcCAYEATAkCv/ciRUQBP7QZv3FQvi+N/rCQT8wDrmOKfTHV1xGFOKvMvm/N/m+N6Z/JfjBPlpFFDImC+y0NZNwIPrAN66FJv7PYdelMJVyIcycLfq/OBsUBvzEP39hHHdbGtWjL3NYGU88Ee62Nf/DOu22Nf3QZfG5NRENA0o4EGRMFjUoC+eyNOWwNDkrDM6eLrCHJ7uPKf/ISDwuDXldG/W+PvG9Q0U1DwoHAnpdG29VGDstDXZaGjElCtuoMBwVBpd0IWFKFfW8Nt6qMmhPFzosDCwhCffETey1NVdCE//XeYNkHZl1IqF7I+WwMriNKYdnHhQPBPfAPuy1NNakL/q/N+u0NJ96I+22NuWwM9GgLnxfGxkTBcWXLPK9RPfETt+rMfvDP3teG8OVK7yQKj0uDUExDkc2D/7PXw8LAwsIAoBiHAQDANCfLt6pMsmaLJFvIP3COZRxIfa+P1E+Ev/HQZBuIP/JSf/Wd96qMS0iCr6SKlZCE+eyMx8XBnVZGrqOKf7QZW1TGGVNFtOiL//Wdv/YesiZLNqnMP/cigAAAP/EOQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAM8ALAAAAABKABUAQAj/AJ8JHPgMRR0LZwAoBDCAYcOGAJxFlChxocIAAAJgxMjQYYABGjMqfDjAWUlnDXDpQkFwYJ4FzmLKnDmTgIGYypqRiCmJyAY9y2LyESLGAyAmzgL08QGBBCxnhyA0E5Io5pxeaxg5oMlV5oJQAp9E6Uq2rNmzaMtGeUKw0pEHaePKncv1wZEpAhl4iWszZpZmP5w5abbFGYZmj5whaHbAGYVmDOREsAHCRjMFzlJJCBDTyYQxDhwUioupQkuBJ1KwCFRgWYHWrZcJkD179rLbuHHXrn17t+zbsGHnxs0ixYnTLcGkaRRihoUGdKPTbWBhRohkxEi1xAMXLYFmzW78/+gineslWeVjPrD1DI3cvjHjNJPRplkPZ7maQVLM2Jmqy85A4YwCfhggoAYSyLSDAQeo4YIHcm3yzBsJpPVdM1+UIYJMtWzQTAa+xLRYY48xsIALzfhgRzMgOCPCC+FxYpgRzWxwR1oJANPSKDVUmN6PcyVQAy/ICQQEElrs8kERzDTp5JNQRinllFRKWcQHyKyCBBBFKkFDDECGKVcMNChBkCglQCfmmnE1UIIizzSBA18TcPHLEByYEiaCQOLQRA4X8HVTUpRMgEUnHHyyAwSCbLVYFcbwQIQzQbTCBiET3OKMFBlEEIYjzvQQASpkDFFMXBfksAgtgsbUgQF7BISwBAdBOANKM57wRyJkzmiSQTMRAMhnTEuAB54RqFphwgh8vVIKFTxAcIwzwzSDyBXBsCKDro5BxkQzwpwCI2Z/NOPKJJnQ0YwbGAwyS1wjmPBMJC0AqUIFaZnRlSU0VaBCXC3AQZAOSbBpcFlJ6FCkISvA0MECPh6cXgILdADDCrG0FBAAOw==" />
+                            </a>
+                        </div>
+
+                        <ul>
+                            <li><a title="Write a review" href="https://marketplace.visualstudio.com/items?itemName=maziac.${extensionName}#review-details">Write a Review</a></li>
+                            <li><a title="Star or fork me on GitHub" href="${repositoryUrl}">Star or Fork me on GitHub</a></li>
+                            <!-- <li><a title="Follow me on Twitter" href="https://twitter.com/maziac">Follow me on Twitter</a></li> -->
+                        </ul>
+                        ${sponsors}
+                    </div>
+                    <div class="sidebar-group">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

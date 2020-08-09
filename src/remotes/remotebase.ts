@@ -4,7 +4,7 @@ import {RefList} from '../misc/refList';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
-import {Labels, SourceFileEntry} from '../labels';
+import {Labels, SourceFileEntry} from '../labels/labels';
 import {Settings, ListFile} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
@@ -25,7 +25,11 @@ export enum BREAK_REASON_NUMBER {
 	BREAKPOINT_HIT=2,	// 2=breakpoint hit
 	WATCHPOINT_READ=3,	// 3=watchpoint hit read access
 	WATCHPOINT_WRITE=4,	// 4=watchpoint hit write access
-	UNKNOWN = 255		// 255=some other error
+
+	// Internally used
+	STEPPING_NOT_ALLOWED=100,	// For ZxNextRemote if trying to step code used for debugging.
+
+	UNKNOWN=255		// 255=some other error
 };
 
 
@@ -201,6 +205,7 @@ export class RemoteBase extends EventEmitter {
 						}
 					}
 					if (access&&access.length>0) {
+						access=access.toLocaleLowerCase();
 						if (access!='r'&&access!='w'&&access!='rw') {
 							console.log("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '"+access+"' in line: '"+entry.line+"'");
 							continue;
@@ -241,6 +246,8 @@ export class RemoteBase extends EventEmitter {
 			// - ASSERT A < 5
 			// - ASSERT HL <= LBL_END+2
 			// - ASSERT B > (MAX_COUNT+1)/2
+			// - ASSERT false
+			// - ASSERT
 
 			// ASSERTs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
@@ -1093,22 +1100,29 @@ export class RemoteBase extends EventEmitter {
 			const newBps=currentBps.filter(bp => bp.address>=0&&oldBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 			const removedBps=oldBps.filter(bp => bp.address>=0&&currentBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
 
-			// remove old breakpoints
-			removedBps.forEach(async bp => {
-				// from zesarux
-				await this.removeBreakpoint(bp);
-			});
+			// Catch communication problems
+			try {
+				// remove old breakpoints
+				for (const bp of removedBps) {
+					// from zesarux
+					await this.removeBreakpoint(bp);
+				}
 
-			// Add new breakpoints and find free breakpoint ids
-			newBps.forEach(async bp => {
-				// set breakpoint
-				await this.setBreakpoint(bp);
-			});
+				// Add new breakpoints and find free breakpoint ids
+				for (const bp of newBps) {
+					// set breakpoint
+					await this.setBreakpoint(bp);
+				}
+			}
+			catch {
+				// Error resolution is maybe a little to simple but most probably all commands did fail.
+				return oldBps;
+			}
 
 			// get all breakpoints for the path
 			//const resultingBps = this.breakpoints.filter(bp => bp.filePath == path);
 
-			// call handler
+			// Return
 			return currentBps;
 		}
 		catch (e) {
@@ -1168,7 +1182,6 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
-	/**
 	/**
 	 * Sends a command to the emulator.
 	 * Override if supported.
@@ -1428,11 +1441,12 @@ export class RemoteBase extends EventEmitter {
 	 * In this case the branching is ignored for CALL and RST.
 	 * @returns A Promise with the opcode and 2 breakpoint
 	 * addresses.
-	 * The first always points directly after the address.
+	 * The first always points directly after the address or for unconditional jumps/calls
+	 * it points to the jump address.
 	 * The 2nd of these bp addresses can be undefined.
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
-		// Make sute the registers are there
+		// Make sure the registers are there
 		await this.getRegisters();
 		const pc=this.getPC();
 		// Get opcodes
@@ -1447,7 +1461,9 @@ export class RemoteBase extends EventEmitter {
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (opcode.code==0xCF) {
+		if (ocFlags&OpcodeFlag.BRANCH_ADDRESS
+			&& (ocFlags&OpcodeFlag.CONDITIONAL)==0
+			&& opcode.code==0xCF) {
 			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
 			if (stepOver) {
 				// For stepOver nothing is required normally.
@@ -1511,8 +1527,10 @@ export class RemoteBase extends EventEmitter {
 			// Other special instructions
 			if (opcodes[0]==0xED) {
 				if (opcodes[1]==0xB0||opcodes[1]==0xB8
-					||opcodes[1]==0xB1||opcodes[1]==0xB9) {
-					// LDIR/LDDR/CPIR/CPDR
+					||opcodes[1]==0xB1||opcodes[1]==0xB9
+					||opcodes[1]==0xB2||opcodes[1]==0xBA
+					||opcodes[1]==0xB3||opcodes[1]==0xBB) {
+					// LDIR/LDDR/CPIR/CPDR/INIR/INDR/OTIR/OTDR
 					if (!stepOver)
 						bpAddr2=pc;
 				}

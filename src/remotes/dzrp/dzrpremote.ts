@@ -9,15 +9,19 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import * as path from 'path';
 import {Remote} from '../remotefactory';
-import {Labels} from '../../labels';
+import {Labels} from '../../labels/labels';
 import {ZxMemory} from '../zxsimulator/zxmemory';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
+import {Log} from '../../log';
 
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 0, 0];
+export const DZRP_VERSION=[1, 6, 0];
+
+// The program name and version transmitted during CMD_INIT.
+export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
 
 
 /**
@@ -25,35 +29,41 @@ export const DZRP_VERSION=[1, 0, 0];
  * The response contains the command with the bit 7 set.
  */
 export enum DZRP {
+	// ZXNext: All Commands available in ZXNext (need to be consecutive)
 	CMD_INIT=1,
-	CMD_GET_REGISTERS=2,
-	CMD_SET_REGISTER=3,
-	CMD_WRITE_BANK=4,
-	CMD_CONTINUE=5,
-	CMD_PAUSE=6,
 
-	CMD_ADD_BREAKPOINT=7,
-	CMD_REMOVE_BREAKPOINT=8,
+	CMD_CLOSE=2,
+	CMD_GET_REGISTERS=3,
+	CMD_SET_REGISTER=4,
+	CMD_WRITE_BANK=5,
+	CMD_CONTINUE=6,
+	CMD_PAUSE=7,
+	CMD_READ_MEM=8,
+	CMD_WRITE_MEM=9,
+	CMD_GET_SLOTS=10,
+	CMD_SET_SLOT=11,
+	CMD_GET_TBBLUE_REG=12,
+	CMD_SET_BORDER=13,
+	CMD_SET_BREAKPOINTS=14,
+	CMD_RESTORE_MEM=15,
+	CMD_LOOPBACK=16,
+	CMD_GET_SPRITES_PALETTE=17,
+	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=18,
 
-	CMD_ADD_WATCHPOINT=9,
-	CMD_REMOVE_WATCHPOINT=0xA,
+	// Sprites
+	CMD_GET_SPRITES=19,
+	CMD_GET_SPRITE_PATTERNS=20,
 
-	CMD_READ_MEM=0xB,
-	CMD_WRITE_MEM=0xC,
+	// Breakpoint
+	CMD_ADD_BREAKPOINT=40,
+	CMD_REMOVE_BREAKPOINT=41,
 
-	CMD_GET_SLOTS=0xD,
+	CMD_ADD_WATCHPOINT=42,
+	CMD_REMOVE_WATCHPOINT=43,
 
-	CMD_READ_STATE=0xE,
-	CMD_WRITE_STATE=0xF,
-
-	CMD_GET_TBBLUE_REG=0x10,
-
-	CMD_GET_SPRITES_PALETTE=0x11,
-	CMD_GET_SPRITES=0x12,
-	CMD_GET_SPRITE_PATTERNS=0x13,
-	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=0x14,
-
-	CMD_SET_BORDER=0x15,
+	// State
+	CMD_READ_STATE=50,
+	CMD_WRITE_STATE=51,
 };
 
 /**
@@ -80,6 +90,12 @@ export enum AlternateCommand {
  * A class that communicates with the remote via the DZRP protocol.
  * It is base class for all DZRP remote classes that implement
  * special transports like serial connection or socket.
+ *
+ * All sendDzrpCmd... methods are empty stubs which need to be filled
+ * by the specialized implementation.
+ *
+ * The class also implements flow/state handling for complex tasks
+ * like 'continue'.
  */
 export class DzrpRemote extends RemoteBase {
 
@@ -96,13 +112,17 @@ export class DzrpRemote extends RemoteBase {
 	// Undefined=no breakpoint is set.
 	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
-	// It allows access of the breakpoint by it's address.
-	// This may happen seldom, but it can happen that 2 breakpoints share
+	// It allows access of the breakpoint by a simple call to one map only.
+	// It may happen seldom, but it can happen that 2 breakpoints share
 	// the same address. Therefore the array contains an Array of GenericBreakpoints.
 	// normally the inner array contains only 1 element.
 	// The tmpBreakpoints are created when a Continue, StepOver, Stepinto
 	// or StepOut starts.
-	protected tmpBreakpoints = new Array<Array<GenericBreakpoint>>(0x10000);
+	// It is used mainly in 'evalBpConditionAndLog()'.
+	// If a breakpoint is set during the debugged program being run
+	// the tmpBreakpoints are updated.
+	protected tmpBreakpoints=new Map<number,Array<GenericBreakpoint>>();
+
 
 	/// Constructor.
 	/// Override this.
@@ -128,13 +148,42 @@ export class DzrpRemote extends RemoteBase {
 	protected async onConnect(): Promise<void> {
 		try {
 			// Get configuration
-			/*const resp=*/ await this.sendDzrpCmdInit();
+			const resp=await this.sendDzrpCmdInit();
+			if (resp.error)
+				throw Error(resp.error);
+
 			// Load sna or nex file
 			const loadPath=Settings.launch.load;
 			if (loadPath)
 				await this.loadBin(loadPath);
+
+			// Load obj file(s) unit
+			for (let loadObj of Settings.launch.loadObjs) {
+				if (loadObj.path) {
+					// Convert start address
+					const start=Labels.getNumberFromString(loadObj.start);
+					if (isNaN(start))
+						throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
+					await this.loadObj(loadObj.path, start);
+				}
+			}
+
+			// Set Program Counter to execAddress
+			if (Settings.launch.execAddress) {
+				const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
+				if (isNaN(execAddress))
+					throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
+				// Set PC
+				await this.setRegisterValue("PC", execAddress);
+			}
+
+			// Get initial registers
+			Z80Registers.clearCache();
+			await this.getRegisters();
+
 			// Ready
-			this.emit('initialized')
+			const text="'"+resp.programName+"' initialized.";
+			this.emit('initialized', text)
 		}
 		catch (err) {
 			this.emit('error', err);
@@ -165,6 +214,165 @@ export class DzrpRemote extends RemoteBase {
 		const regs=await this.sendDzrpCmdGetRegisters();
 		// And set
 		Z80Registers.setCache(regs);
+	}
+
+
+	/**
+	 * Execute specific commands.
+	 * Used to send (for testing) specific DZRP commands to the ZXNext.
+	 * @param cmd E.g. 'cmd_continue.
+	 * @returns A Promise with a return string, i.e. the decoded response.
+	 */
+	public async dbgExec(cmd: string): Promise<string> {
+		const cmdArray=cmd.split(' ');
+		const cmd_name=cmdArray.shift();
+		if (cmd_name=="help") {
+			return "Use e.g. 'cmd_init' to send a DZRP command to the ZX Next.";
+		}
+
+		let response="";
+		if (cmd_name=="cmd_init") {
+			const resp=await this.sendDzrpCmdInit();
+			response="Program: '" +resp.programName+"', DZRP Version: "+resp.dzrpVersion+", Error: "+resp.error;
+		}
+		else if (cmd_name=="cmd_continue") {
+			await this.sendDzrpCmdContinue();
+		}
+		else if (cmd_name=="cmd_pause") {
+			await this.sendDzrpCmdPause();
+		}
+		else if (cmd_name=="cmd_get_registers") {
+			const regs=await this.sendDzrpCmdGetRegisters();
+			const regNames=["PC", "SP", "AF", "BC", "DE", "HL", "IX", "IY", "AF'", "BC'", "DE'", "HL'", "IR", "IM"];
+			let i=0;
+			for (const name of regNames) {
+				const value=regs[i];
+				response+="\n"+name+"("+i+"): 0x"+Utility.getHexString(value, 4)+"/"+value;
+				i++
+			}
+		}
+		else if (cmd_name=="cmd_set_register") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting 2 parameters: regIndex and value.";
+			}
+			const regIndex=Utility.parseValue(cmdArray[0]);
+			const value=Utility.parseValue(cmdArray[1]);
+			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
+		}
+		else if (cmd_name=="cmd_write_bank") {
+			if (cmdArray.length<1) {
+				// Error
+				return "Expecting 1 parameter: 8k bank number [0-223].";
+			}
+			const bank=Utility.parseValue(cmdArray[0]);
+			// Create test data
+			const data=new Uint8Array(0x2000);
+			for (let i=0; i<data.length; i++)
+				data[i]=i&0xFF;
+			await this.sendDzrpCmdWriteBank(bank, data);
+		}
+		else if (cmd_name=="cmd_read_mem") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting at least 2 parameters: address and count.";
+			}
+			const addr=Utility.parseValue(cmdArray[0]);
+			const count=Utility.parseValue(cmdArray[1]);
+			const data=await this.sendDzrpCmdReadMem(addr, count);
+			// Print
+			response=Utility.getHexString(addr,4)+"h: ";
+			for (let i=0; i<data.length; i++)
+				response+=Utility.getHexString(data[i], 2)+"h ";
+		}
+		else if (cmd_name=="cmd_write_mem") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting at least 2 parameters: address and memory content list.";
+			}
+			const addr=Utility.parseValue(cmdArray.shift()!);
+			// Create test data
+			const length=cmdArray.length;
+			const data=new Uint8Array(length);
+			for (let i=0; i<data.length; i++)
+				data[i]=Utility.parseValue(cmdArray[i])&0xFF;
+			await this.sendDzrpCmdWriteMem(addr, data);
+		}
+		else if (cmd_name=="cmd_get_slots") {
+			const slots=await this.sendDzrpCmdGetSlots();
+			// Print
+			for (let i=0; i<slots.length; i++)
+				response+="\nSlot["+i+"]: 8k bank "+slots[i];
+		}
+		else if (cmd_name=="cmd_set_slot") {
+			if (cmdArray.length!=2) {
+				// Error
+				return "Expecting 2 parameters: slot and bank.";
+			}
+			const slot=Utility.parseValue(cmdArray[0]);
+			const bank=Utility.parseValue(cmdArray[1]);
+			await this.sendDzrpCmdSetSlot(slot, bank);
+		}
+		else if (cmd_name=="cmd_get_tbblue_reg") {
+			if (cmdArray.length<1) {
+				// Error
+				return "Expecting 1 parameter: register.";
+			}
+			const reg=Utility.parseValue(cmdArray[0]);
+			const value=await this.sendDzrpCmdGetTbblueReg(reg);
+			response+="\nReg["+Utility.getHexString(reg, 2)+"h/"+reg+"]: "+Utility.getHexString(value, 2)+"h/"+value;
+		}
+		else if (cmd_name=="cmd_get_sprites_palette") {
+			if (cmdArray.length<1) {
+				// Error
+				return "Expecting 1 parameter: palette number (0 or 1).";
+			}
+			const paletteNumber=Utility.parseValue(cmdArray[0]);
+			const palette=await this.sendDzrpCmdGetSpritesPalette(paletteNumber);
+			// Print
+			for (let i=0; i<palette.length; i++)
+				response+=Utility.getHexString(palette[i], 3)+" ";
+		}
+		// TODO: Add missing ones: CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM
+		else if (cmd_name=="cmd_get_sprites_clip_window_and_control") {
+			const clip=await this.sendDzrpCmdGetSpritesClipWindow();
+			response+="xl="+clip.xl+", xr="+clip.xr+", yt="+clip.yt+", yb="+clip.yb+", control="+Utility.getBitsString(clip.control, 8);
+		}
+		else if (cmd_name=="cmd_set_breakpoints") {
+		}
+		else if (cmd_name=="cmd_restore_mem") {
+		}
+
+		/*
+		else if (cmd_name=="cmd_get_sprites") {
+			if (cmdArray.length<2) {
+				// Error
+				return "Expecting 2 parameters: sprite start index and count.";
+			}
+			const index=Utility.parseValue(cmdArray[0]);
+			const count=Utility.parseValue(cmdArray[1]);
+			const data=await this.sendDzrpCmdGetSprites(index, count);
+			// Print
+			for (let i=0; i<data.length; i++) {
+				if (i%5==0)
+					response+="\nSprite "+(i/5)+": ";
+				//const value: number=data[0];
+				//response+=Utility.getHexString(value, 2)+" ";
+				response+=data[i]+" ";
+			}
+		}
+		*/
+		else {
+			return "Error: not supported.";
+		}
+
+		// Return string
+		let result="Sent "+cmd_name.toUpperCase()+".\nResponse received";
+		if (response)
+			result+=": "+response;
+		else
+			result+=".";
+		return result;
 	}
 
 
@@ -200,7 +408,7 @@ export class DzrpRemote extends RemoteBase {
 	 * [] if no breakpoint found.
 	 */
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
-		const foundBps=this.tmpBreakpoints[bpAddress]||[];
+		const foundBps=this.tmpBreakpoints.get(bpAddress)||[];
 		// Nothing found
 		return foundBps;
 	}
@@ -219,22 +427,59 @@ export class DzrpRemote extends RemoteBase {
 	protected createTemporaryBreakpoints() {
 		const tmpBps=this.tmpBreakpoints;
 		// Clear
-		tmpBps.fill(undefined as any);
+		tmpBps.clear()
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints=this.getEnabledLogpoints();
 		// Assert breakpoints
 		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
 		const allBps=[...this.breakpoints, ...enabledLogPoints, ...assertBps];
 		allBps.forEach(bp => {
-			let bpInner=
-				tmpBps[bp.address];
-			if (!bpInner) {
-				// Create new array
-				bpInner=new Array<GenericBreakpoint>();
-				tmpBps[bp.address]=bpInner;
-			}
-			bpInner.push(bp);
+			this.addTmpBreakpoint(bp);
 		});
+	}
+
+
+	/**
+	 * Adds a breakpoint to the temporary array.
+	 * Is called by createTemporaryBreakpoints or if a BP
+	 * is created during a running debugged program.
+	 */
+	protected addTmpBreakpoint(bp: GenericBreakpoint) {
+		const tmpBps=this.tmpBreakpoints;
+		const bpAddress=bp.address;
+		let bpInner=tmpBps.get(bpAddress);
+		if (!bpInner) {
+			// Create new array
+			bpInner=new Array<GenericBreakpoint>();
+			tmpBps.set(bp.address, bpInner);
+		}
+		bpInner.push(bp);
+	}
+
+
+	/**
+	 * Removes a breakpoint from the temporary array.
+	 * Is called by createTemporaryBreakpoints or if a BP
+	 * is removed during a running debugged program.
+	 */
+	protected removeTmpBreakpoint(bp: GenericBreakpoint) {
+		const bpAddress=bp.address;
+		const bpArray=this.tmpBreakpoints.get(bpAddress)!;
+		Utility.assert(bpArray);
+		const len=bpArray.length;
+		// Find breakpoint ID
+		for (let i=0; i<len; i++) {
+			const bpa=bpArray[i];
+			if (bpa.bpId==bp.bpId) {
+				// Breakpoint found
+				// Remove element
+				bpArray.splice(i, 1);
+				// Check if complete array is empty
+				if (bpArray.length==0)
+					this.tmpBreakpoints.delete(bpAddress);
+				return;
+			}
+		}
 	}
 
 
@@ -254,7 +499,7 @@ export class DzrpRemote extends RemoteBase {
 		if (bp) {
 			if (bp.condition) {
 				// Check if condition is true
-				// TODO: If I would allow 'await evalExpression' I coould also allow e.g. memory checks
+				// TODO: If I would allow 'await evalExpression' I could also allow e.g. memory checks
 				const evalCond=Utility.evalExpression(bp.condition, true);
 				if (evalCond!=0)
 					return {condition: bp.condition, log: bp.log};
@@ -424,8 +669,11 @@ export class DzrpRemote extends RemoteBase {
 				}
 				break;
 
+			case BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED:
+				// Flow through
+
 			default:
-				// An other reason, e.g. manual break
+				// Another reason, e.g. manual break
 				condition='';	// Do a break.
 		}
 
@@ -499,7 +747,7 @@ export class DzrpRemote extends RemoteBase {
 	public async pause(): Promise<void> {
 		// Set this flag to pause a stepOut etc
 		this.pauseStep=true;
-		// Send 'run' command
+		// Send 'pause' command
 		await this.sendDzrpCmdPause();
 	}
 
@@ -714,14 +962,13 @@ export class DzrpRemote extends RemoteBase {
 			if (enable) {
 				// Set breakpoint
 				if (!abp.bpId) {
-					const bpId=await this.sendDzrpCmdAddBreakpoint(abp.address);
-					abp.bpId=bpId;
+					await this.sendDzrpCmdAddBreakpoint(abp);
 				}
 			}
 			else {
 				// Remove breakpoint
 				if (abp.bpId) {
-					await this.sendDzrpCmdRemoveBreakpoint(abp.bpId);
+					await this.sendDzrpCmdRemoveBreakpoint(abp);
 					abp.bpId=undefined;
 				}
 			}
@@ -746,14 +993,13 @@ export class DzrpRemote extends RemoteBase {
 			if (enable) {
 				// Set breakpoint
 				if (!lp.bpId) {
-					const bpId=await this.sendDzrpCmdAddBreakpoint(lp.address);
-					lp.bpId=bpId;
+					await this.sendDzrpCmdAddBreakpoint(lp);
 				}
 			}
 			else {
 				// Remove breakpoint
 				if (lp.bpId) {
-					await await this.sendDzrpCmdRemoveBreakpoint(lp.bpId);
+					await await this.sendDzrpCmdRemoveBreakpoint(lp);
 					lp.bpId=undefined;
 				}
 			}
@@ -778,14 +1024,20 @@ export class DzrpRemote extends RemoteBase {
 		}
 
 		// Set breakpoint
-		const bpId=await this.sendDzrpCmdAddBreakpoint(bp.address, bp.condition);
+		await this.sendDzrpCmdAddBreakpoint(bp);
+		if (bp.bpId==0)
+			bp.address=-1;
 
 		// Add to list
-		bp.bpId=bpId;
 		this.breakpoints.push(bp);
 
+		// If running then add also to temporary list
+		if (this.continueResolve) {
+			this.addTmpBreakpoint(bp);
+		}
+
 		// return
-		return bpId;
+		return bp.bpId;
 	}
 
 
@@ -793,12 +1045,18 @@ export class DzrpRemote extends RemoteBase {
 	 * Clears one breakpoint.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
-		await this.sendDzrpCmdRemoveBreakpoint(bp.bpId);
-
 		// Remove from list
 		let index=this.breakpoints.indexOf(bp);
 		Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
+
+		// If running then add remove to temporary list
+		if (this.continueResolve) {
+			this.removeTmpBreakpoint(bp);
+		}
+
+		// Remove
+		await this.sendDzrpCmdRemoveBreakpoint(bp);
 	}
 
 
@@ -876,7 +1134,7 @@ export class DzrpRemote extends RemoteBase {
 		const objBuffer=fs.readFileSync(filePath);
 
 		// Write as memory dump
-		this.sendDzrpCmdWriteMem(startAddress, objBuffer);
+		await this.sendDzrpCmdWriteMem(startAddress, objBuffer);
 
 		// Make sure that the registers are reloaded
 		Z80Registers.clearCache();
@@ -902,6 +1160,13 @@ export class DzrpRemote extends RemoteBase {
 			const bank8=2*memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot=0; slot<8; slot++) {
+			const bank8=slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
 		}
 
 		// Set the registers
@@ -937,10 +1202,18 @@ export class DzrpRemote extends RemoteBase {
 
 		// Transfer 16k memory banks
 		for (const memBank of nexFile.memBanks) {
+			Log.log("loadBinNex: Writing 16k bank "+memBank.bank);
 			// As 2x 8k memory banks
 			const bank8=2*memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot=0; slot<8; slot++) {
+			const bank8=slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
 		}
 
 		// Set the SP and PC registers
@@ -1052,11 +1325,22 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * The first command send. Includes the version number.
-	 * @returns The configuration, e.g. '{xNextRegs: true}'
+	 * @returns The error, program name (incl. version) and dzrp version.
+	 * error is 0 on success. 0xFF if version numbers not match.
+	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<Array<number>> {
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
 		Utility.assert(false);
-		return [0,0,0];
+		return {error: undefined, dzrpVersion: "", programName: ""};
+	}
+
+
+	/**
+	 * Override.
+	 * The last command sent. Closes the debug session.
+	 */
+	protected async sendDzrpCmdClose(): Promise<void> {
+		Utility.assert(false);
 	}
 
 
@@ -1106,24 +1390,21 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to add a breakpoint.
-	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
-	 * @param condition The breakpoint condition as string. If there is n condition
-	 * 'condition' may be undefined or an empty string ''.
-	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
-	 * no breakpoint is available anymore.
+	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		Utility.assert(false);
-		return 0;
 	}
 
 
 	/**
 	 * Override.
-	 * Sends the command to remove a breakpoint.
-	 * @param bpId The breakpoint ID to remove.
+	 * Removes a breakpoint from the list.
+	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
+	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+
 		Utility.assert(false);
 	}
 
@@ -1198,6 +1479,19 @@ export class DzrpRemote extends RemoteBase {
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
 		Utility.assert(false);
 		return [];
+	}
+
+
+	/**
+	 * Override.
+	 * Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error. An error can only occur on real HW if the slot with dezogif is overwritten.
+ 	*/
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		Utility.assert(false);
+		return 0;
 	}
 
 

@@ -1,5 +1,39 @@
 # Changelog
 
+# 1.4.7
+- Added donate button.
+
+# 1.4.6
+- Removed double timer for command/response.
+- Added "What's New".
+
+# 1.4.5
+- Version to start beta testing "zxnext".
+
+# 1.4.4
+- remoteType: "serial" renamed to "zxnext".
+- Allowing to set/remove breakpoints during debugged program being run for cspect, zsim and zxnext.
+
+# 1.4.3
+- Support for DZRP 1.6.0. CMD_CLOSE implemented.
+- startAutomatically with z80 unit tests improved.
+
+# 1.4.2
+- Support for DZRP 1.4.0: Changed numbering.
+- ZXNext remote debugging working. Major changes to DZRP.
+- Breakpoints at address 0x0000 fixed.
+- Introduced TC_END to Unit tests.
+- New eval '-dasm' command.
+
+# 1.4.1
+- Support for DZRP 1.2.0: CMD_SLOT.
+
+# 1.4.0
+- sjasmplus "--lstlab" labels are parsed now.
+- Support for DZRP 1.1.0
+- Formatting of Z80 flags changed.
+- Command dezog.cancelUnitTests added.
+
 # 1.3.1
 - Corrected display of memory slots for zsim and cspect.
 - Removed 'replaceAll'.

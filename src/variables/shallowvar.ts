@@ -1,5 +1,5 @@
 //import { Log } from './log';
-import { Labels } from '../labels';
+import { Labels } from '../labels/labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Settings } from '../settings'
 import { Utility } from '../misc/utility';

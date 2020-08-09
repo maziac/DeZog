@@ -8,12 +8,13 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {Labels} from '../../labels';
+import {Labels} from '../../labels/labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZxSimCpuHistory} from './zxsimcpuhistory';
 import {ZxMemory} from './zxmemory';
+import {GenericBreakpoint} from '../../genericwatchpoint';
 
 
 
@@ -306,7 +307,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				const start=Labels.getNumberFromString(loadObj.start);
 				if (isNaN(start))
 					throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
-				await this.loadObj(loadPath, start);
+				await this.loadObj(loadObj.path, start);
 			}
 		}
 
@@ -532,7 +533,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
-				const bpInner=this.tmpBreakpoints[pc];
+				const bpInner=this.tmpBreakpoints.get(pc);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.
 					// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
@@ -761,15 +762,6 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	//------- Send Commands -------
 
 	/**
-	 * Not used.
-	 */
-	protected async sendDzrpCmdInit(): Promise<Array<number>> {
-		Utility.assert(false);	// Not used
-		return [0, 0, 0];
-	}
-
-
-	/**
 	 * Sends the command to get all registers.
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.
@@ -817,26 +809,21 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	/**
 	 * The simulator does not add any breakpoint here because it already
 	 * has the breakpoint, logpoint and assert lists.
-	 * @param bpAddress The breakpoint address. 0x0000-0xFFFF.
-	 * @param condition The breakpoint condition as string. If there is n condition
-	 * 'condition' may be undefined or an empty string ''.
-	 * @returns A Promise with the breakpoint ID (1-65535) or 0 in case
-	 * no breakpoint is available anymore.
+	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
+	 * ID.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bpAddress: number, condition?: string): Promise<number> {
+	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		this.lastBpId++;
-		this.cpuRunning=false;
-		return this.lastBpId;
+		bp.bpId=this.lastBpId;
 	}
 
 
 	/**
 	 * The simulator does not remove any breakpoint here because it already
 	 * has the breakpoint, logpoint and assert lists.
-	 * @param bpId The breakpoint ID to remove.
+	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bpId: number): Promise<void> {
-		this.cpuRunning=false;
+	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 	}
 
 
@@ -904,6 +891,18 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
 		const slots=this.zxMemory.getSlots();
 		return slots;
+	}
+
+
+	/**
+	 * Sends the command to set a slot/bank associations (8k banks).
+	 * @param slot The slot to set
+	 * @param bank The 8k bank to associate the slot with.
+	 * @returns A Promise with an error=0 (no error).
+ 	*/
+	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+		this.zxMemory.setSlot(slot, bank);
+		return 0;
 	}
 
 

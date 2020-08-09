@@ -1,10 +1,11 @@
 import * as util from 'util';
 import { Remote } from '../remotes/remotefactory';
 import { BaseView } from './baseview';
-import {ImageConvert} from '../imageconvert';
+import {ImageConvert} from '../misc/imageconvert';
 import {WebviewPanel} from 'vscode';
 import {Utility} from '../misc/utility';
 import * as Random from 'rng';
+import {Log} from '../log';
 
 
 /**
@@ -34,19 +35,36 @@ export class ZxNextSpritePatternsView extends BaseView {
 	// STATIC:
 
 	/// The sprites palette transparent index.
-	protected static spritesPaletteTransparentIndex = 0;
+	protected static spritesPaletteTransparentIndex: number;
 
 	/// The sprite patterns, i.e. max 64 patterns each with 256 bytes describing the pattern.
-	protected static spritePatterns = new Map<number, Array<number>>();
+	protected static spritePatterns: Map<number, Array<number>>;
 
 
 	/// The sprite palettes, first and second sprite palette, but also the
 	/// fixed palettes.
-	protected static spritePalettes = new Map<number, Array<number>>();
+	protected static spritePalettes: Map<number, Array<number>>;
 
 
 	/// The currently selected sprite palette.
-	protected static currentPaletteNumber = -1;
+	protected static currentPaletteNumber: number;
+
+	/// String that is shown if retrieving was not possible.
+	protected retrievingError;
+
+
+	/**
+	 * Initializes the static variables.
+	 * Called at launchRequest.
+	 */
+	public static staticInit() {
+		ZxNextSpritePatternsView.currentPaletteNumber=-1;
+		ZxNextSpritePatternsView.spritesPaletteTransparentIndex=0;
+		ZxNextSpritePatternsView.spritePatterns=new Map<number, Array<number>>();
+		ZxNextSpritePatternsView.spritePalettes=new Map<number, Array<number>>();
+		// Register for static updates.
+		BaseView.staticViewClasses.push(ZxNextSpritePatternsView);
+	}
 
 
 	/**
@@ -59,7 +77,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Reload current palette number and transparent index on every update.
 		ZxNextSpritePatternsView.currentPaletteNumber=-1;
 		// Reload patterns and palettes only if not 'step'
-		if(!reason || reason.step != true) {
+		if (!reason||reason.step!=true) {
 			// Mark 'dirty'
 			ZxNextSpritePatternsView.spritePatterns.clear();
 			ZxNextSpritePatternsView.spritePalettes.delete(PaletteSelection.PALETTE_0);
@@ -202,6 +220,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * @return A palette array. May return undefined if no palette is found.
 	 */
 	protected static staticGetPaletteForSelectedIndex(selectedIndex: PaletteSelection): any {
+
+		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex a, selectedIndex='+selectedIndex+', currentPaletteNumber='+ZxNextSpritePatternsView.currentPaletteNumber);
 		let paletteSelection = selectedIndex;
 		if(selectedIndex == PaletteSelection.CURRENT) {
 			switch(ZxNextSpritePatternsView.currentPaletteNumber) {
@@ -213,11 +233,13 @@ export class ZxNextSpritePatternsView extends BaseView {
 					break;
 				default:
 					Utility.assert(false);
+					//paletteSelection=PaletteSelection.PALETTE_0;
 					break;
 			}
 		}
 
-		const palette = ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		const palette=ZxNextSpritePatternsView.spritePalettes.get(paletteSelection);
+		Log.log('ZxNextSpritePatternView::staticGetPaletteForSelectedIndex b');
 		return palette;
 	}
 
@@ -371,19 +393,34 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		try {
+			Log.log('ZxNextSpritePatternView::update a');
 			// Mark as invalid until pattern have been loaded.
 			this.patternDataValid=(!reason||reason.step!=true);
+
+			// TODO: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 
 			// Load palette if not available
 			await this.getSpritesPalette();
 
-			// Get patterns
-			await this.getSpritePatterns();
+			try {
+				// Get patterns
+				Log.log('ZxNextSpritePatternView::update b');
+				await this.getSpritePatterns();
+			}
+			catch (e) {
+				this.retrievingError=e.message;
+			};
+
+			Log.log('ZxNextSpritePatternView::update c');
 
 			// Create a new web view html code
 			this.setHtml();
+			Log.log('ZxNextSpritePatternView::update d');
+
 		}
-		catch {};
+		catch (e) {
+			Remote.emit('warning', e.message);
+		};
 	}
 
 
@@ -433,6 +470,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		%s
 
+		<div %s>
 		<button onclick="reload()">Reload</button>
 
 		<!-- To change the background color of the sprite pattern -->
@@ -450,6 +488,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			<option>Default Palette</option>
 			<option>False Colors Palette</option>
 		</select>
+		</div>
+
 		<br>
 
 		<script>
@@ -464,7 +504,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 		`;
 
 		const invalid = (this.patternDataValid) ? "" : "*";
-		const html = util.format(format, invalid, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
+		const hidden=(this.retrievingError)? "hidden":"";
+		const html=util.format(format, invalid, hidden, ZxNextSpritePatternsView.currentPaletteNumber, this.usedBckgColor, this.usedPalette);
 		return html;
 	}
 
@@ -487,7 +528,12 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * Creates several html table out of the sprite pattern data.
 	 */
 	protected createHtmlTable(): string {
+		if (this.retrievingError)
+			return '<div>'+this.retrievingError+'</div>';
+
 		// Create a string with the table itself.
+		Log.log('ZxNextSpritePatternView::createHtmlTable a');
+
 		let palette = ZxNextSpritePatternsView.staticGetPaletteForSelectedIndex(this.usedPalette);
 		Utility.assert(palette);
 		let table=`
@@ -574,6 +620,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			k ++;
 		}
 
+
+		Log.log('ZxNextSpritePatternView::createHtmlTable b');
 		return table;
 	}
 
@@ -626,9 +674,4 @@ export class ZxNextSpritePatternsView extends BaseView {
 		this.vscodePanel.webview.html = html;
 	}
 }
-
-
-
-// Register for static updates.
-BaseView.staticViewClasses.push(ZxNextSpritePatternsView);
 

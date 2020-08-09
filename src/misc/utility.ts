@@ -1,4 +1,4 @@
-import { Labels } from '../labels';
+import { Labels } from '../labels/labels';
 import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';
@@ -8,7 +8,9 @@ import {Log} from '../log';
 
 
 
-
+/**
+ * A collection of useful functions.
+ */
 export class Utility {
 
 	/// The rootpath to the project. Used in abs and relative filename functions.
@@ -429,9 +431,9 @@ export class Utility {
 	 * ${labels} = value as label (or several labels)"
 	 * @param tabSizeArr An array of strings each string contains the max number of characters for each tab. Or null. If null the tab sizes are calculated on the fly.
 	 * @param undefText Text to use if value is undefined. Defaults to "undefined".
-	 * @returns A Promised with the formatted string.
+	 * @returns A Promise with the formatted string.
 	 * A Promise is required because it might be that for formatting it is required to
-	 * get more data from the socket.
+	 * get more data from the remote.
 	 */
 	public static async numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, undefText = "undefined"): Promise<string> {
 		// Safety check
@@ -482,7 +484,7 @@ export class Utility {
 	 * ${unsigned} = value as unsigned, e.g. 1234
 	 * $(signed) = value as signed, e.g. -59
 	 * $(bits) = value as bits , e.g. 10011011
-	 * $(flags) = value interpreted as status flags (only useful for Fand F#), e.g. ZNC
+	 * $(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC
 	 * ${labels} = value as label (or several labels)"
 	 * @param regsAsWell If true then also matching register names will be returned.
 	 * @param paramName The name, e.g. a register name "A" etc. or a label name. Can be omitted or undefined or ''.
@@ -502,6 +504,7 @@ export class Utility {
 			// '${...' found now check for } from the left side.
 			// This assures that } can also be used inside a ${...}
 			const k = p.lastIndexOf('}');
+			//const k=p.indexOf('}');
 			if(k < 0) {
 				// Not a ${...} -> continue
 				return p;
@@ -564,12 +567,14 @@ export class Utility {
 					// interprete byte as Z80 flags:
 					// Zesarux: (e.g. "SZ5H3PNC")
 					// S Z X H X P/V N C
-					var res = (usedValue&0x80)? 'S' : '.';	// S=sign
-					res += (usedValue&0x40)? 'Z ' : 'NZ';	// Z=zero
-					res += (usedValue&0x10)? 'H' : '.';	// H=Half Carry
-					res += (usedValue&0x04)? 'P' : '.';	// P/V=Parity/Overflow
-					res += (usedValue&0x02)? 'N' : '.';	// N=Add/Subtract
-					res += (usedValue&0x01)? 'C ' : 'NC';	// C=carry
+					var res = (usedValue&0x80)? 'S' : '-';	// S=sign
+					res += (usedValue&0x40)? 'Z':'-';	// Z=zero
+					res += (usedValue&0x20)? '1':'-';
+					res += (usedValue&0x10)? 'H' : '-';	// H=Half Carry
+					res += (usedValue&0x08)? '1':'-';
+					res += (usedValue&0x04)? 'P' : '-';	// P/V=Parity/Overflow
+					res += (usedValue&0x02)? 'N' : '-';	// N=Add/Subtract
+					res += (usedValue&0x01)? 'C' : '-';	// C=carry
 					return res + restP;
 
 				case 'labels':
@@ -920,6 +925,8 @@ export class Utility {
 	 * @returns E.g. "!(A == 7)"
 	 */
 	public static getConditionFromAssert(assertExpression: string) {
+		if (assertExpression.trim().length==0)
+			assertExpression='false';
 		return '!('+assertExpression+')';
 	}
 
@@ -975,7 +982,7 @@ export class Utility {
 
 
 	/**
-	 * An async function that waits for somee miliseconds.
+	 * An async function that waits for some milliseconds.
 	 * @param ms time to wait in ms
 	 */
 	public static async timeout(ms: number): Promise<void> {
