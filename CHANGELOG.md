@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.4.8
+- Fixed white spaces in loading for zrcp (ZEsarUX).
+
 # 1.4.7
 - Added donate button.
 
