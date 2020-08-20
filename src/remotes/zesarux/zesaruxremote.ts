@@ -185,7 +185,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
 				if (loadPath) {
-					zSocket.send('smartload '+Settings.launch.load);
+					zSocket.send('smartload "'+Settings.launch.load+'"');
 					await zSocket.executeWhenQueueIsEmpty();
 				}
 
