@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.5.0
+- Added openmsx support.
+
 # 1.4.8
 - Fixed white spaces in loading for zrcp (ZEsarUX).
 
