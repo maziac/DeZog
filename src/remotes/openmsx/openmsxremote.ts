@@ -619,14 +619,13 @@ export class OpenMSXRemote extends RemoteBase {
 	}
 
 	/**
-	 * Reads the coverage addresses and clears them in ZEsarUX.
+	 * Reads the coverage addresses and clears them in OpenMSX.
+	 * TODO: Needs implementation. Does nothing at the moment.
 	 */
 	protected handleCodeCoverage() {
 		// Check if code coverage is enabled
 		if(!Settings.launch.history.codeCoverageEnabled)
 			return;
-
-		// TODO MSX: This function does nothing. Also the description (zesarux) is wrong.
 	}
 
 
