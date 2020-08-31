@@ -363,8 +363,7 @@
 							"openmsx": {
 								"pcInSlot": {
 									"type": "string",
-									"description": "??? TODO",
-									"default": "??? TODO"
+									"description": "Default primary slot, secondary slot and bank/segment for breakpoints. For example '3 2 4' selects primary slot 3, secondary slot 2 and memory mapper segment 4. Optional parameter."
 								}
 							},
 							"unitTests": {

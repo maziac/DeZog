@@ -385,8 +385,9 @@ export class Settings {
 
 		if (!Settings.launch.openmsx)
 			Settings.launch.openmsx={} as OpenMSXType;
-		if (!Settings.launch.openmsx.pcInSlot)
-			Settings.launch.openmsx.pcInSlot="???";	// TODO MSX: Predefine default values
+		// pcInslot may be undefined
+		//if (!Settings.launch.openmsx.pcInSlot)
+		//	Settings.launch.openmsx.pcInSlot="???";
 
 		// zxnext
 		if (!Settings.launch.zxnext)

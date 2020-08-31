@@ -602,6 +602,8 @@ If you debug .BIN application do the same with an autoexec.bas file.
 
 You can use the commandsAfterLaunch property in launch.json to automatically mount a disk or insert a ROM. Please specify it here as you would do it in the Debug Console.
 
+Please also see this tutorial (at the time of the making OpenMSX was not officially included yet):
+https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be
 
 
 ### ZX Next / Serial Interface

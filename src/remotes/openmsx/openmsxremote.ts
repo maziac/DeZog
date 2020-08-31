@@ -11,9 +11,17 @@ import {DecodeOpenMSXRegisters} from './decodeopenmsxdata';
 import {Utility} from '../../misc/utility';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint, MemoryBank } from '../remotebase';
-import {htonl,ntohl} from 'network-byte-order';
+import {htonl, ntohl} from 'network-byte-order';
+import {LogSocket} from '../../log';
 
 import * as NES from 'node-expose-sspi-strict';
+
+
+
+/// Timeouts.
+const CONNECTION_TIMEOUT=1000;	///< 1 sec
+
+
 
 let nes: typeof NES;
 if (os.platform()=="win32") {
@@ -49,7 +57,7 @@ export class OpenMSXRemote extends RemoteBase {
 				else
 					username = os.userInfo().username;
 				var folder:string = path.join (os.tmpdir(),"openmsx-"+username);
-				console.log (folder);
+				LogSocket.log("OpenMSX folder: "+folder+", os platform: "+os.platform());
                 const readDir = util.promisify (fs.readdir);
 				const filenames = await readDir (folder);
 				if (filenames.length==0) {
@@ -62,10 +70,10 @@ export class OpenMSXRemote extends RemoteBase {
 						var timer  = setTimeout(function () {
 							client.destroy();
 							reject (new Error (`Timeout connecting to OpenMSX`));
-						   }, 15000);  // TODO MSX: 15 secs timeout is too long
+						}, CONNECTION_TIMEOUT);
 						client.on('connect', () => {
 							clearTimeout(timer);
-							console.log('Connected to OpenMSX');
+							LogSocket.log('Connected to OpenMSX');
 							resolve (client);
 						})
 						client.on('error', (err:Error) => {
@@ -80,10 +88,10 @@ export class OpenMSXRemote extends RemoteBase {
 						var timer  = setTimeout(function () {
 							client.destroy();
 							reject (new Error (`Timeout connecting to OpenMSX:${port}`));
-						}, 15000); // TODO MSX: 15 secs timeout is too long
+						}, CONNECTION_TIMEOUT);
 						client.on('connect', () => {
 							clearTimeout(timer);
-							console.log('Connected to OpenMSX');
+							LogSocket.log('Connected to OpenMSX');
 							resolve (client);
 						})
 						client.on('error', (err:Error) => {
@@ -94,7 +102,8 @@ export class OpenMSXRemote extends RemoteBase {
 					}
 				});
 
-            } catch {
+			} catch {
+				LogSocket.log("Error connecting to OpenMSX");
                 reject (new Error ("Error connecting to OpenMSX"));
             }
         });
@@ -102,40 +111,42 @@ export class OpenMSXRemote extends RemoteBase {
 
 	async perform_awake (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve) => {
-            this.once ('awake', (str:string) => {
+			this.once('awake', (str: string) => {
+				LogSocket.log("<= (awake) "+str);
                 resolve (str);
 			});
+			LogSocket.log("=> "+cmd);
 			this.openmsx.write (cmd);
         });
     }
 
     async perform_command (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve,reject) => {
-			console.log (cmd);
 			this.on ('reply', async (r:any) => {
-				console.log (util.inspect(r, { depth: null }));
+				//console.log (util.inspect(r, { depth: null }));
 				if (r.$!=undefined && r.$.result=="ok") {
-					this.removeAllListeners ("reply");
-					if (r._!=undefined)
-						resolve (r._); // return value
-					else
-						resolve (""); // no return value
+					this.removeAllListeners("reply");
+					const reply=r._||"";
+					LogSocket.log("<= (reply) "+reply);
+					resolve(reply);
 				}
 			});
-			this.openmsx.write ("<command>"+cmd+"</command>");
+			LogSocket.log("=> "+cmd);
+			this.openmsx.write("<command>"+cmd+"</command>");
         });
 	}
 
     async perform_run_command (cmd: string) : Promise <string> {
         return new Promise <string> ( async (resolve,reject) => {
-			console.log (cmd);
 			this.on ('update', async (u:any) => {
-				console.log (util.inspect(u, { depth: null }));
+				//console.log (util.inspect(u, { depth: null }));
 				if (u._!=undefined && u._ == "suspended") {
-					this.removeAllListeners ("update");
+					this.removeAllListeners("update");
+					LogSocket.log("<= (update) "+u._);
 					resolve (u._);
 				}
 			});
+			LogSocket.log("=> "+cmd);
 			this.openmsx.write ("<command>"+cmd+"</command>");
         });
 	}
@@ -238,28 +249,30 @@ export class OpenMSXRemote extends RemoteBase {
 	public async doInitialization(): Promise<void> {
 		try {
 			this.openmsx = await this.connectOpenMSX ();
-			console.log ("Connected");
+			//console.log ("Connected");
 			this.connected = true;
         } catch (error) {
-			console.log (error.message);
+			//console.log (error.message);
 			this.emit('error', new Error ("Error connecting to OpenMSX"));
             return;
         }
 
-        this.openmsx.on('timeout', () => {
+		this.openmsx.on('timeout', () => {
+			LogSocket.log("Timeout");
 			this.emit('error', new Error ("Timeout connecting to OpenMSX"));
         })
-        this.openmsx.on('error', err => {
+		this.openmsx.on('error', err => {
+			LogSocket.log("Error: "+err.message);
 			this.emit('error', err);
         })
         this.openmsx.on('close', () => {
 			this.connected=false;
-			console.log("Closed the connection to OpenMSX");
+			LogSocket.log("Closed the connection to OpenMSX");
 			this.emit('log', "Closed the connection to OpenMSX");
         })
         this.openmsx.on ('data', data => {
 			//console.log (data.toString());
-			this.handleOpenMSXResponse (data);
+			this.handleOpenMSXResponse(data);
         });
 
 		if (os.platform()=="win32") {
@@ -347,7 +360,7 @@ export class OpenMSXRemote extends RemoteBase {
 	}
 
 	private async handleOpenMSXResponse (data:Buffer) {
-		let str:string = data.toString();
+		let str: string=data.toString();
 		if (str.indexOf ("<openmsx-output>")==0) {
 			this.emit ('awake',"");
 		} else {
@@ -742,7 +755,7 @@ export class OpenMSXRemote extends RemoteBase {
 		conds = conds.split ("<").join("&lt;");
 		conds = conds.split (">").join("&gt;");
 
-		console.log('Converted condition "' + condition + '" to "' + conds + '"');
+		//console.log('Converted condition "' + condition + '" to "' + conds + '"');
 		return conds;
 	}
 
