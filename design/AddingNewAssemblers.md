@@ -38,7 +38,7 @@ The way this information is extracted is a 2 step process:
 		- the address
 		- the original line
 		- the last label
-2. The list file is analyzed a 2nd time. This time the source file association is extracted by anaylzing the 'includes'.
+2. The list file is analyzed a 2nd time. This time the source file line/address association is extracted. It also anaylzes the 'includes'.
 3. The common format is analyzed and the information is extracted
 
 Step 3 is common for all assemblers.
@@ -63,10 +63,31 @@ TODO Explain: The parsing of the watchpoints, asserts and logpoints ...
 
 ## Parsing for Labels and Addresses
 
+Is done in ```parseLabelAndAddress(line: string)```.
+It is called subsequently for each line of the list file.
+
+You need to extract the label and address. I.e. all labels at the start of the line (normally ended by a ":") and all EQUs and their value.
+Note: You may omit EQUs if they are to complicated to parse, e.g. if these contain are calculation of other labels.
+
+Then call ```addLabelForNumber(value: number, label: string)```` to associate the label (or EQU) name with the value (address or number).
+If your assembler can differentiate local and global labels you should also add the LabelType.
+
+You can have a look at sjasmplus to see how the different types are used.
+Default is the GLOBAL type.
+Then if your assembler supports modules you would use NORMAL for your labels and LOCAL if it is a local label (e.g. a label started with a dot '.').
+
+If your assembler supports modules than you also need to call ```moduleStart(name: string)``` when the module starts and ```moduleEnd()``` when it ends.
+This is required to create correct label names, i.e. the module name is automatically added to the label name that you pass in ```addLabelForNumber```.
+
+
+To set the number of associated bytes with one address you need to call ```addAddressLine(address: number, size: number)```.
+I.e. in your list file you should parse the address and then count the number of following bytes and pass both to the ```addAddressLine```.
+Calling this function is necessary to associate the label with the address.
+
 
 ## Parsing for Sources
 
-
+parseFileAndLineNumber
 
 
 
@@ -96,7 +117,7 @@ The base class for assembler parsing is LabelParserBase.
 It reads in the list file and calls 2 virtual functions for each line of the list file.
 The derived class should implement those:
 - parseLabel: The line is parsed for EQU and normal labels. The extracted info is stored.
-- parseFileAssociation: The line is parsed to associate the source file and line number(s) with an address or addresses.
+- parseAllFilesAndLineNumbers: The line is parsed to associate the source file and line number(s) with an address or addresses.
 
 
 
@@ -114,7 +135,7 @@ For testing you should prepare an project for your assembler that includes
 
 Then generate a list file.
 The list file should be stored under src/tests/data/...
-Store also the project somewhere there. Although it is not required for testing it might help if you need to re-create the list file some time later.
+Store also the assembler project somewhere there. Although it is not required for testing it might help if you need to re-create the list file some time later.
 
 Create unit tests that:
 - check the labels and their values

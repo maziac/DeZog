@@ -13,14 +13,14 @@ import {AsmListFileBase} from '../settings';
 
 /// Different label types.
 export enum LabelType {
-	NORMAL,	// The label might be preceded bya module name
+	NORMAL,	// The label might be preceded by a module name
 	LOCAL,	// It's a local label. The name is concatenated with the lastLabel.
 	GLOBAL	// The name is taken as is. Not concatenated with anything.
 };
 
 
 /**
- * This class is the base class for the assmebler list file parsers.
+ * This class is the base class for the assembler list file parsers.
  */
 export class LabelParserBase {
 	/// Map that associates memory addresses (PC values) with line numbers
@@ -332,7 +332,7 @@ export class LabelParserBase {
 	 * @param label The label to add.
 	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
 	 */
-	protected addLabelForNumber(value: number, label: string, labelType = LabelType.GLOBAL) {
+	protected addLabelForNumber(value: number, label: string, labelType=LabelType.GLOBAL) {
 		// Safety check
 		if (value<0||value>=0x10000)
 			return;
@@ -355,7 +355,6 @@ export class LabelParserBase {
 					label=this.modulePrefix+label;
 				break;
 			case LabelType.GLOBAL:
-				 // TODO: Test global label
 				// Remember last label (for local labels)
 				this.lastLabel=label;
 				this.currentFileEntry.lastLabel=this.lastLabel;
@@ -386,7 +385,6 @@ export class LabelParserBase {
 
 	/**
 	 * Adds the address to the list file array.
-	 * Together with the line and the last label string.
 	 * @param address The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
 	 * Has to be 1 if address is undefined.

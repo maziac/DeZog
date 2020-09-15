@@ -151,7 +151,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 							// Evaluate
 							const value=Utility.evalExpression(valueString, false);
 							//const entry = { value, file: fileName, line: lineNr};
-							// Add label
+							// Add EQU
 							this.addLabelForNumber(value, label, labelType);
 						}
 						catch {};	// do nothing in case of an error
