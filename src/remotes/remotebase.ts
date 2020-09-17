@@ -406,47 +406,8 @@ export class RemoteBase extends EventEmitter {
 	 * @param configuration Contains the list files for the different assemblers
 	 */
 	public readListFiles(configuration: any) {
-		// TODO: Integrate watchpoints etc in LabelParsers
-
 		Labels.readListFiles(configuration);
-		/*
-		// Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
-		const watchPointLines=new Array<{address: number, line: string}>();
-		const assertLines=new Array<{address: number, line: string}>();
-		const logPointLines=new Array<{address: number, line: string}>();
-		// Load user list and labels files
-		for (const listFile of listFiles) {
-			const file={
-				path: Utility.getAbsFilePath(listFile.path),
-				mainFile: listFile.mainFile,
-				srcDirs: listFile.srcDirs||[""],
-				filter: listFile.filter,
-				asm: listFile.asm||"sjasmplus",
-				addOffset: listFile.addOffset||0,
-				z88dkMapFile: listFile.z88dkMapFile
-			};
-			Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
-				// Quick search for WPMEM
-				if (line.indexOf('WPMEM')>=0) {
-					// Add watchpoint at this address
-					watchPointLines.push({address: address, line: line});
-				}
-				// Quick search for ASSERT
-				if (line.indexOf('ASSERT')>=0) {
-					// Add assert line at this address
-					assertLines.push({address: address, line: line});
-				}
-				// Quick search for LOGPOINT
-				if (line.indexOf('LOGPOINT')>=0) {
-					// Add assert line at this address
-					logPointLines.push({address: address, line: line});
-				}
-			}, file.z88dkMapFile);
-		}
 
-		// Finishes off the loading of the list and labels files
-		Labels.finish();
-*/
 		// calculate top of stack, execAddress
 		this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))

@@ -99,11 +99,6 @@ export class LabelParserBase {
 		this.watchPointLines=watchPointLines;
 		this.assertLines=assertLines;
 		this.logPointLines=logPointLines;
-
-		// TODO: remove:
-		this.currentFileEntry={
-			fileName: "", lineNr: 0, addr: undefined, size: 0, line: "", modulePrefix: undefined
-		};
 	}
 
 
@@ -150,8 +145,30 @@ export class LabelParserBase {
 			// Prepare an entry
 			this.currentFileEntry={fileName, lineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			this.listFile.push(this.currentFileEntry);
+
 			// Parse
 			this.parseLabelAndAddress(line);
+
+			// Check for WPMEM, ASSERT and LOGPOINT
+			const address=this.currentFileEntry.addr;
+			if (address!=undefined) {
+				// WPMEM
+				if (line.indexOf('WPMEM')>=0) {
+					// Add watchpoint at this address
+					this.watchPointLines.push({address, line});
+				}
+				// ASSERT
+				if (line.indexOf('ASSERT')>=0) {
+					// Add ASSERT at this address
+					this.assertLines.push({address, line});
+				}
+				// LOGPOINT
+				if (line.indexOf('LOGPOINT')>=0) {
+					// Add logpoint at this address
+					this.logPointLines.push({address, line});
+				}
+			}
+
 			// Next
 			lineNr++;
 		}

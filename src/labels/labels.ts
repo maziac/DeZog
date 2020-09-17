@@ -75,8 +75,6 @@ export class LabelsClass {
 	/// Not the line number of the value of the label.
 	protected labelLocations=new Map<string, {file: string, lineNr: number}>()
 
-	// TODO: Implement watchpoints etc. parsing
-
 	/// Stores the address of the watchpoints together with the line contents.
 	protected watchPointLines=new Array<{address: number, line: string}>();
 
