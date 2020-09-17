@@ -189,7 +189,13 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 	/**
 	 * Parses one line for current file name and line number in this file.
-	 * The function calls.... TODO
+	 * The function determines the line number from the list file.
+	 * The line number is the line number in the correspondent source file.
+	 * Note: this is not the line number of the list file.
+	 * The list file may include other files. It's the line number of those files we are after.
+	 * Call 'setLineNumber' with the line number to set it. Note that source file numbers start at 0.
+	 * Furthermore it also determines teh beginning and ending of include files.
+	 * Call 'includeStart(fname)' and 'includeEnd()'.
 	 * @param line The current analyzed line of the listFile array.
 	 */
 	protected parseFileAndLineNumber(line: string) {
@@ -208,11 +214,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		//   40  004B
 		//
 		// Note:
-		// a) the text "include" is used as indication that a new include
-		// file started (can be used for both sjasmplus and z88dk).
-		// b1) z88dk: the change of the line number is used as indicator that the
-		// include file ended.
-		// b2) sjasmplus: the text '# file closed' is used as indication that the
+		// sjasmplus: the text '# file closed' is used as indication that the
 		// include file ended.
 
 		// Check for start of include file

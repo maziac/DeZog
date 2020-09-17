@@ -147,32 +147,44 @@ export class LabelParserBase {
 
 			// Check for WPMEM, ASSERT and LOGPOINT
 			const address=this.currentFileEntry.addr;
-			if (address!=undefined) {
-				// WPMEM
-				let match=/;.*(\bWPMEM\b.*)/.exec(line);
-				if (match) {
-					// Add watchpoint at this address
-					if (this.currentFileEntry.size==0)
-						this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
-					else
-						this.watchPointLines.push({address, line: match[1]});
-				}
-				// ASSERT
-				match=/;.*(\bASSERT\b.*)/.exec(line);
-				if (match) {
-					// Add ASSERT at this address
-					this.assertLines.push({address, line: match[1]});
-				}
-				// LOGPOINT
-				match=/;.*(\bLOGPOINT\b.*)/.exec(line);
-				if (match) {
-					// Add logpoint at this address
-					this.logPointLines.push({address, line: match[1]});
-				}
-			}
+			this.parseWpmemAssertLogpoint(address, line);
 
 			// Next
 			lineNr++;
+		}
+	}
+
+
+	/**
+	 * Parses the line for comments with WPMEM, ASSERT or LOGPOINT.
+	 */
+	protected parseWpmemAssertLogpoint(address:number|undefined, line: string) {
+
+		if (address==undefined)
+			return;
+
+		// WPMEM
+		let match=/;.*(\bWPMEM\b.*)/.exec(line);
+		if (match) {
+			// Add watchpoint at this address
+			if (this.currentFileEntry.size==0)
+				this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
+			else
+				this.watchPointLines.push({address, line: match[1]});
+		}
+
+		// ASSERT
+		match=/;.*(\bASSERT\b.*)/.exec(line);
+		if (match) {
+			// Add ASSERT at this address
+			this.assertLines.push({address, line: match[1]});
+		}
+
+		// LOGPOINT
+		match=/;.*(\bLOGPOINT\b.*)/.exec(line);
+		if (match) {
+			// Add logpoint at this address
+			this.logPointLines.push({address, line: match[1]});
 		}
 	}
 
@@ -304,7 +316,13 @@ export class LabelParserBase {
 	/**
 	 * Override.
 	 * Parses one line for current file name and line number in this file.
-	 * The function calls.... TODO
+	 * The function determines the line number from the list file.
+	 * The line number is the line number in the correspondent source file.
+	 * Note: this is not the line number of the list file.
+	 * The list file may include other files. It's the line number of those files we are after.
+	 * Call 'setLineNumber' with the line number to set it. Note that source file numbers start at 0.
+	 * Furthermore it also determines teh beginning and ending of include files.
+	 * Call 'includeStart(fname)' and 'includeEnd()'.
 	 * @param line The current analyzed line of the listFile array.
 	 */
 	protected parseFileAndLineNumber(line: string) {

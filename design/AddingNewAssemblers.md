@@ -58,8 +58,6 @@ In particular here are some problem areas one need to take care of:
 - determine EQUs
 - determine the number of bytes used in one line of the list file
 
-TODO Explain: The parsing of the watchpoints, asserts and logpoints ...
-
 
 ## Parsing for Labels and Addresses
 
@@ -67,7 +65,7 @@ Is done in ```parseLabelAndAddress(line: string)```.
 It is called subsequently for each line of the list file.
 
 You need to extract the label and address. I.e. all labels at the start of the line (normally ended by a ":") and all EQUs and their value.
-Note: You may omit EQUs if they are to complicated to parse, e.g. if these contain are calculation of other labels.
+Note: You may omit EQUs if they are too complicated to parse, e.g. if these contain are calculation of other labels.
 
 Then call ```addLabelForNumber(value: number, label: string)```` to associate the label (or EQU) name with the value (address or number).
 If your assembler can differentiate local and global labels you should also add the LabelType.
@@ -87,8 +85,15 @@ Calling this function is necessary to associate the label with the address.
 
 ## Parsing for Sources
 
-parseFileAndLineNumber
+In the second pass the file names and line numbers are associated with the addresses.
+This is done in ```parseAllFilesAndLineNumbers```.
+It calls ```parseFileAndLineNumber(line: string)``` for each line.
 
+```parseFileAndLineNumber(line: string)``` has to determine the include file start and end by calling ```includeStart(fname)``` and ```includeEnd()```.
+And it has to determine the line number in the file.
+Note: this is not the line number of the list file.
+The list file may include other files. It's the line number of those files we are after.
+Call 'setLineNumber' with the line number to set it. Note that source file numbers start at 0.
 
 
 # Common Format
@@ -109,17 +114,11 @@ A label contains the following info:
 - value (a number)
 
 
-# List File Processing
+# WPMEM, ASSERT, LOGPOINT
 
-Noch Unklar:
-
-The base class for assembler parsing is LabelParserBase.
-It reads in the list file and calls 2 virtual functions for each line of the list file.
-The derived class should implement those:
-- parseLabel: The line is parsed for EQU and normal labels. The extracted info is stored.
-- parseAllFilesAndLineNumbers: The line is parsed to associate the source file and line number(s) with an address or addresses.
-
-
+You don'tneed to take care of those.
+These are normally automatically parsed.
+Unless you override ```parseAllLabelsAndAddresses```. In that case take care to call ```parseWpmemAssertLogpoint```for every line.
 
 
 # Testing
