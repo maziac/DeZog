@@ -234,7 +234,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param assertLines An array with address and line (text) pairs.
 	 * @return An array with asserts (GenericWatchpoints).
 	 */
-	protected createAsserts(assertLines: Array<{address: number, line: string}>) {
+	protected createAsserts(assertLines: Array<{address: number, line: string}>): Array<GenericBreakpoint> {
 		const assertMap=new Map<number, GenericBreakpoint>();
 		// Convert ASSERTS to watchpoints
 		for (let entry of assertLines) {
@@ -305,7 +305,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Creates an array of log points from the text lines.
 	 * @param logPointLines An array with address and line (text) pairs.
-	 * @return An array with log points (GenericWatchpoints).
+	 * @return An array with log points (GenericWatchpoints) for each group.
 	 */
 	protected createLogPoints(logPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
 		// convert labels in watchpoints.
@@ -317,7 +317,7 @@ export class RemoteBase extends EventEmitter {
 			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
 
 			// Now check more thoroughly i.e. for comma
-			const match=/;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
+			const match=/^LOGPOINT\b(\s*\[\s*(\w*)\s*\])?\s*(.*)/gm.exec(entry.line);
 			if (match) {
 				// get arguments
 				const group=match[2]||"DEFAULT";

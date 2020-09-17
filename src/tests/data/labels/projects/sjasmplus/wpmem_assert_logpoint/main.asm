@@ -12,5 +12,8 @@
 	nop		; ASSERTx
 
 	nop		; LOGPOINT [GROUP1] ${A}
+	nop		; LOGPOINT [GROUP1] BC=${hex:BC}
+	nop		; LOGPOINT [GROUP1]
+	nop		; LOGPOINT MY LOG
 	nop		; LOGPOINTx [GROUP2] ${A}
 

@@ -13,8 +13,11 @@
 12    A022 00           	nop		; ASSERTx
 13    A023
 14    A023 00           	nop		; LOGPOINT [GROUP1] ${A}
-15    A024 00           	nop		; LOGPOINTx [GROUP2] ${A}
-16    A025
+15    A024 00           	nop		; LOGPOINT [GROUP1] BC=${hex:BC}
+16    A025 00           	nop		; LOGPOINT [GROUP1]
+17    A026 00           	nop		; LOGPOINT MY LOG
+18    A027 00           	nop		; LOGPOINTx [GROUP2] ${A}
+19    A028
 # file closed: main.asm
 
 Value    Label

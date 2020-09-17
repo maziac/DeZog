@@ -45,8 +45,11 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 		Labels.readListFiles(config);
 
 		const logpointLines=Labels.getLogPointLines();
-		assert.equal(logpointLines.length, 1);
+		assert.equal(logpointLines.length, 4);
 		assert.equal(logpointLines[0].address, 0xA023);
+		assert.equal(logpointLines[1].address, 0xA024);
+		assert.equal(logpointLines[2].address, 0xA025);
+		assert.equal(logpointLines[3].address, 0xA026);
 	});
 
 
