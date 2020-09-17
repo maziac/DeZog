@@ -45,5 +45,3 @@ label6	nop
 
 	include "filea.asm"
 
-
-

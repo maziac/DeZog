@@ -1,16 +1,10 @@
 
 import * as assert from 'assert';
 import { Labels } from '../labels/labels';
-//import { Settings } from '../settings';
 
 suite('Labels', () => {
 
 	setup(() => {
-		/*const cfg: any = {
-			remoteType: 'zrcp'
-		};
-		Settings.Init(cfg, '');
-		*/
 		Labels.init(250);
 	});
 

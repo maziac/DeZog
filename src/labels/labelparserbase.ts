@@ -114,10 +114,6 @@ export class LabelParserBase {
 		// Phase 1: Parse for labels and addresses
 		this.parseAllLabelsAndAddresses();
 
-		// Check for watchpoints, asserts and logpoints
-		// TODO: parse the this.listFile
-		// TODO: Test e.g. watchpoint on empty line without label and instruction.
-
 		// Check if Listfile-Mode
 		if (config.srcDirs.length==0) {
 			// Listfile-Mode
@@ -153,19 +149,25 @@ export class LabelParserBase {
 			const address=this.currentFileEntry.addr;
 			if (address!=undefined) {
 				// WPMEM
-				if (line.indexOf('WPMEM')>=0) {
+				let match=/;.*(\bWPMEM\b.*)/.exec(line);
+				if (match) {
 					// Add watchpoint at this address
-					this.watchPointLines.push({address, line});
+					if (this.currentFileEntry.size==0)
+						this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
+					else
+						this.watchPointLines.push({address, line: match[1]});
 				}
 				// ASSERT
-				if (line.indexOf('ASSERT')>=0) {
+				match=/;.*(\bASSERT\b.*)/.exec(line);
+				if (match) {
 					// Add ASSERT at this address
-					this.assertLines.push({address, line});
+					this.assertLines.push({address, line: match[1]});
 				}
 				// LOGPOINT
-				if (line.indexOf('LOGPOINT')>=0) {
+				match=/;.*(\bLOGPOINT\b.*)/.exec(line);
+				if (match) {
 					// Add logpoint at this address
-					this.logPointLines.push({address, line});
+					this.logPointLines.push({address, line: match[1]});
 				}
 			}
 

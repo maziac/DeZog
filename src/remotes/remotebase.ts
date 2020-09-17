@@ -176,7 +176,7 @@ export class RemoteBase extends EventEmitter {
 
 			try {
 				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-				const match=/;\s*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+				const match=/^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 				if (match) {
 					// get arguments
 					let addressString=match[1];
@@ -193,6 +193,7 @@ export class RemoteBase extends EventEmitter {
 					if (lengthString&&lengthString.length>0) {
 						length=Utility.evalExpression(lengthString, false); // don't evaluate registers
 					}
+					/*
 					else {
 						if (!addressString||addressString.length==0) {
 							// If both, address and length are not defined it is checked
@@ -205,6 +206,7 @@ export class RemoteBase extends EventEmitter {
 								continue;
 						}
 					}
+					*/
 					if (access&&access.length>0) {
 						access=access.toLocaleLowerCase();
 						if (access!='r'&&access!='w'&&access!='rw') {
@@ -229,7 +231,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Creates an array of asserts from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
+	 * @param assertLines An array with address and line (text) pairs.
 	 * @return An array with asserts (GenericWatchpoints).
 	 */
 	protected createAsserts(assertLines: Array<{address: number, line: string}>) {
@@ -253,14 +255,12 @@ export class RemoteBase extends EventEmitter {
 			// ASSERTs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
 			try {
-				const matchAssert=/;.*\bASSERT\b/.exec(entry.line);
-				if (!matchAssert) {
-					// Eg. could be that "ASSERTx" was found.
+				const matchAssert=/^ASSERT(.*)/.exec(entry.line);
+				if (!matchAssert)
 					continue;
-				}
 
 				// Get part of the string after the "ASSERT"
-				const part=entry.line.substr(matchAssert.index+matchAssert[0].length).trim();
+				const part=matchAssert[1].trim();
 
 				// Check if no condition was set = ASSERT false = Always break
 				let conds='';
@@ -304,13 +304,13 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Creates an array of log points from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
+	 * @param logPointLines An array with address and line (text) pairs.
 	 * @return An array with log points (GenericWatchpoints).
 	 */
-	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
+	protected createLogPoints(logPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
 		// convert labels in watchpoints.
 		const logpoints=new Map<string, Array<GenericBreakpoint>>();
-		for (let entry of watchPointLines) {
+		for (let entry of logPointLines) {
 			// LOGPOINT:
 			// Syntax:
 			// LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}

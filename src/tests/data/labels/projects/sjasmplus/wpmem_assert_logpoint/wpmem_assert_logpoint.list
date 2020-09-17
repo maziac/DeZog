@@ -1,0 +1,21 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000              	ORG 0xA000
+ 3    A000
+ 4    A000 00 00 00...  	defs 0x10		; WPMEM
+ 5    A010 00 00 00...  	defs 0x10		; WPMEM, 5, w
+ 6    A020              	; WPMEM 0x7000, 10,  r
+ 7    A020              	; This is a watchpoint WPMEM 0x6000, 5,  w, A == 0
+ 8    A020              	; WPMEMx 0x9000, 5,  w, A == 0
+ 9    A020
+10    A020 00           	nop		; ASSERT
+11    A021 00           	nop		; ASSERT B==1
+12    A022 00           	nop		; ASSERTx
+13    A023
+14    A023 00           	nop		; LOGPOINT [GROUP1] ${A}
+15    A024 00           	nop		; LOGPOINTx [GROUP2] ${A}
+16    A025
+# file closed: main.asm
+
+Value    Label
+------ - -----------------------------------------------------------

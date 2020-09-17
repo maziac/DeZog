@@ -4,6 +4,7 @@ import {RemoteBase} from '../remotes/remotebase';
 import {Settings} from '../settings';
 import {Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../remotes/z80registers';
 import {Opcodes, Opcode} from '../disassembler/opcode';
+import {GenericWatchpoint} from '../genericwatchpoint';
 
 
 suite('RemoteBase', () => {
@@ -18,6 +19,46 @@ suite('RemoteBase', () => {
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
+	});
+
+
+
+	suite('WPMEM, ASSERT, LOGPOINT', () => {
+
+		test('WPMEM', async () => {
+			const remote=new RemoteBase();
+			const rem=remote as any;
+
+			const wpLines=[
+				{address: 0xA000, line: "WPMEM"},
+				{address: 0xA010, line: "WPMEM, 5, w"},
+				{address: 0xA020, line: "WPMEM 0x7000, 10, r "},
+				{address: 0xA020, line: "WPMEM 0x6000, 5, w, A==0"}
+			];
+
+			const wps: Array<GenericWatchpoint>=rem.createWatchPoints(wpLines);
+			assert.equal(wps.length, 4);
+
+			assert.equal(wps[0].address, 0xA000);
+			assert.equal(wps[0].size, 1);
+			assert.equal(wps[0].access, "rw");
+			assert.equal(wps[0].condition, "");
+
+			assert.equal(wps[1].address, 0xA010);
+			assert.equal(wps[1].size, 5);
+			assert.equal(wps[1].access, "w");
+			assert.equal(wps[1].condition, "");
+
+			assert.equal(wps[2].address, 0x7000);
+			assert.equal(wps[2].size, 10);
+			assert.equal(wps[2].access, "r");
+			assert.equal(wps[2].condition, "");
+
+			assert.equal(wps[3].address, 0x6000);
+			assert.equal(wps[3].size, 5);
+			assert.equal(wps[3].access, "w");
+			assert.equal(wps[3].condition, "A==0");
+		});
 	});
 
 
