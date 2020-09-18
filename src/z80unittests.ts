@@ -231,7 +231,8 @@ export class Z80UnitTests {
 	protected static runTests() {
 		try {
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : ''); //vscode.workspace.rootPath
+			const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
+			Utility.setRootPath(rootFolder);
 
 			// Mode
 			this.debug=false;
@@ -239,11 +240,8 @@ export class Z80UnitTests {
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
-			//const configName: string = configuration.name;
-			//const listFiles = configuration.listFiles;
 
 			// Setup settings
-			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
@@ -478,12 +476,15 @@ export class Z80UnitTests {
 			throw Error('No unit test configuration found in ' + launchPath + '.');
 		}
 
-		// Load user list and labels files
-		const listFiles = configuration.listFiles;
-		if(!listFiles) {
-			// No list file given
-			// Error
+		// Change path to absolute path
+		const listFiles=Settings.GetAllAssemblerListFiles(configuration);
+		if (!listFiles) {
+			// No list file given: Error
 			throw Error('no list file given in unit test configuration.');
+		}
+		for (let listFile of listFiles) {
+			const path=listFile.path;
+			listFile.path=Utility.getAbsFilePath(path);
 		}
 
 		return configuration;
@@ -503,23 +504,14 @@ export class Z80UnitTests {
 
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
+		// Setup settings
+		const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
+		Settings.Init(configuration, rootFolder);
+		Settings.CheckSettings();
+
+		// Get labels
 		const labels=new LabelsClass();
-		// TODO: Test: getAllUnitTests()
 		labels.readListFiles(configuration);
-		/*
-		const listFiles = configuration.listFiles;
-		for(const listFile of listFiles) {
-			const file = {
-				path: Utility.getAbsFilePath(listFile.path),
-				mainFile: listFile.mainFile,
-				srcDirs: listFile.srcDirs || [""],
-				filter: listFile.filter,
-				asm: listFile.asm || "sjasmplus",
-				addOffset: listFile.addOffset || 0
-			};
-			labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
-		}
-		*/
 		return labels;
 	}
 

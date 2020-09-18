@@ -110,9 +110,6 @@ suite('Labels (sjasmplus)', () => {
 				const config={sjasmplusListFiles: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
-				//const res=Labels.getFileAndLineForAddress(0x8000);
-				// TODO: Sollte 16 sein, ist aber 16.
-
 				// Compare all addresses
 				const count=listFile.length;
 				for (let lineNr=0; lineNr<count; lineNr++) {

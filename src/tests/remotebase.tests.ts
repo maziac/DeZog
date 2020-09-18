@@ -30,6 +30,7 @@ suite('RemoteBase', () => {
 			const rem=remote as any;
 
 			const wpLines=[
+				{address: undefined, line: "WPMEM"},	// E.g. macro or line without bytes
 				{address: 0xA000, line: "WPMEM"},
 				{address: 0xA010, line: "WPMEM, 5, w"},
 				{address: 0xA020, line: "WPMEM 0x7000, 10, r "},

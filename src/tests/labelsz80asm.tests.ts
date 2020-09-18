@@ -82,9 +82,6 @@ suite('Labels (z80asm)', () => {
 				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
-				//const res=Labels.getFileAndLineForAddress(0x8000);
-				// TODO: Sollte 16 sein, ist aber 16.
-
 				// Compare all addresses
 				const count=listFile.length;
 				for (let lineNr=0; lineNr<count; lineNr++) {
@@ -138,7 +135,6 @@ suite('Labels (z80asm)', () => {
 				const config={
 					z80asmListFiles: [{
 						path: './src/tests/data/labels/projects/z80asm/general/general.list',
-						mainFile: "main.asm",
 						srcDirs: [""]	// Sources mode
 					}]
 				};
@@ -164,8 +160,7 @@ suite('Labels (z80asm)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', mainFile: 'main.asm', srcDirs: [""]}]};	// Sources-Mode
-				// TODO : remove here and at other places the "mainFile"
+				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
 				Labels.readListFiles(config);
 
 				// Tests
@@ -189,8 +184,7 @@ suite('Labels (z80asm)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', mainFile: 'main.asm', srcDirs: [""]}]};	// Sources-Mode
-				// TODO : remove here and at other places the "mainFile"
+				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
 				Labels.readListFiles(config);
 
 				// Tests

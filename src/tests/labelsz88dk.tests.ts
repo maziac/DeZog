@@ -164,9 +164,6 @@ suite('Labels (z88dk)', () => {
 				};
 				Labels.readListFiles(config);
 
-				//const res=Labels.getFileAndLineForAddress(0x8000);
-				// TODO: Sollte 16 sein, ist aber 16.
-
 				// Compare all addresses
 				const count=listFile.length;
 				for (let lineNr=0; lineNr<count; lineNr++) {
