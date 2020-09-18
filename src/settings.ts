@@ -584,6 +584,25 @@ export class Settings {
 
 
 	/**
+	 * Returns all xxxListFiles parameters in an array.
+	 * This is used to run checks on the common parameters.
+	 * @param configuration The launch configuration, e.g. Settings.launch.
+	 * @returns An array of list file parameters.
+	 */
+	public static GetAllAssemblerListFiles(configuration: any): Array<AsmListFileBase> {
+		const listFiles=new Array<AsmListFileBase>();
+		if (configuration.sjasmplusListFiles)
+			listFiles.push(...configuration.sjasmplusListFiles);
+		if (configuration.z80asmListFiles)
+			listFiles.push(...configuration.z80asmListFiles);
+		if (configuration.z88dkListFiles)
+			listFiles.push(...configuration.z88dkListFiles);
+
+		return listFiles;
+	}
+
+
+	/**
 	 * Checks the settings and throws an exception if something is wrong.
 	 * E.g. it checks for the existence of file paths.
 	 * Note: file paths are already expanded to absolute paths.
@@ -598,12 +617,9 @@ export class Settings {
 		}
 
 		// List files
-		const listFiles=[
-			...Settings.launch.sjasmplusListFiles?.map(file => file.path)||[],
-			...Settings.launch.z80asmListFiles?.map(file => file.path)||[],
-			...Settings.launch.z88dkListFiles?.map(file => file.path)||[]
-		];
-		for(let path of listFiles) {
+		const listFiles=this.GetAllAssemblerListFiles(Settings.launch);
+		for (let listFile of listFiles) {
+			const path=listFile.path;
 			// Check that file exists
 			if(!fs.existsSync(path))
 				throw Error("File '" + path + "' does not exist.");

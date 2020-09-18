@@ -243,7 +243,6 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		this.setLineNumber(lineNumber-1);	// line numbers start at 0
 	}
 
-
 }
 
 

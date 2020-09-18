@@ -157,31 +157,35 @@ export class LabelParserBase {
 
 	/**
 	 * Parses the line for comments with WPMEM, ASSERT or LOGPOINT.
+	 * @param address The address that correspondents to the line.
+	 * @param fullLine The line of the list file as string.
 	 */
-	protected parseWpmemAssertLogpoint(address:number|undefined, line: string) {
-
-		if (address==undefined)
-			return;
+	protected parseWpmemAssertLogpoint(address:number|undefined, fullLine: string) {
+		// Extract just comment
+		const comment=this.getComment(fullLine);
 
 		// WPMEM
-		let match=/;.*(\bWPMEM\b.*)/.exec(line);
+		let match=/.*(\bWPMEM\b.*)/.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
 			if (this.currentFileEntry.size==0)
 				this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
 			else
-				this.watchPointLines.push({address, line: match[1]});
+				this.watchPointLines.push({address: address!, line: match[1]});
 		}
 
-		// ASSERT
-		match=/;.*(\bASSERT\b.*)/.exec(line);
+		if (address==undefined)
+			return;
+
+			// ASSERT
+		match=/.*(\bASSERT\b.*)/.exec(comment);
 		if (match) {
 			// Add ASSERT at this address
 			this.assertLines.push({address, line: match[1]});
 		}
 
 		// LOGPOINT
-		match=/;.*(\bLOGPOINT\b.*)/.exec(line);
+		match=/.*(\bLOGPOINT\b.*)/.exec(comment);
 		if (match) {
 			// Add logpoint at this address
 			this.logPointLines.push({address, line: match[1]});
@@ -190,10 +194,25 @@ export class LabelParserBase {
 
 
 	/**
+	 * Check the list file line for a comment and returns just the comment.
+	 * Only override if you allow other line comment identifiers than ";".
+	 * @param line The line of the list file as string. E.g. "5    A010 00 00 00...  	defs 0x10		; WPMEM, 5, w"
+	 * @returns Just the comment, e.g. the text after ";". E.g. " WPMEM, 5, w"
+	 */
+	protected getComment(line: string): string {
+		const i=line.indexOf(";");
+		if (i<0)
+			return "";	// No comment
+		const comment=line.substr(i+1);
+		return comment;
+	}
+
+
+	/**
 	 * Loops all entries of the listFile array and parses for the (include) file
 	 * names and line numbers.
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
-	 * beginning of the list file contains onformation that is parsed differently.
+	 * beginning of the list file contains information that is parsed differently.
 	 */
 	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
 		// Loop all lines
@@ -491,7 +510,7 @@ export class LabelParserBase {
 	 */
 	protected setLineNumber(lineNr: number) {
 		this.currentFileEntry.lineNr=lineNr;
-		const index=this.includeFileStack.length-1;
+		const index=this.includeFileStack.length-1; // TODO: Remove below. Is done anyway in parseallfiles...
 		if (index>=0)
 			this.currentFileEntry.fileName=this.includeFileStack[index].fileName;
 	}

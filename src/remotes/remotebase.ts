@@ -417,21 +417,17 @@ export class RemoteBase extends EventEmitter {
 		const watchPointLines=Labels.getWatchPointLines();
 		const watchpoints=this.createWatchPoints(watchPointLines);
 		this.setWPMEMArray(watchpoints);
-		// TODO: Test watchpoints
 
 		// ASSERTs
 		// Set assert breakpoints
 		const assertLines=Labels.getAssertLines();
 		const assertsArray=this.createAsserts(assertLines);
 		this.setASSERTArray(assertsArray);
-		// TODO: Test asserts
 
 		// LOGPOINTs
 		const logPointLines=Labels.getLogPointLines();
 		const logPointsMap=this.createLogPoints(logPointLines);
 		this.setLOGPOINTArray(logPointsMap);
-		// TODO: Test logpoints
-
 	}
 
 
