@@ -31,16 +31,13 @@ A typical configuration looks like this:
             "zsim": {
                 "loadZxRom": true
             },
-            "listFiles": [
+            "sjasmplusListFiles": [
                 {
                     "path": "z80-sample-program.list",
-                    "asm": "sjasmplus",
-                    "mainFile": "main.asm"
                 },
                 /*
                 {
                     "path": "rom48.list",
-                    "asm": "z80asm",
                     "srcDirs": [], // Use list file directly
                 },
                 */
@@ -72,7 +69,7 @@ A typical configuration looks like this:
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
-- listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
+- xxxListFiles: An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
@@ -148,82 +145,76 @@ all the information required by DeZog. While reading this file DeZog
 - reads in labels and constants
 
 An example how this works:
-When you do a 'step-over' in the debugger, DeZog request the new PC (program counter) value from ZEsarUX.
+When you do a 'step-over' in the debugger, DeZog request the new PC (program counter) value from the emulator, e.g. ZEsarUX.
 The address of the PC is looked up to find the line in the list file.
 Now depending on the value of 'srcDirs'
 - []: Empty array. The corresponding line in the list file is shown or
-- Otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
+- otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
-Configuration (**Savannah-z80asm**):
-You need to enter the list files under
+Depending on your assembler you use a different list file parameter:
+- 'sjasmplusListFiles' for sjasmplus
+- 'z80asmListFiles' for the Savannah-z80asm
+- 'z88dkListfiles' for z88dk-z80asm
+
+
+**sjasmplus configuration:**
 
 ~~~
-"listFiles": {
+"sjasmplusListFiles": {
     "path": "z80-sample-program.list",
-    "asm": "z80asm",
-    "mainFile": "main.asm",
     "srcDirs": [""]
     }
 ~~~
+
 
 - path: the path to the list file (relative to the 'rootFolder').
 - srcDirs (default=[""]):
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in subfolders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
-- asm: Choose you assembler here. "sjasmplus", "z80asm" or "z88dk". You don't need 'filter' if you specify 'asm'.
-- filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
-E.g. ```"/^[0-9]+\\s+//"```: This is a sed-like regular expression that removes the first number from all lines.
-Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
-- addOffset: (default=0): The number given here is added to all addresses in the list file. (Note: this was used in the past to get correct addresses for z88dk. Nowadays you should use the "z88dkMapFile" parameter instead and remove "addOffset".)
-- z88dkMapFile: Is **required only for z88dk**. The map file is required to correctly parse the label values and to get correct file/line to address associations.
-
-
-Here is an example to use for the **z88dk-z80asm**:
-
-~~~
-{
-    "path": "currah_uspeech_tests.lis",
-    "srcDirs": [],
-    "asm": "z88dk",
-    "z88dkMapFile": "currah_uspeech_tests.map"
-}
-~~~
-Explanation:
-- "path": is the path to the list file. z88dk list file use the extension .lis.
-- "srcDirs": set to an empty array. This means that DeZog will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
-- "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
-
-And here an example to use for the **sjasmplus**:
-
-~~~
-{
-    "path": "zxngfw.list",
-    "mainFile": "main.asm",
-    "srcDirs": ["src"],
-    "asm": "sjasmplus"
-}
-~~~
-Explanation:
-- "path": is the path to the list file.
-- "mainFile": the relative path of the file used to create the list file.
-- "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
 
 Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 
 
+**Savannah-z80asm configuration:**
+
+Same as sjasmplus but use: ```z80asmListFiles```, e.g.:
+~~~
+"z80asmListFiles": {
+    "path": "z80-sample-program.list",
+    "mainFile": "main.asm",
+    "srcDirs": [""]
+    }
+~~~
+
+
+**z88dk-z80asm configuration:**
+
+~~~
+"z88dkListFiles": {
+    "path": "currah_uspeech_tests.lis",
+    "z88dkMapFile": "currah_uspeech_tests.map",
+    "mainFile": "currah_uspeech_tests.asm",
+    }
+~~~
+
+For 'path' and 'srcDirs' see sjasmplusListFiles.
+
+- z88dkMapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
+- mainFile: The relative path of the file used to create the list file.
+
 
 
 **Other assemblers:**
-I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use DeZog. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
-The required format for DeZog is that
-- each line starts with the address
-- labels are terminated by an ':' and
-- constants look like: 'some_constant: EQU value'
-- Lower or uppercase does not matter.
 
-The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
-The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the line with an empty string, i.e. it deletes the numbers from the line.
+If you use an assembler which produces a different file format you may convert it via a script to the one of the supported formats.
+But this makes sense only if the format is very similar.
+
+It is a better choice either to switch the assembler (e.g. I recommend sjasmplus) or write a new parser the assembler and add it to Dezog.
+
+The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
+
+You can create a pull request so I can add it to the official release.
 
 
 #### Without a listfile
@@ -761,8 +752,7 @@ Placing a BP at any of the above location will destroy the pushed BC value if th
 
 Workaround: Don't place a breakpoint at these locations.
 
-Furthermore the debugger program requires a few bytes on the debugged program's stack.
-This are <TODO: exact number of bytes> bytes.
+Furthermore the debugger program requires 8 bytes on the debugged program's stack.
 
 So take care to use a stack that can hold these additional bytes at any time.
 

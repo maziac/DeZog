@@ -116,9 +116,31 @@ A label contains the following info:
 
 # WPMEM, ASSERT, LOGPOINT
 
-You don'tneed to take care of those.
+You don't need to take care of those.
 These are normally automatically parsed.
-Unless you override ```parseAllLabelsAndAddresses```. In that case take care to call ```parseWpmemAssertLogpoint```for every line.
+Unless you override ```parseAllLabelsAndAddresses```. In that case make sure to call ```parseWpmemAssertLogpoint```for every line.
+
+If your assembler allows other one-line comment identifiers than ";", e.g. "//", then you need to override ```getComment```.
+
+
+# Make DeZog aware of the new Assembler
+
+Implementing the new label parser class is not enough to take the new assembler parsing into use.
+It is also necessary to adjust some code to make sure that the new classes are used.
+And you might also use special parameters for your assembler, so you need to provide those, too.
+
+setting.ts:
+- Add a new interface for your assembler e.g. have a look at SjasmplusListFile, Z80asmListFile or Z88dkListFile.
+The interface need to be derived from AsmListFileBase which provide the basic information available to all assemblers.
+- Add the new interface to SettingsParameters. Just beneath the other assemblers.
+- In SettingsParameters.Init make sure that all of your parameters are initialize with some default value. I.e. everything that the user left undefined should get a reasonable default here.
+- Update the ```GetAllAssemblerListFiles```function with the new assembler.
+
+package.json:
+All of your assembler parameters (declared in setting.ts) should also get a description in the package.json.
+You also need to define the base parameters from AsmListFileBase here.
+
+
 
 
 # Testing

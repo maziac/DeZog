@@ -448,59 +448,6 @@
 									}
 								}
 							},
-							"listFiles": {
-								"type": "array",
-								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
-								"items": {
-									"anyOf": [
-										{
-											"type": "string",
-											"description": "Path to the assembler .list file."
-										},
-										{
-											"type": "object",
-											"properties": {
-												"path": {
-													"type": "string",
-													"description": "Path to the assembler .list file."
-												},
-												"mainFile": {
-													"type": "string",
-													"description": "Path to the main assembler source file that was used to produce the .list file. For 'z80asm' the name is extracted automatically (i.e. not needed), for 'sjasmplus' and 'z88dk' you can provide the source file name here.",
-													"default": null
-												},
-												"srcDirs": {
-													"type": "array",
-													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
-													"default": [
-														""
-													]
-												},
-												"filter": {
-													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by dezog. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasmplus' or 'z88dk'.",
-													"default": null
-												},
-												"asm": {
-													"type": "string",
-													"description": "The used assembler. 'sjasmplus' (default), 'z80asm' or 'z88dk'.",
-													"default": "z80asm"
-												},
-												"addOffset": {
-													"type": "number",
-													"description": "To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG.",
-													"default": 0
-												},
-												"z88dkMapFile": {
-													"type": "string",
-													"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
-													"default": 0
-												}
-											}
-										}
-									]
-								}
-							},
 							"smallValuesMaximum": {
 								"type": "number",
 								"description": "Interprets labels as address if value is bigger. Typically this is e.g. 512. So all numbers below are not treated as addresses if shown. So most constant values are covered with this as they are usually smaller than 512. Influences the formatting.",

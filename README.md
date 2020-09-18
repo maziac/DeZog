@@ -97,8 +97,8 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 ## Roadmap
 
 Next to implement:
-- Serial interface: Allows remote debugging via a serial connection on a real ZX Spectrum Next with breakpoints etc.
-- ZesarusExt: Make ZesarusExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
+- OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
+- ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 
 
 ## Installation
@@ -140,6 +140,28 @@ All can be installed from the market place.
 ## Usage
 
 Please look at the documentation ['Usage of DeZog'](documentation/Usage.md).
+
+
+## Contribution
+
+If you would like to help extending the DeZog functionality in one of the following areas you are very welcome:
+
+- Add **new assembler** parsers: The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
+Shouldn't be to hard.
+- Add a **MAME Remote** for Z80: I'd like to have done it myself but I'm running out of time. The idea here is to connect to the MAME debugger via a socket. As DeZog is focused very much on Z80 it would make sense only for MAME Z80 targets, of course. See [AddingNewRemotes.md](AddingNewRemotes.md).
+My current understanding in general is:
+	- MAME uses lua to communicate with the MAME debugger
+	- A socket connection between MAME lua and DeZog is required
+	- i.e. on MAME side a lua script is required
+	- On DeZog a new Remote is required to communicate with the lua script
+- Adding other Remotes (emulators): See [AddingNewRemotes.md](AddingNewRemotes.md).
+[S0urceror has done so for OpenMSX](https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be), so it is doable.
+
+
+You can create a pull request so I can add your sources to the official release. Most probably I will first move them to a new feature branch for testing.
+Please note that all your contributions/sources should be under MIT license.
+
+If you would like to contact me beforehand you can create a new issue in github and we can discuss.
 
 
 ## License

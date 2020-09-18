@@ -1,7 +1,3 @@
-
-# TODO
-
-
 # Emulator Interface
 
 This document describes the messages used to interface with the emulator(s).
@@ -51,8 +47,6 @@ Every specific Emulator derives three different classes:
 
 # Functionality Overview - ZEsarUX, CSpect, ZXNext HW
 
-Note: Currently (01/2020) only the ZEsarUX interface is implemented.
-
 
 |           | start, step | ext. break | breakpoints | cond. bp | mem bp | rev. dbg |save state | ZXNext regs | Unittests |
 |-----------|-------------|------------|-------------|----------|--------|----------|-----------|-------------|-----------|
@@ -69,9 +63,12 @@ n = not supported
 
 ## MAME
 
+(not implemented)
+
+
 ### gdbstub
 
-The EmulatorClass communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
+The Remote communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
 
 I.e. MAME uses gdb syntax for communicaton with DeZog.
 
@@ -160,7 +157,7 @@ Commands:
 The EmulatorClass communicates with the emulator via the ZEsaruxSocket.
 The following commands are used.
 
-### EmulatorClass
+### ZesaruxRemote class
 
 Initialization (after connection setup):
 - about
