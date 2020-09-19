@@ -469,7 +469,7 @@ export class LabelParserBase {
 
 	/**
 	 * Called by the parser if a new include file is found.
-	 * Is also used to set the main file at the beginnign of parsing or before parsing starts.
+	 * Is also used to set the main file at the beginning of parsing or before parsing starts.
 	 * @param includeFileName The name of the include file.
 	 */
 	protected includeStart(includeFileName: string) {
@@ -494,10 +494,10 @@ export class LabelParserBase {
 	 * Called by the parser if the end of an include file is found.
 	 */
 	protected includeEnd() {
+		if (this.includeFileStack.length==0)
+			throw Error("File parsing error: include file stacking.");
 		// Remove last include file
 		this.includeFileStack.pop();
-		if (this.includeFileStack.length<0)
-			throw Error("File parsing error: include file stacking.");
 	}
 
 
@@ -510,7 +510,8 @@ export class LabelParserBase {
 	 */
 	protected setLineNumber(lineNr: number) {
 		this.currentFileEntry.lineNr=lineNr;
-		const index=this.includeFileStack.length-1; // TODO: Remove below. Is done anyway in parseallfiles...
+		const index=this.includeFileStack.length-1;
+		 // TODO: Remove below. Is done anyway in parseallfiles...
 		if (index>=0)
 			this.currentFileEntry.fileName=this.includeFileStack[index].fileName;
 	}
