@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.4.7",
+	"version": "1.4.10",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80/ZX Spectrum.",
 	"author": {
@@ -146,7 +146,7 @@
 		"commands": [
 			{
 				"command": "dezog.whatsNew",
-				"title": "Show 'What's New' of this DeZog release.",
+				"title": "Show 'What's New' page of this DeZog release.",
 				"category": "dezog"
 			},
 			{
@@ -480,7 +480,7 @@
 							},
 							"loadObjs": {
 								"type": "array",
-								"description": "List of one or many object files, i.e. memory dumps. (Optional)",
+								"description": "List of one or many object files, i.e. memory dumps. Contains of 'path' and 'start' address. (Optional)",
 								"items": {
 									"type": "object",
 									"properties": {
@@ -638,9 +638,7 @@
 							"cspect": {
 								"port": 10000
 							},
-							"zsim": {
-								"machine": "loadZxRom"
-							},
+							"zsim": {},
 							"zxnext": {
 								"baudrate": 230400,
 								"port": "/dev/tty.usbserial"

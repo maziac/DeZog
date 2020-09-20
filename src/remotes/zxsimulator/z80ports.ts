@@ -2,10 +2,9 @@ import {MemBuffer} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
 /**
- * Represents the port behaviour of a ZX Spectrum
- * and ZX Next.
+ * Represents the port behavior for a ZX80 CPU.
  */
-export class ZxPorts {
+export class Z80Ports {
 
 	// Holds the ports for reading.
 	protected ports: Uint8Array;
@@ -16,10 +15,6 @@ export class ZxPorts {
 
 	// This map maps port addresses to functions that are executed on a port read.
 	protected inPortMap: Map<number, (port: number) => number>;
-
-	// The bitmask for the port. Only 1 bits are used to decode.
-	// E.g. the ZX128 does not use bit 1 and bit 15.
-	//public portBitMask=0xFFFF;
 
 
 	/// Constructor.

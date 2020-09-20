@@ -2,7 +2,7 @@
 import * as assert from 'assert';
 import {Z80Cpu} from '../remotes/zxsimulator/z80cpu';
 import {ZxMemory} from '../remotes/zxsimulator/zxmemory';
-import {ZxPorts} from '../remotes/zxsimulator/zxports';
+import {Z80Ports} from '../remotes/zxsimulator/z80ports';
 import {MemBuffer} from '../misc/membuffer';
 import {Settings} from '../settings';
 
@@ -14,7 +14,7 @@ suite('Z80Cpu', () => {
 			let memBuffer;
 			let writeSize;
 			{
-				const cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
+				const cpu=new Z80Cpu(new ZxMemory(), new Z80Ports()) as any;
 
 				cpu.pc=0x1020;
 				cpu.sp=0x1121;
@@ -46,7 +46,7 @@ suite('Z80Cpu', () => {
 			}
 
 			// Create a new object
-			const rCpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
+			const rCpu=new Z80Cpu(new ZxMemory(), new Z80Ports()) as any;
 			rCpu.deserialize(memBuffer);
 
 			// Check size
@@ -118,7 +118,7 @@ suite('Z80Cpu', () => {
 					}
 				};
 				Settings.Init(cfg, '');
-				cpu=new Z80Cpu(new ZxMemory(), new ZxPorts()) as any;
+				cpu=new Z80Cpu(new ZxMemory(), new Z80Ports()) as any;
 				z80=cpu.z80;
 				mem=cpu.memory;
 				ports=cpu.ports;

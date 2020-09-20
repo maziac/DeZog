@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 //import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
-import {ZxSimulatorRemote} from './zxsimremote';
+import {ZSimRemote} from './zsimremote';
 import {WebviewPanel} from 'vscode';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
@@ -19,7 +19,7 @@ export class ZxSimulationView extends BaseView {
 	protected parent: EventEmitter;
 
 	// A pointer to the simulator.
-	protected simulator: ZxSimulatorRemote;
+	protected simulator: ZSimRemote;
 
 
 	/**
@@ -27,7 +27,7 @@ export class ZxSimulationView extends BaseView {
 	 * I.e. the events.
 	 * @param simulator The simulator Remote which emits the signals.
 	 */
-	public static SimulationViewFactory(simulator: ZxSimulatorRemote) {
+	public static SimulationViewFactory(simulator: ZSimRemote) {
 		// Safety check
 		if (!simulator)
 			return;
@@ -48,13 +48,13 @@ export class ZxSimulationView extends BaseView {
 	 * Creates the basic view.
 	 * @param memory The memory of the CPU.
 	 */
-	constructor(simulator: ZxSimulatorRemote) {
+	constructor(simulator: ZSimRemote) {
 		super(false);
 		// Init
 		this.simulator=simulator;
 
 		// Set all ports
-		const ports=simulator.zxPorts;
+		const ports=simulator.ports;
 		ports.setPortValue(0xFEFE, 0xFF);
 		ports.setPortValue(0xFDFE, 0xFF);
 		ports.setPortValue(0xFBFE, 0xFF);
@@ -244,13 +244,13 @@ export class ZxSimulationView extends BaseView {
 		Utility.assert(bit);
 
 		// Get port value
-		let value=this.simulator.zxPorts.getPortValue(port);
+		let value=this.simulator.ports.getPortValue(port);
 		if (on)
 			value&=~bit;
 		else
 			value|=bit;
 		// And set
-		this.simulator.zxPorts.setPortValue(port, value);
+		this.simulator.ports.setPortValue(port, value);
 	}
 
 
@@ -285,7 +285,7 @@ export class ZxSimulationView extends BaseView {
 				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
 
 			if (Settings.launch.zsim.visualMemory=="ZX128") {
-				slots=this.simulator.zxMemory.getSlots();
+				slots=this.simulator.memory.getSlots();
 				// ZX128 has 16k slots/banks
 				slotNames=new Array<string>();
 				for (let i=0; i<8; i+=2) {
@@ -310,16 +310,16 @@ export class ZxSimulationView extends BaseView {
 				}
 			}
 			else if (Settings.launch.zsim.visualMemory=="ZXNEXT") {
-				slots=this.simulator.zxMemory.getSlots();
+				slots=this.simulator.memory.getSlots();
 				slotNames=slots.map(bank => (bank>=254)? "ROM":"BANK"+bank);
 			}
 			if (Settings.launch.zsim.visualMemory!="none") {
 				// The same for all
-				visualMemImg=this.createBase64String(this.simulator.zxMemory.getVisualMemoryImage());
+				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
 			}
 
 			if (Settings.launch.zsim.ulaScreen)
-				screenImg=this.createBase64String(this.simulator.zxMemory.getUlaScreen());
+				screenImg=this.createBase64String(this.simulator.memory.getUlaScreen());
 			// Create message to update the webview
 			let message={
 				command: 'update',
@@ -331,7 +331,7 @@ export class ZxSimulationView extends BaseView {
 			};
 			this.sendMessageToWebView(message);
 			// Clear
-			this.simulator.zxMemory.clearVisualMemory();
+			this.simulator.memory.clearVisualMemory();
 		}
 		catch {}
 	}

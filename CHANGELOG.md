@@ -1,10 +1,19 @@
 # Changelog
 
-# 1.4.7
+# 1.4.10
 - New architecture for parsing list files.
 - launch-json:
 	- "listFiles" removed.
 	- "sjasmplusListfiles", "z80asmListfiles" and "z88dkListfiles" added with overworked parameters.
+
+# 1.4.9
+- Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF
+
+# 1.4.8
+- Fixed white spaces in loading for zrcp (ZEsarUX).
+
+# 1.4.7
+- Added donate button.
 
 # 1.4.6
 - Removed double timer for command/response.

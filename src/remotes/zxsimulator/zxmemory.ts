@@ -33,6 +33,9 @@ export class ZxMemory {
 	// The ZXNext defines both at 255.
 	protected slots: number[]=[254, 255, 10, 11, 4, 5, 0, 1];
 
+	// For each bank this array tels if it is ROM.
+	protected romBanks: boolean[];
+
 	// The bank used to display the ULA screen.
 	// This is normally bank 5 but could be changed to bank7 in ZX128.
 	protected ulaScreenBank: number;
@@ -55,19 +58,23 @@ export class ZxMemory {
 		this.ulaScreenBank=5*2;
 		// Create RAM
 		this.AllBanksRam=new Uint8Array(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
+		// No ROM at start
+		this.romBanks=new Array<boolean>(ZxMemory.NUMBER_OF_BANKS);	// All initialized to false.
+		this.romBanks.fill(false);
 		// Create visual memory
 		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
 		this.clearVisualMemory();
 	}
 
 
-	/**
+	/** TODO: REMOVE:
 	 * Clears the whole memory (all banks) with 0s.
 	 */
+	/*
 	public clear() {
 		this.AllBanksRam.fill(0);
 	}
-
+	/
 
 	/**
 	 * Sets the bank to use for the screen display.
@@ -75,6 +82,19 @@ export class ZxMemory {
 	 */
 	public setUlaScreenBank(bankIndex: number) {
 		this.ulaScreenBank=bankIndex;
+	}
+
+
+	/**
+	 * At start all banks are RAM, even 0xFE and 0xFF.
+	 * Use this method to switch a bank to ROM.
+	 * I.e. any write8() will do nothing.
+	 * Is used e.g. if "loadZxRom" is used.
+	 * @param bank The bank number, e.g. 0xFE.
+	 * @param enableRom true to turn bank into ROM, false to turn it into RAM.
+	 */
+	public setRomBank(bank: number, enableRom: boolean) {
+		this.romBanks[bank]=enableRom;
 	}
 
 
@@ -144,13 +164,19 @@ export class ZxMemory {
 	public write8(addr: number, val: number) {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
-		// Write
+
+		// Convert to bank
 		const slotIndex=addr>>>13;
 		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
-		// Only write if not ROM
-		if (ramAddr<0x1FC000)
-			this.AllBanksRam[ramAddr]=val;
+
+		// Don't write if ROM
+		if (this.romBanks[bankNr])
+			return;
+
+		// Convert to flat address
+		const ramAddr=bankNr*0x2000+(addr&0x1FFF);
+		// Write
+		this.AllBanksRam[ramAddr]=val;
 	}
 
 
