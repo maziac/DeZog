@@ -145,7 +145,7 @@ You also need to define the base parameters from AsmListFileBase here.
 
 # Testing
 
-For testing you should prepare an project for your assembler that includes
+For testing you should prepare a project for your assembler that includes
 
 - 2 nested include files
 - a macro that is used somewhere
@@ -153,19 +153,30 @@ For testing you should prepare an project for your assembler that includes
 - a local label (if supported)
 - an EQU label
 - modules (2 nested modules), if modules are supported
+- lines with WPMEM, ASSERT and LOGPOINT. Although you normally you don't need to implement something special to support these keywords it needs to be tested at least that the keywords are correctly found.
 
 Then generate a list file.
-The list file should be stored under src/tests/data/...
-Store also the assembler project somewhere there. Although it is not required for testing it might help if you need to re-create the list file some time later.
 
 Create unit tests that:
-- check the labels and their values
-- check the label locations, both for list ListFile-Mode and Sources-Mode.
+- checks the labels and their values
+- checks the label locations, both for list ListFile-Mode and Sources-Mode.
 	- local labels
 	- normal labels
 	- module labels (concatenated labels)
 	- EQU values
-- association of an address to a file, both for list ListFile-Mode and Sources-Mode.
-- association of a file/line number to an address, both for list ListFile-Mode and Sources-Mode.
+- checks the association of an address to a file, both for list ListFile-Mode and Sources-Mode.
+- checks the association of a file/line number to an address, both for list ListFile-Mode and Sources-Mode.
+- checks occurrence of at least one WPMEM
+- checks occurrence of at least one ASSERT
+- checks occurrence of at least one LOPGPOINT
 
 
+Although only a list file is required for testing it is best to store the whole assembler project so that it easier to re-create the list file e.g. if you want to extend the test.
+The different assembler projects are store here:
+.../tests/data/labels/projects
+Your project will generate a list file which is then referenced in your test.
+The project and the list file will stored to git.
+
+The actual tests for each assembler are found here:
+.../tests/labelsXXX.tests.ts
+where XXX is the name of your assembler.
