@@ -74,7 +74,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		this.socket.on('connect', async () => {
 			LogSocket.log('ZxNextSocketRemote: Connected to server!');
 
-			this.receivedData=new Buffer(0);
+			this.receivedData=Buffer.alloc(0);
 			this.msgStartByteFound=false;
 			this.expectedLength=4;	// for length
 			this.receivingHeader=true;
