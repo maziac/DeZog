@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {ZxPorts} from '../remotes/zxsimulator/zxports';
+import {Z80Ports} from '../remotes/zxsimulator/z80ports';
 import {MemBuffer} from '../misc/membuffer';
 
 suite('ZxPorts', () => {
@@ -8,7 +8,7 @@ suite('ZxPorts', () => {
 		let memBuffer;
 		let writeSize;
 		{
-			const ports=new ZxPorts();
+			const ports=new Z80Ports();
 
 			// Set ports
 			ports.setPortValue(0x0000, 100);
@@ -26,7 +26,7 @@ suite('ZxPorts', () => {
 
 		{
 			// Create a new object
-			const rPorts=new ZxPorts();
+			const rPorts=new Z80Ports();
 			rPorts.deserialize(memBuffer);
 
 			// Check size
@@ -44,7 +44,7 @@ suite('ZxPorts', () => {
 			// Now create a new buffer and check that the result is the same
 			const memBuffer2=MemBuffer.from(memBuffer.buffer);
 			// Create a new object
-			const rPorts=new ZxPorts();
+			const rPorts=new Z80Ports();
 			rPorts.deserialize(memBuffer2);
 
 			// Check size

@@ -1,7 +1,7 @@
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { RemoteBase } from './remotebase';
 //import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
-import {ZxSimulatorRemote} from './zxsimulator/zxsimremote';
+import {ZSimRemote} from './zxsimulator/zsimremote';
 //import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
 import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
@@ -30,7 +30,7 @@ export class RemoteFactory {
 				RemoteFactory.setRemote(new ZxNextSocketRemote());
 				break;
 			case 'zsim':	// Simulator
-				RemoteFactory.setRemote(new ZxSimulatorRemote());
+				RemoteFactory.setRemote(new ZSimRemote());
 				break;
 			case 'mame':
 				Utility.assert(false);	// needs to be implemented

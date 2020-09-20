@@ -47,7 +47,7 @@ export class WatchpointZxMemory extends ZxMemory {
 		super();
 		this.clearHit();
 		// Create watchpoint area
-		this.watchPointMemory=new Array<SimWatchpoint|undefined>(0x1000);
+		this.watchPointMemory=new Array<SimWatchpoint|undefined>(0x10000);
 	}
 
 

@@ -1,5 +1,5 @@
 import {ZxMemory} from './zxmemory';
-import {ZxPorts} from './zxports';
+import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
@@ -43,11 +43,11 @@ export class Z80Cpu {
 	public memory: ZxMemory;
 
 	// Ports
-	public ports: ZxPorts;
+	public ports: Z80Ports;
 
 
 	/// Constructor.
-	constructor(memory: ZxMemory, ports: ZxPorts) {
+	constructor(memory: ZxMemory, ports: Z80Ports) {
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq=3500000.0;	// 3.5MHz.

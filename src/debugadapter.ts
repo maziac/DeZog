@@ -23,7 +23,7 @@ import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
 //import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
-import {ZxSimulatorRemote} from './remotes/zxsimulator/zxsimremote';
+import {ZSimRemote} from './remotes/zxsimulator/zsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './misc/disassembly';
@@ -590,7 +590,7 @@ export class DebugSessionClass extends DebugSession {
 				// there would be a dependency in RemoteFactory to vscode which in turn /// makes problems for the Unittests.
 				if (Settings.launch.remoteType=="zsim") {
 					// Adds a window that displays the ZX screen.
-					const remote=Remote as ZxSimulatorRemote;
+					const remote=Remote as ZSimRemote;
 					ZxSimulationView.SimulationViewFactory(remote);
 				}
 

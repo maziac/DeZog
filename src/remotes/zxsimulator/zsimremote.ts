@@ -1,7 +1,7 @@
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
-import {ZxPorts} from './zxports';
+import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
 //import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -15,20 +15,20 @@ import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhist
 import {ZxSimCpuHistory} from './zxsimcpuhistory';
 import {ZxMemory} from './zxmemory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+//import {Watchpoint64kRamMemory} from './wp64krammemory';
 
 
 
 /**
- * The representation of the ZX Next HW.
- * It receives the requests from the DebugAdapter and communicates with
- * the USB serial connection with the ZX Next HW.
+ * The representation of a Z80 remote.
+ * With options to simulate ZX Spectrum or some ZX Next features.
  */
-export class ZxSimulatorRemote extends DzrpRemote {
+export class ZSimRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
 	public z80Cpu: Z80Cpu;
-	public zxMemory: WatchpointZxMemory;
-	public zxPorts: ZxPorts;
+	public memory: WatchpointZxMemory;
+	public ports: Z80Ports;
 
 
 	// The ZX128 stores its ROM here as it has 2.
@@ -82,14 +82,15 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		if (Settings.launch.history.codeCoverageEnabled)
 			this.codeCoverage=new CodeCoverageArray();
 		// Create a Z80 CPU to emulate Z80 behaviour
-		this.zxMemory=new WatchpointZxMemory();
-		this.zxPorts=new ZxPorts();
-		this.z80Cpu=new Z80Cpu(this.zxMemory, this.zxPorts);
+		this.memory=new WatchpointZxMemory();
+		//this.memory=new Watchpoint64kRamMemory();
+		this.ports=new Z80Ports();
+		this.z80Cpu=new Z80Cpu(this.memory, this.ports);
 		// For restoring the state
 		this.serializeObjects=[
 			this.z80Cpu,
-			this.zxMemory,
-			this.zxPorts
+			this.memory,
+			this.ports
 		];
 	}
 
@@ -106,7 +107,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 */
 	protected zx128BankSwitch(port: number, value: number) {
 		// bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
-	    const mem=this.zxMemory;
+	    const mem=this.memory;
 		const ramBank=value&0x07;
 		const ramBank0=ramBank*2;
 		const ramBank1=ramBank0+1
@@ -117,20 +118,20 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const shadowScreen=value&0b01000;
 		const screenBank=(shadowScreen!=0)? 7:5;
-		this.zxMemory.setUlaScreenBank(2*screenBank);
+		this.memory.setUlaScreenBank(2*screenBank);
 
 		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 		const romIndex=(value&0b010000)? 1:0;
 		const size=ZxMemory.MEMORY_BANK_SIZE;
 		const rom0=new Uint8Array(this.romBuffer.buffer, romIndex*2*size, size);
 		const rom1=new Uint8Array(this.romBuffer.buffer, romIndex*2*size+size, size);
-		this.zxMemory.writeBank(254, rom0);
-		this.zxMemory.writeBank(255, rom1);
+		this.memory.writeBank(254, rom0);
+		this.memory.writeBank(255, rom1);
 
 		// bit 5: If set, memory paging will be disabled
 		if (value&0b0100000) {
 			// Disable further writes to this port
-			this.zxPorts.registerOutPortFunction(0x7FFD, undefined);
+			this.ports.registerOutPortFunction(0x7FFD, undefined);
 		}
 	}
 
@@ -202,7 +203,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 			return;	// not existing bank
 
 		// Change the slot/bank
-		this.zxMemory.setSlot(slot, value);
+		this.memory.setSlot(slot, value);
 	}
 
 
@@ -215,7 +216,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	protected tbblueMemoryManagementSlotsRead(): number {
 		const slot=this.tbblueRegisterSelectValue&0x07;
 		// Change the slot/bank
-		let bank=this.zxMemory.getSlots()[slot];
+		let bank=this.memory.getSlots()[slot];
 		// Check for ROM = 0xFE
 		if (bank==0xFE)
 			bank=0xFF;
@@ -240,8 +241,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					this.romBuffer=fs.readFileSync(romFilePath);
 					const rom0=new Uint8Array(this.romBuffer.buffer, 2*size, size);
 					const rom1=new Uint8Array(this.romBuffer.buffer, 3*size, size);
-					this.zxMemory.writeBank(254, rom0);
-					this.zxMemory.writeBank(255, rom1);
+					this.memory.writeBank(254, rom0);
+					this.memory.writeBank(255, rom1);
+					this.memory.setRomBank(254, true);
+					this.memory.setRomBank(255, true);
 				}
 				else {
 					// ZX 48K
@@ -251,15 +254,17 @@ export class ZxSimulatorRemote extends DzrpRemote {
 					// use USR 0 mode, i.e. preload the 48K ROM
 					const rom0=new Uint8Array(romBuffer.buffer, 0, size);
 					const rom1=new Uint8Array(romBuffer.buffer, size, size);
-					this.zxMemory.writeBank(254, rom0);
-					this.zxMemory.writeBank(255, rom1);
+					this.memory.writeBank(254, rom0);
+					this.memory.writeBank(255, rom1);
+					this.memory.setRomBank(254, true);
+					this.memory.setRomBank(255, true);
 				}
 			}
 
 			// "memoryPagingControl"
 			if (memoryPagingControl) {
 				// Bank switching.
-				this.zxPorts.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+				this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 			}
 
 			// TBBlue
@@ -275,9 +280,9 @@ export class ZxSimulatorRemote extends DzrpRemote {
 
 			// If any tbblue register is used then enable tbblue ports
 			if (this.tbblueRegisterWriteHandler.size>0) {
-				this.zxPorts.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-				this.zxPorts.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-				this.zxPorts.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+				this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+				this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+				this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 			}
 		}
 		catch (e) {
@@ -509,7 +514,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				const vertInterrupt=this.z80Cpu.execute();
 
 				// Update visual memory
-				this.zxMemory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
+				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
 
 				// Store the pc for coverage
 				this.codeCoverage?.storeAddress(prevPc);
@@ -576,10 +581,10 @@ export class ZxSimulatorRemote extends DzrpRemote {
 				}
 
 				// Check if watchpoint is hit
-				if (this.zxMemory.hitAddress>=0) {
+				if (this.memory.hitAddress>=0) {
 					// Yes, read or write access
-					breakNumber=(this.zxMemory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-					breakAddress=this.zxMemory.hitAddress;
+					breakNumber=(this.memory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+					breakAddress=this.memory.hitAddress;
 					break;
 				}
 
@@ -792,7 +797,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 		// Set the temporary breakpoints array
 		// Run the Z80-CPU in a loop
 		this.cpuRunning=true;
-		this.zxMemory.clearHit();
+		this.memory.clearHit();
 		await this.z80CpuContinue(bp1Address, bp2Address);
 	}
 
@@ -836,7 +841,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * 'condition' may be undefined or an empty string ''.
 	 */
 	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
-		this.zxMemory.setWatchpoint(address, size, access, condition);
+		this.memory.setWatchpoint(address, size, access, condition);
 	}
 
 
@@ -847,7 +852,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 */
 	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
-		this.zxMemory.removeWatchpoint(address, size);
+		this.memory.removeWatchpoint(address, size);
 	}
 
 
@@ -858,7 +863,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @returns A promise with an Uint8Array.
 	 */
 	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		const buffer = this.zxMemory.readBlock(address, size);
+		const buffer = this.memory.readBlock(address, size);
 		return buffer;
 	}
 
@@ -869,7 +874,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		this.zxMemory.writeBlock(address, dataArray);
+		this.memory.writeBlock(address, dataArray);
 	}
 
 
@@ -879,7 +884,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @param dataArray The data to write.
  	*/
 	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		this.zxMemory.writeBank(bank, dataArray);
+		this.memory.writeBank(bank, dataArray);
 	}
 
 
@@ -889,7 +894,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 *  Each entry contains the correspondent bank number.
  	*/
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
-		const slots=this.zxMemory.getSlots();
+		const slots=this.memory.getSlots();
 		return slots;
 	}
 
@@ -901,7 +906,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
 	 * @returns A Promise with an error=0 (no error).
  	*/
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
-		this.zxMemory.setSlot(slot, bank);
+		this.memory.setSlot(slot, bank);
 		return 0;
 	}
 
@@ -934,7 +939,7 @@ export class ZxSimulatorRemote extends DzrpRemote {
  	*/
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		// Set port for border
-		this.zxPorts.write(0xFE, borderColor);
+		this.ports.write(0xFE, borderColor);
 	}
 }
 
