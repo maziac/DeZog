@@ -23,7 +23,7 @@
 22    8005              .localb:
 23    8005 00           	nop		; ASSERT
 24    8006
-25    8006              label3:	m1	; WPMEM
+25    8006              label3:	m1
 25    8006 0E 09       >	ld c,9
 25    8008             >.mlocal:
 25    8008 3D          >	dec a
@@ -52,11 +52,14 @@
 39    8013 00           	nop
 40    8014
 41    8014
-42    8014
-43    8014
-44    8014              	ORG 0x9000
-45    9000
-46    9000              	include "filea.asm"
+42    8014              	ORG 0x8200
+43    8200              data:
+44    8200 01 02 03 04  	defb 1, 2, 3, 4		; WPMEM
+45    8204
+46    8204
+47    8204              	ORG 0x9000
+48    9000
+49    9000              	include "filea.asm"
 # file opened: filea.asm
  1+   9000
  2+   9000 00           fa_label1:	nop
@@ -102,7 +105,7 @@
 17+   900B 00           	nop
 18+   900C
 # file closed: filea.asm
-47    900C
+50    900C
 # file closed: main.asm
 
 Value    Label
@@ -121,6 +124,7 @@ Value    Label
 0x8011 X 3>mlocal
 0x8012 X label6
 0x8013 X label6.local
+0x8200 X data
 0x9000 X fa_label1
 0x9001 X modfilea.fa_label2
 0x9002 X modfilea.fa_label3.mid

@@ -259,6 +259,31 @@ suite('Labels (sjasmplus)', () => {
 				assert.equal(0x900B, address);
 			});
 
+
+			test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+				// Read the list file
+				const config={sjasmplusListFiles: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+				Labels.readListFiles(config);
+
+				// Test WPMEM
+				const wpLines=Labels.getWatchPointLines();
+				assert.equal(wpLines.length, 1);
+				assert.equal(wpLines[0].address, 0x8200);
+				assert.equal(wpLines[0].line, "WPMEM");
+
+				// Test ASSERT
+				const assertLines=Labels.getAssertLines();
+				assert.equal(assertLines.length, 1);
+				assert.equal(assertLines[0].address, 0x8005);
+				assert.equal(assertLines[0].line, "ASSERT");
+
+				// Test LOGPOINT
+				const lpLines=Labels.getLogPointLines();
+				assert.equal(lpLines.length, 1);
+				assert.equal(lpLines[0].address, 0x800F);
+				assert.equal(lpLines[0].line, "LOGPOINT");
+			});
+
 		});
 
 	});

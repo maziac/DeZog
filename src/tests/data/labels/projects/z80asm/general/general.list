@@ -23,7 +23,7 @@
 8005			.localb: 
 8005 00				nop		; ASSERT 
 8006			 
-8006			label3:	m1	; WPMEM 
+8006			label3:	m1 
 8006 0e 09			ld c,9 
 8008 3d				dec a 
 8009				ENDM 
@@ -56,10 +56,12 @@
 8013			.local: ; local label not existing but label with . 
 8013 00				nop 
 8014			 
-8014			 
-8014			 
-8014			 
-8014				ORG 0x9000 
+8014				ORG 0x8200 
+8200			data: 
+8200 01 02 03 04		defb 1, 2, 3, 4		; WPMEM 
+8204			 
+8204			 
+8204				ORG 0x9000 
 9000			 
 9000				include "filea.asm" 
 9000			 
