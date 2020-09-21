@@ -67,14 +67,14 @@ export class ZxMemory {
 	}
 
 
-	/** TODO: REMOVE:
+	/**
 	 * Clears the whole memory (all banks) with 0s.
+	 * So far only used by unit tests.
 	 */
-	/*
 	public clear() {
 		this.AllBanksRam.fill(0);
 	}
-	/
+
 
 	/**
 	 * Sets the bank to use for the screen display.
