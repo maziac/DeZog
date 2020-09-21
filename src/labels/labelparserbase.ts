@@ -58,14 +58,12 @@ export class LabelParserBase {
 	protected config: AsmListFileBase;
 
 	/// Array used temporary. Holds the converted list file.
-	protected listFile=new Array<ListFileLine>();
-
-
-	/// Used for found MODULEs
-	protected modulePrefix: string;
+	protected listFile: Array<ListFileLine>;
 
 	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
-	protected modulePrefixStack=new Array<string>();	// Only used for sjasmplus
+	protected modulePrefixStack: Array<string>;	// Only used for sjasmplus
+	/// Used for found MODULEs
+	protected modulePrefix: string;
 	protected lastLabel: string;		// Only used for sjasmplus for local labels (without modulePrefix)
 
 	/// The separator used for local labels and modules.
@@ -76,7 +74,7 @@ export class LabelParserBase {
 	protected currentFileEntry: ListFileLine;
 
 	/// The stack of include files. For parsing filenames and line numbers.
-	protected includeFileStack = new Array<{fileName: string, lineNr: number}>();
+	protected includeFileStack: Array<{fileName: string, lineNr: number}>;
 
 
 	// Constructor.
@@ -109,7 +107,12 @@ export class LabelParserBase {
 	 */
 	public loadAsmListFile(config: AsmListFileBase) {
 		this.config=config;
-		//Utility.assert(false, "Override loadAsmListFile");
+		// Init (in case of several list files)
+		this.includeFileStack=new Array<{fileName: string, lineNr: number}>();
+		this.listFile=new Array<ListFileLine>();
+		this.modulePrefixStack=new Array<string>();
+		this.modulePrefix=undefined as any;
+		this.lastLabel=undefined as any;
 
 		// Phase 1: Parse for labels and addresses
 		this.parseAllLabelsAndAddresses();
