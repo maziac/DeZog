@@ -33,11 +33,8 @@ export interface Z88dkListFile extends AsmListFileBase {
 	/// Path to the main assembler source file that was used to produce the .list file.
 	mainFile: string;
 
-	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
-	addOffset: number;
-
-	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
-	z88dkMapFile: string;
+	/// The z88dk map file (option "-m").
+	mapFile: string;
 }
 
 
@@ -427,8 +424,7 @@ export class Settings {
 					path: Utility.getAbsFilePath(fp.path),
 					mainFile: fp.mainFile,
 					srcDirs: fp.srcDirs||[""],
-					addOffset: fp.addOffset||0,
-					z88dkMapFile: fp.z88dkMapFile
+					mapFile: fp.mapFile
 				};
 				return file;
 			});

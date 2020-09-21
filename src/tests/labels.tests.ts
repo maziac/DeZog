@@ -266,7 +266,7 @@ suite('Labels', () => {
 		suite('z88dk', () => {
 
 			test('z88dk.lis', () => {
-				const config={z88dkListFiles: [{path: './src/tests/data/labels/z88dk.lis', srcDirs: [""], addOffset: 0, z88dkMapFile: undefined}]};
+				const config={z88dkListFiles: [{path: './src/tests/data/labels/z88dk.lis', srcDirs: [""], mapFile: undefined}]};
 				Labels.readListFiles(config);
 
 				// Checks
@@ -289,20 +289,8 @@ suite('Labels', () => {
 			});
 
 
-			test('address offset', () => {
-				const config={z88dkListFiles: [{path: './src/tests/data/labels/z88dk.lis', srcDirs: [""], addOffset: 0x1000, z88dkMapFile: undefined}]};
-				Labels.readListFiles(config);
-
-				let res=Labels.getNumberForLabel("ct_ui_first_table");
-				assert.equal(0x100B, res, "Label wrong.");
-
-				let labels=Labels.getLabelsPlusIndexForNumber(0x100D);
-				assert.equal(labels[0], 'ct_ui_first_table+2', "Expected label+index wrong.");
-			});
-
-
 			test('z88dk map file (currah)', () => {
-				const config={z88dkListFiles: [{path: './src/tests/data/labels/currah_uspeech_tests.lis', srcDirs: [""], addOffset: 0, z88dkMapFile: './src/tests/data/labels/currah_uspeech_tests.map'}]};
+				const config={z88dkListFiles: [{path: './src/tests/data/labels/currah_uspeech_tests.lis', srcDirs: [""], mapFile: './src/tests/data/labels/currah_uspeech_tests.map'}]};
 				Labels.readListFiles(config);
 
 				// Checks

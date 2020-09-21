@@ -33,9 +33,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 	// To correct address by the values given in the map file.
 	protected z88dkMapOffset: number;
 
-	// Taken from the config (settings).
-	protected addOffset;
-
 	// The current line and the next lines are tested to find the end of an include file-
 	protected expectedLineNr: number;
 
@@ -46,9 +43,8 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmListFileBase) {
-		this.addOffset=(config as Z88dkListFile).addOffset || 0;
-		const z88dkMapFile: string|undefined=(config as Z88dkListFile).z88dkMapFile;
-		this.readZ88dkMapFile(z88dkMapFile);
+		const mapFile: string|undefined=(config as Z88dkListFile).mapFile;
+		this.readmapFile(mapFile);
 		super.loadAsmListFile(config);
 	}
 
@@ -93,7 +89,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 			address=undefined!;	// Should not happen
 		if (address!=undefined) {
 			const readAddress=address;
-			address+=this.addOffset+this.z88dkMapOffset;
+			address+=this.z88dkMapOffset;
 			// Check for labels and "equ".
 			const match=this.labelRegEx.exec(line);
 			if (match) {
@@ -223,18 +219,18 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * The z88dk map file looks like this:
 	 * print_number_address            = $1A1B ; const, local, , , , constants.inc:5
 	 * AT                              = $0016 ; const, local, , , , constants.inc:6
-	 * @param z88dkMapFile The relative path to the map file.
+	 * @param mapFile The relative path to the map file.
 	 */
-	protected readZ88dkMapFile(z88dkMapFile) {
+	protected readmapFile(mapFile) {
 		this.z88dkMapOffset=0;
-		if (!z88dkMapFile)
+		if (!mapFile)
 			return;
 		// Get absolute path
-		z88dkMapFile=Utility.getAbsFilePath(z88dkMapFile);
+		mapFile=Utility.getAbsFilePath(mapFile);
 
 		// Iterate over map file
 		const regex=new RegExp(/^(\w*)\b\s*=\s*\$([0-9a-f]+)/i);
-		let lines=readFileSync(z88dkMapFile).toString().split('\n');
+		let lines=readFileSync(mapFile).toString().split('\n');
 		for (const line of lines) {
 			const match=regex.exec(line);
 			if (match) {

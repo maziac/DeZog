@@ -5,6 +5,8 @@
 - launch-json:
 	- "listFiles" removed.
 	- "sjasmplusListfiles", "z80asmListfiles" and "z88dkListfiles" added with overworked parameters.
+- Renamed "z88dkMapFile" to "mapFile".
+- "addOffset" removed for z88dk. Use "mapFile" instead.
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF

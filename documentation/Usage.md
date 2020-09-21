@@ -193,14 +193,14 @@ Same as sjasmplus but use: ```z80asmListFiles```, e.g.:
 ~~~
 "z88dkListFiles": {
     "path": "currah_uspeech_tests.lis",
-    "z88dkMapFile": "currah_uspeech_tests.map",
+    "mapFile": "currah_uspeech_tests.map",
     "mainFile": "currah_uspeech_tests.asm",
     }
 ~~~
 
 For 'path' and 'srcDirs' see sjasmplusListFiles.
 
-- z88dkMapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
+- mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
 - mainFile: The relative path of the file used to create the list file.
 
 

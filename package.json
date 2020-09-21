@@ -435,12 +435,7 @@
 												""
 											]
 										},
-										"addOffset": {
-											"type": "number",
-											"description": "To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG.",
-											"default": 0
-										},
-										"z88dkMapFile": {
+										"mapFile": {
 											"type": "string",
 											"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
 											"default": 0
