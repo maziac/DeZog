@@ -397,7 +397,7 @@ export class Settings {
 			Settings.launch.sjasmplusListFiles=Settings.launch.sjasmplusListFiles.map(fp => {
 				// ListFile structure
 				const file={
-					path: Utility.getAbsFilePath(fp.path),
+					path: Utility.getAbsFilePath(fp.path||""),
 					srcDirs: fp.srcDirs||[""]
 				};
 				return file;
@@ -409,7 +409,7 @@ export class Settings {
 			Settings.launch.z80asmListFiles=Settings.launch.z80asmListFiles.map(fp => {
 				// ListFile structure
 				const file={
-					path: Utility.getAbsFilePath(fp.path),
+					path: Utility.getAbsFilePath(fp.path||""),
 					srcDirs: fp.srcDirs||[""]
 				};
 				return file;
@@ -421,10 +421,10 @@ export class Settings {
 			Settings.launch.z88dkListFiles=Settings.launch.z88dkListFiles.map(fp => {
 				// ListFile structure
 				const file={
-					path: Utility.getAbsFilePath(fp.path),
+					path: Utility.getAbsFilePath(fp.path||""),
 					mainFile: fp.mainFile,
 					srcDirs: fp.srcDirs||[""],
-					mapFile: fp.mapFile
+					mapFile: Utility.getAbsFilePath(fp.mapFile||"")
 				};
 				return file;
 			});
@@ -619,6 +619,20 @@ export class Settings {
 			// Check that file exists
 			if(!fs.existsSync(path))
 				throw Error("File '" + path + "' does not exist.");
+		}
+
+		// Any special check
+		if (Settings.launch.z88dkListFiles) {
+			// Check for z88dk map file
+			const listFiles=Settings.launch.z88dkListFiles;
+			for (const listFile of listFiles) {
+				const mapFile=listFile.mapFile;
+				if (mapFile==undefined)
+					throw Error("For z88dk you have to define a map file ('mapFile').");
+				// Check that file exists
+				if (!fs.existsSync(mapFile))
+					throw Error("File '"+mapFile+"' does not exist.");
+			}
 		}
 
 		// sna/tap

@@ -266,7 +266,10 @@ suite('Labels', () => {
 		suite('z88dk', () => {
 
 			test('z88dk.lis', () => {
-				const config={z88dkListFiles: [{path: './src/tests/data/labels/z88dk.lis', srcDirs: [""], mapFile: undefined}]};
+				const config={
+					z88dkListFiles: [{
+						path: './src/tests/data/labels/z88dk.lis', srcDirs: [""],
+						mapFile: './src/tests/data/labels/z88dk_empty.map'}]};
 				Labels.readListFiles(config);
 
 				// Checks

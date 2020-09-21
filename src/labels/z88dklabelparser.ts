@@ -43,7 +43,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * PC value.
 	 */
 	public loadAsmListFile(config: AsmListFileBase) {
-		const mapFile: string|undefined=(config as Z88dkListFile).mapFile;
+		const mapFile: string=(config as Z88dkListFile).mapFile;
 		this.readmapFile(mapFile);
 		super.loadAsmListFile(config);
 	}
@@ -219,14 +219,11 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * The z88dk map file looks like this:
 	 * print_number_address            = $1A1B ; const, local, , , , constants.inc:5
 	 * AT                              = $0016 ; const, local, , , , constants.inc:6
-	 * @param mapFile The relative path to the map file.
+	 * @param mapFile The absolute path to the map file.
 	 */
 	protected readmapFile(mapFile) {
 		this.z88dkMapOffset=0;
-		if (!mapFile)
-			return;
-		// Get absolute path
-		mapFile=Utility.getAbsFilePath(mapFile);
+		Utility.assert(mapFile);	// mapFile is already absolute path.
 
 		// Iterate over map file
 		const regex=new RegExp(/^(\w*)\b\s*=\s*\$([0-9a-f]+)/i);

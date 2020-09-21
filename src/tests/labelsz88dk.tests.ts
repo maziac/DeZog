@@ -50,7 +50,8 @@ suite('Labels (z88dk)', () => {
 			const config={
 				z88dkListFiles: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					srcDirs: [""]
+					srcDirs: [""],
+					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
 				}]
 			};
 			Labels.readListFiles(config);

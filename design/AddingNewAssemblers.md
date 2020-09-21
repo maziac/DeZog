@@ -133,8 +133,11 @@ setting.ts:
 - Add a new interface for your assembler e.g. have a look at SjasmplusListFile, Z80asmListFile or Z88dkListFile.
 The interface need to be derived from AsmListFileBase which provide the basic information available to all assemblers.
 - Add the new interface to SettingsParameters. Just beneath the other assemblers.
-- In SettingsParameters.Init make sure that all of your parameters are initialize with some default value. I.e. everything that the user left undefined should get a reasonable default here.
+- In SettingsParameters.Init make sure that all of your parameters are initialized with some default value. I.e. everything that the user left undefined should get a reasonable default here.
 - Update the ```GetAllAssemblerListFiles```function with the new assembler.
+- Make sure that all paths are converted to absolute paths. I.e. use ```Utility.getAbsFilePath(string)``` to convert from relative path to absolute.
+- If you have special settings that should be defined by the user (e.g. for z88dk the 'mapFile') then you can check in ```CheckSettings```. Note: the list file 'path' is already checked automatically.
+
 
 package.json:
 All of your assembler parameters (declared in setting.ts) should also get a description in the package.json.
