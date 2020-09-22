@@ -130,8 +130,8 @@ It is also necessary to adjust some code to make sure that the new classes are u
 And you might also use special parameters for your assembler, so you need to provide those, too.
 
 setting.ts:
-- Add a new interface for your assembler e.g. have a look at SjasmplusListFile, Z80asmListFile or Z88dkListFile.
-The interface need to be derived from AsmListFileBase which provide the basic information available to all assemblers.
+- Add a new interface for your assembler e.g. have a look at SjasmplusConfig, Z80asmConfig or Z88dkConfig.
+The interface need to be derived from AsmConfigBase which provide the basic information available to all assemblers.
 - Add the new interface to SettingsParameters. Just beneath the other assemblers.
 - In SettingsParameters.Init make sure that all of your parameters are initialized with some default value. I.e. everything that the user left undefined should get a reasonable default here.
 - Update the ```GetAllAssemblerListFiles```function with the new assembler.
@@ -141,9 +141,7 @@ The interface need to be derived from AsmListFileBase which provide the basic in
 
 package.json:
 All of your assembler parameters (declared in setting.ts) should also get a description in the package.json.
-You also need to define the base parameters from AsmListFileBase here.
-
-
+You also need to define the base parameters from AsmConfigBase here.
 
 
 # Testing
@@ -183,3 +181,9 @@ The project and the list file will stored to git.
 The actual tests for each assembler are found here:
 .../tests/labelsXXX.tests.ts
 where XXX is the name of your assembler.
+
+
+# Don't forget the documentation
+
+Document the new assembler configuration inside [Usage.md](../documentation/Usage.md) in the chapter "Assembler Configuration".
+Please also don't forget to update the table in "Assemblers and Labels".

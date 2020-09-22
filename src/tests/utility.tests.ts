@@ -498,7 +498,7 @@ suite('Utility', () => {
 			};
 			Settings.Init(cfg, '');
 			*/
-			const config={sjasmplusListFiles: [{path: './src/tests/data/labels/sjasm1.list', srcDirs: [""]}]};
+			const config={sjasmplus: [{path: './src/tests/data/labels/sjasm1.list', srcDirs: [""]}]};
 			Labels.init(250);
 			Labels.readListFiles(config);
 

@@ -6,7 +6,7 @@ import * as path from 'path';
 //import {LabelsClass, ListFileLine, SourceFileEntry} from './labels';
 import {SourceFileEntry, /*, ListFileLine*/
 ListFileLine} from './labels';
-import {AsmListFileBase} from '../settings';
+import {AsmConfigBase} from '../settings';
 //import {Utility} from '../misc/utility';
 //import {readFileSync} from 'fs';
 
@@ -55,7 +55,7 @@ export class LabelParserBase {
 
 
 	/// The config structure is stored here.
-	protected config: AsmListFileBase;
+	protected config: AsmConfigBase;
 
 	/// Array used temporary. Holds the converted list file.
 	protected listFile: Array<ListFileLine>;
@@ -105,7 +105,7 @@ export class LabelParserBase {
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 */
-	public loadAsmListFile(config: AsmListFileBase) {
+	public loadAsmListFile(config: AsmConfigBase) {
 		this.config=config;
 		// Init (in case of several list files)
 		this.includeFileStack=new Array<{fileName: string, lineNr: number}>();

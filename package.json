@@ -364,7 +364,7 @@
 								"type": "string",
 								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}."
 							},
-							"sjasmplusListFiles": {
+							"sjasmplus": {
 								"type": "array",
 								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
@@ -387,7 +387,7 @@
 									}
 								}
 							},
-							"z80asmListFiles": {
+							"z80asm": {
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
@@ -410,7 +410,7 @@
 									}
 								}
 							},
-							"z88dkListFiles": {
+							"z88dk": {
 								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
@@ -639,7 +639,7 @@
 								"port": "/dev/tty.usbserial"
 							},
 							"topOfStack": "stack_top",
-							"listFiles": [
+							"sjasmplus": [
 								{
 									"path": "path_to_your_assembler_file.list"
 								}

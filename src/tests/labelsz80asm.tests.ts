@@ -18,7 +18,7 @@ suite('Labels (z80asm)', () => {
 			const labelsFile=readFileSync('./src/tests/data/labels/projects/z80asm/general/general.labels').toString().split('\n');
 
 			// Read the list file
-			const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};
+			const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};
 			Labels.readListFiles(config);
 
 			// Compare all labels
@@ -38,7 +38,7 @@ suite('Labels (z80asm)', () => {
 
 		test('IF 0 Labels', () => {
 			// Read the list file
-			const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};
+			const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};
 			Labels.readListFiles(config);
 
 			// Test that a label under an IF 0/ENDIF is not defined => not easily possible with
@@ -54,7 +54,7 @@ suite('Labels (z80asm)', () => {
 			test('Labels location', () => {
 				// Read the list file
 				const fname='./src/tests/data/labels/projects/z80asm/general/general.list';
-				const config={z80asmListFiles: [{path: fname, srcDirs: []}]};	// ListFile-Mode
+				const config={z80asm: [{path: fname, srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
 				// Test
@@ -79,7 +79,7 @@ suite('Labels (z80asm)', () => {
 				const listFile=readFileSync('./src/tests/data/labels/projects/z80asm/general/general.list').toString().split('\n');
 
 				// Read the list file
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
+				const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
 				// Compare all addresses
@@ -106,7 +106,7 @@ suite('Labels (z80asm)', () => {
 				const listFile=readFileSync(filename).toString().split('\n');
 
 				// Read the list file
-				const config={z80asmListFiles: [{path: filename, srcDirs: []}]};	// Sources-Mode
+				const config={z80asm: [{path: filename, srcDirs: []}]};	// Sources-Mode
 				Labels.readListFiles(config);
 
 				// Compare all addresses
@@ -133,7 +133,7 @@ suite('Labels (z80asm)', () => {
 			test('Labels location', () => {
 				// Read the list file
 				const config={
-					z80asmListFiles: [{
+					z80asm: [{
 						path: './src/tests/data/labels/projects/z80asm/general/general.list',
 						srcDirs: [""]	// Sources mode
 					}]
@@ -160,7 +160,7 @@ suite('Labels (z80asm)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+				const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
 				Labels.readListFiles(config);
 
 				// Tests
@@ -184,7 +184,7 @@ suite('Labels (z80asm)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file
-				const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+				const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
 				Labels.readListFiles(config);
 
 				// Tests
@@ -208,7 +208,7 @@ suite('Labels (z80asm)', () => {
 
 	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
 		// Read the list file
-		const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+		const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
 		Labels.readListFiles(config);
 
 		// Test WPMEM

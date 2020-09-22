@@ -19,7 +19,7 @@ suite('Labels (z88dk)', () => {
 
 			// Read the list file
 			const config={
-				z88dkListFiles: [{
+				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 					srcDirs: [""],
 					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -48,7 +48,7 @@ suite('Labels (z88dk)', () => {
 			// EQUs are not included in map file for z88dk
 			// Read the list file
 			const config={
-				z88dkListFiles: [{
+				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 					srcDirs: [""],
 					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -68,7 +68,7 @@ suite('Labels (z88dk)', () => {
 		test('IF 0 Labels', () => {
 			// Read the list file
 			const config={
-				z88dkListFiles: [{
+				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 					srcDirs: [""],
 					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -90,7 +90,7 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const fname='./src/tests/data/labels/projects/z88dk/general/main.lis';
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
 						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -126,7 +126,7 @@ suite('Labels (z88dk)', () => {
 
 				// Read the list file
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [],	// ListFile-Mode
 						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -159,7 +159,7 @@ suite('Labels (z88dk)', () => {
 
 				// Read the list file
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [],	// ListFile-Mode
 						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
@@ -191,7 +191,7 @@ suite('Labels (z88dk)', () => {
 			test('Labels location', () => {
 				// Read the list file
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
@@ -231,7 +231,7 @@ suite('Labels (z88dk)', () => {
 			test('address -> file/line', () => {
 				// Read the list file
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
@@ -262,7 +262,7 @@ suite('Labels (z88dk)', () => {
 			test('file/line -> address', () => {
 				// Read the list file
 				const config={
-					z88dkListFiles: [{
+					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
@@ -305,7 +305,7 @@ suite('Labels (z88dk)', () => {
 	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
 		// Read the list file
 		const config={
-			z88dkListFiles: [{
+			z88dk: [{
 				path: './src/tests/data/labels/projects/z88dk/general/main.lis',
 				srcDirs: [""],	// Sources-Mode
 				mainFile: "main.asm",

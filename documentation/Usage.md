@@ -31,7 +31,7 @@ A typical configuration looks like this:
             "zsim": {
                 "loadZxRom": true
             },
-            "sjasmplusListFiles": [
+            "sjasmplus": [
                 {
                     "path": "z80-sample-program.list",
                 },
@@ -69,7 +69,7 @@ A typical configuration looks like this:
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
-- xxxListFiles: An array of list files. Typically it includes only one. But if you e.g. have a
+- sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
@@ -124,7 +124,15 @@ then start it via
 ![](images/vscode_continue_button.jpg)
 
 
-### Listfile
+### Assembler Configuration
+
+Depending on your assembler you use a different configuration names:
+- 'sjasmplus' for sjasmplus
+- 'z80asm' for the Savannah-z80asm
+- 'z88dk' for z88dk-z80asm
+
+You basically define which listfile is used (or several listfiles) and depending on the assembler you may need to add certain parameters.
+
 
 #### z80asm vs. z80asm
 
@@ -136,7 +144,7 @@ b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (N
 DeZog supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
 
 
-#### The list file
+#### Background info: The list file
 
 The most important configuration to do is the *.list file. The list file contains
 all the information required by DeZog. While reading this file DeZog
@@ -151,19 +159,14 @@ Now depending on the value of 'srcDirs'
 - []: Empty array. The corresponding line in the list file is shown or
 - otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
-Depending on your assembler you use a different list file parameter:
-- 'sjasmplusListFiles' for sjasmplus
-- 'z80asmListFiles' for the Savannah-z80asm
-- 'z88dkListfiles' for z88dk-z80asm
-
 
 **sjasmplus configuration:**
 
 ~~~
-"sjasmplusListFiles": {
+"sjasmplus": [{
     "path": "z80-sample-program.list",
     "srcDirs": [""]
-    }
+    }]
 ~~~
 
 
@@ -178,27 +181,27 @@ Note: when using sjasmplus use the "--lst=filename.list" option to generate the 
 
 **Savannah-z80asm configuration:**
 
-Same as sjasmplus but use: ```z80asmListFiles```, e.g.:
+Same as sjasmplus but use: ```z80asm```, e.g.:
 ~~~
-"z80asmListFiles": {
+"z80asm": [{
     "path": "z80-sample-program.list",
     "srcDirs": [""]
-    }
+    }]
 ~~~
 
 
 **z88dk-z80asm configuration:**
 
 ~~~
-"z88dkListFiles": {
+"z88dk": [{
     "path": "currah_uspeech_tests.lis",
     "srcDirs": [""],
     "mapFile": "currah_uspeech_tests.map",
     "mainFile": "currah_uspeech_tests.asm",
-    }
+    }]
 ~~~
 
-For 'path' and 'srcDirs' see sjasmplusListFiles.
+For 'path' and 'srcDirs' see sjasmplus configuration.
 
 - mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
 - mainFile: The relative path of the file used to create the list file.
@@ -219,7 +222,7 @@ You can create a pull request so I can add it to the official release.
 
 #### Without a listfile
 
-If you don't setup any list file then you can still start DeZog and it will work.
+If you don't setup any list file or any assembler configuration then you can still start DeZog and it will work.
 The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for an on-the-fly disassembly.
 Whenever the program is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
 If not a short amount of memory is added to the disassembly.
@@ -228,7 +231,7 @@ For performance reasons a new disassembly is only done if the memory at the PC i
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
 
 
-#### Assemblers And Labels
+#### Assemblers and Labels
 
 The following table lists the differences of the different assemblers in respect to the labels:
 

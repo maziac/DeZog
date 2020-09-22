@@ -1,7 +1,7 @@
 import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
-import {AsmListFileBase, Z88dkListFile} from '../settings';
+import {AsmConfigBase, Z88dkConfig} from '../settings';
 import {Labels} from './labels';
 
 
@@ -43,8 +43,8 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 * values (the first 4 digits), so that each line can be associated with a
 	 * PC value.
 	 */
-	public loadAsmListFile(config: AsmListFileBase) {
-		const mapFile: string=(config as Z88dkListFile).mapFile;
+	public loadAsmListFile(config: AsmConfigBase) {
+		const mapFile: string=(config as Z88dkConfig).mapFile;
 		this.readmapFile(mapFile);
 		super.loadAsmListFile(config);
 	}
@@ -58,7 +58,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 */
 	protected parseAllFilesAndLineNumbers(startLineNr=0) {
 		// Check if there is a main file given in the config
-		const config=this.config as Z88dkListFile;
+		const config=this.config as Z88dkConfig;
 		if (config.mainFile) {
 			// Set main file
 			const fileName=Utility.getRelFilePath(config.mainFile);

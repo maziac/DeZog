@@ -5,8 +5,8 @@ import * as fs from 'fs';
 
 
 
-/// Base for all list files.
-export interface AsmListFileBase {
+/// Base for all assembler configurations.
+export interface AsmConfigBase {
 
 	/// The path to the list file.
 	path: string;
@@ -19,17 +19,17 @@ export interface AsmListFileBase {
 
 
 /// sjasmplus
-export interface SjasmplusListFile extends AsmListFileBase {
+export interface SjasmplusConfig extends AsmConfigBase {
 }
 
 
 /// Z80Asm
-export interface Z80asmListFile extends AsmListFileBase {
+export interface Z80asmConfig extends AsmConfigBase {
 }
 
 
 // Z88dk
-export interface Z88dkListFile extends AsmListFileBase {
+export interface Z88dkConfig extends AsmConfigBase {
 	/// Path to the main assembler source file that was used to produce the .list file.
 	mainFile: string;
 
@@ -177,9 +177,9 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	rootFolder: string;
 
 	/// The paths to the .list files / assembler parameters.
-	sjasmplusListFiles: Array<SjasmplusListFile>;
-	z80asmListFiles: Array<Z80asmListFile>;
-	z88dkListFiles: Array<Z88dkListFile>;
+	sjasmplus: Array<SjasmplusConfig>;
+	z80asm: Array<Z80asmConfig>;
+	z88dk: Array<Z88dkConfig>;
 
 
 	/// The paths to the .labels files.
@@ -280,10 +280,9 @@ export class Settings {
 				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
-				sjasmplusListFiles: <any>undefined,
-				z80asmListFiles: <any>undefined,
-				z88dkListFiles: <any>undefined,
-//				labelsFiles: <any>undefined,
+				sjasmplus: <any>undefined,
+				z80asm: <any>undefined,
+				z88dk: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
@@ -393,8 +392,8 @@ export class Settings {
 			Settings.launch.rootFolder=rootFolder;
 
 		// sjasmplus
-		if (Settings.launch.sjasmplusListFiles) {
-			Settings.launch.sjasmplusListFiles=Settings.launch.sjasmplusListFiles.map(fp => {
+		if (Settings.launch.sjasmplus) {
+			Settings.launch.sjasmplus=Settings.launch.sjasmplus.map(fp => {
 				// ListFile structure
 				const file={
 					path: Utility.getAbsFilePath(fp.path||""),
@@ -405,8 +404,8 @@ export class Settings {
 		}
 
 		// z80asm
-		if (Settings.launch.z80asmListFiles) {
-			Settings.launch.z80asmListFiles=Settings.launch.z80asmListFiles.map(fp => {
+		if (Settings.launch.z80asm) {
+			Settings.launch.z80asm=Settings.launch.z80asm.map(fp => {
 				// ListFile structure
 				const file={
 					path: Utility.getAbsFilePath(fp.path||""),
@@ -417,8 +416,8 @@ export class Settings {
 		}
 
 		// z88dk
-		if (Settings.launch.z88dkListFiles) {
-			Settings.launch.z88dkListFiles=Settings.launch.z88dkListFiles.map(fp => {
+		if (Settings.launch.z88dk) {
+			Settings.launch.z88dk=Settings.launch.z88dk.map(fp => {
 				// ListFile structure
 				const file={
 					path: Utility.getAbsFilePath(fp.path||""),
@@ -585,14 +584,14 @@ export class Settings {
 	 * @param configuration The launch configuration, e.g. Settings.launch.
 	 * @returns An array of list file parameters.
 	 */
-	public static GetAllAssemblerListFiles(configuration: any): Array<AsmListFileBase> {
-		const listFiles=new Array<AsmListFileBase>();
-		if (configuration.sjasmplusListFiles)
-			listFiles.push(...configuration.sjasmplusListFiles);
-		if (configuration.z80asmListFiles)
-			listFiles.push(...configuration.z80asmListFiles);
-		if (configuration.z88dkListFiles)
-			listFiles.push(...configuration.z88dkListFiles);
+	public static GetAllAssemblerListFiles(configuration: any): Array<AsmConfigBase> {
+		const listFiles=new Array<AsmConfigBase>();
+		if (configuration.sjasmplus)
+			listFiles.push(...configuration.sjasmplus);
+		if (configuration.z80asm)
+			listFiles.push(...configuration.z80asm);
+		if (configuration.z88dk)
+			listFiles.push(...configuration.z88dk);
 
 		return listFiles;
 	}
@@ -612,7 +611,7 @@ export class Settings {
 			throw Error("Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
 		}
 
-		// List files
+		// List files (=Assembler configurations)
 		const listFiles=this.GetAllAssemblerListFiles(Settings.launch);
 		for (let listFile of listFiles) {
 			const path=listFile.path;
@@ -622,9 +621,9 @@ export class Settings {
 		}
 
 		// Any special check
-		if (Settings.launch.z88dkListFiles) {
+		if (Settings.launch.z88dk) {
 			// Check for z88dk map file
-			const listFiles=Settings.launch.z88dkListFiles;
+			const listFiles=Settings.launch.z88dk;
 			for (const listFile of listFiles) {
 				const mapFile=listFile.mapFile;
 				if (mapFile==undefined)

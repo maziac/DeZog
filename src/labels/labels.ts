@@ -131,23 +131,23 @@ export class LabelsClass {
 	 */
 	public readListFiles(mainConfig: any) {
 		// sjasmplus
-		if (mainConfig.sjasmplusListFiles) {
+		if (mainConfig.sjasmplus) {
 			const parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.sjasmplusListFiles)
+			for (const listFile of mainConfig.sjasmplus)
 				parser.loadAsmListFile(listFile);
 		}
 
 		// z80asm
-		if (mainConfig.z80asmListFiles) {
+		if (mainConfig.z80asm) {
 			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z80asmListFiles)
+			for (const listFile of mainConfig.z80asm)
 				parser.loadAsmListFile(listFile);
 		}
 
 		// z88dk
-		if (mainConfig.z88dkListFiles) {
+		if (mainConfig.z88dk) {
 			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z88dkListFiles)
+			for (const listFile of mainConfig.z88dk)
 				parser.loadAsmListFile(listFile);
 		}
 

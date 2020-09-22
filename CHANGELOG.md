@@ -4,7 +4,7 @@
 - New architecture for parsing list files.
 - launch-json:
 	- "listFiles" removed.
-	- "sjasmplusListfiles", "z80asmListfiles" and "z88dkListfiles" added with overworked parameters.
+	- Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters.
 - z88dk:
 	- Renamed "z88dkMapFile" to "mapFile".
 	- "addOffset" removed for z88dk. Use "mapFile" instead.
