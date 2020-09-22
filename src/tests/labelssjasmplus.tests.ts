@@ -6,12 +6,12 @@ import {readFileSync} from 'fs';
 
 suite('Labels (sjasmplus)', () => {
 
+	setup(() => {
+		Labels.init(250);
+	});
+
+
 	suite('Labels', () => {
-
-		setup(() => {
-			Labels.init(250);
-		});
-
 
 		test('Labels', () => {
 			// Read result data (labels)
@@ -64,42 +64,42 @@ suite('Labels (sjasmplus)', () => {
 				res=Labels.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(62-1, res.lineNr);	// line number starts at 0
+				assert.equal(65-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fa_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(66-1, res.lineNr);	// line number starts at 0
+				assert.equal(69-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fa_label3.mid')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(69-1, res.lineNr);	// line number starts at 0
+				assert.equal(72-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(76-1, res.lineNr);	// line number starts at 0
+				assert.equal(79-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(81-1, res.lineNr);	// line number starts at 0
+				assert.equal(84-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(85-1, res.lineNr);	// line number starts at 0
+				assert.equal(88-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(87-1, res.lineNr);	// line number starts at 0
+				assert.equal(90-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(95-1, res.lineNr);	// line number starts at 0
+				assert.equal(98-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -259,33 +259,33 @@ suite('Labels (sjasmplus)', () => {
 				assert.equal(0x900B, address);
 			});
 
-
-			test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
-				// Read the list file
-				const config={sjasmplusListFiles: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
-				Labels.readListFiles(config);
-
-				// Test WPMEM
-				const wpLines=Labels.getWatchPointLines();
-				assert.equal(wpLines.length, 1);
-				assert.equal(wpLines[0].address, 0x8200);
-				assert.equal(wpLines[0].line, "WPMEM");
-
-				// Test ASSERT
-				const assertLines=Labels.getAssertLines();
-				assert.equal(assertLines.length, 1);
-				assert.equal(assertLines[0].address, 0x8005);
-				assert.equal(assertLines[0].line, "ASSERT");
-
-				// Test LOGPOINT
-				const lpLines=Labels.getLogPointLines();
-				assert.equal(lpLines.length, 1);
-				assert.equal(lpLines[0].address, 0x800F);
-				assert.equal(lpLines[0].line, "LOGPOINT");
-			});
-
 		});
 
+	});
+
+
+	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+		// Read the list file
+		const config={sjasmplusListFiles: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+		Labels.readListFiles(config);
+
+		// Test WPMEM
+		const wpLines=Labels.getWatchPointLines();
+		assert.equal(wpLines.length, 1);
+		assert.equal(wpLines[0].address, 0x8200);
+		assert.equal(wpLines[0].line, "WPMEM");
+
+		// Test ASSERT
+		const assertLines=Labels.getAssertLines();
+		assert.equal(assertLines.length, 1);
+		assert.equal(assertLines[0].address, 0x8005);
+		assert.equal(assertLines[0].line, "ASSERT");
+
+		// Test LOGPOINT
+		const lpLines=Labels.getLogPointLines();
+		assert.equal(lpLines.length, 1);
+		assert.equal(lpLines[0].address, 0x800F);
+		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
 });

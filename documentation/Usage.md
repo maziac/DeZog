@@ -182,7 +182,6 @@ Same as sjasmplus but use: ```z80asmListFiles```, e.g.:
 ~~~
 "z80asmListFiles": {
     "path": "z80-sample-program.list",
-    "mainFile": "main.asm",
     "srcDirs": [""]
     }
 ~~~
@@ -193,6 +192,7 @@ Same as sjasmplus but use: ```z80asmListFiles```, e.g.:
 ~~~
 "z88dkListFiles": {
     "path": "currah_uspeech_tests.lis",
+    "srcDirs": [""],
     "mapFile": "currah_uspeech_tests.map",
     "mainFile": "currah_uspeech_tests.asm",
     }

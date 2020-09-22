@@ -6,12 +6,12 @@ import {readFileSync} from 'fs';
 
 suite('Labels (z88dk)', () => {
 
+	setup(() => {
+		Labels.init(250);
+	});
+
+
 	suite('Labels', () => {
-
-		setup(() => {
-			Labels.init(250);
-		});
-
 
 		test('Labels (with map)', () => {
 			// Read result data (labels)
@@ -45,7 +45,7 @@ suite('Labels (z88dk)', () => {
 		});
 
 		test('Labels equ', () => {
-			// EQUs are not included in mpa file for z88dk
+			// EQUs are not included in map file for z88dk
 			// Read the list file
 			const config={
 				z88dkListFiles: [{
@@ -107,17 +107,17 @@ suite('Labels (z88dk)', () => {
 				res=Labels.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(49-1, res.lineNr);	// line number starts at 0
+				assert.equal(52-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(68-1, res.lineNr);	// line number starts at 0
+				assert.equal(71-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(70-1, res.lineNr);	// line number starts at 0
+				assert.equal(73-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -245,15 +245,15 @@ suite('Labels (z88dk)', () => {
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(16-1, res.lineNr);
 
-				res=Labels.getFileAndLineForAddress(0x8009);
+				res=Labels.getFileAndLineForAddress(0x800D);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(7-1, res.lineNr);
 
-				res=Labels.getFileAndLineForAddress(0x800C);
+				res=Labels.getFileAndLineForAddress(0x8010);
 				assert.ok(res.fileName.endsWith('filea_b.asm'));
 				assert.equal(7-1, res.lineNr);
 
-				res=Labels.getFileAndLineForAddress(0x8010);
+				res=Labels.getFileAndLineForAddress(0x8014);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(16-1, res.lineNr);
 			});
@@ -276,29 +276,65 @@ suite('Labels (z88dk)', () => {
 				assert.equal(0x8000, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 6-1);
-				assert.equal(0x8009, address);
+				assert.equal(0x800D, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 7-1);
-				assert.equal(0x8009, address);
+				assert.equal(0x800D, address);
 
 				address=Labels.getAddrForFileAndLine('filea_b.asm', 4-1);
-				assert.equal(0x800C, address);
+				assert.equal(0x8010, address);
 
 				address=Labels.getAddrForFileAndLine('filea_b.asm', 15-1);
-				assert.equal(0x800F, address);
+				assert.equal(0x8013, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
-				assert.equal(0x8010, address);
+				assert.equal(0x8014, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 15-1);
-				assert.equal(0x8010, address);
+				assert.equal(0x8014, address);
 
 				address=Labels.getAddrForFileAndLine('filea.asm', 17-1);
-				assert.equal(0x8011, address);
+				assert.equal(0x8015, address);
 			});
 
 		});
 
+	});
+
+
+	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+		// Read the list file
+		const config={
+			z88dkListFiles: [{
+				path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+				srcDirs: [""],	// Sources-Mode
+				mainFile: "main.asm",
+				mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+			}]
+		};
+
+		//(Labels as any).labelsForNumber.length=0;
+		//Labels.init(256);
+		console.log("alabelsForNumber", (Labels as any).labelsForNumber);
+		Labels.readListFiles(config);
+
+		// Test WPMEM
+		const wpLines=Labels.getWatchPointLines();
+		assert.equal(wpLines.length, 1);
+		assert.equal(wpLines[0].address, 0x8008);
+		assert.equal(wpLines[0].line, "WPMEM");
+
+		// Test ASSERT
+		const assertLines=Labels.getAssertLines();
+		assert.equal(assertLines.length, 1);
+		assert.equal(assertLines[0].address, 0x8005);
+		assert.equal(assertLines[0].line, "ASSERT");
+
+		// Test LOGPOINT
+		const lpLines=Labels.getLogPointLines();
+		assert.equal(lpLines.length, 1);
+		assert.equal(lpLines[0].address, 0x8006);
+		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
 });

@@ -22,7 +22,7 @@ _locala:	ld b,8
 _localb:
 	nop		; ASSERT
 
-label3:	;m1	; WPMEM
+label3:	;m1
  ;m1
 label4:
  ;	m1
@@ -41,6 +41,9 @@ _local: ; local label not existing
 
 
 
+	;ORG 0x8200
+data:
+	defb 1, 2, 3, 4		; WPMEM
 
 	;ORG 0x9000
 

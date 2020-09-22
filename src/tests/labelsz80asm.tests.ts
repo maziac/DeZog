@@ -6,12 +6,12 @@ import {readFileSync} from 'fs';
 
 suite('Labels (z80asm)', () => {
 
+	setup(() => {
+		Labels.init(250);
+	});
+
+
 	suite('Labels', () => {
-
-		setup(() => {
-			Labels.init(250);
-		});
-
 
 		test('Labels', () => {
 			// Read result data (labels)
@@ -66,12 +66,12 @@ suite('Labels (z80asm)', () => {
 				res=Labels.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(66-1, res.lineNr);	// line number starts at 0
+				assert.equal(68-1, res.lineNr);	// line number starts at 0
 
 				res=Labels.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal(fname, res.file);
-				assert.equal(85-1, res.lineNr);	// line number starts at 0
+				assert.equal(87-1, res.lineNr);	// line number starts at 0
 			});
 
 			test('address -> file/line', () => {
@@ -203,6 +203,31 @@ suite('Labels (z80asm)', () => {
 
 		});
 
+	});
+
+
+	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+		// Read the list file
+		const config={z80asmListFiles: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+		Labels.readListFiles(config);
+
+		// Test WPMEM
+		const wpLines=Labels.getWatchPointLines();
+		assert.equal(wpLines.length, 1);
+		assert.equal(wpLines[0].address, 0x8200);
+		assert.equal(wpLines[0].line, "WPMEM ");
+
+		// Test ASSERT
+		const assertLines=Labels.getAssertLines();
+		assert.equal(assertLines.length, 1);
+		assert.equal(assertLines[0].address, 0x8005);
+		assert.equal(assertLines[0].line, "ASSERT ");
+
+		// Test LOGPOINT
+		const lpLines=Labels.getLogPointLines();
+		assert.equal(lpLines.length, 1);
+		assert.equal(lpLines[0].address, 0x800F);
+		assert.equal(lpLines[0].line, "LOGPOINT ");
 	});
 
 });
