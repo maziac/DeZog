@@ -1,8 +1,8 @@
 # Changelog
 
-# 1.4.10
-- New architecture for parsing list files.
-- launch-json:
+# 1.5.0
+- New architecture for parsing list files. This will make it easier to add parsing for a new assembler.
+- Related changes to launch.json:
 	- "listFiles" removed.
 	- Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters.
 - z88dk:

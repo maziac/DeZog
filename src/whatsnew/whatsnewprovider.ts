@@ -14,35 +14,30 @@ export class WhatsNewContentProvider implements ContentProvider {
 		changeLog.push(...[
 			{
 				kind: ChangeLogKind.NEW, detail: {
-					message: `<b>Support for the 'zxnext' remote type. This allows <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#zx-next--serial-interface"><b>remote debugging via a serial cable directly on a ZX Next device</b></a>.</b>`
+					message: `<b>New architecture for parsing list files. This will make it easier to add new assemblers in the future.</b>`
 				}
 			},
 			{
 				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<b>Changed to DZRP 1.6. I.e. if you are using CSpect <a href="https://github.com/maziac/DeZogPlugin/releases"><b>you need to update the DeZog CSpect Plugin</b></a>.
-					The same time you should update <a href="http://dailly.blogspot.com">CSpect to (at least) version 2.12.34</a>,</b>`
+					message: `<b>Related changes to launch.json:
+					<ul>
+					<li> - "listFiles" keyword removed. <\li>
+					<li> - Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters. </li>
+					</ul>
+					You will need to adjust your launch.json config files, please consult the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#assembler-configuration">Usage.md chapter "Assembler Configuration"</a>.</b>`
 				}
 			},
 			{
-				kind: ChangeLogKind.NEW, detail: {
-					message: `<b>sjasmplus: support for additional '--lstlab' option. Simply add '--lstlab' to the samsplus assembler options. DeZog will automatically extract the extra infromation from the list file to improve label recognition.</b>`
+				kind: ChangeLogKind.CHANGED, detail: {
+					message: `z88dk:
+					<ul>
+					<li> - Renamed "z88dkMapFile" to "mapFile". </li>
+					<li> - "addOffset" removed for z88dk. Use "mapFile" instead. </li>
+					<li> - "mapFile" is mandatory now. </li>
+					</ul>
+					Please adjust your launch.json configs.`
 				},
-			},
-			{
-				kind: ChangeLogKind.NEW, detail: {
-					message: `New debugger console command '-dasm': Allows to do a brute force disassembly for a given address.`
-				}
-			},
-			{
-				kind: ChangeLogKind.NEW, detail: {
-					message: `Introduced TC_END to Unit tests. With this macro a Z80 unit test is successfully ended`
-				}
-			},
-			{
-				kind: ChangeLogKind.CHANGED, detail: {
-					message: `Formatting of the Z80 flags changed.`
-				}
-			},
+			}
 		]);
 		return changeLog;
 	}
