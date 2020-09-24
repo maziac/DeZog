@@ -622,6 +622,7 @@ export class DebugSessionClass extends DebugSession {
 					else {
 						// Break
 						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
+						// TODO: Hiernach gibt es eine spürbare Pause. 'startAutomatically' geht gefühlt schneller.
 					}
 				}
 				DebugSessionClass.unitTestHandler=undefined;
