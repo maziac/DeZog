@@ -189,7 +189,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	smallValuesMaximum: number;
 
 	/// These arguments are passed to the disassembler (z80dismblr arguments).
-	disassemblerArgs: {esxdosRst: boolean};
+	disassemblerArgs: {
+		numberOfLines: number,	// Number of lines displayed in the disassembly
+		esxdosRst: boolean	// If enabled the disassembler will disassemble "RST 8; defb N" correctly.
+	};
 
 	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
 	tmpDir: string;
@@ -462,9 +465,18 @@ export class Settings {
 		if(isNaN(Settings.launch.smallValuesMaximum))
 			Settings.launch.smallValuesMaximum = 255;
 		if(Settings.launch.disassemblerArgs == undefined)
-			Settings.launch.disassemblerArgs = {esxdosRst: false};
-		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
-			Settings.launch.disassemblerArgs.esxdosRst = false;
+			Settings.launch.disassemblerArgs={
+				numberOfLines: 10,
+				esxdosRst: false
+			};
+		if (!Settings.launch.disassemblerArgs.hasOwnProperty("numberOfLines"))
+			Settings.launch.disassemblerArgs.numberOfLines=10;
+		if (Settings.launch.disassemblerArgs.numberOfLines>100)
+			Settings.launch.disassemblerArgs.numberOfLines=100;
+		if (Settings.launch.disassemblerArgs.numberOfLines<1)
+			Settings.launch.disassemblerArgs.numberOfLines=1;
+		if (!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
+			Settings.launch.disassemblerArgs.esxdosRst=false;
 		if(Settings.launch.startAutomatically == undefined)
 			Settings.launch.startAutomatically = (unitTests) ? false : false;
 		if(Settings.launch.resetOnLaunch == undefined)

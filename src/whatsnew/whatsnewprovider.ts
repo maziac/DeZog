@@ -37,6 +37,15 @@ export class WhatsNewContentProvider implements ContentProvider {
 					</ul>
 					Please adjust your launch.json configs.`
 				},
+			},
+			{
+				kind: ChangeLogKind.NEW, detail: {
+					message: `launch.json:
+					<ul>
+					<li> "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
+					</li>
+					</ul>`
+				},
 			}
 		]);
 		return changeLog;

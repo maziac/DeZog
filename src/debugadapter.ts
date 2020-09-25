@@ -1043,7 +1043,7 @@ export class DebugSessionClass extends DebugSession {
 			// use address
 			const addr=frame.addr;
 			// Create variable object for Disassembly
-			const varDisassembly=new DisassemblyVar(addr, 8);
+			const varDisassembly=new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
 			// Add to list and get reference ID
 			const ref=this.listVariables.addObject(varDisassembly);
 			scopes.push(new Scope("Disassembly", ref));

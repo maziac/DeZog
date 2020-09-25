@@ -53,6 +53,7 @@ A typical configuration looks like this:
                 //"-patterns"
             ],
             "disassemblerArgs": {
+        		numberOfLines: 20,
                 "esxdosRst": true
             },
             "rootFolder": "${workspaceFolder}",
@@ -76,7 +77,9 @@ Please have a look at the [Listfile](#listfile) section.
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
 - codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
-- disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
+- disassemblerArgs: Arguments that can be passed to the internal disassembler.
+    - numberOfLines: The number of lines displayed in the disassembly.
+    - esxdosRst: true/false. Default to false. If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 

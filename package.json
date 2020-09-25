@@ -451,9 +451,15 @@
 							"disassemblerArgs": {
 								"description": "Arguments passed to the disassembler.",
 								"properties": {
+									"numberOfLines": {
+										"type": "number",
+										"description": "The number of lines displayed in the disassembly.",
+										"default": 10
+									},
 									"esxdosRst": {
 										"type": "boolean",
-										"description": "For esxdos disassembly set this to 'true'."
+										"description": "For esxdos disassembly set this to 'true'.",
+										"default": false
 									}
 								}
 							},
