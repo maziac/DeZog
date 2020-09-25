@@ -426,7 +426,7 @@ export class LabelParserBase {
 
 		// Add label
 		let labelsArray=this.labelsForNumber[value];
-		console.log("labelsArray", labelsArray, "value=", value);
+		//console.log("labelsArray", labelsArray, "value=", value);
 		if (labelsArray===undefined) {
 			// create a new array
 			labelsArray=new Array<string>();
