@@ -210,7 +210,7 @@ export class RegistersSecondaryVar extends RegistersMainVar {
 	 * Returns the register names to show. The 2nd half of the registers.
 	 */
 	protected registerNames(): Array<string> {
-		return ["A'", "F'", "HL'", "DE'", "BC'", "I", "R", "IM"];
+		return ["A'", "F'", "HL'", "DE'", "BC'", "IXH", "IXL", "IYH", "IYL", "I", "R", "IM"];
 	}
 }
 

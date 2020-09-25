@@ -10,6 +10,7 @@
 	- "addOffset" removed for z88dk. Use "mapFile" instead.
 	- "mapFile" is mandatory now.
 - launch.json: "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
+- Byte registers IXL, IXH, IYL and IYH now show additionally under "Registers 2"
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF

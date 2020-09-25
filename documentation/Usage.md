@@ -263,6 +263,32 @@ DeZog supports most of them but with some restrictions:
 - sjasmplus: labels inside macros are not supported.
 
 
+<!--
+## Formatting
+
+In the launch.json you can use another property to control the formatting of the registers done in the VARIABLES area.
+
+~~~
+"formatting": [
+    "AF", "AF: ${hex}h, F: ${flags}",
+    "AF'", "AF': ${hex}h, F': ${flags}",
+    "PC", "${hex}h, ${unsigned}u${, :labelsplus|, }",
+    "SP", "${hex}h, ${unsigned}u${, :labelsplus|, }",
+    "HL", "(${hex}h)b=${b@:unsigned}, ${unsigned}u, ${signed}i${, :labelsplus|, }",
+    "IM", "${unsigned}u",
+    "..", "${hex}h, ${unsigned}u, ${signed}i${, :labelsplus|, }",
+    "F", "${flags}",
+    "R", "${unsigned}u",
+    "I", "${hex}h",
+    ".", "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}"
+]
+~~~
+
+Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
+-->
+
+
+
 ## Remote Types
 
 With DeZog you have the option to use different remotes.
