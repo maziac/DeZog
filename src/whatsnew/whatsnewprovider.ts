@@ -14,33 +14,37 @@ export class WhatsNewContentProvider implements ContentProvider {
 		changeLog.push(...[
 			{
 				kind: ChangeLogKind.NEW, detail: {
-					message: `<b>New architecture for parsing list files. This will make it easier to add new assemblers in the future.</b>`
+					message: `<br><b>New architecture for parsing list files. This will make it easier to add support for new assemblers in the future.</b>`
 				}
 			},
 			{
 				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<b>Related changes to launch.json:
+					message: `<br><b>Related changes to launch.json:
 					<ul>
-					<li> - "listFiles" keyword removed. <\li>
+					<li> - "listFiles" keyword removed. </li>
 					<li> - Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters. </li>
 					</ul>
 					You will need to adjust your launch.json config files, please consult the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#assembler-configuration">Usage.md chapter "Assembler Configuration"</a>.</b>`
 				}
 			},
 			{
+				kind: ChangeLogKind.FIXED, detail: {
+					message: `<br><b>In case you had a problem with 'Unverified breakpoints' on Windows please give it another try. I fixed a path name problem.<b>`
+				},
+			},
+			{
 				kind: ChangeLogKind.CHANGED, detail: {
-					message: `z88dk:
+					message: `<br>z88dk:
 					<ul>
 					<li> - Renamed "z88dkMapFile" to "mapFile". </li>
 					<li> - "addOffset" removed for z88dk. Use "mapFile" instead. </li>
 					<li> - "mapFile" is mandatory now. </li>
-					</ul>
-					Please adjust your launch.json configs.`
+					</ul>`
 				},
 			},
 			{
 				kind: ChangeLogKind.NEW, detail: {
-					message: `launch.json:
+					message: `<br>launch.json:
 					<ul>
 					<li> "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
 					</li>
