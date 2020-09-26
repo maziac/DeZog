@@ -183,6 +183,13 @@ The actual tests for each assembler are found here:
 where XXX is the name of your assembler.
 
 
+## macOs/Linux/Windows
+
+Please test parsing/debugging on macOs (or Linux) and on Windows.
+Reason is the different line endings used in both. macOs/Linux uses "\\n" whereas Windows uses "\\r\\n".
+Sometimes this generates trouble.
+
+
 # Don't forget the documentation
 
 Document the new assembler configuration inside [Usage.md](../documentation/Usage.md) in the chapter "Assembler Configuration".
