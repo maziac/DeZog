@@ -676,8 +676,8 @@ export class Utility {
 		let filePath=absFilePath;
 		let rootPath=Utility.rootPath;
 		if (rootPath) {
-			if (!rootPath.endsWith('/'))
-				rootPath+='/';
+			if (!rootPath.endsWith(path.sep))
+				rootPath+=path.sep;
 			if (filePath.startsWith(rootPath))
 				filePath=filePath.substr(rootPath.length);
 		}
