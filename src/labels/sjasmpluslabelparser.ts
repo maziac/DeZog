@@ -220,7 +220,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 		// Check for start of include file
 		if (line.startsWith('# file opened:')) {
 			// Get file name
-			const fname=line.substr(15);
+			const fname=line.substr(15).trim();
 			// Include file
 			this.includeStart(fname);
 			return;

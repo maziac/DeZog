@@ -502,7 +502,7 @@
 							},
 							"resetOnLaunch": {
 								"type": "boolean",
-								"description": "Resets the cpu (on emulator) after starting the debugger before starting the program to debug."
+								"description": "Resets the device (on emulator) after starting the debugger before starting the program to debug."
 							},
 							"commandsAfterLaunch": {
 								"type": "array",
