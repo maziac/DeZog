@@ -49,7 +49,7 @@ export class DisassemblyClass extends Disassembler {
 			// Add to list
 			list.push({address, instruction})
 			// Next address
-			address+=opcode.length;
+			address=(address+opcode.length)&0xFFFF;
 		}
 
 		// Pass data
