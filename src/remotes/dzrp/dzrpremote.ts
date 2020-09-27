@@ -636,26 +636,27 @@ export class DzrpRemote extends RemoteBase {
 				// Get corresponding breakpoint
 				const bps=this.getBreakpointsByAddress(breakAddress);
 
-				// Loop over all matching breakpoints (normally only one)
+				// Loop over all matching breakpoints (normally only one, but could be 2 or more. E.g. if manual BP is at the same point as a LOGPOINT)
 				for (const bp of bps) {
 					// Check for condition
 					const {condition: cond, log}=this.checkConditionAndLog(bp);
-					condition=cond;
+					//condition=cond;
 
 					// Emit log?
-					if (condition!=undefined&&log) {
+					if (cond!=undefined&&log) {
 						// Convert
 						const evalLog=await Utility.evalLogString(log);
 						// Print
 						this.emit('log', evalLog);
 						// Don't eval condition again
-						condition=undefined;
+						//condition=undefined;
 					}
 
-					if (condition!=undefined) {
+					if (cond!=undefined) {
 						// At least one break condition found
+						condition=cond;
 						correctedBreakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-						break;
+						//break;
 					}
 				}
 
