@@ -1,14 +1,8 @@
-//import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-//import * as path from 'path';
 import {Remote} from '../remotes/remotefactory';
 import {SjasmplusLabelParser} from './sjasmpluslabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
-//import {LabelParserBase} from './labelparserbase';
-//import { Log } from './log';
-//import { AssertionError } from 'assert';
-//import { start } from 'repl';
 
 
 /**

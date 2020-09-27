@@ -1,7 +1,7 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './misc/utility';
-//import * as path from 'path';
 import * as fs from 'fs';
+import {UnifiedPath} from './misc/unifiedpath';
 
 
 
@@ -398,9 +398,11 @@ export class Settings {
 		if (Settings.launch.sjasmplus) {
 			Settings.launch.sjasmplus=Settings.launch.sjasmplus.map(fp => {
 				// ListFile structure
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const file={
-					path: Utility.getAbsFilePath(fp.path||""),
-					srcDirs: fp.srcDirs||[""]
+					path: Utility.getAbsFilePath(fpPath||""),
+					srcDirs: fpSrcDirs||[""]
 				};
 				return file;
 			});
@@ -410,8 +412,9 @@ export class Settings {
 		if (Settings.launch.z80asm) {
 			Settings.launch.z80asm=Settings.launch.z80asm.map(fp => {
 				// ListFile structure
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
 				const file={
-					path: Utility.getAbsFilePath(fp.path||""),
+					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fp.srcDirs||[""]
 				};
 				return file;
@@ -422,11 +425,13 @@ export class Settings {
 		if (Settings.launch.z88dk) {
 			Settings.launch.z88dk=Settings.launch.z88dk.map(fp => {
 				// ListFile structure
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpMapFile=UnifiedPath.getUnifiedPath(fp.mapFile);
 				const file={
-					path: Utility.getAbsFilePath(fp.path||""),
+					path: Utility.getAbsFilePath(fpPath||""),
 					mainFile: fp.mainFile,
 					srcDirs: fp.srcDirs||[""],
-					mapFile: Utility.getAbsFilePath(fp.mapFile||"")
+					mapFile: Utility.getAbsFilePath(fpMapFile||"")
 				};
 				return file;
 			});
@@ -444,24 +449,29 @@ export class Settings {
 		if(unitTests)
 			Settings.launch.topOfStack = 'UNITTEST_STACK';
 
-		if(Settings.launch.load)
-			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
+		if (Settings.launch.load) {
+			const uload=UnifiedPath.getUnifiedPath(Settings.launch.load)
+			Settings.launch.load=Utility.getAbsFilePath(uload);
+		}
 		else
 			Settings.launch.load = '';
 
 		if(!Settings.launch.loadObjs)
 			Settings.launch.loadObjs = [];
 		for(let loadObj of Settings.launch.loadObjs) {
-			if(loadObj.path)
-				loadObj.path = Utility.getAbsFilePath(loadObj.path);
+			if (loadObj.path) {
+				const loadObjPath=UnifiedPath.getUnifiedPath(loadObj.path)
+				loadObj.path=Utility.getAbsFilePath(loadObjPath);
+			}
 			else
 				loadObj.path = '';
 		}
 
 		if(Settings.launch.tmpDir == undefined)
-			Settings.launch.tmpDir = '.tmp';
-		Settings.launch.tmpDir = Utility.getAbsFilePath
-		(Settings.launch.tmpDir);
+			Settings.launch.tmpDir='.tmp';
+		Settings.launch.tmpDir=UnifiedPath.getUnifiedPath(Settings.launch.tmpDir);
+		Settings.launch.tmpDir=Utility.getAbsFilePath
+			(Settings.launch.tmpDir);
 		if(isNaN(Settings.launch.smallValuesMaximum))
 			Settings.launch.smallValuesMaximum = 255;
 		if(Settings.launch.disassemblerArgs == undefined)

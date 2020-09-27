@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {basename} from 'path';
+import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
 import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
@@ -742,7 +742,7 @@ export class DebugSessionClass extends DebugSession {
 	private createSource(filePath: string): Source|undefined {
 		if (filePath.length==0)
 			return undefined;
-		const fname=basename(filePath);
+		const fname=UnifiedPath.basename(filePath);
 		const debPath=this.convertDebuggerPathToClient(filePath);
 		return new Source(fname, debPath, undefined, undefined, undefined);
 	}

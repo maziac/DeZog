@@ -1,14 +1,8 @@
 import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-//import {Settings} from '../settings';
-import * as path from 'path';
-//import {Remote} from '../remotes/remotefactory';
-//import {LabelsClass, ListFileLine, SourceFileEntry} from './labels';
-import {SourceFileEntry, /*, ListFileLine*/
-ListFileLine} from './labels';
+import {UnifiedPath} from '../misc/unifiedpath';
+import {SourceFileEntry, ListFileLine} from './labels';
 import {AsmConfigBase} from '../settings';
-//import {Utility} from '../misc/utility';
-//import {readFileSync} from 'fs';
 
 
 /// Different label types.
@@ -180,7 +174,7 @@ export class LabelParserBase {
 		if (address==undefined)
 			return;
 
-			// ASSERT
+		// ASSERT
 		match=/.*(\bASSERT\b.*)/.exec(comment);
 		if (match) {
 			// Add ASSERT at this address
@@ -477,12 +471,13 @@ export class LabelParserBase {
 	 * @param includeFileName The name of the include file.
 	 */
 	protected includeStart(includeFileName: string) {
+		includeFileName=UnifiedPath.getUnifiedPath(includeFileName);
 		const index=this.includeFileStack.length-1;
 		let fileName;
 		if (index>=0) {
 			// Include the parent file dir in search
 			const parentFileName=this.includeFileStack[this.includeFileStack.length-1].fileName;
-			const dirName=path.dirname(parentFileName);
+			const dirName=UnifiedPath.dirname(parentFileName);
 			fileName=Utility.getRelSourceFilePath(includeFileName, [dirName, ...this.config.srcDirs]);
 		}
 		else {

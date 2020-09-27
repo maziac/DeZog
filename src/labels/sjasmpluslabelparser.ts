@@ -1,12 +1,5 @@
-//import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
-//import {Settings} from '../settings';
-//import * as path from 'path';
-//import {Remote} from '../remotes/remotefactory';
-//import {LabelsClass, ListFileLine} from './labels';
 import {LabelParserBase, LabelType} from './labelparserbase';
-//import {ListFileLine} from './labels';
-//import {readFileSync} from 'fs';
 
 
 /**
