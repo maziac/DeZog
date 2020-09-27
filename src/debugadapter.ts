@@ -646,8 +646,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args lines=array with line numbers. source.path=the file path
 	 */
 	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
-
-		const path=<string>args.source.path;
+		const path=UnifiedPath.getUnifiedPath(<string>args.source.path);
 
 		// convert breakpoints
 		const givenBps=args.breakpoints||[];
@@ -742,9 +741,11 @@ export class DebugSessionClass extends DebugSession {
 	private createSource(filePath: string): Source|undefined {
 		if (filePath.length==0)
 			return undefined;
-		const fname=UnifiedPath.basename(filePath);
-		const debPath=this.convertDebuggerPathToClient(filePath);
-		return new Source(fname, debPath, undefined, undefined, undefined);
+		const uFilePath=UnifiedPath.getUnifiedPath(filePath);
+		const fname=UnifiedPath.basename(uFilePath);
+		const debPath=this.convertDebuggerPathToClient(uFilePath);
+		const uDebPath=UnifiedPath.getUnifiedPath(debPath);
+		return new Source(fname, uDebPath, undefined, undefined, undefined);
 	}
 
 

@@ -773,7 +773,7 @@ export class Utility {
 	 */
 	public static setRootPath(rootPath: string) {
 		Utility.assert(rootPath);
-		(Utility.rootPath as any)=rootPath;
+		(Utility.rootPath as any)=UnifiedPath.getUnifiedPath(rootPath);
 	}
 
 
