@@ -439,15 +439,18 @@ export class LabelParserBase {
 
 	/**
 	 * Adds the address to the list file array.
+	 * If size is 0 nothing happens.
+	 * Should be called for code only, i.e. not for data (DEFB, DEFW, DEFS etc.).
+	 * Or for data the size parameter should be 0.
 	 * @param address The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
 	 * Has to be 1 if address is undefined.
 	 */
 	protected addAddressLine(address: number, size: number) {
-		//if (size==0)
-		//	return;
-		this.currentFileEntry.addr=address;
-		this.currentFileEntry.size=size;
+		if (size>0) {
+			this.currentFileEntry.addr=address;
+			this.currentFileEntry.size=size;
+		}
 	}
 
 

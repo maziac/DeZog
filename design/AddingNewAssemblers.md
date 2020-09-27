@@ -189,6 +189,15 @@ Please test parsing/debugging on macOs (or Linux) and on Windows.
 Reason is the different line endings used in both. macOs/Linux uses "\\n" whereas Windows uses "\\r\\n".
 Sometimes this generates trouble.
 
+Internally DeZog will use only forward slashes as forward slashes are correctly interpreted by Windows as well.
+However the outside world (vscode, launch.json, the asm-files) might use Windows backslash convention.
+Therefore every path coming from those should be converted first. This is done with the ```UnifiedPath.getUnifiedPath``` function.
+For include file names this already happens if you use the ```includeStart```method.
+Communication with vscode is also handled.
+The only thing you still need to take care are the paths in the launch.json file.
+Make sure to convert all of the paths (e.g. 'path') in your assembler settings with the ```getUnifiedPath``` function.
+
+
 
 # Don't forget the documentation
 

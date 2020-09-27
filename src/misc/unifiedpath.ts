@@ -45,7 +45,7 @@ export class UnifiedPath {
 	 * Same as getUnifiedPath but works on an array of strings.
 	 * @param fpaths Array of path strings.
 	 * @return An array of path strings but all '\' converted to '/'.
-	 * MAy return undefined if fpaths is undefined.
+	 * May return undefined if fpaths is undefined.
 	 */
 	public static getUnifiedPathArray(fpaths: string[]): string[] {
 		if (!fpaths)

@@ -14,7 +14,10 @@ export class Z80asmLabelParser extends LabelParserBase {
 	protected labelRegEx=/^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
 
 	// Find the bytes after the address
-	protected matchBytesRegEx=/^[0-9a-f]+((\s[0-9a-f][0-9a-f])+)/i;
+	protected matchBytesRegEx=/^[0-9a-f]+((\s[\.0-9a-f]+)+)/i;
+
+	// To check the keyword after the bytes above. I.e. to check for data or instruction (on a trimmed string).
+	protected matchDefbRegEx=/^(\w+:\s*)?(def[bmws]|d[bmws])/i;
 
 	// RegEx to find the end of a macro
 	protected matchMacroEndRegEx=/^# End of macro\s+(.*)/;
@@ -78,21 +81,30 @@ export class Z80asmLabelParser extends LabelParserBase {
 			}
 
 			// Search for bytes after the address:
-			//line = "80F1 D5 C5";
+			// line = "80F1 D5 C5";
+			// or line = "80F1 .. D5 C5";
 			const matchBytes=this.matchBytesRegEx.exec(line);
 			// Count how many bytes are included in the line.
 			if (matchBytes) {
-				const bytes=matchBytes[1].trim();
-				const lenBytes=bytes.length;
-				countBytes=0;
-				for (let k=0; k<lenBytes; k++) {
-					// Count all characters (chars are hex, so 2 characters equal to 1 byte)
-					if (bytes.charCodeAt(k)>32)
-						countBytes++;
+				// Now check if the bytes have been data.
+				const len=matchBytes[0].length;
+				const remLine=line.substr(len).trimLeft();
+				const matchDefb=this.matchDefbRegEx.exec(remLine);
+				if (!matchDefb) {
+					// If not data then assume that it is code
+					const bytes=matchBytes[1].trim();
+					const lenBytes=bytes.length;
+					for (let k=0; k<lenBytes; k++) {
+						// Count all characters (chars are hex, so 2 characters equal to 1 byte)
+						if (bytes.charCodeAt(k)>32)
+							countBytes++;
+					}
+					// 2 characters = 1 byte
+					countBytes/=2;
 				}
-				// 2 characters = 1 byte
-				countBytes/=2;
 			}
+
+
 		}
 
 		// Store address (or several addresses for one line).
