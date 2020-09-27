@@ -17,7 +17,8 @@ export class Z80asmLabelParser extends LabelParserBase {
 	protected matchBytesRegEx=/^[0-9a-f]+((\s[\.0-9a-f]+)+)/i;
 
 	// To check the keyword after the bytes above. I.e. to check for data or instruction (on a trimmed string).
-	protected matchDefbRegEx=/^(\w+:\s*)?(def[bmws]|d[bmws])/i;
+	// Note: This would result in wrong decisions for the NEXTREG macros which are made out of defb.
+	//protected matchDefbRegEx=/^(\w+:\s*)?(def[bmws]|d[bmws])/i;
 
 	// RegEx to find the end of a macro
 	protected matchMacroEndRegEx=/^# End of macro\s+(.*)/;
@@ -86,22 +87,26 @@ export class Z80asmLabelParser extends LabelParserBase {
 			const matchBytes=this.matchBytesRegEx.exec(line);
 			// Count how many bytes are included in the line.
 			if (matchBytes) {
+				/*
 				// Now check if the bytes have been data.
 				const len=matchBytes[0].length;
 				const remLine=line.substr(len).trimLeft();
 				const matchDefb=this.matchDefbRegEx.exec(remLine);
 				if (!matchDefb) {
 					// If not data then assume that it is code
-					const bytes=matchBytes[1].trim();
-					const lenBytes=bytes.length;
-					for (let k=0; k<lenBytes; k++) {
-						// Count all characters (chars are hex, so 2 characters equal to 1 byte)
-						if (bytes.charCodeAt(k)>32)
-							countBytes++;
-					}
-					// 2 characters = 1 byte
-					countBytes/=2;
+				*/
+
+				const bytes=matchBytes[1].trim();
+				const lenBytes=bytes.length;
+				for (let k=0; k<lenBytes; k++) {
+					// Count all characters (chars are hex, so 2 characters equal to 1 byte)
+					if (bytes.charCodeAt(k)>32)
+						countBytes++;
 				}
+				// 2 characters = 1 byte
+				countBytes/=2;
+
+				//}
 			}
 
 
