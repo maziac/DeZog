@@ -605,7 +605,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns undefined or the condition text.
 	 * If the breakpoint condition is not true: undefined is returned.
 	 * If the condition is true:
-	 * - If a log is present the logtext is evaluated and a 'log' with the text will be emitted. 'undefined' is returned.
+	 * - If a log is present the logtext is evaluated and a 'debug_console' with the text will be emitted. 'undefined' is returned.
 	 * - If no log is present the condition text is returned.
 	 * All in all:
 	 * If undefined is returned no break should be done.
@@ -639,7 +639,7 @@ export class DzrpRemote extends RemoteBase {
 				// Loop over all matching breakpoints (normally only one, but could be 2 or more. E.g. if manual BP is at the same point as a LOGPOINT)
 				for (const bp of bps) {
 					// Check for condition
-					const {condition: cond, log}=this.checkConditionAndLog(bp);
+					let {condition: cond, log}=this.checkConditionAndLog(bp);
 					//condition=cond;
 
 					// Emit log?
@@ -647,9 +647,9 @@ export class DzrpRemote extends RemoteBase {
 						// Convert
 						const evalLog=await Utility.evalLogString(log);
 						// Print
-						this.emit('log', evalLog);
+						this.emit('debug_console', "Log: "+evalLog);
 						// Don't eval condition again
-						//condition=undefined;
+						cond=undefined;
 					}
 
 					if (cond!=undefined) {
@@ -788,7 +788,7 @@ export class DzrpRemote extends RemoteBase {
 					// Clear registers
 					this.clearCallStack();
 					// return
-					resolve({instruction, breakReasonString});
+					resolve({instruction, breakReasonString}); // TODO: Remove instruction
 				}
 			};
 
@@ -799,6 +799,7 @@ export class DzrpRemote extends RemoteBase {
 			const pc=this.getPC();
 			const opCodeDescription=opcode.disassemble();
 			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
+			this.emit('debug_console', instruction);
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
 			// Send command to 'continue'

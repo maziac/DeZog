@@ -298,9 +298,9 @@ export class Z80UnitTests {
 				vscode.window.showWarningMessage(message);
 			});
 
-			Remote.on('log', message => {
-				// Show the log (from the socket/ZEsarUX) in the debug console
-				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+			Remote.on('debug_console', message => {
+				// Show the message in the debug console
+				vscode.debug.activeDebugConsole.appendLine(message);
 
 			});
 

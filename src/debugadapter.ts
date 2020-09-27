@@ -89,11 +89,13 @@ export class DebugSessionClass extends DebugSession {
 	protected proccessingSteppingRequest=false;
 
 
-	/// This is saved text that could notbe printed yet because
+	/// This is saved text that could not be printed yet because
 	// the debug console was not there.
-	// It is printed a sson as the console appears.
-	protected debugConsoleSavedText;
+	// It is printed a soon as the console appears.
+	protected debugConsoleSavedText: string;
 
+	/// The text written to console on event 'debug_console' is indented by this amount.
+	protected debugConsoleIndentation="  ";
 
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
@@ -540,9 +542,9 @@ export class DebugSessionClass extends DebugSession {
 			this.showWarning(message);
 		});
 
-		Remote.on('log', message => {
-			// Show the log (from the socket/ZEsarUX) in the debug console
-			this.debugConsoleAppendLine("Log: "+message);
+		Remote.on('debug_console', message => {
+			// Show the message in the debug console
+			this.debugConsoleIndentedText(message);
 		});
 
 		Remote.once('error', err => {
@@ -1171,7 +1173,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Check for output.
 				if (breakReason) {
-					this.debugConsoleAppendLine(breakReason);
+					this.debugConsoleIndentedText(breakReason);
 					// Show break reason
 					this.decorateBreak(breakReason);
 				}
@@ -1207,7 +1209,7 @@ export class DebugSessionClass extends DebugSession {
 
 		if (breakReasonString) {
 			// Send output event to inform the user about the reason
-			this.debugConsoleAppendLine(breakReasonString);
+			this.debugConsoleIndentedText(breakReasonString);
 
 			// Use reason for break-decoration.
 			this.decorateBreak(breakReasonString);
@@ -1285,7 +1287,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Check for output.
 			if (breakReason) {
-				this.debugConsoleAppendLine(breakReason);
+				this.debugConsoleIndentedText(breakReason);
 				// Show break reason
 				this.decorateBreak(breakReason);
 			}
@@ -1314,7 +1316,7 @@ export class DebugSessionClass extends DebugSession {
 
 		if (result.breakReasonString) {
 			// Output a possible problem
-			this.debugConsoleAppendLine(result.breakReasonString);
+			this.debugConsoleIndentedText(result.breakReasonString);
 			// Show break reason
 			this.decorateBreak(result.breakReasonString);
 		}
@@ -1484,7 +1486,7 @@ export class DebugSessionClass extends DebugSession {
 			// Check for output.
 			if (breakReason) {
 				// Show break reason
-				this.debugConsoleAppendLine(breakReason);
+				this.debugConsoleIndentedText(breakReason);
 				this.decorateBreak(breakReason);
 			}
 
@@ -1511,6 +1513,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Assumes that something like "StepInto" has been printed before.
 	 * @param disasm The corresponding disassembly.
 	 */
+	// TODO: Remove disasm
 	protected async endStepInfo(disasm?: string): Promise<void> {
 		// Get used T-states
 		const tStates=await Remote.getTstates();
@@ -1540,6 +1543,10 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
+		if (tStatesText)
+			this.debugConsoleIndentedText(tStatesText);
+
+		/*
 		// Trim
 		if (disasm)
 			disasm=disasm.trim();
@@ -1554,6 +1561,7 @@ export class DebugSessionClass extends DebugSession {
 
 		if(output)
 			this.debugConsoleAppendLine(output);
+		*/
 	}
 
 
@@ -1593,7 +1601,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Check for output.
 			if (result.breakReasonString) {
-				this.debugConsoleAppendLine(result.breakReasonString);
+				this.debugConsoleIndentedText(result.breakReasonString);
 				// Show break reason
 				this.decorateBreak(result.breakReasonString);
 			}
@@ -1633,7 +1641,7 @@ export class DebugSessionClass extends DebugSession {
 
 			if (breakReasonString) {
 				// Output a possible problem (end of log reached)
-				this.debugConsoleAppendLine(breakReasonString);
+				this.debugConsoleIndentedText(breakReasonString);
 				// Show break reason
 				this.decorateBreak(breakReasonString);
 			}
@@ -1666,7 +1674,7 @@ export class DebugSessionClass extends DebugSession {
 
 			if (result.breakReasonString) {
 				// Output a possible problem (end of log reached)
-				this.debugConsoleAppendLine(result.breakReasonString);
+				this.debugConsoleIndentedText(result.breakReasonString);
 				// Show break reason
 				this.decorateBreak(result.breakReasonString);
 			}
@@ -2611,7 +2619,15 @@ Notes:
 
 
 	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
+	}
 
+
+	/**
+	 * Output indented text to the console.
+	 * @param text The output string.
+	 */
+	protected debugConsoleIndentedText(text: string) {
+		this.debugConsoleAppendLine(this.debugConsoleIndentation+text);
 	}
 }
 

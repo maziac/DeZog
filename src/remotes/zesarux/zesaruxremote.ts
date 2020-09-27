@@ -108,7 +108,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 		zSocket.on('log', msg => {
 			// A (breakpoint) log message from Zesarux was received
-			this.emit('log', msg);
+			this.emit('debug_console', "Log: "+msg);
 		});
 
 		zSocket.on('warning', msg => {
