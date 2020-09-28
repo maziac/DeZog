@@ -323,6 +323,7 @@ The following table gives an overview.
 |-------------------------|--------------------|---------|------------|----------|----------|
 | State                   | stable             | stable  | stable     | stable   | stable   |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
+| Break reason output     | yes                | no      | yes        | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | no       | no       |
 | Asserts                 | yes                | no      | yes        | yes/slow | yes/slow |

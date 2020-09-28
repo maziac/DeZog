@@ -1470,6 +1470,13 @@ export class DebugSessionClass extends DebugSession {
 			if (i>1)
 				instr=undefined;
 
+			// Check for output.
+			if (breakReason) {
+				// Show break reason
+				this.debugConsoleIndentedText(breakReason);
+				this.decorateBreak(breakReason);
+			}
+
 			// Print instruction
 			if (stepBackMode) {
 				if (instr)
@@ -1480,13 +1487,6 @@ export class DebugSessionClass extends DebugSession {
 				await this.endStepInfo(instr);
 				// Update memory dump etc.
 				await this.update({step: true});
-			}
-
-			// Check for output.
-			if (breakReason) {
-				// Show break reason
-				this.debugConsoleIndentedText(breakReason);
-				this.decorateBreak(breakReason);
 			}
 
 			// Send event
@@ -1516,12 +1516,12 @@ export class DebugSessionClass extends DebugSession {
 	protected async endStepInfo(disasm?: string): Promise<void> {
 		// Get used T-states
 		const tStates=await Remote.getTstates();
-		// Get frequency
-		const cpuFreq=await Remote.getCpuFrequency();
 		// Display T-states and time
 		let tStatesText;
 		if (tStates) {
 			tStatesText='T-States: '+tStates;
+			// Get frequency
+			const cpuFreq=await Remote.getCpuFrequency();
 			if (cpuFreq) {
 				// Time
 				let time=tStates/cpuFreq;
