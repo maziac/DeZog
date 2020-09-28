@@ -150,7 +150,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 	/**
 	 * Parses one line for current file name and line number in this file.
-	 * The function calls.... TODO
 	 * @param line The current analyzed line of the listFile array.
 	 */
 	protected parseFileAndLineNumber(line: string) {

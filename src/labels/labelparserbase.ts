@@ -509,10 +509,6 @@ export class LabelParserBase {
 	 */
 	protected setLineNumber(lineNr: number) {
 		this.currentFileEntry.lineNr=lineNr;
-		const index=this.includeFileStack.length-1;
-		 // TODO: Remove below. Is done anyway in parseallfiles...
-		if (index>=0)
-			this.currentFileEntry.fileName=this.includeFileStack[index].fileName;
 	}
 
 }
