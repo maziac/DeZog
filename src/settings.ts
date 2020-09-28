@@ -15,6 +15,9 @@ export interface AsmConfigBase {
 	/// The path(s) here are relative to the 'rootFolder'.
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
 	srcDirs: Array<string>;
+
+	// TODO: text
+	excludeFiles: Array<string>;
 }
 
 
@@ -400,9 +403,11 @@ export class Settings {
 				// ListFile structure
 				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
 				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
-					srcDirs: fpSrcDirs||[""]
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[]
 				};
 				return file;
 			});
@@ -413,9 +418,12 @@ export class Settings {
 			Settings.launch.z80asm=Settings.launch.z80asm.map(fp => {
 				// ListFile structure
 				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
-					srcDirs: fp.srcDirs||[""]
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[]
 				};
 				return file;
 			});
@@ -426,25 +434,23 @@ export class Settings {
 			Settings.launch.z88dk=Settings.launch.z88dk.map(fp => {
 				// ListFile structure
 				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const fpMapFile=UnifiedPath.getUnifiedPath(fp.mapFile);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
+				const fpMainFile=UnifiedPath.getUnifiedPath(fp.mainFile);
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
-					mainFile: fp.mainFile,
-					srcDirs: fp.srcDirs||[""],
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[],
+					mainFile: fpMainFile||"",
 					mapFile: Utility.getAbsFilePath(fpMapFile||"")
 				};
 				return file;
 			});
 		}
 
-		/*
-		if(Settings.launch.labelsFiles)
-			Settings.launch.labelsFiles = Settings.launch.labelsFiles.map((fp) => Utility.getAbsFilePath(fp));
-		else
-			Settings.launch.labelsFiles = [];
-		*/
 
-		if(!Settings.launch.topOfStack)
+		if (!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = '0x10000';
 		if(unitTests)
 			Settings.launch.topOfStack = 'UNITTEST_STACK';

@@ -3,6 +3,7 @@ import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import {SourceFileEntry, ListFileLine} from './labels';
 import {AsmConfigBase} from '../settings';
+import * as minimatch from 'minimatch';
 
 
 /// Different label types.
@@ -70,6 +71,8 @@ export class LabelParserBase {
 	/// The stack of include files. For parsing filenames and line numbers.
 	protected includeFileStack: Array<{fileName: string, lineNr: number}>;
 
+	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
+	protected excludedFileStackIndex: number;
 
 	// Constructor.
 	public constructor(
@@ -102,6 +105,7 @@ export class LabelParserBase {
 	public loadAsmListFile(config: AsmConfigBase) {
 		this.config=config;
 		// Init (in case of several list files)
+		this.excludedFileStackIndex=-1;
 		this.includeFileStack=new Array<{fileName: string, lineNr: number}>();
 		this.listFile=new Array<ListFileLine>();
 		this.modulePrefixStack=new Array<string>();
@@ -227,8 +231,26 @@ export class LabelParserBase {
 			if (index<0)
 				continue;	// No main file found so far
 				//throw Error("File parsing error: no main file.");
-			entry.fileName=this.includeFileStack[index].fileName;
+			// Associate with right file
+			this.associateSourceFileName();
 		}
+	}
+
+
+	/**
+	 * Will check if the name is excluded (excludedFiles).
+	 * If so the source filename is not set to the source file name so that it
+	 * is "" and will be ignored.
+	 */
+	protected associateSourceFileName() {
+		let fName="";
+		if (this.excludedFileStackIndex==-1) {
+			// Not excluded
+			const index=this.includeFileStack.length-1;
+			if(index>=0)	// safety check
+				fName=this.includeFileStack[index].fileName;
+		}
+		this.currentFileEntry.fileName=fName;
 	}
 
 
@@ -486,6 +508,18 @@ export class LabelParserBase {
 		}
 
 		this.includeFileStack.push({fileName, lineNr: 0});
+
+		// Now check if we need to exclude it from file/line <-> address relationship.
+		if (this.excludedFileStackIndex==-1) {
+			// Check if filename is one of the excluded file names.
+			for (const exclGlob of this.config.excludeFiles) {
+				const found=minimatch(fileName, exclGlob);
+				if (found) {
+					this.excludedFileStackIndex=index+1;
+					break;
+				}
+			}
+		}
 	}
 
 
@@ -497,11 +531,18 @@ export class LabelParserBase {
 			throw Error("File parsing error: include file stacking.");
 		// Remove last include file
 		this.includeFileStack.pop();
+
+		// Check if excluding files ended
+		const index=this.includeFileStack.length;
+		if (this.excludedFileStackIndex==index) {
+			// Stop excluding
+			this.excludedFileStackIndex=-1;
+		}
 	}
 
 
 	/**
-	 * Called by the parser to set the line number parsed from teh list file.
+	 * Called by the parser to set the line number parsed from the list file.
 	 * This is the line number inside an include file.
 	 * Should be called before 'includeStart' and 'includeEnd'.
 	 * But is not so important as there is no assembler code in these lines.

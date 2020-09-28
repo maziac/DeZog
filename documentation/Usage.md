@@ -69,6 +69,7 @@ A typical configuration looks like this:
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface.
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
+    - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
 - sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
@@ -165,10 +166,12 @@ Now depending on the value of 'srcDirs'
 
 **sjasmplus configuration:**
 
+E.g.
 ~~~
 "sjasmplus": [{
     "path": "z80-sample-program.list",
-    "srcDirs": [""]
+    "srcDirs": [""],
+    "excludefiles": [ "some_folder/*" ]
     }]
 ~~~
 
@@ -178,6 +181,7 @@ Now depending on the value of 'srcDirs'
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in subfolders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
+- excludeFiles (default=[]): an array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shoen. If that is the wrong one you can exclude it here. In the example above all files from "some_folder" are excluded.
 
 Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 

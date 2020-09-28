@@ -1,6 +1,5 @@
 import {Utility} from '../misc/utility';
 import {LabelParserBase} from './labelparserbase';
-import {ListFileLine} from './labels';
 
 
 /**
@@ -207,9 +206,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 			this.currentFileEntry=entry;
 			this.parseFileAndLineNumber(line);
 			// Associate with right file
-			const index=this.includeFileStack.length-1;
-			if (index>=0)
-				entry.fileName=this.includeFileStack[index].fileName;
+			this.associateSourceFileName();
 		}
 
 		// Now correct all line numbers (so far the numbers are negative. All numbers need to be added with the max number of lines for that file.)
