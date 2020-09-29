@@ -799,7 +799,7 @@ export class DzrpRemote extends RemoteBase {
 			const pc=this.getPC();
 			const opCodeDescription=opcode.disassemble();
 			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
-			this.emit('debug_console', instruction);
+			//this.emit('debug_console', instruction);
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
 			// Send command to 'continue'

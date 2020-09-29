@@ -1409,8 +1409,8 @@ export class DebugSessionClass extends DebugSession {
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
 			Remote.getRegisters();
-			const prevPc=Remote.getPC();
-			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
+			let pc=Remote.getPC();
+			const prevFileLoc=Labels.getFileAndLineForAddress(pc);
 			let i=0;
 			let instr;
 			let breakReason;
@@ -1435,6 +1435,11 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 				else {
+					// Show instruction
+					const data=await Remote.readMemoryDump(pc, 4);
+					const disInstr=DisassemblyClass.getInstruction(pc, data);
+					const pcStr=Utility.getHexString(pc, 4);
+					this.debugConsoleIndentedText(pcStr+' '+disInstr);
 					// Normal Step-Over
 					const result=await Remote.stepOver();
 					instr=result.instruction;
@@ -1455,8 +1460,8 @@ export class DebugSessionClass extends DebugSession {
 
 				// Get new file/line location
 				await Remote.getRegisters();
-				const nextPc=Remote.getPC();
-				const nextFileLoc=Labels.getFileAndLineForAddress(nextPc);
+				pc=Remote.getPC();
+				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
 				// Compare with start location
 				if (prevFileLoc.fileName=='')
 					break;

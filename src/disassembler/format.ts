@@ -113,7 +113,6 @@ export class Format {
 
 	/**
 	 * Formats a disassembly string for output.
-	 * @param address The address (for conditional output of the opcode byte values)
 	 * @param memory The Memory to disassemble. For the opcodes. If undefined no opcodes will be printed.
 	 * @param opcodesLowerCase true if opcodes should be printed lower case.
 	 * @param clmnsAddress Number of digits used for the address. If 0 no address is printed.
