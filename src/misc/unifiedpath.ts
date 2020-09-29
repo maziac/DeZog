@@ -22,10 +22,21 @@ export class UnifiedPath {
 	// Just pass these functions:
 	public static basename=redirectedPath.basename;
 	public static dirname=redirectedPath.dirname;
-	public static isAbsolute=redirectedPath.isAbsolute;
 	public static join=redirectedPath.join;
 
+	/**
+	 * Needs to check posix and windows.
+	 * Required because a path could now start with "c:/..." instead of "/".
+	 */
+	public static isAbsolute(path: string): boolean {
+		if(OrigPath.posix.isAbsolute(path))
+			return true;
+		if(OrigPath.win32.isAbsolute(path))
+			return true;
+		return false;
+	}
 
+	
 	/**
 	 * Changes all Windows backslashes "\" into forward slashes "/".
 	 * I.e. it creates a unified path.
