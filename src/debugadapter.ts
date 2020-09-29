@@ -1415,6 +1415,8 @@ export class DebugSessionClass extends DebugSession {
 			let instr;
 			let breakReason;
 			const timeWait=new TimeWait(500, 200, 100);
+			let instructionCount=0;
+			const maxInstructionCount=10;
 			while (true) {
 				i++;
 
@@ -1436,10 +1438,21 @@ export class DebugSessionClass extends DebugSession {
 				}
 				else {
 					// Show instruction
-					const data=await Remote.readMemoryDump(pc, 4);
-					const disInstr=DisassemblyClass.getInstruction(pc, data);
-					const pcStr=Utility.getHexString(pc, 4);
-					this.debugConsoleIndentedText(pcStr+' '+disInstr);
+					instructionCount++;
+					if (instructionCount<=maxInstructionCount+1) {
+						const pcStr=Utility.getHexString(pc, 4);
+						if (instructionCount<=maxInstructionCount) {
+							// Disassemble instruction
+							const data=await Remote.readMemoryDump(pc, 4);
+							const disInstr=DisassemblyClass.getInstruction(pc, data);
+							this.debugConsoleIndentedText(pcStr+' '+disInstr);
+						}
+						else {
+							// Just print dots (for the last print).
+							// If there are to many instruction, e.g. in a macro, they are not shown anymore.
+							this.debugConsoleIndentedText(pcStr+' ...');
+						}
+					}
 					// Normal Step-Over
 					const result=await Remote.stepOver();
 					instr=result.instruction;
