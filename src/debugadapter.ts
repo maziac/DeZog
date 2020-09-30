@@ -1259,7 +1259,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			// Output
-			this.startStepInfo('Continue-reverse', true);
+			await this.startStepInfo('Continue-reverse', true);
 
 			// Reverse continue
 			const breakReason=await StepHistory.reverseContinue();
@@ -1587,7 +1587,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			this.startStepInfo('Step-into');
+			await this.startStepInfo('Step-into');
 
 			// Check for reverse debugging.
 			let result;
@@ -1637,7 +1637,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			this.startStepInfo('Step-out');
+			await this.startStepInfo('Step-out');
 
 			// Check for reverse debugging.
 			let breakReasonString;
@@ -1682,7 +1682,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			this.startStepInfo('Step-back', true);
+			await this.startStepInfo('Step-back', true);
 
 			// Step back
 			const result=await StepHistory.stepBack();
