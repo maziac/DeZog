@@ -1115,6 +1115,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Checks if lite history is used.
 	 * If so it stores the history.
 	 */
+	// TODO: Move to startStepInfo
 	protected async checkAndStoreLiteHistory(): Promise<void> {
 		if (!(CpuHistory as any)) {
 			// Store as (lite step history)
@@ -1165,8 +1166,7 @@ export class DebugSessionClass extends DebugSession {
 		this.handleRequest(response, async () => {
 			// Check for reverse debugging.
 			if (StepHistory.isInStepBackMode()) {
-
-				this.debugConsoleAppendLine('Continue');
+				await this.startStepInfo('Continue');
 				// Continue
 				const breakReason=StepHistory.continue();
 
@@ -1203,9 +1203,7 @@ export class DebugSessionClass extends DebugSession {
 		const breakReasonString=await Remote.continue();
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
-		// Display T-states and time
-		await this.endStepInfo();
-
+		// Display break reason
 		if (breakReasonString) {
 			// Send output event to inform the user about the reason
 			this.debugConsoleIndentedText(breakReasonString);
@@ -1213,6 +1211,9 @@ export class DebugSessionClass extends DebugSession {
 			// Use reason for break-decoration.
 			this.decorateBreak(breakReasonString);
 		}
+
+		// Display T-states and time
+		await this.endStepInfo();
 
 		// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
@@ -1279,7 +1280,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			// Output
-			this.debugConsoleAppendLine('Continue reverse');
+			this.startStepInfo('Continue-reverse', true);
 
 			// Reverse continue
 			const breakReason=await StepHistory.reverseContinue();
@@ -1305,20 +1306,24 @@ export class DebugSessionClass extends DebugSession {
 
 		// Normal Step-Over
 		Z80Registers.clearCache();
-		const result=await Remote.stepOver();
+		//const result=
+		await Remote.stepOver();
 
-		// Display T-states and time
-		await this.endStepInfo(result.instruction);
-
-		// Update memory dump etc.
-		await this.update({step: true});
-
+		/*
+		// Print break reason
 		if (result.breakReasonString) {
 			// Output a possible problem
 			this.debugConsoleIndentedText(result.breakReasonString);
 			// Show break reason
 			this.decorateBreak(result.breakReasonString);
 		}
+		*/
+
+		// Display T-states and time
+		//await this.endStepInfo();
+
+		// Update memory dump etc.
+		await this.update({step: true});
 
 		// Send event
 		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
@@ -1389,46 +1394,40 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
 		this.handleRequest(response, async () => {
+
+			await this.startStepInfo('Step-over');
+
 			// T-states info and lite history
 			const stepBackMode=StepHistory.isInStepBackMode();
-			if (stepBackMode) {
-				// Check if Lite history then print
-				if (!(CpuHistory as any))
-					this.debugConsoleAppend('Lite ');
-			}
-			else {
-				await this.startStepInfo();
+			if (!stepBackMode) {
 				// Check if lite history need to be stored.
 				this.checkAndStoreLiteHistory();
 			}
-
-			// Print
-			this.debugConsoleAppendLine('Step-over');
 
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
 			Remote.getRegisters();
-			let pc=Remote.getPC();
-			const prevFileLoc=Labels.getFileAndLineForAddress(pc);
+			const prevPc=Remote.getPC();
+			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
 			let i=0;
-			let instr;
 			let breakReason;
 			const timeWait=new TimeWait(500, 200, 100);
-			let instructionCount=0;
-			const maxInstructionCount=10;
 			while (true) {
 				i++;
 
 				// Give vscode some time for a break
 				await timeWait.waitAtInterval();
 
+				// Print instruction
+				const instr=await this.getCurrentInstruction(i);
+				if (instr)
+					this.debugConsoleIndentedText(instr);
+
 				// Check for reverse debugging.
 				if (stepBackMode) {
 					// Stepover
 					const {instruction, breakReasonString}=StepHistory.stepOver();
-					instr=instruction;
-
 					// Check for output.
 					if (breakReasonString) {
 						breakReason=breakReasonString;
@@ -1437,25 +1436,8 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 				else {
-					// Show instruction
-					instructionCount++;
-					if (instructionCount<=maxInstructionCount+1) {
-						const pcStr=Utility.getHexString(pc, 4);
-						if (instructionCount<=maxInstructionCount) {
-							// Disassemble instruction
-							const data=await Remote.readMemoryDump(pc, 4);
-							const disInstr=DisassemblyClass.getInstruction(pc, data);
-							this.debugConsoleIndentedText(pcStr+' '+disInstr);
-						}
-						else {
-							// Just print dots (for the last print).
-							// If there are to many instruction, e.g. in a macro, they are not shown anymore.
-							this.debugConsoleIndentedText(pcStr+' ...');
-						}
-					}
 					// Normal Step-Over
 					const result=await Remote.stepOver();
-					instr=result.instruction;
 					// Check for output.
 					if (result.breakReasonString) {
 						breakReason=result.breakReasonString;
@@ -1473,7 +1455,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Get new file/line location
 				await Remote.getRegisters();
-				pc=Remote.getPC();
+				const pc=Remote.getPC();
 				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
 				// Compare with start location
 				if (prevFileLoc.fileName=='')
@@ -1484,10 +1466,6 @@ export class DebugSessionClass extends DebugSession {
 					break;
 			}
 
-			// Multiple instructions
-			if (i>1)
-				instr=undefined;
-
 			// Check for output.
 			if (breakReason) {
 				// Show break reason
@@ -1495,14 +1473,10 @@ export class DebugSessionClass extends DebugSession {
 				this.decorateBreak(breakReason);
 			}
 
-			// Print instruction
-			if (stepBackMode) {
-				if (instr)
-					this.debugConsoleAppendLine(instr);
-			}
-			else {
+			// Print T-states
+			if (!stepBackMode) {
 				// Display T-states and time
-				await this.endStepInfo(instr);
+				await this.endStepInfo();
 				// Update memory dump etc.
 				await this.update({step: true});
 			}
@@ -1516,22 +1490,36 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Starts to print the step info. Use in conjunction with 'endStepInfo'.
 	 * Resets the t-states.
-	 * @param mainText E.g. "StepInto"
+	 * Print text to debug console.
+	 * Adds prefix "Historical " if in reverse debug mode or alwaysHistorical is true.
+	 * Adds suffix " (Lite)" if no true stepping is done.
+	 * @param text E.g. "Step-into"
+	 * @param alwaysHistorical Prints prefix "Historic " even if not (yet) in back step mode.
 	 */
-	protected async startStepInfo(mainText?: string): Promise<void> {
-		if(mainText)
-			this.debugConsoleAppendLine(mainText);
+	// TODO: Remove?
+	protected async startStepInfo(text?: string, alwaysHistorical=false): Promise<void> {
+		// Print text
+		const stepBackMode=StepHistory.isInStepBackMode();
+		if (text) {
+			if (stepBackMode || alwaysHistorical) {
+				text='Historical '+text;
+				if (!(CpuHistory as any))
+					text+=' (Lite)';
+			}
+			this.debugConsoleAppendLine(text);
+		}
 		// Reset t-states counter
-		await Remote.resetTstates();
+		if (!stepBackMode)
+			await Remote.resetTstates();
 	}
+
 
 	/**
 	 * Prints a text, the disassembly and the used T-states and time to the debug console.
 	 * Assumes that something like "StepInto" has been printed before.
 	 * @param disasm The corresponding disassembly.
 	 */
-	// TODO: Remove disasm
-	protected async endStepInfo(disasm?: string): Promise<void> {
+	protected async endStepInfo(): Promise<void> {
 		// Get used T-states
 		const tStates=await Remote.getTstates();
 		// Display T-states and time
@@ -1562,23 +1550,60 @@ export class DebugSessionClass extends DebugSession {
 
 		if (tStatesText)
 			this.debugConsoleIndentedText(tStatesText);
+	}
 
-		/*
-		// Trim
-		if (disasm)
-			disasm=disasm.trim();
-		// Add T-States
-		let output=disasm;
-		if (tStatesText) {
-			if (output)
-				output+='\t; '+tStatesText;
-			else
-				output=tStatesText;
+
+	/**
+	 * Returns the address and current instruction (at PC) as string.
+	 * Works in step-back and in normal mode.
+	 * Note: Does not retrieve the current PC from the remote.
+	 * @param count Optional. If count is bigger than e.g. 10 only "..." is returned.
+	 * If even bigger, undefined is returned.
+	 * @returns E.g. "8000 LD A,6"
+	 */
+	protected async getCurrentInstruction(count=0): Promise<string|undefined> {
+		const maxInstructionCount=10;
+		const pc=Remote.getPC();
+		const pcStr=Utility.getHexString(pc, 4);
+		// Check if count too high
+		if (count==maxInstructionCount)
+			return pcStr+' ...';
+		if (count>maxInstructionCount)
+			return undefined;
+
+		// Get instruction
+		let disInstr;
+		const stepBackMode=StepHistory.isInStepBackMode();
+		if (stepBackMode) {
+			// Reverse debug mode
+			disInstr=StepHistory.getCurrentInstruction();
 		}
+		else {
+			// Normal mode: Disassemble instruction
+			const data=await Remote.readMemoryDump(pc, 4);
+			disInstr=DisassemblyClass.getInstruction(pc, data);
+		}
+		// Construct result string
+		let result;
+		if (disInstr)
+			result=pcStr+" "+disInstr;
+		return result;
+	}
 
-		if(output)
-			this.debugConsoleAppendLine(output);
-		*/
+
+	/**
+	 * Print text to debug console.
+	 * Add prefix "Historical " if in reverse debug mode.
+	 * Add suffix " (Lite)" if no true stepping is done.
+	 */
+	// TODO: REMOVE
+	protected debugConsoleStepText(text: string) {
+		if (StepHistory.isInStepBackMode()) {
+			text='Historical '+text;
+			if (!(CpuHistory as any))
+				text+=' (Lite)';
+		}
+		this.debugConsoleAppendLine(text);
 	}
 
 
@@ -1589,31 +1614,29 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
 		this.handleRequest(response, async () => {
+
+			this.startStepInfo('Step-into');
+
 			// Check for reverse debugging.
 			let result;
-			if (StepHistory.isInStepBackMode()) {
-
+			const stepBackMode=StepHistory.isInStepBackMode();
+			if (stepBackMode) {
 				// StepInto
 				result=StepHistory.stepInto();
 				// Print
-				let text='Step-into';
 				if (result.instruction)
-					text+=': '+result.instruction;
-				this.debugConsoleAppendLine(text);
-
+					this.debugConsoleAppendLine(result.instruction);
 			}
 			else {
 				// Step-Into
-				await this.startStepInfo('Step-into');
 				// Check if lite history need to be stored.
 				this.checkAndStoreLiteHistory();
 				StepHistory.clear();
+				// Show instruction
+				const disInstr=(await this.getCurrentInstruction())!;
+				this.debugConsoleIndentedText(disInstr);
+				// Step into
 				result=await Remote.stepInto();
-				// Display info
-				await this.endStepInfo(result.instruction);
-
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
 
 			// Check for output.
@@ -1622,6 +1645,14 @@ export class DebugSessionClass extends DebugSession {
 				// Show break reason
 				this.decorateBreak(result.breakReasonString);
 			}
+
+			if (!stepBackMode) {
+				// Display info
+				await this.endStepInfo();
+				// Update memory dump etc.
+				await this.update({step: true});
+			}
+
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
@@ -1635,32 +1666,38 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
 		this.handleRequest(response, async () => {
+
+			this.startStepInfo('Step-out');
+
 			// Check for reverse debugging.
 			let breakReasonString;
-			if (StepHistory.isInStepBackMode()) {
-				this.debugConsoleAppendLine('Step-out');
+			const stepBackMode=StepHistory.isInStepBackMode();
+			if (stepBackMode) {
 				// StepOut
 				breakReasonString=StepHistory.stepOut();
 			}
 			else {
 				// Normal Step-Out
-				await this.startStepInfo('Step-out');
 				// Check if lite history need to be stored.
 				this.checkAndStoreLiteHistory();
 				StepHistory.clear();
 				breakReasonString=await Remote.stepOut();
-				// Display T-states and time
-				await this.endStepInfo(undefined);
-
-				// Update memory dump etc.
-				await this.update();
 			}
 
+
+			// Print break reason
 			if (breakReasonString) {
 				// Output a possible problem (end of log reached)
 				this.debugConsoleIndentedText(breakReasonString);
 				// Show break reason
 				this.decorateBreak(breakReasonString);
+			}
+
+			if (!stepBackMode) {
+				// Display info
+				await this.endStepInfo();
+				// Update memory dump etc.
+				await this.update({step: true});
 			}
 
 			// Send event
@@ -1676,19 +1713,17 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
 		this.handleRequest(response, async () => {
+
+			this.startStepInfo('Step-back', true);
+
 			// Step back
 			const result=await StepHistory.stepBack();
 
-			// Check if Lite history then print
-			if (!(CpuHistory as any))
-				this.debugConsoleAppend('Lite ');
-
 			// Print
-			let text='Step-back';
 			if (result.instruction)
-				text+=': '+result.instruction;
-			this.debugConsoleAppendLine(text);
+				this.debugConsoleAppendLine(result.instruction);
 
+			// Print break reason
 			if (result.breakReasonString) {
 				// Output a possible problem (end of log reached)
 				this.debugConsoleIndentedText(result.breakReasonString);

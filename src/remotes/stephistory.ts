@@ -452,6 +452,16 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
+	 * Should return the current instruction.
+	 * For the Lite StepHistory always returns undefined.
+	 * @returns undefined.
+	 */
+	public getCurrentInstruction(): string|undefined {
+		return undefined;
+	}
+
+
+	/**
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
 	 * @returns instruction=undefined

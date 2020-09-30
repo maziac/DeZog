@@ -716,9 +716,10 @@ export class Z80UnitTests {
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
 				.then(() => {
 					// Run
+					/*
 					if (Z80UnitTests.utLabels)
 						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
-
+					*/
 					// Init
 					StepHistory.clear();
 					Z80Registers.clearCache();
@@ -893,7 +894,7 @@ export class Z80UnitTests {
 					Z80UnitTests.dbgOutput(label + ' FAILED.');
 			}
 			// Do a step
-			Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
+			//Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
 			da.emulatorOneStepOver();	// await not needed
 			return;
 		}

@@ -1019,6 +1019,21 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 	/**
+	 * Should return the current instruction.
+	 * For the Lite StepHistory always returns undefined.
+	 * @returns undefined.
+	 */
+	public getCurrentInstruction(): string|undefined {
+		// Get current line
+		let currentLine=Z80Registers.getCache();
+		Utility.assert(currentLine);
+		// Get instruction
+		const instruction=this.getInstruction(currentLine);
+		return instruction;
+	}
+
+
+	/**
 	 * Steps over an instruction.
 	 * Simply returns the next address line.
 	 * @returns instruction=undefined
@@ -1088,7 +1103,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Get instruction
-		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
+		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine); // TODO: Remove
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
