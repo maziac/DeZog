@@ -614,8 +614,6 @@ export class DebugSessionClass extends DebugSession {
 						setTimeout(() => {
 							// Delay call because the breakpoints are set afterwards.
 							this.handleRequest(undefined, async () => {
-								// Check if lite history need to be stored.
-								this.checkAndStoreLiteHistory();
 								// Normal operation
 								return await this.remoteContinue();
 							});
@@ -1112,24 +1110,6 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Checks if lite history is used.
-	 * If so it stores the history.
-	 */
-	// TODO: Move to startStepInfo
-	protected async checkAndStoreLiteHistory(): Promise<void> {
-		if (!(CpuHistory as any)) {
-			// Store as (lite step history)
-			// Make sure registers and callstack exist.
-			await Remote.getRegisters();
-			const regsCache=Z80Registers.getCache();
-			StepHistory.pushHistoryInfo(regsCache);
-			const callStack=await Remote.getCallStack();
-			StepHistory.pushCallStack(callStack);
-		}
-	}
-
-
-	/**
 	 * This method is called before a step (stepOver, stepInto, stepOut,
 	 * continue, stepBack, etc.) is called.
 	 */
@@ -1180,8 +1160,6 @@ export class DebugSessionClass extends DebugSession {
 				return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 			}
 			else {
-				// Check if lite history need to be stored.
-				this.checkAndStoreLiteHistory();
 				// Normal operation
 				const event=await this.remoteContinue();
 				return event;
@@ -1196,10 +1174,11 @@ export class DebugSessionClass extends DebugSession {
 	 * vscode UI (continueRequest).
 	 */
 	public async remoteContinue(): Promise<StoppedEvent> {
+		await this.startStepInfo('Continue');
+
 		Decoration.clearBreak();
 		StepHistory.clear();
 
-		await this.startStepInfo('Continue');
 		const breakReasonString=await Remote.continue();
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
@@ -1399,10 +1378,6 @@ export class DebugSessionClass extends DebugSession {
 
 			// T-states info and lite history
 			const stepBackMode=StepHistory.isInStepBackMode();
-			if (!stepBackMode) {
-				// Check if lite history need to be stored.
-				this.checkAndStoreLiteHistory();
-			}
 
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
@@ -1494,23 +1469,36 @@ export class DebugSessionClass extends DebugSession {
 	 * Adds prefix "Historical " if in reverse debug mode or alwaysHistorical is true.
 	 * Adds suffix " (Lite)" if no true stepping is done.
 	 * @param text E.g. "Step-into"
-	 * @param alwaysHistorical Prints prefix "Historic " even if not (yet) in back step mode.
+	 * @param alwaysHistorical Prints prefix "Historical " even if not (yet) in back step mode.
 	 */
-	// TODO: Remove?
 	protected async startStepInfo(text?: string, alwaysHistorical=false): Promise<void> {
 		// Print text
-		const stepBackMode=StepHistory.isInStepBackMode();
+		const stepBackMode=StepHistory.isInStepBackMode()||alwaysHistorical;
 		if (text) {
-			if (stepBackMode || alwaysHistorical) {
+			if (stepBackMode) {
 				text='Historical '+text;
 				if (!(CpuHistory as any))
 					text+=' (Lite)';
 			}
 			this.debugConsoleAppendLine(text);
 		}
-		// Reset t-states counter
-		if (!stepBackMode)
+
+		// If not in step back mode
+		if (!stepBackMode) {
+			// Checks if lite history is used.
+			// If so, store the history.
+			if (!(CpuHistory as any)) {
+				// Store as (lite step history)
+				// Make sure registers and callstack exist.
+				await Remote.getRegisters();
+				const regsCache=Z80Registers.getCache();
+				StepHistory.pushHistoryInfo(regsCache);
+				const callStack=await Remote.getCallStack();
+				StepHistory.pushCallStack(callStack);
+			}
+			// Reset t-states counter
 			await Remote.resetTstates();
+		}
 	}
 
 
@@ -1592,22 +1580,6 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Print text to debug console.
-	 * Add prefix "Historical " if in reverse debug mode.
-	 * Add suffix " (Lite)" if no true stepping is done.
-	 */
-	// TODO: REMOVE
-	protected debugConsoleStepText(text: string) {
-		if (StepHistory.isInStepBackMode()) {
-			text='Historical '+text;
-			if (!(CpuHistory as any))
-				text+=' (Lite)';
-		}
-		this.debugConsoleAppendLine(text);
-	}
-
-
-	/**
 	  * vscode requested 'step into'.
 	  * @param response
 	  * @param args
@@ -1629,8 +1601,6 @@ export class DebugSessionClass extends DebugSession {
 			}
 			else {
 				// Step-Into
-				// Check if lite history need to be stored.
-				this.checkAndStoreLiteHistory();
 				StepHistory.clear();
 				// Show instruction
 				const disInstr=(await this.getCurrentInstruction())!;
@@ -1678,8 +1648,6 @@ export class DebugSessionClass extends DebugSession {
 			}
 			else {
 				// Normal Step-Out
-				// Check if lite history need to be stored.
-				this.checkAndStoreLiteHistory();
 				StepHistory.clear();
 				breakReasonString=await Remote.stepOut();
 			}
