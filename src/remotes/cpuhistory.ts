@@ -1035,11 +1035,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 	/**
 	 * Steps over an instruction.
-	 * Simply returns the next address line.
-	 * @returns instruction=undefined
-	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
 	 */
-	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
+	public stepOver(): string|undefined {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
@@ -1102,9 +1100,6 @@ export class CpuHistoryClass extends StepHistoryClass {
 			breakReasonString=e;
 		}
 
-		// Get instruction
-		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine); // TODO: Remove
-
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
@@ -1113,7 +1108,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Return
-		return {instruction, breakReasonString};
+		return breakReasonString;
 	}
 
 

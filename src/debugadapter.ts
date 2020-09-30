@@ -1402,29 +1402,24 @@ export class DebugSessionClass extends DebugSession {
 				// Check for reverse debugging.
 				if (stepBackMode) {
 					// Stepover
-					const {instruction, breakReasonString}=StepHistory.stepOver();
-					instruction;
-					// Check for output.
-					if (breakReasonString) {
-						breakReason=breakReasonString;
-						// Stop
-						break;
-					}
+					breakReason=StepHistory.stepOver();
 				}
 				else {
 					// Normal Step-Over
-					const result=await Remote.stepOver();
+					const result=await Remote.stepOver(); // TODO: do I need instruction?
 					// Check for output.
 					if (result.breakReasonString) {
 						breakReason=result.breakReasonString;
-						// Stop
-						break;
 					}
 				}
 
 				// Check for pause request
 				if (this.pauseRequested) {
 					breakReason="Manual break";
+				}
+
+				// Leave loop in case there is a break reason
+				if (breakReason) {
 					// Stop
 					break;
 				}
