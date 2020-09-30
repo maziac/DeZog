@@ -1403,6 +1403,7 @@ export class DebugSessionClass extends DebugSession {
 				if (stepBackMode) {
 					// Stepover
 					const {instruction, breakReasonString}=StepHistory.stepOver();
+					instruction;
 					// Check for output.
 					if (breakReasonString) {
 						breakReason=breakReasonString;
