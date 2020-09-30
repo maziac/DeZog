@@ -1681,18 +1681,21 @@ export class DebugSessionClass extends DebugSession {
 			await this.startStepInfo('Step-back', true);
 
 			// Step back
-			const result=await StepHistory.stepBack();
-
-			// Print
-			if (result.instruction)
-				this.debugConsoleAppendLine(result.instruction);
+			const breakReason=await StepHistory.stepBack();
 
 			// Print break reason
-			if (result.breakReasonString) {
+			if (breakReason) {
 				// Output a possible problem (end of log reached)
-				this.debugConsoleIndentedText(result.breakReasonString);
+				this.debugConsoleIndentedText(breakReason);
 				// Show break reason
-				this.decorateBreak(result.breakReasonString);
+				this.decorateBreak(breakReason);
+			}
+			else {
+				// Print instruction (it's only printed if no error, as the
+				// only error that can occur is 'start of history reached'.
+				const instr=await this.getCurrentInstruction();
+				if (instr)
+					this.debugConsoleIndentedText(instr);
 			}
 
 			// Send event

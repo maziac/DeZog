@@ -511,6 +511,7 @@ export class StepHistoryClass extends EventEmitter {
 	  * instruction: e.g. "081C NOP"
 	  * breakReasonString: If not undefined it holds the break reason message.
 	  */
+	/* TODO: REMOVE
 	public async stepBack(): Promise<{instruction: string, breakReasonString: string|undefined}> {
 		let breakReasonString;
 		try {
@@ -524,6 +525,27 @@ export class StepHistoryClass extends EventEmitter {
 
 		// Call handler
 		return {instruction: undefined as any, breakReasonString};
+	}
+*/
+
+
+	/**
+	  * 'step backwards' the program execution in the debugger.
+	  * @returns A Promise with a string with the break reason. Or undefined, if no break reason.
+	  */
+	public async stepBack(): Promise<string|undefined> {
+		let breakReasonString;
+		try {
+			const currentLine=await this.revDbgPrev();
+			if (!currentLine)
+				throw Error('Break: Reached end of instruction history.');
+		}
+		catch (e) {
+			breakReasonString=e;
+		}
+
+		// Call handler
+		return breakReasonString;
 	}
 
 

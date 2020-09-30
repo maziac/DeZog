@@ -711,15 +711,12 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @returns {instruction, breakReason} Promise.
-	  * instruction: e.g. "081C NOP"
-	  * breakReasonString: If not undefined it holds the break reason message.
+	  * @returns A Promise with a string with the break reason. Or undefined, if no break reason.
 	  */
-	public async stepBack(): Promise<{instruction: string, breakReasonString: string|undefined}> {
+	public async stepBack(): Promise<string|undefined> {
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
 		let breakReasonString;
-		let instruction='';
 		try {
 			// Remember previous line
 			let prevLine=Z80Registers.getCache();
@@ -728,9 +725,6 @@ export class CpuHistoryClass extends StepHistoryClass {
 			if (currentLine) {
 				// Stack handling:
 				await this.handleReverseDebugStackBack(currentLine, prevLine);
-				// Get instruction
-				const pc=Z80Registers.getPC();
-				instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
 			}
 			else
 				breakReasonString='Break: Reached end of instruction history.';
@@ -740,7 +734,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Call handler
-		return {instruction, breakReasonString};
+		return breakReasonString;
 	}
 
 
