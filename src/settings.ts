@@ -16,7 +16,7 @@ export interface AsmConfigBase {
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
 	srcDirs: Array<string>;
 
-	// TODO: text
+	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping.
 	excludeFiles: Array<string>;
 }
 

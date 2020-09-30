@@ -383,6 +383,11 @@
 											"default": [
 												""
 											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
 										}
 									}
 								}
@@ -406,6 +411,11 @@
 											"default": [
 												""
 											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
 										}
 									}
 								}
@@ -423,17 +433,22 @@
 											"type": "string",
 											"description": "Path to the assembler .list file."
 										},
-										"mainFile": {
-											"type": "string",
-											"description": "Path to the main assembler source file that was used to produce the .list file.",
-											"default": null
-										},
 										"srcDirs": {
 											"type": "array",
 											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
 											"default": [
 												""
 											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mainFile": {
+											"type": "string",
+											"description": "Path to the main assembler source file that was used to produce the .list file.",
+											"default": null
 										},
 										"mapFile": {
 											"type": "string",
