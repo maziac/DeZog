@@ -319,7 +319,10 @@ export class LabelParserBase {
 				continue;
 
 			// last address entry wins:
-			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			for (let i=0; i<entry.size; i++) {
+				const addr=(entry.addr+i)&0xFFFF;
+				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			}
 
 			// Check if a new array need to be created
 			if (!this.lineArrays.get(entry.fileName)) {
