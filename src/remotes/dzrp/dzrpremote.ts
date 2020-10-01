@@ -756,12 +756,11 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * 'step over' an instruction in the debugger.
 	 * @param stepOver true=step-over, false=step-into.
-	 * @returns A Promise with:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason.
 	 */
-	public async stepOver(stepOver = true): Promise<{instruction: string, breakReasonString?: string}> {
-		return new Promise<{instruction: string, breakReasonString?: string}>(async resolve => {
+	public async stepOver(stepOver = true): Promise<string|undefined> {
+		return new Promise<string|undefined>(async resolve => {
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve=async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Give vscode a little time
@@ -777,28 +776,30 @@ export class DzrpRemote extends RemoteBase {
 				// Check for continue
 				if (condition==undefined) {
 					// Calculate the breakpoints to use for step-over/step-into
-					let [, bp1, bp2]=await this.calcStepBp(stepOver);
+					[, bp1, bp2]=await this.calcStepBp(stepOver);
 					// Continue
 					this.continueResolve=funcContinueResolve;
 					this.sendDzrpCmdContinue(bp1, bp2);
 				}
 				else {
-					// Construct break reason string to report
-					breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
+					// Check if bp1/2 was hit
+					const pc=Remote.getPC();
+					if (pc!=bp1&&pc!=bp2) {
+						// Construct break reason string to report
+						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
+					}
+					else
+						breakReasonString=undefined;
 					// Clear registers
 					this.clearCallStack();
 					// return
-					resolve({instruction, breakReasonString}); // TODO: Remove instruction
+					resolve(breakReasonString);
 				}
 			};
 
 			// Calculate the breakpoints to use for step-over
 			await this.getRegisters();
-			let [opcode, bp1, bp2]=await this.calcStepBp(stepOver);
-			// Disassemble
-			const pc=this.getPC();
-			const opCodeDescription=opcode.disassemble();
-			const instruction=Utility.getHexString(pc, 4)+' '+opCodeDescription.mnemonic;
+			let [, bp1, bp2]=await this.calcStepBp(stepOver);
 			//this.emit('debug_console', instruction);
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
@@ -810,13 +811,10 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @returns A Promise:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
-	 * record consistent with stepOver. But it is e.g. used to inform when the
-	 * end of the cpu history is reached.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason.
 	 */
-	public async stepInto(): Promise<{instruction: string, breakReasonString?: string}> {
+	public async stepInto(): Promise<string|undefined> {
 		return this.stepOver(false);
 	}
 

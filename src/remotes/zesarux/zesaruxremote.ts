@@ -485,12 +485,11 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @returns A Promise with:
-	 * 'disasm' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason.
 	 */
-	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
-		return new Promise<{instruction: string, breakReasonString?: string}>(resolve => {
+	public async stepOver(): Promise<string|undefined> {
+		return new Promise<string|undefined>(resolve => {
 			// Zesarux is very special in the 'step-over' behavior.
 			// In case of e.g a 'jp cc, addr' it will never return
 			// if the condition is met because
@@ -545,7 +544,7 @@ export class ZesaruxRemote extends RemoteBase {
 											// Read the spot history
 											await CpuHistory.getHistorySpotFromRemote();
 
-											resolve({instruction: disasm, breakReasonString});
+											resolve(breakReasonString);
 										});
 									});
 								});
@@ -567,7 +566,7 @@ export class ZesaruxRemote extends RemoteBase {
 							const breakReasonString=this.getBreakReason(result);
 							// Read the spot history
 							await CpuHistory.getHistorySpotFromRemote();
-							resolve({instruction: disasm, breakReasonString});
+							resolve(breakReasonString);
 
 						});
 					}
@@ -579,16 +578,15 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @returns A Promise:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' E.g. "End of history reached"
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason.
 	 */
-	public async stepInto(): Promise<{instruction: string, breakReasonString?: string}> {
-		return new Promise<{instruction: string, breakReasonString?: string}>(resolve => {
+	public async stepInto(): Promise<string|undefined> {
+		return new Promise<string|undefined>(resolve => {
 			// Normal step into.
 			this.getRegisters().then(() => {
-				const pc=Z80Registers.getPC();
-				zSocket.send('disassemble '+pc, instruction => {
+				//const pc=Z80Registers.getPC();
+				//zSocket.send('disassemble '+pc, instruction => {
 					// Clear register cache
 					Z80Registers.clearCache();
 					zSocket.send('cpu-step', async result => {
@@ -599,9 +597,9 @@ export class ZesaruxRemote extends RemoteBase {
 						this.handleCodeCoverage();
 						// Read the spot history
 						await CpuHistory.getHistorySpotFromRemote();
-						resolve({instruction});
+						resolve(undefined);
 					});
-				});
+				//});
 			});
 		});
 	}

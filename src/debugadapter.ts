@@ -1259,7 +1259,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			// Output
-			await this.startStepInfo('Continue-reverse', true);
+			await this.startStepInfo('Reverse-Continue', true);
 
 			// Reverse continue
 			const breakReason=await StepHistory.reverseContinue();
@@ -1374,7 +1374,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			await this.startStepInfo('Step-over');
+			await this.startStepInfo('Step-Over');
 
 			// T-states info and lite history
 			const stepBackMode=StepHistory.isInStepBackMode();
@@ -1406,11 +1406,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 				else {
 					// Normal Step-Over
-					const result=await Remote.stepOver(); // TODO: do I need instruction?
-					// Check for output.
-					if (result.breakReasonString) {
-						breakReason=result.breakReasonString;
-					}
+					breakReason=await Remote.stepOver();
 				}
 
 				// Check for pause request
@@ -1462,17 +1458,17 @@ export class DebugSessionClass extends DebugSession {
 	 * Starts to print the step info. Use in conjunction with 'endStepInfo'.
 	 * Resets the t-states.
 	 * Print text to debug console.
-	 * Adds prefix "Historical " if in reverse debug mode or alwaysHistorical is true.
+	 * Adds prefix "Time-travel " if in reverse debug mode or alwaysHistorical is true.
 	 * Adds suffix " (Lite)" if no true stepping is done.
 	 * @param text E.g. "Step-into"
-	 * @param alwaysHistorical Prints prefix "Historical " even if not (yet) in back step mode.
+	 * @param alwaysHistorical Prints prefix "Time-travel " even if not (yet) in back step mode.
 	 */
 	protected async startStepInfo(text?: string, alwaysHistorical=false): Promise<void> {
 		// Print text
 		const stepBackMode=StepHistory.isInStepBackMode()||alwaysHistorical;
 		if (text) {
 			if (stepBackMode) {
-				text='Historical '+text;
+				text='Time-travel '+text;
 				if (!(CpuHistory as any))
 					text+=' (Lite)';
 			}
@@ -1583,33 +1579,32 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			await this.startStepInfo('Step-into');
+			await this.startStepInfo('Step-Into');
+
+			// Print instruction
+			const instr=await this.getCurrentInstruction();
+			if (instr)
+				this.debugConsoleIndentedText(instr);
 
 			// Check for reverse debugging.
-			let result;
+			let breakReason;
 			const stepBackMode=StepHistory.isInStepBackMode();
 			if (stepBackMode) {
 				// StepInto
-				result=StepHistory.stepInto();
-				// Print
-				if (result.instruction)
-					this.debugConsoleAppendLine(result.instruction);
+				breakReason=StepHistory.stepInto();
 			}
 			else {
 				// Step-Into
 				StepHistory.clear();
-				// Show instruction
-				const disInstr=(await this.getCurrentInstruction())!;
-				this.debugConsoleIndentedText(disInstr);
 				// Step into
-				result=await Remote.stepInto();
+				breakReason=await Remote.stepInto();
 			}
 
 			// Check for output.
-			if (result.breakReasonString) {
-				this.debugConsoleIndentedText(result.breakReasonString);
+			if (breakReason) {
+				this.debugConsoleIndentedText(breakReason);
 				// Show break reason
-				this.decorateBreak(result.breakReasonString);
+				this.decorateBreak(breakReason);
 			}
 
 			if (!stepBackMode) {
@@ -1633,7 +1628,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			await this.startStepInfo('Step-out');
+			await this.startStepInfo('Step-Out');
 
 			// Check for reverse debugging.
 			let breakReasonString;
@@ -1678,7 +1673,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
-			await this.startStepInfo('Step-back', true);
+			await this.startStepInfo('Step-Back', true);
 
 			// Step back
 			const breakReason=await StepHistory.stepBack();

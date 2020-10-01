@@ -796,31 +796,23 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @returns A Promise with:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason
 	 */
-	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
+	public async stepOver(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return {
-			instruction: ""
-		};
+		return undefined;
 	}
 
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @returns A Promise:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
-	 * record consistent with stepOver. But it is e.g. used to inform when the
-	 * end of the cpu history is reached.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason
 	 */
-	public async stepInto(): Promise<{instruction: string,breakReasonString?: string}> {
+	public async stepInto(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return {
-			instruction: ""
-		};
+		return undefined;
 	}
 
 
@@ -829,9 +821,9 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string containing the break reason.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<string> {
+	public async stepOut(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return '';
+		return undefined;
 	}
 
 

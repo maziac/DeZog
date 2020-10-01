@@ -48,6 +48,8 @@ export class WhatsNewContentProvider implements ContentProvider {
 					<ul>
 					<li> "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
 					</li>
+					<li> "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog). Please read the (sjasmplus) list file section.
+					</li>
 					</ul>`
 				},
 			}
