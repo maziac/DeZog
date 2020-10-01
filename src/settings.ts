@@ -179,7 +179,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// true if the configuration is for unit tests.
 	unitTests: false;
 
-	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
+	/// The path of the root folder. All other paths are relative to this. Usually = ${workspaceFolder}
 	rootFolder: string;
 
 	/// The paths to the .list files / assembler parameters.

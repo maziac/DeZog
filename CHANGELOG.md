@@ -69,7 +69,7 @@
 # 1.2.8
 - skipInterrupt setting moved to zrcp.
 - cspect:
-  - warning if codeCoverabeEnabled==true.
+  - warning if codeCoverageEnabled==true.
   - error if Z80 unit tests are started with cspect.
 - Fixed ZEsarUX Z80 unit tests.
 - Fix for cspect HL', I, R and IM registers.
@@ -227,7 +227,7 @@
 # 0.12.1
 - Added simulator remoteType: 'zxsim'.
 - Changed remoteType 'zxnext' to 'serial'.
-- Ssimulation of ZX Spectrum keys.
+- Simulation of ZX Spectrum keys.
 
 # 0.12.0
 - Changed remoteType 'zesarux' to 'zrcp'.
@@ -365,7 +365,7 @@
 - Fixed hovering on IXL, IXH, IYL and IYH
 - Renamed "resetOnStart" to "resetOnLaunch"
 - New launch.json option "commandsAfterLaunch" to execute certain emulator commands right after the program-to-debug has been loaded.
-- Changed 'Restart' behaviour to overcome hang on restart.
+- Changed 'Restart' behavior to overcome hang on restart.
 
 ## 0.5.0
 - Uses new (ZEsarUX 7.1) and fast memory breakpoints for WPMEM watchpoints, see https://github.com/maziac/z80-debug/blob/master/documentation/Usage.md#wpmem
@@ -399,7 +399,7 @@
 ## 0.2.0
 - WPMEM: Persistent memory watchpoints added.
 - Watches: now the size and type can be manually added.
-- A memory viewer/editory has been added.
+- A memory viewer/editor has been added.
 - console command to evaluate expressions/labels.
 
 ## 0.1.2
