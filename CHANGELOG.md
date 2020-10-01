@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.5.1
+- Packaged for beta testing.
+
 # 1.5.0
 - New architecture for parsing list files. This will make it easier to add parsing for a new assembler.
 - Changes to launch.json:
@@ -12,10 +15,9 @@
 	- Renamed "z88dkMapFile" to "mapFile".
 	- "addOffset" removed for z88dk. Use "mapFile" instead.
 	- "mapFile" is mandatory now.
-- launch.json:
 - Byte registers IXL, IXH, IYL and IYH now show additionally under "Registers 2"
 - Bugfix for a hang when Disassembly should wrap around 0xFFFF.
-- Fixed an "Unverified breakpoint" issue on windows.
+- Fixed an "Unverified breakpoint" issue on Windows.
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF
