@@ -416,6 +416,9 @@
 											"type": "array",
 											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
 											"default": []
+										},
+										"filter": {
+											"type": "string"
 										}
 									}
 								}

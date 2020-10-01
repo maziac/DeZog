@@ -6,7 +6,7 @@
 	- "listFiles" removed.
 	- Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters.
 	- "excludeFiles" parameter added to allow exclude certain files from association with execution addresses.
-	- "filter" regex removed.
+	- "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog).
 	- "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
 - z88dk:
 	- Renamed "z88dkMapFile" to "mapFile".

@@ -135,10 +135,29 @@ export class LabelParserBase {
 	 * for each line.
 	 */
 	protected parseAllLabelsAndAddresses() {
+		// Create regex for filter (deprecated)
+		let filterRegEx;
+		let replace;
+		let filter=this.config.filter;
+		if (filter) {
+			// The filter is parsed for search and substitution string.
+			const filterArr=filter.split('/');
+			if (filterArr.length!=4) {
+				throw SyntaxError('List file "filter" string is wrong: "'+filter+'"');
+			}
+			const search=filterArr[1];
+			replace=filterArr[2];
+			filterRegEx=new RegExp(search);
+		}
+
+		// Loop through all lines
 		const fileName=Utility.getRelFilePath(this.config.path);
 		const listLines=readFileSync(this.config.path).toString().split('\n');
 		let lineNr=0;
-		for (const line of listLines) {
+		for (let line of listLines) {
+			// Filter line with regex (deprecated)
+			if (filterRegEx)
+				line=line.replace(filterRegEx, replace);
 			// Prepare an entry
 			this.currentFileEntry={fileName, lineNr, addr: undefined, size: 0, line, modulePrefix: this.modulePrefix, lastLabel: this.lastLabel};
 			this.listFile.push(this.currentFileEntry);

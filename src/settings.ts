@@ -18,6 +18,9 @@ export interface AsmConfigBase {
 
 	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping.
 	excludeFiles: Array<string>;
+
+	/// An optional filter string that is applied to the list file when it is read.
+	filter: string|undefined;
 }
 
 
@@ -407,7 +410,8 @@ export class Settings {
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fpSrcDirs||[""],
-					excludeFiles: fpExclFiles||[]
+					excludeFiles: fpExclFiles||[],
+					filter: fp.filter
 				};
 				return file;
 			});
@@ -423,7 +427,8 @@ export class Settings {
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fpSrcDirs||[""],
-					excludeFiles: fpExclFiles||[]
+					excludeFiles: fpExclFiles||[],
+					filter: fp.filter
 				};
 				return file;
 			});
@@ -442,6 +447,7 @@ export class Settings {
 					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fpSrcDirs||[""],
 					excludeFiles: fpExclFiles||[],
+					filter: fp.filter,
 					mainFile: fpMainFile||"",
 					mapFile: Utility.getAbsFilePath(fpMapFile||"")
 				};
