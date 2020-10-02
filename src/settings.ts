@@ -26,6 +26,8 @@ export interface AsmConfigBase {
 
 /// sjasmplus
 export interface SjasmplusConfig extends AsmConfigBase {
+	/// Optionally the SLD file path can be given here.
+	sldPath: string|undefined;
 }
 
 
@@ -405,11 +407,15 @@ export class Settings {
 			Settings.launch.sjasmplus=Settings.launch.sjasmplus.map(fp => {
 				// ListFile structure
 				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				let fpSldPath=UnifiedPath.getUnifiedPath(fp.sldPath);
+				if (fpSldPath)
+					fpSldPath=Utility.getAbsFilePath(fpSldPath);
 				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fpSrcDirs||[""],
+					sldPath: fpSldPath,
 					excludeFiles: fpExclFiles||[],
 					filter: fp.filter
 				};

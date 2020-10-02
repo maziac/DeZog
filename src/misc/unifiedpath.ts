@@ -36,7 +36,7 @@ export class UnifiedPath {
 		return false;
 	}
 
-	
+
 	/**
 	 * Changes all Windows backslashes "\" into forward slashes "/".
 	 * I.e. it creates a unified path.
@@ -44,7 +44,7 @@ export class UnifiedPath {
 	 * @return The same path but all '\' converted to '/'.
 	 * If fpath is undefined an undefined value is returned.
 	 */
-	public static getUnifiedPath(fpath: string): string {
+	public static getUnifiedPath(fpath: string|undefined): string {
 		if (!fpath)
 			return undefined as any;
 		const uPath=fpath.replace(/\\/g, '/');

@@ -1,6 +1,7 @@
 import {Utility} from '../misc/utility';
 import {Remote} from '../remotes/remotefactory';
 import {SjasmplusLabelParser} from './sjasmpluslabelparser';
+import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 
@@ -126,23 +127,33 @@ export class LabelsClass {
 	public readListFiles(mainConfig: any) {
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
-			const parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.sjasmplus)
-				parser.loadAsmListFile(listFile);
+			// For sjasmplus it is checked if a list file should be parsed or an sld file
+			for (const config of mainConfig.sjasmplus) {
+				let parser;
+				if (config.sldPath) {
+					// Parse SLD file and list file
+					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+				}
+				else {
+					// Parse just list file
+					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+				}
+				parser.loadAsmListFile(config);
+			}
 		}
 
 		// z80asm
 		if (mainConfig.z80asm) {
 			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z80asm)
-				parser.loadAsmListFile(listFile);
+			for (const config of mainConfig.z80asm)
+				parser.loadAsmListFile(config);
 		}
 
 		// z88dk
 		if (mainConfig.z88dk) {
 			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z88dk)
-				parser.loadAsmListFile(listFile);
+			for (const config of mainConfig.z88dk)
+				parser.loadAsmListFile(config);
 		}
 
 		// Add new assemblers here ...
