@@ -114,6 +114,11 @@ It is possible to parse the list file in parallel but then the bank information 
 Open: How to handle. Ped7g proposes to include this somehow into the SLD. Open.
 
 
+# Label Evaluation
+
+If a long label/address is found the slot/bank information should be used additionally.
+
+Open: how to accurately display the used bank.
 
 
 # Misc
