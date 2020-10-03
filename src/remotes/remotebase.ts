@@ -11,6 +11,7 @@ import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
+import {ZxMemory} from './zxsimulator/zxmemory';
 
 
 
@@ -1108,7 +1109,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc
-		let file=Labels.getFileAndLineForAddress(address);
+		let file=Labels.getFileAndLineForAddress(address);// TODO: Does not work with sld
 		if (!file.fileName) {
 			// Search also the disassembled file
 			const lineNr=Disassembly.getLineForAddress(address);
@@ -1209,10 +1210,34 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemoryBanks.
-	 * @returns A Promise with an array with the available memory pages.
+	 * and converts it to an array of MemoryBanks.
+	 * @returns A Promise with an array with the available memory pages. Contains start and end address
+	 * and a name.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
+		// Prepare array
+		const pages: Array<MemoryBank>=[];
+		// Get the data
+		const data=await this.getSlots();
+		// Save in array
+		let start=0x0000;
+		data.map(slot => {
+			const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
+			const name=(slot>=254)? "ROM":"BANK"+slot;
+			pages.push({start, end, name});
+			start+=ZxMemory.MEMORY_BANK_SIZE;
+		});
+		// Return
+		return pages;
+	}
+
+
+
+	/**
+	 * Reads the slots/banks association.
+	 * @returns A Promise with a slot array containing the refernced banks..
+	 */
+	public async getSlots(): Promise<number[]> {
 		return [];
 	}
 

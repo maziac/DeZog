@@ -1,0 +1,86 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000
+ 3    0000                  DEVICE ZXSPECTRUMNEXT
+ 4    0000
+ 5    0000
+ 6    0000
+ 7    0000              	ORG 0x8000
+ 8    8000
+ 9    8000              main:
+10    8000                  ; Disable interrupts
+11    8000 F3               di
+12    8001 31 ED 80         ld sp,stack_top
+13    8004
+14    8004              .loop:
+15    8004                  ; Bank 100
+16    8004 ED 91 55 64      nextreg 0x50+5,100
+17    8008 CD 00 A0         call sub_b100
+18    800B 00               nop
+19    800C 00               nop
+20    800D
+21    800D                  ; Bank 101
+22    800D ED 91 55 65      nextreg 0x50+5,101
+23    8011 CD 00 A0         call sub_b101
+24    8014 00               nop
+25    8015 00               nop
+26    8016
+27    8016                  ; Bank 110
+28    8016 ED 91 55 6E      nextreg 0x50+5,110
+29    801A CD 00 A0         call sub_b110
+30    801D 00               nop
+31    801E 00               nop
+32    801F
+33    801F 00           	nop
+34    8020 00           	nop
+35    8021 18 E1        	jr .loop
+36    8023
+37    8023
+38    8023              ; Stack: this area is reserved for the stack
+39    8023              STACK_SIZE: equ 100    ; in words
+40    8023
+41    8023
+42    8023              ; Reserve stack space
+43    8023 00 00            defw 0  ; WPMEM, 2
+44    8025              stack_bottom:
+45    8025 00 00 00...      defs    STACK_SIZE*2, 0
+46    80ED              stack_top:
+47    80ED                  ;defw 0
+48    80ED 00 00            defw 0  ; WPMEM, 2
+49    80EF
+50    80EF
+51    80EF
+52    80EF
+53    80EF                  MMU 5, 100, 0xA000
+54    A000              sub_b100:
+55    A000 3E 64            ld a,100
+56    A002 3E 64            ld a,100
+57    A004 C9               ret
+58    A005
+59    A005
+60    A005                  MMU 5, 101, 0xA000
+61    A000              sub_b101:
+62    A000 3E 65            ld a,101
+63    A002 3E 65            ld a,101
+64    A004 C9               ret
+65    A005
+66    A005
+67    A005                  include "subfolder/sub1.asm"
+# file opened: subfolder/sub1.asm
+ 1+   A005
+ 2+   A005                  MMU 5, 110, 0xA000
+ 3+   A000              sub_b110:
+ 4+   A000 3E 6E            ld a,110
+ 5+   A002 3E 6E            ld a,110
+ 6+   A004 C9               ret
+ 7+   A005
+# file closed: subfolder/sub1.asm
+68    A005
+69    A005
+70    A005                  SAVENEX OPEN "sld1.nex", main, stack_top
+71    A005                  SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
+72    A005                  SAVENEX CFG 7   ; Border color
+73    A005                  SAVENEX AUTO
+74    A005                  SAVENEX CLOSE
+75    A005
+# file closed: main.asm

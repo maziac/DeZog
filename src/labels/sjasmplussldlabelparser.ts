@@ -31,6 +31,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// utilities.asm|7||0|-1|500|D|PAUSE_TIME
 	// utilities.asm|11||0|11|24577|F|pause
 
+	// The number of used slots.
+	protected shiftBits=3;
 
 
 	/**
@@ -80,7 +82,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Get page (bank) (-1 if not a memory address)
 		const page=parseInt(fields[4]);
 		// Get value
-		const value=parseInt(fields[5]);
+		let value=parseInt(fields[5]);
 		// Get type
 		const type=fields[6];
 
@@ -88,8 +90,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const label=fields[7];
 
 		// Change value and page info to address
-		page;
-		const address=value;	// TODO: change according page
+		if(page!=-1)
+			value=(value&(0xFFFF>>this.shiftBits))+(page<<(16-this.shiftBits));
 
 
 		// Check data type
@@ -120,7 +122,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					const lineNr=parseInt(fields[1])-1;
 
 					// Store values to associate address with line number
-					this.fileLineNrs.set(address, {
+					this.fileLineNrs.set(value, {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: undefined,
@@ -134,7 +136,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						this.lineArrays.set(sourceFile, new Array<number>());
 					}
 					// Store
-					lineArray[lineNr]=address;
+					lineArray[lineNr]=value;
 				}
 				break;
 			case 'Z':	// Device model

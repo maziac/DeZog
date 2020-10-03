@@ -770,10 +770,18 @@ export class DebugSessionClass extends DebugSession {
 
 		// Get the call stack trace.
 		let callStack;
-		if (StepHistory.isInStepBackMode())
+		let slots;
+		if (StepHistory.isInStepBackMode()) {
 			callStack=StepHistory.getCallStack();
-		else
+			// TODO: Does not work for sld
+		}
+		else {
 			callStack=await Remote.getCallStack();
+			// Get the current slots
+			if(Labels.longAddresses)
+				slots=await Remote.getSlots();
+		}
+
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.
 		frameCount=callStack.length;
@@ -781,7 +789,7 @@ export class DebugSessionClass extends DebugSession {
 			const frame=callStack[index];
 			// Get file for address
 			const addr=frame.addr;
-			const file=Labels.getFileAndLineForAddress(addr);
+			const file=Labels.getFileAndLineForAddress(addr, slots);// TODO: Does not work with sld
 			// Store file, if it does not exist the name is empty
 			const src=this.createSource(file.fileName);
 			const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
@@ -1384,7 +1392,7 @@ export class DebugSessionClass extends DebugSession {
 			// file/line correspondents to the PC value.
 			Remote.getRegisters();
 			const prevPc=Remote.getPC();
-			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
+			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);// TODO: Does not work with sld
 			let i=0;
 			let breakReason;
 			const timeWait=new TimeWait(500, 200, 100);
@@ -1423,7 +1431,7 @@ export class DebugSessionClass extends DebugSession {
 				// Get new file/line location
 				await Remote.getRegisters();
 				const pc=Remote.getPC();
-				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
+				const nextFileLoc=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 				// Compare with start location
 				if (prevFileLoc.fileName=='')
 					break;
@@ -1821,7 +1829,7 @@ export class DebugSessionClass extends DebugSession {
 				// First check for module name and local label prefix (sjasmplus).
 				Remote.getRegisters().then(() => {
 					const pc=Remote.getPC();
-					const entry=Labels.getFileAndLineForAddress(pc);
+					const entry=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 					// Local label and prefix
 					lastLabel=entry.lastLabel;
 					modulePrefix=entry.modulePrefix;

@@ -84,6 +84,10 @@ export class LabelsClass {
 	protected smallValuesMaximum: number;
 
 
+	// Is set to true if addresses+page/bank number is used
+	public longAddresses: boolean;
+
+
 	// Constructor.
 	public constructor() {
 	}
@@ -103,6 +107,7 @@ export class LabelsClass {
 		this.assertLines.length=0;
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
+		this.longAddresses=false;
 	}
 
 
@@ -139,6 +144,7 @@ export class LabelsClass {
 					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
+				this.longAddresses=parser.longAddresses;
 			}
 		}
 
@@ -195,7 +201,7 @@ export class LabelsClass {
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
 		var offs=-1;
-		for (var i=0; i<0x10000; i++) {
+		for (var i=0; i<0x10000; i++) { // TODO: Does this work with sld?
 			const labels=this.labelsForNumber[i];
 			if (labels===undefined) {
 				if (offs>=0) {
@@ -342,7 +348,16 @@ export class LabelsClass {
 	 * @param address The memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
-	public getFileAndLineForAddress(address: number): SourceFileEntry {
+	// TODO: Ist wahrscheinlich doch besser ausserhalb die Addresse zu konverten.
+	public getFileAndLineForAddress(address: number, slots?: number[]): SourceFileEntry {
+		// Check if we need to convert to long address
+		if (slots) {
+			const slot=(address>>>13)&0x7;
+			const bank=slots[slot];
+			address=(address&0x1FFF)+(bank<<13);
+		}
+
+		// Address file conversion
 		const entry=this.fileLineNrs.get(address);
 		if (!entry)
 			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
