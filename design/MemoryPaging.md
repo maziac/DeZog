@@ -150,3 +150,18 @@ Open: how to accurately display the used bank.
     - cspect: Lite history could also save the slot
     - zxnext: same as cspect
 
+
+## labelsForNumber Array
+
+~~~
+/// An element contains either the offset from the last
+/// entry with labels or an array of labels for that number.
+~~~
+
+The idea was to show address values like ```my_array+12```.
+With an array of 64k size this was do-able.
+Now with an array of 256*64k some other routine is required.
+
+Task is to find the label with the smallest diff bigger than 0 with diff=searched_addr-label.
+
+But maybe I can still use the 64k array and only look at the address without bank number.
