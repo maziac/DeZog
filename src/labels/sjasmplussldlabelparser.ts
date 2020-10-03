@@ -1,5 +1,4 @@
 import {readFileSync} from 'fs';
-import {Utility} from '../misc/utility';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 
@@ -105,7 +104,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const page=parseInt(fields[4]);
 		// Get value
 		let value=parseInt(fields[5]);
-		Utility.assert(value<0x10000);
+		// Note: An EQU could have a value bigger than 0xFFFF
 
 		// Get type
 		const type=fields[6];
