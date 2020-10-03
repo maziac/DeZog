@@ -316,24 +316,14 @@ export class ZesaruxRemote extends RemoteBase {
 		Utility.assert(CpuHistory);
 		Utility.assert(!CpuHistory.isInStepBackMode());
 
-		return new Promise<number[]>(resolve => {
-			// Get new (real emulator) data
-			zSocket.send('get-memory-pages', data => {
-				// Convert received data to right format ...
-				// E.g. "O0 O1 A10 A11 A4 A5 A0 A1 "
-				const slotsStrings=data.split(' ');
-				const len=slotsStrings.length-1;
-				const slots=new Array<number>(len);
-				for (let i=0; i<len; i++) {
-					const s=slotsStrings[i];
-					let bankValue=parseInt(s.substr(1));
-					if (s.startsWith('O'))
-						bankValue+=0xFE;	// ROM
-					slots[i]=bankValue;
-				}
-				resolve(slots);
-			});
-		});
+		const len=8;
+		const slots=new Array<number>(len);
+		for (let i=0; i<len; i++) {
+			// Read MMU register
+			const bankString=await zSocket.sendAwait('tbblue-get-register '+(0x50+i));
+			slots[i]=parseInt(bankString,16);
+		}
+		return slots;
 	}
 
 

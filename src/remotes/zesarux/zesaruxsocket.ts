@@ -383,6 +383,18 @@ export class ZesaruxSocket extends Socket {
 
 
 	/**
+	 * Same send, but this one returns a promise.
+	 */
+	public async sendAwait(command: string, suppressErrorHandling=false): Promise<any> {
+		return new Promise<any>(resolve => {
+			this.send(command, data => {
+				resolve(data);
+			}, suppressErrorHandling);
+		});
+	}
+
+
+	/**
 	 * Sends an interruptable 'run' command. I.e. the 'run' command does not immediately return.
 	 * The interruptable command is not executed as long as there are other commands in the queue
 	 * and it is interrupted by any following command.
