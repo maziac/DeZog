@@ -20,6 +20,14 @@ import {LabelParserBase} from './labelparserbase';
  * For this we still need the list file.
  * That's why both files are required for parsing.
  * The list file does not require an --lstlab option.
+ *
+ * A few notes:
+ * - numberForLabel and labelsForNumber will normally only get 64k
+ *   addresses/values (unless an EQU is by itself bigger than 0xFFFF.
+ * - fileLineNrs and lineArrays will get potentially long address.
+ *   I.e. their value is either a normal 64k address or a long address
+ *   with bank number.
+ *
  */
 export class SjasmplusSldLabelParser extends LabelParserBase {
 
@@ -35,6 +43,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// The number of used slots.
 	//protected shiftBits=3;
 
+	// The used bank size.
+	protected bankSize: number;	// will be overwritten
+
+	// The number of bits to shift to get the slot number from the address.
+	protected shiftbits: number;	// will be overwritten
+
 
 	/**
 	 * Reads the given sld file.
@@ -45,6 +59,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const sldConfig=this.config as SjasmplusConfig;
 		// Init (in case of several sld files)
 		this.lastLabel=undefined as any;
+		this.bankSize=0x10000;	// will be overwritten
+		this.shiftbits=0;	// will be overwritten
+
+
+		// TODO: Get from SLD file
+		this.bankSize=0x2000;
+		this.shiftbits=13;
 
 		// Loop through all lines of the sld file
 		const sldLines=readFileSync(sldConfig.sldPath!).toString().split('\n');
@@ -92,11 +113,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Get label
 		const label=fields[7];
 
-		// Change value to contain page info
-		if(page!=-1)
-			value+=(page<<16);
-
-
 		// Check data type
 		switch (type) {
 			case 'F': // Address labels (functions)
@@ -121,11 +137,14 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				break;
 			case 'T':	// Instruction trace data
 				{
+					// Change value to contain page info
+					const address=this.createLongAddress(value, page);
+
 					// Get line number
 					const lineNr=parseInt(fields[1])-1;
 
 					// Store values to associate address with line number
-					this.fileLineNrs.set(value, {
+					this.fileLineNrs.set(address, {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: undefined,
@@ -139,7 +158,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						this.lineArrays.set(sourceFile, new Array<number>());
 					}
 					// Store
-					lineArray[lineNr]=value;
+					lineArray[lineNr]=address;
 				}
 				break;
 			case 'Z':	// Device model
@@ -149,6 +168,18 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 	}
 
+
+	/**
+	 * Creates a long address from the address and the page info.
+	 * If page == -1 address is returned unchanged.
+	 * @param address The 64k address, i.e. the upper bits are the slot index.
+	 * @param page The page the address is associated with.
+	 * @returns address+((page+1)<<16)
+	 */
+	protected createLongAddress(address: number, page: number) {
+		const result=address+((page+1)<<16);
+		return result;
+	}
 }
 
 

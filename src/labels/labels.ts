@@ -201,7 +201,7 @@ export class LabelsClass {
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
 		var offs=-1;
-		for (var i=0; i<0x10000; i++) { // TODO: Does this work with sld?
+		for (var i=0; i<0x10000; i++) { // TODO: Does this work with sld? Ja, könnte sein.
 			const labels=this.labelsForNumber[i];
 			if (labels===undefined) {
 				if (offs>=0) {
@@ -349,14 +349,7 @@ export class LabelsClass {
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
 	// TODO: Ist wahrscheinlich doch besser ausserhalb die Addresse zu konverten.
-	public getFileAndLineForAddress(address: number, slots?: number[]): SourceFileEntry {
-		// Check if we need to convert to long address
-		if (slots) {
-			const slot=(address>>>13)&0x7;
-			const bank=slots[slot];
-			address+=(bank<<16);
-		}
-
+	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Address file conversion
 		const entry=this.fileLineNrs.get(address);
 		if (!entry)

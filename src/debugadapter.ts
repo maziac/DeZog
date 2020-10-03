@@ -788,8 +788,8 @@ export class DebugSessionClass extends DebugSession {
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
-			const addr=frame.addr;
-			const file=Labels.getFileAndLineForAddress(addr, slots);// TODO: Does not work with sld
+			const addr=Remote.createLongAddress(frame.addr, slots);
+			const file=Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
 			const src=this.createSource(file.fileName);
 			const lineNr=(src)? this.convertDebuggerLineToClient(file.lineNr):0;
@@ -1828,8 +1828,8 @@ export class DebugSessionClass extends DebugSession {
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
 				Remote.getRegsAndSlots().then(() => {
-					const pc=Remote.getPC();
-					const entry=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
+					const pcLongAddr=Remote.getPCLong();
+					const entry=Labels.getFileAndLineForAddress(pcLongAddr);
 					// Local label and prefix
 					lastLabel=entry.lastLabel;
 					modulePrefix=entry.modulePrefix;

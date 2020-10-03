@@ -13,7 +13,7 @@ Several problems arise if memory is used in this way.
 - File/line number <-> breakpoint association: If a breakpoint is set by 64k address in one file this breakpoint would be true for all sources, i.e. all memory banks.
 - Code coverage: The addresses returned by the emulator for code coverage need to contain the memory bank. Otherwise the wrong file might be colored. Or if several files are candidates it is not clear what file to color.
 - History (cpu history): A similar problem. The emulator needs to return address and memory bank of the instruction.
-- History (lite history): This is independet of the emulator. I.e. if the current PC address and bank number can be retrieved it is possible to store it.
+- History (lite history): This is independent of the emulator. I.e. if the current PC address and bank number can be retrieved it is possible to store it.
 
 
 # Long Addresses Representation
@@ -21,18 +21,22 @@ Several problems arise if memory is used in this way.
 To store a "long address", i.e. an address with bank number information, it is necessary to know the bank size at first.
 For the ZXNext this is usually 8k and any examples here will use this as assumption.
 
-The long address will consist of the address inside the bank plus the bank number (shifted appropriatedly).
-E.g. an address in bank 107 and an address inside the bank of 0x10B0 with bank size of 8k will be calcualted like:
+<!--
+The long address will consist of the address inside the bank plus the bank number (shifted appropriately).
+E.g. an address in bank 107 and an address inside the bank of 0x10B0 with bank size of 8k will be calculated like:
 ~~~
 long_address = (107)<<13 + 0x10B0
 ~~~
+-->
 
+To easy distinguish between long address and normal addresses all addresses <= 0xFFFF will be normal 64k addresses.
+Everything bigger is a long address with the coding:
+~~~
+(bank_nr+1)<<16 + address
+~~~
+where address includes the upper bits for the slot index.
+It is necessary to increase the bank_nr by 1 because 0 is left for normal addresses.
 
-Maybe I better use this representation:
-~~~
-(bank_nr)<<16 + address
-~~~
-where address includes the upper 3 bits for the slot.
 
 
 # Is it necessary to distinguish if long addresses or 64k addresses are used ?

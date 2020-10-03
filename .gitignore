@@ -8,4 +8,5 @@ logs/
 .vscode/
 notes.md
 /coverage/
+**/.tmp/
 

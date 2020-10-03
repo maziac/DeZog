@@ -489,6 +489,16 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Returns the PC as long address, i.e. with bank info.
+	 */
+	public getPCLong(): number {
+		const pc=this.getPC();
+		const pcLong=this.createLongAddress(pc, this.slots);
+		return pcLong;
+	}
+
+
+	/**
 	 * Returns a specific register value.
 	 * Note: The registers should already be present (cached).
 	 * I.e. there is no communication with the remote emulator involved.
@@ -1256,6 +1266,25 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getSlots(): number[]|undefined {
 		return this.slots;
+	}
+
+
+	/**
+	 * Creates a long address from the address and slots.
+	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
+	 * If undefined: address.
+	 * I.e. a long address is always > 0xFFFF
+	 * a normal address is always <= 0xFFFF
+	 */
+	public createLongAddress(address: number, slots: number[]|undefined): number {
+		// Check for normal address
+		if (!slots)
+			return address;
+		// Calculate long address
+		const slotNr=address>>>13;
+		const bank=slots[slotNr]+1;
+		const result=address+(bank<<16);
+		return result;
 	}
 
 
