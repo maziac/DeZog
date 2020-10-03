@@ -343,7 +343,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			const breakNumber=data[2];
-			const breakAddress=Utility.getWord(data, 3);
+			const breakAddress64k=Utility.getWord(data, 3);
+			// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot.
+			const breakAddress=this.createLongAddress(breakAddress64k, this.slots);
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
@@ -589,7 +591,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const bpAddress=bp.address;
+		const bpAddress=bp.address&0xFFFF;
 		let condition=bp.condition;
 		// Convert condition string to Buffer
 		if (!condition)

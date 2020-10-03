@@ -1293,6 +1293,18 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * Retrieves the slot index from an address.
+	 * @param addr The 16 bit address.
+	 * @return The upper bits of the address (shifted).
+	 */
+	public getSlotFromAddress(addr: number): number {
+		// TODO: Use bank size parameter from somewhere
+		const slotIndex=(addr>>>13)&0x07;
+		return slotIndex;
+	}
+
+
+	/**
 	 * Change the program counter and emit 'stoppedEvent'.
 	 * @param address The new address for the program counter.
 	 */
@@ -1483,7 +1495,7 @@ export class RemoteBase extends EventEmitter {
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
 		await this.getRegsAndSlots();
-		const pc=this.getPC();
+		const pc=this.getPC(); // TODO: Change to long PC
 		// Get opcodes
 		const opcodes=await this.readMemoryDump(pc, 4);
 

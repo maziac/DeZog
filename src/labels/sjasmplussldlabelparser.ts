@@ -154,7 +154,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					let lineArray=this.lineArrays.get(sourceFile);
 					if (!lineArray) {
 						lineArray=new Array<number>();
-						this.lineArrays.set(sourceFile, new Array<number>());
+						this.lineArrays.set(sourceFile, lineArray);
 					}
 					// Store
 					lineArray[lineNr]=address;

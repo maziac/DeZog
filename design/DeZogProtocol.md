@@ -758,3 +758,4 @@ Notification:
 | 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
 
+// TODO: Need to add bank+1 here

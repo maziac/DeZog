@@ -2521,12 +2521,20 @@ Notes:
 	 */
 	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
-		const realLineNr=lineNr; //this.convertClientLineToDebugger(lineNr);
+		const realLineNr=lineNr;
 		let addr=Remote.getAddrForFileAndLine(filename, realLineNr);
 		if (addr<0)
 			return;
+		// Check if bank is the same
+		const slots=Remote.getSlots();
+		const bank=addr>>>16;
+		if (bank&&slots) {
+			const slotIndex=Remote.getSlotFromAddress(addr);
+			if (bank!=slots[slotIndex]+1)
+				return;	// The slots are not correctly set for this to work
+		}
 		// Now change Program Counter
-		await Remote.setProgramCounterWithEmit(addr);
+		await Remote.setProgramCounterWithEmit(addr&0xFFFF);
 	}
 
 
