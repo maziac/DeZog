@@ -162,7 +162,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				break;
 			case 'Z':	// Device model
 				{
-					this.longAddresses=true;
+					this.longAddressesUsed=true;
 				}
 				break;
 		}

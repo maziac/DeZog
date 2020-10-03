@@ -772,15 +772,18 @@ export class DebugSessionClass extends DebugSession {
 		let callStack;
 		let slots;
 		if (StepHistory.isInStepBackMode()) {
+			// Get the current slots
+			// TODO: Does not work for sld. I need to have a StepHistory.getSlots as well.
+			// Get callstack
 			callStack=StepHistory.getCallStack();
-			// TODO: Does not work for sld
 		}
 		else {
-			callStack=await Remote.getCallStack();
 			// Get the current slots
-			if(Labels.longAddressesUsed)
-				slots=await Remote.getSlots();
-		}
+			if (Labels.longAddressesUsed)
+				slots=Remote.getSlots();
+			// Get callstack
+			callStack=await Remote.getCallStack();
+			}
 
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.
