@@ -779,11 +779,14 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else {
 			// Get the current slots
-			if (Labels.longAddressesUsed)
+			if (Labels.longAddressesUsed) {
+				Remote.clearRegsAndSlots();	// TODO: Clear slots would be enough
+				await Remote.getRegsAndSlots();
 				slots=Remote.getSlots();
+			}
 			// Get callstack
 			callStack=await Remote.getCallStack();
-			}
+		}
 
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.

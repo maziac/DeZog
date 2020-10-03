@@ -344,8 +344,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Notification.
 			const breakNumber=data[2];
 			const breakAddress64k=Utility.getWord(data, 3);
-			// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot.
-			const breakAddress=this.createLongAddress(breakAddress64k, this.slots);
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
@@ -355,8 +353,16 @@ export class DzrpBufferRemote extends DzrpRemote {
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 
-				// Handle the break
-				continueHandler({breakNumber, breakAddress, breakReasonString});
+
+				// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot. It's also not cool to call other commands from here.
+				const slotNr=breakAddress64k>>>13;
+				this.sendDzrpCmdGetTbblueReg(0x50+slotNr).then(bank => {
+					const breakAddress=breakAddress64k+((bank+1)<<16);
+
+					// TODO: Hier würde es (ohne 'then') normal weitergehen:
+					// Handle the break
+					continueHandler({breakNumber, breakAddress, breakReasonString});
+				});
 			}
 		}
 		else {
