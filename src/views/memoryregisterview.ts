@@ -51,7 +51,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 			return;
 
 		// Get register values
-		await Remote.getRegisters();
+		await Remote.getRegsAndSlots();
 		// Recalculate the memory addresses
 		this.memDump.clearBlocks();
 		this.vscodePanel.title='';

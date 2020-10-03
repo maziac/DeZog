@@ -149,7 +149,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * A list with all register values is passed (as variables).
 	 */
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
-		await Remote.getRegisters();
+		await Remote.getRegsAndSlots();
 		const registers=new Array<DebugProtocol.Variable>();
 		const regNames=this.registerNames();
 		for (let regName of regNames) {
@@ -184,7 +184,7 @@ export class RegistersMainVar extends ShallowVar {
 			else
 				await Remote.setRegisterValueWithEmit(name, value);
 		}
-		await Remote.getRegisters()
+		await Remote.getRegsAndSlots()
 		const formatted = Remote.getVarFormattedReg(name);
 		return formatted;
 	}

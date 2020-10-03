@@ -953,7 +953,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegsAndSlots();
 			Remote.clearCallStack();
 		}
 
@@ -1097,7 +1097,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegsAndSlots();
 			Remote.clearCallStack();
 		}
 
@@ -1134,7 +1134,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegsAndSlots();
 			Remote.clearCallStack();
 		}
 
@@ -1199,7 +1199,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegsAndSlots();
 			Remote.clearCallStack();
 		}
 

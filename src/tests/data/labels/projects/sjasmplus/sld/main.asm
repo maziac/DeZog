@@ -11,6 +11,14 @@ main:
     di
     ld sp,stack_top
 
+
+    nextreg 0x50+5,94
+    nextreg 0x50+5,95
+    nextreg 0x50+5,96
+    nextreg 0x50+5,97
+    nextreg 0x50+5,111
+
+
 .loop:
     ; Bank 100
     nextreg 0x50+5,100

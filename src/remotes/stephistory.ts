@@ -406,8 +406,8 @@ export class StepHistoryClass extends EventEmitter {
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
-			// Get the registers etc. from ZEsarUX
-			Z80Registers.clearCache();
+			// Get the registers etc. from the Remote
+			Remote.clearRegsAndSlots();
 			breakReasonString='Break: Reached start of instruction history.';
 		}
 

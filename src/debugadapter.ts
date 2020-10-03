@@ -1110,7 +1110,7 @@ export class DebugSessionClass extends DebugSession {
 		if (!breakReason)
 			return;
 		// Get PC
-		Remote.getRegisters().then(() => {
+		Remote.getRegsAndSlots().then(() => {
 			const pc=Remote.getPC();
 			Decoration.showBreak(pc, breakReason);
 		});
@@ -1292,7 +1292,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.clear();
 
 		// Normal Step-Over
-		Z80Registers.clearCache();
+		Remote.clearRegsAndSlots();
 		//const result=
 		await Remote.stepOver();
 
@@ -1390,7 +1390,7 @@ export class DebugSessionClass extends DebugSession {
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
-			Remote.getRegisters();
+			Remote.getRegsAndSlots();
 			const prevPc=Remote.getPC();
 			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);// TODO: Does not work with sld
 			let i=0;
@@ -1429,7 +1429,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Get new file/line location
-				await Remote.getRegisters();
+				await Remote.getRegsAndSlots();
 				const pc=Remote.getPC();
 				const nextFileLoc=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 				// Compare with start location
@@ -1490,7 +1490,7 @@ export class DebugSessionClass extends DebugSession {
 			if (!(CpuHistory as any)) {
 				// Store as (lite step history)
 				// Make sure registers and callstack exist.
-				await Remote.getRegisters();
+				await Remote.getRegsAndSlots();
 				const regsCache=Z80Registers.getCache();
 				StepHistory.pushHistoryInfo(regsCache);
 				const callStack=await Remote.getCallStack();
@@ -1827,7 +1827,7 @@ export class DebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				Remote.getRegisters().then(() => {
+				Remote.getRegsAndSlots().then(() => {
 					const pc=Remote.getPC();
 					const entry=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 					// Local label and prefix

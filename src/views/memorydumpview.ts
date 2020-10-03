@@ -540,7 +540,7 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Get register values
-		Remote.getRegisters().then(() => {
+		Remote.getRegsAndSlots().then(() => {
 			if (!this.vscodePanel)
 				return;
 
@@ -574,7 +574,7 @@ export class MemoryDumpView extends BaseView {
 			if(!Z80RegistersClass.isRegister(reg))
 				continue;
 			// get address = value of reg
-			Remote.getRegisters().then(() => {
+			Remote.getRegsAndSlots().then(() => {
 				const address = Remote.getRegisterValue(reg)
 				//console.log( reg + ': ' + address.toString(16));
 				// Clear old color

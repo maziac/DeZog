@@ -659,7 +659,7 @@ export class Z80UnitTests {
 	protected static onBreak(debugAdapter?: DebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
-		Remote.getRegisters().then(() => {
+		Remote.getRegsAndSlots().then(() => {
 			// Parse the PC value
 			const pc = Remote.getPC();
 			//const sp = Z80Registers.parseSP(data);
@@ -722,7 +722,7 @@ export class Z80UnitTests {
 					*/
 					// Init
 					StepHistory.clear();
-					Z80Registers.clearCache();
+					Remote.clearRegsAndSlots();
 					Remote.clearCallStack();
 
 					// Run or Debug
