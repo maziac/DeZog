@@ -354,7 +354,7 @@ export class LabelsClass {
 		if (slots) {
 			const slot=(address>>>13)&0x7;
 			const bank=slots[slot];
-			address=(address&0x1FFF)+(bank<<13);
+			address+=(bank<<16);
 		}
 
 		// Address file conversion

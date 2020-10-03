@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import {Utility} from '../misc/utility';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 
@@ -32,7 +33,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// utilities.asm|11||0|11|24577|F|pause
 
 	// The number of used slots.
-	protected shiftBits=3;
+	//protected shiftBits=3;
 
 
 	/**
@@ -83,15 +84,17 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const page=parseInt(fields[4]);
 		// Get value
 		let value=parseInt(fields[5]);
+		Utility.assert(value<0x10000);
+
 		// Get type
 		const type=fields[6];
 
 		// Get label
 		const label=fields[7];
 
-		// Change value and page info to address
+		// Change value to contain page info
 		if(page!=-1)
-			value=(value&(0xFFFF>>this.shiftBits))+(page<<(16-this.shiftBits));
+			value+=(page<<16);
 
 
 		// Check data type
