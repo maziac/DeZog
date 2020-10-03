@@ -778,7 +778,7 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			callStack=await Remote.getCallStack();
 			// Get the current slots
-			if(Labels.longAddresses)
+			if(Labels.longAddressesUsed)
 				slots=await Remote.getSlots();
 		}
 

@@ -490,9 +490,13 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Returns the PC as long address, i.e. with bank info.
+	 * Note: If Labels.longAddressesUsed the normal 64k address is returned.
+	 * @returns PC + (bank_nr+1)<<16
 	 */
 	public getPCLong(): number {
 		const pc=this.getPC();
+		if (!Labels.longAddressesUsed)
+			return pc;	// Just return normal value if long addresses are not used.
 		const pcLong=this.createLongAddress(pc, this.slots);
 		return pcLong;
 	}

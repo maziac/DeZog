@@ -75,7 +75,7 @@ export class LabelParserBase {
 	protected excludedFileStackIndex: number;
 
 	// Is set to true if addresses+page/bank number is used
-	public longAddresses=true;
+	public longAddresses=false;
 
 
 	// Constructor.

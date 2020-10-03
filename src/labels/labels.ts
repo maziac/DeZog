@@ -85,7 +85,7 @@ export class LabelsClass {
 
 
 	// Is set to true if addresses+page/bank number is used
-	public longAddresses: boolean;
+	public longAddressesUsed: boolean;
 
 
 	// Constructor.
@@ -107,7 +107,7 @@ export class LabelsClass {
 		this.assertLines.length=0;
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
-		this.longAddresses=false;
+		this.longAddressesUsed=false;
 	}
 
 
@@ -144,7 +144,7 @@ export class LabelsClass {
 					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
-				this.longAddresses=parser.longAddresses;
+				this.longAddressesUsed=parser.longAddressesUsed;
 			}
 		}
 
