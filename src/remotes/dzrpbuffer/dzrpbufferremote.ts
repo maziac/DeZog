@@ -4,6 +4,7 @@ import {Z80RegistersClass, Z80_REG, Z80Registers, Z80RegistersStandardDecoder} f
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Labels} from '../../labels/labels';
 
 
 
@@ -357,7 +358,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 				// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot. It's also not cool to call other commands from here.
 				const slotNr=breakAddress64k>>>13;
 				this.sendDzrpCmdGetTbblueReg(0x50+slotNr).then(bank => {
-					const breakAddress=breakAddress64k+((bank+1)<<16);
+					let breakAddress=breakAddress64k;
+					if (Labels.longAddressesUsed)
+						breakAddress+=(bank+1)<<16;
 
 					// TODO: Hier würde es (ohne 'then') normal weitergehen:
 					// Handle the break
