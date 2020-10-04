@@ -4,6 +4,7 @@ import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
+import {Labels} from '../../labels/labels';
 
 
 
@@ -391,7 +392,7 @@ export class Z80Cpu {
 		const regData=this.getRegisterData();
 		// Add opcode and sp contents
 		const startHist=regData.length;
-		const histData=new Uint16Array(startHist+3);
+		const histData=new Uint16Array(startHist+4);
 		// Copy registers
 		histData.set(regData);
 		// Store opcode (4 bytes)
@@ -404,6 +405,14 @@ export class Z80Cpu {
 		const sp=z80.sp;
 		const spContents=this.memory.getMemory16(sp);
 		histData[startHist+2]=spContents;
+		// Store bank for PC (i.e. to be able to create long address from PC)
+		let bank=0;
+		if (Labels.longAddressesUsed) { // TODO: Pass Labels.longAddressesUsed in constructor
+			const index=pc>>>13;	// TODO: Need to get the constant from somewhere
+			const slots=this.memory.getSlots();
+			bank=slots[index]+1;
+		}
+		histData[startHist+3]=bank;
 		// return
 		return histData;
 	}

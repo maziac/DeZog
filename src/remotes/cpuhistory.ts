@@ -16,6 +16,7 @@ import {TimeWait} from '../misc/timewait';
  * Use similar data as DecodeRegisterData but with data extension.
  * This extension is read and parsed as well.
  * To get the opcodes at the pc and the contents at (SP).
+ * Also returns the extended (long) PC address, i.e. the bank (+1) the PC is used in.
  * This is required only for true cpu history (not for lite/step history).
  */
 export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
@@ -26,11 +27,12 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 	 * @return E.g. 0x5C782AE52 as number
 	 */
 	public getOpcodes(line: HistoryInstructionInfo): number {
-		// 6 bytes at the end contain the additional info:
+		// 8 bytes at the end contain the additional info:
 		// 4 bytes: opcodes
 		// 2 bytes: SP contents
+		// 2 bytes: PC bank+1
 		const data=line as Uint16Array;
-		const index=data.length-3;
+		const index=data.length-4;
 		let opcodes = data[index];
 		opcodes|=data[index+1]<<16;
 		return opcodes;
@@ -43,13 +45,33 @@ export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
 	 * @returns The (sp), e.g. 0xA2BF
 	 */
 	public getSPContent(line: HistoryInstructionInfo): number {
-		// 6 bytes at the end contain the additional info:
+		// 8 bytes at the end contain the additional info:
 		// 4 bytes: opcodes
 		// 2 bytes: SP contents
+		// 2 bytes: PC bank+1
 		const data=line as Uint16Array;
-		const index=data.length-1;
+		const index=data.length-2;
 		let spContents=data[index];
 		return spContents;
+	}
+
+
+	/**
+	 * Returns the PC as long address, i.e. together with bank info.
+	 * @param line One line of HistoryInstructionInfo.
+	 * @returnsA long address e.g. 0x57A000
+	 */
+	public getPCLong(line: HistoryInstructionInfo): number {
+		// 8 bytes at the end contain the additional info:
+		// 4 bytes: opcodes
+		// 2 bytes: SP contents
+		// 2 bytes: PC bank+1
+		const data=line as Uint16Array;
+		const index=data.length-1;
+		let bank=data[index];
+		const pc=Z80Registers.decoder.parsePC(line);
+		const pcLong=pc+(bank<<16);	// Normal address if bank is 0
+		return pcLong;
 	}
 }
 
@@ -175,6 +197,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
+			// TODO: Does this work with long addresses:
 			const pc=Z80Registers.decoder.parsePC(line);
 			addresses.push(pc);
 		}
@@ -640,7 +663,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 
 			// And push to stack
-			const pc=Z80Registers.decoder.parsePC(currentLine);
+			//const pc=Z80Registers.decoder.parsePC(currentLine);
+			const pc=this.decoder.getPCLong(currentLine);
 			const frame=new CallStackFrame(pc, sp, labelCallAddr);
 			this.reverseDbgStack.push(frame);
 
@@ -700,7 +724,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Adjust PC within frame
-		const pc=Z80Registers.decoder.parsePC(currentLine)
+		//const pc=Z80Registers.decoder.parsePC(currentLine);
+		const pc=this.decoder.getPCLong(currentLine);
 		frame.addr=pc;
 
 		// Add a possibly pushed value
@@ -836,7 +861,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 		// Check for interrupt. Either use SP or use PC to check.
 		let interruptFound=false;
-		const nextPC=Z80Registers.decoder.parsePC(nextLine);
+		//const nextPC=Z80Registers.decoder.parsePC(nextLine);
+		const nextPC=this.decoder.getPCLong(nextLine);
 		if (expectedSP!=undefined) {
 			// Use SP for checking
 			if (nextSP==expectedSP-2)

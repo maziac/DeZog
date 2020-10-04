@@ -1293,7 +1293,7 @@ export class RemoteBase extends EventEmitter {
 		if (!slots)
 			return address;
 		// Calculate long address
-		const slotNr=address>>>13;
+		const slotNr=address>>>13;	// TODO: Need to get the constant from somewhere
 		const bank=slots[slotNr]+1;
 		const result=address+(bank<<16);
 		return result;

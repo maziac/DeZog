@@ -475,7 +475,10 @@ export class ZSimRemote extends DzrpRemote {
 	 * Stores the current registers, opcode and sp contents
 	 * in the cpu history.
 	 * Called on every executed instruction.
-	 * @param pc The pc for the line.
+	 * @param pc The pc for the line. Is only used to compare with previous storage.
+	 * I.e. to see if it is a LDIR instruction or similar.
+	 * And that case no new entry is stored.
+	 * Therefore it can be a 64k address, i.e. it does not need to be a long address.
 	 */
 	protected storeHistoryInfo(pc: number) {
 		// Get history element
@@ -502,8 +505,9 @@ export class ZSimRemote extends DzrpRemote {
 		//let bp;
 		let breakAddress;
 		let updateCounter=0;
-		const slots=(this.memory as ZxMemory).getSlots();
-		const longAddressesUsed=Labels.longAddressesUsed;
+		let slots;
+		if (Labels.longAddressesUsed)
+			slots=(this.memory as ZxMemory).getSlots();
 		try {
 			// Run the Z80-CPU in a loop
 			for (; counter>0; counter--) {
@@ -541,11 +545,7 @@ export class ZSimRemote extends DzrpRemote {
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
 				// Convert to long address
-				let pcLong=pc;
-				if (longAddressesUsed) {
-					const index=pc>>13;	// TODO: Need to get the constant from somewhere
-					pcLong+=(slots[index]+1)<<16;	// bank +1
-				}
+				const pcLong=this.createLongAddress(pc, slots);
 				const bpInner=this.tmpBreakpoints.get(pcLong);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.

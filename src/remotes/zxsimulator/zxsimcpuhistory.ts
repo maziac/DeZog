@@ -177,6 +177,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 		let index=startIndex;
 		for (let i=0; i<=count; i++) {
 			const line=this.history[index];
+			// TODO: Does this work?:
 			const pc=Z80Registers.decoder.parsePC(line);
 			addresses.push(pc);
 			index--;

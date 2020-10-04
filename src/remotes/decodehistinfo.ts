@@ -277,5 +277,17 @@ export class DecodeHistoryInfo {
 		Utility.assert(false);
 		return 0;
 	}
+
+
+	/**
+	 * Returns the PC as long address, i.e. together with bank info.
+	 * @param line One line of HistoryInstructionInfo.
+	 * @returnsA long address e.g. 0x57A000
+	 */
+	public getPCLong(line: HistoryInstructionInfo): number {
+		// Override this
+		Utility.assert(false);
+		return 0;
+	}
 }
 
