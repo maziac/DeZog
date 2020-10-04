@@ -31,22 +31,17 @@ export interface ListFileLine extends SourceFileEntry {
 /**
  * Calculation of the labels from the input list and labels file.
  *
- * There is no association between labels/files and memory banks. I.e. it is not
- * possible to load 2 disassemblies for the same area, e.g. for ROM0 and ROM1.
- * The last one would win.
+ * For "normal" list files the labels are 64k addresses.
+ * Special assemblers (e.g. sjasmplus) is also able to generate label
+ * information that includes the used bank number as well.
  *
- * This is because it is not clear/easy to distinguish the bank for a label.
- * Several other problem areas would need to be taken into account:
- * - breakpoints for certain memory banks
- * - should a label be displayed even if another memory bank is currently selected (could be valid).
- * - ...
- * Also the benefit is low. So I decided to stay with a memory bank agnostic implementation:
- * All labels can cover all banks. It is not possible to load 2 disassemblies for the same area for different banks.
+ * DeZog is capable of handling both. If banking information should be used as
+ * well then the longAddressesUsed public boolean is set to true.
+ * This has to be set by the list file parser.
+ * Furthermore the list file parser has to provide these 'long addresses'
+ * in a special format.
+ * Please look at SjasmplusSldLabelParser as an example.
  *
- * This also implies that there is no automatic loading e.g. for the ROM. The user
- * has to supply the wanted list file e.g. for the ROM and needs to decide which ROM he wants to see.
- *
- * (Note: this applies only to the labels/list files, the disassembly shown in the VARIABLEs area is always the one from the current bank.)
  */
 export class LabelsClass {
 

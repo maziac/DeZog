@@ -203,3 +203,6 @@ Make sure to convert all of the paths (e.g. 'path') in your assembler settings w
 
 Document the new assembler configuration inside [Usage.md](../documentation/Usage.md) in the chapter "Assembler Configuration".
 Please also don't forget to update the table in "Assemblers and Labels".
+
+
+// TODO: Add documentation about long addresses.

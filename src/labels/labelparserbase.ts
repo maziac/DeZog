@@ -435,8 +435,8 @@ export class LabelParserBase {
 	 */
 	protected addLabelForNumber(value: number, label: string, labelType=LabelType.GLOBAL) {
 		// Safety check
-		if (value<0||value>=0x10000)
-			return;
+		//if (value<0||value>=0x10000)
+		//	return;  Is allowed for EQU
 
 		switch (labelType) {
 			case LabelType.NORMAL:
