@@ -770,7 +770,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Get the call stack trace.
 		let callStack;
-		let slots;
+		//let slots;
 		if (StepHistory.isInStepBackMode()) {
 			// Get the current slots
 			// TODO: Does not work for sld. I need to have a StepHistory.getSlots as well.
@@ -782,7 +782,7 @@ export class DebugSessionClass extends DebugSession {
 			if (Labels.longAddressesUsed) {
 				Remote.clearRegsAndSlots();	// TODO: Clear slots would be enough
 				await Remote.getRegsAndSlots();
-				slots=Remote.getSlots();
+//				slots=Remote.getSlots();
 			}
 			// Get callstack
 			callStack=await Remote.getCallStack();
@@ -794,7 +794,8 @@ export class DebugSessionClass extends DebugSession {
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
-			const addr=Remote.createLongAddress(frame.addr, slots);
+			//const addr=Remote.createLongAddress(frame.addr, slots);
+			const addr=frame.addr;
 			const file=Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
 			const src=this.createSource(file.fileName);
@@ -1055,7 +1056,7 @@ export class DebugSessionClass extends DebugSession {
 		// get address
 		if (frame) {
 			// use address
-			const addr=frame.addr;
+			const addr=frame.addr;	// TODO: convert to 64k address
 			// Create variable object for Disassembly
 			const varDisassembly=new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
 			// Add to list and get reference ID

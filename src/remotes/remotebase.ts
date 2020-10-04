@@ -633,7 +633,7 @@ export class RemoteBase extends EventEmitter {
 
 		// Found: get label
 		const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
-		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
+		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr&0xFFFF, 4)+'h';
 
 		// Return
 		return {name: labelCalledAddr, callerAddr};
@@ -733,7 +733,8 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Set PC
-		const pc=Z80Registers.getRegValue(Z80_REG.PC);
+		//const pc=Z80Registers.getRegValue(Z80_REG.PC);
+		const pc=this.getPCLong();
 		lastCallStackFrame.addr=pc;
 
 		// Return
