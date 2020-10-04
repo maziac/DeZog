@@ -502,6 +502,8 @@ export class ZSimRemote extends DzrpRemote {
 		//let bp;
 		let breakAddress;
 		let updateCounter=0;
+		const slots=(this.memory as ZxMemory).getSlots();
+		const longAddressesUsed=Labels.longAddressesUsed;
 		try {
 			// Run the Z80-CPU in a loop
 			for (; counter>0; counter--) {
@@ -538,7 +540,13 @@ export class ZSimRemote extends DzrpRemote {
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
-				const bpInner=this.tmpBreakpoints.get(pc);
+				// Convert to long address
+				let pcLong=pc;
+				if (longAddressesUsed) {
+					const index=pc>>13;	// TODO: Need to get the constant from somewhere
+					pcLong+=(slots[index]+1)<<16;	// bank +1
+				}
+				const bpInner=this.tmpBreakpoints.get(pcLong);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.
 					// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
@@ -575,7 +583,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Breakpoint and condition OK
 					if (bp) {
 						breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-						breakAddress=pc;
+						breakAddress=pcLong;
 						break;	// stop loop
 					}
 				}

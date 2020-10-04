@@ -125,6 +125,17 @@ If a long label/address is found the slot/bank information should be used additi
 Open: how to accurately display the used bank.
 
 
+# CPU History
+
+## Step History
+
+The Remote.getCallStack returns long addresses if used.
+This call stack is saved to history on each step.
+It is already enough to get the correct file <-> address association.
+The last frame of the call stack is also used as (long) PC address instead of the value from the Z80 registers.
+As the breakpoints are also long addresses the BP address can be directly compared to the call stack PC.
+
+
 # Misc
 
 - 24bit addresses:
@@ -155,17 +166,3 @@ Open: how to accurately display the used bank.
     - zxnext: same as cspect
 
 
-## labelsForNumber Array
-
-~~~
-/// An element contains either the offset from the last
-/// entry with labels or an array of labels for that number.
-~~~
-
-The idea was to show address values like ```my_array+12```.
-With an array of 64k size this was do-able.
-Now with an array of 256*64k some other routine is required.
-
-Task is to find the label with the smallest diff bigger than 0 with diff=searched_addr-label.
-
-But maybe I can still use the 64k array and only look at the address without bank number.
