@@ -220,8 +220,13 @@ export class LabelsClass {
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
 	public getLabelsForNumber(number: number, regsAsWell=false): Array<string> {
+		/*
 		if (number<=this.smallValuesMaximum||number>0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
+		}
+		*/
+		if (number<=this.smallValuesMaximum) {
+			return [];	// E.g. ignore numbers/labels < e.g. 513
 		}
 
 		let names;

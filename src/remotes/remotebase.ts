@@ -573,8 +573,9 @@ export class RemoteBase extends EventEmitter {
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
-	 * - callerAddr: The caller address of the subroutine
-	 * Otherwise undefined.
+	 * - callerAddr: The caller address of the subroutine.
+	 *   Could be a long address.
+	 *   Otherwise undefined.
 	 */
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get the 3 bytes before address.
@@ -622,6 +623,12 @@ export class RemoteBase extends EventEmitter {
 		// Nothing found?
 		if (calledAddr==undefined) {
 			return undefined;
+		}
+
+		// Convert to long address if necessary
+		if (Labels.longAddressesUsed) {
+			callerAddr=this.createLongAddress(callerAddr, this.slots);
+			calledAddr=this.createLongAddress(calledAddr, this.slots);
 		}
 
 		// Found: get label

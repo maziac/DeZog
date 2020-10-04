@@ -133,6 +133,20 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					}
 					// Add new label
 					labelsArray.push(label);
+
+					// Add label a 2nd time with the long address.
+					// This is used to get the label from teh call stack value.
+					const longValue=this.createLongAddress(value, page);
+					// Add label
+					let labelsArrayLong=this.labelsForNumber[longValue];
+					//console.log("labelsArray", labelsArray, "value=", value);
+					if (labelsArrayLong==undefined) {
+						// create a new array
+						labelsArrayLong=new Array<string>();
+						this.labelsForNumber[longValue]=labelsArrayLong;
+					}
+					// Add new label
+					labelsArrayLong.push(label);
 				}
 				break;
 			case 'T':	// Instruction trace data
