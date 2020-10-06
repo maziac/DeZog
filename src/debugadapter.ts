@@ -782,7 +782,6 @@ export class DebugSessionClass extends DebugSession {
 			if (Labels.longAddressesUsed) {
 				Remote.clearRegisters();	// TODO: Clear slots would be enough
 				await Remote.getRegisters();
-//				slots=Remote.getSlots();
 			}
 			// Get callstack
 			callStack=await Remote.getCallStack();

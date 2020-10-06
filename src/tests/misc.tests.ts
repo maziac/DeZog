@@ -1,23 +1,30 @@
 
 import * as assert from 'assert';
 import {Utility} from '../misc/utility';
+import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
 
 /**
  * The tests here are not really unit tests but meant to check some
  * functionality or to do performance tests.
  */
 
-// Please rename a test suite to 'suite_hide' so that it will
+// Please rename a test 'suite' to 'suite_hide' so that it will
 // not appear on the sidebar.
 // To make it available again rename to 'suite'.
 function suite_hide(name: string, func: () => void) {
 }
+suite_hide;
+
+// Similar for 'test'.
+function test_hide(name: string, func: () => void) {
+}
+test_hide;
 
 suite_hide('Miscellaneous', () => {
 
 	suite('Performance', () => {
 
-		test('Array vs Map', () => {
+		test_hide('Array vs Map', () => {
 			const itemCount=65536*10;
 			const accessCount=10000000;
 			const step=20;
@@ -109,6 +116,61 @@ suite_hide('Miscellaneous', () => {
 			 Comment: A sparse array may get a similar speed as a map if there are less holes.
 
 			 Conclusion: It makes no sense to use a sparse array over a map.
+			 */
+		});
+
+
+		test('Performance decode register', () => {
+			const count=300000;
+			const decoder=new DecodeZesaruxRegisters();
+			const line="PC=812c SP=8418 AF=03ff BC=02ff HL=99a2 DE=ffff IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2c  F=SZ5H3PNC F'=-Z-- -P-- MEMPTR=0000 IM0 IFF-- VPS: 0 MMU=80008001000a000b0004006400000001";
+
+			// Measure access for DE (middle)
+			const timeWithIndexDE=Utility.measure(() => {
+				decoder.parseDE(line);
+			}, count);
+			// Output
+			console.log('\nPerformance: decode register');
+			console.log('parseDE: WithIndex='+timeWithIndexDE+'ms');
+
+			// Measure access for PC (first)
+			const timeWithIndexPC=Utility.measure(() => {
+				decoder.parseDE(line);
+			}, count);
+			// Output
+			console.log('parsePC: WithIndex='+timeWithIndexPC+'ms');
+
+
+			// Measure access for DE (middle)
+			const timeWithSearchDE=Utility.measure(() => {
+				(decoder as any).deIndex=-1;
+				decoder.parseDE(line);
+			}, count);
+			// Output
+			console.log('parseDE: WithSearch='+timeWithSearchDE+'ms');
+
+			// Measure access for PC (first)
+			const timeWithSearchPC=Utility.measure(() => {
+				(decoder as any).pcIndex=-1;
+				decoder.parsePC(line);
+			}, count);
+			// Output
+			console.log('parsePC: WithSearch='+timeWithSearchPC+'ms');
+
+
+
+			assert.ok(true);
+
+			/*
+			 Result:
+			 parseDE: WithIndex=80ms
+			 parsePC: WithIndex=83ms
+
+			 parseDE: WithSearch=107ms
+			 parsePC: WithSearch=100ms
+
+			 Conclusion: With index is 20% faster.
+			 With search: Depending on the position the search might be a bit slower.
 			 */
 		});
 

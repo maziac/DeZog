@@ -76,7 +76,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	 */
 	public parsePC(data: RegisterData): number {
 		// Is 2-3 times faster than a regex
-		if (this.pcIndex<1000) {
+		if (this.pcIndex<0) {
 			this.pcIndex=data.indexOf('PC=');
 			Utility.assert(this.pcIndex>=0);
 			this.pcIndex+=3;
@@ -88,7 +88,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseSP(data: RegisterData): number {
 		if(this.spIndex < 0) {
 			this.spIndex = data.indexOf('SP=');
-			Utility.assert(this.spIndex >= 0);
+			Utility.assert(this.spIndex>=0);
 			this.spIndex += 3;
 		}
 		const res = parseInt(data.substr(this.spIndex,4),16);
