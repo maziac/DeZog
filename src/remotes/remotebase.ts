@@ -125,7 +125,7 @@ export class RemoteBase extends EventEmitter {
 
 	/// Memory slots. Contain the used banks.
 	/// If undefined the data has to be retrieved from the remote.
-	protected slots: number[]|undefined=undefined;
+	//protected slots: number[]|undefined=undefined;
 
 
 	/// Constructor.
@@ -465,7 +465,7 @@ export class RemoteBase extends EventEmitter {
 	* the emulator.
     * Override.
 	*/
-	public async getRegsAndSlots(): Promise<void> {
+	public async getRegisters(): Promise<void> {
 		Utility.assert(false);
 	}
 
@@ -474,9 +474,9 @@ export class RemoteBase extends EventEmitter {
 	 * If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
-	public clearRegsAndSlots() {
+	public clearRegisters() {
 		Z80Registers.clearCache();
-		this.slots=undefined;
+		//this.slots=undefined;
 	}
 
 
@@ -497,7 +497,8 @@ export class RemoteBase extends EventEmitter {
 		const pc=this.getPC();
 		if (!Labels.longAddressesUsed)
 			return pc;	// Just return normal value if long addresses are not used.
-		const pcLong=this.createLongAddress(pc, this.slots);
+		const slots=Z80Registers.getSlots();
+		const pcLong=this.createLongAddress(pc, slots);
 		return pcLong;
 	}
 
@@ -627,8 +628,9 @@ export class RemoteBase extends EventEmitter {
 
 		// Convert to long address if necessary
 		if (Labels.longAddressesUsed) {
-			callerAddr=this.createLongAddress(callerAddr, this.slots);
-			calledAddr=this.createLongAddress(calledAddr, this.slots);
+			const slots=this.getSlots();
+			callerAddr=this.createLongAddress(callerAddr, slots);
+			calledAddr=this.createLongAddress(calledAddr, slots);
 		}
 
 		// Found: get label
@@ -649,7 +651,7 @@ export class RemoteBase extends EventEmitter {
 	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
 	public async getStack(): Promise<Array<string>> {
-		await this.getRegsAndSlots();
+		await this.getRegisters();
 		const sp=Z80Registers.getSP();
 		// calculate the depth of the call stack
 		const tos=this.topOfStack;
@@ -1253,19 +1255,17 @@ export class RemoteBase extends EventEmitter {
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		// Prepare array
 		const pages: Array<MemoryBank>=[];
-		// Check if slots available
-		if (this.slots) {
-			// Get the data
-			const data=this.slots;
-			// Save in array
-			let start=0x0000;
-			data.map(slot => {
-				const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
-				const name=(slot>=254)? "ROM":"BANK"+slot;
-				pages.push({start, end, name});
-				start+=ZxMemory.MEMORY_BANK_SIZE;
-			});
-		}
+		// Get the slots
+		const slots=this.getSlots();
+		// Save in array
+		let start=0x0000;
+		slots.map(slot => {
+			// TODO: Needs to be changed for other devices other than ZX Next.
+			const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
+			const name=(slot>=254)? "ROM":"BANK"+slot;
+			pages.push({start, end, name});
+			start+=ZxMemory.MEMORY_BANK_SIZE;
+		});
 		// Return
 		return pages;
 	}
@@ -1276,8 +1276,8 @@ export class RemoteBase extends EventEmitter {
 	 * Reads the slots/banks association.
 	 * @returns A Promise with a slot array containing the refernced banks..
 	 */
-	public getSlots(): number[]|undefined {
-		return this.slots;
+	public getSlots(): number[] {
+		return Z80Registers.getSlots();
 	}
 
 
@@ -1318,7 +1318,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegsAndSlots();
+		this.clearRegisters();
 		this.clearCallStack();
 		await this.setRegisterValue("PC", address);
 		this.emit('stoppedEvent', 'PC changed');
@@ -1330,7 +1330,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegsAndSlots();
+		this.clearRegisters();
 		this.clearCallStack();
 		await this.setRegisterValue("SP", address);
 		this.emit('stoppedEvent', 'SP changed');
@@ -1502,7 +1502,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
-		await this.getRegsAndSlots();
+		await this.getRegisters();
 		const pc=this.getPC(); // TODO: Change to long PC
 		// Get opcodes
 		const opcodes=await this.readMemoryDump(pc, 4);

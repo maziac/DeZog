@@ -249,7 +249,7 @@ export class Z80UnitTests {
 			Decoration.clearAllDecorations();
 
 			// Create the registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(0);
 
 			// Start emulator.
 			RemoteFactory.createRemote(configuration.remoteType);
@@ -659,7 +659,7 @@ export class Z80UnitTests {
 	protected static onBreak(debugAdapter?: DebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
-		Remote.getRegsAndSlots().then(() => {
+		Remote.getRegisters().then(() => {
 			// Parse the PC value
 			const pc = Remote.getPC();
 			//const sp = Z80Registers.parseSP(data);
@@ -722,7 +722,7 @@ export class Z80UnitTests {
 					*/
 					// Init
 					StepHistory.clear();
-					Remote.clearRegsAndSlots();
+					Remote.clearRegisters();
 					Remote.clearCallStack();
 
 					// Run or Debug

@@ -538,13 +538,18 @@ export class DzrpBufferRemote extends DzrpRemote {
 		const i=regs[25];
 		const im=regs[26];
 
+		// Get slots
+		// TODO: check if this should be done in one command sendDzrpCmdGetRegisters
+		const slots=await this.sendDzrpCmdGetSlots(); // TODO: Also change in zesarux
+
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(
 			pc, sp,
 			af, bc, de, hl,
 			ix, iy,
 			af2, bc2, de2, hl2,
-			i, r, im);
+			i, r, im,
+			slots);
 
 		return regData;
 	}

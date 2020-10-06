@@ -301,7 +301,7 @@ export class StepHistoryClass extends EventEmitter {
 		const len=callStack.length;
 		Utility.assert(len>0);
 		const pc=callStack[len-1].addr;
-		
+
 		const breakpoints=Remote.getBreakpointsArray();
 		for (const bp of breakpoints) {
 			if (bp.address==pc) {
@@ -332,7 +332,14 @@ export class StepHistoryClass extends EventEmitter {
 		// Text
 		let reason;
 		if (condition!=undefined) {
-			reason='Breakpoint hit at PC='+Utility.getHexString(pc&0xFFFF, 4)+'h';
+			const breakAddress=pc;
+			const addrString=Utility.getHexString(breakAddress&0xFFFF, 4);
+			let bankString="";
+			const bank=breakAddress>>>16;
+			if (bank!=0)
+				bankString=" (bank="+(bank-1).toString()+")";
+			reason="Breakpoint hit @"+addrString+"h"+bankString;
+			//reason='Breakpoint hit at PC='+Utility.getHexString(pc&0xFFFF, 4)+'h';
 			if (condition!="")
 				reason+=', '+condition;
 		}
@@ -351,7 +358,7 @@ export class StepHistoryClass extends EventEmitter {
 			Z80Registers.setCache(line);
 			// Add to history for decoration
 			const addr=Z80Registers.getPC();
-			this.revDbgHistory.push(addr);
+			this.revDbgHistory.push(addr); // TODO: Do I need long  address?
 		}
 		return line;
 	}
@@ -417,7 +424,7 @@ export class StepHistoryClass extends EventEmitter {
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
 			// Get the registers etc. from the Remote
-			Remote.clearRegsAndSlots();
+			Remote.clearRegisters();
 			breakReasonString='Break: Reached start of instruction history.';
 		}
 

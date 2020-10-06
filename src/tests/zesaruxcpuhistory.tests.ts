@@ -32,7 +32,7 @@ suite('ZesaruxCpuHistory', () => {
 			remoteType: 'zrcp'
 		};
 		Settings.Init(cfg, '');
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(0);
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {
@@ -544,7 +544,7 @@ suite('ZesaruxCpuHistory', () => {
 
 		setup(() => {
 			Z80RegistersClass.Init();
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(0);
 			RemoteFactory.createRemote('zrcp');
 			//Remote.init();
 			history=CpuHistory;
@@ -836,7 +836,7 @@ suite('ZesaruxCpuHistory', () => {
 
 		setup(() => {
 			Z80RegistersClass.Init();
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(0);
 			RemoteFactory.createRemote('zrcp');
 			//Remote.init();
 			history=CpuHistory;

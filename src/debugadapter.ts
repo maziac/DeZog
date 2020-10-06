@@ -481,7 +481,7 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearAllDecorations();
 
 		// Create the registers
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(8);	// TODO: need to add correct number here.
 
 		// Make sure the history is cleared
 		CpuHistoryClass.setCpuHistory(undefined);
@@ -775,13 +775,13 @@ export class DebugSessionClass extends DebugSession {
 			// Get the current slots
 			// TODO: Does not work for sld. I need to have a StepHistory.getSlots as well.
 			// Get callstack
-			callStack=StepHistory.getCallStack();
+			callStack=StepHistory.getCallStack(); // TODO: Gemeinsames getCallStack für stephistory und Remote.
 		}
 		else {
 			// Get the current slots
 			if (Labels.longAddressesUsed) {
-				Remote.clearRegsAndSlots();	// TODO: Clear slots would be enough
-				await Remote.getRegsAndSlots();
+				Remote.clearRegisters();	// TODO: Clear slots would be enough
+				await Remote.getRegisters();
 //				slots=Remote.getSlots();
 			}
 			// Get callstack
@@ -1117,8 +1117,8 @@ export class DebugSessionClass extends DebugSession {
 		if (!breakReason)
 			return;
 		// Get PC
-		Remote.getRegsAndSlots().then(() => {
-			const pc=Remote.getPC();
+		Remote.getRegisters().then(() => {
+			const pc=Remote.getPCLong();
 			Decoration.showBreak(pc, breakReason);
 		});
 	}
@@ -1299,7 +1299,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.clear();
 
 		// Normal Step-Over
-		Remote.clearRegsAndSlots();
+		Remote.clearRegisters();
 		//const result=
 		await Remote.stepOver();
 
@@ -1397,7 +1397,7 @@ export class DebugSessionClass extends DebugSession {
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
-			Remote.getRegsAndSlots();
+			Remote.getRegisters();
 			const prevPc=Remote.getPC();
 			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);// TODO: Does not work with sld
 			let i=0;
@@ -1436,7 +1436,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Get new file/line location
-				await Remote.getRegsAndSlots();
+				await Remote.getRegisters();
 				const pc=Remote.getPC();
 				const nextFileLoc=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 				// Compare with start location
@@ -1497,7 +1497,7 @@ export class DebugSessionClass extends DebugSession {
 			if (!(CpuHistory as any)) {
 				// Store as (lite step history)
 				// Make sure registers and callstack exist.
-				await Remote.getRegsAndSlots();
+				await Remote.getRegisters();
 				const regsCache=Z80Registers.getCache();
 				StepHistory.pushHistoryInfo(regsCache);
 				const callStack=await Remote.getCallStack();
@@ -1834,7 +1834,7 @@ export class DebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				Remote.getRegsAndSlots().then(() => {
+				Remote.getRegisters().then(() => {
 					const pcLongAddr=Remote.getPCLong();
 					const entry=Labels.getFileAndLineForAddress(pcLongAddr);
 					// Local label and prefix

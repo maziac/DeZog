@@ -7,7 +7,13 @@ import {Utility} from '../misc/utility';
  * functionality or to do performance tests.
  */
 
-suite('Miscellaneous', () => {
+// Please rename a test suite to 'suite_hide' so that it will
+// not appear on the sidebar.
+// To make it available again rename to 'suite'.
+function suite_hide(name: string, func: () => void) {
+}
+
+suite_hide('Miscellaneous', () => {
 
 	suite('Performance', () => {
 
@@ -109,4 +115,5 @@ suite('Miscellaneous', () => {
 	});
 
 });
+
 

@@ -1,6 +1,7 @@
+import {Labels} from '../labels/labels';
 import { Utility } from '../misc/utility';
 import { Settings } from '../settings';
-import {DecodeRegisterData, RegisterData} from './decodehistinfo';
+import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
 
 /// The formatting (for VARIABLES) for each register is provided through a map.
@@ -40,6 +41,12 @@ export enum Z80_REG {
  * I.e. the other 1 byte register parse methods might be implemented as
  * well but it is not necessary as the default implementation will normally
  * work fine.
+ *
+ * After upgrade to 'long addresses' the registers also contain the state of the slots.
+ * Embedding it in the registers significantly simplifies the design.
+ * As these values need to be updated the same time. The values are
+ * also required at the same time to correctly calculate the long addresses.
+ * I.e. the cache data can also be stored into the history easily.
  */
 export class Z80RegistersClass {
 
@@ -59,11 +66,16 @@ export class Z80RegistersClass {
 	/// Is a simple string that needs to get parsed.
 	protected RegisterCache: RegisterData;
 
+	/// The array with the used slots (used for memory banks).
+	/// Is always defined but could be empty.
+	protected slots;
+
 	/**
-	* Called during the launchRequest to create the singleton.
-	*/
-	public static createRegisters() {
-		Z80Registers=new Z80RegistersClass();
+	 * Called during the launchRequest to create the singleton.
+     * @param slotCount The number of used slots (used for memory banks).
+	 */
+	public static createRegisters(slotCount: number) {
+		Z80Registers=new Z80RegistersClass(slotCount);
 		// Init the registers
 		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
@@ -76,6 +88,16 @@ export class Z80RegistersClass {
 	private _decoder: DecodeRegisterData;
 	public get decoder(): DecodeRegisterData {return this._decoder};
 	public set decoder(value: DecodeRegisterData) {this._decoder=value;};
+
+
+	/**
+	 * Constructor.
+     * @param slotCount The number of used slots (used for memory banks).
+	 */
+	constructor(slotCount: number) {
+		this.slots=new Array<number>(slotCount);
+	}
+
 
 	/**
 	 * Called during the launchRequest.
@@ -105,9 +127,10 @@ export class Z80RegistersClass {
 		IX: number, IY: number,
 		AF2: number, BC2: number, DE2: number, HL2: number,
 		I: number, R: number,
-		IM: number): Uint16Array {
+		IM: number,
+		slots: number[]): Uint16Array {
 		// Store data in word array to save space
-		const regData=new Uint16Array(Z80_REG.IM+1);
+		const regData=new Uint16Array(Z80_REG.IM+1+slots.length+1);
 		regData[Z80_REG.PC]=PC;
 		regData[Z80_REG.SP]=SP;
 		regData[Z80_REG.AF]=AF;
@@ -122,6 +145,12 @@ export class Z80RegistersClass {
 		regData[Z80_REG.HL2]=HL2;
 		regData[Z80_REG.IR]=(I<<8)|R;
 		regData[Z80_REG.IM]=IM;
+		// Store slot count + slots
+		let i=Z80_REG.IM+1;
+		regData[i++]=slots.length;
+		for (const slot of slots) {
+			regData[i++]=slot;
+		}
 		return regData;
 	}
 
@@ -362,6 +391,30 @@ export class Z80RegistersClass {
 		return this.getRegValue(Z80_REG.SP);
 	}
 
+
+	/**
+	 * @returns The value of the Stack Pointer
+	 */
+	public getSlots(): number[] {
+		return this.decoder.parseSlots(this.RegisterCache);
+	}
+
+
+	/**
+	 * Returns the PC as long address, i.e. together with bank info.
+	 * @returns long address e.g. 0x57A000
+	 */
+	public getPCLong(): number {
+		const pc=this.getPC();
+		if (!Labels.longAddressesUsed)
+			return pc;
+		const slots=this.getSlots();
+		const slot=pc>>13;	// TODO: Do shifting centrally.
+		Utility.assert(slot<slots.length);
+		const bank=slots[slot];
+		const pcLong=pc+((bank+1)<<16);	// TODO: convert centrally
+		return pcLong;
+	}
 }
 
 
@@ -373,7 +426,7 @@ export class Z80RegistersClass {
 export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 
 	/**
-	 * Parses the zesarux register output for PC etc.
+	 * Parses the register output for PC etc.
 	 * @param data The output from zesarux.
 	 * @returns The value.
 	 */
@@ -437,6 +490,28 @@ export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 		return data[Z80_REG.IM];
 	}
 
+	public parseSlots(data: RegisterData): number[] {
+		// Decode slots
+		let i=Z80_REG.IM+1;
+		const slotCount=data[i++];
+		const slots=new Array<number>(slotCount);
+		for (let k=0; k<slotCount; k++) {
+			slots[k]=data[i++];
+		}
+		return slots;
+	}
+
+	public parsePCLong(data: RegisterData): number {
+		const pc=this.parsePC(data);
+		if (!Labels.longAddressesUsed)
+			return pc;
+		const slots=this.parseSlots(data);
+		const slot=pc>>13;	// TODO: Do shifting centrally.
+		Utility.assert(slot<slots.length);
+		const bank=slots[slot];
+		const pcLong=pc+((bank+1)<<16);	// TODO: convert centrally
+		return pcLong;
+	}
 }
 
 

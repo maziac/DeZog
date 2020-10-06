@@ -15,7 +15,7 @@ suite('RemoteBase', () => {
 			remoteType: 'zsim'
 		};
 		Settings.Init(cfg, '');
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(0);
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
@@ -130,8 +130,8 @@ suite('RemoteBase', () => {
 			public iy: number;
 			public pcMemory=new Uint8Array(4);
 			public spMemory=new Uint16Array(1);
-			public async getRegsAndSlots(): Promise<void> {
-				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0);
+			public async getRegisters(): Promise<void> {
+				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, []);
 				Z80Registers.setCache(cache);
 
 			}
