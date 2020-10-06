@@ -150,7 +150,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 	/**
-	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 * Emits 'historySpot' to signal that the files should be decorated.
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
@@ -176,8 +176,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
-			// TODO: Does this work with long addresses:
-			const pc=Z80Registers.decoder.parsePC(line);
+			const pc=Z80Registers.decoder.parsePCLong(line);
 			addresses.push(pc);
 		}
 

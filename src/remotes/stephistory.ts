@@ -265,7 +265,7 @@ export class StepHistoryClass extends EventEmitter {
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
-			const pc=this.decoder.parsePC(line);
+			const pc=this.decoder.parsePCLong(line);
 			addresses.push(pc);
 		}
 
@@ -357,8 +357,8 @@ export class StepHistoryClass extends EventEmitter {
 			// Add to register cache
 			Z80Registers.setCache(line);
 			// Add to history for decoration
-			const addr=Z80Registers.getPC();
-			this.revDbgHistory.push(addr); // TODO: Do I need long  address?
+			const addr=Z80Registers.getPCLong();
+			this.revDbgHistory.push(addr);
 		}
 		return line;
 	}
