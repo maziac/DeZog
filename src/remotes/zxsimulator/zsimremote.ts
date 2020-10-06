@@ -508,6 +508,7 @@ export class ZSimRemote extends DzrpRemote {
 		let slots;
 		if (Labels.longAddressesUsed)
 			slots=(this.memory as ZxMemory).getSlots();
+		let pcLong=this.createLongAddress(this.z80Cpu.pc, slots);
 		try {
 			// Run the Z80-CPU in a loop
 			for (; counter>0; counter--) {
@@ -522,8 +523,8 @@ export class ZSimRemote extends DzrpRemote {
 				// Update visual memory
 				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
 
-				// Store the pc for coverage
-				this.codeCoverage?.storeAddress(prevPc);
+				// Store the pc for coverage (previous pcLong)
+				this.codeCoverage?.storeAddress(pcLong);
 
 				// Do visual update
 				if (vertInterrupt) {
@@ -537,7 +538,7 @@ export class ZSimRemote extends DzrpRemote {
 
 				// Check if given breakpoints are hit
 				const pc=this.z80Cpu.pc;
-				if (pc==bp1||pc==bp2) {
+				if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
 					breakAddress=pc;
 					break;
 				}
@@ -545,7 +546,7 @@ export class ZSimRemote extends DzrpRemote {
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
 				// Convert to long address
-				const pcLong=this.createLongAddress(pc, slots);
+				pcLong=this.createLongAddress(pc, slots);
 				const bpInner=this.tmpBreakpoints.get(pcLong);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.
