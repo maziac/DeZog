@@ -494,11 +494,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns PC + (bank_nr+1)<<16
 	 */
 	public getPCLong(): number {
-		const pc=this.getPC();
-		if (!Labels.longAddressesUsed)
-			return pc;	// Just return normal value if long addresses are not used.
-		const slots=Z80Registers.getSlots();
-		const pcLong=this.createLongAddress(pc, slots);
+		const pcLong=Z80Registers.getPCLong();
 		return pcLong;
 	}
 
@@ -629,8 +625,8 @@ export class RemoteBase extends EventEmitter {
 		// Convert to long address if necessary
 		if (Labels.longAddressesUsed) {
 			const slots=this.getSlots();
-			callerAddr=this.createLongAddress(callerAddr, slots);
-			calledAddr=this.createLongAddress(calledAddr, slots);
+			callerAddr=Z80Registers.createLongAddress(callerAddr, slots);
+			calledAddr=Z80Registers.createLongAddress(calledAddr, slots);
 		}
 
 		// Found: get label
@@ -1278,37 +1274,6 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getSlots(): number[] {
 		return Z80Registers.getSlots();
-	}
-
-
-	/**
-	 * Creates a long address from the address and slots.
-	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
-	 * If undefined: address.
-	 * I.e. a long address is always > 0xFFFF
-	 * a normal address is always <= 0xFFFF
-	 */
-	public createLongAddress(address: number, slots: number[]|undefined): number {
-		// Check for normal address
-		if (!slots)
-			return address;
-		// Calculate long address
-		const slotNr=address>>>13;	// TODO: Need to get the constant from somewhere
-		const bank=slots[slotNr]+1;
-		const result=address+(bank<<16);
-		return result;
-	}
-
-
-	/**
-	 * Retrieves the slot index from an address.
-	 * @param addr The 16 bit address.
-	 * @return The upper bits of the address (shifted).
-	 */
-	public getSlotFromAddress(addr: number): number {
-		// TODO: Use bank size parameter from somewhere
-		const slotIndex=(addr>>>13)&0x07;
-		return slotIndex;
 	}
 
 

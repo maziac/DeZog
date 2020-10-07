@@ -1,6 +1,6 @@
 import {Labels} from '../labels/labels';
-import { Utility } from '../misc/utility';
-import { Settings } from '../settings';
+import {Utility} from '../misc/utility';
+import {Settings} from '../settings';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
 
@@ -406,15 +406,45 @@ export class Z80RegistersClass {
 	 */
 	public getPCLong(): number {
 		const pc=this.getPC();
-		if (!Labels.longAddressesUsed)
-			return pc;
 		const slots=this.getSlots();
-		const slot=pc>>13;	// TODO: Do shifting centrally.
-		Utility.assert(slot<slots.length);
-		const bank=slots[slot];
-		const pcLong=pc+((bank+1)<<16);	// TODO: convert centrally
+		const pcLong=this.createLongAddress(pc, slots);
 		return pcLong;
 	}
+
+
+	/**
+	 * Creates a long address from the address and slots.
+	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
+	 * If undefined: address.
+	 * I.e. a long address is always > 0xFFFF
+	 * a normal address is always <= 0xFFFF
+	 */
+	// TODO: Need to implement this as lambda function that is set on intialization
+	public createLongAddress(address: number, slots: number[]): number {
+		// Check for normal address
+		if (slots.length==0)
+			return address;
+		if (!Labels.longAddressesUsed)
+			return address;
+		// Calculate long address
+		const slotNr=address>>>13;
+		const bank=slots[slotNr]+1;
+		const result=address+(bank<<16);
+		return result;
+	}
+
+
+	/**
+	 * Retrieves the slot index from an address.
+	 * @param addr The 16 bit address.
+	 * @return The upper bits of the address (shifted).
+	 */
+	public getSlotFromAddress(addr: number): number {
+		// TODO: Use bank size parameter from somewhere
+		const slotIndex=(addr>>>13)&0x07;
+		return slotIndex;
+	}
+
 }
 
 

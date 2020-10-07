@@ -2532,7 +2532,7 @@ Notes:
 		const slots=Remote.getSlots();
 		const bank=addr>>>16;
 		if (bank&&slots) {
-			const slotIndex=Remote.getSlotFromAddress(addr);
+			const slotIndex=Z80Registers.getSlotFromAddress(addr);
 			if (bank!=slots[slotIndex]+1)
 				return;	// The slots are not correctly set for this to work
 		}

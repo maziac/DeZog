@@ -535,7 +535,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Furthermore we don't get a break reason for a zesarux step-over.
 			// I.e. if a step-over is interrupted by a breakpoint zesarux breaks at the breakpoint
 			// but does not show a reason.
-			// Therefore the CALL and RST are exceuted with a "run".
+			// Therefore the CALL and RST are executed with a "run".
 			// All others are executed with a step-into.
 			// Only exception is LDDR etc. Those are executed as step-over.
 			this.getRegisters().then(() => {
@@ -694,18 +694,28 @@ export class ZesaruxRemote extends RemoteBase {
 			// Check for error
 			if(data.startsWith('Error'))
 				return;
-			// Parse data and collect addresses
-			const addresses = new Set<number>();
-			const length = data.length;
-			for(let k=0; k<length; k+=5) {
-				const addressString = data.substr(k,4);
-				const address = parseInt(addressString, 16);
-				addresses.add(address);
-			}
-			// Clear coverage in ZEsarUX
-			zSocket.send('cpu-code-coverage clear');
-			// Emit code coverage event
-			this.emit('coverage', addresses);
+			// Get slots
+			this.getRegisters().then(() => {
+				// Get current slots
+				const slots=Z80Registers.getSlots();
+				// Parse data and collect addresses
+				const addresses=new Set<number>();
+				const length=data.length;
+				for (let k=0; k<length; k+=5) {
+					const addressString=data.substr(k, 4);
+					const address=parseInt(addressString, 16);
+					// Change to long address
+					// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
+					// But since ZEsarUX only returns 64k addresses it is all that
+					// can be done here.
+					const longAddress=Z80Registers.createLongAddress(address, slots);
+					addresses.add(longAddress);
+				}
+				// Clear coverage in ZEsarUX
+				zSocket.send('cpu-code-coverage clear');
+				// Emit code coverage event
+				this.emit('coverage', addresses);
+			});
 		});
 	}
 
