@@ -49,6 +49,19 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// The number of bits to shift to get the slot number from the address.
 	protected shiftbits: number;	// will be overwritten
 
+	/**
+	 * Tests if the given file is an SLD file.
+	 * Is used only to distinguish between parsing of a list file or parsing of an SLD file.
+	 * @param path Absolute path.
+	 */
+	public static IsSldFile(path: string) {
+		const content=readFileSync(path);
+		// Check only if it starts with a '|' for an sld file.
+		const firstChar=content[0];
+		const sld=(firstChar=='|'.charCodeAt(0));
+		return sld;
+	}
+
 
 	/**
 	 * Reads the given sld file.
@@ -68,7 +81,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		this.shiftbits=13;
 
 		// Loop through all lines of the sld file
-		const sldLines=readFileSync(sldConfig.sldPath!).toString().split('\n');
+		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
 		}

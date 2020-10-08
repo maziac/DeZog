@@ -130,7 +130,7 @@ export class LabelsClass {
 			// For sjasmplus it is checked if a list file should be parsed or an sld file
 			for (const config of mainConfig.sjasmplus) {
 				let parser;
-				if (config.sldPath) {
+				if(SjasmplusSldLabelParser.IsSldFile(config.path)) {
 					// Parse SLD file and list file
 					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
 				}
