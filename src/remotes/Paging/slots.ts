@@ -173,7 +173,7 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
 	 * Set decoder.
 	 */
 	public init() {
-		// 4x16k banks
+		// 8x8k banks
 		Z80Registers.setSlotsAndBanks(
 			(address: number, slots: number[]) => {
 				// Calculate long address

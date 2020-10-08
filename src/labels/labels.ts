@@ -196,7 +196,7 @@ export class LabelsClass {
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
 		var offs=-1;
-		for (var i=0; i<0x10000; i++) { // TODO: Does this work with sld? Ja, könnte sein.
+		for (var i=0; i<0x10000; i++) {
 			const labels=this.labelsForNumber[i];
 			if (labels===undefined) {
 				if (offs>=0) {

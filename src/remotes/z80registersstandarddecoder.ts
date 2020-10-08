@@ -1,5 +1,3 @@
-import {Labels} from '../labels/labels';
-import {Utility} from '../misc/utility';
 import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 import {Z80_REG} from './z80registers';
 
@@ -87,16 +85,5 @@ export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 		return slots;
 	}
 
-	public parsePCLong(data: RegisterData): number {
-		const pc=this.parsePC(data);
-		if (!Labels.longAddressesUsed)
-			return pc;
-		const slots=this.parseSlots(data);
-		const slot=pc>>13;	// TODO: Do shifting centrally.
-		Utility.assert(slot<slots.length);
-		const bank=slots[slot];
-		const pcLong=pc+((bank+1)<<16);	// TODO: convert centrally
-		return pcLong;
-	}
 }
 

@@ -323,7 +323,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 		return new Promise<void>(resolve => {
 			// Get new (real emulator) data
-			// TODO: get-memory-pages instead:
 			zSocket.send('get-registers', async data => {
 				// Store data: e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
 

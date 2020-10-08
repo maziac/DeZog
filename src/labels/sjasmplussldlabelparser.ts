@@ -47,7 +47,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	protected bankSize: number;	// will be overwritten
 
 	// The number of bits to shift to get the slot number from the address.
-	protected shiftbits: number;	// will be overwritten
+	//protected shiftBits: number;	// will be overwritten
 
 	/**
 	 * Tests if the given file is an SLD file.
@@ -73,15 +73,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Init (in case of several sld files)
 		this.lastLabel=undefined as any;
 		this.bankSize=0x10000;	// will be overwritten
-		this.shiftbits=0;	// will be overwritten
+		//this.shiftBits=0;	// will be overwritten
 
-
-		// TODO: Get from SLD file
-		this.bankSize=0x2000;
-		this.shiftbits=13;
+		// Get bank size
+		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
+		this.parseForBankSize(sldLines);
 
 		// Loop through all lines of the sld file
-		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
 		}
@@ -94,6 +92,34 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			this.parseFileLabelAddress(line);
 		}
 		*/
+	}
+
+
+	/**
+	 * Parses the complete file to get the bank size.
+	 */
+	protected parseForBankSize(lines: Array<string>) {
+		for (const line of lines) {
+			// Split the fields, e.g. "main.asm|3||0|-1|-1|Z|pages.size: 16384, pages.count: 8, slots.count: 4, slots.adr: 0, 16384, 32768, 49152"
+			const fields=line.split('|');
+
+			// Check for right type
+			const type=fields[6];
+			if (type=='Z') {
+				// Found
+				this.longAddressesUsed=true;
+				// Parse bank size
+				const data=fields[7];
+				// Delete anything not a number or ,
+				const numberString=data.replace(/[^0-9,]/g, '');
+				// Interprete only the first number
+				this.bankSize=parseInt(numberString);
+				//const count=0x10000/this.bankSize;
+				//this.shiftBits=
+				// No need to seek any further
+				break;
+			}
+		}
 	}
 
 
@@ -188,11 +214,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					lineArray[lineNr]=address;
 				}
 				break;
-			case 'Z':	// Device model
-				{
-					this.longAddressesUsed=true;
-				}
-				break;
 		}
 	}
 
@@ -202,12 +223,16 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * If page == -1 address is returned unchanged.
 	 * @param address The 64k address, i.e. the upper bits are the slot index.
 	 * @param page The page the address is associated with.
-	 * @returns address+((page+1)<<16)
+	 * @returns if longAddressesUsed: address+((page+1)<<16)
+	 * else: address.
 	 */
 	protected createLongAddress(address: number, page: number) {
-		const result=address+((page+1)<<16);
+		let result=address;
+		if (this.longAddressesUsed)
+			result+=(page+1)<<16;
 		return result;
 	}
+
 }
 
 

@@ -4,35 +4,39 @@
 
 
 
-	ORG 0x8000
+	ORG 0x8000  ; Bank 2
+
 
 main:
     ; Disable interrupts
     di
     ld sp,stack_top
+    ld bc,0x7FFD
 
-    call sub_b0
+    ld a,1 : out (c),a
+    call sub_b1
     nop
 
 
-    call sub_b2
+    ld a,3 : out (c),a
+    call sub_b3
     nop
 
 .loop:
-    ; Bank 0
-
-    call sub_b0
+    ; Bank 1
+    ld a,1 : out (c),a
+    call sub_b1
     nop
     nop
 
-    ; Bank 2
-
-    call sub_b2
+    ; Bank 3
+    ld a,3 : out (c),a
+    call sub_b3
     nop
     nop
 
     ; Bank 7
-
+    ld a,7 : out (c),a
     call sub_b7
     nop
     nop
@@ -57,22 +61,24 @@ stack_top:
 
 
 
-    MMU 3, 0, 0xC000
-sub_b0:
-    ld a,0
-    ld a,0
+    MMU 3, 1, 0xC000
+sub_b1:
+    ld a,1
+.plus1:
+    ld a,1
     ret
 
-data_b0:
+data_b1:
     defb 0, 1, 2, 3, 4
 
-    MMU 3, 2, 0xC000
-sub_b2:
-    ld a,2
-    ld a,2
+
+    MMU 3, 3, 0xC000
+sub_b3:
+    ld a,3
+    ld a,3
     ret
 
-data_b2:
+data_b3:
     defb 5, 6, 7, 8, 9
 
 

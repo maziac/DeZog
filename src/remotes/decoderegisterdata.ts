@@ -1,4 +1,6 @@
+import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
+import {Z80Registers} from './z80registers';
 
 
 
@@ -173,14 +175,14 @@ export class DecodeRegisterData {
 	public parsePCLong(data: RegisterData): number {
 		// Get PC
 		const pc=this.parsePC(data);
+		if (!Labels.longAddressesUsed)
+			return pc;
 		// Get slots
 		const slots=this.parseSlots(data);
 		if (slots.length==0)
 			return pc;
-		// TODO: Convert centrally
-		const slot=pc>>>13;
-		const bank=slots[slot];
-		const pcLong=pc+((bank+1)<<16);
+		// Convert
+		const pcLong=Z80Registers.createLongAddress(pc, slots);
 		return pcLong;
 	}
 

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log, LogSocket} from './log';
@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -21,7 +21,6 @@ import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {MemAttribute} from './disassembler/memory';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
-//import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZSimRemote} from './remotes/zxsimulator/zsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
@@ -780,7 +779,7 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Get the current slots
 			if (Labels.longAddressesUsed) {
-				Remote.clearRegisters();	// TODO: Clear slots would be enough
+				Remote.clearRegisters();
 				await Remote.getRegisters();
 			}
 			// Get callstack
