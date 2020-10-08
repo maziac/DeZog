@@ -2,7 +2,7 @@
 
     DEVICE ZXSPECTRUMNEXT
 
-
+big_number: EQU 0x1FFFF
 
 	ORG 0x8000
 
@@ -11,24 +11,28 @@ main:
     di
     ld sp,stack_top
 
+    nextreg 0x50+5,60
+    call sub_b100
+    nop
 
-    nextreg 0x50+5,94
-    nextreg 0x50+5,95
-    nextreg 0x50+5,96
-    nextreg 0x50+5,97
-    nextreg 0x50+5,111
+    nextreg 0x50+5,65
+    call sub_b105
+    nop
 
+    ld bc,big_number&0xFFFF
+    ld de,main+2
+    ld hl,.loop+5
 
 .loop:
-    ; Bank 100
-    nextreg 0x50+5,100
+    ; Bank 60
+    nextreg 0x50+5,60
     call sub_b100
     nop
     nop
 
-    ; Bank 101
-    nextreg 0x50+5,101
-    call sub_b101
+    ; Bank 65
+    nextreg 0x50+5,65
+    call sub_b105
     nop
     nop
 
@@ -58,18 +62,24 @@ stack_top:
 
 
 
-    MMU 5, 100, 0xA000
+    MMU 5, 60, 0xA000
 sub_b100:
     ld a,100
     ld a,100
     ret
 
+data_b100:
+    defb 0, 1, 2, 3, 4
 
-    MMU 5, 101, 0xA000
-sub_b101:
-    ld a,101
-    ld a,101
+    MMU 5, 65, 0xA000
+sub_b105:
+    ld a,105
+    ld a,105
     ret
+
+data_b105:
+    defb 5, 6, 7, 8, 9
+
 
 
     include "subfolder/sub1.asm"

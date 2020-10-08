@@ -1,0 +1,10 @@
+main: equ 0x00008000
+stack_top: equ 0x000080E9
+sub_b0: equ 0x0000C000
+sub_b2: equ 0x0000C000
+main.loop: equ 0x0000800C
+sub_b7: equ 0x0000C000
+STACK_SIZE: equ 0x00000064
+stack_bottom: equ 0x00008021
+data_b0: equ 0x0000C005
+data_b2: equ 0x0000C005

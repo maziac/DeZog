@@ -1,0 +1,98 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000
+ 3    0000                  DEVICE ZXSPECTRUM128
+ 4    0000
+ 5    0000
+ 6    0000
+ 7    0000              	ORG 0x8000
+ 8    8000
+ 9    8000              main:
+10    8000                  ; Disable interrupts
+11    8000 F3               di
+12    8001 31 E9 80         ld sp,stack_top
+13    8004
+14    8004 CD 00 C0         call sub_b0
+15    8007 00               nop
+16    8008
+17    8008
+18    8008 CD 00 C0         call sub_b2
+19    800B 00               nop
+20    800C
+21    800C              .loop:
+22    800C                  ; Bank 0
+23    800C
+24    800C CD 00 C0         call sub_b0
+25    800F 00               nop
+26    8010 00               nop
+27    8011
+28    8011                  ; Bank 2
+29    8011
+30    8011 CD 00 C0         call sub_b2
+31    8014 00               nop
+32    8015 00               nop
+33    8016
+34    8016                  ; Bank 7
+35    8016
+36    8016 CD 00 C0         call sub_b7
+37    8019 00               nop
+38    801A 00               nop
+39    801B
+40    801B 00           	nop
+41    801C 00           	nop
+42    801D 18 ED        	jr .loop
+43    801F
+44    801F
+45    801F              ; Stack: this area is reserved for the stack
+46    801F              STACK_SIZE: equ 100    ; in words
+47    801F
+48    801F
+49    801F              ; Reserve stack space
+50    801F 00 00            defw 0  ; WPMEM, 2
+51    8021              stack_bottom:
+52    8021 00 00 00...      defs    STACK_SIZE*2, 0
+53    80E9              stack_top:
+54    80E9                  ;defw 0
+55    80E9 00 00            defw 0  ; WPMEM, 2
+56    80EB
+57    80EB
+58    80EB
+59    80EB
+60    80EB                  MMU 3, 0, 0xC000
+61    C000              sub_b0:
+62    C000 3E 00            ld a,0
+63    C002 3E 00            ld a,0
+64    C004 C9               ret
+65    C005
+66    C005              data_b0:
+67    C005 00 01 02 03      defb 0, 1, 2, 3, 4
+67    C009 04
+68    C00A
+69    C00A                  MMU 3, 2, 0xC000
+70    C000              sub_b2:
+71    C000 3E 02            ld a,2
+72    C002 3E 02            ld a,2
+73    C004 C9               ret
+74    C005
+75    C005              data_b2:
+76    C005 05 06 07 08      defb 5, 6, 7, 8, 9
+76    C009 09
+77    C00A
+78    C00A
+79    C00A
+80    C00A                  include "subfolder/sub1.asm"
+# file opened: subfolder/sub1.asm
+ 1+   C00A
+ 2+   C00A                  MMU 3, 7, 0xC000
+ 3+   C000              sub_b7:
+ 4+   C000 3E 07            ld a,7
+ 5+   C002 3E 07            ld a,7
+ 6+   C004 C9               ret
+ 7+   C005
+# file closed: subfolder/sub1.asm
+81    C005
+82    C005
+83    C005
+84    C005                  SAVESNA "sld1.sna", main
+85    C005
+# file closed: main.asm

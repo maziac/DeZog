@@ -1,0 +1,106 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000
+ 3    0000                  DEVICE ZXSPECTRUMNEXT
+ 4    0000
+ 5    0000              big_number: EQU 0x1FFFF
+ 6    0000
+ 7    0000              	ORG 0x8000
+ 8    8000
+ 9    8000              main:
+10    8000                  ; Disable interrupts
+11    8000 F3               di
+12    8001 31 06 81         ld sp,stack_top
+13    8004
+14    8004 ED 91 55 3C      nextreg 0x50+5,60
+15    8008 CD 00 A0         call sub_b100
+16    800B 00               nop
+17    800C
+18    800C ED 91 55 41      nextreg 0x50+5,65
+19    8010 CD 00 A0         call sub_b105
+20    8013 00               nop
+21    8014
+22    8014 01 FF FF         ld bc,big_number&0xFFFF
+23    8017 11 02 80         ld de,main+2
+24    801A 21 22 80         ld hl,.loop+5
+25    801D
+26    801D              .loop:
+27    801D                  ; Bank 60
+28    801D ED 91 55 3C      nextreg 0x50+5,60
+29    8021 CD 00 A0         call sub_b100
+30    8024 00               nop
+31    8025 00               nop
+32    8026
+33    8026                  ; Bank 65
+34    8026 ED 91 55 41      nextreg 0x50+5,65
+35    802A CD 00 A0         call sub_b105
+36    802D 00               nop
+37    802E 00               nop
+38    802F
+39    802F                  ; Bank 110
+40    802F ED 91 55 6E      nextreg 0x50+5,110
+41    8033 CD 00 A0         call sub_b110
+42    8036 00               nop
+43    8037 00               nop
+44    8038
+45    8038 00           	nop
+46    8039 00           	nop
+47    803A 18 E1        	jr .loop
+48    803C
+49    803C
+50    803C              ; Stack: this area is reserved for the stack
+51    803C              STACK_SIZE: equ 100    ; in words
+52    803C
+53    803C
+54    803C              ; Reserve stack space
+55    803C 00 00            defw 0  ; WPMEM, 2
+56    803E              stack_bottom:
+57    803E 00 00 00...      defs    STACK_SIZE*2, 0
+58    8106              stack_top:
+59    8106                  ;defw 0
+60    8106 00 00            defw 0  ; WPMEM, 2
+61    8108
+62    8108
+63    8108
+64    8108
+65    8108                  MMU 5, 60, 0xA000
+66    A000              sub_b100:
+67    A000 3E 64            ld a,100
+68    A002 3E 64            ld a,100
+69    A004 C9               ret
+70    A005
+71    A005              data_b100:
+72    A005 00 01 02 03      defb 0, 1, 2, 3, 4
+72    A009 04
+73    A00A
+74    A00A                  MMU 5, 65, 0xA000
+75    A000              sub_b105:
+76    A000 3E 69            ld a,105
+77    A002 3E 69            ld a,105
+78    A004 C9               ret
+79    A005
+80    A005              data_b105:
+81    A005 05 06 07 08      defb 5, 6, 7, 8, 9
+81    A009 09
+82    A00A
+83    A00A
+84    A00A
+85    A00A                  include "subfolder/sub1.asm"
+# file opened: subfolder/sub1.asm
+ 1+   A00A
+ 2+   A00A                  MMU 5, 110, 0xA000
+ 3+   A000              sub_b110:
+ 4+   A000 3E 6E            ld a,110
+ 5+   A002 3E 6E            ld a,110
+ 6+   A004 C9               ret
+ 7+   A005
+# file closed: subfolder/sub1.asm
+86    A005
+87    A005
+88    A005                  SAVENEX OPEN "sld1.nex", main, stack_top
+89    A005                  SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
+90    A005                  SAVENEX CFG 7   ; Border color
+91    A005                  SAVENEX AUTO
+92    A005                  SAVENEX CLOSE
+93    A005
+# file closed: main.asm
