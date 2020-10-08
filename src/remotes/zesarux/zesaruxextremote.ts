@@ -7,7 +7,7 @@ import { zSocket } from './zesaruxsocket';
 //import { Utility } from './utility';
 
 /**
- * The representation of the Z80 Zesarux machine with extensions (fast breakpoints).
+ * The representation of the Z80 Zesarux emulator with extensions (fast breakpoints).
  * It automatically detects if extension are available.
  * If not behavior is exactly like ZesaruxEmulator.
  * If yes a few function from ZesaruxEmulator are exchanged.

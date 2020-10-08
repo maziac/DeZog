@@ -1,5 +1,5 @@
 import {DzrpRemote} from '../dzrp/dzrpremote';
-import {Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
+import {Z80_REG, Z80Registers} from '../z80registers';
 import {WatchpointZxMemory} from './wpzxmemory';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
@@ -15,6 +15,7 @@ import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhist
 import {ZxSimCpuHistory} from './zxsimcpuhistory';
 import {ZxMemory} from './zxmemory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 //import {Watchpoint64kRamMemory} from './wp64krammemory';
 
 
@@ -505,9 +506,7 @@ export class ZSimRemote extends DzrpRemote {
 		//let bp;
 		let breakAddress;
 		let updateCounter=0;
-		let slots;
-		if (Labels.longAddressesUsed)
-			slots=(this.memory as ZxMemory).getSlots();
+		const slots=(Labels.longAddressesUsed)? (this.memory as ZxMemory).getSlots() : [];
 		let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 		try {
 			// Run the Z80-CPU in a loop

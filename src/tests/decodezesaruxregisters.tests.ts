@@ -11,7 +11,7 @@ suite('DecodeZesaruxRegisters', () => {
 		let Decoder: any;
 
 		setup(() => {
-			Decoder=new DecodeZesaruxRegisters();
+			Decoder=new DecodeZesaruxRegisters(8);
 		});
 
 		test('PC', () => {

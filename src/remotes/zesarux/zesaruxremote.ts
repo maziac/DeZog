@@ -8,6 +8,7 @@ import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory
 import { Z80RegistersClass, Z80Registers } from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
+import {MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/slots';
 
 
 
@@ -52,8 +53,6 @@ export class ZesaruxRemote extends RemoteBase {
 	/// Constructor.
 	constructor() {
 		super();
-		// Set decoder
-		Z80Registers.decoder=new DecodeZesaruxRegisters();
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
 		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();
@@ -185,7 +184,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
 				if (loadPath) {
-					zSocket.send('smartload "'+Settings.launch.load+'"');
+					zSocket.send('smartload "'+Settings.launch.load+'"');	// Note: this also changes cpu to tbblue
 					await zSocket.executeWhenQueueIsEmpty();
 				}
 
@@ -199,6 +198,33 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
 					}
 				}
+
+				// Get the machine type, e.g. tbblue, zx48k etc.
+				// Is required to find the right slot/bank paging.
+				// Distinguished are only: 48k, 128k and tbblue.
+				// TODO: change send above to sendAwait.
+				const mtResp=await zSocket.sendAwait('get-current-machine') as string;
+				const machineType=mtResp.toLowerCase();
+				if (machineType.indexOf("tbblue")>=0) {
+					// 8x8k banks
+					this.memoryModel=new ZxNextMemoryModel();
+					// Set decoder
+					Z80Registers.decoder=new DecodeZesaruxRegisters(8);
+				}
+				else if (machineType.indexOf("128k")>=0) {
+					// 4x16k banks
+					this.memoryModel=new Zx128MemoryModel();
+					// Set decoder
+					Z80Registers.decoder=new DecodeZesaruxRegisters(4);
+				}
+				else {
+					// For all others no paging is assumed.
+					this.memoryModel=new MemoryModel();
+					Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+				}
+				// Init
+				this.memoryModel.init();
+
 
 				// Set Program Counter to execAddress
 				if(Settings.launch.execAddress) {
@@ -331,12 +357,37 @@ export class ZesaruxRemote extends RemoteBase {
 		Utility.assert(CpuHistory);
 		Utility.assert(!CpuHistory.isInStepBackMode());
 
-		const len=8;
-		const slots=new Array<number>(len);
-		for (let i=0; i<len; i++) {
-			// Read MMU register
-			const bankString=await zSocket.sendAwait('tbblue-get-register '+(0x50+i));
-			slots[i]=parseInt(bankString,16);
+		// Decode
+		const slotsString=await zSocket.sendAwait('get-memory-pages');
+		const slotsStringArray=slotsString.split(' ');
+		// Check for no slots
+		let slots;
+		let count=slotsStringArray.length-1;
+		switch (count) {
+			case 4:
+				// ZX128, e.g. RO1 RA5 RA2 RA0
+				for (let i=0; i<count; i++)
+					slotsStringArray[i]=slotsStringArray[i].substr(1);	// Skip "R"
+				// Flow through
+			case 8:
+				// ZXNext
+				slots=new Array<number>(count);
+				for (let i=0; i<count; i++) {
+					const bankString=slotsStringArray[i];
+					const type=bankString.substr(0, 1);
+					const rest=bankString.substr(1);
+					let bankNumber=parseInt(rest);
+					if (type=='O') {
+						// ROM
+						bankNumber+=0xFE;	// Also for ZX128, doesn't matter
+					}
+					slots[i]=bankNumber;
+				}
+				break;
+			default:
+				// No slots
+				slots=new Array<number>(count);
+				break;
 		}
 		return slots;
 	}

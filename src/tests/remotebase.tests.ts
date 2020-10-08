@@ -2,9 +2,10 @@
 import * as assert from 'assert';
 import {RemoteBase} from '../remotes/remotebase';
 import {Settings} from '../settings';
-import {Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../remotes/z80registers';
+import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {Opcodes, Opcode} from '../disassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../genericwatchpoint';
+import {Z80RegistersStandardDecoder} from '../remotes/z80registersstandarddecoder';
 
 
 suite('RemoteBase', () => {

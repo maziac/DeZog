@@ -122,7 +122,7 @@ suite_hide('Miscellaneous', () => {
 
 		test('Performance decode register', () => {
 			const count=300000;
-			const decoder=new DecodeZesaruxRegisters();
+			const decoder=new DecodeZesaruxRegisters(8);
 			const line="PC=812c SP=8418 AF=03ff BC=02ff HL=99a2 DE=ffff IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2c  F=SZ5H3PNC F'=-Z-- -P-- MEMPTR=0000 IM0 IFF-- VPS: 0 MMU=80008001000a000b0004006400000001";
 
 			// Measure access for DE (middle)

@@ -122,6 +122,8 @@ write-memory-raw              Writes a sequence of bytes starting at desired add
 write-port                    Writes value at port
 zeng-is-master                Tells if ZENG is configured as master or not
 zxevo-get-nvram               Get ZX-Evo NVRAM value at index
+
+ZesaruxExt:
 check-extensions              Checks if extensions are available
 clear-all-fast-breakpoints    Clears all fast-breakpoints
 set-fast-breakpoint           Sets a PC breakpoint at desired address with condition and possibly a log message

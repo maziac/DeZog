@@ -36,7 +36,7 @@ suite('ZesaruxCpuHistory', () => {
 	});
 
 	function createCpuHistory(): ZesaruxCpuHistory {
-		const decoder=new DecodeZesaruxRegisters();
+		const decoder=new DecodeZesaruxRegisters(8);
 		Z80Registers.decoder=decoder;
 		const hist=new ZesaruxCpuHistory();
 		hist.decoder = new DecodeZesaruxHistoryInfo();

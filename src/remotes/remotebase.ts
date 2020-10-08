@@ -11,7 +11,7 @@ import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
-import {ZxMemory} from './zxsimulator/zxmemory';
+import {MemoryBank, MemoryModel} from './Paging/slots';
 
 
 
@@ -46,19 +46,6 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
 	// Already defined: log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
 }
 
-
-
-/// Definition of one memory bank, i.e. memory slot/bank relationship.
-export interface MemoryBank {
-	/// Z80 start address of page.
-	start: number;
-
-	/// Z80 end address of page.
-	end: number;
-
-	/// The name of the mapped memory area.
-	name: string;
-};
 
 
 /**
@@ -126,6 +113,9 @@ export class RemoteBase extends EventEmitter {
 	/// Memory slots. Contain the used banks.
 	/// If undefined the data has to be retrieved from the remote.
 	//protected slots: number[]|undefined=undefined;
+
+	/// The used memory model. E.g. if and how slots are used.
+	protected memoryModel: MemoryModel;
 
 
 	/// Constructor.
@@ -1249,19 +1239,10 @@ export class RemoteBase extends EventEmitter {
 	 * and a name.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
-		// Prepare array
-		const pages: Array<MemoryBank>=[];
 		// Get the slots
 		const slots=this.getSlots();
-		// Save in array
-		let start=0x0000;
-		slots.map(slot => {
-			// TODO: Needs to be changed for other devices other than ZX Next.
-			const end=start+ZxMemory.MEMORY_BANK_SIZE-1;
-			const name=(slot>=254)? "ROM":"BANK"+slot;
-			pages.push({start, end, name});
-			start+=ZxMemory.MEMORY_BANK_SIZE;
-		});
+		// Convert
+		const pages=this.memoryModel.getMemoryBanks(slots);
 		// Return
 		return pages;
 	}
@@ -1270,9 +1251,9 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the slots/banks association.
-	 * @returns A Promise with a slot array containing the refernced banks..
+	 * @returns A Promise with a slot array containing the refernced banks or undefined if no slots are used.
 	 */
-	public getSlots(): number[] {
+	public getSlots(): number[]|undefined {
 		return Z80Registers.getSlots();
 	}
 

@@ -68,7 +68,15 @@ export class Z80RegistersClass {
 
 	/// The array with the used slots (used for memory banks).
 	/// Is always defined but could be empty.
-	protected slots;
+	protected slots; // TODO: Remove, not used.
+
+
+	/// Holds the lambda function that converts an address to a long address with the given slots.
+	protected funcCreateLongAddress: (address: number, slots: number[]) => number;
+
+	/// Holds the lambda function to extract the slot from a 64k address.
+	protected funcGetSlotFromAddress: (addr: number) => number;
+
 
 	/**
 	 * Called during the launchRequest to create the singleton.
@@ -393,10 +401,16 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * @returns The value of the Stack Pointer
+	 * @returns An array with the slots or undefined if no slots are used (e.g. ZX48K)
 	 */
-	public getSlots(): number[] {
-		return this.decoder.parseSlots(this.RegisterCache);
+	public getSlots(): number[]|undefined {
+		// Use slots if a fucntion exist to convert to long address.
+		if (this.funcCreateLongAddress!=undefined) {
+			const slots=this.decoder.parseSlots(this.RegisterCache);
+			return slots;
+		}
+		// Otherwise, don't return slots
+		return undefined;
 	}
 
 
@@ -419,17 +433,14 @@ export class Z80RegistersClass {
 	 * I.e. a long address is always > 0xFFFF
 	 * a normal address is always <= 0xFFFF
 	 */
-	// TODO: Need to implement this as lambda function that is set on intialization
-	public createLongAddress(address: number, slots: number[]): number {
+	public createLongAddress(address: number, slots: number[]|undefined): number {
 		// Check for normal address
-		if (slots.length==0)
+		if (!slots)
 			return address;
 		if (!Labels.longAddressesUsed)
 			return address;
 		// Calculate long address
-		const slotNr=address>>>13;
-		const bank=slots[slotNr]+1;
-		const result=address+(bank<<16);
+		const result=this.funcCreateLongAddress(address, slots);
 		return result;
 	}
 
@@ -440,108 +451,25 @@ export class Z80RegistersClass {
 	 * @return The upper bits of the address (shifted).
 	 */
 	public getSlotFromAddress(addr: number): number {
-		// TODO: Use bank size parameter from somewhere
-		const slotIndex=(addr>>>13)&0x07;
+		Utility.assert(this.funcGetSlotFromAddress);
+		const slotIndex=this.funcGetSlotFromAddress(addr);
 		return slotIndex;
 	}
 
-}
-
-
-/**
- * The standard decoder for registers.
- * Can be used if no external remote is involved, e.g. for the internal
- * simulator.
- */
-export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 
 	/**
-	 * Parses the register output for PC etc.
-	 * @param data The output from zesarux.
-	 * @returns The value.
+	 * Sets the lamba function used to convert back and forth to
+	 * long addresses.
+	 * @param funcCreateLongAddress Function to convert from address/slot to long address.
+	 * @param funcGetSlotFromAddress Function to extract the slot from the 64k address.
 	 */
-	public parsePC(data: RegisterData): number {
-		return data[Z80_REG.PC];
+	public setSlotsAndBanks(
+		funcCreateLongAddress: ((address: number, slots: number[]) => number)|undefined,
+		funcGetSlotFromAddress: ((address: number) => number)|undefined) {
+		this.funcCreateLongAddress=funcCreateLongAddress!;
+		this.funcGetSlotFromAddress=funcGetSlotFromAddress!;
 	}
 
-	public parseSP(data: RegisterData): number {
-		return data[Z80_REG.SP];
-	}
-
-	public parseAF(data: RegisterData): number {
-		return data[Z80_REG.AF];
-	}
-
-	public parseBC(data: RegisterData): number {
-		return data[Z80_REG.BC];
-	}
-
-	public parseHL(data: RegisterData): number {
-		return data[Z80_REG.HL];
-	}
-
-	public parseDE(data: RegisterData): number {
-		return data[Z80_REG.DE];
-	}
-
-	public parseIX(data: RegisterData): number {
-		return data[Z80_REG.IX];
-	}
-
-	public parseIY(data: RegisterData): number {
-		return data[Z80_REG.IY];
-	}
-
-	public parseAF2(data: RegisterData): number {
-		return data[Z80_REG.AF2];
-	}
-
-	public parseBC2(data: RegisterData): number {
-		return data[Z80_REG.BC2];
-	}
-
-	public parseHL2(data: RegisterData): number {
-		return data[Z80_REG.HL2];
-	}
-
-	public parseDE2(data: RegisterData): number {
-		return data[Z80_REG.DE2];
-	}
-
-	public parseI(data: RegisterData): number {
-		return data[Z80_REG.IR]>>>8;
-	}
-
-	public parseR(data: RegisterData): number {
-		return data[Z80_REG.IR]&0xFF;
-	}
-
-	public parseIM(data: RegisterData): number {
-		return data[Z80_REG.IM];
-	}
-
-	public parseSlots(data: RegisterData): number[] {
-		// Decode slots
-		let i=Z80_REG.IM+1;
-		const slotCount=data[i++];
-		const slots=new Array<number>(slotCount);
-		for (let k=0; k<slotCount; k++) {
-			slots[k]=data[i++];
-		}
-		return slots;
-	}
-
-	public parsePCLong(data: RegisterData): number {
-		const pc=this.parsePC(data);
-		if (!Labels.longAddressesUsed)
-			return pc;
-		const slots=this.parseSlots(data);
-		const slot=pc>>13;	// TODO: Do shifting centrally.
-		Utility.assert(slot<slots.length);
-		const bank=slots[slot];
-		const pcLong=pc+((bank+1)<<16);	// TODO: convert centrally
-		return pcLong;
-	}
 }
 
 

@@ -43,13 +43,19 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	protected rIndex: number;
 	protected imIndex: number;
 
+	// Number of slots used for the 64k. 64k/slots is the used bank size.
+	protected countSlots: number;
+
 
 	/**
-	* Called during the launchRequest.
-	*/
-	constructor() {
+	 * Constructor.
+	 * Called during the launchRequest.
+	 * @param countSlots Number of slots used for the 64k.
+	 */
+	constructor(countSlots: number) {
 		super();
 
+		this.countSlots=countSlots;
 		// Indices for first time search.
 		this.pcIndex = -1;
 		this.spIndex = -1;
@@ -234,8 +240,9 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		mmuIndex+=4;
 
 		let line=data.substr(mmuIndex);
-		const slots=new Array<number>();
-		while (line.length>0) {
+		const count=this.countSlots;
+		const slots=new Array<number>(count);
+		for (let i=0; i<count; i++) {
 			const slotPart=line.substr(0, 4);
 			let value=parseInt(slotPart, 16);
 			// Decode ZEsarUX: Bit 15 stands for ROM.
@@ -243,7 +250,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			// Others are simply the bank number.
 			if (value>=0x8000)
 				value=0xFF;	// ROM
-			slots.push(value);
+			slots[i]=value;
 			// Next
 			line=line.substr(4);
 		}
