@@ -12,6 +12,8 @@ import {Labels} from '../../labels/labels';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
+import {ZxNextMemoryModel} from '../Paging/memorymodel';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 
 
@@ -150,7 +152,7 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 
-			// Load sna or nex file
+				// Load sna or nex file
 			const loadPath=Settings.launch.load;
 			if (loadPath)
 				await this.loadBin(loadPath);
@@ -165,6 +167,16 @@ export class DzrpRemote extends RemoteBase {
 					await this.loadObj(loadObj.path, start);
 				}
 			}
+
+
+			// TODO: Determine machine, Assume ZXNext for now
+			// Set memory model according machine type
+			// ZxNext: 8x8k banks
+			Z80Registers.decoder=new Z80RegistersStandardDecoder();
+			this.memoryModel=new ZxNextMemoryModel();
+			this.memoryModel.init();
+			Labels.convertLabelsTo(this.memoryModel);
+
 
 			// Set Program Counter to execAddress
 			if (Settings.launch.execAddress) {
