@@ -74,8 +74,12 @@ export class LabelParserBase {
 	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
 	protected excludedFileStackIndex: number;
 
-	// Is set to true if addresses+page/bank number is used
-	public longAddressesUsed=false;
+	/// The used bank size. Only set if the assembler+parser supports
+	/// long addresses. Then it holds the used bank size (otherwise 0).
+	/// Is used to tell if the Labels are long or not and for internal
+	/// conversion if target has a different memory model.
+	/// Typical value: 0, 8192 or 16384.
+	protected bankSize: number;
 
 
 	// Constructor.
@@ -98,6 +102,7 @@ export class LabelParserBase {
 		this.watchPointLines=watchPointLines;
 		this.assertLines=assertLines;
 		this.logPointLines=logPointLines;
+		this.bankSize=0;
 	}
 
 

@@ -106,8 +106,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			// Check for right type
 			const type=fields[6];
 			if (type=='Z') {
-				// Found
-				this.longAddressesUsed=true;
 				// Parse bank size
 				const data=fields[7];
 				// Delete anything not a number or ,
@@ -223,12 +221,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * If page == -1 address is returned unchanged.
 	 * @param address The 64k address, i.e. the upper bits are the slot index.
 	 * @param page The page the address is associated with.
-	 * @returns if longAddressesUsed: address+((page+1)<<16)
+	 * @returns if bankSize: address+((page+1)<<16)
 	 * else: address.
 	 */
 	protected createLongAddress(address: number, page: number) {
 		let result=address;
-		if (this.longAddressesUsed)
+		if (this.bankSize!=0)
 			result+=(page+1)<<16;
 		return result;
 	}

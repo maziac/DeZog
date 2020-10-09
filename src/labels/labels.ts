@@ -1,5 +1,7 @@
 import {Utility} from '../misc/utility';
+import {MemoryModel} from '../remotes/Paging/memorymodel';
 import {Remote} from '../remotes/remotefactory';
+import {Z80Registers} from '../remotes/z80registers';
 import {SjasmplusLabelParser} from './sjasmpluslabelparser';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
@@ -36,7 +38,7 @@ export interface ListFileLine extends SourceFileEntry {
  * information that includes the used bank number as well.
  *
  * DeZog is capable of handling both. If banking information should be used as
- * well then the longAddressesUsed public boolean is set to true.
+ * well then the bankSize field is set to something different than 0.
  * This has to be set by the list file parser.
  * Furthermore the list file parser has to provide these 'long addresses'
  * in a special format.
@@ -58,7 +60,7 @@ export class LabelsClass {
 	protected labelsForNumber=new Array<any>();
 
 	/// Map with all labels (from labels file) and corresponding values.
-	protected numberForLabel=new Map<string, number>();//ValueLocation>();
+	protected numberForLabel=new Map<string, number>();
 
 	/// Map with label / file location association. Only used in unit tests to
 	/// point to the unit tests. Direct relationship: The line number of the label is returned.
@@ -79,8 +81,12 @@ export class LabelsClass {
 	protected smallValuesMaximum: number;
 
 
-	// Is set to true if addresses+page/bank number is used
-	public longAddressesUsed: boolean;
+	/// The used bank size. Only set if the assembler+parser supports
+	/// long addresses. Then it holds the used bank size (otherwise 0).
+	/// Is used to tell if the Labels are long or not and for internal
+	/// conversion if target has a different memory model.
+	/// Typical value: 0, 8192 or 16384.
+	protected bankSize: number;
 
 
 	// Constructor.
@@ -102,7 +108,16 @@ export class LabelsClass {
 		this.assertLines.length=0;
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
-		this.longAddressesUsed=false;
+		this.bankSize=0;
+	}
+
+
+	/**
+	 * Returns true if long addresses have been used.
+	 * I.e. if bankSize != 0.
+	 */
+	public AreLongAddressesUsed() {
+		return this.bankSize!=0;
 	}
 
 
@@ -139,7 +154,7 @@ export class LabelsClass {
 					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
-				this.longAddressesUsed=parser.longAddressesUsed;
+				this.bankSize=parser.bankSize;
 			}
 		}
 
@@ -348,7 +363,6 @@ export class LabelsClass {
 	 * @param address The memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
-	// TODO: Ist wahrscheinlich doch besser ausserhalb die Addresse zu konverten.
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Address file conversion
 		const entry=this.fileLineNrs.get(address);
@@ -378,6 +392,97 @@ export class LabelsClass {
 		return addr;
 	}
 
+
+	/**
+	 * Checks if the target's memory model matches the model used during parsing.
+	 */
+	public convertLabelsTo(memModel: MemoryModel) {
+		// Adjust labels to target model (if necessary at all)
+
+		// Is a conversion necessary / possible
+		/*
+		|             | Target 64k | Target long |
+		|-------------|------------|-------------|
+		| Labels 64k  |    OK      |    OK       |
+		| Labels long | Not OK 1)  | Depends 2)  |
+		*/
+		if (this.bankSize==0)
+			return;	// No long labels used
+
+		/*
+		1) Eg. Load a ZXNext or ZX128 program to a ZX48 target.
+		In most cases makes no sense. But if it is a small program, e.g. one that fits into a ZX48, it could be done.
+		Conclusion: Either throw an error or change all label addresses to 64k addresses. => Convert all to 64k.
+
+		2)
+		a) If bank size is the same for target and labels then this is OK.
+		b) If not equal e.g. a program assembled for ZX128 (bank size 16k) would not work with a ZXNext (bank size 8k).
+		Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
+		=> Change all labels.
+		*/
+
+
+		// Note: If bank size is 0 no banking is used and labels are converted to 64k.
+		const targetBankSize=memModel.getBankSize();
+		this.convertLabelsToBankSize(targetBankSize);
+	}
+
+
+	/**
+	 * Convert all file/line <-> address association to a new bank size.
+	 * The main use case is to convert ZX128 banking into ZXNext banking.
+	 * @param bankSize If bank size is 0 no banking is used and labels are converted to 64k. Otherwise the labels are
+	 * converted from the old bank size to the new one.
+	 */
+	protected convertLabelsToBankSize(targetBankSize: number) {
+		/*
+		 Need to adjust the 2 structures:
+		 - Associate address with file/line:
+		   this.fileLineNrs=new Map<number, SourceFileEntry>();
+		 - Associate file/line with an address:
+		   this.lineArrays=new Map<string, Array<number>>();
+		*/
+		const bankFactor=(targetBankSize==0) ? 0 : this.bankSize/targetBankSize;
+
+		// Address with file/line:
+		const newFileLines=new Map<number, SourceFileEntry>();
+		for (let [addr, sourceEntry] of this.fileLineNrs) {
+			// Check if no bank used
+			if (targetBankSize==0) {
+				addr&=0xFFFF;
+			}
+			else {
+				// Change banks
+				const origBank=Z80Registers.getBankFromAddress(addr);
+				const newBank=origBank*bankFactor;
+				addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
+			}
+			// Store
+			newFileLines.set(addr, sourceEntry);
+		}
+		// Exchange old with new
+		this.fileLineNrs=newFileLines;
+
+		// File/line with address:
+		for (const [, lineArray] of this.lineArrays) {
+			const count=lineArray.length;
+			for (let i=0; i<count; i++) {
+				let addr=lineArray[i];
+				// Check if no bank used
+				if (targetBankSize==0) {
+					addr&=0xFFFF;
+				}
+				else {
+					// Change banks
+					const origBank=Z80Registers.getBankFromAddress(addr);
+					const newBank=origBank*bankFactor;
+					addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
+				}
+				// Store
+				lineArray[i]=addr;
+			}
+		}
+	}
 }
 
 

@@ -122,7 +122,7 @@ export class Z80RegistersClass {
 		}
 
 		// Formatting
-		Z80RegisterVarFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
+		Z80RegisterVarFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
 		Z80RegisterHoverFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerHover);
 	}
 
@@ -428,6 +428,8 @@ export class Z80RegistersClass {
 
 	/**
 	 * Creates a long address from the address and slots.
+	 * @param address The 64k address.
+	 * @param slots An array with the slots or undefined if no spaging is used.
 	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
 	 * If undefined: address.
 	 * I.e. a long address is always > 0xFFFF
@@ -437,7 +439,7 @@ export class Z80RegistersClass {
 		// Check for normal address
 		if (!slots)
 			return address;
-		if (!Labels.longAddressesUsed)
+		if (!Labels.AreLongAddressesUsed())
 			return address;
 		// Calculate long address
 		const result=this.funcCreateLongAddress(address, slots);
@@ -447,13 +449,39 @@ export class Z80RegistersClass {
 
 	/**
 	 * Retrieves the slot index from an address.
-	 * @param addr The 16 bit address.
+	 * @param addr The 16 bit address or the long address.
 	 * @return The upper bits of the address (shifted).
 	 */
 	public getSlotFromAddress(addr: number): number {
 		Utility.assert(this.funcGetSlotFromAddress);
-		const slotIndex=this.funcGetSlotFromAddress(addr);
+		const slotIndex=this.funcGetSlotFromAddress(addr&0xFFFF);
 		return slotIndex;
+	}
+
+
+	/**
+	 * Retrieves the bank number from an address.
+	 * This is the same for all memory models. I.e. the part beginning
+	 * with bit 16.
+	 * @param addr The long address.
+	 * @return The corresponding bank, i.e. (addr>>>16)-1.
+	 * Returns -1 if 'addr' is not a long address.
+	 */
+	public getBankFromAddress(addr: number): number {
+		const bankPart=addr>>>16;
+		return bankPart-1;
+	}
+
+	/**
+	 * Returns the long address from 64k address and bank.
+	 * the (bankü1) is simply put in the bits above the 16th bit.
+	 * @param addr The 64k address.
+	 * @param bank A bank number.
+	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).
+	 */
+	public getLongAddressWithBank(addr: number, bank: number): number {
+		const longAddr=addr+((bank+1)<<16);
+		return longAddr;
 	}
 
 
