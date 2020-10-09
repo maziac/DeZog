@@ -11,7 +11,7 @@ import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
-import {MemoryBank, MemoryModel} from './Paging/slots';
+import {MemoryBank, MemoryModel} from './Paging/memorymodel';
 
 
 
@@ -480,7 +480,6 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Returns the PC as long address, i.e. with bank info.
-	 * Note: If Labels.longAddressesUsed the normal 64k address is returned.
 	 * @returns PC + (bank_nr+1)<<16
 	 */
 	public getPCLong(): number {
@@ -613,7 +612,7 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Convert to long address if necessary
-		if (Labels.longAddressesUsed) {
+		if (Labels.AreLongAddressesUsed()) {
 			const slots=this.getSlots();
 			callerAddr=Z80Registers.createLongAddress(callerAddr, slots);
 			calledAddr=Z80Registers.createLongAddress(calledAddr, slots);

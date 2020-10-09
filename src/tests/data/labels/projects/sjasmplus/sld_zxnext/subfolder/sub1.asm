@@ -1,7 +1,7 @@
 
-    MMU 5, 110, 0xA000
-sub_b110:
-    ld a,110
-    ld a,110
+    MMU 5, 70, 0xA000
+sub_b70:
+    ld a,70
+    ld a,70
     ret
 

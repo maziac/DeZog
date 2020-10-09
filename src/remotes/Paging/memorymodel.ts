@@ -1,9 +1,10 @@
+import {Utility} from "../../misc/utility";
 import {Z80Registers} from "../z80registers";
 
 
 /// The different memory models.
-export enum MemoryModelType {
-	DEFAULT=0,	// MemoryModel
+export enum MemoryModelType {	// TODO: can this enum be removed?
+	DEFAULT=0,	// MemoryModel (no banks, no long addreses)
 	ZX128K,		// Zx128MemoryModel
 	ZXNEXT		// ZxNextMemoryModel
 }
@@ -32,6 +33,24 @@ export interface MemoryBank {
  * 4000-FFFF: RAM
  */
 export class MemoryModel {
+
+	/**
+	 * Factory method.
+	 */
+	public static createMemoryModel(type: MemoryModelType): MemoryModel {
+		switch (type) {
+			case MemoryModelType.DEFAULT:
+				return new MemoryModel();
+			case MemoryModelType.ZX128K:
+				return new Zx128MemoryModel();
+			case MemoryModelType.ZXNEXT:
+				return new ZxNextMemoryModel();
+			default:
+				Utility.assert(false);
+				return undefined as any;
+		}
+	}
+
 
 	/**
 	 * Constructor.
@@ -63,6 +82,15 @@ export class MemoryModel {
 		pages.push({start: 0x4000, end: 0xFFFF, name: "RAM"});
 		// Return
 		return pages;
+	}
+
+
+	/**
+	 * Returns the bank size.
+	 * @returns 0 in this case = no banks used.
+	 */
+	public getBankSize() {
+		return 0;
 	}
 
 }
@@ -143,6 +171,14 @@ export class Zx128MemoryModel extends MemoryModel {
 		return pages;
 	}
 
+
+	/**
+	 * Returns the bank size.
+	 * @returns this.bankSize
+	 */
+	public getBankSize() {
+		return this.bankSize;
+	}
 }
 
 

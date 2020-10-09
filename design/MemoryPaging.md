@@ -72,15 +72,16 @@ Questionable is maybe OpenMSX?
 
 ## File/line number <-> Breakpoint Association
 
-Open: Another way how to handle long address breakpoints more generally, i.e. independent of the Remote would be to use the 64k address as before. Then when a break occurs additionally the slot/bank is checked by DeZog not by the emulator. e.g. ZEsarUX could still use the fast memory breakpoints.
+If the file/line to address association is using long addresses then long addresses are also used for breakpoints.
+If not then normal 64k addresses are used.
 
-Open: Decision: Either let the Remote handle the long address breakpoints or let DeZog handle it.
-performance may vary. In general DeZog could be slower if a 64k address is hit very often. In other cases (ZEsarUX memory breakpoints) performance should be better.
+For long addresses:
 
-Or: I could do both: DeZog handles the bank number always as fallback. But the long address is also passed to the Remote. If it can handle it: fine. If not (ZEsarUX mem breakpoints) the normal address is used by the Remote and Dezog does the fallback test.
+Still the remote (e.g. emulator) might not support long breakpoints.
+In this case the emulator would set a normal 64k address instead.
+When the break happens, as a fallback, DeZog will check the long BP address on it's own. If the bank is not the correct one (the one from the long BP) then DeZog will send a 'continue' to the remote (emulator).
 
-But it seems that is a problem only for WPMEM. Breakpoints, Asserts, Logpoints can be handled by all in the long version.
-
+Note: If the remote supports long breakpoints DeZog would still additionally do a check but the check would always be 'true'.
 
 
 ### ZEsarUX
@@ -123,6 +124,34 @@ Open: How to handle. Ped7g proposes to include this somehow into the SLD. Open.
 If a long label/address is found the slot/bank information should be used additionally.
 
 Open: how to accurately display the used bank.
+
+
+# Parser / Target Combinations
+
+The Labels parser can output labels for
+- 64k addresses (no banks, no long addresses)
+- long addresses for a certain bank size
+
+The target (ZX48, ZX128, ZXNext) may support
+- 64k addresses only (e.g. ZX 48K)
+- long addresses for a certain bank size
+
+|             | Target 64k | Target long |
+|-------------|------------|-------------|
+| Labels 64k  |    OK      |    OK       |
+| Labels long | Not OK 1)  | Depends 2)  |
+
+1 ) Eg. Load a ZXNext or ZX128 program to a ZX48 target.
+In most cases makes no sense. But if it is a small program, e.g. one that fits into a ZX48, it could be done.
+Conclusion: Either throw an error or change all label addresses to 64k addresses.
+
+2 )
+a) If bank size is the same for target and labels then this is OK.
+b) If not equal e.g. a program assembled for ZX128 (bank size 16k) would not work with a ZXNext (bank size 8k).
+Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
+
+
+
 
 
 # CPU History

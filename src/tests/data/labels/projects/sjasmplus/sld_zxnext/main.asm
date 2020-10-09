@@ -12,11 +12,11 @@ main:
     ld sp,stack_top
 
     nextreg 0x50+5,60
-    call sub_b100
+    call sub_b60
     nop
 
     nextreg 0x50+5,65
-    call sub_b105
+    call sub_b65
     nop
 
     ld bc,big_number&0xFFFF
@@ -26,19 +26,19 @@ main:
 .loop:
     ; Bank 60
     nextreg 0x50+5,60
-    call sub_b100
+    call sub_b60
     nop
     nop
 
     ; Bank 65
     nextreg 0x50+5,65
-    call sub_b105
+    call sub_b65
     nop
     nop
 
-    ; Bank 110
-    nextreg 0x50+5,110
-    call sub_b110
+    ; Bank 70
+    nextreg 0x50+5,70
+    call sub_b70
     nop
     nop
 
@@ -63,21 +63,22 @@ stack_top:
 
 
     MMU 5, 60, 0xA000
-sub_b100:
-    ld a,100
-    ld a,100
+sub_b60:
+    ld a,60
+    ld a,60
     ret
 
-data_b100:
+data_b60:
     defb 0, 1, 2, 3, 4
 
+
     MMU 5, 65, 0xA000
-sub_b105:
-    ld a,105
-    ld a,105
+sub_b65:
+    ld a,65
+    ld a,65
     ret
 
-data_b105:
+data_b65:
     defb 5, 6, 7, 8, 9
 
 

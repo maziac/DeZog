@@ -1,14 +1,14 @@
-import { zSocket, ZesaruxSocket } from './zesaruxsocket';
-import { Utility } from '../../misc/utility';
-import { Labels } from '../../labels/labels';
-import { Settings } from '../../settings';
+import {zSocket, ZesaruxSocket} from './zesaruxsocket';
+import {Utility} from '../../misc/utility';
+import {Labels} from '../../labels/labels';
+import {Settings} from '../../settings';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {RemoteBase, RemoteBreakpoint} from '../remotebase';
-import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from './zesaruxcpuhistory';
-import { Z80RegistersClass, Z80Registers } from '../z80registers';
+import {ZesaruxCpuHistory, DecodeZesaruxHistoryInfo} from './zesaruxcpuhistory';
+import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
-import {MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/slots';
+import {MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 
 
 
@@ -207,24 +207,61 @@ export class ZesaruxRemote extends RemoteBase {
 				const machineType=mtResp.toLowerCase();
 				if (machineType.indexOf("tbblue")>=0) {
 					// 8x8k banks
-					this.memoryModel=new ZxNextMemoryModel();
-					// Set decoder
 					Z80Registers.decoder=new DecodeZesaruxRegisters(8);
+					this.memoryModel=new ZxNextMemoryModel();
 				}
 				else if (machineType.indexOf("128k")>=0) {
 					// 4x16k banks
-					this.memoryModel=new Zx128MemoryModel();
-					// Set decoder
 					Z80Registers.decoder=new DecodeZesaruxRegisters(4);
+					this.memoryModel=new Zx128MemoryModel();
 				}
 				else {
 					// For all others no paging is assumed.
-					this.memoryModel=new MemoryModel();
 					Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+					this.memoryModel=new MemoryModel();
 				}
 				// Init
 				this.memoryModel.init();
 
+				// If the target memory model is different to the oen used for the labels
+				// then the file <-> address association needs to be changed.
+				Labels.convertLabelsTo(this.memoryModel);
+
+				/*
+								// Get the machine type, e.g. tbblue, zx48k etc.
+				// Is required to find the right slot/bank paging.
+				// Distinguished are only: 48k, 128k and tbblue.
+				// TODO: change send above to sendAwait.
+				const mtResp=await zSocket.sendAwait('get-current-machine') as string;
+				const machineType=mtResp.toLowerCase();
+				let memModelType=MemoryModelType.DEFAULT;
+				if (machineType.indexOf("tbblue")>=0) {
+					memModelType=MemoryModelType.ZXNEXT;
+				}
+				else if (machineType.indexOf("128k")>=0) {
+					memModelType=MemoryModelType.ZX128K;
+				}
+
+				// Create decoder
+				switch (memModelType) {
+					case MemoryModelType.ZXNEXT:
+						// 8x8k banks
+						Z80Registers.decoder=new DecodeZesaruxRegisters(8);
+						break;
+					case MemoryModelType.ZX128K:
+						// 4x16k banks
+						Z80Registers.decoder=new DecodeZesaruxRegisters(4);
+						break;
+					default:
+						// For all others no paging is assumed.
+						Z80Registers.decoder=new DecodeZesaruxRegisters(0);
+						break;
+				}
+
+				// Create and init
+				this.memoryModel=MemoryModel.createMemoryModel(memModelType);
+				this.memoryModel.init();	// TODO: Maybe do init in the constructor
+				*/
 
 				// Set Program Counter to execAddress
 				if(Settings.launch.execAddress) {
@@ -1037,7 +1074,15 @@ export class ZesaruxRemote extends RemoteBase {
 			// Create condition from address and bp.condition
 			let condition='';
 			if (bp.address>=0) {
-				condition='PC=0'+Utility.getHexString(bp.address, 4)+'h';
+				condition='PC=0'+Utility.getHexString(bp.address&0xFFFF, 4)+'h';
+				// Add check for long BP
+				const bank=Z80Registers.getBankFromAddress(bp.address);
+				if (bank!=-1) {
+					// Yes, it's a long address
+					const slot=Z80Registers.getSlotFromAddress(bp.address);
+					condition+=' and SEG'+slot+'='+bank;	// TODO: working for ZXNext but not for ZX128 (->Cesar)
+				}
+				// Add BP condition
 				if (zesaruxCondition.length>0) {
 					condition+=' and ';
 					zesaruxCondition='('+zesaruxCondition+')';

@@ -506,7 +506,9 @@ export class ZSimRemote extends DzrpRemote {
 		//let bp;
 		let breakAddress;
 		let updateCounter=0;
-		const slots=(Labels.longAddressesUsed)? (this.memory as ZxMemory).getSlots() : [];
+		let slots
+		if (Labels.AreLongAddressesUsed())
+			slots=(this.memory as ZxMemory).getSlots();
 		let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 		try {
 			// Run the Z80-CPU in a loop

@@ -175,7 +175,7 @@ export class DecodeRegisterData {
 	public parsePCLong(data: RegisterData): number {
 		// Get PC
 		const pc=this.parsePC(data);
-		if (!Labels.longAddressesUsed)
+		if (!Labels.AreLongAddressesUsed())
 			return pc;
 		// Get slots
 		const slots=this.parseSlots(data);

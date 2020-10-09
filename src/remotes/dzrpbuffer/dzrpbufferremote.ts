@@ -360,7 +360,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 				const slotNr=breakAddress64k>>>13;
 				this.sendDzrpCmdGetTbblueReg(0x50+slotNr).then(bank => {
 					let breakAddress=breakAddress64k;
-					if (Labels.longAddressesUsed)
+					if (Labels.AreLongAddressesUsed())
 						breakAddress+=(bank+1)<<16;
 
 					// TODO: Hier würde es (ohne 'then') normal weitergehen:

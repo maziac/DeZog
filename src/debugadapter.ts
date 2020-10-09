@@ -778,7 +778,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else {
 			// Get the current slots
-			if (Labels.longAddressesUsed) {
+			if (Labels.AreLongAddressesUsed()) {
 				Remote.clearRegisters();
 				await Remote.getRegisters();
 			}

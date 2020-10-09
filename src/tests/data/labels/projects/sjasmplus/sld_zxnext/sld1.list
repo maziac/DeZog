@@ -13,11 +13,11 @@
 12    8001 31 06 81         ld sp,stack_top
 13    8004
 14    8004 ED 91 55 3C      nextreg 0x50+5,60
-15    8008 CD 00 A0         call sub_b100
+15    8008 CD 00 A0         call sub_b60
 16    800B 00               nop
 17    800C
 18    800C ED 91 55 41      nextreg 0x50+5,65
-19    8010 CD 00 A0         call sub_b105
+19    8010 CD 00 A0         call sub_b65
 20    8013 00               nop
 21    8014
 22    8014 01 FF FF         ld bc,big_number&0xFFFF
@@ -27,19 +27,19 @@
 26    801D              .loop:
 27    801D                  ; Bank 60
 28    801D ED 91 55 3C      nextreg 0x50+5,60
-29    8021 CD 00 A0         call sub_b100
+29    8021 CD 00 A0         call sub_b60
 30    8024 00               nop
 31    8025 00               nop
 32    8026
 33    8026                  ; Bank 65
 34    8026 ED 91 55 41      nextreg 0x50+5,65
-35    802A CD 00 A0         call sub_b105
+35    802A CD 00 A0         call sub_b65
 36    802D 00               nop
 37    802E 00               nop
 38    802F
-39    802F                  ; Bank 110
-40    802F ED 91 55 6E      nextreg 0x50+5,110
-41    8033 CD 00 A0         call sub_b110
+39    802F                  ; Bank 70
+40    802F ED 91 55 46      nextreg 0x50+5,70
+41    8033 CD 00 A0         call sub_b70
 42    8036 00               nop
 43    8037 00               nop
 44    8038
@@ -64,43 +64,44 @@
 63    8108
 64    8108
 65    8108                  MMU 5, 60, 0xA000
-66    A000              sub_b100:
-67    A000 3E 64            ld a,100
-68    A002 3E 64            ld a,100
+66    A000              sub_b60:
+67    A000 3E 3C            ld a,60
+68    A002 3E 3C            ld a,60
 69    A004 C9               ret
 70    A005
-71    A005              data_b100:
+71    A005              data_b60:
 72    A005 00 01 02 03      defb 0, 1, 2, 3, 4
 72    A009 04
 73    A00A
-74    A00A                  MMU 5, 65, 0xA000
-75    A000              sub_b105:
-76    A000 3E 69            ld a,105
-77    A002 3E 69            ld a,105
-78    A004 C9               ret
-79    A005
-80    A005              data_b105:
-81    A005 05 06 07 08      defb 5, 6, 7, 8, 9
-81    A009 09
-82    A00A
+74    A00A
+75    A00A                  MMU 5, 65, 0xA000
+76    A000              sub_b65:
+77    A000 3E 41            ld a,65
+78    A002 3E 41            ld a,65
+79    A004 C9               ret
+80    A005
+81    A005              data_b65:
+82    A005 05 06 07 08      defb 5, 6, 7, 8, 9
+82    A009 09
 83    A00A
 84    A00A
-85    A00A                  include "subfolder/sub1.asm"
+85    A00A
+86    A00A                  include "subfolder/sub1.asm"
 # file opened: subfolder/sub1.asm
  1+   A00A
- 2+   A00A                  MMU 5, 110, 0xA000
- 3+   A000              sub_b110:
- 4+   A000 3E 6E            ld a,110
- 5+   A002 3E 6E            ld a,110
+ 2+   A00A                  MMU 5, 70, 0xA000
+ 3+   A000              sub_b70:
+ 4+   A000 3E 46            ld a,70
+ 5+   A002 3E 46            ld a,70
  6+   A004 C9               ret
  7+   A005
 # file closed: subfolder/sub1.asm
-86    A005
 87    A005
-88    A005                  SAVENEX OPEN "sld1.nex", main, stack_top
-89    A005                  SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
-90    A005                  SAVENEX CFG 7   ; Border color
-91    A005                  SAVENEX AUTO
-92    A005                  SAVENEX CLOSE
-93    A005
+88    A005
+89    A005                  SAVENEX OPEN "sld1.nex", main, stack_top
+90    A005                  SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
+91    A005                  SAVENEX CFG 7   ; Border color
+92    A005                  SAVENEX AUTO
+93    A005                  SAVENEX CLOSE
+94    A005
 # file closed: main.asm
