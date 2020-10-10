@@ -1891,7 +1891,7 @@ the value correspondends to a label.
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianess which is little endian by default.
-"-ms address size filename": Saves a memory dump to a file. The file is found in the temp directory.
+"-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 Without any parameter it will show all sprite patterns.
@@ -2024,7 +2024,7 @@ Notes:
 	 * @returns A Promise with a text to print.
 	 */
 	protected async evalMemDump(tokens: Array<string>): Promise<string> {
-		// check count of arguments
+		// Check count of arguments
 		if (tokens.length<2) {
 			// Error Handling: No arguments
 			throw Error("Address and size expected.");
@@ -2100,6 +2100,7 @@ Notes:
 			else
 				output+=value+' ';
 		}
+
 		// Send response
 		return output;
 	}
@@ -2111,7 +2112,39 @@ Notes:
 	 * @returns A Promise with a text to print.
 	 */
 	protected async evalMemSave(tokens: Array<string>): Promise<string> {
-		return 'fail';
+		// Check count of arguments
+		if (tokens.length<2) {
+			// Error Handling: No arguments
+			throw Error("Address and size expected.");
+		}
+
+		// Address
+		const addressString=tokens[0];
+		const address=Utility.evalExpression(addressString);
+		if (address<0||address>0xFFFF)
+			throw Error("Address ("+address+") out of range.");
+
+		// Size
+		const sizeString=tokens[1];
+		const size=Utility.evalExpression(sizeString);
+		if (size<0||size>0xFFFF)
+			throw Error("Size ("+size+") out of range.");
+
+		// Get filename
+		const filename=tokens[2];
+		if (!filename)
+			throw Error("No filename given.");
+
+		// Get memory
+		const data=await Remote.readMemoryDump(address, size);
+
+		// Save to .tmp/filename
+		const relPath=Utility.getRelTmpFilePath(filename);
+		const absPath=Utility.getAbsFilePath(relPath);
+		fs.writeFileSync(absPath, data);
+
+		// Send response
+		return 'OK';
 	}
 
 
@@ -2121,7 +2154,7 @@ Notes:
 	 * @returns A Promise with a text to print.
 	 */
 	protected async evalMemView(tokens: Array<string>): Promise<string> {
-		// check count of arguments
+		// Check count of arguments
 		if (tokens.length==0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
