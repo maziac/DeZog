@@ -1079,8 +1079,31 @@ export class ZesaruxRemote extends RemoteBase {
 				const bank=Z80Registers.getBankFromAddress(bp.address);
 				if (bank!=-1) {
 					// Yes, it's a long address
-					const slot=Z80Registers.getSlotFromAddress(bp.address);
-					condition+=' and SEG'+slot+'='+bank;	// TODO: working for ZXNext but not for ZX128 (->Cesar)
+					// Check for ZX128K: ZEsarUX uses different wording:
+					const className=this.memoryModel.constructor.name
+					if (className=="Zx128MemoryModel") {
+						//if (this.memoryModel instanceof Zx128MemoryModel
+						//	&&!(this.memoryModel instanceof ZxNextMemoryModel)) {
+
+						// ZX128K:
+						// 0000-3FFF:	ROM
+						// 4000-BFFF: 	-
+						// C000-FFFF:	RAM
+						const addr=bp.address&0xFFFF;
+						if (addr<=0x3FFF) {
+							// ROM
+							condition+=' and ROM='+bank;
+						}
+						else if(addr>=0xC000) {
+							// RAM
+							condition+=' and RAM='+bank;
+						}
+					}
+					else {
+						// ZXNext
+						const slot=Z80Registers.getSlotFromAddress(bp.address);
+						condition+=' and SEG'+slot+'='+bank;
+					}
 				}
 				// Add BP condition
 				if (zesaruxCondition.length>0) {
