@@ -361,7 +361,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 						breakAddress+=(bank+1)<<16;
 
 					// TODO: Hier würde es (ohne 'then') normal weitergehen:
-					// Handle the break
+					// Handle the break.
 					continueHandler({breakNumber, breakAddress, breakReasonString});
 				});
 			}
@@ -371,12 +371,12 @@ export class DzrpBufferRemote extends DzrpRemote {
 			this.stopCmdRespTimeout();
 			// Get latest sent message
 			const msg=this.messageQueue[0];
-			Utility.assert(msg);
+			Utility.assert(msg, "DZRP: Response received without request.");
 			// Get sequence number
 			const seqno=msg.buffer[4];
 			// Check response
 			if (recSeqno!=seqno) {
-				const error=Error("Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
+				const error=Error("DZRP: Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
 				LogSocket.log("Error: "+error);
 				this.emit('error', error);
 				return;

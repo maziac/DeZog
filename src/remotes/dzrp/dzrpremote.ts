@@ -788,14 +788,15 @@ export class DzrpRemote extends RemoteBase {
 				// Check for continue
 				if (condition==undefined) {
 					// Calculate the breakpoints to use for step-over/step-into
-					[, bp1, bp2]=await this.calcStepBp(stepOver);
+				//	[, bp1, bp2]=await this.calcStepBp(stepOver);
+					// Note: we need to use the original bp addresses
 					// Continue
 					this.continueResolve=funcContinueResolve;
 					this.sendDzrpCmdContinue(bp1, bp2);
 				}
 				else {
 					// Check if bp1/2 was hit
-					const pc=this.getPC();
+					const pc=this.getPC();	// This is intentionally a 64k address
 					if (pc!=bp1&&pc!=bp2) {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
@@ -1359,8 +1360,8 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 * @param bp1Address The 64k address of breakpoint 1 or undefined if not used.
+	 * @param bp2Address The 64k address of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		Utility.assert(false);

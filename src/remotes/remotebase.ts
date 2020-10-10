@@ -1437,6 +1437,9 @@ export class RemoteBase extends EventEmitter {
 	 * But for branching or conditional branching instructions this is different.
 	 * DeZog will then use up to 2 breakpoints to catch up after the instruction is executed.
 	 * The method is async, i.e. it fetches the required registers and memory on it's own.
+	 * Note: The method uses normal 64k addresses, no long addresses.
+	 * This because long addresses are not required and there is some arithmetic
+	 * done to the addresses (e.g. +3) that is not available on long addresses.
 	 * @param stepOver true if breakpoint address should be calculate for a step-over.
 	 * In this case the branching is ignored for CALL and RST.
 	 * @returns A Promise with the opcode and 2 breakpoint
@@ -1448,7 +1451,7 @@ export class RemoteBase extends EventEmitter {
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
 		await this.getRegisters();
-		const pc=this.getPC(); // TODO: Change to long PC
+		const pc=this.getPC();
 		// Get opcodes
 		const opcodes=await this.readMemoryDump(pc, 4);
 
@@ -1541,6 +1544,11 @@ export class RemoteBase extends EventEmitter {
 					bpAddr2=pc;
 			}
 		}
+
+		// Make sure that breakpoints wrap around
+		bpAddr1&=0xFFFF;
+		if (bpAddr2)
+			bpAddr2&=0xFFFF;
 
 		// Return either 1 or 2 breakpoints
 		return [opcode, bpAddr1, bpAddr2];

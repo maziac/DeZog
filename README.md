@@ -99,13 +99,13 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - supports ZEsarUX, CSpect and the internal simulator
 - build output must
 	- create a .list file (support for sjasmplus, Savannah's z80asm, z88dk).
-	- _alternatively you can use other list files with limited functionality, please consult the documentation. You can also simply fetch a disassembly of your code from ZEsarUX. Please see the "List file" section in the documentation._
-	- create a .sna, .nex or .tap file containing the binary
+	- create a .sna, .nex, .tap or object file containing the binary
 
 
 ## Roadmap
 
 Next to implement:
+- "Long Address" support: Currently DeZog treats all addresses as 16 bit (64k) only. "Long Addresses" will extend this to cover also the information to which bank an address points to. This will make it possible to support bigger projects with source code mapped to different memory banks/pages. To make this work the assembler has to support the feature as well. Therefore, particularly support for the sjasmplus SLD file format is planned.
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
 - ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 
