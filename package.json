@@ -608,8 +608,7 @@
 							"cspect": {
 								"port": 10000
 							},
-							"zsim": {
-							},
+							"zsim": {},
 							"zxnext": {
 								"baudrate": 230400,
 								"port": "/dev/tty.usbserial"

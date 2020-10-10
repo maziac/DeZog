@@ -1707,6 +1707,12 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-md') {
 			return await this.evalMemDump(tokens);
 		}
+		else if (cmd=='-ms') {
+			return await this.evalMemSave(tokens);
+		}
+		else if (cmd=='-mv') {
+			return await this.evalMemView(tokens);
+		}
 		else if (cmd=='-dasm') {
 			return await this.evalDasm(tokens);
 		}
@@ -1884,7 +1890,9 @@ the value correspondends to a label.
 "-LOGPOINT enable|disable|status [group]":
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
-"-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
+"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianess which is little endian by default.
+"-ms address size filename": Saves a memory dump to a file. The file is found in the temp directory.
+"-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 Without any parameter it will show all sprite patterns.
 You can concat several ranges.
@@ -1902,7 +1910,7 @@ Examples:
 "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
 "-e gr": Shows all registers.
 "-eval 2+3*5": Results to "17".
-"-md 0 10": Shows the memory at address 0 to address 9.
+"-mv 0 10": Shows the memory at address 0 to address 9.
 "-sprites": Shows all visible sprites.
 "-state save 1": Stores the current state as 'into' 1.
 "-state restore 1": Restores the state 'from' 1.
@@ -2013,9 +2021,106 @@ Notes:
 	/**
 	 * Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
- 	 * @returns A Promise with a text to print.
+	 * @returns A Promise with a text to print.
 	 */
 	protected async evalMemDump(tokens: Array<string>): Promise<string> {
+		// check count of arguments
+		if (tokens.length<2) {
+			// Error Handling: No arguments
+			throw Error("Address and size expected.");
+		}
+
+		// Address
+		const addressString=tokens[0];
+		const address=Utility.evalExpression(addressString);
+		if (address<0||address>0xFFFF)
+			throw Error("Address ("+address+") out of range.");
+
+		// Size
+		const sizeString=tokens[1];
+		const size=Utility.evalExpression(sizeString);
+		if (size<0||size>0xFFFF)
+			throw Error("Size ("+size+") out of range.");
+
+		// Byte or word
+		let unitSize=1; 	// Default=byte
+		let bigEndian=false;
+		// Hex/dec
+		let hex=true;
+		const typeString=tokens[2];
+		if (typeString) {
+			const typeStringlower=typeString.toLowerCase();
+			if (typeStringlower!="hex"&&typeStringlower!="dec"&&typeStringlower!="word")
+				throw Error("'hex', 'dec' or 'word' expected but got '"+typeString+"'.");
+			let k=2;
+			// Check for hex or dec
+			if (typeString=='hex')
+				k++;
+			else if (typeString=='dec') {
+				hex=false;
+				k++;
+			}
+			// Check for unit size (word)
+			const unitSizeString=tokens[k];
+			if (unitSizeString) {
+				const unitSizeStringLower=unitSizeString.toLowerCase()
+				if (unitSizeStringLower!="word")
+					throw Error("'word' expected but got '"+unitSizeString+"'.");
+				unitSize=2;
+				// Endianess
+				const endianess=tokens[k+1];
+				if (endianess) {
+					const endianessLower=endianess.toLowerCase();
+					if (endianessLower=="big") {
+						// Big endian
+						bigEndian=true;
+					}
+					else if (endianessLower!="little") {
+						throw Error("'little' or 'big' expected but got '"+endianess+"'.");
+					}
+				}
+			}
+		}
+
+		// Get memory
+		const data=await Remote.readMemoryDump(address, size);
+
+		// 'Print'
+		let output='';
+		for (let i=0; i<size; i+=unitSize) {
+			let value=data[i];
+			if (unitSize==2) {
+				if (bigEndian)
+					value=(value<<8)+data[i+1];
+				else
+					value+=data[i+1]<<8;
+			}
+			if (hex)
+				output+=Utility.getHexString(value, 2*unitSize)+' ';
+			else
+				output+=value+' ';
+		}
+		// Send response
+		return output;
+	}
+
+
+	/**
+	 * Saves a memory dump to a file.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemSave(tokens: Array<string>): Promise<string> {
+		return 'fail';
+	}
+
+
+	/**
+	 * Shows a view with a memory dump.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemView(tokens: Array<string>): Promise<string> {
 		// check count of arguments
 		if (tokens.length==0) {
 			// Error Handling: No arguments
