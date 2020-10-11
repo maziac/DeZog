@@ -1,8 +1,8 @@
 # Changelog
 
 # 1.5.2
-- Commands: "-view" is now working with all commands.
 - Relaunch: the memory view of the first session is now correctly closed before re-launching.
+- Commands: "-view" is now working with all commands.
 - Commands:
 	- Renamed: "md" changed to "mv".
 	- "md" used to do a memory dump to console.
