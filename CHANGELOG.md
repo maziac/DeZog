@@ -1,8 +1,8 @@
 # Changelog
 
 # 1.4.11
-	- Commands: "-view" is now working with all commands.
-	- Relaunch: the memory view of the first session is now correctly closed before re-launching.
+- Commands: "-view" is now working with all commands.
+- Relaunch: the memory view of the first session is now correctly closed before re-launching.
 
 # 1.4.10
 - Commands:
