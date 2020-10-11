@@ -282,6 +282,21 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
+		// Disconnect Remote etc.
+		this.disconnectAll();
+		// Send response
+		this.sendResponse(response);
+	}
+
+
+	/**
+	 * Disconnects Remote, listeners, views.
+	 * Is called
+	 * - when user presses red square
+	 * - when the user presses relaunch (circled arrow/restart)
+	 * - when the ZEsarUX socket connection is terminated
+	 */
+	protected async disconnectAll(): Promise<void> {
 		// Clear all decorations
 		if (DebugSessionClass.state==DbgAdaperState.UNITTEST) {
 			// Cancel unit tests
@@ -292,7 +307,7 @@ export class DebugSessionClass extends DebugSession {
 		else
 			Decoration?.clearAllDecorations();
 		DebugSessionClass.state=DbgAdaperState.NORMAL;
-		// Close register memory view
+		// Close views, e.g. register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
@@ -303,8 +318,6 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
 		RemoteFactory.removeRemote();
-		// Send response
-		this.sendResponse(response);
 	}
 
 
@@ -357,10 +370,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Stop machine
-		Remote.disconnect().then(() => {
+		await this.disconnectAll();
+		//Remote.disconnect().then(() => {
 			// And setup a new one
 			this.launch(response);
-		});
+		//});
 	}
 
 
@@ -1720,51 +1734,82 @@ export class DebugSessionClass extends DebugSession {
 		const expression=command.trim().replace(/\s+/g, ' ');
 		const tokens=expression.split(' ');
 		const cmd=tokens.shift();
+		if (!cmd)
+			throw Error("No command.");
+
+		// Check for "-view"
+		let viewTitle;
+		if (tokens[0]=='-view') {
+			tokens.shift();
+			viewTitle=cmd.substr(1)+' '+tokens.join(' ');	// strip '-'
+		}
+
 		// All commands start with "-"
+		let output;
 		if (cmd=='-help'||cmd=='-h') {
-			return await this.evalHelp(tokens);
+			output = await this.evalHelp(tokens);
 		}
 		else if (cmd=='-LOGPOINT'||cmd=='-logpoint') {
-			return await this.evalLOGPOINT(tokens);
+			output = await this.evalLOGPOINT(tokens);
 		}
 		else if (cmd=='-ASSERT'||cmd=='-assert') {
-			return await this.evalASSERT(tokens);
+			output = await this.evalASSERT(tokens);
 		}
 		else if (cmd=='-eval') {
-			return await this.evalEval(tokens);
+			output = await this.evalEval(tokens);
 		}
 		else if (cmd=='-exec'||cmd=='-e') {
-			return await this.evalExec(tokens);
+			output = await this.evalExec(tokens);
 		}
 		else if (cmd=='-label'||cmd=='-l') {
-			return await this.evalLabel(tokens);
+			output = await this.evalLabel(tokens);
 		}
 		else if (cmd=='-md') {
-			return await this.evalMemDump(tokens);
+			output = await this.evalMemDump(tokens);
+		}
+		else if (cmd=='-ms') {
+			output = await this.evalMemSave(tokens);
+		}
+		else if (cmd=='-mv') {
+			output = await this.evalMemView(tokens);
 		}
 		else if (cmd=='-dasm') {
-			return await this.evalDasm(tokens);
+			output = await this.evalDasm(tokens);
 		}
 		else if (cmd=='-patterns') {
-			return await this.evalSpritePatterns(tokens);
+			output = await this.evalSpritePatterns(tokens);
 		}
 		else if (cmd=='-WPMEM'||cmd=='-wpmem') {
-			return await this.evalWPMEM(tokens);
+			output = await this.evalWPMEM(tokens);
 		}
 		else if (cmd=='-sprites') {
-			return await this.evalSprites(tokens);
+			output = await this.evalSprites(tokens);
 		}
 		else if (cmd=='-state') {
-			return await this.evalStateSaveRestore(tokens);
+			output = await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
 		else if (cmd=='-dbg') {
-			return await this.evalDebug(tokens);
+			output = await this.evalDebug(tokens);
 		}
 		//
 		else {
 			// Unknown command
-			throw new Error("Unknown command: '"+expression+"'");
+			throw Error("Unknown command: '"+expression+"'");
+		}
+
+		// Check for output target
+		if (viewTitle) {
+			// Output text to new view.
+			// Create new view
+			const panel=new TextView(viewTitle, output);
+			await panel.update();
+			// Send empty response
+			return '';
+		}
+		else {
+			// Output text to console
+			return output;
 		}
 	}
 
@@ -1913,13 +1958,15 @@ export class DebugSessionClass extends DebugSession {
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
-"-exec|e [-view] cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers". If you add "-view" the output will go into a new view instead of the console.
+"-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-LOGPOINT enable|disable|status [group]":
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
-"-md address size [address_n size_n]*": Memory Dump at 'address' with 'size' bytes. Will open a new view to display the memory dump.
+"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianess which is little endian by default.
+"-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
+"-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
 Without any parameter it will show all sprite patterns.
 You can concat several ranges.
@@ -1937,13 +1984,13 @@ Examples:
 "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
 "-e gr": Shows all registers.
 "-eval 2+3*5": Results to "17".
-"-md 0 10": Shows the memory at address 0 to address 9.
+"-mv 0 10": Shows the memory at address 0 to address 9.
 "-sprites": Shows all visible sprites.
 "-state save 1": Stores the current state as 'into' 1.
 "-state restore 1": Restores the state 'from' 1.
 
 Notes:
-"-exec run" will not work at the moment and leads to a disconnect.
+For all commands (if it makes sense or not) you can add "-view" as first parameter. This will redirect the output to a new view instead of the console. E.g. use "-help -view" to put the help text in an own view.
 `;
 		/*
 		For debugging purposes there are a few more:
@@ -1992,23 +2039,10 @@ Notes:
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalExec(tokens: Array<string>): Promise<string> {
-		// Check for "-view"
-		let redirectToView=false;
-		if (tokens[0]=='-view') {
-			redirectToView=true;
-			tokens.shift();
-		}
 		// Execute
 		const machineCmd=tokens.join(' ');
 		const textData=await Remote.dbgExec(machineCmd);
-		if (redirectToView) {
-			// Create new view
-			const panel=new TextView("exec: "+machineCmd, textData);
-			await panel.update();
-			// Send response
-			return 'OK';
-		}
-		// Print to console
+		// Return value
 		return textData;
 	}
 
@@ -2048,10 +2082,140 @@ Notes:
 	/**
 	 * Shows a view with a memory dump.
 	 * @param tokens The arguments. I.e. the address and size.
- 	 * @returns A Promise with a text to print.
+	 * @returns A Promise with a text to print.
 	 */
 	protected async evalMemDump(tokens: Array<string>): Promise<string> {
-		// check count of arguments
+		// Check count of arguments
+		if (tokens.length<2) {
+			// Error Handling: No arguments
+			throw Error("Address and size expected.");
+		}
+
+		// Address
+		const addressString=tokens[0];
+		const address=Utility.evalExpression(addressString);
+		if (address<0||address>0xFFFF)
+			throw Error("Address ("+address+") out of range.");
+
+		// Size
+		const sizeString=tokens[1];
+		const size=Utility.evalExpression(sizeString);
+		if (size<0||size>0xFFFF)
+			throw Error("Size ("+size+") out of range.");
+
+		// Byte or word
+		let unitSize=1; 	// Default=byte
+		let bigEndian=false;
+		// Hex/dec
+		let hex=true;
+		const typeString=tokens[2];
+		if (typeString) {
+			const typeStringlower=typeString.toLowerCase();
+			if (typeStringlower!="hex"&&typeStringlower!="dec"&&typeStringlower!="word")
+				throw Error("'hex', 'dec' or 'word' expected but got '"+typeString+"'.");
+			let k=2;
+			// Check for hex or dec
+			if (typeString=='hex')
+				k++;
+			else if (typeString=='dec') {
+				hex=false;
+				k++;
+			}
+			// Check for unit size (word)
+			const unitSizeString=tokens[k];
+			if (unitSizeString) {
+				const unitSizeStringLower=unitSizeString.toLowerCase()
+				if (unitSizeStringLower!="word")
+					throw Error("'word' expected but got '"+unitSizeString+"'.");
+				unitSize=2;
+				// Endianess
+				const endianess=tokens[k+1];
+				if (endianess) {
+					const endianessLower=endianess.toLowerCase();
+					if (endianessLower=="big") {
+						// Big endian
+						bigEndian=true;
+					}
+					else if (endianessLower!="little") {
+						throw Error("'little' or 'big' expected but got '"+endianess+"'.");
+					}
+				}
+			}
+		}
+
+		// Get memory
+		const data=await Remote.readMemoryDump(address, size);
+
+		// 'Print'
+		let output='';
+		for (let i=0; i<size; i+=unitSize) {
+			let value=data[i];
+			if (unitSize==2) {
+				if (bigEndian)
+					value=(value<<8)+data[i+1];
+				else
+					value+=data[i+1]<<8;
+			}
+			if (hex)
+				output+=Utility.getHexString(value, 2*unitSize)+' ';
+			else
+				output+=value+' ';
+		}
+
+		// Send response
+		return output;
+	}
+
+
+	/**
+	 * Saves a memory dump to a file.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemSave(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length<2) {
+			// Error Handling: No arguments
+			throw Error("Address and size expected.");
+		}
+
+		// Address
+		const addressString=tokens[0];
+		const address=Utility.evalExpression(addressString);
+		if (address<0||address>0xFFFF)
+			throw Error("Address ("+address+") out of range.");
+
+		// Size
+		const sizeString=tokens[1];
+		const size=Utility.evalExpression(sizeString);
+		if (size<0||size>0xFFFF)
+			throw Error("Size ("+size+") out of range.");
+
+		// Get filename
+		const filename=tokens[2];
+		if (!filename)
+			throw Error("No filename given.");
+
+		// Get memory
+		const data=await Remote.readMemoryDump(address, size);
+
+		// Save to .tmp/filename
+		const relPath=Utility.getRelTmpFilePath(filename);
+		const absPath=Utility.getAbsFilePath(relPath);
+		fs.writeFileSync(absPath, data);
+
+		// Send response
+		return 'OK';
+	}
+
+
+	/**
+	 * Shows a view with a memory dump.
+	 * @param tokens The arguments. I.e. the address and size.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemView(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
 		if (tokens.length==0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
