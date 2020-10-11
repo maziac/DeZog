@@ -13,6 +13,8 @@ main:
     ld sp,stack_top
     ld bc,0x7FFD
 
+    ;jp 0x6000
+
     ld a,1 : out (c),a
     call sub_b1
     nop

@@ -11,6 +11,10 @@ main:
     di
     ld sp,stack_top
 
+  jp 0x6000
+  
+    ld a,1 : ld a,2 : ld a,3 : ld a,4
+
     nextreg 0x50+5,60
     call sub_b60
     nop
@@ -65,6 +69,7 @@ stack_top:
     MMU 5, 60, 0xA000
 sub_b60:
     ld a,60
+    ; LOGPOINT TADA
     ld a,60
     ret
 

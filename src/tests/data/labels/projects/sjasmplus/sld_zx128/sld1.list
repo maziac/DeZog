@@ -14,84 +14,86 @@
 13    8001 31 00 81         ld sp,stack_top
 14    8004 01 FD 7F         ld bc,0x7FFD
 15    8007
-16    8007 3E 01            ld a,1
-16    8009 ED 79          out (c),a
-17    800B CD 00 C0         call sub_b1
-18    800E 00               nop
-19    800F
-20    800F
-21    800F 3E 03            ld a,3
-21    8011 ED 79          out (c),a
-22    8013 CD 00 C0         call sub_b3
-23    8016 00               nop
-24    8017
-25    8017              .loop:
-26    8017                  ; Bank 1
-27    8017 3E 01            ld a,1
-27    8019 ED 79          out (c),a
-28    801B CD 00 C0         call sub_b1
-29    801E 00               nop
-30    801F 00               nop
-31    8020
-32    8020                  ; Bank 3
-33    8020 3E 03            ld a,3
-33    8022 ED 79          out (c),a
-34    8024 CD 00 C0         call sub_b3
-35    8027 00               nop
-36    8028 00               nop
-37    8029
-38    8029                  ; Bank 7
-39    8029 3E 07            ld a,7
-39    802B ED 79          out (c),a
-40    802D CD 00 C0         call sub_b7
-41    8030 00               nop
-42    8031 00               nop
-43    8032
-44    8032 00           	nop
-45    8033 00           	nop
-46    8034 18 E1        	jr .loop
-47    8036
-48    8036
-49    8036              ; Stack: this area is reserved for the stack
-50    8036              STACK_SIZE: equ 100    ; in words
-51    8036
-52    8036
-53    8036              ; Reserve stack space
-54    8036 00 00            defw 0  ; WPMEM, 2
-55    8038              stack_bottom:
-56    8038 00 00 00...      defs    STACK_SIZE*2, 0
-57    8100              stack_top:
-58    8100                  ;defw 0
-59    8100 00 00            defw 0  ; WPMEM, 2
-60    8102
-61    8102
+16    8007                  ;jp 0x6000
+17    8007
+18    8007 3E 01            ld a,1
+18    8009 ED 79          out (c),a
+19    800B CD 00 C0         call sub_b1
+20    800E 00               nop
+21    800F
+22    800F
+23    800F 3E 03            ld a,3
+23    8011 ED 79          out (c),a
+24    8013 CD 00 C0         call sub_b3
+25    8016 00               nop
+26    8017
+27    8017              .loop:
+28    8017                  ; Bank 1
+29    8017 3E 01            ld a,1
+29    8019 ED 79          out (c),a
+30    801B CD 00 C0         call sub_b1
+31    801E 00               nop
+32    801F 00               nop
+33    8020
+34    8020                  ; Bank 3
+35    8020 3E 03            ld a,3
+35    8022 ED 79          out (c),a
+36    8024 CD 00 C0         call sub_b3
+37    8027 00               nop
+38    8028 00               nop
+39    8029
+40    8029                  ; Bank 7
+41    8029 3E 07            ld a,7
+41    802B ED 79          out (c),a
+42    802D CD 00 C0         call sub_b7
+43    8030 00               nop
+44    8031 00               nop
+45    8032
+46    8032 00           	nop
+47    8033 00           	nop
+48    8034 18 E1        	jr .loop
+49    8036
+50    8036
+51    8036              ; Stack: this area is reserved for the stack
+52    8036              STACK_SIZE: equ 100    ; in words
+53    8036
+54    8036
+55    8036              ; Reserve stack space
+56    8036 00 00            defw 0  ; WPMEM, 2
+57    8038              stack_bottom:
+58    8038 00 00 00...      defs    STACK_SIZE*2, 0
+59    8100              stack_top:
+60    8100                  ;defw 0
+61    8100 00 00            defw 0  ; WPMEM, 2
 62    8102
 63    8102
-64    8102                  MMU 3, 1, 0xC000
-65    C000              sub_b1:
-66    C000 3E 01            ld a,1
-67    C002              .plus1:
-68    C002 3E 01            ld a,1
-69    C004 C9               ret
-70    C005
-71    C005              data_b1:
-72    C005 00 01 02 03      defb 0, 1, 2, 3, 4
-72    C009 04
-73    C00A
-74    C00A
-75    C00A                  MMU 3, 3, 0xC000
-76    C000              sub_b3:
-77    C000 3E 03            ld a,3
-78    C002 3E 03            ld a,3
-79    C004 C9               ret
-80    C005
-81    C005              data_b3:
-82    C005 05 06 07 08      defb 5, 6, 7, 8, 9
-82    C009 09
-83    C00A
-84    C00A
+64    8102
+65    8102
+66    8102                  MMU 3, 1, 0xC000
+67    C000              sub_b1:
+68    C000 3E 01            ld a,1
+69    C002              .plus1:
+70    C002 3E 01            ld a,1
+71    C004 C9               ret
+72    C005
+73    C005              data_b1:
+74    C005 00 01 02 03      defb 0, 1, 2, 3, 4
+74    C009 04
+75    C00A
+76    C00A
+77    C00A                  MMU 3, 3, 0xC000
+78    C000              sub_b3:
+79    C000 3E 03            ld a,3
+80    C002 3E 03            ld a,3
+81    C004 C9               ret
+82    C005
+83    C005              data_b3:
+84    C005 05 06 07 08      defb 5, 6, 7, 8, 9
+84    C009 09
 85    C00A
-86    C00A                  include "subfolder/sub1.asm"
+86    C00A
+87    C00A
+88    C00A                  include "subfolder/sub1.asm"
 # file opened: subfolder/sub1.asm
  1+   C00A
  2+   C00A                  MMU 3, 7, 0xC000
@@ -101,9 +103,9 @@
  6+   C004 C9               ret
  7+   C005
 # file closed: subfolder/sub1.asm
-87    C005
-88    C005
 89    C005
-90    C005                  SAVESNA "sld1.sna", main
+90    C005
 91    C005
+92    C005                  SAVESNA "sld1.sna", main
+93    C005
 # file closed: main.asm
