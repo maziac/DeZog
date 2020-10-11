@@ -4,7 +4,8 @@ import {Z80Registers} from "../z80registers";
 
 /// The different memory models.
 export enum MemoryModelType {	// TODO: can this enum be removed?
-	DEFAULT=0,	// MemoryModel (no banks, no long addreses)
+	RAM=0,		// 64K RAM (no banks, no long addreses)
+	ZX48K,		// Zx48MemoryModel (no banks, no long addreses)
 	ZX128K,		// Zx128MemoryModel
 	ZXNEXT		// ZxNextMemoryModel
 }
@@ -29,8 +30,7 @@ export interface MemoryBank {
  * I.e. it defines which memory bank to slot association is used.
  *
  * Is the base class and defines:
- * 0000-3FFF: ROM
- * 4000-FFFF: RAM
+ * 0000-FFFF: RAM
  */
 export class MemoryModel {
 
@@ -39,8 +39,10 @@ export class MemoryModel {
 	 */
 	public static createMemoryModel(type: MemoryModelType): MemoryModel {
 		switch (type) {
-			case MemoryModelType.DEFAULT:
+			case MemoryModelType.RAM:
 				return new MemoryModel();
+			case MemoryModelType.ZX48K:
+				return new Zx48MemoryModel();
 			case MemoryModelType.ZX128K:
 				return new Zx128MemoryModel();
 			case MemoryModelType.ZXNEXT:
@@ -76,10 +78,47 @@ export class MemoryModel {
 	 */
 	public getMemoryBanks(slots: number[]|undefined): MemoryBank[] {
 		// Prepare array
-		const pages: Array<MemoryBank>=[];
-		// Fill array
-		pages.push({start: 0x0000, end: 0x3FFF, name: "ROM"});
-		pages.push({start: 0x4000, end: 0xFFFF, name: "RAM"});
+		const pages: Array<MemoryBank>=[
+			{start: 0x0000, end: 0xFFFF, name: "RAM"}
+		];
+		// Return
+		return pages;
+	}
+
+
+	/**
+	 * Returns the bank size.
+	 * @returns 0 in this case = no banks used.
+	 */
+	public getBankSize() {
+		return 0;
+	}
+
+}
+
+
+/**
+ * Class that takes care of the memory paging.
+ * I.e. it defines which memory bank to slot association is used.
+ *
+ * Is the base class and defines:
+ * 0000-3FFF: ROM
+ * 4000-FFFF: RAM
+ */
+export class Zx48MemoryModel extends MemoryModel{
+
+	/**
+	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
+	 * @param slots Not used.
+	 * @returns An array with the available memory pages. Contains start and end address
+	 * and a name.
+	 */
+	public getMemoryBanks(slots: number[]|undefined): MemoryBank[] {
+		// Prepare array
+		const pages: Array<MemoryBank>=[
+		{start: 0x0000, end: 0x3FFF, name: "ROM"},
+		{start: 0x4000, end: 0xFFFF, name: "RAM"}
+		];
 		// Return
 		return pages;
 	}

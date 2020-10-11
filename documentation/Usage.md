@@ -405,8 +405,8 @@ Example launch.json configuration:
         "Z80N": true,
     	"loadZxRom": true,
         "zxKeyboard": true,
-	    "visualMemory": "ZXNEXT",
 	    "ulaScreen": true,
+	    "visualMemory": "ZXNEXT",
 	    "memoryPagingControl": true,
         "tbblueMemoryManagementSlots": true,
         "cpuLoadInterruptRange": 1,
@@ -423,18 +423,15 @@ Here is the explanations of all the options:
 - "loadZxRom": true/false. Defaults to true. Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
 - "zxKeyboard": true/false. Defaults to true. If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
-- "visualMemory": If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
-Different views are possible:
-    - 'none': no view
-    - '64K': One memory area of 64K, no banks.
-    - 'ZX48': ROM and RAM as of the ZX Spectrum 48K.
-    - 'ZX128': Banked memory as of the ZX Spectrum 48K (16k slots/banks).
-    - 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks). The default depends on the banking settings.
+- "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
 ![](images/zsim_visual_memory.jpg)
+- "memoryModel": The used memory model (defaults to "RAM"), i.e.
+    - "RAM": One memory area of 64K RAM, no banks.
+	- "ZX48": ROM and RAM as of the ZX Spectrum 48K.
+	- "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
+	- "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 - "ulaScreen": true/false. Defaults to true. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
-- "memoryPagingControl": true/false. Defaults to false. If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K. zsim uses USR0 mode. I.e. at startup the 48K ROM is paged in.
-- "tbblueMemoryManagementSlots": true/false. Default to false. If enabled the ZX Next memory banking is enabled through registers 0x50-0x57. Use this to simulate ZX Next memory banking.
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).

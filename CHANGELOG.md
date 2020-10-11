@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.6.0
+- "zsim": changed settings parameters:
+	- Removed: "visualMemory", "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
+	- Added: "memoryModel": "RAM", "ZX48K", "ZX128K", "ZXNEXT"
+	- Changed: "visualMemory" to boolean.
+
 # 1.5.2
 - Relaunch: the memory view of the first session is now correctly closed before re-launching.
 - Commands: "-view" is now working with all commands.

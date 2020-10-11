@@ -16,7 +16,7 @@ import {ZxSimCpuHistory} from './zxsimcpuhistory';
 import {ZxMemory} from './zxmemory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {ZxNextMemoryModel} from '../Paging/memorymodel';
+import {MemoryModel, Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 //import {Watchpoint64kRamMemory} from './wp64krammemory';
 
 
@@ -51,10 +51,10 @@ export class ZSimRemote extends DzrpRemote {
 
 	// History info will not occupy a new element but replace the old element
 	// if PC does not change. Used for LDIR, HALT.
-	protected previouslyStoredPCHistory;
+	protected previouslyStoredPCHistory: number;
 
 	// TBBlue register handling.
-	protected tbblueRegisterSelectValue;
+	protected tbblueRegisterSelectValue: number;
 
 	// Maps function handlers to registers (the key). As key the tbblueRegisterSelectValue is used.
 	protected tbblueRegisterWriteHandler: Map<number, (value: number) => void>;
@@ -229,63 +229,84 @@ export class ZSimRemote extends DzrpRemote {
 	/**
 	 * Configures the machine.
 	 * Loads the roms and sets up bank switching.
+	 * @param memModel The memory model:
+	 * - "RAM": One memory area of 64K RAM, no banks.
+	 * - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
+	 * - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
+	 *  - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	 */
-	protected configureMachine(loadZxRom: boolean, memoryPagingControl: boolean, tbblueMemoryManagementSlots: boolean) {
+	protected configureMachine(memModel: string) {
 		try {
+			Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for teh memory model.
 
-			// "loadZxRom"
-			if (loadZxRom) {
-				// Load the rom
-				if (memoryPagingControl) {
-					// ZX 128K
-					const size=ZxMemory.MEMORY_BANK_SIZE;
-					const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
-					this.romBuffer=fs.readFileSync(romFilePath);
-					const rom0=new Uint8Array(this.romBuffer.buffer, 2*size, size);
-					const rom1=new Uint8Array(this.romBuffer.buffer, 3*size, size);
-					this.memory.writeBank(254, rom0);
-					this.memory.writeBank(255, rom1);
-					this.memory.setRomBank(254, true);
-					this.memory.setRomBank(255, true);
-				}
-				else {
-					// ZX 48K
-					const size=ZxMemory.MEMORY_BANK_SIZE;
-					const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
-					const romBuffer=fs.readFileSync(romFilePath);
-					// use USR 0 mode, i.e. preload the 48K ROM
-					const rom0=new Uint8Array(romBuffer.buffer, 0, size);
-					const rom1=new Uint8Array(romBuffer.buffer, size, size);
-					this.memory.writeBank(254, rom0);
-					this.memory.writeBank(255, rom1);
-					this.memory.setRomBank(254, true);
-					this.memory.setRomBank(255, true);
-				}
+			// Configure different memory models
+			switch (memModel) {
+				case "RAM":
+					{
+						// 64K RAM, no ZX
+						// Memory Model
+						this.memoryModel=new MemoryModel();
+					}
+					break;
+				case "ZX128K":
+					{
+						// ZX 128K
+						// Load ROMs
+						const size=ZxMemory.MEMORY_BANK_SIZE;
+						const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
+						this.romBuffer=fs.readFileSync(romFilePath);
+						const rom0=new Uint8Array(this.romBuffer.buffer, 2*size, size);
+						const rom1=new Uint8Array(this.romBuffer.buffer, 3*size, size);
+						this.memory.writeBank(254, rom0);
+						this.memory.writeBank(255, rom1);
+						this.memory.setRomBank(254, true);
+						this.memory.setRomBank(255, true);
+						// Bank switching.
+						this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+						// Memory Model
+						this.memoryModel=new Zx128MemoryModel();
+					}
+					break;
+				case "ZX48K":
+					{
+						// ZX 48K
+						const size=ZxMemory.MEMORY_BANK_SIZE;
+						const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+						const romBuffer=fs.readFileSync(romFilePath);
+						// use USR 0 mode, i.e. preload the 48K ROM
+						const rom0=new Uint8Array(romBuffer.buffer, 0, size);
+						const rom1=new Uint8Array(romBuffer.buffer, size, size);
+						this.memory.writeBank(254, rom0);
+						this.memory.writeBank(255, rom1);
+						this.memory.setRomBank(254, true);
+						this.memory.setRomBank(255, true);
+						// Memory Model
+						this.memoryModel=new Zx48MemoryModel();
+					}
+					break;
+				case "ZXNEXT":
+					{
+						// ZX Next
+						// Bank switching.
+						for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
+							this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
+							this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
+						}
+						// Connect to port
+						this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+						this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+						this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+						// Memory Model
+						this.memoryModel=new ZxNextMemoryModel();
+					}
+					break;
+				default:
+					throw Error("Unknown memory model: '"+memModel+"'.");
 			}
 
-			// "memoryPagingControl"
-			if (memoryPagingControl) {
-				// Bank switching.
-				this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
-			}
-
-			// TBBlue
-
-			// "tbblueMemoryManagementSlots"
-			if (tbblueMemoryManagementSlots) {
-				// Bank switching.
-				for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
-					this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
-					this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
-				}
-			}
-
-			// If any tbblue register is used then enable tbblue ports
-			if (this.tbblueRegisterWriteHandler.size>0) {
-				this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-				this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-				this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-			}
+			// Convert labels if necessary.
+			this.memoryModel.init();
+			Labels.convertLabelsTo(this.memoryModel);
 		}
 		catch (e) {
 			this.emit('warning', e.message);
@@ -300,7 +321,7 @@ export class ZSimRemote extends DzrpRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
 		// Decide what machine
-		this.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
+		this.configureMachine(Settings.launch.zsim.memoryModel);
 
 		// Load sna or nex file
 		const loadPath=Settings.launch.load;
@@ -317,16 +338,6 @@ export class ZSimRemote extends DzrpRemote {
 				await this.loadObj(loadObj.path, start);
 			}
 		}
-
-
-		// TODO: Determine machine, Assume ZXNext for now
-		// Set memory model according machine type
-		// ZxNext: 8x8k banks
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();
-		this.memoryModel=new ZxNextMemoryModel();
-		this.memoryModel.init();
-		Labels.convertLabelsTo(this.memoryModel);
-
 
 		// Set Program Counter to execAddress
 		if (Settings.launch.execAddress) {

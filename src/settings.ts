@@ -130,28 +130,30 @@ export interface ZxNextSocketType {
 
 /// Definitions for the 'zsim' remote type.
 export interface ZxSimType {
-	// Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
-	loadZxRom: boolean,
 	// If enabled the simulator shows a keyboard to simulate keypresses.
 	zxKeyboard: boolean,
+
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
-	// Different views are possible:
-	// - "none": no view
-	// - "64K": One memory area of 64K, no banks.
+	visualMemory: boolean,
+
+	// If enabled it shows the contents of the ZX Spectrum screen.
+	ulaScreen: boolean,
+
+	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
+
+	// Memory model: ZX48k, ZX128K or ZXNext.
+	// - "RAM": One memory area of 64K RAM, no banks.
 	// - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
 	// - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
-	visualMemory: string,
-	// If enabled it shows the contents of the ZX Spectrum screen.
-	ulaScreen: boolean,
-	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
-	memoryPagingControl: boolean,
-	// If enabled the ZX Next memory banking is enabled through registers 0x50-0x57.
-	tbblueMemoryManagementSlots: boolean,
+	memoryModel: string;
+
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
+
 	// If enabled the Z80N extended instructions are supported.
 	Z80N: boolean,
+
 	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 	vsyncInterrupt: boolean,
 }
@@ -346,43 +348,22 @@ export class Settings {
 		// zsim
 		if (!Settings.launch.zsim)
 			Settings.launch.zsim={} as ZxSimType;
-		if (Settings.launch.zsim.loadZxRom==undefined)
-			Settings.launch.zsim.loadZxRom=true;
 		if (Settings.launch.zsim.zxKeyboard==undefined)
 			Settings.launch.zsim.zxKeyboard=true;
 		if (Settings.launch.zsim.ulaScreen==undefined)
 			Settings.launch.zsim.ulaScreen=true;
-		if (Settings.launch.zsim.memoryPagingControl==undefined)
-			Settings.launch.zsim.memoryPagingControl=false;
-		if (Settings.launch.zsim.tbblueMemoryManagementSlots==undefined)
-			Settings.launch.zsim.tbblueMemoryManagementSlots=false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
-		if (Settings.launch.zsim.visualMemory==undefined) {
-			// try to guess visual memory from the other settings
-			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
-				Settings.launch.zsim.visualMemory="ZXNEXT";
-			else if (Settings.launch.zsim.memoryPagingControl)
-				Settings.launch.zsim.visualMemory="ZX128";
-			else if (Settings.launch.zsim.loadZxRom)
-				Settings.launch.zsim.visualMemory="ZX48";
-			else
-				Settings.launch.zsim.visualMemory="64K";
-		}
-		if (Settings.launch.zsim.Z80N==undefined) {
-			// try to guess Z80N visual memory from the other settings
-			if (Settings.launch.zsim.tbblueMemoryManagementSlots)
-				Settings.launch.zsim.Z80N=true;
-			else
+		if (Settings.launch.zsim.visualMemory==undefined)
+			Settings.launch.zsim.visualMemory=true;
+		if (Settings.launch.zsim.memoryModel==undefined)
+			Settings.launch.zsim.memoryModel="RAM";
+		Settings.launch.zsim.memoryModel=Settings.launch.zsim.memoryModel.toUpperCase();
+		if (Settings.launch.zsim.Z80N==undefined)
 				Settings.launch.zsim.Z80N=false;
-		} if (Settings.launch.zsim.vsyncInterrupt==undefined) {
-			// try to guess vsyncInterrupt from the other settings
-			if (Settings.launch.zsim.tbblueMemoryManagementSlots
-				||Settings.launch.zsim.loadZxRom
-				||Settings.launch.zsim.zxKeyboard
-				||Settings.launch.zsim.ulaScreen
-				||Settings.launch.zsim.memoryPagingControl
-			)
+		if (Settings.launch.zsim.vsyncInterrupt==undefined) {
+			// For ZX enable vsync
+			if(Settings.launch.zsim.memoryModel.indexOf("ZX")>=0)
 				Settings.launch.zsim.vsyncInterrupt=true;
 			else
 				Settings.launch.zsim.vsyncInterrupt=false;

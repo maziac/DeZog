@@ -1074,14 +1074,11 @@ export class DebugSessionClass extends DebugSession {
 			scopes.push(new Scope("Disassembly", ref));
 		}
 
-		// Check if memory pages are suported by Remote
-		//if (Remote.supportsZxNextRegisters) {
 		// Create variable object for MemorySlots
 		const varMemorySlots=new MemorySlotsVar();
 		// Add to list and get reference ID
 		ref=this.listVariables.addObject(varMemorySlots);
-		scopes.push(new Scope("Memory Slots", ref));
-		//}
+		scopes.push(new Scope("Memory", ref));
 
 		// Create variable object for the stack
 		const varStack=new StackVar(frame.stack, frame.stackStartAddress);

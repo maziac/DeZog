@@ -66,7 +66,7 @@ export class ZxSimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as WebviewPanel).title='Z80/ZX Spectrum Simulator';
+		(this.vscodePanel as WebviewPanel).title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
 
 		// Initial html page.
 		this.setHtml();
@@ -284,6 +284,14 @@ export class ZxSimulationView extends BaseView {
 			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
 				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
 
+			// Visual Memory
+			if (Settings.launch.zsim.visualMemory) {
+				slots=this.simulator.getSlots();
+				const banks=this.simulator.memoryModel.getMemoryBanks(slots);
+				slotNames=banks.map(bank => bank.name);
+				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
+			}
+			/* TODO: Remove
 			if (Settings.launch.zsim.visualMemory=="ZX128") {
 				slots=this.simulator.memory.getSlots();
 				// ZX128 has 16k slots/banks
@@ -317,6 +325,7 @@ export class ZxSimulationView extends BaseView {
 				// The same for all
 				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
 			}
+			*/
 
 			if (Settings.launch.zsim.ulaScreen)
 				screenImg=this.createBase64String(this.simulator.memory.getUlaScreen());
@@ -382,7 +391,7 @@ color:black;
 	const vscode = acquireVsCodeApi();
 
 	//---- On start send request to vscode to update itself. --------
-	// Otherwise theimages are empty when switching from back- to foreground.
+	// Otherwise the images are empty when switching from back- to foreground.
 	vscode.postMessage({
 		command: 'updateRequest'
 	});
@@ -506,156 +515,11 @@ color:black;
 `;
 		}
 
-
-		// Continuous 64K memory area
-		if (Settings.launch.zsim.visualMemory=="64K") {
-			html+=
-				`<!-- Visual Memory (memory activity) -->
-	<!-- Legend, Slots -->
-	<div style="position:relative; width:100%; height:4.5em;">
-    <style>
-        .border {
-            outline: 1px solid var(--vscode-foreground);
-            outline-offset: 0;
-            height:1em;
-            position:absolute;
-            text-align: center;
-		}
-		.slot {
-			height:2em;
-			background: gray
-        }
-		.transparent {
-			height:2em;
-			background: transparent
-        }
-    </style>
-
-		<!-- Legend -->
-    <span style="position:absolute; top: 0em; left:0%">
-		<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
-		<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
-		<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
-	</span>
-
-	<!-- Address labels -->
-	<label style="position:absolute; top:2em; left:0%">0x0000</label>
-	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
-	<label style="position:absolute; top:2em; left:25%">0x4000</label>
-	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
-	<label style="position:absolute; top:2em; left:50%">0x8000</label>
-	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
-	<label style="position:absolute; top:2em; left:75%">0xC000</label>
-	<label style="position:absolute; top:2em; left:87.5%">0xE000</label>
-
-    <!-- Marker ticks -->
-	<span class="border" style="top: 3em; left:0%; height: 1em"></span>
-	<span class="border" style="top: 3em; left:12.5%; height: 1em"></span>
-	<span class="border" style="top: 3em; left:25%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
-    <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
-
-	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%;">
-
-    <!-- Slots  2nd -->
-    <div class="border transparent" style="top:3.5em; left:0%; width:25%;"></div>
-    <div class="border transparent" style="top:3.5em; left:25%; width:25%;"></div>
-    <div class="border transparent" style="top:3.5em; left:50%; width:25%;"></div>
-    <div class="border transparent" style="top:3.5em; left:75%; width:25%;"></div>
-
-	<script>
-        <!-- Store the visual mem image source -->
-        var visualMemImg=document.getElementById("visual_mem_img_id");
-	</script>
-
-</div>
-<br><br>
-`;
-		}
-
-		// ZX Spectrum 48K: ROM + RAM
-		else if (Settings.launch.zsim.visualMemory=="ZX48") {
-			html+=
-				`<!--Visual Memory(memory activity)-->
-<!--Legend, Slots-->
-<div style="position:relative; width:100%; height:4.5em;">
-		<style>
-        .border {
-				outline: 1px solid var(--vscode-foreground);
-				outline-offset: 0;
-				height: 1em;
-				position: absolute;
-				text-align: center;
-			}
-		.slot {
-				height: 2em;
-				background: gray
-			}
-		.transparent {
-				height: 2em;
-				background: transparent
-			}
-		</style>
-<!-- Legend -->
-    <span style="position:absolute; top: 0em; left:0%">
-		<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
-		<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
-		<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
-	</span>
-
-	<!-- Address labels -->
-	<label style="position:absolute; top:2em; left:0%">0x0000</label>
-	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
-	<label style="position:absolute; top:1em; left:25%">0x4000</label>
-	<label style="position:absolute; top:1em; left:35.5%">0x5B00</label>
-	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
-	<label style="position:absolute; top:2em; left:50%">0x8000</label>
-	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
-	<label style="position:absolute; top:2em; left:75%">0xC000</label>
-	<label style="position:absolute; top:2em; left:87.5%">0xE000</label>
-
-    <!-- Marker ticks -->
-	<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
-	<span class="border" style="top: 3em; left:12.5%;"></span>
-	<span class="border" style="top: 2.0em; left:25%; height:2.5em;"></span>
-	<span class="border" style="top: 2.0em; left:34.4%; height:2.5em;"></span> <!-- 0x5800 -->
-	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->
-	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
-    <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
-
-	<!-- Extra "Screen" range display -->
-    <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
-	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>
-
-	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%;">
-
-    <!-- Slots  2nd -->
-    <div class="border transparent" style="top:3.5em; left:0%; width:25%;">ROM</div>
-    <div class="border transparent" style="top:3.5em; left:25%; width:25%">RAM</div>
-    <div class="border transparent" style="top:3.5em; left:50%; width:25%;">RAM</div>
-    <div class="border transparent" style="top:3.5em; left:75%; width:25%;">RAM</div>
-
-    <script>
-        <!-- Store the visual mem image source -->
-        var visualMemImg=document.getElementById("visual_mem_img_id");
- 	</script>
-
-</div>
-<br><br>
-`;
-		}
-
-		// ZX Spectrum 128K: 16k slots/banks
-		else if (Settings.launch.zsim.visualMemory=="ZX128") {
-			html+=
+		// Memory Pages / Visual Memory
+		const zx=Settings.launch.zsim.memoryModel.includes("ZX");
+		const slots=this.simulator.getSlots();
+		const banks=this.simulator.memoryModel.getMemoryBanks(slots);
+		html+=
 				`<!-- Visual Memory (memory activity) -->
 <!-- Legend, Slots -->
 <div style="position:relative; width:100%; height:4.5em;">
@@ -686,93 +550,19 @@ color:black;
 
 	<!-- Address labels -->
 	<label style="position:absolute; top:2em; left:0%">0x0000</label>
-	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
-	<label style="position:absolute; top:1em; left:25%">0x4000</label>
-	<label style="position:absolute; top:1em; left:35.5%">0x5B00</label>
-	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
-	<label style="position:absolute; top:2em; left:50%">0x8000</label>
-	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
-	<label style="position:absolute; top:2em; left:75%">0xC000</label>
-	<label style="position:absolute; top:2em; left:87.5%">0xE000</label>
-
-    <!-- Marker ticks -->
-	<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
-	<span class="border" style="top: 3em; left:12.5%;"></span>
-	<span class="border" style="top: 2.0em; left:25%; height:2.5em;"></span>
-	<span class="border" style="top: 2.0em; left:34.4%; height:2.5em;"></span> <!-- 0x5800 -->
-	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->
-	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
-	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
-    <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
-
-	<!-- Extra "Screen" range display -->
-    <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
-	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>
-
-	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%;">
-
-    <!-- Slots  2nd -->
-    <div class="border transparent" id="slot0_id" style="top:3.5em; left:0%; width:25%;">ROM</div>
-    <div class="border transparent" id="slot1_id" style="top:3.5em; left:25%; width:25%">BANK5</div>
-    <div class="border transparent" id="slot2_id" style="top:3.5em; left:50%; width:25%;">BANK7</div>
-    <div class="border transparent" id="slot3_id" style="top:3.5em; left:75%; width:25%;">BANK2</div>
-
-    <script>
-        <!-- Store the visual mem image source -->
-        var visualMemImg=document.getElementById("visual_mem_img_id");
-	    <!-- Store the slots -->
-	    var slots = [
-			document.getElementById("slot0_id"),
-			document.getElementById("slot1_id"),
-			document.getElementById("slot2_id"),
-			document.getElementById("slot3_id"),
-		];
- 	</script>
-
-</div>
-<br><br>
-`;
-		}
-
-		// ZX Next: 8k slots/banks
-		else if (Settings.launch.zsim.visualMemory=="ZXNEXT") {
-			html+=
-				`<!-- Visual Memory (memory activity) -->
-<!-- Legend, Slots -->
-<div style="position:relative; width:100%; height:4.5em;">
-    <style>
-        .border {
-            outline: 1px solid var(--vscode-foreground);
-            outline-offset: 0;
-            height:1em;
-            position:absolute;
-            text-align: center;
-		}
-		.slot {
-			height:2em;
-			background: gray
-        }
-		.transparent {
-			height:2em;
-			background: transparent
-        }
-    </style>
-
-	<!-- Legend -->
-    <span style="position:absolute; top: 0em; left:0%">
-		<label style="background:blue">&ensp;&ensp;</label><label>&nbsp;PROG &ensp;&ensp;</label>
-		<label style="background:yellow">&ensp;&ensp;</label><label>&nbsp;READ &ensp;&ensp;</label>
-		<label style="background:red">&ensp;&ensp;</label><label>&nbsp;WRITE</label>
-	</span>
-
-	<!-- Address labels -->
-	<label style="position:absolute; top:2em; left:0%">0x0000</label>
-	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>
+	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>`;
+		// ZX screen memory marker
+		if (zx) {
+			html+=`
 	<label style="position:absolute; top:1.1em; left:25%">0x4000</label>
-	<label style="position:absolute; top:1.1em; left:35.5%">0x5B00</label>
+	<label style="position:absolute; top:1.1em; left:35.5%">0x5B00</label>`;
+		}
+		else {
+			html+=`
+			<label style="position:absolute; top:2em; left:25%">0x4000</label>`;
+		}
+
+		html+=`
 	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
 	<label style="position:absolute; top:2em; left:50%">0x8000</label>
 	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
@@ -781,55 +571,72 @@ color:black;
 
     <!-- Marker ticks -->
 	<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
-	<span class="border" style="top: 3em; left:12.5%;"></span>
+	<span class="border" style="top: 3em; left:12.5%; height:1em;"></span>`;
+		if (zx) {
+			// ZX screen memory marker
+			html+=`
 	<span class="border" style="top: 2.0em; left:25%; height:2.5em;"></span>
 	<span class="border" style="top: 2.0em; left:34.4%; height:2.5em;"></span> <!-- 0x5800 -->
-	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->
+	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->`;
+		}
+		else {
+			// ZX screen memory marker
+			html+=`
+	<span class="border" style="top: 3em; left:25%; height:1em;"></span>`;
+		}
+
+		html+=`
 	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
     <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
-
+`;
+		if (zx) {
+			// Markers for display
+			html+=`
 	<!-- Extra "Screen" range display -->
     <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
-	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>
+	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>`;
+		}
 
+		html+=`
 	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; width:100%;">
+	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%;">
 
-    <!-- Slots  2nd -->
-    <div class="border transparent" id="slot0_id" style="top:3.5em; left:0%; width:12.5%;">ROM</div>
-    <div class="border transparent" id="slot1_id" style="top:3.5em; left:12.5%; width:12.5%">ROM</div>
-    <div class="border transparent" id="slot2_id" style="top:3.5em; left:25%; width:12.5%">M . . . BANK5</div>
-    <div class="border transparent" id="slot3_id" style="top:3.5em; left:37.5%; width:12.5%;">BANK6</div>
-    <div class="border transparent" id="slot4_id" style="top:3.5em; left:50%; width:12.5%;">BANK7</div>
-    <div class="border transparent" id="slot5_id" style="top:3.5em; left:62.5%; width:12.5%;">BANK1</div>
-    <div class="border transparent" id="slot6_id" style="top:3.5em; left:75%; width:12.5%;">BANK2</div>
-    <div class="border transparent" id="slot7_id" style="top:3.5em; left:87.5%; width:12.5%;">BANK3</div>
+	<!-- Slots  2nd -->
+	`;
+		const count=banks.length;
+		for (let i=0; i<count; i++) {
+			const bank=banks[i];
+			const pos=bank.start*100/0x10000;
+			const width=(bank.end+1-bank.start)*100/0x10000;
+			const add=`<div class="border transparent" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%;">${bank.name}</div>
+			`;
+			html+=add;
+		}
 
+		html+=`
     <script>
         <!-- Store the visual mem image source -->
         var visualMemImg=document.getElementById("visual_mem_img_id");
 	    <!-- Store the slots -->
 	    var slots = [
-			document.getElementById("slot0_id"),
-			document.getElementById("slot1_id"),
-			document.getElementById("slot2_id"),
-			document.getElementById("slot3_id"),
-			document.getElementById("slot4_id"),
-			document.getElementById("slot5_id"),
-			document.getElementById("slot6_id"),
-			document.getElementById("slot7_id")
+			`;
+
+		for (let i=0; i<count; i++) {
+			const add=`document.getElementById("slot${i}_id"),
+			`;
+			html+=add;
+		}
+
+		html+=`
 		];
  	</script>
-
 </div>
-
 <br><br>
-
 `;
-		}
+
 
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
@@ -839,7 +646,6 @@ color:black;
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
 </script>
-
 `;
 		}
 
