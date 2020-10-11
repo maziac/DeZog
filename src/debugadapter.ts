@@ -281,6 +281,21 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
+		// Disconnect Remote etc.
+		this.disconnectAll();
+		// Send response
+		this.sendResponse(response);
+	}
+
+
+	/**
+	 * Disconnects Remote, listeners, views.
+	 * Is called
+	 * - when user presses red square
+	 * - when the user presses relaunch (circled arrow/restart)
+	 * - when the ZEsarUX socket connection is terminated
+	 */
+	protected async disconnectAll(): Promise<void> {
 		// Clear all decorations
 		if (DebugSessionClass.state==DbgAdaperState.UNITTEST) {
 			// Cancel unit tests
@@ -291,7 +306,7 @@ export class DebugSessionClass extends DebugSession {
 		else
 			Decoration?.clearAllDecorations();
 		DebugSessionClass.state=DbgAdaperState.NORMAL;
-		// Close register memory view
+		// Close views, e.g. register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
@@ -302,8 +317,6 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
 		RemoteFactory.removeRemote();
-		// Send response
-		this.sendResponse(response);
 	}
 
 
@@ -356,10 +369,11 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Stop machine
-		Remote.disconnect().then(() => {
+		await this.disconnectAll();
+		//Remote.disconnect().then(() => {
 			// And setup a new one
 			this.launch(response);
-		});
+		//});
 	}
 
 

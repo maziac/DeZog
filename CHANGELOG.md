@@ -1,11 +1,14 @@
 # Changelog
 
+# 1.4.11
+	- Commands: "-view" is now working with all commands.
+	- Relaunch: the memory view of the first session is now correctly closed before re-launching.
+
 # 1.4.10
 - Commands:
 	- Renamed: "md" changed to "mv".
 	- "md" used to do a memory dump to console.
 	- "ms" used to save memory contents to a file.
-	- "-view" is now working with all commands.
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF
