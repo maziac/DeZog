@@ -1,10 +1,11 @@
 # Changelog
 
 # 1.4.10
-- New commands:
-	- Rename: "md" changed to "mv"
-	- "md" used to do a memory dump to console
-	- "ms" used to save memory contents to a file
+- Commands:
+	- Renamed: "md" changed to "mv".
+	- "md" used to do a memory dump to console.
+	- "ms" used to save memory contents to a file.
+	- "-view" is now working with all commands.
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF

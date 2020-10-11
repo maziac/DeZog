@@ -1685,57 +1685,82 @@ export class DebugSessionClass extends DebugSession {
 		const expression=command.trim().replace(/\s+/g, ' ');
 		const tokens=expression.split(' ');
 		const cmd=tokens.shift();
+		if (!cmd)
+			throw Error("No command.");
+
+		// Check for "-view"
+		let viewTitle;
+		if (tokens[0]=='-view') {
+			tokens.shift();
+			viewTitle=cmd.substr(1)+' '+tokens.join(' ');	// strip '-'
+		}
+
 		// All commands start with "-"
+		let output;
 		if (cmd=='-help'||cmd=='-h') {
-			return await this.evalHelp(tokens);
+			output = await this.evalHelp(tokens);
 		}
 		else if (cmd=='-LOGPOINT'||cmd=='-logpoint') {
-			return await this.evalLOGPOINT(tokens);
+			output = await this.evalLOGPOINT(tokens);
 		}
 		else if (cmd=='-ASSERT'||cmd=='-assert') {
-			return await this.evalASSERT(tokens);
+			output = await this.evalASSERT(tokens);
 		}
 		else if (cmd=='-eval') {
-			return await this.evalEval(tokens);
+			output = await this.evalEval(tokens);
 		}
 		else if (cmd=='-exec'||cmd=='-e') {
-			return await this.evalExec(tokens);
+			output = await this.evalExec(tokens);
 		}
 		else if (cmd=='-label'||cmd=='-l') {
-			return await this.evalLabel(tokens);
+			output = await this.evalLabel(tokens);
 		}
 		else if (cmd=='-md') {
-			return await this.evalMemDump(tokens);
+			output = await this.evalMemDump(tokens);
 		}
 		else if (cmd=='-ms') {
-			return await this.evalMemSave(tokens);
+			output = await this.evalMemSave(tokens);
 		}
 		else if (cmd=='-mv') {
-			return await this.evalMemView(tokens);
+			output = await this.evalMemView(tokens);
 		}
 		else if (cmd=='-dasm') {
-			return await this.evalDasm(tokens);
+			output = await this.evalDasm(tokens);
 		}
 		else if (cmd=='-patterns') {
-			return await this.evalSpritePatterns(tokens);
+			output = await this.evalSpritePatterns(tokens);
 		}
 		else if (cmd=='-WPMEM'||cmd=='-wpmem') {
-			return await this.evalWPMEM(tokens);
+			output = await this.evalWPMEM(tokens);
 		}
 		else if (cmd=='-sprites') {
-			return await this.evalSprites(tokens);
+			output = await this.evalSprites(tokens);
 		}
 		else if (cmd=='-state') {
-			return await this.evalStateSaveRestore(tokens);
+			output = await this.evalStateSaveRestore(tokens);
 		}
 		// Debug commands
 		else if (cmd=='-dbg') {
-			return await this.evalDebug(tokens);
+			output = await this.evalDebug(tokens);
 		}
 		//
 		else {
 			// Unknown command
-			throw new Error("Unknown command: '"+expression+"'");
+			throw Error("Unknown command: '"+expression+"'");
+		}
+
+		// Check for output target
+		if (viewTitle) {
+			// Output text to new view.
+			// Create new view
+			const panel=new TextView(viewTitle, output);
+			await panel.update();
+			// Send empty response
+			return '';
+		}
+		else {
+			// Output text to console
+			return output;
 		}
 	}
 
@@ -1884,7 +1909,7 @@ export class DebugSessionClass extends DebugSession {
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
-"-exec|e [-view] cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers". If you add "-view" the output will go into a new view instead of the console.
+"-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-LOGPOINT enable|disable|status [group]":
@@ -1916,7 +1941,7 @@ Examples:
 "-state restore 1": Restores the state 'from' 1.
 
 Notes:
-"-exec run" will not work at the moment and leads to a disconnect.
+For all commands (if it makes sense or not) you can add "-view" as first parameter. This will redirect the output to a new view instead of the console. E.g. use "-help -view" to put the help text in an own view.
 `;
 		/*
 		For debugging purposes there are a few more:
@@ -1965,23 +1990,10 @@ Notes:
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalExec(tokens: Array<string>): Promise<string> {
-		// Check for "-view"
-		let redirectToView=false;
-		if (tokens[0]=='-view') {
-			redirectToView=true;
-			tokens.shift();
-		}
 		// Execute
 		const machineCmd=tokens.join(' ');
 		const textData=await Remote.dbgExec(machineCmd);
-		if (redirectToView) {
-			// Create new view
-			const panel=new TextView("exec: "+machineCmd, textData);
-			await panel.update();
-			// Send response
-			return 'OK';
-		}
-		// Print to console
+		// Return value
 		return textData;
 	}
 
