@@ -1082,9 +1082,6 @@ export class ZesaruxRemote extends RemoteBase {
 					// Check for ZX128K: ZEsarUX uses different wording:
 					const className=this.memoryModel.constructor.name
 					if (className=="Zx128MemoryModel") {
-						//if (this.memoryModel instanceof Zx128MemoryModel
-						//	&&!(this.memoryModel instanceof ZxNextMemoryModel)) {
-
 						// ZX128K:
 						// 0000-3FFF:	ROM
 						// 4000-BFFF: 	-

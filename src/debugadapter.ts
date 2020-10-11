@@ -557,7 +557,7 @@ export class DebugSessionClass extends DebugSession {
 
 		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async (text) => {
-				// Print text if available, e.g. "dbg_uart_if initilaized".
+				// Print text if available, e.g. "dbg_uart_if initialized".
 				if (text) {
 					this.debugConsoleAppendLine(text);
 				}
@@ -771,8 +771,6 @@ export class DebugSessionClass extends DebugSession {
 		let callStack;
 		//let slots;
 		if (StepHistory.isInStepBackMode()) {
-			// Get the current slots
-			// TODO: Does not work for sld. I need to have a StepHistory.getSlots as well.
 			// Get callstack
 			callStack=StepHistory.getCallStack(); // TODO: Gemeinsames getCallStack für stephistory und Remote.
 		}

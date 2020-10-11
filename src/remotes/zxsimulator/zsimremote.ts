@@ -16,6 +16,7 @@ import {ZxSimCpuHistory} from './zxsimcpuhistory';
 import {ZxMemory} from './zxmemory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
+import {ZxNextMemoryModel} from '../Paging/memorymodel';
 //import {Watchpoint64kRamMemory} from './wp64krammemory';
 
 
@@ -316,6 +317,16 @@ export class ZSimRemote extends DzrpRemote {
 				await this.loadObj(loadObj.path, start);
 			}
 		}
+
+
+		// TODO: Determine machine, Assume ZXNext for now
+		// Set memory model according machine type
+		// ZxNext: 8x8k banks
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();
+		this.memoryModel=new ZxNextMemoryModel();
+		this.memoryModel.init();
+		Labels.convertLabelsTo(this.memoryModel);
+
 
 		// Set Program Counter to execAddress
 		if (Settings.launch.execAddress) {
