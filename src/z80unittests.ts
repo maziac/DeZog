@@ -231,7 +231,8 @@ export class Z80UnitTests {
 	protected static runTests() {
 		try {
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : ''); //vscode.workspace.rootPath
+			const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
+			Utility.setRootPath(rootFolder);
 
 			// Mode
 			this.debug=false;
@@ -239,11 +240,8 @@ export class Z80UnitTests {
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
-			//const configName: string = configuration.name;
-			const listFiles = configuration.listFiles;
 
 			// Setup settings
-			const rootFolder = (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
@@ -254,7 +252,7 @@ export class Z80UnitTests {
 			Z80RegistersClass.createRegisters();
 
 			// Start emulator.
-			RemoteFactory.createRemote(Settings.launch.remoteType);
+			RemoteFactory.createRemote(configuration.remoteType);
 
 			// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
 			if (!(CpuHistory as any)) {
@@ -264,8 +262,8 @@ export class Z80UnitTests {
 			}
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
-			Labels.init();
-			Remote.readListFiles(listFiles);
+			Labels.init(configuration.smallValuesMaximum);
+			Remote.readListFiles(configuration);
 
 			// Events
 			Remote.once('initialized', async () => {
@@ -300,9 +298,9 @@ export class Z80UnitTests {
 				vscode.window.showWarningMessage(message);
 			});
 
-			Remote.on('log', message => {
-				// Show the log (from the socket/ZEsarUX) in the debug console
-				vscode.debug.activeDebugConsole.appendLine("Log: " + message);
+			Remote.on('debug_console', message => {
+				// Show the message in the debug console
+				vscode.debug.activeDebugConsole.appendLine(message);
 
 			});
 
@@ -478,12 +476,15 @@ export class Z80UnitTests {
 			throw Error('No unit test configuration found in ' + launchPath + '.');
 		}
 
-		// Load user list and labels files
-		const listFiles = configuration.listFiles;
-		if(!listFiles) {
-			// No list file given
-			// Error
+		// Change path to absolute path
+		const listFiles=Settings.GetAllAssemblerListFiles(configuration);
+		if (!listFiles) {
+			// No list file given: Error
 			throw Error('no list file given in unit test configuration.');
+		}
+		for (let listFile of listFiles) {
+			const path=listFile.path;
+			listFile.path=Utility.getAbsFilePath(path);
 		}
 
 		return configuration;
@@ -503,19 +504,14 @@ export class Z80UnitTests {
 
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
-		const labels = new LabelsClass();
-		const listFiles = configuration.listFiles;
-		for(const listFile of listFiles) {
-			const file = {
-				path: Utility.getAbsFilePath(listFile.path),
-				mainFile: listFile.mainFile,
-				srcDirs: listFile.srcDirs || [""],
-				filter: listFile.filter,
-				asm: listFile.asm || "sjasmplus",
-				addOffset: listFile.addOffset || 0
-			};
-			labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset);
-		}
+		// Setup settings
+		const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
+		Settings.Init(configuration, rootFolder);
+		Settings.CheckSettings();
+
+		// Get labels
+		const labels=new LabelsClass();
+		labels.readListFiles(configuration);
 		return labels;
 	}
 
@@ -720,9 +716,10 @@ export class Z80UnitTests {
 			Remote.setRegisterValue("PC", this.addrTestWrapper)
 				.then(() => {
 					// Run
+					/*
 					if (Z80UnitTests.utLabels)
 						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
-
+					*/
 					// Init
 					StepHistory.clear();
 					Z80Registers.clearCache();
@@ -897,7 +894,7 @@ export class Z80UnitTests {
 					Z80UnitTests.dbgOutput(label + ' FAILED.');
 			}
 			// Do a step
-			Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
+			//Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
 			da.emulatorOneStepOver();	// await not needed
 			return;
 		}

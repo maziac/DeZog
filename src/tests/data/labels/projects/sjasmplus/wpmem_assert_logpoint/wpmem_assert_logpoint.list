@@ -1,0 +1,42 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000              	ORG 0xA000
+ 3    A000
+ 4    A000              	MACRO MEMGUARD
+ 5    A000 ~                defs 1 ; WPMEM
+ 6    A000                  ENDM
+ 7    A000
+ 8    A000
+ 9    A000 00 00 00...  	defs 0x10		; WPMEM
+10    A010 00 00 00...  	defs 0x10		; WPMEM, 5, w
+11    A020              	; WPMEM 0x7000, 10,  r
+12    A020              	; This is a watchpoint WPMEM 0x6000, 5,  w, A == 0
+13    A020              	; WPMEMx 0x9000, 5,  w, A == 0
+14    A020
+15    A020              	; This should not work: no address and no used bytes: WPMEM
+16    A020
+17    A020              	ORG 0xA040
+18    A040              	MEMGUARD
+18    A040 00          >    defs 1 ; WPMEM
+19    A041              	MEMGUARD
+19    A041 00          >    defs 1 ; WPMEM
+20    A042
+21    A042              	ORG 0xA100
+22    A100
+23    A100 00           	nop		; ASSERT
+24    A101 00           	nop		; ASSERT B==1
+25    A102 00           	nop		; ASSERTx
+26    A103
+27    A103
+28    A103              	ORG 0xA200
+29    A200
+30    A200 00           	nop		; LOGPOINT [GROUP1] ${A}
+31    A201 00           	nop		; LOGPOINT [GROUP1] BC=${hex:BC}
+32    A202 00           	nop		; LOGPOINT [GROUP1]
+33    A203 00           	nop		; LOGPOINT MY LOG
+34    A204 00           	nop		; LOGPOINTx [GROUP2] ${A}
+35    A205
+# file closed: main.asm
+
+Value    Label
+------ - -----------------------------------------------------------

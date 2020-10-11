@@ -492,14 +492,15 @@ suite('Utility', () => {
 
 
 		test('Label', async () => {
+			/*
 			const cfg: any={
 				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
-			Labels.init();
-			const labels=Labels;
-			labels.loadAsmListFile('./src/tests/data/sjasm1.list', undefined, [""], undefined, "sjasmplus", 0x0000);
-			labels.finish();
+			*/
+			const config={sjasmplus: [{path: './src/tests/data/labels/sjasm1.list', srcDirs: [""]}]};
+			Labels.init(250);
+			Labels.readListFiles(config);
 
 			// Prepare memory
 			Remote.writeMemoryDump(0x80cb, new Uint8Array([0xFE]));

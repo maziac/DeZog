@@ -26,7 +26,7 @@ export class DisassemblyClass extends Disassembler {
 	 * @returns An array of address/instruction pairs with the disassembly.
 	 */
 	public static get(addr: number, data: Uint8Array, count?: number): Array<{address: number, instruction: string}> {
-		if (count==undefined || count >data.length/4)
+		if (count==undefined || count>data.length/4)
 			count=data.length/4;	// 4 is the max size of an opcode
 
 		// Copy buffer
@@ -37,7 +37,9 @@ export class DisassemblyClass extends Disassembler {
 			buffer.setValueAtIndex(i, value);
 		}
 
-		// disassemble all lines
+		// Disassemble all lines
+		const prevLabelHandler=(Opcode as any).convertToLabelHandler;
+		Opcode.setConvertToLabelHandler(undefined as any);	// Without labels
 		let address=addr;
 		const list=new Array<{address: number, instruction: string}>();
 		for (let i=0; i<count; i++) {
@@ -49,11 +51,24 @@ export class DisassemblyClass extends Disassembler {
 			// Add to list
 			list.push({address, instruction})
 			// Next address
-			address+=opcode.length;
+			address=(address+opcode.length)&0xFFFF;
 		}
+		Opcode.setConvertToLabelHandler(prevLabelHandler);
 
 		// Pass data
 		return list;
+	}
+
+
+	/**
+	 * Returns the instruction (disassembly) at given address. Just one line.
+	 * @param addr The start address of the data.
+	 * @param data The data to disassemble. Must be at least 4 bytes.
+	 * @returns A string, e.g. "LD A,(HL)".
+	 */
+	public static getInstruction(addr: number, data: Uint8Array): string {
+		const disArray=this.get(addr, data, 1);
+		return disArray[0].instruction;
 	}
 
 

@@ -401,7 +401,7 @@ export class StepHistoryClass extends EventEmitter {
 			}
 		}
 		catch (e) {
-			breakReasonString='Error occurred: '+e;
+			breakReasonString='Error occurred: '+e.message;
 		}
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
@@ -444,7 +444,7 @@ export class StepHistoryClass extends EventEmitter {
 			}
 		}
 		catch (e) {
-			breakReasonString='Error occurred: '+e;
+			breakReasonString='Error occurred: '+e.message;
 		}
 
 		return breakReasonString;
@@ -452,12 +452,20 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
-	 * Steps over an instruction.
-	 * Simply returns the next address line.
-	 * @returns instruction=undefined
-	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 * Should return the current instruction.
+	 * For the Lite StepHistory always returns undefined.
+	 * @returns undefined.
 	 */
-	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
+	public getCurrentInstruction(): string|undefined {
+		return undefined;
+	}
+
+
+	/**
+	 * Steps over an instruction.
+	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
+	 */
+	public stepOver(): string|undefined {
 		let breakReasonString;
 		try {
 			const currentLine=this.revDbgNext();
@@ -465,25 +473,21 @@ export class StepHistoryClass extends EventEmitter {
 				throw 'Break: Reached start of instruction history.';
 		}
 		catch (e) {
-			breakReasonString=e;
+			breakReasonString=e.message;
 		}
 
 		// Call handler
-		return {instruction: undefined as any, breakReasonString};
+		return breakReasonString;
 	}
 
 
 	/**
 	 * Steps into an instruction.
 	 * Is not implemented for StepHistory, only for CpuHistory.
-	 * @returns instruction=undefined
-	 * breakReasonString='Not supported in lite reverse debugging.'.
+	 * @returns The break reason/error: 'Step-into not supported in lite reverse debugging.'
 	 */
-	public stepInto(): {instruction: string, breakReasonString: string|undefined} {
-		return {
-			instruction: undefined as any,
-			breakReasonString: 'Step-into not supported in lite reverse debugging.'
-		};
+	public stepInto(): string|undefined {
+		return 'Step-into not supported in lite reverse debugging.';
 	}
 
 
@@ -499,23 +503,21 @@ export class StepHistoryClass extends EventEmitter {
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @returns {instruction, breakReason} Promise.
-	  * instruction: e.g. "081C NOP"
-	  * breakReasonString: If not undefined it holds the break reason message.
+	  * @returns A Promise with a string with the break reason. Or undefined, if no break reason.
 	  */
-	public async stepBack(): Promise<{instruction: string, breakReasonString: string|undefined}> {
+	public async stepBack(): Promise<string|undefined> {
 		let breakReasonString;
 		try {
 			const currentLine=await this.revDbgPrev();
 			if (!currentLine)
 				throw Error('Break: Reached end of instruction history.');
-			}
+		}
 		catch (e) {
-			breakReasonString=e;
+			breakReasonString=e.message;
 		}
 
 		// Call handler
-		return {instruction: undefined as any, breakReasonString};
+		return breakReasonString;
 	}
 
 

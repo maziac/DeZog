@@ -31,16 +31,13 @@ A typical configuration looks like this:
             "zsim": {
                 "loadZxRom": true
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
                     "path": "z80-sample-program.list",
-                    "asm": "sjasmplus",
-                    "mainFile": "main.asm"
                 },
                 /*
                 {
                     "path": "rom48.list",
-                    "asm": "z80asm",
                     "srcDirs": [], // Use list file directly
                 },
                 */
@@ -56,6 +53,7 @@ A typical configuration looks like this:
                 //"-patterns"
             ],
             "disassemblerArgs": {
+        		numberOfLines: 20,
                 "esxdosRst": true
             },
             "rootFolder": "${workspaceFolder}",
@@ -71,15 +69,18 @@ A typical configuration looks like this:
 - remoteType: For DeZog to work it is necessary to connect it to some 'Remote'. This can be an emulator like ZEsarUX, the internal Z80 simulator or real ZX Next HW connected via serial interface.
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
+    - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
-- listFiles: An array of list files. Typically it includes only one. But if you e.g. have a
+- sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
 - codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
-- disassemblerArgs: Arguments that can be passed to the internal disassembler. At the moment the only option is "esxdosRst". If enabled the disassembler will disassemble "RST 8; defb N" correctly.
+- disassemblerArgs: Arguments that can be passed to the internal disassembler.
+    - numberOfLines: The number of lines displayed in the disassembly.
+    - esxdosRst: true/false. Default to false. If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 
@@ -127,7 +128,15 @@ then start it via
 ![](images/vscode_continue_button.jpg)
 
 
-### Listfile
+### Assembler Configuration
+
+Depending on your assembler you use a different configuration names:
+- 'sjasmplus' for sjasmplus
+- 'z80asm' for the Savannah-z80asm
+- 'z88dk' for z88dk-z80asm
+
+You basically define which listfile is used (or several listfiles) and depending on the assembler you may need to add certain parameters.
+
 
 #### z80asm vs. z80asm
 
@@ -139,7 +148,7 @@ b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (N
 DeZog supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
 
 
-#### The list file
+#### Background info: The list file
 
 The most important configuration to do is the *.list file. The list file contains
 all the information required by DeZog. While reading this file DeZog
@@ -148,87 +157,80 @@ all the information required by DeZog. While reading this file DeZog
 - reads in labels and constants
 
 An example how this works:
-When you do a 'step-over' in the debugger, DeZog request the new PC (program counter) value from ZEsarUX.
+When you do a 'step-over' in the debugger, DeZog request the new PC (program counter) value from the emulator, e.g. ZEsarUX.
 The address of the PC is looked up to find the line in the list file.
 Now depending on the value of 'srcDirs'
 - []: Empty array. The corresponding line in the list file is shown or
-- Otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
+- otherwise: The originating asm-file is searched together with the associated line and the asm-file is shown at the right line.
 
-Configuration (**Savannah-z80asm**):
-You need to enter the list files under
 
+**sjasmplus configuration:**
+
+E.g.
 ~~~
-"listFiles": {
+"sjasmplus": [{
     "path": "z80-sample-program.list",
-    "asm": "z80asm",
-    "mainFile": "main.asm",
-    "srcDirs": [""]
-    }
+    "srcDirs": [""],
+    "excludefiles": [ "some_folder/*" ]
+    }]
 ~~~
+
 
 - path: the path to the list file (relative to the 'rootFolder').
 - srcDirs (default=[""]):
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
     - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in subfolders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
-- asm: Choose you assembler here. "sjasmplus", "z80asm" or "z88dk". You don't need 'filter' if you specify 'asm'.
-- filter: A string with a reg expression substitution to pre-filter the file before reading. Used to read-in other formats than Savannah-z80asm, z88dk or sjasmplus.
-E.g. ```"/^[0-9]+\\s+//"```: This is a sed-like regular expression that removes the first number from all lines.
-Default: undefined. If you use Savannah-z80asm, z88dk or sjasmplus you should omit this field.
-- addOffset: (default=0): The number given here is added to all addresses in the list file. (Note: this was used in the past to get correct addresses for z88dk. Nowadays you should use the "z88dkMapFile" parameter instead and remove "addOffset".)
-- z88dkMapFile: Is **required only for z88dk**. The map file is required to correctly parse the label values and to get correct file/line to address associations.
-
-
-Here is an example to use for the **z88dk-z80asm**:
-
-~~~
-{
-    "path": "currah_uspeech_tests.lis",
-    "srcDirs": [],
-    "asm": "z88dk",
-    "z88dkMapFile": "currah_uspeech_tests.map"
-}
-~~~
-Explanation:
-- "path": is the path to the list file. z88dk list file use the extension .lis.
-- "srcDirs": set to an empty array. This means that DeZog will not try to find the original source files but uses the list (.lis) file instead for debugging. All stepping etc. will be done showing the list file.
-- "addOffset": The z88dk .lis file might not start at an absolute address (ORG). If it e.g. starts at address 0000 you can add the address offset here.
-
-And here an example to use for the **sjasmplus**:
-
-~~~
-{
-    "path": "zxngfw.list",
-    "mainFile": "main.asm",
-    "srcDirs": ["src"],
-    "asm": "sjasmplus"
-}
-~~~
-Explanation:
-- "path": is the path to the list file.
-- "mainFile": the relative path of the file used to create the list file.
-- "srcDirs": set to an array with one entry "src". Alls .asm files are searched here.
+- excludeFiles (default=[]): an array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here. In the example above all files from "some_folder" are excluded.
+- filter: This is a deprecated parameter. It was meant to read list files from assemblers other than the implemented ones. It contains a string with a regular expression substitution to pre-filter the file before reading. E.g. "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines. Default: undefined. The field will be removed in future versions and is here only for compatibility. If you have need for other supported assemblers please provide a full implementation. Please read the [AddingNewAssemblers.md](../design/AddingNewAssemblers.md) doc.
 
 Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 
 
+**Savannah-z80asm configuration:**
+
+Same as sjasmplus but use: ```z80asm```, e.g.:
+~~~
+"z80asm": [{
+    "path": "z80-sample-program.list",
+    "srcDirs": [""]
+    }]
+~~~
+
+
+**z88dk-z80asm configuration:**
+
+~~~
+"z88dk": [{
+    "path": "currah_uspeech_tests.lis",
+    "srcDirs": [""],
+    "mapFile": "currah_uspeech_tests.map",
+    "mainFile": "currah_uspeech_tests.asm",
+    }]
+~~~
+
+For 'path' and 'srcDirs' see sjasmplus configuration.
+
+- mapFile: The map file is required to correctly parse the label values and to get correct file/line to address associations.
+- mainFile: The relative path of the file used to create the list file.
+
 
 
 **Other assemblers:**
-I haven't tested other assemblers but if your assembler is able to generate a list file you should be able to use DeZog. Most probably the source-file-feature will not work as this uses the special syntax of the Savannah-z80asm, z88dk or sjasmplus but you should be able to step through the list file at least during debugging.
-The required format for DeZog is that
-- each line starts with the address
-- labels are terminated by an ':' and
-- constants look like: 'some_constant: EQU value'
-- Lower or uppercase does not matter.
 
-The key to use other assemblers is the 'filter' property. Here you can define a search pattern and a replacement: "/search/replacement/"
-The pattern ```"/^[0-9]+\\s+//"``` e.g. replaces all numbers at the start of the line with an empty string, i.e. it deletes the numbers from the line.
+If you use an assembler which produces a different file format you may convert it via a script to the one of the supported formats.
+But this makes sense only if the format is very similar.
+
+It is a better choice either to switch the assembler (e.g. I recommend sjasmplus) or write a new parser the assembler and add it to Dezog.
+
+The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
+
+You can create a pull request so I can add it to the official release.
 
 
 #### Without a listfile
 
-If you don't setup any list file then you can still start DeZog and it will work.
+If you don't setup any list file or any assembler configuration then you can still start DeZog and it will work.
 The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for an on-the-fly disassembly.
 Whenever the program is stopped or after each step it checks if a disassembly (or asm/list source) at the current PC already exists.
 If not a short amount of memory is added to the disassembly.
@@ -237,7 +239,7 @@ For performance reasons a new disassembly is only done if the memory at the PC i
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
 
 
-#### Assemblers And Labels
+#### Assemblers and Labels
 
 The following table lists the differences of the different assemblers in respect to the labels:
 
@@ -264,6 +266,32 @@ DeZog supports most of them but with some restrictions:
 - dot-notation: You have to hover over the last part of the dot notation to dissolve the complete label.
 - temporary (number) labels: are not supported.
 - sjasmplus: labels inside macros are not supported.
+
+
+<!--
+## Formatting
+
+In the launch.json you can use another property to control the formatting of the registers done in the VARIABLES area.
+
+~~~
+"formatting": [
+    "AF", "AF: ${hex}h, F: ${flags}",
+    "AF'", "AF': ${hex}h, F': ${flags}",
+    "PC", "${hex}h, ${unsigned}u${, :labelsplus|, }",
+    "SP", "${hex}h, ${unsigned}u${, :labelsplus|, }",
+    "HL", "(${hex}h)b=${b@:unsigned}, ${unsigned}u, ${signed}i${, :labelsplus|, }",
+    "IM", "${unsigned}u",
+    "..", "${hex}h, ${unsigned}u, ${signed}i${, :labelsplus|, }",
+    "F", "${flags}",
+    "R", "${unsigned}u",
+    "I", "${hex}h",
+    ".", "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}"
+]
+~~~
+
+Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\n${b@:...} = This prefix to hex, unsigned, signed or bits allows to show the memory content of the value, i.e. it uses the value as address and shows it's contents. E.g. you can use ${b@:bits} to show the memory contents of the address the register is pointing at as a bit value.",
+-->
+
 
 
 ## Remote Types
@@ -296,6 +324,7 @@ The following table gives an overview.
 |-------------------------|--------------------|---------|------------|----------|----------|
 | State                   | stable             | stable  | stable     | stable   | stable   |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
+| Break reason output     | yes                | no      | yes        | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | no       | no       |
 | Asserts                 | yes                | no      | yes        | yes/slow | yes/slow |
@@ -761,8 +790,7 @@ Placing a BP at any of the above location will destroy the pushed BC value if th
 
 Workaround: Don't place a breakpoint at these locations.
 
-Furthermore the debugger program requires a few bytes on the debugged program's stack.
-This are <TODO: exact number of bytes> bytes.
+Furthermore the debugger program requires 8 bytes on the debugged program's stack.
 
 So take care to use a stack that can hold these additional bytes at any time.
 

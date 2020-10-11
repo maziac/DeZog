@@ -45,7 +45,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		this.socket.on('connect', async () => {
 			LogSocket.log('CSpectRemote: Connected to server!');
 
-			this.receivedData=new Buffer(0);
+			this.receivedData=Buffer.alloc(0);
 			this.expectedLength=4;	// for length
 			this.receivingHeader=true;
 			this.stopChunkTimeout();

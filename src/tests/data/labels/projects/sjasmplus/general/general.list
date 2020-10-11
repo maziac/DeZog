@@ -1,0 +1,140 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000
+ 3    0000              label_equ1:		equ 100
+ 4    0000
+ 5    0000
+ 6    0000              	MACRO m1
+ 7    0000 ~            	ld c,9
+ 8    0000 ~            .mlocal:
+ 9    0000 ~            	dec a
+10    0000              	ENDM
+11    0000
+12    0000
+13    0000              	ORG 0x8000
+14    8000
+15    8000              label1:
+16    8000 00           	nop
+17    8001
+18    8001 3E 05        label2:	ld a,5
+19    8003
+20    8003 06 08        .locala:	ld b,8
+21    8005
+22    8005              .localb:
+23    8005 00           	nop		; ASSERT
+24    8006
+25    8006              label3:	m1
+25    8006 0E 09       >	ld c,9
+25    8008             >.mlocal:
+25    8008 3D          >	dec a
+26    8009               m1
+26    8009 0E 09       >	ld c,9
+26    800B             >.mlocal:
+26    800B 3D          >	dec a
+27    800C              label4:
+28    800C              	m1
+28    800C 0E 09       >	ld c,9
+28    800E             >.mlocal:
+28    800E 3D          >	dec a
+29    800F
+30    800F              label4_1:
+31    800F              	m1	; LOGPOINT
+31    800F 0E 09       >	ld c,9
+31    8011             >.mlocal:
+31    8011 3D          >	dec a
+32    8012
+33    8012              	IF 0
+34    8012 ~            label5:	nop
+35    8012              	ENDIF
+36    8012
+37    8012 00           label6	nop
+38    8013              .local
+39    8013 00           	nop
+40    8014
+41    8014
+42    8014              	ORG 0x8200
+43    8200              data:
+44    8200 01 02 03 04  	defb 1, 2, 3, 4		; WPMEM
+45    8204
+46    8204
+47    8204              	ORG 0x9000
+48    9000
+49    9000              	include "filea.asm"
+# file opened: filea.asm
+ 1+   9000
+ 2+   9000 00           fa_label1:	nop
+ 3+   9001
+ 4+   9001              	MODULE modfilea
+ 5+   9001
+ 6+   9001              fa_label2:
+ 7+   9001 00           	nop
+ 8+   9002
+ 9+   9002 00           fa_label3.mid:	nop
+10+   9003 00           .locala:	nop
+11+   9004
+12+   9004              	include "filea_b.asm"
+# file opened: filea_b.asm
+ 1++  9004
+ 2++  9004
+ 3++  9004 00           fab_label1:	nop
+ 4++  9005 00           .localb:	nop
+ 5++  9006
+ 6++  9006              	MODULE modfileb
+ 7++  9006
+ 8++  9006 00           fab_label2:	nop
+ 9++  9007 00           .local2b:	nop
+10++  9008
+11++  9008
+12++  9008              @global_label1
+13++  9008 00           	nop
+14++  9009              @global_label2:
+15++  9009 00           	nop
+16++  900A              	ENDMODULE
+17++  900A
+18++  900A              fab_label2
+19++  900A 00           	nop
+20++  900B
+21++  900B
+22++  900B              fab_label_equ1:		equ 70
+23++  900B
+# file closed: filea_b.asm
+13+   900B
+14+   900B              	ENDMODULE
+15+   900B
+16+   900B              fa_label3:
+17+   900B 00           	nop
+18+   900C
+# file closed: filea.asm
+50    900C
+# file closed: main.asm
+
+Value    Label
+------ - -----------------------------------------------------------
+0x0064 X label_equ1
+0x8000 X label1
+0x8001 X label2
+0x8003 X label2.locala
+0x8005 X label2.localb
+0x8006 X label3
+0x8008 X 0>mlocal
+0x800B X 1>mlocal
+0x800C X label4
+0x800E X 2>mlocal
+0x800F X label4_1
+0x8011 X 3>mlocal
+0x8012 X label6
+0x8013 X label6.local
+0x8200 X data
+0x9000 X fa_label1
+0x9001 X modfilea.fa_label2
+0x9002 X modfilea.fa_label3.mid
+0x9003 X modfilea.fa_label3.mid.locala
+0x9004 X modfilea.fab_label1
+0x9005 X modfilea.fab_label1.localb
+0x9006 X modfilea.modfileb.fab_label2
+0x9007 X modfilea.modfileb.fab_label2.local2b
+0x9008 X global_label1
+0x9009 X global_label2
+0x900A X modfilea.fab_label2
+0x0046 X modfilea.fab_label_equ1
+0x900B X fa_label3

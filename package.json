@@ -1,9 +1,9 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "1.4.11",
+	"version": "1.5.2",
 	"publisher": "maziac",
-	"description": "Visual Studio Code Debug Adapter for the Z80/ZX Spectrum.",
+	"description": "Visual Studio Code Debugger for the Z80/ZX Spectrum.",
 	"author": {
 		"name": "Thomas Busse"
 	},
@@ -257,8 +257,7 @@
 					"launch": {
 						"required": [
 							"remoteType",
-							"rootFolder",
-							"listFiles"
+							"rootFolder"
 						],
 						"properties": {
 							"remoteType": {
@@ -365,57 +364,101 @@
 								"type": "string",
 								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}."
 							},
-							"listFiles": {
+							"sjasmplus": {
 								"type": "array",
-								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
-									"anyOf": [
-										{
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
 											"type": "string",
 											"description": "Path to the assembler .list file."
 										},
-										{
-											"type": "object",
-											"properties": {
-												"path": {
-													"type": "string",
-													"description": "Path to the assembler .list file."
-												},
-												"mainFile": {
-													"type": "string",
-													"description": "Path to the main assembler source file that was used to produce the .list file. For 'z80asm' the name is extracted automatically (i.e. not needed), for 'sjasmplus' and 'z88dk' you can provide the source file name here.",
-													"default": null
-												},
-												"srcDirs": {
-													"type": "array",
-													"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
-													"default": [
-														""
-													]
-												},
-												"filter": {
-													"type": "string",
-													"description": "You can add a filter with a regular expression here. On reading of the .list file the regular expression is applied on every line. This can be used e.g. to turn a list file of an unsupported assembler into a format that is understood by dezog. Can be omitted.\nExample: '/^[0-9]+\\s+//'. The line number at the start of each line is deleted.\nIs not required for 'z80asm', 'sjasmplus' or 'z88dk'.",
-													"default": null
-												},
-												"asm": {
-													"type": "string",
-													"description": "The used assembler. 'sjasmplus' (default), 'z80asm' or 'z88dk'.",
-													"default": "z80asm"
-												},
-												"addOffset": {
-													"type": "number",
-													"description": "To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG.",
-													"default": 0
-												},
-												"z88dkMapFile": {
-													"type": "string",
-													"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
-													"default": 0
-												}
-											}
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
 										}
-									]
+									}
+								}
+							},
+							"z80asm": {
+								"type": "array",
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here either as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"filter": {
+											"type": "string"
+										}
+									}
+								}
+							},
+							"z88dk": {
+								"type": "array",
+								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"items": {
+									"type": "object",
+									"required": [
+										"path"
+									],
+									"properties": {
+										"path": {
+											"type": "string",
+											"description": "Path to the assembler .list file."
+										},
+										"srcDirs": {
+											"type": "array",
+											"description": "If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used. The source directories are given here as an array of strings. All dirs are relative to the 'rootFolder'.",
+											"default": [
+												""
+											]
+										},
+										"excludeFiles": {
+											"type": "array",
+											"description": "An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here.",
+											"default": []
+										},
+										"mainFile": {
+											"type": "string",
+											"description": "Path to the main assembler source file that was used to produce the .list file.",
+											"default": null
+										},
+										"mapFile": {
+											"type": "string",
+											"description": "Is required only for z88dk. The map file is required to correctly parse the label values and to get correct file/line to address associations.",
+											"default": 0
+										}
+									}
 								}
 							},
 							"smallValuesMaximum": {
@@ -426,9 +469,15 @@
 							"disassemblerArgs": {
 								"description": "Arguments passed to the disassembler.",
 								"properties": {
+									"numberOfLines": {
+										"type": "number",
+										"description": "The number of lines displayed in the disassembly.",
+										"default": 10
+									},
 									"esxdosRst": {
 										"type": "boolean",
-										"description": "For esxdos disassembly set this to 'true'."
+										"description": "For esxdos disassembly set this to 'true'.",
+										"default": false
 									}
 								}
 							},
@@ -471,7 +520,7 @@
 							},
 							"resetOnLaunch": {
 								"type": "boolean",
-								"description": "Resets the cpu (on emulator) after starting the debugger before starting the program to debug."
+								"description": "Resets the device (on emulator) after starting the debugger before starting the program to debug."
 							},
 							"commandsAfterLaunch": {
 								"type": "array",
@@ -614,7 +663,7 @@
 								"port": "/dev/tty.usbserial"
 							},
 							"topOfStack": "stack_top",
-							"listFiles": [
+							"sjasmplus": [
 								{
 									"path": "path_to_your_assembler_file.list"
 								}

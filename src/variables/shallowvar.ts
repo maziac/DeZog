@@ -35,7 +35,7 @@ export class ShallowVar {
 
 
 /**
- * The DisassemblyVar class knows how to retrieve the disassembly from zesarux.
+ * The DisassemblyVar class knows how to retrieve the disassembly from the remote.
  */
 export class DisassemblyVar extends ShallowVar {
 
@@ -61,7 +61,7 @@ export class DisassemblyVar extends ShallowVar {
 
 
 	/**
-	 * Communicates with zesarux to retrieve the disassembly.
+	 * Communicates with the Remote to retrieve the disassembly.
 	 * @returns A Promise with the disassembly.
 	 * A list with all disassembled lines is passed (as variables).
 	 */
@@ -99,7 +99,7 @@ export class DisassemblyVar extends ShallowVar {
 
 /**
  * The MemorySlotsVar class knows how to retrieve the mapping of
- * memory slots and banks from zesarux.
+ * memory slots and banks from Remote.
  */
 export class MemorySlotsVar extends ShallowVar {
 	/**
@@ -111,7 +111,7 @@ export class MemorySlotsVar extends ShallowVar {
 
 
 	/**
-	 * Communicates with zesarux to retrieve the memory pages.
+	 * Communicates with the Remote to retrieve the memory pages.
 	 * @returns A Promise with the memory page data is available.
 	 * A list with start/end address and name (bank name) is passed.
 	 */
@@ -139,7 +139,7 @@ export class MemorySlotsVar extends ShallowVar {
 
 
 /**
- * The RegistersMainVar class knows how to retrieve the register values from zeasrux.
+ * The RegistersMainVar class knows how to retrieve the register values from Remote.
  */
 export class RegistersMainVar extends ShallowVar {
 
@@ -210,7 +210,7 @@ export class RegistersSecondaryVar extends RegistersMainVar {
 	 * Returns the register names to show. The 2nd half of the registers.
 	 */
 	protected registerNames(): Array<string> {
-		return ["A'", "F'", "HL'", "DE'", "BC'", "I", "R", "IM"];
+		return ["A'", "F'", "HL'", "DE'", "BC'", "IXH", "IXL", "IYH", "IYL", "I", "R", "IM"];
 	}
 }
 

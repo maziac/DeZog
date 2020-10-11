@@ -74,7 +74,7 @@ suite('Settings', () => {
 		test('CheckSettings - listFiles 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				listFiles: [
+				sjasmplus: [
 					{ path: "./src/tests/data/settings/filenotexists.list" }
 				]
 			};
@@ -90,7 +90,7 @@ suite('Settings', () => {
 		test('CheckSettings - listFiles 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				listFiles: [
+				sjasmplus: [
 					{ path: "./src/tests/data/settings/file.list" }
 				]
 			};

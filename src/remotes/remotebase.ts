@@ -5,7 +5,7 @@ import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {Settings, ListFile} from '../settings';
+import {Settings/*, ListFile*/} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
@@ -176,7 +176,7 @@ export class RemoteBase extends EventEmitter {
 
 			try {
 				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-				const match=/;\s*WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
+				const match=/^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
 				if (match) {
 					// get arguments
 					let addressString=match[1];
@@ -193,6 +193,7 @@ export class RemoteBase extends EventEmitter {
 					if (lengthString&&lengthString.length>0) {
 						length=Utility.evalExpression(lengthString, false); // don't evaluate registers
 					}
+					/*
 					else {
 						if (!addressString||addressString.length==0) {
 							// If both, address and length are not defined it is checked
@@ -205,6 +206,7 @@ export class RemoteBase extends EventEmitter {
 								continue;
 						}
 					}
+					*/
 					if (access&&access.length>0) {
 						access=access.toLocaleLowerCase();
 						if (access!='r'&&access!='w'&&access!='rw') {
@@ -229,10 +231,10 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Creates an array of asserts from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
+	 * @param assertLines An array with address and line (text) pairs.
 	 * @return An array with asserts (GenericWatchpoints).
 	 */
-	protected createAsserts(assertLines: Array<{address: number, line: string}>) {
+	protected createAsserts(assertLines: Array<{address: number, line: string}>): Array<GenericBreakpoint> {
 		const assertMap=new Map<number, GenericBreakpoint>();
 		// Convert ASSERTS to watchpoints
 		for (let entry of assertLines) {
@@ -253,14 +255,12 @@ export class RemoteBase extends EventEmitter {
 			// ASSERTs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
 			try {
-				const matchAssert=/;.*\bASSERT\b/.exec(entry.line);
-				if (!matchAssert) {
-					// Eg. could be that "ASSERTx" was found.
+				const matchAssert=/^ASSERT(.*)/.exec(entry.line);
+				if (!matchAssert)
 					continue;
-				}
 
 				// Get part of the string after the "ASSERT"
-				const part=entry.line.substr(matchAssert.index+matchAssert[0].length).trim();
+				const part=matchAssert[1].trim();
 
 				// Check if no condition was set = ASSERT false = Always break
 				let conds='';
@@ -304,20 +304,20 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Creates an array of log points from the text lines.
-	 * @param watchPointLines An array with address and line (text) pairs.
-	 * @return An array with log points (GenericWatchpoints).
+	 * @param logPointLines An array with address and line (text) pairs.
+	 * @return An array with log points (GenericWatchpoints) for each group.
 	 */
-	protected createLogPoints(watchPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
+	protected createLogPoints(logPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
 		// convert labels in watchpoints.
 		const logpoints=new Map<string, Array<GenericBreakpoint>>();
-		for (let entry of watchPointLines) {
+		for (let entry of logPointLines) {
 			// LOGPOINT:
 			// Syntax:
 			// LOGPOINT [group] text ${(var):signed} text ${reg:hex} text ${w@(reg)} text ¢{b@(reg):unsigned}
 			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
 
 			// Now check more thoroughly i.e. for comma
-			const match=/;.*LOGPOINT\s(\s*\[\s*(\w*)\s*\]\s)?(.*)$/.exec(entry.line);
+			const match=/^LOGPOINT\b(\s*\[\s*(\w*)\s*\])?\s*(.*)/gm.exec(entry.line);
 			if (match) {
 				// get arguments
 				const group=match[2]||"DEFAULT";
@@ -403,46 +403,10 @@ export class RemoteBase extends EventEmitter {
 	 * WPMEM, ASSERT and LOGPOINT.
 	 * Also sets WPMEM, ASSERT and LOGPOINT break/watchpoints.
 	 * May throw an error.
-	 * @param listFiles An array with all list files.
-	 * @param sources An array with directories where the source files are located.
+	 * @param configuration Contains the list files for the different assemblers
 	 */
-	public readListFiles(listFiles: Array<ListFile>) {
-		// Array for found watchpoints: WPMEM, ASSERT breakpoints, LOGPOINT watchpoints
-		const watchPointLines=new Array<{address: number, line: string}>();
-		const assertLines=new Array<{address: number, line: string}>();
-		const logPointLines=new Array<{address: number, line: string}>();
-		// Load user list and labels files
-		for (const listFile of listFiles) {
-			const file={
-				path: Utility.getAbsFilePath(listFile.path),
-				mainFile: listFile.mainFile,
-				srcDirs: listFile.srcDirs||[""],
-				filter: listFile.filter,
-				asm: listFile.asm||"sjasmplus",
-				addOffset: listFile.addOffset||0,
-				z88dkMapFile: listFile.z88dkMapFile
-			};
-			Labels.loadAsmListFile(file.path, file.mainFile, file.srcDirs, file.filter, file.asm, file.addOffset, (address, line) => {
-				// Quick search for WPMEM
-				if (line.indexOf('WPMEM')>=0) {
-					// Add watchpoint at this address
-					watchPointLines.push({address: address, line: line});
-				}
-				// Quick search for ASSERT
-				if (line.indexOf('ASSERT')>=0) {
-					// Add assert line at this address
-					assertLines.push({address: address, line: line});
-				}
-				// Quick search for LOGPOINT
-				if (line.indexOf('LOGPOINT')>=0) {
-					// Add assert line at this address
-					logPointLines.push({address: address, line: line});
-				}
-			}, file.z88dkMapFile);
-		}
-
-		// Finishes off the loading of the list and labels files
-		Labels.finish();
+	public readListFiles(configuration: any) {
+		Labels.readListFiles(configuration);
 
 		// calculate top of stack, execAddress
 		this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
@@ -450,15 +414,18 @@ export class RemoteBase extends EventEmitter {
 			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
 
 		// Set watchpoints (memory guards)
+		const watchPointLines=Labels.getWatchPointLines();
 		const watchpoints=this.createWatchPoints(watchPointLines);
 		this.setWPMEMArray(watchpoints);
 
 		// ASSERTs
 		// Set assert breakpoints
+		const assertLines=Labels.getAssertLines();
 		const assertsArray=this.createAsserts(assertLines);
 		this.setASSERTArray(assertsArray);
 
 		// LOGPOINTs
+		const logPointLines=Labels.getLogPointLines();
 		const logPointsMap=this.createLogPoints(logPointLines);
 		this.setLOGPOINTArray(logPointsMap);
 	}
@@ -829,31 +796,23 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * 'step over' an instruction in the debugger.
-	 * @returns A Promise with:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason
 	 */
-	public async stepOver(): Promise<{instruction: string, breakReasonString?: string}> {
+	public async stepOver(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return {
-			instruction: ""
-		};
+		return undefined;
 	}
 
 
 	/**
 	 * 'step into' an instruction in the debugger.
-	 * @returns A Promise:
-	 * 'instruction' is the disassembly of the current line.
-	 * 'breakReasonString' a possibly text with the break reason. This is mainly to keep the
-	 * record consistent with stepOver. But it is e.g. used to inform when the
-	 * end of the cpu history is reached.
+	 * @returns A Promise with a string with the break reason.
+	 * Or 'undefined' if no reason
 	 */
-	public async stepInto(): Promise<{instruction: string,breakReasonString?: string}> {
+	public async stepInto(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return {
-			instruction: ""
-		};
+		return undefined;
 	}
 
 
@@ -862,9 +821,9 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string containing the break reason.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<string> {
+	public async stepOut(): Promise<string|undefined> {
 		Utility.assert(false);	// override this
-		return '';
+		return undefined;
 	}
 
 
@@ -1145,7 +1104,7 @@ export class RemoteBase extends EventEmitter {
 	 * Takes also the disassembled file into account.
 	 * Used e.g.for the call stack.
 	 * @param address The memory address to search for.
-	 * @returns The associated filename and line number(and for sjasmplus the modulePrefix and the lastLabel).
+	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc

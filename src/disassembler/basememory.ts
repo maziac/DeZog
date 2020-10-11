@@ -51,7 +51,12 @@ export class BaseMemory {
 	 */
 	public getValueAt(address: number) {
 		address &= (MAX_MEM_SIZE-1);
-		const index = address - this.startAddress;
+		let index=address-this.startAddress;
+		if (index<0) {
+			// wrap around
+			//index=MAX_MEM_SIZE+address-this.startAddress;
+			index+=MAX_MEM_SIZE;
+		}
 		Utility.assert(index >= 0, 'getValueAt 1');
 		Utility.assert(index < this.size, 'getValueAt 2');
 		return this.memory[index];

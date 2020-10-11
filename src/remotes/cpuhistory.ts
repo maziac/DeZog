@@ -711,15 +711,12 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 	/**
 	  * 'step backwards' the program execution in the debugger.
-	  * @returns {instruction, breakReason} Promise.
-	  * instruction: e.g. "081C NOP"
-	  * breakReasonString: If not undefined it holds the break reason message.
+	  * @returns A Promise with a string with the break reason. Or undefined, if no break reason.
 	  */
-	public async stepBack(): Promise<{instruction: string, breakReasonString: string|undefined}> {
+	public async stepBack(): Promise<string|undefined> {
 		// Make sure the call stack exists
 		await this.prepareReverseDbgStack();
 		let breakReasonString;
-		let instruction='';
 		try {
 			// Remember previous line
 			let prevLine=Z80Registers.getCache();
@@ -728,19 +725,16 @@ export class CpuHistoryClass extends StepHistoryClass {
 			if (currentLine) {
 				// Stack handling:
 				await this.handleReverseDebugStackBack(currentLine, prevLine);
-				// Get instruction
-				const pc=Z80Registers.getPC();
-				instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
 			}
 			else
 				breakReasonString='Break: Reached end of instruction history.';
 		}
 		catch (e) {
-			breakReasonString=e;
+			breakReasonString=e.message;
 		}
 
 		// Call handler
-		return {instruction, breakReasonString};
+		return breakReasonString;
 	}
 
 
@@ -953,7 +947,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 		}
 		catch (e) {
-			breakReasonString='Error occurred: '+e;
+			breakReasonString='Error occurred: '+e.message;
 		}
 
 		// Get real registers if we reached the end.
@@ -1010,7 +1004,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 		}
 		catch (e) {
-			breakReason='Break: Error occurred: '+e;
+			breakReason='Break: Error occurred: '+e.message;
 		}
 
 		// Return
@@ -1019,12 +1013,25 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 	/**
-	 * Steps over an instruction.
-	 * Simply returns the next address line.
-	 * @returns instruction=undefined
-	 * breakReasonString=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
+	 * Should return the current instruction.
+	 * For the Lite StepHistory always returns undefined.
+	 * @returns undefined.
 	 */
-	public stepOver(): {instruction: string, breakReasonString: string|undefined} {
+	public getCurrentInstruction(): string|undefined {
+		// Get current line
+		let currentLine=Z80Registers.getCache();
+		Utility.assert(currentLine);
+		// Get instruction
+		const instruction=this.getInstruction(currentLine);
+		return instruction;
+	}
+
+
+	/**
+	 * Steps over an instruction.
+	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
+	 */
+	public stepOver(): string|undefined {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
@@ -1084,11 +1091,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 		}
 		catch (e) {
-			breakReasonString=e;
+			breakReasonString=e.message;
 		}
-
-		// Get instruction
-		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
@@ -1098,21 +1102,19 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Return
-		return {instruction, breakReasonString};
+		return breakReasonString;
 	}
 
 
 	/**
 	 * Steps into an instruction.
 	 * Works like the StepOver in StepHistory.
-	 * @returns instruction=e.g. 'LD A,5'
-	 * breakReasonString='End of history reached'.
+	 * @returns The break reason e.g. 'End of history reached' or undefined if no reason.
 	 */
-	public stepInto(): {instruction: string, breakReasonString: string|undefined} {		// Check for reverse breakReasonString.
+	public stepInto(): string|undefined {		// Check for reverse breakReasonString.
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		Utility.assert(currentLine);
-		const pc=Z80Registers.decoder.parsePC(currentLine);
 		let nextLine;
 
 		let breakReasonString;
@@ -1126,11 +1128,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 		catch (e) {
 			// E.g. "End of history reached"
-			breakReasonString=e;
+			breakReasonString=e.message;
 		}
-
-		// Get instruction
-		const instruction='  '+Utility.getHexString(pc, 4)+' '+this.getInstruction(currentLine);
 
 		// Get real registers if we reached the end.
 		if (!nextLine) {
@@ -1139,7 +1138,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			Remote.clearCallStack();
 		}
 
-		return {instruction, breakReasonString};
+		return breakReasonString;
 	}
 
 
@@ -1194,7 +1193,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 		}
 		catch (e) {
-			breakReason=e;
+			breakReason=e.message;
 		}
 
 		// Get real registers if we reached the end.

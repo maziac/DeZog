@@ -1,40 +1,48 @@
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Utility } from './misc/utility';
-//import * as path from 'path';
 import * as fs from 'fs';
+import {UnifiedPath} from './misc/unifiedpath';
 
-/**
- * together with a boolean variable to tell (true) if the referenced files should be used and a filter string to allow
- * list files from not supported assemblers.
- */
-export interface ListFile {
 
-	/// The path to the file.
+
+/// Base for all assembler configurations.
+export interface AsmConfigBase {
+
+	/// The path to the list file.
 	path: string;
-
-	/// Path to the main assembler source file that was used to produce the .list file.
-	/// For 'z80asm' the name can be extracted automatically, for 'sjasmplus' and 'z88dk'
-	/// you can provide the source file here.
-	mainFile: string;
 
 	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
 	/// The path(s) here are relative to the 'rootFolder'.
 	/// It is also possible to add several paths. Files are checked one after the other: first sources path, second sources path, ... last sources path.
 	srcDirs: Array<string>;
 
-	/// An optional filter string that is applied to the list file when it is read. Used to support z88dk list files.
-	filter:string|undefined;
+	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping.
+	excludeFiles: Array<string>;
 
-	/// Used assembler: "z80asm", "z88dk" or "sjasmplus" (default).
-	/// The list file is read differently. Especially the includes are handled differently.
-	asm: string;
-
-	/// To add an offset to each address in the .list file. Could be used if the addresses in the list file do not start at the ORG (as with z88dk).
-	addOffset: number;
-
-	/// The z88dk map file (option "-m"). This should be used with z88dk list-files (.lis) instead of the deprecated addOffset.
-	z88dkMapFile: string;
+	/// An optional filter string that is applied to the list file when it is read.
+	filter: string|undefined;
 }
+
+
+/// sjasmplus
+export interface SjasmplusConfig extends AsmConfigBase {
+}
+
+
+/// Z80Asm
+export interface Z80asmConfig extends AsmConfigBase {
+}
+
+
+// Z88dk
+export interface Z88dkConfig extends AsmConfigBase {
+	/// Path to the main assembler source file that was used to produce the .list file.
+	mainFile: string;
+
+	/// The z88dk map file (option "-m").
+	mapFile: string;
+}
+
 
 
 export interface Formatting {
@@ -171,11 +179,14 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// true if the configuration is for unit tests.
 	unitTests: false;
 
-	/// The path of the root folder. All other paths are relative to this. Ususally = ${workspaceFolder}
+	/// The path of the root folder. All other paths are relative to this. Usually = ${workspaceFolder}
 	rootFolder: string;
 
-	/// The paths to the .list files.
-	listFiles: Array<ListFile>;
+	/// The paths to the .list files / assembler parameters.
+	sjasmplus: Array<SjasmplusConfig>;
+	z80asm: Array<Z80asmConfig>;
+	z88dk: Array<Z88dkConfig>;
+
 
 	/// The paths to the .labels files.
 	//labelsFiles: Array<string>;
@@ -184,7 +195,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	smallValuesMaximum: number;
 
 	/// These arguments are passed to the disassembler (z80dismblr arguments).
-	disassemblerArgs: {esxdosRst: boolean};
+	disassemblerArgs: {
+		numberOfLines: number,	// Number of lines displayed in the disassembly
+		esxdosRst: boolean	// If enabled the disassembler will disassemble "RST 8; defb N" correctly.
+	};
 
 	/// A directory for temporary files created by this debug adapter. E.g. ".tmp"
 	tmpDir: string;
@@ -275,8 +289,9 @@ export class Settings {
 				zxnext: <any>undefined,
 				unitTests: <any>undefined,
 				rootFolder: <any>undefined,
-				listFiles: <any>undefined,
-//				labelsFiles: <any>undefined,
+				sjasmplus: <any>undefined,
+				z80asm: <any>undefined,
+				z88dk: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
@@ -382,69 +397,108 @@ export class Settings {
 		if (!Settings.launch.zxnext.socketTimeout)
 			Settings.launch.zxnext.socketTimeout=0.5;	// 0.5 secs, needs to be short to show a warning fast if debugged program is running.
 
-
-
 		if(!Settings.launch.rootFolder)
-			Settings.launch.rootFolder = rootFolder;
-		if(Settings.launch.listFiles)
-			Settings.launch.listFiles = Settings.launch.listFiles.map(fp => {
+			Settings.launch.rootFolder=rootFolder;
+
+		// sjasmplus
+		if (Settings.launch.sjasmplus) {
+			Settings.launch.sjasmplus=Settings.launch.sjasmplus.map(fp => {
 				// ListFile structure
-				const file = {
-					path: Utility.getAbsFilePath(fp.path),
-					mainFile: fp.mainFile,
-					srcDirs: fp.srcDirs || [""],
-					filter: fp.filter,
-					asm: fp.asm || "sjasmplus",
-					addOffset: fp.addOffset||0,
-					z88dkMapFile: fp.z88dkMapFile
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
+				const file={
+					path: Utility.getAbsFilePath(fpPath||""),
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[],
+					filter: fp.filter
 				};
-				/*
-				// Add the root folder path to each.
-				const rootFolder=Settings.launch.rootFolder;
-				const srcds=file.srcDirs.map(srcPath => path.join(rootFolder, srcPath));
-				file.srcDirs = srcds;
-				*/
 				return file;
 			});
-		else
-			Settings.launch.listFiles = [];
+		}
 
-		/*
-		if(Settings.launch.labelsFiles)
-			Settings.launch.labelsFiles = Settings.launch.labelsFiles.map((fp) => Utility.getAbsFilePath(fp));
-		else
-			Settings.launch.labelsFiles = [];
-		*/
+		// z80asm
+		if (Settings.launch.z80asm) {
+			Settings.launch.z80asm=Settings.launch.z80asm.map(fp => {
+				// ListFile structure
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
+				const file={
+					path: Utility.getAbsFilePath(fpPath||""),
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[],
+					filter: fp.filter
+				};
+				return file;
+			});
+		}
 
-		if(!Settings.launch.topOfStack)
+		// z88dk
+		if (Settings.launch.z88dk) {
+			Settings.launch.z88dk=Settings.launch.z88dk.map(fp => {
+				// ListFile structure
+				const fpPath=UnifiedPath.getUnifiedPath(fp.path);
+				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
+				const fpMapFile=UnifiedPath.getUnifiedPath(fp.mapFile);
+				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
+				const fpMainFile=UnifiedPath.getUnifiedPath(fp.mainFile);
+				const file={
+					path: Utility.getAbsFilePath(fpPath||""),
+					srcDirs: fpSrcDirs||[""],
+					excludeFiles: fpExclFiles||[],
+					filter: fp.filter,
+					mainFile: fpMainFile||"",
+					mapFile: Utility.getAbsFilePath(fpMapFile||"")
+				};
+				return file;
+			});
+		}
+
+
+		if (!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = '0x10000';
 		if(unitTests)
 			Settings.launch.topOfStack = 'UNITTEST_STACK';
 
-		if(Settings.launch.load)
-			Settings.launch.load = Utility.getAbsFilePath(Settings.launch.load);
+		if (Settings.launch.load) {
+			const uload=UnifiedPath.getUnifiedPath(Settings.launch.load)
+			Settings.launch.load=Utility.getAbsFilePath(uload);
+		}
 		else
 			Settings.launch.load = '';
 
 		if(!Settings.launch.loadObjs)
 			Settings.launch.loadObjs = [];
 		for(let loadObj of Settings.launch.loadObjs) {
-			if(loadObj.path)
-				loadObj.path = Utility.getAbsFilePath(loadObj.path);
+			if (loadObj.path) {
+				const loadObjPath=UnifiedPath.getUnifiedPath(loadObj.path)
+				loadObj.path=Utility.getAbsFilePath(loadObjPath);
+			}
 			else
 				loadObj.path = '';
 		}
 
 		if(Settings.launch.tmpDir == undefined)
-			Settings.launch.tmpDir = '.tmp';
-		Settings.launch.tmpDir = Utility.getAbsFilePath
-		(Settings.launch.tmpDir);
+			Settings.launch.tmpDir='.tmp';
+		Settings.launch.tmpDir=UnifiedPath.getUnifiedPath(Settings.launch.tmpDir);
+		Settings.launch.tmpDir=Utility.getAbsFilePath
+			(Settings.launch.tmpDir);
 		if(isNaN(Settings.launch.smallValuesMaximum))
 			Settings.launch.smallValuesMaximum = 255;
 		if(Settings.launch.disassemblerArgs == undefined)
-			Settings.launch.disassemblerArgs = {esxdosRst: false};
-		if(!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
-			Settings.launch.disassemblerArgs.esxdosRst = false;
+			Settings.launch.disassemblerArgs={
+				numberOfLines: 10,
+				esxdosRst: false
+			};
+		if (!Settings.launch.disassemblerArgs.hasOwnProperty("numberOfLines"))
+			Settings.launch.disassemblerArgs.numberOfLines=10;
+		if (Settings.launch.disassemblerArgs.numberOfLines>100)
+			Settings.launch.disassemblerArgs.numberOfLines=100;
+		if (Settings.launch.disassemblerArgs.numberOfLines<1)
+			Settings.launch.disassemblerArgs.numberOfLines=1;
+		if (!Settings.launch.disassemblerArgs.hasOwnProperty("esxdosRst"))
+			Settings.launch.disassemblerArgs.esxdosRst=false;
 		if(Settings.launch.startAutomatically == undefined)
 			Settings.launch.startAutomatically = (unitTests) ? false : false;
 		if(Settings.launch.resetOnLaunch == undefined)
@@ -559,6 +613,25 @@ export class Settings {
 
 
 	/**
+	 * Returns all xxxListFiles parameters in an array.
+	 * This is used to run checks on the common parameters.
+	 * @param configuration The launch configuration, e.g. Settings.launch.
+	 * @returns An array of list file parameters.
+	 */
+	public static GetAllAssemblerListFiles(configuration: any): Array<AsmConfigBase> {
+		const listFiles=new Array<AsmConfigBase>();
+		if (configuration.sjasmplus)
+			listFiles.push(...configuration.sjasmplus);
+		if (configuration.z80asm)
+			listFiles.push(...configuration.z80asm);
+		if (configuration.z88dk)
+			listFiles.push(...configuration.z88dk);
+
+		return listFiles;
+	}
+
+
+	/**
 	 * Checks the settings and throws an exception if something is wrong.
 	 * E.g. it checks for the existence of file paths.
 	 * Note: file paths are already expanded to absolute paths.
@@ -567,17 +640,32 @@ export class Settings {
 		// Check remote type
 		const rType=Settings.launch.remoteType;
 		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];
-		const found = (allowedTypes.indexOf(rType) >= 0);
+		const found=(allowedTypes.indexOf(rType)>=0);
 		if (!found) {
-			throw Error("Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
+			throw Error("Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
 		}
 
-		// List files
-		for(let listFile of Settings.launch.listFiles) {
+		// List files (=Assembler configurations)
+		const listFiles=this.GetAllAssemblerListFiles(Settings.launch);
+		for (let listFile of listFiles) {
+			const path=listFile.path;
 			// Check that file exists
-			const path = listFile.path;
 			if(!fs.existsSync(path))
 				throw Error("File '" + path + "' does not exist.");
+		}
+
+		// Any special check
+		if (Settings.launch.z88dk) {
+			// Check for z88dk map file
+			const listFiles=Settings.launch.z88dk;
+			for (const listFile of listFiles) {
+				const mapFile=listFile.mapFile;
+				if (mapFile==undefined)
+					throw Error("For z88dk you have to define a map file ('mapFile').");
+				// Check that file exists
+				if (!fs.existsSync(mapFile))
+					throw Error("File '"+mapFile+"' does not exist.");
+			}
 		}
 
 		// sna/tap

@@ -297,7 +297,9 @@ export class Z80RegistersClass {
 
 		// do the formatting
 		let rLen = reg.length;
-		if (reg[rLen - 1] == '\'')--rLen;	// Don't count the "'" in the register name
+		if (reg[rLen-1]=='\'') --rLen;	// Don't count the "'" in the register name
+		if (rLen==3)
+			rLen=1;	// This is IXH, IXL, IYH, IYL
 
 		Utility.assert(this.valid());
 		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);

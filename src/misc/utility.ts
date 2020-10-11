@@ -3,9 +3,8 @@ import { Settings } from '../settings';
 import { Z80RegistersClass } from '../remotes/z80registers';
 import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
-import * as path from 'path';
+import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
-
 
 
 /**
@@ -692,11 +691,11 @@ export class Utility {
 	 * @returns An absolute path
 	 */
 	public static getAbsFilePath(relFilePath: string, rootPath?: string): string {
-		if(path.isAbsolute(relFilePath))
+		if(UnifiedPath.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
 		const usedRootPath = (rootPath) ? rootPath : Utility.rootPath || '';
-		const filePath = path.join(usedRootPath, relFilePath);
+		const filePath=UnifiedPath.join(usedRootPath, relFilePath);
 		return filePath;
 	}
 
@@ -708,11 +707,11 @@ export class Utility {
 	 * @param srcDirs The (relative) directories to search in.
 	 */
 	public static getAbsSourceFilePath(srcPath: string, srcDirs: Array<string>) {
-		if (path.isAbsolute(srcPath))
+		if (UnifiedPath.isAbsolute(srcPath))
 			return srcPath;
 		// Check all sources directories and try to locate the srcPath file.
 		for (let srcDir of srcDirs) {
-			const fPath=path.join(srcDir, srcPath);
+			const fPath=UnifiedPath.join(srcDir, srcPath);
 			const absFPath=Utility.getAbsFilePath(fPath);
 			if (fs.existsSync(absFPath))
 				return absFPath;
@@ -729,12 +728,12 @@ export class Utility {
 	 * @param srcDirs E.g. [ "src", "includes" ]
 	 */
 	public static getRelSourceFilePath(srcPath: string, srcDirs: Array<string>) {
-		if (path.isAbsolute(srcPath))
+		if (UnifiedPath.isAbsolute(srcPath))
 			return Utility.getRelFilePath(srcPath);
 
 		// Check all sources directories and try to locate the srcPath file.
 		for (let srcDir of srcDirs) {
-			const fPath=path.join(srcDir, srcPath);
+			const fPath=UnifiedPath.join(srcDir, srcPath);
 			const absFPath=Utility.getAbsFilePath(fPath);
 			if (fs.existsSync(absFPath))
 				return fPath;
@@ -750,7 +749,7 @@ export class Utility {
 	 * @returns The relative file path, e.g. ".tmp/state0.bin".
 	 */
 	public static getRelTmpFilePath(fileName: string): string {
-		const relFilePath = path.join(Settings.launch.tmpDir, fileName);
+		const relFilePath=UnifiedPath.join(Settings.launch.tmpDir, fileName);
 		return relFilePath;
 	}
 
@@ -762,7 +761,7 @@ export class Utility {
 	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/state_0.bin".
 	 */
 	public static getAbsStateFileName(stateName: string): string {
-		const fPath=path.join('states', stateName)
+		const fPath=UnifiedPath.join('states', stateName)
 		const relPath=Utility.getRelTmpFilePath(fPath);
 		return Utility.getAbsFilePath(relPath);
 	}
@@ -771,9 +770,10 @@ export class Utility {
 	/**
 	 * Sets the root path or absolute and relative file functions.
 	 * @param rootPath What e.g. vscode.workspace.rootPath would return
-	 */	public static setRootPath(rootPath: string) {
+	 */
+	public static setRootPath(rootPath: string) {
 		Utility.assert(rootPath);
-		(Utility.rootPath as any)=rootPath;
+		(Utility.rootPath as any)=UnifiedPath.getUnifiedPath(rootPath);
 	}
 
 

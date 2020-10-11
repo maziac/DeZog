@@ -296,7 +296,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 			// Strip length
 			const length=this.expectedLength-4;
-			const strippedBuffer=new Buffer(length);
+			const strippedBuffer=Buffer.alloc(length);
 			this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
 
 			// Log
@@ -312,14 +312,14 @@ export class DzrpBufferRemote extends DzrpRemote {
 			this.receivingHeader=true;
 			if (overLength==0) {
 				this.expectedLength=4;
-				this.receivedData=new Buffer(0);
+				this.receivedData=Buffer.alloc(0);
 				return;
 			}
 
 			// More data has been received
-			const nextBuffer=new Buffer(overLength);
+			const nextBuffer=Buffer.alloc(overLength);
 			this.receivedData.copy(nextBuffer, 0, this.expectedLength);
-			this.receivedData=new Buffer(0);
+			this.receivedData=Buffer.alloc(0);
 			// Call again
 			this.expectedLength=4;
 			this.dataReceived(nextBuffer);
