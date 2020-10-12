@@ -577,7 +577,8 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Initialize Cpu- or StepHistory.
-				StepHistory.decoder=Z80Registers.decoder;
+				if (!StepHistory.decoder)
+					StepHistory.decoder=Z80Registers.decoder;
 				StepHistory.init();
 
 				// Create memory/register dump view
