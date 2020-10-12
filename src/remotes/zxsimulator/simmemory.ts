@@ -307,7 +307,7 @@ export class SimulatedMemory {
 		let address=addr&(this.bankSize-1);
 		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*bankNr*this.bankSize+address;	// Convert to flat address
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
 		let value=mem[ramAddr];
 		// Second byte
@@ -318,7 +318,7 @@ export class SimulatedMemory {
 		}
 		else {
 			// Overflow
-			slotIndex=(addr+1)>>>this.shiftCount;
+			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
 			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
@@ -349,7 +349,7 @@ export class SimulatedMemory {
 			for (let i=3; i>0; i--) {
 				addr++;
 				address=addr&(this.bankSize-1);
-				slotIndex=addr>>>this.shiftCount;
+				slotIndex=(addr&0xFFFF)>>>this.shiftCount;
 				bankNr=this.slots[slotIndex];
 				ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 				value+=mem[ramAddr]*mult;
@@ -392,7 +392,7 @@ export class SimulatedMemory {
 		}
 		else {
 			// Overflow
-			slotIndex=(addr+1)>>>this.shiftCount;
+			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
 			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
@@ -469,7 +469,7 @@ export class SimulatedMemory {
 		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=addr>>>this.shiftCount;
+			const slot=(addr&0xFFFF)>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
 			let ramAddr=bank*this.bankSize+bankAddr;
@@ -507,7 +507,7 @@ export class SimulatedMemory {
 		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=addr>>>this.shiftCount;
+			const slot=(addr&0xFFFF)>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
 			let ramAddr=bank*this.bankSize+bankAddr;
