@@ -20,7 +20,6 @@ import {ZxNextMemory} from './zxnextmemory';
 import {UlaScreen} from './ulascreen';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
-import {Log} from '../../log';
 
 
 
@@ -795,6 +794,11 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * Loads a .sna file.
+	 * Loading is intelligent. I.e. if a SNA file from a ZX128 is loaded into a ZX48 or a ZXNEXT
+	 * it will work,
+	 * as long as no memory is used that is not present in the memory model.
+	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the SNA file it
+	 * is possible to load it onto a ZX48K.
 	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
 	 */
 	protected async loadBinSna(filePath: string): Promise<void> {
@@ -855,6 +859,11 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * Loads a .nex file.
+	 * Loading is intelligent. I.e. if a NEX file is loaded into a ZX128,
+	 * ZX48 or even a 64k RAM memory model it will work,
+	 * as long as no memory is used that is not present in the memory model.
+	 * E.g. as long as only 16k banks 0, 2 and 5 are used in the NEX file it
+	 * is possible to load it onto a ZX48K.
 	 * See https://wiki.specnext.dev/NEX_file_format
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {
@@ -866,19 +875,32 @@ export class ZSimRemote extends DzrpRemote {
 		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
 
 		// Transfer 16k memory banks
+		const slots=this.memory.getSlots();
+		const slotCount=(slots)? slots.length:1;
+		const bankSize=0x10000/slotCount;
+		const convAddresses=[ // 0x10000 would be out of range,
+			0xC000, 0x10000, 0x8000, 0x10000,
+			0x10000, 0x4000, 0x10000, 0x10000
+		];
 		for (const memBank of nexFile.memBanks) {
-			Log.log("loadBinNex: Writing 16k bank "+memBank.bank);
-			// As 2x 8k memory banks
-			const bank8=2*memBank.bank;
-			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, 0x2000));
-			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(0x2000));
-		}
-
-		// Set the default slot/bank association
-		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
-		for (let slot=0; slot<8; slot++) {
-			const bank8=slotBanks[slot];
-			await this.sendDzrpCmdSetSlot(slot, bank8);
+			let addr17;
+			// Convert banks to 17 bit addresses (128K Spectrum)
+			if (!slots) {
+				// For e.g. ZX48 without banks
+				addr17=convAddresses[memBank.bank];
+			}
+			else {
+				// For another banked machine
+				addr17=memBank.bank*0x4000;
+			}
+			// Write data
+			let offs=0;
+			while (offs<=0x4000) {
+				const data=memBank.data.slice(offs, offs+bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
+				this.memory.writeMemoryData(addr17+offs, data);
+				// Next
+				offs+=bankSize;
+			}
 		}
 
 		// Set the SP and PC registers
