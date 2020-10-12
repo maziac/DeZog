@@ -646,7 +646,8 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch (e) {
 				// Some error occurred
-				this.terminate('Init remote: '+e.message);
+				const error=e.message||"Error";
+				this.terminate('Init remote: '+error);
 			}
 		});
 	}

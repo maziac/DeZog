@@ -18,6 +18,9 @@ import {SimulatedMemory} from './simmemory';
 import {Zx128Memory} from './zx128memory';
 import {ZxNextMemory} from './zxnextmemory';
 import {UlaScreen} from './ulascreen';
+import {SnaFile} from '../dzrp/snafile';
+import {NexFile} from '../dzrp/nexfile';
+import {Log} from '../../log';
 
 
 
@@ -221,6 +224,9 @@ export class ZSimRemote extends DzrpRemote {
 		try {
 			Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for teh memory model.
 
+			// Create ports for paging
+			this.ports=new Z80Ports();
+
 			// Configure different memory models
 			switch (memModel) {
 				case "RAM":
@@ -290,8 +296,7 @@ export class ZSimRemote extends DzrpRemote {
 			this.memoryModel.init();
 			Labels.convertLabelsTo(this.memoryModel);
 
-			// Create a Z80 CPU to emulate Z80 behaviour
-			this.ports=new Z80Ports();
+			// Create a Z80 CPU to emulate Z80 behavior
 			this.z80Cpu=new Z80Cpu(this.memory, this.ports);
 			// For restoring the state
 			this.serializeObjects=[
@@ -788,6 +793,100 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
+	/**
+	 * Loads a .sna file.
+	 * See https://faqwiki.zxnet.co.uk/wiki/SNA_format
+	 */
+	protected async loadBinSna(filePath: string): Promise<void> {
+		// Load and parse file
+		const snaFile=new SnaFile();
+		snaFile.readFile(filePath);
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
+
+		// Transfer 16k memory banks
+		const slots=this.memory.getSlots();
+		const slotCount=(slots) ?slots.length : 1;
+		const bankSize=0x10000/slotCount;
+		const convAddresses=[ // 0x10000 would be out of range,
+			0xC000, 0x10000, 0x8000, 0x10000,
+			0x10000, 0x4000, 0x10000, 0x10000
+		];
+		for (const memBank of snaFile.memBanks) {
+			let addr17;
+			// Convert banks to 17 bit addresses (128K Spectrum)
+			if (!slots) {
+				// For e.g. ZX48 without banks
+				addr17=convAddresses[memBank.bank];
+			}
+			else {
+				// For another banked machine
+				addr17=memBank.bank*0x4000;
+			}
+			// Write data
+			let offs=0;
+			while (offs<=0x4000) {
+				const data=memBank.data.slice(offs, offs+bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
+				this.memory.writeMemoryData(addr17+offs, data);
+				// Next
+				offs+=bankSize;
+			}
+		}
+
+		// Set the registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, snaFile.pc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, snaFile.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF, snaFile.af);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC, snaFile.bc);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE, snaFile.de);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL, snaFile.hl);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IX, snaFile.ix);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IY, snaFile.iy);
+		await this.sendDzrpCmdSetRegister(Z80_REG.AF2, snaFile.af2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.BC2, snaFile.bc2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.DE2, snaFile.de2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.HL2, snaFile.hl2);
+		await this.sendDzrpCmdSetRegister(Z80_REG.R, snaFile.r);
+		await this.sendDzrpCmdSetRegister(Z80_REG.I, snaFile.i);
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, snaFile.im);
+	}
+
+
+	/**
+	 * Loads a .nex file.
+	 * See https://wiki.specnext.dev/NEX_file_format
+	 */
+	protected async loadBinNex(filePath: string): Promise<void> {
+		// Load and parse file
+		const nexFile=new NexFile();
+		nexFile.readFile(filePath);
+
+		// Set the border
+		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
+
+		// Transfer 16k memory banks
+		for (const memBank of nexFile.memBanks) {
+			Log.log("loadBinNex: Writing 16k bank "+memBank.bank);
+			// As 2x 8k memory banks
+			const bank8=2*memBank.bank;
+			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, 0x2000));
+			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(0x2000));
+		}
+
+		// Set the default slot/bank association
+		const slotBanks=[254, 255, 10, 11, 4, 5, 0, 1];	// 5, 2, 0
+		for (let slot=0; slot<8; slot++) {
+			const bank8=slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
+		}
+
+		// Set the SP and PC registers
+		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
+		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
+	}
+
+
 	//------- Send Commands -------
 
 	/**
@@ -904,6 +1003,8 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to write a memory bank.
+	 * This is e.g. used by loadBinSna. The bank number given here is alwas for a ZXNext memory model
+	 * and need to be scaled to other memory models.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
  	*/

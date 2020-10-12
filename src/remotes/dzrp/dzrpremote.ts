@@ -1146,7 +1146,7 @@ export class DzrpRemote extends RemoteBase {
 
 		// Transfer 16k memory banks
 		for (const memBank of snaFile.memBanks) {
-			// As 2x 8k memory banks
+			// As 2x 8k memory banks. I.e. DZRP is for ZX Next only.
 			const bank8=2*memBank.bank;
 			await this.sendDzrpCmdWriteBank(bank8, memBank.data.slice(0, MemBank16k.BANK16K_SIZE/2));
 			await this.sendDzrpCmdWriteBank(bank8+1, memBank.data.slice(MemBank16k.BANK16K_SIZE/2));

@@ -251,9 +251,9 @@ export class SimulatedMemory {
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
 		// Read
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
 		const value=this.memoryData[ramAddr];
 		return value;
 	}
@@ -276,7 +276,7 @@ export class SimulatedMemory {
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
 
 		// Convert to bank
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
 
 		// Don't write if ROM
@@ -284,7 +284,7 @@ export class SimulatedMemory {
 			return;
 
 		// Convert to flat address
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));
 		// Write
 		this.memoryData[ramAddr]=val;
 	}
@@ -293,9 +293,9 @@ export class SimulatedMemory {
 	// Reads one byte.
 	// This is **not** used by the Z80 CPU.
 	public getMemory8(addr: number): number {
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
 		const value=this.memoryData[ramAddr];
 		return value;
 	}
@@ -304,23 +304,23 @@ export class SimulatedMemory {
 	// This is **not** used by the Z80 CPU.
 	public getMemory16(addr: number): number {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
+		let ramAddr=bankNr*bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
 		let value=mem[ramAddr];
 		// Second byte
 		address++;
-		if (address<0x2000) {
+		if (address<this.bankSize) {
 			// No overflow, same bank, normal case
 			ramAddr++;
 		}
 		else {
 			// Overflow
-			slotIndex=(slotIndex+1)&0x07;
+			slotIndex=(addr+1)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*0x2000;	// Convert to flat address
+			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
 		value+=mem[ramAddr]<<8;
 		return value;
@@ -330,14 +330,14 @@ export class SimulatedMemory {
 	// This is **not** used by the Z80 CPU.
 	public getMemory32(addr: number): number {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
 		let value=mem[ramAddr];
 		// Second byte
-		if (address<=0x1FFD) {  // 0x2000-3
+		if (address<=this.bankSize-3) {  // E.g. 0x2000-3
 			// No overflow, same bank, normal case
 			value+=mem[++ramAddr]<<8;
 			value+=mem[++ramAddr]<<16;
@@ -348,10 +348,10 @@ export class SimulatedMemory {
 			let mult=256;
 			for (let i=3; i>0; i--) {
 				addr++;
-				address=addr&0x1FFF;
-				slotIndex=(addr>>>13)&0x07;
+				address=addr&(this.bankSize-1);
+				slotIndex=addr>>>this.shiftCount;
 				bankNr=this.slots[slotIndex];
-				ramAddr=bankNr*0x2000+address;	// Convert to flat address
+				ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 				value+=mem[ramAddr]*mult;
 				// Next
 				mult*=256;
@@ -365,10 +365,10 @@ export class SimulatedMemory {
 	// This is **not** used by the Z80 CPU.
 	public setMemory8(addr: number, val: number) {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
 		mem[ramAddr]=val&0xFF;
 	}
@@ -378,10 +378,10 @@ export class SimulatedMemory {
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
 		mem[ramAddr]=val&0xFF;
 		// Second byte
@@ -392,11 +392,29 @@ export class SimulatedMemory {
 		}
 		else {
 			// Overflow
-			slotIndex=(slotIndex+1)&0x07;
+			slotIndex=(addr+1)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*0x2000;	// Convert to flat address
+			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
 		mem[ramAddr]=val>>>8;
+	}
+
+	/**
+	 * Write to memoryData direcly.
+	 * Is e.g. used during SNA / NEX file loading.
+	 * @param offset Offset into the memData. I.e. can be bigger than 0x10000.
+	 * @param data The data to write.
+	 */
+	public writeMemoryData(offset: number, data: Uint8Array) {
+		// Check size
+		let size=data.length;
+		if (offset+size>this.memoryData.length)
+			size=this.memoryData.length-offset;
+		if (size<=0)
+			return;	// Nothing to write
+		// Copy
+		const data2=data.slice(0, size);
+		this.memoryData.set(data2, offset);
 	}
 
 
@@ -451,7 +469,7 @@ export class SimulatedMemory {
 		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=(addr>>>this.shiftCount)&0x07;
+			const slot=addr>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
 			let ramAddr=bank*this.bankSize+bankAddr;
@@ -489,7 +507,7 @@ export class SimulatedMemory {
 		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=(addr>>>this.shiftCount)&0x07;
+			const slot=addr>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
 			let ramAddr=bank*this.bankSize+bankAddr;
