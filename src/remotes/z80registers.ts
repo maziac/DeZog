@@ -404,7 +404,7 @@ export class Z80RegistersClass {
 	 * @returns An array with the slots or undefined if no slots are used (e.g. ZX48K)
 	 */
 	public getSlots(): number[]|undefined {
-		// Use slots if a fucntion exist to convert to long address.
+		// Use slots if a function exist to convert to long address.
 		if (this.funcCreateLongAddress!=undefined) {
 			const slots=this.decoder.parseSlots(this.RegisterCache);
 			return slots;
@@ -486,7 +486,7 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * Sets the lamba function used to convert back and forth to
+	 * Sets the lambda function used to convert back and forth to
 	 * long addresses.
 	 * @param funcCreateLongAddress Function to convert from address/slot to long address.
 	 * @param funcGetSlotFromAddress Function to extract the slot from the 64k address.

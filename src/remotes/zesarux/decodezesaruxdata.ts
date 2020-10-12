@@ -248,8 +248,8 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			// Decode ZEsarUX: Bit 15 stands for ROM.
 			// I.e. $8000 and $8001 are ROM.
 			// Others are simply the bank number.
-			if (value>=0x8000)
-				value=0xFF;	// ROM
+			if (value>=0x8000)	// TODO: Does this work for ZX128 as well?
+				value=0xFE+(value&0x01);	// ROM
 			slots[i]=value;
 			// Next
 			line=line.substr(4);

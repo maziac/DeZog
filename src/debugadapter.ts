@@ -859,9 +859,9 @@ export class DebugSessionClass extends DebugSession {
 					// since it was fetched at the beginning.
 					// Check if memory changed.
 					for (let k=0; k<checkSize; k++) {
-						const val=Disassembly.memory.getValueAt(fetchAddress+k);
+						const val=Disassembly.memory.getValueAt((fetchAddress+k)&0xFFFF);
 						const memAttr=Disassembly.memory.getAttributeAt(fetchAddress+k);
-						const newVal=memArray.getValueAtAddress(fetchAddress+k);
+						const newVal=memArray.getValueAtAddress((fetchAddress+k)&0xFFFF);
 						if ((val!=newVal)||(memAttr==MemAttribute.UNUSED)) {
 							doDisassembly=true;
 							break;
@@ -879,7 +879,7 @@ export class DebugSessionClass extends DebugSession {
 				this.dasmAddressQueue.unshift(addr);
 			// Check if this requires a disassembly
 			if (!doDisassembly) {
-				const memAttr=Disassembly.memory.getAttributeAt(addr);
+				const memAttr=Disassembly.memory.getAttributeAt(addr&0xFFFF);
 				if (!(memAttr&MemAttribute.CODE_FIRST))
 					doDisassembly=true;	// If memory was not the start of an opcode.
 			}

@@ -582,7 +582,7 @@ export class RemoteBase extends EventEmitter {
 			/*
 			I removed the check for RST:
 			An RST will happen relatively seldom. But here a RST would be found with
-			a probability of 1/16. I.e. every 16th value would be wrong.
+			a probability of 1/32. I.e. every 32th value would be wrong.
 			Therefore I better skip the detection.
 
 			// Check if one of the 2 last bytes was a RST.
