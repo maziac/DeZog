@@ -1,9 +1,9 @@
-import {ZxMemory} from './zxmemory';
 import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
+import {SimulatedMemory} from './simmemory';
 
 
 
@@ -40,14 +40,14 @@ export class Z80Cpu {
 	public cpuFreq: number;
 
 	// Memory
-	public memory: ZxMemory;
+	public memory: SimulatedMemory;
 
 	// Ports
 	public ports: Z80Ports;
 
 
 	/// Constructor.
-	constructor(memory: ZxMemory, ports: Z80Ports) {
+	constructor(memory: SimulatedMemory, ports: Z80Ports) {
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq=3500000.0;	// 3.5MHz.
@@ -373,7 +373,7 @@ export class Z80Cpu {
 	public getRegisterData(): Uint16Array {
 		const r=this.getAllRegisters();
 		// Convert regs
-		const slots=this.memory.getSlots();
+		const slots=this.memory.getSlots()||[];
 		const regData=Z80RegistersClass.getRegisterData(
 			r.pc, r.sp,
 			r.af, r.bc, r.de, r.hl,

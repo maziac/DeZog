@@ -1,23 +1,23 @@
 import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
-import {WatchpointZxMemory} from './wpzxmemory';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
 import {Settings} from '../../settings';
-//import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Utility} from '../../misc/utility';
-import * as fs from 'fs';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels/labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZxSimCpuHistory} from './zxsimcpuhistory';
-import {ZxMemory} from './zxmemory';
+import {Zx48Memory} from './zx48memory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModel, Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
-//import {Watchpoint64kRamMemory} from './wp64krammemory';
+import {SimulatedMemory} from './simmemory';
+import {Zx128Memory} from './zx128memory';
+import {ZxNextMemory} from './zxnextmemory';
+import {UlaScreen} from './ulascreen';
 
 
 
@@ -29,12 +29,11 @@ export class ZSimRemote extends DzrpRemote {
 
 	// For emulation of the CPU.
 	public z80Cpu: Z80Cpu;
-	public memory: WatchpointZxMemory;
+	public memory: SimulatedMemory;
 	public ports: Z80Ports;
 
-
-	// The ZX128 stores its ROM here as it has 2.
-	protected romBuffer: Uint8Array;
+	// If ULA screen is enabled this holds a pointer to it.
+	public ulaScreen: UlaScreen;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -83,17 +82,6 @@ export class ZSimRemote extends DzrpRemote {
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled)
 			this.codeCoverage=new CodeCoverageArray();
-		// Create a Z80 CPU to emulate Z80 behaviour
-		this.memory=new WatchpointZxMemory();
-		//this.memory=new Watchpoint64kRamMemory();
-		this.ports=new Z80Ports();
-		this.z80Cpu=new Z80Cpu(this.memory, this.ports);
-		// For restoring the state
-		this.serializeObjects=[
-			this.z80Cpu,
-			this.memory,
-			this.ports
-		];
 	}
 
 
@@ -111,24 +99,18 @@ export class ZSimRemote extends DzrpRemote {
 		// bit 0-2:  RAM page (0-7) to map into memory at 0xc000.
 	    const mem=this.memory;
 		const ramBank=value&0x07;
-		const ramBank0=ramBank*2;
-		const ramBank1=ramBank0+1
 		// Change the slots
-		mem.setSlot(6, ramBank0);
-		mem.setSlot(7, ramBank1);
+		mem.setSlot(3, ramBank);
 
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const shadowScreen=value&0b01000;
-		const screenBank=(shadowScreen!=0)? 7:5;
-		this.memory.setUlaScreenBank(2*screenBank);
+		const screenAddress=(shadowScreen!=0)? 5*0x4000 : 7*0x4000;
+		Utility.assert(this.ulaScreen);
+		this.ulaScreen.setUlaScreenAddress(screenAddress);
 
 		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 		const romIndex=(value&0b010000)? 1:0;
-		const size=ZxMemory.MEMORY_BANK_SIZE;
-		const rom0=new Uint8Array(this.romBuffer.buffer, romIndex*2*size, size);
-		const rom1=new Uint8Array(this.romBuffer.buffer, romIndex*2*size+size, size);
-		this.memory.writeBank(254, rom0);
-		this.memory.writeBank(255, rom1);
+		this.memory.setSlot(0, 8+romIndex);
 
 		// bit 5: If set, memory paging will be disabled
 		if (value&0b0100000) {
@@ -218,7 +200,7 @@ export class ZSimRemote extends DzrpRemote {
 	protected tbblueMemoryManagementSlotsRead(): number {
 		const slot=this.tbblueRegisterSelectValue&0x07;
 		// Change the slot/bank
-		let bank=this.memory.getSlots()[slot];
+		let bank=this.memory.getSlots()![slot];
 		// Check for ROM = 0xFE
 		if (bank==0xFE)
 			bank=0xFF;
@@ -246,47 +228,44 @@ export class ZSimRemote extends DzrpRemote {
 						// 64K RAM, no ZX
 						// Memory Model
 						this.memoryModel=new MemoryModel();
-					}
-					break;
-				case "ZX128K":
-					{
-						// ZX 128K
-						// Load ROMs
-						const size=ZxMemory.MEMORY_BANK_SIZE;
-						const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
-						this.romBuffer=fs.readFileSync(romFilePath);
-						const rom0=new Uint8Array(this.romBuffer.buffer, 2*size, size);
-						const rom1=new Uint8Array(this.romBuffer.buffer, 3*size, size);
-						this.memory.writeBank(254, rom0);
-						this.memory.writeBank(255, rom1);
-						this.memory.setRomBank(254, true);
-						this.memory.setRomBank(255, true);
-						// Bank switching.
-						this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
-						// Memory Model
-						this.memoryModel=new Zx128MemoryModel();
+						this.memory=new SimulatedMemory(1, 1);
+						// Check if ULA enabled
+						if (Settings.launch.zsim.ulaScreen)
+							this.ulaScreen=new UlaScreen(this.memory);
 					}
 					break;
 				case "ZX48K":
 					{
 						// ZX 48K
-						const size=ZxMemory.MEMORY_BANK_SIZE;
-						const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
-						const romBuffer=fs.readFileSync(romFilePath);
-						// use USR 0 mode, i.e. preload the 48K ROM
-						const rom0=new Uint8Array(romBuffer.buffer, 0, size);
-						const rom1=new Uint8Array(romBuffer.buffer, size, size);
-						this.memory.writeBank(254, rom0);
-						this.memory.writeBank(255, rom1);
-						this.memory.setRomBank(254, true);
-						this.memory.setRomBank(255, true);
 						// Memory Model
 						this.memoryModel=new Zx48MemoryModel();
+						this.memory=new Zx48Memory();
+						// Check if ULA enabled
+						if (Settings.launch.zsim.ulaScreen)
+							this.ulaScreen=new UlaScreen(this.memory);
+					}
+					break;
+				case "ZX128K":
+					{
+						// ZX 128K
+						// Memory Model
+						this.memoryModel=new Zx128MemoryModel();
+						this.memory=new Zx128Memory();
+						// Bank switching.
+						this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+						// Check if ULA enabled
+						if (Settings.launch.zsim.ulaScreen) {
+							this.ulaScreen=new UlaScreen(this.memory);
+							this.ulaScreen.setUlaScreenAddress(5*0x4000);	// Bank 5
+						}
 					}
 					break;
 				case "ZXNEXT":
 					{
 						// ZX Next
+						// Memory Model
+						this.memoryModel=new ZxNextMemoryModel();
+						this.memory=new ZxNextMemory();
 						// Bank switching.
 						for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
 							this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
@@ -296,8 +275,11 @@ export class ZSimRemote extends DzrpRemote {
 						this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 						this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 						this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-						// Memory Model
-						this.memoryModel=new ZxNextMemoryModel();
+						// Check if ULA enabled
+						if (Settings.launch.zsim.ulaScreen) {
+							this.ulaScreen=new UlaScreen(this.memory);
+							this.ulaScreen.setUlaScreenAddress(10*0x2000);	// Initially bank 10
+						}
 					}
 					break;
 				default:
@@ -307,6 +289,16 @@ export class ZSimRemote extends DzrpRemote {
 			// Convert labels if necessary.
 			this.memoryModel.init();
 			Labels.convertLabelsTo(this.memoryModel);
+
+			// Create a Z80 CPU to emulate Z80 behaviour
+			this.ports=new Z80Ports();
+			this.z80Cpu=new Z80Cpu(this.memory, this.ports);
+			// For restoring the state
+			this.serializeObjects=[
+				this.z80Cpu,
+				this.memory,
+				this.ports
+			];
 		}
 		catch (e) {
 			this.emit('warning', e.message);
@@ -530,7 +522,7 @@ export class ZSimRemote extends DzrpRemote {
 		let updateCounter=0;
 		let slots
 		if (Labels.AreLongAddressesUsed())
-			slots=(this.memory as ZxMemory).getSlots();
+			slots=this.memory.getSlots();
 		let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 		try {
 			// Run the Z80-CPU in a loop
@@ -927,7 +919,7 @@ export class ZSimRemote extends DzrpRemote {
  	*/
 	public async sendDzrpCmdGetSlots(): Promise<number[]> {
 		const slots=this.memory.getSlots();
-		return slots;
+		return slots||[];
 	}
 
 

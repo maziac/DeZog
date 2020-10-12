@@ -1,14 +1,14 @@
 
 import * as assert from 'assert';
-import {ZxMemory} from '../remotes/zxsimulator/zxmemory';
 import {MemBuffer} from '../misc/membuffer';
+import {PagedMemory} from '../remotes/zxsimulator/pagedmemory';
 
-suite('ZxMemory', () => {
+suite('PagedMemory', () => {
 	test('serialize/deserialize', () => {
 		let memBuffer;
 		let writeSize;
 		{
-			const mem=new ZxMemory();
+			const mem=new PagedMemory(8, 256);
 
 			// Set slots
 			mem.setSlot(0, 253);
@@ -42,7 +42,7 @@ suite('ZxMemory', () => {
 		}
 
 		// Create a new object
-		const rMem=new ZxMemory();
+		const rMem=new PagedMemory(8, 256);
 		rMem.deserialize(memBuffer);
 
 		// Check size
@@ -76,7 +76,7 @@ suite('ZxMemory', () => {
 
 
 	test('writeBlock/readBlock', () => {
-		const mem=new ZxMemory();
+		const mem=new PagedMemory(8, 256);
 
 		mem.writeBlock(0x0000, new Uint8Array([0xAB]));
 		let result=mem.readBlock(0x0000, 2);
@@ -117,7 +117,7 @@ suite('ZxMemory', () => {
 
 
 	test('setMemory/getMemory', () => {
-		const mem=new ZxMemory();
+		const mem=new PagedMemory(8, 256);
 
 		mem.setMemory16(0x0000, 0x1234);
 		let result=mem.getMemory16(0x0000);

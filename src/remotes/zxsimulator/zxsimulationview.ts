@@ -328,7 +328,7 @@ export class ZxSimulationView extends BaseView {
 			*/
 
 			if (Settings.launch.zsim.ulaScreen)
-				screenImg=this.createBase64String(this.simulator.memory.getUlaScreen());
+				screenImg=this.createBase64String(this.simulator.ulaScreen.getUlaScreen());
 			// Create message to update the webview
 			let message={
 				command: 'update',
