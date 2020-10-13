@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import {ZSimRemote} from '../remotes/zxsimulator/zsimremote';
 import {Settings} from '../settings';
 import {Utility} from '../misc/utility';
+import {Z80RegistersClass} from '../remotes/z80registers';
 
 
 
@@ -15,14 +16,13 @@ suite('ZxSimulatorRemote', () => {
 			const cfg: any={
 				remoteType: 'zsim',
 				zsim: {
-					loadZxRom: true,
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: true,
-					memoryPagingControl: false,
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false
+					vsyncInterrupt: false,
+					memoryModel: "ZX48K"
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -31,12 +31,13 @@ suite('ZxSimulatorRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters(0);
 			zsim=new ZSimRemote();
 		});
 
 		test('Check ROM', () => {
-			// @ts-ignore
-			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
+			// @ts-ignore: protected access
+			zsim.configureMachine(Settings.launch.zsim.memoryModel);
 
 			// Check first 2 bytes
 			let value=zsim.memory.read8(0x0000);
@@ -60,12 +61,13 @@ suite('ZxSimulatorRemote', () => {
 			Utility.setExtensionPath('.');
 			const cfg: any={
 				zsim: {
-					loadZxRom: true,
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: true,
-					memoryPagingControl: true,
 					cpuLoadInterruptRange: 1,
+					Z80N: false,
+					vsyncInterrupt: false,
+					memoryModel: "ZX128K"
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -74,10 +76,10 @@ suite('ZxSimulatorRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters(0);
 			zsim=new ZSimRemote();
-			// @ts-ignore, The 128er ROM
-			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
-
+			// @ts-ignore: protected access
+			zsim.configureMachine(Settings.launch.zsim.memoryModel);
 		});
 
 		test('Check ROM 0', () => {
@@ -175,21 +177,21 @@ suite('ZxSimulatorRemote', () => {
 
 
 		test('ula switching', () => {
-			// @ts-ignore, Default, Bank 5
-			let bank=zsim.memory.ulaScreenBank;
-			assert.equal(2*5, bank);
+			// @ts-ignore: protected
+			let address=zsim.ulaScreen.ulaScreenAddress;
+			assert.equal(5*0x4000, address);
 
 			// Shadow ULA, Bank 7
 			zsim.ports.write(0x7FFD, 0b01000);
-			// @ts-ignore
-			bank=zsim.memory.ulaScreenBank;
-			assert.equal(2*7, bank);
+			// @ts-ignore: protected
+			address=zsim.ulaScreen.ulaScreenAddress;
+			assert.equal(7*0x4000, address);
 
 			// Normal ULA, Bank 5
 			zsim.ports.write(0x7FFD, 0);
-			// @ts-ignore
-			bank=zsim.memory.ulaScreenBank;
-			assert.equal(2*5, bank);
+			// @ts-ignore: protected
+			address=zsim.ulaScreen.ulaScreenAddress;
+			assert.equal(5*0x4000, address);
 		});
 
 
@@ -217,15 +219,13 @@ suite('ZxSimulatorRemote', () => {
 			const cfg: any={
 				remoteType: 'zsim',
 				zsim: {
-					loadZxRom: true,
 					zxKeyboard: true,
 					visualMemory: true,
 					ulaScreen: true,
-					memoryPagingControl: false,
-					tbblueMemoryManagementSlots: true,
 					cpuLoadInterruptRange: 1,
 					Z80N: false,
-					vsyncInterrupt: false
+					vsyncInterrupt: false,
+					memoryModel: "ZXNEXT"
 				},
 				history: {
 					reverseDebugInstructionCount: 0,
@@ -234,10 +234,10 @@ suite('ZxSimulatorRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters(0);
 			zsim=new ZSimRemote();
 			// @ts-ignore
-			zsim.configureMachine(Settings.launch.zsim.loadZxRom, Settings.launch.zsim.memoryPagingControl, Settings.launch.zsim.tbblueMemoryManagementSlots);
-
+			zsim.configureMachine(Settings.launch.zsim.memoryModel);
 		});
 
 		test('bank switching RAM', () => {

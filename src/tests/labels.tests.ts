@@ -17,7 +17,13 @@ suite('Labels', () => {
 		suite('z80asm', () => {
 
 			test('getFileAndLineForAddress', () => {
-				const config={z80asm: [{path: './src/tests/data/labels/test1.list', srcDirs: [""]}]};
+				const config={
+					z80asm: [{
+						path: './src/tests/data/labels/test1.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// Checks
@@ -79,7 +85,13 @@ suite('Labels', () => {
 
 
 			test('getAddrForFileAndLine', () => {
-				const config={z80asm: [{path: './src/tests/data/labels/test1.list', srcDirs: [""]}]};
+				const config={
+					z80asm: [{
+						path: './src/tests/data/labels/test1.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// main.asm
@@ -112,7 +124,13 @@ suite('Labels', () => {
 
 
 			test('get label values from list file', () => {
-				const config={z80asm: [{path: './src/tests/data/labels/test2.list', srcDirs: [""]}]};
+				const config={
+					z80asm: [{
+						path: './src/tests/data/labels/test2.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				let value=Labels.getNumberForLabel('screen_top');
@@ -140,7 +158,13 @@ suite('Labels', () => {
 
 
 			test('get labels for a value from list file', () => {
-				const config={z80asm: [{path: './src/tests/data/labels/test2.list', srcDirs: [""]}]};
+				const config={
+					z80asm: [{
+						path: './src/tests/data/labels/test2.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				let labels=Labels.getLabelsForNumber(0x6000);
@@ -161,7 +185,12 @@ suite('Labels', () => {
 		suite('sjasmplus', () => {
 
 			test('sjasmplus labels with ":"', () => {
-				const config={sjasmplus: [{path: './src/tests/data/labels/sjasm1.list', srcDirs: [""]}]};
+				const config={
+					sjasmplus: [{
+						path: './src/tests/data/labels/sjasm1.list', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				const labels=Labels;
 				labels.readListFiles(config);
 
@@ -195,7 +224,12 @@ suite('Labels', () => {
 
 
 			test('sjasmplus labels without ":"', () => {
-				const config={sjasmplus: [{path: './src/tests/data/labels/sjasm2_wo_colon.list', srcDirs: [""]}]};
+				const config={
+					sjasmplus: [{
+						path: './src/tests/data/labels/sjasm2_wo_colon.list', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				const labels=Labels;
 				labels.readListFiles(config);
 
@@ -235,7 +269,12 @@ suite('Labels', () => {
 		suite('z80asm', () => {
 
 			test('z80asm.list', () => {
-				const config={z80asm: [{path: './src/tests/data/labels/z80asm.list', srcDirs: [""]}]};
+				const config={
+					z80asm: [{
+						path: './src/tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// Checks
@@ -271,8 +310,11 @@ suite('Labels', () => {
 			test('z88dk.lis', () => {
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/z88dk.lis', srcDirs: [""],
-						mapFile: './src/tests/data/labels/z88dk_empty.map'}]};
+						path: './src/tests/data/labels/z88dk.lis',
+						mapFile: './src/tests/data/labels/z88dk_empty.map', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// Checks
@@ -296,7 +338,13 @@ suite('Labels', () => {
 
 
 			test('z88dk map file (currah)', () => {
-				const config={z88dk: [{path: './src/tests/data/labels/currah_uspeech_tests.lis', srcDirs: [""], mapFile: './src/tests/data/labels/currah_uspeech_tests.map'}]};
+				const config={
+					z88dk: [{
+						path: './src/tests/data/labels/currah_uspeech_tests.lis', mapFile: './src/tests/data/labels/currah_uspeech_tests.map',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// Checks

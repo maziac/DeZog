@@ -18,7 +18,13 @@ suite('Labels (sjasmplus)', () => {
 			const labelsFile=readFileSync('./src/tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
 
 			// Read the list file
-			const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};
+			const config={
+				sjasmplus: [{
+					path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
+			};
+
 			Labels.readListFiles(config);
 
 			// Compare all labels
@@ -38,7 +44,14 @@ suite('Labels (sjasmplus)', () => {
 
 		test('IF 0 Labels', () => {
 			// Read the list file
-			const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};
+			const config={
+				sjasmplus: [{
+					path: './src/tests/data/labels/projects/sjasmplus/general/general.list',
+					srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
+			};
+
 			Labels.readListFiles(config);
 
 			// Test the a label under an IF 0/ENDIF is not defined
@@ -163,7 +176,8 @@ suite('Labels (sjasmplus)', () => {
 				const config={
 					sjasmplus: [{
 						path: './src/tests/data/labels/projects/sjasmplus/general/general.list',
-						srcDirs: [""]	// Sources mode
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
 					}]
 				};
 				Labels.readListFiles(config);
@@ -218,7 +232,13 @@ suite('Labels (sjasmplus)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file
-				const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+				const config={
+					sjasmplus: [{
+						path: './src/tests/data/labels/projects/sjasmplus/general/general.list',
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
 				Labels.readListFiles(config);
 
 				// Tests
@@ -242,7 +262,13 @@ suite('Labels (sjasmplus)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file
-				const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+				const config={
+					sjasmplus: [{
+						path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""],	// Sources mode
+						excludeFiles: []
+					}]
+				};
+
 				Labels.readListFiles(config);
 
 				// Tests
@@ -266,7 +292,13 @@ suite('Labels (sjasmplus)', () => {
 
 	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
 		// Read the list file
-		const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""]}]};	// Sources-Mode
+		const config={
+			sjasmplus: [{
+				path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""],	// Sources mode
+				excludeFiles: []
+			}]
+		};
+
 		Labels.readListFiles(config);
 
 		// Test WPMEM

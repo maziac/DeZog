@@ -105,7 +105,7 @@ export class MemoryModel {
  * 0000-3FFF: ROM
  * 4000-FFFF: RAM
  */
-export class Zx48MemoryModel extends MemoryModel{
+export class Zx48MemoryModel extends MemoryModel {
 
 	/**
 	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
@@ -287,6 +287,5 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
 		// Return
 		return pages;
 	}
-
 }
 

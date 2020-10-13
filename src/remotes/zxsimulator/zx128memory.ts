@@ -27,6 +27,8 @@ export class Zx128Memory extends PagedMemory {
 		const rom1=new Uint8Array(romBuffer.buffer, size, size); /* ZX 48K */
 		this.writeBank(8, rom0);
 		this.writeBank(9, rom1);
+		// Initially ROM 1 is selected
+		this.slots[0]=9;
 	}
 
 }

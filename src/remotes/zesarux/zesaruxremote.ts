@@ -1076,7 +1076,7 @@ export class ZesaruxRemote extends RemoteBase {
 			if (bp.address>=0) {
 				condition='PC=0'+Utility.getHexString(bp.address&0xFFFF, 4)+'h';
 				// Add check for long BP
-				const bank=Z80Registers.getBankFromAddress(bp.address);
+				let bank=Z80Registers.getBankFromAddress(bp.address);
 				if (bank!=-1) {
 					// Yes, it's a long address
 					// Check for ZX128K: ZEsarUX uses different wording:
@@ -1088,7 +1088,8 @@ export class ZesaruxRemote extends RemoteBase {
 						// C000-FFFF:	RAM
 						const addr=bp.address&0xFFFF;
 						if (addr<=0x3FFF) {
-							// ROM
+							// Treat ROM banks special for ZEsarUX
+							bank=(bank&0x01);
 							condition+=' and ROM='+bank;
 						}
 						else if(addr>=0xC000) {
@@ -1099,6 +1100,11 @@ export class ZesaruxRemote extends RemoteBase {
 					else {
 						// ZXNext
 						const slot=Z80Registers.getSlotFromAddress(bp.address);
+						// Treat ROM banks special for ZEsarUX
+						if (bank==0xFE)
+							bank=0x8000;
+						else if (bank==0xFF)
+							bank=0x8001;
 						condition+=' and SEG'+slot+'='+bank;
 					}
 				}

@@ -7,6 +7,7 @@ import { Remote, RemoteFactory } from '../remotes/remotefactory';
 import { Settings } from '../settings';
 //import { ZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
 import {Labels} from '../labels/labels';
+import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
 
 
 suite('Utility', () => {
@@ -298,6 +299,7 @@ suite('Utility', () => {
 				};
 				Settings.Init(cfg, '');
 				Z80RegistersClass.createRegisters(0);
+				Z80Registers.decoder=new DecodeZesaruxRegisters(0);
 				RemoteFactory.createRemote(cfg.remoteType);
 			});
 
@@ -386,6 +388,7 @@ suite('Utility', () => {
 			Settings.Init(cfg, '');
 			Z80RegistersClass.createRegisters(0);
 			RemoteFactory.createRemote(cfg.remoteType);
+			(Remote as any).configureMachine("RAM");
 		});
 
 		test('Register', async () => {

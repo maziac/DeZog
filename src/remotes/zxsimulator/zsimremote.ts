@@ -106,7 +106,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
 		const shadowScreen=value&0b01000;
-		const screenAddress=(shadowScreen!=0)? 5*0x4000 : 7*0x4000;
+		const screenAddress=(shadowScreen==0)? 5*0x4000 : 7*0x4000;
 		Utility.assert(this.ulaScreen);
 		this.ulaScreen.setUlaScreenAddress(screenAddress);
 

@@ -11,7 +11,13 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 
 	test('WPMEM', () => {
 		// Read the list file
-		const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list', srcDirs: [""]}]};
+		const config={
+			sjasmplus: [{
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				srcDirs: [""],	// Sources mode
+				excludeFiles: []
+			}]
+		};
 		Labels.readListFiles(config);
 
 		const wpmemLines=Labels.getWatchPointLines();
@@ -36,7 +42,13 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 
 	test('ASSERT', () => {
 		// Read the list file
-		const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list', srcDirs: [""]}]};
+		const config={
+			sjasmplus: [{
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				srcDirs: [""],	// Sources mode
+				excludeFiles: []
+			}]
+		};
 		Labels.readListFiles(config);
 
 		const assertLines=Labels.getAssertLines();
@@ -49,7 +61,13 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 
 	test('LOGPOINT', () => {
 		// Read the list file
-		const config={sjasmplus: [{path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list', srcDirs: [""]}]};
+		const config={
+			sjasmplus: [{
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				srcDirs: [""],	// Sources mode
+				excludeFiles: []
+			}]
+		};
 		Labels.readListFiles(config);
 
 		const logpointLines=Labels.getLogPointLines();

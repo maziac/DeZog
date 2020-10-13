@@ -90,9 +90,10 @@ DeZog knows with which remote it communicates and chooses the right subset.
 ## History
 
 ### 1.7.0 (planned for DeZog 1.6)
-- TODO: New command (or extend CMD_INIT) to get the machine type or slot/bank config (ZX48, ZX128, ZXNEXT)
+- TODO: New command (or extend CMD_INIT) to get the machine type and/or slot/bank config (ZX48, ZX128, ZXNEXT)
 - TODO: Return the slots on each getRegisters command.
 - TODO: Notification: Return the long break address (or the slots).
+- TODO: Extend CMD_WRITE_BANK to write 16K banks.
 
 
 ### 1.6.0
