@@ -46,13 +46,28 @@ export class WhatsNewContentProvider implements ContentProvider {
 				kind: ChangeLogKind.NEW, detail: {
 					message: `<br>launch.json:
 					<ul>
-					<li> "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
+					<li> - "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
 					</li>
-					<li> "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog). Please read the (sjasmplus) list file section.
+					<li> - "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog). Please read the (sjasmplus) list file section.
 					</li>
 					</ul>`
 				},
-			}
+			},
+			{
+				kind: ChangeLogKind.NEW, detail: {
+					message: `<br>Console commands:
+					<ul>
+					<li> - "md" used to do a memory dump to console.</li>
+					<li> - "ms" used to save memory contents to a file.
+					</li>
+					</ul>`
+				},
+			},
+			{
+				kind: ChangeLogKind.CHANGED, detail: {
+					message: `<br>Console command "md" renamed to "mv".`
+				},
+			},
 		]);
 		return changeLog;
 	}

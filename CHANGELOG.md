@@ -1,21 +1,31 @@
 # Changelog
 
+# 1.5.2
+- Relaunch: the memory view of the first session is now correctly closed before re-launching.
+- Commands: "-view" is now working with all commands.
+- Commands:
+	- Renamed: "md" changed to "mv".
+	- "md" used to do a memory dump to console.
+	- "ms" used to save memory contents to a file.
+
+# 1.5.1
+- Packaged for beta testing.
+
 # 1.5.0
 - New architecture for parsing list files. This will make it easier to add parsing for a new assembler.
 - Changes to launch.json:
 	- "listFiles" removed.
 	- Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters.
-	- "excludeFiles" parameter added to allow exclude certain files from association with execution addresses.
+	- "excludeFiles" parameter added to allow excluding certain files from association with execution addresses.
 	- "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog).
 	- "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
 - z88dk:
 	- Renamed "z88dkMapFile" to "mapFile".
 	- "addOffset" removed for z88dk. Use "mapFile" instead.
 	- "mapFile" is mandatory now.
-- launch.json:
 - Byte registers IXL, IXH, IYL and IYH now show additionally under "Registers 2"
 - Bugfix for a hang when Disassembly should wrap around 0xFFFF.
-- Fixed an "Unverified breakpoint" issue on windows.
+- Fixed an "Unverified breakpoint" issue on Windows.
 
 # 1.4.9
 - Fixed issue #29: Zsim: load instruction not executed properly for addresses between 0x0000 and 0x3FFF
