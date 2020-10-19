@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.5.3
+- Merged into master branch.
+- Updated 'whatsnew'.
+
 # 1.5.2
 - Relaunch: the memory view of the first session is now correctly closed before re-launching.
 - Commands: "-view" is now working with all commands.
