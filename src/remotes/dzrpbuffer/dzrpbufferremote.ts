@@ -1,9 +1,10 @@
 import {LogSocket} from '../../log';
 import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
-import {Z80RegistersClass, Z80_REG, Z80Registers, Z80RegistersStandardDecoder} from '../z80registers';
+import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Labels} from '../../labels/labels';
 
 
 
@@ -84,8 +85,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 		this.sequenceNumber=0;
 		// Instantiate the message queue
 		this.messageQueue=new Array<MessageBuffer>();
-		// Set decoder
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 	}
 
 
@@ -343,7 +342,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			const breakNumber=data[2];
-			const breakAddress=Utility.getWord(data, 3);
+			const breakAddress64k=Utility.getWord(data, 3);
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
@@ -353,8 +352,18 @@ export class DzrpBufferRemote extends DzrpRemote {
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 
-				// Handle the break
-				continueHandler({breakNumber, breakAddress, breakReasonString});
+
+				// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot. It's also not cool to call other commands from here.
+				const slotNr=breakAddress64k>>>13;
+				this.sendDzrpCmdGetTbblueReg(0x50+slotNr).then(bank => {
+					let breakAddress=breakAddress64k;
+					if (Labels.AreLongAddressesUsed())
+						breakAddress+=(bank+1)<<16;
+
+					// TODO: Hier würde es (ohne 'then') normal weitergehen:
+					// Handle the break.
+					continueHandler({breakNumber, breakAddress, breakReasonString});
+				});
 			}
 		}
 		else {
@@ -362,12 +371,12 @@ export class DzrpBufferRemote extends DzrpRemote {
 			this.stopCmdRespTimeout();
 			// Get latest sent message
 			const msg=this.messageQueue[0];
-			Utility.assert(msg);
+			Utility.assert(msg, "DZRP: Response received without request.");
 			// Get sequence number
 			const seqno=msg.buffer[4];
 			// Check response
 			if (recSeqno!=seqno) {
-				const error=Error("Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
+				const error=Error("DZRP: Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
 				LogSocket.log("Error: "+error);
 				this.emit('error', error);
 				return;
@@ -527,13 +536,18 @@ export class DzrpBufferRemote extends DzrpRemote {
 		const i=regs[25];
 		const im=regs[26];
 
+		// Get slots
+		// TODO: check if this should be done in one command sendDzrpCmdGetRegisters
+		const slots=await this.sendDzrpCmdGetSlots(); // TODO: Also change in zesarux
+
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(
 			pc, sp,
 			af, bc, de, hl,
 			ix, iy,
 			af2, bc2, de2, hl2,
-			i, r, im);
+			i, r, im,
+			slots);
 
 		return regData;
 	}
@@ -589,7 +603,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const bpAddress=bp.address;
+		const bpAddress=bp.address&0xFFFF;
 		let condition=bp.condition;
 		// Convert condition string to Buffer
 		if (!condition)

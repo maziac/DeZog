@@ -265,7 +265,7 @@ export class StepHistoryClass extends EventEmitter {
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
-			const pc=this.decoder.parsePC(line);
+			const pc=this.decoder.parsePCLong(line);
 			addresses.push(pc);
 		}
 
@@ -291,7 +291,17 @@ export class StepHistoryClass extends EventEmitter {
 	protected checkPcBreakpoints(): string|undefined {
 		Utility.assert(Z80Registers.getCache());
 		let condition;
-		const pc=Z80Registers.getPC();
+
+		// We use the callstack to get the PC long address.
+		// The Z80Register contains only the 64k address but the callstack
+		// contains the PC as well. If long addresses are used the callstack
+		// PC is coded as long address.
+		//const pc=Z80Registers.getPC();  This was used earlier.
+		const callStack=this.getCallStack();
+		const len=callStack.length;
+		Utility.assert(len>0);
+		const pc=callStack[len-1].addr;
+
 		const breakpoints=Remote.getBreakpointsArray();
 		for (const bp of breakpoints) {
 			if (bp.address==pc) {
@@ -322,7 +332,14 @@ export class StepHistoryClass extends EventEmitter {
 		// Text
 		let reason;
 		if (condition!=undefined) {
-			reason='Breakpoint hit at PC='+Utility.getHexString(pc, 4)+'h';
+			const breakAddress=pc;
+			const addrString=Utility.getHexString(breakAddress&0xFFFF, 4);
+			let bankString="";
+			const bank=breakAddress>>>16;
+			if (bank!=0)
+				bankString=" (bank="+(bank-1).toString()+")";
+			reason="Breakpoint hit @"+addrString+"h"+bankString;
+			//reason='Breakpoint hit at PC='+Utility.getHexString(pc&0xFFFF, 4)+'h';
 			if (condition!="")
 				reason+=', '+condition;
 		}
@@ -340,7 +357,7 @@ export class StepHistoryClass extends EventEmitter {
 			// Add to register cache
 			Z80Registers.setCache(line);
 			// Add to history for decoration
-			const addr=Z80Registers.getPC();
+			const addr=Z80Registers.getPCLong();
 			this.revDbgHistory.push(addr);
 		}
 		return line;
@@ -406,8 +423,8 @@ export class StepHistoryClass extends EventEmitter {
 
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
-			// Get the registers etc. from ZEsarUX
-			Z80Registers.clearCache();
+			// Get the registers etc. from the Remote
+			Remote.clearRegisters();
 			breakReasonString='Break: Reached start of instruction history.';
 		}
 

@@ -55,7 +55,7 @@ export class DisassemblyVar extends ShallowVar {
 	 */
 	public constructor(addr: number, count: number) {
 		super();
-		this.addr = addr;
+		this.addr = addr&0xFFFF;
 		this.count = count;
 	}
 

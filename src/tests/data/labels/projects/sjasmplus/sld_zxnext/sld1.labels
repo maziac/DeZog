@@ -1,0 +1,11 @@
+big_number: equ 0x0001FFFF
+main: equ 0x00008000
+stack_top: equ 0x00008111
+sub_b60: equ 0x0000A000
+sub_b65: equ 0x0000A000
+main.loop: equ 0x00008028
+sub_b70: equ 0x0000A000
+STACK_SIZE: equ 0x00000064
+stack_bottom: equ 0x00008049
+data_b60: equ 0x0000A005
+data_b65: equ 0x0000A005

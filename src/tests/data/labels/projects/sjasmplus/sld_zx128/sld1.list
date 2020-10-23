@@ -1,0 +1,111 @@
+# file opened: main.asm
+ 1    0000
+ 2    0000
+ 3    0000                  DEVICE ZXSPECTRUM128
+ 4    0000
+ 5    0000
+ 6    0000
+ 7    0000              	ORG 0x8000  ; Bank 2
+ 8    8000
+ 9    8000
+10    8000              main:
+11    8000                  ; Disable interrupts
+12    8000 F3               di
+13    8001 31 00 81         ld sp,stack_top
+14    8004 01 FD 7F         ld bc,0x7FFD
+15    8007
+16    8007                  ;jp 0x6000
+17    8007
+18    8007 3E 01            ld a,1
+18    8009 ED 79          out (c),a
+19    800B CD 00 C0         call sub_b1
+20    800E 00               nop
+21    800F
+22    800F
+23    800F 3E 03            ld a,3
+23    8011 ED 79          out (c),a
+24    8013 CD 00 C0         call sub_b3
+25    8016 00               nop
+26    8017
+27    8017              .loop:
+28    8017                  ; Bank 1
+29    8017 3E 01            ld a,1
+29    8019 ED 79          out (c),a
+30    801B CD 00 C0         call sub_b1
+31    801E 00               nop
+32    801F 00               nop
+33    8020
+34    8020                  ; Bank 3
+35    8020 3E 03            ld a,3
+35    8022 ED 79          out (c),a
+36    8024 CD 00 C0         call sub_b3
+37    8027 00               nop
+38    8028 00               nop
+39    8029
+40    8029                  ; Bank 7
+41    8029 3E 07            ld a,7
+41    802B ED 79          out (c),a
+42    802D CD 00 C0         call sub_b7
+43    8030 00               nop
+44    8031 00               nop
+45    8032
+46    8032 00           	nop
+47    8033 00           	nop
+48    8034 18 E1        	jr .loop
+49    8036
+50    8036
+51    8036              ; Stack: this area is reserved for the stack
+52    8036              STACK_SIZE: equ 100    ; in words
+53    8036
+54    8036
+55    8036              ; Reserve stack space
+56    8036 00 00            defw 0  ; WPMEM, 2
+57    8038              stack_bottom:
+58    8038 00 00 00...      defs    STACK_SIZE*2, 0
+59    8100              stack_top:
+60    8100                  ;defw 0
+61    8100 00 00            defw 0  ; WPMEM, 2
+62    8102
+63    8102
+64    8102
+65    8102
+66    8102                  MMU 3, 1, 0xC000
+67    C000              sub_b1:
+68    C000 3E 01            ld a,1
+69    C002              .plus1:
+70    C002 3E 01            ld a,1
+71    C004 C9               ret
+72    C005
+73    C005              data_b1:
+74    C005 00 01 02 03      defb 0, 1, 2, 3, 4
+74    C009 04
+75    C00A
+76    C00A
+77    C00A                  MMU 3, 3, 0xC000
+78    C000              sub_b3:
+79    C000 3E 03            ld a,3
+80    C002 3E 03            ld a,3
+81    C004 C9               ret
+82    C005
+83    C005              data_b3:
+84    C005 05 06 07 08      defb 5, 6, 7, 8, 9
+84    C009 09
+85    C00A
+86    C00A
+87    C00A
+88    C00A                  include "subfolder/sub1.asm"
+# file opened: subfolder/sub1.asm
+ 1+   C00A
+ 2+   C00A                  MMU 3, 7, 0xC000
+ 3+   C000              sub_b7:
+ 4+   C000 3E 07            ld a,7
+ 5+   C002 3E 07            ld a,7
+ 6+   C004 C9               ret
+ 7+   C005
+# file closed: subfolder/sub1.asm
+89    C005
+90    C005
+91    C005
+92    C005                  SAVESNA "sld1.sna", main
+93    C005
+# file closed: main.asm

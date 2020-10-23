@@ -1,6 +1,7 @@
-import { Utility } from '../misc/utility';
-import { Settings } from '../settings';
-import {DecodeRegisterData, RegisterData} from './decodehistinfo';
+import {Labels} from '../labels/labels';
+import {Utility} from '../misc/utility';
+import {Settings} from '../settings';
+import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
 
 
 /// The formatting (for VARIABLES) for each register is provided through a map.
@@ -40,6 +41,12 @@ export enum Z80_REG {
  * I.e. the other 1 byte register parse methods might be implemented as
  * well but it is not necessary as the default implementation will normally
  * work fine.
+ *
+ * After upgrade to 'long addresses' the registers also contain the state of the slots.
+ * Embedding it in the registers significantly simplifies the design.
+ * As these values need to be updated the same time. The values are
+ * also required at the same time to correctly calculate the long addresses.
+ * I.e. the cache data can also be stored into the history easily.
  */
 export class Z80RegistersClass {
 
@@ -59,11 +66,24 @@ export class Z80RegistersClass {
 	/// Is a simple string that needs to get parsed.
 	protected RegisterCache: RegisterData;
 
+	/// The array with the used slots (used for memory banks).
+	/// Is always defined but could be empty.
+	protected slots; // TODO: Remove, not used.
+
+
+	/// Holds the lambda function that converts an address to a long address with the given slots.
+	protected funcCreateLongAddress: (address: number, slots: number[]) => number;
+
+	/// Holds the lambda function to extract the slot from a 64k address.
+	protected funcGetSlotFromAddress: (addr: number) => number;
+
+
 	/**
-	* Called during the launchRequest to create the singleton.
-	*/
-	public static createRegisters() {
-		Z80Registers=new Z80RegistersClass();
+	 * Called during the launchRequest to create the singleton.
+     * @param slotCount The number of used slots (used for memory banks).
+	 */
+	public static createRegisters(slotCount: number) {
+		Z80Registers=new Z80RegistersClass(slotCount);
 		// Init the registers
 		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
@@ -76,6 +96,16 @@ export class Z80RegistersClass {
 	private _decoder: DecodeRegisterData;
 	public get decoder(): DecodeRegisterData {return this._decoder};
 	public set decoder(value: DecodeRegisterData) {this._decoder=value;};
+
+
+	/**
+	 * Constructor.
+     * @param slotCount The number of used slots (used for memory banks).
+	 */
+	constructor(slotCount: number) {
+		this.slots=new Array<number>(slotCount);
+	}
+
 
 	/**
 	 * Called during the launchRequest.
@@ -92,7 +122,7 @@ export class Z80RegistersClass {
 		}
 
 		// Formatting
-		Z80RegisterVarFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
+		Z80RegisterVarFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
 		Z80RegisterHoverFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerHover);
 	}
 
@@ -105,9 +135,10 @@ export class Z80RegistersClass {
 		IX: number, IY: number,
 		AF2: number, BC2: number, DE2: number, HL2: number,
 		I: number, R: number,
-		IM: number): Uint16Array {
+		IM: number,
+		slots: number[]): Uint16Array {
 		// Store data in word array to save space
-		const regData=new Uint16Array(Z80_REG.IM+1);
+		const regData=new Uint16Array(Z80_REG.IM+1+slots.length+1);
 		regData[Z80_REG.PC]=PC;
 		regData[Z80_REG.SP]=SP;
 		regData[Z80_REG.AF]=AF;
@@ -122,6 +153,12 @@ export class Z80RegistersClass {
 		regData[Z80_REG.HL2]=HL2;
 		regData[Z80_REG.IR]=(I<<8)|R;
 		regData[Z80_REG.IM]=IM;
+		// Store slot count + slots
+		let i=Z80_REG.IM+1;
+		regData[i++]=slots.length;
+		for (const slot of slots) {
+			regData[i++]=slot;
+		}
 		return regData;
 	}
 
@@ -362,79 +399,103 @@ export class Z80RegistersClass {
 		return this.getRegValue(Z80_REG.SP);
 	}
 
-}
-
-
-/**
- * The standard decoder for registers.
- * Can be used if no external remote is involved, e.g. for the internal
- * simulator.
- */
-export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 
 	/**
-	 * Parses the zesarux register output for PC etc.
-	 * @param data The output from zesarux.
-	 * @returns The value.
+	 * @returns An array with the slots or undefined if no slots are used (e.g. ZX48K)
 	 */
-	public parsePC(data: RegisterData): number {
-		return data[Z80_REG.PC];
+	public getSlots(): number[]|undefined {
+		// Use slots if a function exist to convert to long address.
+		if (this.funcCreateLongAddress!=undefined) {
+			const slots=this.decoder.parseSlots(this.RegisterCache);
+			return slots;
+		}
+		// Otherwise, don't return slots
+		return undefined;
 	}
 
-	public parseSP(data: RegisterData): number {
-		return data[Z80_REG.SP];
+
+	/**
+	 * Returns the PC as long address, i.e. together with bank info.
+	 * @returns long address e.g. 0x57A000
+	 */
+	public getPCLong(): number {
+		const pc=this.getPC();
+		const slots=this.getSlots();
+		const pcLong=this.createLongAddress(pc, slots);
+		return pcLong;
 	}
 
-	public parseAF(data: RegisterData): number {
-		return data[Z80_REG.AF];
+
+	/**
+	 * Creates a long address from the address and slots.
+	 * @param address The 64k address.
+	 * @param slots An array with the slots or undefined if no spaging is used.
+	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
+	 * If undefined: address.
+	 * I.e. a long address is always > 0xFFFF
+	 * a normal address is always <= 0xFFFF
+	 */
+	public createLongAddress(address: number, slots: number[]|undefined): number {
+		// Check for normal address
+		if (!slots)
+			return address;
+		if (!Labels.AreLongAddressesUsed())
+			return address;
+		// Calculate long address
+		const result=this.funcCreateLongAddress(address, slots);
+		return result;
 	}
 
-	public parseBC(data: RegisterData): number {
-		return data[Z80_REG.BC];
+
+	/**
+	 * Retrieves the slot index from an address.
+	 * @param addr The 16 bit address or the long address.
+	 * @return The upper bits of the address (shifted).
+	 */
+	public getSlotFromAddress(addr: number): number {
+		Utility.assert(this.funcGetSlotFromAddress);
+		const slotIndex=this.funcGetSlotFromAddress(addr&0xFFFF);
+		return slotIndex;
 	}
 
-	public parseHL(data: RegisterData): number {
-		return data[Z80_REG.HL];
+
+	/**
+	 * Retrieves the bank number from an address.
+	 * This is the same for all memory models. I.e. the part beginning
+	 * with bit 16.
+	 * @param addr The long address.
+	 * @return The corresponding bank, i.e. (addr>>>16)-1.
+	 * Returns -1 if 'addr' is not a long address.
+	 */
+	public getBankFromAddress(addr: number): number {
+		const bankPart=addr>>>16;
+		return bankPart-1;
 	}
 
-	public parseDE(data: RegisterData): number {
-		return data[Z80_REG.DE];
+	/**
+	 * Returns the long address from 64k address and bank.
+	 * the (bankü1) is simply put in the bits above the 16th bit.
+	 * @param addr The 64k address.
+	 * @param bank A bank number.
+	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).
+	 */
+	public getLongAddressWithBank(addr: number, bank: number): number {
+		const longAddr=addr+((bank+1)<<16);
+		return longAddr;
 	}
 
-	public parseIX(data: RegisterData): number {
-		return data[Z80_REG.IX];
-	}
 
-	public parseIY(data: RegisterData): number {
-		return data[Z80_REG.IY];
-	}
-
-	public parseAF2(data: RegisterData): number {
-		return data[Z80_REG.AF2];
-	}
-
-	public parseBC2(data: RegisterData): number {
-		return data[Z80_REG.BC2];
-	}
-
-	public parseHL2(data: RegisterData): number {
-		return data[Z80_REG.HL2];
-	}
-
-	public parseDE2(data: RegisterData): number {
-		return data[Z80_REG.DE2];
-	}
-
-	public parseI(data: RegisterData): number {
-		return data[Z80_REG.IR]>>>8;
-	}
-
-	public parseR(data: RegisterData): number {
-		return data[Z80_REG.IR]&0xFF;
-	}
-
-	public parseIM(data: RegisterData): number {
-		return data[Z80_REG.IM];
+	/**
+	 * Sets the lambda function used to convert back and forth to
+	 * long addresses.
+	 * @param funcCreateLongAddress Function to convert from address/slot to long address.
+	 * @param funcGetSlotFromAddress Function to extract the slot from the 64k address.
+	 */
+	public setSlotsAndBanks(
+		funcCreateLongAddress: ((address: number, slots: number[]) => number)|undefined,
+		funcGetSlotFromAddress: ((address: number) => number)|undefined) {
+		this.funcCreateLongAddress=funcCreateLongAddress!;
+		this.funcGetSlotFromAddress=funcGetSlotFromAddress!;
 	}
 
 }

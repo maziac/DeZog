@@ -1,4 +1,4 @@
-import {DecodeRegisterData, RegisterData} from '../decodehistinfo';
+import {DecodeRegisterData, RegisterData} from '../decoderegisterdata';
 import {Utility} from '../../misc/utility';
 
 
@@ -15,6 +15,14 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	/**
 	 * A Line from ZEsarUX, e.g.
 	 * "PC=812c SP=8418 AF=03ff BC=02ff HL=99a2 DE=ffff IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2c  F=SZ5H3PNC F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0 "
+	 *
+	 * A line from history:
+	 * PC=0038 SP=ff46 AF=005c BC=ffff HL=10a8 DE=5cb9 IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=5b IM1 IFF-- (PC)=f5e52a78 (SP)=10b4 MMU=80008001000a000b0004006400000001
+	 *
+	 * Note: The MMU info is added to the "normal" zesarux line by DeZog,
+	 * e.g.:
+	 * "PC=812c SP=8418 AF=03ff BC=02ff HL=99a2 DE=ffff IX=ffff IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=00 R=2c  F=SZ5H3PNC F'=-Z---P-- MEMPTR=0000 IM0 IFF-- VPS: 0 MMU=80008001000a000b0004006400000001"
+	 * please note that both lines have a different offset.
 	 */
 
 
@@ -35,13 +43,19 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	protected rIndex: number;
 	protected imIndex: number;
 
+	// Number of slots used for the 64k. 64k/slots is the used bank size.
+	protected countSlots: number;
+
 
 	/**
-	* Called during the launchRequest.
-	*/
-	constructor() {
+	 * Constructor.
+	 * Called during the launchRequest.
+	 * @param countSlots Number of slots used for the 64k.
+	 */
+	constructor(countSlots: number) {
 		super();
 
+		this.countSlots=countSlots;
 		// Indices for first time search.
 		this.pcIndex = -1;
 		this.spIndex = -1;
@@ -68,7 +82,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	 */
 	public parsePC(data: RegisterData): number {
 		// Is 2-3 times faster than a regex
-		if (this.pcIndex<1000) {
+		if (this.pcIndex<0) {
 			this.pcIndex=data.indexOf('PC=');
 			Utility.assert(this.pcIndex>=0);
 			this.pcIndex+=3;
@@ -80,7 +94,7 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 	public parseSP(data: RegisterData): number {
 		if(this.spIndex < 0) {
 			this.spIndex = data.indexOf('SP=');
-			Utility.assert(this.spIndex >= 0);
+			Utility.assert(this.spIndex>=0);
 			this.spIndex += 3;
 		}
 		const res = parseInt(data.substr(this.spIndex,4),16);
@@ -216,5 +230,32 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 		const char=data.codePointAt(this.imIndex) as number;
 		const res: number=char-48;
 		return res;
+	}
+
+	public parseSlots(data: string): number[] {
+		// Note: the mmuIndex has to be calculated everytime because
+		// the position may vary for "normal" lines and "history" lines.
+		let mmuIndex=data.indexOf('MMU=');
+		Utility.assert(mmuIndex>=0);
+		mmuIndex+=4;
+
+		let line=data.substr(mmuIndex);
+		const count=this.countSlots;
+		const slots=new Array<number>(count);
+		for (let i=0; i<count; i++) {
+			const slotPart=line.substr(0, 4);
+			let value=parseInt(slotPart, 16);
+			// Decode ZEsarUX: Bit 15 stands for ROM.
+			// I.e. $8000 and $8001 are ROM.
+			// TODO: Error in zesarux? For ZX128 a 8000 is used for ROM1 (48k rom) and 00FE for the  ROM0.
+			// Others are simply the bank number.
+			if (value>=0x8000)	// Works for both ZX128 and ZXNext
+				value=0xFE+(value&0x01);	// ROM
+			slots[i]=value;
+			// Next
+			line=line.substr(4);
+		}
+
+		return slots;
 	}
 }

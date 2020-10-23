@@ -74,6 +74,14 @@ export class LabelParserBase {
 	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
 	protected excludedFileStackIndex: number;
 
+	/// The used bank size. Only set if the assembler+parser supports
+	/// long addresses. Then it holds the used bank size (otherwise 0).
+	/// Is used to tell if the Labels are long or not and for internal
+	/// conversion if target has a different memory model.
+	/// Typical value: 0, 8192 or 16384.
+	protected bankSize: number;
+
+
 	// Constructor.
 	public constructor(
 		fileLineNrs: Map<number, SourceFileEntry>,
@@ -94,6 +102,7 @@ export class LabelParserBase {
 		this.watchPointLines=watchPointLines;
 		this.assertLines=assertLines;
 		this.logPointLines=logPointLines;
+		this.bankSize=0;
 	}
 
 
@@ -176,11 +185,39 @@ export class LabelParserBase {
 
 
 	/**
+	 * Loops all entries of the listFile array and parses for the (include) file
+	 * names and line numbers.
+	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
+	 * beginning of the list file contains information that is parsed differently.
+	 */
+	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
+		// Loop all lines
+		const count=this.listFile.length;
+		for (let listFileNumber=startLineNr; listFileNumber<count; listFileNumber++) {
+			const entry=this.listFile[listFileNumber];
+			const line=entry.line;
+			if (line.length==0)
+				continue;
+			// Let it parse
+			this.currentFileEntry=entry;
+			this.parseFileAndLineNumber(line);
+			// Associate with right file
+			const index=this.includeFileStack.length-1;
+			if (index<0)
+				continue;	// No main file found so far
+				//throw Error("File parsing error: no main file.");
+			// Associate with right file
+			this.associateSourceFileName();
+		}
+	}
+
+
+	/**
 	 * Parses the line for comments with WPMEM, ASSERT or LOGPOINT.
 	 * @param address The address that correspondents to the line.
 	 * @param fullLine The line of the list file as string.
 	 */
-	protected parseWpmemAssertLogpoint(address:number|undefined, fullLine: string) {
+	protected parseWpmemAssertLogpoint(address: number|undefined, fullLine: string) {
 		// Extract just comment
 		const comment=this.getComment(fullLine);
 
@@ -225,34 +262,6 @@ export class LabelParserBase {
 			return "";	// No comment
 		const comment=line.substr(i+1);
 		return comment;
-	}
-
-
-	/**
-	 * Loops all entries of the listFile array and parses for the (include) file
-	 * names and line numbers.
-	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
-	 * beginning of the list file contains information that is parsed differently.
-	 */
-	protected parseAllFilesAndLineNumbers(startLineNr = 0) {
-		// Loop all lines
-		const count=this.listFile.length;
-		for (let listFileNumber=startLineNr; listFileNumber<count; listFileNumber++) {
-			const entry=this.listFile[listFileNumber];
-			const line=entry.line;
-			if (line.length==0)
-				continue;
-			// Let it parse
-			this.currentFileEntry=entry;
-			this.parseFileAndLineNumber(line);
-			// Associate with right file
-			const index=this.includeFileStack.length-1;
-			if (index<0)
-				continue;	// No main file found so far
-				//throw Error("File parsing error: no main file.");
-			// Associate with right file
-			this.associateSourceFileName();
-		}
 	}
 
 
@@ -339,7 +348,7 @@ export class LabelParserBase {
 
 			// last address entry wins:
 			for (let i=0; i<entry.size; i++) {
-				const addr=(entry.addr+i)&0xFFFF;
+				const addr=(i==0) ? entry.addr : (entry.addr+i)&0xFFFF;	// Don't mask entry addr if size is 1, i.e. for sjasmplus sld allow higher addresses
 				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
 			}
 
@@ -349,7 +358,7 @@ export class LabelParserBase {
 			}
 
 			// Get array
-			const lineArray=this.lineArrays.get(entry.fileName)||[];
+			const lineArray=this.lineArrays.get(entry.fileName)||[]; // TODO: || [] is superfluous
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
@@ -431,8 +440,8 @@ export class LabelParserBase {
 	 */
 	protected addLabelForNumber(value: number, label: string, labelType=LabelType.GLOBAL) {
 		// Safety check
-		if (value<0||value>=0x10000)
-			return;
+		//if (value<0||value>=0x10000)
+		//	return;  Is allowed for EQU
 
 		switch (labelType) {
 			case LabelType.NORMAL:

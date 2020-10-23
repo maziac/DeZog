@@ -249,7 +249,7 @@ export class Z80UnitTests {
 			Decoration.clearAllDecorations();
 
 			// Create the registers
-			Z80RegistersClass.createRegisters();
+			Z80RegistersClass.createRegisters(0);
 
 			// Start emulator.
 			RemoteFactory.createRemote(configuration.remoteType);
@@ -722,7 +722,7 @@ export class Z80UnitTests {
 					*/
 					// Init
 					StepHistory.clear();
-					Z80Registers.clearCache();
+					Remote.clearRegisters();
 					Remote.clearCallStack();
 
 					// Run or Debug

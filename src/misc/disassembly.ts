@@ -4,6 +4,8 @@ import {Format} from "../disassembler/format";
 import {Disassembler} from "../disassembler/disasm";
 import {Utility} from './utility';
 import {Settings} from '../settings';
+import {Z80Registers} from "../remotes/z80registers";
+import {Labels} from "../labels/labels";
 
 
 
@@ -120,8 +122,8 @@ export class DisassemblyClass extends Disassembler {
 		// Write new memory
 		this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
 		for (const block of mem)
-			this.setMemory(block.address, block.data);
-		this.setAddressQueue(addresses);
+			this.setMemory(block.address&0xFFFF, block.data);
+		this.setAddressQueue(addresses.map(addr => addr&0xFFFF));
 	}
 
 
@@ -138,9 +140,15 @@ export class DisassemblyClass extends Disassembler {
 		let lineNr=0;
 		this.addrLineMap.clear();
 		this.lineAddrArray.length=0;
+		let slots;
+		if(Labels.AreLongAddressesUsed())
+			slots=Z80Registers.getSlots();
 		for (const line of this.disassembledLines) {
-			const address=parseInt(line, 16);
+			let address=parseInt(line, 16);
 			if (!isNaN(address)) {
+				// Convert to long address
+				address=Z80Registers.createLongAddress(address, slots);
+				// Add to arrays
 				this.addrLineMap.set(address, lineNr);
 				while (this.lineAddrArray.length<=lineNr)
 					this.lineAddrArray.push(address);

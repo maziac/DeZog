@@ -1,6 +1,9 @@
 import {Utility} from '../misc/utility';
+import {MemoryModel} from '../remotes/Paging/memorymodel';
 import {Remote} from '../remotes/remotefactory';
+import {Z80Registers} from '../remotes/z80registers';
 import {SjasmplusLabelParser} from './sjasmpluslabelparser';
+import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 
@@ -30,22 +33,17 @@ export interface ListFileLine extends SourceFileEntry {
 /**
  * Calculation of the labels from the input list and labels file.
  *
- * There is no association between labels/files and memory banks. I.e. it is not
- * possible to load 2 disassemblies for the same area, e.g. for ROM0 and ROM1.
- * The last one would win.
+ * For "normal" list files the labels are 64k addresses.
+ * Special assemblers (e.g. sjasmplus) is also able to generate label
+ * information that includes the used bank number as well.
  *
- * This is because it is not clear/easy to distinguish the bank for a label.
- * Several other problem areas would need to be taken into account:
- * - breakpoints for certain memory banks
- * - should a label be displayed even if another memory bank is currently selected (could be valid).
- * - ...
- * Also the benefit is low. So I decided to stay with a memory bank agnostic implementation:
- * All labels can cover all banks. It is not possible to load 2 disassemblies for the same area for different banks.
+ * DeZog is capable of handling both. If banking information should be used as
+ * well then the bankSize field is set to something different than 0.
+ * This has to be set by the list file parser.
+ * Furthermore the list file parser has to provide these 'long addresses'
+ * in a special format.
+ * Please look at SjasmplusSldLabelParser as an example.
  *
- * This also implies that there is no automatic loading e.g. for the ROM. The user
- * has to supply the wanted list file e.g. for the ROM and needs to decide which ROM he wants to see.
- *
- * (Note: this applies only to the labels/list files, the disassembly shown in the VARIABLEs area is always the one from the current bank.)
  */
 export class LabelsClass {
 
@@ -62,7 +60,7 @@ export class LabelsClass {
 	protected labelsForNumber=new Array<any>();
 
 	/// Map with all labels (from labels file) and corresponding values.
-	protected numberForLabel=new Map<string, number>();//ValueLocation>();
+	protected numberForLabel=new Map<string, number>();
 
 	/// Map with label / file location association. Only used in unit tests to
 	/// point to the unit tests. Direct relationship: The line number of the label is returned.
@@ -81,6 +79,14 @@ export class LabelsClass {
 
 	/// From the Settings.
 	protected smallValuesMaximum: number;
+
+
+	/// The used bank size. Only set if the assembler+parser supports
+	/// long addresses. Then it holds the used bank size (otherwise 0).
+	/// Is used to tell if the Labels are long or not and for internal
+	/// conversion if target has a different memory model.
+	/// Typical value: 0, 8192 or 16384.
+	protected bankSize: number;
 
 
 	// Constructor.
@@ -102,6 +108,16 @@ export class LabelsClass {
 		this.assertLines.length=0;
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
+		this.bankSize=0;
+	}
+
+
+	/**
+	 * Returns true if long addresses have been used.
+	 * I.e. if bankSize != 0.
+	 */
+	public AreLongAddressesUsed() {
+		return this.bankSize!=0;
 	}
 
 
@@ -126,23 +142,34 @@ export class LabelsClass {
 	public readListFiles(mainConfig: any) {
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
-			const parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.sjasmplus)
-				parser.loadAsmListFile(listFile);
+			// For sjasmplus it is checked if a list file should be parsed or an sld file
+			for (const config of mainConfig.sjasmplus) {
+				let parser;
+				if(SjasmplusSldLabelParser.IsSldFile(config.path)) {
+					// Parse SLD file and list file
+					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+				}
+				else {
+					// Parse just list file
+					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+				}
+				parser.loadAsmListFile(config);
+				this.bankSize=parser.bankSize;
+			}
 		}
 
 		// z80asm
 		if (mainConfig.z80asm) {
 			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z80asm)
-				parser.loadAsmListFile(listFile);
+			for (const config of mainConfig.z80asm)
+				parser.loadAsmListFile(config);
 		}
 
 		// z88dk
 		if (mainConfig.z88dk) {
 			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
-			for (const listFile of mainConfig.z88dk)
-				parser.loadAsmListFile(listFile);
+			for (const config of mainConfig.z88dk)
+				parser.loadAsmListFile(config);
 		}
 
 		// Add new assemblers here ...
@@ -208,8 +235,13 @@ export class LabelsClass {
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
 	public getLabelsForNumber(number: number, regsAsWell=false): Array<string> {
+		/*
 		if (number<=this.smallValuesMaximum||number>0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
+		}
+		*/
+		if (number<=this.smallValuesMaximum) {
+			return [];	// E.g. ignore numbers/labels < e.g. 513
 		}
 
 		let names;
@@ -332,6 +364,7 @@ export class LabelsClass {
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
+		// Address file conversion
 		const entry=this.fileLineNrs.get(address);
 		if (!entry)
 			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
@@ -359,6 +392,97 @@ export class LabelsClass {
 		return addr;
 	}
 
+
+	/**
+	 * Checks if the target's memory model matches the model used during parsing.
+	 */
+	public convertLabelsTo(memModel: MemoryModel) {
+		// Adjust labels to target model (if necessary at all)
+
+		// Is a conversion necessary / possible
+		/*
+		|             | Target 64k | Target long |
+		|-------------|------------|-------------|
+		| Labels 64k  |    OK      |    OK       |
+		| Labels long | Not OK 1)  | Depends 2)  |
+		*/
+		if (this.bankSize==0)
+			return;	// No long labels used
+
+		/*
+		1) Eg. Load a ZXNext or ZX128 program to a ZX48 target.
+		In most cases makes no sense. But if it is a small program, e.g. one that fits into a ZX48, it could be done.
+		Conclusion: Either throw an error or change all label addresses to 64k addresses. => Convert all to 64k.
+
+		2)
+		a) If bank size is the same for target and labels then this is OK.
+		b) If not equal e.g. a program assembled for ZX128 (bank size 16k) would not work with a ZXNext (bank size 8k).
+		Solution: Throw exception or change all labels from one model to the other. ZX128 to ZXNext would be possible, vice versa not.
+		=> Change all labels.
+		*/
+
+
+		// Note: If bank size is 0 no banking is used and labels are converted to 64k.
+		const targetBankSize=memModel.getBankSize();
+		this.convertLabelsToBankSize(targetBankSize);
+	}
+
+
+	/**
+	 * Convert all file/line <-> address association to a new bank size.
+	 * The main use case is to convert ZX128 banking into ZXNext banking.
+	 * @param bankSize If bank size is 0 no banking is used and labels are converted to 64k. Otherwise the labels are
+	 * converted from the old bank size to the new one.
+	 */
+	protected convertLabelsToBankSize(targetBankSize: number) {
+		/*
+		 Need to adjust the 2 structures:
+		 - Associate address with file/line:
+		   this.fileLineNrs=new Map<number, SourceFileEntry>();
+		 - Associate file/line with an address:
+		   this.lineArrays=new Map<string, Array<number>>();
+		*/
+		const bankFactor=(targetBankSize==0) ? 0 : this.bankSize/targetBankSize;
+
+		// Address with file/line:
+		const newFileLines=new Map<number, SourceFileEntry>();
+		for (let [addr, sourceEntry] of this.fileLineNrs) {
+			// Check if no bank used
+			if (targetBankSize==0) {
+				addr&=0xFFFF;
+			}
+			else {
+				// Change banks
+				const origBank=Z80Registers.getBankFromAddress(addr);
+				const newBank=origBank*bankFactor;
+				addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
+			}
+			// Store
+			newFileLines.set(addr, sourceEntry);
+		}
+		// Exchange old with new
+		this.fileLineNrs=newFileLines;
+
+		// File/line with address:
+		for (const [, lineArray] of this.lineArrays) {
+			const count=lineArray.length;
+			for (let i=0; i<count; i++) {
+				let addr=lineArray[i];
+				// Check if no bank used
+				if (targetBankSize==0) {
+					addr&=0xFFFF;
+				}
+				else {
+					// Change banks
+					const origBank=Z80Registers.getBankFromAddress(addr);
+					const newBank=origBank*bankFactor;
+					addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
+				}
+				// Store
+				lineArray[i]=addr;
+			}
+		}
+	}
 }
 
 

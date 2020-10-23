@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import { ZesaruxRemote } from '../remotes/zesarux/zesaruxremote';
 import { Z80RegistersClass } from '../remotes/z80registers';
+import {Settings} from '../settings';
 
 
 suite('ZesaruxEmulator', () => {
@@ -9,6 +10,9 @@ suite('ZesaruxEmulator', () => {
 	let emul: any;
 
 	setup(() => {
+		const cfg: any={
+		};
+		Settings.Init(cfg, '');
 		Z80RegistersClass.Init();
 	});
 

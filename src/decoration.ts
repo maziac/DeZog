@@ -356,7 +356,7 @@ export class DecorationClass {
 		//fileMap.clear();
 		coveredAddresses.forEach(addr => {
 			// Get file location for address
-			let location=Labels.getFileAndLineForAddress(addr);
+			let location=Labels.getFileAndLineForAddress(addr); // TODO: Does not work with sld
 			let filename = location.fileName;
 			if (filename.length==0) {
 				// No file found, so remember address
@@ -555,7 +555,7 @@ export class DecorationClass {
 	 * @param addr The address to convert.
 	 */
 	protected getFileAndLineForAddress(addr: number): SourceFileEntry {
-		const location=Labels.getFileAndLineForAddress(addr);
+		const location=Labels.getFileAndLineForAddress(addr);// TODO: Does not work with sld
 		if (location.fileName.length==0) {
 			// Try disasm file
 			const lineNr=Disassembly.getLineForAddress(addr);

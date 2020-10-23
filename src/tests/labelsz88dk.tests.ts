@@ -21,8 +21,9 @@ suite('Labels (z88dk)', () => {
 			const config={
 				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					srcDirs: [""],
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					srcDirs: [""],	// Sources mode
+					excludeFiles: []
 				}]
 			};
 			Labels.readListFiles(config);
@@ -50,8 +51,9 @@ suite('Labels (z88dk)', () => {
 			const config={
 				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					srcDirs: [""],
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					srcDirs: [""],	// Sources mode
+					excludeFiles: []
 				}]
 			};
 			Labels.readListFiles(config);
@@ -70,8 +72,9 @@ suite('Labels (z88dk)', () => {
 			const config={
 				z88dk: [{
 					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					srcDirs: [""],
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					srcDirs: [""],	// Sources mode
+					excludeFiles: []
 				}]
 			};
 			Labels.readListFiles(config);
@@ -93,7 +96,8 @@ suite('Labels (z88dk)', () => {
 					z88dk: [{
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						excludeFiles: []
 					}]
 				};
 				Labels.readListFiles(config);
@@ -193,9 +197,10 @@ suite('Labels (z88dk)', () => {
 				const config={
 					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
 					}]
 				};
 				Labels.readListFiles(config);
@@ -233,9 +238,10 @@ suite('Labels (z88dk)', () => {
 				const config={
 					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
 					}]
 				};
 				Labels.readListFiles(config);
@@ -264,9 +270,10 @@ suite('Labels (z88dk)', () => {
 				const config={
 					z88dk: [{
 						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-						srcDirs: [""],	// Sources-Mode
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						srcDirs: [""],	// Sources mode
+						excludeFiles: []
 					}]
 				};
 				Labels.readListFiles(config);
@@ -307,9 +314,10 @@ suite('Labels (z88dk)', () => {
 		const config={
 			z88dk: [{
 				path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-				srcDirs: [""],	// Sources-Mode
 				mainFile: "main.asm",
-				mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+				mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+				srcDirs: [""],	// Sources mode
+				excludeFiles: []
 			}]
 		};
 

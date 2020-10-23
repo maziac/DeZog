@@ -177,7 +177,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 		let index=startIndex;
 		for (let i=0; i<=count; i++) {
 			const line=this.history[index];
-			const pc=Z80Registers.decoder.parsePC(line);
+			const pc=Z80Registers.decoder.parsePCLong(line);
 			addresses.push(pc);
 			index--;
 			if (index<0)
@@ -195,7 +195,7 @@ export class ZxSimCpuHistory extends CpuHistoryClass {
 			if (index>=len)
 				index=0;
 			const line=this.history[index];
-			const pc=Z80Registers.decoder.parsePC(line);
+			const pc=Z80Registers.decoder.parsePCLong(line);
 			addresses.unshift(pc);
 		}
 		let convertedStartIndex=index;

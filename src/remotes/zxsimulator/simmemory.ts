@@ -4,41 +4,43 @@ import {Utility} from '../../misc/utility';
 
 
 
+
 /**
- * Represents the memory, banking and slots of a ZX Spectrum
- * and ZX Next.
- *
- * For performance reasons the memory is arranged as 64k continuous block.
- * Apart from this another memory exists with 256 Banks of 8k.
- * The banking is realized as mem copies between these 2 memories.
+ * Watchpoint class used by 'watchPointMemory'.
  */
-export class ZxMemory {
-	// The bank size.
-	public static MEMORY_BANK_SIZE=0x2000;
+interface SimWatchpoint {
+	// The way of access, e.g. read='r', write='w', readwrite='rw'
+	access: string;
+	// The additional condition. Empty string or undefined if no condition.
+	condition: string|undefined;
+}
 
-	// The number of banks.
-	public static NUMBER_OF_BANKS=256;	// To include also the "ROMs". 224 banks in reality
 
-	// Screen height
-	public static SCREEN_HEIGHT=192;
-
-	// Screen width
-	public static SCREEN_WIDTH=256;
-
-	// The memory banks in one big block.
-	protected AllBanksRam: Uint8Array;
+/**
+ * Represents the simulated memory.
+ * It is a base class to allow memory paging etc.
+ * The simulated memory always works with slots although they might not be visible
+ * to the outside.
+ * I.e. the ZX48K is built of 4 slots per 16K. 1rst is ROM the other 3 are RAM.
+ * To the outside is does not show any of these slots.
+ * But for configuration (what is ROM/RAM) it is required.
+ */
+export class SimulatedMemory {
+	// The memory in one big block.
+	// If banking is used in a derived class this array will extend 64k.
+	protected memoryData: Uint8Array;
 
 	// Holds the slot assignments to the banks.
-	// Note: I use 254 for ROM 0-0x1FFF and 255 for ROM 0x2000-0x3FFF.
-	// The ZXNext defines both at 255.
-	protected slots: number[]=[254, 255, 10, 11, 4, 5, 0, 1];
+	protected slots: number[];
 
-	// For each bank this array tels if it is ROM.
+	// For each bank this array tells if it is ROM.
 	protected romBanks: boolean[];
 
-	// The bank used to display the ULA screen.
-	// This is normally bank 5 but could be changed to bank7 in ZX128.
-	protected ulaScreenBank: number;
+	// The used bank size.
+	protected bankSize: number;
+
+	// The number of bits to shift to get the slot from the address
+	protected shiftCount: number;
 
 	// Visual memory: shows the access as an image.
 	// The image is just 1 pixel high.
@@ -53,17 +55,61 @@ export class ZxMemory {
 	protected VISUAL_MEM_COL_PROG=3;
 
 
-	/// Constructor.
-	constructor() {
-		this.ulaScreenBank=5*2;
-		// Create RAM
-		this.AllBanksRam=new Uint8Array(ZxMemory.NUMBER_OF_BANKS*ZxMemory.MEMORY_BANK_SIZE);
-		// No ROM at start
-		this.romBanks=new Array<boolean>(ZxMemory.NUMBER_OF_BANKS);	// All initialized to false.
-		this.romBanks.fill(false);
+
+	// Flag that is set if a watchpoint was hot.
+	// Has to be reset manually before the next turn.
+	public watchpointHit: boolean;
+
+	// If watchpointHit was set the address where the hit occurred.
+	// -1 if no hit.
+	public hitAddress: number;
+
+	// The kind of access, 'r'ead or 'w'rite.
+	public hitAccess: string;
+
+	// An array of 0-0xFFFF entries, one for each address.
+	// If an address has no watchpoint it is undefined.
+	// If it has it points to a SimWatchpoint.
+	// Note: as watchpoints are areas, several addresses might share the same SimWatchpoint.
+	protected watchPointMemory: Array<SimWatchpoint|undefined>;
+
+
+	/**
+	 * Constructor.
+	 * Configures the slot and bank count.
+	 * @param slotCount Number of slots.
+	 * @param bankCount Number of banks.
+	 */
+	constructor(slotCount: number, bankCount: number) {
+		Utility.assert(bankCount>=slotCount);
 		// Create visual memory
 		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
 		this.clearVisualMemory();
+		// The "real" memory
+		this.bankSize=0x10000/slotCount;
+		// Create RAM
+		this.memoryData=new Uint8Array(bankCount*this.bankSize);
+		// No ROM at start
+		this.romBanks=new Array<boolean>(bankCount);	// All initialized to false.
+		this.romBanks.fill(false);
+
+		// Calculate number of bits to shift to get the slot index from the address.
+		let sc=slotCount;
+		let bits=0;
+		while (sc>1) {
+			bits++;
+			sc/=2;
+		}
+		this.shiftCount=16-bits;
+		// Associate banks with slots
+		this.slots=new Array<number>(slotCount);
+		for (let i=0; i<slotCount; i++)
+			this.slots[i]=i;
+
+		// Breakpoints
+		this.clearHit();
+		// Create watchpoint area
+		this.watchPointMemory=new Array<SimWatchpoint|undefined>(0x10000)
 	}
 
 
@@ -72,16 +118,16 @@ export class ZxMemory {
 	 * So far only used by unit tests.
 	 */
 	public clear() {
-		this.AllBanksRam.fill(0);
+		this.memoryData.fill(0);
 	}
 
 
 	/**
-	 * Sets the bank to use for the screen display.
-	 * @param bankIndex The bank to use. Note that this is an 8k bank, not 16k.
+	 * Returns the memory used in all banks.
+	 * @returns this.memoryData
 	 */
-	public setUlaScreenBank(bankIndex: number) {
-		this.ulaScreenBank=bankIndex;
+	public getMemoryData(): Uint8Array {
+		return this.memoryData;
 	}
 
 
@@ -93,10 +139,11 @@ export class ZxMemory {
 	 * @param bank The bank number, e.g. 0xFE.
 	 * @param enableRom true to turn bank into ROM, false to turn it into RAM.
 	 */
+	/*
 	public setRomBank(bank: number, enableRom: boolean) {
 		this.romBanks[bank]=enableRom;
 	}
-
+	*/
 
 	/**
 	 * Returns the size the serialized object would consume.
@@ -122,7 +169,7 @@ export class ZxMemory {
 			memBuffer.write8(bank);
 
 		// Get RAM
-		memBuffer.writeArrayBuffer(this.AllBanksRam);
+		memBuffer.writeArrayBuffer(this.memoryData);
 	}
 
 
@@ -138,35 +185,98 @@ export class ZxMemory {
 
 		// Create memory banks
 		const buffer=memBuffer.readArrayBuffer();
-		Utility.assert(buffer.length==this.AllBanksRam.byteLength);
-		this.AllBanksRam.set(buffer);
+		Utility.assert(buffer.length==this.memoryData.byteLength);
+		this.memoryData.set(buffer);
 
 		// Clear visual memory
 		this.clearVisualMemory();
 	}
 
 
+	/**
+	* Adds a watchpoint address range.
+	* @param address The watchpoint address. 0x0000-0xFFFF.
+	* @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	* I.e. you can watch whole memory areas.
+	* @param condition The watchpoint condition as string. If there is no condition
+	* 'condition' may be undefined or an empty string ''.
+	*/
+	public setWatchpoint(address: number, size: number, access: string, condition?: string) {
+		const wp: SimWatchpoint={access, condition};
+		// Set area
+		for (let i=0; i<size; i++) {
+			this.watchPointMemory[address&0xFFFF]=wp;
+			address++;
+		}
+	}
+
+
+	/**
+	 * Removes a watchpoint address range.
+	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 */
+	public removeWatchpoint(address: number, size: number) {
+		// Set area
+		for (let i=0; i<size; i++) {
+			this.watchPointMemory[address&0xFFFF]=undefined;
+			address++;
+		}
+	}
+
+
+	/**
+	 * Clears the hit flag and the arrays.
+	 */
+	public clearHit() {
+		this.hitAddress=-1;
+		this.hitAccess='';
+	}
+
+
 	// Read 1 byte.
 	// This is used by the Z80 CPU.
 	public read8(addr: number): number {
+		// Check for watchpoint access
+		const wp=this.watchPointMemory[addr];
+		if (wp) {
+			// Check access
+			if ((this.hitAddress<0)&&wp.access.includes('r')) {
+				// Read access
+				this.hitAddress=addr;
+				this.hitAccess='r';
+			}
+		}
+
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
 		// Read
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
-		const value=this.AllBanksRam[ramAddr];
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
+		const value=this.memoryData[ramAddr];
 		return value;
 	}
 
 	// Write 1 byte.
 	// This is used by the Z80 CPU.
 	public write8(addr: number, val: number) {
+		// Check for watchpoint access
+		const wp=this.watchPointMemory[addr];
+		if (wp) {
+			// Check access
+			if ((this.hitAddress<0)&&wp.access.includes('w')) {
+				// Write access
+				this.hitAddress=addr;
+				this.hitAccess='w';
+			}
+		}
+
 		// Visual memory
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
 
 		// Convert to bank
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
 
 		// Don't write if ROM
@@ -174,19 +284,19 @@ export class ZxMemory {
 			return;
 
 		// Convert to flat address
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));
 		// Write
-		this.AllBanksRam[ramAddr]=val;
+		this.memoryData[ramAddr]=val;
 	}
 
 
 	// Reads one byte.
 	// This is **not** used by the Z80 CPU.
 	public getMemory8(addr: number): number {
-		const slotIndex=addr>>>13;
+		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*0x2000+(addr&0x1FFF);	// Convert to flat address
-		const value=this.AllBanksRam[ramAddr];
+		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
+		const value=this.memoryData[ramAddr];
 		return value;
 	}
 
@@ -194,23 +304,23 @@ export class ZxMemory {
 	// This is **not** used by the Z80 CPU.
 	public getMemory16(addr: number): number {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
-		const mem=this.AllBanksRam;
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+		const mem=this.memoryData;
 		let value=mem[ramAddr];
 		// Second byte
 		address++;
-		if (address<0x2000) {
+		if (address<this.bankSize) {
 			// No overflow, same bank, normal case
 			ramAddr++;
 		}
 		else {
 			// Overflow
-			slotIndex=(slotIndex+1)&0x07;
+			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*0x2000;	// Convert to flat address
+			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
 		value+=mem[ramAddr]<<8;
 		return value;
@@ -220,14 +330,14 @@ export class ZxMemory {
 	// This is **not** used by the Z80 CPU.
 	public getMemory32(addr: number): number {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
-		const mem=this.AllBanksRam;
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+		const mem=this.memoryData;
 		let value=mem[ramAddr];
 		// Second byte
-		if (address<=0x1FFD) {  // 0x2000-3
+		if (address<=this.bankSize-3) {  // E.g. 0x2000-3
 			// No overflow, same bank, normal case
 			value+=mem[++ramAddr]<<8;
 			value+=mem[++ramAddr]<<16;
@@ -238,10 +348,10 @@ export class ZxMemory {
 			let mult=256;
 			for (let i=3; i>0; i--) {
 				addr++;
-				address=addr&0x1FFF;
-				slotIndex=(addr>>>13)&0x07;
+				address=addr&(this.bankSize-1);
+				slotIndex=(addr&0xFFFF)>>>this.shiftCount;
 				bankNr=this.slots[slotIndex];
-				ramAddr=bankNr*0x2000+address;	// Convert to flat address
+				ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 				value+=mem[ramAddr]*mult;
 				// Next
 				mult*=256;
@@ -255,11 +365,11 @@ export class ZxMemory {
 	// This is **not** used by the Z80 CPU.
 	public setMemory8(addr: number, val: number) {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
-		const mem=this.AllBanksRam;
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+		const mem=this.memoryData;
 		mem[ramAddr]=val&0xFF;
 	}
 
@@ -268,11 +378,11 @@ export class ZxMemory {
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
 		// First byte
-		let address=addr&0x1FFF;
-		let slotIndex=addr>>>13;
+		let address=addr&(this.bankSize-1);
+		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*0x2000+address;	// Convert to flat address
-		const mem=this.AllBanksRam;
+		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+		const mem=this.memoryData;
 		mem[ramAddr]=val&0xFF;
 		// Second byte
 		address++;
@@ -282,11 +392,29 @@ export class ZxMemory {
 		}
 		else {
 			// Overflow
-			slotIndex=(slotIndex+1)&0x07;
+			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
 			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*0x2000;	// Convert to flat address
+			ramAddr=bankNr*this.bankSize;	// Convert to flat address
 		}
 		mem[ramAddr]=val>>>8;
+	}
+
+	/**
+	 * Write to memoryData direcly.
+	 * Is e.g. used during SNA / NEX file loading.
+	 * @param offset Offset into the memData. I.e. can be bigger than 0x10000.
+	 * @param data The data to write.
+	 */
+	public writeMemoryData(offset: number, data: Uint8Array) {
+		// Check size
+		let size=data.length;
+		if (offset+size>this.memoryData.length)
+			size=this.memoryData.length-offset;
+		if (size<=0)
+			return;	// Nothing to write
+		// Copy
+		const data2=data.slice(0, size);
+		this.memoryData.set(data2, offset);
 	}
 
 
@@ -323,8 +451,9 @@ export class ZxMemory {
 	/**
 	 * Returns the slots array.
 	 */
-	public getSlots(): number[] {
-		return this.slots;
+	public getSlots(): number[]|undefined {
+		//return this.slots;
+		return undefined;
 	}
 
 	/**
@@ -337,17 +466,17 @@ export class ZxMemory {
 		let offset=0;
 		// The block may span several banks.
 		let addr=startAddress;
-		const mem=this.AllBanksRam;
+		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=(addr>>>13)&0x07;
-			const bankAddr=addr&(ZxMemory.MEMORY_BANK_SIZE-1);
+			const slot=(addr&0xFFFF)>>>this.shiftCount;
+			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
-			let ramAddr=bank*ZxMemory.MEMORY_BANK_SIZE+bankAddr;
+			let ramAddr=bank*this.bankSize+bankAddr;
 			// Get block within one bank
 			let blockEnd=bankAddr+size;
-			if (blockEnd>ZxMemory.MEMORY_BANK_SIZE)
-				blockEnd=ZxMemory.MEMORY_BANK_SIZE;
+			if (blockEnd>this.bankSize)
+				blockEnd=this.bankSize;
 			const partBlockSize=blockEnd-bankAddr;
 			// Copy partial block
 			const partBlock=mem.subarray(ramAddr, ramAddr+partBlockSize);
@@ -375,17 +504,17 @@ export class ZxMemory {
 		// The block may span several banks.
 		let addr=startAddress;
 		let size=totalBlock.length;
-		const mem=this.AllBanksRam;
+		const mem=this.memoryData;
 		while (size>0) {
 			// Get memory bank
-			const slot=(addr>>>13)&0x07;
-			const bankAddr=addr&(ZxMemory.MEMORY_BANK_SIZE-1);
+			const slot=(addr&0xFFFF)>>>this.shiftCount;
+			const bankAddr=addr&(this.bankSize-1);
 			const bank=this.slots[slot];
-			let ramAddr=bank*ZxMemory.MEMORY_BANK_SIZE+bankAddr;
+			let ramAddr=bank*this.bankSize+bankAddr;
 			// Get block within one bank
 			let blockEnd=bankAddr+size;
-			if (blockEnd>ZxMemory.MEMORY_BANK_SIZE)
-				blockEnd=ZxMemory.MEMORY_BANK_SIZE;
+			if (blockEnd>this.bankSize)
+				blockEnd=this.bankSize;
 			const partBlockSize=blockEnd-bankAddr;
 			// Copy partial block
 			const partBlock=totalBlock.subarray(offset, offset+partBlockSize);
@@ -406,9 +535,9 @@ export class ZxMemory {
 	 * @param block The block to write.
 	 */
 	public writeBank(bank: number, block: Buffer|Uint8Array) {
-		Utility.assert(block.length==ZxMemory.MEMORY_BANK_SIZE);
-		let ramAddr=bank*ZxMemory.MEMORY_BANK_SIZE;
-		this.AllBanksRam.set(block, ramAddr);
+		Utility.assert(block.length==this.bankSize);
+		let ramAddr=bank*this.bankSize;
+		this.memoryData.set(block, ramAddr);
 	}
 
 
@@ -439,105 +568,5 @@ export class ZxMemory {
 		return gifBuffer;
 	}
 
-
-	/**
-	 * Converts a ZX Spectrum ULA screen into a gif image.
-	 * @returns The screen as a gif buffer.
-	 */
-	public getUlaScreen(): number[] {
-		// Create pixels from the screen memory
-		const pixels=this.createPixels();
-		// Get ZX palette
-		const zxPalette=ZxMemory.getZxPalette();
-		// Convert to gif
-		const gifBuffer=ImageConvert.createGifFromArray(ZxMemory.SCREEN_WIDTH, ZxMemory.SCREEN_HEIGHT, pixels, zxPalette);
-		// Return
-		return gifBuffer;
-	}
-
-
-	/**
-	 * Converts the screen pixels, the bits in the bytes, into pixels
-	 * with a color index.
-	 */
-	protected createPixels(): Array<number> {
-		//const screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+0x4000);
-		// Find memory to display
-		const screenMem=this.AllBanksRam;
-		const screenBaseAddr=this.ulaScreenBank*ZxMemory.MEMORY_BANK_SIZE;
-		const colorStart=screenBaseAddr+ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH/8;
-
-		// Create pixels memory
-		const pixels=new Array<number>(ZxMemory.SCREEN_HEIGHT*ZxMemory.SCREEN_WIDTH);
-		let pixelIndex=0;
-		let inIndex=0;
-		let colorIndex=0;
-
-		// One line after the other
-		for (let y=0; y<ZxMemory.SCREEN_HEIGHT; y++) {
-			// Calculate offset in ZX Spectrum screen
-			inIndex=screenBaseAddr+(((y&0b111)<<8)|((y&0b1100_0000)<<5)|((y&0b11_1000)<<2));
-			colorIndex=colorStart+((y&0b1111_1000)<<2);	// y/8*32;
-			for (let x=0; x<ZxMemory.SCREEN_WIDTH/8; x++) {
-				const byteValue=screenMem[inIndex];
-				// Get color
-				let color=screenMem[colorIndex];
-				let mask=0x80;
-				while (mask) {	// 8x
-					const value=byteValue&mask;
-					// Check if pixel is set
-					let cIndex=(color&0x40)>>>3;	// Brightness
-					if (value) {
-						// Set: foreround
-						cIndex|=color&0x07;
-					}
-					else {
-						// Unset: background
-						cIndex|=(color>>>3)&0x07;
-					}
-
-					// Save color index
-					pixels[pixelIndex]=cIndex;
-
-					// Next pixel
-					mask>>>=1;
-					pixelIndex++;
-				}
-				// Next byte
-				inIndex++;
-				colorIndex++;
-			}
-		}
-		return pixels;
-	}
-
-
-	/// @returns the ZX Spectrum palette.
-	protected static getZxPalette(): number[] {
-		const palette=[
-			// Bright 0
-			0x00, 0x00, 0x00,
-			0x00, 0x00, 0xD7,
-			0xD7, 0x00, 0x00,
-			0xD7, 0x00, 0xD7,
-
-			0x00, 0xD7, 0x00,
-			0x00, 0xD7, 0xD7,
-			0xD7, 0xD7, 0x00,
-			0xD7, 0xD7, 0xD7,
-
-			// Bright 1
-			0x00, 0x00, 0x00,
-			0x00, 0x00, 0xFF,
-			0xFF, 0x00, 0x00,
-			0xFF, 0x00, 0xFF,
-
-			0x00, 0xFF, 0x00,
-			0x00, 0xFF, 0xFF,
-			0xFF, 0xFF, 0x00,
-			0xFF, 0xFF, 0xFF,
-		];
-		return palette;
-	}
 }
 

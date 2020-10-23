@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import { /*Handles,*/ Breakpoint /*, OutputEvent*/, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, /*BreakpointEvent,*/ /*OutputEvent,*/ Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log, LogSocket} from './log';
@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import { /*ShallowVar,*/ DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -21,7 +21,6 @@ import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {MemAttribute} from './disassembler/memory';
 import {Decoration} from './decoration';
 import {ShallowVar} from './variables/shallowvar';
-//import {SerialFake} from './remotes/zxnext/serialfake';
 import {ZxSimulationView} from './remotes/zxsimulator/zxsimulationview';
 import {ZSimRemote} from './remotes/zxsimulator/zsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
@@ -495,7 +494,7 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearAllDecorations();
 
 		// Create the registers
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(8);	// TODO: need to add correct number here.
 
 		// Make sure the history is cleared
 		CpuHistoryClass.setCpuHistory(undefined);
@@ -507,7 +506,6 @@ export class DebugSessionClass extends DebugSession {
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
 			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-			StepHistory.decoder=Z80Registers.decoder;
 		}
 
 		// Load files
@@ -573,12 +571,14 @@ export class DebugSessionClass extends DebugSession {
 
 		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async (text) => {
-				// Print text if available, e.g. "dbg_uart_if initilaized".
+				// Print text if available, e.g. "dbg_uart_if initialized".
 				if (text) {
 					this.debugConsoleAppendLine(text);
 				}
 
 				// Initialize Cpu- or StepHistory.
+				if (!StepHistory.decoder)
+					StepHistory.decoder=Z80Registers.decoder;
 				StepHistory.init();
 
 				// Create memory/register dump view
@@ -647,7 +647,8 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch (e) {
 				// Some error occurred
-				this.terminate('Init remote: '+e.message);
+				const error=e.message||"Error";
+				this.terminate('Init remote: '+error);
 			}
 		});
 	}
@@ -784,16 +785,28 @@ export class DebugSessionClass extends DebugSession {
 
 		// Get the call stack trace.
 		let callStack;
-		if (StepHistory.isInStepBackMode())
-			callStack=StepHistory.getCallStack();
-		else
+		//let slots;
+		if (StepHistory.isInStepBackMode()) {
+			// Get callstack
+			callStack=StepHistory.getCallStack(); // TODO: Gemeinsames getCallStack für stephistory und Remote.
+		}
+		else {
+			// Get the current slots
+			if (Labels.AreLongAddressesUsed()) {
+				Remote.clearRegisters();
+				await Remote.getRegisters();
+			}
+			// Get callstack
 			callStack=await Remote.getCallStack();
+		}
+
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.
 		frameCount=callStack.length;
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
+			//const addr=Remote.createLongAddress(frame.addr, slots);
 			const addr=frame.addr;
 			const file=Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
@@ -846,9 +859,9 @@ export class DebugSessionClass extends DebugSession {
 					// since it was fetched at the beginning.
 					// Check if memory changed.
 					for (let k=0; k<checkSize; k++) {
-						const val=Disassembly.memory.getValueAt(fetchAddress+k);
+						const val=Disassembly.memory.getValueAt((fetchAddress+k)&0xFFFF);
 						const memAttr=Disassembly.memory.getAttributeAt(fetchAddress+k);
-						const newVal=memArray.getValueAtAddress(fetchAddress+k);
+						const newVal=memArray.getValueAtAddress((fetchAddress+k)&0xFFFF);
 						if ((val!=newVal)||(memAttr==MemAttribute.UNUSED)) {
 							doDisassembly=true;
 							break;
@@ -866,7 +879,7 @@ export class DebugSessionClass extends DebugSession {
 				this.dasmAddressQueue.unshift(addr);
 			// Check if this requires a disassembly
 			if (!doDisassembly) {
-				const memAttr=Disassembly.memory.getAttributeAt(addr);
+				const memAttr=Disassembly.memory.getAttributeAt(addr&0xFFFF);
 				if (!(memAttr&MemAttribute.CODE_FIRST))
 					doDisassembly=true;	// If memory was not the start of an opcode.
 			}
@@ -1055,7 +1068,7 @@ export class DebugSessionClass extends DebugSession {
 		// get address
 		if (frame) {
 			// use address
-			const addr=frame.addr;
+			const addr=frame.addr;	// TODO: convert to 64k address
 			// Create variable object for Disassembly
 			const varDisassembly=new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
 			// Add to list and get reference ID
@@ -1063,14 +1076,11 @@ export class DebugSessionClass extends DebugSession {
 			scopes.push(new Scope("Disassembly", ref));
 		}
 
-		// Check if memory pages are suported by Remote
-		//if (Remote.supportsZxNextRegisters) {
 		// Create variable object for MemorySlots
 		const varMemorySlots=new MemorySlotsVar();
 		// Add to list and get reference ID
 		ref=this.listVariables.addObject(varMemorySlots);
-		scopes.push(new Scope("Memory Slots", ref));
-		//}
+		scopes.push(new Scope("Memory", ref));
 
 		// Create variable object for the stack
 		const varStack=new StackVar(frame.stack, frame.stackStartAddress);
@@ -1117,7 +1127,7 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		// Get PC
 		Remote.getRegisters().then(() => {
-			const pc=Remote.getPC();
+			const pc=Remote.getPCLong();
 			Decoration.showBreak(pc, breakReason);
 		});
 	}
@@ -1298,7 +1308,7 @@ export class DebugSessionClass extends DebugSession {
 		StepHistory.clear();
 
 		// Normal Step-Over
-		Z80Registers.clearCache();
+		Remote.clearRegisters();
 		//const result=
 		await Remote.stepOver();
 
@@ -1398,7 +1408,7 @@ export class DebugSessionClass extends DebugSession {
 			// file/line correspondents to the PC value.
 			Remote.getRegisters();
 			const prevPc=Remote.getPC();
-			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
+			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);// TODO: Does not work with sld
 			let i=0;
 			let breakReason;
 			const timeWait=new TimeWait(500, 200, 100);
@@ -1437,7 +1447,7 @@ export class DebugSessionClass extends DebugSession {
 				// Get new file/line location
 				await Remote.getRegisters();
 				const pc=Remote.getPC();
-				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
+				const nextFileLoc=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
 				// Compare with start location
 				if (prevFileLoc.fileName=='')
 					break;
@@ -1865,8 +1875,8 @@ export class DebugSessionClass extends DebugSession {
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
 				Remote.getRegisters().then(() => {
-					const pc=Remote.getPC();
-					const entry=Labels.getFileAndLineForAddress(pc);
+					const pcLongAddr=Remote.getPCLong();
+					const entry=Labels.getFileAndLineForAddress(pcLongAddr);
 					// Local label and prefix
 					lastLabel=entry.lastLabel;
 					modulePrefix=entry.modulePrefix;
@@ -2674,12 +2684,20 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
-		const realLineNr=lineNr; //this.convertClientLineToDebugger(lineNr);
+		const realLineNr=lineNr;
 		let addr=Remote.getAddrForFileAndLine(filename, realLineNr);
 		if (addr<0)
 			return;
+		// Check if bank is the same
+		const slots=Remote.getSlots();
+		const bank=addr>>>16;
+		if (bank&&slots) {
+			const slotIndex=Z80Registers.getSlotFromAddress(addr);
+			if (bank!=slots[slotIndex]+1)
+				return;	// The slots are not correctly set for this to work
+		}
 		// Now change Program Counter
-		await Remote.setProgramCounterWithEmit(addr);
+		await Remote.setProgramCounterWithEmit(addr&0xFFFF);
 	}
 
 

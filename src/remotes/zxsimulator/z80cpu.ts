@@ -1,9 +1,9 @@
-import {ZxMemory} from './zxmemory';
 import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
 import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
+import {SimulatedMemory} from './simmemory';
 
 
 
@@ -40,14 +40,14 @@ export class Z80Cpu {
 	public cpuFreq: number;
 
 	// Memory
-	public memory: ZxMemory;
+	public memory: SimulatedMemory;
 
 	// Ports
 	public ports: Z80Ports;
 
 
 	/// Constructor.
-	constructor(memory: ZxMemory, ports: Z80Ports) {
+	constructor(memory: SimulatedMemory, ports: Z80Ports) {
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq=3500000.0;	// 3.5MHz.
@@ -373,13 +373,16 @@ export class Z80Cpu {
 	public getRegisterData(): Uint16Array {
 		const r=this.getAllRegisters();
 		// Convert regs
+		const slots=this.memory.getSlots()||[];
 		const regData=Z80RegistersClass.getRegisterData(
 			r.pc, r.sp,
 			r.af, r.bc, r.de, r.hl,
 			r.ix, r.iy,
 			r.af2, r.bc2, r.de2, r.hl2,
-			r.i, r.r, r.im);
-		return new Uint16Array(regData);;
+			r.i, r.r, r.im,
+			slots
+		);
+		return new Uint16Array(regData); // TODO: return regdata. Is already new.
 	}
 
 
@@ -400,7 +403,7 @@ export class Z80Cpu {
 		const opcodes=this.memory.getMemory32(pc);
 		histData[startHist]=opcodes&0xFFFF;
 		histData[startHist+1]=opcodes>>>16;
-		// Store sp contents
+		// Store sp contents (2 bytes)
 		const sp=z80.sp;
 		const spContents=this.memory.getMemory16(sp);
 		histData[startHist+2]=spContents;

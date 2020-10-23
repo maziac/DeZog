@@ -5,7 +5,137 @@ import { LogSocket } from '../../log';
 import {Utility} from '../../misc/utility';
 
 
-//import { setKeepAliveInterval } from 'net-keepalive';
+/*
+
+A list of all available ZEsarUX commands:
+
+Available commands:
+about                         Shows about message
+assemble                      Assemble at address
+ayplayer                      Runs a command on the AY Player
+clear-membreakpoints          Clear all memory breakpoints
+cpu-code-coverage             Sets cpu code coverage parameters
+cpu-history                   Runs cpu history actions
+cpu-panic                     Triggers the cpu panic function with the desired text
+cpu-step                      Run single opcode cpu step
+cpu-step-over                 Runs until returning from the current opcode
+cpu-transaction-log           Sets cpu transaction log parameters
+debug-analize-command         Just analize the command and print its parameters
+disable-breakpoint            Disable specific breakpoint
+disable-breakpoints           Disable all breakpoints
+disassemble                   Disassemble at address
+dump-nested-functions         Shows internal nested core functions
+dump-scanline-buffer          Shows internal scanline rainbow buffer, pixel and atribute byte pairs
+enable-breakpoint             Enable specific breakpoint
+enable-breakpoints            Enable breakpoints
+enter-cpu-step                Enter cpu step to step mode
+esxdoshandler-get-open-files  Gets a list of open files and directories on the esxdos handler
+evaluate                      Evaluate expression
+exit-cpu-step                 Exit cpu step to step mode
+exit-emulator                 Ends emulator
+extended-stack                Sets extended stack parameters, which allows you to see what kind of values are in the stack
+find-label                    Finds label on source code
+generate-nmi                  Generates a NMI
+get-audio-buffer-info         Get audio buffer information
+get-breakpoints               Get breakpoints list
+get-breakpointsactions        Get breakpoints actions list
+get-breakpoints-optimized     Show which breakpoints are optimized or not
+get-buildnumber               Shows build number
+get-cpu-core-name             Get emulation cpu core name
+get-cpu-frequency             Get cpu frequency in HZ
+get-cpu-turbo-speed           Get cpu turbo speed
+get-crc32                     Calculate crc32 checksum starting at address for defined length
+get-current-machine           Returns current machine name
+get-current-memory-zone       Returns current memory zone
+get-debug-settings            Get debug settings on remote command protocol
+get-io-ports                  Returns currently i/o ports used
+get-membreakpoints            Get memory breakpoints list
+get-machines                  Returns list of emulated machines
+get-memory-pages              Returns current state of memory pages
+get-memory-zones              Returns list of memory zones of this machine
+get-ocr                       Get OCR output text
+get-os                        Shows emulator operating system
+get-paging-state              Shows paging state on Spectrum 128k machines: if using screen 5/7 and if paging enabled
+get-registers                 Get CPU registers
+get-snapshot                  Gets a zsf snapshot on console
+get-stack-backtrace           Get last 16-bit values from the stack
+get-tstates                   Get the t-states counter
+get-tstates-partial           Get the t-states partial counter
+get-ui-io-ports               Gets user interacton io ports values for 8 rows of keyboard and joystick
+get-version                   Shows emulator version
+get-video-driver              Shows current video driver
+hard-reset-cpu                Hard resets the machine
+help                          Shows help screen or command help
+hexdump                       Dumps memory at address, showing hex and ascii
+hexdump-internal              Dumps internal memory (hexadecimal and ascii) for a given memory pointer
+ifrom-press-button            Press button on the iFrom interface
+kartusho-press-button         Press button on the Kartusho interface
+load-binary                   Load binary file "file" at address "addr" with length "len", on the current memory zone
+load-source-code              Load source file to be used on disassemble opcode functions
+ls                            Minimal command list
+noop                          This command does nothing
+print-footer                  Prints message on footer
+put-snapshot                  Puts a zsf snapshot from console
+quit                          Closes connection
+read-memory                   Dumps memory at address
+reset-cpu                     Resets CPU
+reset-tstates-partial         Resets the t-states partial counter
+run                           Run cpu when on cpu step mode
+save-binary                   Save binary file "file" from address "addr" with length "len", from the current memory zone
+save-binary-internal          Dumps internal memory to file for a given memory pointer
+save-screen                   Save screen to file
+send-keys-ascii               Simulates sending some ascii keys on parameters asciichar, separated by spaces
+send-keys-event               Simulates sending key press/release
+send-keys-string              Simulates sending some keys on parameter string
+set-breakpoint                Sets a breakpoint at desired index entry with condition
+set-breakpointaction          Sets a breakpoint action at desired index entry
+set-cr                        Sends carriage return to every command output received, useful on Windows environments
+set-debug-settings            Set debug settings on remote command protocol
+set-ui-io-ports               Sets user interacton io ports values for 8 rows of keyboard and joystick
+set-machine                   Set machine
+set-membreakpoint             Sets a memory breakpoint starting at desired address entry for type
+set-memory-zone               Set memory zone number
+set-register                  Changes register value
+set-text-brightness           Change text render brightness value (0-100)
+set-verbose-level             Sets verbose level for console output
+set-window-zoom               Sets window zoom
+smartload                     Smart-loads a file
+snapshot-load                 Loads a snapshot
+snapshot-save                 Saves a snapshot
+speech-empty-fifo             Empty speech fifo
+speech-send                   Sends message to speech
+tbblue-get-clipwindow         Get clip window parameters
+tbblue-set-clipwindow         Set clip window parameters
+tbblue-get-palette            Get palette colours at index, if not specified items parameters, returns only one
+tbblue-get-pattern            Get patterns at index, of type 4 or 8 bpp, if not specified items parameters, returns only one
+tbblue-get-register           Get TBBlue register at index
+tbblue-get-sprite             Get sprites at index, if not specified items parameters, returns only one
+tbblue-set-palette            Sets palette values starting at desired starting index
+tbblue-set-pattern            Sets pattern values starting at desired pattern index
+tbblue-set-register           Set TBBlue register with value at index
+tbblue-set-sprite             Sets sprite values starting at desired sprite index
+tsconf-get-af-port            Get TSConf XXAF port value
+tsconf-set-af-port            Set TSConf XXAF port value
+view-basic                    Gets Basic program listing
+write-memory                  Writes a sequence of bytes starting at desired address on memory
+write-memory-raw              Writes a sequence of bytes starting at desired address on memory
+write-port                    Writes value at port
+zeng-is-master                Tells if ZENG is configured as master or not
+zxevo-get-nvram               Get ZX-Evo NVRAM value at index
+
+ZesaruxExt:
+check-extensions              Checks if extensions are available
+clear-all-fast-breakpoints    Clears all fast-breakpoints
+set-fast-breakpoint           Sets a PC breakpoint at desired address with condition and possibly a log message
+clear-fast-breakpoint         Clears one or more PC breakpoint(s) or watchpoints at the given address for the given size
+get-fast-breakpoint           Returns a PC breakpoint or watchpoint at the given address
+set-fast-watchpoint           Sets a memory watchpoint at desired address with condition
+get-all-fast-breakpoints      Prints all fast breakpoints and watchpoints
+
+*/
+
+
+
 
 
 /// Timeouts.
@@ -251,6 +381,18 @@ export class ZesaruxSocket extends Socket {
 				this.sendSocket();
 			}
 		}
+	}
+
+
+	/**
+	 * Same send, but this one returns a promise.
+	 */
+	public async sendAwait(command: string, suppressErrorHandling=false): Promise<any> {
+		return new Promise<any>(resolve => {
+			this.send(command, data => {
+				resolve(data);
+			}, suppressErrorHandling);
+		});
 	}
 
 

@@ -11,6 +11,7 @@ import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
+import {MemoryBank, MemoryModel} from './Paging/memorymodel';
 
 
 
@@ -45,19 +46,6 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
 	// Already defined: log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
 }
 
-
-
-/// Definition of one memory bank, i.e. memory slot/bank relationship.
-export interface MemoryBank {
-	/// Z80 start address of page.
-	start: number;
-
-	/// Z80 end address of page.
-	end: number;
-
-	/// The name of the mapped memory area.
-	name: string;
-};
 
 
 /**
@@ -121,6 +109,13 @@ export class RemoteBase extends EventEmitter {
 
 	/// The logpoints can be enabled/disabled per group.
 	public logpointsEnabled=new Map<string, boolean>();
+
+	/// Memory slots. Contain the used banks.
+	/// If undefined the data has to be retrieved from the remote.
+	//protected slots: number[]|undefined=undefined;
+
+	/// The used memory model. E.g. if and how slots are used.
+	public memoryModel: MemoryModel;
 
 
 	/// Constructor.
@@ -466,10 +461,30 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
+	 * If cache is empty retrieves the registers from
+	 * the Remote.
+	 */
+	public clearRegisters() {
+		Z80Registers.clearCache();
+		//this.slots=undefined;
+	}
+
+
+	/**
 	 * Returns the PC value.
 	 */
 	public getPC(): number {
 		return Z80Registers.getRegValueByName("PC");
+	}
+
+
+	/**
+	 * Returns the PC as long address, i.e. with bank info.
+	 * @returns PC + (bank_nr+1)<<16
+	 */
+	public getPCLong(): number {
+		const pcLong=Z80Registers.getPCLong();
+		return pcLong;
 	}
 
 
@@ -544,8 +559,9 @@ export class RemoteBase extends EventEmitter {
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
 	 * - name: The label name or the hex string of the called address
-	 * - callerAddr: The caller address of the subroutine
-	 * Otherwise undefined.
+	 * - callerAddr: The caller address of the subroutine.
+	 *   Could be a long address.
+	 *   Otherwise undefined.
 	 */
 	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
 		// Get the 3 bytes before address.
@@ -566,7 +582,7 @@ export class RemoteBase extends EventEmitter {
 			/*
 			I removed the check for RST:
 			An RST will happen relatively seldom. But here a RST would be found with
-			a probability of 1/16. I.e. every 16th value would be wrong.
+			a probability of 1/32. I.e. every 32th value would be wrong.
 			Therefore I better skip the detection.
 
 			// Check if one of the 2 last bytes was a RST.
@@ -595,9 +611,16 @@ export class RemoteBase extends EventEmitter {
 			return undefined;
 		}
 
+		// Convert to long address if necessary
+		if (Labels.AreLongAddressesUsed()) {
+			const slots=this.getSlots();
+			callerAddr=Z80Registers.createLongAddress(callerAddr, slots);
+			calledAddr=Z80Registers.createLongAddress(calledAddr, slots);
+		}
+
 		// Found: get label
 		const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
-		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr, 4)+'h';
+		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr&0xFFFF, 4)+'h';
 
 		// Return
 		return {name: labelCalledAddr, callerAddr};
@@ -697,7 +720,8 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Set PC
-		const pc=Z80Registers.getRegValue(Z80_REG.PC);
+		//const pc=Z80Registers.getRegValue(Z80_REG.PC);
+		const pc=this.getPCLong();
 		lastCallStackFrame.addr=pc;
 
 		// Return
@@ -1108,7 +1132,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc
-		let file=Labels.getFileAndLineForAddress(address);
+		let file=Labels.getFileAndLineForAddress(address);// TODO: Does not work with sld
 		if (!file.fileName) {
 			// Search also the disassembled file
 			const lineNr=Disassembly.getLineForAddress(address);
@@ -1209,11 +1233,27 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the memory pages, i.e. the slot/banks relationship from zesarux
-	 * and converts it to an arry of MemoryBanks.
-	 * @returns A Promise with an array with the available memory pages.
+	 * and converts it to an array of MemoryBanks.
+	 * @returns A Promise with an array with the available memory pages. Contains start and end address
+	 * and a name.
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
-		return [];
+		// Get the slots
+		const slots=this.getSlots();
+		// Convert
+		const pages=this.memoryModel.getMemoryBanks(slots);
+		// Return
+		return pages;
+	}
+
+
+
+	/**
+	 * Reads the slots/banks association.
+	 * @returns A Promise with a slot array containing the refernced banks or undefined if no slots are used.
+	 */
+	public getSlots(): number[]|undefined {
+		return Z80Registers.getSlots();
 	}
 
 
@@ -1223,7 +1263,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		Z80Registers.clearCache();
+		this.clearRegisters();
 		this.clearCallStack();
 		await this.setRegisterValue("PC", address);
 		this.emit('stoppedEvent', 'PC changed');
@@ -1235,7 +1275,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		Z80Registers.clearCache();
+		this.clearRegisters();
 		this.clearCallStack();
 		await this.setRegisterValue("SP", address);
 		this.emit('stoppedEvent', 'SP changed');
@@ -1397,6 +1437,9 @@ export class RemoteBase extends EventEmitter {
 	 * But for branching or conditional branching instructions this is different.
 	 * DeZog will then use up to 2 breakpoints to catch up after the instruction is executed.
 	 * The method is async, i.e. it fetches the required registers and memory on it's own.
+	 * Note: The method uses normal 64k addresses, no long addresses.
+	 * This because long addresses are not required and there is some arithmetic
+	 * done to the addresses (e.g. +3) that is not available on long addresses.
 	 * @param stepOver true if breakpoint address should be calculate for a step-over.
 	 * In this case the branching is ignored for CALL and RST.
 	 * @returns A Promise with the opcode and 2 breakpoint
@@ -1501,6 +1544,11 @@ export class RemoteBase extends EventEmitter {
 					bpAddr2=pc;
 			}
 		}
+
+		// Make sure that breakpoints wrap around
+		bpAddr1&=0xFFFF;
+		if (bpAddr2)
+			bpAddr2&=0xFFFF;
 
 		// Return either 1 or 2 breakpoints
 		return [opcode, bpAddr1, bpAddr2];

@@ -45,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
 			|| event.affectsConfiguration(CONFIG_SECTION + '.logfile')
 			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logpanel')
-			|| event.affectsConfiguration(CONFIG_SECTION+'.socket.logfile')) {
+			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logfile')) {
 			configureLogging();
 		}
 	}));

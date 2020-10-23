@@ -2,9 +2,10 @@
 import * as assert from 'assert';
 import {RemoteBase} from '../remotes/remotebase';
 import {Settings} from '../settings';
-import {Z80RegistersClass, Z80Registers, Z80RegistersStandardDecoder} from '../remotes/z80registers';
+import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {Opcodes, Opcode} from '../disassembler/opcode';
 import {GenericBreakpoint, GenericWatchpoint} from '../genericwatchpoint';
+import {Z80RegistersStandardDecoder} from '../remotes/z80registersstandarddecoder';
 
 
 suite('RemoteBase', () => {
@@ -15,7 +16,7 @@ suite('RemoteBase', () => {
 			remoteType: 'zsim'
 		};
 		Settings.Init(cfg, '');
-		Z80RegistersClass.createRegisters();
+		Z80RegistersClass.createRegisters(0);
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF]=new Opcode(0xCF, "RST %s");
@@ -131,7 +132,7 @@ suite('RemoteBase', () => {
 			public pcMemory=new Uint8Array(4);
 			public spMemory=new Uint16Array(1);
 			public async getRegisters(): Promise<void> {
-				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0);
+				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, []);
 				Z80Registers.setCache(cache);
 
 			}

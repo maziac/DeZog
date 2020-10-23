@@ -43,11 +43,11 @@ export class Utility {
 	 */
 	public static getHexString(value: number|undefined, size: number): string {
 		if(value != undefined) {
-			var s = value.toString(16);
+			var s = value.toString(16).toUpperCase();
 			const r = size - s.length;
-			if(r < 0)
-				return s.substr(-r);	// remove leading digits
-			return "0".repeat(r) + s.toUpperCase();
+			if (r>0)
+				s='0'.repeat(r)+s;
+			return s;
 		}
 		// Undefined
 		return "?".repeat(size);

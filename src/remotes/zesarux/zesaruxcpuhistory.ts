@@ -57,6 +57,7 @@ export class DecodeZesaruxHistoryInfo extends DecodeHistoryInfo {
 		const sp=parseInt(spString, 16);
 		return sp;
 	}
+
 }
 
 

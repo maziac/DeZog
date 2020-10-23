@@ -89,6 +89,13 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 ## History
 
+### 1.7.0 (planned for DeZog 1.6)
+- TODO: New command (or extend CMD_INIT) to get the machine type and/or slot/bank config (ZX48, ZX128, ZXNEXT)
+- TODO: Return the slots on each getRegisters command.
+- TODO: Notification: Return the long break address (or the slots).
+- TODO: Extend CMD_WRITE_BANK to write 16K banks.
+
+
 ### 1.6.0
 - Added CMD_CLOSE for closing a debug session.
 
@@ -758,3 +765,4 @@ Notification:
 | 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
 
+// TODO: Need to add bank+1 here

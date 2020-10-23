@@ -16,6 +16,7 @@ import {TimeWait} from '../misc/timewait';
  * Use similar data as DecodeRegisterData but with data extension.
  * This extension is read and parsed as well.
  * To get the opcodes at the pc and the contents at (SP).
+ * Also returns the extended (long) PC address, i.e. the bank (+1) the PC is used in.
  * This is required only for true cpu history (not for lite/step history).
  */
 export class DecodeStandardHistoryInfo extends DecodeHistoryInfo {
@@ -149,7 +150,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 	/**
-	 * Emits 'revDbgHistory' to signal that the files should be decorated.
+	 * Emits 'historySpot' to signal that the files should be decorated.
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
@@ -175,7 +176,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			end=this.history.length;
 		for (let i=startIndex; i<end; i++) {
 			const line=this.history[i];
-			const pc=Z80Registers.decoder.parsePC(line);
+			const pc=Z80Registers.decoder.parsePCLong(line);
 			addresses.push(pc);
 		}
 
@@ -640,7 +641,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 
 			// And push to stack
-			const pc=Z80Registers.decoder.parsePC(currentLine);
+			//const pc=Z80Registers.decoder.parsePC(currentLine);
+			const pc=Z80Registers.decoder.parsePCLong(currentLine);
 			const frame=new CallStackFrame(pc, sp, labelCallAddr);
 			this.reverseDbgStack.push(frame);
 
@@ -700,7 +702,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		}
 
 		// Adjust PC within frame
-		const pc=Z80Registers.decoder.parsePC(currentLine)
+		const pc=Z80Registers.decoder.parsePCLong(currentLine);
 		frame.addr=pc;
 
 		// Add a possibly pushed value
@@ -836,7 +838,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 		// Check for interrupt. Either use SP or use PC to check.
 		let interruptFound=false;
-		const nextPC=Z80Registers.decoder.parsePC(nextLine);
+		//const nextPC=Z80Registers.decoder.parsePC(nextLine);
+		const nextPC=Z80Registers.decoder.parsePCLong(nextLine);
 		if (expectedSP!=undefined) {
 			// Use SP for checking
 			if (nextSP==expectedSP-2)
@@ -953,7 +956,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegisters();
 			Remote.clearCallStack();
 		}
 
@@ -1097,7 +1100,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegisters();
 			Remote.clearCallStack();
 		}
 
@@ -1134,7 +1137,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegisters();
 			Remote.clearCallStack();
 		}
 
@@ -1199,7 +1202,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Z80Registers.clearCache();
+			Remote.clearRegisters();
 			Remote.clearCallStack();
 		}
 
