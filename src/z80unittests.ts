@@ -261,7 +261,7 @@ export class Z80UnitTests {
 				StepHistory.decoder=Z80Registers.decoder;
 			}
 
-			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
+			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
 			Labels.init(configuration.smallValuesMaximum);
 			Remote.readListFiles(configuration);
 
@@ -653,7 +653,7 @@ export class Z80UnitTests {
 
 	/**
 	 * A break occurred. E.g. the test case stopped because it is finished
-	 * or because of an error (ASSERT).
+	 * or because of an error (ASSERTION).
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
 	protected static onBreak(debugAdapter?: DebugSessionClass) {

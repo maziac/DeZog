@@ -1,110 +1,110 @@
 # File main.asm
-0000			 
-0000			 
-0000			label_equ1:		equ 100 
-0000			 
-0000			 
-0000			m1:	MACRO 
-0000				ld c,9 
-0000			.mlocal: 
-0000				dec a 
-0000				ENDM 
-0000			 
-0000			 
-0000				ORG 0x8000 
-8000			 
-8000			label1: 
-8000 00				nop 
-8001			 
-8001 3e 05		label2:	ld a,5 
-8003			 
-8003 06 08		.locala:	ld b,8 
-8005			 
-8005			.localb: 
-8005 00				nop		; ASSERT 
-8006			 
-8006			label3:	m1 
-8006 0e 09			ld c,9 
-8008 3d				dec a 
-8009				ENDM 
+0000
+0000
+0000			label_equ1:		equ 100
+0000
+0000
+0000			m1:	MACRO
+0000				ld c,9
+0000			.mlocal:
+0000				dec a
+0000				ENDM
+0000
+0000
+0000				ORG 0x8000
+8000
+8000			label1:
+8000 00				nop
+8001
+8001 3e 05		label2:	ld a,5
+8003
+8003 06 08		.locala:	ld b,8
+8005
+8005			.localb:
+8005 00				nop		; ASSERTION
+8006
+8006			label3:	m1
+8006 0e 09			ld c,9
+8008 3d				dec a
+8009				ENDM
 # End of macro m1
-8009			 m1 
-8009 0e 09			ld c,9 
-800b 3d				dec a 
-800c				ENDM 
+8009			 m1
+8009 0e 09			ld c,9
+800b 3d				dec a
+800c				ENDM
 # End of macro m1
-800c			label4: 
-800c				m1 
-800c 0e 09			ld c,9 
-800e 3d				dec a 
-800f				ENDM 
+800c			label4:
+800c				m1
+800c 0e 09			ld c,9
+800e 3d				dec a
+800f				ENDM
 # End of macro m1
-800f			 
-800f			label4_1: 
-800f				m1	; LOGPOINT 
-800f 0e 09			ld c,9 
-8011 3d				dec a 
-8012				ENDM 
+800f
+800f			label4_1:
+800f				m1	; LOGPOINT
+800f 0e 09			ld c,9
+8011 3d				dec a
+8012				ENDM
 # End of macro m1
-8012			 
-8012				IF 0 
-8012			label5:	nop 
-8012				ENDIF 
-8012			 
-8012 00			label6:	nop 
-8013			 
-8013			.local: ; local label not existing but label with . 
-8013 00				nop 
-8014			 
-8014				ORG 0x8200 
-8200			data: 
-8200 01 02 03 04		defb 1, 2, 3, 4		; WPMEM 
-8204			 
-8204			 
-8204				ORG 0x9000 
-9000			 
-9000				include "filea.asm" 
-9000			 
-9000 00			fa_label1:	nop 
-9001			 
-9001			 
-9001			 
-9001			fa_label2: 
-9001 00				nop 
-9002			 
-9002 00			fa_label3.mid:	nop 
-9003			 
-9003				include "filea_b.asm" 
-9003			 
-9003			 
-9003 00			fab_label1:	nop 
-9004			 
-9004			 
-9004			 
-9004 00			fab_label2:	nop 
-9005			 
-9005			 
-9005			global_label1:	; All labels are global 
-9005 00				nop 
-9006			global_label2:	; All labels are global 
-9006 00				nop 
-9007			 
-9007			 
-9007			fab_label3: 
-9007 00				nop 
-9008			 
-9008			 
-9008			fab_label_equ1:		equ 70 
+8012
+8012				IF 0
+8012			label5:	nop
+8012				ENDIF
+8012
+8012 00			label6:	nop
+8013
+8013			.local: ; local label not existing but label with .
+8013 00				nop
+8014
+8014				ORG 0x8200
+8200			data:
+8200 01 02 03 04		defb 1, 2, 3, 4		; WPMEM
+8204
+8204
+8204				ORG 0x9000
+9000
+9000				include "filea.asm"
+9000
+9000 00			fa_label1:	nop
+9001
+9001
+9001
+9001			fa_label2:
+9001 00				nop
+9002
+9002 00			fa_label3.mid:	nop
+9003
+9003				include "filea_b.asm"
+9003
+9003
+9003 00			fab_label1:	nop
+9004
+9004
+9004
+9004 00			fab_label2:	nop
+9005
+9005
+9005			global_label1:	; All labels are global
+9005 00				nop
+9006			global_label2:	; All labels are global
+9006 00				nop
+9007
+9007
+9007			fab_label3:
+9007 00				nop
+9008
+9008
+9008			fab_label_equ1:		equ 70
 # End of file filea_b.asm
-9008			 
-9008			 
-9008			 
-9008			fa_label3: 
-9008 00				nop 
-9009			 
+9008
+9008
+9008
+9008			fa_label3:
+9008 00				nop
+9009
 # End of file filea.asm
-9009			 
-9009			 
-9009			 
+9009
+9009
+9009
 # End of file main.asm
 9009

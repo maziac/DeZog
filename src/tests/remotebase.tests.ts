@@ -24,7 +24,7 @@ suite('RemoteBase', () => {
 
 
 
-	suite('WPMEM, ASSERT, LOGPOINT', () => {
+	suite('WPMEM, ASSERTION, LOGPOINT', () => {
 
 		test('WPMEM', async () => {
 			const remote=new RemoteBase();
@@ -63,25 +63,25 @@ suite('RemoteBase', () => {
 		});
 
 
-		test('ASSERT', async () => {
+		test('ASSERTION', async () => {
 			const remote=new RemoteBase();
 			const rem=remote as any;
 
 			const wpLines=[
-				{address: 0xA020, line: "ASSERT"},
-				{address: 0xA021, line: "ASSERT B==1"},
+				{address: 0xA020, line: "ASSERTION"},
+				{address: 0xA021, line: "ASSERTION B==1"},
 			];
 
-			const asserts: Array<GenericBreakpoint>=rem.createAsserts(wpLines);
-			assert.equal(asserts.length, 2);
+			const assertions: Array<GenericBreakpoint>=rem.createAssertions(wpLines);
+			assert.equal(assertions.length, 2);
 
-			assert.equal(asserts[0].address, 0xA020);
-			assert.equal(asserts[0].condition, "!(false)");
-			assert.equal(asserts[0].log, undefined);
+			assert.equal(assertions[0].address, 0xA020);
+			assert.equal(assertions[0].condition, "!(false)");
+			assert.equal(assertions[0].log, undefined);
 
-			assert.equal(asserts[1].address, 0xA021);
-			assert.equal(asserts[1].condition, "!(B==1)");
-			assert.equal(asserts[1].log, undefined);
+			assert.equal(assertions[1].address, 0xA021);
+			assert.equal(assertions[1].condition, "!(B==1)");
+			assert.equal(assertions[1].log, undefined);
 		});
 
 

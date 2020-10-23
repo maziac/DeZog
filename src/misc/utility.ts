@@ -919,31 +919,31 @@ export class Utility {
 
 
 	/**
-	 * Builds a condition for a breakpoint from an ASSERT expression.
+	 * Builds a condition for a breakpoint from an ASSERTION expression.
 	 * Simply inverts the expression by surrounding it with "!(...)".
-	 * @param assertExpression E.g. "A == 7"
+	 * @param assertionExpression E.g. "A == 7"
 	 * @returns E.g. "!(A == 7)"
 	 */
-	public static getConditionFromAssert(assertExpression: string) {
-		if (assertExpression.trim().length==0)
-			assertExpression='false';
-		return '!('+assertExpression+')';
+	public static getConditionFromAssertion(assertionExpression: string) {
+		if (assertionExpression.trim().length==0)
+			assertionExpression='false';
+		return '!('+assertionExpression+')';
 	}
 
 
 	/**
 	 * Strips off the "!(...)" from a breakpoint condition to
-	 * display it as ASSERT expression.
+	 * display it as ASSERTION expression.
 	 * Does no checking, simply strips away the character position.
 	 * @param bpCondition E.g. "!(A == 7)"
 	 * @returns E.g. "A == 7"
 	 */
-	public static getAssertFromCondition(bpCondition: string|undefined) {
+	public static getAssertionFromCondition(bpCondition: string|undefined) {
 		if (!bpCondition)
 			return '';
-		let assertCond=bpCondition.substr(2);	// cut off "!("
-		assertCond=assertCond.substr(0, assertCond.length-1);	// cut off trailing ")"
-		return assertCond;
+		let assertionCond=bpCondition.substr(2);	// cut off "!("
+		assertionCond=assertionCond.substr(0, assertionCond.length-1);	// cut off trailing ")"
+		return assertionCond;
 	}
 
 

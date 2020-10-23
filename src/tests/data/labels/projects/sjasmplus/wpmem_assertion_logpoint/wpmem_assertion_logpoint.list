@@ -23,9 +23,9 @@
 20    A042
 21    A042              	ORG 0xA100
 22    A100
-23    A100 00           	nop		; ASSERT
-24    A101 00           	nop		; ASSERT B==1
-25    A102 00           	nop		; ASSERTx
+23    A100 00           	nop		; ASSERTION
+24    A101 00           	nop		; ASSERTION B==1
+25    A102 00           	nop		; ASSERTIONx
 26    A103
 27    A103
 28    A103              	ORG 0xA200

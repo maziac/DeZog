@@ -954,14 +954,14 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all assertion breakpoints set from the sources.
 	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
+	public async enableAssertionBreakpoints(enable: boolean): Promise<void>{
 		// not supported.
-		if(this.assertBreakpoints.length > 0)
-			this.emit('warning', 'ZEsarUX does not support ASSERTs in the sources.');
+		if(this.assertionBreakpoints.length > 0)
+			this.emit('warning', 'ZEsarUX does not support ASSERTIONs in the sources.');
 	}
 
 

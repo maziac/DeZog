@@ -327,7 +327,7 @@ The following table gives an overview.
 | Break reason output     | yes                | no      | yes        | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
 | Watchpoints             | yes                | yes     | yes/fast   | no       | no       |
-| Asserts                 | yes                | no      | yes        | yes/slow | yes/slow |
+| Assertions                 | yes                | no      | yes        | yes/slow | yes/slow |
 | Logpoints               | yes                | no      | yes        | yes/slow | yes/slow |
 | Long addresses/breakpoints | yes             | yes     | yes        | yes      | yes      |
 | Extended callstack      | no                 | yes     | yes        | no       | no       |
@@ -1056,48 +1056,48 @@ Notes:
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 
 
-### ASSERT
+### ASSERTION
 
-Similar to WPMEM you can use ASSERTs in comments in the assembler sources.
-An ASSERT is translated by DeZog into a breakpoints with an "inverted" condition.
-For all ASSERTs in your source code DeZog can set the correspondent breakpoints automatically at startup.
+Similar to WPMEM you can use ASSERTIONs in comments in the assembler sources.
+An ASSERTION is translated by DeZog into a breakpoints with an "inverted" condition.
+For all ASSERTIONs in your source code DeZog can set the correspondent breakpoints automatically at startup.
 
-The ASSERT syntax is:
+The ASSERTION syntax is:
 
 ~~~
-; [.*] ASSERT expr [;.*]
+; [.*] ASSERTION expr [;.*]
 ~~~
 'expr' is just like the expressions in [breakpoints](#vscode-breakpoint-conditions).
 
 Examples:
 ~~~
-; ASSERT HL <= LBL_END+2
-ld a,b  ; Check that index is not too big ASSERT B < (MAX_COUNT+1)/2
-ld de,hl    ; ASSERT A < 5 && hl != 0 ; Check that pointer is alright
+; ASSERTION HL <= LBL_END+2
+ld a,b  ; Check that index is not too big ASSERTION B < (MAX_COUNT+1)/2
+ld de,hl    ; ASSERTION A < 5 && hl != 0 ; Check that pointer is alright
 ~~~
 
-As an ASSERT converts to a breakpoint it is always evaluated **before** the instruction.
+As an ASSERTION converts to a breakpoint it is always evaluated **before** the instruction.
 I.e. the following check will most probably not work as expected.
 
 ~~~
-ld a,c  ; ASSERT a < 7
+ld a,c  ; ASSERTION a < 7
 ~~~
-A is not loaded yet when the ASSERT is checked. So use
+A is not loaded yet when the ASSERTION is checked. So use
 
 ~~~
 ld a,c
-; ASSERT a < 7
+; ASSERTION a < 7
 ~~~
-instead: The ASSERT is on the next line i.e. at the address after the "LD" instruction and thus A is checked correctly.
+instead: The ASSERTION is on the next line i.e. at the address after the "LD" instruction and thus A is checked correctly.
 
 Notes:
 
-- ASSERT is not available in ZEsarUX.
-- you can use "ASSERT" only, which evaluates to "ASSERT false". I.e. this is equivalent to an unconditional break.
-- The asserts are checked in the list file. I.e. whenever you change an ASSERT it is not immediately used. You have to assemble a new list file and start the debugger anew.
-- ASSERTs are disabled by default. If you want to have asserts enabled after launch then put "-ASSERT enable" in the "commandsAfterLaunch" settings.
-- Other than for sjasmplus ASSERTs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
-- As a special form you can also define an ASSERT without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
+- ASSERTION is not available in ZEsarUX.
+- you can use "ASSERTION" only, which evaluates to "ASSERTION false". I.e. this is equivalent to an unconditional break.
+- The assertions are checked in the list file. I.e. whenever you change an ASSERTION it is not immediately used. You have to assemble a new list file and start the debugger anew.
+- ASSERTIONs are disabled by default. If you want to have assertions enabled after launch then put "-ASSERTION enable" in the "commandsAfterLaunch" settings.
+- Other than for sjasmplus ASSERTIONs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
+- As a special form you can also define an ASSERTION without any condition. This will act as a breakpoint that will always be hit when the program counter reaches the instruction.
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 
 
@@ -1429,7 +1429,7 @@ Please see [here](UnitTests.md).
 ## Known Issues
 
 - **General**
-  - **"ASSERT"s** are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERT / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
+  - **"ASSERTION"s** are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERTION / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
   - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 - **ZEsarUX** (found with v8.1)
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.

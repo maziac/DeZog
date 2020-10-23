@@ -110,7 +110,7 @@ CSpect offers ```SetPhysicalBreakpoint```which should allow for breakpoints even
 
 
 
-# WPMEM, ASSERT, LOGPOINT
+# WPMEM, ASSERTION, LOGPOINT
 
 These are comment annotations.
 I.e. not present in SLD parsing.

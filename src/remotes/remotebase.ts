@@ -64,12 +64,12 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
  * setBreakPoints. The Remote will now compare the breakpoints with the internal
  * 'breakpoints' array and set/remove all changed breakpoints.
  *
- * The additional 'watchpoints', 'assertBreakpoints' and 'logpoints'
+ * The additional 'watchpoints', 'assertionBreakpoints' and 'logpoints'
  * arrays can be enabled/disabled as a group via a debug command.
  * - 'watchPoints': These are associated with the WPMEM keyword and create
  * a memory watchpoint (a breakpoint that is hit if a memory adress is
  * accessed).
- * - 'assertBreakpoints': These are very much like conditional breakpoints but associated with the ASSERT keyword.
+ * - 'assertionBreakpoints': These are very much like conditional breakpoints but associated with the ASSERTION keyword.
  * - 'logpoints': These are just like breakpoints with a log message but associated with the LOGPOINT keyword.
  * Note: The attached emulator may use the same mechanism for all these
  * kinds of breakpoints but in DeZog they are differentiated.
@@ -98,11 +98,11 @@ export class RemoteBase extends EventEmitter {
 	/// Stores the wpmem watchpoints (this is a smaller list, if watchpoints can be given manually)
 	protected wpmemWatchpoints=new Array<GenericWatchpoint>();
 
-	/// Stores the assert breakpoints
-	protected assertBreakpoints=new Array<GenericBreakpoint>();
+	/// Stores the assertion breakpoints
+	protected assertionBreakpoints=new Array<GenericBreakpoint>();
 
-	/// The assert breakpoints can only be enabled/disabled alltogether.
-	public assertBreakpointsEnabled=false;
+	/// The assertion breakpoints can only be enabled/disabled alltogether.
+	public assertionBreakpointsEnabled=false;
 
 	/// Stores the log points
 	protected logpoints=new Map<string, Array<GenericBreakpoint>>();
@@ -225,75 +225,75 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Creates an array of asserts from the text lines.
-	 * @param assertLines An array with address and line (text) pairs.
-	 * @return An array with asserts (GenericWatchpoints).
+	 * Creates an array of assertions from the text lines.
+	 * @param assertionLines An array with address and line (text) pairs.
+	 * @return An array with assertions (GenericWatchpoints).
 	 */
-	protected createAsserts(assertLines: Array<{address: number, line: string}>): Array<GenericBreakpoint> {
-		const assertMap=new Map<number, GenericBreakpoint>();
-		// Convert ASSERTS to watchpoints
-		for (let entry of assertLines) {
-			// ASSERT:
+	protected createAssertions(assertionLines: Array<{address: number, line: string}>): Array<GenericBreakpoint> {
+		const assertionMap=new Map<number, GenericBreakpoint>();
+		// Convert ASSERTIONS to watchpoints
+		for (let entry of assertionLines) {
+			// ASSERTION:
 			// Syntax:
-			// ASSERT var comparison expr [&&|| expr]
+			// ASSERTION var comparison expr [&&|| expr]
 			// with:
 			//  var: a variable, i.e. a register like A or HL
 			//  comparison: one of '<', '>', '==', '!=', '<=', '=>'.
 			//	expr: a mathematical expression that resolves into a constant
 			// Examples:
-			// - ASSERT A < 5
-			// - ASSERT HL <= LBL_END+2
-			// - ASSERT B > (MAX_COUNT+1)/2
-			// - ASSERT false
-			// - ASSERT
+			// - ASSERTION A < 5
+			// - ASSERTION HL <= LBL_END+2
+			// - ASSERTION B > (MAX_COUNT+1)/2
+			// - ASSERTION false
+			// - ASSERTION
 
-			// ASSERTs are breakpoints with "inverted" condition.
+			// ASSERTIONs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
 			try {
-				const matchAssert=/^ASSERT(.*)/.exec(entry.line);
-				if (!matchAssert)
+				const matchAssertion=/^ASSERTION(.*)/.exec(entry.line);
+				if (!matchAssertion)
 					continue;
 
-				// Get part of the string after the "ASSERT"
-				const part=matchAssert[1].trim();
+				// Get part of the string after the "ASSERTION"
+				const part=matchAssertion[1].trim();
 
-				// Check if no condition was set = ASSERT false = Always break
+				// Check if no condition was set = ASSERTION false = Always break
 				let conds='';
 				if (part.length>0) {
 					// Some condition is set
 					const regex=/\s*([^;]*)/i;
 					let match=regex.exec(part);
 					if (!match)	// At least one match should be found
-						throw "Expecting 'ASSERT expr'.";
+						throw "Expecting 'ASSERTION expr'.";
 					conds=match[1];
 				}
 
 				// Negate the expression
-				conds=Utility.getConditionFromAssert(conds);
+				conds=Utility.getConditionFromAssertion(conds);
 
-				// Check if ASSERT for that address already exists.
+				// Check if ASSERTION for that address already exists.
 				if (conds.length>0) {
-					let bp=assertMap.get(entry.address);
+					let bp=assertionMap.get(entry.address);
 					if (bp) {
 						// Already exists: just add condition.
 						bp.condition='('+bp.condition+') || ('+conds+')';
 					}
 					else {
 						// Breakpoint for address does not yet exist. Create a new one.
-						const assertBp={address: entry.address, condition: conds, log: undefined};
-						assertMap.set(entry.address, assertBp);
+						const assertionBp={address: entry.address, condition: conds, log: undefined};
+						assertionMap.set(entry.address, assertionBp);
 					}
 				}
 			}
 			catch (e) {
-				console.log("Problem with ASSERT. Could not evaluate: '"+entry.line+"': "+e+"");
+				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e+"");
 			}
 		}
 
 		// Convert map to array.
-		const assertsArray=Array.from(assertMap.values());
+		const assertionsArray=Array.from(assertionMap.values());
 
-		return assertsArray;
+		return assertionsArray;
 	}
 
 
@@ -395,8 +395,8 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the list file and also retrieves all occurrences of
-	 * WPMEM, ASSERT and LOGPOINT.
-	 * Also sets WPMEM, ASSERT and LOGPOINT break/watchpoints.
+	 * WPMEM, ASSERTION and LOGPOINT.
+	 * Also sets WPMEM, ASSERTION and LOGPOINT break/watchpoints.
 	 * May throw an error.
 	 * @param configuration Contains the list files for the different assemblers
 	 */
@@ -413,11 +413,11 @@ export class RemoteBase extends EventEmitter {
 		const watchpoints=this.createWatchPoints(watchPointLines);
 		this.setWPMEMArray(watchpoints);
 
-		// ASSERTs
-		// Set assert breakpoints
-		const assertLines=Labels.getAssertLines();
-		const assertsArray=this.createAsserts(assertLines);
-		this.setASSERTArray(assertsArray);
+		// ASSERTIONs
+		// Set assertion breakpoints
+		const assertionLines=Labels.getAssertionLines();
+		const assertionsArray=this.createAssertions(assertionLines);
+		this.setASSERTIONArray(assertionsArray);
 
 		// LOGPOINTs
 		const logPointLines=Labels.getLogPointLines();
@@ -906,28 +906,28 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Sets the ASSERTs array.
-	 * @param assertBreakpoints A list of addresses to put a guard on.
+	 * Sets the ASSERTIONs array.
+	 * @param assertionBreakpoints A list of addresses to put a guard on.
 	 */
-	public setASSERTArray(assertBreakpoints: Array<GenericBreakpoint>) {
-		this.assertBreakpoints=[...assertBreakpoints];
+	public setASSERTIONArray(assertionBreakpoints: Array<GenericBreakpoint>) {
+		this.assertionBreakpoints=[...assertionBreakpoints];
 	}
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all assertion breakpoints set from the sources.
 	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpoints(enable: boolean): Promise<void>{
+	public async enableAssertionBreakpoints(enable: boolean): Promise<void>{
 		Utility.assert(false);	// override this
 	}
 
 	/**
-	 * Returns the ASSERT breakpoints.
+	 * Returns the ASSERTION breakpoints.
 	 */
-	public getAllAssertBreakpoints(): Array<GenericBreakpoint> {
-		return this.assertBreakpoints;
+	public getAllAssertionBreakpoints(): Array<GenericBreakpoint> {
+		return this.assertionBreakpoints;
 	}
 
 
@@ -964,7 +964,7 @@ export class RemoteBase extends EventEmitter {
 	 * Enables/disables all logpoints for a given group.
 	 * Throws an exception if the group is unknown.
 	 * Promise is called all logpoints are set.
-	 * Override and assert if logpoints are not supported.
+	 * Override and assertion if logpoints are not supported.
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */

@@ -16,7 +16,7 @@ The main extracted information is:
 
 Apart from this it also looks for instrumentation in the comments to extract
 - watchpoints
-- asserts
+- assertions
 - and logpoints
 
 
@@ -114,11 +114,11 @@ A label contains the following info:
 - value (a number)
 
 
-# WPMEM, ASSERT, LOGPOINT
+# WPMEM, ASSERTION, LOGPOINT
 
 You don't need to take care of those.
 These are normally automatically parsed.
-Unless you override ```parseAllLabelsAndAddresses```. In that case make sure to call ```parseWpmemAssertLogpoint```for every line.
+Unless you override ```parseAllLabelsAndAddresses```. In that case make sure to call ```parseWpmemAssertionLogpoint```for every line.
 
 If your assembler allows other one-line comment identifiers than ";", e.g. "//", then you need to override ```getComment```.
 
@@ -154,7 +154,7 @@ For testing you should prepare a project for your assembler that includes
 - a local label (if supported)
 - an EQU label
 - modules (2 nested modules), if modules are supported
-- lines with WPMEM, ASSERT and LOGPOINT. Although you normally you don't need to implement something special to support these keywords it needs to be tested at least that the keywords are correctly found.
+- lines with WPMEM, ASSERTION and LOGPOINT. Although you normally you don't need to implement something special to support these keywords it needs to be tested at least that the keywords are correctly found.
 
 Then generate a list file.
 
@@ -168,7 +168,7 @@ Create unit tests that:
 - checks the association of an address to a file, both for list ListFile-Mode and Sources-Mode.
 - checks the association of a file/line number to an address, both for list ListFile-Mode and Sources-Mode.
 - checks occurrence of at least one WPMEM
-- checks occurrence of at least one ASSERT
+- checks occurrence of at least one ASSERTION
 - checks occurrence of at least one LOPGPOINT
 
 

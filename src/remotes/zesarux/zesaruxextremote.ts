@@ -33,7 +33,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 				ZesaruxExtRemote.prototype.setWatchpoint=ZesaruxExtRemote.prototype.setWatchpointExt;
 				ZesaruxExtRemote.prototype.removeWatchpoint=ZesaruxExtRemote.prototype.removeWatchpointExt;
 
-				ZesaruxExtRemote.prototype.enableAssertBreakpoints=ZesaruxExtRemote.prototype.enableAssertBreakpointsExt;
+				ZesaruxExtRemote.prototype.enableAssertionBreakpoints=ZesaruxExtRemote.prototype.enableAssertionBreakpointsExt;
 
 				ZesaruxExtRemote.prototype.enableLogpoints=ZesaruxExtRemote.prototype.setLogpointsExt;
 				ZesaruxExtRemote.prototype.enableLogpointGroup=ZesaruxExtRemote.prototype.enableLogpointsExt;
@@ -86,11 +86,11 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all assertion breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpointsExt(enable: boolean): Promise<void> {
-		for (let abp of this.assertBreakpoints) {
+	public async enableAssertionBreakpointsExt(enable: boolean): Promise<void> {
+		for (let abp of this.assertionBreakpoints) {
 			if (enable) {
 				// Create breakpoint
 				const zesaruxCondition=this.convertCondition(abp.condition)||'';
@@ -101,7 +101,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 				zSocket.send('clear-fast-breakpoint '+abp.address+' 1');
 			}
 		}
-		this.assertBreakpointsEnabled = enable;
+		this.assertionBreakpointsEnabled = enable;
 		await zSocket.executeWhenQueueIsEmpty();
 	}
 

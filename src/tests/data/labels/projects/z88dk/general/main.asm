@@ -20,7 +20,7 @@ label2:	ld a,5
 _locala:	ld b,8
 
 _localb:
-	nop		; ASSERT
+	nop		; ASSERTION
 
 label3:	;m1
  ;m1

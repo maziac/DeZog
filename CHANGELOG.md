@@ -5,6 +5,7 @@
 	- Removed: "visualMemory", "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
 	- Added: "memoryModel": "RAM", "ZX48K", "ZX128K", "ZXNEXT"
 	- Changed: "visualMemory" to boolean.
+- For Kris: Changed naming of "ASSERT" to "ASSERTION" to avoid conflicts with commented sjasmplus ASSERTs.
 
 # 1.5.3
 - Merged into master branch.

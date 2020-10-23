@@ -70,8 +70,8 @@ export class LabelsClass {
 	/// Stores the address of the watchpoints together with the line contents.
 	protected watchPointLines=new Array<{address: number, line: string}>();
 
-	/// Stores the address of the asserts together with the line contents.
-	protected assertLines=new Array<{address: number, line: string}>();
+	/// Stores the address of the assertions together with the line contents.
+	protected assertionLines=new Array<{address: number, line: string}>();
 
 	/// Stores the address of the logpoints together with the line contents.
 	protected logPointLines=new Array<{address: number, line: string}>();
@@ -105,7 +105,7 @@ export class LabelsClass {
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
 		this.watchPointLines.length=0;
-		this.assertLines.length=0;
+		this.assertionLines.length=0;
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
 		this.bankSize=0;
@@ -147,11 +147,11 @@ export class LabelsClass {
 				let parser;
 				if(SjasmplusSldLabelParser.IsSldFile(config.path)) {
 					// Parse SLD file and list file
-					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
 				else {
 					// Parse just list file
-					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
 				this.bankSize=parser.bankSize;
@@ -160,14 +160,14 @@ export class LabelsClass {
 
 		// z80asm
 		if (mainConfig.z80asm) {
-			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z80asm)
 				parser.loadAsmListFile(config);
 		}
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertLines, this.logPointLines);
+			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z88dk)
 				parser.loadAsmListFile(config);
 		}
@@ -189,10 +189,10 @@ export class LabelsClass {
 
 
 	/**
-	 * Accessor for the assert lines.
+	 * Accessor for the assertion lines.
 	 */
-	public getAssertLines() {
-		return this.assertLines;
+	public getAssertionLines() {
+		return this.assertionLines;
 	}
 
 

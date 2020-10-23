@@ -110,7 +110,7 @@ export class DzrpRemote extends RemoteBase {
 
 	// A temporary array with the set breakpoints and conditions.
 	// Undefined=no breakpoint is set.
-	// The tmpBreakpoints are created out of the other breakpoints, assertBreakpoints and logpoints
+	// The tmpBreakpoints are created out of the other breakpoints, assertionBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
 	// It allows access of the breakpoint by a simple call to one map only.
 	// It may happen seldom, but it can happen that 2 breakpoints share
@@ -409,7 +409,7 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Searches the 'breakpoints', the 'assertBreakpoints' and the
+	 * Searches the 'breakpoints', the 'assertionBreakpoints' and the
 	 * 'logpoints' arrays for the given breakpoint ID.
 	 * In fact searches tmpBreakpoints. Therefore make sure you called
 	 * createTemporaryBreakpoints before.
@@ -440,9 +440,9 @@ export class DzrpRemote extends RemoteBase {
 		tmpBps.clear()
 		// Get all breakpoints from the enabled logpoints
 		const enabledLogPoints=this.getEnabledLogpoints();
-		// Assert breakpoints
-		const assertBps=(this.assertBreakpointsEnabled)? this.assertBreakpoints:[];
-		const allBps=[...this.breakpoints, ...enabledLogPoints, ...assertBps];
+		// Assertion breakpoints
+		const assertionBps=(this.assertionBreakpointsEnabled)? this.assertionBreakpoints:[];
+		const allBps=[...this.breakpoints, ...enabledLogPoints, ...assertionBps];
 		allBps.forEach(bp => {
 			this.addTmpBreakpoint(bp);
 		});
@@ -550,12 +550,12 @@ export class DzrpRemote extends RemoteBase {
 				reasonString="Manual break.";
 				break;
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
-				// Check if it was an ASSERT.
-				const abps=this.assertBreakpoints.filter(abp => abp.address==breakAddress);
+				// Check if it was an ASSERTION.
+				const abps=this.assertionBreakpoints.filter(abp => abp.address==breakAddress);
 				for (const abp of abps) {
 					if (condition==abp.condition) {
-						const assertCond=Utility.getAssertFromCondition(condition);
-						reasonString="Assertion failed: "+assertCond;
+						const assertionCond=Utility.getAssertionFromCondition(condition);
+						reasonString="Assertionion failed: "+assertionCond;
 						return reasonString;
 					}
 				}
@@ -967,11 +967,11 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
-	 * Enables/disables all assert breakpoints set from the sources.
+	 * Enables/disables all assertion breakpoints set from the sources.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertBreakpoints(enable: boolean): Promise<void> {
-		for (let abp of this.assertBreakpoints) {
+	public async enableAssertionBreakpoints(enable: boolean): Promise<void> {
+		for (let abp of this.assertionBreakpoints) {
 			if (enable) {
 				// Set breakpoint
 				if (!abp.bpId) {
@@ -986,7 +986,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 			}
 		}
-		this.assertBreakpointsEnabled=enable;
+		this.assertionBreakpointsEnabled=enable;
 	}
 
 

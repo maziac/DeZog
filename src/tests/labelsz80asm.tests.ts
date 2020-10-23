@@ -234,7 +234,7 @@ suite('Labels (z80asm)', () => {
 	});
 
 
-	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+	test('Occurence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
 		const config={
 			z80asm: [{
@@ -250,19 +250,19 @@ suite('Labels (z80asm)', () => {
 		const wpLines=Labels.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
 		assert.equal(wpLines[0].address, 0x8200);
-		assert.equal(wpLines[0].line, "WPMEM ");
+		assert.equal(wpLines[0].line, "WPMEM");
 
-		// Test ASSERT
-		const assertLines=Labels.getAssertLines();
-		assert.equal(assertLines.length, 1);
-		assert.equal(assertLines[0].address, 0x8005);
-		assert.equal(assertLines[0].line, "ASSERT ");
+		// Test ASSERTION
+		const assertionionLines=Labels.getAssertionLines();
+		assert.equal(assertionionLines.length, 1);
+		assert.equal(assertionionLines[0].address, 0x8005);
+		assert.equal(assertionionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines=Labels.getLogPointLines();
 		assert.equal(lpLines.length, 1);
 		assert.equal(lpLines[0].address, 0x800F);
-		assert.equal(lpLines[0].line, "LOGPOINT ");
+		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
 });

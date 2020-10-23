@@ -42,8 +42,8 @@ export class LabelParserBase {
 	/// Stores the address of the watchpoints together with the line contents.
 	protected watchPointLines: Array<{address: number, line: string}>;
 
-	/// Stores the address of the asserts together with the line contents.
-	protected assertLines: Array<{address: number, line: string}>;
+	/// Stores the address of the assertions together with the line contents.
+	protected assertionLines: Array<{address: number, line: string}>;
 
 	/// Stores the address of the logpoints together with the line contents.
 	protected logPointLines: Array<{address: number, line: string}>;
@@ -90,7 +90,7 @@ export class LabelParserBase {
 		numberForLabel: Map<string, number>,
 		labelLocations: Map<string, {file: string, lineNr: number}>,
 		watchPointLines: Array<{address: number, line: string}>,
-		assertLines: Array<{address: number, line: string}>,
+		assertionLines: Array<{address: number, line: string}>,
 		logPointLines: Array<{address: number, line: string}>
 	) {
 		// Store variables
@@ -100,7 +100,7 @@ export class LabelParserBase {
 		this.numberForLabel=numberForLabel;
 		this.labelLocations=labelLocations;
 		this.watchPointLines=watchPointLines;
-		this.assertLines=assertLines;
+		this.assertionLines=assertionLines;
 		this.logPointLines=logPointLines;
 		this.bankSize=0;
 	}
@@ -174,9 +174,9 @@ export class LabelParserBase {
 			// Parse
 			this.parseLabelAndAddress(line);
 
-			// Check for WPMEM, ASSERT and LOGPOINT
+			// Check for WPMEM, ASSERTION and LOGPOINT
 			const address=this.currentFileEntry.addr;
-			this.parseWpmemAssertLogpoint(address, line);
+			this.parseWpmemAssertionLogpoint(address, line);
 
 			// Next
 			lineNr++;
@@ -213,11 +213,11 @@ export class LabelParserBase {
 
 
 	/**
-	 * Parses the line for comments with WPMEM, ASSERT or LOGPOINT.
+	 * Parses the line for comments with WPMEM, ASSERTION or LOGPOINT.
 	 * @param address The address that correspondents to the line.
 	 * @param fullLine The line of the list file as string.
 	 */
-	protected parseWpmemAssertLogpoint(address: number|undefined, fullLine: string) {
+	protected parseWpmemAssertionLogpoint(address: number|undefined, fullLine: string) {
 		// Extract just comment
 		const comment=this.getComment(fullLine);
 
@@ -234,11 +234,11 @@ export class LabelParserBase {
 		if (address==undefined)
 			return;
 
-		// ASSERT
-		match=/.*(\bASSERT\b.*)/.exec(comment);
+		// ASSERTION
+		match=/.*(\bASSERTION\b.*)/.exec(comment);
 		if (match) {
-			// Add ASSERT at this address
-			this.assertLines.push({address, line: match[1]});
+			// Add ASSERTION at this address
+			this.assertionLines.push({address, line: match[1]});
 		}
 
 		// LOGPOINT
@@ -493,7 +493,7 @@ export class LabelParserBase {
 	/**
 	 * Adds the address to the list file array.
 	 * Call this even if size is 0. The addresses are also required for
-	 * lines that may contain only a comment, e.g. LOGPOINT, WPMEM, ASSERT:
+	 * lines that may contain only a comment, e.g. LOGPOINT, WPMEM, ASSERTION:
 	 * @param address The address of the line. Could be undefined.
 	 * @param size The size of the line. E.g. for a 2 byte instruction this is 2.
 	 * Has to be 1 if address is undefined.

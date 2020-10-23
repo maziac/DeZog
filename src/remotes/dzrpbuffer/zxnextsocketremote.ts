@@ -390,7 +390,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 	/**
 	 * Stores the breakpoints in a list.
-	 * This includes the breakpoints set for ASSERTs and LOGPOINTs.
+	 * This includes the breakpoints set for ASSERTIONs and LOGPOINTs.
 	 * The breakpoints are later sent all at once with CMD_SET_BREAKPOINTS.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID. If the breakpoint could not be set it is set to 0.

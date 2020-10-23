@@ -16,7 +16,7 @@ import {LabelParserBase} from './labelparserbase';
  * See https://z00m128.github.io/sjasmplus/documentation.html#idp10
  *
  * TODO: Check with ped7g to get it into the SLD file:
- * Anyhow what the SLD file is missing is the WPMEM, ASSERT and LOGPOINT info.
+ * Anyhow what the SLD file is missing is the WPMEM, ASSERTION and LOGPOINT info.
  * For this we still need the list file.
  * That's why both files are required for parsing.
  * The list file does not require an --lstlab option.

@@ -79,7 +79,7 @@ E.g. the example above would result in 2 test suites: "Module1" and "Mod":
 ### Test Macros
 
 Inside the unit test you should use the provided unit test macros to test for failures [^1].
-[^1]: This is very similar to the assertions used in other languages.
+[^1]: This is very similar to the assertionions used in other languages.
 
 There are macros available for various purposes, e.g. to test the registers for specific values or a memory location.
 
@@ -249,7 +249,7 @@ The PC stops at the test because A is obviously not 0.
 Obviously a unit test case fails if the checked condition (the TEST_... macros) fails.
 But there are a few other cases when a test case fails:
 - unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration.
-- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERT fails somewhere. If in debug mode the test case will also be counted as failed but the code execution also stops at the particular line of code. So you can directly investigate what happened.
+- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERTIONION fails somewhere. If in debug mode the test case will also be counted as failed but the code execution also stops at the particular line of code. So you can directly investigate what happened.
 
 
 # Code Coverage

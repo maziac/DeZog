@@ -103,7 +103,7 @@ For zsim it is especially easy to do so as the evaluation is exactly the same in
 
 Watchpoints (read/write) can be set for whole areas (e.g. 0x1000-0x1FFF). They are not related to any ID but the addresses are used directly.
 
-Breakpoints (including ASSERTs and LOGPOINTs) use IDs. Also at the remote (emulator) side.
+Breakpoints (including ASSERTIONs and LOGPOINTs) use IDs. Also at the remote (emulator) side.
 IDs are required at remote side to allow conditional breakpoints also at the external remote.
 I.e. it could happen that there are 2 breakpoints at the same address but with different conditions.
 Still it must be possible to distinguish both to remove one of them but keepingthe other.
@@ -112,14 +112,14 @@ The remote's ability to support conditions is optional. As we learned above, DeZ
 But note: currently CSpect does not support conditions and for serial/ZXNext it seems also unlikely that conditions will be supported.
 However the DZRP protocol would allow it.
 
-ASSERTs: These are just breakpoints with inverted conditions. They are handled inside DeZog. For the remote they are simply breakpoints (with a condition).
+ASSERTIONs: These are just breakpoints with inverted conditions. They are handled inside DeZog. For the remote they are simply breakpoints (with a condition).
 
 LOGPOINTs: Are handled by DeZog only. Unlike conditions the DZRP does not support logpoints. For the remote a logpoint is just a breakpoint (and could additionally include a condition). The logpoint printing is completely evaluated and done in DeZog.
 
 
 When a breakpoint is hit in the (external) remote the address (instead of the ID) is returned in the pause-notification.
 The reason is:
-Several breakpoints could share the same address. Imagine a LOGPOINT or an ASSERT at address 0x8000. The user might set additionaly a breakpoint (with no or another condition) in the vscode GUI at the same location.
+Several breakpoints could share the same address. Imagine a LOGPOINT or an ASSERTION at address 0x8000. The user might set additionaly a breakpoint (with no or another condition) in the vscode GUI at the same location.
 The DzrpRemote inside DeZog will then find all breakpoints that correspond to that address and check them all. If any's condition is true a break is done otherwise a Continue is sent.
 The break reason inside the remote should be determined in the following order:
 1. Temporary breakpoints (i.e. the 2 breakpoints are checked that come with the Continue command)

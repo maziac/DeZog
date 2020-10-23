@@ -290,7 +290,7 @@ suite('Labels (sjasmplus)', () => {
 	});
 
 
-	test('Occurence of WPMEM, ASSERT, LOGPOINT', () => {
+	test('Occurence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
@@ -307,11 +307,11 @@ suite('Labels (sjasmplus)', () => {
 		assert.equal(wpLines[0].address, 0x8200);
 		assert.equal(wpLines[0].line, "WPMEM");
 
-		// Test ASSERT
-		const assertLines=Labels.getAssertLines();
-		assert.equal(assertLines.length, 1);
-		assert.equal(assertLines[0].address, 0x8005);
-		assert.equal(assertLines[0].line, "ASSERT");
+		// Test ASSERTION
+		const assertionLines=Labels.getAssertionLines();
+		assert.equal(assertionLines.length, 1);
+		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines=Labels.getLogPointLines();

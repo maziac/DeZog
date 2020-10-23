@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import {Labels} from '../labels/labels';
 
 
-suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
+suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 
 	setup(() => {
 		(Labels as any).init(250);
@@ -13,7 +13,7 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.list',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
@@ -40,30 +40,30 @@ suite('Labels (WPMEM, ASSERT, LOGPOINT)', () => {
 		assert.equal(wpmemLines[7].line, "WPMEM");
 	});
 
-	test('ASSERT', () => {
+	test('ASSERTION', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.list',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
 		};
 		Labels.readListFiles(config);
 
-		const assertLines=Labels.getAssertLines();
-		assert.equal(assertLines.length, 2);
-		assert.equal(assertLines[0].address, 0xA100);
-		assert.equal(assertLines[0].line, "ASSERT");
-		assert.equal(assertLines[1].address, 0xA101);
-		assert.equal(assertLines[1].line, "ASSERT B==1");
+		const assertionLines=Labels.getAssertionLines();
+		assert.equal(assertionLines.length, 2);
+		assert.equal(assertionLines[0].address, 0xA100);
+		assert.equal(assertionLines[0].line, "ASSERTION");
+		assert.equal(assertionLines[1].address, 0xA101);
+		assert.equal(assertionLines[1].line, "ASSERTION B==1");
 	});
 
 	test('LOGPOINT', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assert_logpoint/wpmem_assert_logpoint.list',
+				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.list',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]

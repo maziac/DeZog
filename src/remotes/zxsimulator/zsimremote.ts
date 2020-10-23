@@ -958,7 +958,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * The simulator does not add any breakpoint here because it already
-	 * has the breakpoint, logpoint and assert lists.
+	 * has the breakpoint, logpoint and assertion lists.
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID.
 	 */
@@ -970,7 +970,7 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * The simulator does not remove any breakpoint here because it already
-	 * has the breakpoint, logpoint and assert lists.
+	 * has the breakpoint, logpoint and assertion lists.
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {

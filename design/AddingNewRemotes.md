@@ -28,9 +28,9 @@ For the simulator (zsim) both is the same. In that case the capital 'Remote' is 
 To add a new Remote it needs to derive from the RemoteBase.
 The RemoteBase defines an API that is used by DeZog to communicate with the real remote.
 RemoteBase includes all methods that you might or must override.
-All must overrides include an 'assert' in the RemoteBase.
+All must overrides include an 'assertion' in the RemoteBase.
 The other are simply empty.
-If you decide to override some of the non-assert methods you can offer additional functionality.
+If you decide to override some of the non-assertion methods you can offer additional functionality.
 The debug adapter will check by itself which of the functions have been overwritten.
 
 Since you also need a transport layer to communicate with remote it could be separate it in an own class or could be implemented directly inside the Remote class.
@@ -59,9 +59,9 @@ Here are some exemplary methods that need to be overwritten:
 The following methods might be overwritten for extra functionality:
 - Watchpoints
 	- enableWPMEM: Enable/disable the watchpoints.
-- Asserts
-	- setASSERT: Sets the given assert array.
-  - enableAssertBreakpoints: Enable/disable all ASSERTs.
+- Assertions
+	- setASSERTION: Sets the given assertion array.
+  - enableAssertionBreakpoints: Enable/disable all ASSERTIONs.
 - Logpoints
 	- setLOGPOINT: Sets the logpoint array.
 	- setLogpoints: Set all logpoints.

@@ -510,7 +510,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Load files
 		try {
-			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERT and LOGPOINT.
+			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
 			Remote.readListFiles(Settings.launch);
 		}
 		catch (err) {
@@ -1751,8 +1751,8 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-LOGPOINT'||cmd=='-logpoint') {
 			output = await this.evalLOGPOINT(tokens);
 		}
-		else if (cmd=='-ASSERT'||cmd=='-assert') {
-			output = await this.evalASSERT(tokens);
+		else if (cmd=='-ASSERTION'||cmd=='-assertion') {
+			output = await this.evalASSERTION(tokens);
 		}
 		else if (cmd=='-eval') {
 			output = await this.evalEval(tokens);
@@ -1950,9 +1950,9 @@ export class DebugSessionClass extends DebugSession {
 	protected async evalHelp(tokens: Array<string>): Promise<string> {
 		const output=
 			`Allowed commands are:
-"-ASSERT enable|disable|status":
-	- enable|disable: Enables/disables all breakpoints caused by ASSERTs set in the sources. All ASSERTs are by default enabled after startup of the debugger.
-	- status: Shows enable status of ASSERT breakpoints.
+"-ASSERTION enable|disable|status":
+	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
+	- status: Shows enable status of ASSERTION breakpoints.
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain
 mathematical expressions and also labels. It will also return the label if
@@ -2334,16 +2334,16 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
-	 * ASSERT. Enable/disable/status.
+	 * ASSERTION. Enable/disable/status.
 	 * @param tokens The arguments.
  	 * @returns A Promise<string> with a probably error text.
 	 */
-	protected async evalASSERT(tokens: Array<string>): Promise<string> {
+	protected async evalASSERTION(tokens: Array<string>): Promise<string> {
 		const param=tokens[0]||'';
 		if (param=='enable'||param=='disable') {
-			// Enable or disable all ASSERT breakpoints
+			// Enable or disable all ASSERTION breakpoints
 			const enable=(param=='enable');
-			await Remote.enableAssertBreakpoints(enable);
+			await Remote.enableAssertionBreakpoints(enable);
 		}
 		else if (param=='status') {
 			// Just show
@@ -2353,20 +2353,20 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			throw new Error("Unknown argument: '"+param+"'");
 		}
 
-		// Show enable status of all ASSERT breakpoints
-		const enable=Remote.assertBreakpointsEnabled;
+		// Show enable status of all ASSERTION breakpoints
+		const enable=Remote.assertionBreakpointsEnabled;
 		const enableString=(enable)? 'enabled':'disabled';
-		let result='ASSERT breakpoints are '+enableString+'.\n';;
+		let result='ASSERTION breakpoints are '+enableString+'.\n';;
 		if (enable) {
-			// Also list all assert breakpoints
-			const abps=Remote.getAllAssertBreakpoints();
+			// Also list all assertion breakpoints
+			const abps=Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
 				const labels=Labels.getLabelsForNumber(abp.address);
 				labels.push(abp.address.toString());	// as decimal number
 				const labelsString=labels.join(', ');
 				result+=Utility.getHexString(abp.address, 4)+'h ('+labelsString+'): ';
 				// Condition, remove the brackets
-				result+=Utility.getAssertFromCondition(abp.condition)+'\n';
+				result+=Utility.getAssertionFromCondition(abp.condition)+'\n';
 			}
 		}
 		return result;

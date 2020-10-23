@@ -20,9 +20,9 @@
 
 	ORG 0xA100
 
-	nop		; ASSERT
-	nop		; ASSERT B==1
-	nop		; ASSERTx
+	nop		; ASSERTION
+	nop		; ASSERTION B==1
+	nop		; ASSERTIONx
 
 
 	ORG 0xA200
