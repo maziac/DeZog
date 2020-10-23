@@ -1,0 +1,39 @@
+{
+    // Verwendet IntelliSense zum Ermitteln möglicher Attribute.
+    // Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
+    // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "Internal Simulator",
+            //"remoteType": "zsim",
+            //"remoteType": "zrcp",
+            "remoteType": "cspect",
+            "zsim": {
+                "visualMemory": "ZXNEXT",
+                "Z80N": true,
+                "tbblueMemoryManagementSlots": true
+            },
+            "zrcp": {
+                "socketTimeout": 50
+            },
+            "cspect": {
+                "socketTimeout": 50
+            },
+            "sjasmplus": [
+                {
+                    "path": "sld1.list",
+                    //"path": "sld1.sld",
+                }
+            ],
+            "commandsAfterLaunch": [
+                "-logpoint enable"
+            ],
+            "topOfStack": "stack_top",
+            "load": "sld1.nex",
+            "rootFolder": "${workspaceFolder}"
+        }
+    ]
+}

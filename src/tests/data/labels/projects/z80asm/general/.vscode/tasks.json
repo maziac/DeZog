@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Savannah's z80asm",
+            "type": "shell",
+            "command": "/Volumes/SDDPCIE2TB/Projects/Z80/z80asm/z80asm",
+            "args": [
+                "--input=main.asm",
+                "--output=general.obj",
+                "--label=general.labels",
+                "--list=general.list"
+            ],
+            "problemMatcher": {
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
