@@ -25,7 +25,7 @@
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "#Extension",
+			"name": "Extension",
 			"preLaunchTask": "npm",
 			"runtimeExecutable": "${execPath}",
 			"args": [
@@ -38,49 +38,49 @@
 				"async_hooks.js"
 			],
 		},
-		{
-			"type": "node",
-			"request": "launch",
-			"name": "#Server",
-			"cwd": "${workspaceFolder}",
-			"program": "${workspaceFolder}/src/debugAdapter.ts",
-			"args": [
-				"--server=4711",
-				//"--prof"
-			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
-			"smartStep": true,
-			"skipFiles": [
-				"inspector_async_hook.js",
-				"async_hooks.js"
-			],
-		},
+	// 	{
+	// 		"type": "node",
+	// 		"request": "launch",
+	// 		"name": "#Server",
+	// 		"cwd": "${workspaceFolder}",
+	// 		"program": "${workspaceFolder}/src/debugAdapter.ts",
+	// 		"args": [
+	// 			"--server=4711",
+	// 			//"--prof"
+	// 		],
+	// 		"outFiles": [ "${workspaceFolder}/out/**/*.js" ],
+	// 		"smartStep": true,
+	// 		"skipFiles": [
+	// 			"inspector_async_hook.js",
+	// 			"async_hooks.js"
+	// 		],
+	// 	},
 
-		{
-			"type": "node",
-			"request": "launch",
-			"name": "Tests",
-			"cwd": "${workspaceFolder}",
-			"program": "${workspaceFolder}/node_modules/mocha/bin/mocha",
-			"args": [
-				"-u", "tdd",
-				"--timeout", "999999",
-				"--colors",
-				"./out/tests/**/*.js"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
-			"sourceMaps": true,
-			"internalConsoleOptions": "openOnSessionStart"
-		}
-	],
-	"compounds": [
-		{
-			"name": "Extension + Server",
-			"configurations": [ "#Extension", "#Server" ],
-			"runtimeExecutable": "/usr/local/bin/node",
-		}
+	// 	{
+	// 		"type": "node",
+	// 		"request": "launch",
+	// 		"name": "Tests",
+	// 		"cwd": "${workspaceFolder}",
+	// 		"program": "${workspaceFolder}/node_modules/mocha/bin/mocha",
+	// 		"args": [
+	// 			"-u", "tdd",
+	// 			"--timeout", "999999",
+	// 			"--colors",
+	// 			"./out/tests/**/*.js"
+	// 		],
+	// 		"outFiles": [
+	// 			"${workspaceFolder}/out/**/*.js"
+	// 		],
+	// 		"sourceMaps": true,
+	// 		"internalConsoleOptions": "openOnSessionStart"
+	// 	}
+	// ],
+	// "compounds": [
+	// 	{
+	// 		"name": "Extension + Server",
+	// 		"configurations": [ "#Extension", "#Server" ],
+	// 		"runtimeExecutable": "/usr/local/bin/node",
+	// 	}
 
 	]
 }
