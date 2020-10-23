@@ -199,7 +199,7 @@ export class Zx128MemoryModel extends MemoryModel {
 			let i=0;
 			slots.map(bank => {
 				const end=start+this.bankSize-1;
-				const name=(i==0)? "ROM":"BANK"+bank;
+				const name=(i==0)? "ROM"+(bank&0x01):"BANK"+bank;
 				pages.push({start, end, name});
 				// Next
 				start=end+1;

@@ -220,93 +220,88 @@ export class ZSimRemote extends DzrpRemote {
 	 *  - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	 */
 	protected configureMachine(memModel: string) {
-		try {
-			Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for teh memory model.
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for teh memory model.
 
-			// Create ports for paging
-			this.ports=new Z80Ports();
+		// Create ports for paging
+		this.ports=new Z80Ports();
 
-			// Configure different memory models
-			switch (memModel) {
-				case "RAM":
-					{
-						// 64K RAM, no ZX
-						// Memory Model
-						this.memoryModel=new MemoryModel();
-						this.memory=new SimulatedMemory(1, 1);
-						// Check if ULA enabled
-						if (Settings.launch.zsim.ulaScreen)
-							this.ulaScreen=new UlaScreen(this.memory);
+		// Configure different memory models
+		switch (memModel) {
+			case "RAM":
+				{
+					// 64K RAM, no ZX
+					// Memory Model
+					this.memoryModel=new MemoryModel();
+					this.memory=new SimulatedMemory(1, 1);
+					// Check if ULA enabled
+					if (Settings.launch.zsim.ulaScreen)
+						this.ulaScreen=new UlaScreen(this.memory);
+				}
+				break;
+			case "ZX48K":
+				{
+					// ZX 48K
+					// Memory Model
+					this.memoryModel=new Zx48MemoryModel();
+					this.memory=new Zx48Memory();
+					// Check if ULA enabled
+					if (Settings.launch.zsim.ulaScreen)
+						this.ulaScreen=new UlaScreen(this.memory);
+				}
+				break;
+			case "ZX128K":
+				{
+					// ZX 128K
+					// Memory Model
+					this.memoryModel=new Zx128MemoryModel();
+					this.memory=new Zx128Memory();
+					// Bank switching.
+					this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+					// Check if ULA enabled
+					if (Settings.launch.zsim.ulaScreen) {
+						this.ulaScreen=new UlaScreen(this.memory);
+						this.ulaScreen.setUlaScreenAddress(5*0x4000);	// Bank 5
 					}
-					break;
-				case "ZX48K":
-					{
-						// ZX 48K
-						// Memory Model
-						this.memoryModel=new Zx48MemoryModel();
-						this.memory=new Zx48Memory();
-						// Check if ULA enabled
-						if (Settings.launch.zsim.ulaScreen)
-							this.ulaScreen=new UlaScreen(this.memory);
+				}
+				break;
+			case "ZXNEXT":
+				{
+					// ZX Next
+					// Memory Model
+					this.memoryModel=new ZxNextMemoryModel();
+					this.memory=new ZxNextMemory();
+					// Bank switching.
+					for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
+						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
+						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 					}
-					break;
-				case "ZX128K":
-					{
-						// ZX 128K
-						// Memory Model
-						this.memoryModel=new Zx128MemoryModel();
-						this.memory=new Zx128Memory();
-						// Bank switching.
-						this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
-						// Check if ULA enabled
-						if (Settings.launch.zsim.ulaScreen) {
-							this.ulaScreen=new UlaScreen(this.memory);
-							this.ulaScreen.setUlaScreenAddress(5*0x4000);	// Bank 5
-						}
+					// Connect to port
+					this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+					this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+					this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+					// Check if ULA enabled
+					if (Settings.launch.zsim.ulaScreen) {
+						this.ulaScreen=new UlaScreen(this.memory);
+						this.ulaScreen.setUlaScreenAddress(10*0x2000);	// Initially bank 10
 					}
-					break;
-				case "ZXNEXT":
-					{
-						// ZX Next
-						// Memory Model
-						this.memoryModel=new ZxNextMemoryModel();
-						this.memory=new ZxNextMemory();
-						// Bank switching.
-						for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
-							this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
-							this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
-						}
-						// Connect to port
-						this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-						this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-						this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-						// Check if ULA enabled
-						if (Settings.launch.zsim.ulaScreen) {
-							this.ulaScreen=new UlaScreen(this.memory);
-							this.ulaScreen.setUlaScreenAddress(10*0x2000);	// Initially bank 10
-						}
-					}
-					break;
-				default:
-					throw Error("Unknown memory model: '"+memModel+"'.");
-			}
-
-			// Convert labels if necessary.
-			this.memoryModel.init();
-			Labels.convertLabelsTo(this.memoryModel);
-
-			// Create a Z80 CPU to emulate Z80 behavior
-			this.z80Cpu=new Z80Cpu(this.memory, this.ports);
-			// For restoring the state
-			this.serializeObjects=[
-				this.z80Cpu,
-				this.memory,
-				this.ports
-			];
+				}
+				break;
+			default:
+				throw Error("Unknown memory model: '"+memModel+"'.");
 		}
-		catch (e) {
-			this.emit('warning', e.message);
-		}
+
+		// Convert labels if necessary.
+		this.memoryModel.init();
+		Labels.convertLabelsTo(this.memoryModel);
+
+		// Create a Z80 CPU to emulate Z80 behavior
+		this.z80Cpu=new Z80Cpu(this.memory, this.ports);
+		// For restoring the state
+		this.serializeObjects=[
+			this.z80Cpu,
+			this.memory,
+			this.ports
+		];
 	}
 
 

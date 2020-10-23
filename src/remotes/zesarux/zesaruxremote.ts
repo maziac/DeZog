@@ -369,8 +369,12 @@ export class ZesaruxRemote extends RemoteBase {
 				let i=0;
 				for (let bank of slots) {
 					// Change to ZEsarUX history coding
-					if (bank==255 && i<2)
-						bank=0x8000+i;	// ROM
+					if (bank>=0xFE) {
+						// ROM, both ZX128 and ZXNext.
+						// ZXNext: 	ROM0: 0xFE or 0xFF,	ROM1: 0x100 or 0x101
+						// ZX128: 	ROM0: 0xFE, 		ROM1: 0xFF
+						bank=0x8000+bank-0xFE;	// ROM
+					}
 					// Convert to hex string
 					data+=Utility.getHexString(bank, 4);
 					// Next
@@ -414,8 +418,8 @@ export class ZesaruxRemote extends RemoteBase {
 					const rest=bankString.substr(1);
 					let bankNumber=parseInt(rest);
 					if (type=='O') {
-						// ROM
-						bankNumber+=0xFE;	// Also for ZX128, doesn't matter
+						// Beginning with 0xFE is ROM
+						bankNumber+=0xFE;
 					}
 					slots[i]=bankNumber;
 				}

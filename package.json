@@ -641,15 +641,12 @@
 							"request": "launch",
 							"name": "DeZog",
 							"remoteType": "zsim",
-							"zrcp": {
-								"port": 10000
+							"zsim": {
+								"memoryModel": "RAM"
 							},
-							"cspect": {
-								"port": 10000
-							},
-							"zsim": {},
+							"zrcp": {},
+							"cspect": {},
 							"zxnext": {
-								"baudrate": 230400,
 								"port": "/dev/tty.usbserial"
 							},
 							"topOfStack": "stack_top",
