@@ -36,18 +36,28 @@ export class UnifiedPath {
 		return false;
 	}
 
-	
+
 	/**
 	 * Changes all Windows backslashes "\" into forward slashes "/".
 	 * I.e. it creates a unified path.
-	 * @param fpath The file path. MAy contain "/" or "\" even both.
+	 * For window path it also chagnes the drive letter to lower case (e.g. "C:" to "c:".
+	 * @param fpath The file path. May contain "/" or "\" even both.
 	 * @return The same path but all '\' converted to '/'.
 	 * If fpath is undefined an undefined value is returned.
 	 */
 	public static getUnifiedPath(fpath: string): string {
 		if (!fpath)
 			return undefined as any;
-		const uPath=fpath.replace(/\\/g, '/');
+		let uPath=fpath.replace(/\\/g, '/');
+		if (uPath.length>1) {
+			// Check for windows path
+			let drive=uPath.substr(0,2);
+			if (drive.endsWith(':')) {
+				// Change drive letter to lower case
+				drive=drive.toLowerCase();
+				uPath=drive+uPath.substr(2);
+			}
+		}
 		return uPath;
 	}
 

@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.5.4
+- Fixed# 34: Unverified breakpoints in version 1.5.3. Windows 10
+
 # 1.5.3
 - Merged into master branch.
 - Updated 'whatsnew'.
