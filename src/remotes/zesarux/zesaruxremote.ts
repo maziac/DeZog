@@ -366,7 +366,6 @@ export class ZesaruxRemote extends RemoteBase {
 				// Add slot info in ZEsarUX format
 				data+=" MMU=";
 				const slots=await this.getSlotsFromEmulator();
-				let i=0;
 				for (let bank of slots) {
 					// Change to ZEsarUX history coding
 					if (bank>=0xFE) {
@@ -377,8 +376,6 @@ export class ZesaruxRemote extends RemoteBase {
 					}
 					// Convert to hex string
 					data+=Utility.getHexString(bank, 4);
-					// Next
-					i++;
 				}
 
 				Z80Registers.setCache(data);

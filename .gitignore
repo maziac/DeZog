@@ -5,7 +5,6 @@ npm-debug.log
 /*.vsix
 logs/
 /data/
-.vscode/
 notes.md
 /coverage/
 **/.tmp/
