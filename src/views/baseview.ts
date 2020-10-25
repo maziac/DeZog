@@ -93,7 +93,7 @@ export class BaseView {
 			BaseView.staticViews.push(this);
 
 		// create vscode panel view
-		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true});
+		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
 
 		// Handle closing of the view
 		this.vscodePanel.onDidDispose(() => {
