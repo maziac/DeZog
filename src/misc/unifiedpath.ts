@@ -40,7 +40,7 @@ export class UnifiedPath {
 	/**
 	 * Changes all Windows backslashes "\" into forward slashes "/".
 	 * I.e. it creates a unified path.
-	 * For window path it also chagnes the drive letter to lower case (e.g. "C:" to "c:".
+	 * For window path it also changes the drive letter to lower case (e.g. "C:" to "c:".
 	 * @param fpath The file path. May contain "/" or "\" even both.
 	 * @return The same path but all '\' converted to '/'.
 	 * If fpath is undefined an undefined value is returned.
