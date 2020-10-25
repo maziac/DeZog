@@ -306,7 +306,7 @@ export class LabelParserBase {
 			}
 
 			// Check address
-			if (!entry.addr)
+			if (entry.addr == undefined)
 				continue;
 
 			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
