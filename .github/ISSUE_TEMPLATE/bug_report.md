@@ -30,4 +30,5 @@ If applicable, add screenshots to help explain your problem.
 
 
 **Additional context**
-Please attach your launch.json file.
+If possible please attach your complete Z80 project as a zip file. 
+It should also include the .vscode folder with the launch.json file and the list (.lst) file.

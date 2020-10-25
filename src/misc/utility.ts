@@ -677,7 +677,9 @@ export class Utility {
 		if (rootPath) {
 			if (!rootPath.endsWith('/'))
 				rootPath+='/';
-			if (filePath.startsWith(rootPath))
+			// If window paths, then make sure both path start with lower case letters for comparison. rootPath does already.
+			const lcFilePath=UnifiedPath.getUnifiedPath(filePath);
+			if (lcFilePath.startsWith(rootPath))
 				filePath=filePath.substr(rootPath.length);
 		}
 		return filePath;
