@@ -1018,7 +1018,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 	 * Sets the html code to display the sprites.
 	 */
 	protected setHtml() {
-		if (!this.vscodePanel)
+		if (!this.vscodeWebview)
 			return;
 
 		const format = this.createHtmlSkeleton();
@@ -1028,7 +1028,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		const canvas = this.createHtmlCanvas();
 		const content = ui + table + '\n<p style="margin-bottom:3em;"></p>\n\n' + canvas;
 		const html = util.format(format, content);
-		this.vscodePanel.webview.html = html;
+		this.vscodeWebview.html = html;
 	}
 
 }

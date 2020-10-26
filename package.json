@@ -22,7 +22,7 @@
 		"sjasmplus"
 	],
 	"engines": {
-		"vscode": "^1.35.1",
+		"vscode": "^1.50.0",
 		"node": "^7.9.0"
 	},
 	"icon": "images/dezog-icon.png",
@@ -39,8 +39,6 @@
 		"tslint": "eslint ./src/**/*.ts",
 		"watch": "tsc -w -p ./src",
 		"test": "mocha -u tdd ./out/tests/",
-		"preinstall": "npx npm-force-resolutions",
-		"postinstall": "node ./node_modules/vscode/bin/install",
 		"package": "vsce package",
 		"publish": "vsce publish"
 	},
@@ -64,9 +62,9 @@
 		"electron-rebuild": "^1.10.1",
 		"minimist": "^1.2.5",
 		"tslint": "^6.1.0",
-		"typescript": "3.8.3",
+		"typescript": "^4.0.2",
 		"vsce": "1.74.0",
-		"vscode": "^1.1.36",
+		"@types/vscode": "^1.50.0",
 		"vscode-debugadapter-testsupport": "1.40.2"
 	},
 	"resolutions": {

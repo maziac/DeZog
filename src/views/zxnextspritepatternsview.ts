@@ -663,7 +663,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 	* Sets the html code to display the sprite patterns.
 	*/
 	protected setHtml() {
-		if (!this.vscodePanel)
+		if (!this.vscodeWebview)
 			return;
 
 		const format = this.createHtmlSkeleton();
@@ -671,7 +671,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		const ui = this.createScriptsAndButtons();
 		const table = this.createHtmlTable();
 		const html = util.format(format, ui + table);
-		this.vscodePanel.webview.html = html;
+		this.vscodeWebview.html = html;
 	}
 }
 

@@ -583,6 +583,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Create memory/register dump view
 				let registerMemoryView=new MemoryRegisterView();
+				await registerMemoryView.asyncInit();
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
 				await registerMemoryView.update();

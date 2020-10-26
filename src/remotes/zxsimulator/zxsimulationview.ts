@@ -351,7 +351,7 @@ export class ZxSimulationView extends BaseView {
 	 * Depending on the Settings selection.
 	 */
 	protected setHtml() {
-		if (!this.vscodePanel)
+		if (!this.vscodeWebview)
 			return;
 
 		let html=
@@ -719,7 +719,7 @@ color:black;
 </html>
 `;
 
-		this.vscodePanel.webview.html=html;
+		this.vscodeWebview.html=html;
 	}
 }
 

@@ -55,11 +55,12 @@ export class MemoryDumpView extends BaseView {
 		MemoryDumpView.MemoryViews.push(this);
 
 		// Handle hide/unhide -> update the register pointers.
-		Utility.assert(this.vscodePanel);
-        (this.vscodePanel as vscode.WebviewPanel).onDidChangeViewState(e => {
-			// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
-			this.setColorsForRegisterPointers();
-        });
+		if (this.vscodePanel) {
+			this.vscodePanel.onDidChangeViewState(e => {
+				// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
+				this.setColorsForRegisterPointers();
+			});
+		}
 	}
 
 
@@ -119,17 +120,20 @@ export class MemoryDumpView extends BaseView {
 	 * @param size The size of the memory block.
 	 */
 	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
-		if (!this.vscodePanel)
+		if (!this.vscodeWebview)
 			return;
 
 		this.memDump.addBlock(startAddress, size, title);
+
 		// title
-		if(this.vscodePanel.title.length > 0)
-			this.vscodePanel.title += ', ';
-		else
-			this.vscodePanel.title = 'Memory Dump ';
-		const usedTitle = title || '@' + Utility.getHexString(startAddress, 4) + 'h';
-		this.vscodePanel.title += usedTitle;
+		if (this.vscodePanel) {
+			if (this.vscodePanel.title.length>0)
+				this.vscodePanel.title+=', ';
+			else
+				this.vscodePanel.title='Memory Dump ';
+			const usedTitle = title || '@' + Utility.getHexString(startAddress, 4) + 'h';
+			this.vscodePanel.title+=usedTitle;
+		}
 	}
 
 
@@ -162,7 +166,6 @@ export class MemoryDumpView extends BaseView {
 						asciiValue: Utility.getASCIIChar(realValue)
 					};
 					this.sendMessageToWebView(message, mdv);
-					//mdv.vscodePanel.webview.postMessage(message);
 					mdv.getValueInfoText(address);
 				}
 			};
@@ -199,7 +202,6 @@ export class MemoryDumpView extends BaseView {
 							text: text
 						};
 						this.sendMessageToWebView(msg);
-						//this.vscodePanel.webview.postMessage(msg);
 					});
 			});
 	}
@@ -220,7 +222,6 @@ export class MemoryDumpView extends BaseView {
 					text: formattedString
 				};
 				this.sendMessageToWebView(msg);
-				//this.vscodePanel.webview.postMessage(msg);
 			});
 	}
 
@@ -505,7 +506,7 @@ export class MemoryDumpView extends BaseView {
 	 * Sets the html code to display the memory dump.
 	 */
 	protected setHtml() {
-		if (!this.vscodePanel)
+		if (!this.vscodeWebview)
 			return;
 
 		const format = `<!DOCTYPE html>
@@ -541,7 +542,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Get register values
 		Remote.getRegisters().then(() => {
-			if (!this.vscodePanel)
+			if (!this.vscodeWebview)
 				return;
 
 			// Loop through all metablocks
@@ -554,7 +555,7 @@ export class MemoryDumpView extends BaseView {
 
 			// Add html body
 			const html = util.format(format, tables, legend);
-			this.vscodePanel.webview.html = html;
+			this.vscodeWebview.html = html;
 
 			// Set colors for register pointers
 			this.setColorsForRegisterPointers();

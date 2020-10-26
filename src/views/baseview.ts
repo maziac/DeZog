@@ -76,8 +76,12 @@ export class BaseView {
 
 
 	// DYNAMIC:
+	/// The webview to show the base view in vscode.
+	protected vscodeWebview: vscode.Webview;
 
-	/// The panel to show the base view in vscode.
+	/// An optional panel (containing the webview).
+	/// This is empty if the webview is used from the side bar but contains
+	/// a vscode.WebviewPanel if an (editor) window is used.
 	protected vscodePanel: vscode.WebviewPanel|undefined;
 
 
@@ -92,21 +96,33 @@ export class BaseView {
 		if (addToStaticViews)
 			BaseView.staticViews.push(this);
 
-		// create vscode panel view
-		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
+		// Create vscode panel view
+		this.setupWebView();
 
 		// Handle closing of the view
-		this.vscodePanel.onDidDispose(() => {
+		this.vscodePanel?.onDidDispose(() => {
 			// Call overwritable function
 			this.disposeView();
 		});
 
+	}
+
+
+	/**
+	 * Creates the webview for communication.
+	 * Called by the constructor.
+	 */
+	protected setupWebView() {
+		// Create vscode panel view
+		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
+		// Use webview
+		this.vscodeWebview=this.vscodePanel.webview;
+
 		// Handle messages from the webview
-		this.vscodePanel.webview.onDidReceiveMessage(message => {
+		this.vscodeWebview.onDidReceiveMessage(message => {
 			//console.log("webView command '"+message.command+"':", message);
 			this.webViewMessageReceived(message);
 		});
-
 	}
 
 
@@ -121,6 +137,7 @@ export class BaseView {
 		Utility.assert(index!==-1)
 		BaseView.staticViews.splice(index, 1);
 		// Do not use panel anymore
+		this.vscodeWebview=undefined as any;
 		this.vscodePanel=undefined;
 	}
 
@@ -139,11 +156,11 @@ export class BaseView {
 	 * A message is posted to the web view.
 	 * @param message The message. message.command should contain the command as a string.
 	 * This needs to be evaluated inside the web view.
-	 * @param webview The webview to post to. Can be omitted, default is 'this'.
+	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
 	 */
-	protected sendMessageToWebView(message: any, webview: BaseView = this) {
-		if (webview.vscodePanel)
-			webview.vscodePanel.webview.postMessage(message);
+	protected sendMessageToWebView(message: any, baseView: BaseView = this) {
+		//if (baseView.vscodeWebView)
+		baseView.vscodeWebview.postMessage(message);
 	}
 
 
