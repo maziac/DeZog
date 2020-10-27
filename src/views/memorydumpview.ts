@@ -24,7 +24,7 @@ const MEM_DUMP_BOUNDARY = 16;
  * when the panel is created or updated (each step) or when the webview becomes visible (e.g. if
  * it was hidden).
  * 		- The dump contents is updated on every step ('update').
- * 		- The hovering text (labels etc.).: When the mouse is over a value or address the webview asks for the hovering text ('getValueInfoText/getAddressInfoText'.
+ * 		- The hovering text (labels etc.): When the mouse is over a value or address the webview asks for the hovering text ('getValueInfoText/getAddressInfoText'.
  * 		This way the calculation of all labels is delayed. A message with the info is sent to the webview ('valueInfoText/addressInfoText').
  * - Editing:
  * 		- On double click the webview turns the cell in editable mode.
@@ -322,7 +322,8 @@ export class MemoryDumpView extends BaseView {
 			// makes the object editable on double click.
 			curObj = obj;	// store object for use in other functions
 			prevValue = curObj.innerText;	// store for undo
-			curObj.innerText += 'h';
+			if(!curObj.innerText.endsWith('h'))
+				curObj.innerText += 'h';
 			curObj.contentEditable = true;
 			curObj.focus();
 			selection = window.getSelection();    // Save the selection.
