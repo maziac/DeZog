@@ -56,7 +56,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Handle hide/unhide -> update the register pointers.
 		if (this.vscodePanel) {
-			this.vscodePanel.onDidChangeViewState(e => {
+			this.vscodePanel.onDidChangeViewState(async e => {
 				// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
 				this.setColorsForRegisterPointers();
 			});
@@ -119,21 +119,12 @@ export class MemoryDumpView extends BaseView {
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block.
 	 */
-	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
+	// TODO: Remove?
+	public addBlock(startAddress: number, size: number, title: string) {
 		if (!this.vscodeWebview)
 			return;
 
 		this.memDump.addBlock(startAddress, size, title);
-
-		// title
-		if (this.vscodePanel) {
-			if (this.vscodePanel.title.length>0)
-				this.vscodePanel.title+=', ';
-			else
-				this.vscodePanel.title='Memory Dump ';
-			const usedTitle = title || '@' + Utility.getHexString(startAddress, 4) + 'h';
-			this.vscodePanel.title+=usedTitle;
-		}
 	}
 
 
@@ -188,11 +179,12 @@ export class MemoryDumpView extends BaseView {
 					.then(formattedString => {
 						text+=formattedString;
 						// Check for last value
-						const prevValue=this.memDump.getValueFor(address, true /*previous*/);
+						const prevValue=this.memDump.getPrevValueFor(address);
 						if (!isNaN(prevValue)) {
-							if (prevValue!=value) {
+							if (prevValue!=value)
+							{
 								// has changed so add the last value to the hover text
-								text+='\nPrevious value: '+prevValue.toString(16)+'h';
+								text+='\nPrevious value: '+Utility.getHexString(prevValue,2)+'h';
 							}
 						}
 						// Now send the formatted text to the web view for display.
@@ -230,27 +222,42 @@ export class MemoryDumpView extends BaseView {
 	 * Retrieves the memory content and displays it.
 	 * @param reason Not used.
 	 */
-	public async update(reason?: any): Promise<void>{
+	public async update(reason?: any): Promise<void> {
+		// Create generic html if not yet done
+		if (!this.vscodeWebview.html)
+			this.setHtml();
+
 		// Loop all memory blocks
+		const msg={
+			command: 'setMemoryTable',
+			index: 0,
+			html: ""
+		};
+		let i=0;
 		for (let metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
 			const data=await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
 			metaBlock.prevData=metaBlock.data;
 			metaBlock.data=data;
+			// Update the block in html
+			msg.html=this.createHtmlTable(metaBlock);
+			msg.index=i;
+			this.sendMessageToWebView(msg);
+			// Next
+			i++;
 		}
 
-		// Now combine all data and create the html.
-		this.setHtml();
+		// Set colors for register pointers
+		await this.setColorsForRegisterPointers();
 	}
 
 
 	/**
-	 * Creates one html table out of a meta block.
-	 * @param metaBlock The block to convert.
+	 * Creates the script (i.e. functions) for all blocks (html tables).
 	 */
-	protected createHtmlTable(metaBlock: MetaBlock): string {
-		const format = `
+	protected createHtmlScript(): string {
+		const html=`
 		<script>
 		const vscode = acquireVsCodeApi();
 
@@ -390,25 +397,71 @@ export class MemoryDumpView extends BaseView {
 						obj.style.backgroundColor = message.color;
 						obj.style.borderRadius = '3px';
 					}
+				 }   break;
+
+				case 'setMemoryTable':
+				{
+					// Set table as html string
+			        const tableDiv=document.getElementById("mem_table_"+message.index);
+					tableDiv.innerHTML=message.html;
  				}   break;
 
            }
         });
 
-
 		</script>
+`;
+		return html;
+	}
 
-		%s
-		<table style="">
-			<colgroup>
-				<col>
-				<col width="10em">
-				<col span="%d" width="20em">
-				<col width="10em">
-			</colgroup>
 
-		%s
-		</table>
+	/**
+	 * Creates one html table out of a meta block.
+	 * @param index The number of the memory block, starting at 0.
+	 * Used for the id.
+	 * @param metaBlock The block to convert. The templtae takes only the name from it.
+	 */
+	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
+		// Add html body
+		let caption=metaBlock.title||'...';
+		/*if (caption)
+			caption='<div align="left">'+caption+':<br></div>\n';
+		else
+			caption='';
+		*/
+
+		const html=`
+		<details open="true">
+			<summary>${caption}</summary>
+			<div id="mem_table_${index}">
+			</div>
+		</details>
+		`;
+		return html;
+	}
+
+
+	/**
+	 * Creates one html table out of a meta block.
+	 * @param index The number of the memory block, starting at 0.
+	 * Used for the id.
+	 * @param metaBlock The block to convert.
+	 */
+	protected createHtmlTable(metaBlock: MetaBlock): string {
+		if (!metaBlock.data)
+			return '';
+
+		const format=
+`			<table style="">
+				<colgroup>
+					<col>
+					<col width="10em">
+					<col span="%d" width="20em">
+					<col width="10em">
+				</colgroup>
+
+			%s
+			</table>
 		`;
 
 		// Create a string with the table itself.
@@ -417,7 +470,7 @@ export class MemoryDumpView extends BaseView {
 		let i = 0;
 		const clmns = MEM_DUMP_BOUNDARY;
 		const data = metaBlock.data;
-		const len = data.length;
+		const len=data.length;
 
 		const addressColor = Settings.launch.memoryViewer.addressColor;
 		const asciiColor = Settings.launch.memoryViewer.asciiColor;
@@ -459,12 +512,14 @@ export class MemoryDumpView extends BaseView {
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Compare with prev value.
-			const prevData = metaBlock.prevData;
-			if(prevData.length > 0) {
-				const prevValue = prevData[k];
-				if(value != prevValue) {
-					// Change html emphasizes
-					valueText = this.addEmphasizeChanged(valueText);
+			const prevData=metaBlock.prevData;
+			if (prevData) {
+				if (prevData.length>0) {
+					const prevValue=prevData[k];
+					if (value!=prevValue) {
+						// Change html emphasizes
+						valueText=this.addEmphasizeChanged(valueText);
+					}
 				}
 			}
 
@@ -491,19 +546,14 @@ export class MemoryDumpView extends BaseView {
 				i = 0;
 		}
 
-		// Add html body
-		let caption = metaBlock.title;
-		if(caption)
-			caption = '<div align="left">' + caption + ':<br></div>\n';
-		else
-			caption = '';
-		const html = util.format(format, caption, clmns, table);
+		const html = util.format(format, clmns, table);
 		return html;
 	}
 
 
 	/**
 	 * Sets the html code to display the memory dump.
+	 * Is called only once at creation time as it does not hold the actual data.
 	 */
 	protected setHtml() {
 		if (!this.vscodeWebview)
@@ -540,26 +590,23 @@ export class MemoryDumpView extends BaseView {
 			legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
 		}
 
-		// Get register values
-		Remote.getRegisters().then(() => {
-			if (!this.vscodeWebview)
-				return;
+		// Loop through all metablocks
+		var tables;
+		const vertBreak=this.getHtmlVertBreak();
+		let i=0;
+		for(let mb of this.memDump.metaBlocks) {
+			const table = this.createHtmlTableTemplate(i, mb);
+			tables=(tables)? tables+vertBreak+table:table;
+			// Next
+			i++;
+		}
 
-			// Loop through all metablocks
-			var tables;
-			const vertBreak = this.getHtmlVertBreak();
-			for(let mb of this.memDump.metaBlocks) {
-				const table = this.createHtmlTable(mb);
-				tables = (tables) ? tables + vertBreak + table : table;
-			}
+		// Add functions
+		const scripts=this.createHtmlScript();
 
-			// Add html body
-			const html = util.format(format, tables, legend);
-			this.vscodeWebview.html = html;
-
-			// Set colors for register pointers
-			this.setColorsForRegisterPointers();
-		});
+		// Add html body
+		const html = util.format(format, scripts+tables, legend);
+		this.vscodeWebview.html = html;
 	}
 
 
@@ -567,46 +614,46 @@ export class MemoryDumpView extends BaseView {
 	 * Set colors for register pointers.
 	 * Colors are only set if the webview is visible.
 	 */
-	protected setColorsForRegisterPointers() {
+	protected async setColorsForRegisterPointers(): Promise<void> {
+		// Make sure registers are current.
+		await Remote.getRegisters();
 		// Set colors for register pointers
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		for(let i=0; i<arr.length-1; i+=2) {
 			const reg = arr[i];
 			if(!Z80RegistersClass.isRegister(reg))
 				continue;
-			// get address = value of reg
-			Remote.getRegisters().then(() => {
-				const address = Remote.getRegisterValue(reg)
-				//console.log( reg + ': ' + address.toString(16));
-				// Clear old color
-				const prevAddr=this.prevRegAddr.get(reg) || -1;
-				const msgPrev = {
-					command: 'setAddressColor',
-					address: prevAddr.toString(),
-					color: "transparent"
-				};
-				this.sendMessageToWebView(msgPrev);
-				// Send the address/color to the web view for display.
-				const color = arr[i+1];
-				const msg = {
-					command: 'setAddressColor',
-					address: address.toString(),
-					color: color
-				};
-				this.sendMessageToWebView(msg);
-				// Store
-				this.prevRegAddr.set(reg, address);
-			});
+			// Get address = value of reg
+			const address = Remote.getRegisterValue(reg)
+			//console.log( reg + ': ' + address.toString(16));
+			// Clear old color
+			const prevAddr=this.prevRegAddr.get(reg) || -1;
+			const msgPrev = {
+				command: 'setAddressColor',
+				address: prevAddr.toString(),
+				color: "transparent"
+			};
+			this.sendMessageToWebView(msgPrev);
+			// Send the address/color to the web view for display.
+			const color = arr[i+1];
+			const msg = {
+				command: 'setAddressColor',
+				address: address.toString(),
+				color: color
+			};
+			this.sendMessageToWebView(msg);
+			// Store
+			this.prevRegAddr.set(reg, address);
 		}
 	}
 
 
 	/**
-	 * Can be overridden. Determines what is shown between the tables,
+	 * Determines what is shown between the tables,
 	 * e.g. "...".
 	 */
 	protected getHtmlVertBreak() {
-		return '\n...<br>\n';
+		return '\n';
 	}
 
 

@@ -141,6 +141,16 @@
 				"language": "pasmo"
 			}
 		],
+		"views": {
+			"debug": [
+				{
+					"type": "webview",
+					"id": "dezog.memoryregisterview",
+					"name": "Memory Dump",
+					"when": "inDebugMode"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "dezog.whatsNew",

@@ -2242,8 +2242,11 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		// Create new view
 		const panel=new MemoryDumpView();
-		for (let k=0; k<tokens.length; k+=2)
-			panel.addBlock(addrSizes[k], addrSizes[k+1]);
+		for (let k=0; k<tokens.length; k+=2) {
+			const start=addrSizes[k];
+			const size=addrSizes[k+1]
+			panel.addBlock(start, size, Utility.getHexString(start, 4)+'h-'+Utility.getHexString(start+size-1, 4)+'h');
+		}
 		panel.mergeBlocks();
 		await panel.update();
 

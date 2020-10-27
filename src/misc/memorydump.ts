@@ -33,9 +33,10 @@ export class MetaBlock {
 
 	/// The (current) memory data.
 	/// The data is stored as one continuous hex string.
-	public data: Uint8Array;
+	public data: Uint8Array|undefined;
 	/// The previous memory data (used to check which values have changed).
-	public prevData: Uint8Array;
+	/// Undefined if not used.
+	public prevData: Uint8Array|undefined;
 
 	/// Title shown as table caption, can be omitted.
 	public title: string|undefined;
@@ -44,9 +45,10 @@ export class MetaBlock {
 	constructor(address: number, size: number, memBlocks: Array<MemBlock>, title: string|undefined = undefined) {
 		this.address = address;
 		this.size = size;
-		this.memBlocks = memBlocks;
-		this.data = new Uint8Array(size);
-		this.prevData = new Uint8Array(size);
+		this.memBlocks=memBlocks;
+		// For the first time no data or prevData is available
+		this.data=undefined;
+		this.prevData=undefined;
 		this.title = title;
 	}
 
@@ -83,7 +85,6 @@ export class MemoryDump {
 	/**
 	 * Remove all memory blocks.
 	 */
-
 	public clearBlocks() {
 		this.metaBlocks.length = 0;
 	}
@@ -97,7 +98,7 @@ export class MemoryDump {
 	 * @param size The size of the memory block.
 	 * @param title An optional title for the memory block (shown as table header).
 	 */
-	public addBlock(startAddress: number, size: number, title:string|undefined = undefined) {
+	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
 		// Create memory block
 		const memBlock={address: startAddress, size: size, data: []};
 		let bigBlock;
@@ -123,18 +124,87 @@ export class MemoryDump {
 
 
 	/**
+	 * A block is changed instead to create a new block.
+	 * This preserves the previous data if new range is the same or at least overlaps
+	 * with the old range.
+	 * @param blockIndex The block to change.
+	 * @param startAddress The address of the memory block.
+	 * @param size The size of the memory block.
+	 */
+	public changeBlock(blockIndex: number, startAddress: number, size: number, title: string|undefined=undefined) {
+		Utility.assert(blockIndex<this.metaBlocks.length);
+
+		const memBlock={address: startAddress, size: size, data: []};
+		let bigBlock;
+		let boundAddr;
+		let boundSize;
+		// Check for size > 0xFFFF
+		if (size<=0xFFFF-2*(2*MEM_DUMP_BOUNDARY-1)) {
+			// Create one meta block for the memory block
+			boundAddr=Utility.getBoundary(memBlock.address-MEM_DUMP_BOUNDARY, MEM_DUMP_BOUNDARY);
+			boundSize=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+2*MEM_DUMP_BOUNDARY-boundAddr;
+		}
+		else {
+			boundAddr=Utility.getBoundary(memBlock.address, MEM_DUMP_BOUNDARY);
+			const boundEnd=Utility.getBoundary(memBlock.address+memBlock.size-1, MEM_DUMP_BOUNDARY)+MEM_DUMP_BOUNDARY;
+			let boundSize=boundEnd-boundAddr+1;
+			if (boundSize>0xFFFF) {
+				boundSize=Math.trunc(0xFFFF/MEM_DUMP_BOUNDARY)*MEM_DUMP_BOUNDARY;
+				memBlock.size=boundAddr+boundSize-startAddress;
+			}
+		}
+
+		// Compare sizes
+		const metaBlock=this.metaBlocks[blockIndex];
+		if (metaBlock.address==boundAddr
+			&&metaBlock.size==boundSize) {
+			// Range is the same, change only memblock
+			metaBlock.memBlocks=[memBlock];
+			return;
+		}
+
+		// Otherwise create new block
+		bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
+
+		// And exchange with current one
+		this.metaBlocks[blockIndex]=bigBlock;
+	}
+
+
+	/**
 	 * Returns the value of an address.
 	 * Searches all meta blocks and returns the value of the first matching one.
 	 * @param address The address to look up.
-	 * @param previous Can be omitted. If given and set to true the previous value is returned.
 	 * @return The value at address or NaN if nothing could be found.
 	 */
-	public getValueFor(address: number, previous = false): number {
-		for(let mb of this.metaBlocks) {
-			const index = address - mb.address;
-			const data = (previous) ? mb.prevData : mb.data;
-			if(index >= 0 && index < data.length)
+	public getValueFor(address: number): number {
+		for (let mb of this.metaBlocks) {
+			const index=address-mb.address;
+			const data=mb.data;
+			if (data&&index>=0&&index<data.length) {
 				return data[index];
+			}
+		}
+		// Nothing found
+		return NaN;
+	}
+
+
+	/**
+	 * Returns the previous value of an address.
+	 * Searches all meta blocks and returns the value of the first matching one.
+	 * @param address The address to look up.
+	 * @return The value at address or NaN if nothing could be found or no prev values are used.
+	 */
+	public getPrevValueFor(address: number): number {
+		for (let mb of this.metaBlocks) {
+			const index=address-mb.address;
+			if (mb.data&&index>=0&&index<mb.data.length) {
+				const data=mb.prevData;
+				if (!data)
+					return NaN;
+				return data[index];
+			}
 		}
 		// Nothing found
 		return NaN;
@@ -150,7 +220,7 @@ export class MemoryDump {
 		for(let mb of this.metaBlocks) {
 			const index = address - mb.address;
 			const data = mb.data;
-			if(index >= 0 && index < data.length)
+			if(data && index >= 0 && index < data.length)
 				data[index] = value;
 		}
 	}
