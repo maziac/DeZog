@@ -159,6 +159,7 @@ export function deactivate() {
  * Instantiates the ZesaruxDebugAdapter and sets up the
  * socket connection to it.
  */
+// TODO: Rename:
 class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 	private _server?: Net.Server;
@@ -200,34 +201,34 @@ class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider 
 
 
 /**
- * Configures teh logging from the settings.
+ * Configures the logging from the settings.
  */
 function configureLogging() {
-	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, null);
+	const configuration=vscode.workspace.getConfiguration(CONFIG_SECTION, null);
 
 	// Global log
 	{
-		const logToPanel = configuration.get<boolean>('logpanel');
-		const filepath = configuration.get<string>('logfile');
-		const channelName = (logToPanel) ? "DeZog" : undefined;
-		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
+		const logToPanel=configuration.get<boolean>('logpanel');
+		const filepath=configuration.get<string>('logfile');
+		const channelName=(logToPanel)? "DeZog":undefined;
+		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
 		Log.init(channelOut, filepath);
 	}
 
 	// Socket log
 	{
-		const logToPanel = configuration.get<boolean>('socket.logpanel');
-		const filepath = configuration.get<string>('socket.logfile');
-		const channelName = (logToPanel) ? "DeZog Socket" : undefined;
-		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
+		const logToPanel=configuration.get<boolean>('socket.logpanel');
+		const filepath=configuration.get<string>('socket.logfile');
+		const channelName=(logToPanel)? "DeZog Socket":undefined;
+		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
 		LogSocket.init(channelOut, filepath);
 	}
 
 	// Enable to get a log of the commands only
-	if(false) {
-		const channelOut = vscode.window.createOutputChannel("DeZog Socket Commands");
-		Lg.LogSocketCommands = new Log();
+	if (false) {
+		const channelOut=vscode.window.createOutputChannel("DeZog Socket Commands");
+		Lg.LogSocketCommands=new Log();
 		Lg.LogSocketCommands.init(channelOut, undefined);
 	}
-
 }
+

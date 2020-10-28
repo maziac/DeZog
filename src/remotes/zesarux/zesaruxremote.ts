@@ -1396,7 +1396,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 	/**
 	 * Retrieves the sprites clipping window from the emulator.
-	 * @returns A Promise that returns the clipping dimensions and teh control byte(xl, xr, yt, yb, control).
+	 * @returns A Promise that returns the clipping dimensions and the control byte(xl, xr, yt, yb, control).
 	 */
 	public async getTbblueSpritesClippingWindow(): Promise<{xl: number, xr: number, yt: number, yb: number, control: number}> {
 		return new Promise<{xl: number, xr: number, yt: number, yb: number, control: number}>(resolve => {

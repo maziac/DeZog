@@ -324,7 +324,7 @@ export class StackVar extends ShallowVar {
  */
 export class LabelVar extends ShallowVar {
 
-	private memArray: Array<DebugProtocol.Variable>;	/// Holds teh 2 pseudo variables for 'byte' and 'word'
+	private memArray: Array<DebugProtocol.Variable>;	/// Holds the 2 pseudo variables for 'byte' and 'word'
 
 	/**
 	 * Constructor.

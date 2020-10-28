@@ -102,6 +102,13 @@
 					"description": "Write socket logs to the given file.",
 					"type": "string",
 					"scope": "resource"
+				},
+				"dezog.memoryregisterview.location": {
+					"description": "Location of the register memory view. Per default it is put in the 'sidebar'. Other options are 'editor' to put it in the editor area or 'none' to hide it completely.",
+					"type": "string",
+					"scope": "resource",
+					"default": "sidebar",
+					"enum": ["sidebar", "editor", "none"]
 				}
 			}
 		},
@@ -147,7 +154,7 @@
 					"type": "webview",
 					"id": "dezog.memoryregisterview",
 					"name": "Memory Dump",
-					"when": "inDebugMode"
+					"when":"inDebugMode && config.dezog.memoryregisterview.location=='sidebar'"
 				}
 			]
 		},

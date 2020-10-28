@@ -3,6 +3,9 @@ import { Remote  } from '../remotes/remotefactory';
 import { MemoryDumpView } from './memorydumpview';
 
 
+/// Config section in the settings.
+const CONFIG_SECTION='dezog';
+
 
 /**
  * A Webview that shows the memory dump for certain registers.
@@ -46,31 +49,57 @@ export class MemoryRegisterView extends MemoryDumpView {
 		)
 		*/
 
-		const self=this;
-		return new Promise<void>(resolve => {
-			class wvp implements vscode.WebviewViewProvider {
-				protected memRegView: MemoryRegisterView;
-				resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken): Thenable<void>|void {
-					// Use passed webview
-					self.vscodeWebview=webviewView.webview;
-					webviewView.webview.options={
-						// Allow scripts in the webview
-						enableScripts: true
-					};
-					// Handle messages from the webview
-					self.vscodeWebview.onDidReceiveMessage(message => {
-						//console.log("webView command '"+message.command+"':", message);
-						self.webViewMessageReceived(message);
-					});
-					// Return
-					resolve();
-				}
-			};
-			const provider=new wvp();
-			//const wvopts: vscode.WebviewOptions={enableScripts: true};
-			vscode.window.registerWebviewViewProvider('dezog.memoryregisterview', provider, {webviewOptions: {retainContextWhenHidden: true}});
-		});
 
+		const configuration=vscode.workspace.getConfiguration(CONFIG_SECTION, null);
+		const location=configuration.get<string>('memoryregisterview.location');
+
+		// Check where to locate the view
+		if (location=='editor') {
+			// As with v1.5 and before: editor area
+			super.setupWebView();
+		}
+		else if (location=='none') {
+			// Remove it
+		}
+		else {
+			// Default: sidebar
+			/*
+			 Note: Requires this in package.json:
+			"views": {
+				"debug": [
+					{
+						"type": "webview",
+						"id": "dezog.memoryregisterview",
+						"name": "Memory Dump"
+					}
+				]
+			}
+			*/
+			const self=this;
+			return new Promise<void>(resolve => {
+				class wvp implements vscode.WebviewViewProvider {
+					protected memRegView: MemoryRegisterView;
+					resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken): Thenable<void>|void {
+						// Use passed webview
+						self.vscodeWebview=webviewView.webview;
+						webviewView.webview.options={
+							// Allow scripts in the webview
+							enableScripts: true
+						};
+						// Handle messages from the webview
+						self.vscodeWebview.onDidReceiveMessage(message => {
+							//console.log("webView command '"+message.command+"':", message);
+							self.webViewMessageReceived(message);
+						});
+						// Return
+						resolve();
+					}
+				};
+				const provider=new wvp();
+				//const wvopts: vscode.WebviewOptions={enableScripts: true};
+				vscode.window.registerWebviewViewProvider('dezog.memoryregisterview', provider, {webviewOptions: {retainContextWhenHidden: true}});
+			});
+		}
 	}
 
 
@@ -121,7 +150,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 			// Check if memory block already exists
 			if (change) {
 				// Change existing mem block
-	//			this.memDump.changeBlock(i, value, 1);
+				this.memDump.changeBlock(i, value, 1);
 			}
 			else {
 				// Create new block

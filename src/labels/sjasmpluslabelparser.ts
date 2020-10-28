@@ -187,7 +187,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	 * Note: this is not the line number of the list file.
 	 * The list file may include other files. It's the line number of those files we are after.
 	 * Call 'setLineNumber' with the line number to set it. Note that source file numbers start at 0.
-	 * Furthermore it also determines teh beginning and ending of include files.
+	 * Furthermore it also determines the beginning and ending of include files.
 	 * Call 'includeStart(fname)' and 'includeEnd()'.
 	 * @param line The current analyzed line of the listFile array.
 	 */

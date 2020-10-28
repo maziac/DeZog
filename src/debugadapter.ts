@@ -586,7 +586,10 @@ export class DebugSessionClass extends DebugSession {
 				await registerMemoryView.asyncInit();
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
-				await registerMemoryView.update();
+				setTimeout(async () => {   // TODO: REMOVE
+					await registerMemoryView.update();
+
+				}, 1000);
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
@@ -1339,7 +1342,7 @@ export class DebugSessionClass extends DebugSession {
 	 * This handles the display in the vscode UI.
 	 * If the command can be handled in a short amount of time (e.g. in 1 sec)
 	 * then the response is sent after the command.
-	 * When teh response is received by vscode it changed the current highlighted line
+	 * When the response is received by vscode it changed the current highlighted line
 	 * into an unhighlighted state and shows the 'pause' button.
 	 * I.e. for short commands this could lead to flickering, but if the
 	 * UI is changed after command no flickering appears.
@@ -2256,7 +2259,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
-	 * Shows a a small disassembly in teh console.
+	 * Shows a a small disassembly in the console.
 	 * @param tokens The arguments. I.e. the address and size.
  	 * @returns A Promise with a text to print.
 	 */

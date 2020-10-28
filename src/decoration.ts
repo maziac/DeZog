@@ -431,7 +431,7 @@ export class DecorationClass {
 	 * Is called when a new 'break' should be shown.
 	 * This happens during continue, continueReverse, stepOut, stepOver.
 	 * The break decoration is cleared before all those actions.
-	 * @param pc The address to decorate. Used to find teh source line.
+	 * @param pc The address to decorate. Used to find the source line.
 	 * @param text The text to show.
 	 */
 	public showBreak(pc: number, text: string) {

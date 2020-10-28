@@ -220,7 +220,7 @@ export class ZSimRemote extends DzrpRemote {
 	 *  - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	 */
 	protected configureMachine(memModel: string) {
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for teh memory model.
+		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
 		this.ports=new Z80Ports();

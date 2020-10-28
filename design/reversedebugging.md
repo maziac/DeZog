@@ -9,7 +9,7 @@ There are 2 basic types of instruction history:
 
 The step history works with all kind of remotes. It just records the the instructions where the user stepped or breaked.
 I.e. it basically records your actions in the debugger and you can replay the locations backwards.
-It is not a true instruction history as it misses instructions. E.g. if you press 'continue' and tehn break it records only the start an the end point, not all the instructions in between.
+It is not a true instruction history as it misses instructions. E.g. if you press 'continue' and then break it records only the start an the end point, not all the instructions in between.
 Although this is less powerful than a true cpu history it has the big advantage that it works without support from the remote.
 
 The cpu history requires support from the remote. In fact the remote does all the recording and DeZog just requests the history entries from the remote.

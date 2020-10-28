@@ -880,7 +880,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			}
 			const prevSprite=this.previousSprites[k];
 
-			// Row color, all anchor+relative sprites share teh same row color.
+			// Row color, all anchor+relative sprites share the same row color.
 			// I.e. the next composite/uniform sprite gets an alternate row color.
 			let index=k;
 			if (sprite.T==undefined) {

@@ -97,7 +97,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		return new Promise<void>(resolve => {
 			this.socket.removeAllListeners();
 			// Timeout is required because socket.end() does not call the
-			// callback it it is already closed and teh state cannot
+			// callback it it is already closed and the state cannot
 			// reliable be determined.
 			const timeout = setTimeout(() => {
 				if (resolve) {
