@@ -582,14 +582,7 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.init();
 
 				// Create memory/register dump view
-				let registerMemoryView=new MemoryRegisterView();
-				await registerMemoryView.asyncInit();
-				const regs=Settings.launch.memoryViewer.registersMemoryView;
-				registerMemoryView.addRegisters(regs);
-				setTimeout(async () => {   // TODO: REMOVE
-					await registerMemoryView.update();
-
-				}, 1000);
+				await MemoryRegisterView.CreateMemoryRegisterView();
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
@@ -2232,12 +2225,12 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Get all addresses/sizes.
 		const addrSizes=new Array<number>();
 		for (let k=0; k<tokens.length; k+=2) {
-			// address
+			// Address
 			const addressString=tokens[k];
 			const address=Utility.evalExpression(addressString);
 			addrSizes.push(address);
 
-			// size
+			// Size
 			const sizeString=tokens[k+1];
 			const size=Utility.evalExpression(sizeString);
 			addrSizes.push(size);
@@ -2264,7 +2257,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalDasm(tokens: Array<string>): Promise<string> {
-		// check count of arguments
+		// Check count of arguments
 		if (tokens.length==0) {
 			// Error Handling: No arguments
 			throw new Error("Address and number of lines expected.");

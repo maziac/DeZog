@@ -109,7 +109,8 @@ export class ZxSimulationView extends BaseView {
 				this.keyChanged(message.key, message.value);
 				break;
 			default:
-				Utility.assert(false);
+				super.webViewMessageReceived(message);
+				break;
 		}
 	}
 

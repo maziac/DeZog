@@ -59,7 +59,10 @@ export class BaseView {
 		for (const view of views) {
 			if (view.vscodePanel)
 				view.vscodePanel.dispose();
+			view.vscodeWebview=undefined as any;
+			view.vscodePanel=undefined;
 		}
+		BaseView.staticViews.length=0;
 	}
 
 
@@ -149,6 +152,7 @@ export class BaseView {
 	 */
 	protected webViewMessageReceived(message: any) {
 		// Overwrite
+		Utility.assert(false);
 	}
 
 

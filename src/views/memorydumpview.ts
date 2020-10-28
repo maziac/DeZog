@@ -56,7 +56,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Handle hide/unhide -> update the register pointers.
 		if (this.vscodePanel) {
-			this.vscodePanel.onDidChangeViewState(async e => {
+			this.vscodePanel.onDidChangeViewState(e => {
 				// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
 				this.setColorsForRegisterPointers();
 			});
@@ -99,15 +99,22 @@ export class MemoryDumpView extends BaseView {
 				break;
 
 			case 'getValueInfoText':
-			{
-				const address = parseInt(message.address);
-				this.getValueInfoText(address);
-			}	break;
+				{
+					const address = parseInt(message.address);
+					this.getValueInfoText(address);
+				}
+				break;
 
 			case 'getAddressInfoText':
-			{	const address = parseInt(message.address);
-				this.getAddressInfoText(address);
-			}	break;
+				{
+					const address=parseInt(message.address);
+					this.getAddressInfoText(address);
+				}
+				break;
+
+			default:
+				super.webViewMessageReceived(message);
+				break;
 		}
 	}
 
@@ -223,29 +230,48 @@ export class MemoryDumpView extends BaseView {
 	 * @param reason Not used.
 	 */
 	public async update(reason?: any): Promise<void> {
-		// Create generic html if not yet done
-		if (!this.vscodeWebview.html)
-			this.setHtml();
-
-		// Loop all memory blocks
-		const msg={
-			command: 'setMemoryTable',
-			index: 0,
-			html: ""
-		};
-		let i=0;
+		// Get data
 		for (let metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
 			const data=await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
 			metaBlock.prevData=metaBlock.data;
 			metaBlock.data=data;
-			// Update the block in html
-			msg.html=this.createHtmlTable(metaBlock);
-			msg.index=i;
-			this.sendMessageToWebView(msg);
-			// Next
-			i++;
+		}
+
+		// Create generic html if not yet done
+		if (!this.vscodeWebview.html) {
+			// Create the first time
+			this.setHtml();
+			// Create title
+			if (this.vscodePanel) {
+				// Create from all blocks
+				let title='';
+				for (let metaBlock of this.memDump.metaBlocks) {
+					if (title)
+						title+=', ';
+					title+=metaBlock.title;
+				}
+				title='Memory '+title;
+				this.vscodePanel.title=title;
+			}
+		}
+		else {
+			// Update blocks the next times
+			const msg={
+				command: 'setMemoryTable',
+				index: 0,
+				html: ""
+			};
+			let i=0;
+			for (let metaBlock of this.memDump.metaBlocks) {
+				// Update the block in html
+				msg.html=this.createHtmlTable(metaBlock);
+				msg.index=i;
+				this.sendMessageToWebView(msg);
+				// Next
+				i++;
+			}
 		}
 
 		// Set colors for register pointers
@@ -425,16 +451,14 @@ export class MemoryDumpView extends BaseView {
 	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
 		// Add html body
 		let caption=metaBlock.title||'...';
-		/*if (caption)
-			caption='<div align="left">'+caption+':<br></div>\n';
-		else
-			caption='';
-		*/
+
+		const table=this.createHtmlTable(metaBlock);	// Is necessary, otherwise nothing might be shown the first time
 
 		const html=`
 		<details open="true">
 			<summary>${caption}</summary>
 			<div id="mem_table_${index}">
+			${table}
 			</div>
 		</details>
 		`;
