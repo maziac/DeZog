@@ -1,8 +1,6 @@
 import {EventEmitter} from 'events';
-//import {Utility} from '../../utility';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
-import {WebviewPanel} from 'vscode';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 
