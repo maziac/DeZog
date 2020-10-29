@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {Z80Ports} from '../remotes/zxsimulator/z80ports';
+import {Z80Ports} from '../remotes/zsimulator/z80ports';
 import {MemBuffer} from '../misc/membuffer';
 
 suite('ZxPorts', () => {

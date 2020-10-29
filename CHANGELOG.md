@@ -5,9 +5,9 @@
 	- Removed: "visualMemory", "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
 	- Added: "memoryModel": "RAM", "ZX48K", "ZX128K", "ZXNEXT"
 	- Changed: "visualMemory" to boolean.
-- For Kris: Changed naming of "ASSERT" to "ASSERTION" to avoid conflicts with commented sjasmplus ASSERTs.
+- For Kris: Changed naming of "ASSERT" to "ASSERTION" to avoid conflicts with commented sjasmplus ASSERTs. (Also the command was renamed from "-ASSERT" to "-ASSERTION".)
 - 'find' enabled on webviews.
-- MemoryRegisterView now in side-bar.
+- Fixed a bug in highlighting register addresses in the MemoryRegisterView .
 
 # 1.5.4
 - Fixed# 34: Unverified breakpoints in version 1.5.3. Windows.

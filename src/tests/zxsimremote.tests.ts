@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {ZSimRemote} from '../remotes/zxsimulator/zsimremote';
+import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import {Settings} from '../settings';
 import {Utility} from '../misc/utility';
 import {Z80RegistersClass} from '../remotes/z80registers';

@@ -6,9 +6,10 @@ import {Utility} from '../../misc/utility';
 
 
 /**
- * A Webview that shows the simulated ZX Spectrum screen.
+ * A Webview that shows the simulated peripherals.
+ * E.g. in case of the Spectrum the ULA screen or the keyboard.
  */
-export class ZxSimulationView extends BaseView {
+export class ZSimulationView extends BaseView {
 
 	// Holds the gif image a string.
 	protected screenGifString;
@@ -31,7 +32,7 @@ export class ZxSimulationView extends BaseView {
 			return;
 
 		// Create new instance
-		let zxview: ZxSimulationView|undefined=new ZxSimulationView(simulator);
+		let zxview: ZSimulationView|undefined=new ZSimulationView(simulator);
 		simulator.once('closed', () => {
 			zxview?.close();
 			zxview=undefined;

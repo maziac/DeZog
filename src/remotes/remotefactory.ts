@@ -1,7 +1,7 @@
 import { ZesaruxExtRemote } from './zesarux/zesaruxextremote';
 import { RemoteBase } from './remotebase';
 //import {ZxNextUsbSerialRemote} from './zxnext/zxnextusbserialremote';
-import {ZSimRemote} from './zxsimulator/zsimremote';
+import {ZSimRemote} from './zsimulator/zsimremote';
 //import {ZxNextSocketRemote} from './zxnext/zxnextsocketremote';
 import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';

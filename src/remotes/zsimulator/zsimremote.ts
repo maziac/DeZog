@@ -9,7 +9,7 @@ import {Labels} from '../../labels/labels';
 import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
-import {ZxSimCpuHistory} from './zxsimcpuhistory';
+import {ZSimCpuHistory} from './zsimcpuhistory';
 import {Zx48Memory} from './zx48memory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
@@ -78,7 +78,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.lastBpId=0;
 		// Reverse debugging / CPU history
 		if (Settings.launch.history.reverseDebugInstructionCount>0) {
-			CpuHistoryClass.setCpuHistory(new ZxSimCpuHistory());
+			CpuHistoryClass.setCpuHistory(new ZSimCpuHistory());
 			CpuHistory.decoder=new DecodeStandardHistoryInfo();
 		}
 		// Code coverage

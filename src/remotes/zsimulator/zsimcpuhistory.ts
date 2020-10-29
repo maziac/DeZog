@@ -24,7 +24,7 @@ import {Utility} from '../../misc/utility';
  * |-----|------------|-------------------------|
  * 0     h.Index      h.writeIndex    h.length=maxSize
  */
-export class ZxSimCpuHistory extends CpuHistoryClass {
+export class ZSimCpuHistory extends CpuHistoryClass {
 
 	// The write index.
 	protected historyWriteIndex: number;

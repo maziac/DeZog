@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {CodeCoverageArray} from '../remotes/zxsimulator/codecovarray';
+import {CodeCoverageArray} from '../remotes/zsimulator/codecovarray';
 
 suite('CodeCoverageArray', () => {
 
