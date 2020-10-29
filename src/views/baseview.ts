@@ -57,10 +57,8 @@ export class BaseView {
 		const views = BaseView.staticViews.map(view => view);
 		// Dispose/close all views
 		for (const view of views) {
-			if (view.vscodePanel)
-				view.vscodePanel.dispose();
-			view.vscodeWebview=undefined as any;
-			view.vscodePanel=undefined;
+			view.vscodePanel.dispose();
+			view.vscodePanel=undefined as any;
 		}
 		BaseView.staticViews.length=0;
 	}
@@ -79,13 +77,11 @@ export class BaseView {
 
 
 	// DYNAMIC:
-	/// The webview to show the base view in vscode.
-	protected vscodeWebview: vscode.Webview;
 
-	/// An optional panel (containing the webview).
+	/// A panel (containing the webview).
 	/// This is empty if the webview is used from the side bar but contains
 	/// a vscode.WebviewPanel if an (editor) window is used.
-	protected vscodePanel: vscode.WebviewPanel|undefined;
+	protected vscodePanel: vscode.WebviewPanel;
 
 
 	/**
@@ -100,32 +96,20 @@ export class BaseView {
 			BaseView.staticViews.push(this);
 
 		// Create vscode panel view
-		this.setupWebView();
+		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
+
+		// Handle messages from the webview
+		this.vscodePanel.webview.onDidReceiveMessage(message => {
+			//console.log("webView command '"+message.command+"':", message);
+			this.webViewMessageReceived(message);
+		});
 
 		// Handle closing of the view
-		this.vscodePanel?.onDidDispose(() => {
+		this.vscodePanel.onDidDispose(() => {
 			// Call overwritable function
 			this.disposeView();
 		});
 
-	}
-
-
-	/**
-	 * Creates the webview for communication.
-	 * Called by the constructor.
-	 */
-	protected setupWebView() {
-		// Create vscode panel view
-		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
-		// Use webview
-		this.vscodeWebview=this.vscodePanel.webview;
-
-		// Handle messages from the webview
-		this.vscodeWebview.onDidReceiveMessage(message => {
-			//console.log("webView command '"+message.command+"':", message);
-			this.webViewMessageReceived(message);
-		});
 	}
 
 
@@ -140,8 +124,7 @@ export class BaseView {
 		Utility.assert(index!==-1)
 		BaseView.staticViews.splice(index, 1);
 		// Do not use panel anymore
-		this.vscodeWebview=undefined as any;
-		this.vscodePanel=undefined;
+		this.vscodePanel=undefined as any;
 	}
 
 
@@ -163,8 +146,7 @@ export class BaseView {
 	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
 	 */
 	protected sendMessageToWebView(message: any, baseView: BaseView = this) {
-		//if (baseView.vscodeWebView)
-		baseView.vscodeWebview.postMessage(message);
+		baseView.vscodePanel.webview.postMessage(message);
 	}
 
 

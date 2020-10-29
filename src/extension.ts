@@ -12,24 +12,32 @@ import {DezogWhatsNewMgr} from './whatsnew/dezogwhatsnewmanager';
 
 
 /// Config section in the settings.
-const CONFIG_SECTION = 'dezog';
+const CONFIG_SECTION='dezog';
+
 
 /**
- * Register configuration provider and command palette commands.
+ * 'activate' is called when one of the package.json activationEvents
+ * fires the first time.
+ * Afterwards it is not called anymore.
+ * 'deactivate' is called when vscode is terminated.
+ * I.e. the activationEvents just distribute the calling of the extensions
+ * little bit. Instead one could as well use "*", i.e. activate on all events.
+ *
+ * Registers configuration provider and command palette commands.
  * @param context
  */
 export function activate(context: vscode.ExtensionContext) {
+	//console.log("Extension ACTIVATED");
 
 	// Register the "Whatsnew" provider
 	const whatsnewProvider=new WhatsNewContentProvider();
 	const viewer=new DezogWhatsNewMgr(context);
 	viewer.registerContentProvider("dezog", whatsnewProvider);
 	// Show the page (if necessary)
-	if (viewer.checkIfVersionDiffers()) {
-		setTimeout(() => {
-			// Show after 1 s, so that it is shown above other stuff
-			viewer.showPage();
-		}, 1000);
+	const differs=viewer.checkIfVersionDiffers();
+	if(differs)
+	{
+		viewer.showPage();
 	}
 	// Register the additional command to view the "Whats' New" page.
 	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => viewer.showPage()));
@@ -149,9 +157,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 /**
- * Called to deactivate the debug session.
+ * 'deactivate' is only called when vscode is terminated.
  */
 export function deactivate() {
+	//console.log("Extension DEACTIVATED");
 }
 
 

@@ -75,7 +75,7 @@ export class MemoryDumpView extends BaseView {
 		Utility.assert(index >= 0);
 		arr.splice(index, 1);
 		// Do not use panel anymore
-		this.vscodePanel=undefined;
+		this.vscodePanel=undefined as any;
 	}
 
 
@@ -126,11 +126,7 @@ export class MemoryDumpView extends BaseView {
 	 * @param startAddress The address of the memory block.
 	 * @param size The size of the memory block.
 	 */
-	// TODO: Remove?
 	public addBlock(startAddress: number, size: number, title: string) {
-		if (!this.vscodeWebview)
-			return;
-
 		this.memDump.addBlock(startAddress, size, title);
 	}
 
@@ -240,7 +236,7 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Create generic html if not yet done
-		if (!this.vscodeWebview.html) {
+		if (!this.vscodePanel.webview.html) {
 			// Create the first time
 			this.setHtml();
 			// Create title
@@ -581,10 +577,7 @@ export class MemoryDumpView extends BaseView {
 	 * Is called only once at creation time as it does not hold the actual data.
 	 */
 	protected setHtml() {
-		if (!this.vscodeWebview)
-			return;
-
-		const format = `<!DOCTYPE html>
+		const format= `<!DOCTYPE html>
 		<html lang="en">
 		<head>
 			<meta charset="UTF-8">
@@ -631,7 +624,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Add html body
 		const html = util.format(format, scripts+tables, legend);
-		this.vscodeWebview.html = html;
+		this.vscodePanel.webview.html = html;
 	}
 
 

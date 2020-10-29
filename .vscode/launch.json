@@ -41,9 +41,9 @@
 	// 	{
 	// 		"type": "node",
 	// 		"request": "launch",
-	// 		"name": "#Server",
+	// 		"name": "Server",
 	// 		"cwd": "${workspaceFolder}",
-	// 		"program": "${workspaceFolder}/src/debugAdapter.ts",
+	// 		"program": "${workspaceFolder}/src/debugadapter.ts",
 	// 		"args": [
 	// 			"--server=4711",
 	// 			//"--prof"
@@ -78,7 +78,7 @@
 	// "compounds": [
 	// 	{
 	// 		"name": "Extension + Server",
-	// 		"configurations": [ "#Extension", "#Server" ],
+	// 		"configurations": [ "Extension", "Server" ],
 	// 		"runtimeExecutable": "/usr/local/bin/node",
 	// 	}
 

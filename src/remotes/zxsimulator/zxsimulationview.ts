@@ -66,7 +66,7 @@ export class ZxSimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as WebviewPanel).title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
+		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
 
 		// Initial html page.
 		this.setHtml();
@@ -78,8 +78,7 @@ export class ZxSimulationView extends BaseView {
 	 * Closes the view.
 	 */
 	public close() {
-		if(this.vscodePanel)
-			this.vscodePanel.dispose();
+		this.vscodePanel.dispose();
 	}
 
 
@@ -89,8 +88,6 @@ export class ZxSimulationView extends BaseView {
 	 * Normally not required.
 	 */
 	public disposeView() {
-		// Do not use panel anymore
-		this.vscodePanel=undefined;
 	}
 
 
@@ -352,9 +349,6 @@ export class ZxSimulationView extends BaseView {
 	 * Depending on the Settings selection.
 	 */
 	protected setHtml() {
-		if (!this.vscodeWebview)
-			return;
-
 		let html=
 `<html>
 
@@ -720,7 +714,7 @@ color:black;
 </html>
 `;
 
-		this.vscodeWebview.html=html;
+		this.vscodePanel.webview.html=html;
 	}
 }
 

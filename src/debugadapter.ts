@@ -582,7 +582,11 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.init();
 
 				// Create memory/register dump view
-				await MemoryRegisterView.CreateMemoryRegisterView();
+				const registerMemoryView=new MemoryRegisterView();
+				const regs=Settings.launch.memoryViewer.registersMemoryView;
+				registerMemoryView.addRegisters(regs);
+				await registerMemoryView.update();
+
 
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {

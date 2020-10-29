@@ -34,9 +34,6 @@ export class TextView extends BaseView {
 	 * @param text Text to display.
 	 */
 	protected setHtml(text: string) {
-		if (!this.vscodeWebview)
-			return;
-
 		const format = `<!DOCTYPE html>
 		<html lang="en">
 		<head>
@@ -61,7 +58,7 @@ export class TextView extends BaseView {
 		const brText = text.replace(/\n/g, '<br>');
 		// Add html body
 		const html = util.format(format, brText);
-		this.vscodeWebview.html = html;
+		this.vscodePanel.webview.html = html;
 	}
 
 }
