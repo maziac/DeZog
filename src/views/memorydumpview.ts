@@ -636,6 +636,7 @@ export class MemoryDumpView extends BaseView {
 		// Make sure registers are current.
 		await Remote.getRegisters();
 		// Set colors for register pointers
+		const setAddrs=new Array<number>();
 		const arr = Settings.launch.memoryViewer.registerPointerColors;
 		for(let i=0; i<arr.length-1; i+=2) {
 			const reg = arr[i];
@@ -645,13 +646,19 @@ export class MemoryDumpView extends BaseView {
 			const address = Remote.getRegisterValue(reg)
 			//console.log( reg + ': ' + address.toString(16));
 			// Clear old color
-			const prevAddr=this.prevRegAddr.get(reg) || -1;
-			const msgPrev = {
-				command: 'setAddressColor',
-				address: prevAddr.toString(),
-				color: "transparent"
-			};
-			this.sendMessageToWebView(msgPrev);
+			let prevAddr=this.prevRegAddr.get(reg);
+			if (prevAddr!=undefined) {
+				// Check if prevAddr has been set by another register (avoid that a just set address is overwritten)
+				if (!setAddrs.includes(prevAddr)) {
+					// If not, clear the address highlighting
+					const msgPrev={
+						command: 'setAddressColor',
+						address: prevAddr.toString(),
+						color: "transparent"
+					};
+					this.sendMessageToWebView(msgPrev);
+				}
+			}
 			// Send the address/color to the web view for display.
 			const color = arr[i+1];
 			const msg = {
@@ -662,6 +669,8 @@ export class MemoryDumpView extends BaseView {
 			this.sendMessageToWebView(msg);
 			// Store
 			this.prevRegAddr.set(reg, address);
+			// Next
+			setAddrs.push(address);
 		}
 	}
 
