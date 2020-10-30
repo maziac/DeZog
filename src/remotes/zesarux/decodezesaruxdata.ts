@@ -248,11 +248,10 @@ export class DecodeZesaruxRegisters extends DecodeRegisterData {
 			// Decode ZEsarUX: Bit 15 stands for ROM.
 			// I.e. $8000 and $8001 are ROM.
 			// ZXNext: 	ROM0: 0x8000 or 0x8001,	ROM1: 0x8002 or 0x8003
-			// ZX128: 	ROM0: 0x8001,	 		ROM1: 0x8001
-			// TODO: Error in zesarux? For ZX128 a 8000 is used for ROM1 (48k rom) and 00FE for the  ROM0.
+			// ZX128: 	ROM0: 0x8000, ROM1: 0x8001
 			// Others are simply the bank number.
 			if (value>=0x8000)
-				value=0xFE+(value&0x01);	// ROM: Works for both ZX128 and ZXNext
+				value=0xFE+(value&0x0003);	// ROM: Works for both ZX128 and ZXNext
 			slots[i]=value;
 			// Next
 			line=line.substr(4);
