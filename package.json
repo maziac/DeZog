@@ -630,6 +630,41 @@
 						}
 					}
 				},
+
+				"initialConfigurations": [
+					{
+						"type": "dezog",
+						"request": "launch",
+						"name": "Simulator",
+						"remoteType": "zsim",
+						"zsim": {
+							"memoryModel": "ZX48K"
+						},
+						"sjasmplus": [
+							{
+								"path": "your_sld_file"
+							}
+						],
+						"history": {
+							"reverseDebugInstructionCount": 1000000,
+							"spotCount": 10,
+							"codeCoverageEnabled": true
+						},
+						"startAutomatically": false,
+						"skipInterrupt": true,
+						"commandsAfterLaunch": [
+							"-logpoint enable",
+							"-assertion enable",
+							"-wpmem enable"
+						],
+						"rootFolder": "${workspaceFolder}",
+						"topOfStack": "your_stack_top",
+						"load": "your_sna_or_nex_file",
+						"smallValuesMaximum": 513,
+						"tmpDir": ".tmp"
+					}
+				],
+
 				"configurationSnippets": [
 					{
 						"label": "DeZog: Launch",
