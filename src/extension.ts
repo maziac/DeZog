@@ -146,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Register a configuration provider for 'zrcp' debug type
-	const configProvider = new ZesaruxConfigurationProvider()
+	const configProvider = new DeZogConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
 	context.subscriptions.push(configProvider);
 
@@ -168,13 +168,12 @@ export function deactivate() {
  * Instantiates the ZesaruxDebugAdapter and sets up the
  * socket connection to it.
  */
-// TODO: Rename:
-class ZesaruxConfigurationProvider implements vscode.DebugConfigurationProvider {
+class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 	private _server?: Net.Server;
 
 	/**
-	* Instantiates the ZesaruxDebugAdapter and sets up the
+	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
  	* soccket connection to it.
  	*/
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
