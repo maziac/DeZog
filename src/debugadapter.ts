@@ -318,6 +318,13 @@ export class DebugSessionClass extends DebugSession {
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
 		RemoteFactory.removeRemote();
+		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
+		if (this.disasmTextDoc) {
+			vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
+				.then(() => {
+					return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				});
+		}
 	}
 
 
@@ -2245,7 +2252,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		for (let k=0; k<tokens.length; k+=2) {
 			const start=addrSizes[k];
 			const size=addrSizes[k+1]
-			panel.addBlock(start, size, Utility.getHexString(start, 4)+'h-'+Utility.getHexString(start+size-1, 4)+'h');
+			panel.addBlock(start, size, Utility.getHexString(start&0xFFFF, 4)+'h-'+Utility.getHexString((start+size-1)&0xFFFF, 4)+'h');
 		}
 		panel.mergeBlocks();
 		await panel.update();
@@ -2372,6 +2379,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 				// Condition, remove the brackets
 				result+=Utility.getAssertionFromCondition(abp.condition)+'\n';
 			}
+			if (abps.length==0)
+				result+='No ASSERTION breakpoints.\n';
 		}
 		return result;
 	}
@@ -2410,6 +2419,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 				const labelsString=labels.join(', ');
 				result+=Utility.getHexString(wp.address, 4)+'h ('+labelsString+'): '+wp.access+', size='+Utility.getHexString(wp.size, 4)+'h ('+wp.size+')\n';
 			}
+			if (wps.length==0)
+				result+='No WPMEM watchpoints.\n';
 		}
 		return result;
 	}
