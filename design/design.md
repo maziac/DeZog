@@ -108,9 +108,9 @@ Remote <-> Socket:
 
 ## Activation
 
-DeZog is activated in the 'activate' function in extension.ts by registering the ZesaruxConfigurationProvider.
+DeZog is activated in the 'activate' function in extension.ts by registering the DeZogConfigurationProvider.
 This happens e.g. when the Debugger is started.
-Short after 'ZesaruxConfigurationProvider::resolveDebugConfiguration' is called.
+Short after 'DeZogConfigurationProvider::resolveDebugConfiguration' is called.
 As the debug adapter is entirely implemented in Typescript it lives in the same process as the extension which simplifies debugging the debug-adapter.
 So in 'resolveDebugConfiguration' the 'ZesaruxDebugSession' is instantiated
 and started as server (socket). In the same function the server (socket) is also connected by the extension.

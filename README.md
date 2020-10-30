@@ -106,7 +106,8 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 Next to implement:
 - "Long Address" support: Currently DeZog treats all addresses as 16 bit (64k) only. "Long Addresses" will extend this to cover also the information to which bank an address points to. This will make it possible to support bigger projects with source code mapped to different memory banks/pages. To make this work the assembler has to support the feature as well. Therefore, particularly support for the sjasmplus SLD file format is planned.
-- OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
+<!-- - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch. -->
+- zsim peripherals support: Allow to extend the zsim simulation for ports by the user.
 - ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 
 

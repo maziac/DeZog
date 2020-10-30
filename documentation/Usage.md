@@ -1258,7 +1258,7 @@ Note: What is saved depends solely on the Remote, i.e. ZEsarUx or the internal s
 If you enter
 
 ~~~
--md <address> <size>
+-mv <address> <size>
 ~~~
 in the debug console you open a memory viewer.
 
@@ -1278,7 +1278,7 @@ The memory viewer will offer a few extra infos:
 You can also open multiple memory dumps at once by adding more address/size ranges to the command, e.g.:
 
 ~~~
--md 0 0x100 0x8000 0x40 0x8340 0x10
+-mv 0 0x100 0x8000 0x40 0x8340 0x10
 ~~~
 This opens a memory dump view 3 memory blocks.
 Please note that if you enter overlapping blocks the dump will merge them in the display.
@@ -1288,6 +1288,10 @@ DeZog opens a special memory viewer by itself on startup: it shows the locations
 The register memory view:
 
 ![](images/memoryviewer2.jpg)
+
+
+Note:
+The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 
 
 ##### Memory Editor
@@ -1410,6 +1414,10 @@ fill_colors Red
 results in
 
 ![](images/watches_comment.jpg)
+
+
+Note:
+Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 
 
 ### Change the Program Counter
