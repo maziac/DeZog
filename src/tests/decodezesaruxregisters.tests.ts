@@ -142,5 +142,36 @@ suite('DecodeZesaruxRegisters', () => {
 		});
 
 	});
+
+
+	suite('MMU/Slots parsing', () => {
+		let Decoder: any;
+
+		setup(() => {
+			Decoder=new DecodeZesaruxRegisters(8);
+		});
+
+		test('MMU at different positions', () => {
+			const line1="PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=00001111222233334444555566667777";
+			const line2="PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 whatever-other-position: MMU=088809990AAA0BBB0CCC0DDD0EEE0FFF";
+
+			const slots1=Decoder.parseSlots(line1);
+			assert.equal(8, slots1.length);
+			assert.deepEqual([0x0000, 0x1111, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666, 0x7777], slots1);
+
+			// MMU at different position
+			const slots2=Decoder.parseSlots(line2);
+			assert.equal(8, slots2.length);
+			assert.deepEqual([0x0888, 0x0999, 0x0AAA, 0x0BBB, 0x0CCC, 0x0DDD, 0x0EEE, 0x0FFF], slots2);
+		});
+
+		test('ROM', () => {
+			const line="PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0 MMU=80008001800280030000000100020003";
+
+			const slots=Decoder.parseSlots(line);
+			assert.equal(8, slots.length);
+			assert.deepEqual([0x00FE, 0x00FF, 0x0100, 0x0101, 0x0000, 0x0001, 0x0002, 0x0003], slots);
+		});
+	});
 });
 
