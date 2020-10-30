@@ -487,7 +487,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Create a string with the table itself.
 		let table = '';
-		let address = metaBlock.address;
+		let address=metaBlock.address;
 		let i = 0;
 		const clmns = MEM_DUMP_BOUNDARY;
 		const data = metaBlock.data;
@@ -508,12 +508,14 @@ export class MemoryDumpView extends BaseView {
 
 		// Table contents
 		let ascii = '';
-		for(let k=0; k<len; k++) {
+		for (let k=0; k<len; k++) {
+			// Address but bound to 64k to forecome wrap arounds
+			const addr64k=address&0xFFFF;
 			// Check start of line
 			if(i == 0) {
 				// start of a new line
-				var addrText = Utility.getHexString(address,4) + ':';
-				table += '<tr>\n<td addressLine="' + address + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				var addrText=Utility.getHexString(addr64k,4) + ':';
+				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 				ascii = '';
 			}
@@ -529,7 +531,7 @@ export class MemoryDumpView extends BaseView {
 				valueText = this.addDeemphasizeNotInRange(valueText);
 
 			// Check if label points directly to this address
-			if(Labels.getLabelsForNumber(address).length > 0)
+			if (Labels.getLabelsForNumber(addr64k).length > 0)
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Compare with prev value.
@@ -545,11 +547,11 @@ export class MemoryDumpView extends BaseView {
 			}
 
 			// Create html cell
-			table += '<td address="' + address + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
+			table+='<td address="'+addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
 
 			// Convert to ASCII (->html)
-			ascii += '<span address="' + address + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
+			ascii+='<span address="'+addr64k + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
 
 			// Check end of line
 			if(i == clmns-1) {
@@ -560,7 +562,7 @@ export class MemoryDumpView extends BaseView {
 				table += '</tr>\n';
 			}
 
-			// Next line
+			// Next column
 			address++;
 			i++;
 			if(i >= clmns)

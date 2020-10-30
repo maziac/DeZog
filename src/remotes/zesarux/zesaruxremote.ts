@@ -1177,7 +1177,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async setBreakpoints(path: string, givenBps:Array<RemoteBreakpoint>): Promise<Array<RemoteBreakpoint>> {
 		// Do most of the work
-		const bps = super.setBreakpoints(path, givenBps);
+		const bps = await super.setBreakpoints(path, givenBps);
 		// But wait for the socket.
 		await zSocket.executeWhenQueueIsEmpty();
 		return bps;
