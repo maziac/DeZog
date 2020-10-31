@@ -563,17 +563,8 @@ export class Utility {
 					const s = Utility.getASCIIChar(usedValue);
 					return s + restP
 				case 'flags':
-					// interprete byte as Z80 flags:
-					// Zesarux: (e.g. "SZ5H3PNC")
-					// S Z X H X P/V N C
-					var res = (usedValue&0x80)? 'S' : '-';	// S=sign
-					res += (usedValue&0x40)? 'Z':'-';	// Z=zero
-					res += (usedValue&0x20)? '1':'-';
-					res += (usedValue&0x10)? 'H' : '-';	// H=Half Carry
-					res += (usedValue&0x08)? '1':'-';
-					res += (usedValue&0x04)? 'P' : '-';	// P/V=Parity/Overflow
-					res += (usedValue&0x02)? 'N' : '-';	// N=Add/Subtract
-					res += (usedValue&0x01)? 'C' : '-';	// C=carry
+					// Interpret byte as Z80 flags:
+					const res=this.getFlagsString(usedValue);
 					return res + restP;
 
 				case 'labels':
@@ -631,9 +622,27 @@ export class Utility {
 		return valString;
 	}
 
+	/**
+	 * Convert value to flags string.
+	 * Useful to convert the F register number into a human readable string.
+	 */
+	public static getFlagsString(flagValue: number) {
+		// Interpret byte as Z80 flags:
+		// Zesarux: (e.g. "SZ5H3PNC")
+		// S Z X H X P/V N C
+		let res=(flagValue&0x80)? 'S':'-';	// S=sign
+		res+=(flagValue&0x40)? 'Z':'-';	// Z=zero
+		res+=(flagValue&0x20)? '1':'-';
+		res+=(flagValue&0x10)? 'H':'-';	// H=Half Carry
+		res+=(flagValue&0x08)? '1':'-';
+		res+=(flagValue&0x04)? 'P':'-';	// P/V=Parity/Overflow
+		res+=(flagValue&0x02)? 'N':'-';	// N=Add/Subtract
+		res+=(flagValue&0x01)? 'C':'-';	// C=carry
+		return res;
+	}
 
 	/**
-	 * Returns the formatted register value. Does a request to zesarux to obtain the register value.
+	 * Returns the formatted register value. Does a request to the Remote to obtain the register value.
 	 * @param regIn The name of the register, e.g. "A" or "BC"
 	 * @param formatMap The map with the formattings (hover map or variables map)
 	 * @returns A Promise with the formatted string.

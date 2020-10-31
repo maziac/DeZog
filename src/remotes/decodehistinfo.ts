@@ -32,7 +32,7 @@ export class DecodeHistoryInfo {
 
 	/**
 	 * Reads the SP content from a given opcode string.
-	 * @param line One line of history.IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
+	 * @param line One line of history. E.g. "IY=5c3a AF'=0044 BC'=174b HL'=107f DE'=0006 I=3f R=06 IM1 IFF-- (PC)=e52a785c (SP)=a2bf"
 	 * @returns The (sp), e.g. 0xA2BF
 	 */
 	public getSpContent(line: HistoryInstructionInfo): number {

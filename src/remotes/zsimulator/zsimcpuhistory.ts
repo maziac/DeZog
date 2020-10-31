@@ -165,8 +165,18 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 		if (count<=0)
 			return;
 
+		const decoder=Z80Registers.decoder;
 		// Otherwise calculate addresses
 		const addresses=new Array<number>();
+		const registers=new Array<string>();
+
+		// Prepare to get current registers
+		const wantedRegs=["A", "F", "BC", "DE", "HL"];
+		const regsMap=new Map<string, number>();
+		wantedRegs.forEach(regName => {
+			const value=Z80Registers.getRegValueByName(regName);
+			regsMap.set(regName, value);
+		});
 
 		// Before historyIndex
 		const len=this.history.length;
@@ -175,10 +185,18 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 		if (startIndex<0)
 			startIndex=this.historyWriteIndex;
 		let index=startIndex;
+
+		// Loop through history
 		for (let i=0; i<=count; i++) {
 			const line=this.history[index];
-			const pc=Z80Registers.decoder.parsePCLong(line);
+			const pc=decoder.parsePCLong(line);
 			addresses.push(pc);
+
+			// Compare registers
+			const regText=this.getChangedRegistersString(line, regsMap);
+			registers.push(regText);
+
+			// Next
 			index--;
 			if (index<0)
 				index=len-1;
@@ -197,6 +215,10 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 			const line=this.history[index];
 			const pc=Z80Registers.decoder.parsePCLong(line);
 			addresses.unshift(pc);
+
+			// Compare registers
+			const regText=this.getChangedRegistersString(line, regsMap);
+			registers.push(regText);
 		}
 		let convertedStartIndex=index;
 
@@ -204,8 +226,79 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 		convertedStartIndex=this.historyWriteIndex-convertedStartIndex;
 		if (convertedStartIndex<0)
 			convertedStartIndex+=len;
-		this.emit('historySpot', convertedStartIndex, addresses);
+		this.emit('historySpot', convertedStartIndex, addresses, registers);
 	}
 
+
+	/**
+	 * Creates a string with changed registers (names+value).
+	 * @param line The history line in question.
+	 * @param regsMap A map of register names ("A", "F", "HL" etc.) with their
+	 * current values, i.e. the value after the history 'line'.
+	 * I.e. the value that will be printed if not equal to previous
+	 * value.
+	 * This function will also override the value with the value of history line.
+	 */
+	protected getChangedRegistersString(line: string, regsMap: Map<string, number>): string {
+		let regText='';
+		for (const [regName, regValue] of regsMap) {
+			const prevValue=Z80Registers.decoder.getRegValueByName(regName, line);
+			// Check if changed
+			if (regValue!=prevValue) {
+				let regName2='';
+				let regValueString='';
+				// Check for flags
+				const size=regName.length;
+				if (size==1) {
+					regName2=regName;
+					if (regName=='F') {
+						// Convert register
+						regValueString=Utility.getFlagsString(regValue);
+					}
+					else {
+						// One byte register
+						regValueString=Utility.getHexString(regValue, 2);
+					}
+				}
+				else {
+					/* Distinguishes one and two byte registers
+					// Normal reg
+						// Check which part of the (double) register has changed
+						if (regName.startsWith('I')) {
+							// Double register
+							regValueString=Utility.getHexString(regValue, 4)+'h';
+						}
+						else {
+							// Check both parts
+							const valueXored=regValue^prevValue;
+							// First part
+							if (valueXored&0xFF00) {
+								regName2+=regName[0];
+								regValueString+=Utility.getHexString(regValue>>>8, 2);
+							}
+							// Second part
+							if (valueXored&0xFF) {
+								regName2+=regName[1];
+								regValueString+=Utility.getHexString(regValue%0xFF, 2);
+							}
+						}
+					*/
+
+					// Only 2 byte registers/ Double register
+					regName2=regName;
+					regValueString=Utility.getHexString(regValue, 4);
+				}
+
+				// Construct text
+				if (regText)
+					regText+=',';
+				regText+=regName2+'='+regValueString+'h';
+				// Store previous value
+				regsMap.set(regName, prevValue);
+			}
+		}
+		// Return
+		return regText;
+	}
 }
 

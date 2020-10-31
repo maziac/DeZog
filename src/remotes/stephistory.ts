@@ -17,7 +17,7 @@ import {Settings} from '../settings';
  * The step history contains only the instructions that one has stepped through
  * during debugging.
  * E.g. if you step over a CALL the step history includes only the instruction CALL.
- * The true cpu history, in contrast, would include all instruction from the subroutine
+ * The true cpu history, in contrast, would include all instructions from the subroutine
  * that was called.
  *
  * The step history has the advantage that it is available for all Remotes.

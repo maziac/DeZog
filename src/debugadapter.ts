@@ -548,11 +548,11 @@ export class DebugSessionClass extends DebugSession {
 			});
 		});
 
-		StepHistory.on('historySpot', (startIndex, addresses) => {
+		StepHistory.on('historySpot', (startIndex, addresses, registers) => {
 			// addresses: All addresses of the history spot.
 			this.delayedDecorations.push(() => {
 				// Short history addresses
-				Decoration.showHistorySpot(startIndex, addresses);
+				Decoration.showHistorySpot(startIndex, addresses, registers);
 			});
 		});
 

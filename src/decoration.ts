@@ -478,10 +478,14 @@ export class DecorationClass {
 	/**
 	 * Is called whenever the short history changes.
 	 * Will set the decoration.
+	 * @param startIndex
 	 * @param addresses The addresses to decorate. Is an ordered list.
 	 * The youngest address (instruction) is at index 0.
+	 * @param registers An array that correspondents to 'addresses' and
+	 * includes the values of the changed registers as text.
+	 * It is shown together with the index in the decoration.
 	 */
-	public showHistorySpot(startIndex, addresses: Array<number>) {
+	public showHistorySpot(startIndex, addresses: Array<number>, registers: Array<string>) {
 		// Clear decorations
 		this.clearHistorySpot();
 
@@ -492,14 +496,19 @@ export class DecorationClass {
 		// Check if addresses are used more than once
 		const addressMap = new Map<string, string>();
 		let index = -startIndex-1;
-		addresses.forEach(addr => {
+		addresses.forEach((addr, k) => {
 			const location = this.getFileAndLineForAddress(addr);
 			const locString = location.lineNr + ';' + location.fileName;
 			let text = addressMap.get(locString);
 			if(text)
-				text += "," + index.toString();
+				text += ", " + index.toString();
 			else
-				text = index.toString();
+				text=index.toString();
+			// Add changed registers
+			const regs=registers[k];
+			if(regs)
+				text+=":"+registers[k];
+			// Include decoration text in map
 			addressMap.set(locString, text);
 			// Next
 			index --;
