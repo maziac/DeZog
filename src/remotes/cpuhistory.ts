@@ -6,7 +6,6 @@ import {CallStackFrame} from '../callstackframe';
 import {Remote} from './remotefactory';
 import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
-import {Settings} from '../settings';
 import {DecodeHistoryInfo} from './decodehistinfo';
 import {TimeWait} from '../misc/timewait';
 
@@ -66,10 +65,6 @@ export class CpuHistoryClass extends StepHistoryClass {
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
 
-	// Mirror of the settings historySpotCount.
-	protected spotCount: number;
-
-
 	// Constructor
 	constructor() {
 		super();
@@ -100,7 +95,6 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public init() {
 		super.init();
-		this.spotCount=Settings.launch.history.spotCount;
 		this.reverseDbgStack=new RefList<CallStackFrame>();
 	}
 
@@ -154,7 +148,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
-	protected emitHistorySpot() {
+	// Exactly the same as base class:
+	/*
+		protected emitHistorySpot() {
 		// Check if history spot is enabled
 		const count=this.spotCount;
 		if (count<=0)
@@ -183,7 +179,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Emit code coverage event
 		this.emit('historySpot', startIndex, addresses);
 	}
-
+	*/
 
 	/**
 	 * Retrieves the data for the history buffer for the history spot.

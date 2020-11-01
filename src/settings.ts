@@ -507,7 +507,7 @@ export class Settings {
 		if(Settings.launch.history.spotCount < 0)
 			Settings.launch.history.spotCount = 0;
 		if (Settings.launch.history.spotShowRegisters==undefined)
-			Settings.launch.history.spotShowRegisters=false;
+			Settings.launch.history.spotShowRegisters=true;
 
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled==undefined) {

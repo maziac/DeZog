@@ -61,6 +61,16 @@ export class StepHistoryClass extends EventEmitter {
 	/// User pressed break (pause). Will interrupt e.g. continueReverse.
 	protected running: boolean;
 
+	// Mirror of the settings historySpotCount.
+	protected spotCount: number;
+
+	// Mirror of the settings spotShowRegisters.
+	protected spotShowRegisters: boolean;
+
+
+	// Prepare to get current registers.
+	protected wantedChangedRegs=["A", "F", "BC", "DE", "HL", "IX", "IY", "SP"];
+
 
 	// Constructor
 	constructor() {
@@ -76,7 +86,8 @@ export class StepHistoryClass extends EventEmitter {
 		this.history=new Array<HistoryInstructionInfo>();
 		this.historyIndex=-1;
 		this.revDbgHistory=new Array<number>();
-		this.liteCallStackHistory=new Array<RefList<CallStackFrame>>();
+		this.liteCallStackHistory=new Array<RefList<CallStackFrame>>(); this.spotCount=Settings.launch.history.spotCount;
+		this.spotShowRegisters=Settings.launch.history.spotShowRegisters;
 	}
 
 
@@ -241,17 +252,141 @@ export class StepHistoryClass extends EventEmitter {
 
 
 	/**
+	 * Creates a string with changed registers (names+value).
+	 * @param line The history line in question.
+	 * @param regsMap A map of register names ("A", "F", "HL" etc.) with their
+	 * current values, i.e. the value after the history 'line'.
+	 * I.e. the value that will be printed if not equal to previous
+	 * value.
+	 * This function will also override the value with the value of history line.
+	 */
+	protected getChangedRegistersString(line: string, regsMap: Map<string, number>): string {
+		let regText='';
+		for (const [regName, prevValue] of regsMap) {
+			const regValue=Z80Registers.decoder.getRegValueByName(regName, line);
+			// Check if changed
+			if (regValue!=prevValue) {
+				let regName2='';
+				let regValueString='';
+				// Check for flags
+				const size=regName.length;
+				if (size==1) {
+					regName2=regName;
+					if (regName=='F') {
+						// Convert register
+						regValueString=Utility.getFlagsString(regValue);
+					}
+					else {
+						// One byte register
+						regValueString=Utility.getHexString(regValue, 2)+'h';
+					}
+				}
+				else {
+					/* Distinguishes one and two byte registers
+					// Normal reg
+						// Check which part of the (double) register has changed
+						if (regName.startsWith('I')) {
+							// Double register
+							regValueString=Utility.getHexString(regValue, 4)+'h';
+						}
+						else {
+							// Check both parts
+							const valueXored=regValue^prevValue;
+							// First part
+							if (valueXored&0xFF00) {
+								regName2+=regName[0];
+								regValueString+=Utility.getHexString(regValue>>>8, 2);
+							}
+							// Second part
+							if (valueXored&0xFF) {
+								regName2+=regName[1];
+								regValueString+=Utility.getHexString(regValue%0xFF, 2);
+							}
+						}
+					*/
+
+					// Only 2 byte registers/ Double register
+					regName2=regName;
+					regValueString=Utility.getHexString(regValue, 4);
+					regValueString+='h';
+				}
+
+				// Construct text
+				if (regText)
+					regText+=',';
+				regText+=regName2+'='+regValueString;
+				// Store previous value
+				regsMap.set(regName, regValue);
+			}
+		}
+		// Return
+		return regText;
+	}
+
+
+	/**
+	 * Calculates the indices into the history array.
+	 * For simple history arrays this is equal to the index range.
+	 * For zsim this is more complex.
+	 * @param indices The correctly ordered indices into this.history.
+	 * @returns addresses and registers to pass to the decorations.
+	 */
+	protected calcSpotHistoryAddressesAndRegisters(indices: Array<number>): {addresses: Array<number>, registers: Array<string>} {
+		// Changed registers
+		let registers;
+		let regsMap;
+		if (this.spotShowRegisters) {
+			// Prepare arrays
+			registers=new Array<string>();
+			regsMap=new Map<string, number>();
+		}
+
+		// Now go through all indices
+		// Note: The decoration shows the (changed) register value, **prior** to the instruction in that line.
+		const addresses=new Array<number>();
+		for (let i=indices.length-1; i>=0; i--) {
+			const index=indices[i];
+			const line=this.history[index];
+			// Get address
+			const pc=Z80Registers.decoder.parsePCLong(line);
+			//addresses.push(pc);
+			addresses.unshift(pc);
+			// Compare registers
+			if (registers) {
+				if (i==indices.length-1) {
+					// Not for the first line
+					registers.unshift('');
+					// Preset register values
+					this.wantedChangedRegs.forEach(regName => {
+						const value=Z80Registers.decoder.getRegValueByName(regName, line);
+						regsMap.set(regName, value);
+					});
+				}
+				else {
+					// But for all others
+					const regText=this.getChangedRegistersString(line, regsMap);
+					registers.unshift(regText);
+				}
+			}
+		}
+
+		// Return
+		return {addresses, registers};
+	}
+
+
+	/**
 	 * Emits 'historySpot' to signal that the files should be decorated.
 	 * It can happen that this method has to retrieve data from the
 	 * remote.
 	 */
 	protected emitHistorySpot() {
 		// Check if history spot is enabled
-		const count=Settings.launch.history.spotCount;
+		const count=this.spotCount;
 		if (count<=0)
 			return;
 
-		// Otherwise calculate addresses
+		// Otherwise calculate indices into the history
 
 		// Get start index
 		let index=this.historyIndex+1;
@@ -259,18 +394,21 @@ export class StepHistoryClass extends EventEmitter {
 		if (startIndex<0)
 			startIndex=0;
 
-		const addresses=new Array<number>();
 		let end=index+count;
 		if (end>this.history.length)
 			end=this.history.length;
-		for (let i=startIndex; i<end; i++) {
-			const line=this.history[i];
-			const pc=this.decoder.parsePCLong(line);
-			addresses.push(pc);
+		// Loop through history
+		const indices=new Array<number>();
+		let i;
+		for (i=startIndex; i<end; i++) {
+			indices.push(i);
 		}
 
+		// Changed registers and addresses
+		const {addresses, registers}=this.calcSpotHistoryAddressesAndRegisters(indices);
+
 		// Emit code coverage event
-		this.emit('historySpot', startIndex, addresses);
+		this.emit('historySpot', startIndex, addresses, registers);
 	}
 
 
