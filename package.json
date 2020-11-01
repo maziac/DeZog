@@ -649,23 +649,47 @@
 								"path": "your_sld_file"
 							}
 						],
-						"history": {
-							"reverseDebugInstructionCount": 1000000,
-							"spotCount": 10,
-							"codeCoverageEnabled": true
-						},
-						"startAutomatically": false,
-						"skipInterrupt": true,
-						"commandsAfterLaunch": [
-							"-logpoint enable",
-							"-assertion enable",
-							"-wpmem enable"
-						],
-						"rootFolder": "${workspaceFolder}",
 						"topOfStack": "your_stack_top",
-						"load": "your_sna_or_nex_file",
-						"smallValuesMaximum": 513,
-						"tmpDir": ".tmp"
+						"load": "your_sna_or_nex_file"
+					},
+					{
+						"type": "dezog",
+						"request": "launch",
+						"name": "ZEsarUX",
+						"remoteType": "zrcp",
+						"sjasmplus": [
+							{
+								"path": "your_sld_file"
+							}
+						],
+						"topOfStack": "your_stack_top",
+						"load": "your_sna_or_nex_file"
+					},
+					{
+						"type": "dezog",
+						"request": "launch",
+						"name": "CSpect",
+						"remoteType": "cspect",
+						"sjasmplus": [
+							{
+								"path": "your_sld_file"
+							}
+						],
+						"topOfStack": "your_stack_top",
+						"load": "your_sna_or_nex_file"
+					},
+					{
+						"type": "dezog",
+						"request": "launch",
+						"name": "ZXNext",
+						"remoteType": "zxnext",
+						"sjasmplus": [
+							{
+								"path": "your_sld_file"
+							}
+						],
+						"topOfStack": "your_stack_top",
+						"load": "your_sna_or_nex_file"
 					}
 				],
 
