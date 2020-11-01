@@ -498,10 +498,11 @@ export class ZSimRemote extends DzrpRemote {
 		// Get history element
 		const hist=this.z80Cpu.getHistoryData();
 		// Check if pc changed
-		const exchange=(pc==this.previouslyStoredPCHistory);
-		this.previouslyStoredPCHistory=pc;
-		// Store
-		CpuHistory.pushHistoryInfo(hist, exchange);
+		if (pc!=this.previouslyStoredPCHistory) {
+			this.previouslyStoredPCHistory=pc;
+			// Store
+			CpuHistory.pushHistoryInfo(hist);
+		}
 	}
 
 

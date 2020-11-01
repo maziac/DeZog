@@ -102,31 +102,22 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 	/**
 	 * Pushes one history into the array.
 	 * @param line One line of history.
-	 * @param exchange true if the element should be exchanged rather than added.
-	 * Note: If you use exchange=true you cannot call 'pushCallStack' afterwards.
 	 */
 	public pushHistoryInfo(line: HistoryInstructionInfo, exchange=false) {
-		//Utility.assert(line);
-		if (exchange&&this.history.length>0) {
-			// Exchange
-			this.history[this.historyWriteIndex]=line;
+		// Otherwise add, first check if max size is reached
+		if (this.history.length>=this.maxSize) {
+			let index=this.historyWriteIndex;
+			index++;
+			// Check for overflow
+			if (index>=this.maxSize)
+				index=0;
+			this.historyWriteIndex=index;
+			this.history[index]=line;
 		}
 		else {
-			// Otherwise add, first check if max size is reached
-			if (this.history.length>=this.maxSize) {
-				let index=this.historyWriteIndex;
-				index++;
-				// Check for overflow
-				if (index>=this.maxSize)
-					index=0;
-				this.historyWriteIndex=index;
-				this.history[index]=line;
-			}
-			else {
-				// Not yet reached, so grow the array
-				this.history.push(line);
-				this.historyWriteIndex++;
-			}
+			// Not yet reached, so grow the array
+			this.history.push(line);
+			this.historyWriteIndex++;
 		}
 	}
 

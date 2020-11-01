@@ -152,20 +152,13 @@ export class StepHistoryClass extends EventEmitter {
 	/**
 	 * Pushes one history into the array.
 	 * @param line One line of history.
-	 * @param exchange true if the element should be exchanged rather than added.
 	 */
-	public pushHistoryInfo(line: HistoryInstructionInfo, exchange = false) {
+	public pushHistoryInfo(line: HistoryInstructionInfo) {
 		Utility.assert(line);
-		if (exchange&&this.history.length>0) {
-			// Exchange
-			this.history[0]=line;
-		}
-		else {
-			// Otherwise add
-			this.history.unshift(line);
-			if (this.history.length>this.maxSize)
-				this.history.pop();
-		}
+		// Otherwise add
+		this.history.unshift(line);
+		if (this.history.length>this.maxSize)
+			this.history.pop();
 	}
 
 

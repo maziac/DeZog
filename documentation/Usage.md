@@ -928,19 +928,38 @@ If enabled (!= 0) you see the historic indices of the instructions. E.g. here:
 ![](images/spot_count1.jpg)
 
 The indices are shown in brackets to the right.
-The PC is currently in line 988.
-The previous executed instruction is at index -1. Before at line 986 is index -2.
-Before that instrucion at index -3 (line 1008) we see that there was a branch. Obviously the flags have been NZ and the branch was taken.
+The PC is currently in line 32.
+The previous executed instruction is at index -1. Before at line 30 is index -2.
 
 With the *History Spot* you can see what has just happened before without having to back step.
+
+After the ":" you can see register values of changed registers. The displayed value is the register **before** the instruction on the line has been executed. I.e. exactly what you would see in the VARIABLES section if the PC would point to that line.
+Some explanations:
+- line 25: SP is shown because it was changed from the previous line which called the function (not shown here).
+- line 26: No register value has changed
+- line 27: In previous instruction register e has been loaded from l. But because e and l were already equal no value was changed. Therefore no register is displayed.
+- line 28: In previous line register D was changed.
+- line 29: In previous line register DE was incremented.
+- line 30: In previous line register BC was decremented.
+- line 31: In previous line LDIR has been executed. This is a block command. I.e. several registers are changed at once. After LDIR has been executed BC is 0 and you see the last values of DE and HL.
 
 In case a line/instruction has been executed more than once you will find several indices in the brackets. E.g.:
 ![](images/spot_count2.jpg)
 
 When you step back you can also see the next instructions i.e. where you came from.
-If 'spotcount' is e.g. 10 you see a maximum of 10 previous and next indices.
+If 'spotCount' is e.g. 10 you see a maximum of 10 previous and next indices.
 
-Here is an animated gif to illustrate the behaviour:
+Note: Changed registers are not shown for the first line of the spot.
+
+Display of changed registers is enabled by default. You can turn it off by setting 'spotShowRegisters' to false:
+~~~
+"history": {
+    "spotCount": 10,
+    "spotShowRegisters": false
+}
+~~~
+
+Here is an animated gif to illustrate the history spot behavior while stepping (with register display turend off):
 ![](images/spot_count_animated.gif)
 
 

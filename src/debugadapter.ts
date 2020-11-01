@@ -349,8 +349,11 @@ export class DebugSessionClass extends DebugSession {
 
 		// The PC value might be changed.
 		//response.body.supportsGotoTargetsRequest = true;
-		response.body.supportsGotoTargetsRequest=false;	// I use my own "Move Program Counter to Cursor"
-		//response.body.supportsGotoTargetsRequest=true;
+		// I use my own "Move Program Counter to Cursor".
+		// GotoTargetsRequest would be working now, but not in all cases.
+		// If the file is not recognized yet. It does not work.
+		// Thought it has soemthing to do with loadSourcesRequest but it doesnt.
+		response.body.supportsGotoTargetsRequest=false;
 
 		// Support hovering over values (registers)
 		response.body.supportsEvaluateForHovers=true;
@@ -2692,6 +2695,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		}
 		this.sendResponse(response);
 	}
+
 
 	/**
 	 * Change the Program Counter such that it points to the given file/line.

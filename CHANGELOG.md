@@ -8,6 +8,7 @@
 - For Kris: Changed naming of "ASSERT" to "ASSERTION" to avoid conflicts with commented sjasmplus ASSERTs. (Also the command was renamed from "-ASSERT" to "-ASSERTION".)
 - 'find' enabled on webviews.
 - Fixed a bug in highlighting register addresses in the MemoryRegisterView .
+- spotHistory now also displays the changed registers.
 
 # 1.5.4
 - Fixed# 34: Unverified breakpoints in version 1.5.3. Windows.
