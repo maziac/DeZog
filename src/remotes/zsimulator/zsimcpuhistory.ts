@@ -168,15 +168,6 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 		const decoder=Z80Registers.decoder;
 		// Otherwise calculate addresses
 		const addresses=new Array<number>();
-		const registers=new Array<string>();
-
-		// Prepare to get current registers
-		const wantedRegs=["A", "F", "BC", "DE", "HL"];
-		const regsMap=new Map<string, number>();
-		wantedRegs.forEach(regName => {
-			const value=Z80Registers.getRegValueByName(regName);
-			regsMap.set(regName, value);
-		});
 
 		// Before historyIndex
 		const len=this.history.length;
@@ -187,15 +178,15 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 		let index=startIndex;
 
 		// Loop through history
-		for (let i=0; i<=count; i++) {
-			const line=this.history[index];
-			const pc=decoder.parsePCLong(line);
-			addresses.push(pc);
-
-			// Compare registers
-			const regText=this.getChangedRegistersString(line, regsMap);
-			registers.push(regText);
-
+		let firstline;
+		const indices=new Array<number>();
+		for (let i=0; i<count+1; i++) {
+			if (i<count)
+				indices.push(index);
+			else {
+				// One line above. For detecting register change.
+				firstline=this.history[index];
+			}
 			// Next
 			index--;
 			if (index<0)
@@ -212,15 +203,43 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 			index++;
 			if (index>=len)
 				index=0;
-			const line=this.history[index];
-			const pc=Z80Registers.decoder.parsePCLong(line);
-			addresses.unshift(pc);
-
-			// Compare registers
-			const regText=this.getChangedRegistersString(line, regsMap);
-			registers.push(regText);
+			indices.unshift(index);
 		}
 		let convertedStartIndex=index;
+
+		// Changed registers
+		let registers;
+		let regsMap;
+		if (Settings.launch.history.spotShowRegisters) {
+			// Prepare to get current registers
+			const wantedRegs=["A", "F", "BC", "DE", "HL"];
+			regsMap=new Map<string, number>();
+			wantedRegs.forEach(regName => {
+				let value=0;
+				if (firstline)
+					value=Z80Registers.decoder.getRegValueByName(regName, firstline);
+				regsMap.set(regName, value);
+			});
+			// Prepare array
+			registers=new Array<string>();
+		}
+
+		// Now go through all indices
+		// Note: The decoration shows the (changed) register value, **prior** to the instruction in that line.
+		for (let i=indices.length-1; i>=0; i--) {
+			const index=indices[i];
+			const line=this.history[index];
+			// Get address
+			const pc=decoder.parsePCLong(line);
+			//addresses.push(pc);
+			addresses.unshift(pc);
+			// Compare registers
+			if (regsMap) {
+				const regText=this.getChangedRegistersString(line, regsMap);
+				//registers.push(regText);
+				registers.unshift(regText);
+			}
+		}
 
 		// Emit code coverage event
 		convertedStartIndex=this.historyWriteIndex-convertedStartIndex;
@@ -241,8 +260,8 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 	 */
 	protected getChangedRegistersString(line: string, regsMap: Map<string, number>): string {
 		let regText='';
-		for (const [regName, regValue] of regsMap) {
-			const prevValue=Z80Registers.decoder.getRegValueByName(regName, line);
+		for (const [regName, prevValue] of regsMap) {
+			const regValue=Z80Registers.decoder.getRegValueByName(regName, line);
 			// Check if changed
 			if (regValue!=prevValue) {
 				let regName2='';
@@ -294,7 +313,7 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 					regText+=',';
 				regText+=regName2+'='+regValueString+'h';
 				// Store previous value
-				regsMap.set(regName, prevValue);
+				regsMap.set(regName, regValue);
 			}
 		}
 		// Return

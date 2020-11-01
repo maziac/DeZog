@@ -233,6 +233,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	history: {
 		reverseDebugInstructionCount: number;	// Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off.
 		spotCount: number;	// Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown.
+		spotShowRegisters: boolean;	// If true it shows additionally the changed registers. Default=true.
 		codeCoverageEnabled: boolean;	// Enable/disable code coverage.
 	}
 
@@ -505,6 +506,8 @@ export class Settings {
 			Settings.launch.history.spotCount = Settings.launch.history.reverseDebugInstructionCount;
 		if(Settings.launch.history.spotCount < 0)
 			Settings.launch.history.spotCount = 0;
+		if (Settings.launch.history.spotShowRegisters==undefined)
+			Settings.launch.history.spotShowRegisters=false;
 
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled==undefined) {

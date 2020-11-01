@@ -484,6 +484,7 @@ export class DecorationClass {
 	 * @param registers An array that correspondents to 'addresses' and
 	 * includes the values of the changed registers as text.
 	 * It is shown together with the index in the decoration.
+	 * Is undefined if 'spotShowRegisters' is false.
 	 */
 	public showHistorySpot(startIndex, addresses: Array<number>, registers: Array<string>) {
 		// Clear decorations
@@ -505,9 +506,11 @@ export class DecorationClass {
 			else
 				text=index.toString();
 			// Add changed registers
-			const regs=registers[k];
-			if(regs)
-				text+=":"+registers[k];
+			if (registers) {
+				const regs=registers[k];
+				if (regs)
+					text+=":"+registers[k];
+			}
 			// Include decoration text in map
 			addressMap.set(locString, text);
 			// Next

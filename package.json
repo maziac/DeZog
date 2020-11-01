@@ -530,6 +530,10 @@
 									"type": "number",
 									"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
 								},
+								"spotShowRegisters":  {
+									"type": "boolean",
+									"description": "If true it shows the changed register values in the spot history. You can disable the feature here. Defaults to true."
+								},
 								"codeCoverageEnabled": {
 									"type": "boolean",
 									"description": "Enables/disables code coverage. Default is 'true."

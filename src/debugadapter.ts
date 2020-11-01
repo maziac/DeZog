@@ -350,6 +350,7 @@ export class DebugSessionClass extends DebugSession {
 		// The PC value might be changed.
 		//response.body.supportsGotoTargetsRequest = true;
 		response.body.supportsGotoTargetsRequest=false;	// I use my own "Move Program Counter to Cursor"
+		//response.body.supportsGotoTargetsRequest=true;
 
 		// Support hovering over values (registers)
 		response.body.supportsEvaluateForHovers=true;
