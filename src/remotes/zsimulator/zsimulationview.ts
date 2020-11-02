@@ -459,7 +459,7 @@ color:black;
 	// Toggles the visibility of an element.
 	/*
 	function toggleVisibility(id) {
-		var x = document.getElementById(id);
+		const x = document.getElementById(id);
 		if (x.style.display === "none") {
 			x.style.display = "block";
 		} else {
@@ -708,8 +708,30 @@ color:black;
 
 		html+=
 `<p id="log"></p>
+`;
 
-</body>
+
+
+		if (Settings.launch.zsim /*debug*/) {
+			html+=
+`<!-- Debug copy button -->
+<script>
+	// Copies the complete html of the document to the clipboard.
+	function copyHtmlToClipboard() {
+	  	const copyText = document.documentElement.innerHTML;
+  		navigator.clipboard.writeText(copyText);
+	}
+</script>
+
+<p>
+	<button onclick="copyHtmlToClipboard()">Copy HTML</button>
+</p>
+
+`;
+		}
+
+		html+=
+`</body>
 </html>
 `;
 
