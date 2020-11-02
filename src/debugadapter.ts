@@ -2683,14 +2683,23 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Get variable object
 		const varObj=this.listVariables.getObject(ref);
 		response.success=false;	// will be changed if successful.
+
 		// Safety check
 		if (varObj) {
-			// Set value
-			const formattedString=await varObj.setValue(name, value);
-			// Send response
-			if (formattedString) {
-				response.body={value: formattedString};
-				response.success=true;
+			// Variables can be changed only if not in reverse debug mode
+			const msg=varObj.changeable();
+			if (msg) {
+				// Change not allowed e.g. if in reverse debugging
+				response.message=msg;
+			}
+			else {
+				// Set value
+				const formattedString=await varObj.setValue(name, value);
+				// Send response
+				if (formattedString) {
+					response.body={value: formattedString};
+					response.success=true;
+				}
 			}
 		}
 		this.sendResponse(response);

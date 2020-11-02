@@ -9,6 +9,7 @@
 - 'find' enabled on webviews.
 - Fixed a bug in highlighting register addresses in the MemoryRegisterView .
 - spotHistory now also displays the changed registers.
+- Fixed: during time-travel it is not possible anymore to change the registers.
 
 # 1.5.4
 - Fixed# 34: Unverified breakpoints in version 1.5.3. Windows.

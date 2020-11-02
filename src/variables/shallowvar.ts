@@ -7,6 +7,7 @@ import { RefList } from '../misc/refList';
 import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
+import {StepHistory} from '../remotes/cpuhistory';
 
 
 /**
@@ -18,6 +19,7 @@ export class ShallowVar {
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		return [];
 	}
+
 
 	/**
 	 * Override if the variable or its properties can be set.
@@ -31,13 +33,44 @@ export class ShallowVar {
 		return undefined as any;
 	};
 
+
+	/**
+	 * Checks if allowed to change the value.
+	 * If not returns a string with an error message.
+	 * Override if necessary.
+	 * @param name The name of data.
+	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
+	 */
+	public changeable(name: string): string|undefined {
+		// Change normally not allowed if in reverse debugging
+		if (StepHistory.isInStepBackMode())
+			return 'Altering values not allowed in time-travel mode.';
+		// Otherwise allow
+		return undefined;
+	}
+
+}
+
+
+/**
+ * Represents a ShallowVar that is const, i.e. not changeable by the user.
+ */
+export class ShallowVarConst extends ShallowVar {
+	/**
+	 * Not changeable by user.
+	 * @param name The name of data.
+	 * @returns 'You cannot alter this value.'
+	 */
+	public changeable(name: string): string|undefined {
+		return 'You cannot alter this value.';
+	}
 }
 
 
 /**
  * The DisassemblyVar class knows how to retrieve the disassembly from the remote.
  */
-export class DisassemblyVar extends ShallowVar {
+export class DisassemblyVar extends ShallowVarConst {
 
 	/// The address the disassembly should start
 	private addr: number;
@@ -101,7 +134,7 @@ export class DisassemblyVar extends ShallowVar {
  * The MemorySlotsVar class knows how to retrieve the mapping of
  * memory slots and banks from Remote.
  */
-export class MemorySlotsVar extends ShallowVar {
+export class MemorySlotsVar extends ShallowVarConst {
 	/**
 	 * Constructor.
 	 */
@@ -187,6 +220,20 @@ export class RegistersMainVar extends ShallowVar {
 		await Remote.getRegisters()
 		const formatted = Remote.getVarFormattedReg(name);
 		return formatted;
+	}
+
+	/**
+	 * Checks if allowed to change the value.
+	 * If not returns a string with an error message.
+	 * @param name The name of data.
+	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
+	 */
+	public changeable(name: string): string|undefined {
+		// Change normally not allowed if in reverse debugging
+		if (StepHistory.isInStepBackMode())
+			return 'Altering values not allowed in time-travel mode.';
+		// Otherwise allow
+		return undefined;
 	}
 
 
