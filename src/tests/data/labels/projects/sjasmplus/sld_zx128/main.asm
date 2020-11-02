@@ -15,6 +15,10 @@ main:
 
     ;jp 0x6000
 
+    ;ld a,010000b : out (c),a    ; ROM1
+    ;ld a,000000b : out (c),a    ; ROM0
+    ;ld a,010000b : out (c),a    ; ROM1
+
     ld a,1 : out (c),a
     call sub_b1
     nop

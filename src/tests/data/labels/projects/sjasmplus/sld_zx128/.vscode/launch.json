@@ -8,13 +8,13 @@
             "type": "dezog",
             "request": "launch",
             "name": "Internal Simulator",
-            "remoteType": "zsim",
-            //"remoteType": "zrcp",
+            //"remoteType": "zsim",
+            "remoteType": "zrcp",
             //"remoteType": "cspect",
-            "zsim": {
-                "visualMemory": "ZXNEXT",
-                "Z80N": true,
-                "tbblueMemoryManagementSlots": true
+            "zsim":  {
+                //"memoryModel": "ZX128K",
+                "memoryModel": "ZXNEXT",
+                "visualMemory": true,
             },
             "zrcp": {
                 "socketTimeout": 50

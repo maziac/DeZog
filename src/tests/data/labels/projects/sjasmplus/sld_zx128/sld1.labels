@@ -1,11 +1,11 @@
 main: equ 0x00008000
-stack_top: equ 0x00008100
+stack_top: equ 0x0000810C
 sub_b1: equ 0x0000C000
 sub_b3: equ 0x0000C000
-main.loop: equ 0x00008017
+main.loop: equ 0x00008023
 sub_b7: equ 0x0000C000
 STACK_SIZE: equ 0x00000064
-stack_bottom: equ 0x00008038
+stack_bottom: equ 0x00008044
 sub_b1.plus1: equ 0x0000C002
 data_b1: equ 0x0000C005
 data_b3: equ 0x0000C005
