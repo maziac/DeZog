@@ -378,7 +378,10 @@ export class Settings {
 		}
 		if (Settings.launch.zsim.debug==undefined)
 			Settings.launch.zsim.debug=false;
-		// Note: jsPath can be undefined.
+		if (Settings.launch.zsim.jsPath!=undefined) {
+			const jsPath=UnifiedPath.getUnifiedPath(Settings.launch.zsim.jsPath);
+			Settings.launch.zsim.jsPath=Utility.getAbsFilePath(jsPath);
+		}
 
 		// zxnext
 		if (!Settings.launch.zxnext)

@@ -3,6 +3,7 @@ import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
+import {readFileSync} from 'fs';
 
 
 /**
@@ -19,6 +20,9 @@ export class ZSimulationView extends BaseView {
 
 	// A pointer to the simulator.
 	protected simulator: ZSimRemote;
+
+	// Taken from Settings. Path to the extra javascript code.
+	protected jsPath: string;
 
 
 	/**
@@ -67,6 +71,9 @@ export class ZSimulationView extends BaseView {
 		Utility.assert(this.vscodePanel);
 		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
 
+		// Read path for additional javascript code
+		this.jsPath=Settings.launch.zsim.jsPath;
+
 		// Initial html page.
 		this.setHtml();
 		//this.update(); Is done by the webview
@@ -97,12 +104,17 @@ export class ZSimulationView extends BaseView {
 	protected webViewMessageReceived(message: any) {
 		switch (message.command) {
 			case 'updateRequest':
-				// The webview requests an update, e.g. because it ha been
+				// The webview requests an update, e.g. because it has been
 				// moved from background to foreground (vscode does not preserve the state)
 				this.update();	// No need to call 'await'
 				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
+				break;
+			case 'refreshJsCode':
+				// In debug mode this is received to recreate the complete html.
+				// And with this the user's java script file is read as well.
+				this.setHtml();
 				break;
 			default:
 				super.webViewMessageReceived(message);
@@ -715,15 +727,27 @@ color:black;
 `;
 
 		// Custom javascript code area
+		let jsCode='';
+		if (this.jsPath) {
+			try {
+				jsCode=readFileSync(this.jsPath).toString();
+			}
+			catch (e) {
+				jsCode="<b>Error: reading file '"+this.jsPath+"'</b>";
+			}
+		}
+
 		html+=
 `<!-- Room for extra/user editable javascript/html code -->
 <p>
-	<div id="js_code_id"></div>
+	<div id="js_code_id">
+	${jsCode}
+	</div>
 </p>
 
 `;
 
-		if (Settings.launch.zsim /*debug*/) {
+		if (Settings.launch.zsim.debug) {
 			html+=
 `<!-- Debug Area -->
 <hr>
@@ -740,33 +764,20 @@ color:black;
 		}
 	</script>
 
-	<p>
-		<button onclick="copyHtmlToClipboard()">Copy all HTML</button>
-	</p>
-	<br>
-
-
-
 	<script>
 		// Use the entered javascript code.
-		function useJsCode() {
-			const jsInput = document.getElementById("js_code_input_id");
-			const codeText = jsInput.textContent;
-			// Check number of brackets
-
-			// Take into use
-			const jsExec = document.getElementById("js_code_id");
-			jsExec.innerHTML = codeText;
+		function refreshJsCode() {
+			// Send request to vscode
+			vscode.postMessage({
+				command: 'refreshJsCode'
+			});
 		}
 	</script>
 
-	<!-- Input the javascript/html -->
-	<p contenteditable="true" id="js_code_input_id">
-		Add your javascript/html code here...
-	</p>
-	<br>
+	<button onclick="refreshJsCode()">Refresh javascript code</button>
+	&nbsp;&nbsp;
+	<button onclick="copyHtmlToClipboard()">Copy all HTML to clipboard</button>
 
-	<button onclick="useJsCode()">Use javascript code</button>
 
 </details>
 
