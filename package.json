@@ -330,18 +330,28 @@
 									"type": "boolean",
 									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
 									"default": false
+								},
+								"debug": {
+									"type": "boolean",
+									"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+									"default": false
+								},
+								"jsPath": {
+									"type": "string",
+									"description": "A relative path to additional javascript code that is included into the Z80 simulator.",
+									"default": false
 								}
 							},
 							"zxnext": {
-								"baudrate": {
-									"type": "number",
-									"description": "The baudrate. Note: If you change the baudrate here you also need to change the baudrate at the remote.",
-									"default": 230400
+								"hostname": {
+									"type": "string",
+									"description": "The hostname/IP address of the socket of the DeZog Serial Interface program. As this usually runs on the same PC as DeZog itself this parameter can be omitted (localhost).",
+									"default": "localhost"
 								},
 								"port": {
 									"type": "string",
-									"description": "The COM port. Nowadays this is normally USB/serial connection. E.g. /dev/tty.usbserial-#### on a Mac or COM1/COM2 etc. on Windows.",
-									"default": "/dev/tty.usbserial"
+									"description": "The port number of the socket of the DeZog Serial Interface program.Defaults to 12000.",
+									"default": "12000"
 								}
 							},
 							"unitTests": {

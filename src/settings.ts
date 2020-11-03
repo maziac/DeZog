@@ -156,6 +156,13 @@ export interface ZxSimType {
 
 	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 	vsyncInterrupt: boolean,
+
+	// If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).
+	debug: boolean;
+
+	// A relative path to additional javascript code that is included into the Z80 simulator.
+	jsPath: string;
+
 }
 
 
@@ -369,6 +376,9 @@ export class Settings {
 			else
 				Settings.launch.zsim.vsyncInterrupt=false;
 		}
+		if (Settings.launch.zsim.debug==undefined)
+			Settings.launch.zsim.debug=false;
+		// Note: jsPath can be undefined.
 
 		// zxnext
 		if (!Settings.launch.zxnext)
