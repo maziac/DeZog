@@ -5,7 +5,6 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
 
-
 /**
  * A Webview that shows the simulated peripherals.
  * E.g. in case of the Spectrum the ULA screen or the keyboard.
@@ -110,6 +109,10 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
+				break;
+			case 'setPortBit':
+				// Can be called by user's js code to set a port.
+				this.setPortBit(message.port, message.bit, message.on);
 				break;
 			case 'refreshJsCode':
 				// In debug mode this is received to recreate the complete html.
@@ -260,6 +263,16 @@ export class ZSimulationView extends BaseView {
 			value|=bit;
 		// And set
 		this.simulator.ports.setPortValue(port, value);
+	}
+
+	/**
+	 * Is called by user's java script code to set a port.
+	 * @param port The port to set. e.g. 0xA23F
+	 * @param bit The bit to set [0;7]
+	 * @param on Set the bit to 1 (true) or 0 (false).
+	 */
+	protected setPortBit(port: number, bit: number, on: boolean) {
+		console.log("port=0x"+Utility.getHexString(port, 4)+", bit="+bit+": "+(on? "1":"0"));
 	}
 
 
@@ -466,6 +479,18 @@ color:black;
         cell=document.getElementById("key_"+keyCode);
      	return cell;
     }
+
+
+	// Sets 'bit' on 'port' address to 'on' (true/false).
+	function setPortBit(port, bit, on) {
+		// Send request to vscode
+		vscode.postMessage({
+			command: 'setPortBit',
+			port: port,
+			bit: bit,
+			on: on
+		});
+	}
 
 
 	// Toggles the visibility of an element.
@@ -733,7 +758,7 @@ color:black;
 				jsCode=readFileSync(this.jsPath).toString();
 			}
 			catch (e) {
-				jsCode="<b>Error: reading file '"+this.jsPath+"'</b>";
+				jsCode="<b>Error: reading file '"+this.jsPath+"':"+e.message+"</b>";
 			}
 		}
 
