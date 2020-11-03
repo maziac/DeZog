@@ -646,62 +646,66 @@ color:black;
 
 		if (Settings.launch.zsim.zxKeyboard) {
 			html+=
-				`<!-- Keyboard -->
-<table style="width:100%">
+`<!-- Keyboard -->
+<details open="true">
+  <summary>ZX Keyboard</summary>
 
-  <tr>
-    <td id="key_Digit1" class="td_off" onClick="cellClicked(this)">1</td>
-    <td id="key_Digit2" class="td_off" onClick="cellClicked(this)">2</td>
-    <td id="key_Digit3" class="td_off" onClick="cellClicked(this)">3</td>
-    <td id="key_Digit4" class="td_off" onClick="cellClicked(this)">4</td>
-    <td id="key_Digit5" class="td_off" onClick="cellClicked(this)">5</td>
-    <td id="key_Digit6" class="td_off" onClick="cellClicked(this)">6</td>
-    <td id="key_Digit7" class="td_off" onClick="cellClicked(this)">7</td>
-    <td id="key_Digit8" class="td_off" onClick="cellClicked(this)">8</td>
-    <td id="key_Digit9" class="td_off" onClick="cellClicked(this)">9</td>
-    <td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
-  </tr>
+	<table style="width:100%">
 
-  <tr>
-    <td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
-    <td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
-    <td id="key_KeyE" class="td_off" onClick="cellClicked(this)">E</td>
-    <td id="key_KeyR" class="td_off" onClick="cellClicked(this)">R</td>
-    <td id="key_KeyT" class="td_off" onClick="cellClicked(this)">T</td>
-    <td id="key_KeyY" class="td_off" onClick="cellClicked(this)">Y</td>
-    <td id="key_KeyU" class="td_off" onClick="cellClicked(this)">U</td>
-    <td id="key_KeyI" class="td_off" onClick="cellClicked(this)">I</td>
-    <td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
-    <td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
-  </tr>
+	<tr>
+		<td id="key_Digit1" class="td_off" onClick="cellClicked(this)">1</td>
+		<td id="key_Digit2" class="td_off" onClick="cellClicked(this)">2</td>
+		<td id="key_Digit3" class="td_off" onClick="cellClicked(this)">3</td>
+		<td id="key_Digit4" class="td_off" onClick="cellClicked(this)">4</td>
+		<td id="key_Digit5" class="td_off" onClick="cellClicked(this)">5</td>
+		<td id="key_Digit6" class="td_off" onClick="cellClicked(this)">6</td>
+		<td id="key_Digit7" class="td_off" onClick="cellClicked(this)">7</td>
+		<td id="key_Digit8" class="td_off" onClick="cellClicked(this)">8</td>
+		<td id="key_Digit9" class="td_off" onClick="cellClicked(this)">9</td>
+		<td id="key_Digit0" class="td_off" onClick="cellClicked(this)">0</td>
+	</tr>
 
-  <tr>
-    <td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
-    <td id="key_KeyS" class="td_off" onClick="cellClicked(this)">S</td>
-    <td id="key_KeyD" class="td_off" onClick="cellClicked(this)">D</td>
-    <td id="key_KeyF" class="td_off" onClick="cellClicked(this)">F</td>
-    <td id="key_KeyG" class="td_off" onClick="cellClicked(this)">G</td>
-    <td id="key_KeyH" class="td_off" onClick="cellClicked(this)">H</td>
-    <td id="key_KeyJ" class="td_off" onClick="cellClicked(this)">J</td>
-    <td id="key_KeyK" class="td_off" onClick="cellClicked(this)">K</td>
-    <td id="key_KeyL" class="td_off" onClick="cellClicked(this)">L</td>
-    <td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
-  </tr>
+	<tr>
+		<td id="key_KeyQ" class="td_off" onClick="cellClicked(this)">Q</td>
+		<td id="key_KeyW" class="td_off" onClick="cellClicked(this)">W</td>
+		<td id="key_KeyE" class="td_off" onClick="cellClicked(this)">E</td>
+		<td id="key_KeyR" class="td_off" onClick="cellClicked(this)">R</td>
+		<td id="key_KeyT" class="td_off" onClick="cellClicked(this)">T</td>
+		<td id="key_KeyY" class="td_off" onClick="cellClicked(this)">Y</td>
+		<td id="key_KeyU" class="td_off" onClick="cellClicked(this)">U</td>
+		<td id="key_KeyI" class="td_off" onClick="cellClicked(this)">I</td>
+		<td id="key_KeyO" class="td_off" onClick="cellClicked(this)">O</td>
+		<td id="key_KeyP" class="td_off" onClick="cellClicked(this)">P</td>
+	</tr>
 
-  <tr>
-    <td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
-    <td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
-    <td id="key_KeyX" class="td_off" onClick="cellClicked(this)">X</td>
-    <td id="key_KeyC" class="td_off" onClick="cellClicked(this)">C</td>
-    <td id="key_KeyV" class="td_off" onClick="cellClicked(this)">V</td>
-    <td id="key_KeyB" class="td_off" onClick="cellClicked(this)">B</td>
-    <td id="key_KeyN" class="td_off" onClick="cellClicked(this)">N</td>
-    <td id="key_KeyM" class="td_off" onClick="cellClicked(this)">M</td>
-    <td id="key_ShiftRight" class="td_off" onClick="cellClicked(this)">SYMB. S.</td>
-    <td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
-  </tr>
+	<tr>
+		<td id="key_KeyA" class="td_off" onClick="cellClicked(this)">A</td>
+		<td id="key_KeyS" class="td_off" onClick="cellClicked(this)">S</td>
+		<td id="key_KeyD" class="td_off" onClick="cellClicked(this)">D</td>
+		<td id="key_KeyF" class="td_off" onClick="cellClicked(this)">F</td>
+		<td id="key_KeyG" class="td_off" onClick="cellClicked(this)">G</td>
+		<td id="key_KeyH" class="td_off" onClick="cellClicked(this)">H</td>
+		<td id="key_KeyJ" class="td_off" onClick="cellClicked(this)">J</td>
+		<td id="key_KeyK" class="td_off" onClick="cellClicked(this)">K</td>
+		<td id="key_KeyL" class="td_off" onClick="cellClicked(this)">L</td>
+		<td id="key_Enter" class="td_off" onClick="cellClicked(this)">ENTER</td>
+	</tr>
 
-</table>
+	<tr>
+		<td id="key_ShiftLeft" class="td_off" onClick="cellClicked(this)">CAPS S.</td>
+		<td id="key_KeyZ" class="td_off" onClick="cellClicked(this)">Z</td>
+		<td id="key_KeyX" class="td_off" onClick="cellClicked(this)">X</td>
+		<td id="key_KeyC" class="td_off" onClick="cellClicked(this)">C</td>
+		<td id="key_KeyV" class="td_off" onClick="cellClicked(this)">V</td>
+		<td id="key_KeyB" class="td_off" onClick="cellClicked(this)">B</td>
+		<td id="key_KeyN" class="td_off" onClick="cellClicked(this)">N</td>
+		<td id="key_KeyM" class="td_off" onClick="cellClicked(this)">M</td>
+		<td id="key_ShiftRight" class="td_off" onClick="cellClicked(this)">SYMB. S.</td>
+		<td id="key_Space" class="td_off" onClick="cellClicked(this)">SPACE</td>
+	</tr>
+
+	</table>
+</details>
 
 `;
 		}
@@ -710,22 +714,61 @@ color:black;
 `<p id="log"></p>
 `;
 
+		// Custom javascript code area
+		html+=
+`<!-- Room for extra/user editable javascript/html code -->
+<p>
+	<div id="js_code_id"></div>
+</p>
 
+`;
 
 		if (Settings.launch.zsim /*debug*/) {
 			html+=
-`<!-- Debug copy button -->
-<script>
-	// Copies the complete html of the document to the clipboard.
-	function copyHtmlToClipboard() {
-	  	const copyText = document.documentElement.innerHTML;
-  		navigator.clipboard.writeText(copyText);
-	}
-</script>
+`<!-- Debug Area -->
+<hr>
 
-<p>
-	<button onclick="copyHtmlToClipboard()">Copy HTML</button>
-</p>
+<details open="true">
+    <summary>Debug Area</summary>
+
+	<!-- "Copy all HTML" button -->
+	<script>
+		// Copies the complete html of the document to the clipboard.
+		function copyHtmlToClipboard() {
+			const copyText = document.documentElement.innerHTML;
+			navigator.clipboard.writeText(copyText);
+		}
+	</script>
+
+	<p>
+		<button onclick="copyHtmlToClipboard()">Copy all HTML</button>
+	</p>
+	<br>
+
+
+
+	<script>
+		// Use the entered javascript code.
+		function useJsCode() {
+			const jsInput = document.getElementById("js_code_input_id");
+			const codeText = jsInput.textContent;
+			// Check number of brackets
+
+			// Take into use
+			const jsExec = document.getElementById("js_code_id");
+			jsExec.innerHTML = codeText;
+		}
+	</script>
+
+	<!-- Input the javascript/html -->
+	<p contenteditable="true" id="js_code_input_id">
+		Add your javascript/html code here...
+	</p>
+	<br>
+
+	<button onclick="useJsCode()">Use javascript code</button>
+
+</details>
 
 `;
 		}
