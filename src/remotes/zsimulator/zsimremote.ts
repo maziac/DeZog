@@ -117,7 +117,7 @@ export class ZSimRemote extends DzrpRemote {
 		// bit 5: If set, memory paging will be disabled
 		if (value&0b0100000) {
 			// Disable further writes to this port
-			this.ports.registerOutPortFunction(0x7FFD, undefined);
+			this.ports.registerSpecificOutPortFunction(0x7FFD, undefined);
 		}
 	}
 
@@ -256,7 +256,7 @@ export class ZSimRemote extends DzrpRemote {
 					this.memoryModel=new Zx128MemoryModel();
 					this.memory=new Zx128Memory();
 					// Bank switching.
-					this.ports.registerOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
+					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 					// Check if ULA enabled
 					if (Settings.launch.zsim.ulaScreen) {
 						this.ulaScreen=new UlaScreen(this.memory);
@@ -276,9 +276,9 @@ export class ZSimRemote extends DzrpRemote {
 						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 					}
 					// Connect to port
-					this.ports.registerOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
-					this.ports.registerOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-					this.ports.registerInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
+					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
+					this.ports.registerspecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 					// Check if ULA enabled
 					if (Settings.launch.zsim.ulaScreen) {
 						this.ulaScreen=new UlaScreen(this.memory);

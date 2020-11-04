@@ -56,6 +56,7 @@ export class ZSimulationView extends BaseView {
 		this.simulator=simulator;
 
 		// Set all ports
+		// TODO: Make dependend of zx keyboard
 		const ports=simulator.ports;
 		ports.setPortValue(0xFEFE, 0xFF);
 		ports.setPortValue(0xFDFE, 0xFF);
