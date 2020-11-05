@@ -20,6 +20,20 @@ const IN_DEFAULT_VALUE=0xFF;
  */
 export class CustomCode extends EventEmitter {
 
+	protected static evalInContext(js, context) {
+		//# Return the results of the in-line anonymous function we call with the passed context
+		return function () {
+			//js='';
+			try {
+				return eval(js);
+			}
+			catch (e) {
+				throw e;
+			}
+		}
+		.call(context);
+	}
+
 	// The context the javascript code is executed.
 	// Remains.
 	protected context: any;
@@ -29,7 +43,7 @@ export class CustomCode extends EventEmitter {
 		// Create new empty context
 		this.context={};
 		// Execute/initialize the javascript
-		evalInContext(`
+		CustomCode.evalInContext(`
 global = this;
 
 /**
@@ -45,11 +59,14 @@ class PortOut {
 	constructor(name, port) {
 		this.name=name;
 		this.port=port;
+		this.value=0xFF;
 	}
 
 	// Called when an 'out' is executed in Z80.
 	out(port, value) {
 		if(port == this.port) {
+			// Store value internally
+			this.value=value;
 			// Send message to UI
 			sendMessage({
 				command: 'my_'+this.name',
@@ -88,9 +105,6 @@ global.outPortB = new PortOut('PortB', 0x8001);
 global.inPortA = new PortIn('PortA', 0x9000);
 global.inPortB = new PortIn('PortB', 0x9001);
 
-// Init joy data.
-global.joyData['PortA'] = 0xFF;
-global.joyData1 = 0xFF;
 
 /**
  * This function is called when an 'out' is executed in Z80.

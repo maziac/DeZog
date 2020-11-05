@@ -6,7 +6,7 @@ import {Z80RegistersClass} from '../remotes/z80registers';
 
 
 
-suite('ZxSimulatorRemote', () => {
+suite('ZSimRemote', () => {
 	let zsim: ZSimRemote;
 
 	suite('48k', () => {

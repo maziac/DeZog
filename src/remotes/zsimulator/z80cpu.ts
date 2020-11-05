@@ -84,9 +84,8 @@ export class Z80Cpu {
 		// Initialize custom code
 		const jsPath=Settings.launch.zsim.customJsPath;
 		if (jsPath) {
-			let jsCode='';
 			// Can throw an error
-			jsCode=readFileSync('ccc'+jsPath).toString();
+			const jsCode=readFileSync(jsPath).toString();
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
 			this.customCode=new CustomCode(jsCode);
 		}
