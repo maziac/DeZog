@@ -4,6 +4,8 @@ import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simmemory';
+import {CustomCode} from './customcode';
+import {readFileSync} from 'fs';
 
 
 
@@ -45,6 +47,9 @@ export class Z80Cpu {
 	// Ports
 	public ports: Z80Ports;
 
+	// Custom code to simulate peripherals (in/out)
+	public customCode: CustomCode;
+
 
 	/// Constructor.
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
@@ -74,7 +79,17 @@ export class Z80Cpu {
 			io_read: (address) => {return ports.read(address);},
 			io_write: (address, val) => {ports.write(address, val);},
 			z80n_enabled: z80n_enabled
-			});
+		});
+
+		// Initialize custom code
+		const jsPath=Settings.launch.zsim.customJsPath;
+		if (jsPath) {
+			let jsCode='';
+			// Can throw an error
+			jsCode=readFileSync('ccc'+jsPath).toString();
+			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
+			this.customCode=new CustomCode(jsCode);
+		}
 	}
 
 
@@ -83,7 +98,7 @@ export class Z80Cpu {
 	 * @returns true if a (vertical) interrupt happened or would have happened.
 	 * Also if interrupts are disabled at the Z80.
 	 * And also if 'vsyncInterrupt' is falsed.
-	 * The return value is used for regularly updating the ZxSimulationView.
+	 * The return value is used for regularly updating the ZSimulationView.
 	 * And this is required even if interrupts are off. Or even if
 	 * there is only Z80 simulation without ZX Spectrum.
 	 */

@@ -10,7 +10,7 @@ export class Z80Ports {
 	//protected ports: Uint8Array;
 
 	protected genericOutPortFunc: ((port: number, value: number) => void)|undefined;
-	protected genericInPortFunc: ((port: number) => number)|undefined;
+	protected genericInPortFunc: ((port: number) => Promise<number>)|undefined;
 
 	// It is possible to add behavior when writing to a specific port.
 	// This map maps port addresses to functions that are executed on a port write.
@@ -36,7 +36,7 @@ export class Z80Ports {
 	 * @param func The function to execute if the port is written. If undefined the
 	 * current function is deregistered.
 	 */
-	public registerGeneralInPortFunction(func: ((port: number, value: number) => void)|undefined) {
+	public registerGenericOutPortFunction(func: ((port: number, value: number) => void)|undefined) {
 		this.genericOutPortFunc=func;
 	}
 
@@ -47,7 +47,7 @@ export class Z80Ports {
 	 * @param func The function to execute if the port is read. If undefined the
 	 * current function is deregistered.
 	 */
-	public registerGenericInPortFunction(func: ((port: number) => number)|undefined) {
+	public registerGenericInPortFunction(func: ((port: number) => Promise<number>)|undefined) {
 		this.genericInPortFunc=func;
 	}
 
@@ -115,7 +115,7 @@ export class Z80Ports {
 	/**
 	 *  Read 1 byte. Used by the CPU when doing a 'in a,(c)'.
 	 */
-	public read(port: number): number {
+	public async read(port: number): Promise<number> {
 		// Check for specific read function
 		const func=this.inPortMap.get(port);
 		if (func)

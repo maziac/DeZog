@@ -21,7 +21,12 @@ export class ZSimulationView extends BaseView {
 	protected simulator: ZSimRemote;
 
 	// Taken from Settings. Path to the extra javascript code.
-	protected jsPath: string;
+	protected customUiPath: string;
+
+	// Is set when a 'portGet' query is send to the webview.
+	// And is called when the response (the port value) is
+	// received from the webview.
+	protected genericInPortResolve: ((value: number) => void)|undefined;
 
 
 	/**
@@ -67,12 +72,40 @@ export class ZSimulationView extends BaseView {
 		ports.setPortValue(0xBFFE, 0xFF);
 		ports.setPortValue(0x7FFE, 0xFF);
 
+		// Register port functions
+		ports.registerGenericOutPortFunction((port, value) => {
+			const message={
+				command: 'portSet',
+				time: 0, // TODO: add time
+				port: port,
+				value: value
+			};
+			this.sendMessageToWebView(message);
+			// Note: this function works asynchronously.
+			// I.e. no wait is done until the message has been processed.
+			// In contrast to 'portGet': There it is required to
+			// wait to process the result.
+		});
+		ports.registerGenericInPortFunction(async port => {
+			return new Promise<number>(resolve => {
+				Utility.assert(!this.genericInPortResolve)
+				this.genericInPortResolve=resolve;
+				const message={
+					command: 'portGet',
+					time: 0, // TODO: add time
+					port: port
+				};
+				this.sendMessageToWebView(message);
+				// Note: resolve is called in 'webViewMessageReceived'.
+			});
+		});
+
 		// Add title
 		Utility.assert(this.vscodePanel);
 		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
 
 		// Read path for additional javascript code
-		this.jsPath=Settings.launch.zsim.jsPath;
+		this.customUiPath=Settings.launch.zsim.customUiPath;
 
 		// Initial html page.
 		this.setHtml();
@@ -120,10 +153,26 @@ export class ZSimulationView extends BaseView {
 				// And with this the user's java script file is read as well.
 				this.setHtml();
 				break;
+			case 'portGetValue':
+				// Return on a 'portGet' postMessage.
+				// Returns the value for a port.
+				this.portGetValue(message.value);
+				break;
 			default:
 				super.webViewMessageReceived(message);
 				break;
 		}
+	}
+
+
+	/**
+	 * A 'portGet' was sent to the webview and now it's value
+	 * in 'portGetValue' has been returned.
+	 * @param value The value for the port.
+	 */
+	protected portGetValue(value: number) {
+		Utility.assert(this.genericInPortResolve); // If not set then there was no request.
+		this.genericInPortResolve!(value);
 	}
 
 
@@ -754,12 +803,12 @@ color:black;
 
 		// Custom javascript code area
 		let jsCode='';
-		if (this.jsPath) {
+		if (this.customUiPath) {
 			try {
-				jsCode=readFileSync(this.jsPath).toString();
+				jsCode=readFileSync(this.customUiPath).toString();
 			}
 			catch (e) {
-				jsCode="<b>Error: reading file '"+this.jsPath+"':"+e.message+"</b>";
+				jsCode="<b>Error: reading file '"+this.customUiPath+"':"+e.message+"</b>";
 			}
 		}
 

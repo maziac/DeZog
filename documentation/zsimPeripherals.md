@@ -119,3 +119,7 @@ view -> html: postMessage
 Will not work for the custom javascript code.
 I.e. save/restore state will work but no state of the custom code is saved/restored.
 
+
+# Open
+
+- ZSimulationView needs to retain state. Is it done?

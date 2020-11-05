@@ -129,7 +129,7 @@ export interface ZxNextSocketType {
 
 
 /// Definitions for the 'zsim' remote type.
-export interface ZxSimType {
+export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
 	zxKeyboard: boolean,
 
@@ -161,7 +161,9 @@ export interface ZxSimType {
 	debug: boolean;
 
 	// A relative path to additional javascript code that is included into the Z80 simulator.
-	jsPath: string;
+	customJsPath: string;
+
+	customUiPath: string;
 
 }
 
@@ -181,7 +183,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	cspect: CSpectType;
 
 	// The special settings for the internal Z80 simulator.
-	zsim: ZxSimType;
+	zsim: ZSimType;
 
 	// The special settings for the serial connection.
 	zxnext: ZxNextSocketType;
@@ -355,7 +357,7 @@ export class Settings {
 
 		// zsim
 		if (!Settings.launch.zsim)
-			Settings.launch.zsim={} as ZxSimType;
+			Settings.launch.zsim={} as ZSimType;
 		if (Settings.launch.zsim.zxKeyboard==undefined)
 			Settings.launch.zsim.zxKeyboard=true;
 		if (Settings.launch.zsim.ulaScreen==undefined)
@@ -378,9 +380,13 @@ export class Settings {
 		}
 		if (Settings.launch.zsim.debug==undefined)
 			Settings.launch.zsim.debug=false;
-		if (Settings.launch.zsim.jsPath!=undefined) {
-			const jsPath=UnifiedPath.getUnifiedPath(Settings.launch.zsim.jsPath);
-			Settings.launch.zsim.jsPath=Utility.getAbsFilePath(jsPath);
+		if (Settings.launch.zsim.customJsPath!=undefined) {
+			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customJsPath);
+			Settings.launch.zsim.customJsPath=Utility.getAbsFilePath(path);
+		}
+		if (Settings.launch.zsim.customUiPath!=undefined) {
+			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customUiPath);
+			Settings.launch.zsim.customUiPath=Utility.getAbsFilePath(path);
 		}
 
 		// zxnext
