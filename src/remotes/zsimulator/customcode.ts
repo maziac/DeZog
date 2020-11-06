@@ -1,5 +1,6 @@
 import {EventEmitter} from 'events';
 import {LogCustomCode} from '../../log';
+import {Utility} from '../../misc/utility';
 
 
 
@@ -179,8 +180,10 @@ ${jsCode}
 	 * @return a value, e.g. 0x7F, or 0xFF if no peripheral attached.
 	 */
 	public readPort(port: number): number {
+		LogCustomCode.log('Reading port '+Utility.getHexString(port, 2)+'h');
 		// Wrap to catch errors
 		const value=this.evalJs(`this.portGet(${port});`);
+		LogCustomCode.log('  Read value: '+Utility.getHexString(value, 4)+'h');
 		if (value==undefined)
 			return IN_DEFAULT_VALUE;
 		return value;
@@ -194,6 +197,7 @@ ${jsCode}
 	 * @param value A value to set, e.g. 0x7F.
 	 */
 	public writePort(port: number, value: number) {
+		LogCustomCode.log('Write '+Utility.getHexString(value, 4)+'h to port '+Utility.getHexString(port, 2)+'h');
 		// Wrap to catch errors
 		this.evalJs(`this.portSet(${port}, ${value});`);
 	}
@@ -207,9 +211,10 @@ ${jsCode}
 	 * command.
 	 */
 	public messageReceived(message: any) {
+		LogCustomCode.log('Message '+JSON.stringify(message)+' received.');
 		if (this.context.receivedMessage==undefined) {
 			// Log that a message has been received without receiver.
-			LogCustomCode.log('Message '+message+' received, but no custom receiver defined.');
+			LogCustomCode.log("  But no custom 'this.receivedMessage' defined.");
 		}
 		else {
 			// Wrap to catch errors
@@ -226,6 +231,7 @@ ${jsCode}
 	 * command.
 	 */
 	public sendMessage(message: any) {
+		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
 		// Send message
 		this.emit('sendMessage', message);
 	}
