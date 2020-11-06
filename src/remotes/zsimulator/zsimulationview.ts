@@ -72,34 +72,6 @@ export class ZSimulationView extends BaseView {
 		ports.setPortValue(0xBFFE, 0xFF);
 		ports.setPortValue(0x7FFE, 0xFF);
 
-		// Register port functions
-		ports.registerGenericOutPortFunction((port, value) => {
-			const message={
-				command: 'portSet',
-				time: 0, // TODO: add time
-				port: port,
-				value: value
-			};
-			this.sendMessageToWebView(message);
-			// Note: this function works asynchronously.
-			// I.e. no wait is done until the message has been processed.
-			// In contrast to 'portGet': There it is required to
-			// wait to process the result.
-		});
-		ports.registerGenericInPortFunction(async port => {
-			return new Promise<number>(resolve => {
-				Utility.assert(!this.genericInPortResolve)
-				this.genericInPortResolve=resolve;
-				const message={
-					command: 'portGet',
-					time: 0, // TODO: add time
-					port: port
-				};
-				this.sendMessageToWebView(message);
-				// Note: resolve is called in 'webViewMessageReceived'.
-			});
-		});
-
 		// Add title
 		Utility.assert(this.vscodePanel);
 		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;

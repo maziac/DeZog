@@ -48,7 +48,7 @@ export class Z80Cpu {
 	public ports: Z80Ports;
 
 	// Custom code to simulate peripherals (in/out)
-	public customCode: CustomCode;
+	public customCode: CustomCode; // TODO: Remove
 
 
 	/// Constructor.
@@ -87,7 +87,15 @@ export class Z80Cpu {
 			// Can throw an error
 			const jsCode=readFileSync(jsPath).toString();
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			this.customCode=new CustomCode(jsCode);
+			const customCode=new CustomCode(jsCode);
+			// Register custom code
+			this.ports.registerGenericInPortFunction(port => {
+				const value=customCode.readPort(port);
+				return value;
+			});
+			this.ports.registerGenericOutPortFunction((port, value) => {
+				customCode.writePort(port, value);
+			});
 		}
 	}
 

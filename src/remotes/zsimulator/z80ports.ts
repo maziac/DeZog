@@ -6,11 +6,14 @@ import {Utility} from '../../misc/utility';
  */
 export class Z80Ports {
 
+	// The default value returned if no peripheral is attached.
+	public static IN_DEFAULT_VALUE=0xFF;
+
 	// Holds the ports for reading.
 	//protected ports: Uint8Array;
 
 	protected genericOutPortFunc: ((port: number, value: number) => void)|undefined;
-	protected genericInPortFunc: ((port: number) => Promise<number>)|undefined;
+	protected genericInPortFunc: ((port: number) => number|undefined)|undefined;
 
 	// It is possible to add behavior when writing to a specific port.
 	// This map maps port addresses to functions that are executed on a port write.
@@ -47,7 +50,7 @@ export class Z80Ports {
 	 * @param func The function to execute if the port is read. If undefined the
 	 * current function is deregistered.
 	 */
-	public registerGenericInPortFunction(func: ((port: number) => Promise<number>)|undefined) {
+	public registerGenericInPortFunction(func: ((port: number) => number|undefined)|undefined) {
 		this.genericInPortFunc=func;
 	}
 
@@ -115,18 +118,23 @@ export class Z80Ports {
 	/**
 	 *  Read 1 byte. Used by the CPU when doing a 'in a,(c)'.
 	 */
-	public async read(port: number): Promise<number> {
+	public read(port: number): number {
+		let value;
 		// Check for specific read function
 		const func=this.inPortMap.get(port);
 		if (func)
-			return func(port);
+			value=func(port);
 
 		// Check for general read function
-		if (this.genericInPortFunc)
-			return this.genericInPortFunc(port);
+		if (value==undefined) {
+			if (this.genericInPortFunc)
+				value=this.genericInPortFunc(port);
+		}
 
 		// Otherwise return default
-		return 0xFF;
+		if (value==undefined)
+			value=Z80Ports.IN_DEFAULT_VALUE;
+		return value;
 	}
 
 
@@ -139,16 +147,12 @@ export class Z80Ports {
 		const writefunc=this.outPortMap.get(port);
 		if (writefunc) {
 			writefunc(port, data);
-			return;
 		}
 
 		// Check for a generic write function
 		if (this.genericOutPortFunc) {
 			this.genericOutPortFunc(port, data);
-			return;
 		}
-
-		// Else: do nothing
 	}
 
 

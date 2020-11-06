@@ -4,9 +4,6 @@ import {Utility} from '../../misc/utility';
 
 
 
-// The default value returned if no peripheral is attached.
-const IN_DEFAULT_VALUE=0xFF;
-
 
 /**
  * A class to execute custom code in the simulator.
@@ -80,6 +77,7 @@ class PortIn {
 		if(port != this.port)
 			return undefined;
 		// Return value
+		this.value=~this.value;
 		return this.value;
 	}
 };
@@ -176,17 +174,16 @@ ${jsCode}
 	/**
 	 * Reads from a port.
 	 * Calls the custom js code.
-	 * @param port the port number, e.g. 0x8000
-	 * @return a value, e.g. 0x7F, or 0xFF if no peripheral attached.
+	 * @param port The port number, e.g. 0x8000
+	 * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+	 * If no port is found then undefined is returned.
 	 */
-	public readPort(port: number): number {
+	public readPort(port: number): number|undefined {
 		LogCustomCode.log('Reading port '+Utility.getHexString(port, 2)+'h');
 		// Wrap to catch errors
 		const value=this.evalJs(`this.portGet(${port});`);
 		LogCustomCode.log('  Read value: '+Utility.getHexString(value, 4)+'h');
-		if (value==undefined)
-			return IN_DEFAULT_VALUE;
-		return value;
+		return value;	// Might be undefined
 	}
 
 
