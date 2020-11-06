@@ -4,8 +4,7 @@ import { DebugSessionClass } from './debugadapter';
 import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
-import { LogSocket, Log } from './log';
-import Lg = require("./log")
+import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
 import {Utility} from './misc/utility';
 import {WhatsNewContentProvider} from './whatsnew/whatsnewprovider';
 import {DezogWhatsNewMgr} from './whatsnew/dezogwhatsnewmanager';
@@ -223,6 +222,15 @@ function configureLogging() {
 		Log.init(channelOut, filepath);
 	}
 
+	// Custom code log
+	{
+		const logToPanel=configuration.get<boolean>('customcode.logpanel');
+		const filepath=configuration.get<string>('customcode.logfile');
+		const channelName=(logToPanel)? "DeZog Custom Code":undefined;
+		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
+		LogCustomCode.init(channelOut, filepath);
+	}
+
 	// Socket log
 	{
 		const logToPanel=configuration.get<boolean>('socket.logpanel');
@@ -235,8 +243,7 @@ function configureLogging() {
 	// Enable to get a log of the commands only
 	if (false) {
 		const channelOut=vscode.window.createOutputChannel("DeZog Socket Commands");
-		Lg.LogSocketCommands=new Log();
-		Lg.LogSocketCommands.init(channelOut, undefined);
+		LogSocketCommands.init(channelOut, undefined);
 	}
 }
 

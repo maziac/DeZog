@@ -102,6 +102,16 @@
 					"description": "Write socket logs to the given file.",
 					"type": "string",
 					"scope": "resource"
+				},
+				"dezog.customcode.logpanel": {
+					"description": "Write logs regarding custom (js) code to an output panel.",
+					"type": "boolean",
+					"scope": "resource"
+				},
+				"dezog.customcode.logfile": {
+					"description": "Write logs regarding custom (js) code to the given file.",
+					"type": "string",
+					"scope": "resource"
 				}
 			}
 		},

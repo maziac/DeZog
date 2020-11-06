@@ -1,11 +1,6 @@
 import {EventEmitter} from 'events';
+import {LogCustomCode} from '../../log';
 
-
-// TODO: Move to static class.
-function evalInContext(js, context) {
-	//# Return the results of the in-line anonymous function we call with the passed context
-	return function () {return eval(js);}.call(context);
-}
 
 
 // The default value returned if no peripheral is attached.
@@ -28,6 +23,7 @@ export class CustomCode extends EventEmitter {
 				return eval(js);
 			}
 			catch (e) {
+				// In case of an error try to find where is occurred
 				throw e;
 			}
 		}
@@ -41,19 +37,9 @@ export class CustomCode extends EventEmitter {
 	constructor(jsCode: string) {
 		super();
 		// Create new empty context
-		this.context={};
-		// Execute/initialize the javascript
-		CustomCode.evalInContext(`
-global = this;
+		this.context={API: this};
 
-/**
- * Sends a message to the ZSimulationView.
- */
-function sendMessage(msg) {
-	global.message = msg;
-}
-
-
+		jsCode=`
 // Sample code
 class PortOut {
 	constructor(name, port) {
@@ -68,8 +54,8 @@ class PortOut {
 			// Store value internally
 			this.value=value;
 			// Send message to UI
-			sendMessage({
-				command: 'my_'+this.name',
+			ApiSendMessage({
+				command: 'my_'+this.name,
 				value: value
 			});
 		}
@@ -98,32 +84,34 @@ class PortIn {
 };
 
 // Instantiate 2 out ports.
-global.outPortA = new PortOut('PortA', 0x8000);
-global.outPortB = new PortOut('PortB', 0x8001);
+this.outPortA = new PortOut('PortA', 0x8000);
+this.outPortB = new PortOut('PortB', 0x8001);
 
 // Instantiate 2 in ports.
-global.inPortA = new PortIn('PortA', 0x9000);
-global.inPortB = new PortIn('PortB', 0x9001);
+this.inPortA = new PortIn('PortA', 0x9000);
+this.inPortA.setValue(90);
+this.inPortB = new PortIn('PortB', 0x9001);
+this.inPortB.setValue(91);
 
 
 /**
  * This function is called when an 'out' is executed in Z80.
  */
-global.portSet = (port, value) => {
+this.portSet = (port, value) => {
 	// Go through all ports
-	global.outPortA.out(port, value);
-	global.outPortB.out(port, value);
+	this.outPortA.out(port, value);
+	this.outPortB.out(port, value);
 }
 
 /**
  * This function is called when an 'in' is executed in Z80.
  */
-global.portGet = (port) => {
+this.portGet = (port) => {
 	// Check all ports and return a valid value
-	let value = global.inPortA.in(port);
+	let value = this.inPortA.in(port);
 	if(value != undefined)
 		return value;
-	value = global.inPortB.in(port);
+	value = this.inPortB.in(port);
 	return value;
 }
 
@@ -131,18 +119,37 @@ global.portGet = (port) => {
  * This function is called by if new input
  * data is available.
  */
-global.messageReceived = (msg) => {
+this.receivedMessage = (msg) => {
 	// Check if joy data
 	switch(msg.command) {
 		case 'joy0':
-			global.inPortA.setValue(msg.data);
+			this.inPortA.setValue(msg.data);
 		break;
 		case 'joy1':
-			global.inPortB.setValue(msg.data);
+			this.inPortB.setValue(msg.data);
 		break;
 	}
 }
-			`,
+`;
+
+
+		// Execute/initialize the javascript
+		CustomCode.evalInContext(`
+// Preamble:
+
+/**
+ * Sends a message to the ZSimulationView.
+ */
+function ApiSendMessageIntern(msg) {
+	this.API.sendMessage(msg);
+}
+
+// Make sure this is the this from the context.
+const ApiSendMessage = ApiSendMessageIntern.bind(this);
+
+${jsCode}
+
+`,
 			this.context);	// This fills the context with the complete program.
 	}
 
@@ -156,15 +163,10 @@ global.messageReceived = (msg) => {
 	protected evalJs(jsCode: string): any {
 		let result;
 		try {
-			result=evalInContext(jsCode, this.context);
-			// Check if a message should be sent.
-			if (this.context.message) {
-				// Send message
-				this.emit('sendMessage', this.context.message);
-			}
+			result=CustomCode.evalInContext(jsCode, this.context);
 		}
 		catch (e) {
-			throw Error('Error during executing custom java script: '+e.message);
+			this.throwError('Error during executing custom java script: '+e.message);
 		}
 		return result;
 	}
@@ -177,9 +179,8 @@ global.messageReceived = (msg) => {
 	 * @return a value, e.g. 0x7F, or 0xFF if no peripheral attached.
 	 */
 	public readPort(port: number): number {
-		let value;
 		// Wrap to catch errors
-		this.evalJs(`global.portGet(0${port});`);
+		const value=this.evalJs(`this.portGet(${port});`);
 		if (value==undefined)
 			return IN_DEFAULT_VALUE;
 		return value;
@@ -194,25 +195,54 @@ global.messageReceived = (msg) => {
 	 */
 	public writePort(port: number, value: number) {
 		// Wrap to catch errors
-		this.evalJs(`global.portSet(${port}, ${value});`);
+		this.evalJs(`this.portSet(${port}, ${value});`);
 	}
 
 
 	/**
-	 * A message has been received from the webview that will be
+	 * A message has been received from the ZSimulationView that will be
 	 * passed to the custom js code.
-	 * @param message The message object. Shoudl at least contain
+	 * @param message The message object. Should at least contain
 	 * a 'command' property plus other properties depending on the
 	 * command.
 	 */
 	public messageReceived(message: any) {
-		// Wrap to catch errors
-		this.evalJs(`global.messageReceived(${message});`);
+		if (this.context.receivedMessage==undefined) {
+			// Log that a message has been received without receiver.
+			LogCustomCode.log('Message '+message+' received, but no custom receiver defined.');
+		}
+		else {
+			// Wrap to catch errors
+			this.evalJs(`this.receivedMessage(${JSON.stringify(message)});`);
+		}
 	}
 
 
+	/**
+	 * Emits a message. Normally this means it is send to the ZSimulationView.
+	 * Is called by the custom javascript code.
+	 * @param message The message object. Should at least contain
+	 * a 'command' property plus other properties depending on the
+	 * command.
+	 */
+	public sendMessage(message: any) {
+		// Send message
+		this.emit('sendMessage', message);
+	}
 
+
+	/**
+	 * Logs the error message and throws an exception.
+	 * @param errorMessage The error text.
+	 */
+	protected throwError(errorMessage: string) {
+		LogCustomCode.log(errorMessage);
+		throw Error(errorMessage);
+	}
 };
+
+
+
 
 /* OR:
 var result = function(str){

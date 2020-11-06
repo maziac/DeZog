@@ -193,7 +193,10 @@ export class Log {
 
 
 /// Global logging is instantiated.
-export let LogGlobal = new Log();
+export let LogGlobal=new Log();
+
+/// Logging for custom code is instantiated.
+export let LogCustomCode=new Log();
 
 /// Socket logging.
 export let LogSocket = new Log();
