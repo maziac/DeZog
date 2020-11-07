@@ -4,6 +4,85 @@ import {Utility} from '../../misc/utility';
 
 
 
+class CustomCodeAPI extends EventEmitter {
+	// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
+	public tstates: number=0;
+
+
+	// Pointer to the object who will receive 'sendMessage'.
+	protected parent: CustomCode;
+
+	/**
+	 * Constructor.
+	 * @param parent The custom code class for communication.
+	 */
+	constructor(parent: CustomCode) {
+		super();
+		this.parent=parent;
+	}
+
+
+	/**
+	 * Just used to place a breakpoint.
+	 */
+	public debugBreak() {
+	}
+
+
+	/**
+	 * Emits a message. Normally this means it is send to the ZSimulationView.
+	 * Is called by the custom javascript code.
+	 * User should not overwrite this.
+	 * @param message The message object. Should at least contain
+	 * a 'command' property plus other properties depending on the
+	 * command.
+	 */
+	public sendMessage(message: any) {
+		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
+		// Send message
+		this.parent.emit('sendMessage', message);
+	}
+
+
+	/**
+	 * A message has been received from the ZSimulationView that
+	 * shall be executed by the custom code.
+	 * User can leave this undefined if he does not generate any message in
+	 * the ZSimulation view.
+	 * @param message The message object.
+	 */
+	public receivedMessage: (message: any) => void = undefined as any;
+
+
+	/**
+	 * Called when time has advanced.
+	 * Can be overwritten by the user.
+	 * Note: API.tstates contains the number of t-states passed
+	 * since start of simulation/debug session.
+	 */
+	public tick: () => void = undefined as any;
+
+
+	/**
+	 * Reads from a port.
+	 * Should be overwritten by the user if in ports are used.
+	 * @param port The port number, e.g. 0x8000
+	 * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+	 * If no port is found then undefined is returned.
+	 */
+	public readPort: (port: number) => number|undefined = undefined as any;
+
+
+	/**
+	 * Writes to a port.
+	 * Should be overwritten by the user if out ports are used.
+	 * @param port the port number, e.g. 0x8000
+	 * @param value A value to set, e.g. 0x7F.
+	 */
+	public writePort: (port: number, value: number) => void = undefined as any;
+
+}
+
 
 /**
  * A class to execute custom code in the simulator.
@@ -32,10 +111,15 @@ export class CustomCode extends EventEmitter {
 	// Remains.
 	protected context: any;
 
+	protected api: CustomCodeAPI;
+
+
 	constructor(jsCode: string) {
 		super();
+		// Create an API object
+		this.api=new CustomCodeAPI(this);
 		// Create new empty context
-		this.context={API: this};
+		this.context={tmpAPI: this.api};
 
 		jsCode=`
 // Sample code
@@ -52,7 +136,7 @@ class PortOut {
 			// Store value internally
 			this.value=value;
 			// Send message to UI
-			ApiSendMessage({
+			API.sendMessage({
 				command: 'my_'+this.name,
 				value: value
 			});
@@ -60,10 +144,29 @@ class PortOut {
 	}
 };
 
-class PortIn {
+
+// This in port returns t-states (for testing purposes).
+class PortInTime {
 	constructor(name, port) {
 		this.name=name;
 		this.port=port;
+	}
+
+	// Called when an 'out' is executed in Z80.
+	// The returned value depends on time.
+	in(port) {
+		if(port != this.port)
+			return undefined;
+		// Return value
+		// Does not make sense. Is just for testing:
+		return API.tstates;
+	}
+};
+
+// This in port returns the set value.
+class PortIn extends PortInTime {
+	constructor(name, port) {
+		super(name, port);
 		this.value=0xFF;	// Default
 	}
 
@@ -73,11 +176,11 @@ class PortIn {
 	}
 
 	// Called when an 'out' is executed in Z80.
+	// Toggles on each call.
 	in(port) {
 		if(port != this.port)
 			return undefined;
 		// Return value
-		this.value=~this.value;
 		return this.value;
 	}
 };
@@ -89,14 +192,20 @@ this.outPortB = new PortOut('PortB', 0x8001);
 // Instantiate 2 in ports.
 this.inPortA = new PortIn('PortA', 0x9000);
 this.inPortA.setValue(90);
-this.inPortB = new PortIn('PortB', 0x9001);
-this.inPortB.setValue(91);
+this.inPortB = new PortInTime('PortB', 0x9001);
 
+
+/**
+ * This function is called when time (t-states) advances.
+ */
+API.tick = () => {
+	this.inPortA.setValue(2*API.tstates);
+}
 
 /**
  * This function is called when an 'out' is executed in Z80.
  */
-this.portSet = (port, value) => {
+API.writePort = (port, value) => {
 	// Go through all ports
 	this.outPortA.out(port, value);
 	this.outPortB.out(port, value);
@@ -105,7 +214,7 @@ this.portSet = (port, value) => {
 /**
  * This function is called when an 'in' is executed in Z80.
  */
-this.portGet = (port) => {
+API.readPort = (port) => {
 	// Check all ports and return a valid value
 	let value = this.inPortA.in(port);
 	if(value != undefined)
@@ -115,10 +224,10 @@ this.portGet = (port) => {
 }
 
 /**
- * This function is called by if new input
+ * This function is called if new input
  * data is available.
  */
-this.receivedMessage = (msg) => {
+API.receivedMessage = (msg) => {
 	// Check if joy data
 	switch(msg.command) {
 		case 'joy0':
@@ -129,22 +238,20 @@ this.receivedMessage = (msg) => {
 		break;
 	}
 }
+
 `;
 
 
 		// Execute/initialize the javascript
 		CustomCode.evalInContext(`
 // Preamble:
+var global = this;
+var API = global.tmpAPI;
+// 'tmpAPI' is not visible to customer code. Use 'API' instead.
+delete global.tmpAPI;
 
-/**
- * Sends a message to the ZSimulationView.
- */
-function ApiSendMessageIntern(msg) {
-	this.API.sendMessage(msg);
-}
-
-// Make sure this is the this from the context.
-const ApiSendMessage = ApiSendMessageIntern.bind(this);
+// Entry point for debugging:
+API.debugBreak();
 
 ${jsCode}
 
@@ -154,35 +261,22 @@ ${jsCode}
 
 
 	/**
-	 * Evaluates the js code in jsCode.
-	 * If an error occurs the exception is catched
-	 * and a new Exception is thrown with additional info
-	 * that this is an error in custom code.
-	 */
-	protected evalJs(jsCode: string): any {
-		let result;
-		try {
-			result=CustomCode.evalInContext(jsCode, this.context);
-		}
-		catch (e) {
-			this.throwError('Error during executing custom java script: '+e.message);
-		}
-		return result;
-	}
-
-
-	/**
 	 * Reads from a port.
 	 * Calls the custom js code.
 	 * @param port The port number, e.g. 0x8000
-	 * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+	 * @return A value, e.g. 0x7F.
 	 * If no port is found then undefined is returned.
 	 */
 	public readPort(port: number): number|undefined {
 		LogCustomCode.log('Reading port '+Utility.getHexString(port, 2)+'h');
-		// Wrap to catch errors
-		const value=this.evalJs(`this.portGet(${port});`);
-		LogCustomCode.log('  Read value: '+Utility.getHexString(value, 4)+'h');
+		// Catch probably errors.
+		let value;
+		try {
+			value=this.api.readPort(port);
+		}
+		catch (e) {
+			this.throwError("Error during executing custom java script in 'readPort': "+e.message);
+		}
 		return value;	// Might be undefined
 	}
 
@@ -195,8 +289,13 @@ ${jsCode}
 	 */
 	public writePort(port: number, value: number) {
 		LogCustomCode.log('Write '+Utility.getHexString(value, 4)+'h to port '+Utility.getHexString(port, 2)+'h');
-		// Wrap to catch errors
-		this.evalJs(`this.portSet(${port}, ${value});`);
+		// Catch probably errors.
+		try {
+			this.api.writePort(port, value);
+			}
+		catch (e) {
+			this.throwError("Error during executing custom java script in 'writePort': "+e.message);
+		}
 	}
 
 
@@ -207,30 +306,43 @@ ${jsCode}
 	 * a 'command' property plus other properties depending on the
 	 * command.
 	 */
-	public messageReceived(message: any) {
+	public receivedMessage(message: any) {
 		LogCustomCode.log('Message '+JSON.stringify(message)+' received.');
-		if (this.context.receivedMessage==undefined) {
+		if (this.api.receivedMessage==undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedMessage' defined.");
 		}
 		else {
-			// Wrap to catch errors
-			this.evalJs(`this.receivedMessage(${JSON.stringify(message)});`);
+			// Catch probably errors.
+			try {
+				this.api.receivedMessage(message);
+			}
+			catch (e) {
+				this.throwError("Error during executing custom java script in 'writePort': "+e.message);
+			}
 		}
 	}
 
 
 	/**
-	 * Emits a message. Normally this means it is send to the ZSimulationView.
-	 * Is called by the custom javascript code.
-	 * @param message The message object. Should at least contain
-	 * a 'command' property plus other properties depending on the
-	 * command.
+	 * A call to inform the custom code about the advanced time.
+	 * The user can control through 'timeSteps' in which interval
+	 * this is called.
+	 * @param tstates The number of tstates since beginning of simulation, beginning of the debug session which starts at 0.
 	 */
-	public sendMessage(message: any) {
-		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
-		// Send message
-		this.emit('sendMessage', message);
+	public tick(tstates: number) {
+		this.api.tstates=tstates;
+		if (this.api.tick==undefined)
+			return;	// No interest in 'timeAdvance'
+
+		LogCustomCode.log('tick: tstates='+tstates);
+		// Catch probably errors.
+		try {
+			this.api.tick();
+		}
+		catch (e) {
+			this.throwError("Error during executing custom java script in 'tick': "+e.message);
+		}
 	}
 
 

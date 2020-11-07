@@ -4,7 +4,6 @@ import {CustomCode} from '../remotes/zsimulator/customcode';
 
 
 suite('CustomCode', () => {
-	const defaultValue=0xFF;
 	const jsCode=`
 // Sample code
 class PortOut {
@@ -98,12 +97,6 @@ this.receivedMessage = (msg) => {
 }
 `;
 
-	class CustomCodeMock extends CustomCode {
-		public sendMessageCalled=false;
-		public sendMessage(msg: any) {
-			this.sendMessageCalled=true;
-		}
-	}
 
 	test('out value', () => {
 		const custom=new CustomCode(jsCode);
@@ -112,8 +105,8 @@ this.receivedMessage = (msg) => {
 		assert.notEqual(undefined, context.outPortA);
 		assert.notEqual(undefined, context.outPortB);
 
-		custom.writePort(0x7000, 0xAA);
-		assert.equal(defaultValue, context.outPortA.value);
+		//custom.writePort(0x7000, 0xAA);
+		//assert.equal(defaultValue, context.outPortA.value);
 
 		custom.writePort(0x8000, 0x55);
 		assert.equal(0x55, context.outPortA.value);
@@ -125,13 +118,15 @@ this.receivedMessage = (msg) => {
 
 
 	test('sendMessage', () => {
-		const custom=new CustomCodeMock(jsCode);
-		// @ts-ignore: protected access
-		const context=custom.context;
+		const custom=new CustomCode(jsCode);
+		let sendMessageCalled=false;
+		custom.on('sendMessage', msg => {
+			sendMessageCalled=true;
+		});
 
-		assert.equal(false, custom.sendMessageCalled);
+		assert.equal(false, sendMessageCalled);
 		custom.writePort(0x8000, 0x55);
-		assert.equal(true, custom.sendMessageCalled);
+		assert.equal(true, sendMessageCalled);
 	});
 
 
@@ -141,22 +136,46 @@ this.receivedMessage = (msg) => {
 		const context=custom.context;
 
 		let result=custom.readPort(0x7000);
-		assert.equal(defaultValue, result);
+		assert.equal(undefined, result);
 
 		result=custom.readPort(0x9000);
 		assert.equal(90, result);
 
 		result=custom.readPort(0x9001);
-		assert.equal(91, result);
+		assert.equal(0, result);
 
 		// Receive
 		const msg={
-			command: 'joy1',
+			command: 'joy0',
 			data: 110
 		};
-		custom.messageReceived(msg);
-		result=custom.readPort(0x9001);
+		custom.receivedMessage(msg);
+		result=custom.readPort(0x9000);
 		assert.equal(110, result);
+	});
+
+
+	test('tick', () => {
+		const custom=new CustomCode(jsCode);
+		// @ts-ignore: protected access
+		const context=custom.context;
+
+		let result=custom.readPort(0x9000);
+		assert.equal(90, result);
+		result=custom.readPort(0x9001);
+		assert.equal(0, result);
+
+		custom.tick(12);	// Writes the t-states to the port for testing.
+		result=custom.readPort(0x9000);
+		assert.equal(24, result);	// 2 * t-states
+		result=custom.readPort(0x9001);
+		assert.equal(12, result);	// t-states
+
+		custom.tick(24);	// Writes the t-states to the port for testing.
+		result=custom.readPort(0x9000);
+		assert.equal(48, result);	// 2 * t-states
+		result=custom.readPort(0x9001);
+		assert.equal(24, result);	// t-states
 	});
 
 });
