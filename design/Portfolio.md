@@ -99,7 +99,7 @@ DeZog + ZX Next:
 
 
 
-DeZog, devloping the serial IF (dezogif) for ZX Next:
+DeZog, developing the serial IF (dezogif) for ZX Next:
 
 ~~~
                                              ┌─────────────────────────────────────────────────┐

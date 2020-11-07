@@ -23,7 +23,7 @@ At the end of this document there is an example that will add a joystick interfa
 In order to use custom code you need to tell zsim to use it.
 
 The related zsim properties are shown here:
-~~~
+~~~json
 "zsim": {
 	"debug": true,
 	"jsPath": "myPeripheral.js"
@@ -200,9 +200,28 @@ dezog.customcode.logpanel=true
 The output can be found in the OUTPUT panel if it has "DeZog Custom Code" selected.
 
 Furthermore you can also place logs inside this window from your custom code by calling
-~~~
+~~~js
 API.log(...args)
 ~~~
+
+
+# UI
+
+So, all port business logic is put into the javascript code at 'customCode.jsPath'.
+But what if you want to display those values or if you want to get input values from the user...
+To simply output values you could, of course, use the ```API.log``` function.
+For simple design this could already be sufficient.
+
+To get a more conveninet output or if you would like to input data you can do so by executing html/js inside the ZSimulation view.
+The html source is extensible. You do so by defining the
+~~~json
+"customCode": {
+	"uiPath": "your_file"
+}
+~~~
+
+
+
 
 
 # Design

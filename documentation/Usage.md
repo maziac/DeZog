@@ -21,7 +21,7 @@ After installing you need to add the configuration for "DeZog".
 
 A typical configuration looks like this:
 
-~~~
+~~~json
     "configurations": [
         {
             "type": "dezog",
@@ -84,13 +84,15 @@ Please have a look at the [Listfile](#listfile) section.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
 
-~~~assembly
 Your assembler file:
+~~~assembly
 stack_bottom:
     defs    STACK_SIZE*2, 0
 stack_top:
+~~~
 
 In your launch.json:
+~~~json
 "topOfStack": "stack_top"
 ~~~
 
@@ -99,7 +101,7 @@ Note:
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
 Note: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
-~~~
+~~~json
 "loadObjs": [
     { "path": "out/main.bin", "start": "0x6000" },
     { "path": "out/graphics.bin", "start": "0x8000" }
@@ -167,7 +169,7 @@ Now depending on the value of 'srcDirs'
 **sjasmplus configuration:**
 
 E.g.
-~~~
+~~~json
 "sjasmplus": [{
     "path": "z80-sample-program.list",
     "srcDirs": [""],
@@ -190,7 +192,7 @@ Note: when using sjasmplus use the "--lst=filename.list" option to generate the 
 **Savannah-z80asm configuration:**
 
 Same as sjasmplus but use: ```z80asm```, e.g.:
-~~~
+~~~json
 "z80asm": [{
     "path": "z80-sample-program.list",
     "srcDirs": [""]
@@ -200,7 +202,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 
 **z88dk-z80asm configuration:**
 
-~~~
+~~~json
 "z88dk": [{
     "path": "currah_uspeech_tests.lis",
     "srcDirs": [""],
@@ -273,7 +275,7 @@ DeZog supports most of them but with some restrictions:
 
 In the launch.json you can use another property to control the formatting of the registers done in the VARIABLES area.
 
-~~~
+~~~json
 "formatting": [
     "AF", "AF: ${hex}h, F: ${flags}",
     "AF'", "AF': ${hex}h, F': ${flags}",
@@ -399,7 +401,7 @@ The included simulator does not. This means: if you step through your assembly c
 The simulator on the other hand immediately displays any change to the screen while stepping. This can also be an advantage during debugging.
 
 Example launch.json configuration:
-~~~
+~~~json
     "remoteType": "zsim",
     "zsim": {
         "Z80N": true,
@@ -469,7 +471,7 @@ You need to enable the ZRCP in ZEsarUX. In ZEsarUX enable the socket zrcp protoc
 or from the ZEsarUX UI ("Settings"->"Debug"->"Remote protocol" to "Enabled").
 
 You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.:
-~~~
+~~~json
     "remoteType": "zrcp",
     "zrcp": {
         "port": 10000
@@ -568,13 +570,13 @@ You need to install it first. Please see [here](https://github.com/maziac/DeZogP
 
 
 You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:
-~~~
+~~~json
     "remoteType": "cspect",
 ~~~
 
 That should normally do.
 If you need to configure the port use:
-~~~
+~~~json
     "remoteType": "cspect",
     "cspect": {
         "port": 11000
@@ -640,7 +642,7 @@ In order to communicate with the ZX Next special SW needs to run on the Next, th
 
 
 Example launch.json configuration:
-~~~
+~~~json
     "remoteType": "zxnext",
     "zxnext": {
         "port": 12000
@@ -653,7 +655,7 @@ The "zxnext" configuration allows the following additional parameters:
 You don't have to enter a hostname, the default is "localhost".
 
 The default port is anyway 12000. So, if you don't change it, you just have to add:
-~~~
+~~~json
     "remoteType": "zxnext"
 ~~~
 
@@ -780,7 +782,7 @@ B) Performance: If you have a large stack or a **wrong topOfStack** setting in t
 
 A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
 Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
-~~~
+~~~assembly
 		push bc
 		inc sp
 BP->	inc sp
@@ -823,7 +825,7 @@ To set a breakpoint first pause your program by pressing the yellow NMI button. 
 
 
 E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file operations you should enable **esxdosRst** with
-~~~
+~~~json
 "disassemblerArgs": {
     "esxdosRst": true
 },
@@ -891,7 +893,7 @@ E.g. one instruction line will occupy ca. 40 bytes of memory. So to store 1 seco
 Or in other words: if you would like to spend 1GB RAM you could store 25 secs.
 
 The number of instructions is set in
-~~~
+~~~json
 "history": {
     "reverseDebugInstructionCount": 20000,
 }
@@ -918,7 +920,7 @@ You can only rely on the register values.
 #### History Spot
 
 You can enable/disable a history spot around the current PC:
-~~~
+~~~json
 "history": {
     "spotCount": 10
 }
@@ -952,7 +954,7 @@ If 'spotCount' is e.g. 10 you see a maximum of 10 previous and next indices.
 Note: Changed registers are not shown for the first line of the spot.
 
 Display of changed registers is enabled by default. You can turn it off by setting 'spotShowRegisters' to false:
-~~~
+~~~json
 "history": {
     "spotCount": 10,
     "spotShowRegisters": false
@@ -981,7 +983,7 @@ will be evaluated to true always so that you don't miss such a breakpoint.
 ### Code Coverage
 
 Code coverage can be enabled/disabled via:
-~~~
+~~~json
 "history": {
     "codeCoverageEnabled": true
 }
