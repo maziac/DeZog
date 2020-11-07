@@ -128,6 +128,22 @@ export interface ZxNextSocketType {
 }
 
 
+// Subtype for the custom javascript code.
+export interface CustomCodeType {
+	// If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).
+	debug: boolean;
+
+	// A relative path to additional javascript code that is included into the Z80 simulator.
+	jsPath: string;
+
+	// A relative path to additional javascript code that is included into the Z80 simulator UI panel.
+	uiPath: string;
+
+	// You can set a time step (interval) to call the tick() function.
+	timeStep: number;
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
@@ -157,14 +173,8 @@ export interface ZSimType {
 	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 	vsyncInterrupt: boolean,
 
-	// If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).
-	debug: boolean;
-
-	// A relative path to additional javascript code that is included into the Z80 simulator.
-	customJsPath: string;
-
-	customUiPath: string;
-
+	// Settings to execute custom javascript code inside the zsim simulator.
+	customCode: CustomCodeType;
 }
 
 
@@ -378,15 +388,24 @@ export class Settings {
 			else
 				Settings.launch.zsim.vsyncInterrupt=false;
 		}
-		if (Settings.launch.zsim.debug==undefined)
-			Settings.launch.zsim.debug=false;
-		if (Settings.launch.zsim.customJsPath!=undefined) {
-			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customJsPath);
-			Settings.launch.zsim.customJsPath=Utility.getAbsFilePath(path);
+
+		// zsim custom code
+		if (Settings.launch.zsim.customCode==undefined) {
+			Settings.launch.zsim.customCode={} as any;
 		}
-		if (Settings.launch.zsim.customUiPath!=undefined) {
-			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customUiPath);
-			Settings.launch.zsim.customUiPath=Utility.getAbsFilePath(path);
+		if (Settings.launch.zsim.customCode.debug==undefined)
+			Settings.launch.zsim.customCode.debug=false;
+		if (Settings.launch.zsim.customCode.jsPath!=undefined) {
+			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customCode.jsPath);
+			Settings.launch.zsim.customCode.jsPath=Utility.getAbsFilePath(path);
+		}
+		if (Settings.launch.zsim.customCode.uiPath!=undefined) {
+			const path=UnifiedPath.getUnifiedPath(Settings.launch.zsim.customCode.uiPath);
+			Settings.launch.zsim.customCode.uiPath=Utility.getAbsFilePath(path);
+		}
+		if (Settings.launch.zsim.customCode.timeStep==undefined) {
+			// In fact: never call tick()
+			Settings.launch.zsim.customCode.timeStep=Number.MAX_SAFE_INTEGER;
 		}
 
 		// zxnext

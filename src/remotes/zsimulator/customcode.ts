@@ -325,17 +325,25 @@ ${jsCode}
 
 
 	/**
+	 * This sets the t-states prior to the next API call.
+	 * @param tstates The number of tstates since beginning of simulation, beginning of the debug session which starts at 0.
+	 */
+	public setTstates(tstates: number) {
+		if (this.api.tick != undefined)
+			LogCustomCode.log('tick: tstates='+tstates);
+		this.api.tstates=tstates;
+	}
+
+
+	/**
 	 * A call to inform the custom code about the advanced time.
 	 * The user can control through 'timeSteps' in which interval
 	 * this is called.
-	 * @param tstates The number of tstates since beginning of simulation, beginning of the debug session which starts at 0.
 	 */
-	public tick(tstates: number) {
-		this.api.tstates=tstates;
+	public tick() {
 		if (this.api.tick==undefined)
-			return;	// No interest in 'timeAdvance'
-
-		LogCustomCode.log('tick: tstates='+tstates);
+			return;	// No interest in 'tick'
+		
 		// Catch probably errors.
 		try {
 			this.api.tick();
@@ -355,93 +363,4 @@ ${jsCode}
 		throw Error(errorMessage);
 	}
 };
-
-
-
-
-/* OR:
-var result = function(str){
-return eval(str);
-}.call(context, somestring);
-*/
-
-/*
-Example code
-
-try {
-	const context={a: 1, b: 2};
-	evalInContext(`
-global = this;
-
-function sendMessage(obj) {
-	global.msg = obj;
-}
-
-
-global.a++; global.b++; global.a+global.b;
-global.c=0;  // New property
-class MyClass {
-	constructor() {
-		this.x=10;
-	}
-	add(diff) {
-		this.x+=diff;
-	}
-};
-global.myclass=new MyClass();
-global.myclass.add(8);
-
-
-global.portSet = (port, value) => {
-		global.myclass.add(value);
-		sendMessage({ma:9, mb: 8});
-	}
-
-global.portGet = (port) => {
-		return 99;
-	}
-			`,
-		context);
-
-	evalInContext(`
-global.portSet(0x9000,10);
-			`,
-		context);
-	const result1=evalInContext(`
-global.portGet(0x8000);
-			`,
-		context);
-
-	const msg={command: "inval1", value: "on"};
-	evalInContext(`
-global.receivedMsg(${msg});
-			`,
-		context);
-	evalInContext(`
-global.portGet(0x8000);
-			`,
-		context);
-
-
-	evalInContext('this.a++; this.b++; this.a + this.b', context);
-	const result2=evalInContext('a++; this.b++; this.a + this.b', context);
-	console.log(result1);
-	console.log(result2);
-}
-catch (e) {
-	console.log(e);
-}
-
-
-try {
-	const context={a: 1, b: 2};
-	const result1=evalInContext(' with (this) {'+'a++; b++; a + b', context);
-	const result2=evalInContext('a++; this.b++; this.a + this.b', context);
-	console.log(result1);
-	console.log(result2);
-}
-catch (e) {
-	console.log(e);
-}
-*/
 

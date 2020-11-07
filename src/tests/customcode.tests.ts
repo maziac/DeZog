@@ -165,13 +165,15 @@ this.receivedMessage = (msg) => {
 		result=custom.readPort(0x9001);
 		assert.equal(0, result);
 
-		custom.tick(12);	// Writes the t-states to the port for testing.
+		custom.setTstates(12);
+		custom.tick();	// Writes the t-states to the port for testing.
 		result=custom.readPort(0x9000);
 		assert.equal(24, result);	// 2 * t-states
 		result=custom.readPort(0x9001);
 		assert.equal(12, result);	// t-states
 
-		custom.tick(24);	// Writes the t-states to the port for testing.
+		custom.setTstates(24);
+		custom.tick();	// Writes the t-states to the port for testing.
 		result=custom.readPort(0x9000);
 		assert.equal(48, result);	// 2 * t-states
 		result=custom.readPort(0x9001);

@@ -77,7 +77,7 @@ export class ZSimulationView extends BaseView {
 		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
 
 		// Read path for additional javascript code
-		this.customUiPath=Settings.launch.zsim.customUiPath;
+		this.customUiPath=Settings.launch.zsim.customCode.uiPath;
 
 		// Initial html page.
 		this.setHtml();
@@ -794,7 +794,7 @@ color:black;
 
 `;
 
-		if (Settings.launch.zsim.debug) {
+		if (Settings.launch.zsim.customCode.debug) {
 			html+=
 `<!-- Debug Area -->
 <hr>

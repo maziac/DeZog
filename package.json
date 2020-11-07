@@ -341,15 +341,24 @@
 									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
 									"default": false
 								},
-								"debug": {
-									"type": "boolean",
-									"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
-									"default": false
-								},
-								"jsPath": {
-									"type": "string",
-									"description": "A relative path to additional javascript code that is included into the Z80 simulator.",
-									"default": false
+								"customCode": {
+									"debug": {
+										"type": "boolean",
+										"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+										"default": false
+									},
+									"jsPath": {
+										"type": "string",
+										"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+									},
+									"uiPath": {
+										"type": "string",
+										"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+									},
+									"timeStep": {
+										"type": "number",
+										"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+									}
 								}
 							},
 							"zxnext": {

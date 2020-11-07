@@ -19,11 +19,21 @@ export class Z80Cpu {
 	// Time for interrupt in T-States
 	protected INTERRUPT_TIME: number;
 
+	// The number of passed t-states. Starts at 0 and is never reset.
+	// Is increased with every executed instruction.
+	protected passedTstates: number;
+
+	// The number of t-states to pass before a 'tick()' is send to the
+	// peripherals custom code.
+	protected timeStep: number;
+	// Used to determine the next tick() call.
+	protected nextStepTstates: number;
+
 	// For calculation of the CPU load.
 	// Summarizes all instruction besides HALT.
 	protected cpuLoadTstates: number;
 	// Summarizes all instruction including HALT.
-	public cpuTotalTstates: number;
+	public cpuWithHaltTstates: number;
 	// cpuLoadTstates divided by cpuTotalTstates.
 	public cpuLoad: number;
 	// The number of interrupts to calculate the average from.
@@ -32,7 +42,8 @@ export class Z80Cpu {
 	// Counts the current number of interrupts.
 	protected cpuLoadRangeCounter: number;
 
-	// Used to calculate thenumber of t-states for a step-over or similar.
+	// Used to calculate the number of t-states for a step-over or similar.
+	// Is reset by the remote.
 	public cpuTstatesCounter: number;
 
 	// Set to true if a ZX Spectrum like interrupt should be generated.
@@ -63,9 +74,12 @@ export class Z80Cpu {
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
+		this.passedTstates=0;
+		this.timeStep=Settings.launch.zsim.customCode.timeStep;
+		this.nextStepTstates=0;
 		this.cpuTstatesCounter=0
 		this.cpuLoadTstates=0;
-		this.cpuTotalTstates=0;
+		this.cpuWithHaltTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
 		this.cpuLoadRangeCounter=0;
 		this.cpuLoadRange=Settings.launch.zsim.cpuLoadInterruptRange;
@@ -82,19 +96,21 @@ export class Z80Cpu {
 		});
 
 		// Initialize custom code
-		const jsPath=Settings.launch.zsim.customJsPath;
+		const jsPath=Settings.launch.zsim.customCode.jsPath;
 		if (jsPath) {
 			// Can throw an error
 			const jsCode=readFileSync(jsPath).toString();
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			const customCode=new CustomCode(jsCode);
+			this.customCode=new CustomCode(jsCode);
 			// Register custom code
 			this.ports.registerGenericInPortFunction(port => {
-				const value=customCode.readPort(port);
+				this.customCode.setTstates(this.passedTstates);
+				const value=this.customCode.readPort(port);
 				return value;
 			});
 			this.ports.registerGenericOutPortFunction((port, value) => {
-				customCode.writePort(port, value);
+				this.customCode.setTstates(this.passedTstates);
+				this.customCode.writePort(port, value);
 			});
 		}
 	}
@@ -104,7 +120,7 @@ export class Z80Cpu {
 	 * Executes one instruction.
 	 * @returns true if a (vertical) interrupt happened or would have happened.
 	 * Also if interrupts are disabled at the Z80.
-	 * And also if 'vsyncInterrupt' is falsed.
+	 * And also if 'vsyncInterrupt' is false.
 	 * The return value is used for regularly updating the ZSimulationView.
 	 * And this is required even if interrupts are off. Or even if
 	 * there is only Z80 simulation without ZX Spectrum.
@@ -113,7 +129,17 @@ export class Z80Cpu {
 		const z80=this.z80;
 
 		// Handle instruction
-		let tStates=z80.run_instruction();
+		const tStates=z80.run_instruction();
+
+		// Increased passed t-states
+		this.passedTstates+=tStates;
+		if (this.passedTstates>=this.nextStepTstates) {
+			this.nextStepTstates+=this.timeStep;
+			if (this.customCode) {
+				this.customCode.setTstates(this.passedTstates);
+				this.customCode.tick();
+			}
+		}
 
 		// Statistics
 		if (z80.halted) {
@@ -124,7 +150,7 @@ export class Z80Cpu {
 				// The t-states are added and the interrupt is executed immediately.
 				// So only one HALT is ever executed, skipping execution of the others
 				// saves processing time.
-				this.cpuTotalTstates+=this.remaingInterruptTstates-tStates;
+				this.cpuWithHaltTstates+=this.remaingInterruptTstates-tStates;
 				this.remaingInterruptTstates=0;
 			}
 		}
@@ -135,7 +161,7 @@ export class Z80Cpu {
 
 		// Add t-states
 		this.cpuTstatesCounter+=tStates;
-		this.cpuTotalTstates+=tStates;
+		this.cpuWithHaltTstates+=tStates;
 		// Interrupt
 			this.remaingInterruptTstates-=tStates;
 		if (this.remaingInterruptTstates<=0) {
@@ -147,10 +173,10 @@ export class Z80Cpu {
 				// Measure CPU load
 				this.cpuLoadRangeCounter++;
 				if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
-					if (this.cpuTotalTstates>0) {
-						this.cpuLoad=this.cpuLoadTstates/this.cpuTotalTstates;
+					if (this.cpuWithHaltTstates>0) {
+						this.cpuLoad=this.cpuLoadTstates/this.cpuWithHaltTstates;
 						this.cpuLoadTstates=0;
-						this.cpuTotalTstates=0;
+						this.cpuWithHaltTstates=0;
 						this.cpuLoadRangeCounter=0;
 					}
 				}
@@ -571,7 +597,7 @@ export class Z80Cpu {
 
 		// Reset statistics
 		this.cpuLoadTstates=0;
-		this.cpuTotalTstates=0;
+		this.cpuWithHaltTstates=0;
 		this.cpuLoad=1.0;	// Start with full load
 	}
 }
