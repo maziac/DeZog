@@ -51,8 +51,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
 			|| event.affectsConfiguration(CONFIG_SECTION + '.logfile')
-			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logpanel')
-			|| event.affectsConfiguration(CONFIG_SECTION + '.socket.logfile')) {
+			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logpanel')
+			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logfile')
+			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logpanel')
+			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logfile')) {
 			configureLogging();
 		}
 	}));
@@ -223,7 +225,6 @@ function configureLogging() {
 	}
 
 	// Custom code log
-	// TODO: This is not updated anymore once DeZog is running.
 	{
 		const logToPanel=configuration.get<boolean>('customcode.logpanel');
 		const filepath=configuration.get<string>('customcode.logfile');
