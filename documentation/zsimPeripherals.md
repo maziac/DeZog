@@ -1,5 +1,7 @@
 # zsim (Internal Z80 Simulator) - Periherals
 
+Note: This document contains [plantuml](https://plantuml.com/de/sequence-diagram) message sequence charts. On github these are not rendered. Use e.g. vscode with a suitable plugin to view the file correctly.
+
 The zsim Z80 simulator basically simulates the Z80 CPU and some RAM or ROM.
 
 It additionally offers a few interfaces to the outside world mainly for the ZX Spectrum like computers.
@@ -35,6 +37,62 @@ The related zsim properties are shown here:
 # API
 
 The API contains the ports (in and out) and a time base.
+~~~js
+// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
+API.tstates: number;
+
+/**
+ * Emits a message. Normally this means it is send to the ZSimulationView.
+ * Is called by the custom javascript code.
+ * User should not overwrite this.
+ * @param message The message object. Should at least contain
+ * a 'command' property plus other properties depending on the
+ * command.
+ */
+API.sendMessage(message: any);
+
+
+/**
+ * A message has been received from the ZSimulationView that
+ * shall be executed by the custom code.
+ * The user can leave this undefined if he does not generate any message in
+ * the ZSimulation view.
+ * @param message The message object.
+ */
+API.receivedMessage(message: any);
+
+
+/**
+ * Called when time has advanced.
+ * Can be overwritten by the user.
+ */
+API.tick();
+
+
+/**
+ * Reads from a port.
+ * Should be overwritten by the user if in ports are used.
+ * @param port The port number, e.g. 0x8000
+ * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+ * If no port is found then undefined is returned.
+ */
+API.readPort(port: number): number|undefined;
+
+
+/**
+ * Writes to a port.
+ * Should be overwritten by the user if out ports are used.
+ * @param port the port number, e.g. 0x8000
+ * @param value A value to set, e.g. 0x7F.
+ */
+API.writePort(port: number, value: number);
+
+/**
+ * Writes a log.
+ * @param ...args Any arguments.
+ */
+API.log(...args);
+~~~
 
 The basic program flow is shown here:
 ~~~puml
@@ -44,7 +102,10 @@ participant zsim
 participant custom as "Custom Code"
 
 note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
-zsim -> custom: portOut(time, 0x8000, 0x6B)
+zsim -> custom: API.writePort(0x8000, 0x6B)
+alt address is correct
+note over custom: Do something
+end
 ~~~
 
 ~~~puml
@@ -54,7 +115,7 @@ participant zsim
 participant custom as "Custom Code"
 
 note over zsim: ld bc,0x9000\nin a,(c)
-zsim -> custom: portIn(time, 0x9000)
+zsim -> custom: API.readPort(0x9000)
 
 alt address is correct
 zsim <- custom: 0xF7
@@ -69,15 +130,80 @@ title Time Advance
 participant zsim
 participant custom as "Custom Code"
 
-zsim -> custom: time(1000)
+note over zsim: Wait for 'timeStep'\nnumber of t-states
+zsim -> custom: API.tick()
 ...
-zsim -> custom: time(2000)
+note over zsim: Wait for 'timeStep'\nnumber of t-states
+zsim -> custom: API.tick()
 ...
-zsim -> custom: time(3000)
-...
-zsim -> custom: time(4000)
+note over zsim: Wait for 'timeStep'\nnumber of t-states
+zsim -> custom: API.tick()
 ...
 ~~~
+
+Note: On each call (tick, readPort, writePort) the variable API.tstates contains the number of t-states since start of simulation/start of debug session.
+
+
+To use the API you have to write javascript code and provide code for the 'API.tick', 'API.readPort', 'API.writePort' and 'API.receivedMessage' methods. 'API.sendMessage' is a ready method that can be called by teh custom code.
+
+If you don't provide code for any method then the method will not be called by DeZog.
+
+So the minimal implementation for an out port is:
+~~~js
+API.writePort = (port, value) => {
+	if(port == my_port) {
+		// Do something
+	}
+}
+~~~
+Note: 'my_port' is a number you need to define. Of course, instead of checking the whole 16 bit port address you can also check only for some of the bits of the port address or none at all. You can exactly mimic the HW as you want.
+
+The minimal implementation for an in port would be:
+~~~js
+API.readPort = (port) => {
+	if(port == my_port) {
+		// Return your value
+		return my_value;
+	}
+	return undefined;
+}
+~~~
+Note: Again you check for your 'my_port' and then return a number. If none of your peripherals match with the port you must return undefined.
+
+Here is another example with 2 in ports that just decode the lowest 2 bits of the port address.
+~~~js
+API.readPort = (port) => {
+	if((port & 0x03) == 0x02)
+		return my_value1;
+	if((port & 0x03) == 0x03)
+		return my_value2;
+	return undefined;
+}
+~~~
+
+
+There exists a property in API that counts the number of t-states since start of simulation. You can simply get it with 'API.tstates'.
+This might be interesting if you have time dependent HW to simulate.
+
+Furthermore the method 'API.tick()' is called regularly by DeZog if defined.
+This is called independently of 'readPort' and 'writePort'.
+The interval at which this is called is set via 'zsim.customCode.timeStep' in launch.json.
+If 'timeStep' is not defined 'tick()' is not called.
+
+
+# Logging
+
+All calls to/from the custom code are logged. You need to enable the log target in the DeZog's preferences:
+~~~
+dezog.customcode.logpanel=true
+~~~
+The output can be found in the OUTPUT panel if it has "DeZog Custom Code" selected.
+
+Furthermore you can also place logs inside this window from your custom code by calling
+~~~
+API.log(...args)
+~~~
+
 
 # Design
 

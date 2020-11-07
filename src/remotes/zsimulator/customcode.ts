@@ -79,7 +79,16 @@ class CustomCodeAPI extends EventEmitter {
 	 * @param port the port number, e.g. 0x8000
 	 * @param value A value to set, e.g. 0x7F.
 	 */
-	public writePort: (port: number, value: number) => void = undefined as any;
+	public writePort: (port: number, value: number) => void=undefined as any;
+
+
+	/**
+	 * Writes a log.
+	 * @param ...args Any arguments.
+	 */
+	public log(...args) {
+		LogCustomCode.log(...args);
+	}
 
 }
 
@@ -92,6 +101,9 @@ class CustomCodeAPI extends EventEmitter {
  */
 export class CustomCode extends EventEmitter {
 
+	/**
+	 * Static method that calls 'eval' with a context.
+	 */
 	protected static evalInContext(js, context) {
 		//# Return the results of the in-line anonymous function we call with the passed context
 		return function () {
@@ -128,6 +140,7 @@ class PortOut {
 		this.name=name;
 		this.port=port;
 		this.value=0xFF;
+		API.log("PortOut constructor called");
 	}
 
 	// Called when an 'out' is executed in Z80.
@@ -343,7 +356,7 @@ ${jsCode}
 	public tick() {
 		if (this.api.tick==undefined)
 			return;	// No interest in 'tick'
-		
+
 		// Catch probably errors.
 		try {
 			this.api.tick();

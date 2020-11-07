@@ -1,7 +1,7 @@
 
 //import * as fs from 'fs';
 import { writeFileSync, appendFileSync } from 'fs';
-import * as util from 'util';
+//import * as util from 'util';
 
 
 // If there is a pause of 2 seconds between logs then an additional indication is logged.
@@ -118,8 +118,9 @@ export class Log {
 			this.write('...');
 		}
 		// write log
-		const who = this.callerName();
-		this.write(who, ...args);
+		//const who = this.callerName();
+		//this.write(who, ...args);
+		this.write(...args);
 		// get new time
 		this.lastLogTime = Date.now();
 	}
@@ -138,8 +139,8 @@ export class Log {
 	 * @param format A format string for the args.
 	 * @param args the values to write.
 	 */
-	protected write(format: string, ...args) {
-		var text = util.format(format, ...args);
+	protected write(...args) {
+		const text= args.map(elem => elem.toString()).join(', '); //util.format(format, ...args);
 		try {
 			// write
 			this.appendLine(text);

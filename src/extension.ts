@@ -223,6 +223,7 @@ function configureLogging() {
 	}
 
 	// Custom code log
+	// TODO: This is not updated anymore once DeZog is running.
 	{
 		const logToPanel=configuration.get<boolean>('customcode.logpanel');
 		const filepath=configuration.get<string>('customcode.logfile');
