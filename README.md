@@ -202,7 +202,15 @@ I would like to thank a few people for their support
 
 # Tutorials
 
+Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
+Especially for changes in the 'launch.json' it might be some properties (names) have changed/removed/added.
+
+
 ## CSpect/DeZog
+
+### Daren May
+
+Date: May-2020, DeZog v1.2
 
 An excellent tutorial by [Daren May](https://github.com/darenm) which shows how to setup [DeZog with CSpect](https://github.com/darenm/SpectrumNextTutorials/blob/master/DeZog%20Setup%20Tutorial.md) on Windows.
 Although it was made for Windows you can easily apply it to macOS or Linux.
@@ -210,7 +218,19 @@ Although it was made for Windows you can easily apply it to macOS or Linux.
 Please note: Daren creates an SD card image that is loaded when CSpect is started. For many projects this is not necessary as you can transfer .nex and .sna files directly from DeZog to CSpect.
 
 
+### Patricia Curtis
+
+Date: Sep-2020, DeZog 1.4
+
+A great tutorial by [Patricia Curtis](https://luckyredfish.com/who-am-i/) describing the setup with [sjasmplus, CSpect and DeZog](https://luckyredfish.com/coding-for-the-spectrum-next-emulator-cspect/).
+
+
+
 ## ZEsarUX/DeZog
+
+### Cesar Wagener Moriana
+
+Date: Dec-2019, DeZog 0.9 (Z80 Debug)
 
 Here is an older (but still great) **tutorial from Cesar Wagener Moriana**.
 He documented how he put all things together. It describes how to setup an integrated development environment for ZEsarUX with DeZog.
@@ -225,6 +245,10 @@ Please note: The tutorial is a bit outdated, it uses 'z80-debug'. This was the f
 
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug/DeZog so that it is a great advice to get you started.
 
+
+### L BREAK into program, 0:1
+
+Date: Aug-2020, DeZog 1.4
 
 And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
 
