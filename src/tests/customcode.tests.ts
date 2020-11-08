@@ -84,6 +84,9 @@ this.inPortB = new PortInTime('PortB', 0x9001);
  */
 API.tick = () => {
 	this.inPortA.setValue(2*API.tstates);
+	// Generates an interrupt if t-states == 1000
+	if(API.tstates == 1000)
+		API.generateInterrupt(false, 0xF1);	// Databus=0xF1
 }
 
 /**
@@ -205,6 +208,33 @@ API.receivedMessage = (msg) => {
 		assert.equal(48, result);	// 2 * t-states
 		result=custom.readPort(0x9001);
 		assert.equal(24, result);	// t-states
+	});
+
+	
+	test('interrupt', () => {
+		const custom=new CustomCode(jsCode);
+		// @ts-ignore: protected access
+		const context=custom.context;
+
+		// Catch interrupt
+		let interruptNon_maskable: boolean;
+		let interruptData: number;
+		let interruptOccurred=false;
+		custom.on('interrupt', (non_maskable: boolean, data: number) => {
+			interruptOccurred=true;
+			interruptNon_maskable=non_maskable;
+			interruptData=data;
+		});
+
+		custom.setTstates(0);
+		custom.tick();		// No interrupt occurs
+		assert.equal(false, interruptOccurred);
+
+		custom.setTstates(1000);
+		custom.tick();		// Interrupt occurs at 1000
+		assert.equal(true, interruptOccurred);
+		assert.equal(false, interruptNon_maskable!);
+		assert.equal(0xF1, interruptData!);
 	});
 
 });
