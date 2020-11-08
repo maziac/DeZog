@@ -65,13 +65,6 @@ export class ZSimRemote extends DzrpRemote {
 	// Same for reading the register.
 	protected tbblueRegisterReadHandler: Map<number, () => number>;
 
-	// For custom code interrupt generation.
-	// interruptGenerated is set to true if an interrupt should be executed.
-	// interruptNonMaskable and interruptData contain data in this case.
-	protected interruptGenerated: boolean;
-	protected interruptNonMaskable; // Whether it is a maskable interrupt or not.
-	protected interruptData: number; // The data that is put on the bus for the interrupt.
-
 	// Custom code to simulate peripherals (in/out)
 	public customCode: CustomCode;
 
@@ -347,7 +340,7 @@ export class ZSimRemote extends DzrpRemote {
 			});
 			// Register on interrupt event
 			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.generateInterrupt(non_maskable, data);
+				this.z80Cpu.generateInterrupt(non_maskable, data);
 			});
 		}
 	}
@@ -593,17 +586,6 @@ export class ZSimRemote extends DzrpRemote {
 					}
 				}
 
-				// Check if there was an interrupt generated the last time
-				// (e.g. by custom code)
-				if (this.interruptGenerated) {
-					// TODO: Saving not required
-					this.interruptGenerated=false;
-					this.z80Cpu.generateInterrupt(this.interruptNonMaskable, this.interruptData);
-				}
-
-				// Save PC (in case an interrupt happens)
-				const pcSaved=this.z80Cpu.pc;
-
 				// Update visual memory
 				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
 
@@ -621,15 +603,16 @@ export class ZSimRemote extends DzrpRemote {
 				}
 
 				// Check if given breakpoints are hit
-				if (pcSaved==bp1||pcSaved==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
-					breakAddress=pcSaved;
+				const pc=this.z80Cpu.pc;
+				if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
+					breakAddress=pc;
 					break;
 				}
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
 				// Convert to long address
-				pcLong=Z80Registers.createLongAddress(pcSaved, slots);
+				pcLong=Z80Registers.createLongAddress(pc, slots);
 				const bpInner=this.tmpBreakpoints.get(pcLong);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.
@@ -737,19 +720,6 @@ export class ZSimRemote extends DzrpRemote {
 			// Otherwise continue
 			this.z80CpuContinue(bp1, bp2);
 		}, 10);
-	}
-
-
-	/**
-	 * Generates an interrupt in the next execution.
-	 * I.e. the interrupt info is cached here.
-	 * @param non_maskable true if this is a non-maskable interrupt.
-	 * @param data the value to be placed on the data bus, if needed.
-	 */
-	public generateInterrupt(non_maskable: boolean, data: number) {
-		this.interruptNonMaskable=non_maskable;
-		this.interruptData=data;
-		this.interruptGenerated=true;
 	}
 
 
