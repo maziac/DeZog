@@ -150,7 +150,7 @@ API.receivedMessage = (msg) => {
 	test('sendMessage', () => {
 		const custom=new CustomCode(jsCode);
 		let sendMessageCalled=false;
-		custom.on('sendMessage', msg => {
+		custom.on('receivedMessage', msg => {
 			sendMessageCalled=true;
 		});
 
@@ -210,7 +210,7 @@ API.receivedMessage = (msg) => {
 		assert.equal(24, result);	// t-states
 	});
 
-	
+
 	test('interrupt', () => {
 		const custom=new CustomCode(jsCode);
 		// @ts-ignore: protected access

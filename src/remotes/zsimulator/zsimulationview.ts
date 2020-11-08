@@ -40,13 +40,21 @@ export class ZSimulationView extends BaseView {
 			return;
 
 		// Create new instance
-		let zxview: ZSimulationView|undefined=new ZSimulationView(simulator);
+		const zxview: ZSimulationView=new ZSimulationView(simulator);
 		simulator.once('closed', () => {
-			zxview?.close();
-			zxview=undefined;
+			zxview.close();
+			//zxview=undefined;
 		});
 		simulator.on('update', async (reason) => {
-			await zxview?.update();
+			await zxview.update();
+		});
+		simulator.customCode.on('receivedMessage', (message: any) => {
+			// Wrap message from custom code
+			const outerMsg={
+				command: 'receivedMessageFromCustomCode',
+				value: message
+			};
+			zxview.sendMessageToWebView(outerMsg);
 		});
 	}
 
@@ -428,6 +436,29 @@ color:black;
 
   <script>
 
+	// Define class for communication
+	class CustomUiApi {
+		/**
+		 * A message has been received from the custom code that
+		 * shall be executed by the custom UI code.
+		 * User can leave this undefined if he does not generate any message in
+		 * the custom code view.
+		 * receivedMessage(message: any) => void;
+		 * @param message The message object. User defined.
+		 */
+		receivedMessage = undefined;
+	}
+	var API2 = new CustomUiApi();
+
+	// This needs to be moved to custom section.
+	API2.receivedMessage = (msg) => {
+		switch(msg.command) {
+			case 'my_PortA':
+
+			break;
+		}
+	}
+
 	const vscode = acquireVsCodeApi();
 
 	//---- On start send request to vscode to update itself. --------
@@ -463,6 +494,15 @@ color:black;
 					screenImg.src = message.screenImg;
 			}
 			break;
+			case 'receivedMessageFromCustomCode':
+				// Message received from custom code.
+				// Call custom UI code
+				if(API.receivedMessage) {
+					// Unwrap original message:
+					const innerMsg = message.value;
+					// Process message
+					API2.receivedMessage(innerMsg);
+				}
 		}
 	});
 

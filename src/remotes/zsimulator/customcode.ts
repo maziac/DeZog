@@ -43,7 +43,7 @@ class CustomCodeAPI extends EventEmitter {
 	public sendMessage(message: any) {
 		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
 		// Send message
-		this.parent.emit('sendMessage', message);
+		this.parent.emit('receivedMessage', message);
 	}
 
 
