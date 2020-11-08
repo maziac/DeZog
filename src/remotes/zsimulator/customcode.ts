@@ -67,7 +67,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * Reads from a port.
 	 * Should be overwritten by the user if in ports are used.
 	 * @param port The port number, e.g. 0x8000
-	 * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+	 * @return A value, e.g. 0x7F.
 	 * If no port is found then undefined is returned.
 	 */
 	public readPort: (port: number) => number|undefined = undefined as any;

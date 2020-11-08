@@ -11,11 +11,14 @@ But it is also possible to instruct the simulator to simulate other custom behav
 
 For example to add own ports for input and output with custom behavior.
 
-The simulator window is run in javascript. The javascript code can be extended with custom code.
-There are special API functions that allow communication with the Z80 simulation.
-As you can manipulate the HTML directly it is also possible to add a custom UI to it.
+There are 2 parts you can add:
+- the business logic
+- the UI
 
-At the end of this document there is an example that will add a joystick interface.
+The business logic is directly added as javascript code to the simulator.
+The UI code is added to the ZSimulator view.
+
+At the end of this document there is an example that will add a joystick interface to show both.
 
 
 # Configuration
@@ -25,13 +28,19 @@ In order to use custom code you need to tell zsim to use it.
 The related zsim properties are shown here:
 ~~~json
 "zsim": {
-	"debug": true,
-	"jsPath": "myPeripheral.js"
+	"customCode": {
+		"debug": true,
+		"jsPath": "myPeripheral.js",
+		"uiPath": "myUi.js",
+		"timeStep": 1000
+	}
 }
 ~~~
 
 - debug: Is false by default. If enabled the debug area is added with a few buttons e.g. to reload the javascript code. This is very handy to allow fast turn around times.
 - jsPath: The path to your javascript code. If not present then no additional code is loaded. This will work also with debug=false.
+- uiPath: The path to your html/javascript code for the UI. If not present then no additional code for the UI is loaded. This will work also with debug=false.
+- timeStep: If defined your javascript code will be called additionally each time that 'timeStep' number of t-states have been passed.
 
 
 # API
@@ -71,9 +80,9 @@ API.tick();
 
 /**
  * Reads from a port.
- * Should be overwritten by the user if in ports are used.
+ * Should be overwritten by the user if in-ports are used.
  * @param port The port number, e.g. 0x8000
- * @return A value, e.g. 0x7F, or 0xFF if no peripheral attached.
+ * @return A value, e.g. 0x7F.
  * If no port is found then undefined is returned.
  */
 API.readPort(port: number): number|undefined;
@@ -81,7 +90,7 @@ API.readPort(port: number): number|undefined;
 
 /**
  * Writes to a port.
- * Should be overwritten by the user if out ports are used.
+ * Should be overwritten by the user if out-ports are used.
  * @param port the port number, e.g. 0x8000
  * @param value A value to set, e.g. 0x7F.
  */
@@ -144,11 +153,11 @@ zsim -> custom: API.tick()
 Note: On each call (tick, readPort, writePort) the variable API.tstates contains the number of t-states since start of simulation/start of debug session.
 
 
-To use the API you have to write javascript code and provide code for the 'API.tick', 'API.readPort', 'API.writePort' and 'API.receivedMessage' methods. 'API.sendMessage' is a ready method that can be called by teh custom code.
+To use the API you have to write javascript code and provide code for the 'API.tick', 'API.readPort', 'API.writePort' and 'API.receivedMessage' methods. 'API.sendMessage' must not be overwritten and can be called by the custom code.
 
 If you don't provide code for any method then the method will not be called by DeZog.
 
-So the minimal implementation for an out port is:
+So the minimal implementation for an out-port is:
 ~~~js
 API.writePort = (port, value) => {
 	if(port == my_port) {
@@ -156,9 +165,9 @@ API.writePort = (port, value) => {
 	}
 }
 ~~~
-Note: 'my_port' is a number you need to define. Of course, instead of checking the whole 16 bit port address you can also check only for some of the bits of the port address or none at all. You can exactly mimic the HW as you want.
+Note: 'my_port' is a number you need to define. Of course, instead of checking the whole 16 bit port address you can also check only some of the bits of the port address or none at all. You can exactly mimic the HW as you want.
 
-The minimal implementation for an in port would be:
+The minimal implementation for an in-port would be:
 ~~~js
 API.readPort = (port) => {
 	if(port == my_port) {
@@ -210,9 +219,9 @@ API.log(...args)
 So, all port business logic is put into the javascript code at 'customCode.jsPath'.
 But what if you want to display those values or if you want to get input values from the user...
 To simply output values you could, of course, use the ```API.log``` function.
-For simple design this could already be sufficient.
+For simple designs this could already be sufficient.
 
-To get a more conveninet output or if you would like to input data you can do so by executing html/js inside the ZSimulation view.
+To get a more convenient output or if you would like to input data you can do so by executing html/js inside the ZSimulation view.
 The html source is extensible. You do so by defining the
 ~~~json
 "customCode": {
@@ -220,7 +229,11 @@ The html source is extensible. You do so by defining the
 }
 ~~~
 
+The UI code and your javascript business logic communicate asynchronously.
 
+~~~puml
+hier weiter
+~~~
 
 
 
