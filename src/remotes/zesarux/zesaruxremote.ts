@@ -361,23 +361,7 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<void>(resolve => {
 			// Get new (real emulator) data
 			zSocket.send('get-registers', async data => {
-				// Store data: e.g: "PC=8193 SP=ff2d BC=8000 AF=0054 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 """
-
-				// Add slot info in ZEsarUX format
-				data+=" MMU=";
-				const slots=await this.getSlotsFromEmulator();
-				for (let bank of slots) {
-					// Change to ZEsarUX history coding
-					if (bank>=0xFE) {
-						// ROM, both ZX128 and ZXNext.
-						// ZXNext: 	ROM0: 0xFE or 0xFF,	ROM1: 0x100 or 0x101
-						// ZX128: 	ROM0: 0xFE, 		ROM1: 0xFF
-						bank=0x8000+bank-0xFE;	// ROM
-					}
-					// Convert to hex string
-					data+=Utility.getHexString(bank, 4);
-				}
-
+				// Store data: e.g: "PC=8000 SP=6000 AF=0054 BC=8000 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 MMU=80028003000a000b0004000500000001"
 				Z80Registers.setCache(data);
 				resolve();
 			});
