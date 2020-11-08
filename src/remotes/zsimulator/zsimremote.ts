@@ -63,6 +63,13 @@ export class ZSimRemote extends DzrpRemote {
 	// Same for reading the register.
 	protected tbblueRegisterReadHandler: Map<number, () => number>;
 
+	// For custom code interrupt generation.
+	// interruptGenerated is set to true if an interrupt should be executed.
+	// interruptNonMaskable and interruptData contain data in this case.
+	protected interruptGenerated: boolean;
+	protected interruptNonMaskable; // Whether it is a maskable interrupt or not.
+	protected interruptData: number; // The data that is put on the bus for the interrupt.
+
 
 	/// Constructor.
 	constructor() {
@@ -532,8 +539,15 @@ export class ZSimRemote extends DzrpRemote {
 				if (CpuHistory)
 					this.storeHistoryInfo(prevPc);
 
+				// Check if there was an interrupt generated the last time
+				// (e.g. by custom code)
+				if (this.interruptGenerated) {
+					this.interruptGenerated=false;
+					this.z80Cpu.generateInterrupt(this.interruptNonMaskable, this.interruptData);
+				}
+
 				// Execute one instruction
-				const vertInterrupt=this.z80Cpu.execute();
+				const update=this.z80Cpu.execute();
 
 				// Update visual memory
 				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
@@ -542,7 +556,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.codeCoverage?.storeAddress(pcLong);
 
 				// Do visual update
-				if (vertInterrupt) {
+				if (update) {
 					updateCounter--;
 					if (updateCounter<=0) {
 						// Update the screen etc.
@@ -671,6 +685,18 @@ export class ZSimRemote extends DzrpRemote {
 		}, 10);
 	}
 
+
+	/**
+	 * Generates an interrupt in the next execution.
+	 * I.e. the interrupt info is cached here.
+	 * @param non_maskable true if this is a non-maskable interrupt.
+	 * @param data the value to be placed on the data bus, if needed.
+	 */
+	public generateInterrupt(non_maskable: boolean, data: number) {
+		this.interruptNonMaskable=non_maskable;
+		this.interruptData=data;
+		this.interruptGenerated=true;
+	}
 
 
 	/**

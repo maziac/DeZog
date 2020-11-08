@@ -150,6 +150,19 @@ zsim -> custom: API.tick()
 ...
 ~~~
 
+~~~puml
+hide footbox
+title Generate Interrupt
+participant zsim
+participant custom as "Custom Code"
+
+...
+note over zsim: Wait for 'timeStep'\nnumber of t-states
+zsim -> custom: API.tick()\n(or read/writePort)
+note over custom: Decide to generate an interrupt
+zsim <- custom: API.generateInterrupt\n(non_maskable, data)
+~~~
+
 Note: On each call (tick, readPort, writePort) the variable API.tstates contains the number of t-states since start of simulation/start of debug session.
 
 

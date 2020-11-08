@@ -59,7 +59,7 @@ export class Z80Cpu {
 	public ports: Z80Ports;
 
 	// Custom code to simulate peripherals (in/out)
-	public customCode: CustomCode; // TODO: Remove
+	public customCode: CustomCode;
 
 
 	/// Constructor.
@@ -111,6 +111,10 @@ export class Z80Cpu {
 			this.ports.registerGenericOutPortFunction((port, value) => {
 				this.customCode.setTstates(this.passedTstates);
 				this.customCode.writePort(port, value);
+			});
+			// Register on interrupt event
+			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
+				this.generateInterrupt(non_maskable, data);
 			});
 		}
 	}
@@ -169,19 +173,9 @@ export class Z80Cpu {
 			this.remaingInterruptTstates=this.INTERRUPT_TIME;
 			// Really generate interrupt?
 			if (this.vsyncInterrupt) {
-				z80.interrupt(false, 0);
-				// Measure CPU load
-				this.cpuLoadRangeCounter++;
-				if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
-					if (this.cpuWithHaltTstates>0) {
-						this.cpuLoad=this.cpuLoadTstates/this.cpuWithHaltTstates;
-						this.cpuLoadTstates=0;
-						this.cpuWithHaltTstates=0;
-						this.cpuLoadRangeCounter=0;
-					}
-				}
+				this.generateInterrupt(false, 0);
 			}
-			// Vert. interrupt
+			// Vert. interrupt: Returns true even if interrupt is not executed. Used for updating the view.
 			return true;
 		}
 
@@ -348,6 +342,28 @@ export class Z80Cpu {
 		r.iy=(r.iy&0xFF)+256*value;
 		this.z80.setState(r);
 	}
+
+
+	/**
+	 * Simulates pulsing the processor's INT (or NMI) pin.
+	 * Is called for the ULA vertical sync and also from custom code.
+	 * @param non_maskable - true if this is a non-maskable interrupt.
+	 * @param data - the value to be placed on the data bus, if needed.
+	 */
+	public generateInterrupt(non_maskable: boolean, data: number) {
+		this.z80.interrupt(non_maskable, data);
+		// Measure CPU load
+		this.cpuLoadRangeCounter++;
+		if (this.cpuLoadRangeCounter>=this.cpuLoadRange) {
+			if (this.cpuWithHaltTstates>0) {
+				this.cpuLoad=this.cpuLoadTstates/this.cpuWithHaltTstates;
+				this.cpuLoadTstates=0;
+				this.cpuWithHaltTstates=0;
+				this.cpuLoadRangeCounter=0;
+			}
+		}
+	}
+
 
 	/**
 	 * Converts the Z80 flags object into a number.
