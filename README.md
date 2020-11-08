@@ -60,8 +60,8 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Features
 
-- supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v8.1)
-- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.26)
+- supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v9.1)
+- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.36)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list files
 	- supports stepping through source code
