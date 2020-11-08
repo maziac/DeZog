@@ -242,12 +242,71 @@ The html source is extensible. You do so by defining the
 }
 ~~~
 
-The UI code and your javascript business logic communicate asynchronously.
+The UI code and your javascript business logic communicate asynchronously. This is very important to understand. I.e. any UI activity will be submitted to the business logic with a delay.
+And vice versa any output that is already present in the business logic and submitted to the UI is also presented with a lag.
+However the UI is updated frequently (every x t-states) and everytime the debugger stops. So you should rarely notice any delay.
 
 ~~~puml
-hier weiter
+hide footbox
+title Communication from business logic to UI
+participant js as "javascript\nbusiness Logic"
+participant dezog as "DeZog"
+participant ui as "UI\nZSimulator View"
+
+js -> dezog: API.sendMessage(msg)
+dezog -> ui: xxxx.receivedMessage(msg)
+note over ui: Update UI element
 ~~~
 
+~~~puml
+hide footbox
+title Communication from UI to business logic
+participant js as "javascript\nbusiness Logic"
+participant dezog as "DeZog"
+participant ui as "UI\nZSimulator View"
+
+dezog <- ui: API.sendMessage(msg)
+js <- dezog: API.receivedMessage(msg)
+note over js: Work with input
+~~~
+
+Here are 2 basic examples:
+~~~puml
+hide footbox
+title E.g. Show an out-port
+participant zsim
+participant js as "javascript\nbusiness Logic"
+participant dezog as "DeZog"
+participant ui as "UI\nZSimulator View"
+
+note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
+zsim -> js: API.writePort(0x8000, 0x6B)
+js -> dezog: API.sendMessage({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
+dezog -> ui: xxxx.receivedMessage({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
+note over ui: Manipulate DOM tree to show\nthe port with the value.
+~~~
+
+~~~puml
+hide footbox
+title E.g. Get input to use for an in-port
+participant zsim
+participant js as "javascript\nbusiness Logic"
+participant dezog as "DeZog"
+participant ui as "UI\nZSimulator View"
+
+...
+note over ui: User action,\ne.g. user pressed\nbutton.
+dezog <- ui: xxxx.sendMessage({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
+js <- dezog: API.receivedMessage({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
+note over js: Store the data.
+...
+...
+note over zsim: ld bc,0x9000\nin a,(c)
+zsim -> js: API.readPort(0x9000)
+zsim <- js: 0x02
+~~~
+The asynchronicity can be seen very clearly: When the user presses a button then the info is sent to the business logic but needs to be stored as it cannot immediately been processed.
+Later, when the Z80 CPU executes an IN instruction it reads from teh port and the value can be passed to the CPU.
 
 
 # Design
@@ -281,7 +340,6 @@ zsim <- ports: value
 ports -> view: portChanged(port, value)
 view -> view: sendMessageToWebView\n('portChanged', port, value)
 view -> html: postMessage
-
 ~~~
 
 
