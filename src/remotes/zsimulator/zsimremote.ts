@@ -20,6 +20,8 @@ import {ZxNextMemory} from './zxnextmemory';
 import {UlaScreen} from './ulascreen';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
+import {CustomCode} from './customcode';
+import {readFileSync} from 'fs';
 
 
 
@@ -70,6 +72,19 @@ export class ZSimRemote extends DzrpRemote {
 	protected interruptNonMaskable; // Whether it is a maskable interrupt or not.
 	protected interruptData: number; // The data that is put on the bus for the interrupt.
 
+	// Custom code to simulate peripherals (in/out)
+	public customCode: CustomCode;
+
+	// The number of passed t-states. Starts at 0 and is never reset.
+	// Is increased with every executed instruction.
+	protected passedTstates: number;
+
+	// The number of t-states to pass before a 'tick()' is send to the
+	// peripherals custom code.
+	protected timeStep: number;
+	// Used to determine the next tick() call.
+	protected nextStepTstates: number;
+
 
 	/// Constructor.
 	constructor() {
@@ -79,6 +94,9 @@ export class ZSimRemote extends DzrpRemote {
 		this.tbblueRegisterSelectValue=0;
 		this.tbblueRegisterWriteHandler=new Map<number, (value: number) => void>();
 		this.tbblueRegisterReadHandler=new Map<number, () => number>();
+		this.passedTstates=0;
+		this.timeStep=Settings.launch.zsim.customCode.timeStep;
+		this.nextStepTstates=0;
 		// Set decoder
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
 		this.cpuRunning=false;
@@ -309,6 +327,29 @@ export class ZSimRemote extends DzrpRemote {
 			this.memory,
 			this.ports
 		];
+
+		// Initialize custom code e.g. for ports
+		const jsPath=Settings.launch.zsim.customCode.jsPath;
+		if (jsPath) {
+			// Can throw an error
+			const jsCode=readFileSync(jsPath).toString();
+			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
+			this.customCode=new CustomCode(jsCode);
+			// Register custom code
+			this.ports.registerGenericInPortFunction(port => {
+				this.customCode.setTstates(this.passedTstates);
+				const value=this.customCode.readPort(port);
+				return value;
+			});
+			this.ports.registerGenericOutPortFunction((port, value) => {
+				this.customCode.setTstates(this.passedTstates);
+				this.customCode.writePort(port, value);
+			});
+			// Register on interrupt event
+			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
+				this.generateInterrupt(non_maskable, data);
+			});
+		}
 	}
 
 
@@ -539,15 +580,29 @@ export class ZSimRemote extends DzrpRemote {
 				if (CpuHistory)
 					this.storeHistoryInfo(prevPc);
 
+				// Execute one instruction
+				const tStates=this.z80Cpu.execute();
+
+				// Increase passed t-states
+				this.passedTstates+=tStates;
+				if (this.passedTstates>=this.nextStepTstates) {
+					this.nextStepTstates+=this.timeStep;
+					if (this.customCode) {
+						this.customCode.setTstates(this.passedTstates);
+						this.customCode.tick();
+					}
+				}
+
 				// Check if there was an interrupt generated the last time
 				// (e.g. by custom code)
 				if (this.interruptGenerated) {
+					// TODO: Saving not required
 					this.interruptGenerated=false;
 					this.z80Cpu.generateInterrupt(this.interruptNonMaskable, this.interruptData);
 				}
 
-				// Execute one instruction
-				const update=this.z80Cpu.execute();
+				// Save PC (in case an interrupt happens)
+				const pcSaved=this.z80Cpu.pc;
 
 				// Update visual memory
 				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
@@ -556,7 +611,7 @@ export class ZSimRemote extends DzrpRemote {
 				this.codeCoverage?.storeAddress(pcLong);
 
 				// Do visual update
-				if (update) {
+				if (this.z80Cpu.update) {
 					updateCounter--;
 					if (updateCounter<=0) {
 						// Update the screen etc.
@@ -566,16 +621,15 @@ export class ZSimRemote extends DzrpRemote {
 				}
 
 				// Check if given breakpoints are hit
-				const pc=this.z80Cpu.pc;
-				if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
-					breakAddress=pc;
+				if (pcSaved==bp1||pcSaved==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
+					breakAddress=pcSaved;
 					break;
 				}
 
 				// Check if any real breakpoint is hit
 				// Note: Because of step-out this needs to be done before the other check.
 				// Convert to long address
-				pcLong=Z80Registers.createLongAddress(pc, slots);
+				pcLong=Z80Registers.createLongAddress(pcSaved, slots);
 				const bpInner=this.tmpBreakpoints.get(pcLong);
 				if (bpInner) {
 					// To improve performance of condition and log breakpoints the condition check is also done below.

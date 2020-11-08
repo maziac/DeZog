@@ -4,8 +4,6 @@ import {MemBuffer} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simmemory';
-import {CustomCode} from './customcode';
-import {readFileSync} from 'fs';
 
 
 
@@ -18,16 +16,6 @@ export class Z80Cpu {
 
 	// Time for interrupt in T-States
 	protected INTERRUPT_TIME: number;
-
-	// The number of passed t-states. Starts at 0 and is never reset.
-	// Is increased with every executed instruction.
-	protected passedTstates: number;
-
-	// The number of t-states to pass before a 'tick()' is send to the
-	// peripherals custom code.
-	protected timeStep: number;
-	// Used to determine the next tick() call.
-	protected nextStepTstates: number;
 
 	// For calculation of the CPU load.
 	// Summarizes all instruction besides HALT.
@@ -58,12 +46,15 @@ export class Z80Cpu {
 	// Ports
 	public ports: Z80Ports;
 
-	// Custom code to simulate peripherals (in/out)
-	public customCode: CustomCode;
+	// Is set if there should be an update to the ZSimulationView.
+	// Is synched with the vertical interrupt if enabled. But also
+	// happens without.
+	public update: boolean;
 
 
 	/// Constructor.
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
+		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq=3500000.0;	// 3.5MHz.
@@ -74,9 +65,6 @@ export class Z80Cpu {
 		IM 1: Jumps to address &0038
 		IM 2: Uses an interrupt vector table, indexed by value on data bus.
 		*/
-		this.passedTstates=0;
-		this.timeStep=Settings.launch.zsim.customCode.timeStep;
-		this.nextStepTstates=0;
 		this.cpuTstatesCounter=0
 		this.cpuLoadTstates=0;
 		this.cpuWithHaltTstates=0;
@@ -94,56 +82,28 @@ export class Z80Cpu {
 			io_write: (address, val) => {ports.write(address, val);},
 			z80n_enabled: z80n_enabled
 		});
-
-		// Initialize custom code
-		const jsPath=Settings.launch.zsim.customCode.jsPath;
-		if (jsPath) {
-			// Can throw an error
-			const jsCode=readFileSync(jsPath).toString();
-			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			this.customCode=new CustomCode(jsCode);
-			// Register custom code
-			this.ports.registerGenericInPortFunction(port => {
-				this.customCode.setTstates(this.passedTstates);
-				const value=this.customCode.readPort(port);
-				return value;
-			});
-			this.ports.registerGenericOutPortFunction((port, value) => {
-				this.customCode.setTstates(this.passedTstates);
-				this.customCode.writePort(port, value);
-			});
-			// Register on interrupt event
-			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.generateInterrupt(non_maskable, data);
-			});
-		}
 	}
 
 
 	/**
 	 * Executes one instruction.
-	 * @returns true if a (vertical) interrupt happened or would have happened.
+	 * @returns The number of t-states used for execution.
+	 * Sets also the 'update' variable:
+	 * true if a (vertical) interrupt happened or would have happened.
 	 * Also if interrupts are disabled at the Z80.
 	 * And also if 'vsyncInterrupt' is false.
 	 * The return value is used for regularly updating the ZSimulationView.
 	 * And this is required even if interrupts are off. Or even if
 	 * there is only Z80 simulation without ZX Spectrum.
 	 */
-	public execute(): boolean {
+	public execute(): number {
 		const z80=this.z80;
+
+		// Assume no update
+		this.update=false;
 
 		// Handle instruction
 		const tStates=z80.run_instruction();
-
-		// Increased passed t-states
-		this.passedTstates+=tStates;
-		if (this.passedTstates>=this.nextStepTstates) {
-			this.nextStepTstates+=this.timeStep;
-			if (this.customCode) {
-				this.customCode.setTstates(this.passedTstates);
-				this.customCode.tick();
-			}
-		}
 
 		// Statistics
 		if (z80.halted) {
@@ -176,11 +136,10 @@ export class Z80Cpu {
 				this.generateInterrupt(false, 0);
 			}
 			// Vert. interrupt: Returns true even if interrupt is not executed. Used for updating the view.
-			return true;
+			this.update=true;
 		}
 
-		// No vert. interrupt
-		return false;
+		return tStates;
 	}
 
 
