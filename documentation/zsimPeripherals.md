@@ -12,8 +12,8 @@ But it is also possible to instruct the simulator to simulate other custom behav
 For example to add own ports for input and output with custom behavior.
 
 There are 2 parts you can add:
-- the business logic
-- the UI
+- the business logic, which is referred to as "Custom Logic", and
+- the UI, which is referred to as "Custom UI".
 
 The business logic is directly added as javascript code to the simulator.
 The UI code is added to the ZSimulator view.
@@ -38,8 +38,8 @@ The related zsim properties are shown here:
 ~~~
 
 - debug: Is false by default. If enabled the debug area is added with a few buttons e.g. to reload the javascript code. This is very handy to allow fast turn around times.
-- jsPath: The path to your javascript code. If not present then no additional code is loaded. This will work also with debug=false.
-- uiPath: The path to your html/javascript code for the UI. If not present then no additional code for the UI is loaded. This will work also with debug=false.
+- jsPath: The path to your javascript code, i.e. the Custom Logic. If not present then no additional code is loaded. This will work also with debug=false.
+- uiPath: The path to your html/javascript code for the UI, i.e. the Custom UI. If not present then no additional code for the UI is loaded. This will work also with debug=false.
 - timeStep: If defined your javascript code will be called additionally each time that 'timeStep' number of t-states have been passed.
 
 
@@ -58,7 +58,7 @@ API.tstates: number;
  * a 'command' property plus other properties depending on the
  * command.
  */
-API.sendMessage(message: any);
+API.sendToCustomUi(message: any);
 
 
 /**
@@ -68,7 +68,7 @@ API.sendMessage(message: any);
  * the ZSimulation view.
  * @param message The message object.
  */
-API.receivedMessage(message: any);
+API.sendFromCustomUi(message: any);
 
 
 /**
@@ -107,7 +107,7 @@ The basic program flow is shown here:
 ~~~puml
 hide footbox
 title OUT (C),A
-participant zsim
+participant zsim as "Dezog\nzsim"
 participant custom as "Custom Code"
 
 note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
@@ -120,7 +120,7 @@ end
 ~~~puml
 hide footbox
 title IN A,(C)
-participant zsim
+participant zsim as "Dezog\nzsim"
 participant custom as "Custom Code"
 
 note over zsim: ld bc,0x9000\nin a,(c)
@@ -136,7 +136,7 @@ end
 ~~~puml
 hide footbox
 title Time Advance
-participant zsim
+participant zsim as "Dezog\nzsim"
 participant custom as "Custom Code"
 
 note over zsim: Wait for 'timeStep'\nnumber of t-states
@@ -166,7 +166,7 @@ zsim <- custom: API.generateInterrupt\n(non_maskable, data)
 Note: On each call (tick, readPort, writePort) the variable API.tstates contains the number of t-states since start of simulation/start of debug session.
 
 
-To use the API you have to write javascript code and provide code for the 'API.tick', 'API.readPort', 'API.writePort' and 'API.receivedMessage' methods. 'API.sendMessage' must not be overwritten and can be called by the custom code.
+To use the API you have to write javascript code and provide code for the 'API.tick', 'API.readPort', 'API.writePort' and 'API.receivedFromCustomUi' methods. 'API.sendToCustomUi' must not be overwritten and can be called by the custom code.
 
 If you don't provide code for any method then the method will not be called by DeZog.
 
@@ -243,30 +243,30 @@ The html source is extensible. You do so by defining the
 ~~~
 
 The UI code and your javascript business logic communicate asynchronously. This is very important to understand. I.e. any UI activity will be submitted to the business logic with a delay.
-And vice versa any output that is already present in the business logic and submitted to the UI is also presented with a lag.
+And vice versa any output that is already present in the custom business logic and submitted to the UI is also presented with a lag.
 However the UI is updated frequently (every x t-states) and everytime the debugger stops. So you should rarely notice any delay.
 
 ~~~puml
 hide footbox
 title Communication from business logic to UI
-participant js as "javascript\nbusiness Logic"
-participant dezog as "DeZog"
-participant ui as "UI\nZSimulator View"
+participant js as "javascript\nCustom Logic"
+participant dezog as "DeZog\nzsim view"
+participant ui as "ZSimulator View\nCustom UI"
 
-js -> dezog: API.sendMessage(msg)
-dezog -> ui: xxxx.receivedMessage(msg)
+js -> dezog: API.sendToCustomUi(msg)
+dezog -> ui: xxxx.receivedFromCustomLogic(msg)
 note over ui: Update UI element
 ~~~
 
 ~~~puml
 hide footbox
 title Communication from UI to business logic
-participant js as "javascript\nbusiness Logic"
-participant dezog as "DeZog"
-participant ui as "UI\nZSimulator View"
+participant js as "javascript\nCustom Logic"
+participant dezog as "DeZog\nzsim view"
+participant ui as "ZSimulator View\nCustom UI"
 
-dezog <- ui: API.sendMessage(msg)
-js <- dezog: API.receivedMessage(msg)
+dezog <- ui: API.sendToCustomLogic(msg)
+js <- dezog: API.receivedFromCustomUi(msg)
 note over js: Work with input
 ~~~
 
@@ -274,30 +274,30 @@ Here are 2 basic examples:
 ~~~puml
 hide footbox
 title E.g. Show an out-port
-participant zsim
-participant js as "javascript\nbusiness Logic"
-participant dezog as "DeZog"
-participant ui as "UI\nZSimulator View"
+participant zsim as "Dezog\nzsim"
+participant js as "javascript\nCustom Logic"
+participant dezog as "DeZog\nzsim view"
+participant ui as "ZSimulator View\nCustom UI"
 
 note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
 zsim -> js: API.writePort(0x8000, 0x6B)
-js -> dezog: API.sendMessage({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
-dezog -> ui: xxxx.receivedMessage({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
+js -> dezog: API.sendToCustomUi({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
+dezog -> ui: xxxx.receivedFromCustomLogic({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
 note over ui: Manipulate DOM tree to show\nthe port with the value.
 ~~~
 
 ~~~puml
 hide footbox
 title E.g. Get input to use for an in-port
-participant zsim
-participant js as "javascript\nbusiness Logic"
-participant dezog as "DeZog"
-participant ui as "UI\nZSimulator View"
+participant zsim as "Dezog\nzsim"
+participant js as "javascript\nCustom Logic"
+participant dezog as "DeZog\nzsim view"
+participant ui as "ZSimulator View\nCustom UI"
 
 ...
 note over ui: User action,\ne.g. user pressed\nbutton.
-dezog <- ui: xxxx.sendMessage({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
-js <- dezog: API.receivedMessage({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
+dezog <- ui: xxxx.sendToCustomLogic({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
+js <- dezog: API.receivedFromCustomUi({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
 note over js: Store the data.
 ...
 ...
