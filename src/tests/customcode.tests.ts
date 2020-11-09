@@ -20,7 +20,7 @@ class PortOut {
 			// Store value internally
 			this.value=value;
 			// Send message to UI
-			API.sendMessage({
+			API.sendToCustomUi({
 				command: 'my_'+this.name,
 				value: value
 			});
@@ -114,7 +114,7 @@ API.readPort = (port) => {
  * This function is called if new input
  * data is available.
  */
-API.receivedMessage = (msg) => {
+API.receivedFromCustomUi = (msg) => {
 	// Check if joy data
 	switch(msg.command) {
 		case 'joy0':
@@ -147,16 +147,16 @@ API.receivedMessage = (msg) => {
 	});
 
 
-	test('sendMessage', () => {
+	test('sendToCustomUi', () => {
 		const custom=new CustomCode(jsCode);
-		let sendMessageCalled=false;
-		custom.on('receivedMessage', msg => {
-			sendMessageCalled=true;
+		let sendToCustomUiCalled=false;
+		custom.on('sendToCustomUi', msg => {
+			sendToCustomUiCalled=true;
 		});
 
-		assert.equal(false, sendMessageCalled);
+		assert.equal(false, sendToCustomUiCalled);
 		custom.writePort(0x8000, 0x55);
-		assert.equal(true, sendMessageCalled);
+		assert.equal(true, sendToCustomUiCalled);
 	});
 
 
@@ -179,7 +179,7 @@ API.receivedMessage = (msg) => {
 			command: 'joy0',
 			data: 110
 		};
-		custom.receivedMessage(msg);
+		custom.receivedFromCustomUi(msg);
 		result=custom.readPort(0x9000);
 		assert.equal(110, result);
 	});

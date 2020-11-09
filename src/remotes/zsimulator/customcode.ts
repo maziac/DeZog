@@ -12,7 +12,7 @@ class CustomCodeAPI extends EventEmitter {
 	public tstates: number=0;
 
 
-	// Pointer to the object who will receive 'sendMessage'.
+	// Pointer to the object who will receive 'sendToCustomUi'.
 	protected parent: CustomCode;
 
 	/**
@@ -40,10 +40,10 @@ class CustomCodeAPI extends EventEmitter {
 	 * a 'command' property plus other properties depending on the
 	 * command.
 	 */
-	public sendMessage(message: any) {
+	public sendToCustomUi(message: any) {
 		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
 		// Send message
-		this.parent.emit('receivedMessage', message);
+		this.parent.emit('sendToCustomUi', message);
 	}
 
 
@@ -54,7 +54,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * the ZSimulation view.
 	 * @param message The message object.
 	 */
-	public receivedMessage: (message: any) => void = undefined as any;
+	public receivedFromCustomUi: (message: any) => void = undefined as any;
 
 
 	/**
@@ -210,16 +210,16 @@ ${jsCode}
 	 * a 'command' property plus other properties depending on the
 	 * command.
 	 */
-	public receivedMessage(message: any) {
+	public receivedFromCustomUi(message: any) {
 		LogCustomCode.log('Message '+JSON.stringify(message)+' received.');
-		if (this.api.receivedMessage==undefined) {
+		if (this.api.receivedFromCustomUi==undefined) {
 			// Log that a message has been received without receiver.
-			LogCustomCode.log("  But no custom 'this.receivedMessage' defined.");
+			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
 		}
 		else {
 			// Catch probably errors.
 			try {
-				this.api.receivedMessage(message);
+				this.api.receivedFromCustomUi(message);
 			}
 			catch (e) {
 				this.throwError("Error during executing custom java script in 'writePort': "+e.message);

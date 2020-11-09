@@ -23,11 +23,6 @@ export class ZSimulationView extends BaseView {
 	// Taken from Settings. Path to the extra javascript code.
 	protected customUiPath: string;
 
-	// Is set when a 'portGet' query is send to the webview.
-	// And is called when the response (the port value) is
-	// received from the webview.
-	protected genericInPortResolve: ((value: number) => void)|undefined;
-
 
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
@@ -48,10 +43,10 @@ export class ZSimulationView extends BaseView {
 		simulator.on('update', async (reason) => {
 			await zxview.update();
 		});
-		simulator.customCode.on('receivedMessage', (message: any) => {
+		simulator.customCode.on('sendToCustomUi', (message: any) => {
 			// Wrap message from custom code
 			const outerMsg={
-				command: 'receivedMessageFromCustomCode',
+				command: 'receivedFromCustomLogic',
 				value: message
 			};
 			zxview.sendMessageToWebView(outerMsg);
@@ -124,19 +119,16 @@ export class ZSimulationView extends BaseView {
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
-			case 'setPortBit':
-				// Can be called by user's js code to set a port.
-				this.setPortBit(message.port, message.bit, message.on);
+			case 'sendToCustomLogic':
+				// Unwrap message
+				const innerMsg=message.value;
+				this.sendToCustomLogic(innerMsg);
 				break;
-			case 'refreshJsCode':
-				// In debug mode this is received to recreate the complete html.
-				// And with this the user's java script file is read as well.
-				this.setHtml();
+			case 'reloadCustomLogic':
+				// Reload the custom code
 				break;
-			case 'portGetValue':
-				// Return on a 'portGet' postMessage.
-				// Returns the value for a port.
-				this.portGetValue(message.value);
+			case 'reloadCustomUi':
+				// Reload the custom UI code
 				break;
 			default:
 				super.webViewMessageReceived(message);
@@ -146,13 +138,10 @@ export class ZSimulationView extends BaseView {
 
 
 	/**
-	 * A 'portGet' was sent to the webview and now it's value
-	 * in 'portGetValue' has been returned.
-	 * @param value The value for the port.
+	 * Called if the custom UI code wants to send something to the custom logic/the javascript code.
 	 */
-	protected portGetValue(value: number) {
-		Utility.assert(this.genericInPortResolve); // If not set then there was no request.
-		this.genericInPortResolve!(value);
+	protected sendToCustomLogic(msg: any) {
+
 	}
 
 
@@ -295,16 +284,6 @@ export class ZSimulationView extends BaseView {
 		this.simulator.ports.setPortValue(port, value);
 	}
 
-	/**
-	 * Is called by user's java script code to set a port.
-	 * @param port The port to set. e.g. 0xA23F
-	 * @param bit The bit to set [0;7]
-	 * @param on Set the bit to 1 (true) or 0 (false).
-	 */
-	protected setPortBit(port: number, bit: number, on: boolean) {
-		console.log("port=0x"+Utility.getHexString(port, 4)+", bit="+bit+": "+(on? "1":"0"));
-	}
-
 
 	/**
 	 * Converts an image into a base64 string.
@@ -423,14 +402,6 @@ border-color:black;
 width:70px;
 }
 
-
-.div_on {
-color:white;
-}
-
-.div_off {
-color:black;
-}
 </style>
 
 
@@ -443,21 +414,27 @@ color:black;
 		 * shall be executed by the custom UI code.
 		 * User can leave this undefined if he does not generate any message in
 		 * the custom code view.
-		 * receivedMessage(message: any) => void;
+		 * receivedFromCustomUi(message: any) => void;
 		 * @param message The message object. User defined.
 		 */
-		receivedMessage = undefined;
+		receivedFromCustomLogic = undefined;
+
+		/**
+		 * Method to send something from the Custom UI to the Custom Logic.
+		 * Wraps the message.
+		 * @param msg The custom message to send.
+		 */
+		API2.sendToCustomLogic = (msg) => {
+			const outerMsg = {
+				command: 'sendToCustomLogic',
+				value: msg
+			};
+			vscode.postMessage(outerMsg);
+		}
+
 	}
 	var API2 = new CustomUiApi();
 
-	// This needs to be moved to custom section.
-	API2.receivedMessage = (msg) => {
-		switch(msg.command) {
-			case 'my_PortA':
-
-			break;
-		}
-	}
 
 	const vscode = acquireVsCodeApi();
 
@@ -468,6 +445,7 @@ color:black;
 	});
 
 
+
 	//---- Handle Messages from vscode extension --------
 	window.addEventListener('message', event => {
 		const message = event.data;
@@ -475,6 +453,7 @@ color:black;
 		switch (message.command) {
 			case 'update':
 			{
+
 				if(message.cpuLoad != undefined)
 					cpuLoad.innerHTML = message.cpuLoad;
 
@@ -494,14 +473,14 @@ color:black;
 					screenImg.src = message.screenImg;
 			}
 			break;
-			case 'receivedMessageFromCustomCode':
+			case 'receivedFromCustomLogic':
 				// Message received from custom code.
 				// Call custom UI code
-				if(API.receivedMessage) {
+				if(API2.receivedFromCustomLogic) {
 					// Unwrap original message:
 					const innerMsg = message.value;
 					// Process message
-					API2.receivedMessage(innerMsg);
+					API2.receivedFromCustomLogic(innerMsg);
 				}
 		}
 	});
@@ -540,19 +519,6 @@ color:black;
         cell=document.getElementById("key_"+keyCode);
      	return cell;
     }
-
-
-	// Sets 'bit' on 'port' address to 'on' (true/false).
-	function setPortBit(port, bit, on) {
-		// Send request to vscode
-		vscode.postMessage({
-			command: 'setPortBit',
-			port: port,
-			bit: bit,
-			on: on
-		});
-	}
-
 
 	// Toggles the visibility of an element.
 	/*
@@ -823,6 +789,16 @@ color:black;
 			}
 		}
 
+		jsCode=`
+		// This needs to be moved to custom section.
+		API2.receivedFromCustomLogic=(msg) => {
+			switch (msg.command) {
+				case 'my_PortA':
+					API2.sendToCustomLogic(msg);
+					break;
+			}
+		}`;
+
 		html+=
 `<!-- Room for extra/user editable javascript/html code -->
 <p>
@@ -851,16 +827,26 @@ color:black;
 	</script>
 
 	<script>
-		// Use the entered javascript code.
-		function refreshJsCode() {
+		// Reload the javascript business logic.
+		function reloadCustomLogic() {
 			// Send request to vscode
 			vscode.postMessage({
-				command: 'refreshJsCode'
+				command: 'reloadCustomLogic'
+			});
+		}
+
+		// Reload the custom UI.
+		function reloadCustomUi() {
+			// Send request to vscode
+			vscode.postMessage({
+				command: 'reloadCustomUi'
 			});
 		}
 	</script>
 
-	<button onclick="refreshJsCode()">Refresh javascript code</button>
+	<button onclick="reloadCustomLogic()">Reload Custom Logic (javascript)</button>
+	&nbsp;&nbsp;
+	<button onclick="reloadCustomUi()">Reload Custom UI (html)</button>
 	&nbsp;&nbsp;
 	<button onclick="copyHtmlToClipboard()">Copy all HTML to clipboard</button>
 
