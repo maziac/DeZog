@@ -45,6 +45,7 @@ export class ZSimulationView extends BaseView {
 			await zxview.update();
 		});
 		simulator.customCode.on('sendToCustomUi', (message: any) => {
+			LogCustomCode.log('UI: receivedFromCustomLogic: '+JSON.stringify(message));
 			// Wrap message from custom code
 			const outerMsg={
 				command: 'receivedFromCustomLogic',
@@ -123,6 +124,7 @@ export class ZSimulationView extends BaseView {
 			case 'sendToCustomLogic':
 				// Unwrap message
 				const innerMsg=message.value;
+				LogCustomCode.log("UI: sendToCustomLogic: "+JSON.stringify(innerMsg));
 				this.sendToCustomLogic(innerMsg);
 				break;
 			case 'reloadCustomLogic':
@@ -147,7 +149,7 @@ export class ZSimulationView extends BaseView {
 	 * Called if the custom UI code wants to send something to the custom logic/the javascript code.
 	 */
 	protected sendToCustomLogic(msg: any) {
-
+		this.simulator.customCode.receivedFromCustomUi(msg);
 	}
 
 
