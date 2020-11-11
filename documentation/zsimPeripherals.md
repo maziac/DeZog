@@ -68,7 +68,7 @@ API.sendToCustomUi(message: any);
  * the ZSimulation view.
  * @param message The message object.
  */
-API.sendFromCustomUi(message: any);
+API.receivedFromCustomUi(message: any);
 
 
 /**
@@ -254,7 +254,7 @@ participant dezog as "DeZog\nzsim view"
 participant ui as "ZSimulator View\nCustom UI"
 
 js -> dezog: API.sendToCustomUi(msg)
-dezog -> ui: xxxx.receivedFromCustomLogic(msg)
+dezog -> ui: UIAPI.receivedFromCustomLogic(msg)
 note over ui: Update UI element
 ~~~
 
@@ -282,7 +282,7 @@ participant ui as "ZSimulator View\nCustom UI"
 note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
 zsim -> js: API.writePort(0x8000, 0x6B)
 js -> dezog: API.sendToCustomUi({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
-dezog -> ui: xxxx.receivedFromCustomLogic({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
+dezog -> ui: UIAPI.receivedFromCustomLogic({\n command: 'showPort',\n port: 0x8000,\n value: 0x6B})
 note over ui: Manipulate DOM tree to show\nthe port with the value.
 ~~~
 
@@ -296,7 +296,7 @@ participant ui as "ZSimulator View\nCustom UI"
 
 ...
 note over ui: User action,\ne.g. user pressed\nbutton.
-dezog <- ui: xxxx.sendToCustomLogic({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
+dezog <- ui: UIAPI.sendToCustomLogic({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
 js <- dezog: API.receivedFromCustomUi({\n command: 'inputForPort',\n port: 0x9000,\n value: 0x02})
 note over js: Store the data.
 ...
@@ -307,6 +307,35 @@ zsim <- js: 0x02
 ~~~
 The asynchronicity can be seen very clearly: When the user presses a button then the info is sent to the business logic but needs to be stored as it cannot immediately been processed.
 Later, when the Z80 CPU executes an IN instruction it reads from teh port and the value can be passed to the CPU.
+
+
+## UIAPI
+
+~~~js
+/**
+ * A message has been received from the custom code that
+ * shall be executed by the custom UI code.
+ * User can leave this undefined if he does not generate any message in
+ * the custom code view.
+ * receivedFromCustomUi(message: any) => void;
+ * @param message The message object. User defined.
+ */
+receivedFromCustomLogic(msg: any);
+
+/**
+ * Method to send something from the Custom UI to the Custom Logic.
+ * Wraps the message.
+ * @param msg The custom message to send.
+ */
+sendToCustomLogic(msg: any);
+
+/**
+* Writes a log.
+* @param ...args Any arguments.
+*/
+log(...args);
+~~~
+
 
 
 # Design
