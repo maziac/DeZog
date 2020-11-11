@@ -4,6 +4,7 @@ import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
+import {LogCustomCode} from '../../log';
 
 /**
  * A Webview that shows the simulated peripherals.
@@ -129,6 +130,10 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'reloadCustomUi':
 				// Reload the custom UI code
+				break;
+			case 'log':
+				// Log a message
+				LogCustomCode.log(message.args);
 				break;
 			default:
 				super.webViewMessageReceived(message);
@@ -424,7 +429,7 @@ width:70px;
 		 * Wraps the message.
 		 * @param msg The custom message to send.
 		 */
-		API2.sendToCustomLogic = (msg) => {
+		sendToCustomLogic = (msg) => {
 			const outerMsg = {
 				command: 'sendToCustomLogic',
 				value: msg
@@ -432,8 +437,19 @@ width:70px;
 			vscode.postMessage(outerMsg);
 		}
 
+		/**
+		 * Writes a log.
+		 * @param ...args Any arguments.
+		 */
+		log = (args) => {
+			const msg = {
+				command: 'log',
+				args: args
+			};
+			vscode.postMessage(msg);
+		}
 	}
-	var API2 = new CustomUiApi();
+	var UIAPI = new CustomUiApi();
 
 
 	const vscode = acquireVsCodeApi();
@@ -476,11 +492,11 @@ width:70px;
 			case 'receivedFromCustomLogic':
 				// Message received from custom code.
 				// Call custom UI code
-				if(API2.receivedFromCustomLogic) {
+				if(UIAPI.receivedFromCustomLogic) {
 					// Unwrap original message:
 					const innerMsg = message.value;
 					// Process message
-					API2.receivedFromCustomLogic(innerMsg);
+					UIAPI.receivedFromCustomLogic(innerMsg);
 				}
 		}
 	});
@@ -788,16 +804,6 @@ width:70px;
 				jsCode="<b>Error: reading file '"+this.customUiPath+"':"+e.message+"</b>";
 			}
 		}
-
-		jsCode=`
-		// This needs to be moved to custom section.
-		API2.receivedFromCustomLogic=(msg) => {
-			switch (msg.command) {
-				case 'my_PortA':
-					API2.sendToCustomLogic(msg);
-					break;
-			}
-		}`;
 
 		html+=
 `<!-- Room for extra/user editable javascript/html code -->
