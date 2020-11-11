@@ -51,9 +51,15 @@ export class Z80Cpu {
 	// happens without.
 	public update: boolean;
 
+	// Used to indicate an error in peripherals, i.e. an error in the custom javascript code.
+	// Will make the program break.
+	// 0 = no error
+	public error: number;
+
 
 	/// Constructor.
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
+		this.error=0;
 		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
@@ -77,9 +83,25 @@ export class Z80Cpu {
 		const z80n_enabled=Settings.launch.zsim.Z80N;
 		this.z80=new (Z80.Z80 as any)({
 			mem_read: (address) => {return memory.read8(address);},
-			mem_write: (address, val) => {memory.write8(address, val);},
-			io_read: (address) => {return ports.read(address);},
-			io_write: (address, val) => {ports.write(address, val);},
+			mem_write: (address, val) => {memory.write8(address, val);
+			},
+			io_read: (address) => {
+				try {
+					return ports.read(address);
+				}
+				catch {
+					this.error=1;
+					return 0;
+				};
+			},
+			io_write: (address, val) => {
+				try {
+					ports.write(address, val);
+				}
+				catch {
+					this.error=1;
+				};
+			},
 			z80n_enabled: z80n_enabled
 		});
 	}

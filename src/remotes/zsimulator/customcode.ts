@@ -41,7 +41,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * command.
 	 */
 	public sendToCustomUi(message: any) {
-		LogCustomCode.log('Message '+JSON.stringify(message)+' send.');
+		LogCustomCode.log('sendToCustomUi: '+JSON.stringify(message));
 		// Send message
 		this.parent.emit('sendToCustomUi', message);
 	}
@@ -157,9 +157,14 @@ delete global.tmpAPI;
 // Entry point for debugging:
 API.debugBreak();
 
+// Add a log to show that log starts
+API.log('\\n=====================================');
+API.log('Custom code: init start');
+
 ${jsCode}
 
-`,
+API.log('Custom code: init end');
+API.log('-------------------------------------\\n');`,
 			this.context);	// This fills the context with the complete program.
 	}
 
@@ -211,7 +216,7 @@ ${jsCode}
 	 * command.
 	 */
 	public receivedFromCustomUi(message: any) {
-		LogCustomCode.log('Message '+JSON.stringify(message)+' received.');
+		LogCustomCode.log('receivedFromCustomUi: '+JSON.stringify(message)+' received.');
 		if (this.api.receivedFromCustomUi==undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
@@ -222,7 +227,7 @@ ${jsCode}
 				this.api.receivedFromCustomUi(message);
 			}
 			catch (e) {
-				this.throwError("Error during executing custom java script in 'writePort': "+e.message);
+				this.throwError("Error during executing custom java script in 'API.receivedFromCustomUi': "+e.message);
 			}
 		}
 	}

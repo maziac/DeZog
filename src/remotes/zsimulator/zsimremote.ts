@@ -555,6 +555,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		//		Utility.timeDiff();
+		this.z80Cpu.error=0;
 		let breakReasonString='';
 		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
 		let counter=5000;
@@ -600,6 +601,14 @@ export class ZSimRemote extends DzrpRemote {
 						this.emit('update')
 						updateCounter=1;
 					}
+				}
+
+				// Check if some CPU error occurred
+				if (this.z80Cpu.error) {
+					// E.g. an error in the custom code
+					breakNumber=BREAK_REASON_NUMBER.CPU_ERROR;
+					breakReasonString="CPU error.";
+					break;
 				}
 
 				// Check if given breakpoints are hit

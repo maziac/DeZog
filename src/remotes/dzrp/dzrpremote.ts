@@ -582,6 +582,7 @@ export class DzrpRemote extends RemoteBase {
 				const labelsString=labels.join(', ');
 				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getHexString(address, 4)+" ("+labelsString+"). "+breakReasonString;
 				break;
+
 			default:
 				reasonString=breakReasonString;
 		}
@@ -801,8 +802,8 @@ export class DzrpRemote extends RemoteBase {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 					}
-					else
-						breakReasonString=undefined;
+//					else
+//						breakReasonString=undefined;
 					// Clear registers
 					this.clearCallStack();
 					// return

@@ -133,7 +133,8 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'log':
 				// Log a message
-				LogCustomCode.log(message.args);
+				const text=message.args.map(elem => elem.toString()).join(', ');
+				LogCustomCode.log("UI: " + text);
 				break;
 			default:
 				super.webViewMessageReceived(message);
@@ -441,7 +442,7 @@ width:70px;
 		 * Writes a log.
 		 * @param ...args Any arguments.
 		 */
-		log = (args) => {
+		log = (...args) => {
 			const msg = {
 				command: 'log',
 				args: args

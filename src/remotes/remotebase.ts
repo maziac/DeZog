@@ -26,6 +26,7 @@ export enum BREAK_REASON_NUMBER {
 	BREAKPOINT_HIT=2,	// 2=breakpoint hit
 	WATCHPOINT_READ=3,	// 3=watchpoint hit read access
 	WATCHPOINT_WRITE=4,	// 4=watchpoint hit write access
+	CPU_ERROR=5,		// 5=CPU error, e.g. error in custom javascript code
 
 	// Internally used
 	STEPPING_NOT_ALLOWED=100,	// For ZxNextRemote if trying to step code used for debugging.
