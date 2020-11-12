@@ -78,11 +78,15 @@ export class ZSimRemote extends DzrpRemote {
 	// Used to determine the next tick() call.
 	protected nextStepTstates: number;
 
+	// Is set/reset by the ZSimulatorView to request processing time.
+	protected timeoutRequest: boolean;
+
 
 	/// Constructor.
 	constructor() {
 		super();
 		// Init
+		this.timeoutRequest=false;
 		this.previouslyStoredPCHistory=-1;
 		this.tbblueRegisterSelectValue=0;
 		this.tbblueRegisterWriteHandler=new Map<number, (value: number) => void>();
@@ -102,6 +106,14 @@ export class ZSimRemote extends DzrpRemote {
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled)
 			this.codeCoverage=new CodeCoverageArray();
+	}
+
+
+	/**
+	 * Is set/reset by the ZSimulatorView to request processing time.
+	 */
+	public setTimeoutRequest(on: boolean) {
+		this.timeoutRequest=on;
 	}
 
 
@@ -554,163 +566,190 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
-		//		Utility.timeDiff();
-		this.z80Cpu.error=0;
-		let breakReasonString='';
-		let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
-		let counter=5000;
-		//let bp;
-		let breakAddress;
-		let updateCounter=0;
-		let slots
-		if (Labels.AreLongAddressesUsed())
-			slots=this.memory.getSlots();
-		let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
-		try {
-			// Run the Z80-CPU in a loop
-			for (; counter>0; counter--) {
-				// Store current registers and opcode
-				const prevPc=this.z80Cpu.pc;
-				if (CpuHistory)
-					this.storeHistoryInfo(prevPc);
+		while (true) {
+			//		Utility.timeDiff();
+			this.z80Cpu.error=undefined;
+			let breakReasonString='';
+			let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
+			let counter=5000;
+			//let bp;
+			let breakAddress;
+			let updateCounter=0;
+			let slots
+			if (Labels.AreLongAddressesUsed())
+				slots=this.memory.getSlots();
+			let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
+			try {
+				// Run the Z80-CPU in a loop
+				for (; counter>0; counter--) {
+					// Store current registers and opcode
+					const prevPc=this.z80Cpu.pc;
+					if (CpuHistory)
+						this.storeHistoryInfo(prevPc);
 
-				// Execute one instruction
-				const tStates=this.z80Cpu.execute();
+					// Execute one instruction
+					const tStates=this.z80Cpu.execute();
 
-				// Increase passed t-states
-				this.passedTstates+=tStates;
-				if (this.passedTstates>=this.nextStepTstates) {
-					this.nextStepTstates+=this.timeStep;
-					if (this.customCode) {
-						this.customCode.setTstates(this.passedTstates);
-						this.customCode.tick();
+					// Increase passed t-states
+					this.passedTstates+=tStates;
+					if (this.passedTstates>=this.nextStepTstates) {
+						this.nextStepTstates+=this.timeStep;
+						if (this.customCode) {
+							this.customCode.setTstates(this.passedTstates);
+							this.customCode.tick();
+						}
 					}
-				}
 
-				// Update visual memory
-				this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
+					// Update visual memory
+					this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
 
-				// Store the pc for coverage (previous pcLong)
-				this.codeCoverage?.storeAddress(pcLong);
+					// Store the pc for coverage (previous pcLong)
+					this.codeCoverage?.storeAddress(pcLong);
 
-				// Do visual update
-				if (this.z80Cpu.update) {
-					updateCounter--;
-					if (updateCounter<=0) {
-						// Update the screen etc.
-						this.emit('update')
-						updateCounter=1;
+					// Do visual update
+					if (this.z80Cpu.update) {
+						updateCounter--;
+						if (updateCounter<=0) {
+							// Update the screen etc.
+							this.emit('update')
+							updateCounter=1;
+						}
 					}
-				}
 
-				// Check if some CPU error occurred
-				if (this.z80Cpu.error) {
-					// E.g. an error in the custom code
-					breakNumber=BREAK_REASON_NUMBER.CPU_ERROR;
-					breakReasonString="CPU error.";
-					break;
-				}
+					// Check if some CPU error occurred
+					if (this.z80Cpu.error!=undefined) {
+						// E.g. an error in the custom code
+						breakNumber=BREAK_REASON_NUMBER.CPU_ERROR;
+						breakReasonString="CPU error: "+this.z80Cpu.error;
+						break;
+					}
 
-				// Check if given breakpoints are hit
-				const pc=this.z80Cpu.pc;
-				if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
-					breakAddress=pc;
-					break;
-				}
+					// Check if given breakpoints are hit
+					const pc=this.z80Cpu.pc;
+					if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
+						breakAddress=pc;
+						break;
+					}
 
-				// Check if any real breakpoint is hit
-				// Note: Because of step-out this needs to be done before the other check.
-				// Convert to long address
-				pcLong=Z80Registers.createLongAddress(pc, slots);
-				const bpInner=this.tmpBreakpoints.get(pcLong);
-				if (bpInner) {
-					// To improve performance of condition and log breakpoints the condition check is also done below.
-					// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
-					// If condition is not true then don't consider the breakpoint.
-					// Get registers
-					const regs=this.z80Cpu.getRegisterData();
-					Z80Registers.setCache(regs);
-					// Now check if condition met or if logpoint
-					let bp;
-					for (const bpElem of bpInner) {
-						try {
-							const {condition, log}=this.checkConditionAndLog(bpElem);
-							// Emit log?
-							if (log) {
-								// Convert and print
-								const evalLog=await Utility.evalLogString(log)
-								this.emit('debug_console', "Log: "+evalLog);
-							}
-							else {
-								// Not a logpoint.
-								// Condition met?
-								if (condition!=undefined) {
-									bp=bpElem;
-									break;
+					// Check if any real breakpoint is hit
+					// Note: Because of step-out this needs to be done before the other check.
+					// Convert to long address
+					pcLong=Z80Registers.createLongAddress(pc, slots);
+					const bpInner=this.tmpBreakpoints.get(pcLong);
+					if (bpInner) {
+						// To improve performance of condition and log breakpoints the condition check is also done below.
+						// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
+						// If condition is not true then don't consider the breakpoint.
+						// Get registers
+						const regs=this.z80Cpu.getRegisterData();
+						Z80Registers.setCache(regs);
+						// Now check if condition met or if logpoint
+						let bp;
+						for (const bpElem of bpInner) {
+							try {
+								const {condition, log}=this.checkConditionAndLog(bpElem);
+								// Emit log?
+								if (log) {
+									// Convert and print
+									const evalLog=await Utility.evalLogString(log)
+									this.emit('debug_console', "Log: "+evalLog);
+								}
+								else {
+									// Not a logpoint.
+									// Condition met?
+									if (condition!=undefined) {
+										bp=bpElem;
+										break;
+									}
 								}
 							}
+							catch (e) {
+								// Some problem occurred, pass evaluation to DebugSessionClass
+								bp=bpElem;
+								break;
+							}
 						}
-						catch (e) {
-							// Some problem occurred, pass evaluation to DebugSessionClass
-							bp=bpElem;
-							break;
+						// Breakpoint and condition OK
+						if (bp) {
+							breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+							breakAddress=pcLong;
+							break;	// stop loop
 						}
 					}
-					// Breakpoint and condition OK
-					if (bp) {
-						breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-						breakAddress=pcLong;
-						break;	// stop loop
+
+					// Check if watchpoint is hit
+					if (this.memory.hitAddress>=0) {
+						// Yes, read or write access
+						breakNumber=(this.memory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+						breakAddress=this.memory.hitAddress;
+						break;
+					}
+
+					// Check if stopped from outside
+					if (!this.cpuRunning) {
+						breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
+						break;
 					}
 				}
 
-				// Check if watchpoint is hit
-				if (this.memory.hitAddress>=0) {
-					// Yes, read or write access
-					breakNumber=(this.memory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-					breakAddress=this.memory.hitAddress;
-					break;
-				}
+			}
+			catch (errorText) {
+				breakReasonString="Z80CPU Error: "+errorText;
+				console.log(breakReasonString);
+				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
+			};
 
-				// Check if stopped from outside
-				if (!this.cpuRunning) {
-					breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
-					break;
+			if (counter!=0) {
+				// Stop immediately
+				//let condition='';
+				this.cpuRunning=false;
+				// Get breakpoint Address
+				/*
+				if (bp) {
+					breakAddress=bp.address;
+					//condition=bp.condition;
 				}
+				*/
+
+				// Create reason string
+				//breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+
+				// Send Notification
+				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
+				Utility.assert(this.continueResolve);
+				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
+
+				return;
 			}
 
-		}
-		catch (errorText) {
-			breakReasonString="Z80CPU Error: "+errorText;
-			console.log(breakReasonString);
-			breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
-		};
+			// Give other tasks a little time and continue
+			await Utility.timeout(10);
 
-		if (counter!=0) {
-			// Stop immediately
-			//let condition='';
-			this.cpuRunning=false;
-			// Get breakpoint Address
-			/*
-			if (bp) {
-				breakAddress=bp.address;
-				//condition=bp.condition;
+			// Check if additional time is required for the webview
+			while (this.timeoutRequest) {
+				// timeoutRequest will be set by the ZSimulatorView.
+				await Utility.timeout(100);
 			}
-			*/
 
-			// Create reason string
-			//breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
+			// Check if meanwhile a manual break happened
+			if (!this.cpuRunning) {
+				// Manual break: Create reason string
+				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
+				breakAddress=0;
+				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
 
-			// Send Notification
-			//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-			Utility.assert(this.continueResolve);
-			this.continueResolve!({breakNumber, breakAddress, breakReasonString});
-
-			return;
+				// Send Notification
+				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
+				Utility.assert(this.continueResolve);
+				if (this.continueResolve)
+					this.continueResolve({breakNumber, breakAddress, breakReasonString});
+				return;
+			}
 		}
 
-		// Give other tasks a little time and continue
-		setTimeout(async () => {
+		/*
+
+			// TODO: must be done differently: Currently the call stack increases to infinite.		setTimeout(async () => {
 			// Check if meanwhile a manual break happened
 			if (!this.cpuRunning) {
 				// Manual break: Create reason string
@@ -728,7 +767,8 @@ export class ZSimRemote extends DzrpRemote {
 
 			// Otherwise continue
 			this.z80CpuContinue(bp1, bp2);
-		}, 10);
+		}, 100); //10);
+		*/
 	}
 
 

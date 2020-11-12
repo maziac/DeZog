@@ -145,7 +145,7 @@ export class BaseView {
 	 * This needs to be evaluated inside the web view.
 	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
 	 */
-	protected sendMessageToWebView(message: any, baseView: BaseView = this) {
+	protected sendMessageToWebView(message: any, baseView: BaseView=this) {
 		baseView.vscodePanel.webview.postMessage(message);
 	}
 

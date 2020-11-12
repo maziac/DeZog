@@ -177,11 +177,12 @@ API.log('-------------------------------------\\n');`,
 	 * If no port is found then undefined is returned.
 	 */
 	public readPort(port: number): number|undefined {
-		LogCustomCode.log('Reading port '+Utility.getHexString(port, 2)+'h');
+		LogCustomCode.log('Reading port '+Utility.getHexString(port,4)+'h');
 		// Catch probably errors.
 		let value;
 		try {
 			value=this.api.readPort(port);
+			LogCustomCode.log('  Reading value ' + Utility.getHexString(value,2) + 'h for port ' + Utility.getHexString(port,4) + 'h');
 		}
 		catch (e) {
 			this.throwError("Error during executing custom java script in 'readPort': "+e.message);
@@ -216,7 +217,7 @@ API.log('-------------------------------------\\n');`,
 	 * command.
 	 */
 	public receivedFromCustomUi(message: any) {
-		LogCustomCode.log('receivedFromCustomUi: '+JSON.stringify(message)+' received.');
+		LogCustomCode.log('receivedFromCustomUi: '+JSON.stringify(message));
 		if (this.api.receivedFromCustomUi==undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");

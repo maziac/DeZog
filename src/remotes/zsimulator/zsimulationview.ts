@@ -12,6 +12,10 @@ import {LogCustomCode} from '../../log';
  */
 export class ZSimulationView extends BaseView {
 
+	// The max. number of message in the queue. If reached the ZSimulationView will ask
+	// for processing time.
+	static MESSAGE_WATERMARK=100;
+
 	// Holds the gif image a string.
 	protected screenGifString;
 
@@ -24,6 +28,9 @@ export class ZSimulationView extends BaseView {
 	// Taken from Settings. Path to the extra javascript code.
 	protected customUiPath: string;
 
+	// Counts the number of outstanding (not processed) webview messages.
+	// Is used to insert "pauses" so that the webview can catch up.
+	protected countOfOutstandingMessages: number;
 
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
@@ -44,7 +51,7 @@ export class ZSimulationView extends BaseView {
 		simulator.on('update', async (reason) => {
 			await zxview.update();
 		});
-		simulator.customCode.on('sendToCustomUi', (message: any) => {
+		simulator.customCode?.on('sendToCustomUi', (message: any) => {
 			LogCustomCode.log('UI: receivedFromCustomLogic: '+JSON.stringify(message));
 			// Wrap message from custom code
 			const outerMsg={
@@ -64,6 +71,7 @@ export class ZSimulationView extends BaseView {
 		super(false);
 		// Init
 		this.simulator=simulator;
+		this.countOfOutstandingMessages=0;
 
 		// Set all ports
 		// TODO: Make dependend of zx keyboard
@@ -136,7 +144,19 @@ export class ZSimulationView extends BaseView {
 			case 'log':
 				// Log a message
 				const text=message.args.map(elem => elem.toString()).join(', ');
-				LogCustomCode.log("UI: " + text);
+				LogCustomCode.log("UI: "+text);
+				break;
+			case 'countOfProcessedMessages':
+				// For balancing the number of processed messages (since last time) is provided.
+				//LogCustomCode.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages+", processed="+message.value);
+				this.countOfOutstandingMessages-=message.value;
+				//Utility.assert(this.countOfOutstandingMessages>=0);
+				if (this.countOfOutstandingMessages<0)
+					console.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages);
+				// For balancing: Remove request for procesing time
+				if (this.countOfOutstandingMessages<ZSimulationView.MESSAGE_WATERMARK) {
+					this.simulator.setTimeoutRequest(false);
+				}
 				break;
 			default:
 				super.webViewMessageReceived(message);
@@ -146,10 +166,27 @@ export class ZSimulationView extends BaseView {
 
 
 	/**
+	 * A message is posted to the web view.
+	 * Overwritten to count the number of messages for balancing.
+	 * @param message The message. message.command should contain the command as a string.
+	 * This needs to be evaluated inside the web view.
+	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
+	 */
+	protected sendMessageToWebView(message: any, baseView: BaseView=this) {
+		this.countOfOutstandingMessages++;
+		super.sendMessageToWebView(message, baseView);
+		// For balancing: Ask for processing time if messages cannot be processed in time.
+		if (this.countOfOutstandingMessages>=ZSimulationView.MESSAGE_WATERMARK) {
+			this.simulator.setTimeoutRequest(true);
+		}
+	}
+
+
+	/**
 	 * Called if the custom UI code wants to send something to the custom logic/the javascript code.
 	 */
 	protected sendToCustomLogic(msg: any) {
-		this.simulator.customCode.receivedFromCustomUi(msg);
+		this.simulator.customCode?.receivedFromCustomUi(msg);
 	}
 
 
@@ -454,6 +491,7 @@ width:70px;
 	}
 	var UIAPI = new CustomUiApi();
 
+	var countOfProcessedMessages = 0;
 
 	const vscode = acquireVsCodeApi();
 
@@ -467,8 +505,19 @@ width:70px;
 
 	//---- Handle Messages from vscode extension --------
 	window.addEventListener('message', event => {
-		const message = event.data;
+		// Count message
+		countOfProcessedMessages++;
+		if(countOfProcessedMessages > ${ZSimulationView.MESSAGE_WATERMARK/10}) {
+			// Send info to vscode
+			vscode.postMessage({
+				command: 'countOfProcessedMessages',
+				value: countOfProcessedMessages
+			});
+			countOfProcessedMessages = 0;
+		}
 
+		// Process message
+		const message = event.data;
 		switch (message.command) {
 			case 'update':
 			{
@@ -872,5 +921,6 @@ width:70px;
 
 		this.vscodePanel.webview.html=html;
 	}
+
 }
 
