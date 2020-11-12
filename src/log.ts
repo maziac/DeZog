@@ -30,6 +30,20 @@ export class Log {
 	/// -1 = caller name disabled.
 	protected callerNameIndex = -1;
 
+	// If set then the logs are not written directly to the console but cached.
+	// The cache has only a limited amount of space. Older entries are lost.
+	protected cache: Array<string>;
+
+	// The used cache length.
+	protected cacheLength=0;
+
+	// Stores info if logs have been removed from the cache.
+	protected cacheLogsLost=false;
+
+	// The time it is waited before the cached logs are output.
+	protected cacheTime=100;	// ms
+
+
 	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
@@ -113,9 +127,11 @@ export class Log {
 		const diffTime = (Date.now() - this.lastLogTime)/1000;
 		if(diffTime > PAUSE_LOG_TIME) {
 			// > 2 secs
+			this.outputCache();
 			this.write('...');
 			this.write('Pause for ' + diffTime + ' secs.');
 			this.write('...');
+			this.outputCache();
 		}
 		// write log
 		//const who = this.callerName();
@@ -156,11 +172,61 @@ export class Log {
 	 */
 	public appendLine(text: string) {
 		// write to console
-		if(this.logOutput)
-			this.logOutput.appendLine(text);
+		if (this.logOutput) {
+			if (this.cache) {
+				// Check for max length
+				if (this.cache.length>=this.cacheLength) {
+					this.cache.shift();
+					this.cacheLogsLost=true;
+				}
+				this.cache.push(text);
+				// Set timeout to print cached values
+				if (this.cache.length==1) {
+					setTimeout(() => {
+						this.outputCache();
+					}, this.cacheTime);
+				}
+			}
+			else {
+				// Direct output
+				this.logOutput.appendLine(text);
+			}
+		}
 		// Append to file
 		if(this.outFilePath)
 			appendFileSync(this.outFilePath, text + '\n');
+	}
+
+
+	/**
+	 * Outputs the cache to console.
+	 * Does nothing if no cache is set.
+	 */
+	public outputCache() {
+		if (this.cache) {
+			// Check if data lost
+			if (this.cacheLogsLost) {
+				this.logOutput.appendLine('[...]');
+			}
+			// Output
+			for (const text of this.cache) {
+				this.logOutput.appendLine(text);
+			}
+			// Clear cache
+			this.cache.length=0;
+			this.cacheLogsLost=false;
+		}
+	}
+
+
+	/**
+	 * Sets the cache length.
+	 * @param length The cache length. If 0 the cache is disabled.
+	 */
+	public setCacheLength(length: number) {
+		this.cache=(length > 0) ? new Array<string>(length) : undefined as any;
+		this.cacheLength=length;
+		this.cacheLogsLost=false;
 	}
 
 
@@ -198,6 +264,7 @@ export let LogGlobal=new Log();
 
 /// Logging for custom code is instantiated.
 export let LogCustomCode=new Log();
+LogCustomCode.setCacheLength(1000);
 
 /// Socket logging.
 export let LogSocket = new Log();
