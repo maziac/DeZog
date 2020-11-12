@@ -53,13 +53,13 @@ export class Z80Cpu {
 
 	// Used to indicate an error in peripherals, i.e. an error in the custom javascript code.
 	// Will make the program break.
-	// 0 = no error
-	public error: number;
+	// undefined = no error
+	public error: string|undefined;
 
 
 	/// Constructor.
 	constructor(memory: SimulatedMemory, ports: Z80Ports) {
-		this.error=0;
+		this.error=undefined;
 		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
@@ -89,8 +89,8 @@ export class Z80Cpu {
 				try {
 					return ports.read(address);
 				}
-				catch {
-					this.error=1;
+				catch(e) {
+					this.error="io_read: "+e.message;
 					return 0;
 				};
 			},
@@ -98,8 +98,8 @@ export class Z80Cpu {
 				try {
 					ports.write(address, val);
 				}
-				catch {
-					this.error=1;
+				catch (e) {
+					this.error="io_write: "+e.message;
 				};
 			},
 			z80n_enabled: z80n_enabled
