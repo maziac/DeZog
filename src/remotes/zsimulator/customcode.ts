@@ -177,6 +177,7 @@ API.log('-------------------------------------\\n');`,
 	 * If no port is found then undefined is returned.
 	 */
 	public readPort(port: number): number|undefined {
+		this.logTstates();
 		LogCustomCode.log('Reading port '+Utility.getHexString(port,4)+'h');
 		// Catch probably errors.
 		let value;
@@ -198,6 +199,7 @@ API.log('-------------------------------------\\n');`,
 	 * @param value A value to set, e.g. 0x7F.
 	 */
 	public writePort(port: number, value: number) {
+		this.logTstates();
 		LogCustomCode.log('Write '+Utility.getHexString(value, 4)+'h to port '+Utility.getHexString(port, 2)+'h');
 		// Catch probably errors.
 		try {
@@ -239,9 +241,15 @@ API.log('-------------------------------------\\n');`,
 	 * @param tstates The number of tstates since beginning of simulation, beginning of the debug session which starts at 0.
 	 */
 	public setTstates(tstates: number) {
-		if (this.api.tick != undefined)
-			LogCustomCode.log('tick: tstates='+tstates);
 		this.api.tstates=tstates;
+	}
+
+
+	/**
+	 * Logs the t-states.
+	 */
+	public logTstates() {
+		LogCustomCode.log('tick: tstates='+this.api.tstates);
 	}
 
 
@@ -256,6 +264,7 @@ API.log('-------------------------------------\\n');`,
 
 		// Catch probably errors.
 		try {
+			this.logTstates();
 			this.api.tick();
 		}
 		catch (e) {

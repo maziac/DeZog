@@ -955,8 +955,8 @@ width:70px;
 		 *               "false" to set state to 'ON' only during button down.
 		 *
 		 * Examples:
-		 * <ui-bit oncolor="green" offcolor="yellow"></ui-bit>
-		 * <ui-bit togglemode="false" onchange="my_func(this)"></ui-bit>
+		 * <ui-bit oncolor="green" offcolor="yellow"/>
+		 * <ui-bit togglemode="false" onchange="my_func(this)"/>
 		 * You can get the value (e.g. in 'my_func(this)' with 'this.bitvalue'.
 		 */
 		class UiBit extends HTMLElement {
@@ -1100,8 +1100,8 @@ width:70px;
 		 *               "false" to set state of a bit to 'ON' only during button down.
 		 *
 		 * Examples:
-		 * <ui-byte oncolor="green" offcolor="yellow"></ui-byte>
-		 * <ui-byte togglemode="false" onchange="my_func(this)"></ui-byte>
+		 * <ui-byte oncolor="green" offcolor="yellow"/>
+		 * <ui-byte togglemode="false" onchange="my_func(this)"/>
 		 * You can get the value (e.g. in 'my_func(this)' with 'this.bytevalue'.
 		 */
 		class UiByte extends HTMLElement {

@@ -18,7 +18,8 @@ There are 2 parts you can add:
 The business logic is directly added as javascript code to the simulator.
 The UI code is added to the ZSimulator view.
 
-At the end of this document there is an example that will add a joystick interface to show both.
+There is an example project provided that shows how to implement the simulation into a project: [z80-peripherals-sample](https://github.com/maziac/z80-peripherals-sample).
+
 
 
 # Configuration
@@ -31,7 +32,7 @@ The related zsim properties are shown here:
 	"customCode": {
 		"debug": true,
 		"jsPath": "myPeripheral.js",
-		"uiPath": "myUi.js",
+		"uiPath": "myUi.html",
 		"timeStep": 1000
 	}
 }
@@ -343,6 +344,75 @@ sendToCustomLogic(msg: any);
 log(...args);
 ~~~
 
+
+## Useful Custom HTML elements
+
+To ease your work there exist 2 custom html elements that you can use to input values or to output values, ui-bit and ui-byte.
+
+```<ui-bit>```represents a bit
+
+```<ui-byte>```represents a byte
+
+Both can be used as input and output.
+
+### ```<ui-bit>```:
+![](images/ui-bit_square.jpg)
+
+An element that can be used for output and input of bit data.
+It can show 2 states 'ON' or 'OFF' indicated by colors.
+The element itself is a square with a border.
+Inside a number (or letter) can be shown, e.g. to indicate the bit index.
+If an 'onchange' function is given the element also observes the mouse
+to change it's internal state. (E.g. a mouse click to toggle the state.)
+Whenever a change happens the 'onchange' function is called.
+
+These values can be set inside the html tag on creation:
+- bitvalue: The initial value. Default is 0.
+- oncolor: The color used to indicate state 'ON', e.g. "red".
+- offcolor: The color used to indicate state 'OFF', e.g. "white".
+- onchange: If set the element is turned into an input element.
+     'onchange' is a function that is called when the state changes because of mouse activity.
+- togglemode: "true" (default) to toggle state on each mouse click.
+              "false" to set state to 'ON' only during button down.
+
+Examples:
+~~~html
+<ui-bit oncolor="green" offcolor="yellow"/>
+<ui-bit togglemode="false" onchange="my_func(this)"/>
+~~~
+
+You can get the value (e.g. in 'my_func(this)' with 'this.bitvalue'.
+
+If you add property ```border-radius```you can get a circled button:
+![](images/ui-bit_circle.jpg)
+~~~html
+<ui-bit style="border-radius:1em"/>
+~~~
+
+
+
+### ```<ui-byte>```
+![](images/ui-byte.jpg)
+
+Combines 8 UiBit elements into one.
+
+These values can be set inside the html tag on creation:
+- bytevalue: The initial value. Default is 0.
+- startindex: If set an index is shown in the bits. The indices start at startindex.
+- oncolor: The color used to indicate state 'ON' of a bit, e.g. "red".
+- offcolor: The color used to indicate state 'OFF' of a bit, e.g. "white".
+- onchange: If set the element is turned into an input element.
+  'onchange' is a function that is called when the state changes because of mouse activity.
+- togglemode: "true" (default) to toggle state on each mouse click.
+  "false" to set state of a bit to 'ON' only during button down.
+
+Examples:
+~~~html
+<ui-byte oncolor="green" offcolor="yellow"/>
+<ui-byte togglemode="false" onchange="my_func(this)"/>
+~~~
+
+You can get the value (e.g. in 'my_func(this)' with 'this.bytevalue'.
 
 
 # Design
