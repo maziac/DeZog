@@ -124,7 +124,8 @@ export class Log {
 	 */
 	public log(...args) {
 		// check time
-		const diffTime = (Date.now() - this.lastLogTime)/1000;
+		const diffTime=(Date.now()-this.lastLogTime)/1000;
+		let outputcache=false;
 		if(diffTime > PAUSE_LOG_TIME) {
 			// > 2 secs
 			this.outputCache();
@@ -132,11 +133,15 @@ export class Log {
 			this.write('Pause for ' + diffTime + ' secs.');
 			this.write('...');
 			this.outputCache();
+			outputcache=true;	// Make sure this line is output
 		}
 		// write log
 		//const who = this.callerName();
 		//this.write(who, ...args);
 		this.write(...args);
+		// Output anyway
+		if (outputcache)
+			this.outputCache();
 		// get new time
 		this.lastLogTime = Date.now();
 	}
@@ -264,7 +269,7 @@ export let LogGlobal=new Log();
 
 /// Logging for custom code is instantiated.
 export let LogCustomCode=new Log();
-LogCustomCode.setCacheLength(1000);
+LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
 export let LogSocket = new Log();

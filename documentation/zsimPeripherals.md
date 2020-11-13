@@ -226,6 +226,11 @@ Furthermore you can also place logs inside this window from your custom code by 
 API.log(...args)
 ~~~
 
+Notes:
+- All logs are cached for performance reasons. If too many logs are being made then logged lines are being trashed. If that happened you see a ```[...]```in the logs.
+- If for some time no messages are logged then this is indicated by ```...```(not to be confused with ```[...]```).
+
+
 
 # UI
 
@@ -308,6 +313,8 @@ zsim <- js: 0x02
 The asynchronicity can be seen very clearly: When the user presses a button then the info is sent to the business logic but needs to be stored as it cannot immediately been processed.
 Later, when the Z80 CPU executes an IN instruction it reads from teh port and the value can be passed to the CPU.
 
+Notes:
+- For performance reasons you should send a message to the UI only if necessary. E.g. you should not send a message on every port-write. Instead you should only send a message if the value really changed.
 
 ## UIAPI
 

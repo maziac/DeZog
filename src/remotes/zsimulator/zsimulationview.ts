@@ -14,7 +14,8 @@ export class ZSimulationView extends BaseView {
 
 	// The max. number of message in the queue. If reached the ZSimulationView will ask
 	// for processing time.
-	static MESSAGE_WATERMARK=100;
+	static MESSAGE_HIGH_WATERMARK=100;
+	static MESSAGE_LOW_WATERMARK=10;
 
 	// Holds the gif image a string.
 	protected screenGifString;
@@ -151,10 +152,10 @@ export class ZSimulationView extends BaseView {
 				//LogCustomCode.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages+", processed="+message.value);
 				this.countOfOutstandingMessages-=message.value;
 				//Utility.assert(this.countOfOutstandingMessages>=0);
-				if (this.countOfOutstandingMessages<0)
+				if (this.countOfOutstandingMessages<0) // TODO: assert
 					console.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages);
 				// For balancing: Remove request for procesing time
-				if (this.countOfOutstandingMessages<ZSimulationView.MESSAGE_WATERMARK) {
+				if (this.countOfOutstandingMessages<=ZSimulationView.MESSAGE_LOW_WATERMARK) {
 					this.simulator.setTimeoutRequest(false);
 				}
 				break;
@@ -176,7 +177,7 @@ export class ZSimulationView extends BaseView {
 		this.countOfOutstandingMessages++;
 		super.sendMessageToWebView(message, baseView);
 		// For balancing: Ask for processing time if messages cannot be processed in time.
-		if (this.countOfOutstandingMessages>=ZSimulationView.MESSAGE_WATERMARK) {
+		if (this.countOfOutstandingMessages>=ZSimulationView.MESSAGE_HIGH_WATERMARK) {
 			this.simulator.setTimeoutRequest(true);
 		}
 	}
@@ -507,7 +508,7 @@ width:70px;
 	window.addEventListener('message', event => {
 		// Count message
 		countOfProcessedMessages++;
-		if(countOfProcessedMessages > ${ZSimulationView.MESSAGE_WATERMARK/10}) {
+		if(countOfProcessedMessages >= ${ZSimulationView.MESSAGE_LOW_WATERMARK}) {
 			// Send info to vscode
 			vscode.postMessage({
 				command: 'countOfProcessedMessages',
