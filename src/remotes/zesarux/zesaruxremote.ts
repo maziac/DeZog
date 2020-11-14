@@ -145,7 +145,6 @@ export class ZesaruxRemote extends RemoteBase {
 			if(this.terminating)
 				return;
 
-			let error: Error;
 			try {
 				// Initialize
 				zSocket.send('about');
@@ -168,24 +167,24 @@ export class ZesaruxRemote extends RemoteBase {
 				await zSocket.executeWhenQueueIsEmpty();
 
 				var debug_settings = (Settings.launch.zrcp.skipInterrupt) ? 32 : 0;
-				zSocket.send('set-debug-settings ' + debug_settings);
+				await zSocket.sendAwait('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.
 				if(Settings.launch.resetOnLaunch)
-					zSocket.send('hard-reset-cpu');
+					await zSocket.sendAwait('hard-reset-cpu');
 
 				// Enter step-mode (stop)
-				zSocket.send('enter-cpu-step');
+				await zSocket.sendAwait('enter-cpu-step');
 
-				await zSocket.executeWhenQueueIsEmpty();
+				//await zSocket.executeWhenQueueIsEmpty();
 				const waitBeforeMs=Settings.launch.zrcp.loadDelay;
 				await Utility.timeout(waitBeforeMs);
 
 				// Load sna, nex or tap file
 				const loadPath = Settings.launch.load;
 				if (loadPath) {
-					zSocket.send('smartload "'+Settings.launch.load+'"');	// Note: this also changes cpu to tbblue
-					await zSocket.executeWhenQueueIsEmpty();
+					await zSocket.sendAwait('smartload "'+Settings.launch.load+'"');	// Note: this also changes cpu to tbblue
+					//await zSocket.executeWhenQueueIsEmpty();
 				}
 
 				// Load obj file(s) unit
@@ -195,14 +194,13 @@ export class ZesaruxRemote extends RemoteBase {
 						const start = Labels.getNumberFromString(loadObj.start);
 						if(isNaN(start))
 							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
-						zSocket.send('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
+						await zSocket.sendAwait('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
 					}
 				}
 
 				// Get the machine type, e.g. tbblue, zx48k etc.
 				// Is required to find the right slot/bank paging.
 				// Distinguished are only: 48k, 128k and tbblue.
-				// TODO: change send above to sendAwait.
 				const mtResp=await zSocket.sendAwait('get-current-machine') as string;
 				const machineType=mtResp.toLowerCase();
 				if (machineType.indexOf("tbblue")>=0) {
@@ -228,6 +226,7 @@ export class ZesaruxRemote extends RemoteBase {
 				Labels.convertLabelsTo(this.memoryModel);
 
 				// Set Program Counter to execAddress
+				let error;
 				if(Settings.launch.execAddress) {
 					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
 					if(isNaN(execAddress)) {
@@ -239,18 +238,16 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// Initialize more
-				this.initAfterLoad();
-
-				zSocket.executeWhenQueueIsEmpty().then(() => {
-					// Check for console.error
-					if(error) {
-						this.emit('error', error);
-					}
-					else {
-						// Send 'initialize' to Machine.
-						this.emit('initialized');
-					}
-				});
+				await this.initAfterLoad();
+				
+				// Check for console.error
+				if (error) {
+					this.emit('error', error);
+				}
+				else {
+					// Send 'initialize' to Machine.
+					this.emit('initialized');
+				}
 			}
 			catch(e) {
 				// Some error occurred
@@ -263,24 +260,24 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Does the initialization necessary after a load or state restore.
 	 */
-	protected initAfterLoad() {
+	protected async initAfterLoad(): Promise<void> {
 		// Initialize breakpoints
 		this.initBreakpoints();
 
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled) {
-			zSocket.send('cpu-code-coverage enabled yes', () => {}, true);	// suppress any error
-			zSocket.send('cpu-code-coverage clear');
+			await zSocket.sendAwait('cpu-code-coverage enabled yes', true);	// suppress any error
+			await zSocket.sendAwait('cpu-code-coverage clear');
 		}
 		else
-			zSocket.send('cpu-code-coverage enabled no', () => {}, true);	// suppress any error
+			await zSocket.sendAwait('cpu-code-coverage enabled no', true);	// suppress any error
 
 		// Reverse debugging.
 		CpuHistory.init();
 
 		// Enable extended stack
-		zSocket.send('extended-stack enabled no', () => {}, true);	// bug in ZEsarUX
-		zSocket.send('extended-stack enabled yes');
+		await zSocket.sendAwait('extended-stack enabled no', true);	// bug in ZEsarUX
+		await zSocket.sendAwait('extended-stack enabled yes');
 	}
 
 
@@ -1271,16 +1268,13 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<void>(resolve => {
 			// Load as zsf
 			filePath+=".zsf";
-			zSocket.send('snapshot-load '+filePath, data => {
+			zSocket.send('snapshot-load '+filePath, async data => {
 				// Initialize more
-				this.initAfterLoad();
-				// At last:
-				zSocket.executeWhenQueueIsEmpty().then(() => {
-					// Clear register cache
-					this.clearRegisters();
-					this.clearCallStack();
-					resolve();
-				});
+				await this.initAfterLoad();
+				// Clear register cache
+				this.clearRegisters();
+				this.clearCallStack();
+				resolve();
 			});
 		});
 	}
