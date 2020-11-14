@@ -1,4 +1,4 @@
-# zsim (Internal Z80 Simulator) - Periherals
+# zsim (Internal Z80 Simulator) - Peripherals
 
 Note: This document contains [plantuml](https://plantuml.com/de/sequence-diagram) message sequence charts. On github these are not rendered. Use e.g. vscode with a suitable plugin to view the file correctly.
 
@@ -262,7 +262,7 @@ The html source is extensible. You do so by defining the
 
 The UI code and your javascript business logic communicate asynchronously. This is very important to understand. I.e. any UI activity will be submitted to the business logic with a delay.
 And vice versa any output that is already present in the custom business logic and submitted to the UI is also presented with a lag.
-However the UI is updated frequently (every x t-states) and everytime the debugger stops. So you should rarely notice any delay.
+However the UI is updated frequently (every x t-states) and every time the debugger stops. So you should rarely notice any delay.
 
 ~~~puml
 hide footbox
@@ -441,46 +441,8 @@ If the program is halted you can add a few commands in the debug console:
 Your custom code (and the UI) is stimulated the same way as if the Z80 CPU would execute a port operation.
 
 
-# Design
-
-## ZX Keyboard
-
-TODO: Muss geändert werden: bei "IN A,(C) wird eine Anfrage an den ZSimulationView geschickt.
-Der verwaltet selbst die gesetzten/nicht gesetzten Keyboard Werte.
-Und vergleicht dann die Port Adresse.
-Sollte keine Keyboard-Adresse ausgewählt sein gibt er die weiter an den Custom Code.
-
-
-~~~puml
-hide footbox
-'title
-participant zsim
-participant ports as "zsim ports"
-participant view as "ZSimulationView"
-participant html as "HTML/javascript"
-
-note over html: Key pressed
-view <- html: webViewMessageReceived\n('keyChanged')
-view <- view: keyChanged(key, on)
-ports <- view: setPortValue(port, value)
-...
-note over zsim: in a,(c)
-zsim -> ports: getPort(port)
-zsim <- ports: value
-
-...
-ports -> view: portChanged(port, value)
-view -> view: sendMessageToWebView\n('portChanged', port, value)
-view -> html: postMessage
-~~~
-
-
 # Save states
 
-Will not work for the custom javascript code.
+Save states will not work for the custom javascript code.
 I.e. save/restore state will work but no state of the custom code is saved/restored.
 
-
-# Open
-
-- ZSimulationView needs to retain state. Is it done?

@@ -168,7 +168,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Writes the selected TBBlue control register.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Access
 	 * Acts according the value and tbblueRegisterSelectValue,
-	 * i.e. calls the mapped fucntion for the selected register.
+	 * i.e. calls the mapped function for the selected register.
 	 * At the moment only the memory slot functions are executed.
 	 * @param port The port.
 	 * @param value The tbblue register to select.
@@ -184,7 +184,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Reads the selected TBBlue control register.
 	 * See https://wiki.specnext.dev/TBBlue_Register_Access
 	 * Acts according the value and tbblueRegisterSelectValue,
-	 * i.e. calls the mapped fucntion for the selected register.
+	 * i.e. calls the mapped function for the selected register.
 	 * At the moment only the memory slot functions are executed.
 	 * @param port The port.
 	 */
@@ -1006,7 +1006,7 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/**
-	 * Executes a few zsim specific commands, e.g. for testing the cusom javascript code.
+	 * Executes a few zsim specific commands, e.g. for testing the custom javascript code.
 	 * @param cmd E.g. 'out 0x9000 0xFE', 'in 0x8000', 'tstates set 1000' or 'tstates add 1000'.
 	 * @returns A Promise with a return string, i.e. the decoded response.
 	 */
@@ -1198,7 +1198,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 	/**
 	 * Sends the command to write a memory bank.
-	 * This is e.g. used by loadBinSna. The bank number given here is alwas for a ZXNext memory model
+	 * This is e.g. used by loadBinSna. The bank number given here is always for a ZXNext memory model
 	 * and need to be scaled to other memory models.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
