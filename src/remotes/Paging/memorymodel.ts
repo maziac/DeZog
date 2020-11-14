@@ -1,14 +1,5 @@
-import {Utility} from "../../misc/utility";
 import {Z80Registers} from "../z80registers";
 
-
-/// The different memory models.
-export enum MemoryModelType {	// TODO: can this enum be removed?
-	RAM=0,		// 64K RAM (no banks, no long addreses)
-	ZX48K,		// Zx48MemoryModel (no banks, no long addreses)
-	ZX128K,		// Zx128MemoryModel
-	ZXNEXT		// ZxNextMemoryModel
-}
 
 
 /// Definition of one memory bank, i.e. memory slot/bank relationship.
@@ -33,26 +24,6 @@ export interface MemoryBank {
  * 0000-FFFF: RAM
  */
 export class MemoryModel {
-
-	/**
-	 * Factory method.
-	 */
-	public static createMemoryModel(type: MemoryModelType): MemoryModel {
-		switch (type) {
-			case MemoryModelType.RAM:
-				return new MemoryModel();
-			case MemoryModelType.ZX48K:
-				return new Zx48MemoryModel();
-			case MemoryModelType.ZX128K:
-				return new Zx128MemoryModel();
-			case MemoryModelType.ZXNEXT:
-				return new ZxNextMemoryModel();
-			default:
-				Utility.assert(false);
-				return undefined as any;
-		}
-	}
-
 
 	/**
 	 * Constructor.

@@ -86,7 +86,7 @@ suite('Utility', () => {
 				remoteType: 'zrcp'
 			};
 			Settings.Init(cfg, '');
-			Z80RegistersClass.createRegisters(0);
+			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			Z80Registers.setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
 		});
@@ -298,7 +298,7 @@ suite('Utility', () => {
 					remoteType: 'zrcp'
 				};
 				Settings.Init(cfg, '');
-				Z80RegistersClass.createRegisters(0);
+				Z80RegistersClass.createRegisters();
 				Z80Registers.decoder=new DecodeZesaruxRegisters(0);
 				RemoteFactory.createRemote(cfg.remoteType);
 			});
@@ -386,7 +386,7 @@ suite('Utility', () => {
 				remoteType: 'zsim'
 			};
 			Settings.Init(cfg, '');
-			Z80RegistersClass.createRegisters(0);
+			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			(Remote as any).configureMachine("RAM");
 		});

@@ -505,7 +505,7 @@ export class DebugSessionClass extends DebugSession {
 		Decoration.clearAllDecorations();
 
 		// Create the registers
-		Z80RegistersClass.createRegisters(8);	// TODO: need to add correct number here.
+		Z80RegistersClass.createRegisters();
 
 		// Make sure the history is cleared
 		CpuHistoryClass.setCpuHistory(undefined);
@@ -800,7 +800,7 @@ export class DebugSessionClass extends DebugSession {
 		//let slots;
 		if (StepHistory.isInStepBackMode()) {
 			// Get callstack
-			callStack=StepHistory.getCallStack(); // TODO: Gemeinsames getCallStack für stephistory und Remote.
+			callStack=StepHistory.getCallStack();
 		}
 		else {
 			// Get the current slots

@@ -66,10 +66,6 @@ export class Z80RegistersClass {
 	/// Is a simple string that needs to get parsed.
 	protected RegisterCache: RegisterData;
 
-	/// The array with the used slots (used for memory banks).
-	/// Is always defined but could be empty.
-	protected slots; // TODO: Remove, not used.
-
 
 	/// Holds the lambda function that converts an address to a long address with the given slots.
 	protected funcCreateLongAddress: (address: number, slots: number[]) => number;
@@ -80,10 +76,9 @@ export class Z80RegistersClass {
 
 	/**
 	 * Called during the launchRequest to create the singleton.
-     * @param slotCount The number of used slots (used for memory banks).
 	 */
-	public static createRegisters(slotCount: number) {
-		Z80Registers=new Z80RegistersClass(slotCount);
+	public static createRegisters() {
+		Z80Registers=new Z80RegistersClass();
 		// Init the registers
 		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
 	}
@@ -102,8 +97,7 @@ export class Z80RegistersClass {
 	 * Constructor.
      * @param slotCount The number of used slots (used for memory banks).
 	 */
-	constructor(slotCount: number) {
-		this.slots=new Array<number>(slotCount);
+	constructor() {
 	}
 
 

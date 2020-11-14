@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
 import { Labels, LabelsClass } from '../labels/labels';
-import {MemoryModel, MemoryModelType} from '../remotes/Paging/memorymodel';
+import {Zx128MemoryModel, ZxNextMemoryModel} from '../remotes/Paging/memorymodel';
 import {Z80RegistersClass} from '../remotes/z80registers';
 import {Settings} from '../settings';
 
@@ -433,8 +433,8 @@ suite('Labels', () => {
 
 				// Is used during conversion (Z80Registers.getBankFromAddress)
 				Settings.Init({} as any, '');
-				Z80RegistersClass.createRegisters(8);
-				const memMdl=MemoryModel.createMemoryModel(MemoryModelType.ZXNEXT);
+				Z80RegistersClass.createRegisters();
+				const memMdl=new ZxNextMemoryModel();
 				memMdl.init();
 				const targetBankSize=memMdl.getBankSize();
 				assert.equal(targetBankSize, 8192);
@@ -471,8 +471,8 @@ suite('Labels', () => {
 
 				// Is used during conversion (Z80Registers.getBankFromAddress)
 				Settings.Init({} as any, '');
-				Z80RegistersClass.createRegisters(4);
-				const memMdl=MemoryModel.createMemoryModel(MemoryModelType.ZX128K);
+				Z80RegistersClass.createRegisters();
+				const memMdl=new Zx128MemoryModel();
 				memMdl.init();
 				const targetBankSize=memMdl.getBankSize();
 				assert.equal(targetBankSize, 16384);

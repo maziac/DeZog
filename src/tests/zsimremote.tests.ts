@@ -31,7 +31,7 @@ suite('ZSimRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
-			Z80RegistersClass.createRegisters(0);
+			Z80RegistersClass.createRegisters();
 			zsim=new ZSimRemote();
 		});
 
@@ -76,7 +76,7 @@ suite('ZSimRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
-			Z80RegistersClass.createRegisters(0);
+			Z80RegistersClass.createRegisters();
 			zsim=new ZSimRemote();
 			// @ts-ignore: protected access
 			zsim.configureMachine(Settings.launch.zsim.memoryModel);
@@ -234,7 +234,7 @@ suite('ZSimRemote', () => {
 				}
 			};
 			Settings.Init(cfg, '');
-			Z80RegistersClass.createRegisters(0);
+			Z80RegistersClass.createRegisters();
 			zsim=new ZSimRemote();
 			// @ts-ignore
 			zsim.configureMachine(Settings.launch.zsim.memoryModel);

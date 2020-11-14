@@ -227,42 +227,6 @@ export class ZesaruxRemote extends RemoteBase {
 				// then the file <-> address association needs to be changed.
 				Labels.convertLabelsTo(this.memoryModel);
 
-				/*
-								// Get the machine type, e.g. tbblue, zx48k etc.
-				// Is required to find the right slot/bank paging.
-				// Distinguished are only: 48k, 128k and tbblue.
-				// TODO: change send above to sendAwait.
-				const mtResp=await zSocket.sendAwait('get-current-machine') as string;
-				const machineType=mtResp.toLowerCase();
-				let memModelType=MemoryModelType.DEFAULT;
-				if (machineType.indexOf("tbblue")>=0) {
-					memModelType=MemoryModelType.ZXNEXT;
-				}
-				else if (machineType.indexOf("128k")>=0) {
-					memModelType=MemoryModelType.ZX128K;
-				}
-
-				// Create decoder
-				switch (memModelType) {
-					case MemoryModelType.ZXNEXT:
-						// 8x8k banks
-						Z80Registers.decoder=new DecodeZesaruxRegisters(8);
-						break;
-					case MemoryModelType.ZX128K:
-						// 4x16k banks
-						Z80Registers.decoder=new DecodeZesaruxRegisters(4);
-						break;
-					default:
-						// For all others no paging is assumed.
-						Z80Registers.decoder=new DecodeZesaruxRegisters(0);
-						break;
-				}
-
-				// Create and init
-				this.memoryModel=MemoryModel.createMemoryModel(memModelType);
-				this.memoryModel.init();	// TODO: Maybe do init in the constructor
-				*/
-
 				// Set Program Counter to execAddress
 				if(Settings.launch.execAddress) {
 					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);

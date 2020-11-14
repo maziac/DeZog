@@ -358,7 +358,7 @@ export class LabelParserBase {
 			}
 
 			// Get array
-			const lineArray=this.lineArrays.get(entry.fileName)||[]; // TODO: || [] is superfluous
+			const lineArray=this.lineArrays.get(entry.fileName)!;
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
