@@ -1,5 +1,4 @@
-import {MemBuffer} from '../../misc/membuffer';
-import {Utility} from '../../misc/utility';
+
 
 /**
  * Represents the port behavior for a ZX80 CPU.
@@ -82,40 +81,6 @@ export class Z80Ports {
 
 
 	/**
-	 * Returns the size the serialized object would consume.
-	 */
-	public getSerializedSize(): number {
-		// Create a MemBuffer to calculate the size.
-		const memBuffer=new MemBuffer();
-		// Serialize object to obtain size
-		this.serialize(memBuffer);
-		// Get size
-		const size=memBuffer.getSize();
-		return size;
-	}
-
-
-	/**
-	 * Serializes the object.
-	 */
-	public serialize(memBuffer: MemBuffer) {
-		// Get ports
-		//memBuffer.writeArrayBuffer(this.ports);
-	}
-
-
-	/**
-	 * Deserializes the object.
-	 */
-	public deserialize(memBuffer: MemBuffer) {
-		// Read ports from buffer
-		//const buffer=memBuffer.readArrayBuffer();
-		//Utility.assert(buffer.length==this.ports.length);
-		//this.ports.set(buffer);
-	}
-
-
-	/**
 	 *  Read 1 byte. Used by the CPU when doing a 'in a,(c)'.
 	 */
 	public read(port: number): number {
@@ -153,24 +118,6 @@ export class Z80Ports {
 		if (this.genericOutPortFunc) {
 			this.genericOutPortFunc(port, data);
 		}
-	}
-
-
-	// Change the port value. Simulates HW access.
-	// Is e.g. called if a key is "pressed".
-	// TODO: Remove
-	public setPortValue(port: number, data: number) {
-		Utility.assert(port>=0&&port<0x10000);
-		//this.ports[port]=data;
-	}
-
-	// Get a port value.
-	// Is e.g. called if a key is "pressed".
-	// TODO: Remove
-	public getPortValue(port: number): number {
-		Utility.assert(port>=0&&port<0x10000);
-		//return this.ports[port];
-		return 0xFF;
 	}
 }
 

@@ -84,7 +84,6 @@ suite('Z80Cpu', () => {
 		let cpu;
 		let z80;
 		let mem;
-		let ports;
 
 
 		// Fills the memory with the given address/value pairs.
@@ -98,15 +97,6 @@ suite('Z80Cpu', () => {
 			}
 		}
 
-		// Fills the ports with the given address/value pairs.
-		function setPorts(portsArray: number[]) {
-			const count=portsArray.length;
-			for (let i=0; i<count; i+=2) {
-				const addr=portsArray[i];
-				const val=portsArray[i+1];
-				ports.setPortValue(addr, val);
-			}
-		}
 
 
 		suite('Z80N instructions', () => {
@@ -121,7 +111,6 @@ suite('Z80Cpu', () => {
 				cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports()) as any;
 				z80=cpu.z80;
 				mem=cpu.memory;
-				ports=cpu.ports;
 				// Make sure whole memory is RAM
 				for (let i=0; i<8; i++)
 					mem.setSlot(i, i);
@@ -460,7 +449,7 @@ suite('Z80Cpu', () => {
 					0x0000, 0xED,
 					0x0001, 0x90,
 					0xFFFF, 0xAA]);
-				cpu.ports.registerOutPortFunction(0xFFFF, (port, value) => {
+				cpu.ports.registerSpecificOutPortFunction(0xFFFF, (port, value) => {
 					if (port==outAddr)
 						outValue=value;
 				});
@@ -713,11 +702,11 @@ suite('Z80Cpu', () => {
 				const outRegAccess=0x253B;
 				let outSelectValue=0;
 				let outAccessValue=0;
-				cpu.ports.registerOutPortFunction(outRegSelect, (port, value) => {
+				cpu.ports.registerSpecificOutPortFunction(outRegSelect, (port, value) => {
 					if (port==outRegSelect)
 						outSelectValue=value;
 				});
-				cpu.ports.registerOutPortFunction(outRegAccess, (port, value) => {
+				cpu.ports.registerSpecificOutPortFunction(outRegAccess, (port, value) => {
 					if (port==outRegAccess)
 						outAccessValue=value;
 				});
@@ -742,11 +731,11 @@ suite('Z80Cpu', () => {
 				const outRegAccess=0x253B;
 				let outSelectValue=0;
 				let outAccessValue=0;
-				cpu.ports.registerOutPortFunction(outRegSelect, (port, value) => {
+				cpu.ports.registerSpecificOutPortFunction(outRegSelect, (port, value) => {
 					if (port==outRegSelect)
 						outSelectValue=value;
 				});
-				cpu.ports.registerOutPortFunction(outRegAccess, (port, value) => {
+				cpu.ports.registerSpecificOutPortFunction(outRegAccess, (port, value) => {
 					if (port==outRegAccess)
 						outAccessValue=value;
 				});
@@ -1059,7 +1048,11 @@ suite('Z80Cpu', () => {
 					0xFFFF, 0xED,
 					0x0000, 0x98]);
 				cpu.bc=0x1234;	// port address
-				setPorts([0x1234, 0xFF]);
+
+				cpu.ports.registerSpecificInPortFunction(0x1234, port => {
+					return 0xFF;
+				});
+
 				let tStates=z80.run_instruction();
 
 				let r=cpu.getAllRegisters();
@@ -1071,7 +1064,11 @@ suite('Z80Cpu', () => {
 					0xC00F, 0xED,
 					0xC010, 0x98]);
 				cpu.bc=0x1234;	// port address
-				setPorts([0x1234, 0b11100011]);
+
+				cpu.ports.registerSpecificInPortFunction(0x1234, port => {
+					return 0b11100011;
+				});
+
 				z80.run_instruction();
 				r=cpu.getAllRegisters();
 				assert.equal(0b1111_1000_1100_0000, r.pc);
