@@ -53,7 +53,7 @@ export class ZSimulationView extends BaseView {
 			await zxview.update();
 		});
 		simulator.customCode?.on('sendToCustomUi', (message: any) => {
-			LogCustomCode.log('UI: receivedFromCustomLogic: '+JSON.stringify(message));
+			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: '+JSON.stringify(message));
 			// Wrap message from custom code
 			const outerMsg={
 				command: 'receivedFromCustomLogic',
@@ -96,6 +96,9 @@ export class ZSimulationView extends BaseView {
 		// Initial html page.
 		this.setHtml();
 		//this.update(); Is done by the webview
+
+		// Inform custom code that UI is ready.
+		this.simulator.customCode.uiReady();
 	}
 
 
@@ -133,14 +136,21 @@ export class ZSimulationView extends BaseView {
 			case 'sendToCustomLogic':
 				// Unwrap message
 				const innerMsg=message.value;
-				LogCustomCode.log("UI: sendToCustomLogic: "+JSON.stringify(innerMsg));
+				LogCustomCode.log("UI: UIAPI.sendToCustomLogic: "+JSON.stringify(innerMsg));
 				this.sendToCustomLogic(innerMsg);
 				break;
-			case 'reloadCustomLogic':
+			case 'reloadCustomLogicAndUi':
 				// Reload the custom code
-				break;
-			case 'reloadCustomUi':
+				const jsPath=Settings.launch.zsim.customCode.jsPath;
+				if (jsPath) {
+					// Can throw an error
+					const jsCode=readFileSync(jsPath).toString();
+					this.simulator.customCode.reload(jsCode);
+				}
 				// Reload the custom UI code
+				this.setHtml();
+				// Inform custom code that UI is ready.
+				this.simulator.customCode.uiReady();
 				break;
 			case 'log':
 				// Log a message
@@ -148,8 +158,7 @@ export class ZSimulationView extends BaseView {
 				LogCustomCode.log("UI: "+text);
 				break;
 			case 'countOfProcessedMessages':
-				// For balancing the number of processed messages (since last time) is provided.
-				//LogCustomCode.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages+", processed="+message.value);
+				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages-=message.value;
 				//Utility.assert(this.countOfOutstandingMessages>=0);
 				if (this.countOfOutstandingMessages<0) // TODO: assert
@@ -851,25 +860,15 @@ width:70px;
 
 	<script>
 		// Reload the javascript business logic.
-		function reloadCustomLogic() {
+		function reloadCustomLogicAndUi() {
 			// Send request to vscode
 			vscode.postMessage({
-				command: 'reloadCustomLogic'
-			});
-		}
-
-		// Reload the custom UI.
-		function reloadCustomUi() {
-			// Send request to vscode
-			vscode.postMessage({
-				command: 'reloadCustomUi'
+				command: 'reloadCustomLogicAndUi'
 			});
 		}
 	</script>
 
-	<button onclick="reloadCustomLogic()">Reload Custom Logic (javascript)</button>
-	&nbsp;&nbsp;
-	<button onclick="reloadCustomUi()">Reload Custom UI (html)</button>
+	<button onclick="reloadCustomLogicAndUi()">Reload Custom Logic and UI</button>
 	&nbsp;&nbsp;
 	<button onclick="copyHtmlToClipboard()">Copy all HTML to clipboard</button>
 
@@ -884,6 +883,7 @@ width:70px;
 </html>
 `;
 
+		this.vscodePanel.webview.html='';
 		this.vscodePanel.webview.html=html;
 	}
 

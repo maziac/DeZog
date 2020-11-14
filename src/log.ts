@@ -184,6 +184,8 @@ export class Log {
 					this.cache.shift();
 					this.cacheLogsLost=true;
 				}
+				if (text==undefined)
+					console.log("");
 				this.cache.push(text);
 				// Set timeout to print cached values
 				if (this.cache.length==1) {
@@ -229,7 +231,7 @@ export class Log {
 	 * @param length The cache length. If 0 the cache is disabled.
 	 */
 	public setCacheLength(length: number) {
-		this.cache=(length > 0) ? new Array<string>(length) : undefined as any;
+		this.cache=(length > 0) ? new Array<string>() : undefined as any;
 		this.cacheLength=length;
 		this.cacheLogsLost=false;
 	}

@@ -96,6 +96,16 @@ class CustomCodeAPI extends EventEmitter {
 
 
 	/**
+	 * This is called once at the start as soon as the UI is ready to
+	 * sent and receive message.
+	 * You can override this to e.g. sent first initialized values to the UI.
+	 * You can also leave this empty and set the values initially from the UI code.
+	 * Note: The custom logic is instantiated before the UI.
+	 */
+	public uiReady: () => void=() => {};
+
+
+	/**
 	 * Writes a log.
 	 * @param ...args Any arguments.
 	 */
@@ -139,10 +149,20 @@ export class CustomCode extends EventEmitter {
 	protected api: CustomCodeAPI;
 
 
+	// Constructor.
 	constructor(jsCode: string) {
 		super();
 		// Create an API object
 		this.api=new CustomCodeAPI(this);
+		// Load for the first time
+		this.reload(jsCode);
+	}
+
+
+	/**
+	 * Reloads the custom javascript code.
+	 */
+	public reload(jsCode: string) {
 		// Create new empty context
 		this.context={tmpAPI: this.api};
 
@@ -169,6 +189,20 @@ API.log('-------------------------------------\\n');`,
 	}
 
 
+
+	/**
+	 * This is called once at the start as soon as the UI is ready to
+	 * sent and receive message.
+	 * You can override this to e.g. sent first initialized values to the UI.
+	 * You can also leave this empty and set the values initially from the UI code.
+	 * Note: The custom logic is instantiated before the UI.
+	 */
+	public uiReady() {
+		LogCustomCode.log('API.uiReady() called.');
+		this.api.uiReady();
+	}
+
+
 	/**
 	 * Reads from a port.
 	 * Calls the custom js code.
@@ -178,7 +212,7 @@ API.log('-------------------------------------\\n');`,
 	 */
 	public readPort(port: number): number|undefined {
 		this.logTstates();
-		LogCustomCode.log('Reading port '+Utility.getHexString(port,4)+'h');
+		LogCustomCode.log('API.readPort('+Utility.getHexString(port,4)+'h)');
 		// Catch probably errors.
 		let value;
 		try {
@@ -200,7 +234,7 @@ API.log('-------------------------------------\\n');`,
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogCustomCode.log('Write '+Utility.getHexString(value, 4)+'h to port '+Utility.getHexString(port, 2)+'h');
+		LogCustomCode.log('API.writePort('+Utility.getHexString(value, 4)+'h , '+Utility.getHexString(port, 2)+'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
@@ -219,7 +253,7 @@ API.log('-------------------------------------\\n');`,
 	 * command.
 	 */
 	public receivedFromCustomUi(message: any) {
-		LogCustomCode.log('receivedFromCustomUi: '+JSON.stringify(message));
+		LogCustomCode.log('API.receivedFromCustomUi: '+JSON.stringify(message));
 		if (this.api.receivedFromCustomUi==undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
