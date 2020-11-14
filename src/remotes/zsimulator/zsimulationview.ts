@@ -110,7 +110,7 @@ export class ZSimulationView extends BaseView {
 		//this.update(); Is done by the webview
 
 		// Inform custom code that UI is ready.
-		this.simulator.customCode.uiReady();
+		this.simulator.customCode?.uiReady();
 	}
 
 
@@ -153,7 +153,7 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'reloadCustomLogicAndUi':
 				// Reload the custom code
-				const jsPath=Settings.launch.zsim.customCode.jsPath;
+				const jsPath=Settings.launch.zsim.customCode?.jsPath;
 				if (jsPath) {
 					// Can throw an error
 					const jsCode=readFileSync(jsPath).toString();
@@ -162,7 +162,7 @@ export class ZSimulationView extends BaseView {
 				// Reload the custom UI code
 				this.setHtml();
 				// Inform custom code that UI is ready.
-				this.simulator.customCode.uiReady();
+				this.simulator.customCode?.uiReady();
 				break;
 			case 'log':
 				// Log a message

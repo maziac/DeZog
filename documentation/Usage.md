@@ -405,24 +405,59 @@ Example launch.json configuration:
     "remoteType": "zsim",
     "zsim": {
         "Z80N": true,
-    	"loadZxRom": true,
         "zxKeyboard": true,
 	    "ulaScreen": true,
-	    "visualMemory": "ZXNEXT",
-	    "memoryPagingControl": true,
-        "tbblueMemoryManagementSlots": true,
+	    "visualMemory": true,
         "cpuLoadInterruptRange": 1,
-        "vsyncInterrupt": true
+        "vsyncInterrupt": true,
+        "memoryModel": "RAM",
+        "customCode": {
+            "debug": true,
+            "jsPath": "myPeripheral.js",
+            "uiPath": "myUi.html",
+            "timeStep": 1000
+        }
     }
 ~~~
 
-With all options disabled zsim behaves just as a Z80 CPU with 64k RAM.
-The default configuration enables: loadZxRom, zxKeyboard, visualMemory, ulaScreen and cpuLoadInterruptRange. So in the default configuration this basically simulates a ZX 48K Spectrum.
-For ZX 128K support you should add the memoryPagingControl option.
+With all options disabled zsim behaves just as a Z80 CPU with 64k RAM without any ZX Spectrum features.
+
+If you need to define a ZX48K machine you could use
+~~~json
+    "zsim": {
+        "zxKeyboard": true,
+	    "ulaScreen": true,
+	    "visualMemory": true,
+        "vsyncInterrupt": true,
+        "memoryModel": "ZX48K"
+    }
+~~~
+
+For a ZX128K:
+~~~json
+    "zsim": {
+        "zxKeyboard": true,
+	    "ulaScreen": true,
+	    "visualMemory": true,
+        "vsyncInterrupt": true,
+        "memoryModel": "ZX128K"
+    }
+~~~
+
+For a ZX Next like system (note: this simulates only the Next's memory paging):
+~~~json
+    "zsim": {
+        "Z80N": true,
+        "zxKeyboard": true,
+	    "ulaScreen": true,
+	    "visualMemory": true,
+        "vsyncInterrupt": true,
+        "memoryModel": "ZXNEXT"
+    }
+~~~
 
 Here is the explanations of all the options:
 - "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
-- "loadZxRom": true/false. Defaults to true. Loads the 48K Spectrum ROM (or the 128K Spectrum ROM) at start. Otherwise the memory 0-0x3FFF is empty RAM.
 - "zxKeyboard": true/false. Defaults to true. If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
 - "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
@@ -437,7 +472,7 @@ Here is the explanations of all the options:
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
-
+- "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](zsimPeripherals.md) for more details.
 
 
 ### ZEsarUX

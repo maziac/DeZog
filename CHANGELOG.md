@@ -1,8 +1,21 @@
 # Changelog
 
 # 1.6.0
-- "zsim": changed settings parameters:
-	- Removed: "visualMemory", "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
+- "zsim": Support for custom code added. E.g. it is possible now to add custom peripheral code to implement ports. You can now write code to support peripherals within zsim.
+  - Support for in-ports, out-ports and to generate an interrupt.
+  - Support to create a custom UI within the ZSimulationView.
+  - See [documentation/zsimPeripherals.md](documentation/zsimPeripherals.md) for more details.
+	- New commands
+		- out: Output to port.
+		- in: input from port.
+		- tstates add/set: change t-states.
+	- launch.json: Added parameters for custom code:
+		- customCode.debug: Enables a few debug buttons in ZSimulationView
+		- customCode.jsPath: Path to the custom javascript file.
+		- customCode.uiPath: Path to the custom html UI.
+		- customCode.timeStep: The t-state interval fro reporting.
+- "zsim": changed parameters:
+	- Removed: "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
 	- Added: "memoryModel": "RAM", "ZX48K", "ZX128K", "ZXNEXT"
 	- Changed: "visualMemory" to boolean.
 - For Kris: Changed naming of "ASSERT" to "ASSERTION" to avoid conflicts with commented sjasmplus ASSERTs. (Also the command was renamed from "-ASSERT" to "-ASSERTION".)
