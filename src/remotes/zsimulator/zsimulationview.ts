@@ -172,9 +172,7 @@ export class ZSimulationView extends BaseView {
 			case 'countOfProcessedMessages':
 				// For balancing the number of processed messages (since last time) is provided.;
 				this.countOfOutstandingMessages-=message.value;
-				//Utility.assert(this.countOfOutstandingMessages>=0);
-				if (this.countOfOutstandingMessages<0) // TODO: assert
-					console.log("this.countOfOutstandingMessages="+this.countOfOutstandingMessages);
+				Utility.assert(this.countOfOutstandingMessages>=0);
 				// For balancing: Remove request for procesing time
 				if (this.countOfOutstandingMessages<=ZSimulationView.MESSAGE_LOW_WATERMARK) {
 					this.simulator.setTimeoutRequest(false);
@@ -391,41 +389,6 @@ export class ZSimulationView extends BaseView {
 				slotNames=banks.map(bank => bank.name);
 				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
 			}
-			/* TODO: Remove
-			if (Settings.launch.zsim.visualMemory=="ZX128") {
-				slots=this.simulator.memory.getSlots();
-				// ZX128 has 16k slots/banks
-				slotNames=new Array<string>();
-				for (let i=0; i<8; i+=2) {
-					const bankA=Math.floor(slots[i]/2);
-					const bankB=Math.floor(slots[i+1]/2);
-					let name;
-					if (bankA==127||bankB==127) {
-						// Use name "ROM"
-						name="ROM";
-						if (bankA<127)
-							name+="/"+bankA;	// pathologic case.
-						if (bankB<127)
-							name+="/"+bankB;	// pathologic case.
-					}
-					else {
-						// Use name "BANKx"
-						name="BANK"+bankB
-						if (bankA!=bankB)
-							name+="/"+bankB;	// This only happens if e.g. ZXNext 8k slots banks are used.
-					}
-					slotNames.push(name);
-				}
-			}
-			else if (Settings.launch.zsim.visualMemory=="ZXNEXT") {
-				slots=this.simulator.memory.getSlots();
-				slotNames=slots.map(bank => (bank>=254)? "ROM":"BANK"+bank);
-			}
-			if (Settings.launch.zsim.visualMemory!="none") {
-				// The same for all
-				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
-			}
-			*/
 
 			if (Settings.launch.zsim.ulaScreen)
 				screenImg=this.createBase64String(this.simulator.ulaScreen.getUlaScreen());

@@ -427,7 +427,8 @@ export class Z80Cpu {
 			r.i, r.r, r.im,
 			slots
 		);
-		return new Uint16Array(regData); // TODO: return regdata. Is already new.
+		return regData;
+		//return new Uint16Array(regData); 
 	}
 
 

@@ -746,29 +746,6 @@ export class ZSimRemote extends DzrpRemote {
 				return;
 			}
 		}
-
-		/*
-
-			// TODO: must be done differently: Currently the call stack increases to infinite.		setTimeout(async () => {
-			// Check if meanwhile a manual break happened
-			if (!this.cpuRunning) {
-				// Manual break: Create reason string
-				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
-				breakAddress=0;
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
-
-				// Send Notification
-				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-				Utility.assert(this.continueResolve);
-				if (this.continueResolve)
-					this.continueResolve({breakNumber, breakAddress, breakReasonString});
-				return;
-			}
-
-			// Otherwise continue
-			this.z80CpuContinue(bp1, bp2);
-		}, 100); //10);
-		*/
 	}
 
 
