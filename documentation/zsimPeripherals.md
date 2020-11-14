@@ -97,6 +97,17 @@ API.readPort(port: number): number|undefined;
  */
 API.writePort(port: number, value: number);
 
+
+/**
+ * This is called once at the start as soon as the UI is ready to
+ * sent and receive message.
+ * You can override this to e.g. sent first initialized values to the UI.
+ * You can also leave this empty and set the values initially from the UI code.
+ * Note: The custom logic is instantiated before the UI.
+ */
+API.uiReady();
+
+
 /**
  * Writes a log.
  * @param ...args Any arguments.
@@ -230,6 +241,7 @@ API.log(...args)
 Notes:
 - All logs are cached for performance reasons. If too many logs are being made then logged lines are being trashed. If that happened you see a ```[...]```in the logs.
 - If for some time no messages are logged then this is indicated by ```...```(not to be confused with ```[...]```).
+- Logs from the custom logic are without prefix. All logs from the UI are prefixed with ``UI: ```.
 
 
 
@@ -312,10 +324,13 @@ zsim -> js: API.readPort(0x9000)
 zsim <- js: 0x02
 ~~~
 The asynchronicity can be seen very clearly: When the user presses a button then the info is sent to the business logic but needs to be stored as it cannot immediately been processed.
-Later, when the Z80 CPU executes an IN instruction it reads from teh port and the value can be passed to the CPU.
+Later, when the Z80 CPU executes an IN instruction it reads from the port and the value can be passed to the CPU.
 
 Notes:
 - For performance reasons you should send a message to the UI only if necessary. E.g. you should not send a message on every port-write. Instead you should only send a message if the value really changed.
+- The custom logic is instantiated before the UI.
+- The ```API.uiReady()``` in the custom logic is called after the UI has been initialized.
+
 
 ## UIAPI
 
