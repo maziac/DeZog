@@ -415,6 +415,17 @@ Examples:
 You can get the value (e.g. in 'my_func(this)' with 'this.bytevalue'.
 
 
+# Debug Commands
+
+If the program is halted you can add a few commands in the debug console:
+  - ```-e out 0x9000,0xFE```
+  - ```-e in 0x8000```
+  - ```-e tstates set 1000```: set t-states to 1000, then create a tick event.
+  - ```-e tstates add 1000```: add 1000 to t-states, then create a tick event.
+
+Your custom code (and the UI) is stimulated the same way as if the Z80 CPU would execute a port operation.
+
+
 # Design
 
 ## ZX Keyboard

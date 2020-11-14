@@ -1004,6 +1004,84 @@ export class ZSimRemote extends DzrpRemote {
 	}
 
 
+
+	/**
+	 * Executes a few zsim specific commands, e.g. for testing the cusom javascript code.
+	 * @param cmd E.g. 'out 0x9000 0xFE', 'in 0x8000', 'tstates set 1000' or 'tstates add 1000'.
+	 * @returns A Promise with a return string, i.e. the decoded response.
+	 */
+	public async dbgExec(cmd: string): Promise<string> {
+		try {
+			let response='';
+			const tokens=cmd.split(' ');
+			const cmd_name=tokens.shift();
+			if (cmd_name=="help") {
+				// Add this to the help text
+				response=`zsim specific commands:
+out port value: Output 'value' to 'port'. E.g. "zsim out 0x9000 0xFE"
+in port: Print input value from 'port'. E.g. "zsim in 0x8000"
+tstates set value: set t-states to 'value', then create a tick event. E.g. "zsim tstastes set 1000"
+tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim tstastes add 1000"
+`;
+			}
+			else if (cmd_name=="out") {
+				// Check count of arguments
+				if (tokens.length!=2) {
+					throw new Error("Wrong number of arguments: port and value expected.");
+				}
+				// Get port and value
+				const port=Utility.parseValue(tokens[0]);
+				const value=Utility.parseValue(tokens[1]);
+				// Set port
+				this.z80Cpu.ports.write(port, value);
+				// Return
+				response="Wrote "+Utility.getHexString(value, 2)+"h to port "+Utility.getHexString(port, 4)+"h";
+				return response;
+			}
+			else if (cmd_name=="in") {
+				// Check count of arguments
+				if (tokens.length!=1) {
+					throw new Error("Wrong number of arguments: port expected.");
+				}
+				// Get port and value
+				const port=Utility.parseValue(tokens[0]);
+				// Get port
+				const value=this.z80Cpu.ports.read(port);
+				// Return
+				response="Read port "+Utility.getHexString(port, 4)+"h: "+Utility.getHexString(value, 2)+"h";
+				return response;
+			}
+			else if (cmd_name=="tstates") {
+				// Check count of arguments
+				if (tokens.length!=2) {
+					throw new Error("Wrong number of arguments.");
+				}
+				const subcmd=tokens[0];
+				const value=Utility.parseValue(tokens[1]);
+				if (subcmd=="set")
+					this.passedTstates=value;
+				else if (subcmd=="add")
+					this.passedTstates+=value;
+				else
+					throw Error("Expected 'set' or 'add' but got '"+subcmd+"'.");
+				this.customCode.setTstates(this.passedTstates);
+				this.customCode.tick();
+				// Return
+				response="T-states set to "+this.passedTstates+".";
+				return response;
+			}
+
+			// Otherwise pass to super class
+			response+=super.dbgExec(cmd);
+			return response;
+		}
+		catch (e) {
+			// Rethrow
+			throw e;
+		}
+	}
+
+
 	//------- Send Commands -------
 
 	/**
