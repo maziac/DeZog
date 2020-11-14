@@ -1225,8 +1225,8 @@ __Breakpoints in interrupts:__
 
 You can also set breakpoints in interrupts.
 
-But when you also set the launch.json option "skipInterrupts" to true you will feel that the behaviour is somewhat strange:
-If the breakpoint is hit the program will stop, but because of "skipInterrupts" it will stop after the interrupt finished.
+But when you also set the launch.json option "skipInterrupt" to true you will feel that the behaviour is somewhat strange for ZEsarUX:
+If the breakpoint is hit the program will stop, but because of "skipInterrupt" it will stop after the interrupt finished.
 
 Although the behavior is correct it looks like the program is randomly stopping.
 
