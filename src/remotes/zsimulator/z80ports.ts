@@ -73,7 +73,7 @@ export class Z80Ports {
 	 * @param port The port address
 	 * @param func The function to execute if the port is read.
 	 */
-	public registerspecificInPortFunction(port: number, func: ((port: number) => number)|undefined) {
+	public registerSpecificInPortFunction(port: number, func: ((port: number) => number)|undefined) {
 		if (func)
 			this.inPortMap.set(port, func);
 		else

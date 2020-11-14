@@ -369,9 +369,9 @@ export class Settings {
 		if (!Settings.launch.zsim)
 			Settings.launch.zsim={} as ZSimType;
 		if (Settings.launch.zsim.zxKeyboard==undefined)
-			Settings.launch.zsim.zxKeyboard=true;
+			Settings.launch.zsim.zxKeyboard=false;
 		if (Settings.launch.zsim.ulaScreen==undefined)
-			Settings.launch.zsim.ulaScreen=true;
+			Settings.launch.zsim.ulaScreen=false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange==undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange=1;
 		if (Settings.launch.zsim.visualMemory==undefined)

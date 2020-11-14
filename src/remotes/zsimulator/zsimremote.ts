@@ -308,7 +308,7 @@ export class ZSimRemote extends DzrpRemote {
 					// Connect to port
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
-					this.ports.registerspecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
+					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 					// Check if ULA enabled
 					if (Settings.launch.zsim.ulaScreen) {
 						this.ulaScreen=new UlaScreen(this.memory);

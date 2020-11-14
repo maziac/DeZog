@@ -20,6 +20,9 @@ export class ZSimulationView extends BaseView {
 	// Holds the gif image a string.
 	protected screenGifString;
 
+	// A map to hold the values for the keyboard ports.
+	protected zxKeyboardPorts: Map<number, number>;	// Port <-> value
+
 	/// We listen for 'update' on this emitter to update the html.
 	protected parent: EventEmitter;
 
@@ -74,17 +77,26 @@ export class ZSimulationView extends BaseView {
 		this.simulator=simulator;
 		this.countOfOutstandingMessages=0;
 
-		// Set all ports
-		// TODO: Make dependend of zx keyboard
-		const ports=simulator.ports;
-		ports.setPortValue(0xFEFE, 0xFF);
-		ports.setPortValue(0xFDFE, 0xFF);
-		ports.setPortValue(0xFBFE, 0xFF);
-		ports.setPortValue(0xF7FE, 0xFF);
-		ports.setPortValue(0xEFFE, 0xFF);
-		ports.setPortValue(0xDFFE, 0xFF);
-		ports.setPortValue(0xBFFE, 0xFF);
-		ports.setPortValue(0x7FFE, 0xFF);
+		// ZX Keyboard?
+		if (Settings.launch.zsim.zxKeyboard) {
+			// Prepare all used ports
+			this.zxKeyboardPorts=new Map<number, number>();
+			this.zxKeyboardPorts.set(0xFEFE, 0xFF);
+			this.zxKeyboardPorts.set(0xFDFE, 0xFF);
+			this.zxKeyboardPorts.set(0xFBFE, 0xFF);
+			this.zxKeyboardPorts.set(0xF7FE, 0xFF);
+			this.zxKeyboardPorts.set(0xEFFE, 0xFF);
+			this.zxKeyboardPorts.set(0xDFFE, 0xFF);
+			this.zxKeyboardPorts.set(0xBFFE, 0xFF);
+			this.zxKeyboardPorts.set(0x7FFE, 0xFF);
+			// Set call backs
+			for (const [port,] of this.zxKeyboardPorts) {
+				this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
+					const value=this.zxKeyboardPorts.get(port)!;
+					return value;
+				});
+			}
+		}
 
 		// Add title
 		Utility.assert(this.vscodePanel);
@@ -314,7 +326,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyN':
 				bit=0b01000;
 				break;
-			case 'key_Keyv':
+			case 'key_KeyV':
 			case 'key_KeyG':
 			case 'key_KeyT':
 			case 'key_Digit5':
@@ -330,13 +342,15 @@ export class ZSimulationView extends BaseView {
 		Utility.assert(bit);
 
 		// Get port value
-		let value=this.simulator.ports.getPortValue(port);
+		Utility.assert(this.zxKeyboardPorts);
+		let value=this.zxKeyboardPorts.get(port)!;
+		Utility.assert(value!=undefined);
 		if (on)
 			value&=~bit;
 		else
 			value|=bit;
 		// And set
-		this.simulator.ports.setPortValue(port, value);
+		this.zxKeyboardPorts.set(port, value);
 	}
 
 
@@ -750,7 +764,7 @@ width:70px;
 		}
 
 
-		if (Settings.launch.zsim.zxKeyboard) {
+		if (this.zxKeyboardPorts) {
 			html+=
 `<!-- Keyboard -->
 <details open="true">
