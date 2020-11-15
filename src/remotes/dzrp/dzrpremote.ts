@@ -343,11 +343,11 @@ export class DzrpRemote extends RemoteBase {
 			for (let i=0; i<palette.length; i++)
 				response+=Utility.getHexString(palette[i], 3)+" ";
 		}
-		// TODO: Add missing ones: CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM
 		else if (cmd_name=="cmd_get_sprites_clip_window_and_control") {
 			const clip=await this.sendDzrpCmdGetSpritesClipWindow();
 			response+="xl="+clip.xl+", xr="+clip.xr+", yt="+clip.yt+", yb="+clip.yb+", control="+Utility.getBitsString(clip.control, 8);
 		}
+		// TODO: Add missing ones: CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM
 		else if (cmd_name=="cmd_set_breakpoints") {
 			// Add long address handling
 		}
@@ -1362,8 +1362,8 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The 64k address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The 64k address of breakpoint 2 or undefined if not used.
+	 * @param bp1Address The 64k address (not long address) of breakpoint 1 or undefined if not used.
+	 * @param bp2Address The 64k address (not long address) of breakpoint 2 or undefined if not used.
 	 */
 	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		Utility.assert(false);

@@ -127,7 +127,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * @param index The index to retrieve. Starts at 0.
 	 * @returns A string with the registers.
 	 */
-	// TODO: Maybe change to use index AND length to obtain several items at once.
+	// REMARK: Maybe change to use index AND length to obtain several items at once.
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		Utility.assert(false);
 		return undefined;

@@ -567,7 +567,7 @@ export class DecorationClass {
 	 * @param addr The address to convert.
 	 */
 	protected getFileAndLineForAddress(addr: number): SourceFileEntry {
-		const location=Labels.getFileAndLineForAddress(addr);// TODO: Does not work with sld
+		const location=Labels.getFileAndLineForAddress(addr);
 		if (location.fileName.length==0) {
 			// Try disasm file
 			const lineNr=Disassembly.getLineForAddress(addr);

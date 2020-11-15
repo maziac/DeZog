@@ -1133,7 +1133,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc
-		let file=Labels.getFileAndLineForAddress(address);// TODO: Does not work with sld
+		let file=Labels.getFileAndLineForAddress(address);
 		if (!file.fileName) {
 			// Search also the disassembled file
 			const lineNr=Disassembly.getLineForAddress(address);
@@ -1448,6 +1448,8 @@ export class RemoteBase extends EventEmitter {
 	 * The first always points directly after the address or for unconditional jumps/calls
 	 * it points to the jump address.
 	 * The 2nd of these bp addresses can be undefined.
+	 * Note: the breakpoints returned here are always 64k addresses,
+	 * i.e. no long addresses.
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there

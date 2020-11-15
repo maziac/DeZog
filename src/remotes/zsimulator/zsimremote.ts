@@ -624,9 +624,9 @@ export class ZSimRemote extends DzrpRemote {
 						break;
 					}
 
-					// Check if given breakpoints are hit
+					// Check if given breakpoints are hit (64k address compare, not long addresses)
 					const pc=this.z80Cpu.pc;
-					if (pc==bp1||pc==bp2) {	// TODO: muss hier nicht auf PCLong getestet werden?
+					if (pc==bp1||pc==bp2) {
 						breakAddress=pc;
 						break;
 					}
