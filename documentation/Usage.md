@@ -152,7 +152,7 @@ DeZog supports the list file formats of both of them and additionally the sjasmp
 
 #### Background info: The list file
 
-The most important configuration to do is the *.list file. The list file contains
+The most important configuration to do is the *.list file (or *.sld file). The list file contains
 all the information required by DeZog. While reading this file DeZog
 - associates addresses with line numbers
 - associates addresses with files
@@ -168,23 +168,25 @@ Now depending on the value of 'srcDirs'
 
 **sjasmplus configuration:**
 
+Note: sjasmplus can generate a list file but since DeZog version 2.0.0 DeZog does not use the sjasmplus list file anymore but the SLD file. You need sjasmplus > 1.17.0 for DeZog to parse the SLD file correctly.
+
+SLD stands for "Source Level Debugging" and is an format with similar information as the list file.
+List files are meant to be read by humans whereas the SLD file format is optimized for reading by a machine, i.e. DeZog, which makes parsing much easier.
+Apart from that the list file is lacking information about 'long addresses'. I.e. addresses that not only include the address it self (0-0xFFFF) but also information about the banking.
+With this information DeZog is able to correctly associate files that are assembled for the same address but for different memory banks. It is also possible to place breakpoints correctly as not only the 64k address of a breakpoint is checked but also it's page.
+
+
 E.g.
 ~~~json
 "sjasmplus": [{
-    "path": "z80-sample-program.list",
-    "srcDirs": [""],
+    "path": "z80-sample-program.sld",
     "excludefiles": [ "some_folder/*" ]
     }]
 ~~~
 
 
-- path: the path to the list file (relative to the 'rootFolder').
-- srcDirs (default=[""]):
-    - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
-    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in subfolders just use '[""]' here or omit the parameter to use the default.
-    - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
+- path: the path to the SLD file (relative to the 'rootFolder').
 - excludeFiles (default=[]): an array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here. In the example above all files from "some_folder" are excluded.
-- filter: This is a deprecated parameter. It was meant to read list files from assemblers other than the implemented ones. It contains a string with a regular expression substitution to pre-filter the file before reading. E.g. "/^[0-9]+\\s+//": This is a sed-like regular expression that removes the first number from all lines. Default: undefined. The field will be removed in future versions and is here only for compatibility. If you have need for other supported assemblers please provide a full implementation. Please read the [AddingNewAssemblers.md](../design/AddingNewAssemblers.md) doc.
 
 Note: when using sjasmplus use the "--lst=filename.list" option to generate the list file. Additionally you can use "--lstlab" which lets sjasmplus add a labels section after the listing. This labels section will be evaluated by DeZog as well. It is not necessary but helps DeZog to parse more complicated labels like alias labels etc.
 

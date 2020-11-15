@@ -1,6 +1,7 @@
 # Changelog
 
 # 1.6.0
+- launch.json: deprecated option "filter" has been removed.
 - "zsim": Support for custom code added. E.g. it is possible now to add custom peripheral code to implement ports. You can now write code to support peripherals within zsim.
   - Support for in-ports, out-ports and to generate an interrupt.
   - Support to create a custom UI within the ZSimulationView.
