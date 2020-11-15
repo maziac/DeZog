@@ -89,11 +89,29 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 ## History
 
-### 1.7.0 (planned for DeZog 1.6)
+### 2.0.0 (planned for DeZog 2.0.0)
 - TODO: New command (or extend CMD_INIT) to get the machine type and/or slot/bank config (ZX48, ZX128, ZXNEXT)
 - TODO: Return the slots on each getRegisters command.
 - TODO: Notification: Return the long break address (or the slots).
 - TODO: Extend CMD_WRITE_BANK to write 16K banks.
+- TODO: set_breakpoints/restore_mem:
+Ich muss bei set_Breakpoints auch die bank mit zurückgeben und bei restore_mem die bank angeben, damit nicht in die falsche Bank "restored" wird und damit Speicher falsch überschrieben wird.
+
+Changed:
+- CMD_INIT: Added memory model.
+- CMD_GET_REGISTERS: Added slot/bank information.
+- NTF_PAUSE: Added long address.
+- CMD_ADD_BREAKPOINT: Added long address.
+- CMD_REMOVE_BREAKPOINT: ???
+- CMD_SET_BREAKPOINTS: Changed to send additionally the bank info for all breakpoints.
+- CMD_RESTORE_MEM: Changed to send additionally the bank info for all restored locations.
+
+Search for "| *"
+
+Open:
+- CMD_ADD_BREAKPOINT: Die returnte BP ID könnte ein Problem sein: nur 64k gross, 2 BPs könnten gleichen Wert returnen.
+- Will ich für Watchpoints long addresses? Wird nur in zsim verwendet, schauen wie es da gemacht wird.
+
 
 
 ### 1.6.0
@@ -154,6 +172,15 @@ The numbering for notifications starts at 255 (counting down).
 So in total there are 255 possible commands and notifications.
 
 
+# Long addresses
+
+With DZRP 2.0.0 (and Dezog 2.0.0) 'long addresses' have been introduced. These are addresses that not only carry the 64k address but additionally 1 byte for the memory bank information.
+
+The stored bank info is the bank number plus 1.
+This is because of the special meaning of ```bank==0``` in DeZog.
+```bank==0``` in DeZog means that not a long address is used but a "normal" 64k address. Since DeZog can work in both modes it is necessary to distinguish those also in the DZRP.
+
+
 # Commands and Responses
 
 ## CMD_INIT
@@ -178,7 +205,8 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
-| 9     | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
+|*9     | 1    | 0-255 | Memory Model: 1 = ZX48K, 2 = ZX128K, 3 = ZXNEXT. |
+| 10    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
 
 
 ## CMD_CLOSE
@@ -214,9 +242,9 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 29    | Length     |
-| 4     | 1    | 1-255 | Same seq no     |
-| 5     | 2    | PC   | All little endian    |
+| 0     | 4    | *30+Nslots | Length |
+| 4     | 1    | 1-255 | Same seq no |
+| 5     | 2    | PC   | All little endian |
 | 7     | 2    | SP   |   |
 | 9     | 2    | AF   |   |
 | 11    | 2    | BC   |   |
@@ -232,6 +260,10 @@ Response:
 | 39    | 1    | I    |   |
 | 30    | 1    | IM   |   |
 | 31    | 1    | reserved |   |
+| *32   | 1    | Nslots | Number of slots |
+| *33   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
+| ...   | ...  | ...  | " |
+| *32+Nslots | slot[Nslots-1] | 0-255 | " |
 
 
 ## CMD_SET_REGISTER
@@ -258,13 +290,25 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 8195  | Length     |
+| 0     | 4    | N+8   | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 5     | CMD_WRITE_BANK |
+| 6     | 1    | 0-255 | Bank number |
+| 7     | 1    | [0]   | First byte of memory block |
+| ..    | ..   | ...   | ... |
+| *N+7   | 1    | [N-1] | Last byte of memory block |
+
+
+Example for ZXNext with 8K memory banks:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 8200  | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 5     | CMD_WRITE_BANK |
 | 6     | 1    | 0-223 | 8k bank number |
 | 7     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
-| 8194 | 1    | [0x1FFF] | Last byte of memory block |
+| 8199  | 1    | [0x1FFF] | Last byte of memory block |
 
 
 Response:
@@ -272,9 +316,8 @@ Response:
 |-------|------|-------|------------|
 | 0     | 4    | 1     | Length     |
 | 4     | 1    | 1-255 | Same seq no |
-
-Note: Maybe I need to add an error code here in case the bank that is used by the DeZogIf on a ZX Next is going to be overwritten.
-At the moment DeZogIf simply restarts itself and does not respond.
+| *5     | 1    | 0-255 | Error: 0=no error, 1 = error. |
+| *6     | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
 
 
 ## CMD_CONTINUE
@@ -473,13 +516,16 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2+2*N | Length     |
+| 0     | 4    | 2+3*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 14    | CMD_SET_BREAKPOINTS |
-| 6     | 2    | 0-65535 | Breakpoint address[0] |
-| 8     | 2    | 0-65535 | Breakpoint address[1] |
+| 6     | 2    | 0-65535 | Breakpoint[0].address |
+| 8     | 1    | 0-65535 | Breakpoint[0].bank |
+| 9     | 2    | 0-65535 | Breakpoint[1].address |
+| 11    | 1    | 0-65535 | Breakpoint[1].bank |
 | ...   | ...  | ...   | ... |
-| 6+2*N | 2    | 0-65535 | Breakpoint address[N-1] |
+| 3+3*N | 2    | 0-65535 | Breakpoint[N-1].address |
+| 5+3*N | 1  | 0-65535 | Breakpoint[N-1].bank |
 
 
 Response:
@@ -494,7 +540,7 @@ Response:
 
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
-- N is max. 21844 ((65536-2)/3)
+- N is max. 16383 ((65536-2)/4)
 
 
 ## CMD_RESTORE_MEM
@@ -507,13 +553,16 @@ Command:
 | 0     | 4    | 2+3*N | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 15    | CMD_RESTORE_MEM |
-| 6     | 2    | 0-65535 | Address[0] |
-| 8     | 1    | 0-255 | Value to restore |
-| 9     | 2    | 0-65535 | Address[1] |
-| 11    | 1    | 0-255 | Value to restore |
+| 6     | 2    | 0-65535 | [0].address |
+| 8     | 1    | 0-255 | [0].bank |
+| 9     | 1    | 0-255 | Value to restore |
+| 10    | 2    | 0-65535 | [1].address |
+| 12    | 1    | 0-255 | [1].bank |
+| 13    | 1    | 0-255 | Value to restore |
 | ...   | ...  | ...   | ... |
-| 6+3*N | 2    | 0-65535 | Address[N-1] |
-| 8+3*N | 1    | 0-255 | Value to restore |
+| 2+4*N | 2    | 0-65535 | [N-1].address |
+| 3+4*N | 1    | 0-255 | [N-1].bank |
+| 3+4*N | 1    | 0-255 | Value to restore |
 
 
 Response:
@@ -524,7 +573,7 @@ Response:
 
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
-- N is max. 21844 ((65536-2)/3)
+- N is max. 16383 ((65536-2)/4)
 
 
 ## CMD_LOOPBACK
@@ -549,6 +598,8 @@ Response:
 | 5+N   | 1    | 0-255 | Data[N-1]  |
 
 N is max. 8192.
+
+Loops back the received data. Used for testing purposes.
 
 
 ## CMD_GET_SPRITES_PALETTE
@@ -643,6 +694,7 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 40    | CMD_ADD_BREAKPOINT |
 | 6     | 2    | 0-65535 | Breakpoint address |
+| *8    | 1    | 0-255 | The bank+1 of the breakpoint. |
 | 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
 
 
@@ -653,6 +705,7 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
+TODO: Long BP ID required?
 
 
 ## CMD_REMOVE_BREAKPOINT
@@ -665,6 +718,7 @@ Command:
 | 5     | 1    | 41    | CMD_REMOVE_BREAKPOINT |
 | 6     | 2    | 1-65535 | Breakpoint ID |
 
+TODO: Long BP ID required?
 
 Response:
 | Index | Size | Value |Description |
@@ -757,12 +811,12 @@ Response:
 Notification:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n   | Length     |
+| 0     | 4    | 6+n   | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
 | 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason, the error string might have useful information for the user |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the error string might have useful information for the user |
 | 8     | 2    | 0-65535 | Breakpoint or watchpoint address. |
-| 10    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
+| 10    | 1    | 0-255 | The bank+1 of the breakpoint or watchpoint address. |
+| 11    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
 
-// TODO: Need to add bank+1 here
