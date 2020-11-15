@@ -1077,10 +1077,10 @@ export class DebugSessionClass extends DebugSession {
 		const ref2=this.listVariables.addObject(varRegisters2);
 		scopes.push(new Scope("Registers 2", ref2));
 
-		// get address
+		// Get address
 		if (frame) {
 			// use address
-			const addr=frame.addr;	// TODO: convert to 64k address
+			const addr=frame.addr&0xFFFF;
 			// Create variable object for Disassembly
 			const varDisassembly=new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
 			// Add to list and get reference ID
@@ -1419,8 +1419,8 @@ export class DebugSessionClass extends DebugSession {
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
 			Remote.getRegisters();
-			const prevPc=Remote.getPC();
-			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);// TODO: Does not work with sld
+			const prevPc=Remote.getPCLong();
+			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
 			let i=0;
 			let breakReason;
 			const timeWait=new TimeWait(500, 200, 100);
@@ -1458,8 +1458,8 @@ export class DebugSessionClass extends DebugSession {
 
 				// Get new file/line location
 				await Remote.getRegisters();
-				const pc=Remote.getPC();
-				const nextFileLoc=Labels.getFileAndLineForAddress(pc);// TODO: Does not work with sld
+				const pc=Remote.getPCLong();
+				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
 				// Compare with start location
 				if (prevFileLoc.fileName=='')
 					break;
