@@ -83,15 +83,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
 		}
-
-		// Loop through all lines of the list file
-		// TODO: Parse WPMEM etc.
-		/*
-		const listLines=readFileSync(this.config.path).toString().split('\n');
-		for (const line of listLines) {
-			this.parseFileLabelAddress(line);
-		}
-		*/
 	}
 
 
@@ -212,6 +203,14 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					lineArray[lineNr]=address;
 				}
 				break;
+			case 'K':	// A comment, e.g. WPMEM, ASSERTION and LOGPOINT
+				{
+					// Get address
+					const address=this.createLongAddress(value, page);
+					this.findWpmemAssertionLogpoint(address, line);
+				}
+				break;
+
 		}
 	}
 

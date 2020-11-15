@@ -176,7 +176,7 @@ export class LabelParserBase {
 
 			// Check for WPMEM, ASSERTION and LOGPOINT
 			const address=this.currentFileEntry.addr;
-			this.parseWpmemAssertionLogpoint(address, line);
+			this.findWpmemAssertionLogpoint(address, line);
 
 			// Next
 			lineNr++;
@@ -214,10 +214,12 @@ export class LabelParserBase {
 
 	/**
 	 * Parses the line for comments with WPMEM, ASSERTION or LOGPOINT.
+	 * Note: This only collect the lines. Parsing is done at a
+	 * later state when all labels are known.
 	 * @param address The address that correspondents to the line.
 	 * @param fullLine The line of the list file as string.
 	 */
-	protected parseWpmemAssertionLogpoint(address: number|undefined, fullLine: string) {
+	protected findWpmemAssertionLogpoint(address: number|undefined, fullLine: string) {
 		// Extract just comment
 		const comment=this.getComment(fullLine);
 
@@ -225,7 +227,7 @@ export class LabelParserBase {
 		let match=/.*(\bWPMEM\b.*)/.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
-			if (this.currentFileEntry.size==0)
+			if (this.currentFileEntry&&this.currentFileEntry.size==0)
 				this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
 			else
 				this.watchPointLines.push({address: address!, line: match[1]});
