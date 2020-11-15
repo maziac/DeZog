@@ -253,10 +253,10 @@ suite('Labels (z80asm)', () => {
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
-		const assertionionLines=Labels.getAssertionLines();
-		assert.equal(assertionionLines.length, 1);
-		assert.equal(assertionionLines[0].address, 0x8005);
-		assert.equal(assertionionLines[0].line, "ASSERTION");
+		const assertionLines=Labels.getAssertionLines();
+		assert.equal(assertionLines.length, 1);
+		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines=Labels.getLogPointLines();

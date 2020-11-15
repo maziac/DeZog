@@ -555,7 +555,7 @@ export class DzrpRemote extends RemoteBase {
 				for (const abp of abps) {
 					if (condition==abp.condition) {
 						const assertionCond=Utility.getAssertionFromCondition(condition);
-						reasonString="Assertionion failed: "+assertionCond;
+						reasonString="Assertion failed: "+assertionCond;
 						return reasonString;
 					}
 				}
