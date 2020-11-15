@@ -326,7 +326,7 @@ export class Opcode {
 				offs = 1;
 			break;
 			case NumberType.PORT_LBL:
-				// TODO: need to be implemented differently
+				// REMARK: need to be implemented differently
 				this.value = memory.getValueAt(address+1);
 				offs = 1;
 			break;

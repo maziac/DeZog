@@ -9,7 +9,7 @@ export const enum NumberType {
 	// "Data LBL"-type, low priority, might be changed to SUB if necessary.
 	DATA_LBL,
 	// Label for "out/in" command
-	PORT_LBL,	// TODO: Port needs other handling. Is another space, i.e. a memory label and a port label could have same number.
+	PORT_LBL,	// REMARK: Port needs other handling. Is another space, i.e. a memory label and a port label could have same number.
 
 	// "relative-label"-type, i.e. JR
 	CODE_LOCAL_LBL,

@@ -349,6 +349,7 @@ export class DzrpRemote extends RemoteBase {
 			response+="xl="+clip.xl+", xr="+clip.xr+", yt="+clip.yt+", yb="+clip.yb+", control="+Utility.getBitsString(clip.control, 8);
 		}
 		else if (cmd_name=="cmd_set_breakpoints") {
+			// Add long address handling
 		}
 		else if (cmd_name=="cmd_restore_mem") {
 		}
@@ -509,7 +510,7 @@ export class DzrpRemote extends RemoteBase {
 		if (bp) {
 			if (bp.condition) {
 				// Check if condition is true
-				// TODO: If I would allow 'await evalExpression' I could also allow e.g. memory checks
+				// REMARK: If I would allow 'await evalExpression' I could also allow e.g. memory checks
 				const evalCond=Utility.evalExpression(bp.condition, true);
 				if (evalCond!=0)
 					return {condition: bp.condition, log: bp.log};
@@ -639,7 +640,7 @@ export class DzrpRemote extends RemoteBase {
 		switch (breakNumber) {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
-				// TODO: evaluate condition
+				// REMARK: evaluate condition
 				// Condition not used at the moment
 				condition='';
 				break;

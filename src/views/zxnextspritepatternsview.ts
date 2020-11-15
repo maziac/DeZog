@@ -397,7 +397,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Mark as invalid until pattern have been loaded.
 			this.patternDataValid=(!reason||reason.step!=true);
 
-			// TODO: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
+			// REMARK: Muss ich verloggen um rauszukriegen wo currentpalette auf -1 gesetzt wird.
 
 			// Load palette if not available
 			await this.getSpritesPalette();

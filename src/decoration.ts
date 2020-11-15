@@ -356,7 +356,7 @@ export class DecorationClass {
 		//fileMap.clear();
 		coveredAddresses.forEach(addr => {
 			// Get file location for address
-			let location=Labels.getFileAndLineForAddress(addr); // TODO: Does not work with sld
+			let location=Labels.getFileAndLineForAddress(addr);
 			let filename = location.fileName;
 			if (filename.length==0) {
 				// No file found, so remember address
@@ -371,7 +371,7 @@ export class DecorationClass {
 				fileMap.set(filename, lines);
 			}
 			const lineNr=location.lineNr;
-			// TODO: Could be optimized. Here it is possible that coverage for that line already exists and would then be added 2 or more times.
+			// REMARK: Could be optimized. Here it is possible that coverage for that line already exists and would then be added 2 or more times.
 			const range = new vscode.Range(lineNr,0, lineNr,1000);
 			// Add address to set
 			lines.push(range);
