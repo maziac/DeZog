@@ -2,6 +2,7 @@ import {LogSocket} from '../../log';
 import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
+import {DzrpMachineType} from '../dzrp/dzrpremote';
 //import {Utility} from '../../misc/utility';
 
 
@@ -157,11 +158,11 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 	/**
 	 * Returns a better error in case of CSpect plugin incompability.
-	 * @returns The error, program name (incl. version) and dzrp version.
+	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		const result=await super.sendDzrpCmdInit();
 		if (result.error) {
 			// An error occured. Add some help.

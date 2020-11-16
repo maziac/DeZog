@@ -1,5 +1,5 @@
 import {LogSocket} from '../../log';
-import {DzrpRemote, AlternateCommand} from '../dzrp/dzrpremote';
+import {DzrpRemote, AlternateCommand, DzrpMachineType} from '../dzrp/dzrpremote';
 import {Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
@@ -479,20 +479,23 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to init the remote.
-	 * @returns The error, program name (incl. version) and dzrp version.
+	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		const nameBuffer=Utility.getBufferFromString(DZRP_PROGRAM_NAME);
 		const resp=await this.sendDzrpCmd(DZRP.CMD_INIT, [...DZRP_VERSION, ...nameBuffer], this.initCloseRespTimeoutTime);
+		// Error
 		let error;
 		if (resp[0]!=0)
 			error="Remote returned an error code: "+resp[0];
+		// DZRP Version
 		const dzrp_version=""+resp[1]+"."+resp[2]+"."+resp[3];
-		let program_name=Utility.getStringFromBuffer(resp, 4);
-		if (!program_name)
-			program_name="Unknown";
+		// Get machine type
+		const machineType=resp[4];
+		// Program name
+		const program_name=Utility.getStringFromBuffer(resp, 4);
 		// Check version number. Check only major and minor number.
 		if (DZRP_VERSION[0]!=resp[1]
 			||DZRP_VERSION[1]!=resp[2]) {
@@ -500,7 +503,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 			error+="Required version is "+DZRP_VERSION[0]+"."+DZRP_VERSION[1]+".\n";
 			error+="But this remote ("+program_name+") supports only version "+resp[1]+"."+resp[2]+".";
 		}
-		return {error, dzrpVersion: dzrp_version, programName: program_name};
+
+		return {error, dzrpVersion: dzrp_version, programName: program_name, machineType};
 	}
 
 
@@ -537,8 +541,10 @@ export class DzrpBufferRemote extends DzrpRemote {
 		const im=regs[26];
 
 		// Get slots
-		// TODO: check if this should be done in one command sendDzrpCmdGetRegisters
-		const slots=await this.sendDzrpCmdGetSlots(); // TODO: Also change in zesarux
+		const slotCount=regs[28];
+		const slots=new Array<number>(slotCount);
+		for (let i=0; i<slotCount; i++)
+			slots[i]=regs[29+i];
 
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(
@@ -698,9 +704,15 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
+	 * @returns A promise with an error string. undefined if no error.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
+		const resp=await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
+		const error=resp[0];
+		let errorString;
+		if(error!=0)
+			errorString=Utility.getStringFromBuffer(resp, 1);
+		return errorString;
 	}
 
 

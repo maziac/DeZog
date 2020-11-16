@@ -1172,16 +1172,18 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		this.memory.writeBlock(address, dataArray);
 	}
 
-
+// TODO: CmdWriteBank for ZX128 ?????
 	/**
 	 * Sends the command to write a memory bank.
 	 * This is e.g. used by loadBinSna. The bank number given here is always for a ZXNext memory model
 	 * and need to be scaled to other memory models.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
+	 * @returns A promise with an error string. undefined if no error.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
 		this.memory.writeBank(bank, dataArray);
+		return undefined;
 	}
 
 

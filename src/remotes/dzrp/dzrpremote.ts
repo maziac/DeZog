@@ -12,13 +12,13 @@ import {Labels} from '../../labels/labels';
 import {gzip, ungzip} from 'node-gzip';
 import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
-import {ZxNextMemoryModel} from '../Paging/memorymodel';
+import {Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 
 
 // The current implemented version of the protocol.
-export const DZRP_VERSION=[1, 6, 0];
+export const DZRP_VERSION=[2, 0, 0];
 
 // The program name and version transmitted during CMD_INIT.
 export const DZRP_PROGRAM_NAME="DeZog v"+process.version;
@@ -64,14 +64,14 @@ export enum DZRP {
 	// State
 	CMD_READ_STATE=50,
 	CMD_WRITE_STATE=51,
-};
+}
 
 /**
  * DZRP notifications.
  */
 export enum DZRP_NTF {
 	NTF_PAUSE=1
-};
+}
 
 
 /**
@@ -83,6 +83,18 @@ export enum AlternateCommand {
 	CONTINUE=0,   // I.e. no alternate command
 	STEP_OVER=1,
 	STEP_OUT=2
+}
+
+
+/**
+ * Defines the machine type that is returned in CMD_INIT.
+ * It is required to determine the memory model.
+ */
+export enum DzrpMachineType {
+	ZX16K = 1,
+	ZX48K = 2,
+	ZX128K = 3,
+	ZXNEXT = 4
 }
 
 
@@ -152,7 +164,7 @@ export class DzrpRemote extends RemoteBase {
 			if (resp.error)
 				throw Error(resp.error);
 
-				// Load sna or nex file
+			// Load sna or nex file
 			const loadPath=Settings.launch.load;
 			if (loadPath)
 				await this.loadBin(loadPath);
@@ -169,11 +181,26 @@ export class DzrpRemote extends RemoteBase {
 			}
 
 
-			// TODO: Determine machine, Assume ZXNext for now
-			// Set memory model according machine type
-			// ZxNext: 8x8k banks
 			Z80Registers.decoder=new Z80RegistersStandardDecoder();
-			this.memoryModel=new ZxNextMemoryModel();
+			// Set memory model according machine type
+			switch (resp.machineType) {
+				case DzrpMachineType.ZX48K:
+					// ZX Spectrum 48K
+					this.memoryModel=new Zx48MemoryModel();
+					break;
+				case DzrpMachineType.ZX128K:
+					// ZX Spectrum 128K
+					this.memoryModel=new Zx128MemoryModel();
+					break;
+				case DzrpMachineType.ZXNEXT:
+					// ZxNext: 8x8k banks
+					this.memoryModel=new ZxNextMemoryModel();
+					break;
+				default:
+					// Error: Unknown type
+					throw Error("Unknown machine type "+resp.machineType+" received.");
+					break;
+			}
 			this.memoryModel.init();
 			Labels.convertLabelsTo(this.memoryModel);
 
@@ -243,7 +270,7 @@ export class DzrpRemote extends RemoteBase {
 		let response="";
 		if (cmd_name=="cmd_init") {
 			const resp=await this.sendDzrpCmdInit();
-			response="Program: '" +resp.programName+"', DZRP Version: "+resp.dzrpVersion+", Error: "+resp.error;
+			response="Program: '"+resp.programName+"', DZRP Version: "+resp.dzrpVersion+"', machineType: "+resp.machineType+", Error: "+resp.error;
 		}
 		else if (cmd_name=="cmd_continue") {
 			await this.sendDzrpCmdContinue();
@@ -280,7 +307,9 @@ export class DzrpRemote extends RemoteBase {
 			const data=new Uint8Array(0x2000);
 			for (let i=0; i<data.length; i++)
 				data[i]=i&0xFF;
-			await this.sendDzrpCmdWriteBank(bank, data);
+			const error=await this.sendDzrpCmdWriteBank(bank, data);
+			if (error)
+				return error;
 		}
 		else if (cmd_name=="cmd_read_mem") {
 			if (cmdArray.length<2) {
@@ -1317,13 +1346,13 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * The first command send. Includes the version number.
-	 * @returns The error, program name (incl. version) and dzrp version.
+	 * @returns The error, program name (incl. version), dzrp version and the machine type.
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string}> {
+	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
 		Utility.assert(false);
-		return {error: undefined, dzrpVersion: "", programName: ""};
+		return {error: undefined, dzrpVersion: "", programName: "", machineType:0};
 	}
 
 
@@ -1456,9 +1485,11 @@ export class DzrpRemote extends RemoteBase {
 	 * Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
+	 * @returns A promise with an error string. undefined if no error.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
 		Utility.assert(false);
+		return undefined;
 	}
 
 

@@ -96,6 +96,7 @@ DeZog knows with which remote it communicates and chooses the right subset.
 - TODO: Extend CMD_WRITE_BANK to write 16K banks.
 - TODO: set_breakpoints/restore_mem:
 Ich muss bei set_Breakpoints auch die bank mit zurückgeben und bei restore_mem die bank angeben, damit nicht in die falsche Bank "restored" wird und damit Speicher falsch überschrieben wird.
+- TODO: CMD_GET_SLOTS: Kann weg. CMD_SET_SLOTS ?
 
 Changed:
 - CMD_INIT: Added memory model.
@@ -201,11 +202,11 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n   | Length     |
+| 0     | 4    | 6+n   | Length     |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
 | 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
-|*9     | 1    | 0-255 | Memory Model: 1 = ZX48K, 2 = ZX128K, 3 = ZXNEXT. |
+| *9    | 1    | 0-255 | Machine type (memory model): 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: Only ZXNEXT is supported. |
 | 10    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
 
 
@@ -242,7 +243,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | *30+Nslots | Length |
+| 0     | 4    | 29+Nslots | Length |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 2    | PC   | All little endian |
 | 7     | 2    | SP   |   |
@@ -256,14 +257,14 @@ Response:
 | 23    | 2    | BC2  |   |
 | 25    | 2    | DE2  |   |
 | 27    | 2    | HL2  |   |
-| 28    | 1    | R    |   |
-| 39    | 1    | I    |   |
-| 30    | 1    | IM   |   |
-| 31    | 1    | reserved |   |
-| *32   | 1    | Nslots | Number of slots |
-| *33   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
+| 29    | 1    | R    |   |
+| 30    | 1    | I    |   |
+| 32    | 1    | IM   |   |
+| 33    | 1    | reserved |   |
+| 33    | 1    | 1-255 | Nslots. The number of slots that will follow.  |
+| *34   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
 | ...   | ...  | ...  | " |
-| *32+Nslots | slot[Nslots-1] | 0-255 | " |
+| *33+Nslots | slot[Nslots-1] | 0-255 | " |
 
 
 ## CMD_SET_REGISTER
@@ -705,8 +706,6 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
-TODO: Long BP ID required?
-
 
 ## CMD_REMOVE_BREAKPOINT
 
@@ -718,7 +717,6 @@ Command:
 | 5     | 1    | 41    | CMD_REMOVE_BREAKPOINT |
 | 6     | 2    | 1-65535 | Breakpoint ID |
 
-TODO: Long BP ID required?
 
 Response:
 | Index | Size | Value |Description |
@@ -816,7 +814,7 @@ Notification:
 | 6     | 1    | 1     | NTF_PAUSE  |
 | 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the error string might have useful information for the user |
 | 8     | 2    | 0-65535 | Breakpoint or watchpoint address. |
-| 10    | 1    | 0-255 | The bank+1 of the breakpoint or watchpoint address. |
+| *10    | 1    | 0-255 | The bank+1 of the breakpoint or watchpoint address. |
 | 11    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
 
