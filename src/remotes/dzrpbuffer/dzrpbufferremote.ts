@@ -341,29 +341,24 @@ export class DzrpBufferRemote extends DzrpRemote {
 		// Check for notification
 		if (recSeqno==0) {
 			// Notification.
-			const breakNumber=data[2];
-			const breakAddress64k=Utility.getWord(data, 3);
 			// Call resolve of 'continue'
 			if (this.continueResolve) {
 				const continueHandler=this.continueResolve;
 				this.continueResolve=undefined;
+				// Get data
+				const breakNumber=data[2];
+				let breakAddress=Utility.getWord(data, 3);
+				if (Labels.AreLongAddressesUsed()) {
+					const breakAddressBank=data[5];
+					breakAddress+=(breakAddressBank+1)<<16;
+				}
 				// Get reason string
 				let breakReasonString=Utility.getStringFromBuffer(data, 5);
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 
-
-				// TODO: Need to get a long address from DZRP notification. Instead here the work around gets the current slot. It's also not cool to call other commands from here.
-				const slotNr=breakAddress64k>>>13;
-				this.sendDzrpCmdGetTbblueReg(0x50+slotNr).then(bank => {
-					let breakAddress=breakAddress64k;
-					if (Labels.AreLongAddressesUsed())
-						breakAddress+=(bank+1)<<16;
-
-					// TODO: Hier würde es (ohne 'then') normal weitergehen:
-					// Handle the break.
-					continueHandler({breakNumber, breakAddress, breakReasonString});
-				});
+				// Handle the break.
+				continueHandler({breakNumber, breakAddress, breakReasonString});
 			}
 		}
 		else {
@@ -609,13 +604,13 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * ID. If the breakpoint could not be set it is set to 0.
 	 */
 	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const bpAddress=bp.address&0xFFFF;
+		const bpAddress=bp.address;	// A long address
 		let condition=bp.condition;
 		// Convert condition string to Buffer
 		if (!condition)
 			condition='';
 		const condBuf=Utility.getBufferFromString(condition);
-		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, bpAddress>>>8, ...condBuf]);
+		const data=await this.sendDzrpCmd(DZRP.CMD_ADD_BREAKPOINT, [bpAddress&0xFF, (bpAddress>>>8)&0xFF, (bpAddress>>>16)&0xFF, ...condBuf]);
 		bp.bpId=Utility.getWord(data, 0);
 	}
 
