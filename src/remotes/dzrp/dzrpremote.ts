@@ -1432,7 +1432,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to add a watchpoint.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint address. 0-0xFFFF
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * I.e. you can watch whole memory areas.
 	 * @param access Read "r" or write "w" access, or both "rw".

@@ -212,8 +212,10 @@ export class RemoteBase extends EventEmitter {
 					}
 					else
 						access='rw';
-					// set watchpoint
-					watchpoints.push({address: entryAddress, size: length, access: access, condition: cond||''});
+					// Set watchpoint. Only 64k address watchpoints are supported.
+					// Reason: DeZog could do the long check. But the 'size' operator is not so nice, it could go over bank boundaries.
+					// Therefore I decided not to support long WPMEM addresses (for now...)
+					watchpoints.push({address: entryAddress&0xFFFF, size: length, access: access, condition: cond||''});
 				}
 			}
 			catch (e) {
