@@ -428,7 +428,6 @@ export class Z80Cpu {
 			slots
 		);
 		return regData;
-		//return new Uint16Array(regData); 
 	}
 
 

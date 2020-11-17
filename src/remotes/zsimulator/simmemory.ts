@@ -535,7 +535,8 @@ export class SimulatedMemory {
 	 * @param block The block to write.
 	 */
 	public writeBank(bank: number, block: Buffer|Uint8Array) {
-		Utility.assert(block.length==this.bankSize);
+		if (block.length!=this.bankSize)
+			throw Error("writeBank: Block length "+block.length+" not allowed. Expected "+this.bankSize+".");
 		let ramAddr=bank*this.bankSize;
 		this.memoryData.set(block, ramAddr);
 	}

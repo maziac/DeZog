@@ -243,7 +243,7 @@ Command:
 Response:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 29+Nslots | Length |
+| 0     | 4    | 28+Nslots | Length |
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 2    | PC   | All little endian |
 | 7     | 2    | SP   |   |
@@ -259,13 +259,12 @@ Response:
 | 27    | 2    | HL2  |   |
 | 29    | 1    | R    |   |
 | 30    | 1    | I    |   |
-| 32    | 1    | IM   |   |
-| 33    | 1    | reserved |   |
-| 33    | 1    | 1-255 | Nslots. The number of slots that will follow.  |
-| *34   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
+| 31    | 1    | IM   |   |
+| 32    | 1    | 1-255 | Nslots. The number of slots that will follow.  |
+| *33   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
 | ...   | ...  | ...  | " |
-| *33+Nslots | slot[Nslots-1] | 0-255 | " |
-
+| *32+Nslots | slot[Nslots-1] | 0-255 | " |
+// TODO: ZXNEXT remove reserved word after IM.
 
 ## CMD_SET_REGISTER
 

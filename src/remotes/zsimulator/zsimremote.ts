@@ -1066,7 +1066,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.
 	 */
-	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
+	public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
 		return this.z80Cpu.getRegisterData();
 	}
 
@@ -1076,7 +1076,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param regIndex E.g. Z80_REG.BC or Z80_REG.A2
 	 * @param value A 1 byte or 2 byte value.
 	 */
-	protected async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
+	public async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
 		this.setRegValue(regIndex, value);
 	}
 
@@ -1086,7 +1086,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
-	protected async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+	public async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
 		if (bp1Address==undefined) bp1Address=-1;	// unreachable
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
 		// Set the temporary breakpoints array
@@ -1100,7 +1100,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	/**
 	 * Sends the command to pause a running program.
 	 */
-	protected async sendDzrpCmdPause(): Promise<void> {
+	public async sendDzrpCmdPause(): Promise<void> {
 		// If running then pause
 		this.cpuRunning=false;
 	}
@@ -1112,7 +1112,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param bp The breakpoint. sendDzrpCmdAddBreakpoint will set bp.bpId with the breakpoint
 	 * ID.
 	 */
-	protected async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		this.lastBpId++;
 		bp.bpId=this.lastBpId;
 	}
@@ -1123,7 +1123,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * has the breakpoint, logpoint and assertion lists.
 	 * @param bp The breakpoint to remove.
 	 */
-	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
 	}
 
 
@@ -1135,7 +1135,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param condition The watchpoint condition as string. If there is n0 condition
 	 * 'condition' may be undefined or an empty string ''.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
+	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
 		this.memory.setWatchpoint(address, size, access, condition);
 	}
 
@@ -1146,7 +1146,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param address The watchpoint address. 0x0000-0xFFFF.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 */
-	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
+	public async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
 		this.memory.removeWatchpoint(address, size);
 	}
 
@@ -1157,7 +1157,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
-	protected async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
+	public async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
 		const buffer = this.memory.readBlock(address, size);
 		return buffer;
 	}
@@ -1172,18 +1172,17 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		this.memory.writeBlock(address, dataArray);
 	}
 
-// TODO: CmdWriteBank for ZX128 ?????
+
 	/**
 	 * Sends the command to write a memory bank.
 	 * This is e.g. used by loadBinSna. The bank number given here is always for a ZXNext memory model
 	 * and need to be scaled to other memory models.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
-	 * @returns A promise with an error string. undefined if no error.
+	 * @throws An exception if e.g. the bank size does not match.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		this.memory.writeBank(bank, dataArray);
-		return undefined;
 	}
 
 

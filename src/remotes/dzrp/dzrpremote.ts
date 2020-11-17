@@ -287,11 +287,12 @@ export class DzrpRemote extends RemoteBase {
 				response+="\n"+name+"("+i+"): 0x"+Utility.getHexString(value, 4)+"/"+value;
 				i++
 			}
+			// TODO: slots
 		}
 		else if (cmd_name=="cmd_set_register") {
 			if (cmdArray.length<2) {
 				// Error
-				return "Expecting 2 parameters: regIndex and value.";
+				throw Error("Expecting 2 parameters: regIndex and value.");
 			}
 			const regIndex=Utility.parseValue(cmdArray[0]);
 			const value=Utility.parseValue(cmdArray[1]);
@@ -300,21 +301,19 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name=="cmd_write_bank") {
 			if (cmdArray.length<1) {
 				// Error
-				return "Expecting 1 parameter: 8k bank number [0-223].";
+				throw Error("Expecting 1 parameter: 8k bank number [0-223].");
 			}
 			const bank=Utility.parseValue(cmdArray[0]);
 			// Create test data
 			const data=new Uint8Array(0x2000);
 			for (let i=0; i<data.length; i++)
 				data[i]=i&0xFF;
-			const error=await this.sendDzrpCmdWriteBank(bank, data);
-			if (error)
-				return error;
+			await this.sendDzrpCmdWriteBank(bank, data);
 		}
 		else if (cmd_name=="cmd_read_mem") {
 			if (cmdArray.length<2) {
 				// Error
-				return "Expecting at least 2 parameters: address and count.";
+				throw Error("Expecting at least 2 parameters: address and count.");
 			}
 			const addr=Utility.parseValue(cmdArray[0]);
 			const count=Utility.parseValue(cmdArray[1]);
@@ -327,7 +326,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name=="cmd_write_mem") {
 			if (cmdArray.length<2) {
 				// Error
-				return "Expecting at least 2 parameters: address and memory content list.";
+				throw Error("Expecting at least 2 parameters: address and memory content list.");
 			}
 			const addr=Utility.parseValue(cmdArray.shift()!);
 			// Create test data
@@ -346,7 +345,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name=="cmd_set_slot") {
 			if (cmdArray.length!=2) {
 				// Error
-				return "Expecting 2 parameters: slot and bank.";
+				throw Error("Expecting 2 parameters: slot and bank.");
 			}
 			const slot=Utility.parseValue(cmdArray[0]);
 			const bank=Utility.parseValue(cmdArray[1]);
@@ -355,7 +354,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name=="cmd_get_tbblue_reg") {
 			if (cmdArray.length<1) {
 				// Error
-				return "Expecting 1 parameter: register.";
+				throw Error("Expecting 1 parameter: register.");
 			}
 			const reg=Utility.parseValue(cmdArray[0]);
 			const value=await this.sendDzrpCmdGetTbblueReg(reg);
@@ -364,7 +363,7 @@ export class DzrpRemote extends RemoteBase {
 		else if (cmd_name=="cmd_get_sprites_palette") {
 			if (cmdArray.length<1) {
 				// Error
-				return "Expecting 1 parameter: palette number (0 or 1).";
+				throw Error("Expecting 1 parameter: palette number (0 or 1).");
 			}
 			const paletteNumber=Utility.parseValue(cmdArray[0]);
 			const palette=await this.sendDzrpCmdGetSpritesPalette(paletteNumber);
@@ -403,7 +402,7 @@ export class DzrpRemote extends RemoteBase {
 		}
 		*/
 		else {
-			return "Error: not supported.";
+			throw Error("Error: not supported.");
 		}
 
 		// Return string
@@ -1485,11 +1484,10 @@ export class DzrpRemote extends RemoteBase {
 	 * Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
-	 * @returns A promise with an error string. undefined if no error.
+	 * @throws An exception if e.g. the bank size does not match.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		Utility.assert(false);
-		return undefined;
 	}
 
 

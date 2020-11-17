@@ -699,15 +699,16 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * Sends the command to write a memory bank.
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
-	 * @returns A promise with an error string. undefined if no error.
+	 * @throws An exception if e.g. the bank size does not match.
  	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<string|undefined> {
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		const resp=await this.sendDzrpCmd(DZRP.CMD_WRITE_BANK, [bank, ...dataArray]);
 		const error=resp[0];
 		let errorString;
-		if(error!=0)
+		if (error!=0) {
 			errorString=Utility.getStringFromBuffer(resp, 1);
-		return errorString;
+			throw Error("sendDzrpCmdWriteBank: "+errorString);
+		}
 	}
 
 
