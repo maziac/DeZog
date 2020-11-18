@@ -350,7 +350,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 				let breakAddress=Utility.getWord(data, 3);
 				if (Labels.AreLongAddressesUsed()) {
 					const breakAddressBank=data[5];
-					breakAddress+=(breakAddressBank+1)<<16;
+					breakAddress+=breakAddressBank<<16;
 				}
 				// Get reason string
 				let breakReasonString=Utility.getStringFromBuffer(data, 5);
