@@ -685,7 +685,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	  * Returns the extended stack as array.
 	  * Oldest element is at index 0.
-	  * The extended stack .......
+	  * The function returns the call addresses as long addresses.
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
 	  */
@@ -723,12 +723,9 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Set PC
-		//const pc=Z80Registers.getRegValue(Z80_REG.PC);
 		const pc=this.getPCLong();
 		lastCallStackFrame.addr=pc;
 
-		// TODO: I need to change all callstack addresses to long addresses.
-		// Also comment that in the function description.
 
 		// Return
 		this.listFrames=callStack;

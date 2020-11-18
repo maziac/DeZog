@@ -811,9 +811,9 @@ Notification:
 | 0     | 4    | 6+n   | Length     |
 | 4     | 1    | 0     | Instead of Seq No. |
 | 6     | 1    | 1     | NTF_PAUSE  |
-| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the error string might have useful information for the user |
+| 7     | 1    | 0-255 | Break reason: 0 = no reason (e.g. a step-over), 1 = manual break, 2 = breakpoint hit, 3 = watchpoint hit read access, 4 = watchpoint hit write access, 255 = some other reason: the reason string might have useful information for the user |
 | 8     | 2    | 0-65535 | Breakpoint or watchpoint address. |
 | *10    | 1    | 0-255 | The bank+1 of the breakpoint or watchpoint address. |
-| 11    | 1-n  | error string | Null-terminated error string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
+| 11    | 1-n  | reason string | Null-terminated break reason string. Might in theory have almost 2^32 byte length. In practice it will be normally less than 256.
 If error string is empty it will contain at least a 0. |
 

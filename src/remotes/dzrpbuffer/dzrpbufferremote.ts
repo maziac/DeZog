@@ -353,7 +353,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 					breakAddress+=breakAddressBank<<16;
 				}
 				// Get reason string
-				let breakReasonString=Utility.getStringFromBuffer(data, 5);
+				let breakReasonString=Utility.getStringFromBuffer(data, 6);
 				if (breakReasonString.length==0)
 					breakReasonString=undefined as any;
 
