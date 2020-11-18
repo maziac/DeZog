@@ -171,4 +171,20 @@ export class CSpectRemote extends DzrpBufferRemote {
 		return result;
 	}
 
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
+		throw Error("'sendDzrpCmdSetBreakpoints' is not implemented.'");
+	}
+
+
+	/**
+	 * Not used/supported.
+	 */
+	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
+		throw Error("'sendDzrpCmdRestoreMem' is not implemented.");
+	}
 }

@@ -727,6 +727,9 @@ export class RemoteBase extends EventEmitter {
 		const pc=this.getPCLong();
 		lastCallStackFrame.addr=pc;
 
+		// TODO: I need to change all callstack addresses to long addresses.
+		// Also comment that in the function description.
+
 		// Return
 		this.listFrames=callStack;
 		return callStack;
@@ -765,6 +768,7 @@ export class RemoteBase extends EventEmitter {
 	 * Either the "real" ones from Remote or the virtual ones during reverse debugging.
 	 * @returns A Promise with an array with call stack frames.
 	 */
+	// TODO: use or remove
 	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
 		// Check for reverse debugging.
 		if (CpuHistory.isInStepBackMode()) {

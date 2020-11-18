@@ -1,5 +1,4 @@
 import {LogSocket} from '../../log';
-import {DZRP} from '../dzrp/dzrpremote';
 import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
@@ -340,51 +339,6 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			// Step
 			await super.sendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
 		}
-	}
-
-
-	/**
-	 * Sends the command to set all breakpoints.
-	 * For the ZXNext all breakpoints are set at once just before the
-	 * next 'continue' is executed.
-	 * @param bpAddresses The breakpoint addresses. Each 0x0000-0xFFFF.
-	 * @returns A Promise with the memory contents from each breakpoint address.
-	 */
-	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
-		// Create buffer from array
-		const count=bpAddresses.length;
-		const buffer=Buffer.alloc(2*count);
-		let i=0;
-		for (const addr of bpAddresses) {
-			buffer[i++]=addr&0xFF;
-			buffer[i++]=(addr>>>8)&0xFF;
-		}
-		const opcodes=await this.sendDzrpCmd(DZRP.CMD_SET_BREAKPOINTS, buffer);
-		return [...opcodes];
-	}
-
-
-	/**
-	 * Sends the command to restore the memory for all breakpoints.
-	 * This is send just after the 'continue' command.
-	 * So that the user only sees correct memory contents even if doing
-	 * a disassembly or memory read.
-	 * It is also required otherwise the breakpoints in 'calcStep' are not correctly
-	 * calculated.
-	 * @param elems The addresses + memory content.
-	 */
-	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
-		// Create buffer from array
-		const count=elems.length;
-		const buffer=Buffer.alloc(3*count);
-		let i=0;
-		for (const elem of elems) {
-			const addr=elem.address;
-			buffer[i++]=addr&0xFF;
-			buffer[i++]=(addr>>>8)&0xFF;
-			buffer[i++]=elem.value;
-		}
-		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
 
 

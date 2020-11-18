@@ -280,6 +280,7 @@ export class DzrpRemote extends RemoteBase {
 		}
 		else if (cmd_name=="cmd_get_registers") {
 			const regs=await this.sendDzrpCmdGetRegisters();
+			// Registers
 			const regNames=["PC", "SP", "AF", "BC", "DE", "HL", "IX", "IY", "AF'", "BC'", "DE'", "HL'", "IR", "IM"];
 			let i=0;
 			for (const name of regNames) {
@@ -287,7 +288,11 @@ export class DzrpRemote extends RemoteBase {
 				response+="\n"+name+"("+i+"): 0x"+Utility.getHexString(value, 4)+"/"+value;
 				i++
 			}
-			// TODO: slots
+			// Slots
+			const slotCount=regs[i++];
+			response+='\nslots.length='+slotCount;
+			for (let k=0; k<slotCount; k++)
+				response+='\n slots['+k+']='+regs[k+i];
 		}
 		else if (cmd_name=="cmd_set_register") {
 			if (cmdArray.length<2) {
@@ -319,7 +324,7 @@ export class DzrpRemote extends RemoteBase {
 			const count=Utility.parseValue(cmdArray[1]);
 			const data=await this.sendDzrpCmdReadMem(addr, count);
 			// Print
-			response=Utility.getHexString(addr,4)+"h: ";
+			response=Utility.getHexString(addr, 4)+"h: ";
 			for (let i=0; i<data.length; i++)
 				response+=Utility.getHexString(data[i], 2)+"h ";
 		}
@@ -375,11 +380,63 @@ export class DzrpRemote extends RemoteBase {
 			const clip=await this.sendDzrpCmdGetSpritesClipWindow();
 			response+="xl="+clip.xl+", xr="+clip.xr+", yt="+clip.yt+", yb="+clip.yb+", control="+Utility.getBitsString(clip.control, 8);
 		}
-		// TODO: Add missing ones: CMD_SET_BREAKPOINTS, CMD_RESTORE_MEM
 		else if (cmd_name=="cmd_set_breakpoints") {
-			// Add long address handling
+			// Note: This command supports only the setting of 1 breakpoint:
+			// "cmd_set_breakpoints address bank"
+			if (cmdArray.length!=2) {
+				// Error
+				throw Error("Expecting 2 parameters: address and bank.");
+			}
+			const address=Utility.parseValue(cmdArray[0]);
+			const bank=Utility.parseValue(cmdArray[1]);
+			// Create data to send
+			const longAddress=address+((bank+1)<<16);
+			const memValues=await this.sendDzrpCmdSetBreakpoints([longAddress]);
+			const value=memValues[0];
+			response+='\n Response: 0x'+Utility.getHexString(value, 2)+'/'+value;
 		}
 		else if (cmd_name=="cmd_restore_mem") {
+			// Note: This command supports only the restoring of 1 breakpoint:
+			// "cmd_restore_mem address bank value"
+			if (cmdArray.length!=3) {
+				// Error
+				throw Error("Expecting 3 parameters: address, bank and value.");
+			}
+			const address=Utility.parseValue(cmdArray[0]);
+			const bank=Utility.parseValue(cmdArray[1]);
+			const value=Utility.parseValue(cmdArray[2]);
+			// Create data to send
+			const longAddress=address+((bank+1)<<16);
+			await this.sendDzrpCmdRestoreMem([{address: longAddress, value}]);
+		}
+		else if (cmd_name=="cmd_add_breakpoint") {
+			// "cmd_add_breakpoint address bank"
+			if (cmdArray.length!=2) {
+				// Error
+				throw Error("Expecting 2 parameters: address and bank.");
+			}
+			const address=Utility.parseValue(cmdArray[0]);
+			const bank=Utility.parseValue(cmdArray[1]);
+			// Create data to send
+			const longAddress=address+((bank+1)<<16);
+			const bp: GenericBreakpoint={
+				address: longAddress
+			};
+			await this.sendDzrpCmdAddBreakpoint(bp);
+			response+='\n Breakpoint ID: '+bp.bpId;
+		}
+		else if (cmd_name=="cmd_remove_breakpoint") {
+			// "cmd_remove_breakpoint breakpointId"
+			if (cmdArray.length!=1) {
+				// Error
+				throw Error("Expecting 1 parameter: breakpoint ID.");
+			}
+			const bp: GenericBreakpoint={
+				address: -1,	// not used
+				bpId: Utility.parseValue(cmdArray[0])
+			};
+			// Create data to send
+			await this.sendDzrpCmdRemoveBreakpoint(bp);
 		}
 
 		/*
@@ -1424,7 +1481,6 @@ export class DzrpRemote extends RemoteBase {
 	 * @param bp The breakpoint to remove.
 	 */
 	protected async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-
 		Utility.assert(false);
 	}
 
@@ -1606,5 +1662,31 @@ export class DzrpRemote extends RemoteBase {
 		Utility.assert(false);
 	}
 
+
+	/**
+	 * Sends the command to set all breakpoints.
+	 * For the ZXNext all breakpoints are set at once just before the
+	 * next 'continue' is executed.
+	 * @param bpAddresses The breakpoint addresses. Each 0x0000-0xFFFF.
+	 * @returns A Promise with the memory contents from each breakpoint address.
+	 */
+	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
+		Utility.assert(false);
+		return [];
+	}
+
+
+	/**
+	 * Sends the command to restore the memory for all breakpoints.
+	 * This is send just after the 'continue' command.
+	 * So that the user only sees correct memory contents even if doing
+	 * a disassembly or memory read.
+	 * It is also required otherwise the breakpoints in 'calcStep' are not correctly
+	 * calculated.
+	 * @param elems The addresses + memory content.
+	 */
+	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
+		Utility.assert(false);
+	}
 }
 

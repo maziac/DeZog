@@ -805,7 +805,7 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Get the current slots
 			if (Labels.AreLongAddressesUsed()) {
-				Remote.clearRegisters();
+				Remote.clearRegisters();  // TODO: Is this if-clause really required? What use case?
 				await Remote.getRegisters();
 			}
 			// Get callstack

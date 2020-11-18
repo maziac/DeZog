@@ -536,10 +536,10 @@ export class DzrpBufferRemote extends DzrpRemote {
 		const im=regs[26];
 
 		// Get slots
-		const slotCount=regs[28];
+		const slotCount=regs[27];
 		const slots=new Array<number>(slotCount);
 		for (let i=0; i<slotCount; i++)
-			slots[i]=regs[29+i];
+			slots[i]=regs[28+i];
 
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(
@@ -854,6 +854,54 @@ export class DzrpBufferRemote extends DzrpRemote {
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		await this.sendDzrpCmd(DZRP.CMD_SET_BORDER, [borderColor]);
 	}
+
+
+	/**
+	 * Sends the command to set all breakpoints.
+	 * For the ZXNext all breakpoints are set at once just before the
+	 * next 'continue' is executed.
+	 * @param bpAddresses The breakpoint addresses. Each 0x0000-0xFFFF.
+	 * @returns A Promise with the memory contents from each breakpoint address.
+	 */
+	protected async sendDzrpCmdSetBreakpoints(bpAddresses: Array<number>): Promise<Array<number>> {
+		// Create buffer from array
+		const count=bpAddresses.length;
+		const buffer=Buffer.alloc(3*count);
+		let i=0;
+		for (const addr of bpAddresses) {
+			buffer[i++]=addr&0xFF;
+			buffer[i++]=(addr>>>8)&0xFF;
+			buffer[i++]=(addr>>>16)&0xFF;
+		}
+		const opcodes=await this.sendDzrpCmd(DZRP.CMD_SET_BREAKPOINTS, buffer);
+		return [...opcodes];
+	}
+
+
+	/**
+	 * Sends the command to restore the memory for all breakpoints.
+	 * This is send just after the 'continue' command.
+	 * So that the user only sees correct memory contents even if doing
+	 * a disassembly or memory read.
+	 * It is also required otherwise the breakpoints in 'calcStep' are not correctly
+	 * calculated.
+	 * @param elems The addresses + memory content.
+	 */
+	protected async sendDzrpCmdRestoreMem(elems: Array<{address: number, value: number}>): Promise<void> {
+		// Create buffer from array
+		const count=elems.length;
+		const buffer=Buffer.alloc(4*count);
+		let i=0;
+		for (const elem of elems) {
+			const addr=elem.address;
+			buffer[i++]=addr&0xFF;
+			buffer[i++]=(addr>>>8)&0xFF;
+			buffer[i++]=(addr>>>16)&0xFF;
+			buffer[i++]=elem.value;
+		}
+		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
+	}
+	spec
 
 }
 

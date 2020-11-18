@@ -520,7 +520,7 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 14    | CMD_SET_BREAKPOINTS |
 | 6     | 2    | 0-65535 | Breakpoint[0].address |
-| 8     | 1    | 0-65535 | Breakpoint[0].bank |
+| *8     | 1    | 0-65535 | Breakpoint[0].bank |
 | 9     | 2    | 0-65535 | Breakpoint[1].address |
 | 11    | 1    | 0-65535 | Breakpoint[1].bank |
 | ...   | ...  | ...   | ... |
@@ -554,7 +554,7 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 15    | CMD_RESTORE_MEM |
 | 6     | 2    | 0-65535 | [0].address |
-| 8     | 1    | 0-255 | [0].bank |
+| *8     | 1    | 0-255 | [0].bank |
 | 9     | 1    | 0-255 | Value to restore |
 | 10    | 2    | 0-65535 | [1].address |
 | 12    | 1    | 0-255 | [1].bank |
