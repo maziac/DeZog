@@ -2376,12 +2376,14 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			// Also list all assertion breakpoints
 			const abps=Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
+				result+=Utility.getLongAddressString(abp.address);
 				const labels=Labels.getLabelsForNumber(abp.address);
-				labels.push(abp.address.toString());	// as decimal number
-				const labelsString=labels.join(', ');
-				result+=Utility.getHexString(abp.address, 4)+'h ('+labelsString+'): ';
+				if (labels.length>0) {
+					const labelsString=labels.join(', ');
+					result+=' ('+labelsString+')';
+				}
 				// Condition, remove the brackets
-				result+=Utility.getAssertionFromCondition(abp.condition)+'\n';
+				result+=', Condition: '+Utility.getAssertionFromCondition(abp.condition)+'\n';
 			}
 			if (abps.length==0)
 				result+='No ASSERTION breakpoints.\n';
@@ -2418,10 +2420,14 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			// Also list all watchpoints
 			const wps=Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
+				result+=Utility.getLongAddressString(wp.address);
 				const labels=Labels.getLabelsForNumber(wp.address);
-				labels.push(wp.address.toString());	// as decimal number
-				const labelsString=labels.join(', ');
-				result+=Utility.getHexString(wp.address, 4)+'h ('+labelsString+'): '+wp.access+', size='+Utility.getHexString(wp.size, 4)+'h ('+wp.size+')\n';
+				if (labels.length>0) {
+					const labelsString=labels.join(', ');
+					result+=' ('+labelsString+')';
+				}
+				// Condition, remove the brackets
+				result+=', size='+wp.size+'\n';
 			}
 			if (wps.length==0)
 				result+='No WPMEM watchpoints.\n';

@@ -42,15 +42,31 @@ export class Utility {
 	 * @returns E.g. "AF" or "0BC8"
 	 */
 	public static getHexString(value: number|undefined, size: number): string {
-		if(value != undefined) {
-			var s = value.toString(16).toUpperCase();
-			const r = size - s.length;
+		if (value!=undefined) {
+			var s=value.toString(16).toUpperCase();
+			const r=size-s.length;
 			if (r>0)
 				s='0'.repeat(r)+s;
 			return s;
 		}
 		// Undefined
 		return "?".repeat(size);
+	}
+
+
+	/**
+	 * Returns a hex string from a long address the string is in the format.
+	 * "F7A4h @bank5" for a long address and
+	 * "F7A4h" for a 64k address.
+	 * @param value The number to convert
+	 * @returns E.g. "F7A4h @bank5" or "F7A4h"
+	 */
+	public static getLongAddressString(value: number): string {
+		let addrString=this.getHexString(value&0xFFFF, 4)+'h';
+		const bank=value>>>16;
+		if (bank>0)
+			addrString+=" @bank"+(bank-1);
+		return addrString;
 	}
 
 
