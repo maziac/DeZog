@@ -71,7 +71,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Get bank size
 		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
-		this.parseForBankSize(sldLines);
+		this.parseForBankSizeAndSldOpt(sldLines);
 
 		// Loop through all lines of the sld file
 		for (const line of sldLines) {
@@ -83,7 +83,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/**
 	 * Parses the complete file to get the bank size.
 	 */
-	protected parseForBankSize(lines: Array<string>) {
+	protected parseForBankSizeAndSldOpt(lines: Array<string>) {
+		let keywords: string[]=[];
+		let bankSize;
 		for (const line of lines) {
 			// Split the fields, e.g. "main.asm|3||0|-1|-1|Z|pages.size: 16384, pages.count: 8, slots.count: 4, slots.adr: 0, 16384, 32768, 49152"
 			const fields=line.split('|');
@@ -96,12 +98,34 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				// Delete anything not a number or ,
 				const numberString=data.replace(/[^0-9,]/g, '');
 				// Interprete only the first number
-				this.bankSize=parseInt(numberString);
-				//const count=0x10000/this.bankSize;
-				//this.shiftBits=
-				// No need to seek any further
-				break;
+				bankSize=parseInt(numberString);
 			}
+
+			// Check for SLD OPT
+			if (line.startsWith('||K|KEYWORDS|')) {
+				// The SLD OPT options, e.g.
+				// "||K|KEYWORDS|WPMEM,LOGPOINT,ASSERTION"
+				keywords=fields[4].split(','); //"WPMEM,LOGPOINT,ASSERTION"
+			}
+			if (bankSize!=undefined&&keywords!=undefined)
+				break;
+		}
+
+		// Check
+		if (bankSize==undefined)
+			throw Error("Could not find bank size in SLD file.");
+		this.bankSize=bankSize;
+
+		// Check for keywords
+		const kws=["WPMEM", "LOGPOINT", "ASSERTION"];
+		let missing: string[]=[];
+		for (const kw of kws) {
+			if (keywords.indexOf(kw)<0)
+				missing.push(kw);
+		}
+		if (missing.length>0) {
+			const missingStr=missing.join(', ');
+			this.warnings+="The assembler file is missing the 'SLDOPT COMMENT "+missingStr+"' statement. Use of "+missingStr+" is not possible.";
 		}
 	}
 

@@ -513,6 +513,26 @@ export class DebugSessionClass extends DebugSession {
 		// Create the Remote
 		RemoteFactory.createRemote(Settings.launch.remoteType);
 
+		Remote.on('warning', message => {
+			// Some problem occurred
+			this.showWarning(message);
+		});
+
+		Remote.on('debug_console', message => {
+			// Show the message in the debug console
+			this.debugConsoleIndentedText(message);
+		});
+
+		Remote.once('error', err => {
+			// Some error occurred
+			this.terminate(err.message);
+		});
+
+		Remote.once('terminated', () => {
+			// Emulator has been terminated (e.g. by unit tests)
+			this.terminate();
+		});
+
 		// Check if a cpu history object has been created by the Remote.
 		if (!(CpuHistory as any)) {
 			// If not create a lite (step) history
@@ -558,26 +578,6 @@ export class DebugSessionClass extends DebugSession {
 				// Short history addresses
 				Decoration.showHistorySpot(startIndex, addresses, registers);
 			});
-		});
-
-		Remote.on('warning', message => {
-			// Some problem occurred
-			this.showWarning(message);
-		});
-
-		Remote.on('debug_console', message => {
-			// Show the message in the debug console
-			this.debugConsoleIndentedText(message);
-		});
-
-		Remote.once('error', err => {
-			// Some error occurred
-			this.terminate(err.message);
-		});
-
-		Remote.once('terminated', () => {
-			// Emulator has been terminated (e.g. by unit tests)
-			this.terminate();
 		});
 
 		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
@@ -2409,7 +2409,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '"+param+"'");
+			throw Error("Unknown argument: '"+param+"'");
 		}
 
 		// Show enable status of all WPMEM watchpoints

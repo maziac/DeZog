@@ -89,6 +89,10 @@ export class LabelsClass {
 	protected bankSize: number;
 
 
+	// Collects the warnings from the different parsers.
+	protected warnings: string;
+
+
 	// Constructor.
 	public constructor() {
 	}
@@ -109,6 +113,7 @@ export class LabelsClass {
 		this.logPointLines.length=0;
 		this.smallValuesMaximum=smallValuesMaximum;
 		this.bankSize=0;
+		this.warnings=undefined as any;
 	}
 
 
@@ -140,6 +145,7 @@ export class LabelsClass {
 	 * Especially it contains the path to the list file.
 	 */
 	public readListFiles(mainConfig: any) {
+		this.warnings='';
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
 			// For sjasmplus it is checked if a list file should be parsed or an sld file
@@ -155,6 +161,10 @@ export class LabelsClass {
 				}
 				parser.loadAsmListFile(config);
 				this.bankSize=parser.bankSize;
+				// Warnings
+				const warnings=parser.getWarnings();
+				if (warnings)
+					this.warnings+='sjasmplus sld parser warnings:\n'+warnings;
 			}
 		}
 
@@ -175,8 +185,20 @@ export class LabelsClass {
 		// Add new assemblers here ...
 
 
+		// Check warnings
+		if (this.warnings=='')
+			this.warnings=undefined as any;
 		// Finish
 		this.finish();
+	}
+
+
+	/**
+	 * Returns the warnings.
+	 * undefined if no warnings.
+	 */
+	public getWarnings() {
+		return this.warnings;
 	}
 
 

@@ -81,6 +81,9 @@ export class LabelParserBase {
 	/// Typical value: 0, 8192 or 16384.
 	protected bankSize: number;
 
+	// Collects the warnings.
+	protected warnings: string;
+
 
 	// Constructor.
 	public constructor(
@@ -103,6 +106,7 @@ export class LabelParserBase {
 		this.assertionLines=assertionLines;
 		this.logPointLines=logPointLines;
 		this.bankSize=0;
+		this.warnings='';
 	}
 
 
@@ -567,5 +571,13 @@ export class LabelParserBase {
 		this.currentFileEntry.lineNr=lineNr;
 	}
 
+
+	/**
+	 * Returns the collected warnings.
+	 * undefined if no warnings.
+	 */
+	public getWarnings() {
+		return this.warnings;
+	}
 }
 
