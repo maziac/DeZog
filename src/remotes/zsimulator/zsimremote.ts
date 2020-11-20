@@ -544,7 +544,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Called on every executed instruction.
 	 * @param pc The pc for the line. Is only used to compare with previous storage.
 	 * I.e. to see if it is a LDIR instruction or similar.
-	 * And that case no new entry is stored.
+	 * In that case no new entry is stored.
 	 * Therefore it can be a 64k address, i.e. it does not need to be a long address.
 	 */
 	protected storeHistoryInfo(pc: number) {
@@ -575,8 +575,9 @@ export class ZSimRemote extends DzrpRemote {
 			//let bp;
 			let breakAddress;
 			let updateCounter=0;
-			let slots
-			if (Labels.AreLongAddressesUsed())
+			let slots;
+			const longAddressesUsed=Labels.AreLongAddressesUsed();
+			if(longAddressesUsed)
 				slots=this.memory.getSlots();
 			let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			try {
@@ -634,6 +635,8 @@ export class ZSimRemote extends DzrpRemote {
 					// Check if any real breakpoint is hit
 					// Note: Because of step-out this needs to be done before the other check.
 					// Convert to long address
+					if (longAddressesUsed)
+						slots=this.memory.getSlots();
 					pcLong=Z80Registers.createLongAddress(pc, slots);
 					const bpInner=this.tmpBreakpoints.get(pcLong);
 					if (bpInner) {
@@ -681,7 +684,11 @@ export class ZSimRemote extends DzrpRemote {
 					if (this.memory.hitAddress>=0) {
 						// Yes, read or write access
 						breakNumber=(this.memory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-						breakAddress=this.memory.hitAddress;
+						const memAddress=this.memory.hitAddress;
+						// Calculate long address
+						breakAddress=Z80Registers.createLongAddress(memAddress, slots);
+						// NOTE: Check for long watchpoint address could be done already here.
+						// However it is done anyway in the DzrpRemote.
 						break;
 					}
 
@@ -1129,25 +1136,23 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 	/**
 	 * Sends the command to add a watchpoint.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
-	 * I.e. you can watch whole memory areas.
-	 * @param condition The watchpoint condition as string. If there is n0 condition
-	 * 'condition' may be undefined or an empty string ''.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
-		this.memory.setWatchpoint(address, size, access, condition);
+	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		this.memory.setWatchpoint(address, size, access);
 	}
 
 
 	/**
-	 * Override.
 	 * Sends the command to remove a watchpoint for an address range.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	public async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
-		this.memory.removeWatchpoint(address, size);
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		this.memory.removeWatchpoint(address, size, access);
 	}
 
 

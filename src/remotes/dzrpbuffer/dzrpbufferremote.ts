@@ -627,40 +627,45 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * Sends the command to add a watchpoint.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
 	 * I.e. you can watch whole memory areas.
-	 * @param condition The watchpoint condition as string. If there is n0 condition
-	 * 'condition' may be undefined or an empty string ''.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
-		// Convert condition string to Buffer
-		if (!condition)
-			condition='';
-		const condBuf=Utility.getBufferFromString(condition);
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
 		let accessCode=0;
 		if (access.indexOf('r')>=0)
 			accessCode+=0x01;
 		if (access.indexOf('w')>=0)
 			accessCode+=0x02;
 		await this.sendDzrpCmd(DZRP.CMD_ADD_WATCHPOINT, [
-			address&0xFF, address>>>8,
+			address&0xFF,
+			(address>>>8)&0xFF,
+			(address>>>16)&0xFF, // bank
 			size&0xFF, size>>>8,
-			accessCode,
-			...condBuf,
+			accessCode
 		]);
 	}
 
 
 	/**
 	 * Sends the command to remove a watchpoint for an address range.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
-		await this.sendDzrpCmd(DZRP.CMD_REMOVE_WATCHPOINT, [
-			address&0xFF, address>>>8,
-			size&0xFF, size>>>8
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		let accessCode=0;
+		if (access.indexOf('r')>=0)
+			accessCode+=0x01;
+		if (access.indexOf('w')>=0)
+			accessCode+=0x02;
+		await this.sendDzrpCmd(DZRP.CMD_ADD_WATCHPOINT, [
+			address&0xFF,
+			(address>>>8)&0xFF,
+			(address>>>16)&0xFF, // bank
+			size&0xFF, size>>>8,
+			accessCode
 		]);
 	}
 

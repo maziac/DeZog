@@ -9,11 +9,11 @@ import {Utility} from '../../misc/utility';
  * Watchpoint class used by 'watchPointMemory'.
  */
 interface SimWatchpoint {
-	// The way of access, e.g. read='r', write='w', readwrite='rw'
-	access: string;
-	// The additional condition. Empty string or undefined if no condition.
-	condition: string|undefined;
-}
+	// read/write are counters. They are reference counts and count how many
+	// read/write access points have been set. If 0 then no watchpoint is set.
+	read: number;
+	write: number;
+	}
 
 
 /**
@@ -71,7 +71,7 @@ export class SimulatedMemory {
 	// If an address has no watchpoint it is undefined.
 	// If it has it points to a SimWatchpoint.
 	// Note: as watchpoints are areas, several addresses might share the same SimWatchpoint.
-	protected watchPointMemory: Array<SimWatchpoint|undefined>;
+	protected watchPointMemory: Array<SimWatchpoint>;
 
 
 	/**
@@ -109,7 +109,7 @@ export class SimulatedMemory {
 		// Breakpoints
 		this.clearHit();
 		// Create watchpoint area
-		this.watchPointMemory=new Array<SimWatchpoint|undefined>(0x10000)
+		this.watchPointMemory=Array.from({length: 0x10000}, () => ({read: 0, write: 0}));
 	}
 
 
@@ -194,18 +194,19 @@ export class SimulatedMemory {
 
 
 	/**
-	* Adds a watchpoint address range.
-	* @param address The watchpoint address. 0x0000-0xFFFF.
-	* @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
-	* I.e. you can watch whole memory areas.
-	* @param condition The watchpoint condition as string. If there is no condition
-	* 'condition' may be undefined or an empty string ''.
-	*/
-	public setWatchpoint(address: number, size: number, access: string, condition?: string) {
-		const wp: SimWatchpoint={access, condition};
+	 * Adds a watchpoint address range.
+	 * @param address The watchpoint long address.
+	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
+	 */
+	public setWatchpoint(address: number, size: number, access: string) {
+		const readAdd=access.includes('r')? 1:0;
+		const writeAdd=access.includes('w')? 1:0;
 		// Set area
 		for (let i=0; i<size; i++) {
-			this.watchPointMemory[address&0xFFFF]=wp;
+			const wp=this.watchPointMemory[address&0xFFFF];
+			wp.read+=readAdd;
+			wp.write+=writeAdd;
 			address++;
 		}
 	}
@@ -213,13 +214,20 @@ export class SimulatedMemory {
 
 	/**
 	 * Removes a watchpoint address range.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	public removeWatchpoint(address: number, size: number) {
-		// Set area
+	public removeWatchpoint(address: number, size: number, access: string) {
+		const readAdd=access.includes('r')? 1:0;
+		const writeAdd=access.includes('w')? 1:0;
+		// remove area
 		for (let i=0; i<size; i++) {
-			this.watchPointMemory[address&0xFFFF]=undefined;
+			const wp=this.watchPointMemory[address&0xFFFF];
+			if (wp.read>0)
+				wp.read-=readAdd;
+			if(wp.write>0)
+				wp.write-=writeAdd;
 			address++;
 		}
 	}
@@ -241,7 +249,7 @@ export class SimulatedMemory {
 		const wp=this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if ((this.hitAddress<0)&&wp.access.includes('r')) {
+			if ((this.hitAddress<0)&&wp.read>0) {
 				// Read access
 				this.hitAddress=addr;
 				this.hitAccess='r';
@@ -265,7 +273,7 @@ export class SimulatedMemory {
 		const wp=this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if ((this.hitAddress<0)&&wp.access.includes('w')) {
+			if ((this.hitAddress<0)&&wp.write>0) {
 				// Write access
 				this.hitAddress=addr;
 				this.hitAccess='w';

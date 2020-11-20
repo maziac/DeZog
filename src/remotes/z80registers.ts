@@ -423,7 +423,7 @@ export class Z80RegistersClass {
 	/**
 	 * Creates a long address from the address and slots.
 	 * @param address The 64k address.
-	 * @param slots An array with the slots or undefined if no spaging is used.
+	 * @param slots An array with the slots or undefined if no paging is used.
 	 * @returns If slots defined: address+slots[address>>bits_bank_size]+1.
 	 * If undefined: address.
 	 * I.e. a long address is always > 0xFFFF
@@ -468,7 +468,7 @@ export class Z80RegistersClass {
 
 	/**
 	 * Returns the long address from 64k address and bank.
-	 * the (bankü1) is simply put in the bits above the 16th bit.
+	 * the (bank) is simply put in the bits above the 16th bit.
 	 * @param addr The 64k address.
 	 * @param bank A bank number.
 	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).

@@ -120,8 +120,7 @@ export class DzrpRemote extends RemoteBase {
 	// Object to allow to give time to vscode during long running 'steps'.
 	protected timeWait: TimeWait;
 
-	// A temporary array with the set breakpoints and conditions.
-	// Undefined=no breakpoint is set.
+	// A temporary map with the set breakpoints and conditions.
 	// The tmpBreakpoints are created out of the other breakpoints, assertionBreakpoints and logpoints
 	// as soon as the z80CpuContinue is called.
 	// It allows access of the breakpoint by a simple call to one map only.
@@ -134,6 +133,13 @@ export class DzrpRemote extends RemoteBase {
 	// If a breakpoint is set during the debugged program being run
 	// the tmpBreakpoints are updated.
 	protected tmpBreakpoints=new Map<number,Array<GenericBreakpoint>>();
+
+	// The watchpoints are collected here. These are all watchpoint set through setWatchpoint.
+	// If the user could set watchpoints also manually this would include all WPMEM watchpoints plus
+	// the user set watchpoints.
+	// Note: it could happen that several watchpoints are defined for the same
+	// address or that they overlap(they have size).
+	protected addedWatchpoints=new Set<GenericWatchpoint>();
 
 
 	/// Constructor.
@@ -495,6 +501,40 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Returns the array of watchpoint for a given address.
+	 * Normally the array is empty or contains only 1 watchpoint.
+	 * But it could happen that several watchpoints are defined for the same address.
+	 * @param The address to check. Could be a long address.
+	 * @return An array with all corresponding watchpoints. Usually only 1 or an empty array.
+	 */
+	protected getWatchpointsByAddress(address: number): Array<GenericWatchpoint> {
+		const address64=address&0xFFFF;
+		const arr=new Array<GenericWatchpoint>();
+		const slots=this.getSlots()!;
+		for (const wp of this.addedWatchpoints) {
+			// Check if address falls in range
+			const addr=wp.address;
+			const addr64=addr&0xFFFF;
+			if (address64<addr64||address64>=addr64+wp.size)	// Note: wrap around is ignored
+				continue;
+
+			// Check if wp start address is currently paged in
+			const bank=Z80Registers.getBankFromAddress(addr);
+			if (bank>=0) {
+				const slotNr=Z80Registers.getSlotFromAddress(addr);
+				const slotBank=slots[slotNr];
+				if (bank!=slotBank)
+					continue;	// Wrong bank -> Next
+			}
+
+			// WP fits
+			arr.push(wp);
+		}
+		return arr;
+	}
+
+
+	/**
 	 * Searches the 'breakpoints', the 'assertionBreakpoints' and the
 	 * 'logpoints' arrays for the given breakpoint ID.
 	 * In fact searches tmpBreakpoints. Therefore make sure you called
@@ -510,12 +550,8 @@ export class DzrpRemote extends RemoteBase {
 	}
 
 	/**
-	 * Creates a temporary array from the given array.
-	 * The structure is more performant for use in a
-	 * loop:
-	 * The array contains 65536 entries, i.e. addresses. If no BP
-	 * is set for an address the entry is undefined.
-	 * If one is set the entry contains a pointer to the breakpoint.
+	 * Creates a temporary map from the breakpoints, logpoints and assertions.
+	 * If one entry is set the entry contains a pointer to the breakpoint.
 	 * Or better it contains an array of breakpoints that all share the
 	 * same address.
 	 * Note: normally this array contains only one entry.
@@ -663,10 +699,12 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Watchpoint
 				const address=breakAddress;
-				const labels=Labels.getLabelsForNumber(address);
-				labels.push(address.toString());	// as decimal number
-				const labelsString=labels.join(', ');
-				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getHexString(address, 4)+" ("+labelsString+"). "+breakReasonString;
+				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getLongAddressString(address);
+				const labels=Labels.getLabelsForNumber(address);				if (labels.length>0) {
+					const labelsString=labels.join(', ');
+					reasonString+=" ("+labelsString+")";
+				}
+				reasonString+=". "+breakReasonString;
 				break;
 
 			default:
@@ -725,15 +763,34 @@ export class DzrpRemote extends RemoteBase {
 		switch (breakNumber) {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
-				// REMARK: evaluate condition
-				// Condition not used at the moment
-				condition='';
+				// Check if watchpoint really exists, i.e. it could be that a watchpoint for a wrong bank was hit.
+				// If no watchpointis found condition stays undefined.
+				const wps=this.getWatchpointsByAddress(breakAddress);
+				for (const wp of wps) {
+					let found=false;
+					if (breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ) {
+						found=wp.access.includes('r');
+					}
+					else {
+						// WATCHPOINT_WRITE
+						found=wp.access.includes('w');
+					}
+					if (found) {
+						// REMARK: evaluate condition
+						// Condition not used at the moment
+						condition='';
+						break;
+					}
+				}
 				break;
 
 			case BREAK_REASON_NUMBER.NO_REASON:
 			case BREAK_REASON_NUMBER.BREAKPOINT_HIT:
 				// Get corresponding breakpoint
 				const bps=this.getBreakpointsByAddress(breakAddress);
+				// Note: If breakAddress is not found (e.g. break in wrong bank) then bps is empty.
+				// This results in condition being undefined on return which in turn
+				// results in another continue.
 
 				// Loop over all matching breakpoints (normally only one, but could be 2 or more. E.g. if manual BP is at the same point as a LOGPOINT)
 				for (const bp of bps) {
@@ -1039,7 +1096,11 @@ export class DzrpRemote extends RemoteBase {
 	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.access, wp.condition);
+		// Remember watchpoint
+		this.addedWatchpoints.add(wp);
+
+		// Forward request
+		await this.sendDzrpCmdAddWatchpoint(wp.address, wp.size, wp.access);
 	}
 
 
@@ -1049,7 +1110,11 @@ export class DzrpRemote extends RemoteBase {
 	 * @param wp The watchpoint to renove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		await this.sendDzrpCmdRemoveWatchpoint(wp.address, wp.size);
+		// Forget watchpoint
+		this.addedWatchpoints.delete(wp);
+
+		// Forward request
+		await this.sendDzrpCmdRemoveWatchpoint(wp.address, wp.size, wp.access);
 	}
 
 
@@ -1488,14 +1553,11 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to add a watchpoint.
-	 * @param address The watchpoint address. 0-0xFFFF
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
-	 * I.e. you can watch whole memory areas.
-	 * @param access Read "r" or write "w" access, or both "rw".
-	 * @param condition The watchpoint condition as string. If there is n0 condition
-	 * 'condition' may be undefined or an empty string ''.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string, condition: string): Promise<void> {
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
 		throw Error("Watchpoints not supported!");
 	}
 
@@ -1503,10 +1565,11 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to remove a watchpoint for an address range.
-	 * @param address The watchpoint address. 0x0000-0xFFFF.
+	 * @param address The watchpoint long address.
 	 * @param size The size of the watchpoint. address+size-1 is the last address for the watchpoint.
+	 * @param access 'r', 'w' or 'rw'.
 	 */
-	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number): Promise<void> {
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
 		throw Error("Watchpoints not supported!");
 	}
 

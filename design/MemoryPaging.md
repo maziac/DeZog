@@ -29,7 +29,7 @@ long_address = (107)<<13 + 0x10B0
 ~~~
 -->
 
-To easy distinguish between long address and normal addresses all addresses <= 0xFFFF will be normal 64k addresses.
+To easily distinguish between long address and normal addresses all addresses <= 0xFFFF will be normal 64k addresses.
 Everything bigger is a long address with the coding:
 ~~~
 (bank_nr+1)<<16 + address
