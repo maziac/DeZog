@@ -520,12 +520,12 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 14    | CMD_SET_BREAKPOINTS |
 | 6     | 2    | 0-65535 | Breakpoint[0].address |
-| *8     | 1    | 0-65535 | Breakpoint[0].bank |
+| *8     | 1    | 0-255 | Breakpoint[0].bank+1 |
 | 9     | 2    | 0-65535 | Breakpoint[1].address |
-| 11    | 1    | 0-65535 | Breakpoint[1].bank |
+| 11    | 1    | 0-255 | Breakpoint[1].bank+1 |
 | ...   | ...  | ...   | ... |
 | 3+3*N | 2    | 0-65535 | Breakpoint[N-1].address |
-| 5+3*N | 1  | 0-65535 | Breakpoint[N-1].bank |
+| 5+3*N | 1  | 0-255 | Breakpoint[N-1].bank+1 |
 
 
 Response:
@@ -540,7 +540,8 @@ Response:
 
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
-- N is max. 16383 ((65536-2)/4)
+- N is max. 16383 ((65536-2)/4), see CMD_RESTORE_MEM.
+- long addresses (with bank info are passed, bank=0: 64k address)
 
 
 ## CMD_RESTORE_MEM
@@ -554,14 +555,14 @@ Command:
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 15    | CMD_RESTORE_MEM |
 | 6     | 2    | 0-65535 | [0].address |
-| *8     | 1    | 0-255 | [0].bank |
+| *8     | 1    | 0-255 | [0].bank+1 |
 | 9     | 1    | 0-255 | Value to restore |
 | 10    | 2    | 0-65535 | [1].address |
-| 12    | 1    | 0-255 | [1].bank |
+| 12    | 1    | 0-255 | [1].bank+1 |
 | 13    | 1    | 0-255 | Value to restore |
 | ...   | ...  | ...   | ... |
 | 2+4*N | 2    | 0-65535 | [N-1].address |
-| 3+4*N | 1    | 0-255 | [N-1].bank |
+| 3+4*N | 1    | 0-255 | [N-1].bank+1 |
 | 3+4*N | 1    | 0-255 | Value to restore |
 
 
@@ -574,6 +575,7 @@ Response:
 Notes:
 - This command is only used by the ZX Next, not by the emulators.
 - N is max. 16383 ((65536-2)/4)
+- long addresses (with bank info) are passed, bank=0: 64k address
 
 
 ## CMD_LOOPBACK
@@ -706,6 +708,8 @@ Response:
 | 5     | 2    | 1-65535/0 | Breakpoint ID. 0 is returned if no BP is available anymore. |
 
 
+Note: long addresses (with bank info) are passed, bank=0: 64k address
+
 ## CMD_REMOVE_BREAKPOINT
 
 Command:
@@ -730,13 +734,13 @@ Response:
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 6+n   | Length     |
+| 0     | 4    | 8   | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 42    | CMD_ADD_WATCHPOINT |
 | 6     | 2    | 0-65535 | Start of watchpoint address range |
-| 6     | 2    | 0-65535 | Size of watchpoint address range |
-| 6     | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
-| 8     | 1-n  | 0-terminated string | Breakpoint condition. Just 0 if no condition. |
+| 8     | 1    | 0-255 | bank+1 info |
+| 9     | 2    | 0-65535 | Size of watchpoint address range |
+| 11    | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
 
 
 Response:
@@ -746,17 +750,20 @@ Response:
 | 4     | 1    | 1-255 | Same seq no |
 | 5     | 1    | 0/1   | 0=success, other=error, e.g. no watchpoints available |
 
+Note: long addresses (with bank info) are passed, bank=0: 64k address
 
 ## CMD_REMOVE_WATCHPOINT
 
 Command:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
+| 0     | 4    | 8     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 43    | CMD_REMOVE_WATCHPOINT |
 | 6     | 2    | 0-65535 | Start of watchpoint address range |
-| 6     | 2    | 0-65535 | Size of watchpoint address range |
+| 8     | 1    | 0-255 | bank+1 info |
+| 9     | 2    | 0-65535 | Size of watchpoint address range |
+| 11    | 1    | Bit 0: read, Bit 1: write | Access type: read, write or read/write |
 
 
 Response:
