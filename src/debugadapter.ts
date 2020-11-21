@@ -446,7 +446,7 @@ export class DebugSessionClass extends DebugSession {
 		});
 
 		// Launch emulator
-		this.launch(response);
+		await this.launch(response);
 	}
 
 
