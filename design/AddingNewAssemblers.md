@@ -26,7 +26,7 @@ To make it even more complicated there exist two modes when parsing a list file:
 1. ListFile-Mode: The list file is the source. I.e. when stepping through a program the list file itself is shown and you are stepping through the list file no matter from what sources the list file was generated
 2. Sources-Mode: The list file is used to find the association between the source files (your assembler files) with the step addresses. When you step through the code you step through your source files.
 
-The mode is determined by the "srcDirs" launch.jso parameter. This is an array which contains the directories where source file can be located. If the array has length 0 (is empty) ListFile-Mode is assumed. If directories are given Sources-Mode is assumed.
+The mode is determined by the "srcDirs" launch.json parameter. This is an array which contains the directories where source file can be located. If the array has length 0 (is empty) ListFile-Mode is assumed. If directories are given Sources-Mode is assumed.
 
 
 # Process

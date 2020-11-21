@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import {Utility} from '../misc/utility';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
 
@@ -140,10 +141,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const fields=line.split('|');
 
 		// Get filename
-		const sourceFile=fields[0];
+		let sourceFile=fields[0];
 		// Check for comment or SLD.data.version
 		if (sourceFile=='')
 			return;
+		// Convert (also use srcDirs)
+		sourceFile=Utility.getRelSourceFilePath(sourceFile, this.config.srcDirs);
 
 		// Definition file/line not required
 

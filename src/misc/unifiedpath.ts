@@ -72,7 +72,7 @@ export class UnifiedPath {
 		if (!fpaths)
 			return undefined as any;
 		const uPath=fpaths.map(fpath =>
-			((fpath) ? fpath.replace(/\\/g, '/') : undefined) as string);
+			((fpath!=undefined) ? fpath.replace(/\\/g, '/') : undefined) as string);
 		return uPath;
 	}
 
