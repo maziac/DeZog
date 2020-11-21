@@ -217,7 +217,7 @@ export class RemoteBase extends EventEmitter {
 				}
 			}
 			catch (e) {
-				throw "Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e+"";
+				throw Error("Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e.message+"");
 			}
 		}
 
@@ -265,7 +265,7 @@ export class RemoteBase extends EventEmitter {
 					const regex=/\s*([^;]*)/i;
 					let match=regex.exec(part);
 					if (!match)	// At least one match should be found
-						throw "Expecting 'ASSERTION expr'.";
+						throw Error("Expecting 'ASSERTION expr'.");
 					conds=match[1];
 				}
 
@@ -287,7 +287,7 @@ export class RemoteBase extends EventEmitter {
 				}
 			}
 			catch (e) {
-				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e+"");
+				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e.message+"");
 			}
 		}
 
@@ -332,7 +332,7 @@ export class RemoteBase extends EventEmitter {
 				}
 				catch (e) {
 					// Show error
-					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e+"");
+					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e.message+"");
 				}
 			}
 		}
@@ -357,7 +357,7 @@ export class RemoteBase extends EventEmitter {
 			// Check syntax
 			const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
 			if (!matchInner)
-				throw "Log message format error: '"+match+"' in '"+logMsg+"'";
+				throw Error("Log message format error: '"+match+"' in '"+logMsg+"'");
 			const end=(matchInner[6])? ':'+matchInner[6]:'';
 			let addr=matchInner[3]||'';
 			if (addr.length) {
@@ -376,7 +376,7 @@ export class RemoteBase extends EventEmitter {
 					}
 					catch (e) {
 						// If it cannot be converted (e.g. a register name) an exception will be thrown.
-						throw "Log message format error: "+e.message+" in '"+logMsg+"'";
+						throw Error("Log message format error: "+e.message+" in '"+logMsg+"'");
 					}
 				}
 			}
@@ -384,7 +384,7 @@ export class RemoteBase extends EventEmitter {
 				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
 				const reg=matchInner[4];
 				if (!Z80RegistersClass.isRegister(reg))
-					throw "Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'";
+					throw Error("Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'");
 				return "${"+reg+end+"}";
 			}
 		});

@@ -693,7 +693,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch (e) {
 				// Show error
-				this.showWarning(e);
+				this.showWarning(e.message);
 			}
 		}
 

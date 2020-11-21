@@ -618,7 +618,7 @@ export class StepHistoryClass extends EventEmitter {
 		try {
 			const currentLine=this.revDbgNext();
 			if (!currentLine)
-				throw 'Break: Reached start of instruction history.';
+				throw Error('Break: Reached start of instruction history.');
 		}
 		catch (e) {
 			breakReasonString=e.message;
