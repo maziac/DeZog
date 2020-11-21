@@ -12,7 +12,7 @@ It is recommended to use the sjasmplus assembler but you can also use other asse
 
 The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax.
 
-For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc]](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well.
+For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well.
 
 Note: the z88dk z80asm is not supported as it lacks native support for macros.
 
@@ -195,8 +195,11 @@ If you like you can set this set this to true, but then you need to set a breakp
 
 ## Start the Unit Tests
 
-Make sure ZEsarUX is running and has remote control enabled (just like in a normal debugging session).
-Make sure that no debug session is currently running.
+For most unit tests you shouldn't need much (ZX) HW, ie. you coulld run them in the internal Z80 simulator (zsim).
+If you need more sophisticated HW emulation use ZEsarUX or CSpect.
+The internal simulator and ZEsarUX support memory breakpoints which can be an advantage if you make use of WPMEM in your sources.
+If you use ZEsarUX or CSpect make sure it is running (just like in a normal debugging session).
+Make sure that no "normal" debug session is currently running.
 
 Press F1 for the command palette to appear.
 Enter "dezog: Run all unit tests".
@@ -260,6 +263,7 @@ The coverage decoration is also available when running the unit tests in debug m
 It is reset whenever you start a new debug session or a new unit test.
 If you need to clear the coverage decoration at some other point go tp the command palette and enter "dezog: Clear the current code coverage decoration"
 
+Note: Code coverage is not supported in CSpect.
 
 # What Else
 
@@ -276,6 +280,6 @@ Example:
 # Caveats
 
 If you use a .sna file the inherited start address is simply ignored.
-You can use .sna and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
+You can use .sna, .nex and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
 
 

@@ -73,7 +73,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * @return A value, e.g. 0x7F.
 	 * If no port is found then undefined is returned.
 	 */
-	public readPort: (port: number) => number|undefined = undefined as any;
+	public readPort: (port: number) => number|undefined = (port) => undefined;
 
 
 	/**
@@ -82,7 +82,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * @param port the port number, e.g. 0x8000
 	 * @param value A value to set, e.g. 0x7F.
 	 */
-	public writePort: (port: number, value: number) => void=undefined as any;
+	public writePort: (port: number, value: number) => void=(port, value) => {};
 
 	/**
 	 * Simulates pulsing the processor's INT (or NMI) pin.
@@ -153,7 +153,7 @@ export class CustomCode extends EventEmitter {
 	constructor(jsCode: string) {
 		super();
 		// Create an API object
-		this.api=new CustomCodeAPI(this);
+		this.api = new CustomCodeAPI(this);
 		// Load for the first time
 		this.reload(jsCode);
 	}
