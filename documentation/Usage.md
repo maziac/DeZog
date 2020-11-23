@@ -53,7 +53,7 @@ A typical configuration looks like this:
                 //"-patterns"
             ],
             "disassemblerArgs": {
-        		numberOfLines: 20,
+        		"numberOfLines": 20,
                 "esxdosRst": true
             },
             "rootFolder": "${workspaceFolder}",
@@ -199,7 +199,13 @@ Then for the launch.json file you simply have to set the path to the SLD file. E
     }]
 ~~~
 
-
+Note: If for some reason you want to turn the banking information, i.e. the long addresses you can do so by setting ```disableBanking``` to true.
+~~~json
+"sjasmplus": [{
+    "path": "z80-sample-program.sld"
+    }],
+    "disableBanking": true
+~~~
 
 **Savannah-z80asm configuration:**
 

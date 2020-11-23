@@ -66,13 +66,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		this.config=config;
 		const sldConfig=this.config as SjasmplusConfig;
 		// Init (in case of several sld files)
-		this.lastLabel=undefined as any;
-		this.bankSize=0x10000;	// will be overwritten
-		//this.shiftBits=0;	// will be overwritten
+		this.lastLabel = undefined as any;
 
 		// Get bank size
 		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
 		this.parseForBankSizeAndSldOpt(sldLines);
+
+		// Check for setting to ignore the banking
+		if ((config as SjasmplusConfig).disableBanking)
+			this.bankSize = 0;	// Ignore banking
 
 		// Loop through all lines of the sld file
 		for (const line of sldLines) {

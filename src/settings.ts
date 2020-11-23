@@ -24,6 +24,9 @@ export interface AsmConfigBase {
 /// sjasmplus
 export interface SjasmplusConfig extends AsmConfigBase {
 	// Note: In sjasmplus the 'path' can be used either for a list file or for a sld file.
+
+	// SLD files work with addresses+bank information. If this is set all addresses are turned into simple 64k addresses as with list files.
+	disableBanking: boolean;
 }
 
 
@@ -428,7 +431,8 @@ export class Settings {
 				const file={
 					path: Utility.getAbsFilePath(fpPath||""),
 					srcDirs: fpSrcDirs||[""],
-					excludeFiles: fpExclFiles||[]
+					excludeFiles: fpExclFiles || [],
+					disableBanking: fp.disableBanking || false
 				};
 				return file;
 			});
