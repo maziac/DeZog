@@ -146,6 +146,10 @@ export class CustomCode extends EventEmitter {
 	// Remains.
 	protected context: any;
 
+	// For 'reload' the js code text is stored here.
+	protected jsCode: string;
+
+	// The api object is stored here.
 	protected api: CustomCodeAPI;
 
 
@@ -155,14 +159,25 @@ export class CustomCode extends EventEmitter {
 		// Create an API object
 		this.api = new CustomCodeAPI(this);
 		// Load for the first time
-		this.reload(jsCode);
+		this.load(jsCode);
 	}
 
 
 	/**
 	 * Reloads the custom javascript code.
 	 */
-	public reload(jsCode: string) {
+	public reload() {
+		this.load(this.jsCode);
+	}
+
+
+	/**
+	 * Reloads the custom javascript code.
+	 */
+	public load(jsCode: string) {
+		// Remember
+		this.jsCode = jsCode;
+
 		// Create new empty context
 		this.context={tmpAPI: this.api};
 
@@ -234,7 +249,7 @@ API.log('-------------------------------------\\n');`,
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogCustomCode.log('API.writePort('+Utility.getHexString(value, 4)+'h , '+Utility.getHexString(port, 2)+'h)');
+		LogCustomCode.log('API.writePort('+Utility.getHexString(port, 4)+'h , '+Utility.getHexString(value, 2)+'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);

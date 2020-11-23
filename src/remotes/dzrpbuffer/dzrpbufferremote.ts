@@ -536,10 +536,10 @@ export class DzrpBufferRemote extends DzrpRemote {
 		const im=regs[26];
 
 		// Get slots
-		const slotCount=regs[27];
+		const slotCount=regs[28];
 		const slots=new Array<number>(slotCount);
 		for (let i=0; i<slotCount; i++)
-			slots[i]=regs[28+i];
+			slots[i]=regs[29+i];
 
 		// Convert regs
 		const regData=Z80RegistersClass.getRegisterData(

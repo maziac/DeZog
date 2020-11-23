@@ -13,6 +13,7 @@ import { Decoration } from './decoration';
 import {StepHistory, CpuHistory, CpuHistoryClass} from './remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from './remotes/z80registers';
 import {StepHistoryClass} from './remotes/stephistory';
+import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 
 
 
@@ -520,23 +521,42 @@ export class Z80UnitTests {
 	 * Retrieves a list of strings with the labels of all unit tests.
 	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
 	 */
+	/*
 	public static async getAllUnitTests(): Promise<UnitTestCase[]> {
 		return new Promise<UnitTestCase[]>((resolve, reject) => {
 			try {
 				// Read all list files.
 				const labels = Z80UnitTests.loadLabelsFromConfiguration();
 				// Check if unit tests available
-				if(!Z80UnitTests.AreUnitTestsAvailable(labels))
+				if (!Z80UnitTests.AreUnitTestsAvailable(labels))
 					return resolve([]);	// Return empty array
 				// Get the unit test labels
 				const utLabels = Z80UnitTests.getAllUtLabels(labels);
 				resolve(utLabels);
 			}
-			catch(e) {
+			catch (e) {
 				// Error
 				reject(e.message || "Unknown error.");
 			}
 		});
+	}
+	*/
+	public static  getAllUnitTests(): UnitTestCase[] {
+		try {
+			// Read all list files.
+			const labels = Z80UnitTests.loadLabelsFromConfiguration();
+			// Check if unit tests available
+			if (!Z80UnitTests.AreUnitTestsAvailable(labels))
+				return [];	// Return empty array
+			// Get the unit test labels
+			const utLabels = Z80UnitTests.getAllUtLabels(labels);
+			return utLabels;
+		}
+		catch (e) {
+			// Re-throw
+			const msg = e.message || "Unknown error.";
+			throw Error("Z80 Unit Tests: "+msg);
+		}
 	}
 
 
@@ -577,15 +597,15 @@ export class Z80UnitTests {
 			throw Error("Unit tests not enabled in assembler sources.");
 
 		// Get the unit test code
-		Z80UnitTests.addrStart = Z80UnitTests.getNumberForLabel("UNITTEST_START");
-		Z80UnitTests.addrTestWrapper = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_WRAPPER");
-		Z80UnitTests.addrCall = Z80UnitTests.getNumberForLabel("UNITTEST_CALL_ADDR");
+		Z80UnitTests.addrStart = Z80UnitTests.getLongAddressForLabel("UNITTEST_START");
+		Z80UnitTests.addrTestWrapper = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
+		Z80UnitTests.addrCall = Z80UnitTests.getLongAddressForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
-		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_SUCCESS");
-		Z80UnitTests.addrTestReadyReturnFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
-		Z80UnitTests.addrTestReadyFailure=Z80UnitTests.getNumberForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
-		const stackMinWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MIN_STACK_GUARD");
-		const stackMaxWatchpoint = Z80UnitTests.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
+		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
+		Z80UnitTests.addrTestReadyReturnFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
+		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		const stackMinWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
+		const stackMaxWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
 
 		// Check if code for unit tests is really present
 		// (In case labels are present but the actual code has not been loaded.)
@@ -671,14 +691,17 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Returns the address for a label. Checks it and throws an error if it does not exist.
+	 * Returns the long address for a label. Checks it and throws an error if it does not exist.
 	 * @param label The label eg. "UNITTEST_TEST_WRAPPER"
 	 * @returns An address.
 	 */
-	protected static getNumberForLabel(label: string): number {
-		const addr = Labels.getNumberForLabel(label) as number;
-		if(addr == undefined) {
-			throw Error("Couldn't find the unit test wrapper (" + label + "). Did you forget to use the macro?");
+	protected static getLongAddressForLabel(label: string): number {
+		const loc = Labels.getLocationOfLabel(label);
+		let addr;
+		if (loc)
+			addr = loc.address;
+		if (addr == undefined) {
+			throw Error("Z80 unit Tests: Couldn't find the unit test wrapper (" + label + "). Did you forget to use the macro?");
 		}
 		return addr;
 	}
@@ -724,6 +747,12 @@ export class Z80UnitTests {
 					StepHistory.clear();
 					Remote.clearRegisters();
 					Remote.clearCallStack();
+
+					// Special handling for zsim: Re-init custom code.
+					if (Remote instanceof ZSimRemote) {
+						const zsim = Remote as ZSimRemote;
+						zsim.customCode?.reload();
+					}
 
 					// Run or Debug
 					Z80UnitTests.RemoteContinue(da);
@@ -966,8 +995,8 @@ export class Z80UnitTests {
 		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
 		// Convert to filenames and line numbers.
 		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
-			const location = labels.getLocationOfLabel(label) as {file: string, lineNr: number};
-			Utility.assert(location);
+			const location = labels.getLocationOfLabel(label)!
+			Utility.assert(location, "'getAllUtLabels'");
 			return {label, file:Utility.getAbsFilePath(location.file), line:location.lineNr};
 		});
 		return labelFilesLines;

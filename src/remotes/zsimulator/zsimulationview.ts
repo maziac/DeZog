@@ -157,7 +157,7 @@ export class ZSimulationView extends BaseView {
 				if (jsPath) {
 					// Can throw an error
 					const jsCode=readFileSync(jsPath).toString();
-					this.simulator.customCode.reload(jsCode);
+					this.simulator.customCode.load(jsCode);
 				}
 				// Reload the custom UI code
 				this.setHtml();

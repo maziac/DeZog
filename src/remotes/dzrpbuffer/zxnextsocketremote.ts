@@ -456,12 +456,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * This command is not used anymore. Use the NMI button instead.
 	 */
 	protected async sendDzrpCmdPause(): Promise<void> {
-		try {
-			await super.sendDzrpCmdPause();
-		}
-		catch {
-			throw Error("To pause execution use the yellow NMI button of the ZX Next.");
-		}
+		throw Error("To pause execution use the yellow NMI button of the ZX Next.");
 	}
 
 

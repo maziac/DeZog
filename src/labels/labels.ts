@@ -65,7 +65,7 @@ export class LabelsClass {
 	/// Map with label / file location association. Only used in unit tests to
 	/// point to the unit tests. Direct relationship: The line number of the label is returned.
 	/// Not the line number of the value of the label.
-	protected labelLocations=new Map<string, {file: string, lineNr: number}>()
+	protected labelLocations=new Map<string, {file: string, lineNr: number, address: number}>()
 
 	/// Stores the address of the watchpoints together with the line contents.
 	protected watchPointLines=new Array<{address: number, line: string}>();
@@ -272,7 +272,7 @@ export class LabelsClass {
 		else
 			names=new Array<string>();
 
-		let labels=this.labelsForNumber[number];
+		const labels=this.labelsForNumber[number];
 
 		if (labels&&typeof labels!=='number') {
 			names.push(...labels);
@@ -324,6 +324,7 @@ export class LabelsClass {
 	 * Returns the corresponding number of a label.
 	 * @param label The label name.
 	 * @returns It's value. undefined if label does not exist.
+	 * Returns only 64k addresses.
 	 */
 	public getNumberForLabel(label: string): number|undefined {
 		return this.numberForLabel.get(label);
@@ -333,10 +334,10 @@ export class LabelsClass {
 	/**
 	 * Returns the location (file/line number) of a label.
 	 * @param label The label. E.g. "math.div_c_d"
-	 * @returns {file, lineNr}: The absolute filepath and the line number.
+	 * @returns {file, lineNr, address}: The absolute filepath, the line number and the (long) address.
 	 * undefined if label does not exist.
 	 */
-	public getLocationOfLabel(label: string): {file: string, lineNr: number}|undefined {
+	public getLocationOfLabel(label: string): {file: string, lineNr: number, address: number}|undefined {
 		return this.labelLocations.get(label);
 	}
 

@@ -996,7 +996,7 @@ export class Utility {
 	public static assert(test: any, message?: string) {
 		if (!test) {
 			try {
-				throw Error(message);
+				throw Error("'assert' error. "+(message||""));
 			}
 			catch (err) {
 				// Log

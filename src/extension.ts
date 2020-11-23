@@ -115,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		catch (e) {
 			// Return empty list in case no unit tests are configured.
-			//vscode.window.showErrorMessage(e); // This is not an error!
+			vscode.window.showErrorMessage(e.message);
 			return [];
 		}
 	}));

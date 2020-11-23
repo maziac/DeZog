@@ -34,9 +34,10 @@ export class LabelParserBase {
 	protected numberForLabel: Map<string, number>;
 
 	/// Map with label / file location association.
+	/// 'address' is long address if available.
 	/// Does not store local labels.
 	/// Is used only for unit tests.
-	protected labelLocations: Map<string, {file: string, lineNr: number}>;
+	protected labelLocations: Map<string, {file: string, lineNr: number, address: number}>;
 
 
 	/// Stores the address of the watchpoints together with the line contents.
@@ -91,7 +92,7 @@ export class LabelParserBase {
 		lineArrays: Map<string, Array<number>>,
 		labelsForNumber: Array<any>,
 		numberForLabel: Map<string, number>,
-		labelLocations: Map<string, {file: string, lineNr: number}>,
+		labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
 		watchPointLines: Array<{address: number, line: string}>,
 		assertionLines: Array<{address: number, line: string}>,
 		logPointLines: Array<{address: number, line: string}>
@@ -288,7 +289,8 @@ export class LabelParserBase {
 				let fileLoc=this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
-					fileLoc={file: entry.fileName, lineNr: entry.lineNr};
+					const address: number = entry.addr!;
+					fileLoc = {file: entry.fileName, lineNr: entry.lineNr, address};
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
@@ -325,7 +327,8 @@ export class LabelParserBase {
 				let fileLoc=this.labelLocations.get(fullLabel);
 				if (!fileLoc) {
 					// Add new file location
-					fileLoc={file: entry.fileName, lineNr: entry.lineNr};
+					const address: number = entry.addr!;
+					fileLoc={file: entry.fileName, lineNr: entry.lineNr, address};
 					this.labelLocations.set(fullLabel, fileLoc);
 				}
 			}
@@ -459,13 +462,14 @@ export class LabelParserBase {
 		// Label: add to label array
 		this.numberForLabel.set(label, value);
 
-		// Add label
-		let labelsArray=this.labelsForNumber[value];
+		// Add label (just 64k address)
+		const value64k = value & 0xFFFF;
+		let labelsArray = this.labelsForNumber[value64k];
 		//console.log("labelsArray", labelsArray, "value=", value);
 		if (labelsArray===undefined) {
 			// create a new array
 			labelsArray=new Array<string>();
-			this.labelsForNumber[value]=labelsArray;
+			this.labelsForNumber[value64k]=labelsArray;
 		}
 		// Check if label already exists
 		for (let item of labelsArray) {

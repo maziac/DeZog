@@ -173,29 +173,32 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// Label: add to label array
 					this.numberForLabel.set(label, value);
 					// Add label
-					let labelsArray=this.labelsForNumber[value];
+					let labelsArray = this.labelsForNumber[value];	// 64k address
 					//console.log("labelsArray", labelsArray, "value=", value);
-					if (labelsArray==undefined) {
+					if (labelsArray == undefined) {
 						// create a new array
-						labelsArray=new Array<string>();
-						this.labelsForNumber[value]=labelsArray;
+						labelsArray = new Array<string>();
+						this.labelsForNumber[value] = labelsArray;
 					}
 					// Add new label
 					labelsArray.push(label);
 
 					// Add label a 2nd time with the long address.
 					// This is used to get the label from the call stack value.
-					const longValue=this.createLongAddress(value, page);
+					const longValue = this.createLongAddress(value, page);
 					// Add label
-					let labelsArrayLong=this.labelsForNumber[longValue];
+					let labelsArrayLong = this.labelsForNumber[longValue];
 					//console.log("labelsArray", labelsArray, "value=", value);
-					if (labelsArrayLong==undefined) {
+					if (labelsArrayLong == undefined) {
 						// create a new array
-						labelsArrayLong=new Array<string>();
-						this.labelsForNumber[longValue]=labelsArrayLong;
+						labelsArrayLong = new Array<string>();
+						this.labelsForNumber[longValue] = labelsArrayLong;
 					}
 					// Add new label
 					labelsArrayLong.push(label);
+					// Add (full) label to labelLocations for unit tests
+					const lineNr = parseInt(fields[1]) - 1;	// Get line number
+					this.labelLocations.set(label, {file: sourceFile, lineNr, address: longValue});
 				}
 				break;
 			case 'T':	// Instruction trace data

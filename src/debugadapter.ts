@@ -1218,6 +1218,10 @@ export class DebugSessionClass extends DebugSession {
 		const breakReasonString=await Remote.continue();
 		// It returns here not immediately but only when a breakpoint is hit or pause is requested.
 
+		// Safety check on termination
+		if (Remote == undefined)
+			return new StoppedEvent('exception', DebugSessionClass.THREAD_ID);
+
 		// Display break reason
 		if (breakReasonString) {
 			// Send output event to inform the user about the reason

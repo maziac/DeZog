@@ -63,7 +63,7 @@ The table below shows which commands are used with what remote:
 | CMD_SET_REGISTER      | X       | X      | X      |
 | CMD_WRITE_BANK        | X       | X      | X      |
 | CMD_CONTINUE          | X       | X      | X      |
-| CMD_PAUSE             | X       | X      | X      |
+| CMD_PAUSE             | X       | X      | -      |
 | CMD_READ_MEM          | X       | X      | X      |
 | CMD_WRITE_MEM         | X       | X      | X      |
 | CMD_GET_SLOTS         | X       | X      | X      |
@@ -97,6 +97,8 @@ DeZog knows with which remote it communicates and chooses the right subset.
 - TODO: set_breakpoints/restore_mem:
 Ich muss bei set_Breakpoints auch die bank mit zurückgeben und bei restore_mem die bank angeben, damit nicht in die falsche Bank "restored" wird und damit Speicher falsch überschrieben wird.
 - TODO: CMD_GET_SLOTS: Kann weg. CMD_SET_SLOTS ?
+
+- TODO: Alle Length (commands/responses durchgehen). Sind wohl größtenteils falsch.
 
 Changed:
 - CMD_INIT: Added memory model.
@@ -154,23 +156,52 @@ Open:
 ### 0.1.0
 - Initial experimental version.
 
+
 # Data Format
 
-The message format is very simple. It starts with the length information followed by a byte containing the command or response ID and then the data.
+The message format is very simple. It starts with the length information followed by a byte containing the sequence number.
+For commands a byte with the command ID will follow.
+And then the payload follows.
+
+Length is the length of all bytes folowing Length.
+
+Command:
 
 | Index | Size | Description |
 |-------|------|-------------|
-| 0     | 4    | Length of the following data beginning with 'Command ID' (little endian) |
+| 0     | 4    | Length of the payload data. (little endian) |
 | 4     | 1    | Sequence number, 1-255. Increased with each command |
-| 5     | 1    | Command ID or Response ID |
-| 6     | 1    | Data[0] |
+| 5     | 1    | Command ID |
+| 6     | 1    | Payload: Data[0] |
 | ...   | ...  | Data[...] |
 | 6+n-1 | 1    | Data[n-1] |
 
-The response ID is the same as the corresponding command ID.
+
+Response:
+
+| Index | Size | Description |
+|-------|------|-------------|
+| 0     | 4    | Length of the following data beginning with the sequence number. (little endian) |
+| 4     | 1    | Sequence number, same as command. |
+| 5     | 1    | Payload: Data[0] |
+| ...   | ...  | Data[...] |
+| 5+n-1 | 1    | Data[n-1] |
+
 The numbering for Commands starts at 1. (0 is reserved, i.e. not used).
 The numbering for notifications starts at 255 (counting down).
-So in total there are 255 possible commands and notifications.
+So in total there are 255 possible commands.
+
+There is one notification defined which uses the seqeunce number 0.
+
+Notification:
+
+| Index | Size | Description |
+|-------|------|-------------|
+| 0     | 4    | Length of the following data beginning with the sequence number. (little endian) |
+| 4     | 1    | Sequence number = 0. |
+| 5     | 1    | Payload: Data[0] |
+| ...   | ...  | Data[...] |
+| 5+n-1 | 1    | Data[n-1] |
 
 
 # Long addresses
@@ -189,25 +220,21 @@ This is because of the special meaning of ```bank==0``` in DeZog.
 This is the first command sent after connection.
 The command sender will evaluate the received version and disconnect if versions do not match.
 
-Command:
+Command (Length=4+n):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5+n   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 1     | CMD_INIT   |
-| 6     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
-| 9     | 1-n  | 0-terminated string | The program name + version as a string. E.g. "DeZog v1.4.0" |
+| 0     | 3    | 0-255, 0-255, 0-255 | Version (of the command sender): 3 bytes, big endian: Major.Minor.Patch |
+| 3     | 1-n  | 0-terminated string | The program name + version as a string. E.g. "DeZog v1.4.0" |
 
 
-Response:
+Response (Length=7+n):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 6+n   | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
-| 6     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
-| *9    | 1    | 0-255 | Machine type (memory model): 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: Only ZXNEXT is supported. |
-| 10    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v1.0.0" |
+| 0     | 1    | 1-255 | Same seq no |
+| 1     | 1    | 0/1-255 | Error: 0=no error, 1=general (unknown) error. |
+| 2     | 3    | 0-255, 0-255, 0-255 | Version (of the response sender) : 3 bytes, big endian: Major.Minor.Patch |
+| *5    | 1    | 0-255 | Machine type (memory model): 1 = ZX16K, 2 = ZX48K, 3 = ZX128K, 4 = ZXNEXT. Note: Only ZXNEXT is supported. |
+| 6    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0" |
 
 
 ## CMD_CLOSE
@@ -216,15 +243,13 @@ This is the last command. It is sent when the debug session is closed gracefully
 There is no guarantee that this command is sent at all, e.g. when the connection is disconnected ungracefully.
 But the receiver could use it e.g. to show the (assumed) connection status.
 
-Command:
+Command (Length=0):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 2     | CMD_CLOSE  |
+| -     | -    | -     | -          |
 
 
-Response:
+Response (Length=1):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
 | 0     | 4    | 1     | Length     |
@@ -233,91 +258,79 @@ Response:
 
 ## CMD_GET_REGISTERS
 
-Command:
+Command (Length=0):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 2     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 3     | CMD_GET_REGISTERS |
+| -     | -    | -     | -          |
 
-Response:
+
+Response (Length=30+Nslots):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 28+Nslots | Length |
-| 4     | 1    | 1-255 | Same seq no |
-| 5     | 2    | PC   | All little endian |
-| 7     | 2    | SP   |   |
-| 9     | 2    | AF   |   |
-| 11    | 2    | BC   |   |
-| 13    | 2    | DE   |   |
-| 15    | 2    | HL   |   |
-| 17    | 2    | IX   |   |
-| 19    | 2    | IY   |   |
-| 21    | 2    | AF2  |   |
-| 23    | 2    | BC2  |   |
-| 25    | 2    | DE2  |   |
-| 27    | 2    | HL2  |   |
-| 29    | 1    | R    |   |
-| 30    | 1    | I    |   |
-| 31    | 1    | IM   |   |
-| 32    | 1    | 1-255 | Nslots. The number of slots that will follow.  |
-| *33   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
+| 0    | 1    |       | Sequence number |
+| 1     | 2    | PC   | All little endian |
+| 3     | 2    | SP   |   |
+| 5     | 2    | AF   |   |
+| 7     | 2    | BC   |   |
+| 9     | 2    | DE   |   |
+| 11    | 2    | HL   |   |
+| 13    | 2    | IX   |   |
+| 15    | 2    | IY   |   |
+| 17    | 2    | AF2  |   |
+| 19    | 2    | BC2  |   |
+| 21    | 2    | DE2  |   |
+| 23    | 2    | HL2  |   |
+| 25    | 1    | R    |   |
+| 26    | 1    | I    |   |
+| 27    | 1    | IM   |   |
+| 28    | 1    | reserved |   |
+| 29    | 1    | 1-255 | Nslots. The number of slots that will follow.  |
+| *30   | slot[0] | 0-255 | The slot contents, i.e. the bank number |
 | ...   | ...  | ...  | " |
-| *32+Nslots | slot[Nslots-1] | 0-255 | " |
-// TODO: ZXNEXT remove reserved word after IM.
+| *29+Nslots | slot[Nslots-1] | 0-255 | " |
+
 
 ## CMD_SET_REGISTER
 
-Command:
+Command (Length=3):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 5     | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 4     | CMD_SET_REGISTER |
-| 6     | 1    | i     | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
-| 7     | 2  | n  | The value to set. Little endian. If register is one byte only the lower byte is used but both bytes are sent. |
+| 0     | 1    | i     | Register number: 0=PC, 1=SP, 2=AF, 3=BC, 4=DE, 5=HL, 6=IX, 7=IY, 8=AF', 9=BC', 10=DE', 11=HL', 13=IM, 14=F, 15=A, 16=C, 17=B, 18=E, 19=D, 20=L, 21=H, 22=IXL, 23=IXH, 24=IYL, 25=IYH, 26=F', 27=A', 28=C', 29=B', 30=E', 31=D', 32=L', 33=H', 34=R, 35=I |
+| 1     | 2  | n  | The value to set. Little endian. If register is one byte only the lower byte is used but both bytes are sent. |
 
 
-Response:
+Response (Length=1):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
+| 0     | 1    | 1-255 | Same seq no |
 
 
 ## CMD_WRITE_BANK
 
-Command:
+Command (Length=1+N):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | N+8   | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 5     | CMD_WRITE_BANK |
-| 6     | 1    | 0-255 | Bank number |
-| 7     | 1    | [0]   | First byte of memory block |
+| 0     | 1    | 0-255 | Bank number |
+| 1     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
-| *N+7   | 1    | [N-1] | Last byte of memory block |
+| *N   | 1    | [N-1] | Last byte of memory block |
 
 
 Example for ZXNext with 8K memory banks:
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 8200  | Length     |
-| 4     | 1    | 1-255 | Seq no     |
-| 5     | 1    | 5     | CMD_WRITE_BANK |
-| 6     | 1    | 0-223 | 8k bank number |
-| 7     | 1    | [0]   | First byte of memory block |
+| 0     | 1    | 0-223 | 8k bank number |
+| 1     | 1    | [0]   | First byte of memory block |
 | ..    | ..   | ...   | ... |
-| 8199  | 1    | [0x1FFF] | Last byte of memory block |
+| 8191  | 1    | [0x1FFF] | Last byte of memory block |
 
 
-Response:
+Response (Length=2+n):
 | Index | Size | Value |Description |
 |-------|------|-------|------------|
-| 0     | 4    | 1     | Length     |
-| 4     | 1    | 1-255 | Same seq no |
-| *5     | 1    | 0-255 | Error: 0=no error, 1 = error. |
-| *6     | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
+| 0     | 1    | 1-255 | Same seq no |
+| *1     | 1    | 0-255 | Error: 0=no error, 1 = error. |
+| *2     | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
 
 
 ## CMD_CONTINUE

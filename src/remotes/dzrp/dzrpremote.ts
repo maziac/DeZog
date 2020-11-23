@@ -292,9 +292,10 @@ export class DzrpRemote extends RemoteBase {
 			for (const name of regNames) {
 				const value=regs[i];
 				response+="\n"+name+"("+i+"): 0x"+Utility.getHexString(value, 4)+"/"+value;
-				i++
+				i++;
 			}
 			// Slots
+			i++;	// Skip reserved
 			const slotCount=regs[i++];
 			response+='\nslots.length='+slotCount;
 			for (let k=0; k<slotCount; k++)
@@ -700,7 +701,8 @@ export class DzrpRemote extends RemoteBase {
 				// Watchpoint
 				const address=breakAddress;
 				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getLongAddressString(address);
-				const labels=Labels.getLabelsForNumber(address);				if (labels.length>0) {
+				const labels = Labels.getLabelsPlusIndexForNumber(address);
+				if (labels.length > 0) {
 					const labelsString=labels.join(', ');
 					reasonString+=" ("+labelsString+")";
 				}
@@ -893,7 +895,7 @@ export class DzrpRemote extends RemoteBase {
 
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
-			this.sendDzrpCmdContinue();
+			await this.sendDzrpCmdContinue();
 		});
 	}
 
