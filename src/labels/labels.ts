@@ -417,7 +417,7 @@ export class LabelsClass {
 				return NaN;
 			result=Utility.parseValue(text);
 		}
-		return result;
+		return result & 0xFFFF;
 	}
 
 

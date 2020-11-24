@@ -82,6 +82,7 @@ export class RemoteBase extends EventEmitter {
 	static MAX_STACK_ITEMS=100;
 
 	/// The top of the stack. Used to limit the call stack.
+	/// 64k address.
 	public topOfStack: number;
 
 	/// A list for the frames (call stack items). Is cached here.
@@ -751,7 +752,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Returns the name of the main function.
-	 * @param sp The current SP value.
+	 * @param sp The current SP value. 64k address.
 	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
 	 */
 	public getMainName(sp: number) {
