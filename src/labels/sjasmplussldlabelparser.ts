@@ -181,12 +181,14 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// Split
 					const lbls = label.split(',');
 					this.modulePrefix = lbls[0];
+					if (this.modulePrefix)
+						this.modulePrefix + '.';
 					const mainLabel = lbls[1];
 					this.lastLabel = mainLabel;
 					const localLabel = lbls[2];	// without the '.'
 					let fullLabel = mainLabel;
 					if (this.modulePrefix)
-						fullLabel = this.modulePrefix + '.' + mainLabel;
+						fullLabel = this.modulePrefix + mainLabel;
 					if (localLabel)
 						fullLabel += '.' + localLabel;
 

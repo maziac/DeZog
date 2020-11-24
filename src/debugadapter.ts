@@ -1918,7 +1918,9 @@ export class DebugSessionClass extends DebugSession {
 							size=readSize;
 					}
 					if (!byteWord||byteWord.length==0)
-						byteWord="bw";	// both byte and word
+						byteWord = "bw";	// both byte and word
+					// Create fullLabel
+					const fullLabel = Utility.createFullLabel(labelString, modulePrefix, lastLabel);
 					// Now create a "variable" for the bigValues or small values
 					const format=(labelValue<=Settings.launch.smallValuesMaximum)? Settings.launch.formatting.smallValues:Settings.launch.formatting.bigValues;
 					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
@@ -1926,7 +1928,7 @@ export class DebugSessionClass extends DebugSession {
 							// small value
 							// Response
 							response.body={
-								result: (args.context=='hover')? name+': '+formattedValue:formattedValue,
+								result: (args.context == 'hover') ? fullLabel+': '+formattedValue:formattedValue,
 								variablesReference: 0,
 								//type: "data",
 								//amedVariables: 0
@@ -1940,7 +1942,7 @@ export class DebugSessionClass extends DebugSession {
 							const ref=this.listVariables.addObject(labelVar);
 							// Response
 							response.body={
-								result: (args.context=='hover')? name+': '+formattedValue:formattedValue,
+								result: (args.context == 'hover') ? fullLabel+': '+formattedValue:formattedValue,
 								variablesReference: ref,
 								type: "data",
 								//presentationHint: ,

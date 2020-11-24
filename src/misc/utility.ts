@@ -218,6 +218,7 @@ export class Utility {
 			if(isNaN(res)) {
 				// Assume it is a label or number
 				let lbl = p1;
+
 				// Local label?
 				if(lastLabel && lbl.startsWith('.')) {
 					lbl = lastLabel + lbl;
@@ -246,6 +247,28 @@ export class Utility {
 
 		// Return normal number
 		return result;
+	}
+
+
+	/**
+	 * Returns the full label form a label, lastLabel and modulePrefix info.
+	 * Is e.g. used on hovering to reconstruct a full label from a part of a label.
+	 * @param label The (found or main) label, e.g. "main.loop" or ".loop".
+	 * @param modulePrefix If defined a possible module (with dot), e.g. "module.".
+	 * @param lastLabel The last label found in the file, e.g. "main.loop". Will be added to the label,
+	 * if the label is a local label.
+	 * @returns A full label, e.g. "module.main.something.end".
+	 */
+	public static createFullLabel(label: string, modulePrefix?: string, lastLabel?: string): string {
+		// Local label?
+		if (lastLabel && label.startsWith('.')) {
+			label = lastLabel + label;
+		}
+		// Module prefix?
+		if (modulePrefix) {
+			label = modulePrefix + label;
+		}
+		return label;
 	}
 
 
