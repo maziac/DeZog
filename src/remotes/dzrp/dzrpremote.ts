@@ -179,7 +179,7 @@ export class DzrpRemote extends RemoteBase {
 			for (let loadObj of Settings.launch.loadObjs) {
 				if (loadObj.path) {
 					// Convert start address
-					const start=Labels.getNumberFromString(loadObj.start);
+					const start=Labels.getNumberFromString64k(loadObj.start);
 					if (isNaN(start))
 						throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
 					await this.loadObj(loadObj.path, start);
@@ -213,7 +213,7 @@ export class DzrpRemote extends RemoteBase {
 
 			// Set Program Counter to execAddress
 			if (Settings.launch.execAddress) {
-				const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
+				const execAddress=Labels.getNumberFromString64k(Settings.launch.execAddress);
 				if (isNaN(execAddress))
 					throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
 				// Set PC
@@ -701,7 +701,7 @@ export class DzrpRemote extends RemoteBase {
 				// Watchpoint
 				const address=breakAddress;
 				reasonString="Watchpoint "+((breakNumber==BREAK_REASON_NUMBER.WATCHPOINT_READ)? "read":"write")+" access at address 0x"+Utility.getLongAddressString(address);
-				const labels = Labels.getLabelsPlusIndexForNumber(address);
+				const labels = Labels.getLabelsPlusIndexForNumber64k(address);
 				if (labels.length > 0) {
 					const labelsString=labels.join(', ');
 					reasonString+=" ("+labelsString+")";

@@ -191,7 +191,7 @@ export class ZesaruxRemote extends RemoteBase {
 				for(let loadObj of Settings.launch.loadObjs) {
 					if(loadObj.path) {
 						// Convert start address
-						const start = Labels.getNumberFromString(loadObj.start);
+						const start = Labels.getNumberFromString64k(loadObj.start);
 						if(isNaN(start))
 							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
 						await zSocket.sendAwait('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
@@ -228,7 +228,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Set Program Counter to execAddress
 				let error;
 				if(Settings.launch.execAddress) {
-					const execAddress = Labels.getNumberFromString(Settings.launch.execAddress);
+					const execAddress = Labels.getNumberFromString64k(Settings.launch.execAddress);
 					if(isNaN(execAddress)) {
 						error = new Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
 						return;
@@ -239,7 +239,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Initialize more
 				await this.initAfterLoad();
-				
+
 				// Check for console.error
 				if (error) {
 					this.emit('error', error);
@@ -454,6 +454,7 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Returns the stack as array.
 	 * Oldest element is at index 0.
+	 * 64k addresses.
 	 * @returns The stack, i.e. the word values from topOfStack to SP.
 	 * But no more than about 100 elements.
 	 * The values are returned as hex string with additional from the
@@ -960,10 +961,11 @@ export class ZesaruxRemote extends RemoteBase {
 			if(Z80RegistersClass.isRegister(label))
 				return label;
 			// Convert label to number.
-			const addr = Labels.getNumberForLabel(label);
+			let addr = Labels.getNumberForLabel(label);
 			// If undefined, don't touch it.
 			if(addr == undefined)
 				return label;
+			addr &= 0xFFFF;	// for conditions only 64k are used
 			return addr.toString();;
 		});
 

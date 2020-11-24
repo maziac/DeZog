@@ -33,13 +33,18 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// main.asm|10||0|-1|-1|Z|pages.size: 8192, pages.count: 224, slots.count: 8, slots.adr: 0, 8192, 16384, 24576, 32768, 40960, 49152, 57344
 	// main.asm|15||0|11|24576|F|screen_top
 	// utilities.asm|7||0|-1|500|D|PAUSE_TIME
-	// utilities.asm|11||0|11|24577|F|pause
+	// src/breakpoints.asm|222||0|92|57577|F|enter_debugger.int_found
+	// src/breakpoints.asm|222||0|92|57577|L|,enter_debugger,int_found,+used
+	// src/breakpoints.asm|224||0|92|57577|T|
+	// src/breakpoints.asm|225||0|92|57580|K|; LOGPOINT [INT] Saving interrupt state: ${A:hex}h
+	// Note: F/D are not used (deprecated), instead L is used
+
 
 	// The number of used slots.
 	//protected shiftBits=3;
 
 	// The used bank size.
-	protected bankSize: number;	// will be overwritten
+	protected bankSize: number;	// will be overwritten. O indicates that long addresses should not be used (set by "disableBanking").
 
 	// The number of bits to shift to get the slot number from the address.
 	//protected shiftBits: number;	// will be overwritten
@@ -166,41 +171,32 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 		// Check data type
 		switch (type) {
-			case 'F': // Address labels (functions)
-				// Check if not local label
-				if(!label.startsWith((this.lastLabel||'')+'.'))
-					this.lastLabel=label;
-			case 'D': // EQU
+			case 'L': // Address labels or EQU
+				// A label looks like this: "module@1.main.2.local.2,module@1,main.2,local.2"
+				// First: Full label name.
+				// 2nd: Module.
+				// 3rd: The label without the local label(if any)
+				// 4th: The local label (if there is).
 				{
-					// Label: add to label array
-					this.numberForLabel.set(label, value);
-					// Add label
-					let labelsArray = this.labelsForNumber[value];	// 64k address
-					//console.log("labelsArray", labelsArray, "value=", value);
-					if (labelsArray == undefined) {
-						// create a new array
-						labelsArray = new Array<string>();
-						this.labelsForNumber[value] = labelsArray;
-					}
-					// Add new label
-					labelsArray.push(label);
+					// Split
+					const lbls = label.split(',');
+					this.modulePrefix = lbls[0];
+					const mainLabel = lbls[1];
+					this.lastLabel = mainLabel;
+					const localLabel = lbls[2];	// without the '.'
+					let fullLabel = mainLabel;
+					if (this.modulePrefix)
+						fullLabel = this.modulePrefix + '.' + mainLabel;
+					if (localLabel)
+						fullLabel += '.' + localLabel;
 
-					// Add label a 2nd time with the long address.
-					// This is used to get the label from the call stack value.
+					// Label: add to label array
 					const longValue = this.createLongAddress(value, page);
-					// Add label
-					let labelsArrayLong = this.labelsForNumber[longValue];
-					//console.log("labelsArray", labelsArray, "value=", value);
-					if (labelsArrayLong == undefined) {
-						// create a new array
-						labelsArrayLong = new Array<string>();
-						this.labelsForNumber[longValue] = labelsArrayLong;
-					}
-					// Add new label
-					labelsArrayLong.push(label);
+					this.addLabelForNumberRaw(longValue, fullLabel);
+
 					// Add (full) label to labelLocations for unit tests
 					const lineNr = parseInt(fields[1]) - 1;	// Get line number
-					this.labelLocations.set(label, {file: sourceFile, lineNr, address: longValue});
+					this.labelLocations.set(fullLabel, {file: sourceFile, lineNr, address: longValue});
 				}
 				break;
 			case 'T':	// Instruction trace data
@@ -215,7 +211,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					this.fileLineNrs.set(address, {
 						fileName: sourceFile,
 						lineNr: lineNr,
-						modulePrefix: undefined,
+						modulePrefix: this.modulePrefix,
 						lastLabel: this.lastLabel
 					});
 
@@ -225,7 +221,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						lineArray=new Array<number>();
 						this.lineArrays.set(sourceFile, lineArray);
 					}
-					// Store
+					// Store long address
 					lineArray[lineNr]=address;
 				}
 				break;

@@ -65,7 +65,9 @@ export class SjasmplusLabelParser extends LabelParserBase {
 				return;
 			// Get hex value
 			const valString=line.substr(2, 4);
-			const value=parseInt(valString, 16);
+			let value = parseInt(valString, 16);
+			// Restrict label to 64k (Note: >64k is interpreted as long address)
+			value &= 0xFFFF;
 			// Label
 			const label=line.substr(9).trim();
 			// Add label
@@ -142,8 +144,9 @@ export class SjasmplusLabelParser extends LabelParserBase {
 								valueString=cAddrString;
 							}
 							// Evaluate
-							const value=Utility.evalExpression(valueString, false);
-							//const entry = { value, file: fileName, line: lineNr};
+							let value = Utility.evalExpression(valueString, false);
+							// Restrict label to 64k (Note: >64k is interpreted as long address)
+							value &= 0xFFFF;
 							// Add EQU
 							this.addLabelForNumber(value, label, labelType);
 						}

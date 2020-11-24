@@ -531,7 +531,7 @@ export class MemoryDumpView extends BaseView {
 				valueText = this.addDeemphasizeNotInRange(valueText);
 
 			// Check if label points directly to this address
-			if (Labels.getLabelsForNumber(addr64k).length > 0)
+			if (Labels.getLabelsForNumber64k(addr64k).length > 0)
 				valueText = this.addEmphasizeLabelled(valueText);
 
 			// Compare with prev value.

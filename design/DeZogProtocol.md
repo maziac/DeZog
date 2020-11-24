@@ -471,8 +471,18 @@ Command:
 | 0     | 4    | 4     | Length     |
 | 4     | 1    | 1-255 | Seq no     |
 | 5     | 1    | 11    | CMD_SET_SLOT |
+| 6     | 1    | 0-255 | The slot to set. |
+| 7     | 1    | 0-255 | The 8k bank to use. |
+
+Example for ZXNext:
+Command:
+| Index | Size | Value |Description |
+|-------|------|-------|------------|
+| 0     | 4    | 4     | Length     |
+| 4     | 1    | 1-255 | Seq no     |
+| 5     | 1    | 11    | CMD_SET_SLOT |
 | 6     | 1    | 0-7   | The slot to set. |
-| 7     | 1    | 0-223, 0xFF | The 8k bank to use. |
+| 7     | 1    | 0-223, 0xFE, 0xFF | The 8k bank to use. |
 
 Note:
 - ROM0 = 254

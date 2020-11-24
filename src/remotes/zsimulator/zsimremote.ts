@@ -376,7 +376,7 @@ export class ZSimRemote extends DzrpRemote {
 		for (let loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
 				// Convert start address
-				const start=Labels.getNumberFromString(loadObj.start);
+				const start=Labels.getNumberFromString64k(loadObj.start);
 				if (isNaN(start))
 					throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
 				await this.loadObj(loadObj.path, start);
@@ -385,7 +385,7 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Set Program Counter to execAddress
 		if (Settings.launch.execAddress) {
-			const execAddress=Labels.getNumberFromString(Settings.launch.execAddress);
+			const execAddress=Labels.getNumberFromString64k(Settings.launch.execAddress);
 			if (isNaN(execAddress))
 				throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
 			// Set PC

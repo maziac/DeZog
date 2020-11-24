@@ -624,7 +624,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 			else {
 				// Now find label for this address
-				const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+				// TODO: Check if I could lookup a long address here
+				const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 				labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			}
 
@@ -787,8 +788,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 			sp-=2;	// CALL pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
-			const callAddr=(opcodes>>>8)&0xFFFF;
-			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const callAddr = (opcodes >>> 8) & 0xFFFF;
+			// TODO: Check if I could lookup a long address here
+			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
 			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway
@@ -799,8 +801,9 @@ export class CpuHistoryClass extends StepHistoryClass {
 			sp-=2;	// RST pushes to the stack
 			expectedSP=sp;
 			// Now find label for this address
-			const callAddr=this.getRstAddress(opcodes);
-			const labelCallAddrArr=Labels.getLabelsForNumber(callAddr);
+			const callAddr = this.getRstAddress(opcodes);
+			// TODO: Check if I could lookup a long address here
+			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
 			frame=new CallStackFrame(0, nextSP-2, name);	// pc is set later anyway

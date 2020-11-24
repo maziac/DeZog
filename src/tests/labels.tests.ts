@@ -167,13 +167,13 @@ suite('Labels', () => {
 				};
 				Labels.readListFiles(config);
 
-				let labels=Labels.getLabelsForNumber(0x6000);
+				let labels=Labels.getLabelsForNumber64k(0x6000);
 				assert.equal(labels[0], 'screen_top', "Expected label wrong.");
 
-				labels=Labels.getLabelsForNumber(0x6004);
+				labels=Labels.getLabelsForNumber64k(0x6004);
 				assert.equal(labels[0], 'pause_loop_l2', "Expected label wrong.");
 
-				labels=Labels.getLabelsPlusIndexForNumber(0x6008);
+				labels=Labels.getLabelsPlusIndexForNumber64k(0x6008);
 				assert.equal(labels[0], 'pause_loop_l1+2', "Expected label+index wrong.");
 
 			});

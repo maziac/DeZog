@@ -410,7 +410,7 @@ export class RemoteBase extends EventEmitter {
 			this.emit('warning', warnings);
 
 		// calculate top of stack, execAddress
-		this.topOfStack=Labels.getNumberFromString(Settings.launch.topOfStack);
+		this.topOfStack=Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
 
@@ -561,6 +561,9 @@ export class RemoteBase extends EventEmitter {
 	 * If the type is CALL, RST (or interrupt) an object with the label name, the called and
 	 * the caller address is returned.
 	 * Otherwise an undefined object is returned.
+	 * Uses the 64k address in stackEntryValue and builds a
+	 * long address together with the slot.
+	 * That is used to obtain the label.
 	 * @param stackEntryValue E.g. "3B89"
 	 * @returns {name, callerAddr}
 	 * if there was a CALL or RST
@@ -625,7 +628,7 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Found: get label
-		const labelCalledAddrArr=Labels.getLabelsForNumber(calledAddr);
+		const labelCalledAddrArr=Labels.getLabelsForLongAddress(calledAddr);
 		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr&0xFFFF, 4)+'h';
 
 		// Return
@@ -636,6 +639,7 @@ export class RemoteBase extends EventEmitter {
 	/**
 	* Returns the stack as an array.
 	* Oldest element is at index 0.
+	* 64k addresses.
 	* @returns The stack, i.e. the word values from topOfStack to SP.
 	* But no more than about 100 elements.
     * The values are returned as hex string, an additional info might follow.
@@ -688,7 +692,8 @@ export class RemoteBase extends EventEmitter {
 	/**
 	  * Returns the extended stack as array.
 	  * Oldest element is at index 0.
-	  * The function returns the call addresses as long addresses.
+	  * The function returns the call addresses as
+	  * long addresses.
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
 	  */
@@ -699,7 +704,7 @@ export class RemoteBase extends EventEmitter {
 
 		const callStack=new RefList<CallStackFrame>();
 		// Get normal stack values
-		const stack=await this.getStack();
+		const stack=await this.getStack();	// Returns 64k addresses as hex string.
 		// Start with main
 		const sp=Z80Registers.getRegValue(Z80_REG.SP);
 		const len=stack.length;

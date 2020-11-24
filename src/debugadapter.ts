@@ -718,11 +718,12 @@ export class DebugSessionClass extends DebugSession {
 			const verified=(foundCbp!=undefined)&&(foundCbp.address>=0);
 			const bp=new Breakpoint(verified, lineNr, 0, source);
 			if (foundCbp) {
+				// TODO: check if foundCbp.address is really a 64k address.
 				// Add address to source name.
 				const addrString=Utility.getHexString(foundCbp.address, 4)+'h';
 				// Add hover text
 				let txt=addrString;
-				const labels=Labels.getLabelsForNumber(foundCbp.address);
+				const labels=Labels.getLabelsForNumber64k(foundCbp.address);
 				labels.map(lbl => txt+='\n'+lbl);
 				(bp as any).message=txt;
 			}
@@ -818,6 +819,7 @@ export class DebugSessionClass extends DebugSession {
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
+			// TODO: use long addresses
 			//const addr=Remote.createLongAddress(frame.addr, slots);
 			const addr=frame.addr;
 			const file=Labels.getFileAndLineForAddress(addr);
@@ -1911,7 +1913,7 @@ export class DebugSessionClass extends DebugSession {
 					// Is a number
 					var size=100;
 					if (sizeString) {
-						const readSize=Labels.getNumberFromString(sizeString)||NaN;
+						const readSize=Labels.getNumberFromString64k(sizeString)||NaN;
 						if (!isNaN(readSize))
 							size=readSize;
 					}
@@ -2039,7 +2041,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// convert also to bin
 		result+=', '+value.toString(2)+'b';
 		// check for label
-		const labels=Labels.getLabelsPlusIndexForNumber(value);
+		const labels=Labels.getLabelsPlusIndexForNumber64k(value);
 		if (labels.length>0) {
 			result+=', '+labels.join(', ');
 		}
@@ -2081,7 +2083,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		let result='';
 		if (labels.length>0) {
 			labels.map(label => {
-				const value=Labels.getNumberForLabel(label);
+				let value = Labels.getNumberForLabel(label);
+				if (value != undefined)
+					value &= 0xFFFF;
 				result+=label+': '+Utility.getHexString(value, 4)+'h\n';
 			})
 		}
@@ -2380,8 +2384,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			// Also list all assertion breakpoints
 			const abps=Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
-				result+=Utility.getLongAddressString(abp.address);
-				const labels=Labels.getLabelsForNumber(abp.address);
+				result += Utility.getLongAddressString(abp.address);
+				// TODO: getLabelsForNumber is wrong: Should call getLabelsFornumberLong or similar
+				const labels=Labels.getLabelsForNumber64k(abp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');
 					result+=' ('+labelsString+')';
@@ -2424,8 +2429,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			// Also list all watchpoints
 			const wps=Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
-				result+=Utility.getLongAddressString(wp.address);
-				const labels=Labels.getLabelsForNumber(wp.address);
+				result += Utility.getLongAddressString(wp.address);
+				// TODO: getLabelsForNumber is wrong: Should call getLabelsFornumberLong or similar
+				const labels=Labels.getLabelsForNumber64k(wp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');
 					result+=' ('+labelsString+')';

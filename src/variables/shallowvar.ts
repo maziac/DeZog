@@ -112,7 +112,7 @@ export class DisassemblyVar extends ShallowVarConst {
 			const address=entry.address;
 			// Add to list
 			const addrString=Format.getHexString(address).toUpperCase();
-			const labels=Labels.getLabelsForNumber(address);
+			const labels=Labels.getLabelsForNumber64k(address);
 			var addrLabel=addrString;
 			if (labels)
 				addrLabel=labels.join(',\n');
@@ -460,7 +460,7 @@ export class MemDumpByteVar extends ShallowVar {
 			const formatted=await Utility.numberFormatted('', addr_i, size, format, tabSizes);
 			// check for label
 			var types=[Utility.getHexString(addr_i, 4)];
-			const labels=Labels.getLabelsPlusIndexForNumber(addr_i);
+			const labels=Labels.getLabelsPlusIndexForNumber64k(addr_i);
 			if (labels)
 				types=types.concat(labels);
 			const descr=types.join(',\n');

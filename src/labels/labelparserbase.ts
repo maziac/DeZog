@@ -20,33 +20,46 @@ export enum LabelType {
 export class LabelParserBase {
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
+	/// Long addresses.
 	protected fileLineNrs: Map<number, SourceFileEntry>;
 
 	/// Map of arrays of line numbers. The key of the map is the filename.
 	/// The array contains the correspondent memory address for the line number.
+	/// Long addresses.
 	protected lineArrays: Map<string, Array<number>>;
 
 	/// An element contains either the offset from the last
 	/// entry with labels or an array of labels for that number.
-	protected labelsForNumber: Array<any>;
+	/// Array contains a max 0x10000 entries. Thus it is for
+	/// 64k addresses.
+	protected labelsForNumber64k: Array<any>;
+
+	/// This map is used to associate long addresses with labels.
+	/// E.g. used for the call stack.
+	/// Long addresses.
+	protected labelsForLongAddress = new Map<number, Array<string>>();
 
 	/// Map with all labels (from labels file) and corresponding values.
-	protected numberForLabel: Map<string, number>;
+	/// Long addresses.
+	protected numberForLabel = new Map<string, number>();
 
 	/// Map with label / file location association.
-	/// 'address' is long address if available.
 	/// Does not store local labels.
 	/// Is used only for unit tests.
+	/// Long addresses.
 	protected labelLocations: Map<string, {file: string, lineNr: number, address: number}>;
 
 
 	/// Stores the address of the watchpoints together with the line contents.
+	/// Long addresses.
 	protected watchPointLines: Array<{address: number, line: string}>;
 
 	/// Stores the address of the assertions together with the line contents.
+	/// Long addresses.
 	protected assertionLines: Array<{address: number, line: string}>;
 
 	/// Stores the address of the logpoints together with the line contents.
+	/// Long addresses.
 	protected logPointLines: Array<{address: number, line: string}>;
 
 
@@ -90,7 +103,8 @@ export class LabelParserBase {
 	public constructor(
 		fileLineNrs: Map<number, SourceFileEntry>,
 		lineArrays: Map<string, Array<number>>,
-		labelsForNumber: Array<any>,
+		labelsForNumber64k: Array<any>,
+		labelsForLongAddress: Map<number, Array<string>>,
 		numberForLabel: Map<string, number>,
 		labelLocations: Map<string, {file: string, lineNr: number, address: number}>,
 		watchPointLines: Array<{address: number, line: string}>,
@@ -99,8 +113,9 @@ export class LabelParserBase {
 	) {
 		// Store variables
 		this.fileLineNrs=fileLineNrs;
-		this.lineArrays=lineArrays;
-		this.labelsForNumber=labelsForNumber;
+		this.lineArrays = lineArrays;
+		this.labelsForNumber64k = labelsForNumber64k;
+		this.labelsForLongAddress = labelsForLongAddress;
 		this.numberForLabel=numberForLabel;
 		this.labelLocations=labelLocations;
 		this.watchPointLines=watchPointLines;
@@ -422,63 +437,93 @@ export class LabelParserBase {
 
 
 	/**
-	 * Adds a new label to the LabelsForNumber array.
+	 * Adds a new label to the labelsForNumber64k array.
 	 * Creates a new array if required.
 	 * Adds the the label/value pair also to the numberForLabelMap.
-	 * @param value The value for which a new label is to be set.
+	 * Don't use for EQUs > 64k.
+	 * On the other hand long addresses can be passed.
+	 * I.e. everything > 64k is interpreted as long address.
+	 * Handles 64k and long addresses.
+	 * @param value The value for which a new label is to be set. If a value > 64k it needs
+	 * to be a long address.
+	 * I.e. EQU values > 64k are not allowed here.
 	 * @param label The label to add.
 	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
 	 */
-	protected addLabelForNumber(value: number, label: string, labelType=LabelType.GLOBAL) {
-		// Safety check
-		//if (value<0||value>=0x10000)
-		//	return;  Is allowed for EQU
-
+	// TODO: Deprecated: The labelType is only required for sjasmplus list file, which is deprecated. Remove the parameter.
+	protected addLabelForNumber(value: number, label: string, labelType = LabelType.GLOBAL) {
 		switch (labelType) {
 			case LabelType.NORMAL:
 				// Remember last label (for local labels)
-				this.lastLabel=label;
-				this.currentFileEntry.lastLabel=this.lastLabel;
+				this.lastLabel = label;
+				this.currentFileEntry.lastLabel = this.lastLabel;
 				// Add prefix
 				if (this.modulePrefix)
-					label=this.modulePrefix+label;
+					label = this.modulePrefix + label;
 				break;
 			case LabelType.LOCAL:
 				// local label
 				if (this.lastLabel) // Add Last label
-					label=this.lastLabel+label;
+					label = this.lastLabel + label;
 				// Add prefix
 				if (this.modulePrefix)
-					label=this.modulePrefix+label;
+					label = this.modulePrefix + label;
 				break;
 			case LabelType.GLOBAL:
 				// Remember last label (for local labels)
-				this.lastLabel=label;
-				this.currentFileEntry.lastLabel=this.lastLabel;
-				this.currentFileEntry.modulePrefix=undefined;
+				this.lastLabel = label;
+				this.currentFileEntry.lastLabel = this.lastLabel;
+				this.currentFileEntry.modulePrefix = undefined;
 				break;
 		}
 
-		// Label: add to label array
+		this.addLabelForNumberRaw(value, label);
+	}
+
+
+	/**
+	 * Adds a new label to the labelsForNumber64k array.
+	 * Creates a new array if required.
+	 * Adds the the label/value pair also to the numberForLabelMap.
+	 * Don't use for EQUs > 64k.
+	 * On the other hand long addresses can be passed.
+	 * I.e. everything > 64k is interpreted as long address.
+	 * Handles 64k and long addresses.
+	 * @param value The value for which a new label is to be set. If a value > 64k it needs
+	 * to be a long address.
+	 * I.e. EQU values > 64k are not allowed here.
+	 * @param label The label to add.
+	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
+	 */
+	protected addLabelForNumberRaw(value: number, label: string) {
+
+		// Label: add to label array, long address
 		this.numberForLabel.set(label, value);
 
-		// Add label (just 64k address)
+		// Add label to labelsForNumber64k (just 64k address)
 		const value64k = value & 0xFFFF;
-		let labelsArray = this.labelsForNumber[value64k];
+		let labelsArray = this.labelsForNumber64k[value64k];
 		//console.log("labelsArray", labelsArray, "value=", value);
-		if (labelsArray===undefined) {
+		if (labelsArray === undefined) {
 			// create a new array
-			labelsArray=new Array<string>();
-			this.labelsForNumber[value64k]=labelsArray;
+			labelsArray = new Array<string>();
+			this.labelsForNumber64k[value64k] = labelsArray;
 		}
 		// Check if label already exists
-		for (let item of labelsArray) {
-			if (item==label)
-				return;	// already exists.
-		}
+		if (labelsArray.indexOf(label) < 0)
+			labelsArray.push(label);	// Add new label
 
-		// Add new label
-		labelsArray.push(label);
+		// Add label to labelsForLongAddress
+		labelsArray = this.labelsForLongAddress.get(value);
+		//console.log("labelsArray", labelsArray, "value=", value);
+		if (labelsArray === undefined) {
+			// create a new array
+			labelsArray = new Array<string>();
+			this.labelsForLongAddress.set(value, labelsArray);
+		}
+		// Check if label already exists
+		if (labelsArray.indexOf(label) < 0)
+			labelsArray.push(label);	// Add new label
 	}
 
 

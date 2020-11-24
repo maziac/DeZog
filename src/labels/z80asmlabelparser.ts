@@ -67,7 +67,9 @@ export class Z80asmLabelParser extends LabelParserBase {
 								valueString=cAddrString;
 							}
 							// Evaluate
-							const value=Utility.evalExpression(valueString, false);
+							let value = Utility.evalExpression(valueString, false);
+							// Restrict label to 64k (Note: >64k is interpreted as long address)
+							value &= 0xFFFF;
 							// Add label
 							this.addLabelForNumber(value, label);
 						}

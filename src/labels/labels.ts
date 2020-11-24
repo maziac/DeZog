@@ -49,31 +49,48 @@ export class LabelsClass {
 
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
+	/// Long addresses.
 	protected fileLineNrs=new Map<number, SourceFileEntry>();
 
 	/// Map of arrays of line numbers. The key of the map is the filename.
 	/// The array contains the correspondent memory address for the line number.
+	/// Long addresses.
 	protected lineArrays=new Map<string, Array<number>>();
 
 	/// An element contains either the offset from the last
 	/// entry with labels or an array of labels for that number.
-	protected labelsForNumber=new Array<any>();
+	/// Array contains a max 0x10000 entries. Thus it is for
+	/// 64k addresses.
+	protected labelsForNumber64k = new Array<any>();
+
+	/// This map is used to associate long addresses with labels.
+	/// E.g. used for the call stack.
+	/// Long addresses.
+	protected labelsForLongAddress = new Map<number, Array<string>>();
+
 
 	/// Map with all labels (from labels file) and corresponding values.
+	/// Long addresses.
 	protected numberForLabel=new Map<string, number>();
 
-	/// Map with label / file location association. Only used in unit tests to
-	/// point to the unit tests. Direct relationship: The line number of the label is returned.
+	/// Map with label / file location association.
+	/// Used in sourcesModeFinish to create the file label association and
+	/// used in unit tests to point to the unit tests.
+	/// Direct relationship: The line number of the label is returned.
 	/// Not the line number of the value of the label.
+	/// Long addresses.
 	protected labelLocations=new Map<string, {file: string, lineNr: number, address: number}>()
 
 	/// Stores the address of the watchpoints together with the line contents.
+	/// Long addresses.
 	protected watchPointLines=new Array<{address: number, line: string}>();
 
 	/// Stores the address of the assertions together with the line contents.
+	/// Long addresses.
 	protected assertionLines=new Array<{address: number, line: string}>();
 
 	/// Stores the address of the logpoints together with the line contents.
+	/// Long addresses.
 	protected logPointLines=new Array<{address: number, line: string}>();
 
 
@@ -105,7 +122,8 @@ export class LabelsClass {
 		// clear data
 		this.fileLineNrs.clear();
 		this.lineArrays.clear();
-		this.labelsForNumber.length=0;
+		this.labelsForNumber64k.length = 0;
+		this.labelsForLongAddress.clear();
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
 		this.watchPointLines.length=0;
@@ -153,11 +171,11 @@ export class LabelsClass {
 				let parser;
 				if(SjasmplusSldLabelParser.IsSldFile(config.path)) {
 					// Parse SLD file and list file
-					parser=new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+					parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
 				else {
 					// Parse just list file
-					parser=new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+					parser = new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
 				this.bankSize=parser.bankSize;
@@ -170,14 +188,14 @@ export class LabelsClass {
 
 		// z80asm
 		if (mainConfig.z80asm) {
-			const parser=new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z80asm)
 				parser.loadAsmListFile(config);
 		}
 
 		// z88dk
 		if (mainConfig.z88dk) {
-			const parser=new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			const parser = new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z88dk)
 				parser.loadAsmListFile(config);
 		}
@@ -204,6 +222,7 @@ export class LabelsClass {
 
 	/**
 	 * Accessor for the watchpoint lines.
+	 * Long addresses.
 	 */
 	public getWatchPointLines() {
 		return this.watchPointLines;
@@ -212,6 +231,7 @@ export class LabelsClass {
 
 	/**
 	 * Accessor for the assertion lines.
+	 * Long addresses.
 	 */
 	public getAssertionLines() {
 		return this.assertionLines;
@@ -220,6 +240,7 @@ export class LabelsClass {
 
 	/**
 	 * Accessor for the logpoint lines.
+	 * Long addresses.
 	 */
 	public getLogPointLines() {
 		return this.logPointLines;
@@ -229,15 +250,16 @@ export class LabelsClass {
 	/**
 	 * Calculates the offsets for all labels.
 	 * I.e. for all addresses without a direct label entry.
+	 * Deals with 64k addresses only.
 	 */
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
 		var offs=-1;
 		for (var i=0; i<0x10000; i++) {
-			const labels=this.labelsForNumber[i];
+			const labels=this.labelsForNumber64k[i];
 			if (labels===undefined) {
 				if (offs>=0) {
-					this.labelsForNumber[i]=offs;
+					this.labelsForNumber64k[i]=offs;
 					++offs;
 				}
 			}
@@ -250,31 +272,43 @@ export class LabelsClass {
 
 
 	/**
-	 * Returns all labels with the exact same address
-	 * to the given address.
-	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
+	 * Returns all labels with the exact same address to the given address.
+	 * Long addresses.
+	 * @param longAddress The address value to find.
+	 * @returns An array of strings with labels. Might return an empty array.
+	 */
+	public getLabelsForLongAddress(longAddress: number): Array<string> {
+		const labels = this.labelsForLongAddress.get(longAddress);
+		return labels||[];
+	}
+
+
+	/**
+	 * Returns all labels with the exact same address to the given address.
+	 * 64k addresses.
+	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 0xFFFF.
 	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
-	public getLabelsForNumber(number: number, regsAsWell=false): Array<string> {
+	public getLabelsForNumber64k(number: number, regsAsWell = false): Array<string> {
 		/*
 		if (number<=this.smallValuesMaximum||number>0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
 		}
 		*/
-		if (number<=this.smallValuesMaximum) {
+		if (number <= this.smallValuesMaximum) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513
 		}
 
 		let names;
 		if (regsAsWell)
-			names=Remote.getRegistersEqualTo(number);
+			names = Remote.getRegistersEqualTo(number);
 		else
-			names=new Array<string>();
+			names = new Array<string>();
 
-		const labels=this.labelsForNumber[number];
+		const labels = this.labelsForNumber64k[number];
 
-		if (labels&&typeof labels!=='number') {
+		if (labels && typeof labels !== 'number') {
 			names.push(...labels);
 		}
 		return names;
@@ -286,11 +320,12 @@ export class LabelsClass {
 	 * to the given address.
 	 * If label is equal to given addr the label itself is returned.
 	 * If label is not equal to given addr the label+offset is returned.
+	 * 64k addresses.
 	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 65535.
 	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels + offset
 	 */
-	public getLabelsPlusIndexForNumber(number: number, regsAsWell=false): Array<string> {
+	public getLabelsPlusIndexForNumber64k(number: number, regsAsWell=false): Array<string> {
 		if (number<=this.smallValuesMaximum||number>0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
 		}
@@ -301,7 +336,7 @@ export class LabelsClass {
 		else
 			names=new Array<string>();
 
-		let labels=this.labelsForNumber[number];
+		let labels=this.labelsForNumber64k[number];
 		if (labels) {
 			if (typeof labels!=='number') {
 				names.push(...labels);
@@ -309,7 +344,7 @@ export class LabelsClass {
 			else {
 				const offs=labels;	// number
 				number-=offs;
-				const baseLabels=this.labelsForNumber[number];	// this is an array
+				const baseLabels=this.labelsForNumber64k[number];	// this is an array
 				if (baseLabels!==undefined) {
 					const labelsPlus=baseLabels.map(label => label+'+'+offs);
 					names.push(...labelsPlus);
@@ -322,9 +357,13 @@ export class LabelsClass {
 
 	/**
 	 * Returns the corresponding number of a label.
+	 * Long addresses.
+	 * Used by:
+	 * - debugAdapter.evalLabel
+	 * - zesarux.convertCondition
+	 * - z80unittests.labels.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 	 * @param label The label name.
 	 * @returns It's value. undefined if label does not exist.
-	 * Returns only 64k addresses.
 	 */
 	public getNumberForLabel(label: string): number|undefined {
 		return this.numberForLabel.get(label);
@@ -333,6 +372,7 @@ export class LabelsClass {
 
 	/**
 	 * Returns the location (file/line number) of a label.
+	 * Long addresses.
 	 * @param label The label. E.g. "math.div_c_d"
 	 * @returns {file, lineNr, address}: The absolute filepath, the line number and the (long) address.
 	 * undefined if label does not exist.
@@ -363,10 +403,11 @@ export class LabelsClass {
 	/**
 	 * Returns a number. If text is a label than the corresponding number for the label is returned.
 	 * If text is not a label it is tried to convert text as string to a number.
+	 * 64k addresses.
 	 * @param text The label name or a number in hex or decimal as string.
 	 * @returns The correspondent number. May return NaN.
 	 */
-	public getNumberFromString(text: string): number {
+	public getNumberFromString64k(text: string): number {
 		if (text==undefined)
 			return NaN;
 		var result=this.getNumberForLabel(text);
@@ -383,6 +424,7 @@ export class LabelsClass {
 	/**
 	 * Returns file name and line number associated with a certain memory address.
 	 * Used e.g. for the call stack.
+	 * Long addresses.
 	 * @param address The memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
@@ -399,9 +441,10 @@ export class LabelsClass {
 
 	/**
 	 * Returns the memory address associated with a certain file and line number.
+	 * Long addresses.
 	 * @param fileName The path to the file. Can be an absolute path.
 	 * @param lineNr The line number inside the file.
-	 * @returns The associated address. -1 if file or line does not exist.
+	 * @returns The associated (long) address. -1 if file or line does not exist.
 	 */
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
 		var filePath=Utility.getRelFilePath(fileName);

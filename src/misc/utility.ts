@@ -224,12 +224,12 @@ export class Utility {
 				}
 				// module prefix?
 				if(modulePrefix) {
-					res = Labels.getNumberFromString(modulePrefix+lbl) || NaN;
+					res = Labels.getNumberFromString64k(modulePrefix+lbl) || NaN;
 				}
 
 				if(isNaN(res)) {
 					// Check for "normal" label
-					res = Labels.getNumberFromString(lbl);
+					res = Labels.getNumberFromString64k(lbl);
 					if(isNaN(res))
 						res = p1;	// Return unchanged substring
 				}
@@ -586,7 +586,7 @@ export class Utility {
 				case 'labels':
 				{
 					// calculate labels
-					const labels = Labels.getLabelsForNumber(value, regsAsWell);
+					const labels = Labels.getLabelsForNumber64k(value, regsAsWell);
 					// format
 					if(labels && labels.length > 0)
 						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
@@ -597,7 +597,7 @@ export class Utility {
 				case 'labelsplus':
 				{
 					// calculate labels
-					const labels = Labels.getLabelsPlusIndexForNumber(value, regsAsWell);
+					const labels = Labels.getLabelsPlusIndexForNumber64k(value, regsAsWell);
 					// format
 					if(labels && labels.length > 0)
 						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
