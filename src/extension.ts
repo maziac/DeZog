@@ -146,10 +146,34 @@ export function activate(context: vscode.ExtensionContext) {
 		return Z80UnitTests.cmdCancelAllUnitTests();
 	}));
 
-	// Register a configuration provider for 'zrcp' debug type
+	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
 	context.subscriptions.push(configProvider);
+
+	// Register an evaluation provider for hovering.
+	// Note: Function is only called in debug context and only for the file currently being debugged.
+	// Therefore '' is enough.
+	vscode.languages.registerEvaluatableExpressionProvider('*', {
+		provideEvaluatableExpression(
+			document: vscode.TextDocument,
+			position: vscode.Position
+		): vscode.ProviderResult<vscode.EvaluatableExpression> {
+			const wordRange = document.getWordRangeAtPosition(position, /[\w\.]+/);
+			if (wordRange) {
+				const filePath = document.fileName;
+				if (filePath) {
+					const text = document.getText(wordRange);
+					// Put additionally text file path and position into 'expression',
+					// Format: "word:filePath:line:column"
+					// Example: "data_b60:/Volumes/SDDPCIE2TB/Projects/Z80/asm/z80-sld/main.asm:28:12
+					const expression = text + ':' + filePath + ':' + position.line + ':' + position.character;
+					return new vscode.EvaluatableExpression(wordRange, expression);
+				}
+			}
+			return undefined; // Nothing found
+		}
+	});
 
 	// Initialize the Coverage singleton.
 	DecorationClass.Initialize(context);

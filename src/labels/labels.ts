@@ -10,6 +10,8 @@ import {Z88dkLabelParser} from './z88dklabelparser';
 
 /**
  * For the association of the addresses to the files.
+ * modulePrefix and lastLabel are also put here. They are used mainly for hovering.
+ * This is not optimal but too much effort to change.
  */
 export interface SourceFileEntry {
 	fileName: string;	/// The associated source filename
@@ -417,6 +419,8 @@ export class LabelsClass {
 				return NaN;
 			result=Utility.parseValue(text);
 		}
+		if (isNaN(result))
+			return result;
 		return result & 0xFFFF;
 	}
 
@@ -430,12 +434,49 @@ export class LabelsClass {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Address file conversion
-		const entry=this.fileLineNrs.get(address);
+		const entry = this.fileLineNrs.get(address);
 		if (!entry)
 			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
 
-		const filePath=Utility.getAbsFilePath(entry.fileName);
+		const filePath = Utility.getAbsFilePath(entry.fileName);
 		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel};
+	}
+
+
+	/**
+	 * Returns the memory address associated with a certain file and line number.
+	 * Long addresses.
+	 * @param fileName The path to the file. Can be an absolute path.
+	 * @param lineNr The line number inside the file.
+	 * @returns The associated (long) address. -1 if file or line does not exist.
+	 */
+	public getModuleAndLastLabelForFileAndLine(fileName: string, lineNr: number): {modulePrefix: string, lastLabel: string} {
+		// The available structures are not ideal:
+		// First find an address for lineNr.
+		// Then use the address to get modulePrefix and lastLabel.
+		var filePath = Utility.getRelFilePath(fileName);
+		const result = {modulePrefix: '', lastLabel: ''};
+		let longAddr;
+		const lineArray = this.lineArrays.get(filePath);
+		if (!lineArray)
+			return result;
+		// Search backward for an address
+		while (true) {
+			if (lineNr < 0)
+				return {modulePrefix: '', lastLabel: ''};
+			longAddr = lineArray[lineNr];
+			if (longAddr != undefined)
+				break;
+			// Previous
+			lineNr--;
+		}
+
+		// Now with the address get the modulePrefix and the lastLabel
+		const entry = Labels.getFileAndLineForAddress(longAddr);
+		result.modulePrefix=entry.modulePrefix!;
+		result.lastLabel = entry.lastLabel!;
+
+		return result;
 	}
 
 
@@ -533,7 +574,9 @@ export class LabelsClass {
 		for (const [, lineArray] of this.lineArrays) {
 			const count=lineArray.length;
 			for (let i=0; i<count; i++) {
-				let addr=lineArray[i];
+				let addr = lineArray[i];
+				if (addr == undefined)
+					continue;
 				// Check if no bank used
 				if (targetBankSize==0) {
 					addr&=0xFFFF;

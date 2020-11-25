@@ -1834,6 +1834,9 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Is called when hovering or when an expression is added to the watches.
 	 * Or if commands are input in the debug console.
+	 * both have different formats:
+	 * - hovering: "word:filePath:line:column", e.g. "data_b60:/Volumes/SDDPCIE2TB/Projects/Z80/asm/z80-sld/main.asm:28:12"
+	 * - debug console: starts with "-", e.g. "-wpmem enable"
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		// Check if its a debugger command
@@ -1845,6 +1848,7 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
+		// Check for debug console
 		if (expression.startsWith('-')) {
 			try {
 				if (expression.startsWith('-')) {
@@ -1861,13 +1865,28 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
+		// Hover
 		Log.log('evaluate.expression: '+args.expression);
 		Log.log('evaluate.context: '+args.context);
 		Log.log('evaluate.format: '+args.format);
 
-		// get the name
-		const name=expression;
+		// Get the name, path, line
+		const hoverArr = expression.split(':');
+		// Check format
+		if (hoverArr.length < 3) {
+			// Happens e.g. if in the debug console a word without starting "-" is entered
+			const errorTxt = "Error: Can't evaluate '" + expression + "'"
+			Log.log(errorTxt);
+			response.body = {
+				result: errorTxt,
+				variablesReference: 0
+			};
+			this.sendResponse(response);
+			return;
+		}
+
 		// Check if it is a register
+		const name = hoverArr[0];
 		if (Z80RegistersClass.isRegister(name)) {
 			const formatMap=(args.context=='hover')? Z80RegisterHoverFormat:Z80RegisterVarFormat;
 			const formattedValue=await Utility.getFormattedRegister(name, formatMap); response.body={
@@ -1878,11 +1897,14 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
+
 		// Check if it is a label. A label may have a special formatting:
 		// Example: LBL_TEXT 10, b
 		// = Addresse LBL_TEXT, 10 bytes
 		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 		if (match) {
+			const path = hoverArr[1];	// Absolute path
+			const lineNr = parseInt(hoverArr[2]);
 			let labelString=match[1];
 			let sizeString=match[3];
 			let byteWord=match[5];
@@ -1892,12 +1914,10 @@ export class DebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				Remote.getRegisters().then(() => {
-					const pcLongAddr=Remote.getPCLong();
-					const entry=Labels.getFileAndLineForAddress(pcLongAddr);
+				const modLbl = Labels.getModuleAndLastLabelForFileAndLine(path, lineNr);
 					// Local label and prefix
-					lastLabel=entry.lastLabel;
-					modulePrefix=entry.modulePrefix;
+				lastLabel = modLbl.lastLabel;
+				modulePrefix = modLbl.modulePrefix;
 
 					// Convert label
 					try {
@@ -1923,36 +1943,35 @@ export class DebugSessionClass extends DebugSession {
 					const fullLabel = Utility.createFullLabel(labelString, modulePrefix, lastLabel);
 					// Now create a "variable" for the bigValues or small values
 					const format=(labelValue<=Settings.launch.smallValuesMaximum)? Settings.launch.formatting.smallValues:Settings.launch.formatting.bigValues;
-					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
-						if (labelValue<=Settings.launch.smallValuesMaximum) {
-							// small value
-							// Response
-							response.body={
-								result: (args.context == 'hover') ? fullLabel+': '+formattedValue:formattedValue,
-								variablesReference: 0,
-								//type: "data",
-								//amedVariables: 0
-							}
+				Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
+					if (labelValue <= Settings.launch.smallValuesMaximum) {
+						// small value
+						// Response
+						response.body = {
+							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+							variablesReference: 0,
+							//type: "data",
+							//amedVariables: 0
 						}
-						else {
-							// big value
-							// Create a label variable
-							const labelVar=new LabelVar(labelValue, size, byteWord, this.listVariables);
-							// Add to list
-							const ref=this.listVariables.addObject(labelVar);
-							// Response
-							response.body={
-								result: (args.context == 'hover') ? fullLabel+': '+formattedValue:formattedValue,
-								variablesReference: ref,
-								type: "data",
-								//presentationHint: ,
-								namedVariables: 2,
-								//indexedVariables: 100
-							};
+					}
+					else {
+						// big value
+						// Create a label variable
+						const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+						// Add to list
+						const ref = this.listVariables.addObject(labelVar);
+						// Response
+						response.body = {
+							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+							variablesReference: ref,
+							type: "data",
+							//presentationHint: ,
+							namedVariables: 2,
+							//indexedVariables: 100
 						}
-						this.sendResponse(response);
-					});
-				});	// Emulator.getRegisters
+					}
+					this.sendResponse(response);
+				});
 				return;
 			}	// If labelString
 		}	// If match

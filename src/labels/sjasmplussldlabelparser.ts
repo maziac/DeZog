@@ -167,7 +167,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const type=fields[6];
 
 		// Get label
-		const label=fields[7];
+		const label = fields[7];
 
 		// Check data type
 		switch (type) {
@@ -192,13 +192,16 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					if (localLabel)
 						fullLabel += '.' + localLabel;
 
-					// Label: add to label array
-					const longValue = this.createLongAddress(value, page);
-					this.addLabelForNumberRaw(longValue, fullLabel);
+					// If some label exists
+					if (fullLabel) {
+						// Label: add to label array
+						const longValue = this.createLongAddress(value, page);
+						this.addLabelForNumberRaw(longValue, fullLabel);
 
-					// Add (full) label to labelLocations for unit tests
-					const lineNr = parseInt(fields[1]) - 1;	// Get line number
-					this.labelLocations.set(fullLabel, {file: sourceFile, lineNr, address: longValue});
+						// Add (full) label to labelLocations for unit tests
+						const lineNr = parseInt(fields[1]) - 1;	// Get line number
+						this.labelLocations.set(fullLabel, {file: sourceFile, lineNr, address: longValue});
+					}
 				}
 				break;
 			case 'T':	// Instruction trace data
@@ -209,7 +212,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// Get line number
 					const lineNr=parseInt(fields[1])-1;
 
-					// Store values to associate address with line number
+					// Store values to associate address with line number and (last) label
 					this.fileLineNrs.set(address, {
 						fileName: sourceFile,
 						lineNr: lineNr,
