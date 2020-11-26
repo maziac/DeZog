@@ -1914,14 +1914,16 @@ export class DebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				const modLbl = Labels.getModuleAndLastLabelForFileAndLine(path, lineNr);
+				Remote.getRegisters().then(() => {
+					const pcLongAddr = Remote.getPCLong();
+					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
 					// Local label and prefix
-				lastLabel = modLbl.lastLabel;
-				modulePrefix = modLbl.modulePrefix;
+					lastLabel = entry.lastLabel;
+					modulePrefix = entry.modulePrefix;
 
 					// Convert label
 					try {
-						labelValue=Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
 					} catch {}
 
 					if (isNaN(labelValue)) {
@@ -1931,47 +1933,48 @@ export class DebugSessionClass extends DebugSession {
 					}
 
 					// Is a number
-					var size=100;
+					var size = 100;
 					if (sizeString) {
-						const readSize=Labels.getNumberFromString64k(sizeString)||NaN;
+						const readSize = Labels.getNumberFromString64k(sizeString) || NaN;
 						if (!isNaN(readSize))
-							size=readSize;
+							size = readSize;
 					}
-					if (!byteWord||byteWord.length==0)
+					if (!byteWord || byteWord.length == 0)
 						byteWord = "bw";	// both byte and word
 					// Create fullLabel
 					const fullLabel = Utility.createFullLabel(labelString, modulePrefix, lastLabel);
 					// Now create a "variable" for the bigValues or small values
-					const format=(labelValue<=Settings.launch.smallValuesMaximum)? Settings.launch.formatting.smallValues:Settings.launch.formatting.bigValues;
-				Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
-					if (labelValue <= Settings.launch.smallValuesMaximum) {
-						// small value
-						// Response
-						response.body = {
-							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-							variablesReference: 0,
-							//type: "data",
-							//amedVariables: 0
+					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
+					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
+						if (labelValue <= Settings.launch.smallValuesMaximum) {
+							// small value
+							// Response
+							response.body = {
+								result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+								variablesReference: 0,
+								//type: "data",
+								//amedVariables: 0
+							}
 						}
-					}
-					else {
-						// big value
-						// Create a label variable
-						const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
-						// Add to list
-						const ref = this.listVariables.addObject(labelVar);
-						// Response
-						response.body = {
-							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-							variablesReference: ref,
-							type: "data",
-							//presentationHint: ,
-							namedVariables: 2,
-							//indexedVariables: 100
+						else {
+							// big value
+							// Create a label variable
+							const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+							// Add to list
+							const ref = this.listVariables.addObject(labelVar);
+							// Response
+							response.body = {
+								result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+								variablesReference: ref,
+								type: "data",
+								//presentationHint: ,
+								namedVariables: 2,
+								//indexedVariables: 100
+							}
 						}
-					}
-					this.sendResponse(response);
-				});
+						this.sendResponse(response);
+					});
+				});	// Emulator.getRegisters
 				return;
 			}	// If labelString
 		}	// If match
