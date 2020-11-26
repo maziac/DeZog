@@ -151,6 +151,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
 	context.subscriptions.push(configProvider);
 
+	/*
+	Actually this did not work very well for other reasons:
+	It's better to retrieve the file/lineNr from the PC value.
+	Therefore I removed this.
 	// Register an evaluation provider for hovering.
 	// Note: Function is only called in debug context and only for the file currently being debugged.
 	// Therefore '' is enough.
@@ -174,7 +178,8 @@ export function activate(context: vscode.ExtensionContext) {
 			return undefined; // Nothing found
 		}
 	});
-
+	*/
+	
 	// Initialize the Coverage singleton.
 	DecorationClass.Initialize(context);
 

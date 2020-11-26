@@ -1835,7 +1835,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Is called when hovering or when an expression is added to the watches.
 	 * Or if commands are input in the debug console.
 	 * both have different formats:
-	 * - hovering: "word:filePath:line:column", e.g. "data_b60:/Volumes/SDDPCIE2TB/Projects/Z80/asm/z80-sld/main.asm:28:12"
+	 * - hovering: "word", e.g. "data_b60" or ".loop" or "HL"
 	 * - debug console: starts with "-", e.g. "-wpmem enable"
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
@@ -1870,23 +1870,8 @@ export class DebugSessionClass extends DebugSession {
 		Log.log('evaluate.context: '+args.context);
 		Log.log('evaluate.format: '+args.format);
 
-		// Get the name, path, line
-		const hoverArr = expression.split(':');
-		// Check format
-		if (hoverArr.length < 3) {
-			// Happens e.g. if in the debug console a word without starting "-" is entered
-			const errorTxt = "Error: Can't evaluate '" + expression + "'"
-			Log.log(errorTxt);
-			response.body = {
-				result: errorTxt,
-				variablesReference: 0
-			};
-			this.sendResponse(response);
-			return;
-		}
-
 		// Check if it is a register
-		const name = hoverArr[0];
+		const name = expression;
 		if (Z80RegistersClass.isRegister(name)) {
 			const formatMap=(args.context=='hover')? Z80RegisterHoverFormat:Z80RegisterVarFormat;
 			const formattedValue=await Utility.getFormattedRegister(name, formatMap); response.body={
@@ -1903,8 +1888,6 @@ export class DebugSessionClass extends DebugSession {
 		// = Addresse LBL_TEXT, 10 bytes
 		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 		if (match) {
-			const path = hoverArr[1];	// Absolute path
-			const lineNr = parseInt(hoverArr[2]);
 			let labelString=match[1];
 			let sizeString=match[3];
 			let byteWord=match[5];
