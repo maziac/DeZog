@@ -1925,7 +1925,7 @@ export class DebugSessionClass extends DebugSession {
 					if (!byteWord || byteWord.length == 0)
 						byteWord = "bw";	// both byte and word
 					// Create fullLabel
-					const fullLabel = Utility.createFullLabel(labelString, modulePrefix, lastLabel);
+					const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module is from the PC location, this could be irritating. Therefore it is left off.
 					// Now create a "variable" for the bigValues or small values
 					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
 					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {

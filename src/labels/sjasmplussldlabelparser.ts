@@ -192,6 +192,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					if (localLabel)
 						fullLabel += '.' + localLabel;
 
+					// TODO: Check for ENDMODULE is missing
+					
 					// If some label exists
 					if (fullLabel) {
 						// Label: add to label array
