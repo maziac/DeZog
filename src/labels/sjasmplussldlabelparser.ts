@@ -74,7 +74,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		this.lastLabel = undefined as any;
 
 		// Get bank size
-		const sldLines=readFileSync(sldConfig.path).toString().split('\n');
+		const sldLines = readFileSync(sldConfig.path).toString().split('\n');
+		this.checkSldVersion(sldLines);
+
+		// Get bank size
 		this.parseForBankSizeAndSldOpt(sldLines);
 
 		// Check for setting to ignore the banking
@@ -85,6 +88,23 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
 		}
+	}
+
+	/**
+	 * Checks the SLD file version and throws an exception if too old.
+	 */
+	protected checkSldVersion(lines: Array<string>) {
+		// Check only first line
+		if (lines.length < 1)
+			throw Error("'" + this.config.path + "' is empty.");
+		// First line
+		const fields = lines[0].split('|');
+		if (fields[1]!='SLD.data.version')
+			throw Error("'" + this.config.path + "': SLD data version not found.");
+		const version = fields[2] || '0';
+		const requiredVersion = 1;
+		if (parseInt(version) < requiredVersion)
+			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need at least version "+requiredVersion+". Please update sjsamplus.");
 	}
 
 
@@ -193,7 +213,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						fullLabel += '.' + localLabel;
 
 					// TODO: Check for ENDMODULE is missing
-					
+
 					// If some label exists
 					if (fullLabel) {
 						// Label: add to label array
