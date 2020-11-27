@@ -275,7 +275,9 @@ The PC stops at the test because A is obviously not 0.
 Obviously a unit test case fails if the checked condition (the TEST_... macros) fails.
 But there are a few other cases when a test case fails:
 - unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration.
-- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERTION fails somewhere. If in debug mode the test case will also be counted as failed but the code execution also stops at the particular line of code. So you can directly investigate what happened.
+- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERTION fails somewhere. If in debug mode the code execution also stops at the particular line of code. So you can directly investigate what happened. You will also see the values used in the ASSERTION so you can directly see what went wrong.
+
+Note: During debug if you continue from a break condition, e.g. an ASSERTION, and reach the end of the unit test, the unit test will be counted as pass. If it's run (not debugged) it will, of course, not reach the end and counted as fail.
 
 
 # Code Coverage
