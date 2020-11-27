@@ -200,10 +200,21 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				{
 					// Split
 					const lbls = label.split(',');
+					const trait = lbls[3];	// E.g. "+equ", "+module", "+endmod"
 					this.modulePrefix = lbls[0];
+					// Check for ENDMODULE
+					if (trait == "+endmod") {
+						// Remove the last module (note: modules names cannot include a dot)
+						const modArr = this.modulePrefix.split('.');
+						modArr.pop();	// Remove last element
+						this.modulePrefix = modArr.join('.');
+					}
 					if (this.modulePrefix)
 						this.modulePrefix += '.';
+					// Label
 					const mainLabel = lbls[1];
+					if (!mainLabel)
+						break;
 					this.lastLabel = mainLabel;
 					const localLabel = lbls[2];	// without the '.'
 					let fullLabel = mainLabel;
@@ -211,8 +222,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						fullLabel = this.modulePrefix + mainLabel;
 					if (localLabel)
 						fullLabel += '.' + localLabel;
-
-					// TODO: Check for ENDMODULE is missing
 
 					// If some label exists
 					if (fullLabel) {

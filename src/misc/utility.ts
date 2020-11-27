@@ -185,27 +185,22 @@ export class Utility {
 
 
 	/**
-	 * Evaluates the given expression.
-	 * Also checks if there are elements to convert first, e.g. labels are converted
-	 * to numbers first.
-	 * Examples:
-	 * 2-5*3 => -13, -Dh
-	 * LBL_TEST+1 => 32769, 8001h
-	 * HL' != 1111h
+	 * Replaces all registers and labels with numbers.
+	 * Example:
+	 * "A == 7"  =>  "2 == 7"
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
 	 * Also evaluates numbers in formats like '$4000', '2FACh', 100111b, 'G'.
 	 * @param evalRegisters If true then register names will also be evaluated.
 	 * @param modulePrefix An optional prefix to use for each label. (sjasmplus)
 	 * @param lastLabel An optional last label to use for local labels. (sjasmplus)
-	 * @returns The evaluated number. (If a boolean expression is evaluated a 1 is returned for true and a 0 for false)
-	 * @throws SyntaxError if 'eval' throws an error or if the label is not found.
+	 * @returns The 'expr' with all labels and registers replaced by numbers.
 	 */
-	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?:string, lastLabel?: string): number {
+	public static replaceVarsWithValues(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): string {
 		const exprLabelled = expr.replace(/([\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[0-9]+\S+|0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|'[\S ]+')/g, (match, p1) => {
 			let res;
-			if(evalRegisters) {
+			if (evalRegisters) {
 				// Check if it might be a register name.
-				if(Z80RegistersClass.isRegister(p1)) {
+				if (Z80RegistersClass.isRegister(p1)) {
 					// Note: this is called synchronously because the cached register is available.
 					// If (it should not but if) it would be called asynchronously the
 					// addressString would simply be not decoded.
@@ -215,28 +210,48 @@ export class Utility {
 					catch {};
 				}
 			}
-			if(isNaN(res)) {
+			if (isNaN(res)) {
 				// Assume it is a label or number
 				let lbl = p1;
 
 				// Local label?
-				if(lastLabel && lbl.startsWith('.')) {
+				if (lastLabel && lbl.startsWith('.')) {
 					lbl = lastLabel + lbl;
 				}
 				// module prefix?
-				if(modulePrefix) {
-					res = Labels.getNumberFromString64k(modulePrefix+lbl) || NaN;
+				if (modulePrefix) {
+					res = Labels.getNumberFromString64k(modulePrefix + lbl) || NaN;
 				}
 
-				if(isNaN(res)) {
+				if (isNaN(res)) {
 					// Check for "normal" label
 					res = Labels.getNumberFromString64k(lbl);
-					if(isNaN(res))
+					if (isNaN(res))
 						res = p1;	// Return unchanged substring
 				}
 			}
 			return res.toString();
 		});
+
+		// Return the expression with variables replaced by numbers
+		return exprLabelled;
+	}
+
+
+
+	/**
+	 * Evaluates all registers and labels in a string.
+	 * For parameters see replaceVarsWithValues.
+	 * Examples:
+	 * 2-5*3 => -13, -Dh
+	 * LBL_TEST+1 => 32769, 8001h
+	 * HL' != 1111h
+	 * @returns A number
+	 * Throws an error if evaluation not possible.
+ 	*/
+	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): number {
+		// Get all labels and registers replaced with numbers
+		const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
 
 		// Evaluate
 		const result = eval(exprLabelled);

@@ -633,9 +633,16 @@ export class DzrpRemote extends RemoteBase {
 			if (bp.condition) {
 				// Check if condition is true
 				// REMARK: If I would allow 'await evalExpression' I could also allow e.g. memory checks
-				const evalCond=Utility.evalExpression(bp.condition, true);
-				if (evalCond!=0)
-					return {condition: bp.condition, log: bp.log};
+				try {
+					const evalCond = Utility.evalExpression(bp.condition, true);
+					if (evalCond != 0)
+						return {condition: bp.condition, log: bp.log};
+				}
+				catch (e) {
+					// Extend message
+					e.message = "Evaluation condition '" + bp.condition + "': " + (e.message || "Unknown error");
+					throw e;
+				}
 				return {condition: undefined, log: bp.log};
 			}
 			else {
@@ -678,7 +685,9 @@ export class DzrpRemote extends RemoteBase {
 				for (const abp of abps) {
 					if (condition==abp.condition) {
 						const assertionCond=Utility.getAssertionFromCondition(condition);
-						reasonString="Assertion failed: "+assertionCond;
+						//reasonString = "Assertion failed: " + assertionCond;
+						const replaced = Utility.replaceVarsWithValues(assertionCond);
+						reasonString = "Assertion failed: " + replaced;
 						return reasonString;
 					}
 				}
@@ -888,7 +897,7 @@ export class DzrpRemote extends RemoteBase {
 					// Clear registers
 					this.clearRegisters();
 					this.clearCallStack();
-					const reason: string=e;
+					const reason: string=e.message;
 					resolve(reason);
 				}
 			};
