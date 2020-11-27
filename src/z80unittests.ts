@@ -272,11 +272,10 @@ export class Z80UnitTests {
 					// Initialize Cpu- or StepHistory.
 					StepHistory.init();  // might call the socket
 
-					// Enable unit test logpoints
-					try {
-						await Remote.enableLogpointGroup('UNITTEST', true);
-					}
-					catch {}	// Note: This group might be used by tee user. Most probably this group is undefined.
+					// Execute command to enable wpmem, logpoints, assertions.
+					await Remote.enableLogpointGroup(undefined, true);
+					await Remote.enableWPMEM(true);
+					await Remote.enableAssertionBreakpoints(true);
 
 					await Z80UnitTests.initUnitTests();
 
@@ -640,6 +639,11 @@ export class Z80UnitTests {
 	protected static handleDebugAdapter(debugAdapter: DebugSessionClass) {
 		debugAdapter.on('initialized', async () => {
 			try {
+				// Execute command to enable wpmem, logpoints, assertions.
+				await Remote.enableLogpointGroup(undefined, true);
+				await Remote.enableWPMEM(true);
+				await Remote.enableAssertionBreakpoints(true);
+
 				// Handle coverage
 				Remote.on('coverage', coveredAddresses => {
 					// Cache covered addresses (since last unit test)

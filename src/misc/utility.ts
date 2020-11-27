@@ -186,6 +186,7 @@ export class Utility {
 
 	/**
 	 * Replaces all registers and labels with numbers.
+	 * Works in the 64k space only. I.e. long addresses are changed to 64k addresses.
 	 * Example:
 	 * "A == 7"  =>  "2 == 7"
 	 * @param expr The expression to evaluate. May contain math expressions and labels.
@@ -238,7 +239,6 @@ export class Utility {
 	}
 
 
-
 	/**
 	 * Evaluates all registers and labels in a string.
 	 * For parameters see replaceVarsWithValues.
@@ -246,9 +246,9 @@ export class Utility {
 	 * 2-5*3 => -13, -Dh
 	 * LBL_TEST+1 => 32769, 8001h
 	 * HL' != 1111h
-	 * @returns A number
+	 * @returns A number. In case of boolean: 0 or 1.
 	 * Throws an error if evaluation not possible.
- 	*/
+	  */
 	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): number {
 		// Get all labels and registers replaced with numbers
 		const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
@@ -257,13 +257,34 @@ export class Utility {
 		const result = eval(exprLabelled);
 
 		// Check if boolean
-		if(typeof(result) == 'boolean')
+		if (typeof (result) == 'boolean')
 			return (result) ? 1 : 0;
 
 		// Return normal number
 		return result;
 	}
 
+	/**
+	 * Evaluates all registers and labels in a string.
+	 * Also evaluates ${...}.
+	 * For parameters see replaceVarsWithValues.
+	 * Examples:
+	 * ${(HL)} == 5
+	 * @returns A number. In case of boolean: 0 or 1.
+	 * Throws an error if evaluation not possible.
+	  */
+	/*
+	public static async substCondition(expr: string): Promise<string> {
+		// Look for ${...} expressions
+		const exprSoph = await this.evalLogString(expr);
+
+		// Get all labels and simple register names replaced with numbers
+		const exprLabelled = this.replaceVarsWithValues(exprSoph);
+
+		// Return normal number
+		return exprLabelled;
+	}
+	*/
 
 	/**
 	 * Returns the full label form a label, lastLabel and modulePrefix info.

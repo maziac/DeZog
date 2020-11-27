@@ -76,24 +76,36 @@ E.g. the example above would result in 2 test suites: "Module1" and "Mod":
 ~~~
 
 
-### Test Macros
+### Test Macros / ASSERTION
 
-Inside the unit test you should use the provided unit test macros to test for failures [^1].
-[^1]: This is very similar to the assertions used in other languages.
+During unit testing WPMEM, LOGPOINTs and ASSERTIONs are automatically turned on, even if you don't enable them in 'commandsAfterLaunch'.
+The ASSERTION is especially required because you use it to test your assertions.
 
-There are macros available for various purposes, e.g. to test the registers for specific values or a memory location.
+E.g. write
+~~~
+	nop ; ASSERTION A == 6
+~~~
+
+to test that A is 6. DeZog will break here, failing the unit test, if A is not 6.
+Note the nop. It is not required but is used for clarity. If not used the break will happen on the next line. And, if you use several ASSERTION right after the other any assertion would result in any break on the same line.
+Therefore it's more clear to use the ```nop```.
+
+Inside the assertion you can use register and label names and a little math.
+You e.g. cannot test memory contains with the ASSERTs.
+
+Examples:
+~~~
+	nop ; ASSERTION A == 6
+	nop ; ASSERTION BC == COUNT+1
+	nop ; ASSERTION A == L
+	nop ; ASSERTION HL > LABEL_X
+~~~
+
+For testing memory contents and some other tasks there are a few predefined test macros available.
 
 Here is the complete list:
 - TEST_MEMORY_BYTE addr, value: (addr) == value
 - TEST_MEMORY_WORD addr, value: (addr) == value
-- TEST_A value: A == value
-- TEST_A_UNEQUAL value: A != value
-- TEST_REG reg, value: reg == value, with reg = B|C|D|E|H|L
-- TEST_REG_UNEQUAL reg, value: reg != value, with reg = B|C|D|E|H|L
-- TEST_DREG dreg, value: dreg == value, with dreg = BC|DE|HL|IX|IY
-- TEST_DREG_UNEQUAL dreg, value: dreg != value, with dreg = BC|DE|HL|IX|IY
-- TEST_DREGS dreg1, dreg2: dreg1 == dreg2, with dreg1/2 = BC|DE|HL|IX|IY
-- TEST_DREGS_UNEQUAL dreg1, dreg2: dreg1 != dreg2, with dreg1/2 = BC|DE|HL|IX|IY
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
 - TEST_STRING_PTR addr1, addr2: Compares 2 null-terminated strings strings (addr1 and addr2)
 - TEST_MEM_CMP addr1, addr2, count: Compares to memory area on equality.
@@ -105,18 +117,28 @@ If the condition is fulfilled the code execution carries on after the macro and 
 
 Example:
 ~~~
+result:	defb 0
+
+multiply_a_by_3:
+	add a
+	add a
+	add a
+	ld (result),a
+	ret
+
+
 UT_mytest2:
 	ld a,5
 	call multiply_a_by_3
-	TEST_REG C, 15
+	TEST_MEMORY_BYTE result, 15
 
 	ld a,0
 	call multiply_a_by_3
-	TEST_REG C, 0
+	TEST_MEMORY_BYTE result, 0
 
 	TC_END
 ~~~
-This simple example test the subroutine 'multiply_a_by_3' which hypothetically takes A, multiplies it by 3 and returns the result in C. If A is 5 it should result in 15 and if A is 0 it should be 0.
+This simple example test the subroutine 'multiply_a_by_3' which takes A, multiplies it by 3 and stores the result. If A is 5 it should result in 15 and if A is 0 it should be 0.
 
 Please note that if you run a unit test case in debug mode the debugger will stop execution at exactly the macro that failed.
 
@@ -139,7 +161,7 @@ UT_mytest2:
 	...
 	TC_END
 ~~~
-It check that 'my_subroutine' does not change the values of B, C, D, and E.
+It checks that 'my_subroutine' does not change the values of B, C, D, and E.
 It however doesn't care about changing A or HL.
 
 There are a few macros defined for testing:
@@ -157,7 +179,7 @@ There are a few macros defined for testing:
 - TEST_UNCHANGED_L
 
 Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers. (USE_ALL_REGS2 is the same with different values.)
-THis macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
+This macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
 
 ## Provide Initialization Routine
@@ -190,12 +212,13 @@ At best you copy a working configuration, change its name (to e.g. "Unit Tests")
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
 - 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
 If you like you can set this set this to true, but then you need to set a breakpoint inside your unit test if you debug it otherwise the unit test will be finished before you can see anything in the debugger.
+- You need not enable WPMEM, ASSERTION or LOGPOINT. They are automatically enabled for unit tests.
 - You must remove any occurrence of 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated automatically and the PC (program counter) is set accordingly.
 
 
 ## Start the Unit Tests
 
-For most unit tests you shouldn't need much (ZX) HW, ie. you coulld run them in the internal Z80 simulator (zsim).
+For most unit tests you shouldn't need much (ZX) HW, ie. you could run them in the internal Z80 simulator (zsim).
 If you need more sophisticated HW emulation use ZEsarUX or CSpect.
 The internal simulator and ZEsarUX support memory breakpoints which can be an advantage if you make use of WPMEM in your sources.
 If you use ZEsarUX or CSpect make sure it is running (just like in a normal debugging session).

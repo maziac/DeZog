@@ -981,7 +981,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableLogpointGroup(group: string, enable: boolean): Promise<void> {
+	public async enableLogpointGroup(group: string|undefined, enable: boolean): Promise<void> {
 		let lPoints;
 
 		// Check if one group or all
