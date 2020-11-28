@@ -173,49 +173,52 @@ export class RemoteBase extends EventEmitter {
 
 			try {
 				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
-				const match=/^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line);
-				if (match) {
-					// get arguments
-					let addressString=match[1];
-					let lengthString=match[3];
-					let access=match[5];
-					let cond=match[7];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
-					// defaults
-					let entryAddress: number|undefined=entry.address;
-					if (addressString&&addressString.length>0)
-						entryAddress=Utility.evalExpression(addressString, false); // don't evaluate registers
-					if (isNaN(entryAddress))
-						continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
-					let length=1;
-					if (lengthString&&lengthString.length>0) {
-						length=Utility.evalExpression(lengthString, false); // don't evaluate registers
-					}
-					/*
-					else {
-						if (!addressString||addressString.length==0) {
-							// If both, address and length are not defined it is checked
-							// if there exists bytes in the list file (i.e.
-							// numbers after the address field).
-							// If not the "WPMEM" is assumed to be inside a
-							// macro and omitted.
-							const match=/^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
-							if (!match)
-								continue;
-						}
-					}
-					*/
-					if (access&&access.length>0) {
-						access=access.toLowerCase();
-						if (access!='r'&&access!='w'&&access!='rw') {
-							console.log("Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '"+access+"' in line: '"+entry.line+"'");
-							continue;
-						}
-					}
-					else
-						access='rw';
-					// Set watchpoint. (long address)
-					watchpoints.push({address: entryAddress, size: length, access: access, condition: cond||''});
+				//const match = /^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line)
+				// All lines start with WPMEM, remove it
+				const line = entry.line.substr(5);
+				const subParts = line.split(',');
+				// Get arguments
+				let addressString = subParts[0];
+				let lengthString = subParts[1];
+				let access = subParts[2];
+				let cond = subParts[3];	// This is supported only with "fast-breakpoints" not with the unmodified ZEsarUX. Also the new (7.1) faster memory breakpoints do not support conditions.
+				// defaults
+				let entryAddress: number | undefined = entry.address;
+				if (addressString && addressString.length > 0)
+					entryAddress = Utility.evalExpression(addressString, false); // don't evaluate registers
+				if (isNaN(entryAddress))
+					continue;	// could happen if the WPMEM is in an area that is conditionally not compiled, i.e. label does not exist.
+				let length = 1;
+				if (lengthString && lengthString.length > 0) {
+					length = Utility.evalExpression(lengthString, false); // don't evaluate registers
 				}
+				/*
+				else {
+					if (!addressString||addressString.length==0) {
+						// If both, address and length are not defined it is checked
+						// if there exists bytes in the list file (i.e.
+						// numbers after the address field).
+						// If not the "WPMEM" is assumed to be inside a
+						// macro and omitted.
+						const match=/^[0-9a-f]+\s[0-9a-f]+/i.exec(entry.line);
+						if (!match)
+							continue;
+					}
+				}
+				*/
+				if (access && access.length > 0) {
+					access = access.trim();
+					access = access.toLowerCase();
+					if (access != 'r' && access != 'w' && access != 'rw') {
+						const errText = "Wrong access mode in watch point. Allowed are only 'r', 'w' or 'rw' but found '" + access + "' in line: '" + entry.line + "'";
+						console.log(errText);
+						continue;
+					}
+				}
+				else
+					access = 'rw';
+				// Set watchpoint. (long address)
+				watchpoints.push({address: entryAddress, size: length, access: access, condition: cond || ''});
 			}
 			catch (e) {
 				throw Error("Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e+"");
@@ -554,6 +557,17 @@ export class RemoteBase extends EventEmitter {
 	public async setRegisterValue(register: string, value: number): Promise<number> {
 		Utility.assert(false);	// override this
 		return 0;
+	}
+
+
+	/**
+	 * Sets the slot to a specific bank.
+	 * Used by the unit tests.
+	 * @param slot The slot to set.
+	 * @param bank The bank for the slot.
+	 */
+	public async setSlot(slotIndex: number, bank: number): Promise<void> {
+		Utility.assert(false);	// override this
 	}
 
 
