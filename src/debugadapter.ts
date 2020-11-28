@@ -1100,7 +1100,7 @@ export class DebugSessionClass extends DebugSession {
 		const varStack=new StackVar(frame.stack, frame.stackStartAddress);
 		// Add to list and get reference ID
 		ref=this.listVariables.addObject(varStack);
-		scopes.push(new Scope("Stack", ref));
+		scopes.push(new Scope("Local Stack", ref));
 
 		// Send response
 		response.body={scopes: scopes};
