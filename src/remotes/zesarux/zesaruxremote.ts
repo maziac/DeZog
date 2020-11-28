@@ -414,6 +414,18 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
+	 * Sets the slot to a specific bank.
+	 * Used by the unit tests.
+	 * Supports only tbblue.
+	 * @param slot The slot to set.
+	 * @param bank The bank for the slot.
+	 */
+	public async setSlot(slotIndex: number, bank: number): Promise<void> {
+		await zSocket.sendAwait('tbblue-set-register ' + (0x50 + slotIndex) + ' ' + bank);
+	}
+
+
+	/**
 	 * Checks the stack entry type for the given value.
 	 * For ZEsarUX the extended stack is used, i.e. the 'stackEntryValue'
 	 * already contains the type.

@@ -3,7 +3,7 @@ import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels/labels';
 import { RemoteBreakpoint } from './remotes/remotebase';
-import { GenericWatchpoint } from './genericwatchpoint';
+//import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels/labels';
 import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
@@ -601,10 +601,10 @@ export class Z80UnitTests {
 		Z80UnitTests.addrCall = Z80UnitTests.getLongAddressForLabel("UNITTEST_CALL_ADDR");
 		Z80UnitTests.addrCall ++;
 		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
-		Z80UnitTests.addrTestReadyReturnFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
-		Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
-		const stackMinWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
-		const stackMaxWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
+		//Z80UnitTests.addrTestReadyReturnFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
+		//Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		//const stackMinWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
+		//const stackMaxWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
 
 		// Check if code for unit tests is really present
 		// (In case labels are present but the actual code has not been loaded.)
@@ -625,10 +625,10 @@ export class Z80UnitTests {
 		await Remote.setBreakpoint(failureBp2);
 
 		// Stack watchpoints
-		const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
-		const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', condition: '' };
-		await Remote.setWatchpoint(stackMinWp);
-		await Remote.setWatchpoint(stackMaxWp);
+		//const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
+		//const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', condition: '' };
+		//await Remote.setWatchpoint(stackMinWp);
+		//await Remote.setWatchpoint(stackMaxWp);
 	}
 
 
@@ -685,7 +685,7 @@ export class Z80UnitTests {
 		// Get current pc
 		Remote.getRegisters().then(() => {
 			// Parse the PC value
-			const pc = Remote.getPC();
+			const pc = Remote.getPCLong();
 			//const sp = Z80Registers.parseSP(data);
 			// Check if test case was successful
 			Z80UnitTests.checkUnitTest(pc, debugAdapter);
@@ -738,29 +738,30 @@ export class Z80UnitTests {
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
-		Remote.writeMemoryDump(this.addrCall, callAddr).then(() => {
+		Remote.writeMemoryDump(this.addrCall, callAddr).then(async () => {
 			// Set PC
-			Remote.setRegisterValue("PC", this.addrTestWrapper)
-				.then(() => {
-					// Run
-					/*
-					if (Z80UnitTests.utLabels)
-						Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
-					*/
-					// Init
-					StepHistory.clear();
-					Remote.clearRegisters();
-					Remote.clearCallStack();
+			//await Remote.setSlot(0, 0); // TODO: not ready
+			const addr64k = this.addrTestWrapper&0xFFFF;
+			await Remote.setRegisterValue("PC", addr64k);
 
-					// Special handling for zsim: Re-init custom code.
-					if (Remote instanceof ZSimRemote) {
-						const zsim = Remote as ZSimRemote;
-						zsim.customCode?.reload();
-					}
+			// Run
+			/*
+			if (Z80UnitTests.utLabels)
+				Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
+			*/
+			// Init
+			StepHistory.clear();
+			Remote.clearRegisters();
+			Remote.clearCallStack();
 
-					// Run or Debug
-					Z80UnitTests.RemoteContinue(da);
-				});
+			// Special handling for zsim: Re-init custom code.
+			if (Remote instanceof ZSimRemote) {
+				const zsim = Remote as ZSimRemote;
+				zsim.customCode?.reload();
+			}
+
+			// Run or Debug
+			Z80UnitTests.RemoteContinue(da);
 		});
 	}
 
@@ -844,9 +845,9 @@ export class Z80UnitTests {
 		}
 
 		// Check if test case ended successfully or not
-		if (pc!=this.addrTestReadySuccess
-			&& pc!=this.addrTestReadyFailure
-			&& pc!=this.addrTestReadyReturnFailure) {
+		if (pc != this.addrTestReadySuccess
+			&& pc != this.addrTestReadyFailure
+			&& pc != this.addrTestReadyReturnFailure) {
 			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {

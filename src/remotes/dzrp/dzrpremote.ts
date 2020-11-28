@@ -502,6 +502,17 @@ export class DzrpRemote extends RemoteBase {
 
 
 	/**
+	 * Sets the slot to a specific bank.
+	 * Used by the unit tests.
+	 * @param slot The slot to set.
+	 * @param bank The bank for the slot.
+	 */
+	public async setSlot(slotIndex: number, bank: number): Promise<void> {
+		await this.sendDzrpCmdSetSlot(slotIndex, bank);
+	}
+
+
+	/**
 	 * Returns the array of watchpoint for a given address.
 	 * Normally the array is empty or contains only 1 watchpoint.
 	 * But it could happen that several watchpoints are defined for the same address.
