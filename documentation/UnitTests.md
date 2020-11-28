@@ -290,6 +290,17 @@ If you need to clear the coverage decoration at some other point go tp the comma
 
 Note: Code coverage is not supported in "cspect" or "zxnext".
 
+
+# A note about banking
+
+Wherever you place the UNITTEST_INITIALIZE macro this is also the place where the unit test stack is created.
+If you are testing in a system with banked memory you can still place it in any slot you like. But you need to be aware that the unit test stack is also created in the same bank. I.e. the bank should be accessible all the time as long as the stack is being used.
+Of course, you can switch to another stack. But make sure that before you call TC_END the bank is again accessible.
+
+The memory test macros like TEST_MEMORY_BYTE etc. do work with 64k addresses. I.e. they don't do any changes to the used banks.
+So, if you want to test memory of some other bank then make sure that you page it in before.
+
+
 # What Else
 
 ## Test Explorer
