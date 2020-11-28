@@ -619,10 +619,10 @@ export class Z80UnitTests {
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
-		const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '', log: undefined};
-		await Remote.setBreakpoint(failureBp1);
-		const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyReturnFailure, condition: '', log: undefined};
-		await Remote.setBreakpoint(failureBp2);
+		//const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '', log: undefined};
+		//await Remote.setBreakpoint(failureBp1);
+		//const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyReturnFailure, condition: '', log: undefined};
+		//await Remote.setBreakpoint(failureBp2);
 
 		// Stack watchpoints
 		//const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
@@ -733,15 +733,21 @@ export class Z80UnitTests {
 	 * Executes the sub routine at 'addr'.
 	 * Used to call the unit test initialization subroutine and the unit
 	 * tests.
+	 * @param address The (long) address of the unit test.
 	 * @param da The debug adapter.
 	 */
 	protected static execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
 		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
 		Remote.writeMemoryDump(this.addrCall, callAddr).then(async () => {
+			// Set slot/bank to Unit test address
+			const bank = Z80Registers.getBankFromAddress(address);
+			if (bank >= 0) {
+				const slot = Z80Registers.getSlotFromAddress(address)
+				await Remote.setSlot(slot, bank);
+			}
 			// Set PC
-			//await Remote.setSlot(0, 0); // TODO: not ready
-			const addr64k = this.addrTestWrapper&0xFFFF;
+			const addr64k = this.addrTestWrapper & 0xFFFF;
 			await Remote.setRegisterValue("PC", addr64k);
 
 			// Run

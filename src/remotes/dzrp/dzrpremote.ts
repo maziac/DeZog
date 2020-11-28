@@ -594,7 +594,7 @@ export class DzrpRemote extends RemoteBase {
 		let bpInner=tmpBps.get(bpAddress);
 		if (!bpInner) {
 			// Create new array
-			bpInner=new Array<GenericBreakpoint>();
+			bpInner = new Array<GenericBreakpoint>();
 			tmpBps.set(bp.address, bpInner);
 		}
 		bpInner.push(bp);
