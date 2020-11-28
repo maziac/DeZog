@@ -12,6 +12,7 @@ import {Opcode, OpcodeFlag} from '../disassembler/opcode';
 import {CpuHistory, StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
 import {MemoryBank, MemoryModel} from './Paging/memorymodel';
+import {Log} from '../log';
 
 
 
@@ -393,7 +394,8 @@ export class RemoteBase extends EventEmitter {
 			}
 		});
 
-		console.log('evalLogMessage: '+result);
+		//console.log('evalLog(point)Message: ' + result);
+		Log.log('evalLog(point)Message: ' + result);
 		return result;
 	}
 

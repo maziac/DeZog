@@ -214,7 +214,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public terminate(message?: string) {
 		(async () => {
-			DebugSessionClass.state=DbgAdaperState.NORMAL;
+			//DebugSessionClass.state=DbgAdaperState.NORMAL;
 			if (message)
 				this.showError(message);
 			Log.log("Exit debugger!");

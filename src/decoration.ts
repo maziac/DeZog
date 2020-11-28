@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Labels, SourceFileEntry } from './labels/labels';
+import {Log} from './log';
 //import { Settings } from './settings';
 import {Disassembly, DisassemblyClass} from './misc/disassembly';
 import {Utility} from './misc/utility';
@@ -348,6 +349,9 @@ export class DecorationClass {
 	 * @param coveredAddresses All addresses to add (all covered addresses)
 	 */
 	public showCodeCoverage(coveredAddresses: Set<number>) {
+		Log.log("showCodeCoverage", JSON.stringify(coveredAddresses));
+		console.log("showCodeCoverage", coveredAddresses.size);
+		console.log("showCodeCoverage", JSON.stringify(Array.from(coveredAddresses)));
 		// Get map name
 		const mapName = this.COVERAGE;
 		// Loop over all addresses

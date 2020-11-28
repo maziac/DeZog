@@ -363,6 +363,9 @@ export class Z80UnitTests {
 	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
 	 */
 	public static cancelUnitTests() {
+		// Avoid calling twice
+		if (this.cancelled)
+			return;
 		// Cancel the unit tests
 		this.cancelled=true;
 		const text="Unit tests cancelled.";
@@ -1039,13 +1042,20 @@ export class Z80UnitTests {
 			Z80UnitTests.timeoutHandle=undefined;
 			// Clear remaining test cases
 			Z80UnitTests.CancelAllRemainingResults();
+
 			// Show coverage
 			Decoration.showCodeCoverage(Z80UnitTests.allCoveredAddresses);
-			Z80UnitTests.lastCoveredAddresses=undefined as any;
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
-			if (debugAdapter)
+			if (debugAdapter) {
 				await debugAdapter.executeAfterBeingQuietFor(300);
+			}
+
+			// Show remaining covered addresses
+			if (Z80UnitTests.lastCoveredAddresses) {
+				Decoration.showCodeCoverage(Z80UnitTests.lastCoveredAddresses);
+				Z80UnitTests.lastCoveredAddresses = undefined as any;
+			}
 
 			// Remove event handling for the emulator
 			Remote.removeAllListeners();
@@ -1053,8 +1063,10 @@ export class Z80UnitTests {
 			StepHistory.clear();
 
 			// Exit
-			if (debugAdapter)
+			if (debugAdapter) {
+				this.cancelled = true;	// Avoid calling the cancel routine.
 				debugAdapter.terminate(errMessage);
+			}
 			else {
 				// Stop emulator
 				await Remote.disconnect();
