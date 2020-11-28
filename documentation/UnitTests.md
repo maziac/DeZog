@@ -12,7 +12,7 @@ It is recommended to use the sjasmplus assembler but you can also use other asse
 
 The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax.
 
-For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well.
+For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well. (Note: it has less macros defined as the sjasmplus inc file.)
 
 Note: the z88dk z80asm is not supported as it lacks native support for macros.
 
@@ -103,7 +103,7 @@ Examples:
 
 For testing memory contents and some other tasks there are a few predefined test macros available.
 
-Here is the complete list:
+Here is the complete list of available macros for sjasmplus:
 - TEST_MEMORY_BYTE addr, value: (addr) == value
 - TEST_MEMORY_WORD addr, value: (addr) == value
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
@@ -288,7 +288,7 @@ The coverage decoration is also available when running the unit tests in debug m
 It is reset whenever you start a new debug session or a new unit test.
 If you need to clear the coverage decoration at some other point go tp the command palette and enter "dezog: Clear the current code coverage decoration"
 
-Note: Code coverage is not supported in CSpect.
+Note: Code coverage is not supported in "cspect" or "zxnext".
 
 # What Else
 
