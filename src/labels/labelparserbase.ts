@@ -229,10 +229,12 @@ export class LabelParserBase {
 		let match=/.*(\bWPMEM\b.*)/.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
+			/*
 			if (this.currentFileEntry&&this.currentFileEntry.size==0)
-				this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data
+				this.watchPointLines.push({address: undefined as any, line: match[1]}); // watchpoint inside a macro or without data -> Does not work: WPMEM could be on a separate line
 			else
-				this.watchPointLines.push({address: address!, line: match[1]});
+			*/
+			this.watchPointLines.push({address: address!, line: match[1]});
 		}
 
 		if (address==undefined)
