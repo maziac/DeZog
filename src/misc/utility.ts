@@ -250,18 +250,24 @@ export class Utility {
 	 * Throws an error if evaluation not possible.
 	  */
 	public static evalExpression(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): number {
-		// Get all labels and registers replaced with numbers
-		const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
+		try {
+			// Get all labels and registers replaced with numbers
+			const exprLabelled = this.replaceVarsWithValues(expr, evalRegisters, modulePrefix, lastLabel);
 
-		// Evaluate
-		const result = eval(exprLabelled);
+			// Evaluate
+			const result = eval(exprLabelled);
 
-		// Check if boolean
-		if (typeof (result) == 'boolean')
-			return (result) ? 1 : 0;
+			// Check if boolean
+			if (typeof (result) == 'boolean')
+				return (result) ? 1 : 0;
 
-		// Return normal number
-		return result;
+			// Return normal number
+			return result;
+		}
+		catch (e) {
+			// Rethrow
+			throw Error("Error evaluating 'expr': " + e.message);
+		}
 	}
 
 	/**
