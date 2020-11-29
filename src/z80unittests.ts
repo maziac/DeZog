@@ -478,7 +478,7 @@ export class Z80UnitTests {
 		const listFiles=Settings.GetAllAssemblerListFiles(configuration);
 		if (!listFiles) {
 			// No list file given: Error
-			throw Error('no list file given in unit test configuration.');
+			throw Error('No list file given in unit test configuration.');
 		}
 		for (let listFile of listFiles) {
 			const path=listFile.path;

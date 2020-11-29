@@ -115,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		catch (e) {
 			// Return empty list in case no unit tests are configured.
-			vscode.window.showErrorMessage(e.message);
+			//vscode.window.showErrorMessage(e.message); Don't show an error, otherwise it would be shown everytime that no configuration is found.
 			return [];
 		}
 	}));
@@ -179,7 +179,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 	*/
-	
+
 	// Initialize the Coverage singleton.
 	DecorationClass.Initialize(context);
 
