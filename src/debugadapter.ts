@@ -1319,39 +1319,6 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Step over.
-	 * Used only by the unit tests.
-	 */
-	public async emulatorOneStepOver(): Promise<void> {
-		StepHistory.clear();
-
-		// Normal Step-Over
-		Remote.clearRegisters();
-		//const result=
-		await Remote.stepOver();
-
-		/*
-		// Print break reason
-		if (result.breakReasonString) {
-			// Output a possible problem
-			this.debugConsoleIndentedText(result.breakReasonString);
-			// Show break reason
-			this.decorateBreak(result.breakReasonString);
-		}
-		*/
-
-		// Display T-states and time
-		//await this.endStepInfo();
-
-		// Update memory dump etc.
-		await this.update({step: true});
-
-		// Send event
-		this.sendEvent(new StoppedEvent('step', DebugSessionClass.THREAD_ID));
-	}
-
-
-	/**
 	 * Is called by all request (step, stepInto, continue, etc.).
 	 * This handles the display in the vscode UI.
 	 * If the command can be handled in a short amount of time (e.g. in 1 sec)

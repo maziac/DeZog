@@ -1,6 +1,7 @@
 # Changelog
 
 # 1.6.0
+- Improvements to unit tests. Now ASSERTs show the failure values.
 - "sjasmplus" configuration now uses the SLD file instead of a list file to support banking information (long addresses). If you want to use 64k addresses instead there is a new option "disableBanking".
 - launch.json: deprecated option "filter" has been removed.
 - "zsim": Support for custom code added. E.g. it is possible now to add custom peripheral code to implement ports. You can now write code to support peripherals within zsim.

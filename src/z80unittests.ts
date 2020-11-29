@@ -115,13 +115,6 @@ export class Z80UnitTests {
 	/// At the end of the test this address is reached on success.
 	protected static addrTestReadySuccess: number;
 
-	/// The test case would end here if it just returns.
-	/// The TC_END macro should be used instead as 'ret' at the end of a testcase.
-	protected static addrTestReadyReturnFailure: number;
-
-	/// At the end of the test this address is reached on failure.
-	protected static addrTestReadyFailure: number;
-
 	/// Is filled with the summary of tests and results.
 	protected static outputSummary: string;
 
@@ -854,9 +847,7 @@ export class Z80UnitTests {
 		}
 
 		// Check if test case ended successfully or not
-		if (pc != this.addrTestReadySuccess
-			&& pc != this.addrTestReadyFailure
-			&& pc != this.addrTestReadyReturnFailure) {
+		if (pc != this.addrTestReadySuccess) {
 			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {
@@ -932,13 +923,7 @@ export class Z80UnitTests {
 			if(Z80UnitTests.utLabels) {
 				if(pc == this.addrTestReadySuccess)
 					Z80UnitTests.dbgOutput(label + ' PASSED.');
-				if (pc==this.addrTestReadyFailure
-					||pc==this.addrTestReadyReturnFailure)
-					Z80UnitTests.dbgOutput(label + ' FAILED.');
 			}
-			// Do a step
-			//Z80UnitTests.dbgOutput(label + '  da.emulatorStepOver()');
-			da.emulatorOneStepOver();	// await not needed
 			return;
 		}
 
