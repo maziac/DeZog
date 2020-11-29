@@ -275,32 +275,31 @@ export class StepHistoryClass extends EventEmitter {
 					}
 				}
 				else {
-					/* Distinguishes one and two byte registers
+					// Distinguishes one and two byte registers
 					// Normal reg
-						// Check which part of the (double) register has changed
-						if (regName.startsWith('I')) {
-							// Double register
-							regValueString=Utility.getHexString(regValue, 4)+'h';
+					// Check which part of the (double) register has changed
+					if (regName.startsWith('I')) {
+						// Double register
+						regValueString = Utility.getHexString(regValue, 4) + 'h';
+					}
+					else {
+						// Check both parts
+						const valueXored = regValue ^ prevValue;
+						// First part
+						if (valueXored & 0xFF00) {
+							regName2 += regName[0];
+							regValueString += Utility.getHexString(regValue >>> 8, 2);
 						}
-						else {
-							// Check both parts
-							const valueXored=regValue^prevValue;
-							// First part
-							if (valueXored&0xFF00) {
-								regName2+=regName[0];
-								regValueString+=Utility.getHexString(regValue>>>8, 2);
-							}
-							// Second part
-							if (valueXored&0xFF) {
-								regName2+=regName[1];
-								regValueString+=Utility.getHexString(regValue%0xFF, 2);
-							}
+						// Second part
+						if (valueXored & 0xFF) {
+							regName2 += regName[1];
+							regValueString += Utility.getHexString(regValue & 0xFF, 2);
 						}
-					*/
+					}
 
 					// Only 2 byte registers/ Double register
-					regName2=regName;
-					regValueString=Utility.getHexString(regValue, 4);
+					//regName2=regName;
+					//regValueString=Utility.getHexString(regValue, 4);
 					regValueString+='h';
 				}
 

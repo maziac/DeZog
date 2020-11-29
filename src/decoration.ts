@@ -520,9 +520,9 @@ export class DecorationClass {
 			let regs = registers[k];
 			if (regs) {
 				if (regText && lastLocString == locString) {
-					regText += ' ';
+					regText = ' ' + regText;
 				}
-				regText+=regs
+				regText = regs + regText;
 			}
 			// Include decoration text in map
 			entry.regText = regText;
