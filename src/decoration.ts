@@ -499,30 +499,41 @@ export class DecorationClass {
 		const fileMap = decoMap.fileMap;
 
 		// Check if addresses are used more than once
-		const addressMap = new Map<string, string>();
-		let index = -startIndex-1;
+		const addressMap = new Map<string, {regText: string, indexText: string}>();
+		let index = -startIndex - 1;
+		let lastLocString;
 		addresses.forEach((addr, k) => {
 			const location = this.getFileAndLineForAddress(addr);
 			const locString = location.lineNr + ';' + location.fileName;
-			let text = addressMap.get(locString);
-			if(text)
-				text += ", " + index.toString();
+			let entry = addressMap.get(locString);
+			if (!entry) {
+				entry = {regText: '', indexText: ''};
+				addressMap.set(locString, entry);
+			}
+			let indexText = entry.indexText;
+			if(indexText)
+				indexText += ", " + index.toString();
 			else
-				text=index.toString();
+				indexText=index.toString();
 			// Add changed registers
-			if (registers) {
-				const regs=registers[k];
-				if (regs)
-					text+=":"+registers[k];
+			let regText = entry.regText;
+			let regs = registers[k];
+			if (regs) {
+				if (regText && lastLocString == locString) {
+					regText += ' ';
+				}
+				regText+=regs
 			}
 			// Include decoration text in map
-			addressMap.set(locString, text);
+			entry.regText = regText;
+			entry.indexText = indexText;
 			// Next
-			index --;
+			index--;
+			lastLocString = locString;
 		});
 
 		// Loop over all addresses
-		for(const [locString, text] of addressMap) {
+		for(const [locString, entry] of addressMap) {
 			// Get file location for address
 			//const location = Labels.getFileAndLineForAddress(addr);
 			const k = locString.indexOf(';');
@@ -539,20 +550,28 @@ export class DecorationClass {
 			// Add address to set
 			const lineNr = parseInt(locString);
 			const deco = {
-				range: new vscode.Range(lineNr,0, lineNr,1000),
+				range: new vscode.Range(lineNr, 0, lineNr, 1000),
 				hoverMessage: undefined,
 				renderOptions: {
-				  //opacity: "0.5",
-				  after: {
-					  contentText: "[" + text + "]",
-					  margin: "2.5em",
-					  //height: "5px",
-					  //fontWeight: "4em",
-					  //width: "4em",
-					  //fontStyle: "italic",
-				  },
+					after: {
+						contentText: "[" + entry.indexText + "] " + entry.regText,
+						margin: "2.5em",
+						//height: "5px",
+						//fontWeight: "4em",
+						//width: "4em",
+						//fontStyle: "italic",
+					},
 				},
 			};
+			// If changes register is available:
+			/*
+			if (entry.regText) {
+				deco.renderOptions.before = {
+					contentText: "[" + entry.regText + "]",
+					margin: "2.5em",
+				};
+			}
+			*/
 
 			// Add address to set
 			lines.push(deco);

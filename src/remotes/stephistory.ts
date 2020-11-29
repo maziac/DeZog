@@ -348,7 +348,7 @@ export class StepHistoryClass extends EventEmitter {
 			if (registers) {
 				if (i==indices.length-1) {
 					// Not for the first line
-					registers.unshift('');
+					//registers.unshift('');
 					// Preset register values
 					this.wantedChangedRegs.forEach(regName => {
 						const value=Z80Registers.decoder.getRegValueByName(regName, line);
@@ -362,6 +362,10 @@ export class StepHistoryClass extends EventEmitter {
 				}
 			}
 		}
+		// Now for the current line
+		const currentRegs = Z80Registers.getCache();
+		const regText = this.getChangedRegistersString(currentRegs, regsMap);
+		registers.unshift(regText);
 
 		// Return
 		return {addresses, registers};
