@@ -2709,11 +2709,15 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			return;
 		// Check if bank is the same
 		const slots=Remote.getSlots();
-		const bank=addr>>>16;
-		if (bank&&slots) {
-			const slotIndex=Z80Registers.getSlotFromAddress(addr);
-			if (bank!=slots[slotIndex]+1)
-				return;	// The slots are not correctly set for this to work
+		if (slots) {
+			const bank = Z80Registers.getBankFromAddress(addr);
+			if (bank >= 0) {
+				const slotIndex = Z80Registers.getSlotFromAddress(addr);
+				if (bank != slots[slotIndex]) {
+					this.showError("Cannot set PC to a location (address="+Utility.getHexString(addr&0xFFFF,4)+"h) of a bank (bank " + bank + ") hat is currently not paged in.");
+					return;
+				}
+			}
 		}
 		// Now change Program Counter
 		await Remote.setProgramCounterWithEmit(addr&0xFFFF);
