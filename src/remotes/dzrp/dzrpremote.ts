@@ -40,19 +40,18 @@ export enum DZRP {
 	CMD_PAUSE=7,
 	CMD_READ_MEM=8,
 	CMD_WRITE_MEM=9,
-	CMD_GET_SLOTS=10,
-	CMD_SET_SLOT=11,
-	CMD_GET_TBBLUE_REG=12,
-	CMD_SET_BORDER=13,
-	CMD_SET_BREAKPOINTS=14,
-	CMD_RESTORE_MEM=15,
-	CMD_LOOPBACK=16,
-	CMD_GET_SPRITES_PALETTE=17,
-	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=18,
+	CMD_SET_SLOT=10,
+	CMD_GET_TBBLUE_REG=11,
+	CMD_SET_BORDER=12,
+	CMD_SET_BREAKPOINTS=13,
+	CMD_RESTORE_MEM=14,
+	CMD_LOOPBACK=15,
+	CMD_GET_SPRITES_PALETTE=16,
+	CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=17,
 
 	// Sprites
-	CMD_GET_SPRITES=19,
-	CMD_GET_SPRITE_PATTERNS=20,
+	CMD_GET_SPRITES=18,
+	CMD_GET_SPRITE_PATTERNS=19,
 
 	// Breakpoint
 	CMD_ADD_BREAKPOINT=40,
@@ -347,12 +346,6 @@ export class DzrpRemote extends RemoteBase {
 			for (let i=0; i<data.length; i++)
 				data[i]=Utility.parseValue(cmdArray[i])&0xFF;
 			await this.sendDzrpCmdWriteMem(addr, data);
-		}
-		else if (cmd_name=="cmd_get_slots") {
-			const slots=await this.sendDzrpCmdGetSlots();
-			// Print
-			for (let i=0; i<slots.length; i++)
-				response+="\nSlot["+i+"]: 8k bank "+slots[i];
 		}
 		else if (cmd_name=="cmd_set_slot") {
 			if (cmdArray.length!=2) {
@@ -1629,18 +1622,6 @@ export class DzrpRemote extends RemoteBase {
  	*/
 	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
 		Utility.assert(false);
-	}
-
-
-	/**
-	 * Override.
-	 * Sends the command to read the slot/bank associations (8k banks).
-	 * @returns A Promise with an number array of 8 slots.
-	 *  Each entry contains the correspondent bank number.
- 	*/
-	public async sendDzrpCmdGetSlots(): Promise<number[]> {
-		Utility.assert(false);
-		return [];
 	}
 
 

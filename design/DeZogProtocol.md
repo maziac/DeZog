@@ -66,7 +66,6 @@ The table below shows which commands are used with what remote:
 | CMD_PAUSE             | X       | X      | -      |
 | CMD_READ_MEM          | X       | X      | X      |
 | CMD_WRITE_MEM         | X       | X      | X      |
-| CMD_GET_SLOTS         | X       | X      | X      |
 | CMD_SET_SLOT          | X       | X      | X      |
 | CMD_GET_TBBLUE_REG    | X       | X      | X      |
 | CMD_SET_BORDER        | X       | X      | X      |
@@ -90,7 +89,6 @@ DeZog knows with which remote it communicates and chooses the right subset.
 ## History
 
 ### 2.0.0 (planned for DeZog 2.0.0)
-- TODO: CMD_GET_SLOTS: Kann weg. CMD_SET_SLOTS ?
 
 Changed:
 - CMD_INIT: Added memory model.
@@ -100,6 +98,8 @@ Changed:
 - CMD_REMOVE_BREAKPOINT: ???
 - CMD_SET_BREAKPOINTS: Changed to send additionally the bank info for all breakpoints.
 - CMD_RESTORE_MEM: Changed to send additionally the bank info for all restored locations.
+Removed:
+- CMD_GET_SLOTS: Now done with CMD_GET_REGISTERS.
 
 Search for "| *"
 
@@ -416,33 +416,7 @@ Response (Length=1):
 | 0     | 1    | 1-255 | Same seq no |
 
 
-## CMD_GET_SLOTS=10
-
-Command (Length=0):
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| -     | -    | -     | -          |
-
-
-
-Response (Length=1+N):
-| Index | Size | Value |Description |
-|-------|------|-------|------------|
-| 0     | 1    | 1-255 | Same seq no |
-| 1     | 1    | slot[0] | The bank number associated with slot 0 |
-| 2     | 1    | slot[1] | The bank number associated with slot 1 |
-| ...   | ...  | ..      | ... |
-| 1+N-1 | 1    | slot[N-1] | The bank number associated with slot N-1 |
-
-For ZXNext is N = 8.
-
-Note:
-- ROM0 = 254
-- ROM1 = 255
-On real HW this is the same, 0xFF is returned for both.
-
-
-## CMD_SET_SLOT=11
+## CMD_SET_SLOT=10
 
 Command (Length=2):
 | Index | Size | Value |Description |
@@ -470,7 +444,7 @@ Response (Length=2):
 | 1     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot. At the moment this should return always 0. |
 
 
-## CMD_GET_TBBLUE_REG=12
+## CMD_GET_TBBLUE_REG=11
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -484,7 +458,7 @@ Response (Length=2):
 | 1     | 1    | 0-255 | Value of the register |
 
 
-## CMD_SET_BORDER=13
+## CMD_SET_BORDER=12
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -498,7 +472,7 @@ Response (Length=1):
 | 4     | 1    | 1-255 | Same seq no |
 
 
-## CMD_SET_BREAKPOINTS=14
+## CMD_SET_BREAKPOINTS=13
 
 Command (Length=3*N):
 | Index | Size | Value |Description |
@@ -527,7 +501,7 @@ Notes:
 - long addresses (with bank info are passed, bank=0: 64k address)
 
 
-## CMD_RESTORE_MEM=15
+## CMD_RESTORE_MEM=14
 
 Restores the memory previously overwritten by CMD_SET_BREAKPOINTS.
 
@@ -557,7 +531,7 @@ Notes:
 - long addresses (with bank info) are passed, bank=0: 64k address
 
 
-## CMD_LOOPBACK=16
+## CMD_LOOPBACK=15
 
 Command (Length=N):
 | Index | Size | Value |Description |
@@ -579,7 +553,7 @@ N is max. 8192.
 Loops back the received data. Used for testing purposes.
 
 
-## CMD_GET_SPRITES_PALETTE=17
+## CMD_GET_SPRITES_PALETTE=16
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -594,7 +568,7 @@ Response (Length=513):
 
 
 
-## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=18
+## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=17
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -613,7 +587,7 @@ Response (Length=6):
 
 
 
-## CMD_GET_SPRITES=19
+## CMD_GET_SPRITES=18
 
 Command (Length=2):
 | Index | Size | Value |Description |
@@ -628,7 +602,7 @@ Response (Length=1+5*N):
 | 1     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
 
 
-## CMD_GET_SPRITE_PATTERNS=20
+## CMD_GET_SPRITE_PATTERNS=19
 
 Command (Length=4):
 | Index | Size | Value |Description |

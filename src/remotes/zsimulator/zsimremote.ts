@@ -1192,17 +1192,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 
 	/**
-	 * Sends the command to read the slot/bank associations (8k banks).
-	 * @returns A Promise with an number array of 8 slots.
-	 *  Each entry contains the correspondent bank number.
- 	*/
-	public async sendDzrpCmdGetSlots(): Promise<number[]> {
-		const slots=this.memory.getSlots();
-		return slots||[];
-	}
-
-
-	/**
 	 * Sends the command to set a slot/bank associations (8k banks).
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.

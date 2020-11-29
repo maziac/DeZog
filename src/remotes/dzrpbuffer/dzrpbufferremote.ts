@@ -718,18 +718,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 
 	/**
-	 * Sends the command to read the slot/bank associations (8k banks).
-	 * @returns A Promise with an number array of 8 slots.
-	 *  Each entry contains the correspondent bank number.
- 	*/
-	public async sendDzrpCmdGetSlots(): Promise<number[]> {
-		const buffer=await this.sendDzrpCmd(DZRP.CMD_GET_SLOTS);
-		const slots=[...buffer];
-		return slots;
-	}
-
-
-	/**
 	 * Sends the command to set a slot/bank associations (8k banks).
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.
