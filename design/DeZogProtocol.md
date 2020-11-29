@@ -215,7 +215,7 @@ This is because of the special meaning of ```bank==0``` in DeZog.
 
 # Commands and Responses
 
-## CMD_INIT
+## CMD_INIT=1
 
 This is the first command sent after connection.
 The command sender will evaluate the received version and disconnect if versions do not match.
@@ -237,7 +237,7 @@ Response (Length=7+n):
 | 6    | 1-n  | 0-terminated string | The responding program name + version as a string. E.g. "dbg_uart_if v2.0.0" |
 
 
-## CMD_CLOSE
+## CMD_CLOSE=2
 
 This is the last command. It is sent when the debug session is closed gracefully.
 There is no guarantee that this command is sent at all, e.g. when the connection is disconnected ungracefully.
@@ -256,7 +256,7 @@ Response (Length=1):
 | 4     | 1    | 1-255 | Same seq no |
 
 
-## CMD_GET_REGISTERS
+## CMD_GET_REGISTERS=3
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -290,7 +290,7 @@ Response (Length=30+Nslots):
 | *29+Nslots | slot[Nslots-1] | 0-255 | " |
 
 
-## CMD_SET_REGISTER
+## CMD_SET_REGISTER=4
 
 Command (Length=3):
 | Index | Size | Value |Description |
@@ -305,7 +305,7 @@ Response (Length=1):
 | 0     | 1    | 1-255 | Same seq no |
 
 
-## CMD_WRITE_BANK
+## CMD_WRITE_BANK=5
 
 Command (Length=1+N):
 | Index | Size | Value |Description |
@@ -333,7 +333,7 @@ Response (Length=2+n):
 | *2     | 1-n  | 0-terminated string | Either 0 or a string which explains the error. E.g. one could have tried to overwrite ROM or the DezogIf program. |
 
 
-## CMD_CONTINUE
+## CMD_CONTINUE=6
 
 Command (Length=11):
 | Index | Size | Value |Description |
@@ -370,7 +370,7 @@ Note 2:
 - The breakpoints are temporary. They will be removed automatically after the command is finished.
 
 
-## CMD_PAUSE
+## CMD_PAUSE=7
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -385,7 +385,7 @@ Response (Length=1):
 
 
 
-## CMD_READ_MEM
+## CMD_READ_MEM=8
 
 Command (Length=6):
 | Index | Size | Value |Description |
@@ -405,7 +405,7 @@ Response (Length=N+1):
 | 1+n-1 | 1    | addr[n-1] | Last byte of memory block |
 
 
-## CMD_WRITE_MEM
+## CMD_WRITE_MEM=9
 
 Command (Length=4+N):
 | Index | Size | Value |Description |
@@ -424,7 +424,7 @@ Response (Length=1):
 | 0     | 1    | 1-255 | Same seq no |
 
 
-## CMD_GET_SLOTS
+## CMD_GET_SLOTS=10
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -450,7 +450,7 @@ Note:
 On real HW this is the same, 0xFF is returned for both.
 
 
-## CMD_SET_SLOT
+## CMD_SET_SLOT=11
 
 Command (Length=2):
 | Index | Size | Value |Description |
@@ -478,7 +478,7 @@ Response (Length=2):
 | 1     | 1    | 0/1   | Error code. 0 = No error. 1 = could not set slot. At the moment this should return always 0. |
 
 
-## CMD_GET_TBBLUE_REG
+## CMD_GET_TBBLUE_REG=12
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -492,7 +492,7 @@ Response (Length=2):
 | 1     | 1    | 0-255 | Value of the register |
 
 
-## CMD_SET_BORDER
+## CMD_SET_BORDER=13
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -506,7 +506,7 @@ Response (Length=1):
 | 4     | 1    | 1-255 | Same seq no |
 
 
-## CMD_SET_BREAKPOINTS
+## CMD_SET_BREAKPOINTS=14
 
 Command (Length=3*N):
 | Index | Size | Value |Description |
@@ -535,7 +535,7 @@ Notes:
 - long addresses (with bank info are passed, bank=0: 64k address)
 
 
-## CMD_RESTORE_MEM
+## CMD_RESTORE_MEM=15
 
 Restores the memory previously overwritten by CMD_SET_BREAKPOINTS.
 
@@ -565,7 +565,7 @@ Notes:
 - long addresses (with bank info) are passed, bank=0: 64k address
 
 
-## CMD_LOOPBACK
+## CMD_LOOPBACK=16
 
 Command (Length=N):
 | Index | Size | Value |Description |
@@ -587,7 +587,7 @@ N is max. 8192.
 Loops back the received data. Used for testing purposes.
 
 
-## CMD_GET_SPRITES_PALETTE
+## CMD_GET_SPRITES_PALETTE=17
 
 Command (Length=1):
 | Index | Size | Value |Description |
@@ -602,7 +602,7 @@ Response (Length=513):
 
 
 
-## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
+## CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL=18
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -621,7 +621,7 @@ Response (Length=6):
 
 
 
-## CMD_GET_SPRITES
+## CMD_GET_SPRITES=19
 
 Command (Length=2):
 | Index | Size | Value |Description |
@@ -636,7 +636,7 @@ Response (Length=1+5*N):
 | 1     | 5*N  | 0-255 | 5 bytes per sprite: Attribute 0, 1, 2, 3, 4 |
 
 
-## CMD_GET_SPRITE_PATTERNS
+## CMD_GET_SPRITE_PATTERNS=20
 
 Command (Length=4):
 | Index | Size | Value |Description |
@@ -655,7 +655,7 @@ Response (Length=1+256*N):
 Note: 512 = 16x16x2.
 
 
-## CMD_ADD_BREAKPOINT
+## CMD_ADD_BREAKPOINT=40
 
 Command (Length=3+n):
 | Index | Size | Value |Description |
@@ -674,7 +674,7 @@ Response (Length=3):
 
 Note: long addresses (with bank info) are passed, bank=0: 64k address
 
-## CMD_REMOVE_BREAKPOINT
+## CMD_REMOVE_BREAKPOINT=41
 
 Command (Length=2):
 | Index | Size | Value |Description |
@@ -688,7 +688,7 @@ Response (Length=1):
 | 4     | 1    | 1-255 | Same seq no |
 
 
-## CMD_ADD_WATCHPOINT
+## CMD_ADD_WATCHPOINT=42
 
 Command (Length=6):
 | Index | Size | Value |Description |
@@ -707,7 +707,7 @@ Response (Length=2):
 
 Note: long addresses (with bank info) are passed, bank=0: 64k address
 
-## CMD_REMOVE_WATCHPOINT
+## CMD_REMOVE_WATCHPOINT=43
 
 Command (Length=6):
 | Index | Size | Value |Description |
@@ -724,7 +724,7 @@ Response (Length=1):
 | 4     | 1    | 1-255 | Same seq no |
 
 
-## CMD_READ_STATE
+## CMD_READ_STATE=50
 
 Command (Length=0):
 | Index | Size | Value |Description |
@@ -739,7 +739,7 @@ Response (Length=1+N):
 | 5     | N    |       | Arbitrary data. The format is up to the remote. |
 
 
-## CMD_WRITE_STATE
+## CMD_WRITE_STATE=51
 
 Command (Length=N):
 | Index | Size | Value |Description |

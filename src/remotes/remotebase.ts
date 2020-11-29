@@ -69,7 +69,7 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
  * The additional 'watchpoints', 'assertionBreakpoints' and 'logpoints'
  * arrays can be enabled/disabled as a group via a debug command.
  * - 'watchPoints': These are associated with the WPMEM keyword and create
- * a memory watchpoint (a breakpoint that is hit if a memory adress is
+ * a memory watchpoint (a breakpoint that is hit if a memory address is
  * accessed).
  * - 'assertionBreakpoints': These are very much like conditional breakpoints but associated with the ASSERTION keyword.
  * - 'logpoints': These are just like breakpoints with a log message but associated with the LOGPOINT keyword.

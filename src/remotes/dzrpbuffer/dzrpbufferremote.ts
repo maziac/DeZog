@@ -169,14 +169,14 @@ export class DzrpBufferRemote extends DzrpRemote {
 	protected async sendDzrpCmd(cmd: DZRP, data?: Buffer|Array<number>, respTimeoutTime?: number): Promise<Buffer> {
 		return new Promise<Buffer>(async (resolve, reject) => {
 			// Calculate length
-			let len=2;
+			let len=0;
 			if (data) {
 				if (Array.isArray(data))
 					data=Buffer.from(data);	// Convert to Buffer if Array
 				len+=data.length;
 			}
 			// Put length in buffer
-			const totalLength=4+len;
+			const totalLength=4+2+len;
 			const buffer=Buffer.alloc(totalLength);
 			// Encode length
 			buffer[0]=len&0xFF;
