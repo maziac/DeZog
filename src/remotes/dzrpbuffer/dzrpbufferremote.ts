@@ -490,7 +490,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		// Get machine type
 		const machineType=resp[4];
 		// Program name
-		const program_name=Utility.getStringFromBuffer(resp, 4);
+		const program_name=Utility.getStringFromBuffer(resp, 5);
 		// Check version number. Check only major and minor number.
 		if (DZRP_VERSION[0]!=resp[1]
 			||DZRP_VERSION[1]!=resp[2]) {

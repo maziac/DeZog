@@ -305,7 +305,7 @@ export class StepHistoryClass extends EventEmitter {
 
 				// Construct text
 				if (regText)
-					regText+=',';
+					regText+=' ';
 				regText+=regName2+'='+regValueString;
 				// Store previous value
 				regsMap.set(regName, regValue);
