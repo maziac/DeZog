@@ -1460,7 +1460,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @returns A Promise called after being quiet for the given timeout.
 	 */
-	public async executeAfterBeingQuietFor(timeout: number): Promise<void>{
+	public async waitForBeingQuietFor(timeout: number): Promise<void>{
 		return new Promise<void>(resolve => {
 			let timerId;
 			const timer=() => {

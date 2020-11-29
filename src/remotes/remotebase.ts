@@ -1432,7 +1432,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @returns A Promise called after being quiet for the given timeout.
 	 */
-	public async executeAfterBeingQuietFor(timeout: number): Promise<void> {
+	public async waitForBeingQuietFor(timeout: number): Promise<void> {
 		// This is a hack for ZEsarUX. Not required for the others.
 	}
 

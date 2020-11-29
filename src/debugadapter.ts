@@ -631,7 +631,7 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.clear();
 				if (DebugSessionClass.unitTestHandler) {
 					// Handle continue/stop in the z80unittests.
-					this.emit("initialized");
+					this.emit('initialized');
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
@@ -2827,8 +2827,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @param handler This handler is called after being quiet for the given timeout.
 	 */
-	public async executeAfterBeingQuietFor(timeout: number): Promise<void> {
-		await Remote.executeAfterBeingQuietFor(timeout);
+	public async waitForBeingQuietFor(timeout: number): Promise<void> {
+		await Remote.waitForBeingQuietFor(timeout);
 	}
 
 

@@ -182,6 +182,7 @@ export class Z80UnitTests {
 				await Remote.terminate();
 				RemoteFactory.removeRemote();
 			}
+
 			// (Unfortunately there is no event for this, so we need to wait)
 			Utility.delayedCall(time => {
 				// After 5 secs give up
@@ -197,6 +198,7 @@ export class Z80UnitTests {
 				if (vscode.debug.activeDebugSession)
 					return false;  // Try again
 				// Debugger not active anymore, start tests
+				this.cancelled = false;
 				if (debug)
 					this.debugTests();
 				else
@@ -717,7 +719,7 @@ export class Z80UnitTests {
 	 */
 	protected static startUnitTestsWhenQuiet(da: DebugSessionClass) {
 		// Wait
-		da.executeAfterBeingQuietFor(1000)
+		da.waitForBeingQuietFor(1000)
 		.then(() => {
 			// Load the initial unit test routine (provided by the user)
 			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
@@ -1033,7 +1035,7 @@ export class Z80UnitTests {
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (debugAdapter) {
-				await debugAdapter.executeAfterBeingQuietFor(300);
+				await debugAdapter.waitForBeingQuietFor(300);
 			}
 
 			// Show remaining covered addresses
