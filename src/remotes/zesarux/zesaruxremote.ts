@@ -885,7 +885,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 				// Create watchpoint with range
 				const size=wp.size;
-				let addr=wp.address;
+				let addr=wp.address&0xFFFF;
 				zSocket.send('set-membreakpoint '+addr.toString(16)+'h '+type+' '+size);
 			}
 
@@ -904,7 +904,7 @@ export class ZesaruxRemote extends RemoteBase {
 		return new Promise<void>(resolve => {
 			// Clear watchpoint with range
 			const size=wp.size;
-			let addr=wp.address;
+			let addr=wp.address&0xFFFF;
 			zSocket.send('set-membreakpoint '+addr.toString(16)+'h 0 '+size);
 			// Return promise after last watchpoint set
 			zSocket.executeWhenQueueIsEmpty().then(resolve);

@@ -354,8 +354,8 @@ The following table gives an overview.
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Break reason output     | yes                | no      | yes        | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes     | yes/fast   | no       | no       |
-| Assertions                 | yes                | no      | yes        | yes/slow | yes/slow |
+| Watchpoints             | yes                | yes 2)  | yes/fast 2) | no      | no       |
+| Assertions              | yes                | no      | yes        | yes/slow | yes/slow |
 | Logpoints               | yes                | no      | yes        | yes/slow | yes/slow |
 | Long addresses/breakpoints | yes             | yes     | yes        | yes      | yes      |
 | Extended callstack      | no                 | yes     | yes        | no       | no       |
@@ -376,7 +376,7 @@ Notes:
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" mens that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
 - ZesaruxExt is not available at the moment.
 - 1 ) ZEsarUX code coverage uses 16 bit addresses only. I.e. if slots are changed during execution the shown info might be wrong. But in most cases the output will be just fine.
-
+- 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 
 ### The Internal Z80 Simulator
 

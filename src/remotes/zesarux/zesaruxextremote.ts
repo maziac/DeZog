@@ -65,7 +65,8 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 */
 	public async setWatchpointExt(wp: GenericWatchpoint): Promise<void> {
 		// Set watchpoint
-		zSocket.send('set-fast-watchpoint '+wp.address+' '+wp.access+' '+wp.size+' '+wp.condition);
+		const addr = wp.address & 0xFFFF;
+		zSocket.send('set-fast-watchpoint ' + addr + ' ' + wp.access + ' ' + wp.size + ' ' + wp.condition);
 
 		// Wait on last command
 		await zSocket.executeWhenQueueIsEmpty();
@@ -79,7 +80,8 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 	 */
 	public async removeWatchpointExt(wp: GenericWatchpoint): Promise<void> {
 		// Clear watchpoint with range
-		zSocket.send('clear-fast-breakpoint '+wp.address+' '+ + wp.size);
+		const addr = wp.address & 0xFFFF;
+		zSocket.send('clear-fast-breakpoint ' + addr + ' ' + + wp.size);
 		// Return promise after last watchpoint set
 		await zSocket.executeWhenQueueIsEmpty();
 	}
