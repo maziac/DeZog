@@ -6,6 +6,7 @@ import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
+import {Z80Registers} from '../z80registers';
 
 
 
@@ -433,19 +434,17 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * If not allowed: a string with the address range that can be used for
 	 * error output.
 	 */
-	protected async checkBreakpoint(addr: number|undefined): Promise<string|undefined> {
-		if (addr!=undefined) {
+	protected async checkBreakpoint(addr: number | undefined): Promise<string | undefined> {
+		if (addr != undefined) {
 			// Check for ROM
-			if (addr>=0&&addr<0x4000) {
-				const slots=await this.sendDzrpCmdGetSlots();
-				const slot=addr>>>13;
-				if (slots[slot]>=0xFE)	// ROM
-					return "ROM";
-			}
+			const bank = Z80Registers.getBankFromAddress(addr);
+			if (bank >= 0xFE)	// ROM
+				return "ROM";
 
 			// Check for special area
-			if ((addr>=0&&addr<=0x07)
-				||(addr>=0x66&&addr<=0x73))
+			const addr64k = addr & 0xFFFF;
+			if ((addr64k >= 0 && addr64k <= 0x07)
+				|| (addr64k >= 0x66 && addr64k <= 0x73))
 				return "addresses 0x0000-0x0007 and 0x0066-0x0073";
 		}
 		return undefined;

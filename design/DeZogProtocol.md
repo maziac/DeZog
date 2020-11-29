@@ -90,15 +90,7 @@ DeZog knows with which remote it communicates and chooses the right subset.
 ## History
 
 ### 2.0.0 (planned for DeZog 2.0.0)
-- TODO: New command (or extend CMD_INIT) to get the machine type and/or slot/bank config (ZX48, ZX128, ZXNEXT)
-- TODO: Return the slots on each getRegisters command.
-- TODO: Notification: Return the long break address (or the slots).
-- TODO: Extend CMD_WRITE_BANK to write 16K banks.
-- TODO: set_breakpoints/restore_mem:
-Ich muss bei set_Breakpoints auch die bank mit zurückgeben und bei restore_mem die bank angeben, damit nicht in die falsche Bank "restored" wird und damit Speicher falsch überschrieben wird.
 - TODO: CMD_GET_SLOTS: Kann weg. CMD_SET_SLOTS ?
-
-- TODO: Alle Length (commands/responses durchgehen). Sind wohl größtenteils falsch.
 
 Changed:
 - CMD_INIT: Added memory model.
