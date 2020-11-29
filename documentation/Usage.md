@@ -43,7 +43,6 @@ A typical configuration looks like this:
                 */
             ],
             "startAutomatically": false,
-            "skipInterrupt": true,
             "history": {
                 "reverseDebugInstructionCount": 10000,
                 "codeCoverageEnabled": true

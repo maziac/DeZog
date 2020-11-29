@@ -222,7 +222,7 @@ export class RemoteBase extends EventEmitter {
 				watchpoints.push({address: entryAddress, size: length, access: access, condition: cond || ''});
 			}
 			catch (e) {
-				throw Error("Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e+"");
+				throw Error("Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e.message+"");
 			}
 		}
 
@@ -292,7 +292,7 @@ export class RemoteBase extends EventEmitter {
 				}
 			}
 			catch (e) {
-				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e+"");
+				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e.message+"");
 			}
 		}
 
@@ -337,7 +337,7 @@ export class RemoteBase extends EventEmitter {
 				}
 				catch (e) {
 					// Show error
-					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e+"");
+					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e.message+"");
 				}
 			}
 		}

@@ -446,7 +446,7 @@ export class DebugSessionClass extends DebugSession {
 		});
 
 		// Launch emulator
-		this.launch(response);
+		await this.launch(response);
 	}
 
 
@@ -693,7 +693,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 			catch (e) {
 				// Show error
-				this.showWarning(e);
+				this.showWarning(e.message);
 			}
 		}
 
