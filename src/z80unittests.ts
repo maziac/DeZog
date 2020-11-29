@@ -1044,8 +1044,6 @@ export class Z80UnitTests {
 				Z80UnitTests.lastCoveredAddresses = undefined as any;
 			}
 
-			// Remove event handling for the emulator
-			Remote.removeAllListeners();
 			// For reverse debugging.
 			StepHistory.clear();
 
@@ -1061,6 +1059,10 @@ export class Z80UnitTests {
 				if (errMessage)
 					vscode.window.showErrorMessage(errMessage);
 			}
+
+			// Remove event handling for the emulator
+			Remote.removeAllListeners();
+
 			resolve();
 		});
 	}
