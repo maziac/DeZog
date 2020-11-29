@@ -15,14 +15,12 @@ UNITTEST_CALL_ADDR: call 0x0000 ; Will be changed by the z80 unit tests.
 
 UNITTEST_TEST_READY_SUCCESS:    jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
 
-UNITTEST_TEST_READY_FAILURE:    nop
-UNITTEST_TEST_READY_FAILURE_BREAKPOINT: ret 	; A breakpoint will be set here. The next step will return to the failed test case
-UNITTEST_MIN_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
-        defs 2*50	; Stack depth of 50 should be enough
-UNITTEST_STACK: defw 0
-UNITTEST_MAX_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
 
-UNITTEST_SAVE_REG:  defw 0  ; Used to save register values.
+; Stack
+        defw 0	; WPMEM ,2
+        defs 2*50	; Stack depth of 50 should be enough
+UNITTEST_STACK:   defw 0  ; WPMEM ,2
+
 
 
     ; The unit test initialization. Provided by the user.
