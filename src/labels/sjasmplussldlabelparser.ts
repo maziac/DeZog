@@ -74,7 +74,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		this.lastLabel = undefined as any;
 
 		// Get bank size
-		const sldLines = readFileSync(sldConfig.path).toString().split('\n');
+		const sldLinesFull = readFileSync(sldConfig.path).toString().split('\n');
+		// Strip away windows line ending
+		const sldLines = sldLinesFull.map(line => line.trimRight());
 		this.checkSldVersion(sldLines);
 
 		// Get bank size
@@ -133,7 +135,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			if (line.startsWith('||K|KEYWORDS|')) {
 				// The SLD OPT options, e.g.
 				// "||K|KEYWORDS|WPMEM,LOGPOINT,ASSERTION"
-				keywords=fields[4].split(','); //"WPMEM,LOGPOINT,ASSERTION"
+				keywords = fields[4].split(','); // "WPMEM,LOGPOINT,ASSERTION"
 			}
 			if (bankSize!=undefined&&keywords!=undefined)
 				break;

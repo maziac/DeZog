@@ -166,7 +166,9 @@ export class LabelParserBase {
 	protected parseAllLabelsAndAddresses() {
 		// Loop through all lines
 		const fileName=Utility.getRelFilePath(this.config.path);
-		const listLines=readFileSync(this.config.path).toString().split('\n');
+		const listLinesFull = readFileSync(this.config.path).toString().split('\n');
+		// Strip away windows line endings
+		const listLines = listLinesFull.map(line => line.trimRight());
 		let lineNr=0;
 		for (let line of listLines) {
 			// Prepare an entry
