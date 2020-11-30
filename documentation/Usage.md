@@ -996,7 +996,7 @@ The previous executed instruction is at index -1. Before at line 30 is index -2.
 
 With the *History Spot* you can see what has just happened before without having to back step.
 
-After the ":" you can see register values of changed registers. The displayed value is the register **before** the instruction on the line has been executed. I.e. exactly what you would see in the VARIABLES section if the PC would point to that line.
+After the ":" you can see register values of changed registers. The displayed value is the register(s) that have been changed after the instruction was executed.
 Some explanations:
 - line 25: SP is shown because it was changed from the previous line which called the function (not shown here).
 - line 26: No register value has changed

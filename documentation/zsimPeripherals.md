@@ -75,6 +75,9 @@ API.receivedFromCustomUi(message: any);
 /**
  * Called when time has advanced.
  * Can be overwritten by the user.
+ * If tick() is called it is called right before the execution of an instruction.
+ * The first time tick() is called at t-states = 0 at the very start
+ * of the first instruction.
  */
 API.tick();
 
