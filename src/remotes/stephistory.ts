@@ -320,6 +320,8 @@ export class StepHistoryClass extends EventEmitter {
 	 * Calculates the indices into the history array.
 	 * For simple history arrays this is equal to the index range.
 	 * For zsim this is more complex.
+	 * Note: The current register values in Z80Registers need to be uptodate, i.e. Remote.getRegisters has to be
+	 * called somewhere before.
 	 * @param indices The correctly ordered indices into this.history.
 	 * @returns addresses and registers to pass to the decorations.
 	 */

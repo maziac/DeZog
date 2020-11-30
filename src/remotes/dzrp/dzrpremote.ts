@@ -885,7 +885,7 @@ export class DzrpRemote extends RemoteBase {
 					if (condition==undefined) {
 						// Continue
 						this.continueResolve=funcContinueResolve;
-						this.sendDzrpCmdContinue();
+						await this.sendDzrpCmdContinue();
 					}
 					else {
 						// Construct break reason string to report
@@ -951,7 +951,7 @@ export class DzrpRemote extends RemoteBase {
 					// Note: we need to use the original bp addresses
 					// Continue
 					this.continueResolve=funcContinueResolve;
-					this.sendDzrpCmdContinue(bp1, bp2);
+					await this.sendDzrpCmdContinue(bp1, bp2);
 				}
 				else {
 					// Check if bp1/2 was hit
@@ -1043,7 +1043,7 @@ export class DzrpRemote extends RemoteBase {
 						// Continue
 						this.continueResolve=funcContinueResolve;
 						prevPc=Z80Registers.getPC();
-						this.sendDzrpCmdContinue(bp1, bp2);
+						await this.sendDzrpCmdContinue(bp1, bp2);
 					}
 					else {
 						// Construct break reason string to report
@@ -1069,7 +1069,7 @@ export class DzrpRemote extends RemoteBase {
 			// Send 'run' command
 			this.continueResolve=funcContinueResolve;
 			prevPc=Z80Registers.getPC();
-			this.sendDzrpCmdContinue(bp1, bp2);
+			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
 	}
 
