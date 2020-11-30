@@ -1359,6 +1359,7 @@ export class DebugSessionClass extends DebugSession {
 			this.stopProcessing();
 
 			// Show decorations
+			await Remote.getRegisters();
 			StepHistory.emitHistory();
 
 			// Send response
