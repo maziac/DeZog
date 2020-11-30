@@ -588,18 +588,20 @@ export class ZSimRemote extends DzrpRemote {
 					if (CpuHistory)
 						this.storeHistoryInfo(prevPc);
 
-					// Execute one instruction
-					const tStates=this.z80Cpu.execute();
-
-					// Increase passed t-states
-					this.passedTstates+=tStates;
-					if (this.passedTstates>=this.nextStepTstates) {
-						this.nextStepTstates+=this.timeStep;
+					// For custom code: Call tick before the execution of the opcode
+					if (this.passedTstates >= this.nextStepTstates) {
+						this.nextStepTstates += this.timeStep;
 						if (this.customCode) {
 							this.customCode.setTstates(this.passedTstates);
 							this.customCode.tick();
 						}
 					}
+
+					// Execute one instruction
+					const tStates=this.z80Cpu.execute();
+
+					// For custom code: Increase passed t-states
+					this.passedTstates += tStates;
 
 					// Update visual memory
 					this.memory.setVisualProg(prevPc); // Fully correct would be to update all opcodes. But as it is compressed anyway this only gives a more accurate view at a border but on the other hand reduces the performance.
