@@ -2,6 +2,9 @@
 
 This document describes the features of DeZog and how they can be used.
 
+## TOC
+
+[toc]
 
 ## Sample Program
 
@@ -484,7 +487,7 @@ For a ZX Next like system (note: this simulates only the Next's memory paging):
 
 Here is the explanations of all the options:
 - "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
-- "zxKeyboard": true/false. Defaults to true. If enabled the simulator shows a keyboard to simulate keypresses.
+- "zxKeyboard": true/false. Defaults to false. If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
 - "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
 ![](images/zsim_visual_memory.jpg)
@@ -493,11 +496,11 @@ Here is the explanations of all the options:
 	- "ZX48": ROM and RAM as of the ZX Spectrum 48K.
 	- "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	- "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
-- "ulaScreen": true/false. Defaults to true. If enabled it shows the contents of the ZX Spectrum screen.
+- "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
-- "vsyncInterrupt": Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
+- "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](zsimPeripherals.md) for more details.
 
 
@@ -1519,7 +1522,6 @@ Please see [here](UnitTests.md).
 ## Known Issues
 
 - **General**
-  - **"ASSERTION"s** are set on startup but if for the same address an breakpoint already exists (e.g. from a previous session) it is not changed. If e.g. the ASSERTION / breakpoint condition is changed it is not updated. Workaround: Remove all breakpoints manually before debugging the assembler program.
   - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 - **ZEsarUX** (found with v8.1)
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
@@ -1527,7 +1529,6 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
     - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program](https://github.com/maziac/z80-sample-program) for placing the WPMEM correctly.
 - **CSpect** (found with v2.12.26)
   - Watchpoints do not work and are therefore disabled.
-  - Z80 unit tests do not work. Because of above watchpoint problem.
 
 
 ## Notes
