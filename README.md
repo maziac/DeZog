@@ -90,7 +90,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - [memory viewer](documentation/Usage.md#memory-dumps) / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - [change of program counter](documentation/Usage.md#change-the-program-counter) through menu
-- support for assembler [unit tests](documentation/Unittests.md)
+- support for assembler [unit tests](documentation/UnitTests.md)
 - Display of ZXNext [sprites and sprite patterns](documentation/Usage.md#sprites--patterns)
 
 
