@@ -29,6 +29,7 @@ import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
+import {HelpView} from './help/helpview';
 
 
 
@@ -420,6 +421,8 @@ export class DebugSessionClass extends DebugSession {
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
 
+			const helpView = new HelpView("HelpView", "# hello, markdown!");
+			
 			// Set root path
 			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
 

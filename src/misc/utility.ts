@@ -874,7 +874,7 @@ export class Utility {
 	 * @param extPath Use what vscode.extensions.getExtension("maziac").extensionPath returns.
 	 */
 	public static setExtensionPath(extPath: string) {
-		Utility.extensionPath=extPath;
+		Utility.extensionPath = UnifiedPath.getUnifiedPath(extPath);
 	}
 
 
