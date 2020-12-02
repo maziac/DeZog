@@ -463,22 +463,11 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	* Gets the registers from cache. If cache is empty retrieves the registers from
-	* the emulator.
-    * Override.
-	*/
-	public async getRegisters(): Promise<void> {
-		Utility.assert(false);
-	}
-
-
-	/**
 	 * If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
-	public clearRegisters() {
-		Z80Registers.clearCache();
-		//this.slots=undefined;
+	public async getRegistersFromEmulator(): Promise<void> {
+		Utility.assert(false);
 	}
 
 
@@ -663,7 +652,7 @@ export class RemoteBase extends EventEmitter {
 	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
 	public async getStack(): Promise<Array<string>> {
-		await this.getRegisters();
+		//await this.getRegisters();
 		const sp=Z80Registers.getSP();
 		// calculate the depth of the call stack
 		const tos=this.topOfStack;
@@ -1292,9 +1281,9 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegisters();
-		this.clearCallStack();
 		await this.setRegisterValue("PC", address);
+		await this.getRegistersFromEmulator();
+		this.clearCallStack();
 		this.emit('stoppedEvent', 'PC changed');
 	}
 
@@ -1304,9 +1293,9 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegisters();
-		this.clearCallStack();
 		await this.setRegisterValue("SP", address);
+		await this.getRegistersFromEmulator();
+		this.clearCallStack();
 		this.emit('stoppedEvent', 'SP changed');
 	}
 
@@ -1481,7 +1470,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
-		await this.getRegisters();
+		//await this.getRegisters();
 		const pc=this.getPC();
 		// Get opcodes
 		const opcodes=await this.readMemoryDump(pc, 4);

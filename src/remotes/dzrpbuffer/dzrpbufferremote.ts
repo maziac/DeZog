@@ -1,6 +1,6 @@
-import {LogSocket} from '../../log';
+import {Log, LogSocket} from '../../log';
 import {DzrpRemote, AlternateCommand, DzrpMachineType} from '../dzrp/dzrpremote';
-import {Z80RegistersClass, Z80_REG} from '../z80registers';
+import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -518,7 +518,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
 		// Get regs
+		Log.log('sendDzrpCmdGetRegisters ->', JSON.stringify(Z80Registers.getCache() || {}));
 		const regs=await this.sendDzrpCmd(DZRP.CMD_GET_REGISTERS);
+		Log.log('sendDzrpCmdGetRegisters ----', Z80Registers.getCache() || "undefined");
 		const pc=Utility.getWord(regs, 0);
 		const sp=Utility.getWord(regs, 2);
 		const af=Utility.getWord(regs, 4);
@@ -549,6 +551,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 			af2, bc2, de2, hl2,
 			i, r, im,
 			slots);
+
+		Log.log('sendDzrpCmdGetRegisters <-', Z80Registers.getCache() || "undefined");
 
 		return regData;
 	}

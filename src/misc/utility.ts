@@ -331,7 +331,7 @@ export class Utility {
 	*/
 	public static async evalLogString(logString: string): Promise<string> {
 		// logString e.g. "${b@(HL):hex}"
-		await Remote.getRegisters();	// Make sure that registers are available.
+		//await Remote.getRegisters();	// Make sure that registers are available.
 
 		// Replace does not work asynchrounously, therefore we need to store the results in arrays.
 		const offsets: Array<number>=[];
@@ -529,7 +529,7 @@ export class Utility {
 		// Return registers only if 'name' itself is not a register.
 		if (!Z80RegistersClass.isRegister(name)) {
 			regsAsWell=true;
-			await Remote.getRegisters();
+			//await Remote.getRegisters();
 		}
 
 		// Check first if we need to retrieve address values
@@ -734,7 +734,7 @@ export class Utility {
 		const format=formatMap.get(reg);
 		Utility.assert(format!=undefined, 'Register '+reg+' does not exist.');
 
-		await Remote.getRegisters();
+		//await Remote.getRegisters();
 		// Get value of register
 		const value=Remote.getRegisterValue(reg);
 
@@ -1061,6 +1061,12 @@ export class Utility {
 	public static assert(test: any, message?: string) {
 		if (!test) {
 			try {
+				/*
+				while (true) {
+					Log.log('assert');
+					console.log();
+				};
+				*/
 				throw Error("'assert' error. "+(message||""));
 			}
 			catch (err) {

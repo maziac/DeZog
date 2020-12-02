@@ -220,8 +220,7 @@ export class DzrpRemote extends RemoteBase {
 			}
 
 			// Get initial registers
-			this.clearRegisters();
-			await this.getRegisters();
+			await this.getRegistersFromEmulator();
 
 			// Ready
 			const text="'"+resp.programName+"' initialized.";
@@ -248,14 +247,13 @@ export class DzrpRemote extends RemoteBase {
 	 * If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
-	public async getRegisters(): Promise<void> {
-		// Registers
-		if (!Z80Registers.valid()) {
-			// Get regs
-			const regs=await this.sendDzrpCmdGetRegisters();
-			// And set
-			Z80Registers.setCache(regs);
-		}
+	public async getRegistersFromEmulator(): Promise<void> {
+		Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
+		// Get regs
+		const regs = await this.sendDzrpCmdGetRegisters();
+		// And set
+		Z80Registers.setCache(regs);
+		Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
 	}
 
 
@@ -486,8 +484,7 @@ export class DzrpRemote extends RemoteBase {
 		// Send command to set register
 		await this.sendDzrpCmdSetRegister(index, value);
 		// Send command to get registers
-		Z80Registers.clearCache(); // Not necessary: this.clearRegsAndSlots();
-		await this.getRegisters();
+		await this.getRegistersFromEmulator(); // Not necessary: this.clearRegsAndSlots();
 		// Return
 		const realValue=Z80Registers.getRegValueByName(register);
 		return realValue;
@@ -875,8 +872,7 @@ export class DzrpRemote extends RemoteBase {
 					await this.timeWait.waitAtInterval();
 
 					// Get registers
-					this.clearRegisters();
-					await this.getRegisters();
+					await this.getRegistersFromEmulator();
 
 					// Check for break condition
 					const {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
@@ -891,7 +887,7 @@ export class DzrpRemote extends RemoteBase {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
-						this.clearRegisters();
+						await this.getRegistersFromEmulator();
 						this.clearCallStack();
 						// return
 						resolve(breakReasonString);
@@ -899,7 +895,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 				catch (e) {
 					// Clear registers
-					this.clearRegisters();
+					await this.getRegistersFromEmulator();
 					this.clearCallStack();
 					const reason: string=e.message;
 					resolve(reason);
@@ -938,8 +934,7 @@ export class DzrpRemote extends RemoteBase {
 				await this.timeWait.waitAtInterval();
 
 				// Get registers
-				this.clearRegisters();
-				await this.getRegisters();
+				await this.getRegistersFromEmulator();
 
 				// Check for break condition
 				let {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
@@ -970,7 +965,7 @@ export class DzrpRemote extends RemoteBase {
 			};
 
 			// Calculate the breakpoints to use for step-over
-			await this.getRegisters();
+			//await this.getRegisters();
 			let [, bp1, bp2]=await this.calcStepBp(stepOver);
 			//this.emit('debug_console', instruction);
 			// Send 'run' command
@@ -1012,8 +1007,7 @@ export class DzrpRemote extends RemoteBase {
 					await this.timeWait.waitAtInterval();
 
 					// Get registers
-					this.clearRegisters();
-					await this.getRegisters();
+					await this.getRegistersFromEmulator();
 
 					// Check for break condition
 					let {condition, correctedBreakNumber}=await this.evalBpConditionAndLog(breakNumber, breakAddress);
@@ -1049,7 +1043,7 @@ export class DzrpRemote extends RemoteBase {
 						// Construct break reason string to report
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
-						this.clearRegisters();
+						await this.getRegistersFromEmulator();
 						this.clearCallStack();
 						// return
 						resolve(breakReasonString);
@@ -1057,7 +1051,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 				catch (e) {
 					// Clear registers
-					this.clearRegisters();
+					await this.getRegistersFromEmulator();
 					this.clearCallStack();
 					const reason: string=e;
 					resolve(reason);
@@ -1276,7 +1270,7 @@ export class DzrpRemote extends RemoteBase {
 			throw Error("File extension not supported in '"+filePath+"' with remoteType:'"+Settings.launch.remoteType+"'. Can only load .sna and .nex files.");
 		}
 		// Make sure that the registers are reloaded
-		this.clearRegisters();
+		await this.getRegistersFromEmulator();
 		this.clearCallStack();
 	}
 
@@ -1294,7 +1288,7 @@ export class DzrpRemote extends RemoteBase {
 		await this.sendDzrpCmdWriteMem(startAddress, objBuffer);
 
 		// Make sure that the registers are reloaded
-		this.clearRegisters();
+		await this.getRegistersFromEmulator();
 		this.clearCallStack();
 	}
 
@@ -1409,7 +1403,7 @@ export class DzrpRemote extends RemoteBase {
 		// Restore data
 		await this.sendDzrpCmdWriteState(stateData);
 		// Clear register cache
-		this.clearRegisters();
+		await this.getRegistersFromEmulator();
 		this.clearCallStack();
 	}
 

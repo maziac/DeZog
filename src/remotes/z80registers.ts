@@ -273,10 +273,12 @@ export class Z80RegistersClass {
 	/**
 	 * Clears the register cache.
 	 */
+	/*
 	public clearCache() {
+		Log.log('Z80Registers.clearCache');
 		this.RegisterCache=undefined;
 	}
-
+	*/
 
 	/**
 	 * Sets the register cache.

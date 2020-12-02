@@ -131,7 +131,8 @@ suite('RemoteBase', () => {
 			public iy: number;
 			public pcMemory=new Uint8Array(4);
 			public spMemory=new Uint16Array(1);
-			public async getRegisters(): Promise<void> {
+			//public async getRegisters(): Promise<void> {
+			public async getRegistersFromEmulator(): Promise<void> {
 				const cache=Z80RegistersClass.getRegisterData(this.pc, this.sp, 0, 0, 0, this.hl, this.ix, this.iy, 0, 0, 0, 0, 0, 0, 0, []);
 				Z80Registers.setCache(cache);
 

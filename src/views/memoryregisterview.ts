@@ -37,7 +37,7 @@ export class MemoryRegisterView extends MemoryDumpView {
 	 */
 	public async update(reason?: any): Promise<void> {
 		// Get register values
-		await Remote.getRegisters();
+		//await Remote.getRegisters();
 
 		// If run the first time
 		if (!this.vscodePanel.webview.html) {
