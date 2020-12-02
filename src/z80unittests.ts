@@ -756,7 +756,7 @@ export class Z80UnitTests {
 			// Init
 			StepHistory.clear();
 			await Remote.getRegistersFromEmulator();
-			Remote.clearCallStack();
+			await Remote.getCallStackFromEmulator();
 
 			// Special handling for zsim: Re-init custom code.
 			if (Remote instanceof ZSimRemote) {

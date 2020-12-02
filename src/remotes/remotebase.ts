@@ -651,7 +651,7 @@ export class RemoteBase extends EventEmitter {
     * The values are returned as hex string, an additional info might follow.
 	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
-	public async getStack(): Promise<Array<string>> {
+	public async getStackFromEmulator(): Promise<Array<string>> {
 		//await this.getRegisters();
 		const sp=Z80Registers.getSP();
 		// calculate the depth of the call stack
@@ -680,19 +680,42 @@ export class RemoteBase extends EventEmitter {
 	 * The next call to 'getCallStack' will not return the cached value,
 	 * but will reload the cache.
 	 */
-	public clearCallStack() {
-		this.listFrames=undefined as any;
-	}
+	public async getCallStackFromEmulator(): Promise<void> {
+		const callStack = new RefList<CallStackFrame>();
+		// Get normal stack values
+		const stack = await this.getStackFromEmulator();	// Returns 64k addresses as hex string.
+		// Start with main
+		const sp = Z80Registers.getRegValue(Z80_REG.SP);
+		const len = stack.length;
+		const top = sp + 2 * len;
+		let lastCallStackFrame = new CallStackFrame(0, top - 2, this.getMainName(top));
+		callStack.addObject(lastCallStackFrame);
 
+		// Check for each value if it maybe is a CALL or RST
+		for (let i = 0; i < len; i++) {
+			const valueString = stack[i];
+			const type = await this.getStackEntryType(valueString);
+			if (type) {
+				// Set caller address
+				lastCallStackFrame.addr = type.callerAddr;
+				// CALL, RST or interrupt
+				const frameSP = top - 2 - 2 * (i + 1);
+				lastCallStackFrame = new CallStackFrame(0, frameSP, type.name);
+				callStack.addObject(lastCallStackFrame);
+			}
+			else {
+				// Something else, e.g. pushed value
+				lastCallStackFrame.stack.push(parseInt(valueString, 16));
+			}
+		}
 
-	/**
-	 * Returns the stored call stack.
-	 */
-	/*
-	public getCallStackCache(): RefList<CallStackFrame> {
-		return this.listFrames;
+		// Set PC
+		const pc = this.getPCLong();
+		lastCallStackFrame.addr = pc;
+
+		// Return
+		this.listFrames = callStack;
 	}
-	*/
 
 
 	/**
@@ -703,50 +726,11 @@ export class RemoteBase extends EventEmitter {
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
 	  */
-	public async getCallStack(): Promise<RefList<CallStackFrame>> {
-		// Check if there are already cached values.
-		if (this.listFrames)
-			return this.listFrames;
-
-		const callStack=new RefList<CallStackFrame>();
-		// Get normal stack values
-		const stack=await this.getStack();	// Returns 64k addresses as hex string.
-		// Start with main
-		const sp=Z80Registers.getRegValue(Z80_REG.SP);
-		const len=stack.length;
-		const top=sp+2*len;
-		let lastCallStackFrame=new CallStackFrame(0, top-2, this.getMainName(top));
-		callStack.addObject(lastCallStackFrame);
-
-		// Check for each value if it maybe is a CALL or RST
-		for (let i=0; i<len; i++) {
-			const valueString=stack[i];
-			const type=await this.getStackEntryType(valueString);
-			if (type) {
-				// Set caller address
-				lastCallStackFrame.addr=type.callerAddr;
-				// CALL, RST or interrupt
-				const frameSP=top-2-2*(i+1);
-				lastCallStackFrame=new CallStackFrame(0, frameSP, type.name);
-				callStack.addObject(lastCallStackFrame);
-			}
-			else {
-				// Something else, e.g. pushed value
-				lastCallStackFrame.stack.push(parseInt(valueString,16));
-			}
-		}
-
-		// Set PC
-		const pc=this.getPCLong();
-		lastCallStackFrame.addr=pc;
-
-
-		// Return
-		this.listFrames=callStack;
-		return callStack;
+	public async getCallStackCache(): Promise<RefList<CallStackFrame>> {
+		return this.listFrames;
 	}
 
-
+	
 	/**
 	 * Returns the name of the interrupt.
 	 */
@@ -789,7 +773,7 @@ export class RemoteBase extends EventEmitter {
 		}
 		else {
 			// "real" stack trace
-			const callStack=await this.getCallStack();
+			const callStack=await this.getCallStackCache();
 			return callStack;
 		}
 	}
@@ -1281,10 +1265,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		await this.setRegisterValue("PC", address);
-		await this.getRegistersFromEmulator();
-		this.clearCallStack();
-		this.emit('stoppedEvent', 'PC changed');
+		await this.setRegisterValueWithEmit('PC', address);
 	}
 
 	/**
@@ -1293,10 +1274,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		await this.setRegisterValue("SP", address);
-		await this.getRegistersFromEmulator();
-		this.clearCallStack();
-		this.emit('stoppedEvent', 'SP changed');
+		await this.setRegisterValueWithEmit('SP', address);
 	}
 
 
@@ -1309,8 +1287,9 @@ export class RemoteBase extends EventEmitter {
 	 * @param value The new register value.
 	 */
 	public async setRegisterValueWithEmit(register: string, value: number) {
-		this.clearCallStack();
 		await this.setRegisterValue(register, value);
+		await this.getRegistersFromEmulator();
+		await this.getCallStackFromEmulator();
 		this.emit('stoppedEvent', register+' changed');
 	}
 

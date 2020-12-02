@@ -590,6 +590,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Get initial registers
 				await Remote.getRegistersFromEmulator();
+				await Remote.getCallStackFromEmulator();
 
 				// Initialize Cpu- or StepHistory.
 				if (!StepHistory.decoder)
@@ -813,7 +814,7 @@ export class DebugSessionClass extends DebugSession {
 				await Remote.getRegistersFromEmulator();  // TODO: Is this if-clause really required? What use case?
 			}
 			// Get callstack
-			callStack=await Remote.getCallStack();
+			callStack=await Remote.getCallStackCache();
 		}
 
 		// Go through complete call stack and get the sources.
@@ -1060,7 +1061,7 @@ export class DebugSessionClass extends DebugSession {
 		if (StepHistory.isInStepBackMode())
 			frame=StepHistory.getCallStack().getObject(frameId);
 		else {
-			await Remote.getCallStack();	// make sure listFrames exist
+			await Remote.getCallStackCache();	// make sure listFrames exist
 			frame=Remote.getFrame(frameId);
 		}
 		if (!frame) {
@@ -1499,7 +1500,7 @@ export class DebugSessionClass extends DebugSession {
 				// Store as (lite step history)
 				const regsCache=Z80Registers.getCache();
 				StepHistory.pushHistoryInfo(regsCache);
-				const callStack=await Remote.getCallStack();
+				const callStack=await Remote.getCallStackCache();
 				StepHistory.pushCallStack(callStack);
 			}
 			// Reset t-states counter

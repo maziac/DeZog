@@ -888,7 +888,7 @@ export class DzrpRemote extends RemoteBase {
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						await this.getRegistersFromEmulator();
-						this.clearCallStack();
+						await this.getCallStackFromEmulator();
 						// return
 						resolve(breakReasonString);
 					}
@@ -896,7 +896,7 @@ export class DzrpRemote extends RemoteBase {
 				catch (e) {
 					// Clear registers
 					await this.getRegistersFromEmulator();
-					this.clearCallStack();
+					await this.getCallStackFromEmulator();
 					const reason: string=e.message;
 					resolve(reason);
 				}
@@ -958,7 +958,7 @@ export class DzrpRemote extends RemoteBase {
 //					else
 //						breakReasonString=undefined;
 					// Clear registers
-					this.clearCallStack();
+					await this.getCallStackFromEmulator();
 					// return
 					resolve(breakReasonString);
 				}
@@ -1044,7 +1044,7 @@ export class DzrpRemote extends RemoteBase {
 						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 						// Clear registers
 						await this.getRegistersFromEmulator();
-						this.clearCallStack();
+						await this.getCallStackFromEmulator();
 						// return
 						resolve(breakReasonString);
 					}
@@ -1052,7 +1052,7 @@ export class DzrpRemote extends RemoteBase {
 				catch (e) {
 					// Clear registers
 					await this.getRegistersFromEmulator();
-					this.clearCallStack();
+					await this.getCallStackFromEmulator();
 					const reason: string=e;
 					resolve(reason);
 				}
@@ -1270,8 +1270,8 @@ export class DzrpRemote extends RemoteBase {
 			throw Error("File extension not supported in '"+filePath+"' with remoteType:'"+Settings.launch.remoteType+"'. Can only load .sna and .nex files.");
 		}
 		// Make sure that the registers are reloaded
-		await this.getRegistersFromEmulator();
-		this.clearCallStack();
+		//await this.getRegistersFromEmulator();
+		//await this.getCallStackFromEmulator();
 	}
 
 
@@ -1288,8 +1288,8 @@ export class DzrpRemote extends RemoteBase {
 		await this.sendDzrpCmdWriteMem(startAddress, objBuffer);
 
 		// Make sure that the registers are reloaded
-		await this.getRegistersFromEmulator();
-		this.clearCallStack();
+		//await this.getRegistersFromEmulator();
+		//await this.getCallStackFromEmulator();
 	}
 
 
@@ -1404,7 +1404,7 @@ export class DzrpRemote extends RemoteBase {
 		await this.sendDzrpCmdWriteState(stateData);
 		// Clear register cache
 		await this.getRegistersFromEmulator();
-		this.clearCallStack();
+		await this.getCallStackFromEmulator();
 	}
 
 

@@ -457,10 +457,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 15E1H call
 	 * 0000H default
 	 */
-	public async getStack(): Promise<Array<string>> {
+	public async getStackFromEmulator(): Promise<Array<string>> {
 		return new Promise<Array<string>>(async resolve => {
 			// Get normal callstack
-			const stack=await super.getStack();
+			const stack=await super.getStackFromEmulator();
 			// Get e-stack
 			const depth=stack.length;
 			if (depth==0) {
@@ -501,7 +501,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// (could take some time, e.g. until a breakpoint is hit)
 				// Clear register cache
 				await this.getRegistersFromEmulator();
-				this.clearCallStack();
+				await this.getCallStackFromEmulator();
 				// Handle code coverage
 				this.handleCodeCoverage();
 				// The reason is the 2nd line
@@ -596,7 +596,7 @@ export class ZesaruxRemote extends RemoteBase {
 										// (could take some time, e.g. until a breakpoint is hit)
 										// Clear register cache
 										await this.getRegistersFromEmulator();
-										this.clearCallStack();
+										await this.getCallStackFromEmulator();
 										// Handle code coverage
 										this.handleCodeCoverage();
 										// The break reason is in the returned text
@@ -621,7 +621,7 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.send(cmd, async result => {
 							// Clear cache
 							await this.getRegistersFromEmulator();
-							this.clearCallStack();
+							await this.getCallStackFromEmulator();
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// Call handler
@@ -654,7 +654,7 @@ export class ZesaruxRemote extends RemoteBase {
 					zSocket.send('cpu-step', async result => {
 						// Clear cache
 						await this.getRegistersFromEmulator();
-						this.clearCallStack();
+						await this.getCallStackFromEmulator();
 						// Handle code coverage
 						this.handleCodeCoverage();
 						// Read the spot history
@@ -811,7 +811,7 @@ export class ZesaruxRemote extends RemoteBase {
 											// (could take some time, e.g. until a breakpoint is hit)
 											// Clear register cache
 											await this.getRegistersFromEmulator();
-											this.clearCallStack();
+											await this.getCallStackFromEmulator();
 											// Handle code coverage
 											this.handleCodeCoverage();
 											// The reason is the 2nd line
@@ -1268,7 +1268,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await this.initAfterLoad();
 				// Clear register cache
 				await this.getRegistersFromEmulator();
-				this.clearCallStack();
+				await this.getCallStackFromEmulator();
 				resolve();
 			});
 		});

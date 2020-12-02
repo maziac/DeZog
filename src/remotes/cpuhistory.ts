@@ -550,7 +550,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	protected async prepareReverseDbgStack(): Promise<void> {
 		if (!this.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.reverseDbgStack=await Remote.getCallStack();
+			this.reverseDbgStack=await Remote.getCallStackCache();
 		}
 	}
 
@@ -956,7 +956,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		if (!nextLine) {
 			// Clear
 			await Remote.getRegistersFromEmulator();
-			Remote.clearCallStack();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReasonString;
@@ -1100,7 +1100,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		if (!nextLine) {
 			// Clear
 			await Remote.getRegistersFromEmulator();
-			Remote.clearCallStack();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		// Return
@@ -1137,7 +1137,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		if (!nextLine) {
 			// Clear
 			await Remote.getRegistersFromEmulator();
-			Remote.clearCallStack();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReasonString;
@@ -1202,7 +1202,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		if (!nextLine) {
 			// Clear
 			await Remote.getRegistersFromEmulator();
-			Remote.clearCallStack();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReason;
