@@ -135,6 +135,24 @@ export class RemoteBase extends EventEmitter {
 	public async init(): Promise<void> {
 		// Call custom initialization
 		await this.doInitialization();
+
+		// This needs to be done after the initialization to get the labels converted correctly:
+		
+		// Set watchpoints (memory guards)
+		const watchPointLines = Labels.getWatchPointLines();
+		const watchpoints = this.createWatchPoints(watchPointLines);
+		this.setWPMEMArray(watchpoints);
+
+		// ASSERTIONs
+		// Set assertion breakpoints
+		const assertionLines = Labels.getAssertionLines();
+		const assertionsArray = this.createAssertions(assertionLines);
+		this.setASSERTIONArray(assertionsArray);
+
+		// LOGPOINTs
+		const logPointLines = Labels.getLogPointLines();
+		const logPointsMap = this.createLogPoints(logPointLines);
+		this.setLOGPOINTArray(logPointsMap);
 	}
 
 
@@ -419,22 +437,6 @@ export class RemoteBase extends EventEmitter {
 		this.topOfStack=Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
-
-		// Set watchpoints (memory guards)
-		const watchPointLines=Labels.getWatchPointLines();
-		const watchpoints=this.createWatchPoints(watchPointLines);
-		this.setWPMEMArray(watchpoints);
-
-		// ASSERTIONs
-		// Set assertion breakpoints
-		const assertionLines=Labels.getAssertionLines();
-		const assertionsArray=this.createAssertions(assertionLines);
-		this.setASSERTIONArray(assertionsArray);
-
-		// LOGPOINTs
-		const logPointLines=Labels.getLogPointLines();
-		const logPointsMap=this.createLogPoints(logPointLines);
-		this.setLOGPOINTArray(logPointsMap);
 	}
 
 
@@ -676,9 +678,7 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Clears the callstack.
-	 * The next call to 'getCallStack' will not return the cached value,
-	 * but will reload the cache.
+	 * Retrieves the stack from the emulator and filters all CALL addresses.
 	 */
 	public async getCallStackFromEmulator(): Promise<void> {
 		const callStack = new RefList<CallStackFrame>();
@@ -730,7 +730,7 @@ export class RemoteBase extends EventEmitter {
 		return this.listFrames;
 	}
 
-	
+
 	/**
 	 * Returns the name of the interrupt.
 	 */

@@ -604,6 +604,7 @@ export class DebugSessionClass extends DebugSession {
 				await registerMemoryView.update();
 
 
+
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
 					this.debugConsoleAppendLine(cmd);

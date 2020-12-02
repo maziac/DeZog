@@ -52,12 +52,12 @@ export class LabelsClass {
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
 	/// Long addresses.
-	protected fileLineNrs=new Map<number, SourceFileEntry>();
+	protected fileLineNrs = new Map<number, SourceFileEntry>();
 
 	/// Map of arrays of line numbers. The key of the map is the filename.
 	/// The array contains the correspondent memory address for the line number.
 	/// Long addresses.
-	protected lineArrays=new Map<string, Array<number>>();
+	protected lineArrays = new Map<string, Array<number>>();
 
 	/// An element contains either the offset from the last
 	/// entry with labels or an array of labels for that number.
@@ -73,7 +73,7 @@ export class LabelsClass {
 
 	/// Map with all labels (from labels file) and corresponding values.
 	/// Long addresses.
-	protected numberForLabel=new Map<string, number>();
+	protected numberForLabel = new Map<string, number>();
 
 	/// Map with label / file location association.
 	/// Used in sourcesModeFinish to create the file label association and
@@ -81,19 +81,19 @@ export class LabelsClass {
 	/// Direct relationship: The line number of the label is returned.
 	/// Not the line number of the value of the label.
 	/// Long addresses.
-	protected labelLocations=new Map<string, {file: string, lineNr: number, address: number}>()
+	protected labelLocations = new Map<string, {file: string, lineNr: number, address: number}>()
 
 	/// Stores the address of the watchpoints together with the line contents.
 	/// Long addresses.
-	protected watchPointLines=new Array<{address: number, line: string}>();
+	protected watchPointLines = new Array<{address: number, line: string}>();
 
 	/// Stores the address of the assertions together with the line contents.
 	/// Long addresses.
-	protected assertionLines=new Array<{address: number, line: string}>();
+	protected assertionLines = new Array<{address: number, line: string}>();
 
 	/// Stores the address of the logpoints together with the line contents.
 	/// Long addresses.
-	protected logPointLines=new Array<{address: number, line: string}>();
+	protected logPointLines = new Array<{address: number, line: string}>();
 
 
 	/// From the Settings.
@@ -128,12 +128,12 @@ export class LabelsClass {
 		this.labelsForLongAddress.clear();
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
-		this.watchPointLines.length=0;
-		this.assertionLines.length=0;
-		this.logPointLines.length=0;
-		this.smallValuesMaximum=smallValuesMaximum;
-		this.bankSize=0;
-		this.warnings=undefined as any;
+		this.watchPointLines.length = 0;
+		this.assertionLines.length = 0;
+		this.logPointLines.length = 0;
+		this.smallValuesMaximum = smallValuesMaximum;
+		this.bankSize = 0;
+		this.warnings = undefined as any;
 	}
 
 
@@ -142,7 +142,7 @@ export class LabelsClass {
 	 * I.e. if bankSize != 0.
 	 */
 	public AreLongAddressesUsed() {
-		return this.bankSize!=0;
+		return this.bankSize != 0;
 	}
 
 
@@ -165,13 +165,13 @@ export class LabelsClass {
 	 * Especially it contains the path to the list file.
 	 */
 	public readListFiles(mainConfig: any) {
-		this.warnings='';
+		this.warnings = '';
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
 			// For sjasmplus it is checked if a list file should be parsed or an sld file
 			for (const config of mainConfig.sjasmplus) {
 				let parser;
-				if(SjasmplusSldLabelParser.IsSldFile(config.path)) {
+				if (SjasmplusSldLabelParser.IsSldFile(config.path)) {
 					// Parse SLD file and list file
 					parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
@@ -180,11 +180,11 @@ export class LabelsClass {
 					parser = new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				}
 				parser.loadAsmListFile(config);
-				this.bankSize=parser.bankSize;
+				this.bankSize = parser.bankSize;
 				// Warnings
-				const warnings=parser.getWarnings();
+				const warnings = parser.getWarnings();
 				if (warnings)
-					this.warnings+='sjasmplus sld parser warnings:\n'+warnings;
+					this.warnings += 'sjasmplus sld parser warnings:\n' + warnings;
 			}
 		}
 
@@ -206,8 +206,8 @@ export class LabelsClass {
 
 
 		// Check warnings
-		if (this.warnings=='')
-			this.warnings=undefined as any;
+		if (this.warnings == '')
+			this.warnings = undefined as any;
 		// Finish
 		this.finish();
 	}
@@ -256,18 +256,18 @@ export class LabelsClass {
 	 */
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
-		var offs=-1;
-		for (var i=0; i<0x10000; i++) {
-			const labels=this.labelsForNumber64k[i];
-			if (labels===undefined) {
-				if (offs>=0) {
-					this.labelsForNumber64k[i]=offs;
+		var offs = -1;
+		for (var i = 0; i < 0x10000; i++) {
+			const labels = this.labelsForNumber64k[i];
+			if (labels === undefined) {
+				if (offs >= 0) {
+					this.labelsForNumber64k[i] = offs;
 					++offs;
 				}
 			}
 			else {
 				// array
-				offs=1;
+				offs = 1;
 			}
 		}
 	}
@@ -281,7 +281,7 @@ export class LabelsClass {
 	 */
 	public getLabelsForLongAddress(longAddress: number): Array<string> {
 		const labels = this.labelsForLongAddress.get(longAddress);
-		return labels||[];
+		return labels || [];
 	}
 
 
@@ -327,28 +327,28 @@ export class LabelsClass {
 	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels + offset
 	 */
-	public getLabelsPlusIndexForNumber64k(number: number, regsAsWell=false): Array<string> {
-		if (number<=this.smallValuesMaximum||number>0xFFFF) {
+	public getLabelsPlusIndexForNumber64k(number: number, regsAsWell = false): Array<string> {
+		if (number <= this.smallValuesMaximum || number > 0xFFFF) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
 		}
 
 		let names;
 		if (regsAsWell)
-			names=Remote.getRegistersEqualTo(number);
+			names = Remote.getRegistersEqualTo(number);
 		else
-			names=new Array<string>();
+			names = new Array<string>();
 
-		let labels=this.labelsForNumber64k[number];
+		let labels = this.labelsForNumber64k[number];
 		if (labels) {
-			if (typeof labels!=='number') {
+			if (typeof labels !== 'number') {
 				names.push(...labels);
 			}
 			else {
-				const offs=labels;	// number
-				number-=offs;
-				const baseLabels=this.labelsForNumber64k[number];	// this is an array
-				if (baseLabels!==undefined) {
-					const labelsPlus=baseLabels.map(label => label+'+'+offs);
+				const offs = labels;	// number
+				number -= offs;
+				const baseLabels = this.labelsForNumber64k[number];	// this is an array
+				if (baseLabels !== undefined) {
+					const labelsPlus = baseLabels.map(label => label + '+' + offs);
 					names.push(...labelsPlus);
 				}
 			}
@@ -367,7 +367,7 @@ export class LabelsClass {
 	 * @param label The label name.
 	 * @returns It's value. undefined if label does not exist.
 	 */
-	public getNumberForLabel(label: string): number|undefined {
+	public getNumberForLabel(label: string): number | undefined {
 		return this.numberForLabel.get(label);
 	}
 
@@ -379,7 +379,7 @@ export class LabelsClass {
 	 * @returns {file, lineNr, address}: The absolute filepath, the line number and the (long) address.
 	 * undefined if label does not exist.
 	 */
-	public getLocationOfLabel(label: string): {file: string, lineNr: number, address: number}|undefined {
+	public getLocationOfLabel(label: string): {file: string, lineNr: number, address: number} | undefined {
 		return this.labelLocations.get(label);
 	}
 
@@ -390,11 +390,11 @@ export class LabelsClass {
 	 * @param options E.g. 'g'
 	 * @returns An array with matching labels. If nothing found an empty array is returned.
 	 */
-	public getLabelsForRegEx(labelRegEx: string, options='i'): Array<string> {
-		const regex=new RegExp(labelRegEx, options);
-		const foundLabels=new Array<string>();
+	public getLabelsForRegEx(labelRegEx: string, options = 'i'): Array<string> {
+		const regex = new RegExp(labelRegEx, options);
+		const foundLabels = new Array<string>();
 		for (let [k,] of this.numberForLabel) {
-			const match=regex.exec(k);
+			const match = regex.exec(k);
 			if (match)
 				foundLabels.push(k);
 		}
@@ -410,14 +410,14 @@ export class LabelsClass {
 	 * @returns The correspondent number. May return NaN.
 	 */
 	public getNumberFromString64k(text: string): number {
-		if (text==undefined)
+		if (text == undefined)
 			return NaN;
-		var result=this.getNumberForLabel(text);
-		if (result==undefined) {
+		var result = this.getNumberForLabel(text);
+		if (result == undefined) {
 			// Try convert as string
 			if (text.startsWith('_'))
 				return NaN;
-			result=Utility.parseValue(text);
+			result = Utility.parseValue(text);
 		}
 		if (isNaN(result))
 			return result;
@@ -473,7 +473,7 @@ export class LabelsClass {
 
 		// Now with the address get the modulePrefix and the lastLabel
 		const entry = Labels.getFileAndLineForAddress(longAddr);
-		result.modulePrefix=entry.modulePrefix!;
+		result.modulePrefix = entry.modulePrefix!;
 		result.lastLabel = entry.lastLabel!;
 
 		return result;
@@ -488,13 +488,13 @@ export class LabelsClass {
 	 * @returns The associated (long) address. -1 if file or line does not exist.
 	 */
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
-		var filePath=Utility.getRelFilePath(fileName);
-		var addr=-1;
-		const lineArray=this.lineArrays.get(filePath);
+		var filePath = Utility.getRelFilePath(fileName);
+		var addr = -1;
+		const lineArray = this.lineArrays.get(filePath);
 		if (lineArray) {
-			addr=lineArray[lineNr];
-			if (addr==undefined)
-				addr=-1;
+			addr = lineArray[lineNr];
+			if (addr == undefined)
+				addr = -1;
 		}
 		return addr;
 	}
@@ -513,7 +513,7 @@ export class LabelsClass {
 		| Labels 64k  |    OK      |    OK       |
 		| Labels long | Not OK 1)  | Depends 2)  |
 		*/
-		if (this.bankSize==0)
+		if (this.bankSize == 0)
 			return;	// No long labels used
 
 		/*
@@ -530,7 +530,7 @@ export class LabelsClass {
 
 
 		// Note: If bank size is 0 no banking is used and labels are converted to 64k.
-		const targetBankSize=memModel.getBankSize();
+		const targetBankSize = memModel.getBankSize();
 		this.convertLabelsToBankSize(targetBankSize);
 	}
 
@@ -549,48 +549,97 @@ export class LabelsClass {
 		 - Associate file/line with an address:
 		   this.lineArrays=new Map<string, Array<number>>();
 		*/
-		const bankFactor=(targetBankSize==0) ? 0 : this.bankSize/targetBankSize;
 
 		// Address with file/line:
-		const newFileLines=new Map<number, SourceFileEntry>();
+		const newFileLines = new Map<number, SourceFileEntry>();
 		for (let [addr, sourceEntry] of this.fileLineNrs) {
-			// Check if no bank used
-			if (targetBankSize==0) {
-				addr&=0xFFFF;
-			}
-			else {
-				// Change banks
-				const origBank=Z80Registers.getBankFromAddress(addr);
-				const newBank=origBank*bankFactor;
-				addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
-			}
+			// Convert
+			addr = this.convertAddressToBankSize(addr, targetBankSize);
 			// Store
 			newFileLines.set(addr, sourceEntry);
 		}
 		// Exchange old with new
-		this.fileLineNrs=newFileLines;
+		this.fileLineNrs = newFileLines;
 
 		// File/line with address:
 		for (const [, lineArray] of this.lineArrays) {
-			const count=lineArray.length;
-			for (let i=0; i<count; i++) {
+			const count = lineArray.length;
+			for (let i = 0; i < count; i++) {
 				let addr = lineArray[i];
 				if (addr == undefined)
 					continue;
-				// Check if no bank used
-				if (targetBankSize==0) {
-					addr&=0xFFFF;
-				}
-				else {
-					// Change banks
-					const origBank=Z80Registers.getBankFromAddress(addr);
-					const newBank=origBank*bankFactor;
-					addr=Z80Registers.getLongAddressWithBank(addr&0xFFFF, newBank);
-				}
+				// Convert
+				addr = this.convertAddressToBankSize(addr, targetBankSize);
 				// Store
-				lineArray[i]=addr;
+				lineArray[i] = addr;
 			}
 		}
+
+		// labelsForLongAddress
+		const newLabelsForLongAddress = new Map<number, string[]>();
+		for (let [addr, labels] of this.labelsForLongAddress) {
+			// Convert
+			addr = this.convertAddressToBankSize(addr, targetBankSize);
+			// Store
+			newLabelsForLongAddress.set(addr, labels);
+		}
+		this.labelsForLongAddress = newLabelsForLongAddress;
+
+		// numberForLabel
+		const newNumberForLabel = new Map<string, number>();
+		for (let [label, addr] of this.numberForLabel) {
+			// Convert
+			addr = this.convertAddressToBankSize(addr, targetBankSize);
+			// Store
+			newNumberForLabel.set(label, addr);
+		}
+		this.numberForLabel = newNumberForLabel;
+
+		// labelLocations
+		const newLabelLocations = new Map<string, {file: string; lineNr: number; address: number}>();
+		for (let [label, location] of this.labelLocations) {
+			// Convert
+			location.address = this.convertAddressToBankSize(location.address, targetBankSize);
+			// Store
+			newLabelLocations.set(label, location);
+		}
+		this.labelLocations = newLabelLocations;
+
+		// watchPointLines
+		for (const line of this.watchPointLines) {
+			line.address = this.convertAddressToBankSize(line.address, targetBankSize);
+		}
+
+		// assertionLines
+		for (const line of this.assertionLines) {
+			line.address = this.convertAddressToBankSize(line.address, targetBankSize);
+		}
+
+		// logPointLines
+		for (const line of this.logPointLines) {
+			line.address = this.convertAddressToBankSize(line.address, targetBankSize);
+		}
+	}
+
+
+	/**
+	 * Converts 1 address to the target bank size.
+	 * @param address a long address.
+	 * @param targetBankSize target banks size. If 0 then convert to 64k address.
+	 * @returns The converted address (long address or 64k address)
+	 */
+	protected convertAddressToBankSize(address: number, targetBankSize: number): number {
+		// Check if no bank used
+		if (targetBankSize == 0) {
+			address &= 0xFFFF;
+		}
+		else {
+			// Change banks
+			const origBank = Z80Registers.getBankFromAddress(address);
+			const newBank = origBank * this.bankSize / targetBankSize;
+			address = Z80Registers.getLongAddressWithBank(address & 0xFFFF, newBank);
+		}
+		return address;
 	}
 }
 
