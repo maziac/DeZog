@@ -129,7 +129,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/**
 	 * Note:
 	 * This is like the super class implementation except that it suppresses a warning message.
-	 * IF F5 (CONTINUE) or F10 etc. is pressed rapidly or held down it may happen that a request
+	 * If F5 (CONTINUE) or F10 etc. is pressed rapidly or held down it may happen that a request
 	 * (e.g. memory request) is done after CMD_CONTINUE has been sent. Due to some asynchronous
 	 * requests from vscode.
 	 * Normally this is not a problem, the remote would just answer the request.
