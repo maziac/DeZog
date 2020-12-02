@@ -1479,7 +1479,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param alwaysHistorical Prints prefix "Time-travel " even if not (yet) in back step mode.
 	 */
 	protected async startStepInfo(text?: string, alwaysHistorical = false): Promise<void> {
-		Log.log('startStepInfo ->');
+		//Log.log('startStepInfo ->');
 		// Print text
 		const stepBackMode=StepHistory.isInStepBackMode()||alwaysHistorical;
 		if (text) {
@@ -1497,23 +1497,15 @@ export class DebugSessionClass extends DebugSession {
 			// If so, store the history.
 			if (!(CpuHistory as any)) {
 				// Store as (lite step history)
-				// Make sure registers and callstack exist.
-				Log.log('startStepInfo A');
-				//if (!Z80Registers.valid()) {
-				//	await Remote.getRegisters();
-				//}
-				Log.log('startStepInfo B');
 				const regsCache=Z80Registers.getCache();
-				Log.log('startStepInfo C');
 				StepHistory.pushHistoryInfo(regsCache);
-				Log.log('startStepInfo D');
 				const callStack=await Remote.getCallStack();
 				StepHistory.pushCallStack(callStack);
 			}
 			// Reset t-states counter
 			await Remote.resetTstates();
 		}
-		Log.log('startStepInfo <-');
+		//Log.log('startStepInfo <-');
 	}
 
 
