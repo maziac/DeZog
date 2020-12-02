@@ -80,7 +80,6 @@ export class Z88dkLabelParser extends LabelParserBase {
 	 */
 	protected parseLabelAndAddress(line: string) {
 		let countBytes=0;
-		console.log("labelsForNumber[32769]", (Labels as any).labelsForNumber[32769]);
 
 		// Replace line number with empty string.
 		line=line.replace(this.z88dkRegEx, '');

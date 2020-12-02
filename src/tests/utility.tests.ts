@@ -423,9 +423,9 @@ suite('Utility', () => {
 
 
 		test('Error', async () => {
-			let log='${(A}';	// incomplete -> creates an error
-			let evalString=await Utility.evalLogString(log);;
-			assert.equal('SyntaxError: Unexpected end of input', evalString);
+			let log = '${(A}';	// incomplete -> creates an error
+			let evalString = await Utility.evalLogString(log);
+			assert.equal("Error: Error evaluating '(A': Unexpected end of input", evalString);
 		});
 
 

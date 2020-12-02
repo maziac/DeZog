@@ -137,7 +137,7 @@ export class RemoteBase extends EventEmitter {
 		await this.doInitialization();
 
 		// This needs to be done after the initialization to get the labels converted correctly:
-		
+
 		// Set watchpoints (memory guards)
 		const watchPointLines = Labels.getWatchPointLines();
 		const watchpoints = this.createWatchPoints(watchPointLines);
@@ -195,7 +195,7 @@ export class RemoteBase extends EventEmitter {
 				//const match = /^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line)
 				// All lines start with WPMEM, remove it
 				const line = entry.line.substr(5);
-				const subParts = line.split(',');
+				const subParts = line.split(',').map(s => s.trim());
 				// Get arguments
 				let addressString = subParts[0];
 				let lengthString = subParts[1];

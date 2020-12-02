@@ -10,6 +10,18 @@ suite('Z80Cpu', () => {
 
 	suite('Serialization', () => {
 
+		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				"zsim": {
+					"cpuLoadInterruptRange": 1,
+					"vsyncInterrupt": true
+				}
+			};
+			Settings.Init(cfg, '');
+		});
+
+
 		test('serialize/deserialize', () => {
 			let memBuffer;
 			let writeSize;

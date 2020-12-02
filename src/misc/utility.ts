@@ -266,7 +266,7 @@ export class Utility {
 		}
 		catch (e) {
 			// Rethrow
-			throw Error("Error evaluating 'expr': " + e.message);
+			throw Error("Error evaluating '"+expr+"': " + e.message);
 		}
 	}
 

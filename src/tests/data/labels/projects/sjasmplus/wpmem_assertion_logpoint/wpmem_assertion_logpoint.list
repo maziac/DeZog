@@ -13,7 +13,7 @@
 12    A020              	; This is a watchpoint WPMEM 0x6000, 5,  w, A == 0
 13    A020              	; WPMEMx 0x9000, 5,  w, A == 0
 14    A020
-15    A020              	; This should not work: no address and no used bytes: WPMEM
+15    A020              	; Should now also work: no address and no used bytes: WPMEM
 16    A020
 17    A020              	ORG 0xA040
 18    A040              	MEMGUARD

@@ -311,7 +311,8 @@ suite('Labels', () => {
 				const config={
 					z88dk: [{
 						path: './src/tests/data/labels/z88dk.lis',
-						mapFile: './src/tests/data/labels/z88dk_empty.map', srcDirs: [""],	// Sources mode
+						mapFile: './src/tests/data/labels/z88dk_empty.map',
+						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
 				};
