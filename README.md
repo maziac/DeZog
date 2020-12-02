@@ -96,10 +96,10 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Constraints
 
-- supports ZEsarUX, CSpect and the internal simulator
+- supports ZEsarUX, CSpect, ZX Next HW and the internal simulator
 - build output must
-	- create a .list file (support for sjasmplus, Savannah's z80asm, z88dk).
-	- create a .sna, .nex, .tap or object file containing the binary
+	- create a .list or SLD file (support for sjasmplus, Savannah's z80asm, z88dk).
+	- create a .sna, .nex or object file containing the binary
 
 
 ## Roadmap
@@ -123,8 +123,8 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 8.1 is required.
-- the [CSpect](http://www.cspect.org) emulator. At least version v2.12.26 is required.
+- the ZEsarUX ZX Spectrum emulator (https://github.com/chernandezba/zesarux). At least version 9.1 is required.
+- the [CSpect](http://www.cspect.org) emulator. At least version v2.13.0 is required.
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.

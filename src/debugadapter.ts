@@ -422,8 +422,9 @@ export class DebugSessionClass extends DebugSession {
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
 
-			const helpView = new HelpView("HelpView", "# hello, markdown!");
-			
+			//const helpView =
+				new HelpView("HelpView", "# hello, markdown!");
+
 			// Set root path
 			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
 

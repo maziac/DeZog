@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import { BaseView } from '../views/baseview';
-import {WebviewPanel} from 'vscode';
+import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
 import * as showdown from 'showdown';
 import {UnifiedPath} from '../misc/unifiedpath';
@@ -21,7 +21,7 @@ export class HelpView extends BaseView {
 		super();
 		// Title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as WebviewPanel).title = title;
+		(this.vscodePanel as vscode.WebviewPanel).title = title;
 		// Load usage file
 		const extFolder = Utility.getExtensionPath();
 		const usageFileName = 'documentation/Usage.md';
@@ -37,11 +37,15 @@ export class HelpView extends BaseView {
 	 * @param mdText Markdown text to display.
 	 */
 	protected setMarkdown(mdText: string) {
+		const extPath = Utility.getExtensionPath();
+		const resourcePath = vscode.Uri.file(UnifiedPath.join(extPath, 'documentation'));
+		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath);
 		// Convert md -> html
-		const defaultOptions = showdown.getDefaultOptions();
+		//const defaultOptions = showdown.getDefaultOptions();
 		const converter = new showdown.Converter();
 		//converter.setOption('completeHTMLDocument', 'true');
 		converter.setOption('simpleLineBreaks', 'true');
+		converter.setOption('simplifiedAutoLink', 'true');
 		converter.setOption('tables', 'true');	// TODO: geht nicht
 		//converter.setOption('tablesHeaderId', 'true');
 		const html = converter.makeHtml(mdText);
@@ -51,7 +55,7 @@ export class HelpView extends BaseView {
 <head>
 	<meta charset="utf-8" >
 	<title>This is an example for the < base > element </title>
-	<base href="file:///Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/documentation/">
+	<base href="${vscodeResPath}/">
 </head>
 	<body>
 	<img src="images/debug_console_tstates.jpg">
