@@ -54,6 +54,11 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	protected msgStartByteFound: boolean;
 
 
+	// The time the last CMD_CONTINUE was sent. Is used to suppress the "No response received message" from the remote if a request is sent from vscode right after a CMD_CONTINUE.
+	protected lastCmdContinueTime = 0;	// ms
+	protected cmdContinueNoResponseErrorTime = 1000;	// ms
+
+
 	/// Constructor.
 	constructor() {
 		super();
@@ -118,6 +123,45 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 				resolve();
 			});
 		});
+	}
+
+
+	/**
+	 * Note:
+	 * This is like the super class implementation except that it suppresses a warning message.
+	 * IF F5 (CONTINUE) or F10 etc. is pressed rapidly or held down it may happen that a request
+	 * (e.g. memory request) is done after CMD_CONTINUE has been sent. Due to some asynchronous
+	 * requests from vscode.
+	 * Normally this is not a problem, the remote would just answer the request.
+	 * For the ZXNext UART serial protocol this is different.
+	 * The UART is not accessible when the Z80 program is being run. This is because the 'dezogif'
+	 * program does not check the UART for new data when run and because the Joystick ports are
+	 * remapped to serve as joystick ports and not as UART ports when the program is being run.
+	 * Thus, the ZX NExt is not able to receive and not able to respond.
+	 * Furthermore if the user now changes e.g. a register or memory content there should be
+	 * feedback that this is not possible.
+	 * On the other hand the "automatic" requests from vscode should be suppressed.
+	 * As there is no way to distinguish it is done with a time guardian.
+	 * I.e about one second after the CMD_CONTINUE was sent no warning is emitted.
+	 * Otherwise the warning is shown.
+	 */
+	protected startCmdRespTimeout(respTimeoutTime: number) {
+		this.stopCmdRespTimeout();
+		this.cmdRespTimeout = setTimeout(() => {
+			this.stopCmdRespTimeout();
+			const err = new Error('No response received from remote. A simple reason for this message is that the ZX Next is running the debugged program and cannot answer. In that case press the yellow NMI button on the ZX Next to pause execution.');
+			// Log
+			LogSocket.log('Warning: ' + err.message);
+			// Show warning (only if a few moments have gone after the last CMD_CONTINUE)
+			const timeSpan = (Date.now() - this.lastCmdContinueTime);	// In ms
+			if (timeSpan>this.cmdContinueNoResponseErrorTime)
+				this.emit('warning', err.message);
+			// Remove message / Queue next message
+			const msg = this.messageQueue.shift()!;
+			this.sendNextMessage();
+			// Pass error data to right consumer
+			msg.reject(err);
+		}, respTimeoutTime);
 	}
 
 
@@ -305,6 +349,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			// Catch resolve method to store the breakpoint ID.
 			Utility.assert(this.continueResolve);
 			this.continueResolve=resolveWithBp;
+			this.lastCmdContinueTime = Date.now();
 			await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 		}
 		else {
@@ -330,6 +375,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 					// Restore the breakpoint (the other breakpoints are already set)
 					oldOpcode=await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue
+					this.lastCmdContinueTime = Date.now();
 					await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 				}
 			};
@@ -338,6 +384,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			let [, tmpBp1Addr, tmpBp2Addr]=await this.calcStepBp(false /*step-into*/);
 
 			// Step
+			this.lastCmdContinueTime = Date.now();
 			await super.sendDzrpCmdContinue(tmpBp1Addr, tmpBp2Addr);
 		}
 	}

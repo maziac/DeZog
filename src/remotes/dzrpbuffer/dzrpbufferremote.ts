@@ -124,7 +124,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout=setTimeout(() => {
 			this.stopCmdRespTimeout();
-			const err=new Error('No response received.');
+			const err=new Error('No response received from remote.');
 			// Log
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
@@ -211,7 +211,15 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * @param reject Called when the command/response timeout elapses.
 	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
 	 */
-	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject:(error) => void) {
+	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void) {
+
+		const l = this.messageQueue.length;
+		if (l > 0) {
+			const prevMsg = this.messageQueue[l - 1];
+			if (prevMsg[5] == DZRP.CMD_CONTINUE)
+				console.log();
+		}
+
 		// Create new buffer entry
 		const entry=new MessageBuffer();
 		entry.buffer=buffer;
