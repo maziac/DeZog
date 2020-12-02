@@ -823,8 +823,6 @@ export class DebugSessionClass extends DebugSession {
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
-			// TODO: use long addresses
-			//const addr=Remote.createLongAddress(frame.addr, slots);
 			const addr=frame.addr;
 			const file=Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
@@ -1190,7 +1188,7 @@ export class DebugSessionClass extends DebugSession {
 			if (StepHistory.isInStepBackMode()) {
 				await this.startStepInfo('Continue');
 				// Continue
-				const breakReason=await StepHistory.continue();
+				const breakReason = await StepHistory.continue();
 
 				// Check for output.
 				if (breakReason) {
@@ -1244,8 +1242,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
-			// Update memory dump etc.
-			await this.update();
 			// Send break
 			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
 		}
@@ -1364,6 +1360,9 @@ export class DebugSessionClass extends DebugSession {
 			// End processing
 			this.stopProcessing();
 
+			// Update memory dump etc. (also in reverse debug because of the register display)
+			await this.update({step: true});
+
 			// Show decorations
 			//await Remote.getRegisters();
 			StepHistory.emitHistory();
@@ -1460,10 +1459,7 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display T-states and time
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
-
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		}, 100);
@@ -1626,8 +1622,6 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display info
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
 
 			// Send event
@@ -1671,8 +1665,6 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display info
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
 
 			// Send event

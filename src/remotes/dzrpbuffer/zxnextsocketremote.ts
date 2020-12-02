@@ -137,7 +137,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 * The UART is not accessible when the Z80 program is being run. This is because the 'dezogif'
 	 * program does not check the UART for new data when run and because the Joystick ports are
 	 * remapped to serve as joystick ports and not as UART ports when the program is being run.
-	 * Thus, the ZX NExt is not able to receive and not able to respond.
+	 * Thus, the ZX Next is not able to receive and not able to respond.
 	 * Furthermore if the user now changes e.g. a register or memory content there should be
 	 * feedback that this is not possible.
 	 * On the other hand the "automatic" requests from vscode should be suppressed.
