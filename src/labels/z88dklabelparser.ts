@@ -2,8 +2,6 @@ import {LabelParserBase} from './labelparserbase';
 import {Utility} from '../misc/utility';
 import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings';
-import {Labels} from './labels';
-
 
 /**
  * This class parses sjasmplus list files.
