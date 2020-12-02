@@ -96,6 +96,7 @@ export class DebugSessionClass extends DebugSession {
 	/// The text written to console on event 'debug_console' is indented by this amount.
 	protected debugConsoleIndentation="  ";
 
+
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
@@ -1180,13 +1181,10 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	static contCounter = 0;
 	public async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): Promise<void> {
-		if (DebugSessionClass.contCounter > 0)
-			return;
-		DebugSessionClass.contCounter++;
-		Log.log("continueRequest ->: " + DebugSessionClass.contCounter);
 		this.handleRequest(response, async () => {
+			let event;
+
 			// Check for reverse debugging.
 			if (StepHistory.isInStepBackMode()) {
 				await this.startStepInfo('Continue');
@@ -1200,17 +1198,15 @@ export class DebugSessionClass extends DebugSession {
 					this.decorateBreak(breakReason);
 				}
 				// Send event
-				DebugSessionClass.contCounter--;
-				Log.log("continueRequest <-: " + DebugSessionClass.contCounter);
-				return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
+				event = new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 			}
 			else {
 				// Normal operation
-				const event = await this.remoteContinue();
-				DebugSessionClass.contCounter--;
-				Log.log("continueRequest <-: " + DebugSessionClass.contCounter);
-				return event;
+				event = await this.remoteContinue();
 			}
+
+			// Return
+			return event;
 		});
 	}
 
