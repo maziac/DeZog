@@ -681,14 +681,14 @@ export class Z80UnitTests {
 	protected static onBreak(debugAdapter?: DebugSessionClass) {
 		// The program was run and a break occurred.
 		// Get current pc
-		Remote.getRegisters().then(() => {
+		//Remote.getRegisters().then(() => {
 			// Parse the PC value
 			const pc = Remote.getPCLong();
 			//const sp = Z80Registers.parseSP(data);
 			// Check if test case was successful
 			Z80UnitTests.checkUnitTest(pc, debugAdapter);
 			// Otherwise another break- or watchpoint was hit or the user stepped manually.
-		});
+		//});
 	}
 
 
@@ -755,8 +755,8 @@ export class Z80UnitTests {
 			*/
 			// Init
 			StepHistory.clear();
-			Remote.clearRegisters();
-			Remote.clearCallStack();
+			await Remote.getRegistersFromEmulator();
+			await Remote.getCallStackFromEmulator();
 
 			// Special handling for zsim: Re-init custom code.
 			if (Remote instanceof ZSimRemote) {
@@ -854,7 +854,7 @@ export class Z80UnitTests {
 			// Check if in debug or run mode.
 			if(da) {
 				// In debug mode: Send break to give vscode control
-				da.sendEventBreakAndUpdate();  // No need for 'await'
+				await da.sendEventBreakAndUpdate();  // No need for 'await'
 				return;
 			}
 			// Count failure

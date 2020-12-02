@@ -310,27 +310,6 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	 * Retrieves the registers from zesarux directly.
-	 * From outside better use 'getRegisters' (the cached version).
-	 */
-	protected async getRegistersFromEmulator(): Promise<void> {
-		// Check if in reverse debugging mode
-		// In this mode registersCache should be set and thus this function is never called.
-		Utility.assert(CpuHistory);
-		Utility.assert(!CpuHistory.isInStepBackMode());
-
-		return new Promise<void>(resolve => {
-			// Get new (real emulator) data
-			zSocket.send('get-registers', async data => {
-				// Store data: e.g: "PC=8000 SP=6000 AF=0054 BC=8000 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 MMU=80028003000a000b0004000500000001"
-				Z80Registers.setCache(data);
-				resolve();
-			});
-		});
-	}
-
-
-	/**
 	 * Retrieves the slots from zesarux directly.
 	 */
 	protected async getSlotsFromEmulator(): Promise<number[]> {
@@ -376,17 +355,19 @@ export class ZesaruxRemote extends RemoteBase {
 
 
 	/**
-	* Make sure the cache is filled.
-	* If cache is empty retrieves the registers from
-	* the emulator.
-	* @param handler(registersString) Passes 'registersString' to the handler.
-	*/
-	public async getRegisters(): Promise<void> {
-		// Registers
-		if (!Z80Registers.getCache()) {
-			// Get new data
-			return this.getRegistersFromEmulator();
-		}
+	 * If cache is empty retrieves the registers from
+	 * the Remote.
+	 */
+	public async getRegistersFromEmulator(): Promise<void> {
+		// Check if in reverse debugging mode
+		// In this mode registersCache should be set and thus this function is never called.
+		Utility.assert(CpuHistory);
+		Utility.assert(!CpuHistory.isInStepBackMode());
+
+		// Get new (real emulator) data
+		const data = await zSocket.sendAwait('get-registers');
+		// Store data: e.g: "PC=8000 SP=6000 AF=0054 BC=8000 HL=2d2b DE=5cdc IX=ff3c IY=5c3a AF'=0044 BC'=0000 HL'=2758 DE'=369b I=3f R=00  F=-Z-H-P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0 MMU=80028003000a000b0004000500000001"
+		Z80Registers.setCache(data);
 	}
 
 
@@ -476,10 +457,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 15E1H call
 	 * 0000H default
 	 */
-	public async getStack(): Promise<Array<string>> {
+	public async getStackFromEmulator(): Promise<Array<string>> {
 		return new Promise<Array<string>>(async resolve => {
 			// Get normal callstack
-			const stack=await super.getStack();
+			const stack=await super.getStackFromEmulator();
 			// Get e-stack
 			const depth=stack.length;
 			if (depth==0) {
@@ -519,8 +500,8 @@ export class ZesaruxRemote extends RemoteBase {
 			zSocket.sendInterruptableRunCmd(async text => {
 				// (could take some time, e.g. until a breakpoint is hit)
 				// Clear register cache
-				this.clearRegisters();
-				this.clearCallStack();
+				await this.getRegistersFromEmulator();
+				await this.getCallStackFromEmulator();
 				// Handle code coverage
 				this.handleCodeCoverage();
 				// The reason is the 2nd line
@@ -584,7 +565,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// Therefore the CALL and RST are executed with a "run".
 			// All others are executed with a step-into.
 			// Only exception is LDDR etc. Those are executed as step-over.
-			this.getRegisters().then(() => {
+			//this.getRegisters().then(() => {
 				const pc=Z80Registers.getPC();
 				zSocket.send('disassemble '+pc, disasm => {
 					// Check if this was a "CALL something" or "CALL n/z,something"
@@ -611,11 +592,11 @@ export class ZesaruxRemote extends RemoteBase {
 								// enable breakpoint
 								zSocket.send('enable-breakpoint '+bpId, () => {
 									// Run
-									zSocket.sendInterruptableRunCmd(text => {
+									zSocket.sendInterruptableRunCmd(async text => {
 										// (could take some time, e.g. until a breakpoint is hit)
 										// Clear register cache
-										this.clearRegisters();
-										this.clearCallStack();
+										await this.getRegistersFromEmulator();
+										await this.getCallStackFromEmulator();
 										// Handle code coverage
 										this.handleCodeCoverage();
 										// The break reason is in the returned text
@@ -639,8 +620,8 @@ export class ZesaruxRemote extends RemoteBase {
 						//Z80Registers.clearCache();
 						zSocket.send(cmd, async result => {
 							// Clear cache
-							this.clearRegisters();
-							this.clearCallStack();
+							await this.getRegistersFromEmulator();
+							await this.getCallStackFromEmulator();
 							// Handle code coverage
 							this.handleCodeCoverage();
 							// Call handler
@@ -652,7 +633,7 @@ export class ZesaruxRemote extends RemoteBase {
 						});
 					}
 				});
-			});
+			//});
 		});
 	}
 
@@ -665,15 +646,15 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stepInto(): Promise<string|undefined> {
 		return new Promise<string|undefined>(resolve => {
 			// Normal step into.
-			this.getRegisters().then(() => {
+			//this.getRegisters().then(() => {
 				//const pc=Z80Registers.getPC();
 				//zSocket.send('disassemble '+pc, instruction => {
 					// Clear register cache
 					//Z80Registers.clearCache();
 					zSocket.send('cpu-step', async result => {
 						// Clear cache
-						this.clearRegisters();
-						this.clearCallStack();
+						await this.getRegistersFromEmulator();
+						await this.getCallStackFromEmulator();
 						// Handle code coverage
 						this.handleCodeCoverage();
 						// Read the spot history
@@ -681,7 +662,7 @@ export class ZesaruxRemote extends RemoteBase {
 						resolve(undefined);
 					});
 				//});
-			});
+			//});
 		});
 	}
 
@@ -741,7 +722,7 @@ export class ZesaruxRemote extends RemoteBase {
 			if(data.startsWith('Error'))
 				return;
 			// Get slots
-			this.getRegisters().then(() => {
+			//this.getRegisters().then(() => {
 				// Get current slots
 				const slots=Z80Registers.getSlots();
 				// Parse data and collect addresses
@@ -761,7 +742,7 @@ export class ZesaruxRemote extends RemoteBase {
 				zSocket.send('cpu-code-coverage clear');
 				// Emit code coverage event
 				this.emit('coverage', addresses);
-			});
+			//});
 		});
 	}
 
@@ -778,7 +759,7 @@ export class ZesaruxRemote extends RemoteBase {
 			// I.e. when the RET (or (RET cc) gets executed.
 
 			// Get current stackpointer
-			this.getRegisters().then(() => {
+			//this.getRegisters().then(() => {
 				// Get SP
 				const sp=Z80Registers.getSP();
 
@@ -826,11 +807,11 @@ export class ZesaruxRemote extends RemoteBase {
 										// Clear register cache
 										//Z80Registers.clearCache();
 										// Run
-										zSocket.sendInterruptableRunCmd(text => {
+										zSocket.sendInterruptableRunCmd(async text => {
 											// (could take some time, e.g. until a breakpoint is hit)
 											// Clear register cache
-											this.clearRegisters();
-											this.clearCallStack();
+											await this.getRegistersFromEmulator();
+											await this.getCallStackFromEmulator();
 											// Handle code coverage
 											this.handleCodeCoverage();
 											// The reason is the 2nd line
@@ -853,7 +834,7 @@ export class ZesaruxRemote extends RemoteBase {
 					// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
 					resolve(undefined);
 				});
-			});
+			//});
 		});
 	}
 
@@ -1286,8 +1267,8 @@ export class ZesaruxRemote extends RemoteBase {
 				// Initialize more
 				await this.initAfterLoad();
 				// Clear register cache
-				this.clearRegisters();
-				this.clearCallStack();
+				await this.getRegistersFromEmulator();
+				await this.getCallStackFromEmulator();
 				resolve();
 			});
 		});

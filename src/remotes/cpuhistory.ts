@@ -550,7 +550,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	protected async prepareReverseDbgStack(): Promise<void> {
 		if (!this.isInStepBackMode()) {
 			// Prefill array with current stack
-			this.reverseDbgStack=await Remote.getCallStack();
+			this.reverseDbgStack=await Remote.getCallStackCache();
 		}
 	}
 
@@ -909,7 +909,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * or the start of the instruction is encountered.
 	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
-	public continue(): string|undefined {
+	public async continue(): Promise<string|undefined> {
 		this.running=true;
 		// Continue in reverse debugging
 		// Will run until after the first of the instruction history
@@ -955,8 +955,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Remote.clearRegisters();
-			Remote.clearCallStack();
+			await Remote.getRegistersFromEmulator();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReasonString;
@@ -1033,7 +1033,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Steps over an instruction.
 	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
 	 */
-	public stepOver(): string|undefined {
+	public async stepOver(): Promise<string|undefined> {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
@@ -1099,8 +1099,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Remote.clearRegisters();
-			Remote.clearCallStack();
+			await Remote.getRegistersFromEmulator();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		// Return
@@ -1113,7 +1113,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Works like the StepOver in StepHistory.
 	 * @returns The break reason e.g. 'End of history reached' or undefined if no reason.
 	 */
-	public stepInto(): string|undefined {		// Check for reverse breakReasonString.
+	public async stepInto(): Promise<string|undefined> {		// Check for reverse breakReasonString.
 		// Get current line
 		let currentLine=Z80Registers.getCache();
 		Utility.assert(currentLine);
@@ -1136,8 +1136,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Remote.clearRegisters();
-			Remote.clearCallStack();
+			await Remote.getRegistersFromEmulator();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReasonString;
@@ -1149,7 +1149,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Is not implemented for StepHistory, only for CpuHistory.
 	 * @returns breakReason='Not supported in lite reverse debugging.'.
 	 */
-	public stepOut(): string|undefined {
+	public async stepOut(): Promise<string|undefined> {
 		this.running=true;
 		// Get current line
 		let currentLine=Z80Registers.getCache();
@@ -1201,8 +1201,8 @@ export class CpuHistoryClass extends StepHistoryClass {
 		// Get real registers if we reached the end.
 		if (!nextLine) {
 			// Clear
-			Remote.clearRegisters();
-			Remote.clearCallStack();
+			await Remote.getRegistersFromEmulator();
+			await Remote.getCallStackFromEmulator();
 		}
 
 		return breakReason;

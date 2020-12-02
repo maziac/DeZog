@@ -1,6 +1,6 @@
-import {LogSocket} from '../../log';
+import {Log, LogSocket} from '../../log';
 import {DzrpRemote, AlternateCommand, DzrpMachineType} from '../dzrp/dzrpremote';
-import {Z80RegistersClass, Z80_REG} from '../z80registers';
+import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
@@ -124,7 +124,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout=setTimeout(() => {
 			this.stopCmdRespTimeout();
-			const err=new Error('No response received.');
+			const err=new Error('No response received from remote.');
 			// Log
 			LogSocket.log('Warning: '+err.message);
 			// Show warning
@@ -211,7 +211,15 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * @param reject Called when the command/response timeout elapses.
 	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
 	 */
-	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject:(error) => void) {
+	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void) {
+
+		const l = this.messageQueue.length;
+		if (l > 0) {
+			const prevMsg = this.messageQueue[l - 1];
+			if (prevMsg[5] == DZRP.CMD_CONTINUE)
+				console.log();
+		}
+
 		// Create new buffer entry
 		const entry=new MessageBuffer();
 		entry.buffer=buffer;
@@ -518,7 +526,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
 		// Get regs
+		Log.log('sendDzrpCmdGetRegisters ->', JSON.stringify(Z80Registers.getCache() || {}));
 		const regs=await this.sendDzrpCmd(DZRP.CMD_GET_REGISTERS);
+		Log.log('sendDzrpCmdGetRegisters ----', Z80Registers.getCache() || "undefined");
 		const pc=Utility.getWord(regs, 0);
 		const sp=Utility.getWord(regs, 2);
 		const af=Utility.getWord(regs, 4);
@@ -549,6 +559,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 			af2, bc2, de2, hl2,
 			i, r, im,
 			slots);
+
+		Log.log('sendDzrpCmdGetRegisters <-', Z80Registers.getCache() || "undefined");
 
 		return regData;
 	}

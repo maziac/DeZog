@@ -636,7 +636,7 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected async setColorsForRegisterPointers(): Promise<void> {
 		// Make sure registers are current.
-		await Remote.getRegisters();
+		//await Remote.getRegisters();
 		// Set colors for register pointers
 		const setAddrs=new Array<number>();
 		const arr = Settings.launch.memoryViewer.registerPointerColors;

@@ -97,6 +97,7 @@ export class DebugSessionClass extends DebugSession {
 	/// The text written to console on event 'debug_console' is indented by this amount.
 	protected debugConsoleIndentation="  ";
 
+
 	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
@@ -590,6 +591,10 @@ export class DebugSessionClass extends DebugSession {
 					this.debugConsoleAppendLine(text);
 				}
 
+				// Get initial registers
+				await Remote.getRegistersFromEmulator();
+				await Remote.getCallStackFromEmulator();
+
 				// Initialize Cpu- or StepHistory.
 				if (!StepHistory.decoder)
 					StepHistory.decoder=Z80Registers.decoder;
@@ -600,6 +605,7 @@ export class DebugSessionClass extends DebugSession {
 				const regs=Settings.launch.memoryViewer.registersMemoryView;
 				registerMemoryView.addRegisters(regs);
 				await registerMemoryView.update();
+
 
 
 				// Run user commands after load.
@@ -809,11 +815,10 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Get the current slots
 			if (Labels.AreLongAddressesUsed()) {
-				Remote.clearRegisters();  // TODO: Is this if-clause really required? What use case?
-				await Remote.getRegisters();
+				await Remote.getRegistersFromEmulator();  // TODO: Is this if-clause really required? What use case?
 			}
 			// Get callstack
-			callStack=await Remote.getCallStack();
+			callStack=await Remote.getCallStackCache();
 		}
 
 		// Go through complete call stack and get the sources.
@@ -822,8 +827,6 @@ export class DebugSessionClass extends DebugSession {
 		for (let index=frameCount-1; index>=0; index--) {
 			const frame=callStack[index];
 			// Get file for address
-			// TODO: use long addresses
-			//const addr=Remote.createLongAddress(frame.addr, slots);
 			const addr=frame.addr;
 			const file=Labels.getFileAndLineForAddress(addr);
 			// Store file, if it does not exist the name is empty
@@ -1060,7 +1063,7 @@ export class DebugSessionClass extends DebugSession {
 		if (StepHistory.isInStepBackMode())
 			frame=StepHistory.getCallStack().getObject(frameId);
 		else {
-			await Remote.getCallStack();	// make sure listFrames exist
+			await Remote.getCallStackCache();	// make sure listFrames exist
 			frame=Remote.getFrame(frameId);
 		}
 		if (!frame) {
@@ -1143,10 +1146,8 @@ export class DebugSessionClass extends DebugSession {
 		if (!breakReason)
 			return;
 		// Get PC
-		Remote.getRegisters().then(() => {
-			const pc=Remote.getPCLong();
-			Decoration.showBreak(pc, breakReason);
-		});
+		const pc=Remote.getPCLong();
+		Decoration.showBreak(pc, breakReason);
 	}
 
 
@@ -1185,11 +1186,13 @@ export class DebugSessionClass extends DebugSession {
 	  */
 	public async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
+			let event;
+
 			// Check for reverse debugging.
 			if (StepHistory.isInStepBackMode()) {
 				await this.startStepInfo('Continue');
 				// Continue
-				const breakReason=StepHistory.continue();
+				const breakReason = await StepHistory.continue();
 
 				// Check for output.
 				if (breakReason) {
@@ -1198,13 +1201,15 @@ export class DebugSessionClass extends DebugSession {
 					this.decorateBreak(breakReason);
 				}
 				// Send event
-				return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
+				event = new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 			}
 			else {
 				// Normal operation
-				const event=await this.remoteContinue();
-				return event;
+				event = await this.remoteContinue();
 			}
+
+			// Return
+			return event;
 		});
 	}
 
@@ -1241,8 +1246,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// React depending on internal state.
 		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
-			// Update memory dump etc.
-			await this.update();
 			// Send break
 			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
 		}
@@ -1361,8 +1364,11 @@ export class DebugSessionClass extends DebugSession {
 			// End processing
 			this.stopProcessing();
 
+			// Update memory dump etc. (also in reverse debug because of the register display)
+			await this.update({step: true});
+
 			// Show decorations
-			await Remote.getRegisters();
+			//await Remote.getRegisters();
 			StepHistory.emitHistory();
 
 			// Send response
@@ -1395,7 +1401,7 @@ export class DebugSessionClass extends DebugSession {
 			// The stepOver should also step over macros, fake instructions, several instruction on the same line.
 			// Therefore the stepOver is repeated until really a new
 			// file/line correspondents to the PC value.
-			Remote.getRegisters();
+			//Remote.getRegisters();
 			const prevPc=Remote.getPCLong();
 			const prevFileLoc=Labels.getFileAndLineForAddress(prevPc);
 			let i=0;
@@ -1415,7 +1421,7 @@ export class DebugSessionClass extends DebugSession {
 				// Check for reverse debugging.
 				if (stepBackMode) {
 					// Stepover
-					breakReason=StepHistory.stepOver();
+					breakReason=await StepHistory.stepOver();
 				}
 				else {
 					// Normal Step-Over
@@ -1434,7 +1440,7 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Get new file/line location
-				await Remote.getRegisters();
+				//await Remote.getRegisters();
 				const pc=Remote.getPCLong();
 				const nextFileLoc=Labels.getFileAndLineForAddress(pc);
 				// Compare with start location
@@ -1457,10 +1463,7 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display T-states and time
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
-
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		}, 100);
@@ -1476,7 +1479,8 @@ export class DebugSessionClass extends DebugSession {
 	 * @param text E.g. "Step-into"
 	 * @param alwaysHistorical Prints prefix "Time-travel " even if not (yet) in back step mode.
 	 */
-	protected async startStepInfo(text?: string, alwaysHistorical=false): Promise<void> {
+	protected async startStepInfo(text?: string, alwaysHistorical = false): Promise<void> {
+		//Log.log('startStepInfo ->');
 		// Print text
 		const stepBackMode=StepHistory.isInStepBackMode()||alwaysHistorical;
 		if (text) {
@@ -1494,16 +1498,15 @@ export class DebugSessionClass extends DebugSession {
 			// If so, store the history.
 			if (!(CpuHistory as any)) {
 				// Store as (lite step history)
-				// Make sure registers and callstack exist.
-				await Remote.getRegisters();
 				const regsCache=Z80Registers.getCache();
 				StepHistory.pushHistoryInfo(regsCache);
-				const callStack=await Remote.getCallStack();
+				const callStack=await Remote.getCallStackCache();
 				StepHistory.pushCallStack(callStack);
 			}
 			// Reset t-states counter
 			await Remote.resetTstates();
 		}
+		//Log.log('startStepInfo <-');
 	}
 
 
@@ -1604,7 +1607,7 @@ export class DebugSessionClass extends DebugSession {
 			const stepBackMode=StepHistory.isInStepBackMode();
 			if (stepBackMode) {
 				// StepInto
-				breakReason=StepHistory.stepInto();
+				breakReason=await StepHistory.stepInto();
 			}
 			else {
 				// Step-Into
@@ -1623,8 +1626,6 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display info
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
 
 			// Send event
@@ -1648,7 +1649,7 @@ export class DebugSessionClass extends DebugSession {
 			const stepBackMode=StepHistory.isInStepBackMode();
 			if (stepBackMode) {
 				// StepOut
-				breakReasonString=StepHistory.stepOut();
+				breakReasonString=await StepHistory.stepOut();
 			}
 			else {
 				// Normal Step-Out
@@ -1668,8 +1669,6 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display info
 				await this.endStepInfo();
-				// Update memory dump etc.
-				await this.update({step: true});
 			}
 
 			// Send event
@@ -1868,67 +1867,67 @@ export class DebugSessionClass extends DebugSession {
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
-				Remote.getRegisters().then(() => {
-					const pcLongAddr = Remote.getPCLong();
-					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-					// Local label and prefix
-					lastLabel = entry.lastLabel;
-					modulePrefix = entry.modulePrefix;
+				//Remote.getRegisters().then(() => {
+				const pcLongAddr = Remote.getPCLong();
+				const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+				// Local label and prefix
+				lastLabel = entry.lastLabel;
+				modulePrefix = entry.modulePrefix;
 
-					// Convert label
-					try {
-						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
-					} catch {}
+				// Convert label
+				try {
+					labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+				} catch {}
 
-					if (isNaN(labelValue)) {
-						// Return empty response
-						this.sendResponse(response);
-						return;
-					}
+				if (isNaN(labelValue)) {
+					// Return empty response
+					this.sendResponse(response);
+					return;
+				}
 
-					// Is a number
-					var size = 100;
-					if (sizeString) {
-						const readSize = Labels.getNumberFromString64k(sizeString) || NaN;
-						if (!isNaN(readSize))
-							size = readSize;
-					}
-					if (!byteWord || byteWord.length == 0)
-						byteWord = "bw";	// both byte and word
-					// Create fullLabel
-					const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module is from the PC location, this could be irritating. Therefore it is left off.
-					// Now create a "variable" for the bigValues or small values
-					const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
-					Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
-						if (labelValue <= Settings.launch.smallValuesMaximum) {
-							// small value
-							// Response
-							response.body = {
-								result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-								variablesReference: 0,
-								//type: "data",
-								//amedVariables: 0
-							}
+				// Is a number
+				var size = 100;
+				if (sizeString) {
+					const readSize = Labels.getNumberFromString64k(sizeString) || NaN;
+					if (!isNaN(readSize))
+						size = readSize;
+				}
+				if (!byteWord || byteWord.length == 0)
+					byteWord = "bw";	// both byte and word
+				// Create fullLabel
+				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module is from the PC location, this could be irritating. Therefore it is left off.
+				// Now create a "variable" for the bigValues or small values
+				const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
+				Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
+					if (labelValue <= Settings.launch.smallValuesMaximum) {
+						// small value
+						// Response
+						response.body = {
+							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+							variablesReference: 0,
+							//type: "data",
+							//amedVariables: 0
 						}
-						else {
-							// big value
-							// Create a label variable
-							const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
-							// Add to list
-							const ref = this.listVariables.addObject(labelVar);
-							// Response
-							response.body = {
-								result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-								variablesReference: ref,
-								type: "data",
-								//presentationHint: ,
-								namedVariables: 2,
-								//indexedVariables: 100
-							}
+					}
+					else {
+						// big value
+						// Create a label variable
+						const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
+						// Add to list
+						const ref = this.listVariables.addObject(labelVar);
+						// Response
+						response.body = {
+							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+							variablesReference: ref,
+							type: "data",
+							//presentationHint: ,
+							namedVariables: 2,
+							//indexedVariables: 100
 						}
-						this.sendResponse(response);
-					});
-				});	// Emulator.getRegisters
+					}
+					this.sendResponse(response);
+				});
+				//});	// Emulator.getRegisters
 				return;
 			}	// If labelString
 		}	// If match

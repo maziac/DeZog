@@ -416,7 +416,7 @@ export class Settings {
 		if (Settings.launch.zxnext.port==undefined)
 			Settings.launch.zxnext.port=12000;
 		if (!Settings.launch.zxnext.socketTimeout)
-			Settings.launch.zxnext.socketTimeout=0.5;	// 0.5 secs, needs to be short to show a warning fast if debugged program is running.
+			Settings.launch.zxnext.socketTimeout=0.8;	// 0.8 secs, needs to be short to show a warning fast if debugged program is running.
 
 		if(!Settings.launch.rootFolder)
 			Settings.launch.rootFolder=rootFolder;

@@ -135,6 +135,24 @@ export class RemoteBase extends EventEmitter {
 	public async init(): Promise<void> {
 		// Call custom initialization
 		await this.doInitialization();
+
+		// This needs to be done after the initialization to get the labels converted correctly:
+
+		// Set watchpoints (memory guards)
+		const watchPointLines = Labels.getWatchPointLines();
+		const watchpoints = this.createWatchPoints(watchPointLines);
+		this.setWPMEMArray(watchpoints);
+
+		// ASSERTIONs
+		// Set assertion breakpoints
+		const assertionLines = Labels.getAssertionLines();
+		const assertionsArray = this.createAssertions(assertionLines);
+		this.setASSERTIONArray(assertionsArray);
+
+		// LOGPOINTs
+		const logPointLines = Labels.getLogPointLines();
+		const logPointsMap = this.createLogPoints(logPointLines);
+		this.setLOGPOINTArray(logPointsMap);
 	}
 
 
@@ -177,7 +195,7 @@ export class RemoteBase extends EventEmitter {
 				//const match = /^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line)
 				// All lines start with WPMEM, remove it
 				const line = entry.line.substr(5);
-				const subParts = line.split(',');
+				const subParts = line.split(',').map(s => s.trim());
 				// Get arguments
 				let addressString = subParts[0];
 				let lengthString = subParts[1];
@@ -419,22 +437,6 @@ export class RemoteBase extends EventEmitter {
 		this.topOfStack=Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' ("+Settings.launch.topOfStack+").");
-
-		// Set watchpoints (memory guards)
-		const watchPointLines=Labels.getWatchPointLines();
-		const watchpoints=this.createWatchPoints(watchPointLines);
-		this.setWPMEMArray(watchpoints);
-
-		// ASSERTIONs
-		// Set assertion breakpoints
-		const assertionLines=Labels.getAssertionLines();
-		const assertionsArray=this.createAssertions(assertionLines);
-		this.setASSERTIONArray(assertionsArray);
-
-		// LOGPOINTs
-		const logPointLines=Labels.getLogPointLines();
-		const logPointsMap=this.createLogPoints(logPointLines);
-		this.setLOGPOINTArray(logPointsMap);
 	}
 
 
@@ -463,22 +465,11 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	* Gets the registers from cache. If cache is empty retrieves the registers from
-	* the emulator.
-    * Override.
-	*/
-	public async getRegisters(): Promise<void> {
-		Utility.assert(false);
-	}
-
-
-	/**
 	 * If cache is empty retrieves the registers from
 	 * the Remote.
 	 */
-	public clearRegisters() {
-		Z80Registers.clearCache();
-		//this.slots=undefined;
+	public async getRegistersFromEmulator(): Promise<void> {
+		Utility.assert(false);
 	}
 
 
@@ -662,8 +653,8 @@ export class RemoteBase extends EventEmitter {
     * The values are returned as hex string, an additional info might follow.
 	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
-	public async getStack(): Promise<Array<string>> {
-		await this.getRegisters();
+	public async getStackFromEmulator(): Promise<Array<string>> {
+		//await this.getRegisters();
 		const sp=Z80Registers.getSP();
 		// calculate the depth of the call stack
 		const tos=this.topOfStack;
@@ -687,23 +678,44 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Clears the callstack.
-	 * The next call to 'getCallStack' will not return the cached value,
-	 * but will reload the cache.
+	 * Retrieves the stack from the emulator and filters all CALL addresses.
 	 */
-	public clearCallStack() {
-		this.listFrames=undefined as any;
-	}
+	public async getCallStackFromEmulator(): Promise<void> {
+		const callStack = new RefList<CallStackFrame>();
+		// Get normal stack values
+		const stack = await this.getStackFromEmulator();	// Returns 64k addresses as hex string.
+		// Start with main
+		const sp = Z80Registers.getRegValue(Z80_REG.SP);
+		const len = stack.length;
+		const top = sp + 2 * len;
+		let lastCallStackFrame = new CallStackFrame(0, top - 2, this.getMainName(top));
+		callStack.addObject(lastCallStackFrame);
 
+		// Check for each value if it maybe is a CALL or RST
+		for (let i = 0; i < len; i++) {
+			const valueString = stack[i];
+			const type = await this.getStackEntryType(valueString);
+			if (type) {
+				// Set caller address
+				lastCallStackFrame.addr = type.callerAddr;
+				// CALL, RST or interrupt
+				const frameSP = top - 2 - 2 * (i + 1);
+				lastCallStackFrame = new CallStackFrame(0, frameSP, type.name);
+				callStack.addObject(lastCallStackFrame);
+			}
+			else {
+				// Something else, e.g. pushed value
+				lastCallStackFrame.stack.push(parseInt(valueString, 16));
+			}
+		}
 
-	/**
-	 * Returns the stored call stack.
-	 */
-	/*
-	public getCallStackCache(): RefList<CallStackFrame> {
-		return this.listFrames;
+		// Set PC
+		const pc = this.getPCLong();
+		lastCallStackFrame.addr = pc;
+
+		// Return
+		this.listFrames = callStack;
 	}
-	*/
 
 
 	/**
@@ -714,47 +726,8 @@ export class RemoteBase extends EventEmitter {
 	  * @returns The stack, i.e. the word values from SP to topOfStack.
 	  * But no more than about 100 elements.
 	  */
-	public async getCallStack(): Promise<RefList<CallStackFrame>> {
-		// Check if there are already cached values.
-		if (this.listFrames)
-			return this.listFrames;
-
-		const callStack=new RefList<CallStackFrame>();
-		// Get normal stack values
-		const stack=await this.getStack();	// Returns 64k addresses as hex string.
-		// Start with main
-		const sp=Z80Registers.getRegValue(Z80_REG.SP);
-		const len=stack.length;
-		const top=sp+2*len;
-		let lastCallStackFrame=new CallStackFrame(0, top-2, this.getMainName(top));
-		callStack.addObject(lastCallStackFrame);
-
-		// Check for each value if it maybe is a CALL or RST
-		for (let i=0; i<len; i++) {
-			const valueString=stack[i];
-			const type=await this.getStackEntryType(valueString);
-			if (type) {
-				// Set caller address
-				lastCallStackFrame.addr=type.callerAddr;
-				// CALL, RST or interrupt
-				const frameSP=top-2-2*(i+1);
-				lastCallStackFrame=new CallStackFrame(0, frameSP, type.name);
-				callStack.addObject(lastCallStackFrame);
-			}
-			else {
-				// Something else, e.g. pushed value
-				lastCallStackFrame.stack.push(parseInt(valueString,16));
-			}
-		}
-
-		// Set PC
-		const pc=this.getPCLong();
-		lastCallStackFrame.addr=pc;
-
-
-		// Return
-		this.listFrames=callStack;
-		return callStack;
+	public async getCallStackCache(): Promise<RefList<CallStackFrame>> {
+		return this.listFrames;
 	}
 
 
@@ -800,7 +773,7 @@ export class RemoteBase extends EventEmitter {
 		}
 		else {
 			// "real" stack trace
-			const callStack=await this.getCallStack();
+			const callStack=await this.getCallStackCache();
 			return callStack;
 		}
 	}
@@ -1292,10 +1265,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setProgramCounterWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegisters();
-		this.clearCallStack();
-		await this.setRegisterValue("PC", address);
-		this.emit('stoppedEvent', 'PC changed');
+		await this.setRegisterValueWithEmit('PC', address);
 	}
 
 	/**
@@ -1304,10 +1274,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async setStackPointerWithEmit(address: number): Promise<void> {
 		StepHistory.clear();
-		this.clearRegisters();
-		this.clearCallStack();
-		await this.setRegisterValue("SP", address);
-		this.emit('stoppedEvent', 'SP changed');
+		await this.setRegisterValueWithEmit('SP', address);
 	}
 
 
@@ -1320,8 +1287,9 @@ export class RemoteBase extends EventEmitter {
 	 * @param value The new register value.
 	 */
 	public async setRegisterValueWithEmit(register: string, value: number) {
-		this.clearCallStack();
 		await this.setRegisterValue(register, value);
+		await this.getRegistersFromEmulator();
+		await this.getCallStackFromEmulator();
 		this.emit('stoppedEvent', register+' changed');
 	}
 
@@ -1481,7 +1449,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
-		await this.getRegisters();
+		//await this.getRegisters();
 		const pc=this.getPC();
 		// Get opcodes
 		const opcodes=await this.readMemoryDump(pc, 4);

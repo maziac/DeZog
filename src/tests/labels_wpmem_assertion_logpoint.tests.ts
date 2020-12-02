@@ -28,11 +28,11 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		assert.equal(wpmemLines[1].line, "WPMEM");
 		assert.equal(wpmemLines[2].address, 0xA010);
 		assert.equal(wpmemLines[2].line, "WPMEM, 5, w");
-		assert.equal(wpmemLines[3].address, undefined);
+		assert.equal(wpmemLines[3].address, 0xA020);
 		assert.equal(wpmemLines[3].line, "WPMEM 0x7000, 10,  r");
-		assert.equal(wpmemLines[4].address, undefined);
+		assert.equal(wpmemLines[4].address, 0xA020);
 		assert.equal(wpmemLines[4].line, "WPMEM 0x6000, 5,  w, A == 0");
-		assert.equal(wpmemLines[5].address, undefined);
+		assert.equal(wpmemLines[5].address, 0xA020);
 		assert.equal(wpmemLines[5].line, "WPMEM");
 		assert.equal(wpmemLines[6].address, 0xA040);
 		assert.equal(wpmemLines[6].line, "WPMEM");

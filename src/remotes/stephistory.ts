@@ -521,7 +521,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * or the start of the instruction is encountered.
 	 * @returns breakReason=A possibly break reason (e.g. 'Reached start of instruction history') or undefined.
 	 */
-	public continue(): string|undefined {
+	public async continue(): Promise<string|undefined> {
 		this.running=true;
 		// Continue in reverse debugging
 		// Will run until after the first of the instruction history
@@ -560,7 +560,7 @@ export class StepHistoryClass extends EventEmitter {
 		// Return if next line is available, i.e. as long as we did not reach the start.
 		if (!nextLine) {
 			// Get the registers etc. from the Remote
-			Remote.clearRegisters();
+			await Remote.getRegistersFromEmulator();
 			breakReasonString='Break: Reached start of instruction history.';
 		}
 
@@ -618,7 +618,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * Steps over an instruction.
 	 * @returns A possibly break reason (e.g. 'Reached start of instruction history') or undefined if no break.
 	 */
-	public stepOver(): string|undefined {
+	public async stepOver(): Promise<string|undefined> {
 		let breakReasonString;
 		try {
 			const currentLine=this.revDbgNext();
@@ -639,7 +639,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * Is not implemented for StepHistory, only for CpuHistory.
 	 * @returns The break reason/error: 'Step-into not supported in lite reverse debugging.'
 	 */
-	public stepInto(): string|undefined {
+	public async stepInto(): Promise<string|undefined> {
 		return 'Step-into not supported in lite reverse debugging.';
 	}
 
@@ -649,7 +649,7 @@ export class StepHistoryClass extends EventEmitter {
 	 * Is not implemented for StepHistory, only for CpuHistory.
 	 * @returns breakReason='Not supported in lite reverse debugging.'.
 	 */
-	public stepOut(): string|undefined {
+	public async stepOut(): Promise<string | undefined> {
 		return 'Step-out not supported in lite reverse debugging.';
 	}
 

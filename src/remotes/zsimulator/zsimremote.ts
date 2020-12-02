@@ -410,15 +410,6 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/**
-	 * Loads .nex or .sna files.
-	 * Assures that the memory banks are copied to the Z80 memory.
-	 */
-	protected async loadBin(filePath: string): Promise<void> {
-		await super.loadBin(filePath);
-	}
-
-
-	/**
 	 * Sets a specific register value.
 	 * @param reg E.g. Z80_REG.PC or Z80_REG.A
 	 * @param value The value to set.

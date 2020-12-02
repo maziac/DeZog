@@ -12,7 +12,7 @@
 	; This is a watchpoint WPMEM 0x6000, 5,  w, A == 0
 	; WPMEMx 0x9000, 5,  w, A == 0
 
-	; This should not work: no address and no used bytes: WPMEM
+	; Should now also work: no address and no used bytes: WPMEM
 
 	ORG 0xA040
 	MEMGUARD
