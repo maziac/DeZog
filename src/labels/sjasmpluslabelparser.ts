@@ -44,6 +44,9 @@ export class SjasmplusLabelParser extends LabelParserBase {
 	/// Will be set to true when the Lstlab section in the list file is reached.
 	protected sjasmplusLstlabSection=false;
 
+	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
+	protected regexSkipSldOptComment = /^[^;]*(;\s*sldopt)/i;
+
 
 	/**
 	 * Parses one line for label and address.
@@ -237,6 +240,19 @@ export class SjasmplusLabelParser extends LabelParserBase {
 
 		// Associate with line number
 		this.setLineNumber(lineNumber-1);	// line numbers start at 0
+	}
+
+	/**
+	 * Calls super, but only if the line does not start with ";SLDOPT".
+	 * I.e. it filters any commented SLDOPT line.
+	 */
+	protected findWpmemAssertionLogpoint(address: number | undefined, line: string) {
+		// Skip line that starts with "; SLDOPT"
+		const match = this.regexSkipSldOptComment.exec(line);
+		if (match)
+			return;
+		// Otherwise call super normally
+		super.findWpmemAssertionLogpoint(address, line);
 	}
 
 }
