@@ -50,11 +50,8 @@ export function activate(context: vscode.ExtensionContext) {
 	configureLogging();
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
-			|| event.affectsConfiguration(CONFIG_SECTION + '.logfile')
 			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logpanel')
-			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logfile')
-			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logpanel')
-			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logfile')) {
+			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logpanel')) {
 			configureLogging();
 		}
 	}));
@@ -247,28 +244,25 @@ function configureLogging() {
 	// Global log
 	{
 		const logToPanel=configuration.get<boolean>('logpanel');
-		const filepath=configuration.get<string>('logfile');
 		const channelName=(logToPanel)? "DeZog":undefined;
 		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
-		Log.init(channelOut, filepath);
+		Log.init(channelOut);
 	}
 
 	// Custom code log
 	{
 		const logToPanel=configuration.get<boolean>('customcode.logpanel');
-		const filepath=configuration.get<string>('customcode.logfile');
 		const channelName=(logToPanel)? "DeZog Custom Code":undefined;
 		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
-		LogCustomCode.init(channelOut, filepath);
+		LogCustomCode.init(channelOut);
 	}
 
 	// Socket log
 	{
 		const logToPanel=configuration.get<boolean>('socket.logpanel');
-		const filepath=configuration.get<string>('socket.logfile');
 		const channelName=(logToPanel)? "DeZog Socket":undefined;
 		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
-		LogSocket.init(channelOut, filepath);
+		LogSocket.init(channelOut);
 	}
 
 	// Enable to get a log of the commands only

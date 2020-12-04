@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.0.1
+- Logging to files removed. vscode does this anyway.
+
 # 2.0.0
 - Fix in sendDzrpCmd: length of transmitted bytes fixed.
 - Improvements to unit tests. Now ASSERTs show the failure values.

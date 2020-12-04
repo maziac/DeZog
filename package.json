@@ -88,29 +88,14 @@
 					"type": "boolean",
 					"scope": "resource"
 				},
-				"dezog.logfile": {
-					"description": "Write global logs to the given file.",
-					"type": "string",
-					"scope": "resource"
-				},
 				"dezog.socket.logpanel": {
 					"description": "Write socket logs to an output panel.",
 					"type": "boolean",
 					"scope": "resource"
 				},
-				"dezog.socket.logfile": {
-					"description": "Write socket logs to the given file.",
-					"type": "string",
-					"scope": "resource"
-				},
 				"dezog.customcode.logpanel": {
 					"description": "Write logs regarding custom (js) code to an output panel.",
 					"type": "boolean",
-					"scope": "resource"
-				},
-				"dezog.customcode.logfile": {
-					"description": "Write logs regarding custom (js) code to the given file.",
-					"type": "string",
 					"scope": "resource"
 				}
 			}
