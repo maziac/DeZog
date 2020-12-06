@@ -429,11 +429,13 @@ export class Settings {
 				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file={
-					path: Utility.getAbsFilePath(fpPath||""),
+					path: undefined as any,
 					srcDirs: fpSrcDirs||[""],
 					excludeFiles: fpExclFiles || [],
 					disableBanking: fp.disableBanking || false
 				};
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath)
 				return file;
 			});
 		}
@@ -446,10 +448,12 @@ export class Settings {
 				const fpSrcDirs=UnifiedPath.getUnifiedPathArray(fp.srcDirs);
 				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const file={
-					path: Utility.getAbsFilePath(fpPath||""),
+					path: undefined as any,
 					srcDirs: fpSrcDirs||[""],
 					excludeFiles: fpExclFiles||[]
 				};
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath)
 				return file;
 			});
 		}
