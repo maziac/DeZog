@@ -1,8 +1,4 @@
 
-//import * as fs from 'fs';
-import { writeFileSync, appendFileSync } from 'fs';
-//import * as util from 'util';
-
 
 // If there is a pause of 2 seconds between logs then an additional indication is logged.
 const PAUSE_LOG_TIME = 2;
@@ -10,13 +6,13 @@ const PAUSE_LOG_TIME = 2;
 
 /**
  * Class for logging.
- * This allows to instantiate a new class and log there into an own channel and own file.
+ * This allows to instantiate a new class and log there into an own channel.
  * Or, you can use static methods to log globally.
+ * When logging into a channel this is logged by vscode also into a file located
+ * at /Users/.../Library/Application Support/Code.
+ * You can find it by opening the command palette and typing "Developer: open Extensions logs Folder".
  */
 export class Log {
-
-	/// All log output goes additionally here.
-	protected outFilePath: string|undefined;
 
 	/// Output logging to the "OUTPUT" tab in vscode.
 	/// This is of type vscode.OutputChannel. But it can be used as it would imply a
@@ -47,20 +43,11 @@ export class Log {
 	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
-	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
-	 * @param filePath If set: log additionally to a file. Relative file path.
+	 * @param channelOutput vscode.OutputChannel. The name of the channel output.
 	 */
-	public static init(channelOutput: any, filePath: string|undefined) {
-		LogGlobal.init(channelOutput, filePath);
+	public static init(channelOutput: any) {
+		LogGlobal.init(channelOutput);
 		LogGlobal.callerNameIndex++;
-	}
-
-
-	/**
-	 * Clears a former log file.
-	 */
-	public static clear() {
-		LogGlobal.clear();
 	}
 
 
@@ -87,32 +74,14 @@ export class Log {
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
 	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
-	 * @param filePath If set: log additionally to a file. Relative file path.
 	 * @param callerName If true the name of the calling method is shown.
 	 */
-	public init(channelOutput: any, filePath: string|undefined, callerName = true) {
+	public init(channelOutput: any, callerName = true) {
 		if(this.logOutput)
 			this.logOutput.dispose();
-		this.outFilePath = filePath;
 		this.logOutput = channelOutput;
 		if(callerName)
 			this.callerNameIndex = 3;
-	}
-
-
-	/**
-	 * Clears a former log file.
-	 */
-	public clear() {
-		if(this.outFilePath) {
-			try {
-				writeFileSync(this.outFilePath, (new Date()).toString() + ': log started.\n');
-			}
-			catch(e) {
-				console.log('Error: '+e);
-			}
-		}
-		this.lastLogTime = Date.now();
 	}
 
 
@@ -151,7 +120,7 @@ export class Log {
 	 * @return true if either logging to file or to channel is enabled.
 	 */
 	public isEnabled(): boolean {
-		return (this.logOutput != undefined) || (this.outFilePath != undefined);
+		return (this.logOutput != undefined);
 	}
 
 
@@ -199,9 +168,6 @@ export class Log {
 				this.logOutput.appendLine(text);
 			}
 		}
-		// Append to file
-		if(this.outFilePath)
-			appendFileSync(this.outFilePath, text + '\n');
 	}
 
 

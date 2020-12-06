@@ -40,14 +40,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// Note: F/D are not used (deprecated), instead L is used
 
 
-	// The number of used slots.
-	//protected shiftBits=3;
-
-	// The used bank size.
+	/// The used bank size.
 	protected bankSize: number;	// will be overwritten. O indicates that long addresses should not be used (set by "disableBanking").
 
-	// The number of bits to shift to get the slot number from the address.
-	//protected shiftBits: number;	// will be overwritten
+	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
+	protected regexSkipSldOptComment = /^;\s*sldopt/i;
+
 
 	/**
 	 * Tests if the given file is an SLD file.
@@ -265,9 +263,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				break;
 			case 'K':	// A comment, e.g. WPMEM, ASSERTION and LOGPOINT
 				{
-					// Get address
-					const address=this.createLongAddress(value, page);
-					this.findWpmemAssertionLogpoint(address, line);
+					// Check for WPMEM etc.
+					const comment = fields[7];
+					const address = this.createLongAddress(value, page);
+					this.findWpmemAssertionLogpoint(address, comment);
 				}
 				break;
 
@@ -288,6 +287,20 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		if (this.bankSize!=0)
 			result+=(page+1)<<16;
 		return result;
+	}
+
+
+	/**
+	 * Calls super, but only if the line does not start with ";SLDOPT".
+	 * I.e. it filters any commented SLDOPT line.
+	 */
+	protected findWpmemAssertionLogpoint(address: number | undefined, line: string) {
+		// Skip line that starts with "; SLDOPT"
+		const match = this.regexSkipSldOptComment.exec(line);
+		if (match)
+			return;
+		// Otherwise call super normally
+		super.findWpmemAssertionLogpoint(address, line);
 	}
 
 }

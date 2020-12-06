@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
-import {Log, LogSocket} from './log';
+import {Log} from './log';
 import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
@@ -104,10 +104,6 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public constructor() {
 		super();
-
-		// Start logging
-		Log.clear();
-		LogSocket.clear();
 
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);

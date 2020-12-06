@@ -464,12 +464,16 @@ export class Settings {
 				const fpExclFiles=UnifiedPath.getUnifiedPathArray(fp.excludeFiles);
 				const fpMainFile=UnifiedPath.getUnifiedPath(fp.mainFile);
 				const file={
-					path: Utility.getAbsFilePath(fpPath||""),
+					path: undefined as any,
 					srcDirs: fpSrcDirs||[""],
 					excludeFiles: fpExclFiles||[],
 					mainFile: fpMainFile||"",
-					mapFile: Utility.getAbsFilePath(fpMapFile||"")
+					mapFile: undefined as any
 				};
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath)
+				if (fpMapFile)
+					file.mapFile = Utility.getAbsFilePath(fpMapFile);
 				return file;
 			});
 		}
@@ -663,16 +667,18 @@ export class Settings {
 		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];
 		const found=(allowedTypes.indexOf(rType)>=0);
 		if (!found) {
-			throw Error("Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
+			throw Error("'remoteType': Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
 		}
 
 		// List files (=Assembler configurations)
 		const listFiles=this.GetAllAssemblerListFiles(Settings.launch);
 		for (let listFile of listFiles) {
-			const path=listFile.path;
+			const path = listFile.path;
+			if (path == undefined)
+				throw Error("'path': You need to define a path to your file.");
 			// Check that file exists
 			if(!fs.existsSync(path))
-				throw Error("File '" + path + "' does not exist.");
+				throw Error("'path': File '" + path + "' does not exist.");
 		}
 
 		// Any special check
@@ -682,10 +688,10 @@ export class Settings {
 			for (const listFile of listFiles) {
 				const mapFile=listFile.mapFile;
 				if (mapFile==undefined)
-					throw Error("For z88dk you have to define a map file ('mapFile').");
+					throw Error("'z88dk.mapFile': For z88dk you have to define a map file.");
 				// Check that file exists
 				if (!fs.existsSync(mapFile))
-					throw Error("File '"+mapFile+"' does not exist.");
+					throw Error("'z88dk.mapFile': '"+mapFile+"' does not exist.");
 			}
 		}
 
@@ -693,10 +699,10 @@ export class Settings {
 		if(Settings.launch.load) {
 			// Check that file exists
 			if(!fs.existsSync(Settings.launch.load))
-				throw Error("File '" + Settings.launch.load + "' does not exist.");
+				throw Error("'load': File '" + Settings.launch.load + "' does not exist.");
 			// If sna or tap is given it is not allowed to use an execAddress
 			if(Settings.launch.execAddress)
-				throw Error("You load a .sna or .tap file. In that case the execution address is already known from the file and you cannot set it explicitly via 'execAddress'.");
+				throw Error("'execAddress': You load a .sna or .tap file. In that case the execution address is already known from the file and you cannot set it explicitly via 'execAddress'.");
 		}
 
 		// Object files
@@ -704,10 +710,10 @@ export class Settings {
 			// Check that file exists
 			const path = loadObj.path;
 			if(!fs.existsSync(path))
-				throw Error("File '" + path + "' does not exist.");
+				throw Error("'loadObj.path': File '" + path + "' does not exist.");
 			// Check that start address is given
 			if(loadObj.start == undefined)
-				throw Error("You must specify a 'start' address for '" + path + "'.");
+				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
 	}
 }
