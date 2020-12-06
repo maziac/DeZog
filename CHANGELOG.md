@@ -32,8 +32,11 @@
 - Fixed: during time-travel it is not possible anymore to change the registers.
 - Fixed a bug with UNKNOWN label in call stack during time-travel.
 
+# 1.5.5
+- Fixed an 'Unverified breakpoint' issue for z88dk. (See #38)
+
 # 1.5.4
-- Fixed# 34: Unverified breakpoints in version 1.5.3. Windows.
+- Fixed #34: Unverified breakpoints in version 1.5.3. Windows 10
 
 # 1.5.3
 - Merged into master branch.
