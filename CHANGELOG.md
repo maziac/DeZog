@@ -1,7 +1,10 @@
 # Changelog
 
+# 1.5.5
+- Fixed an 'Unverified breakpoint' issue for z88dk. (See #38)
+
 # 1.5.4
-- Fixed# 34: Unverified breakpoints in version 1.5.3. Windows 10
+- Fixed #34: Unverified breakpoints in version 1.5.3. Windows 10
 
 # 1.5.3
 - Merged into master branch.

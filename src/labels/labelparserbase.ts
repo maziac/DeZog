@@ -300,7 +300,11 @@ export class LabelParserBase {
 			if (!entry.addr)
 				continue;
 
-			this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			const prevFileLine = this.fileLineNrs.get(entry.addr);
+			if (!prevFileLine || entry.size > 0) {
+				// write new value
+				this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			}
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
@@ -343,7 +347,8 @@ export class LabelParserBase {
 				this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
 			}
 
-			// Check if a new array need to be created
+
+		// Check if a new array need to be created
 			if (!this.lineArrays.get(entry.fileName)) {
 				this.lineArrays.set(entry.fileName, new Array<number>());
 			}
