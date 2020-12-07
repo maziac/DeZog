@@ -53,11 +53,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * @param path Absolute path.
 	 */
 	public static IsSldFile(path: string) {
+		/*
 		const content=readFileSync(path);
 		// Check only if it starts with a '|' for an sld file.
 		const firstChar=content[0];
 		const sld=(firstChar=='|'.charCodeAt(0));
 		return sld;
+		*/
+		// TODO: Remove sjasmplus list file support completely.
+		return true;
 	}
 
 

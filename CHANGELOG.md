@@ -2,6 +2,7 @@
 
 # 2.0.1
 - Logging to files removed. vscode does this anyway.
+- sjasmplus list file support disabled.
 
 # 2.0.0
 - Fix in sendDzrpCmd: length of transmitted bytes fixed.
