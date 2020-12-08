@@ -498,35 +498,22 @@ export class DecorationClass {
 		// Check if addresses are used more than once
 		const addressMap = new Map<string, {regText: string, indexText: string}>();
 		let index = -startIndex - 1;
-		let lastLocString;
 		addresses.forEach((addr, k) => {
 			const location = this.getFileAndLineForAddress(addr);
 			const locString = location.lineNr + ';' + location.fileName;
 			let entry = addressMap.get(locString);
 			if (!entry) {
-				entry = {regText: '', indexText: ''};
+				// Show registers only for the first entry
+				// Add changed registers
+				entry = {regText: registers[k] || '', indexText: index.toString()};
 				addressMap.set(locString, entry);
 			}
-			let indexText = entry.indexText;
-			if(indexText)
-				indexText += ", " + index.toString();
-			else
-				indexText=index.toString();
-			// Add changed registers
-			let regText = entry.regText;
-			let regs = registers[k];
-			if (regs) {
-				if (regText && lastLocString == locString) {
-					regText = ' ' + regText;
-				}
-				regText = regs + regText;
+			else {
+				// But show all indices
+				entry.indexText += ", " + index.toString();
 			}
-			// Include decoration text in map
-			entry.regText = regText;
-			entry.indexText = indexText;
 			// Next
 			index--;
-			lastLocString = locString;
 		});
 
 		// Loop over all addresses
