@@ -6,7 +6,21 @@ export class WhatsNewContentProvider implements ContentProvider {
 	provideHeader(logoUrl: string): Header {
 		return <Header>{
 			logo: <Image>{src: logoUrl, height: 50, width: 50},
-			message: `<b>DeZog<b> is an Integrated Development Environment for the Z80 processor. It supports various assemblers and remote debugging. Especially for, but not limited to, ZX Spectrum devices.`};
+			message:
+`<b>DeZog<b> is an Integrated Development Environment for the Z80 processor. It supports various assemblers and remote debugging. Especially for, but not limited to, ZX Spectrum devices.
+<p>
+The step from 1.5 to 2.0 was huge. A lot of things changed under the hood to support 'long addresses'.
+I.e. DeZog is now aware of banking information. It can distinguish sources that share same addresses but reside on different banks. The same for breakpoints. E.g. a breakpoint set to address 0xA000 and bank 7 will not break if address 0xA000 has been hit in bank 8.
+<p>
+To use the feature you need the newest version of sjasmplus and let sjasmplus create a SLD file instead of a list file.
+<p>
+The other bigger feature that has been added is the "custom code" that you can provide to the internal simulator. With "custom code" you can implement your own peripherals inside zsim. I.e. you can provide code that acts on writing to or reading from a port or that generates interrupts.
+<p>
+And, of course, a lot of smaller changes and bug fixes.
+<p>
+There is a migration document that should serve as help to change your projects for usage with the new DeZog. Please find it <a href="https://github.com/maziac/DeZog/blob/develop/documentation/Migration.md">here</a>.
+
+`};
 	}
 
 	provideChangeLog(): ChangeLogItem[] {
@@ -14,58 +28,27 @@ export class WhatsNewContentProvider implements ContentProvider {
 		changeLog.push(...[
 			{
 				kind: ChangeLogKind.NEW, detail: {
-					message: `<br><b>New architecture for parsing list files. This will make it easier to add support for new assemblers in the future.</b>`
+					message: `<br><b>Support for 'long addresses', memory banking.</b>`
+				}
+			},
+			{
+				kind: ChangeLogKind.NEW, detail: {
+					message: `<br><b>"Custom Code" for implementation of peripherals in zsim, see <a href="https://github.com/maziac/DeZog/blob/develop/documentation/zsimPeripherals.md">zsimPeripherals.md</a>.</b>`
 				}
 			},
 			{
 				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<br><b>Related changes to launch.json:
-					<ul>
-					<li> - "listFiles" keyword removed. </li>
-					<li> - Instead a configuration for each assembler: "sjasmplus", "z80asm" and "z88dk" added with overworked parameters. </li>
-					</ul>
-					You will need to adjust your launch.json config files, please consult the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#assembler-configuration">Usage.md chapter "Assembler Configuration"</a>.</b>`
-				}
+					message: `<br><b>Unit Tests have been simplified internally and now make use of ASSERTION keywords instead of the various test macros.</b>`
+				},
+			},
+			{
+				kind: ChangeLogKind.CHANGED, detail: {
+					message: `<br>The 'launch.json' parameters have been changed. Please see the new description in the <a href="https://github.com/maziac/DeZog/blob/develop/documentation/Usage.md">Usage.md</a> document.`
+				},
 			},
 			{
 				kind: ChangeLogKind.FIXED, detail: {
-					message: `<br><b>In case you had a problem with 'Unverified breakpoints' on Windows please give it another try. I fixed a path name problem.<b>`
-				},
-			},
-			{
-				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<br>z88dk:
-					<ul>
-					<li> - Renamed "z88dkMapFile" to "mapFile". </li>
-					<li> - "addOffset" removed for z88dk. Use "mapFile" instead. </li>
-					<li> - "mapFile" is mandatory now. </li>
-					</ul>`
-				},
-			},
-			{
-				kind: ChangeLogKind.NEW, detail: {
-					message: `<br>launch.json:
-					<ul>
-					<li> - "disassemblerArgs"/"numberOfLines": New parameter to control the number of displayed disassembled lines.
-					</li>
-					<li> - "filter" regex deprecated (i.e. it will not be supported anymore in future versions of DeZog). Please read the (sjasmplus) list file section.
-					</li>
-					</ul>`
-				},
-			},
-			{
-				kind: ChangeLogKind.NEW, detail: {
-					message: `<br>Console commands:
-					<ul>
-					<li> - "md" used to do a memory dump to console.</li>
-					<li> - "ms" used to save memory contents to a file.
-					</li>
-					</ul>`
-				},
-			},
-			{
-				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<br>Console command "md" renamed to "mv".`
+					message: `<br>Various fixes.`
 				},
 			},
 		]);

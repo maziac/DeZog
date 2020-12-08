@@ -809,7 +809,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Deserializes the CPU, memory etc. to restore the state.
 	 */
 	protected deserializeState(data: Uint8Array) {
-		// Create mem buffer fro reading
+		// Create mem buffer for reading
 		const memBuffer=MemBuffer.from(data.buffer);
 		// Deserialize objects
 		for (const obj of this.serializeObjects)
