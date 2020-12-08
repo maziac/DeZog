@@ -48,6 +48,9 @@ export class StepHistoryClass extends EventEmitter {
 	// The current history index.
 	protected historyIndex: number;
 
+	// A copy of the Z80Registers cache when the step-back started.
+	protected presentRegistersCache: any;
+
 	// The maximum size of the history array.
 	protected maxSize: number;
 
@@ -113,10 +116,10 @@ export class StepHistoryClass extends EventEmitter {
 	 * Is async.
 	 * @returns The registers or undefined if at the end of the history.
 	 */
-	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo|undefined> {
-		const index=this.historyIndex+1;
+	public async getPrevRegistersAsync(): Promise<HistoryInstructionInfo | undefined> {
+		const index = this.historyIndex + 1;
 		//console.log("len=" + this.history.length + ", index=" + index);
-		Utility.assert(index>=0);
+		Utility.assert(index >= 0);
 		if (index>=this.history.length)
 			return undefined;
 		this.historyIndex=index;
@@ -278,9 +281,10 @@ export class StepHistoryClass extends EventEmitter {
 					// Distinguishes one and two byte registers
 					// Normal reg
 					// Check which part of the (double) register has changed
-					if (regName.startsWith('I')) {
+					if (regName.startsWith('I') || regName=='SP' || regName=='PC') {
 						// Double register
-						regValueString = Utility.getHexString(regValue, 4) + 'h';
+						regName2 = regName;
+						regValueString = Utility.getHexString(regValue, 4);
 					}
 					else {
 						// Check both parts
@@ -364,7 +368,11 @@ export class StepHistoryClass extends EventEmitter {
 			}
 		}
 		// Now for the current line
-		const currentRegs = Z80Registers.getCache();
+		let currentRegs;
+		if (this.isInStepBackMode())
+			currentRegs = this.presentRegistersCache;	// Use stored one
+		else
+			currentRegs = Z80Registers.getCache();	// Or the current one, if nothing stored
 		const regText = this.getChangedRegistersString(currentRegs, regsMap);
 		registers.unshift(regText);
 
@@ -488,7 +496,11 @@ export class StepHistoryClass extends EventEmitter {
 	 * If at end it returns undefined.
 	 */
 	public async revDbgPrev(): Promise<HistoryInstructionInfo|undefined> {
-		const line=await this.getPrevRegistersAsync();
+		if (!this.isInStepBackMode()) {
+			// Store current registers
+			this.presentRegistersCache = Z80Registers.getCache();
+		}
+		const line = await this.getPrevRegistersAsync();
 		if (line) {
 			// Add to register cache
 			Z80Registers.setCache(line);
