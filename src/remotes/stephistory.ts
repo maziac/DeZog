@@ -514,13 +514,18 @@ export class StepHistoryClass extends EventEmitter {
 
 	/**
 	 * @returns Returns the next line in the cpu history.
-	 * If at start it returns ''.
+	 * If at start it returns undefined.
 	 * Note: Doesn't need to be async. I.e. doesn't need to communicate with the external remote.
 	 */
 	public revDbgNext(): HistoryInstructionInfo|undefined {
 		// Get line
-		let line=this.getNextRegisters() as string;
-		Z80Registers.setCache(line);
+		let line = this.getNextRegisters() as string;
+		if (line)
+			Z80Registers.setCache(line);
+		else {
+			// At the start set Z80 registers back with their real value.
+			Z80Registers.setCache(this.presentRegistersCache);
+		}
 		// Remove one address from history
 		this.revDbgHistory.pop();
 		return line;
