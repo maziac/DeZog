@@ -259,7 +259,10 @@ let run_instruction = function()
       // Read the byte at the PC and run the instruction it encodes.
       var opcode = core.mem_read(pc);
       decode_instruction(opcode);
-      pc = (pc + 1) & 0xffff;
+
+      // T.Busse, Dec-2020: Fix: A HALT does not increase the PC
+      if (!halted)
+         pc = (pc + 1) & 0xffff;
 
       // Actually do the delayed interrupt disable/enable if we have one.
       if (doing_delayed_di)
@@ -299,6 +302,11 @@ let interrupt = function(non_maskable, data)
 {
    if (non_maskable)
    {
+      // T.Busse, Dec-2020: Fix: An interrupt, if halted, does increase the PC
+      if (halted) {
+         pc = (pc + 1) & 0xffff;
+      }
+
       // The high bit of R is not affected by this increment,
       //  it can only be changed using the LD R, A instruction.
       r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
@@ -314,6 +322,11 @@ let interrupt = function(non_maskable, data)
    }
    else if (iff1)
    {
+      // T.Busse, Dec-2020: Fix: An interrupt, if halted, does increase the PC
+      if (halted) {
+         pc = (pc + 1) & 0xffff;
+      }
+
       // The high bit of R is not affected by this increment,
       //  it can only be changed using the LD R, A instruction.
       r = (r & 0x80) | (((r & 0x7f) + 1) & 0x7f);
