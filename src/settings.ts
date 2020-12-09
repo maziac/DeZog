@@ -381,13 +381,8 @@ export class Settings {
 		Settings.launch.zsim.memoryModel=Settings.launch.zsim.memoryModel.toUpperCase();
 		if (Settings.launch.zsim.Z80N==undefined)
 				Settings.launch.zsim.Z80N=false;
-		if (Settings.launch.zsim.vsyncInterrupt==undefined) {
-			// For ZX enable vsync
-			if(Settings.launch.zsim.memoryModel.indexOf("ZX")>=0)
-				Settings.launch.zsim.vsyncInterrupt=true;
-			else
-				Settings.launch.zsim.vsyncInterrupt=false;
-		}
+		if (Settings.launch.zsim.vsyncInterrupt==undefined)
+			Settings.launch.zsim.vsyncInterrupt=false;
 
 		// zsim custom code
 		if (Settings.launch.zsim.customCode==undefined) {
