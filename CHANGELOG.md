@@ -2,6 +2,7 @@
 
 # 2.0.2
 - ASSERTION for ZEsarUX implemented.
+- "resetOnLaunch" moved to "zrcp".
 
 # 2.0.1
 - Logging to files removed. vscode does this anyway.

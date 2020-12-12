@@ -97,6 +97,9 @@ export interface ZrcpType {
 	// The delay before loading the Z80 program via smartload.
 	loadDelay: number;
 
+	/// Resets the cpu (on ZEsarUX) after starting the debugger.
+	resetOnLaunch: boolean;
+
 	/// The socket timeout in seconds.
 	socketTimeout: number;
 }
@@ -241,9 +244,6 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	/// Start automatically after launch.
 	startAutomatically: boolean;
 
-	/// Resets the cpu (on emulator) after starting the debugger.
-	resetOnLaunch: boolean;
-
 	/// An array with commands that are executed after the program-to-debug is loaded.
 	commandsAfterLaunch: Array<string>;
 
@@ -323,7 +323,6 @@ export class Settings {
 				load: <any>undefined,
 				loadObjs: <any>undefined,
 				startAutomatically: <any>undefined,
-				resetOnLaunch: <any>undefined,
 				commandsAfterLaunch: <any>undefined,
 				history: <any>undefined,
 				formatting: <any>undefined,
@@ -352,6 +351,8 @@ export class Settings {
 				delay=100;
 			Settings.launch.zrcp.loadDelay=delay;	// ms
 		}
+		if (Settings.launch.zrcp.resetOnLaunch == undefined)
+			Settings.launch.zrcp.resetOnLaunch = true;
 		if (!Settings.launch.zrcp.socketTimeout)
 			Settings.launch.zrcp.socketTimeout=5;	// 5 secs
 
@@ -523,8 +524,6 @@ export class Settings {
 			Settings.launch.disassemblerArgs.esxdosRst=false;
 		if(Settings.launch.startAutomatically == undefined)
 			Settings.launch.startAutomatically = (unitTests) ? false : false;
-		if(Settings.launch.resetOnLaunch == undefined)
-			Settings.launch.resetOnLaunch = true;
 		if(Settings.launch.commandsAfterLaunch == undefined)
 			Settings.launch.commandsAfterLaunch = [];
 		if (Settings.launch.zrcp.skipInterrupt == undefined)

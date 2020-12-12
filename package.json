@@ -275,6 +275,10 @@
 									"type": "boolean",
 									"description": "Skips the interrupt during stepping. Defaults to false."
 								},
+								"resetOnLaunch": {
+									"type": "boolean",
+									"description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
+								},
 								"socketTimeout": {
 									"type": "number",
 									"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
@@ -525,10 +529,6 @@
 							"startAutomatically": {
 								"type": "boolean",
 								"description": "Start automatically after launch. Default is false."
-							},
-							"resetOnLaunch": {
-								"type": "boolean",
-								"description": "Resets the device (on emulator) after starting the debugger before starting the program to debug."
 							},
 							"commandsAfterLaunch": {
 								"type": "array",

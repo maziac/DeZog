@@ -170,7 +170,7 @@ export class ZesaruxRemote extends RemoteBase {
 				await zSocket.sendAwait('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.
-				if(Settings.launch.resetOnLaunch)
+				if(Settings.launch.zrcp.resetOnLaunch)
 					await zSocket.sendAwait('hard-reset-cpu');
 
 				// Enter step-mode (stop)
