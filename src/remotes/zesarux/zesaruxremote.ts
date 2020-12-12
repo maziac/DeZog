@@ -295,17 +295,17 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Override this if fast-breakpoints should be used.
 	 */
 	protected initBreakpoints() {
-			// Clear memory breakpoints (watchpoints)
-			zSocket.send('clear-membreakpoints');
+		// Clear memory breakpoints (watchpoints)
+		zSocket.send('clear-membreakpoints');
 
-			// Clear all breakpoints
-			zSocket.send('enable-breakpoints', () => {}, true);
-			this.clearAllZesaruxBreakpoints();
+		// Clear all breakpoints
+		zSocket.send('enable-breakpoints', () => {}, true);
+		this.clearAllZesaruxBreakpoints();
 
-			// Init breakpoint array
-			this.freeBreakpointIds.length = 0;
-			for(var i=1; i<=ZesaruxRemote.MAX_USED_BREAKPOINTS; i++)
-				this.freeBreakpointIds.push(i);
+		// Init breakpoint array
+		this.freeBreakpointIds.length = 0;
+		for (var i = ZesaruxRemote.MAX_USED_BREAKPOINTS; i > 0; i--)  // 1-99
+			this.freeBreakpointIds.push(i);
 	}
 
 
@@ -898,10 +898,28 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertionBreakpoints(enable: boolean): Promise<void>{
-		// not supported.
-		if(this.assertionBreakpoints.length > 0)
-			this.emit('warning', 'ZEsarUX does not support ASSERTIONs in the sources.');
+	public async enableAssertionBreakpoints(enable: boolean): Promise<void> {
+		if (enable) {
+			for (let abp of this.assertionBreakpoints) {
+				// Set breakpoint
+				if (!abp.bpId) {
+					abp.bpId = await this.setBreakpointZesarux(abp.address, abp.condition);
+				}
+
+			}
+		}
+		else {
+			// Loop reverse (just to re-use the same IDs if multiple disable/enable are done)
+			for (let i = this.assertionBreakpoints.length - 1; i >= 0; i--) {
+				const abp = this.assertionBreakpoints[i];
+				// Remove breakpoint
+				if (abp.bpId) {
+					await this.removeBreakpointZesarux(abp.bpId);
+					abp.bpId = undefined;
+				}
+			}
+		}
+		this.assertionBreakpointsEnabled = enable;
 	}
 
 
@@ -947,6 +965,10 @@ export class ZesaruxRemote extends RemoteBase {
 		if(!condition || condition.length == 0)
 			return '';	// No condition
 
+		// Simplify assertions
+		if (condition == '!(false)')
+			return '';	// Always true
+
 		// Convert labels
 		let regex = /\b[_a-z][\.0-9a-z_]*\b/gi;
 		let conds = condition.replace(regex, label => {
@@ -981,6 +1003,99 @@ export class ZesaruxRemote extends RemoteBase {
 	}
 
 
+
+	/**
+	 * Sets the breakpoint at zesarux but does not update this.breakpoints.
+	 * I.e. this function can be used by ASSERTIONs as well.
+	 * @param address The (long) address to break on. If address is < 0 then only the condition is used.
+	 * @param bpCondition An additional condition. May also be undefined or ''.
+	 * @returns A breakpoint ID (1-100 for zesarux). Or 0 if an error occurred.
+	 */
+	public async setBreakpointZesarux(address: number, bpCondition?: string): Promise<number> {
+		// Get condition
+		let zesaruxCondition = this.convertCondition(bpCondition);
+		if (zesaruxCondition == undefined) {
+			this.emit('warning', "Breakpoint: Can't set condition: " + (bpCondition || ''));
+			return 0;
+		}
+
+		// Get free id
+		const bpId = this.freeBreakpointIds.pop();
+		if (bpId == undefined)
+			return 0;	// no free ID
+
+		// Create condition from address and bp.condition
+		let condition = '';
+		if (address >= 0) {
+			condition = 'PC=0' + Utility.getHexString(address & 0xFFFF, 4) + 'h';
+			// Add check for long BP
+			let bank = Z80Registers.getBankFromAddress(address);
+			if (bank != -1) {
+				// Yes, it's a long address
+				// Check for ZX128K: ZEsarUX uses different wording:
+				const className = this.memoryModel.constructor.name
+				if (className == "Zx128MemoryModel") {
+					// ZX128K:
+					// 0000-3FFF:	ROM
+					// 4000-BFFF: 	-
+					// C000-FFFF:	RAM
+					const addr = address & 0xFFFF;
+					if (addr <= 0x3FFF) {
+						// Treat ROM banks special for ZEsarUX
+						bank = (bank & 0x01);
+						condition += ' and ROM=' + bank;
+					}
+					else if (addr >= 0xC000) {
+						// RAM
+						condition += ' and RAM=' + bank;
+					}
+				}
+				else {
+					// ZXNext
+					const slot = Z80Registers.getSlotFromAddress(address);
+					// Treat ROM banks special for ZEsarUX
+					if (bank == 0xFE)
+						bank = 0x8000;
+					else if (bank == 0xFF)
+						bank = 0x8001;
+					condition += ' and SEG' + slot + '=' + bank;
+				}
+			}
+			// Add BP condition
+			if (zesaruxCondition.length > 0) {
+				condition += ' and ';
+				zesaruxCondition = '(' + zesaruxCondition + ')';
+			}
+		}
+		if (zesaruxCondition.length > 0)
+			condition += zesaruxCondition;
+
+		// Set action first (no action)
+		const shortCond = (condition.length < 50) ? condition : condition.substr(0, 50) + '...';
+		await zSocket.sendAwait('set-breakpointaction ' + bpId + ' prints breakpoint ' + bpId + ' hit (' + shortCond + ')');
+		//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
+		// Set the breakpoint
+		await zSocket.sendAwait('set-breakpoint ' + bpId + ' ' + condition);
+		// Enable the breakpoint
+		await zSocket.sendAwait('enable-breakpoint ' + bpId);
+		// Return
+		return bpId;
+	}
+
+
+
+	/**
+	 * Clears one breakpoint at zesarux.
+	 * Does not affect the this.breakpoints list.
+	 * @param bpId The breakpoint ID to remove.
+	 */
+	protected async removeBreakpointZesarux(bpId: number): Promise<void> {
+		// Disable breakpoint
+		await zSocket.sendAwait('disable-breakpoint ' + bpId);
+		this.freeBreakpointIds.push(bpId);
+	}
+
+
 	/*
 	 * Sets breakpoint in the zesarux debugger.
 	 * Sets the breakpoint ID (bpId) in bp.
@@ -988,92 +1103,27 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns The used breakpoint ID. 0 if no breakpoint is available anymore.
 	 */
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
-		return new Promise<number>(resolve => {
-			// Check for logpoint (not supported)
-			if (bp.log) {
-				this.emit('warning', 'ZEsarUX does not support logpoints ("'+bp.log+'").');
-				// set to unverified
-				bp.address=-1;
-				return 0;
-			}
+		// Check for logpoint (not supported)
+		if (bp.log) {
+			this.emit('warning', 'ZEsarUX does not support logpoints ("'+bp.log+'").');
+			// set to unverified
+			bp.address = -1;
+			return 0;
+		}
 
-			// Get condition
-			let zesaruxCondition=this.convertCondition(bp.condition);
-			if (zesaruxCondition==undefined) {
-				this.emit('warning', "Breakpoint: Can't set condition: "+(bp.condition||''));
-				// set to unverified
-				bp.address=-1;
-				return 0;
-			}
+		// Set breakpoint
+		const bpId = await this.setBreakpointZesarux(bp.address, bp.condition);
+		// Check for error
+		if (bpId <= 0) {
+			// set to unverified
+			bp.address = -1;
+			return 0
+		}
 
-			// get free id
-			if (this.freeBreakpointIds.length==0)
-				return 0;	// no free ID
-			bp.bpId=this.freeBreakpointIds[0];
-			this.freeBreakpointIds.shift();
-
-			// Create condition from address and bp.condition
-			let condition='';
-			if (bp.address>=0) {
-				condition='PC=0'+Utility.getHexString(bp.address&0xFFFF, 4)+'h';
-				// Add check for long BP
-				let bank=Z80Registers.getBankFromAddress(bp.address);
-				if (bank!=-1) {
-					// Yes, it's a long address
-					// Check for ZX128K: ZEsarUX uses different wording:
-					const className=this.memoryModel.constructor.name
-					if (className=="Zx128MemoryModel") {
-						// ZX128K:
-						// 0000-3FFF:	ROM
-						// 4000-BFFF: 	-
-						// C000-FFFF:	RAM
-						const addr=bp.address&0xFFFF;
-						if (addr<=0x3FFF) {
-							// Treat ROM banks special for ZEsarUX
-							bank=(bank&0x01);
-							condition+=' and ROM='+bank;
-						}
-						else if(addr>=0xC000) {
-							// RAM
-							condition+=' and RAM='+bank;
-						}
-					}
-					else {
-						// ZXNext
-						const slot=Z80Registers.getSlotFromAddress(bp.address);
-						// Treat ROM banks special for ZEsarUX
-						if (bank==0xFE)
-							bank=0x8000;
-						else if (bank==0xFF)
-							bank=0x8001;
-						condition+=' and SEG'+slot+'='+bank;
-					}
-				}
-				// Add BP condition
-				if (zesaruxCondition.length>0) {
-					condition+=' and ';
-					zesaruxCondition='('+zesaruxCondition+')';
-				}
-			}
-			if (zesaruxCondition.length>0)
-				condition+=zesaruxCondition;
-
-			// set action first (no action)
-			const shortCond=(condition.length<50)? condition:condition.substr(0, 50)+'...';
-			zSocket.send('set-breakpointaction '+bp.bpId+' prints breakpoint '+bp.bpId+' hit ('+shortCond+')', () => {
-				//zSocket.send('set-breakpointaction ' + bp.bpId + ' menu', () => {
-				// set the breakpoint
-				zSocket.send('set-breakpoint '+bp.bpId+' '+condition, () => {
-					// enable the breakpoint
-					zSocket.send('enable-breakpoint '+bp.bpId);
-					// Add to list
-					this.breakpoints.push(bp);
-					// return
-					resolve(bp.bpId);
-				});
-			});
-
-		});
+		// Add to list
+		this.breakpoints.push(bp);
+		// Return
+		return bp.bpId;
 	}
 
 
@@ -1081,16 +1131,15 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Clears one breakpoint.
 	 */
 	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
-		return new Promise<void>(resolve => {
-			// Disable breakpoint
-			zSocket.send('disable-breakpoint '+bp.bpId, () => {
-				// Remove from list
-				let index=this.breakpoints.indexOf(bp);
-				Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
-				this.breakpoints.splice(index, 1);
-				this.freeBreakpointIds.push(index);
-			});
-		});
+		const bpId = bp.bpId;
+		if (!bpId)
+			return;	// 0 or undefined
+		// Disable breakpoint
+		await this.removeBreakpointZesarux(bpId);
+		// Remove from list
+		let index=this.breakpoints.indexOf(bp);
+		Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
+		this.breakpoints.splice(index, 1);
 	}
 
 

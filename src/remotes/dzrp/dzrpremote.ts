@@ -1136,7 +1136,7 @@ export class DzrpRemote extends RemoteBase {
 			if (enable) {
 				// Set breakpoint
 				if (!abp.bpId) {
-					await this.sendDzrpCmdAddBreakpoint(abp);
+					await this.sendDzrpCmdAddBreakpoint(abp);	// Sets sbp.bpId
 				}
 			}
 			else {

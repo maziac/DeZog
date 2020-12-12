@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.0.2
+- ASSERTION for ZEsarUX implemented.
+
 # 2.0.1
 - Logging to files removed. vscode does this anyway.
 - sjasmplus list file support disabled.

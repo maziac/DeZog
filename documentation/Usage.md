@@ -357,9 +357,9 @@ The following table gives an overview.
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Break reason output     | yes                | no      | yes        | yes      | yes      |
 | Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| Watchpoints             | yes                | yes 2)  | yes/fast 2) | no      | no       |
-| Assertions              | yes                | no      | yes        | yes/slow | yes/slow |
-| Logpoints               | yes                | no      | yes        | yes/slow | yes/slow |
+| WPMEM (Watchpoints) support | yes            | yes 2)  | yes/fast 2) | no      | no       |
+| ASSERTION support       | yes                | yes      | yes        | yes/slow | yes/slow |
+| LOGPOINT support        | yes                | no      | yes        | yes/slow | yes/slow |
 | Long addresses/breakpoints | yes             | yes     | yes        | yes      | yes      |
 | Extended callstack      | no                 | yes     | yes        | no       | no       |
 | Code coverage           | yes                | yes 1)  | yes        | no       | no       |
