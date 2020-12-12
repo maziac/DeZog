@@ -368,6 +368,8 @@ The following table gives an overview.
 | Save/restore the state  | yes                | yes     | yes        | no       | no       |
 | Output of T-States      | yes                | yes     | yes        | no       | no       |
 | Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
+| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes        | yes      | yes      |
+| Load .tap file through DeZog | no            | yes     | yes        | no       | no       |
 | Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
 
 Notes:
