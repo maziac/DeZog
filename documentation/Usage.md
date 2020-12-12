@@ -170,7 +170,7 @@ Now depending on the value of 'srcDirs'
 
 **sjasmplus configuration:**
 
-Note: sjasmplus can generate a list file but since DeZog version 2.0.0 DeZog does not use the sjasmplus list file anymore but the SLD file. You need sjasmplus > 1.17.0 for DeZog to parse the SLD file correctly.
+Note: sjasmplus can generate a list file but since DeZog version 2.0.0 DeZog does not use the sjasmplus list file anymore but the SLD file. You need sjasmplus >= 1.18.0 for DeZog to parse the SLD file correctly.
 
 SLD stands for "Source Level Debugging" and is an format with similar information as the list file.
 List files are meant to be read by humans whereas the SLD file format is optimized for reading by a machine, i.e. DeZog, which makes parsing much easier.

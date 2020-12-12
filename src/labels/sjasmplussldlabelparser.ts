@@ -108,7 +108,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const version = fields[2] || '0';
 		const requiredVersion = 1;
 		if (parseInt(version) < requiredVersion)
-			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need at least version "+requiredVersion+". Please update sjsamplus.");
+			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need SLD version "+requiredVersion+". Please update sjasmplus to at least version 1.18.0.");
 	}
 
 
