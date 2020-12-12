@@ -63,7 +63,7 @@ export class Z80Cpu {
 		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
-		this.cpuFreq=3500000.0;	// 3.5MHz.
+		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
 		this.INTERRUPT_TIME=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
 		this.remaingInterruptTstates=this.INTERRUPT_TIME;
 		/*

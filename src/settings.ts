@@ -176,6 +176,10 @@ export interface ZSimType {
 	// If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 	vsyncInterrupt: boolean,
 
+	// The CPU frequency is only used for output. I.e. when the t-states are printed
+	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
+	cpuFrequency: number,
+
 	// Settings to execute custom javascript code inside the zsim simulator.
 	customCode: CustomCodeType;
 }
@@ -381,9 +385,11 @@ export class Settings {
 			Settings.launch.zsim.memoryModel="RAM";
 		Settings.launch.zsim.memoryModel=Settings.launch.zsim.memoryModel.toUpperCase();
 		if (Settings.launch.zsim.Z80N==undefined)
-				Settings.launch.zsim.Z80N=false;
-		if (Settings.launch.zsim.vsyncInterrupt==undefined)
-			Settings.launch.zsim.vsyncInterrupt=false;
+			Settings.launch.zsim.Z80N = false;
+		if (Settings.launch.zsim.vsyncInterrupt == undefined)
+			Settings.launch.zsim.vsyncInterrupt = false;
+		if (Settings.launch.zsim.cpuFrequency == undefined)
+			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
 
 		// zsim custom code
 		if (Settings.launch.zsim.customCode==undefined) {

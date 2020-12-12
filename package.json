@@ -334,6 +334,11 @@
 									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
 									"default": false
 								},
+								"cpuFrequency": {
+									"type": "number",
+									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+									"default": 3500000.0
+								},
 								"customCode": {
 									"debug": {
 										"type": "boolean",

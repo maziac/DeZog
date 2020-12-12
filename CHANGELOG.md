@@ -1,8 +1,9 @@
 # Changelog
 
 # 2.0.2
-- ASSERTION for ZEsarUX implemented.
+- New "zsim" option to set the "cpuFrequency".
 - "resetOnLaunch" moved to "zrcp".
+- ASSERTION for ZEsarUX implemented.
 
 # 2.0.1
 - Logging to files removed. vscode does this anyway.
