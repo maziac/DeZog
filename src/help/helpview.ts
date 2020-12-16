@@ -2,8 +2,8 @@ import {readFileSync} from 'fs';
 import { BaseView } from '../views/baseview';
 import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
-import * as showdown from 'showdown';
 import {UnifiedPath} from '../misc/unifiedpath';
+import * as showdown from 'showdown';
 
 
 /**
@@ -44,9 +44,11 @@ export class HelpView extends BaseView {
 		//const defaultOptions = showdown.getDefaultOptions();
 		const converter = new showdown.Converter();
 		//converter.setOption('completeHTMLDocument', 'true');
-		converter.setOption('simpleLineBreaks', 'true');
-		converter.setOption('simplifiedAutoLink', 'true');
-		converter.setOption('tables', 'true');	// TODO: geht nicht
+		converter.setOption('simpleLineBreaks', true);
+		//converter.setOption('simplifiedAutoLink', true);
+		//converter.setOption('noHeaderId', false);
+		converter.setOption('ghCompatibleHeaderId', true);
+		converter.setOption('tables', true);	// TODO: geht nicht
 		//converter.setOption('tablesHeaderId', 'true');
 		const html = converter.makeHtml(mdText);
 		const mainHtml=`
@@ -54,18 +56,36 @@ export class HelpView extends BaseView {
 <html>
 <head>
 	<meta charset="utf-8" >
-	<title>This is an example for the < base > element </title>
+	<title>DeZog Help</title>
 	<base href="${vscodeResPath}/">
 </head>
+
+<style>
+table {
+    border-collapse: collapse;
+}
+td, th {
+    border: 1px solid;
+}
+
+th {
+  background-color: lightblue;
+}
+
+@media (prefers-color-scheme: dark) {
+  th {
+    color: black;
+  }
+}
+</style>
+
 	<body>
-	<img src="images/debug_console_tstates.jpg">
-	<img src="file:///Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/documentation/images/memoryviewer2b.jpg">
 
 ${html}
 
 	</body>
-	<script src="showdown.js"> </script>
-	<script src="showdown-toc.js"> </script>
+	<!-- <script src="showdown.js"> </script>
+	<script src="showdown-toc.js"> </script> -->
 </html>
 `;
 

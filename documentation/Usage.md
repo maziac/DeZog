@@ -2,11 +2,43 @@
 
 This document describes the features of DeZog and how they can be used.
 
-## TOC
+# abc def
 
-[toc]
 
-## Sample Program
+
+| Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
+|:--|:--|:--|:--|
+| Local lables | no | no | yes |
+| Needs a ':' | yes | yes | no
+| Dots (.) are allowed (also at start of label) | no | no | yes |
+| Misc | | | @ for global labels, numbers for labels |
+
+
+
+|                     | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
+|:------------------------|:-------------------|:--------|:-----------|:---------|:---------|
+| State                   | stable             | stable  | stable     | stable   | stable   |
+| Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
+| Break reason output     | yes                | no      | yes        | yes      | yes      |
+| Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
+| Watchpoints             | yes                | yes 2)  | yes/fast 2) | no      | no       |
+| Assertions              | yes                | no      | yes        | yes/slow | yes/slow |
+| Logpoints               | yes                | no      | yes        | yes/slow | yes/slow |
+| Long addresses/breakpoints | yes             | yes     | yes        | yes      | yes      |
+| Extended callstack      | no                 | yes     | yes        | no       | no       |
+| Code coverage           | yes                | yes 1)  | yes        | no       | no       |
+| Reverse debugging       | true               | true    | true       | lite     | lite     |
+| ZX Next capable         | no                 | yes     | yes        | yes      | yes      |
+| Save/restore the state  | yes                | yes     | yes        | no       | no       |
+| Output of T-States      | yes                | yes     | yes        | no       | no       |
+| Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
+| Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
+
+
+
+# Sample Program
+
+[Configuration](#configuration)
 
 I provide a simple sample assembler program to demonstrate the features of DeZog.
 
@@ -16,9 +48,11 @@ https://github.com/maziac/z80-sample-program
 It includes the sources and the binaries (.list, .sna files). So, if you don't want to change the sources, you can try debugging even without building from the sources.
 
 
-## Configuration
+# Configuration
 
-### launch.json
+[link](#abc-def)
+
+## launch.json
 
 After installing you need to add the configuration for "DeZog".
 
@@ -132,7 +166,7 @@ then start it via
 ![](images/vscode_continue_button.jpg)
 
 
-### Assembler Configuration
+## Assembler Configuration
 
 Depending on your assembler you use a different configuration names:
 - 'sjasmplus' for sjasmplus
@@ -142,7 +176,7 @@ Depending on your assembler you use a different configuration names:
 You basically define which listfile is used (or several listfiles) and depending on the assembler you may need to add certain parameters.
 
 
-#### z80asm vs. z80asm
+### z80asm vs. z80asm
 
 z80asm was and is still a very popular name for a Z80 assembler. There are especially 2 of them that I have used in the past and despite the name doesn't share very much.
 To distinguish them I will call them
@@ -152,7 +186,7 @@ b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (N
 DeZog supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
 
 
-#### Background info: The list file
+### Background info: The list file
 
 The most important configuration to do is the *.list file (or *.sld file). The list file contains
 all the information required by DeZog. While reading this file DeZog
@@ -259,7 +293,7 @@ The process of writing a parser is described in detail here: [AddingNewAssembler
 You can create a pull request so I can add it to the official release.
 
 
-#### Without a listfile
+### Without a listfile
 
 If you don't setup any list file or any assembler configuration then you can still start DeZog and it will work.
 The internal disassembler [z80dismblr](https://github.com/maziac/z80dismblr) will be used for an on-the-fly disassembly.
@@ -270,12 +304,12 @@ For performance reasons a new disassembly is only done if the memory at the PC i
 I.e. the disassembly at the current PC is always correct while an older disassembly (at a different address) might be outdated. This may happen in case a memory bank has been switched or the code was modified meanwhile (self modifying code).
 
 
-#### Assemblers and Labels
+### Assemblers and Labels
 
 The following table lists the differences of the different assemblers in respect to the labels:
 
 | Feature | Savannah/z80asm | z88dk/z80asm | sjasmplus |
-|-|-|-|-|
+|:--|:--|:--|:--|
 | Local lables | no | no | yes |
 | Needs a ':' | yes | yes | no
 | Dots (.) are allowed (also at start of label) | no | no | yes |
@@ -300,7 +334,7 @@ DeZog supports most of them but with some restrictions:
 
 
 <!--
-## Formatting
+# Formatting
 
 In the launch.json you can use another property to control the formatting of the registers done in the VARIABLES area.
 
@@ -325,7 +359,7 @@ Defines the formatting of the registers when displayed in the VARIABLES area. E.
 
 
 
-## Remote Types
+# Remote Types
 
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
@@ -335,7 +369,7 @@ They are distinguished via the "remoteType":
 - "zxnext": ZX Next connected via serial cable.
 
 
-### What is a 'Remote'?
+## What is a 'Remote'?
 
 A Remote is normally an external emulator that is running independently of DeZog.
 ZesarUX e.g is such a Remote.
@@ -346,13 +380,13 @@ The ZX Next can be connected via a serial interface to the PC.
 Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbserial (macOS).
 
 
-### Remote capabilities
+## Remote capabilities
 
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
 |                     | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
-|-------------------------|--------------------|---------|------------|----------|----------|
+|:------------------------|:-------------------|:--------|:-----------|:---------|:---------|
 | State                   | stable             | stable  | stable     | stable   | stable   |
 | Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
 | Break reason output     | yes                | no      | yes        | yes      | yes      |
@@ -381,7 +415,7 @@ Notes:
 - 1 ) ZEsarUX code coverage uses 16 bit addresses only. I.e. if slots are changed during execution the shown info might be wrong. But in most cases the output will be just fine.
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 
-### The Internal Z80 Simulator
+## The Internal Z80 Simulator
 
 ![](images/zsim_starwarrior.gif)
 
@@ -504,7 +538,7 @@ Here is the explanations of all the options:
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](zsimPeripherals.md) for more details.
 
 
-### ZEsarUX
+## ZEsarUX
 
 The setup is slightly more complicated as it involves communication with another program: the ZEsarUX emulator.
 
@@ -564,7 +598,7 @@ Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 
 
-### Useful ZEsarUX command-line options.
+## Useful ZEsarUX command-line options.
 
 To ease the usage of ZEsarUX with DeZog you can use several ZEsarUX command line options.
 I have collected a few that I found useful:
@@ -598,7 +632,7 @@ I have collected a few that I found useful:
 Please note: Normally you can set the commandline option also directly in the ZEsarUX Settings GUI.
 
 
-### CSpect
+## CSpect
 
 For this setup you need 2 additional programs: the CSpect emulator and the DeZog/CSpect Plugin.
 
@@ -655,7 +689,7 @@ You don't have to enter a hostname, the default is "localhost".
 Note: You can start CSpect with the "-remote" option. In that case CSpect will not show it's debugger screen when stopped.
 
 
-### macOS
+## macOS
 
 To run CSpect under macOS or Linux you need to install Mono first.
 A typical commandline to start CSpect looks like:
@@ -665,9 +699,9 @@ mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -r -v -debug
 
 
 
-### ZX Next / Serial Interface
+## ZX Next / Serial Interface
 
-#### Overview
+### Overview
 
 The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
 
@@ -724,7 +758,7 @@ The default port is anyway 12000. So, if you don't change it, you just have to a
 ~~~
 
 
-#### Setup
+### Setup
 
 Prerequisites:
 1. Install at least core 3.1.5 on the ZX Next.
@@ -757,14 +791,14 @@ You can now step through your code and set breakpoints.
 The debugger will stop at a breakpoint.
 
 
-#### Pausing the Debugged Program
+### Pausing the Debugged Program
 
 While the debugged program is running there is no communication between DeZog and the ZX Next.
 I.e. it is also not possible to pause the program through the serial cable.
 For pausing your program you need to press the yellow M1 button at the left side of your ZX Next.
 
 
-#### HW
+### HW
 
 **Disclaimer**
 
@@ -821,28 +855,28 @@ You can solder it directly or use the socket that is already available on the bo
 ![](images/uart_pin_header.jpg)
 
 
-#### Caveats
+### Caveats
 
-##### Joystick ports
+#### Joystick ports
 
 As the joystick ports are shared by the joysticks and by the UART/serial cable the communication with DeZog can happen only when the debugged program is being paused.
 E.g. you can't set a breakpoint while your program is running. You need to pause it first, set a new breakpoint and then continue the program.
 
 
-##### Memory banks
+#### Memory banks
 
 The dezogif program on the ZX Next needs some space. It uses the MF ROM/RAM and bank 94.
 For your program it means you mustn't use bank 94 otherwise DeZog will not work.
 
 
-##### Stack
+#### Stack
 
 A) This is more a note: If you watch the stack while stepping you can see that some values below the SP are changing on each step. This is additional info (e.g. for breakpoint addresses) used by DeZog. The values are below SP so they should not harm normal program operation.
 
 B) Performance: If you have a large stack or a **wrong topOfStack** setting in the launch.json stepping might become sluggish. This is because DeZog does a lot of analysis on the stack, e.g. it reads not only the stack but also memory that a stack entry points to. If the topOfStack is wrong many false reading is done after each step which slows down the system.
 
 
-##### SW Breakpoints
+#### SW Breakpoints
 
 A) For SW breakpoints internally the instruction is replaced with a RST instruction. I.e. when a breakpoint is hit the PC is placed on the stack.
 Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted when the breakpoint is hit.
@@ -896,7 +930,7 @@ E) Stepping over RST 8 is possible. However if RST 8 is used for the ESXDOS file
 ~~~
 
 
-##### Layer 2
+#### Layer 2
 
 DeZog can work with "Layer 2 write-only paging", i.e. bit 0 of port 0x123B being set.
 For bit 2, "read-only paging" it is different as DeZog needs a few bytes in the area 0x0000-0x1FFF for execution, i.e. for breakpoints and stepping. If "read-only paging" is enabled this area is blocked for DeZog.
@@ -904,7 +938,7 @@ If you e.g. try to step when "read-only paging" is enabled then the system will 
 However, you can still use "read-only paging" in your program, you just shouldn't put a breakpoint somewhere where it is enabled or step in such code.
 
 
-##### NMI
+#### NMI
 
 To interrupt the debugged program an NMI can be used (pressing the yellow NMI button).
 As an NMI places the current PC on the stack and can occur anytime it can and will corrupt the stack **if** it happens while the debugged program is manipulating the SP.
@@ -919,7 +953,7 @@ For the debugged program this means
 - If you only rarely use the SP in that way: the probability for the scenario above is certainly quite low. I.e. you can simply ignore it. But you should keep in mind that if something odd happens when you press the NMI M1 button that it could be the reason described above.
 
 
-## Usage
+# Usage
 
 If you use any Remote other than the internal Simulator please make sure that it is started before you start the debug session with DeZog.
 
@@ -946,7 +980,7 @@ You can now try the following:
 
 
 
-### Reverse Debugging
+## Reverse Debugging
 
 A special feature of DeZog is the possibility to reverse debug your program.
 (Sometimes this is referred to as "[Time travel debugging](https://en.wikipedia.org/wiki/Time_travel_debugging)", "Historical debugging" or "Replay debugger".)
@@ -981,7 +1015,7 @@ So whenever a memory location is changed from the program code in reverse debugg
 You can only rely on the register values.
 
 
-#### History Spot
+### History Spot
 
 You can enable/disable a history spot around the current PC:
 ~~~json
@@ -1029,7 +1063,7 @@ Here is an animated gif to illustrate the history spot behavior while stepping (
 ![](images/spot_count_animated.gif)
 
 
-#### Breakpoints in Reverse Debug Mode
+### Breakpoints in Reverse Debug Mode
 
 You can also use breakpoints during reverse debugging.
 The normal (program counter related) breakpoints work just as you would expect.
@@ -1044,7 +1078,7 @@ b@(HL) == 0
 will be evaluated to true always so that you don't miss such a breakpoint.
 
 
-### Code Coverage
+## Code Coverage
 
 Code coverage can be enabled/disabled via:
 ~~~json
@@ -1062,13 +1096,13 @@ You can use the code coverage feature in several ways. E.g. in unit tests you ca
 Or during debugging you can clear the code coverage (palette command "dezog: Clear current code coverage decoration") and then step over a function (a CALL). Afterwards you can navigate into the function and see what has been executed and which branches have not.
 
 
-### Stop Debugging
+## Stop Debugging
 
 To stop debugging press the orange square button in vscode. This will stop DeZog and disconnect from ZEsarUX.
 After disconnecting ZEsarUX, ZEsarUX will also leave cpu-step mode and therefore continue running the program.
 
 
-### WPMEM
+## WPMEM
 
 WPMEM offers a way to put watch points persistently into your sources.
 
@@ -1141,7 +1175,7 @@ Notes:
 - (sjasmplus) If you use label names make sure to use the global name (i.e. full dot notation).
 
 
-### ASSERTION
+## ASSERTION
 
 Similar to WPMEM you can use ASSERTIONs in comments in the assembler sources.
 An ASSERTION is translated by DeZog into a breakpoints with an "inverted" condition.
@@ -1186,7 +1220,7 @@ Notes:
 - sjasmplus: If you use label names make sure to use the global name (i.e. full dot notation).
 
 
-### LOGPOINT
+## LOGPOINT
 
 Another special keyword is LOGPOINT in comments in the assembler sources.
 A LOGPOINT is translated by DeZog into a breakpoint that does not stop execution but instead prints a log message.
@@ -1215,7 +1249,7 @@ Notes:
 - LOGPOINTs can do math with fixed labels but not with registers. I.e. "${b@(my_data+5)}" will work. It will statically calculate my_data+5 and lookup the memory value. But "${b@(IX+1)}" will not work as it would have to dynamically calculate "IX+1" at runtime.
 
 
-### vscode breakpoint
+## vscode breakpoint
 
 You simply set a breakpoint by clicking left to the line where you want the breakpoint to be.
 A red dot indicates the presense of a breakpoint.
@@ -1261,7 +1295,7 @@ Although the behavior is correct it looks like the program is randomly stopping.
 
 
 
-### vscode logpoints
+## vscode logpoints
 
 You can set vscode logpoints on the fly during debugging with the vscode logpoint feature.
 
@@ -1272,7 +1306,7 @@ E.g. use "Counter=${(sprite.counter)}" as a log message.
 Note: logpoints are not available in ZEsarUX.
 
 
-### Debug Console
+## Debug Console
 
 The debug console prints out useful information and might be used to enter additional commands and communicate with the emulator.
 
@@ -1288,7 +1322,7 @@ The debug console can normally be found in the bottom of vscode after successful
 ![](images/debug_console.jpg)
 
 
-#### Execute emulator commands
+### Execute emulator commands
 
 Withe "-exec" you can directly pass emulator commands to the emulator.
 The response is send to the debug console.
@@ -1304,7 +1338,7 @@ You see the result here:
 ![](images/exec_view_help.jpg)
 
 
-#### State Save/Restore
+### State Save/Restore
 
 It is possible to save/restore the current machine state (mainly RAM, Z80 registers) during a debug session.
 I.e. you can save the state prior to a problem and reload the state to investigate the problem once again.
@@ -1338,7 +1372,7 @@ Note: What is saved depends solely on the Remote, i.e. ZEsarUx or the internal s
 
 
 
-#### Memory Dumps
+### Memory Dumps
 
 If you enter
 
@@ -1379,7 +1413,7 @@ Note:
 The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 
 
-##### Memory Editor
+#### Memory Editor
 
 In the memory viewer you can edit individual memory values with a double-click on the value.
 You can now enter the new value as hex, decimal, bin or even as a math formula.
@@ -1388,12 +1422,12 @@ Any changed value wil be updated automatically in all memory views.
 Note: The changed value is not updated immediately in the WATCH area. There you need to 'step' once to get the updated values.
 
 
-##### Configuration
+#### Configuration
 
 The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registers-memory-viewer, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
 
 
-#### Sprites & Patterns
+### Sprites & Patterns
 
 You can open a view which displays the current sprite slots by entering
 
@@ -1459,7 +1493,7 @@ This, of course, means that normally only the 8bit or the 4bit color pattern is 
 ![](images/zxnextspritepatternsviewer1.jpg)
 
 
-### WATCHES
+## WATCHES
 
 If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
 The dump is updated on each step.
@@ -1505,7 +1539,7 @@ Note:
 Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 
 
-### Change the Program Counter
+## Change the Program Counter
 
 The PC can be changed via the menu. Click in the source line. Do a right-click
 and choose "Move Program Counter to Cursor".
@@ -1513,13 +1547,13 @@ and choose "Move Program Counter to Cursor".
 See [Notes](#Notes).
 
 
-## Unittests
+# Unittests
 
 You can use the DeZog to execute unit tests.
 Please see [here](UnitTests.md).
 
 
-## Known Issues
+# Known Issues
 
 - **General**
   - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
