@@ -29,13 +29,12 @@ import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
-import {HelpView} from './help/helpview';
 
 
 
 
 /// State of the debug adapter.
-enum DbgAdaperState {
+enum DbgAdapterState {
 	NORMAL,	// Normal debugging
 	UNITTEST,	// Debugging or running unit tests
 }
@@ -47,7 +46,7 @@ enum DbgAdaperState {
  */
 export class DebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
-	protected static state=DbgAdaperState.NORMAL;
+	protected static state=DbgAdapterState.NORMAL;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
 	protected dasmAddressQueue=new Array<number>();
@@ -151,7 +150,7 @@ export class DebugSessionClass extends DebugSession {
 		// Return if currently a debug session is running
 		if (vscode.debug.activeDebugSession)
 			return false;
-		if (this.state!=DbgAdaperState.NORMAL)
+		if (this.state!=DbgAdapterState.NORMAL)
 			return false;
 
 		// Start debugger
@@ -159,7 +158,7 @@ export class DebugSessionClass extends DebugSession {
 		let wsFolder;
 		if (vscode.workspace.workspaceFolders)
 			wsFolder=vscode.workspace.workspaceFolders[0];
-		this.state=DbgAdaperState.UNITTEST;
+		this.state=DbgAdapterState.UNITTEST;
 		vscode.debug.startDebugging(wsFolder, configName);
 
 		return true;
@@ -296,7 +295,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async disconnectAll(): Promise<void> {
 		// Clear all decorations
-		if (DebugSessionClass.state==DbgAdaperState.UNITTEST) {
+		if (DebugSessionClass.state==DbgAdapterState.UNITTEST) {
 			// Cancel unit tests
 			Z80UnitTests.cancelUnitTests();
 			// Clear decoration
@@ -304,7 +303,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else
 			Decoration?.clearAllDecorations();
-		DebugSessionClass.state=DbgAdaperState.NORMAL;
+		DebugSessionClass.state=DbgAdapterState.NORMAL;
 		// Close views, e.g. register memory view
 		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
@@ -418,9 +417,6 @@ export class DebugSessionClass extends DebugSession {
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
 
-			//const helpView =
-				new HelpView("HelpView", "# hello, markdown!");
-
 			// Set root path
 			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
 
@@ -456,7 +452,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
-		DebugSessionClass.state=DbgAdaperState.NORMAL;
+		DebugSessionClass.state=DbgAdapterState.NORMAL;
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
 
@@ -498,7 +494,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Call the unit test handler. It will subscribe on events.
 		if (DebugSessionClass.unitTestHandler) {
-			DebugSessionClass.state=DbgAdaperState.UNITTEST;
+			DebugSessionClass.state=DbgAdapterState.UNITTEST;
 			DebugSessionClass.unitTestHandler(this);
 		}
 
@@ -1242,7 +1238,7 @@ export class DebugSessionClass extends DebugSession {
 		await this.endStepInfo();
 
 		// React depending on internal state.
-		if (DebugSessionClass.state==DbgAdaperState.NORMAL) {
+		if (DebugSessionClass.state==DbgAdapterState.NORMAL) {
 			// Send break
 			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
 		}

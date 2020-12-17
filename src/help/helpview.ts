@@ -14,19 +14,17 @@ export class HelpView extends BaseView {
 
 	/**
 	 * Creates the text view.
-	 * @param title The title to use for this view.
-	 * @param mdText The static text to show.
 	 */
-	constructor(title: string, mdText: string) {
-		super();
+	constructor() {
+		super(false);
 		// Title
 		Utility.assert(this.vscodePanel);
-		(this.vscodePanel as vscode.WebviewPanel).title = title;
+		(this.vscodePanel as vscode.WebviewPanel).title = "DeZog Help";
 		// Load usage file
 		const extFolder = Utility.getExtensionPath();
 		const usageFileName = 'documentation/Usage.md';
 		const path = UnifiedPath.join(extFolder, usageFileName);
-		mdText = readFileSync(path).toString();
+		const mdText = readFileSync(path).toString();
 		// Use the text
 		this.setMarkdown(mdText);
 	}
@@ -41,14 +39,13 @@ export class HelpView extends BaseView {
 		const resourcePath = vscode.Uri.file(UnifiedPath.join(extPath, 'documentation'));
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath);
 		// Convert md -> html
-		//const defaultOptions = showdown.getDefaultOptions();
 		const converter = new showdown.Converter();
 		//converter.setOption('completeHTMLDocument', 'true');
 		converter.setOption('simpleLineBreaks', true);
 		//converter.setOption('simplifiedAutoLink', true);
 		//converter.setOption('noHeaderId', false);
 		converter.setOption('ghCompatibleHeaderId', true);
-		converter.setOption('tables', true);	// TODO: geht nicht
+		converter.setOption('tables', true);
 		//converter.setOption('tablesHeaderId', 'true');
 		const html = converter.makeHtml(mdText);
 		const mainHtml=`
@@ -69,28 +66,55 @@ td, th {
 }
 
 th {
-  background-color: lightblue;
+  background: var(--vscode-merge-incomingHeaderBackground);
 }
 
-@media (prefers-color-scheme: dark) {
-  th {
-    color: black;
-  }
+#toc_main {
+  position: fixed;
+  right: 1em;
+  top: 1em;
+  padding: 0.5em;
+  border-radius: 5px;
+  box-shadow: 1px 1px 5px var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
 }
+
+#toc_main #toc_full { display: none; } /* Hide TOC initially */
+
+#toc_main:hover #toc_full{
+  display: block; /* Show it on hover */
+}
+
 </style>
 
-	<body>
+<body>
+
+<!-- Table of contents -->
+<div id="toc_main">
+	<div style="text-align:right">CONTENT</div>
+	<div id="toc_full">
+		<div id="toc_contents"></div>
+	</div>
+</div>
 
 ${html}
 
-	</body>
-	<!-- <script src="showdown.js"> </script>
-	<script src="showdown-toc.js"> </script> -->
+</body>
 </html>
 `;
 
-		// Add html body
-		this.vscodePanel.webview.html = mainHtml;
+		const posthtml = require('posthtml');
+		const toc = require('posthtml-toc');
+
+		posthtml()
+			.use(toc({
+				after: '#toc_contents',
+				title: ' '
+			}))
+			.process(mainHtml/*, options */)
+			.then(result => {
+				this.vscodePanel.webview.html = result.html;;
+			});
 	}
 
 }

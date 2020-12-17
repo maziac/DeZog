@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.0.2
+- Help view added. Palette command "dezog.help".
+
 # 2.0.1
 - Logging to files removed. vscode does this anyway.
 

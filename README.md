@@ -3,7 +3,7 @@
 If you like DeZog please consider supporting it.
 
 <a title="PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url">
-	<img src="images/btn_donate_SM.gif" />
+	<img src="documentation/images/btn_donate_SM.gif" />
 </a>
 
 
@@ -57,11 +57,10 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 
 
-
 ## Features
 
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v9.1)
-- supports [CSpect](http://www.cspect.org) emulator (>= v2.12.36)
+- supports [CSpect](http://www.cspect.org) emulator (>= v2.13.0)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list files
 	- supports stepping through source code
@@ -102,13 +101,13 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 	- create a .sna, .nex or object file containing the binary
 
 
+<!--
 ## Roadmap
 
 Next to implement:
-- "Long Address" support: Currently DeZog treats all addresses as 16 bit (64k) only. "Long Addresses" will extend this to cover also the information to which bank an address points to. This will make it possible to support bigger projects with source code mapped to different memory banks/pages. To make this work the assembler has to support the feature as well. Therefore, particularly support for the sjasmplus SLD file format is planned.
-<!-- - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch. -->
-- zsim peripherals support: Allow to extend the zsim simulation for ports by the user.
+- OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
 - ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
+-->
 
 
 ## Installation
@@ -150,6 +149,11 @@ All can be installed from the market place.
 ## Usage
 
 Please look at the documentation ['Usage of DeZog'](documentation/Usage.md).
+
+You can also access the documentation from within vscode/DeZog.
+Enter "dezog: Show the DeZog Help page" in the command palette (F1 key).
+
+![](documentation/images/dezog_help.gif)
 
 
 ## Contribution

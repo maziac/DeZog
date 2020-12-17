@@ -51,6 +51,8 @@
 		"jsonc-parser": "^2.2.1",
 		"mocha": "^7.1.1",
 		"node-gzip": "^1.1.2",
+		"posthtml": "^0.15.1",
+		"posthtml-toc": "^1.0.3",
 		"rng": "^0.2.2",
 		"showdown": "^1.9.1",
 		"ts-node": "^8.8.1",
@@ -141,6 +143,11 @@
 			{
 				"command": "dezog.whatsNew",
 				"title": "Show 'What's New' page of this DeZog release.",
+				"category": "dezog"
+			},
+			{
+				"command": "dezog.help",
+				"title": "Show the DeZog Help page.",
 				"category": "dezog"
 			},
 			{

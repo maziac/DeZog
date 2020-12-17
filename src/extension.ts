@@ -8,6 +8,7 @@ import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
 import {Utility} from './misc/utility';
 import {WhatsNewContentProvider} from './whatsnew/whatsnewprovider';
 import {DezogWhatsNewMgr} from './whatsnew/dezogwhatsnewmanager';
+import {HelpView} from './help/helpview';
 
 
 /// Config section in the settings.
@@ -41,6 +42,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register the additional command to view the "Whats' New" page.
 	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => viewer.showPage()));
 
+	// Command to show the DeZog Help
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => new HelpView()));
 
 	// Get and store the extension's path
 	const extPath=vscode.extensions.getExtension("maziac.dezog")?.extensionPath as string;
@@ -63,6 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(s => {
 		console.log(`terminated: ${s.type} ${s.name}`);
 	}));
+
 
 	// Command to change the program counter via menu.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.movePCtoCursor', () => {
