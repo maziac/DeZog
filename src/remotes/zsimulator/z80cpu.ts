@@ -63,7 +63,7 @@ export class Z80Cpu {
 		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
-		this.cpuFreq=3500000.0;	// 3.5MHz.
+		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
 		this.INTERRUPT_TIME=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
 		this.remaingInterruptTstates=this.INTERRUPT_TIME;
 		/*
@@ -130,14 +130,18 @@ export class Z80Cpu {
 		// Statistics
 		if (z80.halted) {
 			// HALT instruction
-			if (z80.interruptsEnabled) {
+			if (z80.interruptsEnabled && this.vsyncInterrupt) {
 				// HALT instructions are treated specially:
 				// If a HALT is found the t-states to the next interrupt are calculated.
 				// The t-states are added and the interrupt is executed immediately.
 				// So only one HALT is ever executed, skipping execution of the others
 				// saves processing time.
-				this.cpuWithHaltTstates+=this.remaingInterruptTstates-tStates;
-				this.remaingInterruptTstates=0;
+				this.cpuWithHaltTstates += this.remaingInterruptTstates - tStates;
+				this.remaingInterruptTstates = 0;
+			}
+			else {
+				// Simply count the HALT instruction, no optimization
+				this.cpuLoadTstates += tStates;
 			}
 		}
 		else {

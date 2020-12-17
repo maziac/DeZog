@@ -53,11 +53,15 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * @param path Absolute path.
 	 */
 	public static IsSldFile(path: string) {
+		/*
 		const content=readFileSync(path);
 		// Check only if it starts with a '|' for an sld file.
 		const firstChar=content[0];
 		const sld=(firstChar=='|'.charCodeAt(0));
 		return sld;
+		*/
+		// TODO: Remove sjasmplus list file support completely.
+		return true;
 	}
 
 
@@ -104,7 +108,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		const version = fields[2] || '0';
 		const requiredVersion = 1;
 		if (parseInt(version) < requiredVersion)
-			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need at least version "+requiredVersion+". Please update sjsamplus.");
+			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need SLD version "+requiredVersion+". Please update sjasmplus to at least version 1.18.0.");
 	}
 
 

@@ -2,13 +2,17 @@
 
 # 2.0.2
 - Help view added. Palette command "dezog.help".
+- New "zsim" option to set the "cpuFrequency".
+- "resetOnLaunch" moved to "zrcp".
+- ASSERTION for ZEsarUX implemented.
 
 # 2.0.1
 - Logging to files removed. vscode does this anyway.
+- sjasmplus list file support disabled.
 
 # 2.0.0
 - Fix in sendDzrpCmd: length of transmitted bytes fixed.
-- Improvements to unit tests. Now ASSERTs show the failure values.
+- Improvements to unit tests. Now ASSERTIONs show the failure values.
 - "sjasmplus" configuration now uses the SLD file instead of a list file to support banking information (long addresses). If you want to use 64k addresses instead there is a new option "disableBanking".
 - launch.json: deprecated option "filter" has been removed.
 - "zsim": Support for custom code added. E.g. it is possible now to add custom peripheral code to implement ports. You can now write code to support peripherals within zsim.
@@ -23,7 +27,7 @@
 		- customCode.debug: Enables a few debug buttons in ZSimulationView
 		- customCode.jsPath: Path to the custom javascript file.
 		- customCode.uiPath: Path to the custom html UI.
-		- customCode.timeStep: The t-state interval fro reporting.
+		- customCode.timeStep: The t-state interval for reporting.
 - "zsim": changed parameters:
 	- Removed: "memoryPagingControl", "tbblueMemoryManagementSlots", "loadZxRom"
 	- Added: "memoryModel": "RAM", "ZX48K", "ZX128K", "ZXNEXT"
@@ -155,7 +159,7 @@
 - Fixed: Update of word register in case of byte register change (and vice versa).
 
 # 1.2.3
-- Fixed: crash when switching form ZEsarUX to CSpect.
+- Fixed: crash when switching from ZEsarUX to CSpect.
 - Manual change of PC (or SP) will update the shown file.
 - zsim: cpu writing to ROM does not change the contents anymore.
 - zsim: simulator exchanged. Is less buggy and 30% performance increase.

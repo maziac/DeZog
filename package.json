@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80/ZX Spectrum.",
 	"author": {
@@ -283,6 +283,10 @@
 									"type": "boolean",
 									"description": "Skips the interrupt during stepping. Defaults to false."
 								},
+								"resetOnLaunch": {
+									"type": "boolean",
+									"description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
+								},
 								"socketTimeout": {
 									"type": "number",
 									"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
@@ -337,6 +341,11 @@
 									"type": "boolean",
 									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
 									"default": false
+								},
+								"cpuFrequency": {
+									"type": "number",
+									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+									"default": 3500000.0
 								},
 								"customCode": {
 									"debug": {
@@ -533,10 +542,6 @@
 							"startAutomatically": {
 								"type": "boolean",
 								"description": "Start automatically after launch. Default is false."
-							},
-							"resetOnLaunch": {
-								"type": "boolean",
-								"description": "Resets the device (on emulator) after starting the debugger before starting the program to debug."
 							},
 							"commandsAfterLaunch": {
 								"type": "array",
