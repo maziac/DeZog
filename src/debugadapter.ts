@@ -1913,7 +1913,7 @@ export class DebugSessionClass extends DebugSession {
 							labelVar = new LabelVar(labelValue, elemCount, byteWord, this.listVariables);
 						}
 						else {
-							const size = Labels.getNumberFromString64k(fullLabel);
+							const size = Labels.getNumberFromString64k(byteWord);
 							labelVar = new StructVar(labelValue, elemCount, size, byteWord, props, this.listVariables);
 						}
 						// Add to list
