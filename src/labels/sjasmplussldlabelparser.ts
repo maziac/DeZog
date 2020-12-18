@@ -71,7 +71,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
 		this.config=config;
-		const sldConfig=this.config as SjasmplusConfig;
+		const sldConfig = this.config as SjasmplusConfig;
+
+		// Check that excludeFiles and srcDirs is not used.
+		if (sldConfig.excludeFiles.length > 0)
+			throw Error("You cannot use 'excludeFiles' in a sjasmplus configuration.");
+
 		// Init (in case of several sld files)
 		this.lastLabel = undefined as any;
 
