@@ -75,6 +75,15 @@ export class LabelsClass {
 	/// Long addresses.
 	protected numberForLabel = new Map<string, number>();
 
+
+	/// Map with a key with a label that contains other maps recursively.
+	/// I.e. a dotted label like 'a.b.c.d' can be referenced through
+	/// through 'a' which will contain another map which can be referneced by 'b'
+	/// and so on.
+	/// Used for displaying structs in the watches window.
+	protected labelsHierachy = new Map<string, any>();
+
+
 	/// Map with label / file location association.
 	/// Used in sourcesModeFinish to create the file label association and
 	/// used in unit tests to point to the unit tests.
@@ -128,6 +137,7 @@ export class LabelsClass {
 		this.labelsForLongAddress.clear();
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
+		this.labelsHierachy.clear();
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
@@ -154,6 +164,8 @@ export class LabelsClass {
 	public finish() {
 		// Calculate the label offsets
 		this.calculateLabelOffsets();
+		// Create the hierarchy of labels
+		this.createLabelHierarchy();
 	}
 
 
@@ -401,6 +413,54 @@ export class LabelsClass {
 		// return array with labels
 		return foundLabels;
 	}
+
+
+	/**
+	 * Create the hierarchy of labels.
+	 */
+	protected createLabelHierarchy() {
+		for (let [label,] of this.numberForLabel) {
+			// Get all parts of the label
+			const parts = label.split('.');
+			let map = this.labelsHierachy;
+			for (const part of parts) {
+				// Check if already existing
+				let subMap = map.get(part);
+				if (!subMap) {
+					// Create one
+					subMap = new Map<string, any>();
+					map.set(part, subMap);
+				}
+				// Next
+				map = subMap;
+			}
+		}
+	}
+
+
+	/**
+	 * Returns the direct sub labels.
+	 * @param label E.g. "Invader" or "Invader.hitbox"
+	 * @returns An array of direct sub lables. E.g. for "Invader" it returns "Invader.x" or "Invader.hitbox" but not "Invader.hitbox.x"
+	 */
+	public getSubLabels(label: string): Array<string> {
+		// Get all parts of the label
+		const parts = label.split('.');
+		let map = this.labelsHierachy;
+		for (const part of parts) {
+			// Check if already existing
+			let subMap = map.get(part);
+			if (!subMap) {
+				// Create one
+				subMap = new Map<string, any>();
+				map.set(part, subMap);
+			}
+			// Next
+			map = subMap;
+		}
+		return Array.from(map.keys());
+	}
+
 
 	/**
 	 * Returns a number. If text is a label than the corresponding number for the label is returned.
