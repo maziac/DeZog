@@ -1905,11 +1905,17 @@ export class DebugSessionClass extends DebugSession {
 					else {
 						// big value
 						// Create a label variable
-						//const labelVar = new LabelVar(labelValue, size, byteWord, this.listVariables);
-						const size = Labels.getNumberFromString64k(fullLabel);
+						let labelVar;
 						// Get sub properties
 						const props = Labels.getSubLabels(byteWord);
-						const labelVar = new StructVar(labelValue, elemCount, size, byteWord, props, this.listVariables);
+						if (props.length == 0) {
+							// Simple label
+							labelVar = new LabelVar(labelValue, elemCount, byteWord, this.listVariables);
+						}
+						else {
+							const size = Labels.getNumberFromString64k(fullLabel);
+							labelVar = new StructVar(labelValue, elemCount, size, byteWord, props, this.listVariables);
+						}
 						// Add to list
 						const ref = this.listVariables.addObject(labelVar);
 						// Response

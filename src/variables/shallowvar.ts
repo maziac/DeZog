@@ -382,6 +382,8 @@ export class LabelVar extends ShallowVar {
 	 */
 	public constructor(addr: number, count: number, types: string, list: RefList<ShallowVar>) {
 		super();
+		// TODO : Implement delayed execution
+
 		// Create array for variables
 		this.memArray = [];
 		types = types.trim();
@@ -427,10 +429,19 @@ export class LabelVar extends ShallowVar {
  */
 export class SubStructVar extends ShallowVar {
 	// The parent of the sub structure (which holds the memory contents.
-	protected parent: StructVar;
+	protected parentStruct: StructVar;
 
 	// Holds an array with structure properties.
 	protected propArray: Array<DebugProtocol.Variable>;
+
+	// The data is copied from the constructor for lazy initialization.
+	protected addr: number;
+	protected count: number;
+	protected size: number;
+	protected struct: string;
+	protected props: Array<string>;
+	protected list: RefList<ShallowVar>;
+
 
 	/**
 	 * Constructor.
@@ -440,47 +451,62 @@ export class SubStructVar extends ShallowVar {
 	 * @param size The size of this object. All elements together.
 	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
 	 * @param props An array of names of the direct properties of the struct.
-	 * @param parent The parent object which holds the memory.
+	 * @param parentStruct The parent object which holds the memory.
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 */
-	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, parent: StructVar, list: RefList<ShallowVar>) {
+	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, parentStruct: StructVar, list: RefList<ShallowVar>) {
 		super();
+		// Save all arguments
+		// TODO: Remove addr (should be known only in parent)
+		this.addr = addr;
+		this.count = count;
+		this.size = size;
+		this.struct = struct;
+		this.props = props;
+		this.parentStruct = parentStruct;
+		this.list = list;
+	}
+
+
+	/**
+	 * Creates the propArray.
+	 */
+	protected createPropArray() {
 		// Create array for struct
-		this.parent = parent;
 		this.propArray = [];
-		struct = struct.trim();
+		this.struct = this.struct.trim();
 
 		// Byte or word array
-		if (struct.startsWith("'")) {
+		if (this.struct.startsWith("'")) {
 			// Byte array
-			if (struct.indexOf('b') >= 0)
+			if (this.struct.indexOf('b') >= 0)
 				this.propArray.push(
 					{
 						name: "byte",
 						type: "data",
-						value: "[0.." + (count - 1) + "]",
-						variablesReference: list.addObject(new MemDumpByteVar(addr)),
-						indexedVariables: count
+						value: "[0.." + (this.count - 1) + "]",
+						variablesReference: this.list.addObject(new MemDumpByteVar(this.addr)),
+						indexedVariables: this.count
 					});
 
 			// Word array
-			if (struct.indexOf('w') >= 0)
+			if (this.struct.indexOf('w') >= 0)
 				this.propArray.push(
 					{
 						name: "word",
 						type: "data",
-						value: "[0.." + (count - 1) + "]",
-						variablesReference: list.addObject(new MemDumpWordVar(addr)),
-						indexedVariables: count
+						value: "[0.." + (this.count - 1) + "]",
+						variablesReference: this.list.addObject(new MemDumpWordVar(this.addr)),
+						indexedVariables: this.count
 					});
 		}
 		else {
 			// Check for struct
 			// Now create a new variable for each
 			const unsortedMap = new Map<number, string>();
-			for (const prop of props) {
+			for (const prop of this.props) {
 				// Get the relative address
-				const relAddr = Labels.getNumberFromString64k(struct + '.' + prop);
+				const relAddr = Labels.getNumberFromString64k(this.struct + '.' + prop);
 				unsortedMap.set(relAddr, prop);
 			}
 			// Sort map by indices
@@ -500,14 +526,14 @@ export class SubStructVar extends ShallowVar {
 					else {
 						// Treat last element different
 						// Create diff to the size
-						len = size - prevIndex;
+						len = this.size - prevIndex;
 					}
 					// Check for leaf or node
-					const fullName = struct + '.' + prevName;
+					const fullName = this.struct + '.' + prevName;
 					const subProps = Labels.getSubLabels(fullName);
 					if (subProps.length > 0) {
 						// Node
-						const nodeRef = list.addObject(new SubStructVar(addr, 1, len, fullName, subProps, parent, list));
+						const nodeRef = this.list.addObject(new SubStructVar(this.addr, 1, len, fullName, subProps, this.parentStruct, this.list));
 						this.propArray.push({
 							name: prevName,
 							type: '',
@@ -518,7 +544,7 @@ export class SubStructVar extends ShallowVar {
 					else {
 						// Leaf
 						// Get value depending on len: 1 byte, 1 word or array.
-						const mem = parent.getMemory();
+						const mem = this.parentStruct.getMemory();
 						const value = mem[prevIndex];
 						const valueString = Utility.getHexString(value, 2) + 'h';
 						this.propArray.push({
@@ -538,10 +564,12 @@ export class SubStructVar extends ShallowVar {
 
 
 	/**
-	 * Returns the memory dump.
-	 * @returns A Promise with the memory dump.
+	 * Returns the properties.
+	 * @returns A Promise with the properties.
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {		// Pass data to callback
+	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+		if (!this.propArray)
+			this.createPropArray();
 		return this.propArray;
 	}
 }
@@ -556,7 +584,8 @@ export class SubStructVar extends ShallowVar {
  */
 export class StructVar extends SubStructVar {
 
-	private memArray: Array<DebugProtocol.Variable>;	/// Holds the 2 pseudo variables for 'byte' and 'word'
+	// The memory contents (lazy initialized).
+	protected memory: Uint8Array;
 
 	/**
 	 * Constructor.
@@ -569,93 +598,27 @@ export class StructVar extends SubStructVar {
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 */
 	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, list: RefList<ShallowVar>) {
-		super();
-		// Create array for variables
-		this.memArray = [];
-		struct = struct.trim();
+		super(addr, count, size, struct, props, undefined as any, list);
+		this.parentStruct = this;
+	}
 
-		// Byte or word array
-		if (struct.startsWith("'")) {
-			// Byte array
-			if (struct.indexOf('b') >= 0)
-				this.memArray.push(
-					{
-						name: "byte",
-						type: "data",
-						value: "[0.." + (count - 1) + "]",
-						variablesReference: list.addObject(new MemDumpByteVar(addr)),
-						indexedVariables: count
-					});
 
-			// Word array
-			if (struct.indexOf('w') >= 0)
-				this.memArray.push(
-					{
-						name: "word",
-						type: "data",
-						value: "[0.." + (count - 1) + "]",
-						variablesReference: list.addObject(new MemDumpWordVar(addr)),
-						indexedVariables: count
-					});
+	/**
+	 * Returns the properties.
+	 * Retrieves the memory.
+	 * @returns A Promise with the properties.
+	 */
+	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+		// Check if memory has been retrieved
+		if (!this.memory) {
+			// Retrieve memory values
+			const countBytes = this.count * this.size;
+			this.memory = await Remote.readMemoryDump(this.addr, countBytes);
 		}
-		else {
-			// Check for struct
-			// Now create a new variable for each
-			const unsortedMap = new Map<number, string>();
-			for (const prop of props) {
-				// Get the relative address
-				const relAddr = Labels.getNumberFromString64k(struct + '.' + prop);
-				unsortedMap.set(relAddr, prop);
-			}
-			// Sort map by indices
-			const sortedMap = new Map([...unsortedMap.entries()].sort());
-			// Add an end marker
-			sortedMap.set(-1, '');
-			// Get all lengths of the leafs and dive into nodes
-			let prevName;
-			let prevIndex;
-			for (const [index, name] of sortedMap) {
-				if (prevName) {
-					let len;
-					if (name) {
-						// Create diff of the relative addresses
-						len = index - prevIndex;
-					}
-					else {
-						// Treat last element different
-						// Create diff to the size
-						len = size - prevIndex;
-					}
-					// Check for leaf or node
-					const fullName = struct + '.' + prevName;
-					const subProps = Labels.getSubLabels(fullName);
-					if (subProps.length > 0) {
-						// Node
-						const nodeRef = list.addObject(new StructVar(addr, 1, len, fullName, subProps, list));
-						this.memArray.push({
-							name: prevName,
-							type: '',
-							value: '',
-							variablesReference: nodeRef
-						});
-					}
-					else {
-						// Leaf
-						// Get value depending on len: 1 byte, 1 word or array.
-						const value = "0234h";
-						this.memArray.push({
-							name: prevName,
-							type: value,
-							value: value,
-							variablesReference: 0
-						});
-					}
-				}
-				// Next
-				prevName = name;
-				prevIndex = index;
-			}
-		}
+		// Check if properties array exists.
+		if (!this.propArray)
+			this.createPropArray();
+		return this.propArray;
 	}
 
 
@@ -663,7 +626,7 @@ export class StructVar extends SubStructVar {
 	 * Returns the cached memory. If not existing yet it is fetched.
 	 */
 	public getMemory() {
-
+		return this.memory;
 	}
 }
 
