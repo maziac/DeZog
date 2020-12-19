@@ -112,7 +112,7 @@ Next to implement:
 - Support for CSpect 'rewind' feature.
 <!--
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
-- ZesarusExt: Make ZesaruxExt publicly available. ZesaruxExt is a Zesarux fork with small enhancements like faster breakpoints.
+- ZesaruxExt: Make ZesaruxExt publicly available. ZesaruxExt is a Zesarux fork with small enhancements like faster breakpoints.
 -->
 
 

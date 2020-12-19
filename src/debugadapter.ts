@@ -85,7 +85,7 @@ export class DebugSessionClass extends DebugSession {
 	/// This variable here is set every time a step (or similar) is done.
 	/// And reset when the function is finished. Should some other similar
 	/// request happen a response is send but the request is ignored otherwise.
-	protected proccessingSteppingRequest=false;
+	protected processingSteppingRequest=false;
 
 
 	/// This is saved text that could not be printed yet because
@@ -211,7 +211,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public terminate(message?: string) {
 		(async () => {
-			//DebugSessionClass.state=DbgAdaperState.NORMAL;
+			//DebugSessionClass.state=DbgAdapterState.NORMAL;
 			if (message)
 				this.showError(message);
 			Log.log("Exit debugger!");
@@ -270,7 +270,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Debugadapter disconnects.
+	 * DebugAdapter disconnects.
 	 * End forcefully.
 	 * Is called
 	 * - when user presses red square
@@ -349,7 +349,7 @@ export class DebugSessionClass extends DebugSession {
 		// I use my own "Move Program Counter to Cursor".
 		// GotoTargetsRequest would be working now, but not in all cases.
 		// If the file is not recognized yet. It does not work.
-		// Thought it has soemthing to do with loadSourcesRequest but it doesnt.
+		// Thought it has something to do with loadSourcesRequest but it doesn't.
 		response.body.supportsGotoTargetsRequest=false;
 
 		// Support hovering over values (registers)
@@ -457,7 +457,7 @@ export class DebugSessionClass extends DebugSession {
 		DisassemblyClass.createDisassemblyInstance();
 
 		// Init
-		this.proccessingSteppingRequest=false;
+		this.processingSteppingRequest=false;
 
 		// Start the emulator and the connection.
 		const msg=await this.startEmulator();
@@ -655,7 +655,7 @@ export class DebugSessionClass extends DebugSession {
 				DebugSessionClass.unitTestHandler=undefined;
 			});
 
-			// Inititalize Remote
+			// Initialize Remote
 			try {
 				await Remote.init();
 			}
@@ -862,9 +862,9 @@ export class DebugSessionClass extends DebugSession {
 		const fetchAddressesCount=fetchAddresses.length;
 
 		if (!doDisassembly) {
-			const checkSize=40;	// Needs to be smaller than fetchsize in order not to do a disassembly too often.
+			const checkSize=40;	// Needs to be smaller than fetch-size in order not to do a disassembly too often.
 			if (fetchAddressesCount>0) {
-				// Now get hexdumps for all non existing sources.
+				// Now get hex-dumps for all non existing sources.
 				for (let index=0; index<fetchAddressesCount; index++) {
 					// So fetch a memory dump
 					const fetchAddress=fetchAddresses[index];
@@ -1133,7 +1133,7 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Decorates the current PC source line with a reason.
-	 * @oaram "Breakpoint fired: PC=811EH" or undefined (prints nothing)
+	 * @param "Breakpoint fired: PC=811EH" or undefined (prints nothing)
 	 */
 	public decorateBreak(breakReason: string) {
 		if (!breakReason)
@@ -1150,7 +1150,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected startProcessing() {
 		// Start processing
-		this.proccessingSteppingRequest=true;
+		this.processingSteppingRequest=true;
 		// Reset pause request
 		this.pauseRequested=false;
 		// Clear decorations
@@ -1166,7 +1166,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected stopProcessing() {
 		// Stop processing
-		this.proccessingSteppingRequest=false;
+		this.processingSteppingRequest=false;
 		// Do the same for the Remote
 		Remote.stopProcessing();
 	}
@@ -1331,7 +1331,7 @@ export class DebugSessionClass extends DebugSession {
 	 * The function takes care that the response is sent only once.
 	 */
 	protected handleRequest(response: any, command: () => Promise<StoppedEvent>, responseTime=750) {
-		if (this.proccessingSteppingRequest) {
+		if (this.processingSteppingRequest) {
 			// Response is sent immediately if already something else going on
 			this.sendResponse(response);
 			return;
@@ -1413,7 +1413,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Check for reverse debugging.
 				if (stepBackMode) {
-					// Stepover
+					// Step-Over
 					breakReason=await StepHistory.stepOver();
 				}
 				else {
@@ -1848,7 +1848,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check if it is a label. A label may have a special formatting:
 		// Example: LBL_TEXT 10, b
-		// = Addresse LBL_TEXT, 10 bytes
+		// = Address LBL_TEXT, 10 bytes
 		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 		if (match) {
 			let labelString=match[1];
@@ -1899,7 +1899,7 @@ export class DebugSessionClass extends DebugSession {
 							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
 							variablesReference: 0,
 							//type: "data",
-							//amedVariables: 0
+							//namedVariables: 0
 						}
 					}
 					else {
@@ -1967,7 +1967,7 @@ the value correspondends to a label.
 "-LOGPOINT enable|disable|status [group]":
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
-"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianess which is little endian by default.
+"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianness which is little endian by default.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
@@ -2115,8 +2115,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		let hex=true;
 		const typeString=tokens[2];
 		if (typeString) {
-			const typeStringlower=typeString.toLowerCase();
-			if (typeStringlower!="hex"&&typeStringlower!="dec"&&typeStringlower!="word")
+			const typeStringLower=typeString.toLowerCase();
+			if (typeStringLower!="hex"&&typeStringLower!="dec"&&typeStringLower!="word")
 				throw Error("'hex', 'dec' or 'word' expected but got '"+typeString+"'.");
 			let k=2;
 			// Check for hex or dec
@@ -2133,16 +2133,16 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 				if (unitSizeStringLower!="word")
 					throw Error("'word' expected but got '"+unitSizeString+"'.");
 				unitSize=2;
-				// Endianess
-				const endianess=tokens[k+1];
-				if (endianess) {
-					const endianessLower=endianess.toLowerCase();
-					if (endianessLower=="big") {
+				// Endianness
+				const endianness=tokens[k+1];
+				if (endianness) {
+					const endiannessLower=endianness.toLowerCase();
+					if (endiannessLower=="big") {
 						// Big endian
 						bigEndian=true;
 					}
-					else if (endianessLower!="little") {
-						throw Error("'little' or 'big' expected but got '"+endianess+"'.");
+					else if (endiannessLower!="little") {
+						throw Error("'little' or 'big' expected but got '"+endianness+"'.");
 					}
 				}
 			}
@@ -2371,7 +2371,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			const abps=Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
 				result += Utility.getLongAddressString(abp.address);
-				// TODO: getLabelsForNumber is wrong: Should call getLabelsFornumberLong or similar
+				// TODO: getLabelsForNumber is wrong: Should call getLabelsForNumberLong or similar
 				const labels=Labels.getLabelsForNumber64k(abp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');
@@ -2416,7 +2416,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			const wps=Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
 				result += Utility.getLongAddressString(wp.address);
-				// TODO: getLabelsForNumber is wrong: Should call getLabelsFornumberLong or similar
+				// TODO: getLabelsForNumber is wrong: Should call getLabelsForNumberLong or similar
 				const labels=Labels.getLabelsForNumber64k(wp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');

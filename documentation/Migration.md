@@ -68,7 +68,7 @@ New:
 
 This is one of the main changes: DeZog doesn't use the list file of sjasmplus anymore.
 Instead it uses the SLD format.
-sjasmplus includes special enhancements for DeZog. With the SLD format it is possible to use the ['long addresses'](Usage.md#long-addresses-explanation) feature which allows to debug musch bigger projects that would otherwise not fit in 64k.
+sjasmplus includes special enhancements for DeZog. With the SLD format it is possible to use the ['long addresses'](Usage.md#long-addresses-explanation) feature which allows to debug much bigger projects that would otherwise not fit in 64k.
 
 ~~~
 	"sjasmplus": [
@@ -85,7 +85,25 @@ sjasmplus --sld=your-sld-file.sld --fullpath your-source.asm
 ~~~
 
 Of course, you need to exchange "your-..." with your file names.
-You can still add other options like the cration of a list or labels file but these files are no longer used by DeZog.
+You can still add other options like the creation of a list or labels file but these files are no longer used by DeZog.
+
+
+Inside one of your asm files you need to set a few more options:
+- Use ```DEVICE something``` to set a device. Otherwise the SLD file will be empty. You can e.g. use ```ZXSPECTRUM48```, ```ZXSPECTRUM128```, ```ZXSPECTRUMNEXT``` or for a non-spectrum pure Z80 system without any banking: **```NOSLOTDEVICE```**
+- Add a line ```SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION``` to use DeZog's WPMEM, LOGPOINT and ASSERTION features. If ```SLDOPT ...``` is omitted sjasmplus will remove the info from the SLD file.
+
+E.g. you could start your main.asm with:
+~~~asm
+    DEVICE ZXSPECTRUMNEXT
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+~~~
+
+or
+~~~asm
+    DEVICE NOSLOTDEVICE
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+~~~
+
 
 
 ## Z80 unit tests

@@ -82,7 +82,7 @@ list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
-- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. allsource codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
+- codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
 - commandsAfterLaunch: Here you can enter commands that are executed right after the launch and connection of the debugger. These commands are the same as you can enter in the debug console. E.g. you can use "-sprites" to show all sprites in case of a ZX Next program. See [Debug Console](#debug-console).
 - disassemblerArgs: Arguments that can be passed to the internal disassembler.
     - numberOfLines: The number of lines displayed in the disassembly.
@@ -198,6 +198,12 @@ E.g. you could start your main.asm with:
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
 ~~~
 
+or
+~~~asm
+    DEVICE NOSLOTDEVICE
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+~~~
+
 Then for the launch.json file you simply have to set the path to the SLD file. E.g.:
 ~~~json
 "sjasmplus": [{
@@ -220,7 +226,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
 "z80asm": [{
     "path": "z80-sample-program.list",
     "srcDirs": [""],
-    "excludefiles": [ "some_folder/*" ]
+    "excludeFiles": [ "some_folder/*" ]
     }]
 ~~~
 
@@ -240,7 +246,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
     "srcDirs": [""],
     "mapFile": "currah_uspeech_tests.map",
     "mainFile": "currah_uspeech_tests.asm",
-    "excludefiles": [ "some_folder/*" ]
+    "excludeFiles": [ "some_folder/*" ]
     }]
 ~~~
 
@@ -418,7 +424,7 @@ It allows to test programs that does not make use of special HW features like th
 - The ZX128 memory banks
 - Loading of (48 and 128) .sna and .nex files
 
-It specificly does not support:
+It specifically does not support:
 - ZX Next HW (other than memory bank switching)
 - Loading of .tap/.tzx files
 - Audio
@@ -552,7 +558,7 @@ You need to enable ZEsarUX in your Z80 program's launch.json configuration, e.g.
 
 The "zrcp" configuration allows the following additional parameters:
 - "port": The ZEsarUX port. If not changed in ZEsarUX this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator runnign on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
+- "hostname": The host's name. I.e. the IP of the machine that is running ZEsarUX. If you are not doing any remote debugging this is typically "localhost". Note: Real remote debugging (emulator running on another PC) does work, but requires a mechanism to copy the .sna/nex file to the remote computer.
 You don't have to enter a hostname, the default is "localhost".
 - skipInterrupt: Is passed to ZEsarUX at the start of the debug session. If true (default is false) ZEsarUX does not break in interrupts (on manual break).
 - "loadDelay": Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session when running under Windows. If that is true for you as well you can experiment with the "loadDelay" option which adds an additional delay at startup. This mitigates the problem.
@@ -743,7 +749,7 @@ Setup a debug session:
 1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
-3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferrable Joy 2).
+3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
 4. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
 ./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
 Notes:
@@ -1033,7 +1039,7 @@ Display of changed registers is enabled by default. You can turn it off by setti
 }
 ~~~
 
-Here is an animated gif to illustrate the history spot behavior while stepping (with register display turend off):
+Here is an animated gif to illustrate the history spot behavior while stepping (with register display turned off):
 ![](images/spot_count_animated.gif)
 
 
@@ -1262,7 +1268,7 @@ __Breakpoints in interrupts:__
 
 You can also set breakpoints in interrupts.
 
-But when you also set the launch.json option "skipInterrupt" to true you will feel that the behaviour is somewhat strange for ZEsarUX:
+But when you also set the launch.json option "skipInterrupt" to true you will feel that the behavior is somewhat strange for ZEsarUX:
 If the breakpoint is hit the program will stop, but because of "skipInterrupt" it will stop after the interrupt finished.
 
 Although the behavior is correct it looks like the program is randomly stopping.

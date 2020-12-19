@@ -10,7 +10,7 @@ export class WhatsNewContentProvider implements ContentProvider {
 `<b>DeZog<b> is an Integrated Development Environment for the Z80 processor. It supports various assemblers and remote debugging. Especially for, but not limited to, ZX Spectrum devices.
 <p>
 The step from 1.5 to 2.0 was huge. A lot of things changed under the hood to support 'long addresses'.
-I.e. DeZog is now aware of banking information. It can distinguish sources that share same addresses but reside on different banks. The same for breakpoints. E.g. a breakpoint set to address 0xA000 and bank 7 will not break if address 0xA000 has been hit in bank 8.
+I.e. DeZog is now aware of banking information. It can distinguish sources that share same addresses but reside on different banks. The same for breakpoints. E.g. a breakpoint set to address 0xA000 and bank 7 will not break if address 0xA000 has been executed in bank 8.
 <p>
 To use the feature you need the newest version of sjasmplus and let sjasmplus create a SLD file instead of a list file.
 <p>

@@ -441,7 +441,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	/**
 	 * Returns the previous SP value. Check all direct changes (e.g. inc sp) to SP.
 	 * Does not check CALL/RET/RST/PUSH and POP.
-	 * For LD SP,(nnnn) undefinedis returned otherwise a real number.
+	 * For LD SP,(nnnn) undefined is returned otherwise a real number.
 	 * @param opcodes E.g. 0xe52a785c
 	 * @param sp The SP value.
 	 * @param line One line of history.
@@ -616,7 +616,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 				callAddr=firstByte&0b00111000;
 			}
 			// If no calledAddr then we don't know.
-			// Possibly it is an interrupt, but it could be also an errorneous situation, e.g. too many RETs
+			// Possibly it is an interrupt, but it could be also an erroneous situation, e.g. too many RETs
 			let labelCallAddr;
 			if (callAddr==undefined) {
 				// Unknown
@@ -778,7 +778,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 		let frame=this.reverseDbgStack.last();
 		if (!frame) {
 			// Create new stack entry if none exists
-			// (could happen in errorneous situations if there are more RETs then CALLs)
+			// (could happen in erroneous situations if there are more RETs then CALLs)
 			frame=new CallStackFrame(0, sp, Remote.getMainName(sp));
 			this.reverseDbgStack.push(frame);
 		}
