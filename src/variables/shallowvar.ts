@@ -457,7 +457,6 @@ export class SubStructVar extends ShallowVar {
 	public constructor(relIndex: number, count: number, size: number, struct: string, props: Array<string>, parentStruct: StructVar, list: RefList<ShallowVar>) {
 		super();
 		// Save all arguments
-		// TODO: Remove addr (should be known only in parent)
 		this.relIndex = relIndex;
 		this.count = count;
 		this.size = size;
