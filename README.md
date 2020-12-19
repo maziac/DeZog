@@ -101,10 +101,12 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 	- create a .sna, .nex or object file containing the binary
 
 
-<!--
 ## Roadmap
 
 Next to implement:
+- Improved watches window, see https://github.com/maziac/DeZog/issues/37 .
+- Support for CSpect 'rewind' feature.
+<!--
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
 - ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
 -->
