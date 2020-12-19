@@ -11,6 +11,41 @@ If you like DeZog please consider supporting it.
 </a>
 
 
+## General Usage
+
+A typical debug session with DeZog looks as follows:
+1. Create a binary of your assembler program together with a list or SLD file for DeZog
+2. Start DeZog (therefore you need a working launch.json config file)
+3. Debug, i.e. set breakpoints, run, step through your code, evaluate registers and memory
+4. Stop DeZog
+5. Loop to 1
+
+When using the internal Z80 simulator "zsim" that's basically it.
+
+When using an external [remote](#what-is-a-remote), i.e. an emulator or the ZX Next, you need to start that as well.
+
+I have noticed that this part, the interaction between DeZog and the emulator, often confuses people.
+So I would like to sketch out the intended/main usage scenario.
+
+Many people try to start the emulator while starting DeZog and close it when stopping the DeZog debug session.
+This is **not required**.
+If you work with an emulator you would start the emulator once and then let it running.
+When you start a debug session DeZog will connect to it, **transfer the program to the emulator** and start the program.
+When you stop the debug session DeZog will disconnect from the emulator.
+(Disconnecting from the emulator may have the effect of keeping the program running in the emulator. This is simply because the emulator now continues execution).
+
+I.e. your workflow is as follows:
+1. Start vscode
+2. Start the emulator (or even several emulators/remotes)
+3. Create a binary of your assembler program
+4. Start DeZog
+5. Debug memory
+6. Stop DeZog
+7. Loop to 3
+
+You normally need to re-start the emulator only if it behaves weird, does not connect to DeZog anymore or crashes.
+
+
 ## Sample Program
 
 With DeZog a simple assembler program is provided to demonstrate the features of DeZog.
@@ -41,13 +76,7 @@ A typical configuration looks like this:
             "sjasmplus": [
                 {
                     "path": "z80-sample-program.list",
-                },
-                /*
-                {
-                    "path": "rom48.list",
-                    "srcDirs": [], // Use list file directly
-                },
-                */
+                }
             ],
             "startAutomatically": false,
             "history": {
