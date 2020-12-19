@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar /*, StructVar*/} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -1905,6 +1905,10 @@ export class DebugSessionClass extends DebugSession {
 					else {
 						// big value
 						// Create a label variable
+						const labelVar = new LabelVar(labelValue, elemCount, byteWord, this.listVariables);
+
+
+						/* TODO: Implement:
 						let labelVar;
 						// Get sub properties
 						const props = Labels.getSubLabels(byteWord);
@@ -1916,6 +1920,8 @@ export class DebugSessionClass extends DebugSession {
 							const size = Labels.getNumberFromString64k(byteWord);
 							labelVar = new StructVar(labelValue, elemCount, size, byteWord, props, this.listVariables);
 						}
+						*/
+
 						// Add to list
 						const ref = this.listVariables.addObject(labelVar);
 						// Response
