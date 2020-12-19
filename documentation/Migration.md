@@ -66,14 +66,26 @@ New:
 
 ### sjasmplus
 
+This is one of the main changes: DeZog doesn't use the list file of sjasmplus anymore.
+Instead it uses the SLD format.
+sjasmplus includes special enhancements for DeZog. With the SLD format it is possible to use the ['long addresses'](Usage.md#long-addresses-explanation) feature which allows to debug musch bigger projects that would otherwise not fit in 64k.
+
 ~~~
 	"sjasmplus": [
 		{
-			...
+			"path": "your-sld-file.sld"
 		}
 	],
 ~~~
 
+To create such a file you need at least sjasmplus version 1.18.0.
+The commandline is:
+~~~
+sjasmplus --sld=your-sld-file.sld --fullpath your-source.asm
+~~~
+
+Of course, you need to exchange "your-..." with your file names.
+You can still add other options like the cration of a list or labels file but these files are no longer used by DeZog.
 
 
 ## Z80 unit tests
@@ -114,5 +126,6 @@ Note the 'nop'. Although it is not essential it will make your life easier to fi
 
 The unit tests will automatically enable ASSERTION (and WPMEM and LOGPOINT).
 
+Together with this change DeZog supports ASSERTIONs now also for ZEsarUX.
 
 

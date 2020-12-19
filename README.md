@@ -30,6 +30,10 @@ DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-
 Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
 
 
+**Migration from DeZog 1.5**
+If you installed DeZog 1.5 before [here](documentation/Migration.md) are a few tips to migrate to 2.0.
+
+
 **Important note for Windows users:**
 Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session.
 If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
@@ -108,7 +112,7 @@ Next to implement:
 - Support for CSpect 'rewind' feature.
 <!--
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
-- ZesarusExt: Make ZesaruxExt publicly available. ZesarusExt is a Zesarux fork with small enhancements like faster breakpoints.
+- ZesarusExt: Make ZesaruxExt publicly available. ZesaruxExt is a Zesarux fork with small enhancements like faster breakpoints.
 -->
 
 

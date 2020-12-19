@@ -178,7 +178,7 @@ Note: sjasmplus can generate a list file but since DeZog version 2.0.0 DeZog doe
 
 SLD stands for "Source Level Debugging" and is an format with similar information as the list file.
 List files are meant to be read by humans whereas the SLD file format is optimized for reading by a machine, i.e. DeZog, which makes parsing much easier.
-Apart from that the list file is lacking information about 'long addresses'. I.e. addresses that not only include the address it self (0-0xFFFF) but also information about the paging/banking.
+Apart from that the list file is lacking information about ['long addresses'](#long-addresses-explanation). I.e. addresses that not only include the address it self (0-0xFFFF) but also information about the paging/banking.
 With this information DeZog is able to correctly associate files that are assembled for the same address but for different memory banks. It is also possible to place breakpoints correctly as not only the 64k address of a breakpoint is checked but also it's bank.
 
 In order to let sjasmplus create an SLD file you need to set the following option on the command line:
@@ -1517,6 +1517,19 @@ Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks
 
 The PC can be changed via the menu. Click in the source line. Do a right-click
 and choose "Move Program Counter to Cursor".
+
+
+### 'Long Addresses' Explanation
+
+In DeZog the term 'long address' is used to distinguish an address with banking information from a 'normal' 64k address.
+
+A Z80 CPU can address only 64k of address space, i.e. addresses 0x0000 to 0xFFFF.
+For big programs this is too small.
+Therefore banking/paging mechanisms have been invented which swap the memory of certain address ranges (e.g. 0xC000-0xDFFF) and exchange it with memory contents of another bank.
+E.g. the ZX 128K has 8 different memory banks. The ZX Next has more than 100.
+The size of a bank may also differ. E.g. a ZX 128K has 8 banks a 16K byte. The ZX Next (in assembler) uses 8K byte banks (often also referred to as a page).
+
+A 'long address' refers to an address (0x0000-0xFFFF) plus its bank information. I.e. even if an address points to an address in the Z80 64k address space, DeZog can determine the correct memory by additionally evaluating what memory is currently paged in.
 
 
 ## Unittests
