@@ -47,7 +47,29 @@ export class HelpView extends BaseView {
 		converter.setOption('ghCompatibleHeaderId', true);
 		converter.setOption('tables', true);
 		//converter.setOption('tablesHeaderId', 'true');
-		const html = converter.makeHtml(mdText);
+		const html2 = converter.makeHtml(mdText);
+
+		// Create headings number (CSS is not used because the numbers should occur also in the TOC)
+		const tocCounter = [0, 0, 0];
+		const startLevel = 2;
+		const html = html2.replace(/<h(\d)(.*?)>/g, (match, p1, p2) => {
+			const level = parseInt(p1) - startLevel;
+			// Check for unaffected levels
+			if (level < 0 || level >= tocCounter.length)
+				return match;
+			// Increase counter
+			tocCounter[level]++;
+			// Rest counters below
+			for (let i = level + 1; i < tocCounter.length; i++)
+				tocCounter[i] = 0;
+			// Create aggregated count
+			let countString = '';
+			for (let i = 0; i <= level; i++)
+				countString += tocCounter[i].toString() + '.';
+			return match + ' ' + countString + ' ';
+		});
+
+		// Add the html styles etc.
 		const mainHtml=`
 <!DOCTYPE HTML>
 <html>
