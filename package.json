@@ -345,7 +345,7 @@
 								"cpuFrequency": {
 									"type": "number",
 									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
-									"default": 3500000.0
+									"default": 3500000
 								},
 								"customCode": {
 									"debug": {
