@@ -11,6 +11,8 @@ If you like DeZog please consider supporting it.
 </a>
 
 
+If you would like to contribute, e.g. by adding a new assembler or adding other remotes/emulators, see "Contribution" [here](https://github.com/maziac/DeZog/blob/master/README.md#contribution).
+
 ## General Usage
 
 A typical debug session with DeZog looks as follows:

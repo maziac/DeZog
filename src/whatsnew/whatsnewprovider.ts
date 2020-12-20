@@ -18,7 +18,7 @@ The other bigger feature that has been added is the "custom code" that you can p
 <p>
 And, of course, a lot of smaller changes and bug fixes.
 <p>
-There is a migration document that should serve as help to change your projects for usage with the new DeZog. Please find it <a href="https://github.com/maziac/DeZog/blob/develop/documentation/Migration.md">here</a>.
+There is a migration document that should serve as help to change your projects for usage with the new DeZog. Please find it <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">here</a>.
 
 `};
 	}
@@ -33,7 +33,12 @@ There is a migration document that should serve as help to change your projects 
 			},
 			{
 				kind: ChangeLogKind.NEW, detail: {
-					message: `<br><b>"Custom Code" for implementation of peripherals in zsim, see <a href="https://github.com/maziac/DeZog/blob/develop/documentation/zsimPeripherals.md">zsimPeripherals.md</a>.</b>`
+					message: `<br><b>"Custom Code" for implementation of peripherals in zsim, see <a href="https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md">zsimPeripherals.md</a>.</b>`
+				}
+			},
+			{
+				kind: ChangeLogKind.NEW, detail: {
+					message: `<br><b>"Help included. Enter "dezog: Show the DeZog help page" (or short "dezog help") in the command palette. It shows the Usage.md page with table of contents for easy navigation inside vscode.`
 				}
 			},
 			{
@@ -43,7 +48,7 @@ There is a migration document that should serve as help to change your projects 
 			},
 			{
 				kind: ChangeLogKind.CHANGED, detail: {
-					message: `<br>The 'launch.json' parameters have been changed. Please see the new description in the <a href="https://github.com/maziac/DeZog/blob/develop/documentation/Usage.md">Usage.md</a> document.`
+					message: `<br>The 'launch.json' parameters have been changed. Please see the new description in the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md">Usage.md</a> document.`
 				},
 			},
 			{
