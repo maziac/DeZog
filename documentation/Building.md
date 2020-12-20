@@ -11,7 +11,7 @@ cd DeZog
 
 ## Build
 
-Open folder 'DeZog in vscode (>= 1.50).
+Open folder 'DeZog' in vscode (>= 1.50).
 Open a terminal and install all required packages.
 ~~~bash
 npm i

@@ -12,13 +12,13 @@ export class WhatsNewContentProvider implements ContentProvider {
 The step from 1.5 to 2.0 was huge. A lot of things changed under the hood to support 'long addresses'.
 I.e. DeZog is now aware of banking information. It can distinguish sources that share same addresses but reside on different banks. The same for breakpoints. E.g. a breakpoint set to address 0xA000 and bank 7 will not break if address 0xA000 has been executed in bank 8.
 <p>
-To use the feature you need the newest version of sjasmplus and let sjasmplus create a SLD file instead of a list file.
+To use the feature you need the newest version of <u>sjasmplus (>=1.18.0)</u> and let sjasmplus create a SLD file instead of a list file. I.e. <u>you need to change your build command and the launch.json</u>, please see the migration document.
 <p>
 The other bigger feature that has been added is the "custom code" that you can provide to the internal simulator. With "custom code" you can implement your own peripherals inside zsim. I.e. you can provide code that acts on writing to or reading from a port or that generates interrupts.
 <p>
 And, of course, a lot of smaller changes and bug fixes.
 <p>
-There is a migration document that should serve as help to change your projects for usage with the new DeZog. Please find it <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">here</a>.
+There is a <u>migration document</u> that should serve as help to change your projects for usage with the new DeZog. Please find it <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">here</a>.
 
 `};
 	}
