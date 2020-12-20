@@ -51,7 +51,7 @@ vsce package
 	- ```git push```
 6. Release on github
 	- Upload release ("Draft a new release"), use 'vsce package' to create it.
-	- Use the version number from package.json, e.g. "v1.5.0", as tag
+	- Use the version number from package.json, e.g. "v2.0.0", as tag
 	- Add the changes from the CHANGELOG.md as description.
 7. Pull (```git pull```) to be clean
 8. To publish in Microsoft store run

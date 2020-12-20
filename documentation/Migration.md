@@ -1,7 +1,21 @@
-
 # Migrate your projects from DeZog 1.5 to 2.0
 
 This guide will provide some info what to do to update your projects for use with DeZog 2.0.
+
+
+## Required updates
+
+If you use any of these you need to update:
+
+- sjasmplus: Update to >= 1.18.0.
+- CSpect:
+    - Update to version >= 2.13.0
+    - Update the [DeZog CSpect Plugin](https://github.com/maziac/DeZogPlugin/releases) to >= 2.0.0
+- ZEsarUX: Update to >= 9.1
+- ZXNext:
+    - Update the dezogif (i.e. [enNextMf.rom](https://github.com/maziac/dezogif/releases) to >= 2.0.0
+    - Update [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface/releases) to >= 1.1.1
+
 
 ## launch.json
 
@@ -61,13 +75,12 @@ New:
 
 ### zrcp (ZEsarUX)
 
-"skipInterrupts" is not a global configuration anymore. It belongs to the "zrcp" parameters now.
-
+"skipInterrupts" and "resetOnLaunch" are no global parameters anymore. They have been moved to the "zrcp" parameters.
 
 ### sjasmplus
 
 This is one of the main changes: DeZog doesn't use the list file of sjasmplus anymore.
-Instead it uses the SLD format.
+Instead it uses the SLD file.
 sjasmplus includes special enhancements for DeZog. With the SLD format it is possible to use the ['long addresses'](Usage.md#long-addresses-explanation) feature which allows to debug much bigger projects that would otherwise not fit in 64k.
 
 ~~~
