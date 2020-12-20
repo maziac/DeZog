@@ -136,7 +136,7 @@ In your launch.json:
 Note:
 - topOfStack: instead of a label you can also use a fixed number.
 - load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
-Note: you can also omit this. In that case the DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
+Note: you can also omit this. In that case DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
 ~~~json
 "loadObjs": [
@@ -295,7 +295,7 @@ But this makes sense only if the format is very similar.
 
 It is a better choice either to switch the assembler (e.g. I recommend sjasmplus) or write a new parser the assembler and add it to Dezog.
 
-The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
+The process of writing a parser is described in detail here: [AddingNewAssemblers.md](https://github.com/maziac/DeZog/blob/master/design/AddingNewAssemblers.md)
 
 You can create a pull request so I can add it to the official release.
 
@@ -411,6 +411,7 @@ The following table gives an overview.
 | Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
 | Load .sna/.nex/.obj file through DeZog | yes | yes     | yes        | yes      | yes      |
 | Load .tap file through DeZog | no            | yes     | yes        | no       | no       |
+| Run Z80 Unit Tests      | yes                | yes     | yes        | no       | no       |
 | Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
 
 Notes:
@@ -546,7 +547,7 @@ Here is the explanations of all the options:
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 - "cpuFrequency": The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here. It does not affect in any way the simulation speed.
-- "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](zsimPeripherals.md) for more details.
+- "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
 
 
 ### ZEsarUX
@@ -620,7 +621,7 @@ I have collected a few that I found useful:
 ```
 
 ```bash
-## Start a "normal" ZX Spectrum (48k) and listen for connection from the DeZog.
+## Start a "normal" ZX Spectrum (48k) and listen for connection from DeZog.
 ./zesarux --enable-remoteprotocol &
 ```
 
@@ -672,7 +673,7 @@ For this setup you need 2 additional programs: the CSpect emulator and the DeZog
 
 
 The remote type is "cspect".
-CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](design/DeZogProtocol.md)).
+CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md)).
 CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
 
 You need to install it first. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
@@ -1571,8 +1572,8 @@ A 'long address' refers to an address (0x0000-0xFFFF) plus its bank information.
 
 ## Unittests
 
-You can use the DeZog to execute unit tests.
-Please see [here](UnitTests.md).
+You can use DeZog to execute unit tests.
+Please see [here](https://github.com/maziac/DeZog/blob/master/documentation/UnitTests.md).
 
 
 ## Known Issues
@@ -1580,7 +1581,7 @@ Please see [here](UnitTests.md).
 - **General**
   - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 - **ZEsarUX** (found with v8.1)
-    - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](documentation/Usage.md#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
+    - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
     - Watchpoint (**WPMEM** aka memory breakpoints) and reverse debugging: There is a subtle problem with the memory breakpoints in ZEsarUX. The cpu-history command (used when reverse debugging) does access the memory the same way as the Z80 cpu emulation does. Thus a read might fire a memory breakpoint in the same way. This results in breaks of the program execution when you would not expect it. The memory read is 4 byte at PC (program counter) and 2 bytes at SP. Often you don't even notice because you don't place a watchpoint (WPMEM) at those places but in case you guard your **stack** with WPMEM you need to be aware of it: You shouldn't guard the top of the stack directly but at least grant 2 extra bytes at the top of the stack that are unguarded. See the [z80-sample-program](https://github.com/maziac/z80-sample-program) for placing the WPMEM correctly.
 - **CSpect** (found with v2.13.0)
