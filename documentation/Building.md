@@ -59,5 +59,6 @@ vsce package
 	sudo npm install -g vsce # update vsce
 	vsce publish # or vsce publish -p <token>
 	~~~
+9. Add published releases (vsix file) also to 'releases' directory and commit/push them.
 
 
