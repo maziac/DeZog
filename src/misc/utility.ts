@@ -43,10 +43,7 @@ export class Utility {
 	 */
 	public static getHexString(value: number|undefined, size: number): string {
 		if (value!=undefined) {
-			var s=value.toString(16).toUpperCase();
-			const r=size-s.length;
-			if (r>0)
-				s='0'.repeat(r)+s;
+			const s=value.toString(16).toUpperCase().padStart(size,'0');
 			return s;
 		}
 		// Undefined

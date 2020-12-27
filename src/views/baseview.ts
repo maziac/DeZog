@@ -79,8 +79,6 @@ export class BaseView {
 	// DYNAMIC:
 
 	/// A panel (containing the webview).
-	/// This is empty if the webview is used from the side bar but contains
-	/// a vscode.WebviewPanel if an (editor) window is used.
 	protected vscodePanel: vscode.WebviewPanel;
 
 
