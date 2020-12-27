@@ -93,8 +93,10 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - [memory viewer](documentation/Usage.md#memory-dumps) / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - [change of program counter](documentation/Usage.md#change-the-program-counter) through menu
-- support for assembler [unit tests](documentation/UnitTests.md)
 - Display of ZXNext [sprites and sprite patterns](documentation/Usage.md#sprites--patterns)
+- supports banking (['long addresses'](documentation/Usage.md#long-addresses-explanation))
+- support for Z80 [unit tests](documentation/UnitTests.md)
+- [custom extensions](documentation/zsimPeripherals.md) to the internal simulator to simulate peripherals.
 
 
 ## Constraints
@@ -141,15 +143,17 @@ The table [here](documentation/Usage.md#remote-capabilities) shows a comparison 
 In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
 
 There are 3 other extensions that are not required to work with DeZog but may help:
-- [asm-code-lens](https://github.com/maziac/asm-code-lens):
+- [ASM Code Lens](https://github.com/maziac/asm-code-lens):
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
-- [z80-unit-tests](https://github.com/maziac/z80-unit-tests):
-	- an extension to start/debug unit tests from a graphical UI
-- [z80-instruction-set](https://github.com/maziac/z80-instruction-set):
+- [Z80 Unit-Tests](https://github.com/maziac/z80-unit-tests):
+	- an extension to start/debug Z80 unit tests from a graphical UI
+- [Z80 Instruction Set](https://github.com/maziac/z80-instruction-set):
 	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
+- [Hex Hover Converter](https://github.com/maziac/hex-hover-converter):
+	- converts numbers into their decimal, hexadecimal and binary format on hovering
 
-All can be installed from the market place.
+All can be installed directly inside vscode from the market place.
 
 
 ## Usage
