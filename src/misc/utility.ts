@@ -817,6 +817,7 @@ export class Utility {
 	 * @param srcDirs E.g. [ "src", "includes" ]
 	 */
 	public static getRelSourceFilePath(srcPath: string, srcDirs: Array<string>) {
+		srcPath = UnifiedPath.getUnifiedPath(srcPath);
 		if (UnifiedPath.isAbsolute(srcPath))
 			return Utility.getRelFilePath(srcPath);
 
