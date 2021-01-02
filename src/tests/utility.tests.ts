@@ -495,25 +495,22 @@ suite('Utility', () => {
 
 
 		test('Label', async () => {
-			/*
-			const cfg: any={
-				remoteType: 'zrcp'
+			const config = {
+				z80asm: [{
+					path: './src/tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
 			};
-			Settings.Init(cfg, '');
-			*/
-			const config={sjasmplus: [{path: './src/tests/data/labels/sjasm1.list', srcDirs: [""]}]};
 			Labels.init(250);
 			Labels.readListFiles(config);
 
 			// Prepare memory
-			Remote.writeMemoryDump(0x80cb, new Uint8Array([0xFE]));
+			Remote.writeMemoryDump(0x7015, new Uint8Array([0xFE]));
 
-			let log='${b@(screen_top):signed}';
+			let log ='${b@(check_score_for_new_ship):signed}';
 			let evalString=await Utility.evalLogString(log);
 			assert.equal('-2', evalString);
 		});
-
-
 
 	});
 
