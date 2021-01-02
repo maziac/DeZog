@@ -88,26 +88,17 @@ DeZog knows with which remote it communicates and chooses the right subset.
 
 ## History
 
-### 2.0.0 (planned for DeZog 2.0.0)
+### 2.0.0
 
 Changed:
 - CMD_INIT: Added memory model.
 - CMD_GET_REGISTERS: Added slot/bank information.
 - NTF_PAUSE: Added long address.
 - CMD_ADD_BREAKPOINT: Added long address.
-- CMD_REMOVE_BREAKPOINT: ???
 - CMD_SET_BREAKPOINTS: Changed to send additionally the bank info for all breakpoints.
 - CMD_RESTORE_MEM: Changed to send additionally the bank info for all restored locations.
 Removed:
 - CMD_GET_SLOTS: Now done with CMD_GET_REGISTERS.
-
-Search for "| *"
-
-Open:
-- CMD_ADD_BREAKPOINT: Die returnte BP ID könnte ein Problem sein: nur 64k gross, 2 BPs könnten gleichen Wert returnen.
-- Will ich für Watchpoints long addresses? Wird nur in zsim verwendet, schauen wie es da gemacht wird.
-
-
 
 ### 1.6.0
 - Added CMD_CLOSE for closing a debug session.
