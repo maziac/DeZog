@@ -48,24 +48,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 	/**
-	 * Tests if the given file is an SLD file.
-	 * Is used only to distinguish between parsing of a list file or parsing of an SLD file.
-	 * @param path Absolute path.
-	 */
-	public static IsSldFile(path: string) {
-		/*
-		const content=readFileSync(path);
-		// Check only if it starts with a '|' for an sld file.
-		const firstChar=content[0];
-		const sld=(firstChar=='|'.charCodeAt(0));
-		return sld;
-		*/
-		// TODO: Remove sjasmplus list file support completely.
-		return true;
-	}
-
-
-	/**
 	 * Reads the given sld file.
 	 * As the SLD file is easy to read only one pass is required.
 	 */

@@ -2,7 +2,6 @@ import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/Paging/memorymodel';
 import {Remote} from '../remotes/remotefactory';
 import {Z80Registers} from '../remotes/z80registers';
-import {SjasmplusLabelParser} from './sjasmpluslabelparser';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
@@ -183,14 +182,8 @@ export class LabelsClass {
 			// For sjasmplus it is checked if a list file should be parsed or an sld file
 			for (const config of mainConfig.sjasmplus) {
 				let parser;
-				if (SjasmplusSldLabelParser.IsSldFile(config.path)) {
-					// Parse SLD file and list file
-					parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
-				}
-				else {
-					// Parse just list file
-					parser = new SjasmplusLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
-				}
+				// Parse SLD file and list file
+				parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				parser.loadAsmListFile(config);
 				this.bankSize = parser.bankSize;
 				// Warnings
