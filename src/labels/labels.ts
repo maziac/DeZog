@@ -293,16 +293,15 @@ export class LabelsClass {
 	/**
 	 * Returns all labels with the exact same address to the given address.
 	 * 64k addresses.
-	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum' or > 0xFFFF.
+	 * @param number The address value to find. Ignores numbers/labels <= e.g. 'smallValuesMaximum'.
+	 * Bits >= bit 16 are ignored.
 	 * @param regsAsWell If true it also returns registers which match the number. If false (default) then no registers are returned.
 	 * @returns An array of strings with (registers and) labels. Might return an empty array.
 	 */
 	public getLabelsForNumber64k(number: number, regsAsWell = false): Array<string> {
-		/*
-		if (number<=this.smallValuesMaximum||number>0xFFFF) {
-			return [];	// E.g. ignore numbers/labels < e.g. 513 or > 65535
-		}
-		*/
+		// Make sure it is not a long address.
+		number &= 0xFFFF;
+
 		if (number <= this.smallValuesMaximum) {
 			return [];	// E.g. ignore numbers/labels < e.g. 513
 		}

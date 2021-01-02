@@ -719,9 +719,8 @@ export class DebugSessionClass extends DebugSession {
 			const verified=(foundCbp!=undefined)&&(foundCbp.address>=0);
 			const bp=new Breakpoint(verified, lineNr, 0, source);
 			if (foundCbp) {
-				// TODO: check if foundCbp.address is really a 64k address.
 				// Add address to source name.
-				const addrString=Utility.getHexString(foundCbp.address, 4)+'h';
+				const addrString=Utility.getHexString(foundCbp.address&0xFFFF, 4)+'h';
 				// Add hover text
 				let txt=addrString;
 				const labels=Labels.getLabelsForNumber64k(foundCbp.address);
