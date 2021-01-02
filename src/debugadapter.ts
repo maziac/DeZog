@@ -718,9 +718,9 @@ export class DebugSessionClass extends DebugSession {
 			// Create vscode breakpoint with verification
 			const verified=(foundCbp!=undefined)&&(foundCbp.address>=0);
 			const bp=new Breakpoint(verified, lineNr, 0, source);
-			if (foundCbp) {
+			if (foundCbp && foundCbp.address>=0) {
 				// Add address to source name.
-				const addrString=Utility.getHexString(foundCbp.address&0xFFFF, 4)+'h';
+				const addrString = Utility.getLongAddressString(foundCbp.address);
 				// Add hover text
 				let txt=addrString;
 				const labels=Labels.getLabelsForNumber64k(foundCbp.address);
@@ -2364,8 +2364,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			const abps=Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
 				result += Utility.getLongAddressString(abp.address);
-				// TODO: getLabelsForNumber is wrong: Should call getLabelsForNumberLong or similar
-				const labels=Labels.getLabelsForNumber64k(abp.address);
+				const labels = Labels.getLabelsForLongAddress(abp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');
 					result+=' ('+labelsString+')';
@@ -2409,8 +2408,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			const wps=Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
 				result += Utility.getLongAddressString(wp.address);
-				// TODO: getLabelsForNumber is wrong: Should call getLabelsForNumberLong or similar
-				const labels=Labels.getLabelsForNumber64k(wp.address);
+				const labels=Labels.getLabelsForLongAddress(wp.address);
 				if (labels.length>0) {
 					const labelsString=labels.join(', ');
 					result+=' ('+labelsString+')';
