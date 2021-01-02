@@ -6,13 +6,6 @@ import {AsmConfigBase} from '../settings';
 import * as minimatch from 'minimatch';
 
 
-/// Different label types.
-export enum LabelType {
-	NORMAL,	// The label might be preceded by a module name
-	LOCAL,	// It's a local label. The name is concatenated with the lastLabel.
-	GLOBAL	// The name is taken as is. Not concatenated with anything.
-};
-
 
 /**
  * This class is the base class for the assembler list file parsers.
@@ -457,35 +450,12 @@ export class LabelParserBase {
 	 * to be a long address.
 	 * I.e. EQU values > 64k are not allowed here.
 	 * @param label The label to add.
-	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
 	 */
-	// TODO: Deprecated: The labelType is only required for sjasmplus list file, which is deprecated. Remove the parameter.
-	protected addLabelForNumber(value: number, label: string, labelType = LabelType.GLOBAL) {
-		switch (labelType) {
-			case LabelType.NORMAL:
-				// Remember last label (for local labels)
-				this.lastLabel = label;
-				this.currentFileEntry.lastLabel = this.lastLabel;
-				// Add prefix
-				if (this.modulePrefix)
-					label = this.modulePrefix + label;
-				break;
-			case LabelType.LOCAL:
-				// local label
-				if (this.lastLabel) // Add Last label
-					label = this.lastLabel + label;
-				// Add prefix
-				if (this.modulePrefix)
-					label = this.modulePrefix + label;
-				break;
-			case LabelType.GLOBAL:
-				// Remember last label (for local labels)
-				this.lastLabel = label;
-				this.currentFileEntry.lastLabel = this.lastLabel;
-				this.currentFileEntry.modulePrefix = undefined;
-				break;
-		}
-
+	protected addLabelForNumber(value: number, label: string,) {
+		// Remember last label (for local labels)
+		this.lastLabel = label;
+		this.currentFileEntry.lastLabel = this.lastLabel;
+		this.currentFileEntry.modulePrefix = undefined;
 		this.addLabelForNumberRaw(value, label);
 	}
 
