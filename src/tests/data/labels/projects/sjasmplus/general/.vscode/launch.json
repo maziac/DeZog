@@ -13,9 +13,9 @@
                 "visualMemory": "ZX48"
                 //"Z80N": true,
             },
-            "sjasmplusListFiles": [
+            "sjasmplus": [
                 {
-                    "path": "main.asm",
+                    "path": "_.sld",
                 }
             ],
             "rootFolder": "${workspaceFolder}",

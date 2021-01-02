@@ -6,9 +6,7 @@
             "type": "shell",
             "command": "sjasmplus",
             "args": [
-                "--lst=general.list",
-                "--lstlab",
-                "--sym=general.labels",
+                "--sld=general.sld",
                 "--fullpath",
                 "main.asm"
             ],

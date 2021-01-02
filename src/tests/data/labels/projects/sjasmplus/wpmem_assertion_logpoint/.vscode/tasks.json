@@ -6,9 +6,7 @@
             "type": "shell",
             "command": "sjasmplus",
             "args": [
-                "--lst=wpmem_assertion_logpoint.list",
-                "--lstlab",
-                "--sym=wpmem_assertion_logpoint.labels",
+                "--sld=wpmem_assertion_logpoint.sld",
                 "--fullpath",
                 "main.asm"
             ],

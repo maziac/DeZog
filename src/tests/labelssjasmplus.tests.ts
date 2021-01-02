@@ -294,7 +294,7 @@ suite('Labels (sjasmplus)', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/general/general.list', srcDirs: [""],	// Sources mode
+				path: './src/tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
 		};
@@ -304,19 +304,19 @@ suite('Labels (sjasmplus)', () => {
 		// Test WPMEM
 		const wpLines=Labels.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x8200);
+		assert.equal(wpLines[0].address, 0x10000 + 0x8200);
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines=Labels.getAssertionLines();
 		assert.equal(assertionLines.length, 1);
-		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].address, 0x10000 + 0x8005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
 		const lpLines=Labels.getLogPointLines();
 		assert.equal(lpLines.length, 1);
-		assert.equal(lpLines[0].address, 0x800F);
+		assert.equal(lpLines[0].address, 0x10000 + 0x800F);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
