@@ -804,10 +804,6 @@ export class DebugSessionClass extends DebugSession {
 			callStack=StepHistory.getCallStack();
 		}
 		else {
-			// Get the current slots
-			if (Labels.AreLongAddressesUsed()) {
-				await Remote.getRegistersFromEmulator();  // TODO: Is this if-clause really required? What use case?
-			}
 			// Get callstack
 			callStack=await Remote.getCallStackCache();
 		}
