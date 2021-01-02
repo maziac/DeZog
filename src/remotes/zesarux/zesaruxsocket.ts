@@ -232,7 +232,7 @@ export class ZesaruxSocket extends Socket {
 		this.interruptableRunCmd = undefined;
 
 		// Wait on first text from zesarux after connection
-		var cEntry = new CommandEntry('connected', data => {
+		const cEntry = new CommandEntry('connected', data => {
 			this.state = SocketState.CONNECTED;
 			LogSocket.log('First text from ZEsarUX received!');
 			this.emit('connected');	// data transmission may start now.
@@ -364,7 +364,7 @@ export class ZesaruxSocket extends Socket {
 	public send(command: string, handler: {(data)} = (data) => {}, suppressErrorHandling = false, /*, timeout = -1*/) {
 		const timeout = this.MSG_TIMEOUT;
 		// Create command entry
-		var cEntry = new CommandEntry(command, handler, suppressErrorHandling, timeout);
+		const cEntry = new CommandEntry(command, handler, suppressErrorHandling, timeout);
 		this.queue.push(cEntry);
 		this.emitQueueChanged();
 		// check if command can be sent right away

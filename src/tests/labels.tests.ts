@@ -27,57 +27,55 @@ suite('Labels', () => {
 				Labels.readListFiles(config);
 
 				// Checks
-				var res=Labels.getFileAndLineForAddress(0x7700);
+				let res=Labels.getFileAndLineForAddress(0x7700);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 0, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x7710);
+				res=Labels.getFileAndLineForAddress(0x7710);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 1, "Expected line wrong.");
 
 
-				var res=Labels.getFileAndLineForAddress(0x7721);
+				res=Labels.getFileAndLineForAddress(0x7721);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x7721);
+				res=Labels.getFileAndLineForAddress(0x7721);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x7723);
+				res=Labels.getFileAndLineForAddress(0x7723);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
 
-
-				var res=Labels.getFileAndLineForAddress(0x8820);
+				res=Labels.getFileAndLineForAddress(0x8820);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 2, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x8831);
-				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
-				assert.equal(res.lineNr, 3, "Expected line wrong.");
-
-				var res=Labels.getFileAndLineForAddress(0x8833);
+				res=Labels.getFileAndLineForAddress(0x8831);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 3, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x8834);
+				res=Labels.getFileAndLineForAddress(0x8833);
+				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
+				assert.equal(res.lineNr, 3, "Expected line wrong.");
+
+				res=Labels.getFileAndLineForAddress(0x8834);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 4, "Expected line wrong.");
 
-				var res=Labels.getFileAndLineForAddress(0x8837);
+				res=Labels.getFileAndLineForAddress(0x8837);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 6, "Expected line wrong.");
 
 
-
-				var res=Labels.getFileAndLineForAddress(0x8841);
+				res=Labels.getFileAndLineForAddress(0x8841);
 				assert.equal(res.fileName, 'zxspectrum.asm', "Path wrong.");
 				assert.equal(res.lineNr, 9, "Expected line wrong.");
 
 
-				var res=Labels.getFileAndLineForAddress(0x8843);
+				res=Labels.getFileAndLineForAddress(0x8843);
 				assert.equal(res.fileName, 'main.asm', "Path wrong.");
 				assert.equal(res.lineNr, 5, "Expected line wrong.");
 
@@ -95,7 +93,7 @@ suite('Labels', () => {
 				Labels.readListFiles(config);
 
 				// main.asm
-				var addr=Labels.getAddrForFileAndLine('main.asm', 0);
+				let addr=Labels.getAddrForFileAndLine('main.asm', 0);
 				assert.equal(addr, 0x7700, "Expected address wrong.");
 
 				addr=Labels.getAddrForFileAndLine('main.asm', 1);

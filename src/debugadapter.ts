@@ -682,8 +682,7 @@ export class DebugSessionClass extends DebugSession {
 		for (const bp of givenBps) {
 			try {
 				const log=Remote.evalLogMessage(bp.logMessage);
-				var mbp: RemoteBreakpoint;
-				mbp={
+				const mbp: RemoteBreakpoint= {
 					bpId: 0,
 					filePath: path,
 					lineNr: this.convertClientLineToDebugger(bp.line),
@@ -1124,8 +1123,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else {
 			// Return empty list
-			var variables=new Array<DebugProtocol.Variable>();
-			response.body={variables: variables};
+			response.body = {variables: new Array<DebugProtocol.Variable>()};
 		}
 		this.sendResponse(response);
 	}

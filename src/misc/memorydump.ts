@@ -238,8 +238,8 @@ ranges.
 		// Now merge blocks
 		const biggerBlocks = this.metaBlocks;
 		if(biggerBlocks.length >= 2) {
-			var prevBigBlock = biggerBlocks[biggerBlocks.length-1];
-			for(var i=biggerBlocks.length-2; i>=0; i--) {
+			let prevBigBlock = biggerBlocks[biggerBlocks.length-1];
+			for(let i=biggerBlocks.length-2; i>=0; i--) {
 				// get current block
 				const curBigBlock = biggerBlocks[i];
 				// compare address ranges (Note: the block's addresses are already ordered)

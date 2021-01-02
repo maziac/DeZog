@@ -150,7 +150,7 @@ export class ZesaruxExtRemote extends ZesaruxRemote {
 		// remove the breakpoint
 		zSocket.send('clear-fast-breakpoint ' + bp.address);
 		// Remove from list
-		var index = bp.bpId-1;
+		const index = bp.bpId-1;
 		this.breakpoints.splice(index, 1);
 	}
 

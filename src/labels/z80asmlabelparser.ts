@@ -162,7 +162,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 			const startLine=this.searchStartOfMacro(macroName);
 			// Skip all lines, i.e. all lines get same line number
 			const stackItem=this.includeFileStack[index];
-			for (var i=startLine; i<this.lineNr; i++) {
+			for (let i=startLine; i<this.lineNr; i++) {
 				const entry=this.listFile[i];
 				entry.fileName=stackItem.fileName;
 				entry.lineNr=stackItem.lineNr;
@@ -238,7 +238,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 	 */
 	protected searchStartOfMacro(macroName: string): number {
 		const macroRegex=new RegExp("[0-9a-fA-F]+\\s+"+macroName+"\\s+.*");
-		var k=this.lineNr;
+		let k=this.lineNr;
 		for (; k>0; --k) {
 			const line2=this.listFile[k].line;
 			const matchMacroStart=macroRegex.exec(line2);

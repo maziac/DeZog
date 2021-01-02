@@ -105,7 +105,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			address=undefined!;
 		if (address!=undefined) {
 			// Check for MODULE
-			var matchModuleStart=this.matchModuleStartRegEx.exec(line);
+			const matchModuleStart=this.matchModuleStartRegEx.exec(line);
 			if (matchModuleStart) {
 				// Push module to stack
 				const moduleName=matchModuleStart[1];
@@ -113,7 +113,7 @@ export class SjasmplusLabelParser extends LabelParserBase {
 			}
 			else {
 				// End
-				var matchModuleEnd=this.matchModuleEndRegEx.exec(line);
+				const matchModuleEnd=this.matchModuleEndRegEx.exec(line);
 				if (matchModuleEnd) {
 					// Remove module from stack
 					this.moduleEnd();

@@ -166,7 +166,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Wait for previous command to finish
 				await zSocket.executeWhenQueueIsEmpty();
 
-				var debug_settings = (Settings.launch.zrcp.skipInterrupt) ? 32 : 0;
+				const debug_settings = (Settings.launch.zrcp.skipInterrupt) ? 32 : 0;
 				await zSocket.sendAwait('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.
@@ -304,7 +304,7 @@ export class ZesaruxRemote extends RemoteBase {
 
 		// Init breakpoint array
 		this.freeBreakpointIds.length = 0;
-		for (var i = ZesaruxRemote.MAX_USED_BREAKPOINTS; i > 0; i--)  // 1-99
+		for (let i = ZesaruxRemote.MAX_USED_BREAKPOINTS; i > 0; i--)  // 1-99
 			this.freeBreakpointIds.push(i);
 	}
 
@@ -751,8 +751,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * 'step out' of current subroutine.
 	 * @returns A Promise with a string containing the break reason.
 	 */
-	public async stepOut(): Promise<string> {
-		return new Promise<string>(resolve => {
+	public async stepOut(): Promise<string | undefined> {
+		return new Promise<string | undefined>(resolve => {
 			// Zesarux does not implement a step-out. Therefore we analyze the call stack to
 			// find the first return address.
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
@@ -764,7 +764,7 @@ export class ZesaruxRemote extends RemoteBase {
 				const sp=Z80Registers.getSP();
 
 				// calculate the depth of the call stack
-				var depth=this.topOfStack-sp;
+				let depth=this.topOfStack-sp;
 				if (depth>ZesaruxRemote.MAX_STACK_ITEMS)
 					depth=ZesaruxRemote.MAX_STACK_ITEMS;
 				if (depth==0) {
@@ -1147,7 +1147,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Disables all breakpoints set in zesarux on startup.
 	 */
 	protected clearAllZesaruxBreakpoints() {
-		for(var i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
+		for(let i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
 			zSocket.send('disable-breakpoint ' + i);
 		}
 	}
@@ -1213,7 +1213,7 @@ export class ZesaruxRemote extends RemoteBase {
 				zSocket.send('read-memory '+address+' '+retrieveSize, data => {
 					const len=data.length;
 					Utility.assert(len/2==retrieveSize);
-					for (var i=0; i<len; i+=2) {
+					for (let i=0; i<len; i+=2) {
 						const valueString=data.substr(i, 2);
 						const value=parseInt(valueString, 16);
 						values[k++]=value;

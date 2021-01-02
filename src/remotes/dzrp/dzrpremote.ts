@@ -993,8 +993,8 @@ export class DzrpRemote extends RemoteBase {
 	 * the stackpointer is bigger than at the beginning.
 	 * @returns A Promise with a string containing the break reason.
 	 */
-	public async stepOut(): Promise<string> {
-		return new Promise<string>(async resolve => {
+	public async stepOut(): Promise<string | undefined> {
+		return new Promise<string | undefined>(async resolve => {
 			// Get current SP
 			const startSp=Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp=startSp;

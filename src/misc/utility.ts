@@ -73,7 +73,7 @@ export class Utility {
 	 * @param size The number of digits for the resulting string.
 	 */
 	public static getBitsString(value: number, size: number) {
-		var s = value.toString(2);
+		const s = value.toString(2);
 		return "0".repeat(size - s.length) + s;
 	}
 
@@ -121,13 +121,13 @@ export class Utility {
 		const gbit = match[9];	// b
 		const gbit_empty = match[10];	// should be empty
 
-		var gflags = match[12];	// _
+		let gflags = match[12];	// _
 		const gflags_empty = match[13];	// should be empty
 
 		const gdec = match[15];	// decimal
 		const gdec_empty = match[16];	// should be empty
 
-		var gchar = match[18];	// ASCII character
+		const gchar = match[18];	// ASCII character
 
 		// Hex
 		if(ghex) {
@@ -159,7 +159,7 @@ export class Utility {
 			if(gflags_empty)
 				return NaN;
 			gflags = gflags.toLowerCase()
-			var flags = 0;
+			let flags = 0;
 			if(gflags.includes('s')) flags |= 0x80;
 			if(gflags.includes('z')) flags |= 0x40;
 			if(gflags.includes('h')) flags |= 0x10;
@@ -421,8 +421,8 @@ export class Utility {
 		if(!format.includes('\t'))
 			return null;	// no tabs
 		// Replace every formatting with maximum size replacement
-		var result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (match, p1, p2, p3) => {
-			var usedSize = size;
+		const result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (match, p1, p2, p3) => {
+			let usedSize = size;
 			// Check modifier p1
 			const modifier = (p1 == null) ? '' : p1.substr(0, p1.length-1);
 			switch(modifier) {
@@ -519,7 +519,7 @@ export class Utility {
 		}
 
 		// Variables
-		var memWord = 0;
+		let memWord = 0;
 		let regsAsWell=false;
 
 		// Check if registers might be returned as well.
@@ -540,7 +540,7 @@ export class Utility {
 		}
 
 		// Formatting
-		var valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
+		const valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
 
 		// Return
 		return valString;
@@ -577,7 +577,7 @@ export class Utility {
 		// Search for format string '${...}'
 		// Note: [\s\S] is the same as . but also includes newlines.
 		// First search for '${'
-		var valString = format.replace(/\${([\s\S]*?)(?=\${|$)/g, (match, p) => {
+		let valString = format.replace(/\${([\s\S]*?)(?=\${|$)/g, (match, p) => {
 			// '${...' found now check for } from the left side.
 			// This assures that } can also be used inside a ${...}
 			const k = p.lastIndexOf('}');
@@ -593,9 +593,9 @@ export class Utility {
 			if(innerMatch == undefined)
 				return '${'+p1+'???}' + restP;
 			// Modifier
-			var usedValue;
-			var usedSize;
-			var modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
+			let usedValue;
+			let usedSize;
+			let modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
 			modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length-1);
 			switch(modifier) {
 				case 'b@':
@@ -614,9 +614,9 @@ export class Utility {
 			}
 			// Continue formatting
 			const formatting = innerMatch[2];	// e.g. 'hex' or 'name' or the pre-strign for labels
-			var innerLabelSeparator = innerMatch[3];	// e.g. ', '
+			let innerLabelSeparator = innerMatch[3];	// e.g. ', '
 			innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substr(1);
-			var endLabelSeparator = innerMatch[4];	// e.g. ', '
+			let endLabelSeparator = innerMatch[4];	// e.g. ', '
 			endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substr(1);
 			switch(formatting) {
 				case 'name':
@@ -678,15 +678,15 @@ export class Utility {
 			tabSizeArr = Utility.calculateTabSizes(format, size);
 		if(tabSizeArr)
 			if(tabSizeArr.length == valString.split('\t').length) {
-				var index = 0;
+				let index = 0;
 				valString += '\t';	// to replace also the last string
 				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
 					Utility.assert(tabSizeArr);
-					var tabSize = tabSizeArr![index].length;
+					const tabSize = tabSizeArr![index].length;
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
 					++index;
-					var result = p1 + " ";
+					let result = p1 + " ";
 					// right adjusted
 					const repeatLen = tabSize-p1.length;
 					if(repeatLen > 0)

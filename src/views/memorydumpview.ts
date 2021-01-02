@@ -176,7 +176,7 @@ export class MemoryDumpView extends BaseView {
 		const value=this.memDump.getValueFor(address);
 		Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined)
 			.then(formattedString => {
-				var text=formattedString+'\n';
+				let text=formattedString+'\n';
 				// Address
 				Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined)
 					.then(formattedString => {
@@ -305,11 +305,11 @@ export class MemoryDumpView extends BaseView {
 
 
 		//---- Handle Editing Cells --------
-		var prevValue = '';	// Used to restore the value if ESC is pressed.
-		var curObj = null;	// The currently used object (the tabe cell)
+		let prevValue = '';	// Used to restore the value if ESC is pressed.
+		let curObj = null;	// The currently used object (the tabe cell)
 
 		function keyPress(e) {
-			var key = e.keyCode;
+			let key = e.keyCode;
 
 			if(key == 13) {	// ENTER key
 				const value = curObj.innerText;
@@ -514,7 +514,7 @@ export class MemoryDumpView extends BaseView {
 			// Check start of line
 			if(i == 0) {
 				// start of a new line
-				var addrText=Utility.getHexString(addr64k,4) + ':';
+				let addrText=Utility.getHexString(addr64k,4) + ':';
 				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
 				ascii = '';
@@ -522,7 +522,7 @@ export class MemoryDumpView extends BaseView {
 
 			// Print value
 			const value = data[k];
-			var valueText = Utility.getHexString(value, 2);
+			let valueText = Utility.getHexString(value, 2);
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -611,7 +611,7 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Loop through all metablocks
-		var tables;
+		let tables;
 		const vertBreak=this.getHtmlVertBreak();
 		let i=0;
 		for(let mb of this.memDump.metaBlocks) {

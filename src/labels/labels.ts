@@ -268,8 +268,8 @@ export class LabelsClass {
 	 */
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
-		var offs = -1;
-		for (var i = 0; i < 0x10000; i++) {
+		let offs = -1;
+		for (let i = 0; i < 0x10000; i++) {
 			const labels = this.labelsForNumber64k[i];
 			if (labels === undefined) {
 				if (offs >= 0) {
@@ -472,7 +472,7 @@ export class LabelsClass {
 	public getNumberFromString64k(text: string): number {
 		if (text == undefined)
 			return NaN;
-		var result = this.getNumberForLabel(text);
+		let result = this.getNumberForLabel(text);
 		if (result == undefined) {
 			// Try convert as string
 			if (text.startsWith('_'))
@@ -514,7 +514,7 @@ export class LabelsClass {
 		// The available structures are not ideal:
 		// First find an address for lineNr.
 		// Then use the address to get modulePrefix and lastLabel.
-		var filePath = Utility.getRelFilePath(fileName);
+		const filePath = Utility.getRelFilePath(fileName);
 		const result = {modulePrefix: '', lastLabel: ''};
 		let longAddr;
 		const lineArray = this.lineArrays.get(filePath);
@@ -548,8 +548,8 @@ export class LabelsClass {
 	 * @returns The associated (long) address. -1 if file or line does not exist.
 	 */
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
-		var filePath = Utility.getRelFilePath(fileName);
-		var addr = -1;
+		const filePath = Utility.getRelFilePath(fileName);
+		let addr = -1;
 		const lineArray = this.lineArrays.get(filePath);
 		if (lineArray) {
 			addr = lineArray[lineNr];

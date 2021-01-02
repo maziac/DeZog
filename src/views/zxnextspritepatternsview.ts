@@ -286,7 +286,7 @@ export class ZxNextSpritePatternsView extends BaseView {
 		// Create false colors palette
 		const falseColorsPalette = new Array<number>(3*256);
 		let k=0;
-		var rng=new Random.MT(12345);	// Use always the same seed
+		const rng=new Random.MT(12345);	// Use always the same seed
 		for(let i=0;i<256; i++) {
 			falseColorsPalette[k++]=rng.range(0, 255);
 			falseColorsPalette[k++]=rng.range(0, 255);

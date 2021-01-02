@@ -113,7 +113,7 @@ export class DisassemblyVar extends ShallowVarConst {
 			// Add to list
 			const addrString=Format.getHexString(address).toUpperCase();
 			const labels=Labels.getLabelsForNumber64k(address);
-			var addrLabel=addrString;
+			let addrLabel=addrString;
 			if (labels)
 				addrLabel=labels.join(',\n');
 			list.push({
@@ -303,8 +303,8 @@ export class StackVar extends ShallowVar {
 			const tabSizes=Utility.calculateTabSizes(format, 2);
 
 			// Loop list as recursive function
-			var index=0;
-			var value=this.stack[0];
+			let index=0;
+			let value=this.stack[0];
 			const undefText="unknown";
 			const recursiveFunction=(formatted) => {
 				stackList.push({
@@ -696,19 +696,19 @@ export class MemDumpByteVar extends ShallowVar {
 	public async getContent(start?: number, count?: number): Promise<Array<DebugProtocol.Variable>> {
 		Utility.assert(start!=undefined);
 		Utility.assert(count!=undefined);
-		var addr=this.addr+(start as number);
+		let addr=this.addr+(start as number);
 		const size = this.size();
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
 		// Calculate tabsizing array
 		const tabSizes = Utility.calculateTabSizes(format, size);
 		// Format all array elements
-		for (var i=0; i<(count as number)/size; i++) {
+		for (let i=0; i<(count as number)/size; i++) {
 			// format
 			const addr_i=addr+i*size;
 			const formatted=await Utility.numberFormatted('', addr_i, size, format, tabSizes);
 			// check for label
-			var types=[Utility.getHexString(addr_i, 4)];
+			let types=[Utility.getHexString(addr_i, 4)];
 			const labels=Labels.getLabelsPlusIndexForNumber64k(addr_i);
 			if (labels)
 				types=types.concat(labels);

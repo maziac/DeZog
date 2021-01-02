@@ -2,6 +2,7 @@
 
 # 2.0.3
 - Fixed #39: windows path back slash in SLD file.
+
 # 2.0.2
 - Help view added. Palette command "dezog.help".
 - New "zsim" option to set the "cpuFrequency".
