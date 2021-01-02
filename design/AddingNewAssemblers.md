@@ -123,6 +123,26 @@ Unless you override ```parseAllLabelsAndAddresses```. In that case make sure to 
 If your assembler allows other one-line comment identifiers than ";", e.g. "//", then you need to override ```getComment```.
 
 
+# Long Addresses
+
+DeZog can handle ['long addresses'](../documentation/Usage.md#long-addresses-explanation).
+Long addresses contain the address information 0x0000-0xFFFF plus the banking information (if there is one).
+
+If your assembler has no special banking support you don't have to take of this.
+But if it is capable you should store the addresses with banking information.
+
+DeZog uses a very simply format to store the banking information inside the address:
+~~~
+longAddress == ((bank+1) << 16) + address
+~~~
+
+I.e. an address < 0x10000 is always an address without banking information.
+Everything >= 0x10000 contains banking information.
+
+So if your assembler gives you the information what bank an address is you should use it.
+Use the 'createLongAddress' to create a long address from bank and address.
+
+
 # Make DeZog aware of the new Assembler
 
 Implementing the new label parser class is not enough to take the new assembler parsing into use.
@@ -204,5 +224,3 @@ Make sure to convert all of the paths (e.g. 'path') in your assembler settings w
 Document the new assembler configuration inside [Usage.md](../documentation/Usage.md) in the chapter "Assembler Configuration".
 Please also don't forget to update the table in "Assemblers and Labels".
 
-
-// TODO: Add documentation about long addresses.

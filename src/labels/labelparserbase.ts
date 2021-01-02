@@ -631,6 +631,22 @@ export class LabelParserBase {
 
 
 	/**
+	 * Creates a long address from the address and the page info.
+	 * If page == -1 address is returned unchanged.
+	 * @param address The 64k address, i.e. the upper bits are the slot index.
+	 * @param bank The bank the address is associated with.
+	 * @returns if bankSize: address+((page+1)<<16)
+	 * else: address.
+	 */
+	protected createLongAddress(address: number, bank: number) {
+		let result = address;
+		if (this.bankSize != 0)
+			result += (bank + 1) << 16;
+		return result;
+	}
+
+
+	/**
 	 * Returns the collected warnings.
 	 * undefined if no warnings.
 	 */

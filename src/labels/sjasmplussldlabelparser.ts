@@ -266,22 +266,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 
 
 	/**
-	 * Creates a long address from the address and the page info.
-	 * If page == -1 address is returned unchanged.
-	 * @param address The 64k address, i.e. the upper bits are the slot index.
-	 * @param page The page the address is associated with.
-	 * @returns if bankSize: address+((page+1)<<16)
-	 * else: address.
-	 */
-	protected createLongAddress(address: number, page: number) {
-		let result=address;
-		if (this.bankSize!=0)
-			result+=(page+1)<<16;
-		return result;
-	}
-
-
-	/**
 	 * Calls super, but only if the line does not start with ";SLDOPT".
 	 * I.e. it filters any commented SLDOPT line.
 	 */
