@@ -7,6 +7,7 @@
             "command": "sjasmplus",
             "args": [
                 "--sld=general.sld",
+                "--sym=general.labels",
                 "--fullpath",
                 "main.asm"
             ],
