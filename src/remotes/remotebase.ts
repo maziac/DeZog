@@ -759,27 +759,6 @@ export class RemoteBase extends EventEmitter {
 
 
 	/**
-	 * Returns the stack frames.
-	 * Either the "real" ones from Remote or the virtual ones during reverse debugging.
-	 * @returns A Promise with an array with call stack frames.
-	 */
-	// TODO: use or remove
-	public async stackTraceRequest(): Promise<RefList<CallStackFrame>> {
-		// Check for reverse debugging.
-		if (CpuHistory.isInStepBackMode()) {
-			// Return virtual stack
-			Utility.assert(this.reverseDbgStack);
-			return this.reverseDbgStack;
-		}
-		else {
-			// "real" stack trace
-			const callStack=await this.getCallStackCache();
-			return callStack;
-		}
-	}
-
-
-	/**
 	 * @param ref The reference number to the frame.
 	 * @returns The associated frame or undefined.
 	 */
