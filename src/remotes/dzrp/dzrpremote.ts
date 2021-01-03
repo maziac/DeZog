@@ -693,17 +693,15 @@ export class DzrpRemote extends RemoteBase {
 					}
 				}
 				// Or breakpoint
-				if (reasonString==undefined) {
-					const addrString=Utility.getHexString(breakAddress&0xFFFF, 4);
-					let bankString="";
-					const bank=breakAddress>>>16;
-					if (bank!=0)
-						bankString=" (bank="+(bank-1).toString()+")";
-					//this.getSlotFromAddress(breakAddress);
-					reasonString="Breakpoint hit @"+addrString+"h"+bankString+".";
-					if (condition)
-						reasonString+=" Condition: "+condition;
-				}
+				const addrString=Utility.getHexString(breakAddress&0xFFFF, 4);
+				let bankString="";
+				const bank=breakAddress>>>16;
+				if (bank!=0)
+					bankString=" (bank="+(bank-1).toString()+")";
+				//this.getSlotFromAddress(breakAddress);
+				reasonString="Breakpoint hit @"+addrString+"h"+bankString+".";
+				if (condition)
+					reasonString+=" Condition: "+condition;
 				return reasonString;
 
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
@@ -949,14 +947,8 @@ export class DzrpRemote extends RemoteBase {
 					await this.sendDzrpCmdContinue(bp1, bp2);
 				}
 				else {
-					// Check if bp1/2 was hit
-					const pc=this.getPC();	// This is intentionally a 64k address
-					if (pc!=bp1&&pc!=bp2) {
-						// Construct break reason string to report
-						breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
-					}
-//					else
-//						breakReasonString=undefined;
+					// Construct break reason string to report
+					breakReasonString=await this.constructBreakReasonString(correctedBreakNumber, breakAddress, condition, breakReasonString);
 					// Clear registers
 					await this.getCallStackFromEmulator();
 					// return

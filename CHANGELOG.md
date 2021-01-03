@@ -2,6 +2,7 @@
 
 # 2.0.3
 - Fixed #39: windows path back slash in SLD file.
+- cspect, zsim: LOGPOINT, ASSERTION are printed also on step-over, step-into.
 
 # 2.0.2
 - Help view added. Palette command "dezog.help".

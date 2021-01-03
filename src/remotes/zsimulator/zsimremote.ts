@@ -618,12 +618,7 @@ export class ZSimRemote extends DzrpRemote {
 						break;
 					}
 
-					// Check if given breakpoints are hit (64k address compare, not long addresses)
-					const pc=this.z80Cpu.pc;
-					if (pc==bp1||pc==bp2) {
-						breakAddress=pc;
-						break;
-					}
+					const pc = this.z80Cpu.pc;
 
 					// Check if any real breakpoint is hit
 					// Note: Because of step-out this needs to be done before the other check.
@@ -682,6 +677,13 @@ export class ZSimRemote extends DzrpRemote {
 						breakAddress=Z80Registers.createLongAddress(memAddress, slots);
 						// NOTE: Check for long watchpoint address could be done already here.
 						// However it is done anyway in the DzrpRemote.
+						break;
+					}
+
+
+					// Check if given breakpoints are hit (64k address compare, not long addresses)
+					if (pc == bp1 || pc == bp2) {
+						breakAddress = pc;
 						break;
 					}
 
