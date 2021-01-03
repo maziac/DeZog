@@ -67,7 +67,7 @@ export class DebugSessionClass extends DebugSession {
 	/// unit tests are running and to emit events to the caller.
 	protected static unitTestHandler: ((da: DebugSessionClass) => void)|undefined;
 
-	/// This array contains functions which are pushed on an emit (e.g. 'historySpot', not 'codeCoverage')
+	/// This array contains functions which are pushed on an emit (e.g. 'historySpot', not 'coverage')
 	/// and which are executed after a stackTrace.
 	/// The reason is that the disasm.asm file will not exist before and emits
 	/// regarding this file would be lost.

@@ -307,7 +307,7 @@ export class DecorationClass {
 		if (fileMapName==this.COVERAGE) {
 			if (edFilename==DisassemblyClass.getAbsFilePath()) {
 				// Handle disassembly file
-				this.SetDisasmCoverageDecoration(editor);
+				this.setDisasmCoverageDecoration(editor);
 				return;	// Skip normal case
 			}
 		}
@@ -329,7 +329,7 @@ export class DecorationClass {
 	/**
 	 * Sets the decorations for the disassembler temp file.
 	 */
-	public SetDisasmCoverageDecoration(editor: vscode.TextEditor) {
+	public setDisasmCoverageDecoration(editor: vscode.TextEditor) {
 		// Coverage
 		const lines=Disassembly.getLinesForAddresses(this.unassignedCodeCoverageAddresses);
 		const decorations=lines.map(lineNr => new vscode.Range(lineNr, 0, lineNr, 1000));

@@ -285,7 +285,10 @@ export class Z80UnitTests {
 
 			Remote.on('coverage', coveredAddresses => {
 				// Cache covered addresses (since last unit test)
-			 	Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+				//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+				if (!Z80UnitTests.lastCoveredAddresses)
+					Z80UnitTests.lastCoveredAddresses = new Set<number>();
+				coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
 			});
 
 			Remote.on('warning', message => {
@@ -645,7 +648,10 @@ export class Z80UnitTests {
 				// Handle coverage
 				Remote.on('coverage', coveredAddresses => {
 					// Cache covered addresses (since last unit test)
-					Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+					//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+					if (!Z80UnitTests.lastCoveredAddresses)
+						Z80UnitTests.lastCoveredAddresses = new Set<number>();
+					coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
 				});
 
 				// After initialization vscode might send breakpoint requests
@@ -963,6 +969,7 @@ export class Z80UnitTests {
 		if (Z80UnitTests.lastCoveredAddresses) {
 			const target=Z80UnitTests.allCoveredAddresses;
 			Z80UnitTests.lastCoveredAddresses.forEach(target.add, target);
+			Z80UnitTests.lastCoveredAddresses = undefined as any;
 		}
 
 		// Next unit test
@@ -1035,6 +1042,7 @@ export class Z80UnitTests {
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (debugAdapter) {
+				Remote.stopProcessing();	// To show the coverage after continue to end
 				await debugAdapter.waitForBeingQuietFor(300);
 			}
 
