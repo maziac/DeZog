@@ -13,6 +13,12 @@ If you like DeZog please consider supporting it.
 
 If you would like to contribute, e.g. by adding a new assembler or adding other remotes/emulators, see "Contribution" [here](https://github.com/maziac/DeZog/blob/master/README.md#contribution).
 
+
+
+## Migration from DeZog 1.5
+If you installed DeZog 1.5 before [here](documentation/Migration.md) are a few tips to migrate to 2.0.
+
+
 ## General Usage
 
 A typical debug session with DeZog looks as follows:

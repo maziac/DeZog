@@ -598,6 +598,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			// Get return address
 			const retAddr=this.decoder.getSPContent(currentLine);
 			// Get memory at return address
+			// TODO: Would need to read banked memory (not possible with ZEsarUX)
 			const data=await Remote.readMemoryDump((retAddr-3)&0xFFFF, 3);
 			// Check for CALL and RST
 			const firstByte=data[0];

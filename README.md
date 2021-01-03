@@ -219,8 +219,17 @@ I would like to thank a few people for their support
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
 Especially for changes in the 'launch.json' it might be some properties (names) have changed/removed/added.
 
+Unfortunately there is none for Dezog v2.0 yet. Any contributions are welcome.
+
 
 ## CSpect/DeZog
+
+### Patricia Curtis
+
+Date: Sep-2020, DeZog 1.4
+
+A great tutorial by [Patricia Curtis](https://luckyredfish.com/who-am-i/) describing the setup with [sjasmplus, CSpect and DeZog](https://luckyredfish.com/coding-for-the-spectrum-next-emulator-cspect/).
+
 
 ### Daren May
 
@@ -232,15 +241,14 @@ Although it was made for Windows you can easily apply it to macOS or Linux.
 Please note: Daren creates an SD card image that is loaded when CSpect is started. For many projects this is not necessary as you can transfer .nex and .sna files directly from DeZog to CSpect.
 
 
-### Patricia Curtis
-
-Date: Sep-2020, DeZog 1.4
-
-A great tutorial by [Patricia Curtis](https://luckyredfish.com/who-am-i/) describing the setup with [sjasmplus, CSpect and DeZog](https://luckyredfish.com/coding-for-the-spectrum-next-emulator-cspect/).
-
-
-
 ## ZEsarUX/DeZog
+
+### L BREAK into program, 0:1
+
+Date: Aug-2020, DeZog 1.4
+
+And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
+
 
 ### Cesar Wagener Moriana
 
@@ -258,11 +266,4 @@ and is available in English, Spain and German [here](documentation/extras/Tutori
 Please note: The tutorial is a bit outdated, it uses 'z80-debug'. This was the former name of the project. It has been renamed to 'dezog'. This means especially that in the launch.json files you need to change 'z80-debug' to 'dezog'.
 
 Nevertheless Cesar (W. M.) also shows how to setup the system under Windows and explains a few features of z80-debug/DeZog so that it is a great advice to get you started.
-
-
-### L BREAK into program, 0:1
-
-Date: Aug-2020, DeZog 1.4
-
-And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
 
