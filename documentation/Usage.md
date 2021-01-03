@@ -1081,7 +1081,7 @@ Here is an animated gif to illustrate the history spot behavior while stepping (
 ![](images/spot_count_animated.gif)
 
 
-#### Breakpoints in Reverse Debug Mode
+#### Breakpoints etc. in Reverse Debug Mode
 
 You can also use breakpoints during reverse debugging.
 The normal (program counter related) breakpoints work just as you would expect.
@@ -1094,6 +1094,9 @@ E.g. a condition like this
 b@(HL) == 0
 ~~~
 will be evaluated to true always so that you don't miss such a breakpoint.
+
+
+Logpoints (LOGPOINT), watchpoints (WPMEM) and ASSERTIONs are not evaluated during reverse debugging.
 
 
 ### Code Coverage
