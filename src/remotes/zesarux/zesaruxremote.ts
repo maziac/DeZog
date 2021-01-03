@@ -1120,6 +1120,9 @@ export class ZesaruxRemote extends RemoteBase {
 			return 0
 		}
 
+		// Add bp Id
+		bp.bpId = bpId;
+
 		// Add to list
 		this.breakpoints.push(bp);
 		// Return
