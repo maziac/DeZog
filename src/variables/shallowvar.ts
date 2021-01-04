@@ -366,62 +366,6 @@ export class StackVar extends ShallowVar {
 
 
 /**
- * The LabelVar class is a container class which holds two pseudo properties to open
- * a byte or a word array. The user has the possibility to open it from the UI.
- */
-export class LabelVar extends ShallowVar {
-
-	private memArray: Array<DebugProtocol.Variable>;	/// Holds the 2 pseudo variables for 'byte' and 'word'
-
-	/**
-	 * Constructor.
-	 * @param addr The address of the memory dump
-	 * @param count The count of elements to display.
-	 * @param types 'b'=byte, 'w'=word or 'bw' for byte and word
-	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
-	 */
-	public constructor(addr: number, count: number, types: string, list: RefList<ShallowVar>) {
-		super();
-		// TODO : Implement delayed execution
-
-		// Create array for variables
-		this.memArray = [];
-		types = types.trim();
-		// Byte array
-		if (types.indexOf('b') >= 0)
-			this.memArray.push(
-				{
-					name: "byte",
-					type: "data",
-					value: "[0.." + (count - 1) + "]",
-					variablesReference: list.addObject(new MemDumpByteVar(addr)),
-					indexedVariables: count
-				});
-
-		// Word array
-		if (types.indexOf('w') >= 0)
-			this.memArray.push(
-				{
-					name: "word",
-					type: "data",
-					value: "[0.." + (count - 1) + "]",
-					variablesReference: list.addObject(new MemDumpWordVar(addr)),
-					indexedVariables: count
-				});
-	}
-
-
-	/**
-	 * Returns the memory dump.
-	 * @returns A Promise with the memory dump.
-	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {		// Pass data to callback
-		return this.memArray;
-	}
-}
-
-
-/**
  * The StructVar class is a container class which holds other properties (the elements of the
  * struct). I.e. SubStructVars.
  * The StructVar is the parent object which also holds the memory contents.
