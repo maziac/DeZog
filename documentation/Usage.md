@@ -16,7 +16,7 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 
 
 ## Migration from DeZog 1.5
-If you installed DeZog 1.5 before [here](documentation/Migration.md) are a few tips to migrate to 2.0.
+If you installed DeZog 1.5 before [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to 2.0.
 
 
 ## General Usage
@@ -1207,7 +1207,7 @@ The ASSERTION syntax is:
 ~~~
 ; [.*] ASSERTION expr [;.*]
 ~~~
-'expr' is just like the expressions in [breakpoints](#vscode-breakpoint-conditions).
+'expr' is just like the expressions in [breakpoints](#vscode-breakpoint).
 
 Examples:
 ~~~
