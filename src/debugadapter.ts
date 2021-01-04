@@ -1840,22 +1840,24 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Check if it is a label. A label may have a special formatting:
-		// Example: "LBL_TEXT,b,10"  = Address: LBL_TEXT, 10 bytes
+		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
 		// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
 		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
 		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
 		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
+		const match =/^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 		if (match) {
 			let labelString = match[1];
-			let lblType = match[3];
-			let elemCountString=match[5];
+			let lblIndexString = match[3];
+			let lblType = match[5];
+			let elemCountString=match[7];
 			// Defaults
 			if (labelString) {
 				let labelValue64k = NaN;
 				let lastLabel;
 				let modulePrefix;
+				let lblIndex = 0;
 				// First check for module name and local label prefix (sjasmplus).
 				//Remote.getRegisters().then(() => {
 				const pcLongAddr = Remote.getPCLong();
@@ -1867,6 +1869,9 @@ export class DebugSessionClass extends DebugSession {
 				// Convert label
 				try {
 					labelValue64k = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);	// 64k address
+					// And index "[x]"
+					if (lblIndexString)
+						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
 				} catch {}
 
 				if (isNaN(labelValue64k)) {
@@ -1884,6 +1889,20 @@ export class DebugSessionClass extends DebugSession {
 				}
 				if (!lblType || lblType.length == 0)
 					lblType = "b";	// Assume byte
+
+				// Get element size
+				let elemSize;
+				if (lblType == 'b')
+					elemSize = 1;
+				else if (lblType == 'w')
+					elemSize = 2;
+				else {
+					elemSize = Labels.getNumberFromString64k(lblType);
+				}
+
+				// Add index
+				labelValue64k = (labelValue64k + lblIndex * elemSize) & 0xFFFF;
+
 				// Create fullLabel
 				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 				// Create a label variable
@@ -1891,7 +1910,6 @@ export class DebugSessionClass extends DebugSession {
 				let formattedValue;
 				// Get sub properties
 				if (lblType == 'b' || lblType == 'w') {
-					const elemSize = (lblType == 'b') ? 1 : 2;
 					// Check for single value or array
 					if (elemCount <= 1) {
 						// Single value
@@ -1913,8 +1931,7 @@ export class DebugSessionClass extends DebugSession {
 				else {
 					// Not 'b' or 'w' but a struct given
 					const props = Labels.getSubLabels(lblType);
-					const size = Labels.getNumberFromString64k(lblType);
-					labelVar = new StructVar(labelValue64k, elemCount, size, lblType, props, this.listVariables);
+					labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
 				}
 
 				// Add to list

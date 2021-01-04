@@ -590,7 +590,7 @@ export class StructVar extends SubStructVar {
 		if (!this.memory) {
 			// Retrieve memory values
 			const countBytes = this.count * this.elemSize;
-			this.memory = await Remote.readMemoryDump(this.relIndex, countBytes);
+			this.memory = await Remote.readMemoryDump(this.getAddress(), countBytes);
 		}
 		// Check if properties array exists.
 		if (!this.propArray)
