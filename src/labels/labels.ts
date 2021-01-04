@@ -433,7 +433,7 @@ export class LabelsClass {
 	/**
 	 * Returns the direct sub labels.
 	 * @param label E.g. "Invader" or "Invader.hitbox"
-	 * @returns An array of direct sub lables. E.g. for "Invader" it returns "Invader.x" or "Invader.hitbox" but not "Invader.hitbox.x"
+	 * @returns An array of direct sub labels. E.g. for "Invader" it returns "Invader.x" or "Invader.hitbox" but not "Invader.hitbox.x"
 	 */
 	public getSubLabels(label: string): Array<string> {
 		// Get all parts of the label

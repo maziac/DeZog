@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, LabelVar, RegistersMainVar, RegistersSecondaryVar, StackVar /*, StructVar*/} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpByteVar, MemDumpWordVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -1840,16 +1840,20 @@ export class DebugSessionClass extends DebugSession {
 
 
 		// Check if it is a label. A label may have a special formatting:
-		// Example: LBL_TEXT 10, b
-		// = Address LBL_TEXT, 10 bytes
+		// Example: "LBL_TEXT,b,10"  = Address: LBL_TEXT, 10 bytes
+		// or even a complete struct
+		// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
+		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
+		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
+		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
 		const match=/^@?([^\s,]+)\s*(,\s*([^\s,]*))?(,\s*([^\s,]*))?/.exec(name);
 		if (match) {
-			let labelString=match[1];
-			let elemCountString=match[3];
-			let byteWord=match[5];
+			let labelString = match[1];
+			let lblType = match[3];
+			let elemCountString=match[5];
 			// Defaults
 			if (labelString) {
-				let labelValue=NaN;
+				let labelValue = NaN;
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
@@ -1862,7 +1866,7 @@ export class DebugSessionClass extends DebugSession {
 
 				// Convert label
 				try {
-					labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+					labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);	// 64k address
 				} catch {}
 
 				if (isNaN(labelValue)) {
@@ -1872,65 +1876,56 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				// Is a number
-				let elemCount = 100;
+				let elemCount = 1;	// Use 1 as default
 				if (elemCountString) {
 					const readSize = Labels.getNumberFromString64k(elemCountString) || NaN;
 					if (!isNaN(readSize))
 						elemCount = readSize;
 				}
-				if (!byteWord || byteWord.length == 0)
-					byteWord = "bw";	// both byte and word
+				if (!lblType || lblType.length == 0)
+					lblType = "b";	// Assume byte
 				// Create fullLabel
-				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module is from the PC location, this could be irritating. Therefore it is left off.
-				// Now create a "variable" for the bigValues or small values
-				const format = (labelValue <= Settings.launch.smallValuesMaximum) ? Settings.launch.formatting.smallValues : Settings.launch.formatting.bigValues;
-				Utility.numberFormatted(name, labelValue, 2, format, undefined).then(formattedValue => {
-					if (labelValue <= Settings.launch.smallValuesMaximum) {
-						// small value
-						// Response
-						response.body = {
-							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-							variablesReference: 0,
-							//type: "data",
-							//namedVariables: 0
-						}
+				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
+				// Create a label variable
+				let labelVar;
+				let formattedValue;
+				// Get sub properties
+				if (lblType == 'b' || lblType == 'w') {
+					// Check for single value or array
+					if (elemCount <= 1) {
+						// Single value
+						if(lblType=='b')
+							formattedValue = await Utility.numberFormatted(name, labelValue, 1, Settings.launch.formatting.watchByte, undefined);
+						else
+							formattedValue = await Utility.numberFormatted(name, labelValue, 2, Settings.launch.formatting.watchWord, undefined);
 					}
 					else {
-						// big value
-						// Create a label variable
-						const labelVar = new LabelVar(labelValue, elemCount, byteWord, this.listVariables);
-
-
-						/* TODO: Implement:
-						let labelVar;
-						// Get sub properties
-						const props = Labels.getSubLabels(byteWord);
-						if (props.length == 0) {
-							// Simple label
-							labelVar = new LabelVar(labelValue, elemCount, byteWord, this.listVariables);
-						}
-						else {
-							const size = Labels.getNumberFromString64k(byteWord);
-							labelVar = new StructVar(labelValue, elemCount, size, byteWord, props, this.listVariables);
-						}
-						*/
-
-						// Add to list
-						const ref = this.listVariables.addObject(labelVar);
-						// Response
-						response.body = {
-							result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-							variablesReference: ref,
-							type: "data",
-							//presentationHint: ,
-							namedVariables: 2,
-							//indexedVariables: 100
-						}
+						// Simple memdump
+						if (lblType == 'b')
+							labelVar = new MemDumpByteVar(labelValue);
+						else
+							labelVar = new MemDumpWordVar(labelValue);
 					}
-					this.sendResponse(response);
-				});
-				//});	// Emulator.getRegisters
-				return;
+				}
+				else {
+					// Not 'b' or 'w' but a struct given
+					const props = Labels.getSubLabels(lblType);
+					const size = Labels.getNumberFromString64k(lblType);
+					labelVar = new StructVar(labelValue, elemCount, size, lblType, props, this.listVariables);
+				}
+
+				// Add to list
+				const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
+				// Response
+				const description = Utility.getLongAddressString(labelValue);	// labelValue is anyhow a 64k address
+				response.body = {
+					result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
+					variablesReference: ref,
+					type: description,
+					//presentationHint: ,
+					//namedVariables: elemCount,
+					indexedVariables: elemCount
+				}
 			}	// If labelString
 		}	// If match
 

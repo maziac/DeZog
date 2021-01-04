@@ -475,6 +475,7 @@ export class SubStructVar extends ShallowVar {
 		this.propArray = [];
 
 		// Byte or word array
+		// TODO: REMOVE b and w ??
 		if (this.struct.startsWith("'")) {
 			// Byte array
 			if (this.struct.indexOf('b') >= 0)
@@ -499,7 +500,6 @@ export class SubStructVar extends ShallowVar {
 					});
 		}
 		else {
-			// Check for struct
 			// Now create a new variable for each
 			const unsortedMap = new Map<number, string>();
 			for (const prop of this.props) {
@@ -514,6 +514,7 @@ export class SubStructVar extends ShallowVar {
 			// Get all lengths of the leafs and dive into nodes
 			let prevName;
 			let prevIndex;
+			let lastIndex = this.size;
 			for (const [index, name] of sortedMap) {
 				if (prevName) {
 					let len;
@@ -524,7 +525,7 @@ export class SubStructVar extends ShallowVar {
 					else {
 						// Treat last element different
 						// Create diff to the size
-						len = this.size - prevIndex;
+						len = lastIndex - prevIndex;
 					}
 					// Check for leaf or node
 					const fullName = this.struct + '.' + prevName;
@@ -545,10 +546,10 @@ export class SubStructVar extends ShallowVar {
 						if (len <= 2) {
 							// Byte or word
 							const mem = this.parentStruct.getMemory();
-							let value = mem[this.relIndex+prevIndex];
+							let value = mem[this.relIndex + prevIndex];
 							if (len > 1)
 								value += 256 * mem[this.relIndex + prevIndex + 1];
-							const valueString = Utility.getHexString(value, 2*len) + 'h';
+							const valueString = Utility.getHexString(value, 2 * len) + 'h';
 							this.propArray.push({
 								name: prevName,
 								type: valueString,
@@ -558,8 +559,21 @@ export class SubStructVar extends ShallowVar {
 						}
 						else {
 							// Array
+							// TODO: Address von parent struct memory
+							const memDumpVar = new MemDumpByteVar(0);
+							const ref = this.list.addObject(memDumpVar);
+							this.propArray.push({
+								name: prevName,
+								value: '',
+								variablesReference: ref,
+								indexedVariables: len
+							});
 						}
 					}
+				}
+				else {
+					// Calculate last index
+					lastIndex += index;
 				}
 				// Next
 				prevName = name;
@@ -616,6 +630,7 @@ export class StructVar extends SubStructVar {
 	protected createPropArray() {
 		// But only if more than 1 element
 		if (this.count <= 1) {
+			this.relIndex = 0;
 			super.createPropArray();
 		}
 		else {
@@ -624,13 +639,25 @@ export class StructVar extends SubStructVar {
 			// Create a number of nodes
 			let relIndex = 0;
 			for (let i = 0; i < this.count; i++) {
-				const nodeRef = this.list.addObject(new SubStructVar(relIndex, 1, this.size, this.struct, this.props, this.parentStruct, this.list));
-				this.propArray.push({
-					name: '['+i+']',
+				let labelVar;
+				let elem: DebugProtocol.Variable = {
+					name: '[' + i + ']',
 					type: '',
 					value: '',
-					variablesReference: nodeRef
-				});
+					variablesReference: 0
+				};
+				if (this.props.length) {
+					// Sub structure
+					 labelVar = new SubStructVar(relIndex, 1, this.size, this.struct, this.props, this.parentStruct, this.list);
+				}
+				else {
+					// Simple array
+					// TODO: Address below
+					labelVar = new MemDumpByteVar(0);
+					elem.indexedVariables = this.size;
+				}
+				elem.variablesReference = this.list.addObject(labelVar);
+				this.propArray.push(elem);
 				// Next
 				relIndex += this.size;
 			}
@@ -672,6 +699,7 @@ export class StructVar extends SubStructVar {
  * The MemDumpByteVar class knows how to retrieve a memory dump from remote.
  * It allows retrieval of byte arrays.
  */
+// TODO: Auch von übergeordnetem Object (memory) abhängig machen.
 export class MemDumpByteVar extends ShallowVar {
 
 	private addr: number;	/// The address of the memory dump
@@ -731,7 +759,7 @@ export class MemDumpByteVar extends ShallowVar {
 	 * The format to use.
 	 */
 	protected formatString(): string {
-		return Settings.launch.formatting.arrayByte;	// byte
+		return Settings.launch.formatting.watchByte;	// byte
 	}
 
 	/**
@@ -752,7 +780,7 @@ export class MemDumpWordVar extends MemDumpByteVar {
 	 * The format to use.
 	 */
 	protected formatString(): string {
-		return Settings.launch.formatting.arrayWord;	// word
+		return Settings.launch.formatting.watchWord;	// word
 	}
 
 	/**
