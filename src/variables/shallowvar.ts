@@ -654,26 +654,30 @@ export class MemDumpVar extends ShallowVar {
 		Utility.assert(start!=undefined);
 		Utility.assert(count!=undefined);
 		let addr=this.addr+(start!);
-		const size = this.elemSize;
+		const elemSize = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
+
+		// Get memory
+		const memory = await Remote.readMemoryDump(addr, count! * elemSize);
+
 		// Calculate tabsizing array
-		const tabSizes = Utility.calculateTabSizes(format, size);
+		const tabSizes = Utility.calculateTabSizes(format, elemSize);
 		// Format all array elements
-		for (let i=0; i<(count!)/size; i++) {
-			// format
-			const addr_i=addr+i*size;
-			const formatted=await Utility.numberFormatted('', addr_i, size, format, tabSizes);
-			// check for label
-			let types=[Utility.getHexString(addr_i, 4)];
-			const labels=Labels.getLabelsPlusIndexForNumber64k(addr_i);
-			if (labels)
-				types=types.concat(labels);
-			const descr=types.join(',\n');
-			// add to array
+		let k = 0;
+		for (let i = 0; i < count!; i++) {
+			// Get value
+			let value = memory[k++];
+			if (elemSize > 1)
+				value += 256 * memory[k++];
+			// Format
+			const addr_i=addr+i*elemSize;
+			const formatted = Utility.numberFormattedSync(value, elemSize, format, false, undefined, undefined, tabSizes);
+			// Add to array
+			const descr = Utility.getHexString(addr_i, 4) + 'h'
 			memArray.push({
-				name: "["+memArray.length*size+"]",
-				type: descr,  //type,
+				name: "["+start!+i+"]",
+				type: descr,
 				value: formatted,
 				variablesReference: 0
 			});
