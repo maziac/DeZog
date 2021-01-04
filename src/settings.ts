@@ -64,10 +64,10 @@ export interface Formatting {
 	smallValues: string;
 
 	/// The 'byte' formatting for labels in the WATCHES area.
-	arrayByte: string;
+	watchByte: string;
 
 	/// The 'word' formatting for labels in the WATCHES area.
-	arrayWord: string;
+	watchWord: string;
 
 	/// Format for the pushed values in the STACK area.
 	stackVar: string;
@@ -571,8 +571,8 @@ export class Settings {
 				registerHover: <any>undefined,
 				bigValues: <any>undefined,
 				smallValues: <any>undefined,
-				arrayByte: <any>undefined,
-				arrayWord: <any>undefined,
+				watchByte: <any>undefined,
+				watchWord: <any>undefined,
 				stackVar: <any>undefined,
 			};
 		if(!Settings.launch.formatting.registerVar)
@@ -605,10 +605,10 @@ export class Settings {
 			Settings.launch.formatting.bigValues= "(${hex}h)=${b@:unsigned}/${b@:hex}h/'${b@:char}' or ${w@:hex}h/${w@:unsigned}";
 		if(!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
-		if(!Settings.launch.formatting.arrayByte)
-			Settings.launch.formatting.arrayByte = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${b@:char}'\t${b@:bits}b\t${{:labels|, |}}";
-		if(!Settings.launch.formatting.arrayWord)
-			Settings.launch.formatting.arrayWord = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i\t${{:labels|, |}}";
+		if(!Settings.launch.formatting.watchByte)
+			Settings.launch.formatting.watchByte = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${b@:char}'\t${b@:bits}b}";
+		if(!Settings.launch.formatting.watchWord)
+			Settings.launch.formatting.watchWord = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i";
 		if(!Settings.launch.formatting.stackVar)
 			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.tabSize)
