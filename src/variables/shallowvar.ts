@@ -478,7 +478,7 @@ export class SubStructVar extends ShallowVar {
 					else {
 						// Array
 						// TODO: Address von parent struct memory
-						const memDumpVar = new MemDumpVar(0, 1);
+						const memDumpVar = new MemDumpVar(0, this.size, 1);
 						const ref = this.list.addObject(memDumpVar);
 						this.propArray.push({
 							name: prevName,
@@ -570,7 +570,7 @@ export class StructVar extends SubStructVar {
 				else {
 					// Simple array
 					// TODO: Address below
-					labelVar = new MemDumpVar(0, 1);
+					labelVar = new MemDumpVar(0, this.size, 1);
 					elem.indexedVariables = this.size;
 				}
 				elem.variablesReference = this.list.addObject(labelVar);
@@ -623,7 +623,7 @@ export class MemDumpVar extends ShallowVar {
 	protected addr: number;
 
 	// The element count.
-	protected count: number;
+	protected totalCount: number;
 
 	// The element size. byte=1, word=2.
 	protected elemSize: number;
@@ -632,13 +632,13 @@ export class MemDumpVar extends ShallowVar {
 	/**
 	 * Constructor.
 	 * @param addr The address of the memory dump.
-	 * @param count The element count.
+	 * @param totalCount The element count.
 	 * @param elemSize The element size. byte=1, word=2.
 	 */
-	public constructor(addr: number, elemSize: number) {
+	public constructor(addr: number, totalCount: number, elemSize: number) {
 		super();
 		this.addr = addr;
-		this.count = 20;	// TODO
+		this.totalCount = totalCount;
 		this.elemSize = elemSize;
 	}
 

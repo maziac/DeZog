@@ -1891,20 +1891,18 @@ export class DebugSessionClass extends DebugSession {
 				let formattedValue;
 				// Get sub properties
 				if (lblType == 'b' || lblType == 'w') {
+					const elemSize = (lblType == 'b') ? 1 : 2;
 					// Check for single value or array
 					if (elemCount <= 1) {
 						// Single value
 						if(lblType=='b')
-							formattedValue = await Utility.numberFormatted(name, labelValue, 1, Settings.launch.formatting.watchByte, undefined);
+							formattedValue = await Utility.numberFormatted(name, labelValue, elemSize, Settings.launch.formatting.watchByte, undefined);
 						else
-							formattedValue = await Utility.numberFormatted(name, labelValue, 2, Settings.launch.formatting.watchWord, undefined);
+							formattedValue = await Utility.numberFormatted(name, labelValue, elemSize, Settings.launch.formatting.watchWord, undefined);
 					}
 					else {
 						// Simple memdump
-						if (lblType == 'b')
-							labelVar = new MemDumpVar(labelValue, 1);
-						else
-							labelVar = new MemDumpVar(labelValue, 2);
+						labelVar = new MemDumpVar(labelValue, elemCount, elemSize);
 					}
 				}
 				else {
