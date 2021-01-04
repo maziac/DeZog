@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpByteVar, MemDumpWordVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -1902,9 +1902,9 @@ export class DebugSessionClass extends DebugSession {
 					else {
 						// Simple memdump
 						if (lblType == 'b')
-							labelVar = new MemDumpByteVar(labelValue);
+							labelVar = new MemDumpVar(labelValue, 1);
 						else
-							labelVar = new MemDumpWordVar(labelValue);
+							labelVar = new MemDumpVar(labelValue, 2);
 					}
 				}
 				else {

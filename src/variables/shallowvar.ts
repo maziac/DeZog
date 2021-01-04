@@ -478,7 +478,7 @@ export class SubStructVar extends ShallowVar {
 					else {
 						// Array
 						// TODO: Address von parent struct memory
-						const memDumpVar = new MemDumpByteVar(0);
+						const memDumpVar = new MemDumpVar(0, 1);
 						const ref = this.list.addObject(memDumpVar);
 						this.propArray.push({
 							name: prevName,
@@ -570,7 +570,7 @@ export class StructVar extends SubStructVar {
 				else {
 					// Simple array
 					// TODO: Address below
-					labelVar = new MemDumpByteVar(0);
+					labelVar = new MemDumpVar(0, 1);
 					elem.indexedVariables = this.size;
 				}
 				elem.variablesReference = this.list.addObject(labelVar);
@@ -617,27 +617,29 @@ export class StructVar extends SubStructVar {
  * It allows retrieval of byte arrays.
  */
 // TODO: Auch von übergeordnetem Object (memory) abhängig machen.
-export class MemDumpByteVar extends ShallowVar {
+export class MemDumpVar extends ShallowVar {
 
-	/// The address of the memory dump
+	/// The address of the memory dump.
 	protected addr: number;
 
 	// The element count.
 	protected count: number;
 
-	// The elemnet size. byte=1, word=2.
+	// The element size. byte=1, word=2.
 	protected elemSize: number;
 
 
 	/**
 	 * Constructor.
-	 * @param addr The address of the memory dump
+	 * @param addr The address of the memory dump.
+	 * @param count The element count.
+	 * @param elemSize The element size. byte=1, word=2.
 	 */
-	public constructor(addr: number) {
+	public constructor(addr: number, elemSize: number) {
 		super();
 		this.addr = addr;
 		this.count = 20;	// TODO
-		this.elemSize = 1; // TODO
+		this.elemSize = elemSize;
 	}
 
 
@@ -652,7 +654,7 @@ export class MemDumpByteVar extends ShallowVar {
 		Utility.assert(start!=undefined);
 		Utility.assert(count!=undefined);
 		let addr=this.addr+(start!);
-		const size = this.size();
+		const size = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
 		// Calculate tabsizing array
@@ -686,34 +688,10 @@ export class MemDumpByteVar extends ShallowVar {
 	 * The format to use.
 	 */
 	protected formatString(): string {
-		return Settings.launch.formatting.watchByte;	// byte
-	}
-
-	/**
-	 * The size of the data: 1=byte, 2=word.
-	 */
-	protected size(): number {
-		return 1;	// byte
+		if (this.elemSize == 1)
+			return Settings.launch.formatting.watchByte;	// byte
+		else
+			return Settings.launch.formatting.watchWord;	// word
 	}
 }
 
-
-/**
- * The MemDumpWordVar class knows how to retrieve a memory dump from the remote.
- * It allows retrieval of word arrays.
- */
-export class MemDumpWordVar extends MemDumpByteVar {
-	/**
-	 * The format to use.
-	 */
-	protected formatString(): string {
-		return Settings.launch.formatting.watchWord;	// word
-	}
-
-	/**
-	 * The size of the data: 1=byte, 2=word.
-	 */
-	protected size(): number {
-		return 2;	// word
-	}
-}
