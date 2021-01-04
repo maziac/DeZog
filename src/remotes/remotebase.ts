@@ -1184,7 +1184,7 @@ export class RemoteBase extends EventEmitter {
 	 * Gets one memory value from the remote.
 	 * The write is followed by a read and the read value is returned
 	 * by the Promise.
-	 * @param address The address to change.
+	 * @param address The address to read.
 	 * @returns A Promise with the value.
 	 */
 	public async readMemory(address: number): Promise<number> {

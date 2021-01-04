@@ -1853,7 +1853,7 @@ export class DebugSessionClass extends DebugSession {
 			let elemCountString=match[5];
 			// Defaults
 			if (labelString) {
-				let labelValue = NaN;
+				let labelValue64k = NaN;
 				let lastLabel;
 				let modulePrefix;
 				// First check for module name and local label prefix (sjasmplus).
@@ -1866,10 +1866,10 @@ export class DebugSessionClass extends DebugSession {
 
 				// Convert label
 				try {
-					labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);	// 64k address
+					labelValue64k = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);	// 64k address
 				} catch {}
 
-				if (isNaN(labelValue)) {
+				if (isNaN(labelValue64k)) {
 					// Return empty response
 					this.sendResponse(response);
 					return;
@@ -1895,27 +1895,32 @@ export class DebugSessionClass extends DebugSession {
 					// Check for single value or array
 					if (elemCount <= 1) {
 						// Single value
-						if(lblType=='b')
-							formattedValue = await Utility.numberFormatted(name, labelValue, elemSize, Settings.launch.formatting.watchByte, undefined);
-						else
-							formattedValue = await Utility.numberFormatted(name, labelValue, elemSize, Settings.launch.formatting.watchWord, undefined);
+						// Read memory
+						const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
+						let memVal = memory[0];
+						if (lblType == 'b')
+							formattedValue = await Utility.numberFormatted(name, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
+						else {
+							memVal += 256 * memory[1];
+							formattedValue = await Utility.numberFormatted(name, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
+						}
 					}
 					else {
 						// Simple memdump
-						labelVar = new MemDumpVar(labelValue, elemCount, elemSize);
+						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
 					}
 				}
 				else {
 					// Not 'b' or 'w' but a struct given
 					const props = Labels.getSubLabels(lblType);
 					const size = Labels.getNumberFromString64k(lblType);
-					labelVar = new StructVar(labelValue, elemCount, size, lblType, props, this.listVariables);
+					labelVar = new StructVar(labelValue64k, elemCount, size, lblType, props, this.listVariables);
 				}
 
 				// Add to list
 				const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
 				// Response
-				const description = Utility.getLongAddressString(labelValue);	// labelValue is anyhow a 64k address
+				const description = Utility.getLongAddressString(labelValue64k);	// labelValue is anyhow a 64k address
 				response.body = {
 					result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
 					variablesReference: ref,

@@ -606,9 +606,9 @@ export class Settings {
 		if(!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
 		if(!Settings.launch.formatting.watchByte)
-			Settings.launch.formatting.watchByte = "${b@:hex}h\t${b@:unsigned}u\t${b@:signed}i\t'${b@:char}'\t${b@:bits}b";
+			Settings.launch.formatting.watchByte = "${hex}h\t${unsigned}u\t${signed}i\t'${char}'\t${bits}b";
 		if(!Settings.launch.formatting.watchWord)
-			Settings.launch.formatting.watchWord = "${w@:hex}h\t${w@:unsigned}u\t${w@:signed}i";
+			Settings.launch.formatting.watchWord = "${hex}h\t${unsigned}u\t${signed}i";
 		if(!Settings.launch.formatting.stackVar)
 			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{:labels|, |}}";
 		if(!Settings.launch.tabSize)

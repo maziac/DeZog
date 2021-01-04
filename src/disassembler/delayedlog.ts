@@ -137,11 +137,8 @@ export class DelayedLog {
 	 */
 	public static getNumber(value: any) {
 		let hex = value.toString(16);
-		hex = hex.toUpperCase();
-		const k = 4 - hex.length;
-		if(k > 0)
-			hex = "0".repeat(k) + hex;
-		const s = hex + ' (' + value.toString() + ')';
+		hex = hex.toUpperCase().padStart(4, '0');
+		const s = hex + 'h (' + value.toString() + ')';
 		return s;
 	}
 }

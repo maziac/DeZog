@@ -73,8 +73,8 @@ export class Utility {
 	 * @param size The number of digits for the resulting string.
 	 */
 	public static getBitsString(value: number, size: number) {
-		const s = value.toString(2);
-		return "0".repeat(size - s.length) + s;
+		const s = value.toString(2).padStart(size, '0');
+		return s;
 	}
 
 
@@ -686,11 +686,7 @@ export class Utility {
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
 					++index;
-					let result = p1 + " ";
-					// right adjusted
-					const repeatLen = tabSize-p1.length;
-					if(repeatLen > 0)
-						result = " ".repeat(repeatLen) + result;
+					let result = p1.padStart(tabSize) + " ";
 					return result;
 				});
 		}

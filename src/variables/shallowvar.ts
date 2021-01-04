@@ -614,9 +614,8 @@ export class StructVar extends SubStructVar {
 
 /**
  * The MemDumpByteVar class knows how to retrieve a memory dump from remote.
- * It allows retrieval of byte arrays.
+ * It allows retrieval of byte and word arrays.
  */
-// TODO: Auch von übergeordnetem Object (memory) abhängig machen.
 export class MemDumpVar extends ShallowVar {
 
 	/// The address of the memory dump.
