@@ -29,7 +29,7 @@ const MEM_DUMP_BOUNDARY = 16;
  * - Editing:
  * 		- On double click the webview turns the cell in editable mode.
  * 		- When the user presses enter the new value is sent from the webview('valueChanged').
- * 		- The value is then changed in zesarux and the real value (from zesarux) is sent to
+ * 		- The value is then changed in the remote and the real value (from the remote) is sent to
  * 		to the webview. The webview will then update all cells with the same address. I.e. if there
  * 		are 2 same cells both are updated.
  * 		- If there are several memory views all are informed about the new value to update their display.

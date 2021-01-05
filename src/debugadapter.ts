@@ -1846,7 +1846,7 @@ export class DebugSessionClass extends DebugSession {
 		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
 		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
 		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-		const match =/^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([;,]*))?/.exec(name);
+		const match =/^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(name);
 		if (match) {
 			let labelString = match[1];
 			let lblIndexString = match[3];
