@@ -15,8 +15,9 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 
 
 
-## Migration from DeZog 1.5
-If you installed DeZog 1.5 before [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to 2.0.
+## Migration from a previous DeZog version
+
+If you installed DeZog before [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
 
 
 ## General Usage

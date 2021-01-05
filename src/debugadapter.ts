@@ -1912,8 +1912,12 @@ export class DebugSessionClass extends DebugSession {
 					const indexOffset = lblIndex * elemSize;
 					labelValue64k = (labelValue64k & 0xFFFF) + indexOffset;
 				}
-				catch {
+				catch (e) {
 					// Return empty response
+					response.body = {
+						result: e.message,
+						variablesReference: 0
+					}
 					this.sendResponse(response);
 					return;
 				}
