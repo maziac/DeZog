@@ -249,7 +249,11 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 						this.lineArrays.set(sourceFile, lineArray);
 					}
 					// Store long address
-					lineArray[lineNr]=address;
+					if (lineArray[lineNr] == undefined) {
+						// Store only the first. Otherwise a breakpoint on a multi instruction
+						// line would be on the last instruction and not the first.
+						lineArray[lineNr] = address;
+					}
 				}
 				break;
 			case 'K':	// A comment, e.g. WPMEM, ASSERTION and LOGPOINT

@@ -1584,8 +1584,9 @@ If you like you can also "comment" your watches which e.g. further explains the 
 ![](images/watch_comment.jpg)
 
 
-Note:
-Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
+Notes:
+- Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
+- You can also put a register name (e.g. "BC") in the WATCHes area. However, in that case you cannot add a type or count.
 
 
 ### Change the Program Counter

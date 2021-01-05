@@ -4,6 +4,7 @@
 - WATCH window: can show structured variables (sjasmplus).
 - cspect, zsim: LOGPOINT, ASSERTION are printed also on step-over, step-into.
 - Fixed #41: Can't see values of memory view in light theme
+- Fixed #42: Breakpoint on multi-instruction line.
 
 # 2.0.3
 - Fixed #39: windows path back slash in SLD file.
