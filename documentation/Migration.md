@@ -1,7 +1,39 @@
+This guide will provide some info what to do to update your projects from an earlier version.
+
+
+
+# Migrate from DeZog 2.0 to DeZog 2.1
+
+## Required updates
+
+If you CSpect you need to update:
+- CSpect:
+    - Update to version >= 2.13.0
+    - Update the [DeZog CSpect Plugin](https://github.com/maziac/DeZogPlugin/releases) to >= 2.0.1
+
+## WATCHes
+
+Main change in 2.1 was the overworked WATCH window.
+Please have a look at chapter [WATCHes](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#watch) in Usage.md.
+Together with sjasmplus the WATCH window can now display STRUCTs.
+The syntax has been changed slightly. I.e. the parameters 2 and 3 have been exchanged.
+Instead of
+~~~
+label,count,type
+~~~
+
+you have to use
+~~~
+label,type,count
+~~~
+
+now.
+
+And the behavior has changed. DeZog will not anymore assume and display an array by default.
+If you need the old behavior you now need to specify the count explicitly.
+
+
 # Migrate your projects from DeZog 1.5 to 2.0
-
-This guide will provide some info what to do to update your projects for use with DeZog 2.0.
-
 
 ## Required updates
 

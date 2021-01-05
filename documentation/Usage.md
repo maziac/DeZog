@@ -1514,46 +1514,71 @@ This, of course, means that normally only the 8bit or the 4bit color pattern is 
 ![](images/zxnextspritepatternsviewer1.jpg)
 
 
-### WATCHES
+### WATCHes
 
-If you select a label with the mouse in the source code and do a right-click you can add it to the watches. The watches show a memory dump for that label.
-The dump is updated on each step.
+If you select a label with the mouse in the source code and do a right-click you can add it to the watches (alternatively you can also enter it manually in the WATCH window). The watches show the value of the memory contents the label points to in different formats.
+The content is updated on each step.
 Example:
-![](images/watches.jpg)
-DeZog cannot determine the "type" and size the data associated with the label therefore it assumes 100 bytes or words and shows both,
-a byte array and a word array, on default.
-However you have a few options if you add more parameters to the label.
+![](images/watch_simple.jpg)
+You can hover over the label to display the address of the label.
 
-If you double-click on the label in the WATCHES area you can edit it. You can tell DeZog the number of elements to show and if it should show bytes, words or both.
-The format is:
+By default DeZog assumes the type of the label to be a byte. You can change this by adding the type (e.g. 'w' for word) after the label name:
 
+![](images/watch_simple_type.jpg)
+
+The 3rd parameter is the number of elements to show.
+The example here shows 5 word values starting at the label.
+
+![](images/watch_array.gif)
+
+The type parameter is basically just the element size with 1 for 'b' (byte) and 2 for 'w' (word).
+You can also put a different number here or even another label (EQU) value.
+
+![](images/watch_type_as_number.jpg)
+
+In the example above there are 2 element each with a size of 4 bytes.
+
+But DeZog can show even more advanced memory layouts if the assembler provides the necessary information.
+For now the only assembler that provides this information is sjasmplus which allows to display STRUCTs.
+
+The following example defines 2 nested STRUCTs (HITBOX and INVADER) and a label (invaders) which preserve memory for 5 (INV_COUNT) invaders:
+
+~~~asm
+        STRUCT HITBOX
+x       BYTE 0
+y       BYTE 0
+width   BYTE 0
+height  BYTE 0
+        ENDS
+
+        STRUCT INVADER
+enabled      BYTE
+hitbox       HITBOX
+type         BYTE
+attributes   WORD
+optional     DEFS 3
+        ENDS
+
+INV_COUNT EQU 5
+
+invaders: DS INV_COUNT*INVADER
 ~~~
-label,size,types
-~~~
-with
 
-- label: The label, e.g. LBL_TEXT or just a number e.g. 0x4000
-- size: The number of elements to show. Defaults to 100 if omitted.
-- types: Determines if a byte array ('b'), a word array ('w') or both ('bw') should be shown. Defaults to 'bw'.
+In DeZog the first invader can be displayed like this:
+![](images/watch_struct_one.gif)
 
-Here is an example:
+To inspect all invaders just add the count:
+![](images/watch_struct_many.gif)
 
-~~~
-fill_colors,5,b
-~~~
-It shows an array of 5 bytes beginning at label fill_colors.
+To inspect a specific invader you can do so by adding an index to the label.
+The index step is the type (size) of an element.
+Indexes start at 0.
+E.g. to inspect the 3rd invader use:
+![](images/watch_struct_index.jpg)
 
-If you like you can also "comment" to your watches which e.g. further explains the use. You can separate it with a e.g. a ";" or a space, e.g.:
 
-~~~
-fill_colors,1,b; Red
-or
-fill_colors Red
-~~~
-
-results in
-
-![](images/watches_comment.jpg)
+If you like you can also "comment" your watches which e.g. further explains the use. You can separate it with a e.g. a ";", e.g.:
+![](images/watch_comment.jpg)
 
 
 Note:
