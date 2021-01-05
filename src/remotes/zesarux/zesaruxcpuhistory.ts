@@ -110,7 +110,7 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	 * @returns A string with the registers.
 	 */
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
-		return new Promise<string>(resolve => {
+		return new Promise<HistoryInstructionInfo | undefined>(resolve => {
 			Utility.assert(index >= 0);
 			zSocket.send('cpu-history get ' + index, data => { // 'cpu-history get' starts at 0 too
 				if(data.substr(0,5).toLowerCase() == 'error')

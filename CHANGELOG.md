@@ -1,7 +1,11 @@
 # Changelog
 
+# 2.1.3
+- Regression fixed: Allow input of hex values with preceeding '$'.
+
 # 2.1.2
 - WATCH: Fixed sorting of STRUCT properties.
+
 # 2.1.1
 - Fixed: WATCH: elem count was regexed wrongly.
 - Fixed #42: Breakpoint on multi-instruction line.

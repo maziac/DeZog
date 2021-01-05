@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent, BreakpointEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log} from './log';
@@ -421,7 +421,7 @@ export class DebugSessionClass extends DebugSession {
 			// vscode is informed and will e.g. update the watches.)
 			BaseView.onChange(() => {
 				//this.sendEvent(new StoppedEvent('Value updated'));
-				this.sendEvent(new BreakpointEvent('Value updated', undefined as any));
+				//this.sendEvent(new InvalidatedEvent());
 			});
 
 			// Set root path
