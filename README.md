@@ -153,9 +153,9 @@ There are a few other extensions that are not required to work with DeZog but ma
 - [Hex Hover Converter](https://github.com/maziac/hex-hover-converter):
 	- converts numbers into their decimal, hexadecimal and binary format on hovering
 - [ZX SNA File Viewer](https://github.com/maziac/sna-fileviewer):
-	- A viewer for the ZX Spectrum snapshot (.sna) format
+	- A viewer for the ZX Spectrum snapshot (.sna) format (in marketplace search for "snafile")
 - [ZX NEX File Viewer](https://github.com/maziac/nex-fileviewer):
-	- A viewer for the ZX Spectrum Next (.nex) file format
+	- A viewer for the ZX Spectrum Next (.nex) file format (in marketplace search for "nexfile")
 
 
 All can be installed directly inside vscode from the market place.
