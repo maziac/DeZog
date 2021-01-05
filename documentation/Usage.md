@@ -1520,7 +1520,9 @@ This, of course, means that normally only the 8bit or the 4bit color pattern is 
 If you select a label with the mouse in the source code and do a right-click you can add it to the watches (alternatively you can also enter it manually in the WATCH window). The watches show the value of the memory contents the label points to in different formats.
 The content is updated on each step.
 Example:
+
 ![](images/watch_simple.jpg)
+
 You can hover over the label to display the address of the label.
 
 By default DeZog assumes the type of the label to be a byte. You can change this by adding the type (e.g. 'w' for word) after the label name:
@@ -1544,7 +1546,7 @@ For now the only assembler that provides this information is sjasmplus which all
 
 The following example defines 2 nested STRUCTs (HITBOX and INVADER) and a label (invaders) which preserve memory for 5 (INV_COUNT) invaders:
 
-~~~asm
+~~~js
         STRUCT HITBOX
 x       BYTE 0
 y       BYTE 0
