@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent, BreakpointEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log} from './log';
@@ -416,6 +416,13 @@ export class DebugSessionClass extends DebugSession {
 			// Init static views
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
+
+			// Action on changed value (i.e. when the user changed a value
+			// vscode is informed and will e.g. update the watches.)
+			BaseView.onChange(() => {
+				//this.sendEvent(new StoppedEvent('Value updated'));
+				this.sendEvent(new BreakpointEvent('Value updated', undefined as any));
+			});
 
 			// Set root path
 			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
@@ -2029,6 +2036,9 @@ Examples:
 Notes:
 For all commands (if it makes sense or not) you can add "-view" as first parameter. This will redirect the output to a new view instead of the console. E.g. use "-help -view" to put the help text in an own view.
 `;
+
+		this.sendEvent(new StoppedEvent('Value updated'));
+
 		/*
 		For debugging purposes there are a few more:
 		-dbg serializer clear: Clears the call serializer queue.

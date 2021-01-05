@@ -426,7 +426,9 @@ export class SubStructVar extends ShallowVar {
 			unsortedMap.set(relAddr, prop);
 		}
 		// Sort map by indices
-		const sortedMap = new Map([...unsortedMap.entries()].sort());
+		const sortedMap = new Map([...unsortedMap.entries()].sort(
+			(a, b) => a[0] - b[0]	// Sort numbers (first lelement)
+		));
 		// Add an end marker
 		sortedMap.set(-1, '');
 		// Get all lengths of the leafs and dive into nodes

@@ -148,7 +148,7 @@ export class MemoryDumpView extends BaseView {
 		Remote.writeMemory(address, value).then(realValue => {
 			// Also update the value and the hovertext in all webviews
 			for(let mdv of MemoryDumpView.MemoryViews) {
-				// check first if address included at all
+				// Check first if address included at all
 				if(!isNaN(mdv.memDump.getValueFor(address))) {
 					// Update value
 					mdv.memDump.setValueFor(address, realValue);
@@ -163,6 +163,8 @@ export class MemoryDumpView extends BaseView {
 					mdv.getValueInfoText(address);
 				}
 			};
+			// Inform vscode
+			BaseView.sendChangeEvent();
 		});
 	}
 

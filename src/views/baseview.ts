@@ -76,6 +76,21 @@ export class BaseView {
 	}
 
 
+	/**
+	 * Calls the registers function (debug adapter) to inform about
+	 * a change. I.e. the user changed a memory value.
+	 * The DebugAdapter/vscode uses this to update e.g. the WATCHes.
+	 */
+	public static sendChangeEvent = () => {};
+
+	/**
+	 * Registers the sendChangeEvent function.
+	 * @param func The function to register.
+	 */
+	public static onChange(func: () => void) {
+		this.sendChangeEvent = func;
+	}
+
 	// DYNAMIC:
 
 	/// A panel (containing the webview).
