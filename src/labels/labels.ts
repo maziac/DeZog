@@ -369,7 +369,7 @@ export class LabelsClass {
 	 * - zesarux.convertCondition
 	 * - z80unittests.labels.getNumberForLabel("UNITTEST_TEST_WRAPPER");
 	 * @param label The label name.
-	 * @returns It's value. undefined if label does not exist.
+	 * @returns It's value. (Long address). undefined if label does not exist.
 	 */
 	public getNumberForLabel(label: string): number | undefined {
 		return this.numberForLabel.get(label);

@@ -1854,12 +1854,14 @@ export class DebugSessionClass extends DebugSession {
 			let elemCountString=match[7];
 			// Defaults
 			if (labelString) {
-				let labelValue64k = NaN;
+				let labelValue64k;
 				let lastLabel;
 				let modulePrefix;
 				let lblIndex = 0;
+				let elemCount = 1;	// Use 1 as default
+				let elemSize;
+
 				// First check for module name and local label prefix (sjasmplus).
-				//Remote.getRegisters().then(() => {
 				const pcLongAddr = Remote.getPCLong();
 				const entry = Labels.getFileAndLineForAddress(pcLongAddr);
 				// Local label and prefix
@@ -1868,40 +1870,53 @@ export class DebugSessionClass extends DebugSession {
 
 				// Convert label
 				try {
-					labelValue64k = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);	// 64k address
-					// And index "[x]"
-					if (lblIndexString)
-						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
-				} catch {}
+					labelValue64k = Labels.getNumberForLabel(labelString);
+					if (labelValue64k == undefined) {
+						// Try more complex evaluation, but only 64k
+						labelValue64k = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+					}
+					if (isNaN(labelValue64k))
+						throw Error("Could not parse label");
+					labelValue64k &= 0xFFFF;
 
-				if (isNaN(labelValue64k)) {
+					// And index "[x]"
+					if (lblIndexString) {
+						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
+						if (isNaN(lblIndex))
+							throw Error("Could not parse index");
+					}
+
+					// Is a number
+					if (elemCountString) {
+						elemCount = Utility.evalExpression(elemCountString, false, modulePrefix, lastLabel);
+						if (isNaN(elemCount))
+							throw Error("Could not parse elem count");
+					}
+
+
+					if (!lblType || lblType.length == 0)
+						lblType = "b";	// Assume byte
+
+					// Get element size
+					if (lblType == 'b')
+						elemSize = 1;
+					else if (lblType == 'w')
+						elemSize = 2;
+					else {
+						elemSize = Labels.getNumberFromString64k(lblType);
+						if (isNaN(elemSize))
+							throw Error("Could not parse elem size");
+					}
+
+					// Add index
+					const indexOffset = lblIndex * elemSize;
+					labelValue64k = (labelValue64k & 0xFFFF) + indexOffset;
+				}
+				catch {
 					// Return empty response
 					this.sendResponse(response);
 					return;
 				}
-
-				// Is a number
-				let elemCount = 1;	// Use 1 as default
-				if (elemCountString) {
-					const readSize = Labels.getNumberFromString64k(elemCountString) || NaN;
-					if (!isNaN(readSize))
-						elemCount = readSize;
-				}
-				if (!lblType || lblType.length == 0)
-					lblType = "b";	// Assume byte
-
-				// Get element size
-				let elemSize;
-				if (lblType == 'b')
-					elemSize = 1;
-				else if (lblType == 'w')
-					elemSize = 2;
-				else {
-					elemSize = Labels.getNumberFromString64k(lblType);
-				}
-
-				// Add index
-				labelValue64k = (labelValue64k + lblIndex * elemSize) & 0xFFFF;
 
 				// Create fullLabel
 				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
@@ -1931,7 +1946,14 @@ export class DebugSessionClass extends DebugSession {
 				else {
 					// Not 'b' or 'w' but a struct given
 					const props = Labels.getSubLabels(lblType);
-					labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+					if (props.length) {
+						// Structure
+						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+					}
+					else {
+						// Simple memdump
+						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+					}
 				}
 
 				// Add to list
