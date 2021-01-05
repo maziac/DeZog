@@ -142,7 +142,7 @@ The table [here](documentation/Usage.md#remote-capabilities) shows a comparison 
 
 In Visual Studio Code simply install "DeZog" (maziac.dezog) from the Marketplace.
 
-There are 3 other extensions that are not required to work with DeZog but may help:
+There are a few other extensions that are not required to work with DeZog but may help:
 - [ASM Code Lens](https://github.com/maziac/asm-code-lens):
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
@@ -152,6 +152,11 @@ There are 3 other extensions that are not required to work with DeZog but may he
 	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
 - [Hex Hover Converter](https://github.com/maziac/hex-hover-converter):
 	- converts numbers into their decimal, hexadecimal and binary format on hovering
+- [ZX SNA File Viewer](https://github.com/maziac/sna-fileviewer):
+	- A viewer for the ZX Spectrum snapshot (.sna) format
+- [ZX NEX File Viewer](https://github.com/maziac/nex-fileviewer):
+	- A viewer for the ZX Spectrum Next (.nex) file format
+
 
 All can be installed directly inside vscode from the market place.
 
