@@ -22,7 +22,7 @@
 		"sjasmplus"
 	],
 	"engines": {
-		"vscode": "^1.50.0",
+		"vscode": "^1.52.0",
 		"node": "^7.9.0"
 	},
 	"icon": "images/dezog-icon.png",
