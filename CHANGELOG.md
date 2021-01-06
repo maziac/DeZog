@@ -1,7 +1,7 @@
 # Changelog
 
 # 2.1.3
-- Regression fixed: Allow input of hex values with preceeding '$'.
+- Regression fixed: Allow input of hex values with preceding '$'.
 
 # 2.1.2
 - WATCH: Fixed sorting of STRUCT properties.
