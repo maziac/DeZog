@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import path = require("path");
-import * as semver from "semver";
+//import * as semver from "semver";
 import * as vscode from "vscode";
 import { ContentProvider } from "./ContentProvider";
 import { WhatsNewPageBuilder } from "./PageBuilder";
@@ -62,7 +62,7 @@ export class WhatsNewManager {
     }
 
     public showPageIfVersionDiffers(currentVersion: string, previousVersion: string) {
-
+/*
         if (previousVersion) {
             const differs: semver.ReleaseType | null = semver.diff(currentVersion, previousVersion);
 
@@ -75,6 +75,7 @@ export class WhatsNewManager {
         // "major", "minor"
         this.context.globalState.update(`${this.extensionName}.version`, currentVersion);
         this.showPage();
+        */
     }
 
     protected getWebviewContentLocal(htmlFile: string, cssUrl: string, logoUrl: string): string {

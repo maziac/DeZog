@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import * as fs from "fs";
-import * as semver from "semver";
+//import * as semver from "semver";
 import { ChangeLogItem, ChangeLogIssue, ChangeLogVersion, ChangeLogKind, Header, Sponsor, IssueKind } from "./ContentProvider";
 
 export class WhatsNewPageBuilder {
@@ -31,8 +31,10 @@ export class WhatsNewPageBuilder {
     }
 
     public updateExtensionVersion(extensionVersion: string) {
+        /*
         this.htmlFile = this.htmlFile.replace("${extensionVersion}",
             `${semver.major(extensionVersion)}.${semver.minor(extensionVersion)}`);
+            */
         return this;
     }
 

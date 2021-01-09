@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 import path=require("path");
-import * as semver from "semver";
+//import * as semver from "semver";
 import * as vscode from "vscode";
 //import {ContentProvider} from "./ContentProvider";
 import {WhatsNewPageBuilder} from "../3rdparty/vscode-whats-new/src/PageBuilder";
@@ -13,11 +13,12 @@ import {WhatsNewManager} from "../3rdparty/vscode-whats-new/src/Manager";
 export class DezogWhatsNewMgr extends WhatsNewManager {
 
 	public checkIfVersionDiffers(): boolean {
+		/*
 		// load data from extension manifest
 		this.extension=vscode.extensions.getExtension(`maziac.${this.extensionName}`)!;
 
 		const previousExtensionVersion=this.context.globalState.get<string>(`${this.extensionName}.version`)!;
-		const currentVersion=this.extension.packageJSON.version;
+		const currentVersion = this.extension.packageJSON.version;
 		if (previousExtensionVersion) {
 			const differs: semver.ReleaseType|null=semver.diff(currentVersion, previousExtensionVersion);
 
@@ -29,9 +30,9 @@ export class DezogWhatsNewMgr extends WhatsNewManager {
 
 		// Update version: "major", "minor"
 		this.context.globalState.update(`${this.extensionName}.version`, currentVersion);
+		*/
 
-		// Versions differ
-		return true;
+		return false;
 	}
 
 
@@ -56,7 +57,8 @@ export class DezogWhatsNewMgr extends WhatsNewManager {
 			path.join(this.context.extensionPath, "images", "dezog-icon.png"));
 		const logoUri=logoPathOnDisk.with({scheme: "vscode-resource"});
 
-		panel.webview.html=this.getWebviewContentLocal(pageUri.fsPath, cssUri.toString(), logoUri.toString());
+		const html = this.getWebviewContentLocal(pageUri.fsPath, cssUri.toString(), logoUri.toString());
+		panel.webview.html = html;
 	}
 
 
