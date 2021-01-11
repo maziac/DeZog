@@ -13,4 +13,5 @@ coverage/**/*
 design/**/*
 logs/**/*
 notes.md
-*.xcf
+**/*.xcf
+documentation/extras

@@ -9,7 +9,7 @@ import {Utility} from './misc/utility';
 import {HelpView} from './help/helpview';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
-import {HelpProvider} from './help';
+import {HelpProvider} from './help/helpprovider';
 
 
 /// Config section in the settings.
@@ -250,6 +250,8 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
  */
 function configureLogging() {
 	const configuration=vscode.workspace.getConfiguration(CONFIG_SECTION, null);
+
+	// TODO: observe donate and showHelp
 
 	// Global log
 	{

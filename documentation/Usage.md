@@ -6,8 +6,12 @@ This document describes the features of DeZog and how they can be used.
 
 If you like DeZog please consider supporting it.
 
-<a title="PayPal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url">
-	<img src="images/btn_donate_SM.gif" />
+<a href="https://github.com/sponsors/maziac" title="Github sponsor">
+	<img src="../assets/button_donate_sp.png" />
+</a>
+&nbsp;&nbsp;
+<a href="https://www.paypal.com/donate/?hosted_button_id=K6NNLZCTN3UV4&locale.x=en_DE&Z3JncnB0=" title="PayPal">
+	<img src="../assets/button_donate_pp.png" />
 </a>
 
 
