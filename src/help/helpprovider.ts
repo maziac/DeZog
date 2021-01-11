@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {readFileSync} from 'fs';
 import {PackageInfo} from '../whatsnew/packageinfo';
+import {HelpView} from './helpview';
 
 
 export class HelpProvider implements vscode.WebviewViewProvider {
@@ -40,19 +41,66 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 		if (!this.webview)
 			return;
 
-		// Add the html styles etc.
-		const extPath = PackageInfo.extensionPath;
-		const mainHtmlFile = path.join(extPath, 'html/main.html');
-		let mainHtml = readFileSync(mainHtmlFile).toString();
-		// Exchange local path
-		const resourcePath = vscode.Uri.file(extPath);
-		const vscodeResPath = this.webview.asWebviewUri(resourcePath).toString();
-		mainHtml = mainHtml.replace('${vscodeResPath}', vscodeResPath);
+		// Get the TOC
+		const toc = HelpView.getTocHtml();
 
-		// Get hex prefix
-		const configuration = vscode.workspace.getConfiguration('dezog');
+		// Add html around
+		let mainHtml = `
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8" >
+	<title>DeZog Help</title>
+	<base href="\${vscodeResPath}/">
+</head>
+
+<style>
+
+/* Normal text color for links and no underline. */
+a {
+	color: var(--vscode-editor-foreground);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--vscode-editor-foreground);
+    font-weight: bold;
+}
+
+.tooltip {
+  display: none;
+}
+
+/* No bullets for list. */
+ul {
+	list-style: none;
+    padding-left: 0.5em;
+}
+li > ul {
+    padding-left: 1.5em;
+}
+
+</style>
+
+<body>
+
+<!--\${donate}-->
+
+${toc}
+
+</body>
+<script>
+/* Avoid tooltip on hover by removing all titles. */
+var links = document.getElementsByTagName('a');
+for(var i = 0; i < links.length; i++) {
+    links[i].title = '';
+}
+</script>
+</html>
+`;
 
 		// Get donated state
+		const configuration = vscode.workspace.getConfiguration('dezog');
 		const donated = configuration.get<boolean>('donated');
 		// Set button
 		if (!donated) {

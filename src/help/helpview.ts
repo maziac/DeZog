@@ -103,6 +103,16 @@ th {
   display: block; /* Show it on hover */
 }
 
+
+/* No bullets for list. */
+ul {
+	list-style: none;
+    padding-left: 0.5em;
+}
+li > ul {
+    padding-left: 2em;
+}
+
 </style>
 
 <body>
@@ -150,7 +160,7 @@ ${html}
 	 * Then the string is cached.
 	 * @returns The help TOC as string.
 	 */
-	protected static getTocHtml() {
+	public static getTocHtml() {
 		if (!this.tocHtml) {
 			// Get html
 			const html = this.getHelpHtml();
