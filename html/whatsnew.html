@@ -1,0 +1,96 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Eric Amodio & Alessandro Fragnani. All rights reserved.
+*  Licensed under the MIT License. See License.md in the project root for license information.
+*
+*  Original Author: Eric Amodio @ GitLens
+*  Modifications by: Alessandro Fragnani
+*--------------------------------------------------------------------------------------------*/
+-->
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<base href="${vscodeResPath}/">
+	<link rel="stylesheet" href="html/whatsnew.css">
+</head>
+
+<body class="preload">
+
+	<div class="container">
+		<div class="content">
+			<header>
+				<a style="text-align: center;" title="Learn more about ${extensionDisplayName}" href="${repositoryUrl}">
+					<img width="50%" src="assets/icon.png" />
+				</a>
+				<p class="header__blurb">
+					<p>
+						<b>DeZog<b> is an Integrated Development Environment for the Z80 processor. It supports various assemblers and remote
+						debugging. Especially for, but not limited to, ZX Spectrum devices.
+					</p>
+					<p>
+						The step from 1.5 to 2.0 was huge. A lot of things changed under the hood to support 'long addresses'.<br>
+						This also involved a few changes to the configuration.<br>
+						If you come from 1.5 please read the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">migration</a> document.
+						</p>
+					<p>
+						2.1 now basically adds more convenience. See below.<br>
+				</p>
+
+			</header>
+
+			<div class="section-groups">
+				<div class="section-group__content">
+
+					<section id="whats-new" class="changelog">
+						<h2>What's New in <b>${extensionDisplayName} ${extensionVersion}</b>
+						</h2>
+						<div>
+							<ul>
+								${changeLog}
+							</ul>
+						</div>
+					</section>
+
+				</div>
+				<div class="section-group__sidebar section-group__sidebar--welcome">
+					<div class="sidebar-group">
+						<h2>Show Your Support</h2>
+						<p>
+							While <b>${extensionDisplayName}</b> is offered for free,
+							if you find it useful, please consider supporting it.
+						</p>
+						<div class="button-group">
+							<a class="button button--flat-primary" title="Become a sponsor on Github"
+								href="https://github.com/sponsors/maziac" target="_blank">Become a Sponsor</a>
+							<a class="button button--flat-primary" title="Donate via PayPal"
+								href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url"
+								target="_blank">Donate via PayPal</a>
+						</div>
+						<ul>
+							<li><a title="Write a review"
+									href="https://marketplace.visualstudio.com/items?itemName=${extensionName}&ssr=false#review-details">Write
+									a Review</a>
+							</li>
+						</ul>
+
+
+					<h2>Need Help?</h2>
+					<ul>
+						<li>
+							<a href="${repositoryHomepage}">Homepage</a>
+						</li>
+						<li>
+							<a href="${repositoryIssues}">Questions &amp; Issues</a>
+						</li>
+					</ul>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

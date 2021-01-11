@@ -42,7 +42,7 @@ vsce package
 1. Increase the version number in package.json.
 2. Update change description
 	- Update CHANGELOG.md if not yet done.
-	- Update 'Dezog/src/whatsnew/whatsnewprovider.ts'.
+	- Update 'Dezog/html/whatsnew_changelog.html' and maybe '...whatsnew.html'.
 3. Run ```npm i```
 4. [Build](#build)
 5. Push sources to github:

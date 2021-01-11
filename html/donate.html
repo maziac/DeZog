@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<base href="${vscodeResPath}/">
+	<link rel="stylesheet" href="html/donate.css">
+</head>
+
+<body>
+
+	<p>
+Although the extension is free and will stay free I would appreciate very much if you could support me with a little donation.
+	</p>
+	<p>
+		To do so please use one of the buttons below.
+	</p>
+	<div class="button-group">
+		<a class="button button--flat-primary" title="Become a sponsor on Github" href="https://github.com/sponsors/maziac"
+			target="_blank">Become a Sponsor</a>
+		<a class="button button--flat-primary" title="Donate via PayPal"
+			href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8S4R8HPXVCXUL&source=url"
+			target="_blank">Donate via PayPal</a>
+	</div>
+
+	<p>
+		Afterwards you can hide the 'Donate...' button in the settings by changing
+<code>
+dezog.donated
+</code>
+		to true :-)
+	</p>
+
+	<hr>
+
+	If you like you may also try one of my other extensions:
+	<ul>
+		<li><a href="" onclick="showExtension('dezog')">DeZog</a><br>
+			A debugger for Z80 assembler code.
+		</li>
+		<li><a href="" onclick="showExtension('z80-unit-tests')">Z80 Unit-Tests</a><br>
+			An extension to start/debug Z80 unit tests from a graphical UI.
+		</li>
+		<li>
+			<a  href="" onclick="showExtension('z80-instruction-set')">Z80 Instruction Set</a><br>
+			Shows the opcode, affected flags and a description on hovering over a Z80 instruction.
+		</li>
+		<li>
+			<a href="" onclick="showExtension('hex-hover-converter')">Hex Hover Converter</a><br>
+			Converts numbers into their decimal, hexadecimal and binary format on hovering.
+		</li>
+		<li>
+			<a href="" onclick="showExtension('sna-fileviewer')">ZX SNA File Viewer</a><br>
+			A viewer for the ZX Spectrum snapshot (.sna) format (in marketplace search for "snafile").
+		</li>
+		<li>
+			<a href="" onclick="showExtension('nex-fileviewer')">ZX NEX File Viewer</a><br>
+			A viewer for the ZX Spectrum Next (.nex) file format (in marketplace search for "nexfile").
+		</li>
+	</ul>
+
+</body>
+<script src="out/src/html/donate.js"></script>
+</html>

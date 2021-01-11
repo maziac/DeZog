@@ -1,0 +1,50 @@
+* {
+    font-family: var(--vscode-editor-font-family);
+    font-weight: var(--vscode-editor-font-weight);
+    font-size: var(--vscode-editor-font-size);
+}
+
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+  .button-group .button {
+    white-space: nowrap;
+}
+
+.button {
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.8em;
+  letter-spacing: 0.25em;
+  margin: 1em 0.5em;
+  padding: 1em 1.75em;
+  text-decoration: none;
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+}
+  .button:focus {
+    outline: none;
+  }
+
+.button--flat-primary {
+  background-color: var(--vscode-button-background);
+  border: 1px solid var(--vscode-button-background);
+  color: white !important;
+  font-weight: 600;
+  transition: background-color 250ms, border-color 250ms, color 250ms;
+}
+.button--flat-primary:hover {
+    background-color: white;
+    border-color: white;
+    color: black !important;
+}
+.preload .button--flat-primary {
+    transition-duration: 0s !important;
+}
+

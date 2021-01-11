@@ -1,0 +1,178 @@
+
+.section-group__content {
+  flex: auto 1 1;
+  min-width: 0;
+  max-width: 60%; }
+
+.section-group__sidebar {
+  align-self: flex-start;
+  margin: 0 0 0 3em;
+  position: sticky;
+  top: 0; }
+  .section-group__sidebar li {
+    white-space: nowrap; }
+
+@media all and (max-width: 860px) {
+  .section-group__sidebar--settings {
+    display: none; } }
+
+.section-group__sidebar--welcome {
+  margin-right: 3em; }
+  @media all and (max-width: 560px) {
+    .section-group__sidebar--welcome {
+      display: none; } }
+
+.section-group-section p {
+  font-size: 1.1em;
+  font-weight: 200;
+  margin: 1em 0.25em; }
+
+.section-group-section__cols {
+  display: flex;
+  flex-wrap: wrap; }
+
+.section-group-section__col {
+  flex: 45% 1 1;
+  margin: 0 4px;
+  min-width: 300px; }
+
+.section-groups {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 50%;
+  margin-top: -1em; }
+
+.settings-group {
+  flex: 2 1;
+  margin-bottom: 1em;
+  min-width: 300px; }
+
+.settings-group__hint--more {
+  display: block;
+  margin-left: 34px;
+  margin-top: 0.5em; }
+
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap; }
+  .button-group .button {
+    white-space: nowrap; }
+
+.button {
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.8em;
+  letter-spacing: 0.25em;
+  margin: 1em 0.5em;
+  padding: 1em 1.75em;
+  text-decoration: none;
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap; }
+  .button:focus {
+    outline: none; }
+
+.button--big {
+  font-size: 1.25em; }
+
+.button--flat {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: white !important;
+  transition: background-color 250ms, border-color 250ms, color 250ms; }
+  .button--flat:hover {
+    background-color: white;
+    color: black !important; }
+  .preload .button--flat {
+    transition-duration: 0s !important; }
+
+
+.button--flat-inverse {
+  background-color: white;
+  border: 1px solid white;
+  color: black !important;
+  font-weight: 600;
+  transition: background-color 250ms, border-color 250ms, color 250ms; }
+  .button--flat-inverse:hover {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: white !important; }
+  .preload .button--flat-inverse {
+    transition-duration: 0s !important; }
+
+.button--flat-primary {
+  background-color: var(--vscode-button-background);
+  border: 1px solid var(--vscode-button-background);
+  color: white !important;
+  font-weight: 600;
+  transition: background-color 250ms, border-color 250ms, color 250ms; }
+  .button--flat-primary:hover {
+    background-color: white;
+    border-color: white;
+    color: black !important; }
+  .preload .button--flat-primary {
+    transition-duration: 0s !important; }
+
+
+
+.changelog {
+  /* border-radius: 5em;*/
+  margin: 0 2em 1em 0; }
+  .vscode-light .changelog {
+    background-color: var(--vscode-editor-background);
+    /* box-shadow: inset 0 0 6px 0px rgba(0, 0, 0, 0.05); */
+  }
+  .vscode-dark .changelog {
+    background-color: var(--vscode-editor-background);
+    /* box-shadow: inset 0 0 6px 0px rgba(255, 255, 255, 0.075);  */
+  }
+
+.changelog li {
+  margin-bottom: 2em;
+}
+
+.changelog li:last-child {
+  margin-bottom: 0em;
+}
+
+
+.changelog-badge {
+  background-color: var(--vscode-activityBarBadge-background);
+  border-radius: 3px;
+  box-shadow: 0 0 2px 0px rgba(0, 0, 0, 0.5);
+  color: var(--vscode-editor-background);
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 1.25em;
+  padding: 2px 5px;
+  text-align: center;
+  text-transform: uppercase;
+  vertical-align: text-top;
+  width: 65px;
+}
+
+.changelog-badge-added {
+  background-color: var(--vscode-gitDecoration-untrackedResourceForeground); }
+
+.changelog-badge-changed {
+  background-color: var(--vscode-gitDecoration-modifiedResourceForeground);
+}
+.changelog-badge-fixed {
+  background-color: var(--vscode-gitDecoration-conflictingResourceForeground); }
+
+
+ul {
+  font-size: 1em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+a {
+  text-decoration: none;
+}
