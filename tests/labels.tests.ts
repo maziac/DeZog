@@ -1,9 +1,9 @@
 
 import * as assert from 'assert';
-import { Labels, LabelsClass } from '../labels/labels';
-import {Zx128MemoryModel, ZxNextMemoryModel} from '../remotes/Paging/memorymodel';
-import {Z80RegistersClass} from '../remotes/z80registers';
-import {Settings} from '../settings';
+import { Labels, LabelsClass } from '../src/labels/labels';
+import {Zx128MemoryModel, ZxNextMemoryModel} from '../src/remotes/Paging/memorymodel';
+import {Z80RegistersClass} from '../src/remotes/z80registers';
+import {Settings} from '../src/settings';
 
 suite('Labels', () => {
 
@@ -19,7 +19,7 @@ suite('Labels', () => {
 			test('getFileAndLineForAddress', () => {
 				const config = {
 					z80asm: [{
-						path: './src/tests/data/labels/test1.list',
+						path: './tests/data/labels/test1.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -85,7 +85,7 @@ suite('Labels', () => {
 			test('getAddrForFileAndLine', () => {
 				const config = {
 					z80asm: [{
-						path: './src/tests/data/labels/test1.list',
+						path: './tests/data/labels/test1.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -124,7 +124,7 @@ suite('Labels', () => {
 			test('get label values from list file', () => {
 				const config = {
 					z80asm: [{
-						path: './src/tests/data/labels/test2.list',
+						path: './tests/data/labels/test2.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -158,7 +158,7 @@ suite('Labels', () => {
 			test('get labels for a value from list file', () => {
 				const config = {
 					z80asm: [{
-						path: './src/tests/data/labels/test2.list',
+						path: './tests/data/labels/test2.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -189,7 +189,7 @@ suite('Labels', () => {
 			test('z80asm.list', () => {
 				const config = {
 					z80asm: [{
-						path: './src/tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
+						path: './tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
 				};
@@ -210,7 +210,7 @@ suite('Labels', () => {
 			});
 
 			test('rom.list', () => {
-				const config = {z80asm: [{path: './src/tests/data/labels/rom.list', srcDirs: []}]};
+				const config = {z80asm: [{path: './tests/data/labels/rom.list', srcDirs: []}]};
 				Labels.readListFiles(config);
 
 				// Checks
@@ -228,8 +228,8 @@ suite('Labels', () => {
 			test('z88dk.lis', () => {
 				const config = {
 					z88dk: [{
-						path: './src/tests/data/labels/z88dk.lis',
-						mapFile: './src/tests/data/labels/z88dk_empty.map',
+						path: './tests/data/labels/z88dk.lis',
+						mapFile: './tests/data/labels/z88dk_empty.map',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -259,7 +259,7 @@ suite('Labels', () => {
 			test('z88dk map file (currah)', () => {
 				const config = {
 					z88dk: [{
-						path: './src/tests/data/labels/currah_uspeech_tests.lis', mapFile: './src/tests/data/labels/currah_uspeech_tests.map',
+						path: './tests/data/labels/currah_uspeech_tests.lis', mapFile: './tests/data/labels/currah_uspeech_tests.map',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]

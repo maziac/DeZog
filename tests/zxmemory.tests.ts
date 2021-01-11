@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
-import {MemBuffer} from '../misc/membuffer';
-import {PagedMemory} from '../remotes/zsimulator/pagedmemory';
+import {MemBuffer} from '../src/misc/membuffer';
+import {PagedMemory} from '../src/remotes/zsimulator/pagedmemory';
 
 suite('PagedMemory', () => {
 	test('serialize/deserialize', () => {

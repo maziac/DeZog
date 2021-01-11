@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
-import {Labels} from '../labels/labels';
+import {Labels} from '../src/labels/labels';
 import {readFileSync} from 'fs';
-//import { Settings } from '../settings';
+//import { Settings } from '../src/settings';
 
 suite('Labels (sjasmplus)', () => {
 
@@ -15,12 +15,12 @@ suite('Labels (sjasmplus)', () => {
 
 		test('Labels', () => {
 			// Read result data (labels)
-			const labelsFile = readFileSync('./src/tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
+			const labelsFile = readFileSync('./tests/data/labels/projects/sjasmplus/general/general.labels').toString().split('\n');
 
 			// Read the list file
 			const config = {
 				sjasmplus: [{
-					path: './src/tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
+					path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 					excludeFiles: [],
 					disableBanking: true
 				}]
@@ -47,7 +47,7 @@ suite('Labels (sjasmplus)', () => {
 			// Read the list file
 			const config = {
 				sjasmplus: [{
-					path: './src/tests/data/labels/projects/sjasmplus/general/general.sld',
+					path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -67,7 +67,7 @@ suite('Labels (sjasmplus)', () => {
 				// Read the list file
 				const config = {
 					sjasmplus: [{
-						path: './src/tests/data/labels/projects/sjasmplus/general/general.sld',
+						path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -126,7 +126,7 @@ suite('Labels (sjasmplus)', () => {
 				// Read the list file
 				const config = {
 					sjasmplus: [{
-						path: './src/tests/data/labels/projects/sjasmplus/general/general.sld',
+						path: './tests/data/labels/projects/sjasmplus/general/general.sld',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -156,7 +156,7 @@ suite('Labels (sjasmplus)', () => {
 				// Read the list file
 				const config = {
 					sjasmplus: [{
-						path: './src/tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
+						path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
 				};
@@ -186,7 +186,7 @@ suite('Labels (sjasmplus)', () => {
 		// Read the list file
 		const config = {
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
+				path: './tests/data/labels/projects/sjasmplus/general/general.sld', srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
 		};

@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { MemoryDump } from '../misc/memorydump';
+import { MemoryDump } from '../src/misc/memorydump';
 
 suite('MetaBlocks', () => {
 

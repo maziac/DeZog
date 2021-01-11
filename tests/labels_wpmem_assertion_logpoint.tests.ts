@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import {Labels} from '../labels/labels';
+import {Labels} from '../src/labels/labels';
 
 
 suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
@@ -13,7 +13,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		// Read the list file
 		const config = {
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
+				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
@@ -42,7 +42,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		// Read the list file
 		const config = {
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
+				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: [],
 				disableBanking: true
@@ -60,7 +60,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
+				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]
@@ -79,7 +79,7 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 		// Read the list file
 		const config={
 			sjasmplus: [{
-				path: './src/tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
+				path: './tests/data/labels/projects/sjasmplus/wpmem_assertion_logpoint/wpmem_assertion_logpoint.sld',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]

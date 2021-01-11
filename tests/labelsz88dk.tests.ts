@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
-import {Labels} from '../labels/labels';
+import {Labels} from '../src/labels/labels';
 import {readFileSync} from 'fs';
-//import { Settings } from '../settings';
+//import { Settings } from '../src/settings';
 
 suite('Labels (z88dk)', () => {
 
@@ -15,13 +15,13 @@ suite('Labels (z88dk)', () => {
 
 		test('Labels (with map)', () => {
 			// Read result data (labels)
-			const labelsFile=readFileSync('./src/tests/data/labels/projects/z88dk/general/main.map').toString().split('\n');
+			const labelsFile=readFileSync('./tests/data/labels/projects/z88dk/general/main.map').toString().split('\n');
 
 			// Read the list file
 			const config={
 				z88dk: [{
-					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -50,8 +50,8 @@ suite('Labels (z88dk)', () => {
 			// Read the list file
 			const config={
 				z88dk: [{
-					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -71,8 +71,8 @@ suite('Labels (z88dk)', () => {
 			// Read the list file
 			const config={
 				z88dk: [{
-					path: './src/tests/data/labels/projects/z88dk/general/main.lis',
-					mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+					path: './tests/data/labels/projects/z88dk/general/main.lis',
+					mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -91,12 +91,12 @@ suite('Labels (z88dk)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const fname='./src/tests/data/labels/projects/z88dk/general/main.lis';
+				const fname='./tests/data/labels/projects/z88dk/general/main.lis';
 				const config={
 					z88dk: [{
 						path: fname,
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 						excludeFiles: []
 					}]
 				};
@@ -126,14 +126,14 @@ suite('Labels (z88dk)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file as result data (addresses)
-				const listFile=readFileSync('./src/tests/data/labels/projects/z88dk/general/main.lis').toString().split('\n');
+				const listFile=readFileSync('./tests/data/labels/projects/z88dk/general/main.lis').toString().split('\n');
 
 				// Read the list file
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map"
 					}]
 				};
 				Labels.readListFiles(config);
@@ -158,15 +158,15 @@ suite('Labels (z88dk)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file as result data (addresses)
-				const filename='./src/tests/data/labels/projects/z88dk/general/main.lis';
+				const filename='./tests/data/labels/projects/z88dk/general/main.lis';
 				const listFile=readFileSync(filename).toString().split('\n');
 
 				// Read the list file
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general/main.lis',
 						srcDirs: [],	// ListFile-Mode
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map"
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map"
 					}]
 				};
 				Labels.readListFiles(config);
@@ -196,9 +196,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -237,9 +237,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -269,9 +269,9 @@ suite('Labels (z88dk)', () => {
 				// Read the list file
 				const config={
 					z88dk: [{
-						path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+						path: './tests/data/labels/projects/z88dk/general/main.lis',
 						mainFile: "main.asm",
-						mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+						mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -313,9 +313,9 @@ suite('Labels (z88dk)', () => {
 		// Read the list file
 		const config={
 			z88dk: [{
-				path: './src/tests/data/labels/projects/z88dk/general/main.lis',
+				path: './tests/data/labels/projects/z88dk/general/main.lis',
 				mainFile: "main.asm",
-				mapFile: "./src/tests/data/labels/projects/z88dk/general/main.map",
+				mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]

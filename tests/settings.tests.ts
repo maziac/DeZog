@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Settings } from '../settings';
+import { Settings } from '../src/settings';
 
 suite('Settings', () => {
 
@@ -75,7 +75,7 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				sjasmplus: [
-					{ path: "./src/tests/data/settings/filenotexists.list" }
+					{ path: "./tests/data/settings/filenotexists.list" }
 				]
 			};
 
@@ -91,7 +91,7 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				sjasmplus: [
-					{ path: "./src/tests/data/settings/file.list" }
+					{ path: "./tests/data/settings/file.list" }
 				]
 			};
 
@@ -106,7 +106,7 @@ suite('Settings', () => {
 		test('CheckSettings - load 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./src/tests/data/settings/filenotexists.sna"
+				load: "./tests/data/settings/filenotexists.sna"
 			};
 
 			// File does not exist -> Exception
@@ -120,7 +120,7 @@ suite('Settings', () => {
 		test('CheckSettings - load 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./src/tests/data/settings/file.sna"
+				load: "./tests/data/settings/file.sna"
 			};
 
 			// File does exist -> No exception
@@ -134,7 +134,7 @@ suite('Settings', () => {
 		test('CheckSettings - load and execAddress', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./src/tests/data/settings/file.sna",
+				load: "./tests/data/settings/file.sna",
 				execAddress: "1234"
 			};
 
@@ -150,8 +150,8 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				loadObjs: [
-					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./src/tests/data/settings/file2notexists.obj", start: "1234" }
+					{ path: "./tests/data/settings/file1.obj", start: "1234" },
+					{ path: "./tests/data/settings/file2notexists.obj", start: "1234" }
 				]
 			};
 
@@ -167,8 +167,8 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				loadObjs: [
-					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./src/tests/data/settings/file2.obj", start: "1234" }
+					{ path: "./tests/data/settings/file1.obj", start: "1234" },
+					{ path: "./tests/data/settings/file2.obj", start: "1234" }
 				]
 			};
 
@@ -185,8 +185,8 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				loadObjs: [
-					{ path: "./src/tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./src/tests/data/settings/file2.obj" }
+					{ path: "./tests/data/settings/file1.obj", start: "1234" },
+					{ path: "./tests/data/settings/file2.obj" }
 				]
 			};
 

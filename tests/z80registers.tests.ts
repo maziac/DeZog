@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { Z80RegistersClass } from '../remotes/z80registers';
+import { Z80RegistersClass } from '../src/remotes/z80registers';
 
 suite('Z80Registers', () => {
 

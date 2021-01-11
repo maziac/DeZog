@@ -1,8 +1,8 @@
 
 import * as assert from 'assert';
-import {Labels} from '../labels/labels';
+import {Labels} from '../src/labels/labels';
 import {readFileSync} from 'fs';
-//import { Settings } from '../settings';
+//import { Settings } from '../src/settings';
 
 suite('Labels (z80asm)', () => {
 
@@ -15,12 +15,12 @@ suite('Labels (z80asm)', () => {
 
 		test('Labels', () => {
 			// Read result data (labels)
-			const labelsFile=readFileSync('./src/tests/data/labels/projects/z80asm/general/general.labels').toString().split('\n');
+			const labelsFile=readFileSync('./tests/data/labels/projects/z80asm/general/general.labels').toString().split('\n');
 
 			// Read the list file
 			const config={
 				z80asm: [{
-					path: './src/tests/data/labels/projects/z80asm/general/general.list',
+					path: './tests/data/labels/projects/z80asm/general/general.list',
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -46,7 +46,7 @@ suite('Labels (z80asm)', () => {
 			// Read the list file
 			const config={
 				z80asm: [{
-					path: './src/tests/data/labels/projects/z80asm/general/general.list',
+					path: './tests/data/labels/projects/z80asm/general/general.list',
 					srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
@@ -65,7 +65,7 @@ suite('Labels (z80asm)', () => {
 
 			test('Labels location', () => {
 				// Read the list file
-				const fname='./src/tests/data/labels/projects/z80asm/general/general.list';
+				const fname='./tests/data/labels/projects/z80asm/general/general.list';
 				const config={z80asm: [{path: fname, srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
@@ -88,10 +88,10 @@ suite('Labels (z80asm)', () => {
 
 			test('address -> file/line', () => {
 				// Read the list file as result data (addresses)
-				const listFile=readFileSync('./src/tests/data/labels/projects/z80asm/general/general.list').toString().split('\n');
+				const listFile=readFileSync('./tests/data/labels/projects/z80asm/general/general.list').toString().split('\n');
 
 				// Read the list file
-				const config={z80asm: [{path: './src/tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
+				const config={z80asm: [{path: './tests/data/labels/projects/z80asm/general/general.list', srcDirs: []}]};	// ListFile-Mode
 				Labels.readListFiles(config);
 
 				// Compare all addresses
@@ -114,7 +114,7 @@ suite('Labels (z80asm)', () => {
 
 			test('file/line -> address', () => {
 				// Read the list file as result data (addresses)
-				const filename='./src/tests/data/labels/projects/z80asm/general/general.list';
+				const filename='./tests/data/labels/projects/z80asm/general/general.list';
 				const listFile=readFileSync(filename).toString().split('\n');
 
 				// Read the list file
@@ -146,7 +146,7 @@ suite('Labels (z80asm)', () => {
 				// Read the list file
 				const config={
 					z80asm: [{
-						path: './src/tests/data/labels/projects/z80asm/general/general.list',
+						path: './tests/data/labels/projects/z80asm/general/general.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -176,7 +176,7 @@ suite('Labels (z80asm)', () => {
 				// Read the list file
 				const config={
 					z80asm: [{
-						path: './src/tests/data/labels/projects/z80asm/general/general.list',
+						path: './tests/data/labels/projects/z80asm/general/general.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -207,7 +207,7 @@ suite('Labels (z80asm)', () => {
 				// Read the list file
 				const config={
 					z80asm: [{
-						path: './src/tests/data/labels/projects/z80asm/general/general.list',
+						path: './tests/data/labels/projects/z80asm/general/general.list',
 						srcDirs: [""],	// Sources mode
 						excludeFiles: []
 					}]
@@ -238,7 +238,7 @@ suite('Labels (z80asm)', () => {
 		// Read the list file
 		const config={
 			z80asm: [{
-				path: './src/tests/data/labels/projects/z80asm/general/general.list',
+				path: './tests/data/labels/projects/z80asm/general/general.list',
 				srcDirs: [""],	// Sources mode
 				excludeFiles: []
 			}]

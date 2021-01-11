@@ -1,10 +1,10 @@
 
 import * as assert from 'assert';
-import {Z80Cpu} from '../remotes/zsimulator/z80cpu';
-import {Z80Ports} from '../remotes/zsimulator/z80ports';
-import {MemBuffer} from '../misc/membuffer';
-import {Settings} from '../settings';
-import {SimulatedMemory} from '../remotes/zsimulator/simmemory';
+import {Z80Cpu} from '../src/remotes/zsimulator/z80cpu';
+import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
+import {MemBuffer} from '../src/misc/membuffer';
+import {Settings} from '../src/settings';
+import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
 
 suite('Z80Cpu', () => {
 

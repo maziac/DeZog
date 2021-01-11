@@ -1,13 +1,13 @@
 
 import * as assert from 'assert';
-import { Utility } from '../misc/utility';
-import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
-//import { EmulatorClass } from '../emulator';
-import { Remote, RemoteFactory } from '../remotes/remotefactory';
-import { Settings } from '../settings';
-//import { ZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
-import {Labels} from '../labels/labels';
-import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
+import { Utility } from '../src/misc/utility';
+import { Z80RegistersClass, Z80Registers } from '../src/remotes/z80registers';
+//import { EmulatorClass } from '../src/emulator';
+import { Remote, RemoteFactory } from '../src/remotes/remotefactory';
+import { Settings } from '../src/settings';
+//import { ZesaruxRegisters } from '../src/remotes/zesarux/decodezesaruxdata';
+import {Labels} from '../src/labels/labels';
+import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
 
 
 suite('Utility', () => {
@@ -497,7 +497,7 @@ suite('Utility', () => {
 		test('Label', async () => {
 			const config = {
 				z80asm: [{
-					path: './src/tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
+					path: './tests/data/labels/z80asm.list', srcDirs: [""],	// Sources mode
 					excludeFiles: []
 				}]
 			};

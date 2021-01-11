@@ -1,7 +1,7 @@
 
 import * as assert from 'assert';
-import {Utility} from '../misc/utility';
-import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
+import {Utility} from '../src/misc/utility';
+import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
 
 /**
  * The tests here are not really unit tests but meant to check some

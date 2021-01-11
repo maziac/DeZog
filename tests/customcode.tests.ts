@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import {CustomCode} from '../remotes/zsimulator/customcode';
+import {CustomCode} from '../src/remotes/zsimulator/customcode';
 
 
 

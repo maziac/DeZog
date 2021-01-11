@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { MemoryArray } from '../misc/memoryarray';
+import { MemoryArray } from '../src/misc/memoryarray';
 
 suite('MemoryArray', () => {
 

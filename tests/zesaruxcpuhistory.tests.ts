@@ -1,14 +1,14 @@
 
 import * as assert from 'assert';
-import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../remotes/zesarux/zesaruxcpuhistory';
-import { Z80RegistersClass, Z80Registers } from '../remotes/z80registers';
-import {DecodeZesaruxRegisters} from '../remotes/zesarux/decodezesaruxdata';
-import {Settings} from '../settings';
-import {ZesaruxSocket, zSocket} from '../remotes/zesarux/zesaruxsocket';
-import {RefList} from '../misc/refList';
-import {CallStackFrame} from '../callstackframe';
-import {RemoteFactory} from '../remotes/remotefactory';
-import {CpuHistory} from '../remotes/cpuhistory';
+import { ZesaruxCpuHistory, DecodeZesaruxHistoryInfo } from '../src/remotes/zesarux/zesaruxcpuhistory';
+import { Z80RegistersClass, Z80Registers } from '../src/remotes/z80registers';
+import {DecodeZesaruxRegisters} from '../src/remotes/zesarux/decodezesaruxdata';
+import {Settings} from '../src/settings';
+import {ZesaruxSocket, zSocket} from '../src/remotes/zesarux/zesaruxsocket';
+import {RefList} from '../src/misc/refList';
+import {CallStackFrame} from '../src/callstackframe';
+import {RemoteFactory} from '../src/remotes/remotefactory';
+import {CpuHistory} from '../src/remotes/cpuhistory';
 
 
 

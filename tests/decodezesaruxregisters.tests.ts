@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { DecodeZesaruxRegisters } from '../remotes/zesarux/decodezesaruxdata';
+import { DecodeZesaruxRegisters } from '../src/remotes/zesarux/decodezesaruxdata';
 
 
 
