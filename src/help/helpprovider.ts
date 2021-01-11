@@ -26,6 +26,9 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 				case 'donateClicked':
 					this.openDonateWebView();
 					break;
+				case 'linkClicked':
+					this.openDonateWebView();
+					break;
 			}
 		});
 
@@ -80,6 +83,12 @@ li > ul {
     padding-left: 1.5em;
 }
 
+/* Donate button. */
+button {
+  background-color: yellow;
+  color: black;
+}
+
 </style>
 
 <body>
@@ -90,11 +99,21 @@ ${toc}
 
 </body>
 <script>
-/* Avoid tooltip on hover by removing all titles. */
-var links = document.getElementsByTagName('a');
+
+const vscode = acquireVsCodeApi();
+
+
+/*
+ * Avoid tooltip on hover by removing all titles.
+ * And add function call to each click.
+ */
+const links = document.getElementsByTagName('a');
 for(var i = 0; i < links.length; i++) {
-    links[i].title = '';
+	// Remove tooltip
+	links[i].title = '';
+	// Add function call
 }
+
 </script>
 </html>
 `;
@@ -105,7 +124,8 @@ for(var i = 0; i < links.length; i++) {
 		// Set button
 		if (!donated) {
 			mainHtml = mainHtml.replace('<!--${donate}-->', `
-		<button class="button-donate" style="float:right" onclick="donateClicked()">Donate...</button>`);
+		<button class="button-donate" style="float:right" onclick="
+	vscode.postMessage({command: 'donateClicked'});">Donate...</button>`);
 		}
 
 		// Add a Reload and Copy button for debugging

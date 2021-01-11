@@ -621,7 +621,7 @@ Enter e.g. "-e h 0 100" to get a hexdump from address 0 to 99.
 
 
 
-### Useful ZEsarUX command-line options.
+### Useful ZEsarUX command-line options
 
 To ease the usage of ZEsarUX with DeZog you can use several ZEsarUX command line options.
 I have collected a few that I found useful:

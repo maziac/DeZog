@@ -30,8 +30,12 @@ const CONFIG_SECTION='dezog';
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
 
-	// Save the extension path
-	PackageInfo.setExtensionPath(context.extensionPath);
+	// Get and store the extension's path
+	const extPath = context.extensionPath;
+	Utility.setExtensionPath(extPath);
+
+	// Save the extension path also to PackageInfo
+	PackageInfo.setExtensionPath(extPath);
 
 	// Check version and show 'What's new' if necessary.
 	const mjrMnrChanged = WhatsNewView.updateVersion(context);
@@ -51,9 +55,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// Command to show the DeZog Help
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => new HelpView()));
 
-	// Get and store the extension's path
-	const extPath=vscode.extensions.getExtension("maziac.dezog")?.extensionPath as string;
-	Utility.setExtensionPath(extPath);
 
 	// Enable logging.
 	configureLogging();
@@ -156,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
-	context.subscriptions.push(configProvider);
+	context.subscriptions.push(configProvider);	// TODO: is this correct?
 
 	/*
 	Actually this did not work very well for other reasons:
