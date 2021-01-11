@@ -1,5 +1,11 @@
 # Changelog
 
+# 2.1.4
+- Settings names for 'logpanel's changed.
+- Folder structure refactored.
+- WhatsNew refactored.
+- 'DeZog Help' view for sidebar added.
+
 # 2.1.3
 - Regression fixed: Allow input of hex values with preceding '$'.
 

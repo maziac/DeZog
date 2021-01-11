@@ -6,9 +6,10 @@ import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
 import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
 import {Utility} from './misc/utility';
-import {WhatsNewContentProvider} from './whatsnew/whatsnewprovider';
-import {DezogWhatsNewMgr} from './whatsnew/dezogwhatsnewmanager';
 import {HelpView} from './help/helpview';
+import {PackageInfo} from './whatsnew/packageinfo';
+import {WhatsNewView} from './whatsnew/whatsnewview';
+import {HelpProvider} from './help';
 
 
 /// Config section in the settings.
@@ -29,19 +30,24 @@ const CONFIG_SECTION='dezog';
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
 
-	// Register the "Whatsnew" provider
-	const whatsnewProvider=new WhatsNewContentProvider();
-	const viewer=new DezogWhatsNewMgr(context);
-	viewer.registerContentProvider("dezog", whatsnewProvider);
-	// Show the page (if necessary)
-	const differs=viewer.checkIfVersionDiffers();
-	if(differs)
-	{
-		viewer.showPage();
+	// Save the extension path
+	PackageInfo.setExtensionPath(context.extensionPath);
+
+	// Check version and show 'What's new' if necessary.
+	const mjrMnrChanged = WhatsNewView.updateVersion(context);
+	if (mjrMnrChanged) {
+		// Major or minor version changed so show the whatsnew page.
+		new WhatsNewView();
 	}
 	// Register the additional command to view the "Whats' New" page.
-	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => viewer.showPage()));
+	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => new WhatsNewView()));
 
+
+	// Register the 'DeZog Help' webview
+	const helpProvider = new HelpProvider();
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("dezog.helpview", helpProvider, {webviewOptions: {retainContextWhenHidden: false}})
+	);
 	// Command to show the DeZog Help
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => new HelpView()));
 

@@ -3,7 +3,9 @@
 .github/**/*
 .travis.yml
 appveyor.yml
-src/**/*
+**/*.tests.*
+tests/**
+src/**
 out/tests/**/*
 **/*.js.map
 data/listings/**/*
