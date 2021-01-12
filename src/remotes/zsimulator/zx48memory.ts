@@ -1,6 +1,6 @@
 import {SimulatedMemory} from './simmemory';
 import * as fs from 'fs';
-import {Utility} from '../../misc/utility';
+import {PackageInfo} from '../../whatsnew/packageinfo';
 
 
 
@@ -16,7 +16,7 @@ export class Zx48Memory extends SimulatedMemory {
 		// 0000-0x3FFF is ROM
 		this.romBanks[0]=true;
 		// Load ROMs
-		const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+		const romFilePath=PackageInfo.extensionPath+'/data/48.rom';
 		const romBuffer=fs.readFileSync(romFilePath);
 		const size=0x4000;
 		const rom=new Uint8Array(romBuffer.buffer, 0, size);

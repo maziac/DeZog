@@ -1,6 +1,6 @@
-import {Utility} from '../../misc/utility';
 import {PagedMemory} from './pagedmemory';
 import * as fs from 'fs';
+import {PackageInfo} from '../../whatsnew/packageinfo';
 
 
 /**
@@ -20,7 +20,7 @@ export class Zx128Memory extends PagedMemory {
 		// Bank configuration
 		this.slots=[8 /*ROM*/, 5, 2, 0];
 		// Load the  ROMs
-		const romFilePath=Utility.getExtensionPath()+'/data/128.rom';
+		const romFilePath=PackageInfo.extensionPath+'/data/128.rom';
 		const romBuffer=fs.readFileSync(romFilePath);
 		const size=0x4000;
 		const rom0=new Uint8Array(romBuffer.buffer, 0, size); /* 128 editor */

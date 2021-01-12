@@ -1,8 +1,8 @@
 import * as assert from 'assert';
 import {ZSimRemote} from '../src/remotes/zsimulator/zsimremote';
 import {Settings} from '../src/settings';
-import {Utility} from '../src/misc/utility';
 import {Z80RegistersClass} from '../src/remotes/z80registers';
+import {PackageInfo} from '../src/whatsnew/packageinfo';
 
 
 
@@ -12,7 +12,7 @@ suite('ZSimRemote', () => {
 	suite('48k', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			PackageInfo.setExtensionPath('.');
 			const cfg: any={
 				remoteType: 'zsim',
 				zsim: {
@@ -58,7 +58,7 @@ suite('ZSimRemote', () => {
 	suite('memoryPagingControl', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			PackageInfo.setExtensionPath('.');
 			const cfg: any={
 				zsim: {
 					zxKeyboard: true,
@@ -215,7 +215,7 @@ suite('ZSimRemote', () => {
 	suite('tbblueMemoryManagementSlots', () => {
 
 		setup(() => {
-			Utility.setExtensionPath('.');
+			PackageInfo.setExtensionPath('.');
 			const cfg: any={
 				remoteType: 'zsim',
 				zsim: {

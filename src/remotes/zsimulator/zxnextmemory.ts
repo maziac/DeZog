@@ -1,6 +1,6 @@
-import {Utility} from '../../misc/utility';
 import {PagedMemory} from './pagedmemory';
 import * as fs from 'fs';
+import {PackageInfo} from '../../whatsnew/packageinfo';
 
 
 /**
@@ -22,7 +22,7 @@ export class ZxNextMemory extends PagedMemory {
 		// Bank configuration
 		this.slots=[0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 		// Load the  ROM
-		const romFilePath=Utility.getExtensionPath()+'/data/48.rom';
+		const romFilePath=PackageInfo.extensionPath+'/data/48.rom';
 		const romBuffer=fs.readFileSync(romFilePath);
 		const size=0x2000;
 		const rom_a=new Uint8Array(romBuffer.buffer, 0, size); /* 128 editor */

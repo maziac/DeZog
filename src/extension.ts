@@ -12,7 +12,7 @@ import {HelpProvider} from './help/helpprovider';
 
 
 /// Config section in the settings.
-const CONFIG_SECTION='dezog';
+const CONFIG_SECTION='dezog'; // TODO Get from package info
 
 
 /**
@@ -29,11 +29,8 @@ const CONFIG_SECTION='dezog';
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
 
-	// Get and store the extension's path
-	const extPath = context.extensionPath;
-	Utility.setExtensionPath(extPath);
-
 	// Save the extension path also to PackageInfo
+	const extPath = context.extensionPath;
 	PackageInfo.setExtensionPath(extPath);
 
 	// Check version and show 'What's new' if necessary.
@@ -58,10 +55,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// Enable logging.
 	configureLogging();
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		// Logging changed
 		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
 			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logpanel')
 			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logpanel')) {
 			configureLogging();
+		}
+		// 'donated' changed
+		if (event.affectsConfiguration(CONFIG_SECTION + '.donated')) {
 		}
 	}));
 
@@ -156,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
-	context.subscriptions.push(configProvider);	// TODO: is this correct?
+	//context.subscriptions.push(configProvider);	// TODO: is this correct?
 
 	/*
 	Actually this did not work very well for other reasons:
@@ -249,37 +250,37 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
  * Configures the logging from the settings.
  */
 function configureLogging() {
-	const configuration=vscode.workspace.getConfiguration(CONFIG_SECTION, null);
+	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, null);
 
 	// TODO: observe donate and showHelp
 
 	// Global log
 	{
-		const logToPanel=configuration.get<boolean>('logpanel');
-		const channelName=(logToPanel)? "DeZog":undefined;
-		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
+		const logToPanel = configuration.get<boolean>('logpanel');
+		const channelName = (logToPanel) ? "DeZog" : undefined;
+		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		Log.init(channelOut);
 	}
 
 	// Custom code log
 	{
-		const logToPanel=configuration.get<boolean>('customcode.logpanel');
-		const channelName=(logToPanel)? "DeZog Custom Code":undefined;
-		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
+		const logToPanel = configuration.get<boolean>('customcode.logpanel');
+		const channelName = (logToPanel) ? "DeZog Custom Code" : undefined;
+		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogCustomCode.init(channelOut);
 	}
 
 	// Socket log
 	{
-		const logToPanel=configuration.get<boolean>('socket.logpanel');
-		const channelName=(logToPanel)? "DeZog Socket":undefined;
-		const channelOut=(channelName)? vscode.window.createOutputChannel(channelName):undefined;
+		const logToPanel = configuration.get<boolean>('socket.logpanel');
+		const channelName = (logToPanel) ? "DeZog Socket" : undefined;
+		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogSocket.init(channelOut);
 	}
 
 	// Enable to get a log of the commands only
 	if (false) {
-		const channelOut=vscode.window.createOutputChannel("DeZog Socket Commands");
+		const channelOut = vscode.window.createOutputChannel("DeZog Socket Commands");
 		LogSocketCommands.init(channelOut, undefined);
 	}
 }

@@ -864,25 +864,6 @@ export class Utility {
 
 
 	/**
-	 * Sets the extension's path.
-	 * @param extPath Use what vscode.extensions.getExtension("maziac").extensionPath returns.
-	 */
-	public static setExtensionPath(extPath: string) {
-		Utility.extensionPath = UnifiedPath.getUnifiedPath(extPath);
-	}
-
-
-	/**
-	 * Returns the extension's path.
-	 * @return The path.
-	 */
-	// TODO: Check if I can substitute this with PackageInfo.extensionPath.
-	public static getExtensionPath() {
-		return Utility.extensionPath;
-	}
-
-
-	/**
 	 * Removes all files in tmpDir that start with "TMP_".
 	 */
 	public static removeAllTmpFiles() {
