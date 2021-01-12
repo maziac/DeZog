@@ -11,9 +11,6 @@ import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
 
 
-/// Config section in the settings.
-const CONFIG_SECTION='dezog'; // TODO Get from package info
-
 
 /**
  * 'activate' is called when one of the package.json activationEvents
@@ -53,16 +50,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	// Enable logging.
-	configureLogging();
+	const extensionBaseName = PackageInfo.extensionBaseName;
+	const configuration = vscode.workspace.getConfiguration(extensionBaseName, null);
+	configureLogging(configuration);
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		// Logging changed
-		if (event.affectsConfiguration(CONFIG_SECTION + '.logpanel')
-			||event.affectsConfiguration(CONFIG_SECTION+'.socket.logpanel')
-			||event.affectsConfiguration(CONFIG_SECTION+'.customcode.logpanel')) {
-			configureLogging();
+		if (event.affectsConfiguration(extensionBaseName + '.logpanel')
+			|| event.affectsConfiguration(extensionBaseName+'.socket.logpanel')
+			|| event.affectsConfiguration(extensionBaseName+'.customcode.logpanel')) {
+			configureLogging(configuration);
 		}
 		// 'donated' changed
-		if (event.affectsConfiguration(CONFIG_SECTION + '.donated')) {
+		if (event.affectsConfiguration(extensionBaseName + '.donated')) {
+			// Reload complete html
+			helpProvider.setMainHtml();
 		}
 	}));
 
@@ -249,11 +250,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 /**
  * Configures the logging from the settings.
  */
-function configureLogging() {
-	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, null);
-
-	// TODO: observe donate and showHelp
-
+function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Global log
 	{
 		const logToPanel = configuration.get<boolean>('logpanel');

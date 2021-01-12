@@ -14,7 +14,10 @@ export class PackageInfo {
 	// The publisher name (maziac) is stored here after setting the extensionPath.
 	public static publisher: string;
 
-	// The extension name is stored here after setting the extensionPath.
+	// The extension name (without publisher) is stored here after setting the extensionPath.
+	public static extensionBaseName: string;
+
+	// The extension name (plus publisher) is stored here after setting the extensionPath.
 	public static extensionName: string;
 
 	// The extension info is stored here after setting the extensionPath.
@@ -36,6 +39,7 @@ export class PackageInfo {
 		const pkgJson = jsonc.parse(pkgJsonData, parseErrors, {allowTrailingComma: true});
 		this.publisher = pkgJson.publisher;
 		this.extensionName = pkgJson.publisher + '.' + pkgJson.name;
+		this.extensionBaseName = pkgJson.name;
 		// Store extension info
 		this.extension = vscode.extensions.getExtension(this.extensionName)!;
 	}

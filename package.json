@@ -118,7 +118,7 @@
 					"scope": "resource",
 					"default": false
 				},
-				"asm-code-lens.donated": {
+				"dezog.donated": {
 					"description": "If you donated (press the 'Donate...' button in hex calculator to do so) you can hide the button by setting this parameter.",
 					"type": "boolean",
 					"scope": "resource",
