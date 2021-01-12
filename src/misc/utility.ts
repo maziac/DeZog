@@ -876,6 +876,7 @@ export class Utility {
 	 * Returns the extension's path.
 	 * @return The path.
 	 */
+	// TODO: Check if I can substitute this with PackageInfo.extensionPath.
 	public static getExtensionPath() {
 		return Utility.extensionPath;
 	}

@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import {Utility} from '../misc/utility';
 import {UnifiedPath} from '../misc/unifiedpath';
 import * as showdown from 'showdown';
+import {PackageInfo} from '../whatsnew/packageinfo';
 
 
 /**
@@ -29,7 +30,7 @@ export class HelpView extends BaseView {
 	protected static getHelpHtml() {
 		if (!this.helpHtml) {
 			// Load Usage.md file
-			const extFolder = Utility.getExtensionPath();
+			const extFolder = PackageInfo.extensionPath;
 			const usageFileName = 'documentation/Usage.md';
 			const path = UnifiedPath.join(extFolder, usageFileName);
 			const mdText = readFileSync(path).toString();
@@ -132,6 +133,28 @@ li > ul {
 ${html}
 
 </body>
+
+<script>
+
+const vscode = acquireVsCodeApi();
+
+//---- Handle Messages from vscode extension --------
+window.addEventListener('message', event => {
+		const message = event.data;
+
+	switch (message.command) {
+		case 'navigate':
+		{
+			// Get link to chapter
+			const chapter = message.data;
+			// Jump to
+		    location.hash = chapter;
+		}   break;
+	}
+});
+
+</script>
+
 </html>
 `;
 
@@ -193,7 +216,7 @@ ${html}
 		let html = HelpView.getHelpHtml();
 
 		// Substitute the resource path
-		const extPath = Utility.getExtensionPath();
+		const extPath = PackageInfo.extensionPath;
 		const resourcePath = vscode.Uri.file(UnifiedPath.join(extPath, 'documentation'));
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
 		html = html.replace('${vscodeResPath}', vscodeResPath);
@@ -202,5 +225,17 @@ ${html}
 		this.vscodePanel.webview.html = html;
 	}
 
+
+	/**
+	 * User has clicked on a link.
+	 * The help view is made visible and it is jumped to the chapter.
+	 */
+	public navigateToChapter(chapter: string) {
+		// Make sure the view is visible
+		// TODO
+		// Jump to chapter
+		const message = {command: 'navigate', data: chapter};
+		this.sendMessageToWebView(message);
+	}
 }
 

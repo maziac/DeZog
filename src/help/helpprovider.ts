@@ -3,11 +3,15 @@ import * as path from 'path';
 import {readFileSync} from 'fs';
 import {PackageInfo} from '../whatsnew/packageinfo';
 import {HelpView} from './helpview';
+//import {UnifiedPath} from '../misc/unifiedpath';
 
 
 export class HelpProvider implements vscode.WebviewViewProvider {
 	// The webview is stored here.
 	protected webview: vscode.Webview;
+
+	// A pointer to the help contents.
+	protected helpView: HelpView;
 
 
 	/**
@@ -27,7 +31,14 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 					this.openDonateWebView();
 					break;
 				case 'linkClicked':
-					this.openDonateWebView();
+					// Strip chapter from link
+					const link = message.data;
+					const index = link.lastIndexOf('#');
+					if (index >= 0) {
+						const chapter = link.substr(index);
+						// E.g. "#support"
+						this.navigateToChapter(chapter);
+					}
 					break;
 			}
 		});
@@ -54,7 +65,6 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 <head>
 	<meta charset="utf-8" >
 	<title>DeZog Help</title>
-	<base href="\${vscodeResPath}/">
 </head>
 
 <style>
@@ -104,15 +114,40 @@ const vscode = acquireVsCodeApi();
 
 
 /*
+ * A link to a chapter has been clicked.
+ */
+function linkClicked() {
+	vscode.postMessage({command: 'linkClicked', data: this.href});
+    return false;
+}
+
+
+/*
  * Avoid tooltip on hover by removing all titles.
  * And add function call to each click.
  */
-const links = document.getElementsByTagName('a');
-for(var i = 0; i < links.length; i++) {
-	// Remove tooltip
-	links[i].title = '';
-	// Add function call
+function initAnchors() {
+	const links = document.getElementsByTagName('a');
+	for (var i = 0; i < links.length; i++) {
+		// Remove tooltip
+		links[i].title = '';
+		// Add function call
+		links[i].onclick = linkClicked;
+	}
 }
+
+
+/**
+ * Copies the complete html of the document to the clipboard.
+ */
+function copyHtmlToClipboard() {
+	const copyText = document.documentElement.innerHTML;
+	navigator.clipboard.writeText(copyText);
+}
+
+
+// Init all anchors.
+initAnchors();
 
 </script>
 </html>
@@ -125,11 +160,11 @@ for(var i = 0; i < links.length; i++) {
 		if (!donated) {
 			mainHtml = mainHtml.replace('<!--${donate}-->', `
 		<button class="button-donate" style="float:right" onclick="
-	vscode.postMessage({command: 'donateClicked'});">Donate...</button>`);
+	vscode.postMessage({command: 'donateClicked'})">Donate...</button>`);
 		}
 
 		// Add a Reload and Copy button for debugging
-		//mainHtml = mainHtml.replace('<body>', '<body><button onclick="parseStart()">Reload</button><button onclick="copyHtmlToClipboard()">Copy HTML to clipboard</button>');
+		mainHtml = mainHtml.replace('<body>', '<body><button onclick="initAnchors()">Init</button><button onclick="copyHtmlToClipboard()">Copy HTML to clipboard</button>');
 
 		// Set content
 		this.webview.html = mainHtml;
@@ -170,4 +205,25 @@ for(var i = 0; i < links.length; i++) {
 		vscodePanel.webview.html = html;
 	}
 
+
+	/**
+	 * Creates a help view window with contents
+	 * and makes it visible. // TODO
+	 */
+	public createHelpView() {
+		if (!this.helpView)
+			this.helpView = new HelpView();
+	}
+
+
+	/**
+	 * User has clicked on a link.
+	 * The help view is opened and it is jumped to the chapter.
+	 */
+	protected navigateToChapter(chapter: string) {
+		// Create a new help view if it does not exist yet.
+		this.createHelpView();
+		// Jump to chapter
+		this.helpView.navigateToChapter(chapter);
+	}
 }
