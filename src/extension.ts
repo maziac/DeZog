@@ -6,7 +6,6 @@ import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
 import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
 import {Utility} from './misc/utility';
-import {HelpView} from './help/helpview';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
@@ -53,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.registerWebviewViewProvider("dezog.helpview", helpProvider, {webviewOptions: {retainContextWhenHidden: false}})
 	);
 	// Command to show the DeZog Help
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => new HelpView()));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => helpProvider.createHelpView()));
 
 
 	// Enable logging.

@@ -231,8 +231,6 @@ window.addEventListener('message', event => {
 	 * The help view is made visible and it is jumped to the chapter.
 	 */
 	public navigateToChapter(chapter: string) {
-		// Make sure the view is visible
-		// TODO
 		// Jump to chapter
 		const message = {command: 'navigate', data: chapter};
 		this.sendMessageToWebView(message);

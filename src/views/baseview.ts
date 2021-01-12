@@ -172,5 +172,12 @@ export class BaseView {
 		// Overwrite this.
 	}
 
+
+	/**
+	 * Put webview to the foreground.
+	 */
+	public reveal() {
+		this.vscodePanel.reveal();
+	}
 }
 

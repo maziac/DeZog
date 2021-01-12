@@ -164,7 +164,7 @@ initAnchors();
 		}
 
 		// Add a Reload and Copy button for debugging
-		mainHtml = mainHtml.replace('<body>', '<body><button onclick="initAnchors()">Init</button><button onclick="copyHtmlToClipboard()">Copy HTML to clipboard</button>');
+		//mainHtml = mainHtml.replace('<body>', '<body><button onclick="initAnchors()">Init</button><button onclick="copyHtmlToClipboard()">Copy HTML to clipboard</button>');
 
 		// Set content
 		this.webview.html = mainHtml;
@@ -208,11 +208,13 @@ initAnchors();
 
 	/**
 	 * Creates a help view window with contents
-	 * and makes it visible. // TODO
+	 * and makes it visible.
 	 */
 	public createHelpView() {
 		if (!this.helpView)
 			this.helpView = new HelpView();
+		// Make sure the view is visible
+		this.helpView.reveal();
 	}
 
 
