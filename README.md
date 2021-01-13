@@ -15,7 +15,7 @@ If you like DeZog please consider supporting it.
 
 ![](documentation/images/main.gif)
 
-The goal of this project is to achieve a development environment for Z80 assembler programs much the same as developers are nowadays used to for other programming languages. An experience similar to what you would expect from Eclipse, Visual Studio or XCode.
+The goal of this project is to achieve a development environment for Z80 assembler programs much the same as for high-level programming languages. An experience similar to what you would expect from Eclipse, Visual Studio or XCode.
 
 As this is a huge goal the focus is here on
 - Easy navigating/stepping through assembler source files with step-over, step-into and step-out

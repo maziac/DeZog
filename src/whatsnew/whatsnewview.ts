@@ -13,7 +13,7 @@ export class WhatsNewView {
 	/**
 	 * Updates the version number.
 	 * @param context The extension context.
-	 * @return true if version was updated. false if version major/monr are equal.
+	 * @return true if version was updated. false if version major/minor are equal.
 	 */
 	public static updateVersion(context: vscode.ExtensionContext): boolean {
 		// Load data from extension storage

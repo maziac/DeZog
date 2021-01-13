@@ -154,7 +154,7 @@ initAnchors();
 `;
 
 		// Get donated state
-		const configuration = vscode.workspace.getConfiguration('dezog');
+		const configuration = vscode.workspace.getConfiguration('dezog', null);
 		const donated = configuration.get<boolean>('donated');
 		// Set button
 		if (!donated) {
@@ -162,6 +162,7 @@ initAnchors();
 		<button class="button-donate" style="float:right" onclick="
 	vscode.postMessage({command: 'donateClicked'})">Donate...</button>`);
 		}
+
 
 		// Add a Reload and Copy button for debugging
 		//mainHtml = mainHtml.replace('<body>', '<body><button onclick="initAnchors()">Init</button><button onclick="copyHtmlToClipboard()">Copy HTML to clipboard</button>');
