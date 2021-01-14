@@ -1803,10 +1803,10 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		// Check if its a debugger command
-		const expression=args.expression.trim();
-		const tokens=expression.split(' ');
-		const cmd=tokens.shift();
-		if (cmd==undefined) {
+		const expression = args.expression.trim();
+		const tokens = expression.split(' ');
+		const cmd = tokens.shift();
+		if (cmd == undefined) {
 			this.sendResponse(response);
 			return;
 		}
@@ -1815,29 +1815,28 @@ export class DebugSessionClass extends DebugSession {
 		if (expression.startsWith('-')) {
 			try {
 				if (expression.startsWith('-')) {
-					const text=await this.evaluateCommand(expression);
+					const text = await this.evaluateCommand(expression);
 					this.sendEvalResponse(text, response);
 				}
 			}
 			catch (err) {
-				let output="Error";
+				let output = "Error";
 				if (err.message)
-					output+=': '+err.message;
+					output += ': ' + err.message;
 				this.sendEvalResponse(output, response);
 			}
 			return;
 		}
 
-		// Hover
-		Log.log('evaluate.expression: '+args.expression);
-		Log.log('evaluate.context: '+args.context);
-		Log.log('evaluate.format: '+args.format);
+		// Hover or WATCH
+		Log.log('evaluate.expression: ' + args.expression);
+		Log.log('evaluate.context: ' + args.context);
+		Log.log('evaluate.format: ' + args.format);
 
-		// Check if it is a register
-		const name = expression;
-		if (Z80RegistersClass.isRegister(name)) {
-			const formatMap=(args.context=='hover')? Z80RegisterHoverFormat:Z80RegisterVarFormat;
-			const formattedValue=await Utility.getFormattedRegister(name, formatMap); response.body={
+		// Check for single register (same for hover and watch)
+		if (Z80RegistersClass.isSingleRegister(expression)) {
+			const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
+			const formattedValue = await Utility.getFormattedRegister(expression, formatMap); response.body = {
 				result: formattedValue,
 				variablesReference: 0
 			};
@@ -1846,45 +1845,82 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 
-		// Check if it is a label. A label may have a special formatting:
-		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
-		// or even a complete struct
-		// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
-		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
-		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
-		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-		const match =/^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(name);
-		if (match) {
-			let labelString = match[1];
-			let lblIndexString = match[3];
-			let lblType = match[5];
-			let elemCountString=match[7];
-			// Defaults
-			if (labelString) {
-				let labelValue64k;
-				let lastLabel;
-				let modulePrefix;
-				let lblIndex = 0;
-				let elemCount = 1;	// Use 1 as default
-				let elemSize;
+		// Check for hover
+		if (args.context == 'hover') {
+			// If hovering only the label address + byte and word contents are shown.
+			// First check for module name and local label prefix (sjasmplus).
+			const pcLongAddr = Remote.getPCLong();
+			const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+			// Local label and prefix
+			const lastLabel = entry.lastLabel;
+			const modulePrefix = entry.modulePrefix;
+			// Get label value
+			const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+			if (labelValue != undefined) {
+				// Get content
+				const memDump = await Remote.readMemoryDump(labelValue, 2);
+				// Format byte
+				const memByte = memDump[0];
+				const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+				// Format word
+				const memWord = memByte + 256 * memDump[1];
+				const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+				// Response
+				response.body = {
+					result: expression+' ('+Utility.getHexString(labelValue,4)+'h):\nByte content: '+formattedByte+'\nWord content: '+formattedWord,
+					variablesReference: 0
+				}
+			}
+			// Return
+			this.sendResponse(response);
+			return;
+		}
 
-				// First check for module name and local label prefix (sjasmplus).
-				const pcLongAddr = Remote.getPCLong();
-				const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-				// Local label and prefix
-				lastLabel = entry.lastLabel;
-				modulePrefix = entry.modulePrefix;
+		// WATCH or else
+		try {
 
-				// Convert label
-				try {
-					labelValue64k = Labels.getNumberForLabel(labelString);
-					if (labelValue64k == undefined) {
-						// Try more complex evaluation, but only 64k
-						labelValue64k = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+			// Check if it is a label (or double register). A label may have a special formatting:
+			// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
+			// or even a complete struct
+			// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
+			// If the count is > 1 then an array is displayed. If left then 1 is assumed.
+			// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
+			// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
+			const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
+			if (match) {
+				let labelString = match[1];
+				let lblIndexString = match[3];
+				let lblType = match[5];
+				let elemCountString = match[7];
+				// Defaults
+				if (labelString) {
+					let labelValue;
+					let lastLabel;
+					let modulePrefix;
+					let lblIndex = 0;
+					let elemCount = 1;	// Use 1 as default
+					let elemSize;
+
+					// Check if it is a register
+					if (Z80RegistersClass.isRegister(labelString)) {
+						// Otherwise it is a double register.
+						labelValue = Remote.getRegisterValue(labelString);  // TODO brauch ich das?
 					}
-					if (isNaN(labelValue64k))
+					else {
+						// No register, so assume a label.
+						// First check for module name and local label prefix (sjasmplus).
+						const pcLongAddr = Remote.getPCLong();
+						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+						// Local label and prefix
+						lastLabel = entry.lastLabel;
+						modulePrefix = entry.modulePrefix;
+
+						// Convert label (+expression)
+						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
+					}
+
+					if (isNaN(labelValue))
 						throw Error("Could not parse label");
-					labelValue64k &= 0xFFFF;
 
 					// And index "[x]"
 					if (lblIndexString) {
@@ -1895,20 +1931,29 @@ export class DebugSessionClass extends DebugSession {
 
 					// Is a number
 					if (elemCountString) {
-						elemCount = Utility.evalExpression(elemCountString, false, modulePrefix, lastLabel);
+						elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
 						if (isNaN(elemCount))
 							throw Error("Could not parse elem count");
 					}
 
-
-					if (!lblType || lblType.length == 0)
-						lblType = "b";	// Assume byte
-
-					// Get element size
-					if (lblType == 'b')
-						elemSize = 1;
-					else if (lblType == 'w')
-						elemSize = 2;
+					// Check label type
+					if (!lblType) {
+						// If no type given try to estimate it by calculating the distance to
+						// the next label.
+						elemSize = Labels.getDistanceToNextLabel(labelValue);
+						if (!elemSize)	// Also 0 is not allowed
+							elemSize = 10; // Use 10 bytes as default
+						// limit max. number
+						if (elemSize > 1000)
+							elemSize = 1000;
+						// Exchange count and size?
+						if (elemSize > 2) {
+							// If bigger 2 (word) then assume byte and use size as elem count
+							if (!elemCountString)
+								elemCount = elemSize;	// Only if no value given by user
+							elemSize = 1;
+						}
+					}
 					else {
 						elemSize = Labels.getNumberFromString64k(lblType);
 						if (isNaN(elemSize))
@@ -1917,71 +1962,84 @@ export class DebugSessionClass extends DebugSession {
 
 					// Add index
 					const indexOffset = lblIndex * elemSize;
-					labelValue64k = (labelValue64k & 0xFFFF) + indexOffset;
-				}
-				catch (e) {
-					// Return empty response
-					response.body = {
-						result: e.message,
-						variablesReference: 0
-					}
-					this.sendResponse(response);
-					return;
-				}
+					const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
 
-				// Create fullLabel
-				const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
-				// Create a label variable
-				let labelVar;
-				let formattedValue;
-				// Get sub properties
-				if (lblType == 'b' || lblType == 'w') {
-					// Check for single value or array
-					if (elemCount <= 1) {
-						// Single value
-						// Read memory
-						const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-						let memVal = memory[0];
-						if (lblType == 'b')
-							formattedValue = await Utility.numberFormatted(name, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
+					// Create fullLabel
+					const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
+					// Create a label variable
+					let labelVar;
+					let formattedValue = '';
+					// Get sub properties
+					if (elemSize <= 2) {
+						// Check for single value or array
+						if (elemCount <= 1) {
+							// Single value
+							// Read memory
+							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
+							let memVal = memory[0];
+							if (elemSize == 1)
+								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
+							else {
+								memVal += 256 * memory[1];
+								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
+							}
+						}
 						else {
-							memVal += 256 * memory[1];
-							formattedValue = await Utility.numberFormatted(name, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
+							// Simple memdump
+							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
 						}
 					}
 					else {
-						// Simple memdump
-						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+						// Not 1 or 2 was given as size but e.g. a struct label
+						if (lblType != undefined) {
+							const props = Labels.getSubLabels(lblType);
+							if (props.length) {
+								// Structure
+								labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+							}
+						}
+						if (!labelVar) {
+							// Simple memdump
+							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+						}
 					}
-				}
-				else {
-					// Not 'b' or 'w' but a struct given
-					const props = Labels.getSubLabels(lblType);
-					if (props.length) {
-						// Structure
-						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+
+					// Add to list
+					const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
+					// Response
+					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
+					// Different display on hover:
+					let res;
+					if (args.context == 'hover') { // TODO
+						// Hover
+						res = fullLabel + ' (' + description + '): ' + formattedValue;
 					}
 					else {
-						// Simple memdump
-						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+						// WATCH
+						res = formattedValue;
 					}
-				}
-
-				// Add to list
-				const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
-				// Response
-				const description = Utility.getLongAddressString(labelValue64k);	// labelValue is anyhow a 64k address
-				response.body = {
-					result: (args.context == 'hover') ? fullLabel + ': ' + formattedValue : formattedValue,
-					variablesReference: ref,
-					type: description,
-					//presentationHint: ,
-					//namedVariables: elemCount,
-					indexedVariables: elemCount
-				}
-			}	// If labelString
-		}	// If match
-
+					// Response
+					response.body = {
+						result: res,
+						variablesReference: ref,
+						type: description,
+						//presentationHint: ,
+						//namedVariables: elemCount,
+						indexedVariables: elemCount
+					}
+				}	// If labelString
+			}	// If match
+		}	// try
+		catch (e) {
+			// Return empty response
+			response.body = {
+				// No error message on hover
+				result: (args.context == 'hover') ? undefined : e.message,
+				variablesReference: 0
+			}
+			this.sendResponse(response);
+			return;
+		}
 		// Default: return nothing
 		this.sendResponse(response);
 	}
