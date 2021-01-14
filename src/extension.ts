@@ -29,6 +29,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// Save the extension path also to PackageInfo
 	const extPath = context.extensionPath;
 	PackageInfo.setExtensionPath(extPath);
+	// it is also stored here as Utility does not inclide vscode which is more unit-test-friendly.
+	Utility.setExtensionPath(extPath);
+
+
 
 	// Check version and show 'What's new' if necessary.
 	const mjrMnrChanged = WhatsNewView.updateVersion(context);
