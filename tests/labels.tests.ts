@@ -425,4 +425,98 @@ suite('Labels', () => {
 
 	});
 
+	suite('Misc', () => {
+
+		suite('calculateLabelDistances', () => {
+
+			let labels;
+			let _labels;
+
+			setup(() => {
+				labels = new LabelsClass();
+				_labels = labels as any;
+			});
+
+			function initNumberforLabels(addresses: Array<number>) {
+				_labels.numberForLabel = new Map<string, number>();
+				_labels.distanceForLabelAddress = new Map<number, number>();
+				for (let address of addresses) {
+					// LAbel name does not matter
+					_labels.numberForLabel.set("does_not_matter_"+address, address);
+				}
+				_labels.calculateLabelDistances();
+			}
+
+			test('64k addresses', () => {
+				// Test empty array (no labels)
+				initNumberforLabels([]);
+				assert.equal(_labels.distanceForLabelAddress.size, 0);
+
+				// Test one label
+				initNumberforLabels([0x8000]);
+				assert.equal(_labels.distanceForLabelAddress.size, 0);
+
+				// Test two label
+				initNumberforLabels([0x8000, 0x8001]);
+				assert.equal(_labels.distanceForLabelAddress.size, 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8000), 1);
+
+				// Test several labels
+				initNumberforLabels([0x8000, 0x8001, 0x8003, 0x8006, 0x8106]);
+				assert.equal(_labels.distanceForLabelAddress.size, 4);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8000), 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8001), 2);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8003), 3);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8006), 0x100);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8106), undefined);
+
+				// Test same bank, lower (e.g. an EQU). Is not the correct size but may happen.
+				initNumberforLabels([0x8000, 0x8003, 0x7000, 0x8004]);
+				assert.equal(_labels.distanceForLabelAddress.size, 2);
+				assert.equal(_labels.distanceForLabelAddress.get(0x8000), 3);
+				assert.equal(_labels.distanceForLabelAddress.get(0x7000), 0x1004);
+			});
+
+			test('long addresses', () => {
+				// Test one label
+				initNumberforLabels([0x018000]);
+				assert.equal(_labels.distanceForLabelAddress.size, 0);
+
+				// Test two label
+				initNumberforLabels([0x018000, 0x018001]);
+				assert.equal(_labels.distanceForLabelAddress.size, 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x018000), 1);
+
+				// Test several labels
+				initNumberforLabels([0x028000, 0x028001, 0x028003, 0x028006, 0x028106]);
+				assert.equal(_labels.distanceForLabelAddress.size, 4);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028000), 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028001), 2);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028003), 3);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028006), 0x100);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028106), undefined);
+
+				// Different banks (consecutive)
+				initNumberforLabels([0x018000, 0x028001, 0x038003, 0x048006, 0x058106]);
+				assert.equal(_labels.distanceForLabelAddress.size, 4);
+				assert.equal(_labels.distanceForLabelAddress.get(0x018000), 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028001), 2);
+				assert.equal(_labels.distanceForLabelAddress.get(0x038003), 3);
+				assert.equal(_labels.distanceForLabelAddress.get(0x048006), 0x100);
+				assert.equal(_labels.distanceForLabelAddress.get(0x058106), undefined);
+
+				// Different banks (lower). Note: this results in incorrect sizes. E.g.
+				// If an equ was defined between the labels.
+				initNumberforLabels([0x018000, 0x028001, 0x037000, 0x028004]);
+				assert.equal(_labels.distanceForLabelAddress.size, 2);
+				assert.equal(_labels.distanceForLabelAddress.get(0x018000), 1);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028001), undefined);
+				assert.equal(_labels.distanceForLabelAddress.get(0x037000), 0x1004);
+				assert.equal(_labels.distanceForLabelAddress.get(0x028004), undefined);
+			});
+
+		});
+
+	});
+
 });

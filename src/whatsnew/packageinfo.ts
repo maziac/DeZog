@@ -3,6 +3,7 @@ import * as jsonc from 'jsonc-parser';
 import {readFileSync} from 'fs';
 
 
+
 /**
  * Reads the package.json of the extension.
  */

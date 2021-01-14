@@ -1529,17 +1529,22 @@ Example:
 
 You can hover over the label to display the address of the label.
 
-By default DeZog assumes the type of the label to be a byte. You can change this by adding the type (e.g. 'w' for word) after the label name:
+You can assign the size of the label contents manually by placing the size after the label name.
+E.g. use ```2```for a word.
 
+TODO: Different picture.
 ![](images/watch_simple_type.jpg)
 
+If you omit the size it is estimated by DeZog. But note that the size estimation is based on heuristics and might be wrong.
+
+TODO: Different picture.
 The 3rd parameter is the number of elements to show.
 The example here shows 5 word values starting at the label.
 
 ![](images/watch_array.gif)
 
-The type parameter is basically just the element size with 1 for 'b' (byte) and 2 for 'w' (word).
-You can also put a different number here or even another label (EQU) value.
+If you choose a different size the display changes accordingly.
+You can also put another label (EQU) value here.
 
 ![](images/watch_type_as_number.jpg)
 
@@ -1547,6 +1552,7 @@ In the example above there are 2 element each with a size of 4 bytes.
 
 But DeZog can show even more advanced memory layouts if the assembler provides the necessary information.
 For now the only assembler that provides this information is sjasmplus which allows to display STRUCTs.
+Instead of a number for the size you have to give the name of a STRUCT.
 
 The following example defines 2 nested STRUCTs (HITBOX and INVADER) and a label (invaders) which preserve memory for 5 (INV_COUNT) invaders:
 
@@ -1590,7 +1596,10 @@ If you like you can also "comment" your watches which e.g. further explains the 
 
 Notes:
 - Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
-- You can also put a register name (e.g. "BC") in the WATCHes area. However, in that case you cannot add a type or count.
+- You can also put a register name (e.g. "BC") in the WATCHes area. E.g. you can easily watch the last 10 elements on the stack by typing:```SP,2,10```.
+- Instead of a simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use thevalue of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
+- To watch the stack in the WATCH section you could use: ```SP,2,(stack_top-SP)/2```which shows a dynamic size array which starts at SP and ends at stack_top (assuming stack_top is defined as a label just above your stack).
+- If a label is not recognized try to use the fully qualified name. I.e. in case of a dot label try to use the full label name with the module name (if used).
 
 
 ### Change the Program Counter
