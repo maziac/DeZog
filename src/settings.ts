@@ -584,7 +584,7 @@ export class Settings {
 				"F", "${flags}",
 				"R", "${unsigned}u",
 				"I", "${hex}h",
-				".", "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}"
+				".", "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}b"
 			];
 		if (!Settings.launch.formatting.registerHover)
 			Settings.launch.formatting.registerHover = [
@@ -603,9 +603,9 @@ export class Settings {
 		if (!Settings.launch.formatting.smallValues)
 			Settings.launch.formatting.smallValues = "${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}";
 		if (!Settings.launch.formatting.watchByte)
-			Settings.launch.formatting.watchByte = "${hex}h\t${unsigned}u\t${signed}i\t'${char}'\t${bits}b";
+			Settings.launch.formatting.watchByte = "${hex}h,\t${unsigned}u,\t${signed}i,\t'${char}',\t${bits}b";
 		if (!Settings.launch.formatting.watchWord)
-			Settings.launch.formatting.watchWord = "${hex}h\t${unsigned}u\t${signed}i";
+			Settings.launch.formatting.watchWord = "${hex}h,\t${unsigned}u,\t${signed}i";
 		if (!Settings.launch.formatting.stackVar)
 			Settings.launch.formatting.stackVar = "${hex}h\t${unsigned}u\t${signed}i\t${{:labels|, |}}";
 		if (!Settings.launch.tabSize)

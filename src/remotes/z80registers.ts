@@ -239,6 +239,21 @@ export class Z80RegistersClass {
 
 
 	/**
+	 * Returns true if the string contains a single register,
+	 * e.g. A, B, C, D, E, H, L.
+	 * @param reg To check for a register name.
+	 */
+	public static isSingleRegister(reg: string): boolean {
+		const regEnum = Z80RegistersClass.getEnumFromName(reg)
+		if (regEnum == undefined)
+			return false;
+		if (regEnum >= Z80_REG.F)
+			return true;
+		return false;
+	}
+
+
+	/**
 	 * Check if the cc condition is met by the flags.
 	 * @param cc E.g. 010b for "NC" (as in "CALL NC,nnnn")
 	 * @param flags E.g. 00000001b, C is set. Only the lower byte is important.
