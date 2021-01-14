@@ -674,14 +674,13 @@ export class Utility {
 		});
 
 		// Format on tabs
-		if(!tabSizeArr)
-			tabSizeArr = Utility.calculateTabSizes(format, size);
-		if(tabSizeArr)
-			if(tabSizeArr.length == valString.split('\t').length) {
+		//if(!tabSizeArr)
+		//	tabSizeArr = Utility.calculateTabSizes(format, size);
+		if (tabSizeArr) {
+			if (tabSizeArr.length == valString.split('\t').length) {
 				let index = 0;
 				valString += '\t';	// to replace also the last string
 				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
-					Utility.assert(tabSizeArr);
 					const tabSize = tabSizeArr![index].length;
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
@@ -689,8 +688,12 @@ export class Utility {
 					let result = p1.padStart(tabSize) + " ";
 					return result;
 				});
+			}
 		}
-
+		else {
+			// Remove any tabs
+			valString = valString.replace(/\t/g, ' ');
+		}
 
 		// return
 		return valString;
@@ -860,6 +863,24 @@ export class Utility {
 	public static setRootPath(rootPath: string) {
 		Utility.assert(rootPath);
 		(Utility.rootPath as any)=UnifiedPath.getUnifiedPath(rootPath);
+	}
+
+
+	/**
+	 * Sets the extension's path.
+	 * @param extPath Use what vscode.extensions.getExtension("maziac").extensionPath returns.
+	 */
+	public static setExtensionPath(extPath: string) {
+		Utility.extensionPath = UnifiedPath.getUnifiedPath(extPath);
+	}
+
+
+	/**
+	 * Returns the extension's path.
+	 * @return The path.
+	 */
+	public static getExtensionPath() {
+		return Utility.extensionPath;
 	}
 
 

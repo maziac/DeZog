@@ -62,13 +62,22 @@ export class LabelsClass {
 	/// entry with labels or an array of labels for that number.
 	/// Array contains a max 0x10000 entries. Thus it is for
 	/// 64k addresses.
-	protected labelsForNumber64k = new Array<any>();
+	protected labelsForNumber64k = new Array<any>(0x10000);
 
 	/// This map is used to associate long addresses with labels.
 	/// E.g. used for the call stack.
 	/// Long addresses.
 	protected labelsForLongAddress = new Map<number, Array<string>>();
 
+	/// This map contains the distance to the next label.
+	/// E.g.
+	/// [0x8000] = 4  : Label	stack_bottom
+	/// [0x8001] = 3  : 3 bytes to stack_top
+	/// [0x8002] = 2
+	/// [0x8003] = 1
+	/// [0x8004] = 1	: Label stack_top
+	/// The map contains long addresses.
+	protected distanceForLabelAddress = new Map<number, number>();
 
 	/// Map with all labels (from labels file) and corresponding values.
 	/// Long addresses.
@@ -163,6 +172,8 @@ export class LabelsClass {
 	public finish() {
 		// Calculate the label offsets
 		this.calculateLabelOffsets();
+		// Calculate the label distances
+		this.calculateLabelDistances();
 		// Create the hierarchy of labels
 		this.createLabelHierarchy();
 	}
@@ -258,6 +269,18 @@ export class LabelsClass {
 	 * Calculates the offsets for all labels.
 	 * I.e. for all addresses without a direct label entry.
 	 * Deals with 64k addresses only.
+	 * E.g. labelsForNumber:
+	 * [0x0000] undefined
+	 * [0x0001] undefined
+	 * ...
+	 * [0x8000]	stack_bottom
+	 * [0x8001] 1
+	 * [0x8002] 2
+	 * [0x8003] 3
+	 * [0x8004] 4
+	 * [0x8005] stack_top
+	 * [0x8006] 1
+	 * ...
 	 */
 	protected calculateLabelOffsets() {
 		// Now fill the unset values with the offsets
@@ -271,9 +294,46 @@ export class LabelsClass {
 				}
 			}
 			else {
-				// array
+				// Array
 				offs = 1;
 			}
+		}
+	}
+
+
+	/**
+	 * Calculates the distance array (distance to next label, or estimated size of a label).
+	 * works with long addresses and fills the 'distanceForLabelAddress' map.
+	 * It has entries for each long address with it's size.
+	 * The last label address will stay undefined as no distance to the next label can be measured.
+	 * Similar, if the next label is smaller (maybe because a different bank is used or
+	 * a smaller EQU has been defined).
+	 * This is used for estimating the data that should be displayed on hovering or if no
+	 * data size is specified in the WATCH window.
+	 * It covers only main cases and the output might not be accurate. e.g. the following
+	 * won't work:
+	 * ~~~
+	 *  ORG 0x8000
+	 *  label: defb 1
+	 *  val: equ 0x7000
+	 * ~~~
+	 * Because val is < label, address 0x8000 gets no size entry.
+	 */
+	protected calculateLabelDistances() {
+		// This approach assumes that the labels in the map are ordered.
+		let prevAddr;
+		for (let [, longAddr] of this.numberForLabel) {
+			// Skip first entry
+			if (prevAddr != undefined) {
+				// Check if it is a higher address (in 64k area)
+				const dist = (longAddr & 0xFFFF) - (prevAddr & 0xFFFF);
+				if (dist > 0) {
+					// Store distance
+					this.distanceForLabelAddress.set(prevAddr, dist);
+				}
+			}
+			// Next
+			prevAddr = longAddr;
 		}
 	}
 
@@ -318,6 +378,18 @@ export class LabelsClass {
 			names.push(...labels);
 		}
 		return names;
+	}
+
+
+	/**
+	 * Returns the distance to the next label.
+	 * This is used to estimate the size of a label value.
+	 * @param addr The address (of the current label). Long address.
+	 * @returns N. addr+N is the address that relates to the next available label.
+	 */
+	public getDistanceToNextLabel(addr: number): number|undefined {
+		const distance = this.distanceForLabelAddress.get(addr);
+		return distance;
 	}
 
 
