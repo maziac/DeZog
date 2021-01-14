@@ -13,7 +13,7 @@ interface SimWatchpoint {
 	// read/write access points have been set. If 0 then no watchpoint is set.
 	read: number;
 	write: number;
-	}
+}
 
 
 /**
