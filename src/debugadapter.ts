@@ -1876,6 +1876,7 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
+
 		// WATCH or else
 		try {
 
@@ -1899,65 +1900,73 @@ export class DebugSessionClass extends DebugSession {
 					let modulePrefix;
 					let lblIndex = 0;
 					let elemCount = 1;	// Use 1 as default
-					let elemSize;
+					let elemSize = 1;	// Use 1 as default (if no type/size given)
 
+					/*
 					// Check if it is a register
 					if (Z80RegistersClass.isRegister(labelString)) {
 						// Otherwise it is a double register.
 						labelValue = Remote.getRegisterValue(labelString);  // TODO brauch ich das?
 					}
 					else {
+						*/
 						// No register, so assume a label.
 						// First check for module name and local label prefix (sjasmplus).
 						const pcLongAddr = Remote.getPCLong();
 						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
 						// Local label and prefix
 						lastLabel = entry.lastLabel;
-						modulePrefix = entry.modulePrefix;
-
+					modulePrefix = entry.modulePrefix;
 						// Convert label (+expression)
-						labelValue = Utility.evalExpression(labelString, false, modulePrefix, lastLabel);
-					}
+						labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
+					//}
 
 					if (isNaN(labelValue))
-						throw Error("Could not parse label");
+						throw Error("Could not parse label.");
+
+					// Get size from type
+					if (lblType) {
+						//elemSize = Labels.getNumberFromString64k(lblType);
+						elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
+						if (isNaN(elemSize))
+							throw Error("Could not parse element size.");
+						if (elemSize <= 0)
+							throw Error("Element size must be > 0, is " + elemSize + ".");
+					}
 
 					// And index "[x]"
 					if (lblIndexString) {
 						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
 						if (isNaN(lblIndex))
-							throw Error("Could not parse index");
+							throw Error("Could not parse index.");
+						if (lblIndex < 0)
+							throw Error("Index must be > 0, is " + lblIndex + ".");
 					}
 
-					// Is a number
+					// Check count
 					if (elemCountString) {
 						elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
 						if (isNaN(elemCount))
-							throw Error("Could not parse elem count");
-					}
-
-					// Check label type
-					if (!lblType) {
-						// If no type given try to estimate it by calculating the distance to
-						// the next label.
-						elemSize = Labels.getDistanceToNextLabel(labelValue);
-						if (!elemSize)	// Also 0 is not allowed
-							elemSize = 10; // Use 10 bytes as default
-						// limit max. number
-						if (elemSize > 1000)
-							elemSize = 1000;
-						// Exchange count and size?
-						if (elemSize > 2) {
-							// If bigger 2 (word) then assume byte and use size as elem count
-							if (!elemCountString)
-								elemCount = elemSize;	// Only if no value given by user
-							elemSize = 1;
-						}
+							throw Error("Could not parse element count.");
+						if (elemCount <= 0)
+							throw Error("Element count must be > 0, is " + elemCount + ".");
 					}
 					else {
-						elemSize = Labels.getNumberFromString64k(lblType);
-						if (isNaN(elemSize))
-							throw Error("Could not parse elem size");
+						// If no count is given try to estimate it by calculating the distance to
+						// the next label.
+						// Note: labelValue is 64k only. So first check if the label name is simply a name without calculation.
+						// If yes, use it. If no use labelValue.
+						let distAddr = Labels.getNumberForLabel(labelString);
+						// If not a long address then use the 64k value
+						if (distAddr == undefined)
+							distAddr = labelValue;
+						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 0;
+						elemCount /= elemSize;
+						if (!elemCount)	// Also 0 is not allowed (and should not happen)
+							elemCount = 10; // Use 10 bytes as default
+						// lLmit max. number
+						if (elemCount > 1000)
+							elemCount = 1000;
 					}
 
 					// Add index
@@ -1965,7 +1974,7 @@ export class DebugSessionClass extends DebugSession {
 					const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
 
 					// Create fullLabel
-					const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
+					//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 					// Create a label variable
 					let labelVar;
 					let formattedValue = '';
@@ -2008,19 +2017,8 @@ export class DebugSessionClass extends DebugSession {
 					const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
 					// Response
 					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
-					// Different display on hover:
-					let res;
-					if (args.context == 'hover') { // TODO
-						// Hover
-						res = fullLabel + ' (' + description + '): ' + formattedValue;
-					}
-					else {
-						// WATCH
-						res = formattedValue;
-					}
-					// Response
 					response.body = {
-						result: res,
+						result: formattedValue,
 						variablesReference: ref,
 						type: description,
 						//presentationHint: ,
@@ -2033,8 +2031,7 @@ export class DebugSessionClass extends DebugSession {
 		catch (e) {
 			// Return empty response
 			response.body = {
-				// No error message on hover
-				result: (args.context == 'hover') ? undefined : e.message,
+				result: e.message,
 				variablesReference: 0
 			}
 			this.sendResponse(response);

@@ -1597,7 +1597,8 @@ If you like you can also "comment" your watches which e.g. further explains the 
 Notes:
 - Watches always work in the 64k area. I.e. they don't use 'long addresses' (banks).
 - You can also put a register name (e.g. "BC") in the WATCHes area. E.g. you can easily watch the last 10 elements on the stack by typing:```SP,2,10```.
-- Instead of a simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use thevalue of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
+- Don't get confused: If you use a register then not the register content is shown! Instead the memory contents the register points to is displayed. The same as it is with labels. And, consequently, if you have an EQU not the value itself but that of the memory location the EQU points to is shown.
+- Instead of simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use the value of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
 - To watch the stack in the WATCH section you could use: ```SP,2,(stack_top-SP)/2```which shows a dynamic size array which starts at SP and ends at stack_top (assuming stack_top is defined as a label just above your stack).
 - If a label is not recognized try to use the fully qualified name. I.e. in case of a dot label try to use the full label name with the module name (if used).
 
