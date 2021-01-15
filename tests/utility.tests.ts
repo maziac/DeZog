@@ -240,10 +240,194 @@ suite('Utility', () => {
 	});
 
 
+	suite('replaceVarsWithValues', () => {
+
+		setup(() => {
+			const cfg: any = {
+				remoteType: 'zrcp'
+			};
+			Settings.Init(cfg, '');
+			Z80RegistersClass.createRegisters();
+			RemoteFactory.createRemote(cfg.remoteType);
+			Z80Registers.setCache("PC=1110 SP=2120 AF=3130 BC=4140 HL=5150 DE=6160 IX=A1A0 IY=B1B0 AF'=3332 BC'=4342 HL'=5352 DE'=6362 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
+			Z80Registers.decoder = new DecodeZesaruxRegisters(8);		});
+
+		test('No labels, no registers', () => {
+			let res = Utility.replaceVarsWithValues('');
+			assert.equal(res, '');
+
+			res = Utility.replaceVarsWithValues('0x1000 $200 40h 9786 1000b LABEL');
+			assert.equal(res, '4096 512 64 9786 8 LABEL');
+		});
+
+		suite('Calculations', () => {
+
+			test('Addition', () => {
+				// No space
+				let res = Utility.replaceVarsWithValues('lbl_a+lbl_b', false);
+				assert.equal(res, 'lbl_a+lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a+ lbl_b', false);
+				assert.equal(res, 'lbl_a+ lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a +lbl_b', false);
+				assert.equal(res, 'lbl_a +lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues(' lbl_a + lbl_b ', false);
+				assert.equal(res, ' lbl_a + lbl_b ');
+			});
+
+			test('Subtraction', () => {
+				// No space
+				let res = Utility.replaceVarsWithValues('lbl_a-lbl_b', false);
+				assert.equal(res, 'lbl_a-lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a- lbl_b', false);
+				assert.equal(res, 'lbl_a- lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a -lbl_b', false);
+				assert.equal(res, 'lbl_a -lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues(' lbl_a - lbl_b ', false);
+				assert.equal(res, ' lbl_a - lbl_b ');
+			});
+
+			test('Multiplication', () => {
+				// No space
+				let res = Utility.replaceVarsWithValues('lbl_a*lbl_b', false);
+				assert.equal(res, 'lbl_a*lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a* lbl_b', false);
+				assert.equal(res, 'lbl_a* lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a *lbl_b', false);
+				assert.equal(res, 'lbl_a *lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues(' lbl_a * lbl_b ', false);
+				assert.equal(res, ' lbl_a * lbl_b ');
+			});
+
+			test('Division', () => {
+				// No space
+				let res = Utility.replaceVarsWithValues('lbl_a/lbl_b', false);
+				assert.equal(res, 'lbl_a/lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a/ lbl_b', false);
+				assert.equal(res, 'lbl_a/ lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues('lbl_a /lbl_b', false);
+				assert.equal(res, 'lbl_a /lbl_b');
+
+				// Test
+				res = Utility.replaceVarsWithValues(' lbl_a / lbl_b ', false);
+				assert.equal(res, ' lbl_a / lbl_b ');
+			});
+
+			test('mixed', () => {
+				// No space
+				let res = Utility.replaceVarsWithValues('lbl_a*3+lbl_b', false);
+				assert.equal(res, 'lbl_a*3+lbl_b');
+			});
+		});
+
+		suite('Registers', () => {
+			test('Capital Letters', () => {
+				// Eval no registers
+				let res = Utility.replaceVarsWithValues('PC SP AF BC HL DE IX IY', false);
+				assert.equal(res, 'PC SP AF BC HL DE IX IY');
+
+				// Eval registers
+				res = Utility.replaceVarsWithValues('PC SP AF BC HL DE IX IY', true);
+				assert.equal(res, '4368 8480 12592 16704 20816 24928 41376 45488');
+
+				// Eval shadow registers
+				res = Utility.replaceVarsWithValues("AF' BC' HL' DE' LABEL'", true);
+				assert.equal(res, "13106 17218 21330 25442 LABEL'");
+
+				// Single registers
+				res = Utility.replaceVarsWithValues('A B C H L D E', true);
+				assert.equal(res, '49 65 64 81 80 97 96');
+
+				// Special registers
+				res = Utility.replaceVarsWithValues('I R IXH IXL IYH IYL', true);
+				assert.equal(res, '63 94 161 160 177 176');
+
+				// Flags
+				res = Utility.replaceVarsWithValues('F', true);
+				assert.equal(res, '48');
+			});
+
+
+			test('Lowercase Letters', () => {
+				// Eval registers
+				let res = Utility.replaceVarsWithValues('pc sp af bc hl de ix iy', true);
+				assert.equal(res, '4368 8480 12592 16704 20816 24928 41376 45488');
+
+				// Single registers
+				res = Utility.replaceVarsWithValues('a b c h l d e', true);
+				assert.equal(res, '49 65 64 81 80 97 96');
+			});
+
+		});
+
+		test('Register calculations', () => {
+			// No space
+			let res = Utility.replaceVarsWithValues('C+B', true);
+			assert.equal(res, 'lbl_a+lbl_b');
+
+			// Test
+			res = Utility.replaceVarsWithValues('lbl_a+ lbl_b', true);
+			assert.equal(res, 'lbl_a+ lbl_b');
+
+			// Test
+			res = Utility.replaceVarsWithValues('lbl_a +lbl_b', true);
+			assert.equal(res, 'lbl_a +lbl_b');
+
+			// Test
+			res = Utility.replaceVarsWithValues(' lbl_a + lbl_b ', true);
+			assert.equal(res, ' lbl_a + lbl_b ');
+
+			// Mixed
+			res = Utility.replaceVarsWithValues("C*3+B", true);
+			assert.equal(res, "64*3+65");
+		});
+
+
+		test('Labels', () => {
+			Labels.init(0);
+			(Labels as any).numberForLabel.set("MY_LBLA", 0x208081);
+			(Labels as any).numberForLabel.set("MY_LBLB", 0x304041);
+
+			// Eval (0x208081 & 0xFFFF)
+			let res = Utility.replaceVarsWithValues('MY_LBLA', false);
+			assert.equal(res, '32897');
+
+			// Eval
+			res = Utility.replaceVarsWithValues("MY_LBLA'", false);
+			assert.equal(res, "MY_LBLA'");
+
+			// Mixed calculation
+			res = Utility.replaceVarsWithValues("MY_LBLA*3+MY_LBLB", false);
+			assert.equal(res, "32897*3+16449");
+		});
+
+	});
+
 	suite('evalExpression', () => {
 
 		test('plus', () => {
-            let res = Utility.evalExpression('2+5');
+			let res = Utility.evalExpression('2+5');
 			assert.equal(7, res, "Wrong eval result");
 
 			res = Utility.evalExpression('2 +5');
