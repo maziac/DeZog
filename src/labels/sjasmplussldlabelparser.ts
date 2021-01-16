@@ -274,7 +274,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					});
 					// Also assume for max. instruction size and associate the following
 					// 3 bytes as well (but only to "estimated")
-					
 					const endAddress = this.addressAdd4(address);
 					for (let addrInside = address + 1; addrInside < endAddress; addrInside++) {
 						// Note: addrInside is >= address.
@@ -350,7 +349,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * @param address Long address or 64k address.
 	 * @returns address + 4 but bound to the bank. long or 64k address.
 	 */
-	// TODO : test case
 	protected addressAdd4(address: number): number {
 		// Check for long address
 		if (address & ~0xFFFF) {

@@ -2,6 +2,7 @@
 import * as assert from 'assert';
 import {Labels} from '../src/labels/labels';
 import {readFileSync} from 'fs';
+import {SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
 //import { Settings } from '../src/settings';
 
 suite('Labels (sjasmplus)', () => {
@@ -262,14 +263,11 @@ suite('Labels (sjasmplus)', () => {
 			entry = Labels.getFileAndLineForAddress(0x058002);
 			assert.notEqual(entry.fileName, '');	// Known
 
-			// 0x8101-0x8102: are still undefined as no instruction is following.
-			// Note: This is not desired behavior, but that's how it is.
+			// 0x8101-0x8102
 			entry = Labels.getFileAndLineForAddress(0x058101);
 			assert.notEqual(entry.fileName, '');	// Known
-			//assert.equal(entry.fileName, '');	// Unknown
 			entry = Labels.getFileAndLineForAddress(0x058102);
 			assert.notEqual(entry.fileName, '');	// Known
-			//assert.equal(entry.fileName, '');	// Unknown
 
 			// 0x8202, 0x8004, 0x8005, 0x8007, 0x8008, 0x8009
 			entry = Labels.getFileAndLineForAddress(0x058202);
@@ -285,11 +283,30 @@ suite('Labels (sjasmplus)', () => {
 			entry = Labels.getFileAndLineForAddress(0x058209);
 			assert.notEqual(entry.fileName, '');	// Known
 
-			// 0x8301: is still undefined as no instruction is following.
-			// Note: This is not desired behavior, but that's how it is.
+			// 0x8301
 			entry = Labels.getFileAndLineForAddress(0x058301);
 			assert.notEqual(entry.fileName, '');	// Known
-			//assert.equal(entry.fileName, '');	// Unknown
+		});
+
+
+		test('addressAdd4', () => {
+			const sdlParser = new SjasmplusSldLabelParser(undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any, undefined as any) as any;
+
+			// 64k address
+			sdlParser.bankSize = 0x10000;
+			assert.equal(sdlParser.addressAdd4(0x0000), 0x0004);
+			assert.equal(sdlParser.addressAdd4(0xFFFF), 0xFFFF);
+			assert.equal(sdlParser.addressAdd4(0xFFFE), 0xFFFF);
+			assert.equal(sdlParser.addressAdd4(0xFFFD), 0xFFFF);
+			assert.equal(sdlParser.addressAdd4(0xFFFC), 0xFFFF);
+			assert.equal(sdlParser.addressAdd4(0xFFFB), 0xFFFF);
+			assert.equal(sdlParser.addressAdd4(0xFFFA), 0xFFFE);
+
+			// long address
+			sdlParser.bankSize = 0x2000;
+			assert.equal(sdlParser.addressAdd4(0x018000), 0x018004);
+			assert.equal(sdlParser.addressAdd4(0x019FFE), 0x019FFF);
+			assert.equal(sdlParser.addressAdd4(0x01FFFF), 0x01FFFF);
 		});
 
 	});
