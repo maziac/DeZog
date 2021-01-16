@@ -47,12 +47,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
 	protected regexSkipSldOptComment = /^;\s*sldopt/i;
 
-	/// This contains the (long) address of the previous line and is undefined
-	/// if the previous line was no T (instruction) line.
-	/// Is used for estimating the size of an instruction.
-	protected prevLineAddress: number | undefined;
-
-
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
 	/// This contains estimated address to file/line associations.
@@ -98,7 +92,6 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			this.bankSize = 0;	// Ignore banking
 
 		// Loop through all lines of the sld file
-		this.prevLineAddress = undefined;
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
 		}
