@@ -1527,23 +1527,31 @@ Example:
 
 ![](images/watch_simple.jpg)
 
-You can hover over the label to display the address of the label.
+You can hover over the label in the WATCH window to display the address of the label.
 
-You can assign the size of the label contents manually by placing the size after the label name.
+DeZog tries to estimate the size of the label but if that is incorrect you can assign the size of the label contents manually by placing the size after the label name.
 E.g. use ```2```for a word.
 
-TODO: Different picture.
 ![](images/watch_simple_type.jpg)
-
-If you omit the size it is estimated by DeZog. But note that the size estimation is based on heuristics and might be wrong.
 
 TODO: Different picture.
 The 3rd parameter is the number of elements to show.
-The example here shows 5 word values starting at the label.
+The example here uses an "array" of 5 word-sized counters starting at the label 'counters'. E.g.
+~~~asm
+counters:
+    defw 0x1000 ; Counter 0
+    defw 0x0030 ; Counter 1
+    defw 0x0800 ; Counter 2
+    defw 0xA000 ; Counter 3
+    defw 0x0010 ; Counter 4
+~~~
 
 ![](images/watch_array.gif)
 
-If you choose a different size the display changes accordingly.
+Again DeZog would try to estimate the element count if you omit the 3rd parameter.
+DeZog will succeed estimating if the counters are immediately followed by some other label. DeZog's element count estimation would fail if there is some space (e.g. a DEFS area) before the next label is defined.
+
+If you'd choose a different size the display changes accordingly.
 You can also put another label (EQU) value here.
 
 ![](images/watch_type_as_number.jpg)
