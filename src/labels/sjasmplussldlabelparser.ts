@@ -2,6 +2,7 @@ import {readFileSync} from 'fs';
 import {Utility} from '../misc/utility';
 import {AsmConfigBase, SjasmplusConfig} from '../settings';
 import {LabelParserBase} from './labelparserbase';
+import {SourceFileEntry} from './labels';
 
 
 /**
@@ -46,6 +47,27 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
 	protected regexSkipSldOptComment = /^;\s*sldopt/i;
 
+	/// This contains the (long) address of the previous line and is undefined
+	/// if the previous line was no T (instruction) line.
+	/// Is used for estimating the size of an instruction.
+	protected prevLineAddress: number | undefined;
+
+
+	/// Map that associates memory addresses (PC values) with line numbers
+	/// and files.
+	/// This contains estimated address to file/line associations.
+	/// I.e. they only indirectly derive from the SLD file.
+	/// All addresses belonging to an instruction (except the start address)
+	/// are put in here.
+	/// This is simply done by assuming each instruction is 4 byte.
+	/// I.e. the remaining 3 byte are put in here.
+	/// In post processing all addresses that are not present in the fileLineNrs
+	/// map are also set in the fileLineNrs map.
+	/// The problem that is solved is SMC (self modifying code). DeZog would switch to
+	/// the disassembly file otherwise.
+	/// Long addresses.
+	protected estimatedFileLineNrs = new Map<number, SourceFileEntry>();
+
 
 	/**
 	 * Reads the given sld file.
@@ -76,8 +98,17 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			this.bankSize = 0;	// Ignore banking
 
 		// Loop through all lines of the sld file
+		this.prevLineAddress = undefined;
 		for (const line of sldLines) {
 			this.parseFileLabelAddress(line);
+		}
+
+		// Now put all estimated file/line addresses into the main file
+		for (let [address, entry] of this.estimatedFileLineNrs) {
+			if (!this.fileLineNrs.get(address)) {
+				// Only if address not yet exists
+				this.fileLineNrs.set(address, entry);
+			}
 		}
 	}
 
@@ -234,13 +265,43 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					// Get line number
 					const lineNr=parseInt(fields[1])-1;
 
-					// Store values to associate address with line number and (last) label
+					// Store values to associate address with line number and (last) label.
 					this.fileLineNrs.set(address, {
 						fileName: sourceFile,
 						lineNr: lineNr,
 						modulePrefix: this.modulePrefix,
 						lastLabel: this.lastLabel
 					});
+					// Also assume for max. instruction size and associate the following
+					// 3 bytes as well (but only to "estimated")
+					
+					const endAddress = this.addressAdd4(address);
+					for (let addrInside = address + 1; addrInside < endAddress; addrInside++) {
+						// Note: addrInside is >= address.
+						this.estimatedFileLineNrs.set(addrInside, {
+							fileName: sourceFile,
+							lineNr: lineNr,
+							modulePrefix: this.modulePrefix,
+							lastLabel: this.lastLabel
+						});
+					}
+
+
+					/*
+					// Note: not only the start address is stored but also the size
+					// of the instruction is estimated and all of the covered addresses
+					// are associated to the file, too.
+					if (this.prevLineAddress != undefined) {
+						// Check if same bank
+						if ((address & ~0xFFFF) == (this.prevLineAddress & ~0xFFFF)) {
+							// Check if distance is smaller/equal 4 (=max instruction size)
+							const dist = (address - this.prevLineAddress) & 0xFFFF;
+							if (dist <= 4) {
+
+							}
+						}
+					}
+					*/
 
 					// Check if a new array need to be created
 					let lineArray=this.lineArrays.get(sourceFile);
@@ -282,6 +343,35 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		super.findWpmemAssertionLogpoint(address, line);
 	}
 
+
+	/**
+	 * Increments the address.
+	 * Can work with long and 64k addresses.
+	 * @param address Long address or 64k address.
+	 * @returns address + 4 but bound to the bank. long or 64k address.
+	 */
+	// TODO : test case
+	protected addressAdd4(address: number): number {
+		// Check for long address
+		if (address & ~0xFFFF) {
+			// Long address
+			const mask = this.bankSize - 1;
+			let addrBank = address & mask;
+			addrBank += 4;
+			if (addrBank > mask)
+				addrBank = mask;
+			// Reconstruct bank/slot
+			addrBank += address & ~mask;
+			return addrBank;
+		}
+		else {
+			// 64k address
+			let addr2 = address + 4;
+			if (addr2 > 0xFFFF)
+				addr2 = 0xFFFF;
+			return addr2;
+		}
+	}
 }
 
 

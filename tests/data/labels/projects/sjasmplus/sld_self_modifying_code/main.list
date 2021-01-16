@@ -1,0 +1,36 @@
+# file opened: main.asm
+ 1    0000              ; File to tests address file association when executing self modifyfing code.
+ 2    0000              ; In SLD files there is only the address of the start of an instruction.
+ 3    0000              ; If the instruction is modified by the program also addresses "inside"
+ 4    0000              ; the original instruction may occur.
+ 5    0000              ; If such an new instruction is executed DeZog would create adisassembly file.
+ 6    0000              ; The behavior is a little inconsistent as the first address still
+ 7    0000              ; navigates to the original file although the instruction is "wrong".
+ 8    0000              ;
+ 9    0000              ; to at least get a consisten behavior deZog tries to estimate the size of an
+10    0000              ; instruction and assiciates all addresses to this file.
+11    0000
+12    0000                  DEVICE ZXSPECTRUMNEXT
+13    0000                  SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+14    0000
+15    0000
+16    0000              	ORG 0x8000
+17    8000 C3 00 90     	jp 0x9000	; 3 bytes will be associated
+18    8003 00           	nop
+19    8004
+20    8004              	ORG 0x8100
+21    8100 C3 00 90     	jp 0x9000	; Only one byte is associated as the following address is more than 4 bytes away
+22    8103
+23    8103              	ORG 0x8200
+24    8200 00           	nop		; 1 byte instruction
+25    8201 3E 0A        	ld a,10	; 2 byte instruction
+26    8203 C3 00 90     	jp 0x9000	; 3 bytes will be associated
+27    8206 DD 36 09 05  	ld (ix+9),5	; 4 byte instruction
+28    820A 00           	nop
+29    820B
+30    820B              	ORG 0x8300
+31    8300 3E 09        	ld a,9	; 2 byte instruction followed by data is not associated
+32    8302 0E           	defb 0x0E
+33    8303
+34    8303
+# file closed: main.asm

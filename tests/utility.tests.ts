@@ -384,19 +384,19 @@ suite('Utility', () => {
 		test('Register calculations', () => {
 			// No space
 			let res = Utility.replaceVarsWithValues('C+B', true);
-			assert.equal(res, 'lbl_a+lbl_b');
+			assert.equal(res, '64+65');
 
 			// Test
-			res = Utility.replaceVarsWithValues('lbl_a+ lbl_b', true);
-			assert.equal(res, 'lbl_a+ lbl_b');
+			res = Utility.replaceVarsWithValues('C+ B', true);
+			assert.equal(res, '64+ 65');
 
 			// Test
-			res = Utility.replaceVarsWithValues('lbl_a +lbl_b', true);
-			assert.equal(res, 'lbl_a +lbl_b');
+			res = Utility.replaceVarsWithValues('C +B', true);
+			assert.equal(res, '64 +65');
 
 			// Test
-			res = Utility.replaceVarsWithValues(' lbl_a + lbl_b ', true);
-			assert.equal(res, ' lbl_a + lbl_b ');
+			res = Utility.replaceVarsWithValues(' C + B ', true);
+			assert.equal(res, ' 64 + 65 ');
 
 			// Mixed
 			res = Utility.replaceVarsWithValues("C*3+B", true);

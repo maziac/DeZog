@@ -212,5 +212,87 @@ suite('Labels (sjasmplus)', () => {
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
+	suite('Self modifying code', () => {
+
+		setup(() => {
+			// Read the list file
+			const config = {
+				sjasmplus: [{
+					path: './tests/data/labels/projects/sjasmplus/sld_self_modifying_code/main.sld', srcDirs: [""],	// Sources mode
+					excludeFiles: []
+				}]
+			};
+			Labels.readListFiles(config);
+		});
+
+		test('Start addresses found', () => {
+			// Note 0x8000 is at bank 4. So: 0x05....
+
+			// 0x8000
+			let entry = Labels.getFileAndLineForAddress(0x058000);
+			assert.notEqual(entry.fileName, '');	// Known
+
+			// 0x8100
+			entry = Labels.getFileAndLineForAddress(0x058100);
+			assert.notEqual(entry.fileName, '');	// Known
+
+			// 0x8200, 0x8201, 0x8203, 0x8206, 0x800A
+			entry = Labels.getFileAndLineForAddress(0x058200);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058201);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058203);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058206);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x05820A);
+			assert.notEqual(entry.fileName, '');	// Known
+
+			// 0x8300
+			entry = Labels.getFileAndLineForAddress(0x058300);
+			assert.notEqual(entry.fileName, '');	// Known
+		});
+
+		test('Address ranges (after start address) found', () => {
+			// Note 0x8000 is at bank 4. So: 0x05....
+
+			// 0x8001-0x8002
+			let entry = Labels.getFileAndLineForAddress(0x058001);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058002);
+			assert.notEqual(entry.fileName, '');	// Known
+
+			// 0x8101-0x8102: are still undefined as no instruction is following.
+			// Note: This is not desired behavior, but that's how it is.
+			entry = Labels.getFileAndLineForAddress(0x058101);
+			assert.notEqual(entry.fileName, '');	// Known
+			//assert.equal(entry.fileName, '');	// Unknown
+			entry = Labels.getFileAndLineForAddress(0x058102);
+			assert.notEqual(entry.fileName, '');	// Known
+			//assert.equal(entry.fileName, '');	// Unknown
+
+			// 0x8202, 0x8004, 0x8005, 0x8007, 0x8008, 0x8009
+			entry = Labels.getFileAndLineForAddress(0x058202);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058204);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058205);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058207);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058208);
+			assert.notEqual(entry.fileName, '');	// Known
+			entry = Labels.getFileAndLineForAddress(0x058209);
+			assert.notEqual(entry.fileName, '');	// Known
+
+			// 0x8301: is still undefined as no instruction is following.
+			// Note: This is not desired behavior, but that's how it is.
+			entry = Labels.getFileAndLineForAddress(0x058301);
+			assert.notEqual(entry.fileName, '');	// Known
+			//assert.equal(entry.fileName, '');	// Unknown
+		});
+
+	});
+
 });
 

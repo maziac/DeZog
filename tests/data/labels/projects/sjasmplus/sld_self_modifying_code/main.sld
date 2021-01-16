@@ -1,0 +1,12 @@
+|SLD.data.version|1
+||K|KEYWORDS|WPMEM,LOGPOINT,ASSERTION
+main.asm|12||0|-1|-1|Z|pages.size:8192,pages.count:224,slots.count:8,slots.adr:0,8192,16384,24576,32768,40960,49152,57344
+main.asm|17||0|4|32768|T|
+main.asm|18||0|4|32771|T|
+main.asm|21||0|4|33024|T|
+main.asm|24||0|4|33280|T|
+main.asm|25||0|4|33281|T|
+main.asm|26||0|4|33283|T|
+main.asm|27||0|4|33286|T|
+main.asm|28||0|4|33290|T|
+main.asm|31||0|4|33536|T|

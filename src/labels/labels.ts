@@ -553,7 +553,7 @@ export class LabelsClass {
 	 * Returns file name and line number associated with a certain memory address.
 	 * Used e.g. for the call stack.
 	 * Long addresses.
-	 * @param address The memory address to search for.
+	 * @param address The (long) memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
