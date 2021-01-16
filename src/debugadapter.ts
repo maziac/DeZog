@@ -12,7 +12,7 @@ import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
 import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
-import {Z80RegisterHoverFormat, Z80RegisterVarFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
+import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
@@ -1833,48 +1833,53 @@ export class DebugSessionClass extends DebugSession {
 		Log.log('evaluate.context: ' + args.context);
 		Log.log('evaluate.format: ' + args.format);
 
-		// Check for single register (same for hover and watch)
-		if (Z80RegistersClass.isSingleRegister(expression)) {
-			const formatMap = (args.context == 'hover') ? Z80RegisterHoverFormat : Z80RegisterVarFormat;
-			const formattedValue = await Utility.getFormattedRegister(expression, formatMap); response.body = {
-				result: formattedValue,
-				variablesReference: 0
-			};
-			this.sendResponse(response);
-			return;
-		}
-
-
 		// Check for hover
 		if (args.context == 'hover') {
-			// If hovering only the label address + byte and word contents are shown.
-			// First check for module name and local label prefix (sjasmplus).
-			const pcLongAddr = Remote.getPCLong();
-			const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-			// Local label and prefix
-			const lastLabel = entry.lastLabel;
-			const modulePrefix = entry.modulePrefix;
-			// Get label value
-			const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
-			if (labelValue != undefined) {
-				// Get content
-				const memDump = await Remote.readMemoryDump(labelValue, 2);
-				// Format byte
-				const memByte = memDump[0];
-				const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
-				// Format word
-				const memWord = memByte + 256 * memDump[1];
-				const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
-				// Response
-				response.body = {
-					result: expression+' ('+Utility.getHexString(labelValue,4)+'h):\nByte content: '+formattedByte+'\nWord content: '+formattedWord,
-					variablesReference: 0
+			let formattedValue = '';
+			// Check for registers
+			if (Z80RegistersClass.isRegister(expression)) {
+				formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
+			}
+			else {
+				// Label
+				// Check if a 2nd line (memory content) is required
+				if (!Z80RegistersClass.isSingleRegister(expression)) {
+					// If hovering only the label address + byte and word contents are shown.
+					// First check for module name and local label prefix (sjasmplus).
+					const pcLongAddr = Remote.getPCLong();
+					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+					// Local label and prefix
+					const lastLabel = entry.lastLabel;
+					const modulePrefix = entry.modulePrefix;
+					// Get label value
+					const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+					if (labelValue != undefined) {
+						// Get content
+						const memDump = await Remote.readMemoryDump(labelValue, 2);
+						// Format byte
+						const memByte = memDump[0];
+						const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+						// Format word
+						const memWord = memByte + 256 * memDump[1];
+						const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+						// Format output
+						const addrString = Utility.getHexString(labelValue, 4) + 'h';
+						if (!formattedValue)
+							formattedValue = expression + ': ' + addrString;
+						// Second line
+						formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
+					}
 				}
+			}
+			// Response
+			response.body = {
+				result: formattedValue,
+				variablesReference: 0
 			}
 			// Return
 			this.sendResponse(response);
 			return;
-		}
+		}	// Hover
 
 
 		// WATCH or else

@@ -590,12 +590,12 @@ export class Settings {
 			Settings.launch.formatting.registerHover = [
 				"AF", "AF: ${hex}h, F: ${flags}",
 				"AF'", "AF': ${hex}h, F': ${flags}",
-				"PC", "${name}: ${hex}h${\n:labelsplus|\n}",
-				"SP", "${name}: ${hex}h${\n:labelsplus|\n}",
-				"IM", "${unsigned}u",
-				"..", "${hex}h, ${unsigned}u, ${signed}i\n${\n:labelsplus|\n}\n(${hex}h)b=${b@:hex}h, (${hex}h)w=${w@:hex}h",
-				"R", "${name}: ${unsigned}u",
-				"I", "${name}: ${hex}h",
+				"PC", "PC: ${hex}h${\n:labelsplus|\n}",
+				"SP", "SP: ${hex}h${\n:labelsplus|\n}",
+				"IM", "IM: ${unsigned}u",
+				"..", "${name}: ${hex}h, ${unsigned}u, ${signed}i${\n:labelsplus|\n}\n(${hex}h)b=${b@:hex}h, (${hex}h)w=${w@:hex}h",
+				"R", "R: ${unsigned}u",
+				"I", "I: ${hex}h",
 				".", "${name}: ${hex}h, ${unsigned}u, ${signed}i, '${char}', ${bits}b"
 			];
 		if (!Settings.launch.formatting.bigValues)
