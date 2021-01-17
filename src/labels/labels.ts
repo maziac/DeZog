@@ -141,7 +141,7 @@ export class LabelsClass {
 		// clear data
 		this.fileLineNrs.clear();
 		this.lineArrays.clear();
-		this.labelsForNumber64k.length = 0;
+		this.labelsForNumber64k.fill(undefined);
 		this.labelsForLongAddress.clear();
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
