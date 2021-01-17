@@ -86,7 +86,7 @@
 					"type": "webview",
 					"id": "dezog.helpview",
 					"name": "DeZog Help",
-					"when": "config.dezog.showHelp"
+					"icon": "assets/help_icon.svg"
 				}
 			]
 		},
