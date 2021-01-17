@@ -89,7 +89,7 @@ export class LabelsClass {
 	/// through 'a' which will contain another map which can be referneced by 'b'
 	/// and so on.
 	/// Used for displaying structs in the watches window.
-	protected labelsHierachy = new Map<string, any>();
+	protected labelsHierarchy = new Map<string, any>();
 
 
 	/// Map with label / file location association.
@@ -145,7 +145,7 @@ export class LabelsClass {
 		this.labelsForLongAddress.clear();
 		this.numberForLabel.clear();
 		this.labelLocations.clear();
-		this.labelsHierachy.clear();
+		this.labelsHierarchy.clear();
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
@@ -486,7 +486,7 @@ export class LabelsClass {
 		for (let [label,] of this.numberForLabel) {
 			// Get all parts of the label
 			const parts = label.split('.');
-			let map = this.labelsHierachy;
+			let map = this.labelsHierarchy;
 			for (const part of parts) {
 				// Check if already existing
 				let subMap = map.get(part);
@@ -510,7 +510,7 @@ export class LabelsClass {
 	public getSubLabels(label: string): Array<string> {
 		// Get all parts of the label
 		const parts = label.split('.');
-		let map = this.labelsHierachy;
+		let map = this.labelsHierarchy;
 		for (const part of parts) {
 			// Check if already existing
 			let subMap = map.get(part);

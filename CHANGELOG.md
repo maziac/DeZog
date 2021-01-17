@@ -5,6 +5,9 @@
 - Folder structure refactored.
 - WhatsNew refactored.
 - 'DeZog Help' view for sidebar added.
+- Hover format overworked.
+- WATCH: 'b' and 'w' removed for size. Use 1 and 2 instead.
+- Smaller memory footprint.
 
 # 2.1.3
 - Regression fixed: Allow input of hex values with preceding '$'.
