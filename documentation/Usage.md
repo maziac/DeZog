@@ -1534,7 +1534,6 @@ E.g. use ```2```for a word.
 
 ![](images/watch_simple_type.jpg)
 
-TODO: Different picture.
 The 3rd parameter is the number of elements to show.
 The example here uses an "array" of 5 word-sized counters starting at the label 'counters'. E.g.
 ~~~asm
@@ -1580,7 +1579,7 @@ attributes   WORD
 optional     DEFS 3
         ENDS
 
-INV_COUNT EQU 5
+INV_COUNT: EQU 5
 
 invaders: DS INV_COUNT*INVADER
 ~~~

@@ -1,0 +1,31 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+style="fill:none; stroke-width:3; stroke: gray; font-family: arial;" >
+
+	<!-- Main rect -->
+	<rect width="60" height="90" x="20" y="5" />
+
+	<!-- Left upper pin -->
+	<rect width="10" height="10" x="10"	y="11" />
+
+	<!-- Other pins -->
+	<!-- Left: -->
+	<rect width="10" height="10" x="10"	y="28" />
+	<rect width="10" height="10" x="10"	y="45" />
+	<rect width="10" height="10" x="10"	y="62" />
+	<rect width="10" height="10" x="10"	y="79" />
+	<!-- Right: -->
+	<rect width="10" height="10" x="80"	y="11" />
+	<rect width="10" height="10" x="80"	y="28" />
+	<rect width="10" height="10" x="80"	y="45" />
+	<rect width="10" height="10" x="80"	y="62" />
+	<rect width="10" height="10" x="80"	y="79" />
+
+	<!-- top nodge -->
+	 <path d="M40,6 a1,1 0 0,0 20,0" />
+
+	<!-- Question mark -->
+	<text x="50" y="75" style="text-anchor: middle; fill: gray; font-size: 60" >
+		?
+	</text>
+
+</svg>
