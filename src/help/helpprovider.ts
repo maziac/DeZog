@@ -158,9 +158,12 @@ initAnchors();
 		const donated = configuration.get<boolean>('donated');
 		// Set button
 		if (!donated) {
+			// TODO: Enable
+			/*
 			mainHtml = mainHtml.replace('<!--${donate}-->', `
 		<button class="button-donate" style="float:right" onclick="
 	vscode.postMessage({command: 'donateClicked'})">Donate...</button>`);
+	*/
 		}
 
 

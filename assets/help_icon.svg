@@ -21,7 +21,7 @@ style="fill:none; stroke-width:3; stroke: gray; font-family: arial;" >
 	<rect width="10" height="10" x="80"	y="79" />
 
 	<!-- top nodge -->
-	 <path d="M40,6 a1,1 0 0,0 20,0" />
+	<path d="M40,6 a1,1 0 0,0 20,0" />
 
 	<!-- Question mark -->
 	<text x="50" y="75" style="text-anchor: middle; fill: gray; font-size: 60" >

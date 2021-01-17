@@ -1638,7 +1638,7 @@ Please see [here](https://github.com/maziac/DeZog/blob/master/documentation/Unit
 ## Known Issues
 
 - **General**
-  - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) is. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
+  - **Hovering** does work only on the file that is currently debugged, i.e. where the PC (program counter) points to. This seems to be a restriction of vscode. debug-adapter-protocol issue #86 https://github.com/microsoft/debug-adapter-protocol/issues/86
 - **ZEsarUX** (found with v8.1)
     - **Windows** only: Some people encounter a crash (rainbow/kernel panic) of ZEsarUX at the start of a debug session. If that is true for you as well you can experiment with the "[loadDelay](#zesarux)" option which adds an additional delay at startup. This mitigates the problem.
 The default for Windows is 100 (ms). If you run into this problem you can try to increase the value to 400 or even 1000. (You can also try smaller values than 100).
