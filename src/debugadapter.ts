@@ -1836,40 +1836,45 @@ export class DebugSessionClass extends DebugSession {
 		// Check for hover
 		if (args.context == 'hover') {
 			let formattedValue = '';
-			// Check for registers
-			if (Z80RegistersClass.isRegister(expression)) {
-				formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
-			}
-			else {
-				// Label
-				// Check if a 2nd line (memory content) is required
-				if (!Z80RegistersClass.isSingleRegister(expression)) {
-					// If hovering only the label address + byte and word contents are shown.
-					// First check for module name and local label prefix (sjasmplus).
-					const pcLongAddr = Remote.getPCLong();
-					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-					// Local label and prefix
-					const lastLabel = entry.lastLabel;
-					const modulePrefix = entry.modulePrefix;
-					// Get label value
-					const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
-					if (labelValue != undefined) {
-						// Get content
-						const memDump = await Remote.readMemoryDump(labelValue, 2);
-						// Format byte
-						const memByte = memDump[0];
-						const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
-						// Format word
-						const memWord = memByte + 256 * memDump[1];
-						const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
-						// Format output
-						const addrString = Utility.getHexString(labelValue, 4) + 'h';
-						if (!formattedValue)
-							formattedValue = expression + ': ' + addrString;
-						// Second line
-						formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
+			try {
+				// Check for registers
+				if (Z80RegistersClass.isRegister(expression)) {
+					formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
+				}
+				else {
+					// Label
+					// Check if a 2nd line (memory content) is required
+					if (!Z80RegistersClass.isSingleRegister(expression)) {
+						// If hovering only the label address + byte and word contents are shown.
+						// First check for module name and local label prefix (sjasmplus).
+						const pcLongAddr = Remote.getPCLong();
+						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+						// Local label and prefix
+						const lastLabel = entry.lastLabel;
+						const modulePrefix = entry.modulePrefix;
+						// Get label value
+						const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+						if (labelValue != undefined) {
+							// Get content
+							const memDump = await Remote.readMemoryDump(labelValue, 2);
+							// Format byte
+							const memByte = memDump[0];
+							const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+							// Format word
+							const memWord = memByte + 256 * memDump[1];
+							const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+							// Format output
+							const addrString = Utility.getHexString(labelValue, 4) + 'h';
+							if (!formattedValue)
+								formattedValue = expression + ': ' + addrString;
+							// Second line
+							formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
+						}
 					}
 				}
+			}
+			catch {
+				// Ignore any error during hover.
 			}
 			// Response
 			response.body = {
