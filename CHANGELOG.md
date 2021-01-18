@@ -1,5 +1,7 @@
 # Changelog
 
+# 2.1.5
+- Fix: RegisterMemoryView lost content when hidden and re-displayed.
 # 2.1.4
 - Settings names for 'logpanel's changed.
 - Folder structure refactored.

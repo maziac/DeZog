@@ -109,7 +109,7 @@ export class BaseView {
 			BaseView.staticViews.push(this);
 
 		// Create vscode panel view
-		this.vscodePanel=vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true});
+		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true, retainContextWhenHidden: true});
 
 		// Handle messages from the webview
 		this.vscodePanel.webview.onDidReceiveMessage(message => {
