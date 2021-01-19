@@ -1650,7 +1650,6 @@ export class DebugSessionClass extends DebugSession {
 				breakReasonString=await Remote.stepOut();
 			}
 
-
 			// Print break reason
 			if (breakReasonString) {
 				// Output a possible problem (end of log reached)
@@ -1912,24 +1911,14 @@ export class DebugSessionClass extends DebugSession {
 					let elemCount = 1;	// Use 1 as default
 					let elemSize = 1;	// Use 1 as default (if no type/size given)
 
-					/*
-					// Check if it is a register
-					if (Z80RegistersClass.isRegister(labelString)) {
-						// Otherwise it is a double register.
-						labelValue = Remote.getRegisterValue(labelString);  // TODO brauch ich das?
-					}
-					else {
-						*/
-						// No register, so assume a label.
-						// First check for module name and local label prefix (sjasmplus).
-						const pcLongAddr = Remote.getPCLong();
-						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-						// Local label and prefix
-						lastLabel = entry.lastLabel;
-					modulePrefix = entry.modulePrefix;
-						// Convert label (+expression)
-						labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
-					//}
+					// First check for module name and local label prefix (sjasmplus).
+					const pcLongAddr = Remote.getPCLong();
+					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+					// Local label and prefix
+					lastLabel = entry.lastLabel;
+				modulePrefix = entry.modulePrefix;
+					// Convert label (+expression)
+					labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
 
 					if (isNaN(labelValue))
 						throw Error("Could not parse label.");
@@ -1971,12 +1960,21 @@ export class DebugSessionClass extends DebugSession {
 						if (distAddr == undefined)
 							distAddr = labelValue;
 						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 0;
-						elemCount /= elemSize;
-						if (!elemCount)	// Also 0 is not allowed (and should not happen)
-							elemCount = 10; // Use 10 bytes as default
-						// lLmit max. number
-						if (elemCount > 1000)
-							elemCount = 1000;
+						// Check special case
+						if (!lblType && elemCount == 2) {
+							// Special case: 1 word. Exchange size and count
+							elemSize = 2;
+							elemCount = 1;
+						}
+						else {
+							// Normal case
+							elemCount /= elemSize;
+							if (!elemCount)	// Also 0 is not allowed (and should not happen)
+								elemCount = 10; // Use 10 bytes as default
+							// lLmit max. number
+							if (elemCount > 1000)
+								elemCount = 1000;
+						}
 					}
 
 					// Add index
