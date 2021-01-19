@@ -59,6 +59,29 @@ I.e. your workflow is as follows:
 You normally need to re-start the emulator only if it behaves weird, does not connect to DeZog anymore or crashes.
 
 
+## Main Areas
+
+The picture below shows the main areas that you will see when debugging a program, in this case the [sample program](#sample-program).
+
+![](images/main_areas.jpg)
+
+**S** - After starting the debugger you can use the buttons to step through your source code. Note: Depending on your settings this might be floating bar.
+
+**R** - The Z80 registers are shown here. It contains also other information like the memory banking, the local stack or the disassembly of the current PC location.
+
+**W** - The WATCH area contains labels that you put in here for observation.
+
+**B** - Breakpoints that you set in the editor are collected here.
+
+**H** - DeZog Sidebar Help: Click on a topic for help.
+
+**E** - The source code editor. DeZog will jump to the right file while stepping. You can set breakpoints and hover over labels and registers to see the contents.
+
+**D** - The debug console shows the executed instructions and other infos. You can also setup additional commands (like ```-mv 0x4000 0x1000```to view the memory contents 0x4000-0x4FFFF).
+
+**V** - Other views like the memory view, the sprites view or the simulator view.
+
+
 ## Sample Program
 
 With DeZog a simple assembler program is provided to demonstrate the features of DeZog.
