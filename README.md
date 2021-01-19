@@ -70,7 +70,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v9.1)
 - supports [CSpect](http://www.cspect.org) emulator (>= v2.13.0)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
-- reads .list files
+- reads .list aand .sld files
 	- supports stepping through source code
 	- either in .list file or in .asm files
 - step-over, step-in, step-out, continue, pause
@@ -111,12 +111,11 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 	- create a .sna, .nex or object file containing the binary
 
 
+<!--
 ## Roadmap
 
 Next to implement:
-- Improved watches window, see https://github.com/maziac/DeZog/issues/37 .
 - Support for CSpect 'rewind' feature.
-<!--
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
 - ZesaruxExt: Make ZesaruxExt publicly available. ZesaruxExt is a Zesarux fork with small enhancements like faster breakpoints.
 -->
@@ -170,7 +169,7 @@ All can be installed directly inside vscode from the market place.
 Please look at the documentation ['Usage of DeZog'](documentation/Usage.md).
 
 You can also access the documentation from within vscode/DeZog.
-Enter "dezog: Show the DeZog Help page" in the command palette (F1 key).
+Enter "dezog: Show the DeZog Help page" in the command palette (F1 key) or reveal the "DeZog Help" from the debugging sidebar.
 
 ![](documentation/images/dezog_help.gif)
 

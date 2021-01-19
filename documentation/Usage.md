@@ -73,11 +73,11 @@ The picture below shows the main areas that you will see when debugging a progra
 
 **B** - Breakpoints that you set in the editor are collected here.
 
-**H** - DeZog Sidebar Help: Click on a topic for help.
+**H** - DeZog Sidebar Help: Click on a topic for help. (Hint: CTRL-F in the opened view allows searching.)
 
 **E** - The source code editor. DeZog will jump to the right file while stepping. You can set breakpoints and hover over labels and registers to see the contents.
 
-**D** - The debug console shows the executed instructions and other infos. You can also setup additional commands (like ```-mv 0x4000 0x1000```to view the memory contents 0x4000-0x4FFFF).
+**D** - The debug console shows the executed instructions and other infos. You can also setup additional commands (like ```-mv 0x4000 0x1000``` to view the memory contents 0x4000-0x4FFFF).
 
 **V** - Other views like the memory view, the sprites view or the simulator view.
 
