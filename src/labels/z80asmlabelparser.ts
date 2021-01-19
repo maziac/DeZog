@@ -237,8 +237,8 @@ export class Z80asmLabelParser extends LabelParserBase {
 	 * @return The found line number or startSearchLine if nothing found (should not happen).
 	 */
 	protected searchStartOfMacro(macroName: string): number {
-		const macroRegex=new RegExp("[0-9a-fA-F]+\\s+"+macroName+"\\s+.*");
-		let k=this.lineNr;
+		const macroRegex = new RegExp("[0-9a-fA-F]+\\s+(.*:\\s*)?"+macroName+"\\b");
+		let k=this.lineNr-1;
 		for (; k>0; --k) {
 			const line2=this.listFile[k].line;
 			const matchMacroStart=macroRegex.exec(line2);
@@ -246,6 +246,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 				return k;	// macro start found
 		}
 		// Nothing found (should not happen)
+		Utility.assert(false);
 		return this.lineNr;
 	}
 

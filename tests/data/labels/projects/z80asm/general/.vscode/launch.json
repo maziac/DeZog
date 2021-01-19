@@ -13,12 +13,14 @@
                 "visualMemory": "ZX48"
                 //"Z80N": true,
             },
-            "sjasmplusListFiles": [
+            "z80asm": [
                 {
-                    "path": "main.asm",
+                    "path": "general.list",
                 }
             ],
             "rootFolder": "${workspaceFolder}",
+            "execAddress": "label1",
+            "loadObjs": [{ "path": "general.obj", "start": "0x8000" }]
         }
     ]
 }
