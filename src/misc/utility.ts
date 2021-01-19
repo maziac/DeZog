@@ -194,7 +194,7 @@ export class Utility {
 	 * @returns The 'expr' with all labels and registers replaced by numbers.
 	 */
 	public static replaceVarsWithValues(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): string {
-		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[0-9]+|'[\S ]+')/g, (match, p1) => {
+		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[01]+b|[0-9]+|'[\S ]+')/g, (match, p1) => {
 			let res;
 			if (evalRegisters) {
 				// Check if it might be a register name.
