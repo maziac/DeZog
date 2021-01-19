@@ -221,7 +221,7 @@ export class LabelParserBase {
 		const comment=this.getComment(fullLine);
 
 		// WPMEM
-		let match=/.*(\bWPMEM\b.*)/.exec(comment);
+		let match=/.*(\bWPMEM([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add watchpoint at this address
 			/*
@@ -236,14 +236,14 @@ export class LabelParserBase {
 			return;
 
 		// ASSERTION
-		match=/.*(\bASSERTION\b.*)/.exec(comment);
+		match =/.*(\bASSERTION([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add ASSERTION at this address
 			this.assertionLines.push({address, line: match[1]});
 		}
 
 		// LOGPOINT
-		match=/.*(\bLOGPOINT\b.*)/.exec(comment);
+		match =/.*(\bLOGPOINT([\s,]|$).*)/.exec(comment);
 		if (match) {
 			// Add logpoint at this address
 			this.logPointLines.push({address, line: match[1]});

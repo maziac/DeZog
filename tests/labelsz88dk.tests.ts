@@ -323,7 +323,7 @@ suite('Labels (z88dk)', () => {
 
 		//(Labels as any).labelsForNumber.length=0;
 		//Labels.init(256);
-		console.log("alabelsForNumber", (Labels as any).labelsForNumber);
+		//console.log("labelsForNumber", (Labels as any).labelsForNumber);
 		Labels.readListFiles(config);
 
 		// Test WPMEM

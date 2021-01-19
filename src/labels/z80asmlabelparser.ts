@@ -194,7 +194,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 	 * Note: It is done reverse to safely find the include / macro occurrences.
 	 * The include file end only exists if the file was really included and not just part
 	 * of an if/def. The 'include'  would occur in any case. So we loop reverse and remember the file name
-	 * and skipp all includes that do not have a correspondent #end of file.
+	 * and skip all includes that do not have a correspondent #end of file.
 	 * @param startLineNr The line number to start the loop with. I.e. sometimes the
 	 * beginning of the list file contains information that is parsed differently.
 	 */
