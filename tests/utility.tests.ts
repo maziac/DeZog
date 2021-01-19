@@ -116,10 +116,18 @@ suite('Utility', () => {
 
 		suite('tabs', () => {
 
+			test('no tabs', async () => {
+				// No tabbing if single line (no tab format)
+				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
+				const res = await Utility.numberFormatted('myname', 65, 1, format, undefined);
+				assert.equal(res, 'myname 41 65 65 01000001 A -Z-----C', "Unexpected tab formatting");
+			});
+
 			test('general', async () => {
 				const format = '${name}\t${hex}\t${signed}\t${unsigned}\t${bits}\t${char}\t${flags}';
-				const res=await Utility.numberFormatted('myname', 65, 1, format, undefined);
-				assert.equal( res, 'myname 41   65  65 01000001 A -Z-----C ', "Unexpected tab formatting");
+				const tabSizeArr = Utility.calculateTabSizes(format, 1);
+				const res = await Utility.numberFormatted('myname', 65, 1, format, tabSizeArr);
+				assert.equal(res, 'myname 41   65  65 01000001 A -Z-----C ', "Unexpected tab formatting");
 			});
 
 			test('use tab array 1', async () => {
@@ -146,13 +154,15 @@ suite('Utility', () => {
 
 			test('special test 1', async () => {
 				const format = "${b#:hex}h\t${b#:unsigned}u\t${b#:signed}i\t'${char}'\t${b#:bits}b";
-				const res=await Utility.numberFormatted('', 65, 1, format, undefined);
+				const tabSizeArr = Utility.calculateTabSizes(format, 1);
+				const res = await Utility.numberFormatted('', 65, 1, format, tabSizeArr);
 				assert.equal( res, "41h  65u   65i 'A' 01000001b ", "Unexpected tab formatting");
 			});
 
 			test('special test 2', async () => {
 				const format = "${b#:signed}i\t'${char}'\t${b#:bits}b";
-				const res=await Utility.numberFormatted('', 255, 1, format, undefined);
+				const tabSizeArr = Utility.calculateTabSizes(format, 1);
+				const res = await Utility.numberFormatted('', 255, 1, format, tabSizeArr);
 				assert.equal( res, "  -1i '.' 11111111b ", "Unexpected tab formatting");
 			});
 
