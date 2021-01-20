@@ -378,7 +378,7 @@ export class RemoteBase extends EventEmitter {
 		// Search all "${...}""
 		const result=logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
 			// Check syntax
-			const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex))?\s*/i.exec(inner);
+			const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner);
 			if (!matchInner)
 				throw Error("Log message format error: '"+match+"' in '"+logMsg+"'");
 			const end=(matchInner[6])? ':'+matchInner[6]:'';

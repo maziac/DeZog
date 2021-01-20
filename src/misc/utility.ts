@@ -334,8 +334,8 @@ export class Utility {
 		const offsets: Array<number>=[];
 		const promises: Array<Promise<string>> = [];
 
-		const regex=/\${(.*?)(:(.*?))?}/g;
-		const reAt=/([bw]@)?\((.*?)\)/i;
+		const regex = /\${(.*?)(:(.*?))?}/g;
+		const reAt = /([bw]@)?\((.*?)\)/i;
 		let offsCorrection=0;
 		logString = logString.replace(regex, (match, statement /*p1*/, p2, format /*p3*/, offset) => {
 			// 'statement' contains the statement, e.g. "b@(HL)".
