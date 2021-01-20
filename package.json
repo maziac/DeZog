@@ -372,6 +372,11 @@
 									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
 									"default": 3500000
 								},
+								"defaultPortIn": {
+									"type": "number",
+									"description": "The default value that is read if the read port is unused.",
+									"default": 255
+								},
 								"customCode": {
 									"debug": {
 										"type": "boolean",

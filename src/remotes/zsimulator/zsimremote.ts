@@ -253,7 +253,7 @@ export class ZSimRemote extends DzrpRemote {
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
-		this.ports=new Z80Ports();
+		this.ports=new Z80Ports(Settings.launch.zsim.defaultPortIn);
 
 		// Configure different memory models
 		switch (memModel) {

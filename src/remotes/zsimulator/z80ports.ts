@@ -6,7 +6,7 @@
 export class Z80Ports {
 
 	// The default value returned if no peripheral is attached.
-	public static IN_DEFAULT_VALUE=0xFF;
+	protected defaultPortIn;
 
 	// Holds the ports for reading.
 	//protected ports: Uint8Array;
@@ -24,9 +24,12 @@ export class Z80Ports {
 	protected inPortMap: Map<number, (port: number) => number>;
 
 
-	/// Constructor.
-	constructor() {
-		//this.ports=new Uint8Array(0x10000);
+	/**
+	 *  Constructor.
+	 * @param defaultPortIn The default value that is read if the read port is unused.
+	 */
+	constructor(defaultPortIn: number) {
+		this.defaultPortIn = defaultPortIn;
 		this.outPortMap=new Map<number, (port: number, value: number) => void>();
 		this.inPortMap=new Map<number, (port: number) => number>();
 	}
@@ -98,7 +101,7 @@ export class Z80Ports {
 
 		// Otherwise return default
 		if (value==undefined)
-			value=Z80Ports.IN_DEFAULT_VALUE;
+			value=this.defaultPortIn;
 		return value;
 	}
 

@@ -4,6 +4,8 @@
 - Fix: RegisterMemoryView lost content when hidden and re-displayed.
 - Fix: z80asm line address association wrong when using macros.
 - Allowed bullets for list in help view.
+- zsim, added:
+	- "defaultPortIn": The default value that is read if the read port is unused.
 
 # 2.1.4
 - Settings names for 'logpanel's changed.

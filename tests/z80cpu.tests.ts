@@ -26,7 +26,7 @@ suite('Z80Cpu', () => {
 			let memBuffer;
 			let writeSize;
 			{
-				const cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports()) as any;
+				const cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
 
 				cpu.pc=0x1020;
 				cpu.sp=0x1121;
@@ -58,7 +58,7 @@ suite('Z80Cpu', () => {
 			}
 
 			// Create a new object
-			const rCpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports()) as any;
+			const rCpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
 			rCpu.deserialize(memBuffer);
 
 			// Check size
@@ -120,7 +120,7 @@ suite('Z80Cpu', () => {
 					}
 				};
 				Settings.Init(cfg, '');
-				cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports()) as any;
+				cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
 				z80=cpu.z80;
 				mem=cpu.memory;
 				// Make sure whole memory is RAM

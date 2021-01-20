@@ -2,6 +2,18 @@ This guide will provide some info what to do to update your projects from an ear
 
 
 
+# Migrate from DeZog 2.1 to DeZog 2.2
+
+# launch.json
+
+zsim has got a few more configurations:
+- "defaultPortIn": The default value that is read if the read port is unused. Formerly this was always 0xFF which is still the default. But it can be cahnged now.
+
+# WATCHes
+
+The parameters named 'b' and 'w' for byte and word have been removed.
+Simply use the size now instead. I.e. 1 for byte and 2 for word.
+
 # Migrate from DeZog 2.0 to DeZog 2.1
 
 ## Required updates

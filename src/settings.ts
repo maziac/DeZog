@@ -180,6 +180,10 @@ export interface ZSimType {
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
 	cpuFrequency: number,
 
+	// Default value that is returned for the ports (if no "HW" is configured).
+	// Usually 0xFF.
+	defaultPortIn: number;
+
 	// Settings to execute custom javascript code inside the zsim simulator.
 	customCode: CustomCodeType;
 }
@@ -387,6 +391,8 @@ export class Settings {
 			Settings.launch.zsim.vsyncInterrupt = false;
 		if (Settings.launch.zsim.cpuFrequency == undefined)
 			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
+		if (Settings.launch.zsim.defaultPortIn == undefined)
+			Settings.launch.zsim.defaultPortIn = 0xFF;	
 
 		// zsim custom code
 		if (Settings.launch.zsim.customCode == undefined) {
