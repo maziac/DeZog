@@ -152,6 +152,9 @@ export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
 	zxKeyboard: boolean,
 
+	// If enabled the simulator shows a pad to simulate the joysticks for interface 2.
+	zxInterface2Joy: boolean,
+
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
 	visualMemory: boolean,
 
@@ -376,6 +379,8 @@ export class Settings {
 			Settings.launch.zsim = {} as ZSimType;
 		if (Settings.launch.zsim.zxKeyboard == undefined)
 			Settings.launch.zsim.zxKeyboard = false;
+		if (Settings.launch.zsim.zxInterface2Joy == undefined)
+			Settings.launch.zsim.zxInterface2Joy = false;
 		if (Settings.launch.zsim.ulaScreen == undefined)
 			Settings.launch.zsim.ulaScreen = false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange == undefined)
@@ -392,7 +397,7 @@ export class Settings {
 		if (Settings.launch.zsim.cpuFrequency == undefined)
 			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
 		if (Settings.launch.zsim.defaultPortIn == undefined)
-			Settings.launch.zsim.defaultPortIn = 0xFF;	
+			Settings.launch.zsim.defaultPortIn = 0xFF;
 
 		// zsim custom code
 		if (Settings.launch.zsim.customCode == undefined) {

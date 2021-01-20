@@ -7,6 +7,7 @@
 - zsim, added:
 	- "defaultPortIn": The default value that is read if the read port is unused.
 	- now supports flash color attribute (#44).
+	- "zxInterface2Joy": Enables the ports and the visuals for simulating ZX interface 2 joysticks.
 
 # 2.1.4
 - Settings names for 'logpanel's changed.

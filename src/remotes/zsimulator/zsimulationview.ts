@@ -78,9 +78,9 @@ export class ZSimulationView extends BaseView {
 		this.countOfOutstandingMessages=0;
 
 		// ZX Keyboard?
+		this.zxKeyboardPorts = new Map<number, number>();
 		if (Settings.launch.zsim.zxKeyboard) {
 			// Prepare all used ports
-			this.zxKeyboardPorts=new Map<number, number>();
 			this.zxKeyboardPorts.set(0xFEFE, 0xFF);
 			this.zxKeyboardPorts.set(0xFDFE, 0xFF);
 			this.zxKeyboardPorts.set(0xFBFE, 0xFF);
@@ -89,14 +89,31 @@ export class ZSimulationView extends BaseView {
 			this.zxKeyboardPorts.set(0xDFFE, 0xFF);
 			this.zxKeyboardPorts.set(0xBFFE, 0xFF);
 			this.zxKeyboardPorts.set(0x7FFE, 0xFF);
-			// Set call backs
-			for (const [port,] of this.zxKeyboardPorts) {
-				this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
-					const value=this.zxKeyboardPorts.get(port)!;
-					return value;
-				});
+		}
+		else {
+			// If keyboard id not defined, check for ZX Interface 2
+			if (Settings.launch.zsim.zxInterface2Joy) {
+				// Prepare all used ports
+				this.zxKeyboardPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
+				this.zxKeyboardPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
+
+				// Set call backs
+				for (const [port,] of this.zxKeyboardPorts) {
+					this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
+						const value = this.zxKeyboardPorts.get(port)!;
+						return value;
+					});
+				}
 			}
 		}
+		// Set keyboard (Interface 2) call backs, if map is not empty.
+		for (const [port,] of this.zxKeyboardPorts) {
+			this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
+				const value = this.zxKeyboardPorts.get(port)!;
+				return value;
+			});
+		}
+
 
 		// Add title
 		Utility.assert(this.vscodePanel);
@@ -717,7 +734,7 @@ width:70px;
 <br><br>
 `;
 
-
+		// Add code for the screen
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
@@ -730,9 +747,10 @@ width:70px;
 		}
 
 
-		if (this.zxKeyboardPorts) {
-			html+=
-`<!-- Keyboard -->
+		// Add code for the keyboard
+		if (Settings.launch.zsim.zxKeyboard) {
+			html +=
+				`<!-- Keyboard -->
 <details open="true">
   <summary>ZX Keyboard</summary>
 
@@ -796,6 +814,64 @@ width:70px;
 `;
 		}
 
+
+		// Add code for the Interface 2 joysticks
+		if (Settings.launch.zsim.zxInterface2Joy) {
+			html +=
+				`<!-- ZX Interface 2 Joysticks -->
+<details open="true">
+  <summary>ZX Interface 2 Joysticks</summary>
+
+<table>
+<tr>
+  <td>
+  <table>
+	<tr>
+		<td id="key_Digit0" class="td_off" onClick="cellClicked(this)">F</td>
+		<td id="key_Digit9" class="td_off" onClick="cellClicked(this)">U</td>
+	</tr>
+	<tr>
+		<td id="key_Digit6" class="td_off" onClick="cellClicked(this)">L</td>
+		<td style="text-align:center">Joy 1</td>
+		<td id="key_Digit7" class="td_off" onClick="cellClicked(this)">R</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td id="key_Digit8" class="td_off" onClick="cellClicked(this)">D</td>
+	</tr>
+  </table>
+  </td>
+
+  <td></td>
+  <td></td>
+
+  <td>
+  <table>
+	<tr>
+		<td id="key_Digit5" class="td_off" onClick="cellClicked(this)">F</td>
+		<td id="key_Digit4" class="td_off" onClick="cellClicked(this)">U</td>
+	</tr>
+	<tr>
+		<td id="key_Digit1" class="td_off" onClick="cellClicked(this)">L</td>
+		<td style="text-align:center">Joy 2</td>
+		<td id="key_Digit2" class="td_off" onClick="cellClicked(this)">R</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td id="key_Digit3" class="td_off" onClick="cellClicked(this)">D</td>
+	</tr>
+  </table>
+  </td>
+</tr>
+</table>
+
+</details>
+
+`;
+		}
+
+
+		// Space for logging
 		html+=
 `<p id="log"></p>
 `;

@@ -568,6 +568,8 @@ Here is the explanations of all the options:
 - "Z80N": true/false. Defaults to false. Enables the Z80N (ZX Next) instruction set. See https://wiki.specnext.dev/Extended_Z80_instruction_set .
 - "zxKeyboard": true/false. Defaults to false. If enabled the simulator shows a keyboard to simulate keypresses.
 ![](images/zsim_keyboard.jpg)
+- "zxInterface2Joy": true/false. Defaults to false. If enabled the simulator shows 2 joystick controls to simulate ZX Interface 2 joysticks.
+![](images/zsim_interface2joy.jpg)
 - "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
 ![](images/zsim_visual_memory.jpg)
 - "memoryModel": The used memory model (defaults to "RAM"), i.e.
@@ -1285,6 +1287,7 @@ with:
 - [group]: (Note: the [ ] are meant literally here) The log group. Separate log groups might be turned on/off separately. E.g. "[SPRITES]". If omitted "DEFAULT" is used as group.
 - reg: a register name, e.g. A, BC, HL, IX, H, IXL.
 - var: a label.
+- Allowed modifiers are ':signed', ':unsigned', ':hex', ':bits' and ':flags' (for register F).
 - text: A simple text that may include variables. Here are a few examples for variables:
     - ```LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}```
     - ```LOGPOINT Status=${w@(HL)}, ${(DE)}, ${b@(DE)}```

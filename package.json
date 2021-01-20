@@ -337,10 +337,15 @@
 									"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
 									"default": true
 								},
+								"zxInterface2Joy": {
+									"type": "boolean",
+									"description": "If enabled the simulator shows  a pad to simulate the joysticks for ZX Interface 2.",
+									"default": true
+								},
 								"visualMemory": {
 									"type": "boolean",
 									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
-									"default": "true"
+									"default": true
 								},
 								"memoryModel": {
 									"type": "string",
