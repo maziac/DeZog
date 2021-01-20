@@ -2,6 +2,9 @@
 
 # 2.1.5
 - Fix: RegisterMemoryView lost content when hidden and re-displayed.
+- Fix: z80asm line address association wrong when using macros.
+- Allowed bullets for list in help view.
+
 # 2.1.4
 - Settings names for 'logpanel's changed.
 - Folder structure refactored.

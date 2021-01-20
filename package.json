@@ -703,7 +703,10 @@
 						"name": "Simulator",
 						"remoteType": "zsim",
 						"zsim": {
-							"memoryModel": "ZX48K"
+							"memoryModel": "ZX48K",
+							"vsyncInterrupt": true,
+							"ulaScreen": true,
+							"zxKeyboard": true
 						},
 						"sjasmplus": [
 							{

@@ -104,16 +104,6 @@ th {
   display: block; /* Show it on hover */
 }
 
-
-/* No bullets for list. */
-ul {
-	list-style: none;
-    padding-left: 0.5em;
-}
-li > ul {
-    padding-left: 2em;
-}
-
 </style>
 
 <body>
