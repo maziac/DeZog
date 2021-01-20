@@ -6,6 +6,7 @@
 - Allowed bullets for list in help view.
 - zsim, added:
 	- "defaultPortIn": The default value that is read if the read port is unused.
+	- now supports flash color attribute (#44).
 
 # 2.1.4
 - Settings names for 'logpanel's changed.

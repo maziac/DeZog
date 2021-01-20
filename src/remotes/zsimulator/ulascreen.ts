@@ -22,6 +22,32 @@ export class UlaScreen {
 	protected ulaScreenAddress: number;
 
 
+	// The ZX palette.
+	protected zxPalette = [
+		// Bright 0
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0xD7,
+		0xD7, 0x00, 0x00,
+		0xD7, 0x00, 0xD7,
+
+		0x00, 0xD7, 0x00,
+		0x00, 0xD7, 0xD7,
+		0xD7, 0xD7, 0x00,
+		0xD7, 0xD7, 0xD7,
+
+		// Bright 1
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0xFF,
+		0xFF, 0x00, 0x00,
+		0xFF, 0x00, 0xFF,
+
+		0x00, 0xFF, 0x00,
+		0x00, 0xFF, 0xFF,
+		0xFF, 0xFF, 0x00,
+		0xFF, 0xFF, 0xFF,
+	];
+
+
 	/// Constructor.
 	constructor(memory: SimulatedMemory) {
 		this.memory=memory;
@@ -40,13 +66,15 @@ export class UlaScreen {
 
 	/**
 	 * Converts a ZX Spectrum ULA screen into a gif image.
+	 * @param time An optional time in ms which is used for the flashing of the color attributes.
+	 * The flash frequency is 1.6Hz.
 	 * @returns The screen as a gif buffer.
 	 */
-	public getUlaScreen(): number[] {
+	public getUlaScreen(time = 0): number[] {
 		// Create pixels from the screen memory
-		const pixels=this.createPixels();
+		const pixels=this.createPixels(time);
 		// Get ZX palette
-		const zxPalette=UlaScreen.getZxPalette();
+		const zxPalette=this.getZxPalette();
 		// Convert to gif
 		const gifBuffer=ImageConvert.createGifFromArray(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT, pixels, zxPalette);
 		// Return
@@ -57,9 +85,17 @@ export class UlaScreen {
 	/**
 	 * Converts the screen pixels, the bits in the bytes, into pixels
 	 * with a color index.
+	 * Uses time to distinguish when to switch
+	 * paper and ink for flashing.
+	 * The blink frequency is 1.6Hz -> 62.5ms
+	 * @param time in ms.
 	 */
-	protected createPixels(): Array<number> {
-		//const screenMem=new Uint8Array(this.z80Memory.buffer, this.z80Memory.byteOffset+0x4000);
+	protected createPixels(time = 0): Array<number> {
+		// Check time. Calculate remainder.
+		const interval = 625;	// 625 ms
+		const remainder = time % interval;
+		const flash = (remainder >= interval/2) ? 0x80 : 0; // 0x80 if colors should be exchanged
+
 		// Find memory to display
 		const screenMem=this.memory.getMemoryData();
 		const screenBaseAddr=this.ulaScreenAddress;
@@ -71,22 +107,27 @@ export class UlaScreen {
 		let inIndex=0;
 		let colorIndex=0;
 
+
 		// One line after the other
 		for (let y=0; y<UlaScreen.SCREEN_HEIGHT; y++) {
 			// Calculate offset in ZX Spectrum screen
 			inIndex=screenBaseAddr+(((y&0b111)<<8)|((y&0b1100_0000)<<5)|((y&0b11_1000)<<2));
 			colorIndex=colorStart+((y&0b1111_1000)<<2);	// y/8*32;
 			for (let x=0; x<UlaScreen.SCREEN_WIDTH/8; x++) {
-				const byteValue=screenMem[inIndex];
+				let byteValue=screenMem[inIndex];
 				// Get color
 				let color=screenMem[colorIndex];
-				let mask=0x80;
+				let mask = 0x80;
+				if (color & flash) {
+					// Toggle back- and foreground
+					byteValue ^= 0xFF;
+				}
 				while (mask) {	// 8x
-					const value=byteValue&mask;
+					let value = byteValue & mask;
 					// Check if pixel is set
-					let cIndex=(color&0x40)>>>3;	// Brightness
+					let cIndex = (color & 0x40) / 8;	// Brightness (/8 = >>>3 but faster)
 					if (value) {
-						// Set: foreround
+						// Set: foreground
 						cIndex|=color&0x07;
 					}
 					else {
@@ -110,32 +151,12 @@ export class UlaScreen {
 	}
 
 
-	/// @returns the ZX Spectrum palette.
-	protected static getZxPalette(): number[] {
-		const palette=[
-			// Bright 0
-			0x00, 0x00, 0x00,
-			0x00, 0x00, 0xD7,
-			0xD7, 0x00, 0x00,
-			0xD7, 0x00, 0xD7,
-
-			0x00, 0xD7, 0x00,
-			0x00, 0xD7, 0xD7,
-			0xD7, 0xD7, 0x00,
-			0xD7, 0xD7, 0xD7,
-
-			// Bright 1
-			0x00, 0x00, 0x00,
-			0x00, 0x00, 0xFF,
-			0xFF, 0x00, 0x00,
-			0xFF, 0x00, 0xFF,
-
-			0x00, 0xFF, 0x00,
-			0x00, 0xFF, 0xFF,
-			0xFF, 0xFF, 0x00,
-			0xFF, 0xFF, 0xFF,
-		];
-		return palette;
+	/**
+	 * Returns the palette depending on time.
+	 * @returns the ZX Spectrum palette.
+	 */
+	protected getZxPalette(): number[] {
+		return this.zxPalette;
 	}
 }
 

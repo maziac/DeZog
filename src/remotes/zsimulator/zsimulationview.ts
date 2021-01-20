@@ -390,8 +390,11 @@ export class ZSimulationView extends BaseView {
 				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
 			}
 
-			if (Settings.launch.zsim.ulaScreen)
-				screenImg=this.createBase64String(this.simulator.ulaScreen.getUlaScreen());
+			if (Settings.launch.zsim.ulaScreen) {
+				// Calculate time
+				const time = this.simulator.getTstatesSync()/this.simulator.getCpuFrequencySync()*1000;
+				screenImg = this.createBase64String(this.simulator.ulaScreen.getUlaScreen(time));
+			}
 			// Create message to update the webview
 			const message={
 				command: 'update',

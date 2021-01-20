@@ -855,6 +855,10 @@ export class ZSimRemote extends DzrpRemote {
 	public async getTstates(): Promise<number> {
 		return this.z80Cpu.cpuTstatesCounter;
 	}
+	// Same as sync function.
+	public getTstatesSync(): number {
+		return this.z80Cpu.cpuTstatesCounter;
+	}
 
 
 	/**
@@ -864,7 +868,10 @@ export class ZSimRemote extends DzrpRemote {
 	public async getCpuFrequency(): Promise<number> {
 		return this.z80Cpu.cpuFreq;
 	}
-
+	// Same as sync function.
+	public getCpuFrequencySync(): number {
+		return this.z80Cpu.cpuFreq;
+	}
 
 	/**
 	 * Loads a .sna file.

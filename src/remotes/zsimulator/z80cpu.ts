@@ -15,7 +15,7 @@ export class Z80Cpu {
 	protected remaingInterruptTstates: number;
 
 	// Time for interrupt in T-States
-	protected INTERRUPT_TIME: number;
+	protected INTERRUPT_TIME_AS_T_STATES: number;
 
 	// For calculation of the CPU load.
 	// Summarizes all instruction besides HALT.
@@ -64,8 +64,8 @@ export class Z80Cpu {
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
-		this.INTERRUPT_TIME=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
-		this.remaingInterruptTstates=this.INTERRUPT_TIME;
+		this.INTERRUPT_TIME_AS_T_STATES=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
+		this.remaingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
 		/*
 		IM 0: Executes an instruction that is placed on the data bus by a peripheral.
 		IM 1: Jumps to address &0038
@@ -156,7 +156,7 @@ export class Z80Cpu {
 			this.remaingInterruptTstates-=tStates;
 		if (this.remaingInterruptTstates<=0) {
 			// Interrupt
-			this.remaingInterruptTstates=this.INTERRUPT_TIME;
+			this.remaingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
 			// Really generate interrupt?
 			if (this.vsyncInterrupt) {
 				this.generateInterrupt(false, 0);
