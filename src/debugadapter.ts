@@ -988,8 +988,9 @@ export class DebugSessionClass extends DebugSession {
 			// If disassembly text editor is open, then show decorations
 			const editors=vscode.window.visibleTextEditors;
 			for (const editor of editors) {
-				if(editor.document==this.disasmTextDoc)
-					Decoration.SetDisasmCoverageDecoration(editor);
+				if (editor.document == this.disasmTextDoc) {
+					Decoration.setDisasmCoverageDecoration(editor);
+				}
 			}
 			/*
 			// Show document and get editor

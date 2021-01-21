@@ -8,7 +8,7 @@ import {Utility} from './misc/utility';
 
 
 /// Is a singleton. Initialize in 'activate'.
-export let Decoration;
+export let Decoration: DecorationClass;
 
 
 /**
@@ -250,7 +250,7 @@ export class DecorationClass {
 	/**
 	 * Clears all decorations for all editors.
 	 */
-	protected clearAllDecorations() {
+	public clearAllDecorations() {
 		for (const [, map] of this.decorationFileMaps) {
 			map.fileMap.clear();
 			const editors=vscode.window.visibleTextEditors;
@@ -266,7 +266,7 @@ export class DecorationClass {
 	/**
 	 * Clears all decorations but the code coverage decorations for all editors.
 	 */
-	protected clearAllButCodeCoverageDecorations() {
+	public clearAllButCodeCoverageDecorations() {
 		for (const [name, map] of this.decorationFileMaps) {
 			if (name!=this.COVERAGE) {
 				map.fileMap.clear();
