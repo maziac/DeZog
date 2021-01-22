@@ -227,6 +227,8 @@ This is called independently of 'readPort' and 'writePort'.
 The interval at which this is called is set via 'zsim.customCode.timeStep' in launch.json.
 If 'timeStep' is not defined 'tick()' is not called.
 
+Never use time dependend javascript like ```setinterval```or ```settimeout```inside your custom logic (non UI). Use the tick API instead.
+
 
 # Logging
 

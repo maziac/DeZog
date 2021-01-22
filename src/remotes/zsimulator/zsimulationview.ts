@@ -495,6 +495,10 @@ width:70px;
 
 	const vscode = acquireVsCodeApi();
 
+	// Pointer to the joystick html elements
+	const joystickObjs = [];
+
+
 	//---- On start send request to vscode to update itself. --------
 	// Otherwise the images are empty when switching from back- to foreground.
 	vscode.postMessage({
@@ -593,9 +597,6 @@ width:70px;
 	// Inverts the bit before sending.
 	// I.e. Active=LOW
     function togglePortBitNeg(cell, port, bitByte) {
-
-UIAPI.log("togglePortBitNeg");
-
 		// Send request to vscode
 		vscode.postMessage({
 			command: 'portBit',
@@ -879,25 +880,25 @@ UIAPI.log("togglePortBitNeg");
   <table style="color:black;" oncolor="red" offcolor="white">
 	<tr>
 		<td>
-			<ui-bit style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xEFFE, 0x01)">F</ui-bit>
+			<ui-bit id="if2.joy1.fire" style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xEFFE, 0x01)">F</ui-bit>
 		</td>
 		<td align="center">
-			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x02)">U</ui-bit>
+			<ui-bit id="if2.joy1.up" onchange="togglePortBitNeg(this, 0xEFFE, 0x02)">U</ui-bit>
 		</td>
 	</tr>
 	<tr>
 		<td>
-			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x10)">L</ui-bit>
+			<ui-bit id="if2.joy1.left" onchange="togglePortBitNeg(this, 0xEFFE, 0x10)">L</ui-bit>
 		</td>
 		<td style="color:var(--vscode-editor-foreground)">Joy1</td>
 		<td>
-			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x08)">R</ui-bit>
+			<ui-bit id="if2.joy1.right" onchange="togglePortBitNeg(this, 0xEFFE, 0x08)">R</ui-bit>
 		</td>
 	</tr>
 	<tr>
 		<td></td>
 		<td align="center">
-			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x04)">D</ui-bit>
+			<ui-bit id="if2.joy1.down" onchange="togglePortBitNeg(this, 0xEFFE, 0x04)">D</ui-bit>
 		</td>
 	</tr>
   </table>
@@ -910,25 +911,25 @@ UIAPI.log("togglePortBitNeg");
   <table style="color:black;">
 	<tr>
 		<td>
-			<ui-bit style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xF7FE, 0x10)">F</ui-bit>
+			<ui-bit id="if2.joy2.fire" style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xF7FE, 0x10)">F</ui-bit>
 		</td>
 		<td align="center">
-			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x08)">U</ui-bit>
+			<ui-bit id="if2.joy2.up" onchange="togglePortBitNeg(this, 0xF7FE, 0x08)">U</ui-bit>
 		</td>
 	</tr>
 	<tr>
 		<td>
-			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x01)">L</ui-bit>
+			<ui-bit id="if2.joy2.left" onchange="togglePortBitNeg(this, 0xF7FE, 0x01)">L</ui-bit>
 		</td>
 		<td style="color:var(--vscode-editor-foreground)">Joy2</td>
 		<td>
-			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x02)">R</ui-bit>
+			<ui-bit id="if2.joy2.right" onchange="togglePortBitNeg(this, 0xF7FE, 0x02)">R</ui-bit>
 		</td>
 	</tr>
 	<tr>
 		<td></td>
 		<td align="center">
-			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x04)">D</ui-bit>
+			<ui-bit id="if2.joy2.down" onchange="togglePortBitNeg(this, 0xF7FE, 0x04)">D</ui-bit>
 		</td>
 	</tr>
   </table>
@@ -938,6 +939,23 @@ UIAPI.log("togglePortBitNeg");
 
 </details>
 
+<script>
+// Add references to the html elements
+joystickObjs.push({
+	fire: document.getElementById("if2.joy1.fire"),
+	up: document.getElementById("if2.joy1.up"),
+	left: document.getElementById("if2.joy1.left"),
+	right: document.getElementById("if2.joy1.right"),
+	down: document.getElementById("if2.joy1.down")
+});
+joystickObjs.push({
+	fire: document.getElementById("if2.joy2.fire"),
+	up: document.getElementById("if2.joy2.up"),
+	left: document.getElementById("if2.joy2.left"),
+	right: document.getElementById("if2.joy2.right"),
+	down: document.getElementById("if2.joy2.down")
+});
+</script>
 `;
 		}
 
@@ -955,25 +973,25 @@ UIAPI.log("togglePortBitNeg");
   <table style="color:black;" oncolor="red" offcolor="white" >
 	<tr>
 		<td>
-			<ui-bit style="border-radius:1em;color:black;" onchange="togglePortBit(this, 0x001F, 0x10)">F</ui-bit>
+			<ui-bit id="kempston.joy1.fire" style="border-radius:1em;color:black;" onchange="togglePortBit(this, 0x001F, 0x10)">F</ui-bit>
 		</td>
 		<td>
-			<ui-bit onchange="togglePortBit(this, 0x001F, 0x08)">U</ui-bit>
-		</td>
-	</tr>
-	<tr>
-		<td>
-			<ui-bit onchange="togglePortBit(this, 0x001F, 0x02)">L</ui-bit>
-		</td>
-		<td></td>
-		<td>
-			<ui-bit onchange="togglePortBit(this, 0x001F, 0x01)">R</ui-bit>
+			<ui-bit id="kempston.joy1.up" onchange="togglePortBit(this, 0x001F, 0x08)">U</ui-bit>
 		</td>
 	</tr>
 	<tr>
+		<td>
+			<ui-bit id="kempston.joy1.left" onchange="togglePortBit(this, 0x001F, 0x02)">L</ui-bit>
+		</td>
 		<td></td>
 		<td>
-			<ui-bit onchange="togglePortBit(this, 0x001F, 0x04)">D</ui-bit>
+			<ui-bit id="kempston.joy1.right" onchange="togglePortBit(this, 0x001F, 0x01)">R</ui-bit>
+		</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td>
+			<ui-bit id="kempston.joy1.down" onchange="togglePortBit(this, 0x001F, 0x04)">D</ui-bit>
 		</td>
 	</tr>
   </table>
@@ -986,12 +1004,57 @@ UIAPI.log("togglePortBitNeg");
 
 </details>
 
+<script>
+// References to the html objects
+joystickObjs.push({
+	fire: document.getElementById("kempston.joy1.fire"),
+	up: document.getElementById("kempston.joy1.up"),
+	left: document.getElementById("kempston.joy1.left"),
+	right: document.getElementById("kempston.joy1.right"),
+	down: document.getElementById("kempston.joy1.down")
+});
+</script>
 `;
 		}
 
+		// Add polling of gamepads
+		html += `
+<script>
+
+// Poll gamepads regularly if at least one joystick was enabled
+if(joystickObjs.length > 0) {
+	// Check every 50 ms
+	setInterval( () => {
+		const gps = navigator.getGamepads();
+		let j=0;
+		for(const gp of gps) {
+			if(gp) {
+				const obj = joystickObjs[j];
+				// Fire button
+				const pressed = (gp.buttons[0].pressed) ? 1 : 0;
+				obj.fire.setBitValue(pressed);
+				// Check all axis
+				const axes = gp.axes;
+				const axesLen = axes.length;
+				if(axesLen >= 2) {
+					const lr = axes[0];
+					const ud = axes[1];
+					obj.up.setBitValue((ud < -0.5) ? 1 : 0);
+					obj.down.setBitValue((ud > 0.5) ? 1 : 0);
+					obj.left.setBitValue((lr < -0.5) ? 1 : 0);
+					obj.right.setBitValue((lr > 0.5) ? 1 : 0);
+				}
+				// Next
+				j++;
+			}
+		}
+	}, 50);
+}
+</script>
+`;
 
 		// Space for logging
-		html+=
+		html +=
 `<p id="log"></p>
 `;
 
@@ -1414,17 +1477,6 @@ UIAPI.log("togglePortBitNeg");
 		}
 
 		customElements.define('ui-byte', UiByte);
-
-
-
-// Check every 100 ms
-setInterval( () => {
-	const gps = navigator.getGamepads();
-	for(let i=0;i<gps.length; i++) {
-		const gp = gps[i];
-		UIAPI.log("gamepad["+i+"]: conn="+gp.connected+", button0="+gp.buttons[0].pressed);
-	}
-}, 1000);
 
 `;
 	}

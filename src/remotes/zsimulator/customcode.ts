@@ -135,7 +135,7 @@ export class CustomCode extends EventEmitter {
 				return eval(js);
 			}
 			catch (e) {
-				// In case of an error try to find where is occurred
+				// In case of an error try to find where it occurred
 				throw e;
 			}
 		}
@@ -201,6 +201,9 @@ ${jsCode}
 API.log('Custom code: init end');
 API.log('-------------------------------------\\n');`,
 			this.context);	// This fills the context with the complete program.
+
+		this.context.tmpAPI = undefined;
+		this.context = undefined;
 	}
 
 

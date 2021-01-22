@@ -570,6 +570,9 @@ Here is the explanations of all the options:
 ![](images/zsim_keyboard.jpg)
 - "zxInterface2Joy": true/false. Defaults to false. If enabled the simulator shows 2 joystick controls to simulate ZX Interface 2 joysticks.
 ![](images/zsim_interface2joy.jpg)
+You can either click on the buttons to simulate the joysticks or attach a gamepad. The gamepad support is very limited. If e.g. xbox controllers do not work try simple USB controllers.
+- "kempstonJoy": true/false. Defaults to false. If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.
+![](images/zsim_kempstonjoy.jpg)
 - "visualMemory": If true the simulator shows the access to the memory (0-0xFFFF) visually while the program is running. Default is true.
 ![](images/zsim_visual_memory.jpg)
 - "memoryModel": The used memory model (defaults to "RAM"), i.e.

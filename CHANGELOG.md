@@ -6,8 +6,10 @@
 - Allowed bullets for list in help view.
 - zsim, added:
 	- "defaultPortIn": The default value that is read if the read port is unused.
-	- now supports flash color attribute (#44).
+	- ULA screen now supports flash color attribute (#44).
 	- "zxInterface2Joy": Enables the ports and the visuals for simulating ZX interface 2 joysticks.
+	- "kempstonJoy": Enables the port for a Kempston joystick at 0x1F.
+	- joystick simulation supports attached gamepads.
 
 # 2.1.4
 - Settings names for 'logpanel's changed.
