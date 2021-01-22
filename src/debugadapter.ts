@@ -379,10 +379,10 @@ export class DebugSessionClass extends DebugSession {
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Stop machine
 		await this.disconnectAll();
-		//Remote.disconnect().then(() => {
-			// And setup a new one
+		// Allow promises to return
+		setTimeout(() => {
 			this.launch(response);
-		//});
+		}, 200);	// Smaller than 200 throws an exception in 'continue' because Remote is not yet set to undefined
 	}
 
 
@@ -1354,6 +1354,10 @@ export class DebugSessionClass extends DebugSession {
 		// Start command
 		(async () => {
 			const event = await command();
+
+			// Note: On termination/restart Remote could be undefined
+			if (!Remote)
+				return;
 
 			// End processing
 			this.stopProcessing();
