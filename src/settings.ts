@@ -155,6 +155,9 @@ export interface ZSimType {
 	// If enabled the simulator shows a pad to simulate the joysticks for interface 2.
 	zxInterface2Joy: boolean,
 
+	// If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.
+	kempstonJoy: boolean;
+
 	// If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.
 	visualMemory: boolean,
 
@@ -381,6 +384,8 @@ export class Settings {
 			Settings.launch.zsim.zxKeyboard = false;
 		if (Settings.launch.zsim.zxInterface2Joy == undefined)
 			Settings.launch.zsim.zxInterface2Joy = false;
+		if (Settings.launch.zsim.kempstonJoy == undefined)
+			Settings.launch.zsim.kempstonJoy = false;
 		if (Settings.launch.zsim.ulaScreen == undefined)
 			Settings.launch.zsim.ulaScreen = false;
 		if (Settings.launch.zsim.cpuLoadInterruptRange == undefined)

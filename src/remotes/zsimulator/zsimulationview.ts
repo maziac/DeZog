@@ -20,8 +20,8 @@ export class ZSimulationView extends BaseView {
 	// Holds the gif image a string.
 	protected screenGifString;
 
-	// A map to hold the values for the keyboard ports.
-	protected zxKeyboardPorts: Map<number, number>;	// Port <-> value
+	// A map to hold the values of the simulated ports.
+	protected simulatedPorts: Map<number, number>;	// Port <-> value
 
 	/// We listen for 'update' on this emitter to update the html.
 	protected parent: EventEmitter;
@@ -78,38 +78,45 @@ export class ZSimulationView extends BaseView {
 		this.countOfOutstandingMessages=0;
 
 		// ZX Keyboard?
-		this.zxKeyboardPorts = new Map<number, number>();
+		this.simulatedPorts = new Map<number, number>();
 		if (Settings.launch.zsim.zxKeyboard) {
 			// Prepare all used ports
-			this.zxKeyboardPorts.set(0xFEFE, 0xFF);
-			this.zxKeyboardPorts.set(0xFDFE, 0xFF);
-			this.zxKeyboardPorts.set(0xFBFE, 0xFF);
-			this.zxKeyboardPorts.set(0xF7FE, 0xFF);
-			this.zxKeyboardPorts.set(0xEFFE, 0xFF);
-			this.zxKeyboardPorts.set(0xDFFE, 0xFF);
-			this.zxKeyboardPorts.set(0xBFFE, 0xFF);
-			this.zxKeyboardPorts.set(0x7FFE, 0xFF);
+			this.simulatedPorts.set(0xFEFE, 0xFF);
+			this.simulatedPorts.set(0xFDFE, 0xFF);
+			this.simulatedPorts.set(0xFBFE, 0xFF);
+			this.simulatedPorts.set(0xF7FE, 0xFF);
+			this.simulatedPorts.set(0xEFFE, 0xFF);
+			this.simulatedPorts.set(0xDFFE, 0xFF);
+			this.simulatedPorts.set(0xBFFE, 0xFF);
+			this.simulatedPorts.set(0x7FFE, 0xFF);
 		}
 		else {
 			// If keyboard id not defined, check for ZX Interface 2
 			if (Settings.launch.zsim.zxInterface2Joy) {
 				// Prepare all used ports
-				this.zxKeyboardPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
-				this.zxKeyboardPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
+				this.simulatedPorts.set(0xF7FE, 0xFF);	// Joystick 2 (left): Bits: xxxLRDUF, low active, keys 1-5
+				this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
 
 				// Set call backs
-				for (const [port,] of this.zxKeyboardPorts) {
+				for (const [port,] of this.simulatedPorts) {
 					this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
-						const value = this.zxKeyboardPorts.get(port)!;
+						const value = this.simulatedPorts.get(port)!;
 						return value;
 					});
 				}
 			}
 		}
-		// Set keyboard (Interface 2) call backs, if map is not empty.
-		for (const [port,] of this.zxKeyboardPorts) {
+
+		// Check for Kempston Joystick
+		if (Settings.launch.zsim.kempstonJoy) {
+			// Prepare port:  Port 0x001f, 000FUDLR, Active = 1
+			this.simulatedPorts.set(0x001F, 0x00);
+		}
+
+		// Set callbacks for all simulated ports.
+		for (const [port,] of this.simulatedPorts) {
 			this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
-				const value = this.zxKeyboardPorts.get(port)!;
+				const value = this.simulatedPorts.get(port)!;
 				return value;
 			});
 		}
@@ -161,6 +168,9 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
+				break;
+			case 'portBit':
+				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
 				break;
 			case 'sendToCustomLogic':
 				// Unwrap message
@@ -357,15 +367,34 @@ export class ZSimulationView extends BaseView {
 		Utility.assert(bit);
 
 		// Get port value
-		Utility.assert(this.zxKeyboardPorts);
-		let value=this.zxKeyboardPorts.get(port)!;
+		Utility.assert(this.simulatedPorts);
+		let value=this.simulatedPorts.get(port)!;
 		Utility.assert(value!=undefined);
 		if (on)
 			value&=~bit;
 		else
 			value|=bit;
 		// And set
-		this.zxKeyboardPorts.set(port, value);
+		this.simulatedPorts.set(port, value);
+	}
+
+
+	/**
+	 * Called if a bit for a port should change.
+	 * @param port The port number.
+	 * @param on true = bit should be set, false = bit should be cleared
+	 * @param bitByte A byte with the right bit set.
+	 */
+	protected setPortBit(port: number, on: boolean, bitByte: number) {		// Get port value
+		Utility.assert(this.simulatedPorts);
+		let value = this.simulatedPorts.get(port)!;
+		Utility.assert(value != undefined);
+		if (on)
+			value |= bitByte;
+		else
+			value &= ~bitByte;
+		// And set
+		this.simulatedPorts.set(port, value);
 	}
 
 
@@ -529,10 +558,10 @@ width:70px;
     function cellSelect(cell, on) {
 		cell.tag=on;
 		if(on) {
-		cell.className="td_on";
+			cell.className="td_on";
 		}
 		else {
-		cell.className="td_off";
+			cell.className="td_off";
 		}
 
 		// Send request to vscode
@@ -551,6 +580,28 @@ width:70px;
       	cellSelect(cell, cell.tag);
     }
 
+    // Toggle the cell and the corresponding bit
+    function togglePortBit(cell, port, bitByte) {
+		// Send request to vscode
+		vscode.postMessage({
+			command: 'portBit',
+			value: { port: port, on: cell.bitvalue, bitByte: bitByte }
+		});
+	}
+
+	// Toggle the cell and the corresponding bit.
+	// Inverts the bit before sending.
+	// I.e. Active=LOW
+    function togglePortBitNeg(cell, port, bitByte) {
+
+UIAPI.log("togglePortBitNeg");
+
+		// Send request to vscode
+		vscode.postMessage({
+			command: 'portBit',
+			value: { port: port, on: !cell.bitvalue, bitByte: bitByte }
+		});
+	}
 
     // Find right cell for keycode.
 	function findCell(keyCode) {
@@ -825,19 +876,29 @@ width:70px;
 <table>
 <tr>
   <td>
-  <table>
+  <table style="color:black;" oncolor="red" offcolor="white">
 	<tr>
-		<td id="key_Digit0" class="td_off" onClick="cellClicked(this)">F</td>
-		<td id="key_Digit9" class="td_off" onClick="cellClicked(this)">U</td>
+		<td>
+			<ui-bit style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xEFFE, 0x01)">F</ui-bit>
+		</td>
+		<td align="center">
+			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x02)">U</ui-bit>
+		</td>
 	</tr>
 	<tr>
-		<td id="key_Digit6" class="td_off" onClick="cellClicked(this)">L</td>
-		<td style="text-align:center">Joy 1</td>
-		<td id="key_Digit7" class="td_off" onClick="cellClicked(this)">R</td>
+		<td>
+			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x10)">L</ui-bit>
+		</td>
+		<td style="color:var(--vscode-editor-foreground)">Joy1</td>
+		<td>
+			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x08)">R</ui-bit>
+		</td>
 	</tr>
 	<tr>
 		<td></td>
-		<td id="key_Digit8" class="td_off" onClick="cellClicked(this)">D</td>
+		<td align="center">
+			<ui-bit onchange="togglePortBitNeg(this, 0xEFFE, 0x04)">D</ui-bit>
+		</td>
 	</tr>
   </table>
   </td>
@@ -846,20 +907,78 @@ width:70px;
   <td></td>
 
   <td>
-  <table>
+  <table style="color:black;">
 	<tr>
-		<td id="key_Digit5" class="td_off" onClick="cellClicked(this)">F</td>
-		<td id="key_Digit4" class="td_off" onClick="cellClicked(this)">U</td>
+		<td>
+			<ui-bit style="border-radius:1em;" onchange="togglePortBitNeg(this, 0xF7FE, 0x10)">F</ui-bit>
+		</td>
+		<td align="center">
+			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x08)">U</ui-bit>
+		</td>
 	</tr>
 	<tr>
-		<td id="key_Digit1" class="td_off" onClick="cellClicked(this)">L</td>
-		<td style="text-align:center">Joy 2</td>
-		<td id="key_Digit2" class="td_off" onClick="cellClicked(this)">R</td>
+		<td>
+			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x01)">L</ui-bit>
+		</td>
+		<td style="color:var(--vscode-editor-foreground)">Joy2</td>
+		<td>
+			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x02)">R</ui-bit>
+		</td>
 	</tr>
 	<tr>
 		<td></td>
-		<td id="key_Digit3" class="td_off" onClick="cellClicked(this)">D</td>
+		<td align="center">
+			<ui-bit onchange="togglePortBitNeg(this, 0xF7FE, 0x04)">D</ui-bit>
+		</td>
 	</tr>
+  </table>
+  </td>
+</tr>
+</table>
+
+</details>
+
+`;
+		}
+
+
+		// Add code for the Kempston joystick
+		if (Settings.launch.zsim.kempstonJoy) {
+			html +=
+				`<!-- Kempston Joystick -->
+<details open="true">
+  <summary>Kempston Joystick</summary>
+
+<table>
+<tr>
+  <td>
+  <table style="color:black;" oncolor="red" offcolor="white" >
+	<tr>
+		<td>
+			<ui-bit style="border-radius:1em;color:black;" onchange="togglePortBit(this, 0x001F, 0x10)">F</ui-bit>
+		</td>
+		<td>
+			<ui-bit onchange="togglePortBit(this, 0x001F, 0x08)">U</ui-bit>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<ui-bit onchange="togglePortBit(this, 0x001F, 0x02)">L</ui-bit>
+		</td>
+		<td></td>
+		<td>
+			<ui-bit onchange="togglePortBit(this, 0x001F, 0x01)">R</ui-bit>
+		</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td>
+			<ui-bit onchange="togglePortBit(this, 0x001F, 0x04)">D</ui-bit>
+		</td>
+	</tr>
+  </table>
+  </td>
+
   </table>
   </td>
 </tr>
@@ -1028,8 +1147,18 @@ width:70px;
 				// https://www.w3schools.com/jsref/dom_obj_style.asp
 				if (!this.style.margin)
 					this.style.margin="0.0em";
+				/*
 				if (!this.style.padding)
 					this.style.padding="0em";
+					*/
+				if (!this.style.paddingTop)
+					this.style.paddingTop="1px";
+				if (!this.style.paddingBottom)
+					this.style.paddingBottom="3px";
+				if (!this.style.paddingLeft)
+					this.style.paddingLeft="2px";
+				if (!this.style.paddingRight)
+					this.style.paddingRight="2px";
 				if (!this.style.textAlign)
 					this.style.textAlign="center";
 				if (!this.style.display)
@@ -1285,6 +1414,18 @@ width:70px;
 		}
 
 		customElements.define('ui-byte', UiByte);
+
+
+
+// Check every 100 ms
+setInterval( () => {
+	const gps = navigator.getGamepads();
+	for(let i=0;i<gps.length; i++) {
+		const gp = gps[i];
+		UIAPI.log("gamepad["+i+"]: conn="+gp.connected+", button0="+gp.buttons[0].pressed);
+	}
+}, 1000);
+
 `;
 	}
 

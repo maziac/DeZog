@@ -385,7 +385,7 @@ to change it's internal state. (E.g. a mouse click to toggle the state.)
 Whenever a change happens the 'onchange' function is called.
 
 These values can be set inside the html tag on creation:
-- bitvalue: The initial value. Default is 0.
+- bitvalue: The initial value [0,1]. Default is 0.
 - oncolor: The color used to indicate state 'ON', e.g. "red".
 - offcolor: The color used to indicate state 'OFF', e.g. "white".
 - onchange: If set the element is turned into an input element.

@@ -579,7 +579,7 @@ Here is the explanations of all the options:
 	- "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 - "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
-Note: the simualted ULA screen doe not support any flashing color attribute (bit 7 of color attribute).
+Note: The simulated ULA screen supports flashing of color attributes (bit 7 of color attribute). But this is stopped as long as you pause execution.
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
