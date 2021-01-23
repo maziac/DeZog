@@ -17,7 +17,6 @@ import {MemoryModel, Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from 
 import {SimulatedMemory} from './simmemory';
 import {Zx128Memory} from './zx128memory';
 import {ZxNextMemory} from './zxnextmemory';
-import {UlaScreen} from './ulascreen';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
 import {CustomCode} from './customcode';
@@ -35,9 +34,6 @@ export class ZSimRemote extends DzrpRemote {
 	public z80Cpu: Z80Cpu;
 	public memory: SimulatedMemory;
 	public ports: Z80Ports;
-
-	// If ULA screen is enabled this holds a pointer to it.
-	public ulaScreen: UlaScreen;
 
 	// Stores the code coverage.
 	protected codeCoverage: CodeCoverageArray;
@@ -81,11 +77,17 @@ export class ZSimRemote extends DzrpRemote {
 	// Is set/reset by the ZSimulatorView to request processing time.
 	protected timeoutRequest: boolean;
 
+	// The address used to display the ULA screen.
+	// This is normally bank 5 but could be changed to bank7 in ZX128.
+	// I.e. normally 0x4000, but could be 7*16=0x1C000 for ZX128.
+	protected ulaScreenAddress: number;
+
 
 	/// Constructor.
 	constructor() {
 		super();
 		// Init
+		this.ulaScreenAddress = 0x4000;
 		this.timeoutRequest=false;
 		this.previouslyStoredPCHistory=-1;
 		this.tbblueRegisterSelectValue=0;
@@ -135,10 +137,8 @@ export class ZSimRemote extends DzrpRemote {
 		mem.setSlot(3, ramBank);
 
 		// bit 3: Select normal(0) or shadow(1) screen to be displayed.
-		const shadowScreen=value&0b01000;
-		const screenAddress=(shadowScreen==0)? 5*0x4000 : 7*0x4000;
-		Utility.assert(this.ulaScreen);
-		this.ulaScreen.setUlaScreenAddress(screenAddress);
+		const shadowScreen = value & 0b01000;
+		this.ulaScreenAddress = (shadowScreen == 0) ? 5 * 0x4000 : 7 * 0x4000;
 
 		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
 		const romIndex=(value&0b010000)? 1:0;
@@ -263,9 +263,6 @@ export class ZSimRemote extends DzrpRemote {
 					// Memory Model
 					this.memoryModel=new MemoryModel();
 					this.memory=new SimulatedMemory(1, 1);
-					// Check if ULA enabled
-					if (Settings.launch.zsim.ulaScreen)
-						this.ulaScreen=new UlaScreen(this.memory);
 				}
 				break;
 			case "ZX48K":
@@ -274,9 +271,6 @@ export class ZSimRemote extends DzrpRemote {
 					// Memory Model
 					this.memoryModel=new Zx48MemoryModel();
 					this.memory=new Zx48Memory();
-					// Check if ULA enabled
-					if (Settings.launch.zsim.ulaScreen)
-						this.ulaScreen=new UlaScreen(this.memory);
 				}
 				break;
 			case "ZX128K":
@@ -287,11 +281,8 @@ export class ZSimRemote extends DzrpRemote {
 					this.memory=new Zx128Memory();
 					// Bank switching.
 					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
-					// Check if ULA enabled
-					if (Settings.launch.zsim.ulaScreen) {
-						this.ulaScreen=new UlaScreen(this.memory);
-						this.ulaScreen.setUlaScreenAddress(5*0x4000);	// Bank 5
-					}
+					// Screen address is initially bank 5
+					this.ulaScreenAddress = 5 * 0x4000;
 				}
 				break;
 			case "ZXNEXT":
@@ -309,11 +300,8 @@ export class ZSimRemote extends DzrpRemote {
 					this.ports.registerSpecificOutPortFunction(0x243B, this.tbblueRegisterSelect.bind(this));
 					this.ports.registerSpecificOutPortFunction(0x253B, this.tbblueRegisterWriteAccess.bind(this));
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
-					// Check if ULA enabled
-					if (Settings.launch.zsim.ulaScreen) {
-						this.ulaScreen=new UlaScreen(this.memory);
-						this.ulaScreen.setUlaScreenAddress(10*0x2000);	// Initially bank 10
-					}
+					// Initially bank 10
+					this.ulaScreenAddress = 10 * 0x2000;
 				}
 				break;
 			default:
@@ -872,6 +860,18 @@ export class ZSimRemote extends DzrpRemote {
 	public getCpuFrequencySync(): number {
 		return this.z80Cpu.cpuFreq;
 	}
+
+
+	/**
+	 * Returns the ULA screen with color attributes.
+	 * @returns The screen as a UInt8Array.
+	 */
+	public getUlaScreen(): Uint8Array {
+		const memory = this.memory.getMemoryData();
+		const ulaScreen = memory.slice(this.ulaScreenAddress, this.ulaScreenAddress + 0x1C00);
+		return ulaScreen;
+	}
+
 
 	/**
 	 * Loads a .sna file.

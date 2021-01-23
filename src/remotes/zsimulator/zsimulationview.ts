@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import {EventEmitter} from 'events';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
@@ -437,10 +438,15 @@ export class ZSimulationView extends BaseView {
 			}
 
 			if (Settings.launch.zsim.ulaScreen) {
-				// Calculate time
+				// A time in ms which is used for the flashing of the color attributes. The flash frequency is 1.6Hz = 625ms.
 				const time = this.simulator.getTstatesSync()/this.simulator.getCpuFrequencySync()*1000;
-				screenImg = this.simulator.ulaScreen.getUlaScreen(time);
+				const ulaData = this.simulator.getUlaScreen();
+				screenImg = {
+					time,
+					ulaData
+				};
 			}
+
 			// Create message to update the webview
 			const message = {
 				command: 'update',
@@ -462,9 +468,19 @@ export class ZSimulationView extends BaseView {
 	 * Depending on the Settings selection.
 	 */
 	protected setHtml() {
-		const jsHelper=this.customScriptHelper();
+		// Resource path
+		const extPath = Utility.getExtensionPath();
+		const resourcePath = vscode.Uri.file(extPath);
+		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
+
 		let html=
-`<html>
+`
+<head>
+	<meta charset="utf-8">
+	<base href="${vscodeResPath}/">
+</head>
+
+<html>
 
 <style>
 .td_on {border: 3px solid;
@@ -486,180 +502,14 @@ width:70px;
 
 </style>
 
+<script>
+	var exports = {};
+</script>
 
-  <script>
+  <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
+  <script src="out/src/remotes/zsimulator/zsimwebview/helper.js"></script>
+  <script src="out/src/remotes/zsimulator/zsimwebview/main.js"></script>
 
-	${jsHelper}
-
-	var countOfProcessedMessages = 0;
-
-	const vscode = acquireVsCodeApi();
-
-	// Pointer to the joystick html elements
-	const joystickObjs = [];
-
-
-	//---- On start send request to vscode to update itself. --------
-	// Otherwise the images are empty when switching from back- to foreground.
-	vscode.postMessage({
-		command: 'updateRequest'
-	});
-
-
-
-	//---- Handle Messages from vscode extension --------
-	window.addEventListener('message', event => {
-		// Count message
-		countOfProcessedMessages++;
-		if(countOfProcessedMessages >= ${ZSimulationView.MESSAGE_LOW_WATERMARK}) {
-			// Send info to vscode
-			vscode.postMessage({
-				command: 'countOfProcessedMessages',
-				value: countOfProcessedMessages
-			});
-			countOfProcessedMessages = 0;
-		}
-
-		// Process message
-		const message = event.data;
-		switch (message.command) {
-			case 'update':
-			{
-
-				if(message.cpuLoad != undefined)
-					cpuLoad.innerHTML = message.cpuLoad;
-
-				if(message.slotNames) {
-					let i=0;
-					for(slotString of message.slotNames) {
-						const slot=slots[i++];
-						if(slot)
-							slot.textContent = slotString;
-					}
-				}
-
-				if(message.visualMemImg)
-					visualMemImg.src = message.visualMemImg;
-
-				if(message.screenImg) {
-					const data = message.screenImg.data;
-					const ctx = screenImg.getContext("2d");
-					//ctx.putImageData(imgData, 0, 0);
-
-var imgData = ctx.createImageData(256, 192);
-
-var i;
-for (i = 0; i < imgData.data.length; i += 4) {
-  imgData.data[i+0] = data[i+0];
-  imgData.data[i+1] = data[i+1];
-  imgData.data[i+2] = data[i+2];
-  imgData.data[i+3] = data[i+3];
-}
-
-
-ctx.putImageData(imgData, 0, 0);
-
-				}
-			}
-			break;
-			case 'receivedFromCustomLogic':
-				// Message received from custom code.
-				// Call custom UI code
-				if(UIAPI.receivedFromCustomLogic) {
-					// Unwrap original message:
-					const innerMsg = message.value;
-					// Process message
-					UIAPI.receivedFromCustomLogic(innerMsg);
-				}
-		}
-	});
-
-
-	// Set cell to selected or unselected.
-    function cellSelect(cell, on) {
-		cell.tag=on;
-		if(on) {
-			cell.className="td_on";
-		}
-		else {
-			cell.className="td_off";
-		}
-
-		// Send request to vscode
-		vscode.postMessage({
-			command: 'keyChanged',
-			value: on,
-			key: cell.id
-		});
-    }
-
-
-    // Toggle the cell.
-    function cellClicked(cell) {
-      	//log.textContent += "clicked ";
-      	cell.tag=!cell.tag;
-      	cellSelect(cell, cell.tag);
-    }
-
-    // Toggle the cell and the corresponding bit
-    function togglePortBit(cell, port, bitByte) {
-		// Send request to vscode
-		vscode.postMessage({
-			command: 'portBit',
-			value: { port: port, on: cell.bitvalue, bitByte: bitByte }
-		});
-	}
-
-	// Toggle the cell and the corresponding bit.
-	// Inverts the bit before sending.
-	// I.e. Active=LOW
-    function togglePortBitNeg(cell, port, bitByte) {
-		// Send request to vscode
-		vscode.postMessage({
-			command: 'portBit',
-			value: { port: port, on: !cell.bitvalue, bitByte: bitByte }
-		});
-	}
-
-    // Find right cell for keycode.
-	function findCell(keyCode) {
-    	// Find correspondent cell
-        cell=document.getElementById("key_"+keyCode);
-     	return cell;
-    }
-
-	// Toggles the visibility of an element.
-	/*
-	function toggleVisibility(id) {
-		const x = document.getElementById(id);
-		if (x.style.display === "none") {
-			x.style.display = "block";
-		} else {
-			x.style.display = "none";
-		}
-	}
-	*/
-
-	// Handle key down presses.
-	document.addEventListener('keydown', keydown);
-	function keydown(e) {
-       	// Find correspondent cell
-        cell=findCell(e.code);
-        cellSelect(cell, true);
-       	//log.textContent += e.code + ", ";
-    }
-
-
-	// Handle key up presses.
-	document.addEventListener('keyup', keyup);
-	function keyup(e) {
-    	// Find correspondent cell
-        cell=findCell(e.code);
-        cellSelect(cell, false);
-    }
-
-
-  </script>
 
 <body>
 
@@ -882,7 +732,6 @@ ctx.putImageData(imgData, 0, 0);
 
 `;
 		}
-
 
 		// Add code for the Interface 2 joysticks
 		if (Settings.launch.zsim.zxInterface2Joy) {
@@ -1140,362 +989,6 @@ if(joystickObjs.length > 0) {
 
 		this.vscodePanel.webview.html='';
 		this.vscodePanel.webview.html=html;
-	}
-
-
-	/**
-	 * Returns the javascript code for some helper classes.
-	 * I.e. it contains the code for the custom html elements
-	 * ui-bit and ui-byte.
-	 * And it contains the UIAPI class.
-	 */
-	protected customScriptHelper() {
-		return `
-			// Define class for communication
-		class CustomUiApi {
-			/**
-			 * A message has been received from the custom code that
-			 * shall be executed by the custom UI code.
-			 * User can leave this undefined if he does not generate any message in
-			 * the custom code view.
-			 * receivedFromCustomUi(message: any) => void;
-			 * @param message The message object. User defined.
-			 */
-			receivedFromCustomLogic = undefined;
-
-			/**
-			 * Method to send something from the Custom UI to the Custom Logic.
-			 * Wraps the message.
-			 * @param msg The custom message to send.
-			 */
-			sendToCustomLogic = (msg) => {
-				const outerMsg = {
-					command: 'sendToCustomLogic',
-					value: msg
-				};
-				vscode.postMessage(outerMsg);
-			}
-
-			/**
-			 * Writes a log.
-			 * @param ...args Any arguments.
-			 */
-			log = (...args) => {
-				const msg = {
-					command: 'log',
-					args: args
-				};
-				vscode.postMessage(msg);
-			}
-		}
-		var UIAPI = new CustomUiApi();
-
-
-		/**
-		 * An element that can be used for output and input of bit data.
-		 * It can show 2 states 'ON' or 'OFF' indicated by colors.
-		 * The element itself is a square with a border.
-		 * Inside a number (or letter) can be shown, e.g. to indicate the bit index.
-		 * If an 'onchange' function is given the element also observes the mouse
-		 * to change it's internal state. (E.g. a mouse click to toggle the state.)
-		 * Whenever a change happens the 'onchange' function is called.
-		 *
-		 * These values can be set inside the html tag on creation:
-		 * - bitvalue: The initial value. Default is 0.
-		 * - oncolor: The color used to indicate state 'ON', e.g. "red".
-		 * - offcolor: The color used to indicate state 'OFF', e.g. "white".
-		 * - onchange: If set the element is turned into an input element.
-		 *     'onchange' is a function that is called when the state changes because of mouse activity.
-		 * - togglemode: "true" (default) to toggle state on each mouse click.
-		 *               "false" to set state to 'ON' only during button down.
-		 *
-		 * Examples:
-		 * <ui-bit oncolor="green" offcolor="yellow"/>
-		 * <ui-bit togglemode="false" onchange="my_func(this)"/>
-		 * You can get the value (e.g. in 'my_func(this)' with 'this.bitvalue'.
-		 */
-		class UiBit extends HTMLElement {
-
-			static get observedAttributes() {
-				return ['bitvalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
-			}
-
-			connectedCallback() {
-				this.innerHTML="";
-
-				// Set default values.
-				// https://www.w3schools.com/jsref/dom_obj_style.asp
-				if (!this.style.margin)
-					this.style.margin="0.0em";
-				/*
-				if (!this.style.padding)
-					this.style.padding="0em";
-					*/
-				if (!this.style.paddingTop)
-					this.style.paddingTop="1px";
-				if (!this.style.paddingBottom)
-					this.style.paddingBottom="3px";
-				if (!this.style.paddingLeft)
-					this.style.paddingLeft="2px";
-				if (!this.style.paddingRight)
-					this.style.paddingRight="2px";
-				if (!this.style.textAlign)
-					this.style.textAlign="center";
-				if (!this.style.display)
-					this.style.display="inline-block";
-				if (!this.style.borderWidth)
-					this.style.borderWidth="thin";
-				if (!this.style.borderStyle)
-					this.style.borderStyle="solid";
-				if (!this.style.borderColor)
-					this.style.borderColor="black";
-				if (!this.style.width)
-					this.style.width="1em";
-				if (!this.style.height)
-					this.style.height="1em";
-				if (!this.style.webkitUserSelect)
-					this.style.webkitUserSelect="none";
-
-				// Init undefined
-				if (this.bitvalue==undefined)
-					this.bitvalue=0;
-				if (this.oncolor==undefined)
-					this.oncolor="red";
-				if (this.offcolor==undefined)
-					this.offcolor="white";
-				this.setColor();
-
-				// Inform about initial value
-				const bitvalue=this.bitvalue;
-				this.bitvalue=undefined;	// To make sure it is different
-				this.setBitValue(bitvalue);
-
-				// Listeners for the mouse, depending on this.onstatechange
-				this.registerMouseListeners();
-			}
-
-
-			attributeChangedCallback(name, oldValue, newValue) {
-				if (name=="bitvalue") {
-					this.bitvalue=newValue;
-				}
-				else if (name=="oncolor") {
-					this.oncolor=newValue;
-				}
-				else if (name=="offcolor") {
-					this.offcolor=newValue;
-				}
-				else if (name=="togglemode") {
-					this.togglemode=(newValue=="true");
-				}
-				else if (name=="onchange") {
-					// Note: this.onchange does not work
-					this.onstatechange=eval("() => { "+newValue+" }");
-				}
-			}
-
-
-			registerMouseListeners() {
-				if (this.onstatechange!=undefined) {
-					this.style.cursor="pointer";
-					if (this.togglemode==undefined)
-						this.togglemode=true;
-					this.addEventListener('click', () => {
-						if (this.togglemode)
-							this.toggle();
-					});
-					this.addEventListener('mousedown', () => {
-						if (!this.togglemode)
-							this.setBitValue(1);
-					});
-					this.addEventListener('mouseup', () => {
-						if (!this.togglemode)
-							this.setBitValue(0);
-					});
-					this.addEventListener('mouseleave', () => {
-						if (!this.togglemode)
-							this.setBitValue(0);
-					});
-				}
-			}
-
-			setBitIndex(index) {
-				this.innerHTML=index;
-			}
-
-			setColor() {
-				if (this.bitvalue!=0)
-					this.style.backgroundColor=this.oncolor;
-				else
-					this.style.backgroundColor=this.offcolor;
-			}
-
-			setBitValue(newVal) {
-				if (this.bitvalue!=newVal) {
-					this.bitvalue=newVal;
-					// Check if someone waits on a notification
-					if (this.onstatechange) {
-						this.onstatechange();
-					}
-				}
-				this.setColor();
-			}
-
-			toggle() {
-				const newVal=(this.bitvalue==0)? 1:0;
-				this.setBitValue(newVal);
-			}
-		}
-
-		customElements.define('ui-bit', UiBit);
-
-
-		/**
-		 * Combines 8 UiBit elements into one.
-		 *
-		 * These values can be set inside the html tag on creation:
-		 * - bytevalue: The initial value. Default is 0.
-		 * - startindex: If set an index is shown in the bits. The indices start
-		 *     at startindex.
-		 * - oncolor: The color used to indicate state 'ON' of a bit, e.g. "red".
-		 * - offcolor: The color used to indicate state 'OFF' of a bit, e.g. "white".
-		 * - onchange: If set the element is turned into an input element.
-		 *     'onchange' is a function that is called when the state changes because of mouse activity.
-		 * - togglemode: "true" (default) to toggle state on each mouse click.
-		 *               "false" to set state of a bit to 'ON' only during button down.
-		 *
-		 * Examples:
-		 * <ui-byte oncolor="green" offcolor="yellow"/>
-		 * <ui-byte togglemode="false" onchange="my_func(this)"/>
-		 * You can get the value (e.g. in 'my_func(this)' with 'this.bytevalue'.
-		 */
-		class UiByte extends HTMLElement {
-
-			static get observedAttributes() {
-				return ['startindex', 'bytevalue', 'oncolor', 'offcolor', 'togglemode', 'onchange'];
-			}
-
-			connectedCallback() {
-				this.innerHTML="";
-				if (!this.style.display)
-					this.style.display="inline-block";
-
-				// Init undefined
-				if (this.initialbytevalue==undefined)
-					this.initialbytevalue=0;
-				if (this.oncolor==undefined)
-					this.oncolor="red";
-				if (this.offcolor==undefined)
-					this.offcolor="white";
-				if (this.togglemode==undefined)
-					this.togglemode=true;
-
-				// Create byte from bits
-				this.bits=[];
-				let k=this.startindex;
-				if (k!=undefined)
-					k=7+parseInt(k);
-				for (let i=0; i<8; i++) {
-					const bit=document.createElement('ui-bit');
-					// Togglemode
-					bit.togglemode=this.togglemode;
-					// Add object
-					this.appendChild(bit);
-					this.bits[i]=bit;
-					// Bit index
-					if (k!=undefined) {
-						bit.setBitIndex(k);
-						k--;
-					}
-					// Color
-					bit.oncolor=this.oncolor;
-					bit.offcolor=this.offcolor;
-					// Copy style (e.g. border-radius)
-					bit.style.borderWidth=this.style.borderWidth;
-					bit.style.borderRadius=this.style.borderRadius;
-					bit.style.borderRadius=this.style.borderRadius;
-					if (this.style.borderWidth)
-						bit.style.borderWidth=this.style.borderWidth;
-					if (this.style.borderStyle)
-						bit.style.borderStyle=this.style.borderStyle;
-					if (this.style.borderColor)
-						bit.style.borderColor=this.style.borderColor;
-				}
-
-				// Set the value through setter. Send notification.
-				this.bytevalue=this.initialbytevalue;
-
-				// Set onchange
-				for (let i=0; i<8; i++) {
-					const bit=this.bits[i];
-					// Onchange
-					if (this.onstatechange) {
-						bit.onstatechange=() => {
-							this.onstatechange();
-						};
-						bit.registerMouseListeners();
-					}
-				}
-			}
-
-
-			attributeChangedCallback(name, oldValue, newValue) {
-				if (name=="startindex") {
-					this.startindex=newValue;
-				}
-				else if (name=="bytevalue") {
-					this.initialbytevalue=parseInt(newValue);
-				}
-				else if (name=="oncolor") {
-					this.oncolor=newValue;
-				}
-				else if (name=="offcolor") {
-					this.offcolor=newValue;
-				}
-				else if (name=="togglemode") {
-					this.togglemode=(newValue=="true");
-				}
-				else if (name=="onchange") {
-					// Note: this.onchange does not work
-					this.onstatechange=eval("() => { "+newValue+" }");
-				}
-			}
-
-			// Get value
-			get bytevalue() {
-				let bitMaskIndex=7;
-				let value=0;
-				for (let i=0; i<8; i++) {
-					const bit=this.bits[i];
-					// Set value
-					const bitvalue=bit.bitvalue;
-					value+=bit.bitvalue<<bitMaskIndex;
-					bitMaskIndex--;
-				}
-				return value;
-			}
-
-			// Set value
-			set bytevalue(newVal) {
-				let bitMaskIndex=7;
-				for (let i=0; i<8; i++) {
-					const bit=this.bits[i];
-					// Set value
-					bit.bitvalue=(newVal>>bitMaskIndex)&0x01;
-					bitMaskIndex--;
-					// Color
-					bit.setColor();
-				}
-				// Notify
-				if (this.onstatechange)
-					this.onstatechange();
-			}
-
-		}
-
-		customElements.define('ui-byte', UiByte);
-
-`;
 	}
 
 }

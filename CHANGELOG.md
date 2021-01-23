@@ -4,7 +4,8 @@
 - Fix: RegisterMemoryView lost content when hidden and re-displayed.
 - Fix: z80asm line address association wrong when using macros.
 - Allowed bullets for list in help view.
-- zsim, added:
+- zsim:
+	- Big performance improvement (achieved by improving for decoding the ULA screen).
 	- "defaultPortIn": The default value that is read if the read port is unused.
 	- ULA screen now supports flash color attribute (#44).
 	- "zxInterface2Joy": Enables the ports and the visuals for simulating ZX interface 2 joysticks.
