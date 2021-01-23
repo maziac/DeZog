@@ -657,7 +657,7 @@ width:70px;
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
-<canvas id="screen_img_id" style="border:1px solid white;width:100%;"></canvas>
+<canvas id="screen_img_id" width="256" height="192" style="border:1px solid white; width:100%; height:100%"></canvas>
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");

@@ -868,7 +868,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public getUlaScreen(): Uint8Array {
 		const memory = this.memory.getMemoryData();
-		const ulaScreen = memory.slice(this.ulaScreenAddress, this.ulaScreenAddress + 0x1C00);
+		const ulaScreen = memory.slice(this.ulaScreenAddress, this.ulaScreenAddress + 0x1B00);
 		return ulaScreen;
 	}
 
