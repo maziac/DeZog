@@ -439,10 +439,10 @@ export class ZSimulationView extends BaseView {
 			if (Settings.launch.zsim.ulaScreen) {
 				// Calculate time
 				const time = this.simulator.getTstatesSync()/this.simulator.getCpuFrequencySync()*1000;
-				screenImg = this.createBase64String(this.simulator.ulaScreen.getUlaScreen(time));
+				screenImg = this.simulator.ulaScreen.getUlaScreen(time);
 			}
 			// Create message to update the webview
-			const message={
+			const message = {
 				command: 'update',
 				cpuLoad,
 				slotNames,
@@ -541,8 +541,25 @@ width:70px;
 				if(message.visualMemImg)
 					visualMemImg.src = message.visualMemImg;
 
-				if(message.screenImg)
-					screenImg.src = message.screenImg;
+				if(message.screenImg) {
+					const data = message.screenImg.data;
+					const ctx = screenImg.getContext("2d");
+					//ctx.putImageData(imgData, 0, 0);
+
+var imgData = ctx.createImageData(256, 192);
+
+var i;
+for (i = 0; i < imgData.data.length; i += 4) {
+  imgData.data[i+0] = data[i+0];
+  imgData.data[i+1] = data[i+1];
+  imgData.data[i+2] = data[i+2];
+  imgData.data[i+3] = data[i+3];
+}
+
+
+ctx.putImageData(imgData, 0, 0);
+
+				}
 			}
 			break;
 			case 'receivedFromCustomLogic':
@@ -790,7 +807,7 @@ width:70px;
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
-<img id="screen_img_id" style="image-rendering:pixelated; width:100%;">
+<canvas id="screen_img_id" style="border:1px solid white;width:100%;"></canvas>
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
