@@ -637,7 +637,6 @@ width:70px;
     <script>
         <!-- Store the visual mem image source -->
         var visualMem=document.getElementById("visual_mem_img_id");
-		const visualMemContext = visualMem.getContext("2d");
 
 	    <!-- Store the slots -->
 	    var slots = [
