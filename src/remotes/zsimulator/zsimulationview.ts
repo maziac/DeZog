@@ -5,7 +5,7 @@ import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {LogCustomCode} from '../../log';
+import {Log, LogCustomCode} from '../../log';
 
 /**
  * A Webview that shows the simulated peripherals.
@@ -38,8 +38,20 @@ export class ZSimulationView extends BaseView {
 	protected countOfOutstandingMessages: number;
 
 	// Stores the last T-states value.
-	// Used to check for chagnes.
-	protected previousTstates;
+	// Used to check for changes.
+	protected previousTstates: number;
+
+	// The time interval to update the simulation view.
+	protected displayTime: number;
+
+	// The timer used for updating the display.
+	protected displayTimer: NodeJS.Timeout;
+
+	// Set by the display timer: the next time an update will happen.
+	protected nextUpdateTime: number;
+
+	// Set by the vertSync event: The last sync time.
+	protected lastVertSyncTime: number;
 
 
 	/**
@@ -58,8 +70,8 @@ export class ZSimulationView extends BaseView {
 			zxview.close();
 			//zxview=undefined;
 		});
-		simulator.on('update', async (reason) => {
-		//	await zxview.update(); TODO
+		simulator.on('vertSync', async (reason) => {
+			zxview.vertSync();
 		});
 		simulator.customCode?.on('sendToCustomUi', (message: any) => {
 			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: '+JSON.stringify(message));
@@ -83,6 +95,8 @@ export class ZSimulationView extends BaseView {
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
 		this.previousTstates = -1;
+		this.displayTime = 1000 / Settings.launch.zsim.displayFrequency;
+		this.displayTimer = undefined as any;
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
@@ -138,16 +152,62 @@ export class ZSimulationView extends BaseView {
 
 		// Initial html page.
 		this.setHtml();
-		//this.update(); Is done by the webview
-
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
 
+		// Update regularly
+		this.setDisplayTimer();
+	}
+
+
+	/**
+	 * Sets the display timer.
+	 */
+	protected setDisplayTimer() {
 		// Update on timer
-		setInterval(() => {
+		clearInterval(this.displayTimer);
+		// Get current time
+		const currentTime = Date.now();
+		this.lastVertSyncTime = currentTime;
+		this.nextUpdateTime = currentTime + this.displayTime;
+		// Start timer
+		this.displayTimer = setInterval(async () => {
+			//Log.log("timer: do update");
+			// Update
+			await this.update();
+			// Get current time
+			const currentTime = Date.now();
+			this.lastVertSyncTime = currentTime;
+			this.nextUpdateTime = currentTime + this.displayTime;
+		}, this.displayTime);	// in ms
+	}
+
+
+	/**
+	 * A vertical sync was received from the Z80 simulation.
+	 * Is used to sync the display as best as possible:
+	 * On update the next time is store (nextUpdateTime).
+	 * The lastVertSyncTime is stored with the current time.
+	 * On next vert sync the diff to lastVertSyncTime is calculated and extrapolated.
+	 * If the next time would be later as the next regular update, then the update is
+	 * done earlier and the timer restarted.
+	 * I.e. the last vert sync before the regular update is used for synched display.
+	 */
+	protected vertSync() {
+		//Log.log("vertSync");
+		// Get current time
+		const currentTime = Date.now();
+		// Diff to last vertical sync
+		const diff = currentTime - this.lastVertSyncTime;
+		this.lastVertSyncTime = currentTime;
+		// Extrapolate
+		if (currentTime + diff > this.nextUpdateTime) {
+			//Log.log("vertSync: do update");
+			// Do the update earlier, now at the vert sync
 			this.update();
-			},
-		1000/Settings.launch.zsim.displayFrequency);	// in ms
+			// Restart timer
+			this.setDisplayTimer();
+		}
 	}
 
 
@@ -431,11 +491,13 @@ export class ZSimulationView extends BaseView {
 	 * @param reason Not used.
 	 */
 	public async update(): Promise<void> {
+		// Check if CPU did something
 		const tStates = this.simulator.getTstatesSync();
 		if (this.previousTstates == tStates)
 			return;		// No change
-		this.previousTstates = tStates;
 
+		// Yes, there was a change
+		this.previousTstates = tStates;
 		try {
 			let cpuLoad;
 			let slots;

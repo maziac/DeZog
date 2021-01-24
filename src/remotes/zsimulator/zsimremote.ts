@@ -313,7 +313,10 @@ export class ZSimRemote extends DzrpRemote {
 		Labels.convertLabelsTo(this.memoryModel);
 
 		// Create a Z80 CPU to emulate Z80 behavior
-		this.z80Cpu=new Z80Cpu(this.memory, this.ports);
+		this.z80Cpu = new Z80Cpu(this.memory, this.ports, () => {
+			this.emit('vertSync');
+		});
+
 		// For restoring the state
 		this.serializeObjects=[
 			this.z80Cpu,
@@ -553,7 +556,6 @@ export class ZSimRemote extends DzrpRemote {
 			let counter = 5000;
 			//let bp;
 			let breakAddress;
-			let updateCounter=0;
 			let slots;
 			const longAddressesUsed=Labels.AreLongAddressesUsed();
 			if(longAddressesUsed)
@@ -587,16 +589,6 @@ export class ZSimRemote extends DzrpRemote {
 
 					// Store the pc for coverage (previous pcLong)
 					this.codeCoverage?.storeAddress(pcLong);
-
-					// Do visual update
-					if (this.z80Cpu.update) {
-						updateCounter--;
-						if (updateCounter<=0) {
-							// Update the screen etc.
-							this.emit('update')
-							updateCounter=1;
-						}
-					}
 
 					// Check if some CPU error occurred
 					if (this.z80Cpu.error!=undefined) {

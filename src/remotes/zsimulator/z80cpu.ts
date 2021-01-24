@@ -46,21 +46,25 @@ export class Z80Cpu {
 	// Ports
 	public ports: Z80Ports;
 
-	// Is set if there should be an update to the ZSimulationView.
-	// Is synched with the vertical interrupt if enabled. But also
-	// happens without.
-	public update: boolean;
-
 	// Used to indicate an error in peripherals, i.e. an error in the custom javascript code.
 	// Will make the program break.
 	// undefined = no error
 	public error: string|undefined;
 
+	// A function that is called when a vertical interrupt is generated.
+	protected vertInterruptFunc: () => void;
 
-	/// Constructor.
-	constructor(memory: SimulatedMemory, ports: Z80Ports) {
+
+	/**
+	 * Constructor.
+	 * @param memory The Z80 memory.
+	 * @param ports The Z80 ports.
+	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
+	 * Can be used by teh caller to sync the display.
+	 */
+	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {
+		this.vertInterruptFunc = vertInterruptFunc;
 		this.error=undefined;
-		this.update=false;
 		this.memory=memory;
 		this.ports=ports;
 		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
@@ -121,9 +125,6 @@ export class Z80Cpu {
 	public execute(): number {
 		const z80=this.z80;
 
-		// Assume no update
-		this.update=false;
-
 		// Handle instruction
 		const tStates=z80.run_instruction();
 
@@ -159,10 +160,11 @@ export class Z80Cpu {
 			this.remaingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
 			// Really generate interrupt?
 			if (this.vsyncInterrupt) {
+				// Inform e.g. ZSimulationView about interrupt, for synching of the display
+				this.vertInterruptFunc();
+				// And generate
 				this.generateInterrupt(false, 0);
 			}
-			// Vert. interrupt: Returns true even if interrupt is not executed. Used for updating the view.
-			this.update=true;
 		}
 
 		return tStates;
