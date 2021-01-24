@@ -186,6 +186,10 @@ export interface ZSimType {
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
 	cpuFrequency: number,
 
+	// If enabled the simulated CPU performance is throttled to fit the given PU frequency.
+	// Is enabled by default.If disabled the CPU will be simulated as fast as possible.
+	limitSpeed: boolean;
+
 	// The update frequency of the simulator view in Hz.
 	displayFrequency: number,
 
@@ -404,6 +408,8 @@ export class Settings {
 			Settings.launch.zsim.vsyncInterrupt = false;
 		if (Settings.launch.zsim.cpuFrequency == undefined)
 			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
+		if (Settings.launch.zsim.limitSpeed == undefined)
+			Settings.launch.zsim.limitSpeed = true;
 		if (Settings.launch.zsim.displayFrequency == undefined)
 			Settings.launch.zsim.displayFrequency = 10.0;
 		if (Settings.launch.zsim.defaultPortIn == undefined)

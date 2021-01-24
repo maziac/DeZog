@@ -5,7 +5,7 @@ import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {Log, LogCustomCode} from '../../log';
+import {LogCustomCode} from '../../log';
 
 /**
  * A Webview that shows the simulated peripherals.

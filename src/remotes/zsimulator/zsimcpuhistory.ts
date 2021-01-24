@@ -113,7 +113,7 @@ export class ZSimCpuHistory extends CpuHistoryClass {
 				index=0;
 			this.historyWriteIndex = index;
 
-			// NOTE: the following line caused stutterign for half a second every 5 secs:
+			// NOTE: the following line caused stuttering of half a second every 5 secs:
 			// this.history[index] = line;
 			// The underlying problem was that the new data was being added.
 			// The garbage collector had to free all those data,

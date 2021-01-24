@@ -548,19 +548,22 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param bp2 Breakpoint 2 address or -1 if not used.
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
+		const limitSpeed = Settings.launch.zsim.limitSpeed;
 		while (true) {
 			//		Utility.timeDiff();
 			this.z80Cpu.error=undefined;
 			let breakReasonString='';
 			let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
-			let counter = 5000;
+			let counter = 2000;
 			//let bp;
 			let breakAddress;
 			let slots;
 			const longAddressesUsed=Labels.AreLongAddressesUsed();
 			if(longAddressesUsed)
 				slots=this.memory.getSlots();
-			let pcLong=Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
+			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
+			const prevTime = Date.now();
+			const prevTstates = this.passedTstates;
 			try {
 				// Run the Z80-CPU in a loop
 				for (; counter>0; counter--) {
@@ -704,8 +707,23 @@ export class ZSimRemote extends DzrpRemote {
 				return;
 			}
 
+			// Check if the CPU frequency should be simulated as well
+			if (limitSpeed) {
+				const currentTime = Date.now();
+				const usedTime = currentTime - prevTime;
+				const usedTstates = this.passedTstates - prevTstates;
+				const targetTime = 1000 * usedTstates / this.z80Cpu.cpuFreq;
+				let remainingTime = targetTime - usedTime;
+				if (remainingTime >= 1) {
+					// Safety check: no longer than 500ms
+					if (remainingTime > 500)
+						remainingTime = 500;
+					// Wait additional time
+					await Utility.timeout(remainingTime);
+				}
+			}
+
 			// Give other tasks a little time and continue
-			//await Utility.timeout(10);
 			await Utility.timeout(1);
 
 			// Check if additional time is required for the webview

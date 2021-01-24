@@ -6,6 +6,7 @@
 - Allowed bullets for list in help view.
 - zsim:
 	- Big performance improvement (achieved by improving for decoding the ULA screen).
+	- "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 	- "defaultPortIn": The default value that is read if the read port is unused.
 	- ULA screen now supports flash color attribute (#44).
 	- "zxInterface2Joy": Enables the ports and the visuals for simulating ZX interface 2 joysticks.

@@ -499,7 +499,7 @@ It specifically does not support:
 Performance:
 - Don't expect accurate timings.
 The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
-- Simulation speed, of course, depends on your PC but don't expect it to run at the normal speed of a ZX Spectrum. You can expect something about 5x slower.
+- Simulation speed: On a decent system the simulation will achieve the speed of a ZX 48K or even higher.
 
 One thing to mention that can be an advantage during development:
 
@@ -586,7 +586,8 @@ Note: The simulated ULA screen supports flashing of color attributes (bit 7 of c
 - "cpuLoadInterruptRange": Default is 1. The number of interrupts to calculate the CPU-load average from. 0 to disable. The CPU load is calculated by the number of executed t-states of all instructions without the HALT instruction divided by the number of all executed t-states. I.e. the time the CPU executes just HALT instructions is not considered as CPU load. Naturally, if you have turned off interrupts the CPU load is always 100%. Normally the average is calculated from interrupt to interrupt but you can extend the range to 2 or more interrupts. To disable the display choose 0.
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
-- "cpuFrequency": The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here. It does not affect in any way the simulation speed.
+- "cpuFrequency": The used CPU frequency. If "limitSpeed" is enabled (default) the simulation speed is throttled to simulate the correct frequency. The CPU frequency is also used printout of the correspondent time when t-states are printed.
+- "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "displayFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz.
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
 
