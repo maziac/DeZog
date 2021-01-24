@@ -21,13 +21,6 @@ const MESSAGE_HIGH_WATERMARK = 100;
 const MESSAGE_LOW_WATERMARK = 10;
 
 
-//---- On start send request to vscode to update itself. --------
-// Otherwise the images are empty when switching from back- to foreground.
-vscode.postMessage({
-	command: 'updateRequest'
-});
-
-
 
 //---- Handle Messages from vscode extension --------
 window.addEventListener('message', event => {

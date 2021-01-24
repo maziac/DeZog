@@ -5,7 +5,7 @@ import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {Log, LogCustomCode} from '../../log';
+import {LogCustomCode} from '../../log';
 
 /**
  * A Webview that shows the simulated peripherals.
@@ -234,11 +234,6 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected webViewMessageReceived(message: any) {
 		switch (message.command) {
-			case 'updateRequest':
-				// The webview requests an update, e.g. because it has been
-				// moved from background to foreground (vscode does not preserve the state)
-				this.update();	// No need to call 'await'
-				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
@@ -468,21 +463,6 @@ export class ZSimulationView extends BaseView {
 			value &= ~bitByte;
 		// And set
 		this.simulatedPorts.set(port, value);
-	}
-
-
-	/**
-	 * Converts an image into a base64 string.
-	 */
-	public createBase64String(imgBuffer: number[]): string {
-		let screenGifString='';
-		try {
-			// Create gif
-			const buf=Buffer.from(imgBuffer);
-			screenGifString='data:image/gif;base64,'+buf.toString('base64');
-		}
-		catch {}
-		return screenGifString;
 	}
 
 
