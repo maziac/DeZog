@@ -5,7 +5,7 @@ import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {LogCustomCode} from '../../log';
+import {Log, LogCustomCode} from '../../log';
 
 /**
  * A Webview that shows the simulated peripherals.
@@ -171,10 +171,10 @@ export class ZSimulationView extends BaseView {
 		this.lastVertSyncTime = currentTime;
 		this.nextUpdateTime = currentTime + this.displayTime;
 		// Start timer
-		this.displayTimer = setInterval(async () => {
+		this.displayTimer = setInterval(() => {
 			//Log.log("timer: do update");
 			// Update
-			await this.update();
+			this.updateDisplay();
 			// Get current time
 			const currentTime = Date.now();
 			this.lastVertSyncTime = currentTime;
@@ -204,7 +204,7 @@ export class ZSimulationView extends BaseView {
 		if (currentTime + diff > this.nextUpdateTime) {
 			//Log.log("vertSync: do update");
 			// Do the update earlier, now at the vert sync
-			this.update();
+			this.updateDisplay();
 			// Restart timer
 			this.setDisplayTimer();
 		}
@@ -225,6 +225,8 @@ export class ZSimulationView extends BaseView {
 	 * Normally not required.
 	 */
 	public disposeView() {
+		clearInterval(this.displayTimer);
+		this.displayTimer = undefined as any;
 	}
 
 
@@ -470,7 +472,7 @@ export class ZSimulationView extends BaseView {
 	 * Retrieves the screen memory content and displays it.
 	 * @param reason Not used.
 	 */
-	public async update(): Promise<void> {
+	public updateDisplay() {
 		// Check if CPU did something
 		const tStates = this.simulator.getTstatesSync();
 		if (this.previousTstates == tStates)
@@ -952,38 +954,7 @@ joystickObjs.push({
 
 		// Add polling of gamepads
 		html += `
-<script>
-
-// Poll gamepads regularly if at least one joystick was enabled
-if(joystickObjs.length > 0) {
-	// Check every 50 ms
-	setInterval( () => {
-		const gps = navigator.getGamepads();
-		let j=0;
-		for(const gp of gps) {
-			if(gp) {
-				const obj = joystickObjs[j];
-				// Fire button
-				const pressed = (gp.buttons[0].pressed) ? 1 : 0;
-				obj.fire.setBitValue(pressed);
-				// Check all axis
-				const axes = gp.axes;
-				const axesLen = axes.length;
-				if(axesLen >= 2) {
-					const lr = axes[0];
-					const ud = axes[1];
-					obj.up.setBitValue((ud < -0.5) ? 1 : 0);
-					obj.down.setBitValue((ud > 0.5) ? 1 : 0);
-					obj.left.setBitValue((lr < -0.5) ? 1 : 0);
-					obj.right.setBitValue((lr > 0.5) ? 1 : 0);
-				}
-				// Next
-				j++;
-			}
-		}
-	}, 50);
-}
-</script>
+ <script src="out/src/remotes/zsimulator/zsimwebview/joysticks.js"></script>
 `;
 
 		// Space for logging

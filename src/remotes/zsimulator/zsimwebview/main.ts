@@ -13,7 +13,13 @@ let countOfProcessedMessages = 0;
 const vscode = acquireVsCodeApi();
 
 // Pointer to the joystick html elements
-const joystickObjs = [];
+const joystickObjs = new Array<{
+	fire: UiBit,
+	up: UiBit,
+	left: UiBit,
+	right: UiBit,
+	down: UiBit
+}>();
 
 
 // Message water marks.
