@@ -37,6 +37,11 @@ export class ZSimulationView extends BaseView {
 	// Is used to insert "pauses" so that the webview can catch up.
 	protected countOfOutstandingMessages: number;
 
+	// Stores the last T-states value.
+	// Used to check for chagnes.
+	protected previousTstates;
+
+
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
 	 * I.e. the events.
@@ -54,7 +59,7 @@ export class ZSimulationView extends BaseView {
 			//zxview=undefined;
 		});
 		simulator.on('update', async (reason) => {
-			await zxview.update();
+		//	await zxview.update(); TODO
 		});
 		simulator.customCode?.on('sendToCustomUi', (message: any) => {
 			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: '+JSON.stringify(message));
@@ -75,8 +80,9 @@ export class ZSimulationView extends BaseView {
 	constructor(simulator: ZSimRemote) {
 		super(false);
 		// Init
-		this.simulator=simulator;
-		this.countOfOutstandingMessages=0;
+		this.simulator = simulator;
+		this.countOfOutstandingMessages = 0;
+		this.previousTstates = -1;
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
@@ -136,6 +142,12 @@ export class ZSimulationView extends BaseView {
 
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
+
+		// Update on timer
+		setInterval(() => {
+			this.update();
+			},
+		100);
 	}
 
 
@@ -419,6 +431,11 @@ export class ZSimulationView extends BaseView {
 	 * @param reason Not used.
 	 */
 	public async update(): Promise<void> {
+		const tStates = this.simulator.getTstatesSync();
+		if (this.previousTstates == tStates)
+			return;		// No change
+		this.previousTstates = tStates;
+
 		try {
 			let cpuLoad;
 			let slots;
@@ -516,6 +533,7 @@ width:70px;
 
 `;
 
+		// CPU Load
 		if (Settings.launch.zsim.cpuLoadInterruptRange>0) {
 			html+=
 				`<!-- Z80 CPU load -->
@@ -533,10 +551,11 @@ width:70px;
 		}
 
 		// Memory Pages / Visual Memory
-		const zx=Settings.launch.zsim.memoryModel.includes("ZX");
-		const slots=this.simulator.getSlots();
-		const banks=this.simulator.memoryModel.getMemoryBanks(slots);
-		html+=
+		if (Settings.launch.zsim.visualMemory) {
+			const zx = Settings.launch.zsim.memoryModel.includes("ZX");
+			const slots = this.simulator.getSlots();
+			const banks = this.simulator.memoryModel.getMemoryBanks(slots);
+			html +=
 				`<!-- Visual Memory (memory activity) -->
 <!-- Legend, Slots -->
 <div style="position:relative; width:100%; height:4.5em;">
@@ -568,18 +587,18 @@ width:70px;
 	<!-- Address labels -->
 	<label style="position:absolute; top:2em; left:0%">0x0000</label>
 	<label style="position:absolute; top:2em; left:12.5%">0x2000</label>`;
-		// ZX screen memory marker
-		if (zx) {
-			html+=`
+			// ZX screen memory marker
+			if (zx) {
+				html += `
 	<label style="position:absolute; top:1.1em; left:25%">0x4000</label>
 	<label style="position:absolute; top:1.1em; left:35.5%">0x5B00</label>`;
-		}
-		else {
-			html+=`
+			}
+			else {
+				html += `
 			<label style="position:absolute; top:2em; left:25%">0x4000</label>`;
-		}
+			}
 
-		html+=`
+			html += `
 	<label style="position:absolute; top:2em; left:37.5%">0x6000</label>
 	<label style="position:absolute; top:2em; left:50%">0x8000</label>
 	<label style="position:absolute; top:2em; left:62.5%">0xA000</label>
@@ -589,51 +608,51 @@ width:70px;
     <!-- Marker ticks -->
 	<span class="border" style="top: 3em; left:0%; height: 1.7em"></span>
 	<span class="border" style="top: 3em; left:12.5%; height:1em;"></span>`;
-		if (zx) {
-			// ZX screen memory marker
-			html+=`
+			if (zx) {
+				// ZX screen memory marker
+				html += `
 	<span class="border" style="top: 2.0em; left:25%; height:2.5em;"></span>
 	<span class="border" style="top: 2.0em; left:34.4%; height:2.5em;"></span> <!-- 0x5800 -->
 	<span class="border" style="top: 2.0em; left:35.5%; height:2.5em;"></span> <!-- 0x5B00 -->`;
-		}
-		else {
-			// ZX screen memory marker
-			html+=`
+			}
+			else {
+				// ZX screen memory marker
+				html += `
 	<span class="border" style="top: 3em; left:25%; height:1em;"></span>`;
-		}
+			}
 
-		html+=`
+			html += `
 	<span class="border" style="top: 3em; left:37.5%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:50%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:62.5%; height:1em;"></span>
 	<span class="border" style="top: 3em; left:75%; height:1em;"></span>
     <span class="border" style="top: 3em; left:87.5%; height:1em;"></span>
 `;
-		if (zx) {
-			// Markers for display
-			html+=`
+			if (zx) {
+				// Markers for display
+				html += `
 	<!-- Extra "Screen" range display -->
     <div class="border slot" style="top:2.2em; left:25%; width:9.4%;">SCREEN</div>
 	<div class="border slot" style="top:2.2em; left:34.4%; width:1.1%;"></div>`;
-		}
+			}
 
-		html+=`
+			html += `
 	<!-- Visual memory image, is mainly transparent and put on top -->
-	<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="position:absolute; top:3.5em; left:0; width:100%;"></canvas>
+	<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%;"></canvas>
 
 	<!-- Slots  2nd -->
 	`;
-		const count=banks.length;
-		for (let i=0; i<count; i++) {
-			const bank=banks[i];
-			const pos=bank.start*100/0x10000;
-			const width=(bank.end+1-bank.start)*100/0x10000;
-			const add=`<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
+			const count = banks.length;
+			for (let i = 0; i < count; i++) {
+				const bank = banks[i];
+				const pos = bank.start * 100 / 0x10000;
+				const width = (bank.end + 1 - bank.start) * 100 / 0x10000;
+				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
 			`;
-			html+=add;
-		}
+				html += add;
+			}
 
-		html+=`
+			html += `
     <script>
         <!-- Store the visual mem image source -->
         const visualMem=document.getElementById("visual_mem_img_id");
@@ -642,24 +661,26 @@ width:70px;
 	    const slots = [
 			`;
 
-		for (let i=0; i<count; i++) {
-			const add=`document.getElementById("slot${i}_id"),
+			for (let i = 0; i < count; i++) {
+				const add = `document.getElementById("slot${i}_id"),
 			`;
-			html+=add;
-		}
+				html += add;
+			}
 
-		html+=`
+			html += `
 		];
  	</script>
 </div>
 <br><br>
 `;
+		}
+
 
 		// Add code for the screen
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
-<canvas id="screen_img_id" width="256" height="192" style="border:1px solid var(--vscode-foreground); width:100%; height:100%"></canvas>
+<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:1px solid var(--vscode-foreground); width:100%; height:100%"></canvas>
 <script>
 	<!-- Store the screen image source -->
 	const screenImg=document.getElementById("screen_img_id");

@@ -550,7 +550,7 @@ export class ZSimRemote extends DzrpRemote {
 			this.z80Cpu.error=undefined;
 			let breakReasonString='';
 			let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
-			let counter=5000;
+			let counter = 5000;
 			//let bp;
 			let breakAddress;
 			let updateCounter=0;
@@ -713,7 +713,8 @@ export class ZSimRemote extends DzrpRemote {
 			}
 
 			// Give other tasks a little time and continue
-			await Utility.timeout(10);
+			//await Utility.timeout(10);
+			await Utility.timeout(1);
 
 			// Check if additional time is required for the webview
 			while (this.timeoutRequest) {
