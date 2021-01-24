@@ -1,7 +1,7 @@
 declare var acquireVsCodeApi: any;
 declare var cpuLoad: HTMLLabelElement;
 declare var slots: Array<HTMLDivElement>;
-declare var visualMemImg: HTMLImageElement;
+declare var visualMem: HTMLCanvasElement;
 declare var screenImg: HTMLCanvasElement;
 declare var UIAPI: CustomUiApi;
 
@@ -57,8 +57,9 @@ window.addEventListener('message', event => {
 					}
 				}
 
-				if (message.visualMemImg)
-					visualMemImg.src = message.visualMemImg;
+				if (message.visualMem) {
+					VisualMem.drawVisualMemory(visualMem, message.visualMem);
+				}
 
 				if (message.screenImg) {
 					const data = message.screenImg.ulaData;
@@ -145,6 +146,25 @@ function toggleVisibility(id) {
 	}
 }
 */
+
+
+// "Copy all HTML" button-- >
+
+// Copies the complete html of the document to the clipboard.
+function copyHtmlToClipboard() {
+	const copyText = document.documentElement.innerHTML;
+	navigator.clipboard.writeText(copyText);
+}
+
+
+// Reload the javascript business logic.
+function reloadCustomLogicAndUi() {
+	// Send request to vscode
+	vscode.postMessage({
+		command: 'reloadCustomLogicAndUi'
+	});
+}
+
 
 // Handle key down presses.
 document.addEventListener('keydown', keydown);

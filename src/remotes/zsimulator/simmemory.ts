@@ -1,4 +1,3 @@
-import {ImageConvert} from '../../misc/imageconvert';
 import {MemBuffer} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
@@ -559,22 +558,10 @@ export class SimulatedMemory {
 
 
 	/**
-	 * Converts the visual memory into a gif.
-	 * @returns The visual memory as a gif buffer.
+	 * @returns The visual memory as a buffer.
 	 */
-	public getVisualMemoryImage(): number[] {
-		// Get ZX palette
-		const palette=[
-			0x80, 0x80, 0x80,	// Gray (background)/Transparent
-			0xC0, 0xC0, 0x00,	// Yellow: Read access
-			0xC0, 0x00, 0x00,	// Red: Write access
-			0x00, 0x00, 0xC0,	// Blue: Prog access
-		];
-		// Convert to gif
-		const size=this.visualMemory.length;
-		const gifBuffer=ImageConvert.createGifFromArray(size, 1, this.visualMemory, palette, 0 /*transparent index*/);
-		// Return
-		return gifBuffer;
+	public getVisualMemory(): number[] {
+		return this.visualMemory;
 	}
 
 }

@@ -423,7 +423,7 @@ export class ZSimulationView extends BaseView {
 			let cpuLoad;
 			let slots;
 			let slotNames;
-			let visualMemImg;
+			let visualMem;
 			let screenImg;
 			// Update values
 			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
@@ -434,7 +434,7 @@ export class ZSimulationView extends BaseView {
 				slots=this.simulator.getSlots();
 				const banks=this.simulator.memoryModel.getMemoryBanks(slots);
 				slotNames=banks.map(bank => bank.name);
-				visualMemImg=this.createBase64String(this.simulator.memory.getVisualMemoryImage());
+				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
 			if (Settings.launch.zsim.ulaScreen) {
@@ -452,7 +452,7 @@ export class ZSimulationView extends BaseView {
 				command: 'update',
 				cpuLoad,
 				slotNames,
-				visualMemImg,
+				visualMem,
 				screenImg
 			};
 			this.sendMessageToWebView(message);
@@ -507,6 +507,7 @@ width:70px;
 </script>
 
   <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
+  <script src="out/src/remotes/zsimulator/zsimwebview/visualmem.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/helper.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/main.js"></script>
 
@@ -618,7 +619,7 @@ width:70px;
 
 		html+=`
 	<!-- Visual memory image, is mainly transparent and put on top -->
-	<img class="slot" id="visual_mem_img_id" style="image-rendering:pixelated; position:absolute; top:3.5em; left:0; width:100%;">
+	<canvas class="slot" width="256" height="1" id="visual_mem_img_id" style="position:absolute; top:3.5em; left:0; width:100%;"></canvas>
 
 	<!-- Slots  2nd -->
 	`;
@@ -627,7 +628,7 @@ width:70px;
 			const bank=banks[i];
 			const pos=bank.start*100/0x10000;
 			const width=(bank.end+1-bank.start)*100/0x10000;
-			const add=`<div class="border transparent" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%;">${bank.name}</div>
+			const add=`<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
 			`;
 			html+=add;
 		}
@@ -635,7 +636,7 @@ width:70px;
 		html+=`
     <script>
         <!-- Store the visual mem image source -->
-        var visualMemImg=document.getElementById("visual_mem_img_id");
+        var visualMem=document.getElementById("visual_mem_img_id");
 	    <!-- Store the slots -->
 	    var slots = [
 			`;
@@ -657,7 +658,7 @@ width:70px;
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
-<canvas id="screen_img_id" width="256" height="192" style="border:1px solid white; width:100%; height:100%"></canvas>
+<canvas id="screen_img_id" width="256" height="192" style="border:1px solid var(--vscode-foreground); width:100%; height:100%"></canvas>
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
@@ -945,38 +946,16 @@ if(joystickObjs.length > 0) {
 
 `;
 
-		if (Settings.launch.zsim.customCode.debug) {
+		if (Settings.launch.zsim.customCode.debug || true) {	// TODO: remove true
 			html+=
 `<!-- Debug Area -->
 <hr>
 
 <details open="true">
     <summary>Debug Area</summary>
-
-	<!-- "Copy all HTML" button -->
-	<script>
-		// Copies the complete html of the document to the clipboard.
-		function copyHtmlToClipboard() {
-			const copyText = document.documentElement.innerHTML;
-			navigator.clipboard.writeText(copyText);
-		}
-	</script>
-
-	<script>
-		// Reload the javascript business logic.
-		function reloadCustomLogicAndUi() {
-			// Send request to vscode
-			vscode.postMessage({
-				command: 'reloadCustomLogicAndUi'
-			});
-		}
-	</script>
-
 	<button onclick="reloadCustomLogicAndUi()">Reload Custom Logic and UI</button>
 	&nbsp;&nbsp;
 	<button onclick="copyHtmlToClipboard()">Copy all HTML to clipboard</button>
-
-
 </details>
 
 `;

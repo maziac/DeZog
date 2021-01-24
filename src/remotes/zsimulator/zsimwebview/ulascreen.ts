@@ -37,11 +37,11 @@ class UlaScreen {
 
 
 	/**
-	 * Converts a ZX Spectrum ULA screen into a gif image.
+	 * Draws a ZX Spectrum ULA screen into the given canvas.
+	 * @param canvas The canvas to draw to.
 	 * @param ulaScreen The ULA screen data. Pixels + color attributes.
 	 * @param time An optional time in ms which is used for the flashing of the color attributes.
 	 * The flash frequency is 1.6Hz.
-	 * @returns The screen as an imageData buffer.
 	 */
 	public static drawUlaScreen(canvas: HTMLCanvasElement, ulaScreen: Uint8Array, time = 0) {
 		// Get canvas drawing context
@@ -54,7 +54,6 @@ class UlaScreen {
 		const flash = (remainder >= interval / 2) ? 0x80 : 0; // 0x80 if colors should be exchanged
 
 		// Find memory to display
-		const screenMem = ulaScreen;
 		const colorStart = UlaScreen.SCREEN_HEIGHT * UlaScreen.SCREEN_WIDTH / 8;
 
 		// Get pixels memory
@@ -75,12 +74,12 @@ class UlaScreen {
 			// Iterate all 32 bytes from left to right
 			for (let x = 0; x < width8; x++) {
 				// Get color
-				let color = screenMem[colorIndex];
+				let color = ulaScreen[colorIndex];
 				const cIndexBase = (color & 0x40) / 8;	// Brightness (/8 = >>>3 but faster)
 				pixelIndex = (y * 256 + x * 8) * 4;
 				// Iterate a block of 8 bytes downwards
 				for (let y2 = 0; y2 < 8; y2++) {
-					let byteValue = screenMem[inIndex + y2 * 256];
+					let byteValue = ulaScreen[inIndex + y2 * 256];
 					if (color & flash) {
 						// Toggle back- and foreground
 						byteValue ^= 255;
@@ -103,8 +102,8 @@ class UlaScreen {
 						cIndex *= 3;	// rgb = 3 bytes
 						pixels[pixelIndex++] = this.zxPalette[cIndex++];	// red
 						pixels[pixelIndex++] = this.zxPalette[cIndex++];	// green
-						pixels[pixelIndex++] = this.zxPalette[cIndex];	// blue
-						pixels[pixelIndex++] = 255;	// alpha
+						pixels[pixelIndex++] = this.zxPalette[cIndex];		// blue
+						pixels[pixelIndex++] = 255;							// alpha
 
 						// Next pixel
 						mask /= 2;
@@ -118,7 +117,7 @@ class UlaScreen {
 			}
 		}
 
-		// Write picture
+		// Write image
 		ctx.putImageData(imgData, 0, 0);
 	}
 }
