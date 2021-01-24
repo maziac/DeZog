@@ -103,7 +103,7 @@ suite('Utility', () => {
 				const format='${name},${hex},${signed},${unsigned},${bits},${char},${flags}';
 				const res=await Utility.numberFormatted('myname', 9999, 2, format, undefined);
 				// Note: value of flags doesn't matter
-				var b=res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
+				let b=res.startsWith('myname,270F,9999,9999,0010011100001111,.,');
 				assert.ok(b, "Unexpected formatting");
 			});
 
@@ -137,7 +137,7 @@ suite('Utility', () => {
 				const res=await Utility.numberFormatted('myname', 65, 1, format, predefArr);
 				const arr = res.split(',');
 				assert.equal( arr[0].length+1, 'myname,'.length, "Unexpected formatting");
-				var i;
+				let i;
 				for(i=1; i<arr.length-1; i++) {
 					assert.equal( arr[i].length, predefArr[i].length, "Unexpected formatting");
 				}

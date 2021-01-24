@@ -128,7 +128,7 @@ function linkClicked() {
  */
 function initAnchors() {
 	const links = document.getElementsByTagName('a');
-	for (var i = 0; i < links.length; i++) {
+	for (let i = 0; i < links.length; i++) {
 		// Remove tooltip
 		links[i].title = '';
 		// Add function call

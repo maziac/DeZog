@@ -728,9 +728,9 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		let html = super.createScriptsAndButtons();
 		html +=  `
 		<script>
-			var zxBorderColor;
-			var zxScreenBckgColor;
-			var zxScreenFgColor;
+			let zxBorderColor;
+			let zxScreenBckgColor;
+			let zxScreenFgColor;
 
 			//----- To change also the background color of the screen -----
 			function spriteBckgSelected() {
@@ -936,8 +936,8 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 		<canvas id="screen" width="640px" height="512px" style="border:1px solid #c3c3c3;">
 
 		<script>
-			var canvas = document.getElementById("screen");
-			var ctx = canvas.getContext("2d");
+			let canvas = document.getElementById("screen");
+			let ctx = canvas.getContext("2d");
 			ctx.scale(2, 2);
 
 				function drawScreen() {
@@ -999,7 +999,7 @@ export class ZxNextSpritesView extends ZxNextSpritePatternsView {
 			// The image
 			const buf = Buffer.from(sprite.image);
 			const base64String = buf.toString('base64');
-			spritesHtml += util.format('var img%d = new Image();\n', k);
+			spritesHtml += util.format('let img%d = new Image();\n', k);
 			spritesHtml+=util.format('img%d.onload = function() { ctx.drawImage(img%d,%d,%d,%d,%d); };\n', k, k, pos.x, pos.y, width, height);
 			spritesHtml += util.format('img%d.src = "data:image/gif;base64,%s";\n', k, base64String);
 		}

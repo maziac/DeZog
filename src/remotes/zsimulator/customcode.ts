@@ -184,8 +184,8 @@ export class CustomCode extends EventEmitter {
 		// Execute/initialize the javascript
 		CustomCode.evalInContext(`
 // Preamble:
-var global = this;
-var API = global.tmpAPI;
+const global = this;
+const API = global.tmpAPI;
 // 'tmpAPI' is not visible to customer code. Use 'API' instead.
 delete global.tmpAPI;
 

@@ -8,12 +8,12 @@ declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
 
 
-var countOfProcessedMessages = 0;
+let countOfProcessedMessages = 0;
 
 const vscode = acquireVsCodeApi();
 
 // Pointer to the joystick html elements
-var joystickObjs = [];
+const joystickObjs = [];
 
 
 // Message water marks.

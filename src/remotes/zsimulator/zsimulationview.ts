@@ -503,7 +503,7 @@ width:70px;
 </style>
 
 <script>
-	var exports = {};
+	const exports = {};
 </script>
 
   <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
@@ -526,7 +526,7 @@ width:70px;
 </p>
 <script>
 	<!-- Store the cpu_load_id -->
-	var cpuLoad=document.getElementById("cpu_load_id");
+	const cpuLoad=document.getElementById("cpu_load_id");
 </script>
 
 `;
@@ -636,10 +636,10 @@ width:70px;
 		html+=`
     <script>
         <!-- Store the visual mem image source -->
-        var visualMem=document.getElementById("visual_mem_img_id");
+        const visualMem=document.getElementById("visual_mem_img_id");
 
 	    <!-- Store the slots -->
-	    var slots = [
+	    const slots = [
 			`;
 
 		for (let i=0; i<count; i++) {
@@ -662,7 +662,7 @@ width:70px;
 <canvas id="screen_img_id" width="256" height="192" style="border:1px solid var(--vscode-foreground); width:100%; height:100%"></canvas>
 <script>
 	<!-- Store the screen image source -->
-	var screenImg=document.getElementById("screen_img_id");
+	const screenImg=document.getElementById("screen_img_id");
 	const screenImgContext = screenImg.getContext("2d");
 	const screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
 </script>

@@ -444,8 +444,8 @@ export class ZxNextSpritePatternsView extends BaseView {
 			// Get color for index
 			let color = bckgSelector[bckgSelector.selectedIndex].value;
 			// Update sprite patterns backgrounds
-			var cells = document.getElementsByClassName("classPattern");
-			for(var i=0; i<cells.length; i++) {
+			let cells = document.getElementsByClassName("classPattern");
+			for(let i=0; i<cells.length; i++) {
 				 cells[i].style.background = color;
 			}
 
@@ -494,11 +494,11 @@ export class ZxNextSpritePatternsView extends BaseView {
 
 		<script>
 			// Also select the right index
-			var bckgSelector = document.getElementById("bckgSelector");
+			let bckgSelector = document.getElementById("bckgSelector");
 			bckgSelector.selectedIndex = %d;
 
 			// Set the palette selection
-			var paletteSelector = document.getElementById("paletteSelector");
+			let paletteSelector = document.getElementById("paletteSelector");
 			paletteSelector.selectedIndex = %d;
 		</script>
 		`;

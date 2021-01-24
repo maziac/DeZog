@@ -512,4 +512,4 @@ export class Z80RegistersClass {
 }
 
 
-export var Z80Registers: Z80RegistersClass;
+export let Z80Registers: Z80RegistersClass;

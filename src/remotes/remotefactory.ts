@@ -59,4 +59,4 @@ export class RemoteFactory {
 }
 
 
-export var Remote: RemoteBase;
+export let Remote: RemoteBase;

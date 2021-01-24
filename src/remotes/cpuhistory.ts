@@ -1213,7 +1213,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 
 // Contains the history singleton.
-export var StepHistory: StepHistoryClass;
+export let StepHistory: StepHistoryClass;
 
 // Contains the same object as StepHistory but allows type-safe access.
-export var CpuHistory: CpuHistoryClass;
+export let CpuHistory: CpuHistoryClass;
