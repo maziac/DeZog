@@ -637,6 +637,8 @@ width:70px;
     <script>
         <!-- Store the visual mem image source -->
         var visualMem=document.getElementById("visual_mem_img_id");
+		const visualMemContext = visualMem.getContext("2d");
+
 	    <!-- Store the slots -->
 	    var slots = [
 			`;
@@ -662,6 +664,8 @@ width:70px;
 <script>
 	<!-- Store the screen image source -->
 	var screenImg=document.getElementById("screen_img_id");
+	const screenImgContext = screenImg.getContext("2d");
+	const screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
 </script>
 `;
 		}
@@ -946,7 +950,7 @@ if(joystickObjs.length > 0) {
 
 `;
 
-		if (Settings.launch.zsim.customCode.debug || true) {	// TODO: remove true
+		if (Settings.launch.zsim.customCode.debug ) {
 			html+=
 `<!-- Debug Area -->
 <hr>

@@ -2,7 +2,9 @@ declare var acquireVsCodeApi: any;
 declare var cpuLoad: HTMLLabelElement;
 declare var slots: Array<HTMLDivElement>;
 declare var visualMem: HTMLCanvasElement;
-declare var screenImg: HTMLCanvasElement;
+//declare var screenImg: HTMLCanvasElement;
+declare var screenImgContext: CanvasRenderingContext2D;
+declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
 
 
@@ -64,7 +66,7 @@ window.addEventListener('message', event => {
 				if (message.screenImg) {
 					const data = message.screenImg.ulaData;
 					const time = message.screenImg.time;
-					UlaScreen.drawUlaScreen(screenImg, data, time);
+					UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
 				}
 			}
 			break;

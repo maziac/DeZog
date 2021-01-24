@@ -43,10 +43,10 @@ class UlaScreen {
 	 * @param time An optional time in ms which is used for the flashing of the color attributes.
 	 * The flash frequency is 1.6Hz.
 	 */
-	public static drawUlaScreen(canvas: HTMLCanvasElement, ulaScreen: Uint8Array, time = 0) {
+	public static drawUlaScreen(ctx: CanvasRenderingContext2D, imgData: ImageData, ulaScreen: Uint8Array, time = 0) {
 		// Get canvas drawing context
-		const ctx = canvas.getContext("2d")!;
-		const imgData = ctx.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
+//		const ctx = canvas.getContext("2d")!;
+//		const imgData = ctx.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
 
 		// Check time. Calculate remainder.
 		const interval = 625;	// 625 ms
