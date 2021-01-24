@@ -587,6 +587,7 @@ Note: The simulated ULA screen supports flashing of color attributes (bit 7 of c
 ![](images/zsim_cpu_load.jpg)
 - "vsyncInterrupt": Default is false. Enable it if you use zsim to emulate a ZX Spectrum. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).
 - "cpuFrequency": The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here. It does not affect in any way the simulation speed.
+- "displayFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz.
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
 
 

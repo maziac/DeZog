@@ -382,6 +382,11 @@
 									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
 									"default": 3500000
 								},
+								"displayFrequency": {
+									"type": "number",
+									"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz.",
+									"default": 10
+								},
 								"defaultPortIn": {
 									"type": "number",
 									"description": "The default value that is read if the read port is unused.",

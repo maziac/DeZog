@@ -186,6 +186,9 @@ export interface ZSimType {
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
 	cpuFrequency: number,
 
+	// The update frequency of the simulator view in Hz.
+	displayFrequency: number,
+
 	// Default value that is returned for the ports (if no "HW" is configured).
 	// Usually 0xFF.
 	defaultPortIn: number;
@@ -401,6 +404,8 @@ export class Settings {
 			Settings.launch.zsim.vsyncInterrupt = false;
 		if (Settings.launch.zsim.cpuFrequency == undefined)
 			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
+		if (Settings.launch.zsim.displayFrequency == undefined)
+			Settings.launch.zsim.displayFrequency = 10.0;
 		if (Settings.launch.zsim.defaultPortIn == undefined)
 			Settings.launch.zsim.defaultPortIn = 0xFF;
 

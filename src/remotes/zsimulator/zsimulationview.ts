@@ -147,7 +147,7 @@ export class ZSimulationView extends BaseView {
 		setInterval(() => {
 			this.update();
 			},
-		100);
+		1000/Settings.launch.zsim.displayFrequency);	// in ms
 	}
 
 
