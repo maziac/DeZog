@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
 import * as vscode from 'vscode';
-import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent} from 'vscode-debugadapter/lib/main';
+import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ContinuedEvent, CapabilitiesEvent, InvalidatedEvent} from 'vscode-debugadapter/lib/main';
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log} from './log';
@@ -421,6 +421,8 @@ export class DebugSessionClass extends DebugSession {
 			// vscode is informed and will e.g. update the watches.)
 			BaseView.onChange(() => {
 				// TODO: InvalidatedEvent does not work yet as intended, see https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
+				this.sendEvent(new InvalidatedEvent(['variables'])); // Maybe this works
+				//this.sendEvent(new InvalidatedEvent(['all']));
 				//this.sendEvent(new InvalidatedEvent());
 			});
 
