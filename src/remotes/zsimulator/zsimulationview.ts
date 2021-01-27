@@ -486,6 +486,8 @@ export class ZSimulationView extends BaseView {
 			let slotNames;
 			let visualMem;
 			let screenImg;
+			let audio;
+
 			// Update values
 			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
 				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
@@ -508,13 +510,33 @@ export class ZSimulationView extends BaseView {
 				};
 			}
 
+			{
+				// Audio
+				// samples to add to the circular buffer.
+				const buffer = new Array<{value: number, time: number}>(10);
+				let value = 0;
+				for (let i = 0; i < buffer.length; i++) {
+					buffer[i] = {value, time: this.time};
+					// Next
+					//value = (value == 0) ? 1 : 0;
+					this.time += (this.displayTime / 1000) / buffer.length;
+				}
+				audio = {
+					sampleRate: 4096, // TODO
+					bufferSizeInSecs: 2 * this.displayTime / 1000,
+					buffer,
+					timeEnd: this.time	// The time the buffer ends, i.e. the current Z80 time. Z80 time starts at 0.
+				};
+			}
+
 			// Create message to update the webview
 			const message = {
 				command: 'update',
 				cpuLoad,
 				slotNames,
 				visualMem,
-				screenImg
+				screenImg,
+				audio
 			};
 			this.sendMessageToWebView(message);
 			// Clear
@@ -522,6 +544,8 @@ export class ZSimulationView extends BaseView {
 		}
 		catch {}
 	}
+
+	protected time = 0;	// TODO
 
 
 	/**
@@ -567,6 +591,7 @@ width:70px;
 	const exports = {};
 </script>
 
+  <script src="out/src/remotes/zsimulator/zsimwebview/zxaudio.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/visualmem.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/helper.js"></script>

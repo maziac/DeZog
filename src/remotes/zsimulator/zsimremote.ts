@@ -11,6 +11,7 @@ import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZSimCpuHistory} from './zsimcpuhistory';
 import {Zx48Memory} from './zx48memory';
+//import {ZxAudio} from './zsimwebview/zxaudio';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 import {MemoryModel, Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
@@ -81,6 +82,9 @@ export class ZSimRemote extends DzrpRemote {
 	// This is normally bank 5 but could be changed to bank7 in ZX128.
 	// I.e. normally 0x4000, but could be 7*16=0x1C000 for ZX128.
 	protected ulaScreenAddress: number;
+
+	// ZX beeper audio simulation.
+	//protected zxAudio: ZxAudio;
 
 
 	/// Constructor.
@@ -247,13 +251,17 @@ export class ZSimRemote extends DzrpRemote {
 	 * - "RAM": One memory area of 64K RAM, no banks.
 	 * - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
 	 * - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
-	 *  - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+	 * - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	 */
 	protected configureMachine(memModel: string) {
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
-		this.ports=new Z80Ports(Settings.launch.zsim.defaultPortIn);
+		this.ports = new Z80Ports(Settings.launch.zsim.defaultPortIn);
+
+		// Create audio
+		//this.zxAudio = new ZxAudio();
+		//this.zxAudio.start();
 
 		// Configure different memory models
 		switch (memModel) {
@@ -549,6 +557,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
+		//let beeperValue = 0;
 		while (true) {
 			//		Utility.timeDiff();
 			this.z80Cpu.error=undefined;
@@ -706,6 +715,16 @@ export class ZSimRemote extends DzrpRemote {
 
 				return;
 			}
+
+			// Audio
+			/*
+			if (beeperValue == 0)
+				beeperValue = 1;
+			else
+				beeperValue = 0;
+			const time = this.passedTstates / this.z80Cpu.cpuFreq;
+			this.zxAudio.writeOneBeeperSample(beeperValue, time);
+			*/
 
 			// Check if the CPU frequency should be simulated as well
 			if (limitSpeed) {

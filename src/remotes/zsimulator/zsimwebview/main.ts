@@ -6,6 +6,7 @@ declare var visualMem: HTMLCanvasElement;
 declare var screenImgContext: CanvasRenderingContext2D;
 declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
+//declare var zxAudio: ZxAudio;
 
 
 let countOfProcessedMessages = 0;
@@ -66,6 +67,16 @@ window.addEventListener('message', event => {
 					const data = message.screenImg.ulaData;
 					const time = message.screenImg.time;
 					UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+				}
+
+				if (message.audio) {
+					//return;
+					const ctx = (zxAudio as any).ctx;
+					if(ctx)
+						console.log("main, currentTime: " + ctx.currentTime);
+					const audio = message.audio;
+					zxAudio.setFrameRateAndBuffer(audio.sampleRate, audio.bufferSizeInSecs);
+					zxAudio.writeBeeperBuffer(audio.buffer, audio.timeEnd);
 				}
 			}
 			break;
