@@ -115,9 +115,8 @@ class ZxAudio {
 			return;	// No samples
 
 		// Create a buffer
-		const buffer = this.ctx.createBuffer(2, bufLen, sampleRate);
-		const channel0 = buffer.getChannelData(0);
-		const channel1 = buffer.getChannelData(1);
+		const buffer = this.ctx.createBuffer(1, bufLen, sampleRate);
+		const monoChannel = buffer.getChannelData(0);
 
 		// Fill buffer
 		const volume = this.volume;
@@ -128,20 +127,17 @@ class ZxAudio {
 			const index = Math.floor((beep.time - startTime) * sampleRate);
 			// Fill with previous value
 			for (; i < index; i++) {
-				channel0[i] = sample;
-				channel1[i] = sample;
+				monoChannel[i] = sample;
 			}
 			// New value
 			value = beep.value;
 			sample = (2 * value - 1) * volume;
-			channel0[index] = sample;
-			channel1[index] = sample;
+			monoChannel[index] = sample;
 
 		}
 		// Fill rest of buffer
 		for (; i < bufLen; i++) {
-			channel0[i] = sample;
-			channel1[i] = sample;
+			monoChannel[i] = sample;
 		}
 		// Remember last value
 		this.lastBeeperSample = value;
