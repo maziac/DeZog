@@ -518,12 +518,11 @@ export class ZSimulationView extends BaseView {
 				for (let i = 0; i < buffer.length; i++) {
 					buffer[i] = {value, time: this.time};
 					// Next
-					//value = (value == 0) ? 1 : 0;
+					value = (value == 0) ? 1 : 0;
 					this.time += (this.displayTime / 1000) / buffer.length;
 				}
 				audio = {
 					sampleRate: 4096, // TODO
-					bufferSizeInSecs: 2 * this.displayTime / 1000,
 					buffer,
 					timeEnd: this.time	// The time the buffer ends, i.e. the current Z80 time. Z80 time starts at 0.
 				};

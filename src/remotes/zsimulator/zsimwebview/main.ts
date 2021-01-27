@@ -71,12 +71,12 @@ window.addEventListener('message', event => {
 
 				if (message.audio) {
 					//return;
-					const ctx = (zxAudio as any).ctx;
-					if(ctx)
-						console.log("main, currentTime: " + ctx.currentTime);
+					//const ctx = (zxAudio as any).ctx;
+					//if(ctx)
+					//	console.log("main, currentTime: " + ctx.currentTime);
 					const audio = message.audio;
-					zxAudio.setFrameRateAndBuffer(audio.sampleRate, audio.bufferSizeInSecs);
-					zxAudio.writeBeeperBuffer(audio.buffer, audio.timeEnd);
+					zxAudio.setFrameRateAndBuffer(audio.sampleRate);
+					zxAudio.writeBeeperSamples(audio.buffer, audio.timeEnd);
 				}
 			}
 			break;
