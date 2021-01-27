@@ -6,7 +6,7 @@ class ZxAudio {
 	protected MIN_LATENCY = 0.1;
 
 	// MAximum latency. If latency grows bigger audio frames are dropped.
-	protected MAX_LATENCY = 0.2;
+	protected MAX_LATENCY = 0.2;	// TODO: not used yet
 
 	// The audio context.
 	protected ctx: AudioContext;
@@ -29,44 +29,13 @@ class ZxAudio {
 	/**
 	 * Constructor.
 	 */
-	constructor() {
+	constructor(sampleRate: number) {
 		this.volume = 1.0;
-		this.sampleRate = 0;
-	}
-
-
-	/**
-	 * Returns the time since start (= first packet).
-	 * @returns time in secs
-	 */
-	protected getAudioTime(): number {
-		const time = this.ctx.currentTime - this.audioCtxStartTime;
-		if (time < 0)
-			return 0;
-		return time;
-	}
-
-
-	/**
-	 * Sets the sample rate and buffer size.
-	 * If values are same as already set this function returns immediately.
-	 * If values are different the ZxAudio is reconfigured.
-	 * Usually this is set only once per session.
-	 */
-	public setFrameRateAndBuffer(sampleRate: number) {
-		if (this.sampleRate == sampleRate)
-			return;	// No change
-
-		try {
-			this.ctx = new AudioContext({sampleRate});
-			this.sampleRate = this.ctx.sampleRate;
-			this.lastBeeperSample = 1;
-			this.z80TimeOffset = this.MIN_LATENCY;
-			this.audioCtxStartTime = this.ctx.currentTime;
-		}
-		catch (e) {
-			console.log(e);
-		}
+		this.sampleRate = sampleRate;
+		this.ctx = new AudioContext({sampleRate});
+		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
+		this.lastBeeperSample = 1;
+		this.z80TimeOffset = this.MIN_LATENCY;
 	}
 
 
@@ -104,43 +73,51 @@ class ZxAudio {
 	// the longer the audio is played.
 	protected z80TimeOffset: number;
 
-	public writeBeeperSamples(beeperBuffer: Array<{value: number, time: number}>, timeEnd: number) {
-		// Determine buffer length
-		const sampleRate = this.sampleRate;
-		const startTime = this.lastZ80Time;
-		const bufTime = (timeEnd - startTime);
-		const bufLen = Math.floor(bufTime * sampleRate);  // TODO: +0.5 ???
-		// Safety check
-		if (bufLen <= 0)
-			return;	// No samples
+
+	/**
+	 * Creates an audio frame from the beeperBuffer.
+	 * The beeper buffer structure:
+	 * 1rst word: beeper start value: 0 or 1
+	 * An array of lengths, after each length the beeper value alternates.
+	 * The beeper array size and length may vary.
+	 * So does the resulting frame.
+	 * The frame is set to start in the near future.
+	 * The sample rate of the originating values is the same as the target sample rate.
+	 */
+	public writeBeeperSamples(beeperBuffer: Uint16Array) {
+		const bufLen = beeperBuffer.length;
+		if (bufLen <= 1)
+			return; 	// No samples
+
+		// Store the start time on the first packet
+		if (this.audioCtxStartTime == undefined)
+			this.audioCtxStartTime = this.ctx.currentTime;
+
+		// Get start beeper value
+		let audioValue = (2 * beeperBuffer[0] - 1) * this.volume;
+
+		// Calculate size of required frame buffer
+		let totalLength = -beeperBuffer[0];
+		for (const len of beeperBuffer) {
+			totalLength += len;
+		}
 
 		// Create a buffer
-		const buffer = this.ctx.createBuffer(1, bufLen, sampleRate);
+		const buffer = this.ctx.createBuffer(1, totalLength, this.sampleRate);
 		const monoChannel = buffer.getChannelData(0);
 
 		// Fill buffer
-		const volume = this.volume;
-		let value = this.lastBeeperSample;
-		let i = 0;
-		let sample = (2 * value - 1) * volume;;
-		for (const beep of beeperBuffer) {
-			const index = Math.floor((beep.time - startTime) * sampleRate);
-			// Fill with previous value
-			for (; i < index; i++) {
-				monoChannel[i] = sample;
+		let k = 0;
+		for (let i = 1; i < bufLen; i++) {
+			// Read length
+			const length = beeperBuffer[i];
+			// Set all samples to the same value
+			for (let j = length; j > 0; j--) {
+				monoChannel[k++] = audioValue;
 			}
-			// New value
-			value = beep.value;
-			sample = (2 * value - 1) * volume;
-			monoChannel[index] = sample;
-
+			// Alternate for next length
+			audioValue *= -1;
 		}
-		// Fill rest of buffer
-		for (; i < bufLen; i++) {
-			monoChannel[i] = sample;
-		}
-		// Remember last value
-		this.lastBeeperSample = value;
 
 		// Create audio source
 		const bufferSource = this.ctx.createBufferSource();
@@ -148,22 +125,16 @@ class ZxAudio {
 		bufferSource.connect(this.ctx.destination);
 
 		// Add buffer time
-		this.totalBufferedTime += bufTime;
+		this.totalBufferedTime += totalLength;
 
 		// Listen for end
 		bufferSource.addEventListener('ended', () => {
 			// Correct the currently buffered time
-			this.totalBufferedTime -= bufTime;
+			this.totalBufferedTime -= totalLength;
 		});
 
 		// Play (in near future)
-		const frameStartTime = this.audioCtxStartTime + startTime + this.z80TimeOffset;
+		const frameStartTime = this.audioCtxStartTime + this.z80TimeOffset;
 		bufferSource.start(frameStartTime);
-
-		// Remember end time
-		this.lastZ80Time = timeEnd;
 	}
 }
-
-let zxAudio = new ZxAudio();
-//zxAudio.start();

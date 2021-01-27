@@ -164,7 +164,11 @@ export interface ZSimType {
 	// If enabled it shows the contents of the ZX Spectrum screen.
 	ulaScreen: boolean,
 
-	// If enabled the ZX 128K memory banks can be paged in. Use this to simulate a ZX 128K.
+	// Enables ZX Spectrum sound through it's beeper.
+	zxBeeper: boolean,
+
+	// The sample rate used for audio. Defaults to 22050 Hz.
+	audioSampleRate: number,
 
 	// Memory model: ZX48k, ZX128K or ZXNext.
 	// - "RAM": One memory area of 64K RAM, no banks.
@@ -395,6 +399,10 @@ export class Settings {
 			Settings.launch.zsim.kempstonJoy = false;
 		if (Settings.launch.zsim.ulaScreen == undefined)
 			Settings.launch.zsim.ulaScreen = false;
+		if (Settings.launch.zsim.zxBeeper == undefined)
+			Settings.launch.zsim.zxBeeper = false;
+		if (Settings.launch.zsim.audioSampleRate == undefined)
+			Settings.launch.zsim.audioSampleRate = 22050;
 		if (Settings.launch.zsim.cpuLoadInterruptRange == undefined)
 			Settings.launch.zsim.cpuLoadInterruptRange = 1;
 		if (Settings.launch.zsim.visualMemory == undefined)

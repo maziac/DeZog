@@ -510,22 +510,9 @@ export class ZSimulationView extends BaseView {
 				};
 			}
 
-			{
+			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
-				// samples to add to the circular buffer.
-				const buffer = new Array<{value: number, time: number}>(10);
-				let value = 0;
-				for (let i = 0; i < buffer.length; i++) {
-					buffer[i] = {value, time: this.time};
-					// Next
-					value = (value == 0) ? 1 : 0;
-					this.time += (this.displayTime / 1000) / buffer.length;
-				}
-				audio = {
-					sampleRate: 4096, // TODO
-					buffer,
-					timeEnd: this.time	// The time the buffer ends, i.e. the current Z80 time. Z80 time starts at 0.
-				};
+				audio = this.simulator.getBeeperBuffer();
 			}
 
 			// Create message to update the webview
@@ -754,6 +741,17 @@ width:70px;
 	const screenImg=document.getElementById("screen_img_id");
 	const screenImgContext = screenImg.getContext("2d");
 	const screenImgImgData = screenImgContext.createImageData(UlaScreen.SCREEN_WIDTH, UlaScreen.SCREEN_HEIGHT);
+</script>
+`;
+		}
+
+
+		// Add code for the ZX beeper
+		if (Settings.launch.zsim.zxBeeper) {
+			html += `
+<script>
+	<!-- Singleton for audio -->
+	const zxAudio = new ZxAudio(${Settings.launch.zsim.audioSampleRate});
 </script>
 `;
 		}

@@ -6,7 +6,7 @@ declare var visualMem: HTMLCanvasElement;
 declare var screenImgContext: CanvasRenderingContext2D;
 declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
-//declare var zxAudio: ZxAudio;
+declare var zxAudio: ZxAudio;
 
 
 let countOfProcessedMessages = 0;
@@ -71,12 +71,9 @@ window.addEventListener('message', event => {
 
 				if (message.audio) {
 					//return;
-					//const ctx = (zxAudio as any).ctx;
-					//if(ctx)
 					//	console.log("main, currentTime: " + ctx.currentTime);
 					const audio = message.audio;
-					zxAudio.setFrameRateAndBuffer(audio.sampleRate);
-					zxAudio.writeBeeperSamples(audio.buffer, audio.timeEnd);
+					zxAudio.writeBeeperSamples(audio);
 				}
 			}
 			break;

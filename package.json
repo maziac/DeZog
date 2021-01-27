@@ -362,6 +362,16 @@
 									"description": "If enabled it shows the contents of the ZX Spectrum screen.",
 									"default": true
 								},
+								"zxBeeper": {
+									"type": "boolean",
+									"description": "Enables ZX Spectrum sound through it's beeper.",
+									"default": true
+								},
+								"audioSampleRate": {
+									"type": "number",
+									"description": "The sample rate used for audio. Defaults to 22050 Hz.",
+									"default": 22050
+								},
 								"cpuLoadInterruptRange": {
 									"type": "number",
 									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
