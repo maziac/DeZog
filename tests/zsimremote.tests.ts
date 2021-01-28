@@ -178,19 +178,19 @@ suite('ZSimRemote', () => {
 
 		test('ula switching', () => {
 			// @ts-ignore: protected
-			let address = zsim.ulaScreen.ulaScreenAddress;
+			let address = zsim.ulaScreenAddress;
 			assert.equal(5 * 0x4000, address);
 
 			// Shadow ULA, Bank 7
 			zsim.ports.write(0x7FFD, 0b01000);
 			// @ts-ignore: protected
-			address = zsim.ulaScreen.ulaScreenAddress;
+			address = zsim.ulaScreenAddress;
 			assert.equal(7 * 0x4000, address);
 
 			// Normal ULA, Bank 5
 			zsim.ports.write(0x7FFD, 0);
 			// @ts-ignore: protected
-			address = zsim.ulaScreen.ulaScreenAddress;
+			address = zsim.ulaScreenAddress;
 			assert.equal(5 * 0x4000, address);
 		});
 

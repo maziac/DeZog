@@ -202,8 +202,9 @@ API.log('Custom code: init end');
 API.log('-------------------------------------\\n');`,
 			this.context);	// This fills the context with the complete program.
 
-		this.context.tmpAPI = undefined;
-		this.context = undefined;
+		// Required for test case
+		//this.context.tmpAPI = undefined;
+		//this.context = undefined;
 	}
 
 

@@ -22,6 +22,7 @@ import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
 import {CustomCode} from './customcode';
 import {readFileSync} from 'fs';
+import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 
 
 
@@ -83,8 +84,8 @@ export class ZSimRemote extends DzrpRemote {
 	// I.e. normally 0x4000, but could be 7*16=0x1C000 for ZX128.
 	protected ulaScreenAddress: number;
 
-	// ZX beeper audio simulation.
-	//protected zxAudio: ZxAudio;
+	// ZX Beeper simulation
+	protected zxBeeper: ZxBeeper;
 
 
 	/// Constructor.
@@ -261,21 +262,16 @@ export class ZSimRemote extends DzrpRemote {
 
 		// Check if beeper enabled
 		if (Settings.launch.zsim.zxBeeper) {
-			// Create the buffer
-			this.sampleRate = 22050;
-			const bufferSize = 2*Math.floor(this.sampleRate / Settings.launch.zsim.displayFrequency);	// *2: Allow for jitter. The buffer is not fully used.
-			this.beeperBuffer = new Uint16Array(bufferSize);
-			this.lastBeeperIndex = 0;
-			this.lastBeeperTstates = this.passedTstates;
-			this.lastBeeperValue = true;
+			// Create the beeper simulation
+			this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.displayFrequency);
 			// Add the port
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
-				// The port 0xFE. Every even port address will do
+				// The port 0xFE. Every even port address will do.
 				if (port & 0x01)
 					return undefined;
 				// Yes, it's an even address.
 				// write beeper (bit 4, EAR)
-				this.writeBeeper((value & 0b10000) != 0);
+				this.zxBeeper.writeBeeper(this.passedTstates, (value & 0b10000) != 0);
 			});
 		}
 		//this.zxAudio = new ZxAudio();
@@ -922,76 +918,16 @@ export class ZSimRemote extends DzrpRemote {
 
 
 	/**
-	 * Sound output.
-	 * Writes to the beeper (EAR).
-	 * @param on true/false. On or off.
-	 */
-	protected lastBeeperValue = true;
-	protected lastBeeperTstates = 0;
-	protected lastBeeperIndex = 0;
-	protected lastBeeperTimeIndex = 0;
-
-	// The beeper value the frame starts with.
-	protected startBeeperValue = 0;
-	protected beeperBuffer: Uint16Array;
-	protected sampleRate = 22050;	// TODO
-	protected writeBeeper(on: boolean) {
-		// Only if changed
-		if (on != this.lastBeeperValue) {
-			// Set length of last value
-			this.setLastBeeperValue();
-			// Remember value
-			this.lastBeeperValue = on;
-		}
-	}
-
-
-	/**
-	 * Sets the length of the last beeper value.
-	 * Length is calculated from current t-states to
-	 * last (beeper) t-states.
-	 * Length is put in array in samples (at sampleRate).
-	 * If index has not advanced far enough (1 sample) nothing is stored.
-	 */
-	protected setLastBeeperValue() {
-		// Calculate time
-		const time = (this.passedTstates - this.lastBeeperTstates) / this.z80Cpu.cpuFreq;
-		let timeIndex = Math.floor(time * this.sampleRate);
-		let length = timeIndex - this.lastBeeperTimeIndex;
-		if (length == 0)
-			return;
-
-		// Check for max
-		const bufMax = this.beeperBuffer.length;
-		if (length >= bufMax)
-			length = bufMax - 1;
-
-		// Set buffer
-		this.beeperBuffer[this.lastBeeperIndex++] = length;
-	}
-
-
-	/**
 	 * Returns the buffer with beeper values.
-	 * Fills the remaining samples before returning.
-	 * @returns UInt16Array of beeper lengths.
-	 * First value is the start beeper value (0 or 1).
-	 * Then an array of lengths follow, each indicating how long
+	 * @returns Structure with:
+	 * time: The start time of the buffer
+	 * startValue: of the beeper (on/off)
+	 * buffer: UInt16Array of beeper lengths, each indicating how long
 	 * (in samples) the previous value lasted.
 	 */
-	public getBeeperBuffer(): Uint16Array {
-		// Set length of last value
-		this.setLastBeeperValue();
-
-		// Copy buffer
-		const buffer = new Uint16Array(1 + this.lastBeeperIndex);
-		buffer.set(this.beeperBuffer.slice(0, this.lastBeeperIndex), 0);
-		buffer[0] = this.startBeeperValue ? 1 : 0;
-
-		// Return
-		return buffer;
+	public getBeeperBuffer(): BeeperBuffer {
+		return this.zxBeeper.getBeeperBuffer(this.passedTstates);
 	}
-
 
 
 	/**
