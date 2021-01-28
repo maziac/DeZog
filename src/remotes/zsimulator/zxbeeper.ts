@@ -138,24 +138,34 @@ export class ZxBeeper {
 	 * (in samples) the previous value lasted.
 	 */
 	public getBeeperBuffer(passedTstates: number): BeeperBuffer {
+		// Calculate time
+		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
+		let timeIndex = Math.floor(time * this.sampleRate);
+		if (timeIndex >= this.beeperLenBuffer.length) {
+			// This would result in a "normal" audio frame buffer bigger than beeperLenBuffer.length
+			// which is 2x the normal update frequency.
+			// In this case the buffer is "full" and nothing is added.
+			timeIndex = this.beeperLenBuffer.length;
+		}
 		// Set length of last value.
-		this.setLastBeeperValue(passedTstates);
+		let length = timeIndex - this.lastBeeperTimeIndex;
+		if(length>0)
+			this.beeperLenBuffer[this.lastBeeperIndex++] = length;
 
 		// Copy buffer
 		const buffer = new Uint16Array(this.lastBeeperIndex);
 		buffer.set(this.beeperLenBuffer.slice(0, this.lastBeeperIndex), 0);
 
-		// Caclulate total length of packet
+		// Calculate total length of packet
 		let totalLength = 0;
-		for (const len of this.beeperLenBuffer) {
+		for (let i = this.lastBeeperIndex - 1; i >= 0; i--) {
+			const len = this.beeperLenBuffer[i];
 			totalLength += len;
 		}
 
-		// Calculate time, quantizize
-		const timeIndex = Math.floor(passedTstates * this.sampleRate / this.cpuFrequency);
-		const startTime = (timeIndex-totalLength) / this.sampleRate;
-
-		// Caclulate total length of packet
+		// Calculate time, quantize
+		const absTime = passedTstates / this.cpuFrequency
+		const startTime = absTime-totalLength / this.sampleRate;
 
 		// Return
 		return {
