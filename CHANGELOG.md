@@ -11,7 +11,8 @@
 	- ULA screen now supports flash color attribute (#44).
 	- "zxInterface2Joy": Enables the ports and the visuals for simulating ZX interface 2 joysticks.
 	- "kempstonJoy": Enables the port for a Kempston joystick at 0x1F.
-	- joystick simulation supports attached gamepads.
+	- Joystick simulation supports attached gamepads.
+	- Corrected T-states counting for HALT instruction.
 
 # 2.1.4
 - Settings names for 'logpanel's changed.

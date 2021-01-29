@@ -6,6 +6,7 @@ declare var visualMem: HTMLCanvasElement;
 declare var screenImgContext: CanvasRenderingContext2D;
 declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
+// @ts-ignore
 declare var zxAudio: ZxAudio;
 
 

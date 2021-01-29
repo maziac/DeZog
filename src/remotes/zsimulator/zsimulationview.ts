@@ -512,7 +512,9 @@ export class ZSimulationView extends BaseView {
 
 			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
-				audio = this.simulator.getBeeperBuffer();
+				const beeper = this.simulator.getBeeperBuffer();
+				if (beeper.totalLength > 0)
+					audio = beeper;
 			}
 
 			// Create message to update the webview

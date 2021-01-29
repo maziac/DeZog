@@ -165,7 +165,10 @@ export class ZxBeeper {
 
 		// Calculate time, quantize
 		const absTime = passedTstates / this.cpuFrequency
-		const startTime = absTime-totalLength / this.sampleRate;
+		const startTime = absTime - totalLength / this.sampleRate;
+
+		// Reset index
+		this.lastBeeperIndex = 0;
 
 		// Return
 		return {

@@ -867,7 +867,7 @@ export class DzrpRemote extends RemoteBase {
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
 					// Give vscode a little time
-					await this.timeWait.waitAtInterval();
+					// await this.timeWait.waitAtInterval();  // TODO: I think I do need it anymore
 
 					// Get registers
 					await this.getRegistersFromEmulator();

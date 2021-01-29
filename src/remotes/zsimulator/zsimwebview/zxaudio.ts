@@ -6,7 +6,7 @@ declare interface BeeperBuffer {
 	buffer: Uint16Array		// Contains the length of the beeper values.
 }
 
-class ZxAudio {
+export class ZxAudio {
 
 
 	// Start latency of the system.
@@ -45,10 +45,18 @@ class ZxAudio {
 	constructor(sampleRate: number) {
 		this.volume = 1.0;
 		this.sampleRate = sampleRate;
-		this.ctx = new AudioContext({sampleRate});
+		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
 		this.lastBeeperSample = 1;
 		this.z80TimeOffset = (this.MIN_LATENCY+this.MAX_LATENCY)/2;
+	}
+
+
+	/**
+	 * For testing this function is overwritten to return a mocked AudioContext.
+	 */
+	protected createAudioContext(sampleRate: number): AudioContext {
+		return new AudioContext({sampleRate});
 	}
 
 
@@ -82,7 +90,8 @@ class ZxAudio {
 			this.audioCtxStartTime = this.ctx.currentTime;
 
 		// Get start beeper value
-		let audioValue = (2 * beeperBuffer[0] - 1) * this.volume;
+		const value = (beeperBuffer.startValue) ? 1 : -1;
+		let audioValue = value * this.volume;
 
 		// Create a buffer
 		const totalLength = beeperBuffer.totalLength;
@@ -105,13 +114,8 @@ class ZxAudio {
 		bufferSource.buffer = buffer;
 		bufferSource.connect(this.ctx.destination);
 
-
-		// Listen for end
-		//bufferSource.addEventListener('ended', () => {
-		//});
-
 		// Play (in near future)
-		const frameStartTime = this.audioCtxStartTime + this.z80TimeOffset;
+		const frameStartTime = this.audioCtxStartTime + this.z80TimeOffset + beeperBuffer.time;
 		bufferSource.start(frameStartTime);
 	}
 }

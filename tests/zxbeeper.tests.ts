@@ -4,12 +4,10 @@ import {ZxBeeper} from '../src/remotes/zsimulator/zxbeeper';
 
 
 suite('ZxBeeper', () => {
-	let zxBeeper: ZxBeeper;
-	let zxBeeperAny: any;
 
 	test('constructor', () => {
-		zxBeeper = new ZxBeeper(3500000, 22050, 50);
-		zxBeeperAny = zxBeeper as any;
+		let zxBeeper = new ZxBeeper(3500000, 22050, 50);
+		let zxBeeperAny = zxBeeper as any;
 		assert.equal(zxBeeperAny.sampleRate, 22050);
 		assert.equal(zxBeeperAny.cpuFrequency, 3500000);
 		assert.equal(zxBeeperAny.lastBeeperTstates, 0);
@@ -35,8 +33,8 @@ suite('ZxBeeper', () => {
 		test('Add samples', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
 			assert.equal(zxBeeperAny.lastBeeperTimeIndex, 0);
@@ -71,8 +69,8 @@ suite('ZxBeeper', () => {
 		test('max buffer size', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
 			assert.equal(zxBeeperAny.lastBeeperTimeIndex, 0)
@@ -97,8 +95,8 @@ suite('ZxBeeper', () => {
 		test('write samples', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 
 			// Initial conditions
 			assert.equal(zxBeeperAny.lastBeeperValue, true);
@@ -130,8 +128,8 @@ suite('ZxBeeper', () => {
 		test('different values, same sample', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 
 			// Initial conditions
 			assert.equal(zxBeeperAny.lastBeeperValue, true);
@@ -174,8 +172,8 @@ suite('ZxBeeper', () => {
 		test('different values, same sample, at start', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 
 			// Initial conditions
 			assert.equal(zxBeeperAny.lastBeeperValue, true);
@@ -215,8 +213,8 @@ suite('ZxBeeper', () => {
 			const sampleRate = 22000;
 
 			// Initial conditions
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 			assert.equal(zxBeeperAny.lastBeeperValue, true);
 			assert.equal(zxBeeperAny.startBeeperValue, true);
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
@@ -240,8 +238,8 @@ suite('ZxBeeper', () => {
 			const sampleRate = 22000;
 
 			// Initial conditions
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
 			assert.equal(zxBeeperAny.lastBeeperValue, true);
 			assert.equal(zxBeeperAny.startBeeperValue, true);
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
@@ -261,7 +259,6 @@ suite('ZxBeeper', () => {
 			assert.equal(result.buffer.length, 1);
 			assert.equal(zxBeeperAny.lastBeeperValue, false);
 			assert.equal(zxBeeperAny.startBeeperValue, false);
-			assert.equal(zxBeeperAny.lastBeeperIndex, 1);
 
 			// One value, true
 			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
@@ -282,8 +279,8 @@ suite('ZxBeeper', () => {
 			const sampleRate = 22000;
 
 			// Almost max value
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50, 0);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50, 0);
+			let zxBeeperAny = zxBeeper as any;
 			const bufMax = zxBeeperAny.beeperLenBuffer.length;
 			let time = ((bufMax - 1) / sampleRate) * cpuFreq + 0.1;
 			zxBeeperAny.writeBeeper(time, false);
@@ -308,14 +305,12 @@ suite('ZxBeeper', () => {
 			assert.equal(result.buffer.length, 1);
 		});
 
-
 		test('start time', () => {
 			const cpuFreq = 3500000;
 			const sampleRate = 22000;
 
 			// Initial conditions
-			zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50, 10 / sampleRate * cpuFreq);
-			zxBeeperAny = zxBeeper as any;
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50, 10 / sampleRate * cpuFreq);
 
 			// Get samples
 			let result = zxBeeper.getBeeperBuffer(100 / sampleRate * cpuFreq + 0.1);
@@ -323,7 +318,18 @@ suite('ZxBeeper', () => {
 			assert.ok(Math.abs(result.time - 10 / sampleRate) < q);
 		});
 
-// max buffer
+		test('reset index', () => {
+			const cpuFreq = 3500000;
+			const sampleRate = 22000;
+
+			// One value, false
+			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50);
+			let zxBeeperAny = zxBeeper as any;
+			zxBeeperAny.writeBeeper(0.01 * cpuFreq, false);
+			assert.notEqual(zxBeeperAny.lastBeeperIndex, 0);
+			zxBeeper.getBeeperBuffer(100 / sampleRate * cpuFreq + 0.1);
+			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
+		});
 
 	});
 });

@@ -577,7 +577,6 @@ export class ZSimRemote extends DzrpRemote {
 			this.z80Cpu.error=undefined;
 			let breakReasonString='';
 			let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
-			let counter = 2000;
 			//let bp;
 			let breakAddress;
 			let slots;
@@ -587,9 +586,10 @@ export class ZSimRemote extends DzrpRemote {
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const prevTime = Date.now();
 			const prevTstates = this.passedTstates;
+			const leaveAtTstates = prevTstates + 2000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
 			try {
 				// Run the Z80-CPU in a loop
-				for (; counter>0; counter--) {
+				while (this.passedTstates < leaveAtTstates) {
 					// Store current registers and opcode
 					const prevPc=this.z80Cpu.pc;
 					if (CpuHistory)
@@ -605,7 +605,7 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Execute one instruction
-					const tStates=this.z80Cpu.execute();
+					const tStates = this.z80Cpu.execute();
 
 					// For custom code: Increase passed t-states
 					this.passedTstates += tStates;
@@ -707,38 +707,14 @@ export class ZSimRemote extends DzrpRemote {
 				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 			};
 
-			if (counter!=0) {
+			if (this.passedTstates < leaveAtTstates) {
 				// Stop immediately
-				//let condition='';
 				this.cpuRunning=false;
-				// Get breakpoint Address
-				/*
-				if (bp) {
-					breakAddress=bp.address;
-					//condition=bp.condition;
-				}
-				*/
-
-				// Create reason string
-				//breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, condition, breakReasonString);
-
 				// Send Notification
-				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
 				Utility.assert(this.continueResolve);
 				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
-
 				return;
 			}
-
-			// Audio
-			/*
-			if (beeperValue == 0)
-				beeperValue = 1;
-			else
-				beeperValue = 0;
-			const time = this.passedTstates / this.z80Cpu.cpuFreq;
-			this.zxAudio.writeOneBeeperSample(beeperValue, time);
-			*/
 
 			// Check if the CPU frequency should be simulated as well
 			if (limitSpeed) {
