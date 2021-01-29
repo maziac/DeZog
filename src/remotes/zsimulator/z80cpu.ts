@@ -12,7 +12,7 @@ export class Z80Cpu {
 	protected z80: any;
 
 	// Time until next interrupt.
-	protected remaingInterruptTstates: number;
+	protected remainingInterruptTstates: number;
 
 	// Time for interrupt in T-States
 	protected INTERRUPT_TIME_AS_T_STATES: number;
@@ -69,7 +69,7 @@ export class Z80Cpu {
 		this.ports=ports;
 		this.cpuFreq = Settings.launch.zsim.cpuFrequency;	// e.g. 3500000.0 for 3.5MHz.
 		this.INTERRUPT_TIME_AS_T_STATES=0.02*this.cpuFreq;  // 20ms * 3.5 MHz
-		this.remaingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
+		this.remainingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
 		/*
 		IM 0: Executes an instruction that is placed on the data bus by a peripheral.
 		IM 1: Jumps to address &0038
@@ -126,7 +126,8 @@ export class Z80Cpu {
 		const z80=this.z80;
 
 		// Handle instruction
-		const tStates=z80.run_instruction();
+		const tStates = z80.run_instruction();
+		let accumulatedTstates = tStates;
 
 		// Statistics
 		if (z80.halted) {
@@ -137,8 +138,8 @@ export class Z80Cpu {
 				// The t-states are added and the interrupt is executed immediately.
 				// So only one HALT is ever executed, skipping execution of the others
 				// saves processing time.
-				this.cpuWithHaltTstates += this.remaingInterruptTstates - tStates;
-				this.remaingInterruptTstates = 0;
+				accumulatedTstates = this.remainingInterruptTstates;
+				this.remainingInterruptTstates = 0;
 			}
 			else {
 				// Simply count the HALT instruction, no optimization
@@ -151,13 +152,13 @@ export class Z80Cpu {
 		}
 
 		// Add t-states
-		this.cpuTstatesCounter+=tStates;
-		this.cpuWithHaltTstates+=tStates;
+		this.cpuTstatesCounter += accumulatedTstates;
+		this.cpuWithHaltTstates += accumulatedTstates;
 		// Interrupt
-			this.remaingInterruptTstates-=tStates;
-		if (this.remaingInterruptTstates<=0) {
+		this.remainingInterruptTstates-=tStates;
+		if (this.remainingInterruptTstates<=0) {
 			// Interrupt
-			this.remaingInterruptTstates=this.INTERRUPT_TIME_AS_T_STATES;
+			this.remainingInterruptTstates = this.INTERRUPT_TIME_AS_T_STATES;
 			// Really generate interrupt?
 			if (this.vsyncInterrupt) {
 				// Inform e.g. ZSimulationView about interrupt, for synching of the display
@@ -167,7 +168,7 @@ export class Z80Cpu {
 			}
 		}
 
-		return tStates;
+		return accumulatedTstates;
 	}
 
 
@@ -538,7 +539,7 @@ export class Z80Cpu {
 		//memBuffer.write8(s.cycle_counter);
 
 		// Additional state
-		memBuffer.write32(this.remaingInterruptTstates);
+		memBuffer.write32(this.remainingInterruptTstates);
 	}
 
 
@@ -596,7 +597,7 @@ export class Z80Cpu {
 		z80.setState(r);
 
 		// Additional state
-		this.remaingInterruptTstates=memBuffer.read32();
+		this.remainingInterruptTstates=memBuffer.read32();
 
 		// Reset statistics
 		this.cpuLoadTstates=0;
