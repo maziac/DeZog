@@ -11,10 +11,10 @@ export class ZxAudio {
 
 
 	// Start latency of the system.
-	protected MIN_LATENCY = 0.5; //0.1;
+	protected MIN_LATENCY = 0.02; //0.1;
 
 	// Maximum latency. If latency grows bigger audio frames are dropped.
-	protected MAX_LATENCY = 1; //0.2;	// TODO: not used yet
+	protected MAX_LATENCY = 0.03; //0.2;
 
 	// The audio context.
 	protected ctx: AudioContext;
@@ -63,19 +63,21 @@ export class ZxAudio {
 	// The next frames start time.
 	protected nextFrameStartTime: number;
 
+	// The total length of unplayed samples. Used to limit the latency.
+	protected bufferedTime = 0;
 
 	/**
 	 * Constructor.
 	 */
 	constructor(sampleRate: number) {
 		//sampleRate = 22050;
-		this.volume = 1.0;
+		this.volume = 0.5;
 		this.sampleRate = sampleRate;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
 		this.lastBeeperSample = 1;
 		this.z80TimeOffset = (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
-		this.fixedFrameLength = Math.ceil(0.05 * this.sampleRate);	// 50 ms // TODO
+		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 
 		//this.writeBeeperSamples(undefined as any);
@@ -122,7 +124,8 @@ export class ZxAudio {
 		// Store the start time on the first packet
 		if (this.audioCtxStartTime == undefined) {
 			this.audioCtxStartTime = this.ctx.currentTime;
-			this.nextFrameStartTime = this.audioCtxStartTime + this.z80TimeOffset;
+			this.nextFrameStartTime = this.audioCtxStartTime + (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
+			this.bufferedTime = 0;
 		}
 
 		// Fill intermediate buffer
@@ -165,17 +168,60 @@ export class ZxAudio {
 			// Mark
 			//this.nextFrame[0] = 1.0;
 
-			// Create audio source
-			const bufferSource = this.ctx.createBufferSource();
-			bufferSource.buffer = this.nextBuffer;
-			bufferSource.connect(this.ctx.destination);
 
-			// Play (in near future)
-			bufferSource.start(this.nextFrameStartTime);
+			// Check next start frame time for upper limit.
+			// This happens if simulation is too fast.
+			// In this case the start time is reduced ba a few frames is reduced.
+			//this.bufferedTime = 0;	// TODO REMOVE
+			if (this.bufferedTime < this.MAX_LATENCY+2*this.fixedFrameTime) {
+				// Latency still OK:
+				// Create audio source
+				const bufferSource = this.ctx.createBufferSource();
+				bufferSource.buffer = this.nextBuffer;
+				bufferSource.connect(this.ctx.destination);
 
-			// Next frame
-			this.nextFrameStartTime += this.fixedFrameTime;
-			this.prepareNextFrame();
+				// End listener
+				const self = this;
+				bufferSource.addEventListener('ended', function () {
+					self.bufferedTime -= self.fixedFrameTime;
+					self.logPassedFrames.push({bufferedTime: self.bufferedTime});
+					if (self.bufferedTime <= self.fixedFrameTime) {
+						// Get last value
+						const audioBuffer = this.buffer!;
+						const frame = audioBuffer.getChannelData(0);
+						const lastSample = frame[frame.length - 1];
+						// Start gap filler
+						self.startGapFiller(lastSample);
+						// Reset
+					//	self.audioCtxStartTime = undefined as any;
+					}
+
+				});
+
+				// Play (in near future)
+				bufferSource.start(this.nextFrameStartTime);
+				this.bufferedTime += this.fixedFrameTime;
+
+				this.logBuf.push({
+					bufferedTime: this.bufferedTime,
+					nextFrameStartTime: this.nextFrameStartTime,
+					descr: "new frame",
+				});
+
+				// Next frame
+				this.nextFrameStartTime += this.fixedFrameTime;
+				this.prepareNextFrame();
+			}
+			else {
+				// Latency too high:
+				// Re-use buffer for next frame
+				this.lastFrameIndex = 0;
+				this.logBuf.push({
+					bufferedTime: this.bufferedTime,
+					nextFrameStartTime: this.nextFrameStartTime,
+					descr: "frame skipped",
+				});
+			}
 		}
 	}
 
@@ -187,5 +233,59 @@ export class ZxAudio {
 		this.nextBuffer = this.ctx.createBuffer(1, this.fixedFrameLength, this.sampleRate);
 		this.nextFrame = this.nextBuffer.getChannelData(0);
 		this.lastFrameIndex = 0;
+	}
+
+
+	/**
+	 * Creates a gap filler frame with all samples containing value
+	 * and starts it at the next starting time.
+	 * @param value The audio value to use.
+	 */
+	protected startGapFiller(value: number) {
+		// Create the (remaining) samples
+		const frame = this.nextFrame;
+		if (this.lastFrameIndex > 0)
+			value = frame[this.lastFrameIndex - 1];	// Use the last known value instead
+		for (let i = this.lastFrameIndex; i < this.fixedFrameLength; i++)
+			frame[i] = value;
+
+		// Start
+
+		// Create audio source
+		const bufferSource = this.ctx.createBufferSource();
+		bufferSource.buffer = this.nextBuffer;
+		bufferSource.connect(this.ctx.destination);
+
+		// End listener
+		const self = this;
+		bufferSource.addEventListener('ended', function () {
+			self.bufferedTime -= self.fixedFrameTime;
+			self.logPassedFrames.push({bufferedTime: self.bufferedTime});
+			if (self.bufferedTime <= self.fixedFrameTime) {
+				// Get last value
+				const audioBuffer = this.buffer!;
+				const frame = audioBuffer.getChannelData(0);
+				const lastSample = frame[frame.length - 1];
+				// Start gap filler
+				self.startGapFiller(lastSample);
+				// Reset
+			//	self.audioCtxStartTime = undefined as any;
+			}
+
+		});
+
+		// Play (in near future)
+		bufferSource.start(this.nextFrameStartTime);
+		this.bufferedTime += this.fixedFrameTime;
+
+		this.logBuf.push({
+			bufferedTime: this.bufferedTime,
+			nextFrameStartTime: this.nextFrameStartTime,
+			descr: "gap filler frame",
+		});
+
+		// Next frame
+		this.nextFrameStartTime += this.fixedFrameTime;
+		this.prepareNextFrame();
 	}
 }
