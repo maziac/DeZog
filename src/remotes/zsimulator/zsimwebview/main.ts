@@ -74,7 +74,7 @@ window.addEventListener('message', event => {
 					//return;
 					//	console.log("main, currentTime: " + ctx.currentTime);
 					const audio = message.audio;
-					//zxAudio.writeBeeperSamples(audio);
+					zxAudio.writeBeeperSamples(audio);
 				}
 			}
 			break;
