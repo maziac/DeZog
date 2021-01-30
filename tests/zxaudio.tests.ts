@@ -103,7 +103,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 0,
 				startValue: true,
-				buffer: new Uint16Array(0)
+				buffer: new Uint16Array(0),
+				bufferLen: 0
 			};
 			zxAudio.writeBeeperSamples(beeperBuffer);
 			assert.equal(zxAudio.audioCtxStartTime, undefined);
@@ -113,7 +114,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 10,
 				startValue: true,
-				buffer: new Uint16Array(1)
+				buffer: new Uint16Array(1),
+				bufferLen: 1
 			};
 			beeperBuffer.buffer[0] = 10;
 			zxAudio.writeBeeperSamples(beeperBuffer);
@@ -126,12 +128,14 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 0,
 				startValue: false,
-				buffer: undefined as any
+				buffer: undefined as any,
+				bufferLen: 0
 			};
 			const lengths = [5, 7, 2, 5, 1];
 			for (const l of lengths)
 				beeperBuffer.totalLength += l;
 			beeperBuffer.buffer = new Uint16Array(lengths);
+			beeperBuffer.bufferLen = beeperBuffer.buffer.length;
 			let value = (beeperBuffer.startValue) ? 1.0 : -1.0;
 			zxAudio.writeBeeperSamples(beeperBuffer);
 			let frame = zxAudio.ctxMock.channelBuffer[0];
@@ -153,7 +157,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 3,
 				startValue: true,
-				buffer: new Uint16Array(1)
+				buffer: new Uint16Array(1),
+				bufferLen: 1
 			};
 			beeperBuffer.buffer[0] = 3;
 			zxAudio.writeBeeperSamples(beeperBuffer);
@@ -168,7 +173,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 3,
 				startValue: false,
-				buffer: new Uint16Array(1)
+				buffer: new Uint16Array(1),
+				bufferLen: 1
 			};
 			beeperBuffer.buffer[0] = 3;
 			zxAudio.writeBeeperSamples(beeperBuffer);
@@ -189,7 +195,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 5,
 				startValue: true,
-				buffer: new Uint16Array(2)
+				buffer: new Uint16Array(2),
+				bufferLen: 2
 			};
 			beeperBuffer.buffer[0] = 2;
 			beeperBuffer.buffer[1] = 3;
@@ -215,7 +222,8 @@ suite('ZxAudio', () => {
 				time: 0,
 				totalLength: 1,
 				startValue: true,
-				buffer: new Uint16Array([1])
+				buffer: new Uint16Array([1]),
+				bufferLen: 1
 			};
 			zxAudio.writeBeeperSamples(beeperBuffer);
 			let startFrameTime = zxAudio.ctxMock.frameStartTime;
@@ -228,7 +236,8 @@ suite('ZxAudio', () => {
 				time: 10.5,
 				totalLength: 1,
 				startValue: true,
-				buffer: new Uint16Array([1])
+				buffer: new Uint16Array([1]),
+				bufferLen: 1
 			};
 			zxAudio.writeBeeperSamples(beeperBuffer);
 			startFrameTime = zxAudio.ctxMock.frameStartTime;
@@ -241,7 +250,8 @@ suite('ZxAudio', () => {
 				time: 10.0,
 				totalLength: 1,
 				startValue: true,
-				buffer: new Uint16Array([1])
+				buffer: new Uint16Array([1]),
+				bufferLen: 1
 			};
 			zxAudio.ctxMock.currentTimeMock = 100.0;
 			zxAudio.writeBeeperSamples(beeperBuffer);

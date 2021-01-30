@@ -186,7 +186,7 @@ export class ZSimulationView extends BaseView {
 	/**
 	 * A vertical sync was received from the Z80 simulation.
 	 * Is used to sync the display as best as possible:
-	 * On update the next time is store (nextUpdateTime).
+	 * On update the next time is stored (nextUpdateTime).
 	 * The lastVertSyncTime is stored with the current time.
 	 * On next vert sync the diff to lastVertSyncTime is calculated and extrapolated.
 	 * If the next time would be later as the next regular update, then the update is
@@ -201,6 +201,9 @@ export class ZSimulationView extends BaseView {
 		const diff = currentTime - this.lastVertSyncTime;
 		this.lastVertSyncTime = currentTime;
 		// Extrapolate
+
+		//return; //TODO REMOVE
+
 		if (currentTime + diff > this.nextUpdateTime) {
 			//Log.log("vertSync: do update");
 			// Do the update earlier, now at the vert sync

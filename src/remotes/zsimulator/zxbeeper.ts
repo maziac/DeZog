@@ -1,3 +1,4 @@
+//import {Log} from "../../log";
 
 /**
  * The buffer exchanged with the zsim simulator webview.
@@ -7,7 +8,8 @@ export interface BeeperBuffer {
 	time: number,			// The time the buffer starts (Z80 simulator time).
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
 	startValue: boolean,	// Beeper value start value for the buffer.
-	buffer: Uint16Array		// Contains the length of the beeper values.
+	buffer: Uint16Array,	// Contains the length of the beeper values.
+	bufferLen: number		// The length of buffer. For some reason buffer.length does not work in the webview.
 }
 
 
@@ -42,6 +44,8 @@ export class ZxBeeper {
 	// The used sample rate.
 	protected sampleRate: number;
 
+
+	protected logBuf = new Array<any>(); // TODO REMOVE
 
 	/**
 	 * Constructor.
@@ -92,7 +96,9 @@ export class ZxBeeper {
 	 * @param passedTstates The current t-states count.
 	 */
 	protected setLastBeeperValue(passedTstates: number) {
-		// Calculate time
+		// Calculate
+		//const lastBTstates = Math.floor(this.lastBeeperTstates);
+		//Log.log('passedTstates=' + passedTstates + ',  lastBeeperTstates=' + lastBTstates + ',  diff=' + (passedTstates - lastBTstates));
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
 		let timeIndex = Math.floor(time * this.sampleRate);
 		if (timeIndex >= this.beeperLenBuffer.length) {
@@ -137,6 +143,7 @@ export class ZxBeeper {
 	 * buffer: UInt16Array of beeper lengths, each indicating how long
 	 * (in samples) the previous value lasted.
 	 */
+	protected firstTime: number = 0;
 	public getBeeperBuffer(passedTstates: number): BeeperBuffer {
 		// Calculate time
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
@@ -158,24 +165,42 @@ export class ZxBeeper {
 
 		// Calculate total length of packet
 		let totalLength = 0;
-		for (let i = this.lastBeeperIndex - 1; i >= 0; i--) {
-			const len = this.beeperLenBuffer[i];
+		for (const len of buffer) {
 			totalLength += len;
 		}
 
 		// Calculate time, quantize
 		const absTime = passedTstates / this.cpuFrequency
 		const startTime = absTime - totalLength / this.sampleRate;
+//		const startTime = Math.floor(absTime * this.sampleRate - totalLength) / this.sampleRate;
 
-		// Reset index
+		// Set values
+		const diffTstates = totalLength / this.sampleRate * this.cpuFrequency;
+		this.lastBeeperTstates += diffTstates;
 		this.lastBeeperIndex = 0;
+		this.lastBeeperTimeIndex = 0;
+
+		// TODO REMOVE
+		if (!this.firstTime && totalLength > 0)
+			this.firstTime = Date.now() / 1000;
+
+		this.logBuf.push({
+			startTime: startTime,
+			dezogTime: Date.now() / 1000 - this.firstTime,
+			passedTstates: passedTstates,
+			passedtime: passedTstates / this.cpuFrequency,
+			totalLength: totalLength,
+			totalLengthTime: totalLength / this.sampleRate,
+			diffStates: diffTstates
+		});
 
 		// Return
 		return {
 			time: startTime,
 			totalLength,
 			startValue: this.startBeeperValue,
-			buffer
+			buffer,
+			bufferLen: buffer.length
 		};
 	}
 

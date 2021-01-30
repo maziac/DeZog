@@ -3,17 +3,18 @@ declare interface BeeperBuffer {
 	time: number,			// The time the buffer starts (Z80 simulator time).
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
 	startValue: boolean,	// Beeper value start value for the buffer.
-	buffer: Uint16Array		// Contains the length of the beeper values.
+	buffer: Uint16Array,		// Contains the length of the beeper values.
+	bufferLen: number		// The length of buffer. For some reason buffer.length does not work in the webview.
 }
 
 export class ZxAudio {
 
 
 	// Start latency of the system.
-	protected MIN_LATENCY = 0.1;
+	protected MIN_LATENCY = 0.5; //0.1;
 
 	// Maximum latency. If latency grows bigger audio frames are dropped.
-	protected MAX_LATENCY = 0.2;	// TODO: not used yet
+	protected MAX_LATENCY = 1; //0.2;	// TODO: not used yet
 
 	// The audio context.
 	protected ctx: AudioContext;
@@ -38,6 +39,11 @@ export class ZxAudio {
 	// the longer the audio is played.
 	protected z80TimeOffset: number;
 
+	// TODO REMOVE
+	protected logBuf = new Array<any>();
+
+	protected logPassedFrames = new Array<any>();
+	protected bufferedCount = 0;
 
 	/**
 	 * Constructor.
@@ -80,8 +86,9 @@ export class ZxAudio {
 	 * Creates an audio frame from the beeperBuffer.
 	 * @param beeperBuffer The beeper changes.
 	 */
+	protected markIndex = true;
 	public writeBeeperSamples(beeperBuffer: BeeperBuffer) {
-		const bufLen = beeperBuffer.buffer.length;
+		const bufLen = beeperBuffer.bufferLen;
 		if (bufLen == 0)
 			return; 	// No samples
 
@@ -91,6 +98,7 @@ export class ZxAudio {
 
 		// Get start beeper value
 		const value = (beeperBuffer.startValue) ? 1 : -1;
+		this.volume = 0.5;	// TODO: REMOVE
 		let audioValue = value * this.volume;
 
 		// Create a buffer
@@ -100,7 +108,10 @@ export class ZxAudio {
 
 		// Fill buffer
 		let k = 0;
-		for (const length of beeperBuffer.buffer) {
+		const tmpBuffer = beeperBuffer.buffer;
+		for (let i = 0; i < bufLen; i++) {	// TODO: Change to 'of' loop ?
+			// Get length
+			const length = tmpBuffer[i];
 			// Set all samples to the same value
 			for (let j = length; j > 0; j--) {
 				monoChannel[k++] = audioValue;
@@ -109,13 +120,50 @@ export class ZxAudio {
 			audioValue *= -1;
 		}
 
+		// "Mark" first sample
+		if (false) {
+			monoChannel[0] = 1;
+			if (this.markIndex) {
+				monoChannel[1] = 1;
+				monoChannel[2] = 1;
+				monoChannel[3] = 1;
+			}
+			this.markIndex = !this.markIndex;
+		}
+
 		// Create audio source
 		const bufferSource = this.ctx.createBufferSource();
 		bufferSource.buffer = buffer;
 		bufferSource.connect(this.ctx.destination);
 
+
+		// LOG REMOVE
+		bufferSource.addEventListener('ended', () => {
+			this.bufferedCount--;
+			this.logPassedFrames.push({
+				endedTime: this.ctx.currentTime - this.audioCtxStartTime,
+				bufferedCount: this.bufferedCount
+			});
+		});
+
 		// Play (in near future)
 		const frameStartTime = this.audioCtxStartTime + this.z80TimeOffset + beeperBuffer.time;
 		bufferSource.start(frameStartTime);
+
+		// REMOVE
+		this.bufferedCount++;
+		this.logBuf.push({
+			bufferedCount: this.bufferedCount,
+			startTime: beeperBuffer.time,
+			bufLen: bufLen,
+			totalLength: totalLength,
+			totalLengthTime: totalLength / this.sampleRate,
+		});
+
+
+		// Check
+		const currentCtxTime = this.ctx.currentTime;
+		if (frameStartTime < currentCtxTime)
+			console.log("framsStartTime lower than current time: " + (frameStartTime - currentCtxTime));
 	}
 }

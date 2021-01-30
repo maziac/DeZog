@@ -586,7 +586,7 @@ export class ZSimRemote extends DzrpRemote {
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const prevTime = Date.now();
 			const prevTstates = this.passedTstates;
-			const leaveAtTstates = prevTstates + 2000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
+			const leaveAtTstates = prevTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
@@ -728,7 +728,8 @@ export class ZSimRemote extends DzrpRemote {
 					if (remainingTime > 500)
 						remainingTime = 500;
 					// Wait additional time
-					await Utility.timeout(remainingTime);
+//					await Utility.timeout(remainingTime);
+					await Utility.timeout(remainingTime/2); // TODO: Remove
 				}
 			}
 
