@@ -104,7 +104,7 @@ export class ZxAudio {
 	 */
 	protected stop() {
 		// Fade
-//		this.startFadeToZero();
+		this.startFadeToZero();
 	}
 
 
@@ -131,6 +131,7 @@ export class ZxAudio {
 		let tmpBuffer = new Float32Array(beeperBuffer.totalLength);
 		let beeperValue = beeperBuffer.startValue;
 		let audioValue = this.getAudioValueForBeeper(beeperValue);
+		let lastValue = audioValue;
 		for (let i = 0; i < bufLen; i++) {
 			// Get length
 			const length = beeperLengths[i];
@@ -139,12 +140,13 @@ export class ZxAudio {
 				tmpBuffer[k++] = audioValue;
 			}
 			// Alternate for next length
+			lastValue = audioValue;
 			beeperValue = !beeperValue;
 			audioValue = this.getAudioValueForBeeper(beeperValue);
 		}
 
 		// Remember
-		this.lastEnqueuedAudioSampleValue = audioValue;
+		this.lastEnqueuedAudioSampleValue = lastValue;
 
 		// Check if audio frame can be played
 		let remainingLen = beeperBuffer.totalLength;
@@ -264,7 +266,6 @@ export class ZxAudio {
 	 * @param value The audio value to use.
 	 */
 	protected startFadeToZero() {
-		return;
 		// Check if necessary
 		if (this.lastEnqueuedAudioSampleValue == 0) {
 			// Fill recent frame wit zeroes
@@ -272,12 +273,15 @@ export class ZxAudio {
 			return;
 		}
 
+		// Remember
+		const prevLastEnqueuedAudioSampleValue = this.lastEnqueuedAudioSampleValue;
+
 		// Creates one or more audio frames, starts from the current (unfinished packet)
-		const fadingTime = 0.5;	// 500 ms
+		const fadingTime = 0.05;	// 50ms = 20Hz
 		const fadingLength = fadingTime * this.sampleRate;
 		let k = this.nextFrameIndex;
 		const frameLength = this.fixedFrameLength;
-		let value = this.lastEnqueuedAudioSampleValue;
+		let value = this.lastEnqueuedAudioSampleValue*.5;
 		let nextFrameStartTime;
 		for (let i = 0; i < fadingLength-1; i++) {
 			// Check for next frame
@@ -294,7 +298,7 @@ export class ZxAudio {
 				});
 			}
 			// Fill
-			this.nextFrame[k++] = value / frameLength;
+			this.nextFrame[k++] = value * (fadingLength-1-i) / fadingLength;
 		}
 		// Fill remaining with 0
 		if (k >= frameLength) {
@@ -306,6 +310,8 @@ export class ZxAudio {
 			for (; k < frameLength; k++)
 				this.nextFrame[k] = 0;
 		}
+		this.lastEnqueuedAudioSampleValue = 0;
+
 		// Play last frame
 		nextFrameStartTime = this.nextFrameStartTime;
 		this.playNextFrame(false);
@@ -318,7 +324,10 @@ export class ZxAudio {
 		});
 
 		// Next values in upper or lower half
-		this.samplesInTopHalf = (this.lastEnqueuedAudioSampleValue < 0);
+		this.samplesInTopHalf = (prevLastEnqueuedAudioSampleValue < 0);
+
+		// Next values will restart the context time
+		this.audioCtxStartTime = undefined as any;
 	}
 
 
@@ -346,6 +355,9 @@ export class ZxAudio {
 				}
 			});
 		}
+
+		// Mark
+		this.nextFrame[0] = -0.2;
 
 		// Store last value
 		this.lastEnqueuedAudioSampleValue = this.nextFrame[this.fixedFrameLength - 1];
