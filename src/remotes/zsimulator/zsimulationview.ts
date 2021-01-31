@@ -54,6 +54,11 @@ export class ZSimulationView extends BaseView {
 	protected lastVertSyncTime: number;
 
 
+	// This is used to send one beeper buffer with length 0 8to indicate stop of audio)
+	// but not more.
+	protected lastBeeperTotallength: number;
+
+
 	/**
 	 * Factory method which creates a new view and handles it's lifecycle.
 	 * I.e. the events.
@@ -97,6 +102,7 @@ export class ZSimulationView extends BaseView {
 		this.previousTstates = -1;
 		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
+		this.lastBeeperTotallength = 0;
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
@@ -516,8 +522,11 @@ export class ZSimulationView extends BaseView {
 			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
 				const beeper = this.simulator.getBeeperBuffer();
-				if (beeper.totalLength > 0)
+				if (beeper.totalLength > 0 || this.lastBeeperTotallength > 0) {
+					// Note: At least send one buffer with length of 0 to stop audio.
 					audio = beeper;
+				}
+				this.lastBeeperTotallength = beeper.totalLength;
 			}
 
 			// Create message to update the webview

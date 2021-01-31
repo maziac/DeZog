@@ -144,6 +144,14 @@ This also means that from now one a beeper value of 1 is output as 0 in the host
 
 
 
+# Load Measurements
+
+Some CPU load measurements done on a mac mini (late 2018) for a ZX 48K Spectrum simulation at normal speed ("limitSpeed" = true).
+
+|     | Without Simulation | Simulation without Display and Audio | Simulation with Display | Simulation with Audio | Simulation with Display and Audio |
+|---|:-:|:-:|:-:|:-:|:-:|
+| User  | 2% | 25% | 32% | 38% | 47% |
+|System | 2% |  3% |  4% |  5% |  8% |
 
 
 

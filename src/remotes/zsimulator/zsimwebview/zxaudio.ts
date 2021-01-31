@@ -64,6 +64,9 @@ export class ZxAudio {
 	// Contains the index insde the audio frame of the next to write.
 	protected nextFrameIndex: number;
 
+	// Value is used e.g. to fill gaps.
+	protected lastEnqueuedAudioSampleValue: number;
+
 
 	/**
 	 * Constructor.
@@ -77,6 +80,7 @@ export class ZxAudio {
 		this.z80TimeOffset = (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
+		this.lastEnqueuedAudioSampleValue = 0;
 
 		this.prepareNextFrame();
 	}
@@ -113,8 +117,15 @@ export class ZxAudio {
 
 	public writeBeeperSamples(beeperBuffer: BeeperBuffer) {
 		const bufLen = beeperBuffer.bufferLen;
-		if (bufLen == 0)
-			return; 	// No samples
+		if (bufLen == 0) {
+			// A buffer with length 0 means that there has been no time (t-states)
+			// progress in the simulation. I.e. while stepping.
+			// This shuts down audio i.e. audio frame generation.
+			// A fading (to 0) frame is generated at last.
+			const sample = this.getAudioValueForBeeper(beeperBuffer.startValue);
+			this.startFadeToZero(sample);
+			return;
+		}
 
 		// Store the start time on the first packet
 		if (this.audioCtxStartTime == undefined) {
@@ -127,7 +138,7 @@ export class ZxAudio {
 		const beeperLengths = beeperBuffer.buffer;
 		let k = 0;
 		let tmpBuffer = new Float32Array(beeperBuffer.totalLength);
-		let audioValue = (2 * (beeperBuffer.startValue ? 1 : 0) - 1) * this.volume;;
+		let audioValue = this.getAudioValueForBeeper(beeperBuffer.startValue);
 		for (let i = 0; i < bufLen; i++) {
 			// Get length
 			const length = beeperLengths[i];
@@ -165,41 +176,16 @@ export class ZxAudio {
 			// This happens if simulation is too fast.
 			// In this case the start time is reduced ba a few frames is reduced.
 			if (this.bufferedTime < this.MAX_LATENCY+2*this.fixedFrameTime) {
-				// Latency still OK:
-				// Create audio source
-				const bufferSource = this.ctx.createBufferSource();
-				bufferSource.buffer = this.nextBuffer;
-				bufferSource.connect(this.ctx.destination);
+				// Latency still OK: Play audio frame
+				const nextFrameStartTime = this.nextFrameStartTime;
+				this.playNextFrame();
 
-				// End listener
-				const self = this;
-				bufferSource.addEventListener('ended', function () {
-					self.bufferedTime -= self.fixedFrameTime;
-					self.logPassedFrames.push({bufferedTime: self.bufferedTime});
-					if (self.bufferedTime <= self.fixedFrameTime) {
-						// Get last value
-						const audioBuffer = this.buffer!;
-						const frame = audioBuffer.getChannelData(0);
-						const lastSample = frame[frame.length - 1];
-						// Start gap filler
-						self.startGapFiller(lastSample);
-					}
-
-				});
-
-				// Play (in near future)
-				bufferSource.start(this.nextFrameStartTime);
-				this.bufferedTime += this.fixedFrameTime;
-
+				// Log
 				this.logBuf.push({
 					bufferedTime: this.bufferedTime,
-					nextFrameStartTime: this.nextFrameStartTime,
+					nextFrameStartTime,
 					descr: "new frame",
 				});
-
-				// Next frame
-				this.nextFrameStartTime += this.fixedFrameTime;
-				this.prepareNextFrame();
 			}
 			else {
 				// Latency too high, too many buffers, drop frame.
@@ -226,6 +212,17 @@ export class ZxAudio {
 
 
 	/**
+	 * Returns an audio sample value [-1;1] from the boolean beeper value.
+	 * @param beeperValue true/false. 1/0
+	 * @returns [-1;1]
+	 */
+	protected getAudioValueForBeeper(beeperValue: boolean) {
+		const audioValue = (2 * (beeperValue ? 1 : 0) - 1) * this.volume;
+		return audioValue;
+	}
+
+
+	/**
 	 * Creates a gap filler frame with all samples containing value
 	 * and starts it at the next starting time.
 	 * @param value The audio value to use.
@@ -238,8 +235,59 @@ export class ZxAudio {
 		for (let i = this.nextFrameIndex; i < this.fixedFrameLength; i++)
 			frame[i] = value;
 
-		// Start
+		// For logging
+		const nextFrameStartTime = this.nextFrameStartTime;
 
+		// Start gap filler
+		this.playNextFrame();
+
+		// Log
+		this.logBuf.push({
+			bufferedTime: this.bufferedTime,
+			nextFrameStartTime,
+			descr: "gap filler frame",
+		});
+	}
+
+	/**
+	 * Creates a frame that fades to 0 if current value is 1 or -1.
+	 * The frame is enqueued. It will be the last played frame until another
+	 * writeBeeperSamples is received.
+	 * This happens while stepping in the simulator.
+	 * If current value is already 0 nothing happens, no fade required.
+	 * @param value The audio value to use.
+	 */
+	protected startFadeToZero(value: number) {
+		// Creates one or more audio frames, starts from the current (unfinished packet)
+		return;
+
+		// Create the (remaining) samples
+		const frame = this.nextFrame;
+		if (this.nextFrameIndex > 0)
+			value = frame[this.nextFrameIndex - 1];	// Use the last known value instead
+		for (let i = this.nextFrameIndex; i < this.fixedFrameLength; i++)
+			frame[i] = value;
+
+		// For logging
+		const nextFrameStartTime = this.nextFrameStartTime;
+
+		// Start gap filler
+		this.playNextFrame();
+
+		// Log
+		this.logBuf.push({
+			bufferedTime: this.bufferedTime,
+			nextFrameStartTime,
+			descr: "gap filler frame",
+		});
+	}
+
+
+	/**
+	 * Assumes the audio frame (this.nextFrame) is filled and enqueues it for
+	 * playing.
+	 */
+	protected playNextFrame() {
 		// Create audio source
 		const bufferSource = this.ctx.createBufferSource();
 		bufferSource.buffer = this.nextBuffer;
@@ -251,28 +299,21 @@ export class ZxAudio {
 			self.bufferedTime -= self.fixedFrameTime;
 			self.logPassedFrames.push({bufferedTime: self.bufferedTime});
 			if (self.bufferedTime <= self.fixedFrameTime) {
-				// Get last value
-				const audioBuffer = this.buffer!;
-				const frame = audioBuffer.getChannelData(0);
-				const lastSample = frame[frame.length - 1];
 				// Start gap filler
-				self.startGapFiller(lastSample);
+				self.startGapFiller(self.lastEnqueuedAudioSampleValue);
 			}
-
 		});
+
+		// Store last value
+		this.lastEnqueuedAudioSampleValue = this.nextFrame[this.fixedFrameLength - 1];
 
 		// Play (in near future)
 		bufferSource.start(this.nextFrameStartTime);
 		this.bufferedTime += this.fixedFrameTime;
 
-		this.logBuf.push({
-			bufferedTime: this.bufferedTime,
-			nextFrameStartTime: this.nextFrameStartTime,
-			descr: "gap filler frame",
-		});
-
 		// Next frame
 		this.nextFrameStartTime += this.fixedFrameTime;
 		this.prepareNextFrame();
 	}
+
 }
