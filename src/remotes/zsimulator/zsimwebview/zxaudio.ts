@@ -22,9 +22,6 @@ export class ZxAudio {
 	// The volume of all samples. [0;1.0]
 	protected volume: number;
 
-	// Stores the last beeper sample got from Z80.
-	protected lastBeeperSample: number;
-
 	// Stores the sample rate.
 	protected sampleRate: number;
 
@@ -43,8 +40,6 @@ export class ZxAudio {
 	protected logBuf = new Array<any>();
 
 	protected logPassedFrames = new Array<any>();
-	protected bufferedCount = 0;
-
 
 
 	// The next audio buffer. Samples are being prepared here.
@@ -66,6 +61,10 @@ export class ZxAudio {
 	// The total length of unplayed samples. Used to limit the latency.
 	protected bufferedTime = 0;
 
+	// Contains the index insde the audio frame of the next to write.
+	protected nextFrameIndex: number;
+
+
 	/**
 	 * Constructor.
 	 */
@@ -75,13 +74,10 @@ export class ZxAudio {
 		this.sampleRate = sampleRate;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
-		this.lastBeeperSample = 1;
 		this.z80TimeOffset = (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 
-		//this.writeBeeperSamples(undefined as any);
-		//this.writeBeeperSamples(undefined as any);
 		this.prepareNextFrame();
 	}
 
@@ -109,13 +105,12 @@ export class ZxAudio {
 		this.ctx.resume();
 	}
 
-	protected lastFrameIndex: number;
 
 	/**
 	 * Creates an audio frame from the beeperBuffer.
 	 * @param beeperBuffer The beeper changes.
 	 */
-	protected markIndex = true;
+
 	public writeBeeperSamples(beeperBuffer: BeeperBuffer) {
 		const bufLen = beeperBuffer.bufferLen;
 		if (bufLen == 0)
@@ -148,31 +143,27 @@ export class ZxAudio {
 		let offset = 0;
 		while (true) {
 			// Check if buffer full
-			if (this.lastFrameIndex + remainingLen < this.fixedFrameLength) {
+			if (this.nextFrameIndex + remainingLen < this.fixedFrameLength) {
 				// Buffer not yet full.
 				// Copy bytes to frame buffer
-				this.nextFrame.set(tmpBuffer.slice(offset, offset + remainingLen), this.lastFrameIndex);
-				this.lastFrameIndex += remainingLen;
+				this.nextFrame.set(tmpBuffer.slice(offset, offset + remainingLen), this.nextFrameIndex);
+				this.nextFrameIndex += remainingLen;
 				break;
 			}
 
 			// Buffer full
 			// Copy as much as possible bytes.
-			const fillLen = this.fixedFrameLength - this.lastFrameIndex;
-			if (this.lastFrameIndex + fillLen > this.fixedFrameLength)
-				console.log("errorddd");
-			this.nextFrame.set(tmpBuffer.slice(offset, offset + fillLen), this.lastFrameIndex);
+			const fillLen = this.fixedFrameLength - this.nextFrameIndex;
+			this.nextFrame.set(tmpBuffer.slice(offset, offset + fillLen), this.nextFrameIndex);
 			offset += fillLen;
 			remainingLen -= fillLen;
 
 			// Mark
 			//this.nextFrame[0] = 1.0;
 
-
 			// Check next start frame time for upper limit.
 			// This happens if simulation is too fast.
 			// In this case the start time is reduced ba a few frames is reduced.
-			//this.bufferedTime = 0;	// TODO REMOVE
 			if (this.bufferedTime < this.MAX_LATENCY+2*this.fixedFrameTime) {
 				// Latency still OK:
 				// Create audio source
@@ -192,8 +183,6 @@ export class ZxAudio {
 						const lastSample = frame[frame.length - 1];
 						// Start gap filler
 						self.startGapFiller(lastSample);
-						// Reset
-					//	self.audioCtxStartTime = undefined as any;
 					}
 
 				});
@@ -215,7 +204,7 @@ export class ZxAudio {
 			else {
 				// Latency too high, too many buffers, drop frame.
 				// Re-use buffer for next frame
-				this.lastFrameIndex = 0;
+				this.nextFrameIndex = 0;
 				this.logBuf.push({
 					bufferedTime: this.bufferedTime,
 					nextFrameStartTime: this.nextFrameStartTime,
@@ -232,7 +221,7 @@ export class ZxAudio {
 	protected prepareNextFrame() {
 		this.nextBuffer = this.ctx.createBuffer(1, this.fixedFrameLength, this.sampleRate);
 		this.nextFrame = this.nextBuffer.getChannelData(0);
-		this.lastFrameIndex = 0;
+		this.nextFrameIndex = 0;
 	}
 
 
@@ -244,9 +233,9 @@ export class ZxAudio {
 	protected startGapFiller(value: number) {
 		// Create the (remaining) samples
 		const frame = this.nextFrame;
-		if (this.lastFrameIndex > 0)
-			value = frame[this.lastFrameIndex - 1];	// Use the last known value instead
-		for (let i = this.lastFrameIndex; i < this.fixedFrameLength; i++)
+		if (this.nextFrameIndex > 0)
+			value = frame[this.nextFrameIndex - 1];	// Use the last known value instead
+		for (let i = this.nextFrameIndex; i < this.fixedFrameLength; i++)
 			frame[i] = value;
 
 		// Start
@@ -268,8 +257,6 @@ export class ZxAudio {
 				const lastSample = frame[frame.length - 1];
 				// Start gap filler
 				self.startGapFiller(lastSample);
-				// Reset
-			//	self.audioCtxStartTime = undefined as any;
 			}
 
 		});

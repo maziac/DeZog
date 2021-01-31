@@ -85,7 +85,6 @@ suite('ZxAudio', () => {
 		assert.notEqual(zxAudio.ctx, undefined);
 		assert.equal(zxAudio.ctx.sampleRate, 22000);
 		assert.equal(zxAudio.ctx.sampleRate, 22000);
-		assert.equal(zxAudio.lastBeeperSample, 1);
 		assert.ok(zxAudio.z80TimeOffset > zxAudio.MIN_LATENCY);
 		assert.ok(zxAudio.z80TimeOffset < zxAudio.MAX_LATENCY);
 		assert.equal(zxAudio.audioCtxStartTime, undefined);
