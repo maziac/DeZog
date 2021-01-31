@@ -195,7 +195,7 @@ export interface ZSimType {
 	limitSpeed: boolean;
 
 	// The update frequency of the simulator view in Hz.
-	displayFrequency: number,
+	updateFrequency: number,
 
 	// Default value that is returned for the ports (if no "HW" is configured).
 	// Usually 0xFF.
@@ -418,10 +418,17 @@ export class Settings {
 			Settings.launch.zsim.cpuFrequency = 3500000.0;	// 3500000.0 for 3.5MHz.
 		if (Settings.launch.zsim.limitSpeed == undefined)
 			Settings.launch.zsim.limitSpeed = true;
-		if (Settings.launch.zsim.displayFrequency == undefined)
-			Settings.launch.zsim.displayFrequency = 10.0;
+		if (Settings.launch.zsim.updateFrequency == undefined)
+			Settings.launch.zsim.updateFrequency = 10.0;
 		if (Settings.launch.zsim.defaultPortIn == undefined)
 			Settings.launch.zsim.defaultPortIn = 0xFF;
+
+		// Check update frequency ranges
+		if (Settings.launch.zsim.updateFrequency < 5.0)
+			Settings.launch.zsim.updateFrequency = 5.0;	// 5 Hz
+		else if (Settings.launch.zsim.updateFrequency > 100.0)
+			Settings.launch.zsim.updateFrequency = 100.0;	// 100 Hz
+
 
 		// zsim custom code
 		if (Settings.launch.zsim.customCode == undefined) {

@@ -397,9 +397,9 @@
 									"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
 									"default": false
 								},
-								"displayFrequency": {
+								"updateFrequency": {
 									"type": "number",
-									"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz.",
+									"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
 									"default": 10
 								},
 								"defaultPortIn": {

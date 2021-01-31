@@ -263,7 +263,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Check if beeper enabled
 		if (Settings.launch.zsim.zxBeeper) {
 			// Create the beeper simulation
-			this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.displayFrequency);
+			this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
 			// Add the port
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
 				// The port 0xFE. Every even port address will do.

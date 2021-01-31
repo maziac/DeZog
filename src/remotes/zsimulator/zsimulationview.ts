@@ -95,7 +95,7 @@ export class ZSimulationView extends BaseView {
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
 		this.previousTstates = -1;
-		this.displayTime = 1000 / Settings.launch.zsim.displayFrequency;
+		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
 
 		// ZX Keyboard?
