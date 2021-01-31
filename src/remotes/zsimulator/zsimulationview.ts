@@ -41,6 +41,9 @@ export class ZSimulationView extends BaseView {
 	// Used to check for changes.
 	protected previousTstates: number;
 
+	// Is set by 'updateDisplay' if cpu T-states do not advance anymore.
+	protected cpuStopped: boolean;
+
 	// The time interval to update the simulation view.
 	protected displayTime: number;
 
@@ -52,11 +55,6 @@ export class ZSimulationView extends BaseView {
 
 	// Set by the vertSync event: The last sync time.
 	protected lastVertSyncTime: number;
-
-
-	// This is used to send one beeper buffer with length 0 8to indicate stop of audio)
-	// but not more.
-	protected lastBeeperTotallength: number;
 
 
 	/**
@@ -102,7 +100,7 @@ export class ZSimulationView extends BaseView {
 		this.previousTstates = -1;
 		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
-		this.lastBeeperTotallength = 0;
+		this.cpuStopped = true;
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
@@ -484,8 +482,15 @@ export class ZSimulationView extends BaseView {
 	public updateDisplay() {
 		// Check if CPU did something
 		const tStates = this.simulator.getTstatesSync();
-		if (this.previousTstates == tStates)
-			return;		// No change
+		const prevStopped = this.cpuStopped;
+		this.cpuStopped = (this.previousTstates == tStates);
+		if (this.cpuStopped) {
+			if (!prevStopped) {
+				// Inform web view about stop
+				this.sendMessageToWebView({command: 'cpuStopped'});
+			}
+			return;
+		}
 
 		// Yes, there was a change
 		this.previousTstates = tStates;
@@ -521,12 +526,7 @@ export class ZSimulationView extends BaseView {
 
 			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
-				const beeper = this.simulator.getBeeperBuffer();
-				if (beeper.totalLength > 0 || this.lastBeeperTotallength > 0) {
-					// Note: At least send one buffer with length of 0 to stop audio.
-					audio = beeper;
-				}
-				this.lastBeeperTotallength = beeper.totalLength;
+				audio = this.simulator.getBeeperBuffer();
 			}
 
 			// Create message to update the webview

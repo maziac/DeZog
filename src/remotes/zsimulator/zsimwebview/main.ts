@@ -46,6 +46,11 @@ window.addEventListener('message', event => {
 	// Process message
 	const message = event.data;
 	switch (message.command) {
+		case 'cpuStopped':
+			// Z80 CPU was stopped, t-states do not advance.
+			zxAudio.stop();
+			break;
+
 		case 'update':
 			{
 				if (message.cpuLoad != undefined)
@@ -88,6 +93,7 @@ window.addEventListener('message', event => {
 				// Process message
 				UIAPI.receivedFromCustomLogic(innerMsg);
 			}
+			break;
 	}
 });
 
