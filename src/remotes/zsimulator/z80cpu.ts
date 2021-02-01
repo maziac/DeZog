@@ -1,13 +1,13 @@
 import {Z80Ports} from './z80ports';
 import {Z80RegistersClass} from '../z80registers';
-import {MemBuffer} from '../../misc/membuffer'
+import {MemBuffer, Serializeable} from '../../misc/membuffer'
 import {Settings} from '../../settings';
 import * as Z80 from '../../3rdparty/z80.js/Z80.js';
 import {SimulatedMemory} from './simmemory';
 
 
 
-export class Z80Cpu {
+export class Z80Cpu implements Serializeable {
 	// Pointer to the Z80.js (Z80.ts) simulator
 	protected z80: any;
 
@@ -602,6 +602,7 @@ export class Z80Cpu {
 		// Reset statistics
 		this.cpuLoadTstates=0;
 		this.cpuWithHaltTstates=0;
-		this.cpuLoad=1.0;	// Start with full load
+		this.cpuLoad = 1.0;	// Start with full load
+		this.cpuTstatesCounter = 0;	// This will force an update of the zsim screen etc.
 	}
 }

@@ -1,4 +1,27 @@
 
+/**
+ *
+ */
+export interface Serializeable {
+
+	/**
+	 * Returns the size the serialized object would consume.
+	 */
+	getSerializedSize(): number;
+
+
+	/**
+	 * Serializes the object.
+	 */
+	serialize(memBuffer: MemBuffer);
+
+
+	/**
+	 * Deserializes the object.
+	 */
+	deserialize(memBuffer: MemBuffer);
+}
+
 
 /**
  * The intention for this buffer is to use it for serialization.
@@ -115,6 +138,15 @@ export class MemBuffer {
 
 
 	/**
+	 * Writes a boolean value to the next position (offset).
+	 */
+	public writeBoolean(value: boolean) {
+		this.dataView?.setUint8(this.writeOffset, value ? 1 : 0);
+		this.writeOffset++;
+	}
+
+
+	/**
 	 * Returns an array of the required length.
 	 */
 	public getUint8Array(): Uint8Array {
@@ -162,6 +194,16 @@ export class MemBuffer {
 		const buffer=wholeBuffer.subarray(this.readOffset, end);
 		this.readOffset=end;
 		return buffer;
+	}
+
+
+	/**
+	 * Reads a boolean value from the next position (offset).
+	 */
+	public readBoolean(): boolean {
+		const value = (this.dataView.getUint8(this.readOffset) != 0);
+		this.readOffset++;
+		return value;
 	}
 
 }

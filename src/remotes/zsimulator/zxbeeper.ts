@@ -1,4 +1,4 @@
-//import {Log} from "../../log";
+import {Serializeable, MemBuffer} from "../../misc/membuffer";
 
 /**
  * The buffer exchanged with the zsim simulator webview.
@@ -16,7 +16,7 @@ export interface BeeperBuffer {
 /**
  * ZX beeper audio simulation.
  */
-export class ZxBeeper {
+export class ZxBeeper implements Serializeable {
 
 	// Stores the last set beeper value.
 	protected lastBeeperValue = true;
@@ -201,4 +201,39 @@ export class ZxBeeper {
 	}
 
 
+
+	/**
+	 * Returns the size the serialized object would consume.
+	 */
+	public getSerializedSize(): number {
+		// Create a MemBuffer to calculate the size.
+		const memBuffer = new MemBuffer();
+		// Serialize object to obtain size
+		this.serialize(memBuffer);
+		// Get size
+		const size = memBuffer.getSize();
+		return size;
+	}
+
+
+	/**
+	 * Serializes the object.
+	 * Basically the last beeper value.
+	 */
+	public serialize(memBuffer: MemBuffer) {
+		// Get slot/bank mapping
+		memBuffer.writeBoolean(this.lastBeeperValue);
+	}
+
+
+	/**
+	 * Deserializes the object.
+	 */
+	public deserialize(memBuffer: MemBuffer) {
+		// Read beeper state
+		this.lastBeeperValue = memBuffer.readBoolean();
+		// Reset other values
+		this.lastBeeperIndex = 0;
+		this.lastBeeperTstates = 0;
+	}
 }

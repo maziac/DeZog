@@ -343,6 +343,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.serializeObjects=[
 			this.z80Cpu,
 			this.memory,
+			this.zxBeeper,
 			// this.ports // Note: ports are not serialized anymore. Since customCode.
 		];
 
@@ -826,7 +827,8 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected deserializeState(data: Uint8Array) {
 		// Create mem buffer for reading
-		const memBuffer=MemBuffer.from(data.buffer);
+		const memBuffer = MemBuffer.from(data.buffer);
+
 		// Deserialize objects
 		for (const obj of this.serializeObjects)
 			obj.deserialize(memBuffer);
@@ -843,8 +845,10 @@ export class ZSimRemote extends DzrpRemote {
 		let size=0;
 		for (const obj of this.serializeObjects)
 			size += obj.getSerializedSize();
+
 		// Allocate memory
-		const memBuffer=new MemBuffer(size);
+		const memBuffer = new MemBuffer(size);
+
 		// Serialize objects
 		for (const obj of this.serializeObjects)
 			obj.serialize(memBuffer);
@@ -1263,7 +1267,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		this.deserializeState(stateData);
 		// Update the screen etc.
-		this.emit('update')
+		this.emit('update'); // TODO ReMOVE
 	}
 
 

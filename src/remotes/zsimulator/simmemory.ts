@@ -1,4 +1,4 @@
-import {MemBuffer} from '../../misc/membuffer';
+import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
 
@@ -24,7 +24,7 @@ interface SimWatchpoint {
  * To the outside is does not show any of these slots.
  * But for configuration (what is ROM/RAM) it is required.
  */
-export class SimulatedMemory {
+export class SimulatedMemory implements Serializeable {
 	// The memory in one big block.
 	// If banking is used in a derived class this array will extend 64k.
 	protected memoryData: Uint8Array;
