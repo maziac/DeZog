@@ -343,7 +343,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.serializeObjects=[
 			this.z80Cpu,
 			this.memory,
-			this.ports
+			// this.ports // Note: ports are not serialized anymore. Since customCode.
 		];
 
 		// Initialize custom code e.g. for ports
@@ -842,7 +842,7 @@ export class ZSimRemote extends DzrpRemote {
 		// Get size of all serialized objects
 		let size=0;
 		for (const obj of this.serializeObjects)
-			size+=obj.getSerializedSize();
+			size += obj.getSerializedSize();
 		// Allocate memory
 		const memBuffer=new MemBuffer(size);
 		// Serialize objects
