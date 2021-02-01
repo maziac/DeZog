@@ -571,7 +571,8 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async z80CpuContinue(bp1: number, bp2: number): Promise<void> {
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
-		//let beeperValue = 0;
+		let limitSpeedPrevTime = Date.now();
+		let limitSpeedPrevTstates = this.passedTstates;
 		while (true) {
 			//		Utility.timeDiff();
 			this.z80Cpu.error=undefined;
@@ -584,9 +585,7 @@ export class ZSimRemote extends DzrpRemote {
 			if(longAddressesUsed)
 				slots=this.memory.getSlots();
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
-			const prevTime = Date.now();
-			const prevTstates = this.passedTstates;
-			const leaveAtTstates = prevTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
+			const leaveAtTstates = this.passedTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
@@ -719,24 +718,30 @@ export class ZSimRemote extends DzrpRemote {
 			// Check if the CPU frequency should be simulated as well
 			if (limitSpeed) {
 				const currentTime = Date.now();
-				const usedTime = currentTime - prevTime;
-				const usedTstates = this.passedTstates - prevTstates;
-				const targetTime = 1000 * usedTstates / this.z80Cpu.cpuFreq;
-				let remainingTime = targetTime - usedTime;
-				if (remainingTime >= 1) {
-					// Safety check: no longer than 500ms
-					if (remainingTime > 500)
-						remainingTime = 500;
-					// Wait additional time
-//					await Utility.timeout(remainingTime);
-					await Utility.timeout(remainingTime/2); // TODO: Remove
+				const usedTime = currentTime - limitSpeedPrevTime;
+				// Check for too small values to get a better accuracy
+				if (usedTime > 20) { // 20 ms
+					const usedTstates = this.passedTstates - limitSpeedPrevTstates;
+					const targetTime = 1000 * usedTstates / this.z80Cpu.cpuFreq;
+					let remainingTime = targetTime - usedTime;
+					if (remainingTime >= 1) {
+						// Safety check: no longer than 500ms
+						if (remainingTime > 500)
+							remainingTime = 500;
+						// Wait additional time
+						await Utility.timeout(remainingTime);
+					}
+					// Use new time
+					limitSpeedPrevTime = Date.now();
+					limitSpeedPrevTstates = this.passedTstates;
 				}
 			}
 
 			// Give other tasks a little time and continue
 			await Utility.timeout(1);
 
-			// Check if additional time is required for the webview
+			// Check if additional time is required for the webview.
+			// Mainly required for custom code.
 			while (this.timeoutRequest) {
 				// timeoutRequest will be set by the ZSimulatorView.
 				await Utility.timeout(100);

@@ -11,10 +11,10 @@ export class ZxAudio {
 
 
 	// Start latency of the system.
-	protected MIN_LATENCY = 0.05; //0.1;
+	protected MIN_LATENCY = 0.2; //0.05; //0.1;
 
 	// Maximum latency. If latency grows bigger audio frames are dropped.
-	protected MAX_LATENCY = 0.1; //0.2;
+	protected MAX_LATENCY = 0.4; //0.1; //0.2;
 
 	// The audio context.
 	protected ctx: AudioContext;
@@ -84,7 +84,7 @@ export class ZxAudio {
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
 		this.z80TimeOffset = (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
-		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY * this.sampleRate);
+		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;
 		this.samplesInTopHalf = true;
