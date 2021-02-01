@@ -5,7 +5,7 @@
  * It contains only the lengths for the stats changes of the beeper.
  */
 export interface BeeperBuffer {
-	time: number,			// The time the buffer starts (Z80 simulator time).
+	time: number, // TODO: REMOVE. in here just to let the unit tests compile.
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
 	startValue: boolean,	// Beeper value start value for the buffer.
 	buffer: Uint16Array,	// Contains the length of the beeper values.
@@ -156,7 +156,7 @@ export class ZxBeeper {
 		}
 		// Set length of last value.
 		let length = timeIndex - this.lastBeeperTimeIndex;
-		if(length>0)
+		if (length > 0)
 			this.beeperLenBuffer[this.lastBeeperIndex++] = length;
 
 		// Copy buffer
@@ -169,36 +169,32 @@ export class ZxBeeper {
 			totalLength += len;
 		}
 
-		// Calculate time, quantize
-		const absTime = passedTstates / this.cpuFrequency
-		const startTime = absTime - totalLength / this.sampleRate;
-//		const startTime = Math.floor(absTime * this.sampleRate - totalLength) / this.sampleRate;
-
 		// Set values
 		const diffTstates = totalLength / this.sampleRate * this.cpuFrequency;
 		this.lastBeeperTstates += diffTstates;
 		this.lastBeeperIndex = 0;
 		this.lastBeeperTimeIndex = 0;
 
-		// TODO REMOVE
-		if (!this.firstTime && totalLength > 0)
-			this.firstTime = Date.now() / 1000;
-
 		this.logBuf.push({
-			startTime: startTime,
-			dezogTime: Date.now() / 1000 - this.firstTime,
+			startValue: this.startBeeperValue,
+			buffer: buffer,
 			passedTstates: passedTstates,
-			passedtime: passedTstates / this.cpuFrequency,
+			passedTime: passedTstates / this.cpuFrequency,
 			totalLength: totalLength,
 			totalLengthTime: totalLength / this.sampleRate,
 			diffStates: diffTstates
 		});
 
+		// Set next beeper value (this is for the case that no change happens until
+		// next getBeeperBuffer)
+		const resultStartValue = this.startBeeperValue;
+		this.startBeeperValue = this.lastBeeperValue;
+
 		// Return
 		return {
-			time: startTime,
+			time: 0,
 			totalLength,
-			startValue: this.startBeeperValue,
+			startValue: resultStartValue,
 			buffer,
 			bufferLen: buffer.length
 		};
