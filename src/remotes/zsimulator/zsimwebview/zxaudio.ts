@@ -37,9 +37,9 @@ export class ZxAudio {
 	protected z80TimeOffset: number;
 
 	// TODO REMOVE
-	protected logBuf = new Array<any>();
+	//protected logBuf = new Array<any>();
 
-	protected logPassedFrames = new Array<any>();
+	//protected logPassedFrames = new Array<any>();
 
 
 	// The next audio buffer. Samples are being prepared here.
@@ -124,6 +124,8 @@ export class ZxAudio {
 		if (bufLen == 0)
 			return;	// No frames
 
+
+		/* TODO : REMOVE logging
 		this.logBuf.push({
 			descr: "writeBeeperSamples start",
 			startValue: beeperBuffer.startValue,
@@ -131,6 +133,7 @@ export class ZxAudio {
 			lastEnqueuedAudioSampleValue: this.lastEnqueuedAudioSampleValue,
 			lengths: beeperBuffer.buffer
 		});
+		*/
 
 		// Fill intermediate buffer
 		const beeperLengths = beeperBuffer.buffer;
@@ -138,7 +141,6 @@ export class ZxAudio {
 		let tmpBuffer = new Float32Array(beeperBuffer.totalLength);
 		let beeperValue = beeperBuffer.startValue;
 		let audioValue = this.getAudioValueForBeeper(beeperValue);
-		let lastValue = audioValue;
 		for (let i = 0; i < bufLen; i++) {
 			// Get length
 			const length = beeperLengths[i];
@@ -147,13 +149,9 @@ export class ZxAudio {
 				tmpBuffer[k++] = audioValue;
 			}
 			// Alternate for next length
-			lastValue = audioValue;
 			beeperValue = !beeperValue;
 			audioValue = this.getAudioValueForBeeper(beeperValue);
 		}
-
-		// Remember
-	//	this.lastEnqueuedAudioSampleValue = lastValue;
 
 		// Check if audio frame can be played
 		let remainingLen = beeperBuffer.totalLength;
@@ -189,17 +187,20 @@ export class ZxAudio {
 				// Latency too high, too many buffers, drop frame.
 				// Re-use buffer for next frame
 				this.nextFrameIndex = 0;
+				/* TODO : REMOVE logging
 				this.logBuf.push({
 					descr: "frame skipped",
 					volume: this.volume,
 					bufferedTime: this.bufferedTime,
 					nextFrameStartTime: this.nextFrameStartTime,
 				});
+				*/
 			}
 		}
 
+		/* TODO : REMOVE logging
 		this.logBuf.push({descr: "writeBeeperSamples end"});
-
+		*/
 	}
 
 
@@ -211,12 +212,15 @@ export class ZxAudio {
 		this.nextFrameStartTime = this.audioCtxStartTime + (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
 		this.bufferedTime = 0;
 
+
+		/* TODO : REMOVE logging
 		this.logBuf.push({
 			descr: "time reset",
 			volume: this.volume,
 			ctxTime: this.audioCtxStartTime,
 			nextFrameStartTime: this.nextFrameStartTime
 		});
+		*/
 	}
 
 
@@ -347,17 +351,13 @@ export class ZxAudio {
 	 * @param useEndListener Use false to disable.
 	 * Otherwise it is checked to start a gap filler frame with not enough buffers are present.
 	 */
-	protected markerVolume = 0.5;
+	//protected markerVolume = 0.5; TODO: REMOVE
 	protected playNextFrame(useEndListener = true, logDescription: string) {
 		// Change state
 		this.stopped = false;
 
-
-		const val = this.nextFrame[0];
-		if (val > 0.22 && val < 0.27)
-			console.log("kkklllkll");
-
 		// TODO: REMOVE mark
+		/*
 		// mark all points
 		const frame = this.nextFrame;
 		const mVol = this.markerVolume;
@@ -365,10 +365,10 @@ export class ZxAudio {
 			frame[i] *= mVol;
 		}
 		// cycle marker volume
-	//	this.markerVolume += 0.05;
+		this.markerVolume += 0.05;
 		if (this.markerVolume > 0.5001)
 			this.markerVolume = 0.1;
-
+		*/
 
 
 		// Create audio source
@@ -381,7 +381,11 @@ export class ZxAudio {
 			const self = this;
 			bufferSource.addEventListener('ended', function () {
 				self.bufferedTime -= self.fixedFrameTime;
+
+				/* TODO : REMOVE logging
 				self.logPassedFrames.push({bufferedTime: self.bufferedTime});
+				*/
+
 				if (self.bufferedTime <= self.fixedFrameTime) {
 					// Start gap filler
 					self.startGapFiller();
@@ -389,14 +393,11 @@ export class ZxAudio {
 			});
 		}
 
-		// Mark
-		//this.nextFrame[0] = -0.2;
-
 		// Store last value
 		this.lastEnqueuedAudioSampleValue = this.nextFrame[this.fixedFrameLength - 1];
 
 		// TODO: REMOVE mark inverse
-		this.lastEnqueuedAudioSampleValue /= this.markerVolume;
+		//this.lastEnqueuedAudioSampleValue /= this.markerVolume;
 
 		// Store the start time on the first packet
 		if (this.audioCtxStartTime == undefined) {
@@ -408,6 +409,7 @@ export class ZxAudio {
 		this.bufferedTime += this.fixedFrameTime;
 
 		// Log
+		/* TODO : REMOVE logging
 		const bakFrameBuffer = new Float32Array(this.nextFrame);
 		this.logBuf.push({
 			descr: logDescription,
@@ -418,6 +420,7 @@ export class ZxAudio {
 			ctxTime: this.ctx.currentTime,
 			frame: bakFrameBuffer
 		});
+		*/
 
 		// Next frame
 		this.nextFrameStartTime += this.fixedFrameTime;
