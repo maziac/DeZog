@@ -47,7 +47,7 @@ suite('Z80Cpu', () => {
 				cpu.iff1=1;
 				cpu.iff2=3;
 
-				cpu.remaingInterruptTstates=65536+12;
+				cpu.remainingInterruptTstates=65536+12;
 
 				// Get size
 				writeSize=cpu.getSerializedSize();
@@ -86,7 +86,7 @@ suite('Z80Cpu', () => {
 			assert.equal(1, regs.iff1);
 			assert.equal(3, regs.iff2);
 
-			assert.equal(65536+12, rCpu.remaingInterruptTstates);
+			assert.equal(65536 + 12, rCpu.remainingInterruptTstates);
 		});
 	});
 

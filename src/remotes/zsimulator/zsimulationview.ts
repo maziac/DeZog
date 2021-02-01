@@ -591,7 +591,7 @@ width:70px;
 	const exports = {};
 </script>
 
-  <script src="out/src/remotes/zsimulator/zsimwebview/zxaudio.js"></script>
+  <script src="out/src/remotes/zsimulator/zsimwebview/zxaudiobeeper.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/ulascreen.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/visualmem.js"></script>
   <script src="out/src/remotes/zsimulator/zsimwebview/helper.js"></script>

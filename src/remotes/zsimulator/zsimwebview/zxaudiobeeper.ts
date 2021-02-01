@@ -1,13 +1,12 @@
 
 declare interface BeeperBuffer {
-	time: number,			// The time the buffer starts (Z80 simulator time).
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
 	startValue: boolean,	// Beeper value start value for the buffer.
 	buffer: Uint16Array,		// Contains the length of the beeper values.
 	bufferLen: number		// The length of buffer. For some reason buffer.length does not work in the webview.
 }
 
-export class ZxAudio {
+export class ZxAudioBeeper {
 
 
 	// Start latency of the system.

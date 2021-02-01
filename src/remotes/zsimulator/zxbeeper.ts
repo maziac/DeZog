@@ -5,7 +5,6 @@ import {Serializeable, MemBuffer} from "../../misc/membuffer";
  * It contains only the lengths for the stats changes of the beeper.
  */
 export interface BeeperBuffer {
-	time: number, // TODO: REMOVE. in here just to let the unit tests compile.
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
 	startValue: boolean,	// Beeper value start value for the buffer.
 	buffer: Uint16Array,	// Contains the length of the beeper values.
@@ -192,7 +191,6 @@ export class ZxBeeper implements Serializeable {
 
 		// Return
 		return {
-			time: 0,
 			totalLength,
 			startValue: resultStartValue,
 			buffer,

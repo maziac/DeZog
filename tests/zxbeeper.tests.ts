@@ -226,7 +226,6 @@ suite('ZxBeeper', () => {
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
 			assert.equal(zxBeeperAny.lastBeeperTimeIndex, 0);
 			let result = zxBeeper.getBeeperBuffer(0);
-			assert.equal(result.time, 0);
 			assert.equal(result.totalLength, 0);
 			assert.equal(result.startValue, true);
 			assert.notEqual(result.buffer, undefined);
@@ -251,8 +250,6 @@ suite('ZxBeeper', () => {
 			zxBeeperAny.startBeeperValue = false;
 			zxBeeperAny.lastBeeperValue = false;
 			let result = zxBeeper.getBeeperBuffer(1 / sampleRate * cpuFreq);
-			const q = 1 / 22000;
-			assert.ok(result.time < q);
 			assert.equal(result.totalLength, 1);
 			assert.equal(result.startValue, false);
 			assert.notEqual(result.buffer, undefined);
@@ -267,7 +264,6 @@ suite('ZxBeeper', () => {
 			assert.equal(zxBeeperAny.startBeeperValue, true);
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
 			result = zxBeeper.getBeeperBuffer(1 / sampleRate * cpuFreq);
-			assert.ok(result.time < q);
 			assert.equal(result.totalLength, 1);
 			assert.equal(result.startValue, true);
 			assert.notEqual(result.buffer, undefined);
@@ -285,8 +281,6 @@ suite('ZxBeeper', () => {
 			let time = ((bufMax - 1) / sampleRate) * cpuFreq + 0.1;
 			zxBeeperAny.writeBeeper(time, false);
 			let result = zxBeeper.getBeeperBuffer(time);
-			const q = 1 / 22000;
-			assert.ok(result.time < q);
 			assert.equal(result.totalLength, bufMax-1);
 			assert.equal(result.startValue, true);
 			assert.notEqual(result.buffer, undefined);
@@ -298,24 +292,10 @@ suite('ZxBeeper', () => {
 			time = (bufMax / sampleRate) * cpuFreq + 0.1;
 			zxBeeperAny.writeBeeper(time, false);
 			result = zxBeeper.getBeeperBuffer(time);
-			assert.ok(result.time < q);
 			assert.equal(result.totalLength, bufMax);
 			assert.equal(result.startValue, true);
 			assert.notEqual(result.buffer, undefined);
 			assert.equal(result.buffer.length, 1);
-		});
-
-		test('start time', () => {
-			const cpuFreq = 3500000;
-			const sampleRate = 22000;
-
-			// Initial conditions
-			let zxBeeper = new ZxBeeper(cpuFreq, sampleRate, 50, 10 / sampleRate * cpuFreq);
-
-			// Get samples
-			let result = zxBeeper.getBeeperBuffer(100 / sampleRate * cpuFreq + 0.1);
-			const q = 1 / 22000;
-			assert.ok(Math.abs(result.time - 10 / sampleRate) < q);
 		});
 
 		test('reset index, set lastBeeperTstates', () => {

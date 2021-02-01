@@ -14,6 +14,7 @@
 	- Joystick simulation supports attached gamepads.
 	- Corrected T-states counting for HALT instruction.
 	- "updateFrequency" added: the frequency the Z80 simulation view gets updated.
+	- Fixed save/restore.
 
 # 2.1.4
 - Settings names for 'logpanel's changed.
