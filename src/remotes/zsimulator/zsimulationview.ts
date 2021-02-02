@@ -762,10 +762,38 @@ width:70px;
 
 		// Add code for the ZX beeper
 		if (Settings.launch.zsim.zxBeeper) {
+
+			const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue().toString();
 			html += `
+<details open="true">
+  <summary>ZX Beeper</summary>
+  <span style="display:table-cell; vertical-align: middle">
+	<img src="assets/loudspeaker.svg" width="20em"></img>
+	&nbsp;
+  </span>
+
+  <!-- 0/1 visual output -->
+  <span id="beeper.output" style="display:table-cell; vertical-align: middle">0</span>
+
+  <!-- Volume slider -->
+  <span style="display:table-cell; vertical-align: middle">&nbsp;&nbsp;&nbsp;-</span>
+
+  <span style="display:table-cell; vertical-align: middle">
+	  <input  id="audio.volume" type="range" min="0" max="1" step="0.01" value="${initialBeeperValue}">
+  </span>
+  <span style="display:table-cell; vertical-align: middle">+</span>
+
+</details>
+
 <script>
-	<!-- Singleton for audio -->
-	const zxAudio = new ZxAudio(${Settings.launch.zsim.audioSampleRate});
+	// Singleton for audio
+	const zxAudioBeeper = new ZxAudioBeeper(${Settings.launch.zsim.audioSampleRate});
+
+	// Get Beeper output object
+	//const beeperOutput = document.getElementById("beeper.output");
+	// Get Volume slider
+	//const volumeSlider = document.getElementById("audio.volume");
+
 </script>
 `;
 		}

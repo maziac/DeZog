@@ -85,7 +85,7 @@ export class ZSimRemote extends DzrpRemote {
 	protected ulaScreenAddress: number;
 
 	// ZX Beeper simulation
-	protected zxBeeper: ZxBeeper;
+	public zxBeeper: ZxBeeper;
 
 
 	/// Constructor.
@@ -260,11 +260,11 @@ export class ZSimRemote extends DzrpRemote {
 		// Create ports for paging
 		this.ports = new Z80Ports(Settings.launch.zsim.defaultPortIn);
 
+		// Create the beeper simulation object (create always because of serialization)
+		this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
 		// Check if beeper enabled
 		if (Settings.launch.zsim.zxBeeper) {
-			// Create the beeper simulation
-			this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
-			// Add the port
+			// Add the port only if enabled
 			this.ports.registerGenericOutPortFunction((port: number, value: number) => {
 				// The port 0xFE. Every even port address will do.
 				if (port & 0x01)
@@ -274,8 +274,6 @@ export class ZSimRemote extends DzrpRemote {
 				this.zxBeeper.writeBeeper(this.passedTstates, (value & 0b10000) != 0);
 			});
 		}
-		//this.zxAudio = new ZxAudio();
-		//this.zxAudio.start();
 
 		// Configure different memory models
 		switch (memModel) {

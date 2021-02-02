@@ -1,3 +1,5 @@
+import {ZxAudioBeeper} from "./zxaudiobeeper";
+
 declare var acquireVsCodeApi: any;
 declare var cpuLoad: HTMLLabelElement;
 declare var slots: Array<HTMLDivElement>;
@@ -7,7 +9,7 @@ declare var screenImgContext: CanvasRenderingContext2D;
 declare var screenImgImgData: ImageData;
 declare var UIAPI: CustomUiApi;
 // @ts-ignore
-declare var zxAudio: ZxAudio;
+declare var zxAudioBeeper: ZxAudioBeeper;
 
 
 let countOfProcessedMessages = 0;
@@ -15,6 +17,7 @@ let countOfProcessedMessages = 0;
 const vscode = acquireVsCodeApi();
 
 // Pointer to the joystick html elements
+// @ts-ignore
 const joystickObjs = new Array<{
 	fire: UiBit,
 	up: UiBit,
@@ -25,6 +28,7 @@ const joystickObjs = new Array<{
 
 
 // Message water marks.
+// @ts-ignore
 const MESSAGE_HIGH_WATERMARK = 100;
 const MESSAGE_LOW_WATERMARK = 10;
 
@@ -48,7 +52,7 @@ window.addEventListener('message', event => {
 	switch (message.command) {
 		case 'cpuStopped':
 			// Z80 CPU was stopped, t-states do not advance.
-			zxAudio.stop();
+			zxAudioBeeper.stop();
 			break;
 
 		case 'update':
@@ -76,10 +80,8 @@ window.addEventListener('message', event => {
 				}
 
 				if (message.audio) {
-					//return;
-					//	console.log("main, currentTime: " + ctx.currentTime);
 					const audio = message.audio;
-					zxAudio.writeBeeperSamples(audio);
+					zxAudioBeeper.writeBeeperSamples(audio);
 				}
 			}
 			break;
@@ -118,6 +120,7 @@ function cellSelect(cell, on) {
 
 
 // Toggle the cell.
+// @ts-ignore
 function cellClicked(cell) {
 	//log.textContent += "clicked ";
 	cell.tag = !cell.tag;
@@ -125,6 +128,7 @@ function cellClicked(cell) {
 }
 
 // Toggle the cell and the corresponding bit
+// @ts-ignore
 function togglePortBit(cell, port, bitByte) {
 	// Send request to vscode
 	vscode.postMessage({
@@ -136,6 +140,7 @@ function togglePortBit(cell, port, bitByte) {
 // Toggle the cell and the corresponding bit.
 // Inverts the bit before sending.
 // I.e. Active=LOW
+// @ts-ignore
 function togglePortBitNeg(cell, port, bitByte) {
 	// Send request to vscode
 	vscode.postMessage({
@@ -167,6 +172,7 @@ function toggleVisibility(id) {
 // "Copy all HTML" button-- >
 
 // Copies the complete html of the document to the clipboard.
+// @ts-ignore
 function copyHtmlToClipboard() {
 	const copyText = document.documentElement.innerHTML;
 	navigator.clipboard.writeText(copyText);
@@ -174,6 +180,7 @@ function copyHtmlToClipboard() {
 
 
 // Reload the javascript business logic.
+// @ts-ignore
 function reloadCustomLogicAndUi() {
 	// Send request to vscode
 	vscode.postMessage({

@@ -56,6 +56,8 @@ export class ZxBeeper implements Serializeable {
 	 * internally used buffer size is bigger.
 	 * @param passedTstates Usually 0 as ZxBeeper is created before simulation starts.
 	 * If it would be initialized later, the current t-States should be passed here.
+	 * Note: on restore this.passedTstates are set to 0 (not restored) in order to
+	 * force an update of the screen in the ZSimulationView.
 	 */
 	constructor(cpuFrequency: number, sampleRate: number, updateFrequency: number, passedTstates = 0) {
 		// Create the buffer
@@ -66,6 +68,14 @@ export class ZxBeeper implements Serializeable {
 		this.lastBeeperTstates = passedTstates;
 		this.lastBeeperValue = true;
 		this.cpuFrequency = cpuFrequency;
+	}
+
+	/**
+	 * Returns the last set beeper value.
+	 * @returns 0 or 1.
+	 */
+	public getCurrentBeeperValue(): number {
+		return (this.lastBeeperValue) ? 1 : 0;
 	}
 
 
@@ -142,7 +152,6 @@ export class ZxBeeper implements Serializeable {
 	 * buffer: UInt16Array of beeper lengths, each indicating how long
 	 * (in samples) the previous value lasted.
 	 */
-	protected firstTime: number = 0;
 	public getBeeperBuffer(passedTstates: number): BeeperBuffer {
 		// Calculate time
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;

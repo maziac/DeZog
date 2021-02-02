@@ -1,3 +1,5 @@
+//declare var beeperOutput: HTMLElement;
+
 
 declare interface BeeperBuffer {
 	totalLength: number,	// The length a "normal" audio frame buffer would occupy.
@@ -105,7 +107,7 @@ export class ZxAudioBeeper {
 	 * Stops audio.
 	 * Creates a fading audio frame.
 	 */
-	protected stop() {
+	public stop() {
 		// Fade
 		this.startFadeToZero();
 		// Change state
@@ -151,6 +153,9 @@ export class ZxAudioBeeper {
 			beeperValue = !beeperValue;
 			audioValue = this.getAudioValueForBeeper(beeperValue);
 		}
+
+		// Set the visual state
+//		beeperOutput.textContent = (beeperValue) ? "0" : "1";	// beeper value is the inverse
 
 		// Check if audio frame can be played
 		let remainingLen = beeperBuffer.totalLength;
