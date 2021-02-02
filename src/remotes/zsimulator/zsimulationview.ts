@@ -481,19 +481,13 @@ export class ZSimulationView extends BaseView {
 	 */
 	public updateDisplay() {
 		// Check if CPU did something
-		const tStates = this.simulator.getTstatesSync();
 		const prevStopped = this.cpuStopped;
-		this.cpuStopped = (this.previousTstates == tStates);
-		if (this.cpuStopped) {
-			if (!prevStopped) {
-				// Inform web view about stop
-				this.sendMessageToWebView({command: 'cpuStopped'});
-			}
+		this.cpuStopped = !this.simulator.isCpuRunning();
+		if (prevStopped) {
 			return;
 		}
 
-		// Yes, there was a change
-		this.previousTstates = tStates;
+		// Yes, it is running
 		try {
 			let cpuLoad;
 			let slots;
@@ -543,9 +537,13 @@ export class ZSimulationView extends BaseView {
 			this.simulator.memory.clearVisualMemory();
 		}
 		catch {}
-	}
 
-	protected time = 0;	// TODO
+		// If it is now stopped, stop also the audio
+		if (this.cpuStopped) {
+			// Inform web view about stop
+			this.sendMessageToWebView({command: 'cpuStopped'});
+		}
+	}
 
 
 	/**
@@ -773,10 +771,10 @@ width:70px;
   </span>
 
   <!-- 0/1 visual output -->
-  <span id="beeper.output" style="display:table-cell; vertical-align: middle">0</span>
+  <span id="beeper.output" style="display:table-cell; vertical-align: middle; width: 4em">0</span>
 
   <!-- Volume slider -->
-  <span style="display:table-cell; vertical-align: middle">&nbsp;&nbsp;&nbsp;-</span>
+  <span style="display:table-cell; vertical-align: middle;">-</span>
 
   <span style="display:table-cell; vertical-align: middle">
 	  <input  id="audio.volume" type="range" min="0" max="1" step="0.01" value="${initialBeeperValue}">
@@ -790,9 +788,9 @@ width:70px;
 	const zxAudioBeeper = new ZxAudioBeeper(${Settings.launch.zsim.audioSampleRate});
 
 	// Get Beeper output object
-	//const beeperOutput = document.getElementById("beeper.output");
+	const beeperOutput = document.getElementById("beeper.output");
 	// Get Volume slider
-	//const volumeSlider = document.getElementById("audio.volume");
+	const volumeSlider = document.getElementById("audio.volume");
 
 </script>
 `;

@@ -46,6 +46,9 @@ export class ZSimRemote extends DzrpRemote {
 	// Set to true as long as the CPU is running.
 	protected cpuRunning: boolean;
 
+	// Set to true to stop the CPU from running. Is set when the user presses "break".
+	protected stopCpu: boolean;
+
 	// Push here all objects that should be serialized.
 	// I.e. that are relevant for the saving/restoring the state.
 	protected serializeObjects: any[];
@@ -100,11 +103,12 @@ export class ZSimRemote extends DzrpRemote {
 		this.tbblueRegisterReadHandler=new Map<number, () => number>();
 		this.passedTstates=0;
 		this.timeStep=Settings.launch.zsim.customCode.timeStep;
-		this.nextStepTstates=0;
+		this.nextStepTstates = 0;
+		this.cpuRunning = false;
+		this.stopCpu = true;
+		this.lastBpId = 0;
 		// Set decoder
 		Z80Registers.decoder=new Z80RegistersStandardDecoder();
-		this.cpuRunning=false;
-		this.lastBpId=0;
 		// Reverse debugging / CPU history
 		if (Settings.launch.history.reverseDebugInstructionCount>0) {
 			CpuHistoryClass.setCpuHistory(new ZSimCpuHistory());
@@ -113,6 +117,14 @@ export class ZSimRemote extends DzrpRemote {
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled)
 			this.codeCoverage=new CodeCoverageArray();
+	}
+
+
+	/**
+	 * Returns the CPU state. If running or not (breaked).
+	 */
+	public isCpuRunning() {
+		return this.cpuRunning;
 	}
 
 
@@ -416,7 +428,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public async disconnect(): Promise<void> {
 		// Stop running cpu
-		this.cpuRunning=false;
+		this.stopCpu=true;
 		this.emit('closed')
 	}
 
@@ -692,7 +704,7 @@ export class ZSimRemote extends DzrpRemote {
 					}
 
 					// Check if stopped from outside
-					if (!this.cpuRunning) {
+					if (this.stopCpu) {
 						breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
 						break;
 					}
@@ -707,7 +719,7 @@ export class ZSimRemote extends DzrpRemote {
 
 			if (this.passedTstates < leaveAtTstates) {
 				// Stop immediately
-				this.cpuRunning=false;
+				this.stopCpu=true;
 				// Send Notification
 				Utility.assert(this.continueResolve);
 				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
@@ -747,7 +759,7 @@ export class ZSimRemote extends DzrpRemote {
 			}
 
 			// Check if meanwhile a manual break happened
-			if (!this.cpuRunning) {
+			if (this.stopCpu) {
 				// Manual break: Create reason string
 				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
 				breakAddress=0;
@@ -874,6 +886,15 @@ export class ZSimRemote extends DzrpRemote {
 	// Same as sync function.
 	public getTstatesSync(): number {
 		return this.z80Cpu.cpuTstatesCounter;
+	}
+
+
+	/**
+	 * Returns the passed T-states since start of simulation.
+	 * (Or since last state restore.)
+	 */
+	public getPassedTstates(): number {
+		return this.passedTstates;
 	}
 
 
@@ -1141,9 +1162,11 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		if (bp2Address==undefined) bp2Address=-1;	// unreachable
 		// Set the temporary breakpoints array
 		// Run the Z80-CPU in a loop
-		this.cpuRunning=true;
+		this.stopCpu = false;
+		this.cpuRunning = true;
 		this.memory.clearHit();
 		await this.z80CpuContinue(bp1Address, bp2Address);
+		this.cpuRunning = false;
 	}
 
 
@@ -1152,7 +1175,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 */
 	public async sendDzrpCmdPause(): Promise<void> {
 		// If running then pause
-		this.cpuRunning=false;
+		this.stopCpu=true;
 	}
 
 

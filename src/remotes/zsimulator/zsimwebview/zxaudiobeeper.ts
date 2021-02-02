@@ -1,4 +1,4 @@
-//declare var beeperOutput: HTMLElement;
+declare var beeperOutput: HTMLElement;
 
 
 declare interface BeeperBuffer {
@@ -122,8 +122,12 @@ export class ZxAudioBeeper {
 
 	public writeBeeperSamples(beeperBuffer: BeeperBuffer) {
 		const bufLen = beeperBuffer.bufferLen;
-		if (bufLen == 0)
-			return;	// No frames
+		if (bufLen == 0) {
+			// Set the visual state
+			this.setVisualBeeperState(beeperBuffer.startValue);
+			// But no frames
+			return;
+		}
 
 
 		/* TODO : REMOVE logging
@@ -155,7 +159,7 @@ export class ZxAudioBeeper {
 		}
 
 		// Set the visual state
-//		beeperOutput.textContent = (beeperValue) ? "0" : "1";	// beeper value is the inverse
+		this.setVisualBeeperState(!beeperValue);	// beeper value is the inverse
 
 		// Check if audio frame can be played
 		let remainingLen = beeperBuffer.totalLength;
@@ -431,4 +435,11 @@ export class ZxAudioBeeper {
 		this.prepareNextFrame();
 	}
 
+
+	/**
+	 * Sets the visual state of the beeper: 0 or 1.
+	 */
+	protected setVisualBeeperState(beeperValue: boolean) {
+		beeperOutput.textContent = (beeperValue) ? "1" : "0";
+	}
 }
