@@ -74,6 +74,9 @@ export class ZxAudioBeeper {
 	// State: true if stopped, false if playing.
 	protected stopped: boolean;
 
+	// The node used to change the volume.
+	protected gainNode: GainNode;
+
 
 	/**
 	 * Constructor.
@@ -91,6 +94,11 @@ export class ZxAudioBeeper {
 		this.samplesInTopHalf = true;
 		this.stopped = true;
 
+		// Create gain node
+		this.gainNode = this.ctx.createGain();
+		this.gainNode.gain.value = 1.0;
+		//this.gainNode.gain.setValueAtTime(1.0, this.ctx.currentTime);
+		this.gainNode.connect(this.ctx.destination);
 		this.prepareNextFrame();
 	}
 
@@ -262,8 +270,9 @@ export class ZxAudioBeeper {
 	 * Skips creation if lastEnqueuedAudioSampleValue is 0 and there is no
 	 * pending frame.
 	 * I.e. it will immediately return after a fadeToZero frame(s).
+	 * @param lastFrame Set to true if last frame before stop. Will stop listening to end events.
 	 */
-	protected startGapFiller() {
+	protected startGapFiller(lastFrame = false) {
 		// Check if required
 		if (this.nextFrameIndex == 0 && this.lastEnqueuedAudioSampleValue == 0)
 			return;
@@ -276,7 +285,7 @@ export class ZxAudioBeeper {
 			frame[i] = value;
 
 		// Start gap filler
-		this.playNextFrame(true, "gap filler frame");
+		this.playNextFrame(!lastFrame, "gap filler frame");
 	}
 
 
@@ -299,14 +308,18 @@ export class ZxAudioBeeper {
 	 * @param value The audio value to use.
 	 */
 	protected startFadeToZero() {
-		// Check if no frame has been played yet since last stop.
+		// Check that no frame has been played yet since last stop.
 		if (this.stopped) {
 			// Reset time, so that this sample is played at the correct time.
 			this.resetTime();
 		}
 
 		// Check if it is necessary to fade.
-		const prevLastAudioSample = this.getLastAudioValue()
+		const prevLastAudioSample = this.getLastAudioValue();
+
+		this.stopped = true;
+		this.startGapFiller(false);
+/*
 		if (prevLastAudioSample == 0) {
 			// Fill recent frame with zeroes
 			this.startGapFiller();
@@ -314,6 +327,7 @@ export class ZxAudioBeeper {
 			this.audioCtxStartTime = undefined as any;
 			return;
 		}
+
 
 		// Creates one or more audio frames, starts from the current (unfinished packet)
 		const fadingTime = 0.05;	// 50ms = 20Hz
@@ -344,6 +358,11 @@ export class ZxAudioBeeper {
 
 		// Play last frame
 		this.playNextFrame(false, "last fade frame");
+*/
+
+		//this.gainNode.gain.value = 0.0;
+		this.gainNode.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + 0.1);
+
 
 		// Next values in upper or lower half
 		this.samplesInTopHalf = (prevLastAudioSample < 0);
@@ -364,6 +383,8 @@ export class ZxAudioBeeper {
 		// Change state
 		this.stopped = false;
 
+		this.gainNode.gain.value = 1.0;
+
 		// TODO: REMOVE mark
 		/*
 		// mark all points
@@ -382,7 +403,7 @@ export class ZxAudioBeeper {
 		// Create audio source
 		const bufferSource = this.ctx.createBufferSource();
 		bufferSource.buffer = this.nextBuffer;
-		bufferSource.connect(this.ctx.destination);
+		bufferSource.connect(this.gainNode);
 
 		// End listener
 		if (useEndListener) {
@@ -394,7 +415,7 @@ export class ZxAudioBeeper {
 				self.logPassedFrames.push({bufferedTime: self.bufferedTime});
 				*/
 
-				if (self.bufferedTime <= self.fixedFrameTime) {
+				if (self.bufferedTime <= self.fixedFrameTime && !self.stopped) {
 					// Start gap filler
 					self.startGapFiller();
 				}

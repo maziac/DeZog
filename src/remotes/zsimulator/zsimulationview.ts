@@ -771,13 +771,13 @@ width:70px;
   </span>
 
   <!-- 0/1 visual output -->
-  <span id="beeper.output" style="display:table-cell; vertical-align: middle; width: 4em">0</span>
+  <span id="beeper.output" style="display:table-cell; vertical-align: middle; width: 4em">${initialBeeperValue}</span>
 
   <!-- Volume slider -->
   <span style="display:table-cell; vertical-align: middle;">-</span>
 
   <span style="display:table-cell; vertical-align: middle">
-	  <input  id="audio.volume" type="range" min="0" max="1" step="0.01" value="${initialBeeperValue}">
+	  <input  id="audio.volume" type="range" min="0" max="1" step="0.01" value="0.75">
   </span>
   <span style="display:table-cell; vertical-align: middle">+</span>
 
