@@ -1,3 +1,5 @@
+declare var vscode: any;
+
 
 // Define class for communication
 class CustomUiApi {

@@ -1,4 +1,7 @@
 
+declare var joystickObjs: Array<any>;
+
+
 // Poll gamepads regularly if at least one joystick was enabled
 if (joystickObjs.length > 0) {
 	// Check every 50 ms
