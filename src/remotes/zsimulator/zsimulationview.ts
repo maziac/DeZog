@@ -777,7 +777,7 @@ width:70px;
   <span style="display:table-cell; vertical-align: middle;">-</span>
 
   <span style="display:table-cell; vertical-align: middle">
-	  <input  id="audio.volume" type="range" min="0" max="1" step="0.01" value="0.75">
+	  <input id="audio.volume" type="range" min="0" max="1" step="0.01" value="0" oninput="zxAudioBeeper.setVolume(parseFloat(this.value))">
   </span>
   <span style="display:table-cell; vertical-align: middle">+</span>
 
@@ -791,6 +791,7 @@ width:70px;
 	const beeperOutput = document.getElementById("beeper.output");
 	// Get Volume slider
 	const volumeSlider = document.getElementById("audio.volume");
+	volumeSlider.value = zxAudioBeeper.getVolume();
 
 </script>
 `;
