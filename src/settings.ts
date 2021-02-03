@@ -620,7 +620,6 @@ export class Settings {
 				"AF'", "AF': ${hex}h, F': ${flags}",
 				"PC", "${hex}h, ${unsigned}u${, :labelsplus|, }",
 				"SP", "${hex}h, ${unsigned}u${, :labelsplus|, }",
-				"HL", "(${hex}h)b=${b@:unsigned}, ${unsigned}u, ${signed}i${, :labelsplus|, }",
 				"IM", "${unsigned}u",
 				"..", "${hex}h, ${unsigned}u, ${signed}i${, :labelsplus|, }",
 				"F", "${flags}",

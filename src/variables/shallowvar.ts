@@ -185,7 +185,7 @@ export class RegistersMainVar extends ShallowVar {
 		//await Remote.getRegisters();
 		const registers=new Array<DebugProtocol.Variable>();
 		const regNames=this.registerNames();
-		for (let regName of regNames) {
+		for (const regName of regNames) {
 			const formattedValue=Remote.getVarFormattedReg(regName);
 			registers.push({
 				name: regName,
