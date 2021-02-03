@@ -91,8 +91,8 @@ Audio data is sent to ZxAudio.
 # ZxAudio
 
 ZxAudio receives the BeeperBuffer data and decodes it into samples and complete audio frames.
-Because fo the problems with the floating point accuracy in "Web Audio API" the ZxAudio works with fixed frame sizes.
-This also means that a received BeeperBuffer may not fill a completed audio frame or could also fill more than 1 audio frame.
+Because of the problems with the floating point accuracy in "Web Audio API" the ZxAudio works with fixed frame sizes.
+This also means that a received BeeperBuffer may not fill a complete audio frame or could also fill more than 1 audio frame.
 
 When an audio frame is completely filled up is is enqueued for playing. This simply means it is started with a start time in the near future.
 
@@ -101,20 +101,20 @@ If an audio frame is not filled up yet the ZxAudio simply waits for the next Bee
 
 ## Overfill
 
-The Z80 simulator time and the host system time are not synchronized. For audio you should at least leave the "limitSpeed" to the default state, which is enabled. The times will at least be similar.
+The Z80 simulator time and the host system time are not synchronized. For audio you should leave the "limitSpeed" enabled (the default state). So that the simulation speed and the timing of the audio is at least similar.
 But still they are not fully synchronized.
 
 If the simulator runs too fast it will produce more samples then the host system can play.
 In this case frames are dropped.
 
-Therefore the buffered time is measured and if bigger than LATENCY the audio frame is simply dropped by not creating one (see writeBeeperSamples).
+Therefore the buffered time is measured and if bigger than MAX_LATENCY the audio frame is simply dropped by not creating one (see writeBeeperSamples).
 
 
 ## Underfill
 
 If the simulator speed is slower than the host system there are not enough samples to play. I.e. gaps happen.
 
-The gap is filled an audio frame with all values equal to the last played sample to prevent that a clicking sound is hearable.
+The gap is an audio frame with all values equal to the last played sample to prevent that a clicking sound is hearable.
 
 If audio data is already present in the prepared audio frame then only the rest of the audio frame is filled with same data.
 
@@ -123,7 +123,7 @@ The 'startGapFiller' is called when an audio frame ends and the buffered time is
 
 # Simulator Breaks
 
-If running the simulator there are frequent breaks. E.g. when a breakpoint is hit or when you step-over an instruction (simulation starts and stops immediately).
+While running the simulator there are frequent breaks. E.g. when a breakpoint is hit or when you step-over an instruction (simulation starts and stops immediately).
 
 The audio design tries to avoid frequent audio clicks while stepping. It furthermore pauses audio frame generation in the breaks in order to lower the overall host system load.
 
@@ -134,14 +134,12 @@ To avoid this a "trick" is used.
 
 The beeper value can be 1 or 0. These values are not mapped to 1 and -1 but instead to 1 and 0 or depending on the situation to 0 and -1.
 
-If ZxAudio receives a BeeperBuffer of length 0 it knows that a break has started (i.e. no time advance in the simulator).
-It will generate a fading audio frame. This frame is generated and fades from the last output to 0.
-It turns a hard change from 1 to 0 into a soft change.
+When the simulator detects a user break it sends a "cpuStopped" command to the audio which in turn will react with fading the gain (to avoid a click) and afterwards not creating any gap fillers anymore.
+This will stop the audio activity.
 
-This also means that from now one a beeper value of 1 is output as 0 in the host audio system. If the beeper value changes to 0 the host output will cahnge to -1.
+Audio activityis restarted by the next 'writeBeeperSamples' coming from the simulator.
 
-
-
+This also means that from now one a beeper value of 1 is output as 0 in the host audio system. If the beeper value changes to 0 the host output will change to -1.
 
 
 # Load Measurements

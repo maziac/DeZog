@@ -35,12 +35,16 @@ export class ZxAudioBeeper {
 	// is stored here.
 	protected audioCtxStartTime: number;
 
-	// The audio system and the Z80 are not fully synchronized.
-	// The difference may also vary over time a little bit.
-	// The offset here is use to calculate from one time system to the other.
-	// z80TimeOffset starts with the latency of the system but is adjusted
-	// the longer the audio is played.
-	protected z80TimeOffset: number;
+	// The value shown to the user. Is here in order not to update to frequently.
+	protected lastVisualBeeperState: boolean;
+
+	// Used to display a value different from 1 and 0 when the speaker value is constantly changing.
+	protected visualBeeperChanging: boolean;
+
+	// Aggregation time for the changing value.
+	protected BEEPER_DISPLAY_AGGREGATE_TIME = 100;	// 100 ms
+
+
 
 	// TODO REMOVE
 	//protected logBuf = new Array<any>();
@@ -89,10 +93,11 @@ export class ZxAudioBeeper {
 		this.sampleRate = sampleRate;
 		this.ctx = this.createAudioContext(sampleRate);
 		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
-		this.z80TimeOffset = (this.MIN_LATENCY + this.MAX_LATENCY) / 2;
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;
+		this.lastVisualBeeperState = (this.lastEnqueuedAudioSampleValue != 0);
+		this.visualBeeperChanging = false;
 		this.samplesInTopHalf = true;
 		this.stopped = true;
 
@@ -102,6 +107,11 @@ export class ZxAudioBeeper {
 		//this.gainNode.gain.setValueAtTime(1.0, this.ctx.currentTime);
 		this.gainNode.connect(this.ctx.destination);
 		this.prepareNextFrame();
+
+		// Visual update
+		setInterval(() => {
+			this.updateVisualBeeper();
+		}, this.BEEPER_DISPLAY_AGGREGATE_TIME);
 	}
 
 
@@ -150,6 +160,9 @@ export class ZxAudioBeeper {
 	 */
 
 	public writeBeeperSamples(beeperBuffer: BeeperBuffer) {
+		// Update display
+		this.setVisualBeeperState(beeperBuffer);
+
 		// Start if stopped
 		if (this.stopped) {
 			/*
@@ -171,8 +184,6 @@ export class ZxAudioBeeper {
 
 		const bufLen = beeperBuffer.bufferLen;
 		if (bufLen == 0) {
-			// Set the visual state
-			this.setVisualBeeperState(beeperBuffer.startValue);
 			// But no frames
 			return;
 		}
@@ -204,9 +215,6 @@ export class ZxAudioBeeper {
 			beeperValue = !beeperValue;
 			audioValue = this.getAudioValueForBeeper(beeperValue);
 		}
-
-		// Set the visual state
-		this.setVisualBeeperState(!beeperValue);	// beeper value is the inverse
 
 		// Check if audio frame can be played
 		let remainingLen = beeperBuffer.totalLength;
@@ -307,9 +315,8 @@ export class ZxAudioBeeper {
 	 * Skips creation if lastEnqueuedAudioSampleValue is 0 and there is no
 	 * pending frame.
 	 * I.e. it will immediately return after a fadeToZero frame(s).
-	 * @param lastFrame Set to true if last frame before stop. Will stop listening to end events.
 	 */
-	protected startGapFiller(lastFrame = false) {
+	protected startGapFiller() {
 		// Check if required
 		if (this.nextFrameIndex == 0 && this.lastEnqueuedAudioSampleValue == 0)
 			return;
@@ -347,7 +354,7 @@ export class ZxAudioBeeper {
 		// Check if it is necessary to fade.
 		const prevLastAudioSample = this.getLastAudioValue();
 
-		this.startGapFiller(false);
+		this.startGapFiller();
 		this.stopped = true;
 		this.gainNode.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + this.FADE_TO_ZERO_TIME);
 
@@ -421,8 +428,41 @@ export class ZxAudioBeeper {
 	/**
 	 * Sets the visual state of the beeper: 0 or 1.
 	 */
-	protected setVisualBeeperState(beeperValue: boolean) {
-		beeperOutput.textContent = (beeperValue) ? "1" : "0";
+	protected setVisualBeeperState(beeperBuffer: BeeperBuffer) {
+		// Check if changing by the length
+		if (beeperBuffer.bufferLen >= 2) {
+			this.visualBeeperChanging = true;
+			// Check if flipped
+			if (beeperBuffer.bufferLen % 2 == 0) // Even
+				this.lastVisualBeeperState = beeperBuffer.startValue;
+			else
+				this.lastVisualBeeperState = !beeperBuffer.startValue;
+		}
+		else {
+			// Check if start Value changed
+			if (this.lastVisualBeeperState != beeperBuffer.startValue) {
+				// Yes, change detected
+				this.visualBeeperChanging = true;
+				// Remember value
+				this.lastVisualBeeperState = beeperBuffer.startValue;
+			}
+		}
+	}
+
+
+	/**
+	 * Called periodically to update the beeper displayed value.
+	 */
+	protected updateVisualBeeper() {
+		if (this.visualBeeperChanging) {
+			// Display symbol for changing
+			beeperOutput.textContent = '*';
+			this.visualBeeperChanging = false;
+		}
+		else {
+			// Display 0 or 1
+			beeperOutput.textContent = (this.lastVisualBeeperState) ? "1" : "0";
+		}
 	}
 }
 
