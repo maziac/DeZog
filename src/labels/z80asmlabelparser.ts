@@ -48,7 +48,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 		const address=parseInt(line.substr(0, 4), 16);
 		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
 
-			// Check for labels and "equ". It allows also for @/dot notation as used in sjasmplus.
+			// Check for labels and "equ".
 			const match=this.labelRegEx.exec(line);
 			if (match) {
 				let label=match[1];

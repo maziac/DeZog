@@ -303,7 +303,7 @@ export class LabelsClass {
 
 	/**
 	 * Calculates the distance array (distance to next label, or estimated size of a label).
-	 * works with long addresses and fills the 'distanceForLabelAddress' map.
+	 * Works also with long addresses and fills the 'distanceForLabelAddress' map.
 	 * It has entries for each long address with it's size.
 	 * The last label address will stay undefined as no distance to the next label can be measured.
 	 * Similar, if the next label is smaller (maybe because a different bank is used or

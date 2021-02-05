@@ -9,6 +9,7 @@ import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
+import {GlobalStorage} from './globalstorage';
 
 
 
@@ -26,13 +27,16 @@ import {HelpProvider} from './help/helpprovider';
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
 
+	// Init package info
+	PackageInfo.Init(context);
+
+	// Init global storage
+	GlobalStorage.Init(context);
+
 	// Save the extension path also to PackageInfo
 	const extPath = context.extensionPath;
-	PackageInfo.setExtensionPath(extPath);
 	// it is also stored here as Utility does not include vscode which is more unit-test-friendly.
 	Utility.setExtensionPath(extPath);
-
-
 
 	// Check version and show 'What's new' if necessary.
 	const mjrMnrChanged = WhatsNewView.updateVersion(context);
@@ -54,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	// Enable logging.
-	const extensionBaseName = PackageInfo.extensionBaseName;
+	const extensionBaseName = PackageInfo.extension.packageJSON.extensionBaseName;
 	const configuration = vscode.workspace.getConfiguration(extensionBaseName, null);
 	configureLogging(configuration);
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
@@ -193,8 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
 	*/
 
 	// Initialize the Coverage singleton.
-	DecorationClass.Initialize(context);
-
+	DecorationClass.Initialize();
 }
 
 

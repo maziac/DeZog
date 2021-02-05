@@ -67,7 +67,7 @@ export class DecorationClass {
 
 
 	/// Initialize. Call from 'activate' to set the icon paths.
-	public static Initialize(context: vscode.ExtensionContext) {
+	public static Initialize() {
 		// Create new singleton
 		Decoration = new DecorationClass();
 	}

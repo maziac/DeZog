@@ -3,6 +3,7 @@ import * as path from 'path';
 import {readFileSync} from 'fs';
 import {PackageInfo} from './packageinfo';
 import {Version} from './version';
+import {GlobalStorage} from '../globalstorage';
 
 
 export class WhatsNewView {
@@ -17,13 +18,13 @@ export class WhatsNewView {
 	 */
 	public static updateVersion(context: vscode.ExtensionContext): boolean {
 		// Load data from extension storage
-		const versionId = PackageInfo.extensionPath+ '.version';
-		const previousVersion = context.globalState.get<string>(versionId)!;
+		const versionId = 'version';
+		const previousVersion = GlobalStorage.Get<string>(versionId)!;
 		const currentVersion = PackageInfo.extension.packageJSON.version;
 
 		// Update version: "major", "minor"
-		if(currentVersion != previousVersion)
-			context.globalState.update(versionId, currentVersion);
+		if (currentVersion != previousVersion)
+			GlobalStorage.Set(versionId, currentVersion);
 
 		// Compare
 		const isNewer = Version.isNewVersion(currentVersion, previousVersion);
@@ -65,7 +66,7 @@ export class WhatsNewView {
 		html = html.replace('${vscodeResPath}', vscodeResPath);
 
 		// Exchange extension name
-		html = html.replace(/\${extensionName}/g, PackageInfo.extensionName);
+		html = html.replace(/\${extensionName}/g, PackageInfo.extension.packageJSON.extensionName);
 
 		// Exchange extension name
 		html = html.replace(/\${extensionVersion}/g, PackageInfo.extension.packageJSON.version);

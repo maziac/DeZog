@@ -573,7 +573,7 @@ export class ZSimRemote extends DzrpRemote {
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
 		// Inform
-		this.emit('cpuStarted');
+		this.emit('cpuStarted'); // TODO remove
 
 		while (true) {
 			//		Utility.timeDiff();

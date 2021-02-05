@@ -30,7 +30,7 @@ export class HelpView extends BaseView {
 	protected static getHelpHtml() {
 		if (!this.helpHtml) {
 			// Load Usage.md file
-			const extFolder = PackageInfo.extensionPath;
+			const extFolder = PackageInfo.extension.extensionPath;
 			const usageFileName = 'documentation/Usage.md';
 			const path = UnifiedPath.join(extFolder, usageFileName);
 			const mdText = readFileSync(path).toString();
@@ -206,7 +206,7 @@ window.addEventListener('message', event => {
 		let html = HelpView.getHelpHtml();
 
 		// Substitute the resource path
-		const extPath = PackageInfo.extensionPath;
+		const extPath = PackageInfo.extension.extensionPath;
 		const resourcePath = vscode.Uri.file(UnifiedPath.join(extPath, 'documentation'));
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
 		html = html.replace('${vscodeResPath}', vscodeResPath);
