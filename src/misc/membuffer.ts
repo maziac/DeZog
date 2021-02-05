@@ -138,6 +138,16 @@ export class MemBuffer {
 
 
 	/**
+	 * Writes a java script number. I.e. a float 64.
+	 * Size = 8.
+	 */
+	public writeNumber(value: number) {
+		this.dataView?.setFloat64(this.writeOffset, value);
+		this.writeOffset += 8;
+	}
+
+
+	/**
 	 * Writes a boolean value to the next position (offset).
 	 */
 	public writeBoolean(value: boolean) {
@@ -194,6 +204,17 @@ export class MemBuffer {
 		const buffer=wholeBuffer.subarray(this.readOffset, end);
 		this.readOffset=end;
 		return buffer;
+	}
+
+
+	/**
+	 * Reads a java script number from the next position (offset).
+	 * Size = 8.
+	 */
+	public readNumber(): number {
+		const value = this.dataView.getFloat64(this.readOffset);
+		this.readOffset += 8;
+		return value;
 	}
 
 

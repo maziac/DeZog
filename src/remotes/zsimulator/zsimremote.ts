@@ -43,9 +43,6 @@ export class ZSimRemote extends DzrpRemote {
 	// The last used breakpoint ID.
 	protected lastBpId: number;
 
-	// Set to true as long as the CPU is running.
-	protected cpuRunning: boolean;
-
 	// Set to true to stop the CPU from running. Is set when the user presses "break".
 	protected stopCpu: boolean;
 
@@ -104,7 +101,6 @@ export class ZSimRemote extends DzrpRemote {
 		this.passedTstates=0;
 		this.timeStep=Settings.launch.zsim.customCode.timeStep;
 		this.nextStepTstates = 0;
-		this.cpuRunning = false;
 		this.stopCpu = true;
 		this.lastBpId = 0;
 		// Set decoder
@@ -117,14 +113,6 @@ export class ZSimRemote extends DzrpRemote {
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled)
 			this.codeCoverage=new CodeCoverageArray();
-	}
-
-
-	/**
-	 * Returns the CPU state. If running or not (breaked).
-	 */
-	public isCpuRunning() {
-		return this.cpuRunning;
 	}
 
 
@@ -584,6 +572,9 @@ export class ZSimRemote extends DzrpRemote {
 		const limitSpeed = Settings.launch.zsim.limitSpeed;
 		let limitSpeedPrevTime = Date.now();
 		let limitSpeedPrevTstates = this.passedTstates;
+		// Inform
+		this.emit('cpuStarted');
+
 		while (true) {
 			//		Utility.timeDiff();
 			this.z80Cpu.error=undefined;
@@ -717,12 +708,15 @@ export class ZSimRemote extends DzrpRemote {
 				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
 			};
 
+			// Check to leave
 			if (this.passedTstates < leaveAtTstates) {
 				// Stop immediately
 				this.stopCpu=true;
 				// Send Notification
 				Utility.assert(this.continueResolve);
 				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
+				// Inform
+				this.emit('cpuStopped');
 				return;
 			}
 
@@ -770,6 +764,9 @@ export class ZSimRemote extends DzrpRemote {
 				Utility.assert(this.continueResolve);
 				if (this.continueResolve)
 					this.continueResolve({breakNumber, breakAddress, breakReasonString});
+
+				// Inform
+				this.emit('cpuStopped');
 				return;
 			}
 		}
@@ -843,6 +840,9 @@ export class ZSimRemote extends DzrpRemote {
 		for (const obj of this.serializeObjects)
 			obj.deserialize(memBuffer);
 
+		// Update the simulation view
+		this.emit('restored');
+
 		return memBuffer.getUint8Array();
 	}
 
@@ -891,9 +891,8 @@ export class ZSimRemote extends DzrpRemote {
 
 	/**
 	 * Returns the passed T-states since start of simulation.
-	 * (Or since last state restore.)
 	 */
-	public getPassedTstates(): number {
+	public getPassedTstates(): number { // TODO: Brauch ich vielleicht nicht mehr.
 		return this.passedTstates;
 	}
 
@@ -1163,10 +1162,8 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 		// Set the temporary breakpoints array
 		// Run the Z80-CPU in a loop
 		this.stopCpu = false;
-		this.cpuRunning = true;
 		this.memory.clearHit();
 		await this.z80CpuContinue(bp1Address, bp2Address);
-		this.cpuRunning = false;
 	}
 
 
@@ -1287,8 +1284,6 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
  	*/
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		this.deserializeState(stateData);
-		// Update the screen etc.
-		this.emit('update'); // TODO ReMOVE
 	}
 
 

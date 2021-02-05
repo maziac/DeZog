@@ -539,7 +539,8 @@ export class Z80Cpu implements Serializeable {
 		//memBuffer.write8(s.cycle_counter);
 
 		// Additional state
-		memBuffer.write32(this.remainingInterruptTstates);
+		memBuffer.writeNumber(this.remainingInterruptTstates);
+		memBuffer.writeNumber(this.cpuTstatesCounter);
 	}
 
 
@@ -597,12 +598,12 @@ export class Z80Cpu implements Serializeable {
 		z80.setState(r);
 
 		// Additional state
-		this.remainingInterruptTstates=memBuffer.read32();
+		this.remainingInterruptTstates = memBuffer.readNumber();
+		this.cpuTstatesCounter = memBuffer.readNumber();
 
 		// Reset statistics
 		this.cpuLoadTstates=0;
 		this.cpuWithHaltTstates=0;
 		this.cpuLoad = 1.0;	// Start with full load
-		this.cpuTstatesCounter = 0;	// This will force an update of the zsim screen etc.
 	}
 }

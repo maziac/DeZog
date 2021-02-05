@@ -1,3 +1,4 @@
+import {Log} from "../../log";
 import {Serializeable, MemBuffer} from "../../misc/membuffer";
 
 /**
@@ -56,8 +57,6 @@ export class ZxBeeper implements Serializeable {
 	 * internally used buffer size is bigger.
 	 * @param passedTstates Usually 0 as ZxBeeper is created before simulation starts.
 	 * If it would be initialized later, the current t-States should be passed here.
-	 * Note: on restore this.passedTstates are set to 0 (not restored) in order to
-	 * force an update of the screen in the ZSimulationView.
 	 */
 	constructor(cpuFrequency: number, sampleRate: number, updateFrequency: number, passedTstates = 0) {
 		// Create the buffer
@@ -100,45 +99,60 @@ export class ZxBeeper implements Serializeable {
 	 * Sets the length of the last beeper value.
 	 * Length is calculated from current t-states to
 	 * last (beeper) t-states.
-	 * Length is put in array in samples (at sampleRate).
-	 * If index has not advanced far enough (1 sample) nothing is stored.
+	 * Length is put into the array in samples (at sampleRate).
+	 * If index has not advanced far enough (1 sample) the previous value is corrected
+	 * or the lastBeeperValue is corrected.
 	 * @param passedTstates The current t-states count.
 	 */
 	protected setLastBeeperValue(passedTstates: number) {
 		// Calculate
-		//const lastBTstates = Math.floor(this.lastBeeperTstates);
-		//Log.log('passedTstates=' + passedTstates + ',  lastBeeperTstates=' + lastBTstates + ',  diff=' + (passedTstates - lastBTstates));
+		const lastBTstates = Math.floor(this.lastBeeperTstates);
+		Log.log('setLastBeeperValue: value=' +(!this.lastBeeperValue)+ ', passedTstates=' + passedTstates + ',  lastBeeperTstates=' + lastBTstates + ',  diff=' + (passedTstates - lastBTstates));
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
 		let timeIndex = Math.floor(time * this.sampleRate);
 		if (timeIndex >= this.beeperLenBuffer.length) {
 			// This would result in a "normal" audio frame buffer bigger than beeperLenBuffer.length
 			// which is 2x the normal update frequency.
 			// In this case the buffer is "full" and nothing is added.
+
+			Log.log('setLastBeeperValue: timeIndex >= this.beeperLenBuffer.length, return');
 			return;
 		}
 		let length = timeIndex - this.lastBeeperTimeIndex;
 		if (length == 0) {
+			Log.log('setLastBeeperValue: A length == 0');
 			// Value has changed within a sample.
 			// Adjust the old value
 			if (this.lastBeeperIndex > 0) {
+				Log.log('setLastBeeperValue: A length == 0, lastBeeperIndex=' + this.lastBeeperIndex);
 				this.lastBeeperIndex--;
 				this.lastBeeperTimeIndex -= this.beeperLenBuffer[this.lastBeeperIndex];
 			}
 			// Start value
-			if (this.lastBeeperTimeIndex == 0)
+			if (this.lastBeeperTimeIndex == 0) {
 				this.startBeeperValue = !this.lastBeeperValue;
+				Log.log('setLastBeeperValue: A this.lastBeeperTimeIndex == 0: startBeeperValue='+this.startBeeperValue);
+			}
+			Log.log('setLastBeeperValue: A return');
 			return;
 		}
 
 		// Start value
-		if (this.lastBeeperTimeIndex == 0)
-			this.startBeeperValue = this.lastBeeperValue;
+		//if (this.lastBeeperTimeIndex == 0) {
+		//this.startBeeperValue = this.lastBeeperValue;
+	//	if (timeIndex == 0) { // TODO SUPERFLUOUS
+	//		this.startBeeperValue = !this.lastBeeperValue;
+	//		Log.log('setLastBeeperValue: timeIndex == 0, startBeeperValue=' + this.startBeeperValue);
+	//	}
+
+		Log.log('setLastBeeperValue: length='+length+', lastBeeperIndex='+this.lastBeeperIndex);
 
 		// Set buffer
 		this.beeperLenBuffer[this.lastBeeperIndex++] = length;
 
 		// Remember
 		this.lastBeeperTimeIndex = timeIndex;
+		Log.log('setLastBeeperValue: end');
 	}
 
 
@@ -153,6 +167,7 @@ export class ZxBeeper implements Serializeable {
 	 * (in samples) the previous value lasted.
 	 */
 	public getBeeperBuffer(passedTstates: number): BeeperBuffer {
+		Log.log('getBeeperBuffer: start.');
 		// Calculate time
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
 		let timeIndex = Math.floor(time * this.sampleRate);
@@ -178,19 +193,23 @@ export class ZxBeeper implements Serializeable {
 		}
 
 		// Set values
-		const diffTstates = totalLength / this.sampleRate * this.cpuFrequency;
-		this.lastBeeperTstates += diffTstates;
+	//	const diffTstates = Math.floor(totalLength / this.sampleRate * this.cpuFrequency);
+	//	this.lastBeeperTstates += diffTstates;
+		this.lastBeeperTstates = passedTstates;
 		this.lastBeeperIndex = 0;
 		this.lastBeeperTimeIndex = 0;
 
-		this.logBuf.push({
+		Log.log('getBeeperBuffer: value=' + this.startBeeperValue+ ', totalLength=' +totalLength+', lastBeeperTstates=' + this.lastBeeperTstates);
+
+
+		this.logBuf.push({  // TODO REMOVE log
 			startValue: this.startBeeperValue,
 			buffer: buffer,
 			passedTstates: passedTstates,
 			passedTime: passedTstates / this.cpuFrequency,
 			totalLength: totalLength,
 			totalLengthTime: totalLength / this.sampleRate,
-			diffStates: diffTstates
+	//		diffStates: diffTstates
 		});
 
 		// Set next beeper value (this is for the case that no change happens until
@@ -228,8 +247,10 @@ export class ZxBeeper implements Serializeable {
 	 * Basically the last beeper value.
 	 */
 	public serialize(memBuffer: MemBuffer) {
-		// Get slot/bank mapping
+		// Write slot/bank mapping
 		memBuffer.writeBoolean(this.lastBeeperValue);
+		// Write last t-states
+		memBuffer.writeNumber(this.lastBeeperTstates);
 	}
 
 
@@ -239,6 +260,8 @@ export class ZxBeeper implements Serializeable {
 	public deserialize(memBuffer: MemBuffer) {
 		// Read beeper state
 		this.lastBeeperValue = memBuffer.readBoolean();
+		// Write last t-states
+		this.lastBeeperTstates = memBuffer.readNumber();
 		// Reset other values
 		this.lastBeeperIndex = 0;
 		this.lastBeeperTstates = 0;

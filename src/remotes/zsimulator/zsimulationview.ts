@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import {EventEmitter} from 'events';
 import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
 import {LogCustomCode} from '../../log';
+
 
 /**
  * A Webview that shows the simulated peripherals.
@@ -18,14 +18,8 @@ export class ZSimulationView extends BaseView {
 	static MESSAGE_HIGH_WATERMARK=100;
 	static MESSAGE_LOW_WATERMARK=10;
 
-	// Holds the gif image a string.
-	protected screenGifString;
-
 	// A map to hold the values of the simulated ports.
 	protected simulatedPorts: Map<number, number>;	// Port <-> value
-
-	/// We listen for 'update' on this emitter to update the html.
-	protected parent: EventEmitter;
 
 	// A pointer to the simulator.
 	protected simulator: ZSimRemote;
@@ -37,24 +31,31 @@ export class ZSimulationView extends BaseView {
 	// Is used to insert "pauses" so that the webview can catch up.
 	protected countOfOutstandingMessages: number;
 
-	// Stores the last T-states value.
-	// Used to check for changes.
-	protected previousTstates: number;
-
-	// Is set by 'updateDisplay' if cpu T-states do not advance anymore.
-	protected cpuStopped: boolean;
-
 	// The time interval to update the simulation view.
 	protected displayTime: number;
 
 	// The timer used for updating the display.
 	protected displayTimer: NodeJS.Timeout;
 
+	// The timeout (with no CPU activity) before a 'cpuStopped' is sent to the webview.
+	protected stopTime: number;
+
+	// The timer used for the stop time.
+	protected stopTimer: NodeJS.Timeout;
+
 	// Set by the display timer: the next time an update will happen.
 	protected nextUpdateTime: number;
 
 	// Set by the vertSync event: The last sync time.
 	protected lastVertSyncTime: number;
+
+
+	// Stores the last T-states value.
+	// Used to check for changes.
+	protected previousTstates: number;
+
+	// Set through events from the simulator.
+	protected cpuRunning: boolean; // TODO :remove
 
 
 	/**
@@ -68,23 +69,10 @@ export class ZSimulationView extends BaseView {
 			return;
 
 		// Create new instance
-		const zxview: ZSimulationView=new ZSimulationView(simulator);
-		simulator.once('closed', () => {
-			zxview.close();
-			//zxview=undefined;
-		});
-		simulator.on('vertSync', async (reason) => {
-			zxview.vertSync();
-		});
-		simulator.customCode?.on('sendToCustomUi', (message: any) => {
-			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: '+JSON.stringify(message));
-			// Wrap message from custom code
-			const outerMsg={
-				command: 'receivedFromCustomLogic',
-				value: message
-			};
-			zxview.sendMessageToWebView(outerMsg);
-		});
+		//const zxview: ZSimulationView =
+			new ZSimulationView(simulator);
+
+		// TODO: Remove the factory.
 	}
 
 
@@ -97,10 +85,16 @@ export class ZSimulationView extends BaseView {
 		// Init
 		this.simulator = simulator;
 		this.countOfOutstandingMessages = 0;
-		this.previousTstates = -1;
 		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
 		this.displayTimer = undefined as any;
-		this.cpuStopped = true;
+		this.displayTime = 1000 / Settings.launch.zsim.updateFrequency;
+		this.displayTimer = undefined as any;
+		this.stopTime = 2 * this.displayTime;
+		if (this.stopTime < 500)
+			this.stopTime = 500;	// At least 500 ms
+		this.stopTimer = undefined as any;
+		this.cpuRunning = false;
+		this.previousTstates = -1;
 
 		// ZX Keyboard?
 		this.simulatedPorts = new Map<number, number>();
@@ -159,15 +153,62 @@ export class ZSimulationView extends BaseView {
 		// Inform custom code that UI is ready.
 		this.simulator.customCode?.uiReady();
 
+		// Check if simulator restored
+		this.simulator.on('restored', () => {
+			// Change previous t-states to force an update.
+			this.previousTstates = -1;
+		});
+
+		// Close
+		this.simulator.once('closed', () => {
+			this.close();
+		});
+
+		// Handle vertical sync
+		this.simulator.on('vertSync', async (reason) => {
+			this.vertSync();
+		});
+
+		// Handle custom code messages
+		this.simulator.customCode?.on('sendToCustomUi', (message: any) => {
+			LogCustomCode.log('UI: UIAPI.receivedFromCustomLogic: ' + JSON.stringify(message));
+			// Wrap message from custom code
+			const outerMsg = {
+				command: 'receivedFromCustomLogic',
+				value: message
+			};
+			this.sendMessageToWebView(outerMsg);
+		});
+
 		// Update regularly
-		this.setDisplayTimer();
+		this.startDisplayTimer();
+
+		// Update once initially
+		//this.updateDisplay();
 	}
 
 
 	/**
-	 * Sets the display timer.
+	 * Starts the stop timer.
+	 * Some time after the last CPU activity has been found a 'cpuStopped'
+	 * is sent to the webview to e.g. shutdown audio.
 	 */
-	protected setDisplayTimer() {
+	protected restartStopTimer() {
+		// Update on timer
+		clearInterval(this.stopTimer);
+		// Start timer
+		this.stopTimer = setTimeout(() => {
+			// Send stop to audio in webview
+			this.sendMessageToWebView({command: 'cpuStopped'});
+			this.stopTimer = undefined as any;
+		}, this.stopTime);	// in ms
+	}
+
+
+	/**
+	 * Starts the display timer.
+	 */
+	protected startDisplayTimer() {
 		// Update on timer
 		clearInterval(this.displayTimer);
 		// Get current time
@@ -188,6 +229,17 @@ export class ZSimulationView extends BaseView {
 
 
 	/**
+	 * Stops the display timer.
+	 */
+	/*
+	protected stopppDisplayTimer() { // TODO: REMOVE
+		// Update on timer
+		clearInterval(this.displayTimer);
+		this.displayTimer = undefined as any;
+	}
+	*/
+
+	/**
 	 * A vertical sync was received from the Z80 simulation.
 	 * Is used to sync the display as best as possible:
 	 * On update the next time is stored (nextUpdateTime).
@@ -205,15 +257,12 @@ export class ZSimulationView extends BaseView {
 		const diff = currentTime - this.lastVertSyncTime;
 		this.lastVertSyncTime = currentTime;
 		// Extrapolate
-
-		//return; //TODO REMOVE
-
 		if (currentTime + diff > this.nextUpdateTime) {
 			//Log.log("vertSync: do update");
 			// Do the update earlier, now at the vert sync
 			this.updateDisplay();
 			// Restart timer
-			this.setDisplayTimer();
+			this.startDisplayTimer();
 		}
 	}
 
@@ -481,13 +530,12 @@ export class ZSimulationView extends BaseView {
 	 */
 	public updateDisplay() {
 		// Check if CPU did something
-		const prevStopped = this.cpuStopped;
-		this.cpuStopped = !this.simulator.isCpuRunning();
-		if (prevStopped) {
+		const tStates = this.simulator.getPassedTstates();
+		if (this.previousTstates == tStates)
 			return;
-		}
+		this.previousTstates = tStates;
+		this.restartStopTimer();
 
-		// Yes, it is running
 		try {
 			let cpuLoad;
 			let slots;
@@ -537,12 +585,6 @@ export class ZSimulationView extends BaseView {
 			this.simulator.memory.clearVisualMemory();
 		}
 		catch {}
-
-		// If it is now stopped, stop also the audio
-		if (this.cpuStopped) {
-			// Inform web view about stop
-			this.sendMessageToWebView({command: 'cpuStopped'});
-		}
 	}
 
 
