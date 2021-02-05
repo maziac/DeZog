@@ -45,7 +45,7 @@ export class ZxBeeper implements Serializeable {
 	protected sampleRate: number;
 
 
-	protected logBuf = new Array<any>(); // TODO REMOVE
+	//protected logBuf = new Array<any>();
 
 	/**
 	 * Constructor.
@@ -68,6 +68,7 @@ export class ZxBeeper implements Serializeable {
 		this.lastBeeperValue = true;
 		this.cpuFrequency = cpuFrequency;
 	}
+
 
 	/**
 	 * Returns the last set beeper value.
@@ -106,46 +107,36 @@ export class ZxBeeper implements Serializeable {
 	 */
 	protected setLastBeeperValue(passedTstates: number) {
 		// Calculate
-		const lastBTstates = Math.floor(this.lastBeeperTstates);
-		Log.log('setLastBeeperValue: value=' +(!this.lastBeeperValue)+ ', passedTstates=' + passedTstates + ',  lastBeeperTstates=' + lastBTstates + ',  diff=' + (passedTstates - lastBTstates));
+		//Log.log('setLastBeeperValue: value=' +(!this.lastBeeperValue)+ ', passedTstates=' + passedTstates + ',  lastBeeperTstates=' + this.lastBeeperTstates + ',  diff=' + (passedTstates - lastBTstates));
 		const time = (passedTstates - this.lastBeeperTstates) / this.cpuFrequency;
 		let timeIndex = Math.floor(time * this.sampleRate);
 		if (timeIndex >= this.beeperLenBuffer.length) {
 			// This would result in a "normal" audio frame buffer bigger than beeperLenBuffer.length
 			// which is 2x the normal update frequency.
 			// In this case the buffer is "full" and nothing is added.
-
-			Log.log('setLastBeeperValue: timeIndex >= this.beeperLenBuffer.length, return');
+			//Log.log('setLastBeeperValue: timeIndex >= this.beeperLenBuffer.length, return');
 			return;
 		}
 		let length = timeIndex - this.lastBeeperTimeIndex;
 		if (length == 0) {
-			Log.log('setLastBeeperValue: A length == 0');
+			//Log.log('setLastBeeperValue: A length == 0');
 			// Value has changed within a sample.
 			// Adjust the old value
 			if (this.lastBeeperIndex > 0) {
-				Log.log('setLastBeeperValue: A length == 0, lastBeeperIndex=' + this.lastBeeperIndex);
+				//Log.log('setLastBeeperValue: A length == 0, lastBeeperIndex=' + this.lastBeeperIndex);
 				this.lastBeeperIndex--;
 				this.lastBeeperTimeIndex -= this.beeperLenBuffer[this.lastBeeperIndex];
 			}
 			// Start value
 			if (this.lastBeeperTimeIndex == 0) {
 				this.startBeeperValue = !this.lastBeeperValue;
-				Log.log('setLastBeeperValue: A this.lastBeeperTimeIndex == 0: startBeeperValue='+this.startBeeperValue);
+				//Log.log('setLastBeeperValue: A this.lastBeeperTimeIndex == 0: startBeeperValue='+this.startBeeperValue);
 			}
-			Log.log('setLastBeeperValue: A return');
+			//Log.log('setLastBeeperValue: A return');
 			return;
 		}
 
-		// Start value
-		//if (this.lastBeeperTimeIndex == 0) {
-		//this.startBeeperValue = this.lastBeeperValue;
-	//	if (timeIndex == 0) { // TODO SUPERFLUOUS
-	//		this.startBeeperValue = !this.lastBeeperValue;
-	//		Log.log('setLastBeeperValue: timeIndex == 0, startBeeperValue=' + this.startBeeperValue);
-	//	}
-
-		Log.log('setLastBeeperValue: length='+length+', lastBeeperIndex='+this.lastBeeperIndex);
+		//Log.log('setLastBeeperValue: length='+length+', lastBeeperIndex='+this.lastBeeperIndex);
 
 		// Set buffer
 		this.beeperLenBuffer[this.lastBeeperIndex++] = length;
@@ -193,24 +184,22 @@ export class ZxBeeper implements Serializeable {
 		}
 
 		// Set values
-	//	const diffTstates = Math.floor(totalLength / this.sampleRate * this.cpuFrequency);
-	//	this.lastBeeperTstates += diffTstates;
 		this.lastBeeperTstates = passedTstates;
 		this.lastBeeperIndex = 0;
 		this.lastBeeperTimeIndex = 0;
 
-		Log.log('getBeeperBuffer: value=' + this.startBeeperValue+ ', totalLength=' +totalLength+', lastBeeperTstates=' + this.lastBeeperTstates);
+		//Log.log('getBeeperBuffer: value=' + this.startBeeperValue+ ', totalLength=' +totalLength+', lastBeeperTstates=' + this.lastBeeperTstates);
 
-
-		this.logBuf.push({  // TODO REMOVE log
+		/*
+		this.logBuf.push({
 			startValue: this.startBeeperValue,
 			buffer: buffer,
 			passedTstates: passedTstates,
 			passedTime: passedTstates / this.cpuFrequency,
 			totalLength: totalLength,
-			totalLengthTime: totalLength / this.sampleRate,
-	//		diffStates: diffTstates
+			totalLengthTime: totalLength / this.sampleRate
 		});
+		*/
 
 		// Set next beeper value (this is for the case that no change happens until
 		// next getBeeperBuffer)
