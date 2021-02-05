@@ -5,6 +5,7 @@ import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
 import {LogCustomCode} from '../../log';
+import {GlobalStorage} from '../../globalstorage';
 
 
 /**
@@ -294,6 +295,9 @@ export class ZSimulationView extends BaseView {
 		switch (message.command) {
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
+				break;
+			case 'volumeChanged':
+				GlobalStorage.Set('audio.volume', message.value);
 				break;
 			case 'portBit':
 				this.setPortBit(message.value.port, message.value.on, message.value.bitByte);
@@ -804,6 +808,7 @@ width:70px;
 		if (Settings.launch.zsim.zxBeeper) {
 
 			const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue().toString();
+			const volume = GlobalStorage.Get<number>('audio.volume') || 0.75;
 			html += `
 <details open="true">
   <summary>ZX Beeper</summary>
@@ -819,7 +824,7 @@ width:70px;
   <span style="display:table-cell; vertical-align: middle;">-</span>
 
   <span style="display:table-cell; vertical-align: middle">
-	  <input id="audio.volume" type="range" min="0" max="1" step="0.01" value="0" oninput="zxAudioBeeper.setVolume(parseFloat(this.value))">
+	  <input id="audio.volume" type="range" min="0" max="1" step="0.01" value="0" oninput="volumeChanged(parseFloat(this.value))">
   </span>
   <span style="display:table-cell; vertical-align: middle">+</span>
 
@@ -828,6 +833,7 @@ width:70px;
 <script>
 	// Singleton for audio
 	const zxAudioBeeper = new ZxAudioBeeper(${Settings.launch.zsim.audioSampleRate});
+	zxAudioBeeper.setVolume(${volume});
 
 	// Get Beeper output object
 	const beeperOutput = document.getElementById("beeper.output");

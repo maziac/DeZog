@@ -189,6 +189,21 @@ function reloadCustomLogicAndUi() {
 }
 
 
+// Called when the volume was changed by the user.
+// @ts-ignore
+function volumeChanged(volumeStr: string) {
+	// Convert to number
+	const volume = parseFloat(volumeStr);
+	// Inform beeper
+	zxAudioBeeper.setVolume(volume);
+	// Inform vscode
+	vscode.postMessage({
+		command: 'volumeChanged',
+		value: volume
+	});
+}
+
+
 // Handle key down presses.
 document.addEventListener('keydown', keydown);
 function keydown(e) {
