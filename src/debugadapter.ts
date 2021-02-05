@@ -421,9 +421,7 @@ export class DebugSessionClass extends DebugSession {
 			// vscode is informed and will e.g. update the watches.)
 			BaseView.onChange(() => {
 				// TODO: InvalidatedEvent does not work yet as intended, see https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
-				this.sendEvent(new InvalidatedEvent(['variables'])); // Maybe this works
-				//this.sendEvent(new InvalidatedEvent(['all']));
-				//this.sendEvent(new InvalidatedEvent());
+				this.sendEvent(new InvalidatedEvent(['variables']));
 			});
 
 			// Set root path
@@ -2709,9 +2707,6 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		else if (param=='restore') {
 			// Restores the state
 			await this.stateRestore(stateName);
-			// Reload register values etc.
-			this.sendEventContinued();
-			this.sendEvent(new StoppedEvent('Restore', DebugSessionClass.THREAD_ID));
 			return "Restored state '"+stateName+"'.";
 		}
 		else if (param=='list') {
@@ -2924,6 +2919,10 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param stateName A state name (or number) can be appended, so that different states might be saved.
 	 */
 	protected async stateRestore(stateName: string): Promise<void> {
+		// Check
+		if (this.processingSteppingRequest) {
+			throw new Error("Can't restore state while running. Please stop first.");
+		}
 		// Load data from temp directory
 		let filePath;
 		try {
@@ -2940,6 +2939,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		StepHistory.init();
 		// Clear decorations
 		Decoration?.clearAllDecorations();
+		// Update registers
+		await Remote.getRegistersFromEmulator();
+		await Remote.getCallStackFromEmulator();
 		// Update memory etc.
 		await this.update();
 		// Send event
