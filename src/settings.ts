@@ -164,6 +164,9 @@ export interface ZSimType {
 	// If enabled it shows the contents of the ZX Spectrum screen.
 	ulaScreen: boolean,
 
+	// The displayed border width in pixels. No border if 0. Works only in conjunction with ulaScreen.
+	zxBorderWidth: number,
+
 	// Enables ZX Spectrum sound through it's beeper.
 	zxBeeper: boolean,
 
@@ -399,6 +402,8 @@ export class Settings {
 			Settings.launch.zsim.kempstonJoy = false;
 		if (Settings.launch.zsim.ulaScreen == undefined)
 			Settings.launch.zsim.ulaScreen = false;
+		if (Settings.launch.zsim.zxBorderWidth == undefined || !Settings.launch.zsim.ulaScreen)
+			Settings.launch.zsim.zxBorderWidth = 0;
 		if (Settings.launch.zsim.zxBeeper == undefined)
 			Settings.launch.zsim.zxBeeper = false;
 		if (Settings.launch.zsim.audioSampleRate == undefined)

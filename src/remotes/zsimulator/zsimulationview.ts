@@ -547,6 +547,7 @@ export class ZSimulationView extends BaseView {
 			let visualMem;
 			let screenImg;
 			let audio;
+			let borderColor;
 
 			// Update values
 			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
@@ -562,7 +563,7 @@ export class ZSimulationView extends BaseView {
 
 			if (Settings.launch.zsim.ulaScreen) {
 				// A time in ms which is used for the flashing of the color attributes. The flash frequency is 1.6Hz = 625ms.
-				const time = this.simulator.getTstatesSync()/this.simulator.getCpuFrequencySync()*1000;
+				const time = this.simulator.getTstatesSync() / this.simulator.getCpuFrequencySync() * 1000;
 				const ulaData = this.simulator.getUlaScreen();
 				screenImg = {
 					time,
@@ -570,9 +571,14 @@ export class ZSimulationView extends BaseView {
 				};
 			}
 
+			if (Settings.launch.zsim.zxBorderWidth > 0) {
+				// Get the border and set it.
+				borderColor = this.simulator.getZxBorderColor();
+			}
+
 			if (Settings.launch.zsim.zxBeeper) {
 				// Audio
-				audio = this.simulator.getBeeperBuffer();
+				audio = this.simulator.getZxBeeperBuffer();
 			}
 
 			// Create message to update the webview
@@ -582,6 +588,7 @@ export class ZSimulationView extends BaseView {
 				slotNames,
 				visualMem,
 				screenImg,
+				borderColor,
 				audio
 			};
 			this.sendMessageToWebView(message);
@@ -793,7 +800,8 @@ width:70px;
 		if (Settings.launch.zsim.ulaScreen) {
 			html+=
 				`<!-- Display the screen gif -->
-<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:1px solid var(--vscode-foreground); width:100%; height:100%"></canvas>
+<canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:${Settings.launch.zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
+</canvas>
 <script>
 	<!-- Store the screen image source -->
 	const screenImg=document.getElementById("screen_img_id");

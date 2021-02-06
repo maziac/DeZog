@@ -362,6 +362,11 @@
 									"description": "If enabled it shows the contents of the ZX Spectrum screen.",
 									"default": true
 								},
+								"zxBorderWidth": {
+									"type": "number",
+									"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
+									"default": true
+								},
 								"zxBeeper": {
 									"type": "boolean",
 									"description": "Enables ZX Spectrum sound through it's beeper.",

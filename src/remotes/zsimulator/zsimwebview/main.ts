@@ -7,6 +7,7 @@ declare var visualMem: HTMLCanvasElement;
 //declare var screenImg: HTMLCanvasElement;
 declare var screenImgContext: CanvasRenderingContext2D;
 declare var screenImgImgData: ImageData;
+declare var screenImg: HTMLDivElement;
 declare var UIAPI: CustomUiApi;
 // @ts-ignore
 declare var zxAudioBeeper: ZxAudioBeeper;
@@ -77,6 +78,13 @@ window.addEventListener('message', event => {
 					const data = message.screenImg.ulaData;
 					const time = message.screenImg.time;
 					UlaScreen.drawUlaScreen(screenImgContext, screenImgImgData, data, time);
+				}
+
+				if (message.borderColor != undefined) {
+					// Convert ZX color to html color
+					const htmlColor = UlaScreen.getHtmlColor(message.borderColor);
+					// Set color
+					screenImg.style.borderColor = htmlColor;
 				}
 
 				if (message.audio) {

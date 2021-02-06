@@ -117,5 +117,21 @@ class UlaScreen {
 		// Write image
 		ctx.putImageData(imgData, 0, 0);
 	}
+
+
+	/**
+	 * Returns the html color for a ZX color.
+	 * @param zxColor [0;15]. 0-7 = black-white, 8-15 = bright: black - white
+	 * @returns E.g. "#D70000" for RED
+	 */
+	public static getHtmlColor(zxColor: number) {
+		let i = 3 * zxColor;
+		let htmlColor = '#';
+		for (let k = 0; k < 3; k++) {
+			const value = this.zxPalette[i++];
+			htmlColor += value.toString(16).padStart(2, '0');
+		}
+		return htmlColor;
+	}
 }
 
