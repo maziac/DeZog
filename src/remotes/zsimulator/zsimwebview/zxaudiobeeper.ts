@@ -144,7 +144,9 @@ export class ZxAudioBeeper {
 	 */
 	public setVolume(volume: number) {
 		this.volume = volume;
-		this.gainNode.gain.value = volume;
+		// Use a "ramp" otherwise changing the volume will introduce some noise
+		this.gainNode.gain.value = this.gainNode.gain.value;
+		this.gainNode.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.1)
 	}
 
 
@@ -351,6 +353,7 @@ export class ZxAudioBeeper {
 	 * @param value The audio value to use.
 	 */
 	protected startFadeToZero() {
+		return; // TODO REMOVE
 		let prevLastAudioSample = this.getLastAudioValue();
 
 		// Get current index
