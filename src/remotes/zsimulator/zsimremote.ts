@@ -908,7 +908,7 @@ export class ZSimRemote extends DzrpRemote {
 	/**
 	 * Returns the passed T-states since start of simulation.
 	 */
-	public getPassedTstates(): number { // TODO: Brauch ich vielleicht nicht mehr.
+	public getPassedTstates(): number {
 		return this.passedTstates;
 	}
 

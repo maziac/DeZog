@@ -57,8 +57,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => helpProvider.createHelpView()));
 
 
-	// Enable logging.
-	const extensionBaseName = PackageInfo.extension.packageJSON.extensionBaseName;
+	// Enable e.g. logging.
+	const extension = PackageInfo.extension;
+	const packageJSON = extension.packageJSON;
+	const extensionBaseName = packageJSON.name;
 	const configuration = vscode.workspace.getConfiguration(extensionBaseName, null);
 	configureLogging(configuration);
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {

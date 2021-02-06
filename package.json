@@ -121,7 +121,7 @@
 					"default": true
 				},
 				"dezog.donated": {
-					"description": "If you donated (press the 'Donate...' button in hex calculator to do so) you can hide the button by setting this parameter.",
+					"description": "If you donated (press the donate button in the help) you can hide the button by setting this parameter.",
 					"type": "boolean",
 					"scope": "resource",
 					"default": false

@@ -598,7 +598,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			// Get return address
 			const retAddr=this.decoder.getSPContent(currentLine);
 			// Get memory at return address
-			// TODO: Would need to read banked memory (also for ZEsarUX)
+			// REMARK: Maybe I should do: Would need to read banked memory (also for ZEsarUX)
 			const data=await Remote.readMemoryDump((retAddr-3)&0xFFFF, 3);
 			// Check for CALL and RST
 			const firstByte=data[0];
@@ -625,7 +625,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			}
 			else {
 				// Now find label for this address
-				// TODO: Check if I could lookup a long address here
+				// REMARK: Maybe I should check if I could lookup a long address here
 				const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 				labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			}
@@ -790,7 +790,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			expectedSP=sp;
 			// Now find label for this address
 			const callAddr = (opcodes >>> 8) & 0xFFFF;
-			// TODO: Check if I could lookup a long address here
+			// REMARK: Maybe I should check if I could lookup a long address here
 			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;
@@ -803,7 +803,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			expectedSP=sp;
 			// Now find label for this address
 			const callAddr = this.getRstAddress(opcodes);
-			// TODO: Check if I could lookup a long address here
+			// REMARK: Maybe I should check if I could lookup a long address here
 			const labelCallAddrArr=Labels.getLabelsForNumber64k(callAddr);
 			const labelCallAddr=(labelCallAddrArr.length>0)? labelCallAddrArr[0]:Utility.getHexString(callAddr, 4)+'h';
 			const name=labelCallAddr;

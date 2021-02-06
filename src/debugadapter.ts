@@ -420,7 +420,8 @@ export class DebugSessionClass extends DebugSession {
 			// Action on changed value (i.e. when the user changed a value
 			// vscode is informed and will e.g. update the watches.)
 			BaseView.onChange(() => {
-				// TODO: InvalidatedEvent does not work yet as intended, see https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
+				// This ['variables'] seems to work:
+				// See https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
 				this.sendEvent(new InvalidatedEvent(['variables']));
 			});
 

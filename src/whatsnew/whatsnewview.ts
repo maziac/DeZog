@@ -66,7 +66,7 @@ export class WhatsNewView {
 		html = html.replace('${vscodeResPath}', vscodeResPath);
 
 		// Exchange extension name
-		html = html.replace(/\${extensionName}/g, PackageInfo.extension.packageJSON.extensionName);
+		html = html.replace(/\${extensionName}/g, PackageInfo.extension.packageJSON.id);
 
 		// Exchange extension name
 		html = html.replace(/\${extensionVersion}/g, PackageInfo.extension.packageJSON.version);
