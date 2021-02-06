@@ -365,7 +365,6 @@ export class ZxAudioBeeper {
 		// Fade out
 		const currentGain = this.gainNode.gain.value;
 		this.gainNode.gain.value = currentGain;	// Set start time
-		//const fadeStartTime = this.ctx.currentTime + this.FADE_TO_ZERO_TIME;
 		const fadeStartTime = this.nextFrameStartTime + prevIndex / this.sampleRate;
 		this.gainNode.gain.linearRampToValueAtTime(currentGain, fadeStartTime); // Stay at volume until end of last frame
 		this.gainNode.gain.linearRampToValueAtTime(0.0, fadeStartTime + this.FADE_TO_ZERO_TIME); // Set end time

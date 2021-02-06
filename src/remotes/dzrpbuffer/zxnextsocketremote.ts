@@ -149,7 +149,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		this.stopCmdRespTimeout();
 		this.cmdRespTimeout = setTimeout(() => {
 			this.stopCmdRespTimeout();
-			const err = new Error('No response received from remote. A simple reason for this message is that the ZX Next is running the debugged program and cannot answer. In that case press the yellow NMI button on the ZX Next to pause execution.');
+			const err = new Error('No response received from remote. A simple reason for this message is that the ZX Next is running the debugged program and cannot answer. In that case press the yellow NMI button on the ZX Next to pause execution. It can, of course, be also any other connection problem.');
 			// Log
 			LogSocket.log('Warning: ' + err.message);
 			// Show warning (only if a few moments have gone after the last CMD_CONTINUE)
@@ -205,13 +205,24 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
-		return new Promise<void>(resolve => {
+		return new Promise<void>((resolve, reject) => {
 			// Send data
 			const txt=this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('>>> ZxNextSocketRemote: Sending '+txt);
-			this.socket.write(buffer, () => {
-					resolve();
-			});
+			LogSocket.log('>>> ZxNextSocketRemote: Sending ' + txt);
+			let outerError;
+			try {
+				this.socket.write(buffer, (error) => {
+					if (!outerError) {
+						if (error)
+							throw error;
+						resolve();
+					}
+				});
+			}
+			catch (e) {
+				outerError = e;
+				reject(e);
+			}
 		});
 	}
 
