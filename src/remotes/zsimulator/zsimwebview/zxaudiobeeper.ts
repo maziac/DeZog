@@ -353,7 +353,6 @@ export class ZxAudioBeeper {
 	 * @param value The audio value to use.
 	 */
 	protected startFadeToZero() {
-		return; // TODO REMOVE
 		let prevLastAudioSample = this.getLastAudioValue();
 
 		// Get current index
