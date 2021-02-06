@@ -788,7 +788,9 @@ width:70px;
 		if (Settings.launch.zsim.zxBeeper) {
 
 			const initialBeeperValue = this.simulator.zxBeeper.getCurrentBeeperValue().toString();
-			const volume = GlobalStorage.Get<number>('audio.volume') || 0.75;
+			let volume = GlobalStorage.Get<number>('audio.volume');
+			if (volume == undefined)
+				volume = 0.75;
 			html += `
 <details open="true">
   <summary>ZX Beeper</summary>
