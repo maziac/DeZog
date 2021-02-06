@@ -152,12 +152,17 @@ Some CPU load measurements done on a mac mini (late 2018) for a ZX 48K Spectrum 
 |System | 2% |  3% |  4% |  5% |  8% |
 
 
+# Criticism
 
+This audio design is not optimal. It implies a lot of inefficient communication between the simulator and the webview.
+To improve there are 2 possibilities:
+- move the audio to the simulator
+- move the simulator to the webview
 
+Moving audio is not easily done because there is no cross platform audio environment for node.
 
+Moving the simulator is an option which should be doable but, of course, requires a lot of changes at the interface to the simulator.
 
-
-
-
+For now the separated design will do, but if there is more to do on audio the moving of the simulator should be considered.
 
 
