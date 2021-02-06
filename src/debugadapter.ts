@@ -628,7 +628,7 @@ export class DebugSessionClass extends DebugSession {
 				if (Settings.launch.remoteType=="zsim") {
 					// Adds a window that displays the ZX screen.
 					const remote=Remote as ZSimRemote;
-					ZSimulationView.SimulationViewFactory(remote);
+					new ZSimulationView(remote);
 				}
 
 				// Socket is connected, allow setting breakpoints

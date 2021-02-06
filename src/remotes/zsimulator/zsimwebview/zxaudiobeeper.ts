@@ -44,9 +44,6 @@ export class ZxAudioBeeper {
 	// Aggregation time for the changing value.
 	protected BEEPER_DISPLAY_AGGREGATE_TIME = 100;	// 100 ms
 
-
-
-	// TODO REMOVE
 	//protected logBuf = new Array<any>();
 
 	// The next audio buffer. Samples are being prepared here.
@@ -90,9 +87,15 @@ export class ZxAudioBeeper {
 	constructor(sampleRate: number) {
 		//sampleRate = 22050;
 		this.volume = 0.75;
-		this.sampleRate = sampleRate;
 		this.ctx = this.createAudioContext(sampleRate);
-		this.sampleRate = this.ctx.sampleRate;	// TODO: Error if wrong?
+		this.sampleRate = this.ctx.sampleRate;
+		if (this.sampleRate != sampleRate) {
+			// Send warning to vscode
+			vscode.postMessage({
+				command: 'warning',
+				text: "Sample rate of " + sampleRate + "Hz could not be set. Try setting it to e.g. " + this.sampleRate + "Hz instead."
+			});
+		}
 		this.fixedFrameLength = Math.ceil(this.MIN_LATENCY/4 * this.sampleRate);
 		this.fixedFrameTime = this.fixedFrameLength / this.sampleRate;
 		this.lastEnqueuedAudioSampleValue = 0;

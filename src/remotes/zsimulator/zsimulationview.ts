@@ -55,27 +55,6 @@ export class ZSimulationView extends BaseView {
 	// Used to check for changes.
 	protected previousTstates: number;
 
-	// Set through events from the simulator.
-	protected cpuRunning: boolean; // TODO :remove
-
-
-	/**
-	 * Factory method which creates a new view and handles it's lifecycle.
-	 * I.e. the events.
-	 * @param simulator The simulator Remote which emits the signals.
-	 */
-	public static SimulationViewFactory(simulator: ZSimRemote) {
-		// Safety check
-		if (!simulator)
-			return;
-
-		// Create new instance
-		//const zxview: ZSimulationView =
-			new ZSimulationView(simulator);
-
-		// TODO: Remove the factory.
-	}
-
 
 	/**
 	 * Creates the basic view.
@@ -94,7 +73,6 @@ export class ZSimulationView extends BaseView {
 		if (this.stopTime < 500)
 			this.stopTime = 500;	// At least 500 ms
 		this.stopTimer = undefined as any;
-		this.cpuRunning = false;
 		this.previousTstates = -1;
 
 		// ZX Keyboard?
@@ -230,17 +208,6 @@ export class ZSimulationView extends BaseView {
 
 
 	/**
-	 * Stops the display timer.
-	 */
-	/*
-	protected stopppDisplayTimer() { // TODO: REMOVE
-		// Update on timer
-		clearInterval(this.displayTimer);
-		this.displayTimer = undefined as any;
-	}
-	*/
-
-	/**
 	 * A vertical sync was received from the Z80 simulation.
 	 * Is used to sync the display as best as possible:
 	 * On update the next time is stored (nextUpdateTime).
@@ -293,6 +260,11 @@ export class ZSimulationView extends BaseView {
 	 */
 	protected webViewMessageReceived(message: any) {
 		switch (message.command) {
+			case 'warning':
+				// A warning has been received, e.g. sample rate was not possible.
+				const warningText = message.text;
+				vscode.window.showWarningMessage(warningText);
+				break;
 			case 'keyChanged':
 				this.keyChanged(message.key, message.value);
 				break;
