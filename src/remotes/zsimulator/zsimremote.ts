@@ -846,6 +846,9 @@ export class ZSimRemote extends DzrpRemote {
 		// Create mem buffer for reading
 		const memBuffer = MemBuffer.from(data.buffer);
 
+		// Deserialize own properties
+		this.zxBorderColor = memBuffer.read8();
+
 		// Deserialize objects
 		for (const obj of this.serializeObjects)
 			obj.deserialize(memBuffer);
@@ -867,7 +870,10 @@ export class ZSimRemote extends DzrpRemote {
 			size += obj.getSerializedSize();
 
 		// Allocate memory
-		const memBuffer = new MemBuffer(size);
+		const memBuffer = new MemBuffer(size+1);	// +1 for border color
+
+		// Serialize own properties
+		memBuffer.write8(this.zxBorderColor);
 
 		// Serialize objects
 		for (const obj of this.serializeObjects)
