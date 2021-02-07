@@ -97,7 +97,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - [memory viewer](documentation/Usage.md#memory-dumps) / editor
 - automatic display of memory that is pointed to by HL, DE, etc.
 - [change of program counter](documentation/Usage.md#change-the-program-counter) through menu
-- Display of ZXNext [sprites and sprite patterns](documentation/Usage.md#sprites--patterns)
+- display of ZXNext [sprites and sprite patterns](documentation/Usage.md#sprites--patterns)
 - supports banking (['long addresses'](documentation/Usage.md#long-addresses-explanation))
 - support for Z80 [unit tests](documentation/UnitTests.md)
 - [custom extensions](documentation/zsimPeripherals.md) to the internal simulator to simulate peripherals.
