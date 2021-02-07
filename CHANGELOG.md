@@ -1,5 +1,7 @@
 # Changelog
 
+# 2.1.6
+- Start activation changed to "*". Otherwise DeZog help sidebar is empty.
 # 2.1.5
 - Fix: RegisterMemoryView lost content when hidden and re-displayed.
 - Fix: z80asm line address association wrong when using macros.
