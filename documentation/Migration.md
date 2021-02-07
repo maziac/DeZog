@@ -1,31 +1,24 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
 
-
-# Migrate from DeZog 2.1 to DeZog 2.2
-
-# launch.json
-
-zsim has got a few more configurations:
-- "defaultPortIn": The default value that is read if the read port is unused. Formerly this was always 0xFF which is still the default. But it can be cahnged now.
-
-# WATCHes
-
-The parameters named 'b' and 'w' for byte and word have been removed.
-Simply use the size now instead. I.e. 1 for byte and 2 for word.
-
 # Migrate from DeZog 2.0 to DeZog 2.1
 
 ## Required updates
 
-If you CSpect you need to update:
-- CSpect:
-    - Update to version >= 2.13.0
-    - Update the [DeZog CSpect Plugin](https://github.com/maziac/DeZogPlugin/releases) to >= 2.0.1
+If you use CSpect you need to update:
+- Update CSpect to version >= 2.13.0
+- Update the [DeZog CSpect Plugin](https://github.com/maziac/DeZogPlugin/releases) to >= 2.0.1
+
+
+## Help
+
+You will find the TOC for the help now also in the sidebar.
+It can be turned off in the DeZog settings.
+
 
 ## WATCHes
 
-Main change in 2.1 was the overworked WATCH window.
+One major change in 2.1 was the overworked WATCH window.
 Please have a look at chapter [WATCHes](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#watch) in Usage.md.
 Together with sjasmplus the WATCH window can now display STRUCTs.
 The syntax has been changed slightly. I.e. the parameters 2 and 3 have been exchanged.
@@ -43,6 +36,21 @@ now.
 
 And the behavior has changed. DeZog will not anymore assume and display an array by default.
 If you need the old behavior you now need to specify the count explicitly.
+
+Furthermore the parameters named 'b' and 'w' for byte and word have been removed.
+Simply use the size now instead. I.e. 1 for byte and 2 for word.
+
+
+# launch.json
+
+zsim is much faster now and has got a few more configurations:
+- "defaultPortIn": The default value that is read if the read port is unused. Formerly this was always 0xFF which is still the default.
+- "zxInterface2Joy": If enabled the simulator shows 2 joystick controls to simulate ZX Interface 2 joysticks. You can also attach a USB controller.
+- "kempstonJoy": If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.
+- "zxBorderWidth": The ZX Spectrum border is now simulated as well. The displayed border width in pixels. If set to 0 then no border is displayed.
+- "zxBeeper": Experimental audio output of the beeper.
+- "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. This was necessary due to the improved zsim speed.
+- "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
 
 
 # Migrate your projects from DeZog 1.5 to 2.0

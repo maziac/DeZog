@@ -16,6 +16,7 @@
 	- "updateFrequency" added: the frequency the Z80 simulation view gets updated.
 	- Fixed save/restore.
 	- Added "zxBorderWidth" to display the simulated border.
+	- Added "zxBeeper" (experimental).
 
 # 2.1.4
 - Settings names for 'logpanel's changed.
