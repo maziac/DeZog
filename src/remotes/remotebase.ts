@@ -40,12 +40,9 @@ export enum BREAK_REASON_NUMBER {
  * The breakpoint representation.
  */
 export interface RemoteBreakpoint extends GenericBreakpoint {
-	bpId: number;	///< The breakpoint ID/number (>0). Mandatory.
-	filePath?: string;	///< The file to which the breakpoint belongs
-	lineNr: number;	///< The line number in the file starting at 0
-	// Already defined: address: number;	///< Usually the pc value to stop at (e.g. 0x0A7F)
-	// Already defined: condition?: string;	///< An additional condition.
-	// Already defined: log?: string;	///< An optional log message. If set the execution will not stop at the breakpoint but a log message is written instead.
+	bpId: number,	///< The breakpoint ID/number (>0). Mandatory.
+	filePath?: string,	///< The file to which the breakpoint belongs
+	lineNr: number	///< The line number in the file starting at 0
 }
 
 
@@ -1040,6 +1037,7 @@ export class RemoteBase extends EventEmitter {
 			const currentBps=new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
 				let ebp;
+				let error;
 				// Get PC value of that line
 				let addr=this.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
@@ -1047,16 +1045,22 @@ export class RemoteBase extends EventEmitter {
 					// Now search last line with that pc
 					const file=this.getFileAndLineForAddress(addr);
 					// Check if right file
-					if (path.valueOf()==file.fileName.valueOf()) {
+					if (path.valueOf() == file.fileName.valueOf()) {
 						// create breakpoint object
-						ebp={bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log};
+						ebp = {bpId: 0, filePath: file.fileName, lineNr: file.lineNr, address: addr, condition: bp.condition, log: bp.log};
 					}
+					else
+						error = "File " + file.fileName + " found at address " + Utility.getHexString(addr, 4) + "h";
+				}
+				else {
+					// Additional info
+					error = "Address not found for " + path;
 				}
 
 				// add to array
 				if (!ebp) {
 					// Breakpoint position invalid
-					ebp={bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined};
+					ebp = {bpId: 0, filePath: path, lineNr: bp.lineNr, address: -1, condition: '', log: undefined, error};
 				}
 				currentBps.push(ebp);
 			});

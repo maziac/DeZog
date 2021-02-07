@@ -738,8 +738,11 @@ export class DebugSessionClass extends DebugSession {
 
 			// Additional print warning if not verified
 			if (!verified) {
-				const text=JSON.stringify(bp);
-				this.debugConsoleAppendLine('Unverified breakpoint:'+text);
+				const text = JSON.stringify(bp);
+				this.debugConsoleAppendLine('Unverified breakpoint: ' + text);
+				if (foundCbp && foundCbp.error) {
+					this.debugConsoleAppendLine('  Additional info: ' + foundCbp.error);
+				}
 			}
 
 			return bp;

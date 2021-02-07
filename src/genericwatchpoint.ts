@@ -18,9 +18,10 @@ export interface GenericWatchpoint {
  * i.e. not machine specific.
  */
 export interface GenericBreakpoint {
-	bpId?: number;	///< An optional number bigger than 0. E.g. not used by ZEsarUX but by DZRP.
-	address: number; ///< The PC address to break on
-	condition?: string;	///< The additional conditions. '' if no condition set.
-	log?: string;	///< If set the log will be printed instead of stopping execution.
+	bpId?: number,	///< An optional number bigger than 0. E.g. not used by ZEsarUX but by DZRP.
+	address: number, ///< The PC address to break on
+	condition?: string,	///< The additional conditions. '' if no condition set.
+	log?: string,	///< If set the log will be printed instead of stopping execution.
+	error?: string	///< An informative error text. E.g. used for additional info if a breakpoint could not be set.
 }
 
