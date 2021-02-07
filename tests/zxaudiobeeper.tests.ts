@@ -17,12 +17,29 @@ class ZxAudioMock extends ZxAudioBeeper {
 	public fixedFrameLength: number;
 	public nextFrame: Float32Array;
 
+	constructor(sampleRate: number) {
+		super(sampleRate);
+		AudioBufferSourceNodeMock.mockClear();
+	}
 	protected createAudioContext(sampleRate: number): AudioContext {
 		return new AudioContextMock(sampleRate) as any;
 	}
-
+	protected updateVisualBeeper() {
+	}
 	get ctxMock(): AudioContextMock {
 		return this.ctx as any;
+	}
+}
+
+// Mock the GainNode.
+class GainNodeMock {
+	public gain = {value: 0};
+
+	public connect(destinationNode: AudioNode, output?: number, input?: number): AudioNode {
+		return destinationNode;
+	}
+	public linearRampToValueAtTime(value: number, endTime: number): AudioParam {
+		return undefined as any;
 	}
 }
 
@@ -38,6 +55,9 @@ class AudioContextMock {
 	}
 	get currentTime () {
 		return this.currentTimeMock;
+	}
+	protected createGain(): GainNode {
+		return new GainNodeMock() as any;
 	}
 	public createBuffer(numberOfChannels: number, length: number, sampleRate: number): AudioBuffer {
 		this.channelBuffer = new Array<Float32Array>(numberOfChannels);
@@ -94,11 +114,11 @@ suite('ZxAudioBeeper', () => {
 
 	test('constructor', () => {
 		const zxAudio = new ZxAudioMock(22000);
-		assert.equal(zxAudio.volume, 1.0);
+		assert.equal(zxAudio.volume, 0.75);
 		assert.notEqual(zxAudio.ctx, undefined);
 		assert.equal(zxAudio.ctx.sampleRate, 22000);
 		assert.equal(zxAudio.sampleRate, 22000);
-		assert.equal(zxAudio.audioCtxStartTime, undefined);
+		assert.equal(zxAudio.audioCtxStartTime, 0);
 	});
 
 
@@ -106,7 +126,7 @@ suite('ZxAudioBeeper', () => {
 
 		test('basics', () => {
 			const zxAudio = new ZxAudioMock(22000);
-			assert.equal(zxAudio.audioCtxStartTime, undefined);
+			assert.equal(zxAudio.audioCtxStartTime, 0);
 
 			// Buffer length 0
 			let beeperBuffer: BeeperBuffer = {
@@ -115,11 +135,10 @@ suite('ZxAudioBeeper', () => {
 				buffer: new Uint16Array(0),
 				bufferLen: 0
 			};
-			AudioBufferSourceNodeMock.mockClear();
 			zxAudio.writeBeeperSamples(beeperBuffer);
-			assert.equal(zxAudio.audioCtxStartTime, undefined);
+			assert.equal(zxAudio.audioCtxStartTime, 0);
 			assert.equal(zxAudio.nextFrameIndex, 0);
-			assert.equal(AudioBufferSourceNodeMock.sourceNodes.length, 0);
+			assert.equal(AudioBufferSourceNodeMock.sourceNodes.length, 2);
 
 			// lengths = [10]
 			beeperBuffer = {
@@ -129,7 +148,7 @@ suite('ZxAudioBeeper', () => {
 				bufferLen: 1
 			};
 			zxAudio.writeBeeperSamples(beeperBuffer);
-			assert.equal(zxAudio.audioCtxStartTime, undefined);
+			assert.equal(zxAudio.audioCtxStartTime, 0);
 			assert.equal(zxAudio.nextFrameIndex, 10);
 
 			// A length bigger than 1 frame
@@ -160,7 +179,7 @@ suite('ZxAudioBeeper', () => {
 		test('startValue', () => {
 			const zxAudio = new ZxAudioMock(22000);
 			zxAudio.volume = 1;
-			assert.equal(zxAudio.audioCtxStartTime, undefined);
+			assert.equal(zxAudio.audioCtxStartTime, 0);
 
 			// startValue = true
 			let beeperBuffer: BeeperBuffer = {

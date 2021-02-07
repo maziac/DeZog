@@ -308,7 +308,7 @@ suite('ZxBeeper', () => {
 			zxBeeperAny.writeBeeper(0.01 * cpuFreq, false);
 			assert.notEqual(zxBeeperAny.lastBeeperIndex, 0);
 			assert.equal(zxBeeperAny.lastBeeperTstates, 0);
-			zxBeeper.getBeeperBuffer(0.02 * cpuFreq + 0.1);
+			zxBeeper.getBeeperBuffer(0.02 * cpuFreq);
 			assert.equal(zxBeeperAny.lastBeeperIndex, 0);
 			assert.equal(zxBeeperAny.lastBeeperTstates, 0.02 * cpuFreq);
 		});

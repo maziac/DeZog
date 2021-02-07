@@ -102,6 +102,7 @@ export class ZxAudioBeeper {
 		this.lastVisualBeeperState = (this.lastEnqueuedAudioSampleValue != 0);
 		this.visualBeeperChanging = false;
 		this.samplesInTopHalf = true;
+		this.audioCtxStartTime = 0;	// Irrelevant while stopped
 		this.stopped = true;
 
 		// Create gain node
@@ -417,11 +418,6 @@ export class ZxAudioBeeper {
 				}
 			}
 		});
-
-		// Store the start time on the first packet
-		if (this.audioCtxStartTime == undefined) {
-			this.resetTime();
-		}
 
 		// Play (in near future)
 		bufferSource.start(this.nextFrameStartTime);
