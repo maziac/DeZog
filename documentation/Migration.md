@@ -30,6 +30,11 @@ If you want to launch the register memory view every time you start a debug sess
 ]
 ~~~
 
+Or you manually launch it from the debug console when needed with:
+~~~
+-rmv
+~~~
+
 
 ## WATCHes
 
