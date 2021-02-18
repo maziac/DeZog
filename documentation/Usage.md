@@ -1438,7 +1438,7 @@ Note: What is saved depends solely on the Remote, i.e. ZEsarUx or the internal s
 
 
 
-#### Memory Dumps
+#### Memory Viewer
 
 If you enter
 
@@ -1468,7 +1468,13 @@ You can also open multiple memory dumps at once by adding more address/size rang
 This opens a memory dump view 3 memory blocks.
 Please note that if you enter overlapping blocks the dump will merge them in the display.
 
-DeZog opens a special memory viewer by itself on startup: it shows the locations around some registers. I.e. you can directly see where the registers are pointing at and what the values before and after are. This memory will change its range automatically if the associated register(s) change.
+
+You can open a special memory viewer, the Register Memory View, with:
+~~~
+-rmv
+~~~
+
+It shows the memory contents at the locations the registers point to. I.e. you can directly see where the registers are pointing at and what the values are. This memory will change its range automatically if the associated register(s) change.
 
 The register memory view:
 
@@ -1476,7 +1482,13 @@ The register memory view:
 
 
 Note:
-The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
+- The memory views always work in the 64k area. I.e. they don't use 'long addresses' (banks).
+- If you want to launch the register memory view every time you start a debug session then add it to the "commandsAfterLaunch" in the launch.json. E.g.
+~~~
+"commandsAfterLaunch": [
+    "-rmv"
+]
+~~~
 
 
 ##### Memory Editor
@@ -1490,7 +1502,16 @@ Note: The changed value is not updated immediately in the WATCH area. There you 
 
 ##### Configuration
 
-The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registers-memory-viewer, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
+The visualization of the memory viewer can be configured. All values are collected under the 'memoryViewer' setting. You can change the registers in the registersMemoryView, the colors of the register pointers and the format of values that is shown when you hover over the memory values.
+
+
+#### Memory Dumps
+
+There are other useful memory commands, please use '-help' to see them all.
+You can for example print a memory dump to the console with
+~~~
+-md 0 200h
+~~~
 
 
 #### Sprites & Patterns

@@ -69,13 +69,13 @@ export class MemoryDumpView extends BaseView {
 	 * Removes it from the static list.
 	 */
 	public disposeView() {
+		// Remove from base list
+		super.disposeView();
 		// Remove from list
 		const arr = MemoryDumpView.MemoryViews;
 		const index = arr.indexOf(this);
 		Utility.assert(index >= 0);
 		arr.splice(index, 1);
-		// Do not use panel anymore
-		this.vscodePanel=undefined as any;
 	}
 
 

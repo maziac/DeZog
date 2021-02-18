@@ -16,6 +16,21 @@ You will find the TOC for the help now also in the sidebar.
 It can be turned off in the DeZog settings.
 
 
+## The Register Memory View
+
+This view:
+![](images/memoryviewer2.jpg)
+
+Does **not start automatically anymore** on each debug session start.
+
+If you want to launch the register memory view every time you start a debug session then add it to the "commandsAfterLaunch" in the launch.json. E.g.
+~~~
+"commandsAfterLaunch": [
+    "-rmv"
+]
+~~~
+
+
 ## WATCHes
 
 One major change in 2.1 was the overworked WATCH window.

@@ -601,14 +601,6 @@ export class DebugSessionClass extends DebugSession {
 					StepHistory.decoder=Z80Registers.decoder;
 				StepHistory.init();
 
-				// Create memory/register dump view
-				const registerMemoryView=new MemoryRegisterView();
-				const regs=Settings.launch.memoryViewer.registersMemoryView;
-				registerMemoryView.addRegisters(regs);
-				await registerMemoryView.update();
-
-
-
 				// Run user commands after load.
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
 					this.debugConsoleAppendLine(cmd);
@@ -1758,8 +1750,11 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-ms') {
 			output = await this.evalMemSave(tokens);
 		}
-		else if (cmd=='-mv') {
+		else if (cmd == '-mv') {
 			output = await this.evalMemView(tokens);
+		}
+		else if (cmd == '-rmv') {
+			output = await this.evalRegisterMemView(tokens);
 		}
 		else if (cmd=='-dasm') {
 			output = await this.evalDasm(tokens);
@@ -2087,6 +2082,7 @@ the value correspondends to a label.
 Without any parameter it will show all sprite patterns.
 You can concat several ranges.
 Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
+"-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
 "-WPMEM enable|disable|status":
 	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
 	- status: Shows enable status of WPMEM watchpoints.
@@ -2337,39 +2333,61 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async evalMemView(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length==0) {
+		if (tokens.length == 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and size expected.");
 		}
 
-		if (tokens.length%2!=0) {
+		if (tokens.length % 2 != 0) {
 			// Error Handling: No size given
-			throw new Error("No size given for address '"+tokens[tokens.length-1]+"'.");
+			throw new Error("No size given for address '" + tokens[tokens.length - 1] + "'.");
 		}
 
 		// Get all addresses/sizes.
-		const addrSizes=new Array<number>();
-		for (let k=0; k<tokens.length; k+=2) {
+		const addrSizes = new Array<number>();
+		for (let k = 0; k < tokens.length; k += 2) {
 			// Address
-			const addressString=tokens[k];
-			const address=Utility.evalExpression(addressString);
+			const addressString = tokens[k];
+			const address = Utility.evalExpression(addressString);
 			addrSizes.push(address);
 
 			// Size
-			const sizeString=tokens[k+1];
-			const size=Utility.evalExpression(sizeString);
+			const sizeString = tokens[k + 1];
+			const size = Utility.evalExpression(sizeString);
 			addrSizes.push(size);
 		}
 
 		// Create new view
-		const panel=new MemoryDumpView();
-		for (let k=0; k<tokens.length; k+=2) {
-			const start=addrSizes[k];
-			const size=addrSizes[k+1]
-			panel.addBlock(start, size, Utility.getHexString(start&0xFFFF, 4)+'h-'+Utility.getHexString((start+size-1)&0xFFFF, 4)+'h');
+		const panel = new MemoryDumpView();
+		for (let k = 0; k < tokens.length; k += 2) {
+			const start = addrSizes[k];
+			const size = addrSizes[k + 1]
+			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
 		}
 		panel.mergeBlocks();
 		await panel.update();
+
+		// Send response
+		return 'OK';
+	}
+
+
+	/**
+	 * Shows the register memory view.
+	 * @returns A Promise with a text to print. I.e. "OK"
+	 */
+	protected async evalRegisterMemView(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length != 0) {
+			// Error Handling: No arguments
+			throw new Error("No parameters expected.");
+		}
+
+		// Create memory/register dump view
+		const registerMemoryView = new MemoryRegisterView();
+		const regs = Settings.launch.memoryViewer.registersMemoryView;
+		registerMemoryView.addRegisters(regs);
+		await registerMemoryView.update();
 
 		// Send response
 		return 'OK';
