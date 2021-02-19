@@ -70,7 +70,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (>= v9.1)
 - supports [CSpect](http://www.cspect.org) emulator (>= v2.13.0)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
-- reads .list aand .sld files
+- reads .list and .sld files
 	- supports stepping through source code
 	- either in .list file or in .asm files
 - step-over, step-in, step-out, continue, pause
