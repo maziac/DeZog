@@ -1,7 +1,13 @@
 # Changelog
 
+# 2.1.7
+- "Register memory View" behavior changed (see feature request #47).
+	- Is not automatically started.
+	- New command "-rmv" to start the register memory view.
+
 # 2.1.6
 - Start activation changed to "*". Otherwise DeZog help sidebar is empty.
+
 # 2.1.5
 - Fix: RegisterMemoryView lost content when hidden and re-displayed.
 - Fix: z80asm line address association wrong when using macros.
