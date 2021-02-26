@@ -3,7 +3,6 @@ import { DebugSessionClass } from './debugadapter';
 import { RemoteFactory, Remote } from './remotes/remotefactory';
 import { Labels } from './labels/labels';
 import { RemoteBreakpoint } from './remotes/remotebase';
-//import { GenericWatchpoint } from './genericwatchpoint';
 import { LabelsClass } from './labels/labels';
 import { Settings } from './settings';
 import * as jsonc from 'jsonc-parser';
@@ -14,6 +13,7 @@ import {StepHistory, CpuHistory, CpuHistoryClass} from './remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from './remotes/z80registers';
 import {StepHistoryClass} from './remotes/stephistory';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
+import * as path from 'path';
 
 
 
@@ -140,18 +140,58 @@ export class Z80UnitTests {
 	/// Caches the last received addresses (from Emulator)
 	protected static lastCoveredAddresses: Set<number>;
 
+	/// Called when the unit test have finished.
+	/// Used to know when the async function is over.
+	protected static finishedCallback?: () => void;
+
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("DeZog Unit Tests");
 
+
 	/**
-	 * Execute all unit tests in debug mode.
+	 * Execute all unit tests.
 	 */
-	public static runAllUnitTests() {
-		// TODO: rootFolder
-		// All test cases
-		Z80UnitTests.partialUtLabels = undefined;
-		// Start
-		Z80UnitTests.runTestsCheck();
+	public static async runAllUnitTests() {
+		// Safety check
+		const wsFolders = vscode.workspace.workspaceFolders;
+		if (!wsFolders)
+			return;
+
+		// Loop over all projects (for multiroot)
+		for (const wsFolder of wsFolders) {
+			// Set root folder
+			const rootFolder = wsFolder.uri.fsPath;
+			await Z80UnitTests.runAllProjectUnitTests(rootFolder);
+		}
+	}
+
+
+	/**
+	 * Runs all tests of one projects.
+	 * Does not return before all tests are done.
+	 * @param rootFolder The root folder of the project.
+	 */
+	protected static async runAllProjectUnitTests(rootFolder: string): Promise<void> {
+		return new Promise<void>(resolve => {
+			// All test cases
+			let lblFileLines: UnitTestCase[] = [];
+			try {
+				lblFileLines = Z80UnitTests.getAllUnitTests(rootFolder);
+			}
+			catch {}
+			if (lblFileLines.length == 0) {
+				resolve();
+				return;
+			}
+			Z80UnitTests.partialUtLabels = lblFileLines.map(lfl => lfl.label);
+			// Set callback
+			Z80UnitTests.finishedCallback = () => {
+				Z80UnitTests.finishedCallback = undefined;
+				resolve();
+			};
+			// Start
+			Z80UnitTests.runTestsCheck();
+		});
 	}
 
 
@@ -324,12 +364,47 @@ export class Z80UnitTests {
 	/**
 	 * Execute all unit tests in debug mode.
 	 */
-	public static debugAllUnitTests() {
-		// TODO: rootfolder
-		// All test cases
-		Z80UnitTests.partialUtLabels = undefined;
-		// Start
-		Z80UnitTests.debugTestsCheck();
+	public static async debugAllUnitTests() {
+		// Safety check
+		const wsFolders = vscode.workspace.workspaceFolders;
+		if (!wsFolders)
+			return;
+
+		// Loop over all projects (for multiroot)
+		for (const wsFolder of wsFolders) {
+			// Set root folder
+			const rootFolder = wsFolder.uri.fsPath;
+			await Z80UnitTests.debugAllProjectUnitTests(rootFolder);
+		}
+	}
+
+
+	/**
+	 * Runs all tests of one projects in debug mode.
+	 * Does not return before all tests are done.
+	 * @param rootFolder The root folder of the project.
+	 */
+	protected static async debugAllProjectUnitTests(rootFolder: string): Promise<void> {
+		return new Promise<void>(resolve => {
+			// All test cases
+			let lblFileLines: UnitTestCase[] = [];
+			try {
+				lblFileLines = Z80UnitTests.getAllUnitTests(rootFolder);
+			}
+			catch {}
+			if (lblFileLines.length == 0) {
+				resolve();
+				return;
+			}
+			Z80UnitTests.partialUtLabels = lblFileLines.map(lfl => lfl.label);
+			// Set callback
+			Z80UnitTests.finishedCallback = () => {
+				Z80UnitTests.finishedCallback = undefined;
+				resolve();
+			};
+			// Start
+			Z80UnitTests.debugTestsCheck();
+		});
 	}
 
 
@@ -881,6 +956,7 @@ export class Z80UnitTests {
 				Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels;
 			}
 			else {
+				// TODO: Do I need this still?
 				// Get all labels that look like: 'UT_xxx'
 				const lblFileLines = Z80UnitTests.getAllUtLabels(Labels);
 				Z80UnitTests.utLabels = lblFileLines.map(lfl => lfl.label);
@@ -993,6 +1069,9 @@ export class Z80UnitTests {
 	protected static unitTestsFinished() {
 		// Summary
 		Z80UnitTests.printSummary();
+		// Inform
+		if (Z80UnitTests.finishedCallback)
+			Z80UnitTests.finishedCallback();
 	}
 
 
@@ -1105,7 +1184,8 @@ export class Z80UnitTests {
 		this.unitTestOutput.show();
 		this.unitTestOutput.appendLine('');
 		this.unitTestOutput.appendLine(emphasize);
-		this.unitTestOutput.appendLine('UNITTEST SUMMARY:');
+		const projectName = path.basename(Utility.getRootPath());
+		this.unitTestOutput.appendLine('UNITTEST SUMMARY, ' + projectName + ':');
 		this.unitTestOutput.appendLine('Date: ' + new Date().toString() + '\n\n');
 		this.unitTestOutput.appendLine(Z80UnitTests.outputSummary);
 
