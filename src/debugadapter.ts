@@ -153,13 +153,23 @@ export class DebugSessionClass extends DebugSession {
 		if (this.state!=DbgAdapterState.NORMAL)
 			return false;
 
+		// Need to find the corresponding workspace folder
+		const rootFolder = Utility.getRootPath();
+		let workspaceFolder;
+		const wsFolders = vscode.workspace.workspaceFolders || [];
+		for (const wsFolder of wsFolders) {
+			if (wsFolder.uri.fsPath == rootFolder) {
+				workspaceFolder = wsFolder;
+				break;
+			}
+		}
+		if (!workspaceFolder)
+			return false;
+
 		// Start debugger
 		this.unitTestHandler=handler;
-		let wsFolder;
-		if (vscode.workspace.workspaceFolders)
-			wsFolder=vscode.workspace.workspaceFolders[0];
 		this.state=DbgAdapterState.UNITTEST;
-		vscode.debug.startDebugging(wsFolder, configName);
+		vscode.debug.startDebugging(workspaceFolder, configName);
 
 		return true;
 	}
