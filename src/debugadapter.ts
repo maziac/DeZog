@@ -426,10 +426,10 @@ export class DebugSessionClass extends DebugSession {
 			});
 
 			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'');
+			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;
+			Utility.setRootPath(rootFolder);
 
 			// Save args
-			const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
 		}

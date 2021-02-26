@@ -1,5 +1,10 @@
 # Changelog
 
+
+# 2.2.0
+- Thanks to bereal DeZog is now working also in multiroot workspaces.
+- The unit test interface has been changes as well to support new version of z80-unit-tests that also supports multiroot workspaces now.
+
 # 2.1.7
 - "Register memory View" behavior changed (see feature request #47).
 	- Is not automatically started.

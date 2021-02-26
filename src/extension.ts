@@ -128,13 +128,13 @@ export function activate(context: vscode.ExtensionContext) {
 	*/
 
 	// Command to get a list of all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', async (rootFolder: string)  => {
 		try {
-			return await Z80UnitTests.getAllUnitTests();
+			return await Z80UnitTests.getAllUnitTests(rootFolder);
 		}
 		catch (e) {
 			// Return empty list in case no unit tests are configured.
-			//vscode.window.showErrorMessage(e.message); Don't show an error, otherwise it would be shown everytime that no configuration is found.
+			//vscode.window.showErrorMessage(e.message); Don't show an error, otherwise it would be shown every time that no configuration is found.
 			return [];
 		}
 	}));
@@ -150,14 +150,14 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.runPartialUnitTests', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.runPartialUnitTests', (rootFolder: string) => {
 		// Send to debug adapter
-		Z80UnitTests.runPartialUnitTests();
+		Z80UnitTests.runPartialUnitTests(rootFolder);
 	}));
 
 	// Command to run (some) unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugPartialUnitTests', () => {
-		Z80UnitTests.debugPartialUnitTests();
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugPartialUnitTests', (rootFolder: string) => {
+		Z80UnitTests.debugPartialUnitTests(rootFolder);
 	}));
 
 	// Command to cancel the unit tests. E.g. during debugging of one unit test.

@@ -1,6 +1,12 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
 
+# Migrate from DeZog 2.1 to DeZog 2.2
+
+## Required updates
+
+If you are using unit tests you need to update z80-unit-tests to v1.2.0.
+
 # Migrate from DeZog 2.0 to DeZog 2.1
 
 ## Required updates

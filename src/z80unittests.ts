@@ -91,7 +91,7 @@ export class Z80UnitTests {
 	protected static utLabels: Array<string>;
 
 	/// This array will contain the names of the test cases that should be run.
-	protected static partialUtLabels: Array<string>|undefined;
+	protected static partialUtLabels: Array<string> | undefined;
 
 	/// A map for the test case labels and their resolve functions. The resolve
 	/// function is called when the test cases has been executed.
@@ -132,7 +132,7 @@ export class Z80UnitTests {
 	protected static debug = false;
 
 	/// Set to true if unit tests are cancelled.
-	protected static cancelled=false;
+	protected static cancelled = false;
 
 	/// Stroes the covered accresses for all unit tests.
 	protected static allCoveredAddresses: Set<number>;
@@ -147,6 +147,7 @@ export class Z80UnitTests {
 	 * Execute all unit tests in debug mode.
 	 */
 	public static runAllUnitTests() {
+		// TODO: rootFolder
 		// All test cases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
@@ -157,11 +158,13 @@ export class Z80UnitTests {
 	/**
 	 * Execute some unit tests in debug mode.
 	 */
-	public static runPartialUnitTests() {
+	public static runPartialUnitTests(rootFolder: string) {
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
-		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
+		for (const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
+		// Set root folder
+		Utility.setRootPath(rootFolder);
 		// Start
 		Z80UnitTests.runTestsCheck();
 	}
@@ -174,7 +177,7 @@ export class Z80UnitTests {
 	 * true: unit tests are run with debugger.
 	 */
 	protected static async terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
-		Z80UnitTests.debug=debug;
+		Z80UnitTests.debug = debug;
 		return new Promise<void>(async resolve => {
 			// Wait until vscode debugger has stopped.
 			if (Remote) {
@@ -186,14 +189,14 @@ export class Z80UnitTests {
 			// (Unfortunately there is no event for this, so we need to wait)
 			Utility.delayedCall(time => {
 				// After 5 secs give up
-				if (time>=5.0) {
+				if (time >= 5.0) {
 					// Give up
 					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
 					resolve();
 					return true;
 				}
 				// New coverage set
-				this.allCoveredAddresses=new Set<number>();
+				this.allCoveredAddresses = new Set<number>();
 				// Check for active debug session
 				if (vscode.debug.activeDebugSession)
 					return false;  // Try again
@@ -226,18 +229,15 @@ export class Z80UnitTests {
 	 */
 	protected static runTests() {
 		try {
-			// Set root path
-			const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
-			Utility.setRootPath(rootFolder);
-
 			// Mode
-			this.debug=false;
-			this.cancelled=false;
+			this.debug = false;
+			this.cancelled = false;
 
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
 			// Setup settings
+			const rootFolder = Utility.getRootPath();
 			Settings.Init(configuration, rootFolder);
 			Settings.CheckSettings();
 
@@ -254,7 +254,7 @@ export class Z80UnitTests {
 			if (!(CpuHistory as any)) {
 				// If not create a lite (step) history
 				CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-				StepHistory.decoder=Z80Registers.decoder;
+				StepHistory.decoder = Z80Registers.decoder;
 			}
 
 			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
@@ -277,7 +277,7 @@ export class Z80UnitTests {
 					// Load the initial unit test routine (provided by the user)
 					Z80UnitTests.execAddr(Z80UnitTests.addrStart);
 				}
-				catch(e) {
+				catch (e) {
 					// Some error occurred
 					Z80UnitTests.stopUnitTests(undefined, e.message);
 				}
@@ -314,7 +314,7 @@ export class Z80UnitTests {
 				Z80UnitTests.stopUnitTests(undefined, e.message);
 			});
 		}
-		catch(e) {
+		catch (e) {
 			// Some error occurred
 			Z80UnitTests.stopUnitTests(undefined, e.message);
 		}
@@ -325,6 +325,7 @@ export class Z80UnitTests {
 	 * Execute all unit tests in debug mode.
 	 */
 	public static debugAllUnitTests() {
+		// TODO: rootfolder
 		// All test cases
 		Z80UnitTests.partialUtLabels = undefined;
 		// Start
@@ -335,14 +336,16 @@ export class Z80UnitTests {
 	/**
 	 * Execute some unit tests in debug mode.
 	 */
-	public static debugPartialUnitTests() {
+	public static debugPartialUnitTests(rootFolder: string) {
 		// Mode
-		this.debug=true;
-		this.cancelled=false;
+		this.debug = true;
+		this.cancelled = false;
 		// Get list of test case labels
 		Z80UnitTests.partialUtLabels = [];
-		for(const [tcLabel,] of Z80UnitTests.testCaseMap)
+		for (const [tcLabel,] of Z80UnitTests.testCaseMap)
 			Z80UnitTests.partialUtLabels.push(tcLabel);
+		// Set root folder
+		Utility.setRootPath(rootFolder);
 		// Start
 		Z80UnitTests.debugTestsCheck();
 	}
@@ -365,18 +368,18 @@ export class Z80UnitTests {
 		if (this.cancelled)
 			return;
 		// Cancel the unit tests
-		this.cancelled=true;
-		const text="Unit tests cancelled.";
+		this.cancelled = true;
+		const text = "Unit tests cancelled.";
 		Z80UnitTests.dbgOutput(text);
 		Z80UnitTests.stopUnitTests(undefined);
-	//	ds.customRequest("terminate");
+		//	ds.customRequest("terminate");
 		// Fail the current test
 		/*
 		Z80UnitTests.countFailed++;
 		if (Z80UnitTests.countFailed>Z80UnitTests.countExecuted)
 			Z80UnitTests.countFailed=Z80UnitTests.countExecuted;
 		*/
-		if (Z80UnitTests.countExecuted>0)
+		if (Z80UnitTests.countExecuted > 0)
 			Z80UnitTests.countExecuted--;
 		Z80UnitTests.unitTestsFinished();
 	}
@@ -398,20 +401,17 @@ export class Z80UnitTests {
 	 */
 	protected static debugTests() {
 		try {
-			// Set root path
-			Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');  //vscode.workspace.rootPath
-
 			// Get unit test launch config
 			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 			const configName: string = configuration.name;
 
 			// Start debugger
 			const success = DebugSessionClass.unitTests(configName, this.handleDebugAdapter);
-			if(!success) {
+			if (!success) {
 				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			}
 		}
-		catch(e) {
+		catch (e) {
 			vscode.window.showErrorMessage(e.message);
 		}
 	}
@@ -421,7 +421,7 @@ export class Z80UnitTests {
 	 * Clears the map of test cases.
 	 * Is called at first when starting (partial) unit test cases.
 	 */
-	public static clearTestCaseList(){
+	public static clearTestCaseList() {
 		// Clear map
 		Z80UnitTests.testCaseMap.clear();
 	}
@@ -453,18 +453,18 @@ export class Z80UnitTests {
 		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
 
 		// Check for error
-		if(parseErrors.length > 0) {
+		if (parseErrors.length > 0) {
 			// Error
 			throw Error("Parse error while reading " + launchJsonFile + ".");
 		}
 
 		// Find the right configuration
 		let configuration;
-		for(const config of launch.configurations) {
+		for (const config of launch.configurations) {
 			if (config.unitTests) {
 				// Check if there is already unit test configuration:
 				// Only one is allowed.
-				if(configuration)
+				if (configuration)
 					throw Error("More than one unit test launch configuration found. Only one is allowed.");
 				configuration = config;
 			}
@@ -472,20 +472,20 @@ export class Z80UnitTests {
 
 
 		// Load user list and labels files
-		if(!configuration) {
+		if (!configuration) {
 			// No configuration found, Error
 			throw Error('No unit test configuration found in ' + launchPath + '.');
 		}
 
 		// Change path to absolute path
-		const listFiles=Settings.GetAllAssemblerListFiles(configuration);
+		const listFiles = Settings.GetAllAssemblerListFiles(configuration);
 		if (!listFiles) {
 			// No list file given: Error
 			throw Error('No list file given in unit test configuration.');
 		}
 		for (let listFile of listFiles) {
-			const path=listFile.path;
-			listFile.path=Utility.getAbsFilePath(path);
+			const path = listFile.path;
+			listFile.path = Utility.getAbsFilePath(path);
 		}
 
 		return configuration;
@@ -497,21 +497,21 @@ export class Z80UnitTests {
 	 * Loads all labels from the launch.json unit test configuration and
 	 * returns a new labels object.
 	 * Reads in all labels files.
+	 * @param rootFolder The root folder of the project.
 	 * @returns A labels object.
 	 */
-	protected static loadLabelsFromConfiguration(): LabelsClass {
+	protected static loadLabelsFromConfiguration(rootFolder: string): LabelsClass {
 		// Set root path
-		Utility.setRootPath((vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.fsPath : '');  //vscode.workspace.rootPath
+		Utility.setRootPath(rootFolder);
 
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
 		// Setup settings
-		const rootFolder=(vscode.workspace.workspaceFolders)? vscode.workspace.workspaceFolders[0].uri.fsPath:'';
 		Settings.Init(configuration, rootFolder);
 		Settings.CheckSettings();
 
 		// Get labels
-		const labels=new LabelsClass();
+		const labels = new LabelsClass();
 		labels.readListFiles(configuration);
 		return labels;
 	}
@@ -541,22 +541,23 @@ export class Z80UnitTests {
 		});
 	}
 	*/
-	public static  getAllUnitTests(): UnitTestCase[] {
+	public static getAllUnitTests(rootFolder: string): UnitTestCase[] {
+		let allUtLabels: UnitTestCase[] = [];
 		try {
 			// Read all list files.
-			const labels = Z80UnitTests.loadLabelsFromConfiguration();
+			const labels = Z80UnitTests.loadLabelsFromConfiguration(rootFolder);
 			// Check if unit tests available
-			if (!Z80UnitTests.AreUnitTestsAvailable(labels))
-				return [];	// Return empty array
-			// Get the unit test labels
-			const utLabels = Z80UnitTests.getAllUtLabels(labels);
-			return utLabels;
+			if (Z80UnitTests.AreUnitTestsAvailable(labels)) {
+				// Get the unit test labels
+				allUtLabels = Z80UnitTests.getAllUtLabels(labels);
+			}
 		}
 		catch (e) {
 			// Re-throw
 			const msg = e.message || "Unknown error.";
-			throw Error("Z80 Unit Tests: "+msg);
+			throw Error("Z80 Unit Tests: " + msg);
 		}
+		return allUtLabels;
 	}
 
 

@@ -862,7 +862,15 @@ export class Utility {
 	 */
 	public static setRootPath(rootPath: string) {
 		Utility.assert(rootPath);
-		(Utility.rootPath as any)=UnifiedPath.getUnifiedPath(rootPath);
+		(Utility.rootPath as any) = UnifiedPath.getUnifiedPath(rootPath);
+	}
+
+	/**
+	 * Returns the root path.
+	 * @param rootPath Must be set beforehand via setRootPath.
+	 */
+	public static getRootPath(): string {
+		return Utility.rootPath;
 	}
 
 
