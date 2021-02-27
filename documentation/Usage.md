@@ -445,7 +445,7 @@ The following table gives an overview.
 | Load .sna/.nex/.obj file through DeZog | yes | yes     | yes        | yes      | yes      |
 | Load .tap file through DeZog | no            | yes     | yes        | no       | no       |
 | Run Z80 Unit Tests      | yes                | yes     | yes        | no       | yes 3)   |
-| Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
+| Comments     | slower than ZEsarUX or CSpect |         | Breakpoints are faster than in ZEsarUX | |
 
 Notes:
 - State:
