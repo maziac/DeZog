@@ -444,7 +444,7 @@ The following table gives an overview.
 | Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
 | Load .sna/.nex/.obj file through DeZog | yes | yes     | yes        | yes      | yes      |
 | Load .tap file through DeZog | no            | yes     | yes        | no       | no       |
-| Run Z80 Unit Tests      | yes                | yes     | yes        | no       | no       |
+| Run Z80 Unit Tests      | yes                | yes     | yes        | no       | yes 3)   |
 | Comments     | slower than ZEsarUx or CSpect |         | Breakpoints are faster than in ZEsarUX | |
 
 Notes:
@@ -457,6 +457,8 @@ Notes:
 - ZesaruxExt is not available at the moment.
 - 1 ) ZEsarUX code coverage uses 16 bit addresses only. I.e. if slots are changed during execution the shown info might be wrong. But in most cases the output will be just fine.
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
+- 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
+
 
 ### The Internal Z80 Simulator
 

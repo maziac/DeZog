@@ -263,8 +263,8 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Start the unit tests, either partial or full, in debug mode.
-	 * I unit test cases are run (opposed to debugged) the vscode UI is not used
+	 * Start the unit tests, either partial or full.
+	 * If unit test cases are run (opposed to debugged) the vscode UI is not used
 	 * and communication takes place directly with the emulator.
 	 */
 	protected static runTests() {
@@ -309,7 +309,14 @@ export class Z80UnitTests {
 
 					// Execute command to enable wpmem, logpoints, assertions.
 					await Remote.enableLogpointGroup(undefined, true);
-					await Remote.enableWPMEM(true);
+					try {
+						await Remote.enableWPMEM(true);
+					}
+					catch (e) {
+						// It's not essential anymore to have watchpoints running.
+						// So catch this error from CSpect and show a warning instead
+						vscode.window.showWarningMessage(e.message);
+					}
 					await Remote.enableAssertionBreakpoints(true);
 
 					await Z80UnitTests.initUnitTests();
@@ -429,16 +436,16 @@ export class Z80UnitTests {
 	/**
 	 * Command execution: Cancel all unit tests.
 	 */
-	public static cmdCancelAllUnitTests() {
+	public static async cmdCancelAllUnitTests() {
 		Remote.emit('terminated');
-		Z80UnitTests.cancelUnitTests();
+		await Z80UnitTests.cancelUnitTests();
 	}
 
 
 	/**
 	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
 	 */
-	public static cancelUnitTests() {
+	public static async cancelUnitTests() {
 		// Avoid calling twice
 		if (this.cancelled)
 			return;
@@ -446,7 +453,7 @@ export class Z80UnitTests {
 		this.cancelled = true;
 		const text = "Unit tests cancelled.";
 		Z80UnitTests.dbgOutput(text);
-		Z80UnitTests.stopUnitTests(undefined);
+		await Z80UnitTests.stopUnitTests(undefined);
 		//	ds.customRequest("terminate");
 		// Fail the current test
 		/*
@@ -718,7 +725,14 @@ export class Z80UnitTests {
 			try {
 				// Execute command to enable wpmem, logpoints, assertions.
 				await Remote.enableLogpointGroup(undefined, true);
-				await Remote.enableWPMEM(true);
+				try {
+					await Remote.enableWPMEM(true);
+				}
+				catch (e) {
+					// It's not essential anymore to have watchpoints running.
+					// So catch this error from CSpect and show a warning instead
+					vscode.window.showWarningMessage(e.message);
+				}
 				await Remote.enableAssertionBreakpoints(true);
 
 				// Handle coverage
@@ -950,19 +964,10 @@ export class Z80UnitTests {
 		// Check if this was the init routine that is started
 		// before any test case:
 		if(!Z80UnitTests.utLabels) {
-			// Choose list
-			if(Z80UnitTests.partialUtLabels) {
-				// Use the passed list
-				Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels;
-			}
-			else {
-				// TODO: Do I need this still?
-				// Get all labels that look like: 'UT_xxx'
-				const lblFileLines = Z80UnitTests.getAllUtLabels(Labels);
-				Z80UnitTests.utLabels = lblFileLines.map(lfl => lfl.label);
-			}
+			// Use the test case list
+			Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels!;
 			// Error check
-			if(Z80UnitTests.utLabels.length == 0) {
+			if (!Z80UnitTests.utLabels || Z80UnitTests.utLabels.length == 0) {
 				// No unit tests found -> disconnect
 				Z80UnitTests.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
 				return;
@@ -1108,7 +1113,7 @@ export class Z80UnitTests {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
-	protected static stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string): Promise<void> {
+	protected static async stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string): Promise<void> {
 		// Async
 		return new Promise<void>(async resolve => {
 			// Clear timeout

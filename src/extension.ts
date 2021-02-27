@@ -161,8 +161,8 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to cancel the unit tests. E.g. during debugging of one unit test.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.cancelUnitTests', () => {
-		return Z80UnitTests.cmdCancelAllUnitTests();
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.cancelUnitTests', async () => {
+		await Z80UnitTests.cmdCancelAllUnitTests();
 	}));
 
 	// Register a configuration provider for 'dezog' debug type
