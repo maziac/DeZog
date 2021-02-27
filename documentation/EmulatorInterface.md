@@ -2,6 +2,7 @@
 
 This document describes the messages used to interface with the emulator(s).
 
+Note: This is an old document and mainly outdated!
 
 # General
 

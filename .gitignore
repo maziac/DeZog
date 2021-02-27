@@ -9,3 +9,4 @@ logs/
 notes.md
 /coverage/
 **/.tmp/
+.obsidian/
