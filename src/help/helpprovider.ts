@@ -154,7 +154,7 @@ initAnchors();
 `;
 
 		// Get donated state
-		const configuration = vscode.workspace.getConfiguration('dezog', null);
+		const configuration = PackageInfo.getConfiguration();
 		const donated = configuration.get<boolean>('donated');
 		// Set button
 		if (!donated) {

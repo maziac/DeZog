@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const extension = PackageInfo.extension;
 	const packageJSON = extension.packageJSON;
 	const extensionBaseName = packageJSON.name;
-	const configuration = vscode.workspace.getConfiguration(extensionBaseName, null);
+	const configuration = PackageInfo.getConfiguration();
 	configureLogging(configuration);
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		// Logging changed
