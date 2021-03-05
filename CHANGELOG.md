@@ -1,5 +1,7 @@
 # Changelog
 
+# 2.2.1
+- Fixed #51: Closing the help once prevents it from being opened again
 
 # 2.2.0
 - Thanks to bereal DeZog is now working also in multiroot workspaces.

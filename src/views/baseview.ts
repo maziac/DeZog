@@ -132,10 +132,10 @@ export class BaseView {
 	 * Normally not required.
 	 */
 	public disposeView() {
-		// Remove from list
-		const index=BaseView.staticViews.indexOf(this);
-		Utility.assert(index!==-1)
-		BaseView.staticViews.splice(index, 1);
+		const index = BaseView.staticViews.indexOf(this);
+		if (index >= 0) {
+			BaseView.staticViews.splice(index, 1);
+		}
 		// Do not use panel anymore
 		this.vscodePanel=undefined as any;
 	}

@@ -10,6 +10,7 @@ import {PackageInfo} from '../whatsnew/packageinfo';
 /**
  * A Webview that just shows some static text.
  * Is e.g. used to run an Emulator command and display it's output.
+ * Singleton.
  */
 export class HelpView extends BaseView {
 
@@ -18,6 +19,20 @@ export class HelpView extends BaseView {
 
 	// String that contains the complete TOC of the help html.
 	protected static tocHtml: string;
+
+	// Static pointer on singleton.
+	protected static singleton: HelpView;
+
+
+	/**
+	 * Returns the pointer to the HelpView singleton.
+	 * If not existing then one is created.
+	 */
+	public static getHelpView(): HelpView {
+		if (!this.singleton)
+			this.singleton = new HelpView();
+		return this.singleton;
+	}
 
 
 	/**
@@ -213,6 +228,15 @@ window.addEventListener('message', event => {
 
 		// Use the text
 		this.vscodePanel.webview.html = html;
+	}
+
+
+	/**
+	 * Additionally clear singleton.
+	 */
+	public disposeView() {
+		HelpView.singleton = undefined as any;
+		super.disposeView();
 	}
 
 

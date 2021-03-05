@@ -10,9 +10,6 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 	// The webview is stored here.
 	protected webview: vscode.Webview;
 
-	// A pointer to the help contents.
-	protected helpView: HelpView;
-
 
 	/**
 	 * Called by vscode.
@@ -212,10 +209,9 @@ initAnchors();
 	 * and makes it visible.
 	 */
 	public createHelpView() {
-		if (!this.helpView)
-			this.helpView = new HelpView();
+		const helpView = HelpView.getHelpView();
 		// Make sure the view is visible
-		this.helpView.reveal();
+		helpView.reveal();
 	}
 
 
@@ -225,8 +221,8 @@ initAnchors();
 	 */
 	protected navigateToChapter(chapter: string) {
 		// Create a new help view if it does not exist yet.
-		this.createHelpView();
+		const helpView = HelpView.getHelpView();
 		// Jump to chapter
-		this.helpView.navigateToChapter(chapter);
+		helpView.navigateToChapter(chapter);
 	}
 }
