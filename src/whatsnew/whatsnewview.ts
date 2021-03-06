@@ -68,8 +68,13 @@ export class WhatsNewView {
 		// Exchange extension name
 		html = html.replace(/\${extensionName}/g, PackageInfo.extension.packageJSON.id);
 
-		// Exchange extension name
-		html = html.replace(/\${extensionVersion}/g, PackageInfo.extension.packageJSON.version);
+		// Exchange extension version
+		const versArray = PackageInfo.extension.packageJSON.version.split('.');
+		let mainVersion = versArray.shift() || '';
+		const vPart2 = versArray.shift();
+		if (vPart2)
+			mainVersion += '.' + vPart2;
+		html = html.replace(/\${extensionMainVersion}/g, mainVersion);
 
 		// Exchange display name
 		html = html.replace(/\${extensionDisplayName}/g, PackageInfo.extension.packageJSON.displayName);
