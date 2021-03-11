@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.2.2
+- Fixed the display of local and call stack if "topOfStack" is omitted.
+(Nevertheless it's good practice not to omit "topOfStack" but to provide this value to DeZog).
+
 # 2.2.1
 - Fixed #51: Closing the help once prevents it from being opened again
 
