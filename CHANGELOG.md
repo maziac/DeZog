@@ -9,7 +9,7 @@
 
 # 2.2.0
 - Thanks to bereal DeZog is now working also in multiroot workspaces.
-- The Z80 unit test interface has been changes as well to support new version of z80-unit-tests that also supports multiroot workspaces now.
+- The Z80 unit test interface has been changed as well to support new version of z80-unit-tests that also supports multiroot workspaces now.
 - CSpect supported now for Z80 unit tests.
 
 # 2.1.7
