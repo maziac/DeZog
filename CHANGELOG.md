@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.2.3
+- SP adjusted by 2 when loading a SNA file in zsim.
+
 # 2.2.2
 - Fixed the display of local and call stack if "topOfStack" is omitted.
 (Nevertheless it's good practice not to omit "topOfStack" but to provide this value to DeZog).
