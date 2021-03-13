@@ -154,22 +154,26 @@ Please have a look at the [Listfile](#listfile) section.
     - esxdosRst: true/false. Default to false. If enabled the disassembler will disassemble "RST 8; defb N" correctly.
 - rootFolder: Typically = workspaceFolder. All other file paths are relative to this path.
 - topOfStack: This is an important parameter to make the callstack display convenient to use. Please add here the label of the top of the stack. Without this information DeZog does not know where the stack ends and may show useless/misleading/wrong information. In order to use this correctly first you need a label that indicates the top of your stack. Here is an example how this may look like:
-
 Your assembler file:
-~~~assembly
-stack_bottom:
-    defs    STACK_SIZE*2, 0
-stack_top:
-~~~
+    ~~~assembly
+    stack_bottom:   ; 100 bytes of stack
+        defs    100, 0
+    stack_top:
+    ~~~
+    In your launch.json:
+    ~~~json
+    "topOfStack": "stack_top"
+    ~~~
 
-In your launch.json:
-~~~json
-"topOfStack": "stack_top"
-~~~
+    In the SNA and NEX file format you can also set the stack address if you use sjasmplus.
+    If you omit the stack address some defaults are used that you can set "topOfStack" to:
+    - SNA: 0x5D58 (Note/sjasmplus: If you add the RAMTOP to your DEVICE entry then it seems the stack is RAMTOP-3. For both, ZXSPECTRUM48 and ZXSPCTRUM128.)
+    - NEX: 0xFFFE
 
-Note:
+    The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in parenthesis) directly or even a calculation, e.g. "label-2".
+
 - topOfStack: instead of a label you can also use a fixed number.
-- load: The .nex, .sna (or .tap) file to load. On start of the debug session ZEsarUX is instructed to load this file.
+- load: The .nex, .sna (or .tap) file to load. On start of the debug session the file is loaded into the emulator. All emulators support SNA and NEX files. ZEsarUX can additionally load .tap files.
 Note: you can also omit this. In that case DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
 ~~~json
@@ -1372,6 +1376,24 @@ You can also use variables similar to the description in chapter [LOGPOINT].
 E.g. use "Counter=${(sprite.counter)}" as a log message.
 
 Note: logpoints are not available in ZEsarUX.
+
+
+### Stack
+
+A thing that might confuse traditional assembler programmers is the way how DeZog handles the stack.
+Dezog does not show a combined stack with all subroutine return values and all pushed values. Instead it shows a "Local Stack" in the "VARIABLES" section and a call stack in "Call Stack" section.
+It works more how the stack is used in a higher level language, e.g. C.
+I.e. DeZog analyzes the global stack and grasps the return addresses from it.
+These (or better the corresponding CALLs) are shown in the "Call Stack".
+The "Local Stack" shows the pushed values only for the current sub routine.
+You can even switch around in the call stack by clicking on the CALL address.
+At the same time you see that the local stack is being switched.
+
+However, if you would rather like to see the global, traditional stack with mixed return addresses and pushed values you can easily achieve this by entering e.g.
+~~~
+sp,2,20
+~~~
+into the [WATCH](#watches) window. This will display the last 20 values on the global stack.
 
 
 ### Debug Console

@@ -91,7 +91,10 @@ export class SnaFile {
 		// Check for 128k
 		if (snaBuffer.length<=index) {
 			// 48k, get PC from SP
-			this.pc=Utility.getWord(snaBuffer, HEADER_LENGTH+this.sp-0x4000);
+			this.pc = Utility.getWord(snaBuffer, HEADER_LENGTH + this.sp - 0x4000);
+			// Increase SP
+			this.sp += 2;
+			// Note: iff1 is not copied from iff2. Should not be important.
 			return;
 		}
 
