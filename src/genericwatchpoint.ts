@@ -2,7 +2,7 @@
 /**
  * Represents a watchpoint used byDebugAdapter in a very generic form,
  * i.e. not machine specific.
- * Watchpoints are NOT identiifed by an ID but instead by the address and size.
+ * Watchpoints are NOT identified by an ID but instead by the address and size.
  *
  */
 export interface GenericWatchpoint {
