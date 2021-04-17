@@ -41,8 +41,13 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	// Note: F/D are not used (deprecated), instead L is used
 
 
-	/// The used bank size.
-	protected bankSize: number;	// will be overwritten. O indicates that long addresses should not be used (set by "disableBanking").
+	/// The used bank size. Only set if the assembler+parser supports
+	/// long addresses. Then it holds the used bank size (otherwise 0).
+	/// Is used to tell if the Labels are long or not and for internal
+	/// conversion if target has a different memory model.
+	/// Typical value: 0, 8192 or 16384.
+	public bankSize: number = 0;
+
 
 	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
 	protected regexSkipSldOptComment = /^;\s*sldopt/i;
@@ -363,6 +368,23 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			return addr2;
 		}
 	}
+
+
+	/**
+	 * Creates a long address from the address and the page info.
+	 * If page == -1 address is returned unchanged.
+	 * @param address The 64k address, i.e. the upper bits are the slot index.
+	 * @param bank The bank the address is associated with.
+	 * @returns if bankSize: address+((page+1)<<16)
+	 * else: address.
+	 */
+	protected createLongAddress(address: number, bank: number) {
+		let result = address;
+		if (this.bankSize != 0)
+			result += (bank + 1) << 16;
+		return result;
+	}
+
 }
 
 

@@ -81,12 +81,6 @@ export class LabelParserBase {
 	/// Used to determine if current (included) files are used or excluded in the addr <-> file search.
 	protected excludedFileStackIndex: number;
 
-	/// The used bank size. Only set if the assembler+parser supports
-	/// long addresses. Then it holds the used bank size (otherwise 0).
-	/// Is used to tell if the Labels are long or not and for internal
-	/// conversion if target has a different memory model.
-	/// Typical value: 0, 8192 or 16384.
-	protected bankSize: number;
 
 	// Collects the warnings.
 	protected warnings: string;
@@ -105,17 +99,16 @@ export class LabelParserBase {
 		logPointLines: Array<{address: number, line: string}>
 	) {
 		// Store variables
-		this.fileLineNrs=fileLineNrs;
+		this.fileLineNrs = fileLineNrs;
 		this.lineArrays = lineArrays;
 		this.labelsForNumber64k = labelsForNumber64k;
 		this.labelsForLongAddress = labelsForLongAddress;
-		this.numberForLabel=numberForLabel;
-		this.labelLocations=labelLocations;
-		this.watchPointLines=watchPointLines;
-		this.assertionLines=assertionLines;
-		this.logPointLines=logPointLines;
-		this.bankSize=0;
-		this.warnings='';
+		this.numberForLabel = numberForLabel;
+		this.labelLocations = labelLocations;
+		this.watchPointLines = watchPointLines;
+		this.assertionLines = assertionLines;
+		this.logPointLines = logPointLines;
+		this.warnings = '';
 	}
 
 
@@ -602,17 +595,14 @@ export class LabelParserBase {
 
 	/**
 	 * Creates a long address from the address and the page info.
-	 * If page == -1 address is returned unchanged.
+	 * This is overwritten by parsers that use it, e.g. sjasmplussdllabelparser.
 	 * @param address The 64k address, i.e. the upper bits are the slot index.
 	 * @param bank The bank the address is associated with.
 	 * @returns if bankSize: address+((page+1)<<16)
 	 * else: address.
 	 */
 	protected createLongAddress(address: number, bank: number) {
-		let result = address;
-		if (this.bankSize != 0)
-			result += (bank + 1) << 16;
-		return result;
+		return address;
 	}
 
 

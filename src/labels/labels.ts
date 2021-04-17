@@ -190,11 +190,9 @@ export class LabelsClass {
 		this.warnings = '';
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
-			// For sjasmplus it is checked if a list file should be parsed or an sld file
 			for (const config of mainConfig.sjasmplus) {
-				let parser;
-				// Parse SLD file and list file
-				parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+				// Parse SLD file
+				const parser = new SjasmplusSldLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 				parser.loadAsmListFile(config);
 				this.bankSize = parser.bankSize;
 				// Warnings
@@ -662,7 +660,7 @@ export class LabelsClass {
 	/**
 	 * Convert all file/line <-> address association to a new bank size.
 	 * The main use case is to convert ZX128 banking into ZXNext banking.
-	 * @param bankSize If bank size is 0 no banking is used and labels are converted to 64k. Otherwise the labels are
+	 * @param targetBankSize If bank size is 0 no banking is used and labels are converted to 64k. Otherwise the labels are
 	 * converted from the old bank size to the new one.
 	 */
 	protected convertLabelsToBankSize(targetBankSize: number) {
