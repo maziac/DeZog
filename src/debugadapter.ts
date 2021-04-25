@@ -1982,12 +1982,19 @@ export class DebugSessionClass extends DebugSession {
 						}
 						else {
 							// Normal case
-							elemCount /= elemSize;
-							if (!elemCount)	// Also 0 is not allowed (and should not happen)
+							if (!elemCount) {	// Also 0 is not allowed (and should not happen)
 								elemCount = 10; // Use 10 bytes as default
-							// lLmit max. number
-							if (elemCount > 1000)
-								elemCount = 1000;
+							}
+							else {
+								// Divide elemcount by elemSize
+								elemCount = Math.floor((elemCount+elemSize-1) / elemSize);
+								// Limit minimal number
+								if (elemCount < 1)
+									elemCount = 1;
+								// Limit max. number
+								if (elemCount > 1000)
+									elemCount = 1000;
+							}
 						}
 					}
 
