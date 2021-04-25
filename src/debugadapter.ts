@@ -1930,7 +1930,7 @@ export class DebugSessionClass extends DebugSession {
 					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
 					// Local label and prefix
 					lastLabel = entry.lastLabel;
-				modulePrefix = entry.modulePrefix;
+					modulePrefix = entry.modulePrefix;
 					// Convert label (+expression)
 					labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
 

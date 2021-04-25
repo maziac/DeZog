@@ -701,8 +701,11 @@ export class MemDumpVar extends ShallowVar {
 		for (let i = 0; i < count!; i++) {
 			// Get value
 			let value = memory[k++];
-			if (elemSize > 1)
-				value += 256 * memory[k++];
+			let mult = 1;
+			for (let j = 1; j < elemSize; j++) {
+				mult *= 256;
+				value += mult * memory[k++];
+			}
 			// Format
 			const addr_i = addr + offset + i * elemSize;
 			const formatted = Utility.numberFormattedSync(value, elemSize, format, false, undefined, undefined, tabSizes);
