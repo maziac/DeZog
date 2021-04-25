@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.2.4
+- Fixed #55: '??' in WATCH display
+- STRUCTs smaller than 3 bytes are now recognized in the WATCHes
+- Fixed #56: Watch doesn't support byte group above 2
+
 # 2.2.3
 - SP adjusted by 2 when loading a SNA file in zsim.
 
