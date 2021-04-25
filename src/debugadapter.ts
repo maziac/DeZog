@@ -2004,9 +2004,16 @@ export class DebugSessionClass extends DebugSession {
 					// Create a label variable
 					let labelVar;
 					let formattedValue = '';
+					// Check for sub labels (i.e. check for struct)
+					let props;
+					let propsLength = 0
+					if (lblType != undefined) {
+						props = Labels.getSubLabels(lblType);
+						propsLength = props.length;
+					}
 					// Get sub properties
-					if (elemSize <= 2) {
-						// Check for single value or array
+					if (elemSize <= 2 && propsLength == 0) {
+						// Check for single value or array (no sub properties)
 						if (elemCount <= 1) {
 							// Single value
 							// Read memory
@@ -2026,12 +2033,9 @@ export class DebugSessionClass extends DebugSession {
 					}
 					else {
 						// Not 1 or 2 was given as size but e.g. a struct label
-						if (lblType != undefined) {
-							const props = Labels.getSubLabels(lblType);
-							if (props.length) {
-								// Structure
-								labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
-							}
+						if (propsLength > 0) {
+							// Structure
+							labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
 						}
 						if (!labelVar) {
 							// Simple memdump
