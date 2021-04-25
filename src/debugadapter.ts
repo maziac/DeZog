@@ -1973,7 +1973,10 @@ export class DebugSessionClass extends DebugSession {
 						// If not a long address then use the 64k value
 						if (distAddr == undefined)
 							distAddr = labelValue;
-						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 0;
+						// Try to get the distance to the next label:
+						// Note: Does not work for structs as the next label would
+						// be inside the struct.
+						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 1;
 						// Check special case
 						if (!lblType && elemCount == 2) {
 							// Special case: 1 word. Exchange size and count
@@ -1981,20 +1984,14 @@ export class DebugSessionClass extends DebugSession {
 							elemCount = 1;
 						}
 						else {
-							// Normal case
-							if (!elemCount) {	// Also 0 is not allowed (and should not happen)
-								elemCount = 10; // Use 10 bytes as default
-							}
-							else {
-								// Divide elemcount by elemSize
-								elemCount = Math.floor((elemCount+elemSize-1) / elemSize);
-								// Limit minimal number
-								if (elemCount < 1)
-									elemCount = 1;
-								// Limit max. number
-								if (elemCount > 1000)
-									elemCount = 1000;
-							}
+							// Divide elemCount by elemSize
+							elemCount = Math.floor((elemCount+elemSize-1) / elemSize);
+							// Limit minimal number
+							if (elemCount < 1)
+								elemCount = 1;
+							// Limit max. number
+							if (elemCount > 1000)
+								elemCount = 1000;
 						}
 					}
 

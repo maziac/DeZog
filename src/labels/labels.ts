@@ -30,6 +30,18 @@ export interface ListFileLine extends SourceFileEntry {
 }
 
 
+/**
+ * Entries for the distanceForLabelAddress map.
+ * Required would be only the number.
+ * But the name of the next label is also stored for debugging
+ * purposes.
+ */
+export interface NextLabelDistance {
+	distance: number;		/// The distance in bytes to the next label
+	nextLabel: string;		/// The next label as string.
+}
+
+
 
 /**
  * Calculation of the labels from the input list and labels file.
@@ -76,8 +88,10 @@ export class LabelsClass {
 	/// [0x8002] = 2
 	/// [0x8003] = 1
 	/// [0x8004] = 1	: Label stack_top
+	/// Note: The stored 'NextLabelDistance' type stores also the
+	/// name of the next label.
 	/// The map contains long addresses.
-	protected distanceForLabelAddress = new Map<number, number>();
+	protected distanceForLabelAddress = new Map<number, NextLabelDistance>();
 
 	/// Map with all labels (from labels file) and corresponding values.
 	/// Long addresses.
@@ -320,14 +334,14 @@ export class LabelsClass {
 	protected calculateLabelDistances() {
 		// This approach assumes that the labels in the map are ordered.
 		let prevAddr;
-		for (let [, longAddr] of this.numberForLabel) {
+		for (let [labelName, longAddr] of this.numberForLabel) {
 			// Skip first entry
 			if (prevAddr != undefined) {
 				// Check if it is a higher address (in 64k area)
 				const dist = (longAddr & 0xFFFF) - (prevAddr & 0xFFFF);
 				if (dist > 0) {
 					// Store distance
-					this.distanceForLabelAddress.set(prevAddr, dist);
+					this.distanceForLabelAddress.set(prevAddr, {distance: dist, nextLabel: labelName});
 				}
 			}
 			// Next
@@ -386,8 +400,8 @@ export class LabelsClass {
 	 * @returns N. addr+N is the address that relates to the next available label.
 	 */
 	public getDistanceToNextLabel(addr: number): number|undefined {
-		const distance = this.distanceForLabelAddress.get(addr);
-		return distance;
+		const nextLabel = this.distanceForLabelAddress.get(addr);
+		return nextLabel?.distance;
 	}
 
 
