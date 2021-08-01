@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.2.5
+- Fixed: Memory views were not updated if the debug session was restarted. See #59.
+
 # 2.2.4
 - Fixed #55: '??' in WATCH display
 - STRUCTs smaller than 3 bytes are now recognized in the WATCHes

@@ -108,9 +108,6 @@ export class DebugSessionClass extends DebugSession {
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
 
-		// Make sure the views listen on 'update' messages.
-		this.on('update', BaseView.staticCallUpdateFunctions);
-
 		/*
 		this._runtime.on('stopOnStep', () => {
 			this.sendEvent(new StoppedEvent('step', ZesaruxDebugSession.THREAD_ID));
@@ -290,7 +287,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
 		// Disconnect Remote etc.
-		this.disconnectAll();
+		await this.disconnectAll();
 		// Send response
 		this.sendResponse(response);
 	}
@@ -315,7 +312,7 @@ export class DebugSessionClass extends DebugSession {
 			Decoration?.clearAllDecorations();
 		DebugSessionClass.state=DbgAdapterState.NORMAL;
 		// Close views, e.g. register memory view
-		BaseView.staticCloseAll();
+		await BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
@@ -414,9 +411,9 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Called after 'initialize' request.
-	 * Loads the list file and connects the socket to the zesarux debugger.
-	 * Initializes zesarux.
-	 * When zesarux is connected and initialized an 'initialized' event
+	 * Loads the list file and connects the socket (if necessary).
+	 * Initializes the remote.
+	 * When the remote is connected and initialized an 'initialized' event
 	 * is sent.
 	 * @param response
 	 * @param args
@@ -477,8 +474,12 @@ export class DebugSessionClass extends DebugSession {
 		// Init
 		this.processingSteppingRequest=false;
 
+		// Register to update the memoryview.
+		this.removeListener('update', BaseView.staticCallUpdateFunctions);
+		this.on('update', BaseView.staticCallUpdateFunctions);
+
 		// Start the emulator and the connection.
-		const msg=await this.startEmulator();
+		const msg = await this.startEmulator();
 		if (msg) {
 			response.message=msg;
 			response.success=(msg==undefined);
