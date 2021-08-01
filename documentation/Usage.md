@@ -1046,6 +1046,13 @@ You can now try the following:
 - set breakpoints, press continue to run to the breakpoints
 
 
+### Registers
+
+You can view and change registers in the VARIABLES panel.
+The registers are normally shown with their values in hex and decimal. If a label is equal to a register contents the label is shown as well.
+You can change a register value by double clicking it, entering the number and pressing 'enter'.
+
+![](images/registers_edit.gif)
 
 
 ### Reverse Debugging
