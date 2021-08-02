@@ -1755,8 +1755,11 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd=='-label'||cmd=='-l') {
 			output = await this.evalLabel(tokens);
 		}
-		else if (cmd=='-md') {
+		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
+		}
+		else if (cmd == '-memset') {
+			output = await this.evalMemSet(tokens);
 		}
 		else if (cmd=='-ms') {
 			output = await this.evalMemSave(tokens);
@@ -2085,8 +2088,7 @@ export class DebugSessionClass extends DebugSession {
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERTION breakpoints.
 "-dasm address count": Disassembles a memory area. count=number of lines.
-"-eval expr": Evaluates an expression. The expression might contain
-mathematical expressions and also labels. It will also return the label if
+"-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
 "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
@@ -2095,19 +2097,32 @@ the value correspondends to a label.
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianness which is little endian by default.
+"-memset value_size address value [repeat [endianness]]:"
+	- value_size: The byte-size of the value. E.g. 1 for byte, 2 for a word etc.
+	- address: The address to fill. Can also be a label or expression.
+	- value: The value to set
+	- repeat: (Optional) How often the value is repeated.
+	- endianness: (Optional) 'little' (default) or 'big'.
+	Examples:
+	"-memset 1 8000h 0Fh" : Puts a 15 into memory location 0x8000.
+	"-memset 2 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
+	"-memset 2 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
+	"-memset 1 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
+	"-memset 1 fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
-"-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices. The values can be omitted. 'index' defaults to 0 and 'count' to 1.
-Without any parameter it will show all sprite patterns.
-You can concat several ranges.
-Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
+"-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices.
+	The values can be omitted. 'index' defaults to 0 and 'count' to 1.
+	Without any parameter it will show all sprite patterns.
+	You can concat several ranges.
+	Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
 "-WPMEM enable|disable|status":
 	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
 	- status: Shows enable status of WPMEM watchpoints.
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
-Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
-Without any parameter it will show all visible sprites automatically.
+	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
+	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
 
 Examples:
@@ -2222,84 +2237,163 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async evalMemDump(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length<2) {
-			// Error Handling: No arguments
+		if (tokens.length < 2) {
+			// Error Handling: Too less arguments
 			throw Error("Address and size expected.");
 		}
 
 		// Address
-		const addressString=tokens[0];
-		const address=Utility.evalExpression(addressString);
-		if (address<0||address>0xFFFF)
-			throw Error("Address ("+address+") out of range.");
+		const addressString = tokens[0];
+		const address = Utility.evalExpression(addressString);
+		if (address < 0 || address > 0xFFFF)
+			throw Error("Address (" + address + ") out of range.");
 
 		// Size
-		const sizeString=tokens[1];
-		const size=Utility.evalExpression(sizeString);
-		if (size<0||size>0xFFFF)
-			throw Error("Size ("+size+") out of range.");
+		const sizeString = tokens[1];
+		const size = Utility.evalExpression(sizeString);
+		if (size < 0 || size > 0xFFFF)
+			throw Error("Size (" + size + ") out of range.");
 
 		// Byte or word
-		let unitSize=1; 	// Default=byte
-		let bigEndian=false;
+		let unitSize = 1; 	// Default=byte
+		let bigEndian = false;
 		// Hex/dec
-		let hex=true;
-		const typeString=tokens[2];
+		let hex = true;
+		const typeString = tokens[2];
 		if (typeString) {
-			const typeStringLower=typeString.toLowerCase();
-			if (typeStringLower!="hex"&&typeStringLower!="dec"&&typeStringLower!="word")
-				throw Error("'hex', 'dec' or 'word' expected but got '"+typeString+"'.");
-			let k=2;
+			const typeStringLower = typeString.toLowerCase();
+			if (typeStringLower != "hex" && typeStringLower != "dec" && typeStringLower != "word")
+				throw Error("'hex', 'dec' or 'word' expected but got '" + typeString + "'.");
+			let k = 2;
 			// Check for hex or dec
-			if (typeString=='hex')
+			if (typeString == 'hex')
 				k++;
-			else if (typeString=='dec') {
-				hex=false;
+			else if (typeString == 'dec') {
+				hex = false;
 				k++;
 			}
 			// Check for unit size (word)
-			const unitSizeString=tokens[k];
+			const unitSizeString = tokens[k];
 			if (unitSizeString) {
-				const unitSizeStringLower=unitSizeString.toLowerCase()
-				if (unitSizeStringLower!="word")
-					throw Error("'word' expected but got '"+unitSizeString+"'.");
-				unitSize=2;
+				const unitSizeStringLower = unitSizeString.toLowerCase()
+				if (unitSizeStringLower != "word")
+					throw Error("'word' expected but got '" + unitSizeString + "'.");
+				unitSize = 2;
 				// Endianness
-				const endianness=tokens[k+1];
+				const endianness = tokens[k + 1];
 				if (endianness) {
-					const endiannessLower=endianness.toLowerCase();
-					if (endiannessLower=="big") {
+					const endiannessLower = endianness.toLowerCase();
+					if (endiannessLower == "big") {
 						// Big endian
-						bigEndian=true;
+						bigEndian = true;
 					}
-					else if (endiannessLower!="little") {
-						throw Error("'little' or 'big' expected but got '"+endianness+"'.");
+					else if (endiannessLower != "little") {
+						throw Error("'little' or 'big' expected but got '" + endianness + "'.");
 					}
 				}
 			}
 		}
 
 		// Get memory
-		const data=await Remote.readMemoryDump(address, size);
+		const data = await Remote.readMemoryDump(address, size);
 
 		// 'Print'
-		let output='';
-		for (let i=0; i<size; i+=unitSize) {
-			let value=data[i];
-			if (unitSize==2) {
+		let output = '';
+		for (let i = 0; i < size; i += unitSize) {
+			let value = data[i];
+			if (unitSize == 2) {
 				if (bigEndian)
-					value=(value<<8)+data[i+1];
+					value = (value << 8) + data[i + 1];
 				else
-					value+=data[i+1]<<8;
+					value += data[i + 1] << 8;
 			}
 			if (hex)
-				output+=Utility.getHexString(value, 2*unitSize)+' ';
+				output += Utility.getHexString(value, 2 * unitSize) + ' ';
 			else
-				output+=value+' ';
+				output += value + ' ';
 		}
 
 		// Send response
 		return output;
+	}
+
+	/**
+	 * Sets a memory location to some value.
+	 * "-memset value_size address value repeat endianness"
+	 * "-memset 2 8000h 54"
+	 * "-memset 1 label+5 8Fh"
+	 * @param tokens The arguments. I.e. the value size, address, value, repeat and endianness. Only the first 3 are mandatory.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemSet(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length < 3) {
+			// Error Handling: Too less arguments
+			throw Error("At least value_size, address and value expected.");
+		}
+
+		// Value size (usually 1 or 2)
+		const valSizeString = tokens[0];
+		const valSize = Utility.evalExpression(valSizeString);
+		if (valSize < 0 || valSize > 0xFFFF)
+			throw Error("Value size (" + valSize + ") out of range.");
+
+		// Address
+		const addressString = tokens[1];
+		const address = Utility.evalExpression(addressString);
+		if (address < 0 || address > 0xFFFF)
+			throw Error("Address (" + address + ") out of range.");
+
+		// Value
+		const valueString = tokens[2];
+		const value = Utility.evalExpression(valueString);
+		const maxValue = 2 ** (valSize * 8);
+		if (value >= maxValue || value < (-maxValue / 2))
+			throw Error("Value (" + value + ") too big (or too small).");
+
+		// Repeat
+		const repeatString = tokens[3] || '1';
+		const repeat = Utility.evalExpression(repeatString);
+		const totalSize = valSize * repeat;
+		if (totalSize <= 0 || totalSize > 0xFFFF)
+			throw Error("Repetition (" + repeat + ") out of range.");
+
+		// endianness
+		let endiannessString = tokens[4] || 'little';
+		endiannessString = endiannessString.toLowerCase();
+		if (endiannessString != 'little' && endiannessString != 'big')
+			throw Error("Endianness (" + endiannessString + ") unknown.");
+		const littleEndian = (endiannessString == 'little');
+
+		// Set (or fill) memory
+
+		// Prepare data
+		const data = new Uint8Array(totalSize);
+		let index = 0;
+		for (let r = 0; r < repeat; r++) {
+			let val = value;
+			for (let k = 0; k < valSize; k++) {
+				if (littleEndian) {
+					data[index+k] = val & 0xFF;
+				}
+				else {
+					data[index+valSize-k-1] = val & 0xFF;
+				}
+				// Next
+				val = val >> 8;
+			}
+			// Next
+			index += valSize;
+		}
+
+		// Write to remote
+		await Remote.writeMemoryDump(address, data);
+
+		// Update
+		this.update();
+
+		// Send response
+		return '';
 	}
 
 
