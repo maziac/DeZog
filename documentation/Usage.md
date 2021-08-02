@@ -67,19 +67,19 @@ The picture below shows the main areas that you will see when debugging a progra
 
 **S** - After starting the debugger you can use the buttons to step through your source code. Note: Depending on your settings this might be floating bar.
 
-**R** - The Z80 registers are shown here. It contains also other information like the memory banking, the local stack or the disassembly of the current PC location.
+**R** - The [Z80 registers](#registers) are shown here. It contains also other information like the memory banking, the local stack or the disassembly of the current PC location.
 
-**W** - The WATCH area contains labels that you put in here for observation.
+**W** - The [WATCH](#watches) area contains labels that you put in here for observation.
 
-**B** - Breakpoints that you set in the editor are collected here.
+**B** - [Breakpoints](#vscode-breakpoint) that you set in the editor are collected here.
 
 **H** - DeZog Sidebar Help: Click on a topic for help. (Hint: CTRL-F in the opened view allows searching.)
 
 **E** - The source code editor. DeZog will jump to the right file while stepping. You can set breakpoints and hover over labels and registers to see the contents.
 
-**D** - The debug console shows the executed instructions and other infos. You can also setup additional commands (like ```-mv 0x4000 0x1000``` to view the memory contents 0x4000-0x4FFFF).
+**D** - The [debug console](#debug-console) shows the executed instructions and other infos. You can also setup additional commands (like ```-mv 0x4000 0x1000``` to view the memory contents 0x4000-0x4FFFF).
 
-**V** - Other views like the memory view, the sprites view or the simulator view.
+**V** - Other views like the [memory viewer](#memory-viewer), the sprites view or the simulator view.
 
 
 ## Sample Program
@@ -1544,6 +1544,27 @@ You can for example print a memory dump to the console with
 -md 0 200h
 ~~~
 
+### Altering Memory Contents
+
+You can alter memory contents directly within the Memory Viewer.
+
+But there is also a special command, the
+~~~
+-memset <value_size> <address> <value> [<repeat> [<endianness>]]
+~~~
+- value_size: The byte-size of the value. E.g. 1 for byte, 2 for a word etc.
+- address: The address to fill. Can also be a label or expression.
+- value: The value to set
+- repeat: (Optional) How often the value is repeated.
+- endianness: (Optional) 'little' (default) or 'big'.
+
+Examples:
+- "-memset 1 8000h 0Fh" : Puts a 15 into memory location 0x8000.
+- "-memset 2 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
+- "-memset 2 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
+- "-memset 1 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
+- "-memset 1 fill_colors_ptr FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF02.
+- "-memset 1 fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everyting after a space is considered as a new argument.
 
 #### Sprites & Patterns
 
@@ -1700,6 +1721,7 @@ Notes:
 - Instead of simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use the value of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
 - To watch the stack in the WATCH section you could use: ```SP,2,(stack_top-SP)/2```which shows a dynamic size array which starts at SP and ends at stack_top (assuming stack_top is defined as a label just above your stack).
 - If a label is not recognized try to use the fully qualified name. I.e. in case of a dot label try to use the full label name with the module name (if used).
+- It is not possible to change any memory contents in the WATCHes area. (vscode does not allow this). Instead you can change values in the [memory viewer](#memory-viewer) or with the "-memset" command.
 
 
 ### Change the Program Counter
