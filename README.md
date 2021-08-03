@@ -140,6 +140,8 @@ The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.
 The table [here](documentation/Usage.md#remote-capabilities) shows a comparison of the features.
 
+If you own a ZX Next you also have the option to debug your SW directly on the Next.
+
 
 ### DeZog
 
@@ -180,12 +182,16 @@ If you would like to help extending the DeZog functionality in one of the follow
 
 - Add **new assembler** parsers: The process of writing a parser is described in detail here: [AddingNewAssemblers.md](AddingNewAssemblers.md)
 Shouldn't be to hard.
+<!--
+Note: I don't think that DeZog would be of much help here: For MAME there are normally no sources and labels/symbols available. I.e. most of DeZog features cannot be used. Also setting breakpoints is difficult as this is done in the source code.
+Original text:
 - Add a **MAME Remote** for Z80: I'd like to have done it myself but I'm running out of time. The idea here is to connect to the MAME debugger via a socket. As DeZog is focused very much on Z80 it would make sense only for MAME Z80 targets, of course. See [AddingNewRemotes.md](AddingNewRemotes.md).
 My current understanding in general is:
 	- MAME uses lua to communicate with the MAME debugger
 	- A socket connection between MAME lua and DeZog is required
 	- i.e. on MAME side a lua script is required
 	- On DeZog a new Remote is required to communicate with the lua script
+-->
 - Adding other Remotes (emulators): See [AddingNewRemotes.md](AddingNewRemotes.md).
 [S0urceror has done so for OpenMSX](https://www.youtube.com/watch?v=cf4nPzoosAw&feature=youtu.be), so it is doable.
 
@@ -219,7 +225,7 @@ I would like to thank a few people for their support
 - [Molly Howell/DrGoldfire](https://bitbucket.org/DrGoldfire/z80.js/src/master/) for the Z80 CPU simulation code.
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in sjasmplus in the SLD format.
-- Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram) and [Daren May](https://github.com/darenm) for writing tutorials.
+- Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm) and [Patricia Curtis](https://luckyredfish.com/who-am-i/) for writing tutorials.
 
 
 # Tutorials
@@ -227,21 +233,35 @@ I would like to thank a few people for their support
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
 Especially for changes in the 'launch.json' it might be some properties (names) have changed/removed/added.
 
-Unfortunately there is none for Dezog v2.0 yet. Any contributions are welcome.
+Unfortunately all tutorials are a little bit outdated, i.e. there is none for Dezog v2.x yet only for the former 1.x versions. Any contributions are very welcome.
+
+I listed the tutorials here by date.
+
+## Patricia Curtis
+
+Date: Sep-2020, DeZog 1.4, CSpect
+
+A great [tutorial](https://luckyredfish.com/coding-for-the-spectrum-next-emulator-cspect/) by [Patricia Curtis](https://luckyredfish.com/who-am-i/) describing the setup with sjasmplus, CSpect and DeZog.
 
 
-## CSpect/DeZog
+## Retro Coder TV
 
-### Patricia Curtis
+Date: Sep-2020, DeZog 1.4, Internal Z80 Simulator, ZEsarUX, CSpect
 
-Date: Sep-2020, DeZog 1.4
+A quite lengthy YouTube [video](https://www.youtube.com/watch?v=a16PG2YOqIg&t=4904s) showing a 'live' DeZog setup.
+By [Retro Coder TV](https://www.twitch.tv/retrocodertv).
 
-A great tutorial by [Patricia Curtis](https://luckyredfish.com/who-am-i/) describing the setup with [sjasmplus, CSpect and DeZog](https://luckyredfish.com/coding-for-the-spectrum-next-emulator-cspect/).
+
+## L BREAK into program, 0:1
+
+Date: Aug-2020, DeZog 1.4 (with a few updates for 2.0), ZEsarUX
+
+And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)).
 
 
-### Daren May
+## Daren May
 
-Date: May-2020, DeZog v1.2
+Date: May-2020, DeZog v1.2, CSpect
 
 An excellent tutorial by [Daren May](https://github.com/darenm) which shows how to setup [DeZog with CSpect](https://github.com/darenm/SpectrumNextTutorials/blob/master/DeZog%20Setup%20Tutorial.md) on Windows.
 Although it was made for Windows you can easily apply it to macOS or Linux.
@@ -249,18 +269,9 @@ Although it was made for Windows you can easily apply it to macOS or Linux.
 Please note: Daren creates an SD card image that is loaded when CSpect is started. For many projects this is not necessary as you can transfer .nex and .sna files directly from DeZog to CSpect.
 
 
-## ZEsarUX/DeZog
+## Cesar Wagener Moriana
 
-### L BREAK into program, 0:1
-
-Date: Aug-2020, DeZog 1.4
-
-And here is another shorter **tutorial by Dean Belfield** ([L BREAK into program, 0:1](http://www.breakintoprogram.co.uk/programming/assembly-language/z80/z80-development-toolchain)). For this one you don't need to compile ZEsarUX by yourself.
-
-
-### Cesar Wagener Moriana
-
-Date: Dec-2019, DeZog 0.9 (Z80 Debug)
+Date: Dec-2019, DeZog 0.9 (Z80 Debug), ZEsarUX
 
 Here is an older (but still great) **tutorial from Cesar Wagener Moriana**.
 He documented how he put all things together. It describes how to setup an integrated development environment for ZEsarUX with DeZog.

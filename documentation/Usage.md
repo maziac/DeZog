@@ -1548,23 +1548,31 @@ You can for example print a memory dump to the console with
 
 You can alter memory contents directly within the Memory Viewer.
 
-But there is also a special command, the
+But there are also a special commands to change memory contents, the
 ~~~
--memset <value_size> <address> <value> [<repeat> [<endianness>]]
+-memsetb <address> <value> [<repeat>]
 ~~~
-- value_size: The byte-size of the value. E.g. 1 for byte, 2 for a word etc.
+- address: The address to fill. Can also be a label or expression.
+- value: The value to set
+- repeat: (Optional) How often the value is repeated.
+
+and
+
+~~~
+-memsetw <address> <value> [<repeat> [<endianness>]]
+~~~
 - address: The address to fill. Can also be a label or expression.
 - value: The value to set
 - repeat: (Optional) How often the value is repeated.
 - endianness: (Optional) 'little' (default) or 'big'.
 
 Examples:
-- "-memset 1 8000h 0Fh" : Puts a 15 into memory location 0x8000.
-- "-memset 2 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
-- "-memset 2 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
-- "-memset 1 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
-- "-memset 1 fill_colors_ptr FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF02.
-- "-memset 1 fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everyting after a space is considered as a new argument.
+- "-memsetb 8000h 0Fh" : Puts a 15 into memory location 0x8000.
+- "-memsetw 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
+- "-memsetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
+- "-memsetb 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
+- "-memsetb fill_colors_ptr FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF02.
+- "-memsetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everyting after a space is considered as a new argument.
 
 #### Sprites & Patterns
 
@@ -1721,13 +1729,14 @@ Notes:
 - Instead of simple labels ore integers it is possible to use expressions. E.g. you could use ```BC+2*INV_COUNT[4]``` which translates to: Use the value of register BC, add 2 times the INV_COUNT constant. From the resulting address use the 4th element.
 - To watch the stack in the WATCH section you could use: ```SP,2,(stack_top-SP)/2```which shows a dynamic size array which starts at SP and ends at stack_top (assuming stack_top is defined as a label just above your stack).
 - If a label is not recognized try to use the fully qualified name. I.e. in case of a dot label try to use the full label name with the module name (if used).
-- It is not possible to change any memory contents in the WATCHes area. (vscode does not allow this). Instead you can change values in the [memory viewer](#memory-viewer) or with the "-memset" command.
+- It is not possible to change any memory contents in the WATCHes area. (vscode does not allow this). Instead you can change values in the [memory viewer](#memory-viewer) or with the ["-memsetb/w"](#altering-memory-contents) command.
 
 
 ### Change the Program Counter
 
-The PC can be changed via the menu. Click in the source line. Do a right-click
-and choose "Move Program Counter to Cursor".
+The PC can be changed via the menu. Click in a source line with an assmbly statement. Then do a right-click and choose "Move Program Counter to Cursor".
+
+You can as well simply change the PC in the VARIABLES panel and enter a new value.
 
 
 ### 'Long Addresses' Explanation

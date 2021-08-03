@@ -90,6 +90,12 @@ Missing:
 - EmulatorClass info: not available.
 - Possibility to change the 'driver', e.g. Spectrum 48k or Spectrum 128k
 
+Problem:
+- for Mame there is normally not source (asm file) available. I.e. DeZog would in that case do short disassemblies.
+But to set a breakpoint a source file is required. As no source file is available there is no possibility to create a BP. I.e. an additional command to set/clear breakpoints is required. Or: one would have to create a disassembly file through a trace file.
+
+
+
 
 ### Mame debugger (accessible through lua)
 

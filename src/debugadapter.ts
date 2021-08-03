@@ -1758,8 +1758,11 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
 		}
-		else if (cmd == '-memset') {
-			output = await this.evalMemSet(tokens);
+		else if (cmd == '-memsetb') {
+			output = await this.evalMemSetByte(tokens);
+		}
+		else if (cmd == '-memsetw') {
+			output = await this.evalMemSetWord(tokens);
 		}
 		else if (cmd=='-ms') {
 			output = await this.evalMemSave(tokens);
@@ -2097,18 +2100,23 @@ the value correspondends to a label.
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianness which is little endian by default.
-"-memset value_size address value [repeat [endianness]]:"
-	- value_size: The byte-size of the value. E.g. 1 for byte, 2 for a word etc.
+"-memsetb address value [repeat]:"
 	- address: The address to fill. Can also be a label or expression.
-	- value: The value to set
+	- value: The byte value to set.
+	- repeat: (Optional) How often the value is repeated.
+	Examples:
+	"-memsetb 8000h 0Fh" : Puts a 15 into memory location 0x8000.
+	"-memsetb 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
+	"-memsetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06.
+"-memsetw address value [repeat [endianness]]:"
+	- address: The address to fill. Can also be a label or expression.
+	- value: The word value to set.
 	- repeat: (Optional) How often the value is repeated.
 	- endianness: (Optional) 'little' (default) or 'big'.
 	Examples:
-	"-memset 1 8000h 0Fh" : Puts a 15 into memory location 0x8000.
-	"-memset 2 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
-	"-memset 2 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
-	"-memset 1 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
-	"-memset 1 fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06.
+	"-memsetw 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
+	"-memsetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
+	"-memsetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices.
@@ -2125,11 +2133,12 @@ the value correspondends to a label.
 	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
 
-Examples:
+Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
 "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
 "-e gr": Shows all registers.
 "-eval 2+3*5": Results to "17".
+"-memsetb mylabel 3": Sets the data at memory location 'mylabel' to 3.
 "-mv 0 10": Shows the memory at address 0 to address 9.
 "-sprites": Shows all visible sprites.
 "-state save 1": Stores the current state as 'into' 1.
@@ -2317,53 +2326,42 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		return output;
 	}
 
+
 	/**
 	 * Sets a memory location to some value.
-	 * "-memset value_size address value repeat endianness"
-	 * "-memset 2 8000h 54"
-	 * "-memset 1 label+5 8Fh"
-	 * @param tokens The arguments. I.e. the value size, address, value, repeat and endianness. Only the first 3 are mandatory.
+	 * @param valSize 1 or 2 for byte or word.
+	 * @param addressString A string with a labeg or hex/decimal number or an expression that is used as start address.
+	 * @param valueString The value to set.
+	 * @param repeatString How often the value gets repeated. Optional. Defaults to '1'.
+	 * @param endiannessString The endianness. For valSize==2. 'little' or 'big'. Optional. defaults to 'little'.
 	 * @returns A Promise with a text to print.
 	 */
-	protected async evalMemSet(tokens: Array<string>): Promise<string> {
-		// Check count of arguments
-		if (tokens.length < 3) {
-			// Error Handling: Too less arguments
-			throw Error("At least value_size, address and value expected.");
-		}
-
-		// Value size (usually 1 or 2)
-		const valSizeString = tokens[0];
-		const valSize = Utility.evalExpression(valSizeString);
-		if (valSize < 0 || valSize > 0xFFFF)
-			throw Error("Value size (" + valSize + ") out of range.");
-
+	protected async memSet(valSize: number, addressString: string, valueString: string, repeatString?: string, endiannessString?: string): Promise<string> {
 		// Address
-		const addressString = tokens[1];
 		const address = Utility.evalExpression(addressString);
 		if (address < 0 || address > 0xFFFF)
 			throw Error("Address (" + address + ") out of range.");
 
 		// Value
-		const valueString = tokens[2];
 		const value = Utility.evalExpression(valueString);
 		const maxValue = 2 ** (valSize * 8);
 		if (value >= maxValue || value < (-maxValue / 2))
 			throw Error("Value (" + value + ") too big (or too small).");
 
 		// Repeat
-		const repeatString = tokens[3] || '1';
-		const repeat = Utility.evalExpression(repeatString);
+		const repeat = (repeatString != undefined) ? Utility.evalExpression(repeatString) : 1;
 		const totalSize = valSize * repeat;
 		if (totalSize <= 0 || totalSize > 0xFFFF)
 			throw Error("Repetition (" + repeat + ") out of range.");
 
 		// endianness
-		let endiannessString = tokens[4] || 'little';
-		endiannessString = endiannessString.toLowerCase();
-		if (endiannessString != 'little' && endiannessString != 'big')
-			throw Error("Endianness (" + endiannessString + ") unknown.");
-		const littleEndian = (endiannessString == 'little');
+		let littleEndian = true;
+		if (endiannessString != undefined) {
+			endiannessString = endiannessString.toLowerCase();
+			if (endiannessString != 'little' && endiannessString != 'big')
+				throw Error("Endianness (" + endiannessString + ") unknown.");
+			littleEndian = (endiannessString == 'little');
+		}
 
 		// Set (or fill) memory
 
@@ -2374,10 +2372,10 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			let val = value;
 			for (let k = 0; k < valSize; k++) {
 				if (littleEndian) {
-					data[index+k] = val & 0xFF;
+					data[index + k] = val & 0xFF;
 				}
 				else {
-					data[index+valSize-k-1] = val & 0xFF;
+					data[index + valSize - k - 1] = val & 0xFF;
 				}
 				// Next
 				val = val >> 8;
@@ -2394,6 +2392,52 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		// Send response
 		return '';
+	}
+
+
+	/**
+	 * Sets a memory location to some byte value.
+	 * "-memsetb address value repeat"
+	 * "-memsetb 8000h 74h""
+	 * @param tokens The arguments. I.e. the address, value and (optional) repeat.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemSetByte(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length < 2) {
+			// Error Handling: Too less arguments
+			throw Error("At least address and value expected.");
+		}
+		// Check count of arguments
+		if (tokens.length > 3) {
+			// Error Handling: Too many arguments
+			throw Error("Too many arguments.");
+		}
+
+		return await this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
+	}
+
+
+	/**
+	 * Sets a memory location to some word value.
+	 * "-memsetw address value repeat endianness"
+	 * "-memsetw 8000h 7654h""
+	 * @param tokens The arguments. I.e. the address, value, repeat and endianness. Only the first 2 are mandatory.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemSetWord(tokens: Array<string>): Promise<string> {
+		// Check count of arguments
+		if (tokens.length < 2) {
+			// Error Handling: Too less arguments
+			throw Error("At least address and value expected.");
+		}
+		// Check count of arguments
+		if (tokens.length > 4) {
+			// Error Handling: Too many arguments
+			throw Error("Too many arguments.");
+		}
+
+		return await this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
 	}
 
 
