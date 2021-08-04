@@ -47,6 +47,10 @@ export class MemoryDumpView extends BaseView {
 	/// Used to store the previous register addresses, e.g. HL, DE etc.
 	protected prevRegAddr = new Map<string,number>();
 
+	// The windows title prefix, e.g. "Memory ".
+	protected titlePrefix = "Memory ";
+
+
 	/**
 	 * Creates the basic panel.
 	 */
@@ -245,7 +249,7 @@ export class MemoryDumpView extends BaseView {
 						title+=', ';
 					title+=metaBlock.title;
 				}
-				title='Memory '+title;
+				title=this.titlePrefix+title;
 				this.vscodePanel.title=title;
 			}
 		}

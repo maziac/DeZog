@@ -48,6 +48,9 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	constructor(littleEndian: boolean) {
 		super();
 		this.littleEndian = littleEndian;
+		// Title prefix depends on endianess
+		if (!littleEndian)
+			this.titlePrefix += "(big endian) ";
 	}
 
 
@@ -336,7 +339,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		// Table column headers
 		table += '<tr>\n<th>Address:</th> <th></th>';
 		for(let k=0; k<MEM_COLUMNS; k++) {
-			table += '<th>' + k.toString(16).toUpperCase() + '</th>';
+			table += '<th>+' + (2*k).toString(16).toUpperCase() + '</th>';
 		}
 		table += '\n</tr>';
 
