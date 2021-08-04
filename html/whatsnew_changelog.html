@@ -1,14 +1,8 @@
 <li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>DeZog is now able to work with multi-root workspaces in vscode. I.e. you can group several projects into one workspace. (Thanks to a change proposal from bereal)<br>
-	See <a href="https://code.visualstudio.com/docs/editor/multi-root-workspaces">Multi-root Workspaces</a>.
-</li>
-<li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>The Z80 Unit Tests now also support multi-root workspaces. Upgrade z80-unit-tests to v1.2
-</li>
-<li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>You can now use CSpect as well for Z80 Unit Tests.
+	<br>Added "-msetb" and "-msetw" commands: See help ("-h") in the debug console. With mset you can change single memory locations or fill a complete area. You can fill by byte or word and use little or big endian.
 </li>
-
+<li>
+	<span class="changelog-badge changelog-badge-changed">FIXED</span>
+	<br>Memory views were not updated if the debug session was restarted.
+</li>

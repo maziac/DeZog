@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.2.5-1
+- Added "-msetb/w" command: See help ("-h"). With mset you can change single memory locations or fill a complete area.
+
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.
 

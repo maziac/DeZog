@@ -1758,10 +1758,10 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
 		}
-		else if (cmd == '-memsetb') {
+		else if (cmd == '-msetb') {
 			output = await this.evalMemSetByte(tokens);
 		}
-		else if (cmd == '-memsetw') {
+		else if (cmd == '-msetw') {
 			output = await this.evalMemSetWord(tokens);
 		}
 		else if (cmd=='-ms') {
@@ -2100,23 +2100,23 @@ the value correspondends to a label.
 	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
 "-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianness which is little endian by default.
-"-memsetb address value [repeat]:"
+"-msetb address value [repeat]:"
 	- address: The address to fill. Can also be a label or expression.
 	- value: The byte value to set.
 	- repeat: (Optional) How often the value is repeated.
 	Examples:
-	"-memsetb 8000h 0Fh" : Puts a 15 into memory location 0x8000.
-	"-memsetb 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
-	"-memsetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06.
-"-memsetw address value [repeat [endianness]]:"
+	"-msetb 8000h 0Fh" : Puts a 15 into memory location 0x8000.
+	"-msetb 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
+	"-msetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06.
+"-msetw address value [repeat [endianness]]:"
 	- address: The address to fill. Can also be a label or expression.
 	- value: The word value to set.
 	- repeat: (Optional) How often the value is repeated.
 	- endianness: (Optional) 'little' (default) or 'big'.
 	Examples:
-	"-memsetw 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
-	"-memsetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
-	"-memsetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
+	"-msetw 8000h AF34h" : Puts 34h into location 0x8000 and AFh into location 0x8001.
+	"-msetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
+	"-msetw 8000h 1234h 100h" : fills memory locations 0x8000 to 0x81FF with the word value 1234h.
 "-ms address size filename": Saves a memory dump to a file. The file is saved to the temp directory.
 "-mv address size [address_n size_n]*": Memory view at 'address' with 'size' bytes. Will open a new view to display the memory contents.
 "-patterns [index[+count|-endindex] [...]": Shows the tbblue sprite patterns beginning at 'index' until 'endindex' or a number of 'count' indices.
@@ -2138,7 +2138,7 @@ Some examples:
 "-e write-memory 8000h 9fh": Writes 9fh to memory address 8000h.
 "-e gr": Shows all registers.
 "-eval 2+3*5": Results to "17".
-"-memsetb mylabel 3": Sets the data at memory location 'mylabel' to 3.
+"-msetb mylabel 3": Sets the data at memory location 'mylabel' to 3.
 "-mv 0 10": Shows the memory at address 0 to address 9.
 "-sprites": Shows all visible sprites.
 "-state save 1": Stores the current state as 'into' 1.
@@ -2397,8 +2397,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 	/**
 	 * Sets a memory location to some byte value.
-	 * "-memsetb address value repeat"
-	 * "-memsetb 8000h 74h""
+	 * "-msetb address value repeat"
+	 * "-msetb 8000h 74h""
 	 * @param tokens The arguments. I.e. the address, value and (optional) repeat.
 	 * @returns A Promise with a text to print.
 	 */
@@ -2420,8 +2420,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 	/**
 	 * Sets a memory location to some word value.
-	 * "-memsetw address value repeat endianness"
-	 * "-memsetw 8000h 7654h""
+	 * "-msetw address value repeat endianness"
+	 * "-msetw 8000h 7654h""
 	 * @param tokens The arguments. I.e. the address, value, repeat and endianness. Only the first 2 are mandatory.
 	 * @returns A Promise with a text to print.
 	 */

@@ -1,6 +1,10 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
 
+# Migrate from DeZog 2.2 to DeZog 2.3
+
+No required updates.
+
 # Migrate from DeZog 2.1 to DeZog 2.2
 
 ## Required updates
