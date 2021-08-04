@@ -84,14 +84,14 @@ export class MemoryDumpView extends BaseView {
 	 * @param message The message. message.command contains the command as a string.
 	 * This needs to be created inside the web view.
 	 */
-	protected webViewMessageReceived(message: any) {
+	protected async webViewMessageReceived(message: any) {
 		switch (message.command) {
 			case 'valueChanged':
 				try {
 					// Change memory
 					const address = parseInt(message.address);
 					const value = Utility.evalExpression(message.value);
-					this.changeMemory(address, value);
+					await this.changeMemory(address, value);
 				}
 				catch(e) {
 					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
@@ -113,7 +113,7 @@ export class MemoryDumpView extends BaseView {
 				break;
 
 			default:
-				super.webViewMessageReceived(message);
+				await super.webViewMessageReceived(message);
 				break;
 		}
 	}
@@ -141,31 +141,30 @@ export class MemoryDumpView extends BaseView {
 
 	/**
 	 * The user just changed a cell in the dump view table.
-	 * @param address The address  to change.
+	 * @param address The address to change.
 	 * @param value The new value.
 	 */
-	protected changeMemory(address: number, value: number) {
-		Remote.writeMemory(address, value).then(realValue => {
-			// Also update the value and the hovertext in all webviews
-			for(let mdv of MemoryDumpView.MemoryViews) {
-				// Check first if address included at all
-				if(!isNaN(mdv.memDump.getValueFor(address))) {
-					// Update value
-					mdv.memDump.setValueFor(address, realValue);
-					// Create message
-					const message = {
-						command: 'changeValue',
-						address: address.toString(),
-						value: Utility.getHexString(realValue, 2),
-						asciiValue: Utility.getASCIIChar(realValue)
-					};
-					this.sendMessageToWebView(message, mdv);
-					mdv.getValueInfoText(address);
-				}
-			};
-			// Inform vscode
-			BaseView.sendChangeEvent();
-		});
+	protected async changeMemory(address: number, value: number) {
+		const realValue = await Remote.writeMemory(address, value);
+		// Also update the value and the hovertext in all webviews
+		for(let mdv of MemoryDumpView.MemoryViews) {
+			// Check first if address included at all
+			if(!isNaN(mdv.memDump.getValueFor(address))) {
+				// Update value
+				mdv.memDump.setValueFor(address, realValue);
+				// Create message
+				const message = {
+					command: 'changeValue',
+					address: address.toString(),
+					value: Utility.getHexString(realValue, 2),
+					asciiValue: Utility.getASCIIChar(realValue)
+				};
+				this.sendMessageToWebView(message, mdv);
+				mdv.getValueInfoText(address);
+			}
+		};
+		// Inform vscode
+		BaseView.sendChangeEvent();
 	}
 
 

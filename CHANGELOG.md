@@ -1,6 +1,6 @@
 # Changelog
 
-# 2.2.5-1
+# 2.3.0
 - Added "-msetb/w" command: See help ("-h"). With mset you can change single memory locations or fill a complete area.
 
 # 2.2.5

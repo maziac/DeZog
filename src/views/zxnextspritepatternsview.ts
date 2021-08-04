@@ -139,36 +139,35 @@ export class ZxNextSpritePatternsView extends BaseView {
 	 * The web view posted a message to this view.
 	 * @param message The message. message.command contains the command as a string.
 	 */
-	protected webViewMessageReceived(message: any) {
+	protected async webViewMessageReceived(message: any) {
 		if (this.processingWebViewMessage)
 			return;
 		this.processingWebViewMessage=true;
-		(async () => {
-			switch (message.command) {
-				case 'reload':
-					ZxNextSpritePatternsView.staticUpdate();
-					const views=BaseView.staticGetAllViews(ZxNextSpritePatternsView);
-					for (const view of views) {
-						await view.update();
-					}
-					break;
-				case 'bckgColor':
-					// Save color
-					this.usedBckgColor=message.value;
-					break;
-				case 'palette':
-					// Save palette
-					this.usedPalette=message.value;
-					// Reload only current view, keep already loaded palettes
-					ZxNextSpritePatternsView.currentPaletteNumber=-1;
-					await this.update();
-					break;
-				default:
-					Utility.assert(false);
-					break;
-			}
-			this.processingWebViewMessage=false;
-		})();
+
+		switch (message.command) {
+			case 'reload':
+				ZxNextSpritePatternsView.staticUpdate();
+				const views=BaseView.staticGetAllViews(ZxNextSpritePatternsView);
+				for (const view of views) {
+					await view.update();
+				}
+				break;
+			case 'bckgColor':
+				// Save color
+				this.usedBckgColor=message.value;
+				break;
+			case 'palette':
+				// Save palette
+				this.usedPalette=message.value;
+				// Reload only current view, keep already loaded palettes
+				ZxNextSpritePatternsView.currentPaletteNumber=-1;
+				await this.update();
+				break;
+			default:
+				Utility.assert(false);
+				break;
+		}
+		this.processingWebViewMessage=false;
 	}
 
 

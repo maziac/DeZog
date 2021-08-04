@@ -112,9 +112,9 @@ export class BaseView {
 		this.vscodePanel = vscode.window.createWebviewPanel('', '', {preserveFocus: true, viewColumn: vscode.ViewColumn.Nine}, {enableScripts: true, enableFindWidget: true, retainContextWhenHidden: true});
 
 		// Handle messages from the webview
-		this.vscodePanel.webview.onDidReceiveMessage(message => {
+		this.vscodePanel.webview.onDidReceiveMessage(async message => {
 			//console.log("webView command '"+message.command+"':", message);
-			this.webViewMessageReceived(message);
+			await this.webViewMessageReceived(message);
 		});
 
 		// Handle closing of the view
@@ -146,7 +146,7 @@ export class BaseView {
 	 * @param message The message. message.command contains the command as a string.
 	 * This needs to be created inside the web view.
 	 */
-	protected webViewMessageReceived(message: any) {
+	protected async webViewMessageReceived(message: any) {
 		// Overwrite
 		Utility.assert(false);
 	}
