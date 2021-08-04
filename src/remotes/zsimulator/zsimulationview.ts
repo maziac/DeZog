@@ -258,7 +258,7 @@ export class ZSimulationView extends BaseView {
 	 * The web view posted a message to this view.
 	 * @param message The message. message.command contains the command as a string. E.g. 'keyChanged'
 	 */
-	protected webViewMessageReceived(message: any) {
+	protected async webViewMessageReceived(message: any) {
 		switch (message.command) {
 			case 'warning':
 				// A warning has been received, e.g. sample rate was not possible.
@@ -308,7 +308,7 @@ export class ZSimulationView extends BaseView {
 				}
 				break;
 			default:
-				super.webViewMessageReceived(message);
+				await super.webViewMessageReceived(message);
 				break;
 		}
 	}

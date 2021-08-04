@@ -29,6 +29,7 @@ import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
+import {MemoryDumpViewWord} from './views/memorydumpviewword';
 
 
 
@@ -1768,7 +1769,10 @@ export class DebugSessionClass extends DebugSession {
 			output = await this.evalMemSave(tokens);
 		}
 		else if (cmd == '-mv') {
-			output = await this.evalMemView(tokens);
+			output = await this.evalMemViewByte(tokens);
+		}
+		else if (cmd == '-mvw') {
+			output = await this.evalMemViewWord(tokens);
 		}
 		else if (cmd == '-rmv') {
 			output = await this.evalRegisterMemView(tokens);
@@ -2328,6 +2332,24 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
+	 * Checks if the given string is 'little' or 'big' case insensitive.
+	 * Throws an exception if string evaluates to something different.
+	 * @param endiannessString The string to check.
+	 * @returns true for 'little' or undefined and 'false for 'big'.
+	 */
+	protected isLittleEndianString(endiannessString: string|undefined) {
+		let littleEndian = true;
+		if (endiannessString != undefined) {
+			const s = endiannessString.toLowerCase();
+			if (s != 'little' && s != 'big')
+				throw Error("Endianness (" + endiannessString + ") unknown.");
+			littleEndian = (s == 'little');
+		}
+		return littleEndian;
+	}
+
+
+	/**
 	 * Sets a memory location to some value.
 	 * @param valSize 1 or 2 for byte or word.
 	 * @param addressString A string with a labeg or hex/decimal number or an expression that is used as start address.
@@ -2354,14 +2376,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		if (totalSize <= 0 || totalSize > 0xFFFF)
 			throw Error("Repetition (" + repeat + ") out of range.");
 
-		// endianness
-		let littleEndian = true;
-		if (endiannessString != undefined) {
-			endiannessString = endiannessString.toLowerCase();
-			if (endiannessString != 'little' && endiannessString != 'big')
-				throw Error("Endianness (" + endiannessString + ") unknown.");
-			littleEndian = (endiannessString == 'little');
-		}
+		// Endianness
+		const littleEndian = this.isLittleEndianString(endiannessString);
 
 		// Set (or fill) memory
 
@@ -2391,7 +2407,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		this.update();
 
 		// Send response
-		return '';
+		return 'OK';
 	}
 
 
@@ -2488,7 +2504,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param tokens The arguments. I.e. the address and size.
 	 * @returns A Promise with a text to print.
 	 */
-	protected async evalMemView(tokens: Array<string>): Promise<string> {
+	protected async evalMemViewByte(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
 		if (tokens.length == 0) {
 			// Error Handling: No arguments
@@ -2516,6 +2532,57 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		// Create new view
 		const panel = new MemoryDumpView();
+		for (let k = 0; k < tokens.length; k += 2) {
+			const start = addrSizes[k];
+			const size = addrSizes[k + 1]
+			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
+		}
+		panel.mergeBlocks();
+		await panel.update();
+
+		// Send response
+		return 'OK';
+	}
+
+
+	/**
+	 * Shows a view with a memory dump. The memory is organized in
+	 * words instead of bytes.
+	 * One can choose little or blig endian.
+	 * @param tokens The arguments. I.e. the address, size and endianness.
+	 * @returns A Promise with a text to print.
+	 */
+	protected async evalMemViewWord(tokens: Array<string>): Promise<string> {
+		// Check for endianness
+		let littleEndian = true;
+		if (tokens.length % 2 != 0) {
+			// Last one should be endianness
+			const endiannessString = tokens.pop()
+			littleEndian = this.isLittleEndianString(endiannessString);
+		}
+
+		// Check count of arguments
+		if (tokens.length == 0) {
+			// Error Handling: No arguments
+			throw new Error("Address and size expected.");
+		}
+
+		// Get all addresses/sizes.
+		const addrSizes = new Array<number>();
+		for (let k = 0; k < tokens.length; k += 2) {
+			// Address
+			const addressString = tokens[k];
+			const address = Utility.evalExpression(addressString);
+			addrSizes.push(address);
+
+			// Size
+			const sizeString = tokens[k + 1];
+			const size = Utility.evalExpression(sizeString);
+			addrSizes.push(size);
+		}
+
+		// Create new view
+		const panel = new MemoryDumpViewWord(littleEndian);
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]

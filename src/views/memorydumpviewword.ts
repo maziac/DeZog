@@ -1,11 +1,11 @@
-import * as vscode from 'vscode';
+//import * as vscode from 'vscode';
 import {Remote} from '../remotes/remotefactory';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';
-import {MetaBlock, MemoryDump} from '../misc/memorydump';
+import {MetaBlock} from '../misc/memorydump';
 import {Settings} from '../settings';
-import {Z80RegistersClass} from '../remotes/z80registers';
+import {MemoryDumpView} from './memorydumpview';
 import {BaseView} from './baseview';
 
 
@@ -36,120 +36,45 @@ const MEM_DUMP_BOUNDARY = 16;
  *
  * See design.md for a sequence chart.
  */
-export class MemoryDumpView extends BaseView {
+export class MemoryDumpViewWord extends MemoryDumpView {
 
-	/// Array that contains all of the created memory views.
-	protected static MemoryViews = Array<MemoryDumpView>();
+	/// true if little endian is used.
+	protected littleEndian: boolean;
 
-	/// The memory dump to show.
-	protected memDump = new MemoryDump();
-
-	/// Used to store the previous register addresses, e.g. HL, DE etc.
-	protected prevRegAddr = new Map<string,number>();
 
 	/**
 	 * Creates the basic panel.
 	 */
-	constructor() {
+	constructor(littleEndian: boolean) {
 		super();
-		MemoryDumpView.MemoryViews.push(this);
-
-		// Handle hide/unhide -> update the register pointers.
-		if (this.vscodePanel) {
-			this.vscodePanel.onDidChangeViewState(e => {
-				// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
-				this.setColorsForRegisterPointers();
-			});
-		}
-	}
-
-
-	/**
-	 * Dispose the view (called e.g. on close).
-	 * Removes it from the static list.
-	 */
-	public disposeView() {
-		// Remove from base list
-		super.disposeView();
-		// Remove from list
-		const arr = MemoryDumpView.MemoryViews;
-		const index = arr.indexOf(this);
-		Utility.assert(index >= 0);
-		arr.splice(index, 1);
-	}
-
-
-	/**
-	 * The web view posted a message to this view.
-	 * @param message The message. message.command contains the command as a string.
-	 * This needs to be created inside the web view.
-	 */
-	protected async webViewMessageReceived(message: any) {
-		switch (message.command) {
-			case 'valueChanged':
-				try {
-					// Change memory
-					const address = parseInt(message.address);
-					const value = Utility.evalExpression(message.value);
-					await this.changeMemory(address, value);
-				}
-				catch(e) {
-					vscode.window.showWarningMessage("Could not evaluate: '" + message.value + "'");
-				}
-				break;
-
-			case 'getValueInfoText':
-				{
-					const address = parseInt(message.address);
-					await this.getValueInfoText(address);
-				}
-				break;
-
-			case 'getAddressInfoText':
-				{
-					const address=parseInt(message.address);
-					await this.getAddressInfoText(address);
-				}
-				break;
-
-			default:
-				await super.webViewMessageReceived(message);
-				break;
-		}
-	}
-
-
-	/**
-	 * Adds a new memory block to display.
-	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
-	 * low to high (the start addresses).
-	 * @param startAddress The address of the memory block.
-	 * @param size The size of the memory block.
-	 */
-	public addBlock(startAddress: number, size: number, title: string) {
-		this.memDump.addBlock(startAddress, size, title);
-	}
-
-
-	/**
-	 * Merges nearby blocks into one block.
-	 */
-	public mergeBlocks() {
-		this.memDump.mergeBlocks();
+		this.littleEndian = littleEndian;
 	}
 
 
 	/**
 	 * The user just changed a cell in the dump view table.
+	 * The value is written to memory. Either little or big endian.
 	 * @param address The address to change.
-	 * @param value The new value.
+	 * @param value The new word value.
 	 */
 	protected async changeMemory(address: number, value: number) {
-		const realValue = await Remote.writeMemory(address, value);
-		// Also update the value and the hovertext in all webviews
-		for(const mdv of MemoryDumpView.MemoryViews) {
+		// Get bytes dependent on endianness
+		let lowByte = value & 0xFF;
+		let highByte = value >> 8;
+		if (!this.littleEndian) {
+			const tmp = lowByte;
+			lowByte = highByte;
+			highByte = tmp;
+		}
+		// Prepare data
+		const data = new Uint8Array([lowByte, highByte]);
+		await Remote.writeMemoryDump(address, data);
+		const realData = await Remote.readMemoryDump(address, 2);
+		const realValue = (this.littleEndian) ? realData[0] + 256 * realData[1] : realData[1] + 256 * realData[0];
+		for (const mdvb of MemoryDumpView.MemoryViews) {
+			const mdv = mdvb as MemoryDumpViewWord;	// To gain access
 			// Check first if address included at all
-			if(!isNaN(mdv.memDump.getValueFor(address))) {
+			if (!isNaN(mdv.memDump.getWordValueFor(address, this.littleEndian))) {
 				// Update value
 				mdv.memDump.setValueFor(address, realValue);
 				// Create message
@@ -174,101 +99,29 @@ export class MemoryDumpView extends BaseView {
 	 */
 	protected async getValueInfoText(address: number) {
 		// Value
-		const value=this.memDump.getValueFor(address);
+		const value = this.memDump.getWordValueFor(address, this.littleEndian);
 		const valFormattedString = await Utility.numberFormatted('', value, 1, Settings.launch.memoryViewer.valueHoverFormat, undefined);
-		let text = valFormattedString+'\n';
+		let text = valFormattedString + '\n';
 
 		// Address
 		const addrFormattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
 		text += addrFormattedString;
 
 		// Check for last value
-		const prevValue=this.memDump.getPrevValueFor(address);
+		const prevValue = this.memDump.getPrevWordValueFor(address, this.littleEndian);
 		if (!isNaN(prevValue)) {
-			if (prevValue!=value)
-			{
+			if (prevValue != value) {
 				// has changed so add the last value to the hover text
-				text+='\nPrevious value: '+Utility.getHexString(prevValue,2)+'h';
+				text += '\nPrevious value: ' + Utility.getHexString(prevValue, 2) + 'h';
 			}
 		}
 		// Now send the formatted text to the web view for display.
-		const msg={
+		const msg = {
 			command: 'valueInfoText',
 			address: address.toString(),
 			text: text
 		};
 		this.sendMessageToWebView(msg);
-	}
-
-
-	/**
-	 * Retrieves the info text for the address (that is the hover text).
-	 * @param address The address for which the info should be shown.
-	 */
-	protected async getAddressInfoText(address: number) {
-		// Address
-		const formattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
-		// Now send the formatted text to the web view for display.
-		const msg={
-			command: 'addressInfoText',
-			address: address.toString(),
-			text: formattedString
-		};
-		this.sendMessageToWebView(msg);
-	}
-
-
-	/**
-	 * Retrieves the memory content and displays it.
-	 * @param reason Not used.
-	 */
-	public async update(reason?: any): Promise<void> {
-		// Get data
-		for (let metaBlock of this.memDump.metaBlocks) {
-			// Updates the shown memory dump.
-			const data=await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
-			// Store data
-			metaBlock.prevData=metaBlock.data;
-			metaBlock.data=data;
-		}
-
-		// Create generic html if not yet done
-		if (!this.vscodePanel.webview.html) {
-			// Create the first time
-			this.setHtml();
-			// Create title
-			if (this.vscodePanel) {
-				// Create from all blocks
-				let title='';
-				for (let metaBlock of this.memDump.metaBlocks) {
-					if (title)
-						title+=', ';
-					title+=metaBlock.title;
-				}
-				title='Memory '+title;
-				this.vscodePanel.title=title;
-			}
-		}
-		else {
-			// Update blocks the next times
-			const msg={
-				command: 'setMemoryTable',
-				index: 0,
-				html: ""
-			};
-			let i=0;
-			for (let metaBlock of this.memDump.metaBlocks) {
-				// Update the block in html
-				msg.html=this.createHtmlTable(metaBlock);
-				msg.index=i;
-				this.sendMessageToWebView(msg);
-				// Next
-				i++;
-			}
-		}
-
-		// Set colors for register pointers
-		await this.setColorsForRegisterPointers();
 	}
 
 
@@ -625,109 +478,5 @@ export class MemoryDumpView extends BaseView {
 		const html = util.format(format, scripts+tables, legend);
 		this.vscodePanel.webview.html = html;
 	}
-
-
-	/**
-	 * Set colors for register pointers.
-	 * Colors are only set if the webview is visible.
-	 */
-	protected async setColorsForRegisterPointers(): Promise<void> {
-		// Set colors for register pointers
-		const setAddrs=new Array<number>();
-		const arr = Settings.launch.memoryViewer.registerPointerColors;
-		for(let i=0; i<arr.length-1; i+=2) {
-			const reg = arr[i];
-			if(!Z80RegistersClass.isRegister(reg))
-				continue;
-			// Get address = value of reg
-			const address = Remote.getRegisterValue(reg)
-			//console.log( reg + ': ' + address.toString(16));
-			// Clear old color
-			let prevAddr=this.prevRegAddr.get(reg);
-			if (prevAddr!=undefined) {
-				// Check if prevAddr has been set by another register (avoid that a just set address is overwritten)
-				if (!setAddrs.includes(prevAddr)) {
-					// If not, clear the address highlighting
-					const msgPrev={
-						command: 'setAddressColor',
-						address: prevAddr.toString(),
-						color: "transparent"
-					};
-					this.sendMessageToWebView(msgPrev);
-				}
-			}
-			// Send the address/color to the web view for display.
-			const color = arr[i+1];
-			const msg = {
-				command: 'setAddressColor',
-				address: address.toString(),
-				color: color
-			};
-			this.sendMessageToWebView(msg);
-			// Store
-			this.prevRegAddr.set(reg, address);
-			// Next
-			setAddrs.push(address);
-		}
-	}
-
-
-	/**
-	 * Determines what is shown between the tables,
-	 * e.g. "...".
-	 */
-	protected getHtmlVertBreak() {
-		return '\n';
-	}
-
-
-	/**
-	 * Adds color to the html.
-	 * @param origText
-	 * @param colorText E.g. 'red'
-	 * @returns html text that combines origText with hoverText
-	 */
-	protected addBckgColor(origText: string, colorText: string): string {
-		const resText = '<div style="background-color:' + colorText + '">' + origText + '</div>';
-		return resText;
-	}
-
-
-	/**
-	 * Adds emphasizes for changed values.
-	 * @param origText
-	 * @returns html text that id emphasized.
-	 */
-	protected addEmphasizeChanged(origText: string,): string {
-		const resText = '<font color="red">' + origText + '</font>';
-		return resText;
-	}
-
-
-	/**
-	 * Adds emphasizes for labelled values.
-	 * @param origText
-	 * @returns html text that id emphasized.
-	 */
-	protected addEmphasizeLabelled(origText: string,): string {
-		const resText = '<u>' + origText + '</u>';
-		return resText;
-	}
-
-
-	/**
-	 * Adds emphasizes for addresses in range, i.e. the addresses that the user wanted to see.
-	 * @param origText
-	 * @returns html text that id emphasized.
-	 */
-	protected addEmphasizeInRange(origText: string,): string {
-		const resText = '<b>' + origText + '</b>';
-		return resText;
-	}
-	protected addDeemphasizeNotInRange(origText: string,): string {
-		const resText = '<font color="gray">' + origText + '</font>';
-		return resText;
-	}
-
 
 }

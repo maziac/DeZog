@@ -179,9 +179,9 @@ export class MemoryDump {
 	 */
 	public getValueFor(address: number): number {
 		for (let mb of this.metaBlocks) {
-			const index=address-mb.address;
-			const data=mb.data;
-			if (data&&index>=0&&index<data.length) {
+			const index = address - mb.address;
+			const data = mb.data;
+			if (data && index >= 0 && index < data.length) {
 				return data[index];
 			}
 		}
@@ -198,12 +198,64 @@ export class MemoryDump {
 	 */
 	public getPrevValueFor(address: number): number {
 		for (let mb of this.metaBlocks) {
-			const index=address-mb.address;
-			if (mb.data&&index>=0&&index<mb.data.length) {
-				const data=mb.prevData;
+			const index = address - mb.address;
+			if (mb.data && index >= 0 && index < mb.data.length) {
+				const data = mb.prevData;
 				if (!data)
 					return NaN;
 				return data[index];
+			}
+		}
+		// Nothing found
+		return NaN;
+	}
+
+
+	/**
+	 * Returns the word value of an address.
+	 * Searches all meta blocks and returns the value of the first matching one.
+	 * @param address The address to look up.
+	 * @param littleEndian or big endian.
+	 * @return The value at address or NaN if nothing could be found.
+	 */
+	public getWordValueFor(address: number, littleEndian: boolean): number {
+		for (let mb of this.metaBlocks) {
+			const index = address - mb.address;
+			const data = mb.data;
+			if (data && index >= 0 && index < data.length) {
+				if (index + 1 >= data.length)
+					return NaN;
+				if (littleEndian)
+					return data[index] + 256 * data[index + 1];
+				// Big endian:
+				return data[index + 1] + 256 * data[index];
+			}
+		}
+		// Nothing found
+		return NaN;
+	}
+
+
+	/**
+	 * Returns the previous word value of an address.
+	 * Searches all meta blocks and returns the value of the first matching one.
+	 * @param address The address to look up.
+	 * @param littleEndian or big endian.
+	 * @return The value at address or NaN if nothing could be found or no prev values are used.
+	 */
+	public getPrevWordValueFor(address: number, littleEndian: boolean): number {
+		for (let mb of this.metaBlocks) {
+			const index = address - mb.address;
+			if (mb.data && index >= 0 && index < mb.data.length) {
+				const data = mb.prevData;
+				if (!data)
+					return NaN;
+				if (index + 1 >= data.length)
+					return NaN;
+				if (littleEndian)
+					return data[index] + 256 * data[index + 1];
+				// Big endian:
+				return data[index + 1] + 256 * data[index];
 			}
 		}
 		// Nothing found
