@@ -128,6 +128,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	/**
 	 * Creates the script (i.e. functions) for all blocks (html tables).
 	 */
+	// TODO: maybe I can remove this completely and use the super class.
 	protected createHtmlScript(): string {
 		const html=`
 		<script>
@@ -292,30 +293,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	 * Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
-	 * @param metaBlock The block to convert. The templtae takes only the name from it.
-	 */
-	protected createHtmlTableTemplate(index: number, metaBlock: MetaBlock): string {
-		// Add html body
-		let caption=metaBlock.title||'...';
-
-		const table=this.createHtmlTable(metaBlock);	// Is necessary, otherwise nothing might be shown the first time
-
-		const html=`
-		<details open="true">
-			<summary>${caption}</summary>
-			<div id="mem_table_${index}">
-			${table}
-			</div>
-		</details>
-		`;
-		return html;
-	}
-
-
-	/**
-	 * Creates one html table out of a meta block.
-	 * @param index The number of the memory block, starting at 0.
-	 * Used for the id.
 	 * @param metaBlock The block to convert.
 	 */
 	protected createHtmlTable(metaBlock: MetaBlock): string {
@@ -328,7 +305,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					<col>
 					<col width="10em">
 					<col span="%d" width="20em">
-					<col width="10em">
 				</colgroup>
 
 			%s
@@ -344,7 +320,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const len=data.length;
 
 		const addressColor = Settings.launch.memoryViewer.addressColor;
-		const asciiColor = Settings.launch.memoryViewer.asciiColor;
 		const bytesColor = Settings.launch.memoryViewer.bytesColor;
 
 		// Table column headers
@@ -357,7 +332,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		table += '\n</tr>';
 
 		// Table contents
-		let ascii = '';
 		for (let k=0; k<len; k++) {
 			// Address but bound to 64k to forecome wrap arounds
 			const addr64k=address&0xFFFF;
@@ -367,7 +341,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				let addrText=Utility.getHexString(addr64k,4) + ':';
 				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
 				table += '<td> </td>\n';
-				ascii = '';
 			}
 
 			// Print value
@@ -399,15 +372,10 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			// Create html cell
 			table+='<td address="'+addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
-
-			// Convert to ASCII (->html)
-			ascii+='<span address="'+addr64k + '" onmouseover="mouseOverValue(this)">' + Utility.getHTMLChar(value) + '</span>';
-
 			// Check end of line
 			if(i == clmns-1) {
 				// print ASCII characters.
 				table += '<td> </td>\n';
-				table += '<td style="color:' + asciiColor + '">' + ascii +'</td>\n';
 				// end of a new line
 				table += '</tr>\n';
 			}
