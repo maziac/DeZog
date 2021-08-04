@@ -9,8 +9,8 @@ import {MemoryDumpView} from './memorydumpview';
 import {BaseView} from './baseview';
 
 
-/// The boundary at which the memory dumps should be shown.
-const MEM_DUMP_BOUNDARY = 16;
+/// The number of word columns shown in one line.
+const MEM_COLUMNS = 8;
 
 
 /**
@@ -48,6 +48,18 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	constructor(littleEndian: boolean) {
 		super();
 		this.littleEndian = littleEndian;
+	}
+
+
+	/**
+	 * Adds a new memory block to display.
+	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
+	 * low to high (the start addresses).
+	 * @param startAddress The address of the memory block in words.
+	 * @param size The size of the memory block in words.
+	 */
+	public addBlock(startAddress: number, size: number, title: string) {
+		this.memDump.addBlockWithoutBoundary(startAddress, 2*size, title);
 	}
 
 
@@ -315,7 +327,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		let table = '';
 		let address=metaBlock.address;
 		let i = 0;
-		const clmns = MEM_DUMP_BOUNDARY;
 		const data = metaBlock.data;
 		const len=data.length;
 
@@ -323,16 +334,14 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const bytesColor = Settings.launch.memoryViewer.bytesColor;
 
 		// Table column headers
-		let clmStart = address % clmns;	// Usually 0
 		table += '<tr>\n<th>Address:</th> <th></th>';
-		for(let k=0; k<clmns; k++) {
-			const c = clmStart+k;
-			table += '<th>' + c.toString(16).toUpperCase() + '</th>';
+		for(let k=0; k<MEM_COLUMNS; k++) {
+			table += '<th>' + k.toString(16).toUpperCase() + '</th>';
 		}
 		table += '\n</tr>';
 
 		// Table contents
-		for (let k=0; k<len; k++) {
+		for (let k=0; k<len-1; k+=2) {
 			// Address but bound to 64k to forecome wrap arounds
 			const addr64k=address&0xFFFF;
 			// Check start of line
@@ -344,8 +353,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			}
 
 			// Print value
-			const value = data[k];
-			let valueText = Utility.getHexString(value, 2);
+			const value = (this.littleEndian) ? data[k] + 256 * data[k + 1] : data[k+1] + 256 * data[k];
+			let valueText = Utility.getHexString(value, 4);
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -373,21 +382,19 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			table+='<td address="'+addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
 			// Check end of line
-			if(i == clmns-1) {
-				// print ASCII characters.
-				table += '<td> </td>\n';
+			if (i == MEM_COLUMNS-1) {
 				// end of a new line
 				table += '</tr>\n';
 			}
 
 			// Next column
-			address++;
+			address += 2;
 			i++;
-			if(i >= clmns)
+			if(i >= MEM_COLUMNS)
 				i = 0;
 		}
 
-		const html = util.format(format, clmns, table);
+		const html = util.format(format, MEM_COLUMNS, table);
 		return html;
 	}
 

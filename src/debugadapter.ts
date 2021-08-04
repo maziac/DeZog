@@ -2586,7 +2586,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
-			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + size - 1) & 0xFFFF, 4) + 'h');
+			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + 2*size - 1) & 0xFFFF, 4) + 'h');
 		}
 		panel.mergeBlocks();
 		await panel.update();

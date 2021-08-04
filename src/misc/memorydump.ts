@@ -95,7 +95,7 @@ export class MemoryDump {
 	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
 	 * low to high (the start addresses).
 	 * @param startAddress The address of the memory block.
-	 * @param size The size of the memory block.
+	 * @param size The size of the memory block in bytes.
 	 * @param title An optional title for the memory block (shown as table header).
 	 */
 	public addBlock(startAddress: number, size: number, title: string|undefined=undefined) {
@@ -119,6 +119,26 @@ export class MemoryDump {
 			}
 			bigBlock=new MetaBlock(boundAddr, boundSize, [memBlock], title);
 		}
+		this.metaBlocks.push(bigBlock);
+	}
+
+
+	/**
+	 * Adds a new memory block to display.
+	 * Memory blocks are ordered, i.e. the 'memDumps' array is ordered from
+	 * low to high (the start addresses).
+	 * @param startAddress The address of the memory block.
+	 * @param size The size of the memory block in bytes.
+	 * @param title An optional title for the memory block (shown as table header).
+	 */
+	public addBlockWithoutBoundary(startAddress: number, size: number, title: string | undefined = undefined) {
+		// Create memory block
+		if (size > 0x10000)
+			size = 0x10000;
+		const memBlock = {address: startAddress, size: size, data: []};
+		let bigBlock;
+		// Create one meta block for the memory block
+		bigBlock = new MetaBlock(startAddress, size, [memBlock], title);
 		this.metaBlocks.push(bigBlock);
 	}
 
