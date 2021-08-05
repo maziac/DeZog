@@ -230,12 +230,22 @@ export class MemoryDumpView extends BaseView {
 		// Get data
 		for (let metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
-			const data=await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
+			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
 			// Store data
-			metaBlock.prevData=metaBlock.data;
-			metaBlock.data=data;
+			metaBlock.prevData = metaBlock.data || new Uint8Array(data);
+			metaBlock.data = data;
 		}
 
+		// Update the html
+		this.updateWithoutRemote();
+	}
+
+
+	/**
+	 * Updates the html. E.g. after the change of a value.
+	 * Without getting the memory from the Remote.
+	 */
+	protected updateWithoutRemote() {
 		// Create generic html if not yet done
 		if (!this.vscodePanel.webview.html) {
 			// Create the first time
@@ -272,7 +282,7 @@ export class MemoryDumpView extends BaseView {
 		}
 
 		// Set colors for register pointers
-		await this.setColorsForRegisterPointers();
+		this.setColorsForRegisterPointers();
 	}
 
 
@@ -307,7 +317,7 @@ export class MemoryDumpView extends BaseView {
 
 		//---- Handle Editing Cells --------
 		let prevValue = '';	// Used to restore the value if ESC is pressed.
-		let curObj = null;	// The currently used object (the tabe cell)
+		let curObj = null;	// The currently used object (the tabbed cell)
 
 		function keyPress(e) {
 			let key = e.keyCode;
@@ -636,7 +646,7 @@ export class MemoryDumpView extends BaseView {
 	 * Set colors for register pointers.
 	 * Colors are only set if the webview is visible.
 	 */
-	protected async setColorsForRegisterPointers(): Promise<void> {
+	protected setColorsForRegisterPointers() {
 		// Set colors for register pointers
 		const setAddrs=new Array<number>();
 		const arr = Settings.launch.memoryViewer.registerPointerColors;

@@ -93,6 +93,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				// Update value
 				mdv.memDump.setWordValueFor(address, realValue, true);	// Also write as little endian
 				// Create 2 messages for both bytes of a word
+				/*
 				// Low byte
 				const message1 = {
 					command: 'changeValue',
@@ -112,9 +113,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				};
 				this.sendMessageToWebView(message2, mdv);
 				await mdv.getValueInfoText(addr2);
+			*/
 			}
 		};
 		// Inform vscode
+		BaseView.staticCallUpdateWithoutRemote();
 		BaseView.sendChangeEvent();
 	}
 
@@ -306,13 +309,14 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		//---- Handle Editing Cells --------
 		let prevValue = '';	// Used to restore the value if ESC is pressed.
-		let curObj = null;	// The currently used object (the tabe cell)
+		let curObj = null;	// The currently used object (the tabbed cell)
 
 		function keyPress(e) {
 			let key = e.keyCode;
 
 			if(key == 13) {	// ENTER key
 				const value = curObj.innerText;
+				prevValue = value;	// To prevent that the old value is shown in 'focusLost'
 				const address = curObj.getAttribute("address");
 				e.preventDefault();
 				curObj.blur();
