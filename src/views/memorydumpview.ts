@@ -156,17 +156,10 @@ export class MemoryDumpView extends BaseView {
 			if(!isNaN(mdv.memDump.getValueFor(address))) {
 				// Update value
 				mdv.memDump.setValueFor(address, realValue);
-				// Create message
-				const message = {
-					command: 'changeValue',
-					address: address.toString(),
-					value: Utility.getHexString(realValue, 2),
-					asciiValue: Utility.getASCIIChar(realValue)
-				};
-				this.sendMessageToWebView(message, mdv);
-				await mdv.getValueInfoText(address);
 			}
 		};
+		// Update html without getting data from remote
+		BaseView.staticCallUpdateWithoutRemote();
 		// Inform vscode
 		BaseView.sendChangeEvent();
 	}
@@ -227,7 +220,7 @@ export class MemoryDumpView extends BaseView {
 	 * @param reason Not used.
 	 */
 	public async update(reason?: any): Promise<void> {
-		// Get data
+		// Get data from Remote
 		for (let metaBlock of this.memDump.metaBlocks) {
 			// Updates the shown memory dump.
 			const data = await Remote.readMemoryDump(metaBlock.address, metaBlock.size);
@@ -378,22 +371,6 @@ export class MemoryDumpView extends BaseView {
 			const message = event.data;
 
             switch (message.command) {
-				case 'changeValue':
-				{
-					prevValue = '';
-					curObj = null;
-					// HEX numbers
-					const tdObjs = document.querySelectorAll("td[address='"+message.address+"']");
-					for(let obj of tdObjs) {
-						obj.innerText = message.value;
-					}
-					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
-						obj.innerText = message.asciiValue;
-					}
-				}   break;
-
 				case 'valueInfoText':
 				{
 					// HEX numbers

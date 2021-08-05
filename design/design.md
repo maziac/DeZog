@@ -272,7 +272,10 @@ User -> webView: DoubleClick
 webView -> MemoryDumpView: valueChanged
 MemoryDumpView -> MemoryDumpView: changeMemory
 MemoryDumpView -> Remote: writeMemory
-webView <- MemoryDumpView: changeValue
+MemoryDumpView <- Remote: readMemory
+MemoryDumpView <- MemoryDumpView: updateWithoutRemote
+note over MemoryDumpView: create html+js
+MemoryDumpView -> webView: Set webview.html
 ```
 
 

@@ -92,32 +92,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			if (!isNaN(mdv.memDump.getWordValueFor(address, this.littleEndian))) {
 				// Update value
 				mdv.memDump.setWordValueFor(address, realValue, true);	// Also write as little endian
-				// Create 2 messages for both bytes of a word
-				/*
-				// Low byte
-				const message1 = {
-					command: 'changeValue',
-					address: address.toString(),
-					value: Utility.getHexString(realValue&0xFF, 2),
-					asciiValue: undefined
-				};
-				this.sendMessageToWebView(message1, mdv);			// Low byte
-				await mdv.getValueInfoText(address);
-				// High byte
-				const addr2 = (address + 1) & 0xFFFF;
-				const message2 = {
-					command: 'changeValue',
-					address: addr2.toString(),
-					value: Utility.getHexString(realValue>>8, 2),
-					asciiValue: undefined
-				};
-				this.sendMessageToWebView(message2, mdv);
-				await mdv.getValueInfoText(addr2);
-			*/
 			}
 		};
-		// Inform vscode
+		// Update html without getting data from remote
 		BaseView.staticCallUpdateWithoutRemote();
+		// Inform vscode
 		BaseView.sendChangeEvent();
 	}
 
@@ -371,28 +350,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			const message = event.data;
 
             switch (message.command) {
-				case 'changeValue':
-				{
-					prevValue = '';
-					curObj = null;
-					// HEX numbers
-					const tdObjs = document.querySelectorAll("td[${firstAddress}='"+message.address+"']");
-					const value = message.value;
-					for(let obj of tdObjs) {
-						// Exchange lower 2 characters
-						const text = obj.innerText.padStart(4,'0');
-						const newText = text.substr(0,2) + value;
-						obj.innerText = newText.padStart(4,'0');
-					}
-					const tdObjs2 = document.querySelectorAll("td[${secondAddress}='"+message.address+"']");
-					for(let obj of tdObjs2) {
-						// Exchange higher 2 characters
-						const text = obj.innerText.padStart(4,'0');
-						const newText = value + text.substr(2,2);
-						obj.innerText = newText.padStart(4,'0');
-					}
-				}   break;
-
 				case 'valueInfoText':
 				{
 					// HEX numbers
