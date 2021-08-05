@@ -184,7 +184,7 @@ export class MemoryDumpView extends BaseView {
 
 		// Address
 		const addrFormattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
-		text += addrFormattedString;
+		text += '@\n' + addrFormattedString;
 
 		// Check for last value
 		const prevValue=this.memDump.getPrevValueFor(address);
@@ -365,7 +365,7 @@ export class MemoryDumpView extends BaseView {
 
 		//---- Handle Messages from vscode extension --------
 		window.addEventListener('message', event => {
-				const message = event.data;
+			const message = event.data;
 
             switch (message.command) {
 				case 'changeValue':
@@ -433,6 +433,7 @@ export class MemoryDumpView extends BaseView {
            }
         });
 
+		//# sourceURL=memorydumpview.js
 		</script>
 `;
 		return html;

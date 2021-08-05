@@ -85,22 +85,33 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const data = new Uint8Array([lowByte, highByte]);
 		await Remote.writeMemoryDump(address, data);
 		const realData = await Remote.readMemoryDump(address, 2);
-		const realValue = (this.littleEndian) ? realData[0] + 256 * realData[1] : realData[1] + 256 * realData[0];
+		const realValue = realData[0] + 256 * realData[1];	// In little endian
 		for (const mdvb of MemoryDumpView.MemoryViews) {
 			const mdv = mdvb as MemoryDumpViewWord;	// To gain access
 			// Check first if address included at all
 			if (!isNaN(mdv.memDump.getWordValueFor(address, this.littleEndian))) {
 				// Update value
-				mdv.memDump.setValueFor(address, realValue);
-				// Create message
-				const message = {
+				mdv.memDump.setWordValueFor(address, realValue, true);	// Also write as little endian
+				// Create 2 messages for both bytes of a word
+				// Low byte
+				const message1 = {
 					command: 'changeValue',
 					address: address.toString(),
-					value: Utility.getHexString(realValue, 2),
-					asciiValue: Utility.getASCIIChar(realValue)
+					value: Utility.getHexString(realValue&0xFF, 2),
+					asciiValue: undefined
 				};
-				this.sendMessageToWebView(message, mdv);
+				this.sendMessageToWebView(message1, mdv);			// Low byte
 				await mdv.getValueInfoText(address);
+				// High byte
+				const addr2 = (address + 1) & 0xFFFF;
+				const message2 = {
+					command: 'changeValue',
+					address: addr2.toString(),
+					value: Utility.getHexString(realValue>>8, 2),
+					asciiValue: undefined
+				};
+				this.sendMessageToWebView(message2, mdv);
+				await mdv.getValueInfoText(addr2);
 			}
 		};
 		// Inform vscode
@@ -120,7 +131,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		// Address
 		const addrFormattedString = await Utility.numberFormatted('', address, 2, Settings.launch.memoryViewer.addressHoverFormat, undefined);
-		text += addrFormattedString;
+		text += '@\n' + addrFormattedString;
 
 		// Check for last value
 		const prevValue = this.memDump.getPrevWordValueFor(address, this.littleEndian);
@@ -141,11 +152,134 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 
 	/**
+	 * Returns a word from an UInt8Array.
+	 * Uses big or little endian coding depending on this.littleEndian.
+	 * @param data The array.
+	 * @param k The index into the array.
+	 */
+	protected getWord(data: Uint8Array, k: number): number {
+		if (this.littleEndian)
+			return data[k] + 256 * data[k + 1];
+		// big endian
+		return data[k + 1] + 256 * data[k];
+	}
+
+
+	/**
+	 * Creates one html table out of a meta block.
+	 * @param index The number of the memory block, starting at 0.
+	 * Used for the id.
+	 * @param metaBlock The block to convert.
+	 */
+	protected createHtmlTable(metaBlock: MetaBlock): string {
+		if (!metaBlock.data)
+			return '';
+
+		const format=
+`			<table style="">
+				<colgroup>
+					<col>
+					<col width="10em">
+					<col span="%d" width="20em">
+				</colgroup>
+
+			%s
+			</table>
+		`;
+
+		// Create a string with the table itself.
+		let table = '';
+		let address=metaBlock.address;
+		let i = 0;
+		const data = metaBlock.data;
+		const len=data.length;
+
+		const addressColor = Settings.launch.memoryViewer.addressColor;
+		const bytesColor = Settings.launch.memoryViewer.bytesColor;
+
+		// Table column headers
+		table += '<tr>\n<th>Address:</th> <th></th>';
+		for(let k=0; k<MEM_COLUMNS; k++) {
+			table += '<th>+' + (2*k).toString(16).toUpperCase() + '</th>';
+		}
+		table += '\n</tr>';
+
+		// Table contents
+		for (let k=0; k<len-1; k+=2) {
+			// Address but bound to 64k to forecome wrap arounds
+			const addr64k=address&0xFFFF;
+			// Check start of line
+			if(i == 0) {
+				// start of a new line
+				let addrText=Utility.getHexString(addr64k,4) + ':';
+				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
+				table += '<td> </td>\n';
+			}
+
+			// Print value
+			const value = this.getWord(data, k);
+			let valueText = Utility.getHexString(value, 4);
+
+			// Check if in address range
+			if(metaBlock.isInRange(address))
+				valueText = this.addEmphasizeInRange(valueText);
+			else
+				valueText = this.addDeemphasizeNotInRange(valueText);
+
+			// Check if label points directly to this address
+			if (Labels.getLabelsForNumber64k(addr64k).length > 0)
+				valueText = this.addEmphasizeLabelled(valueText);
+
+			// Compare with prev value.
+			const prevData=metaBlock.prevData;
+			if (prevData) {
+				if (prevData.length>0) {
+					const prevValue = this.getWord(prevData, k);
+					if (value!=prevValue) {
+						// Change html emphasizes
+						valueText=this.addEmphasizeChanged(valueText);
+					}
+				}
+			}
+
+			// Create html cell
+			const addr64k2 = (addr64k + 1) & 0xFFFF;
+			table += '<td address="' + addr64k + '" address2="' + addr64k2 + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
+			//table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText + '</td>\n';
+
+			// Check end of line
+			if (i == MEM_COLUMNS-1) {
+				// end of a new line
+				table += '</tr>\n';
+			}
+
+			// Next column
+			address += 2;
+			i++;
+			if(i >= MEM_COLUMNS)
+				i = 0;
+		}
+
+		const html = util.format(format, MEM_COLUMNS, table);
+		return html;
+	}
+
+
+
+	/**
 	 * Creates the script (i.e. functions) for all blocks (html tables).
 	 */
-	// TODO: maybe I can remove this completely and use the super class.
 	protected createHtmlScript(): string {
-		const html=`
+		// Handle endianness
+		let firstAddress = 'address';
+		let secondAddress = 'address';
+		if (this.littleEndian)
+			secondAddress += '2';
+		else
+			firstAddress += '2';
+
+		// The html script
+		const html = `
 		<script>
 		const vscode = acquireVsCodeApi();
 
@@ -230,7 +364,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 		//---- Handle Messages from vscode extension --------
 		window.addEventListener('message', event => {
-				const message = event.data;
+			const message = event.data;
 
             switch (message.command) {
 				case 'changeValue':
@@ -238,14 +372,20 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					prevValue = '';
 					curObj = null;
 					// HEX numbers
-					const tdObjs = document.querySelectorAll("td[address='"+message.address+"']");
+					const tdObjs = document.querySelectorAll("td[${firstAddress}='"+message.address+"']");
+					const value = message.value;
 					for(let obj of tdObjs) {
-						obj.innerText = message.value;
+						// Exchange lower 2 characters
+						const text = obj.innerText.padStart(4,'0');
+						const newText = text.substr(0,2) + value;
+						obj.innerText = newText.padStart(4,'0');
 					}
-					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
-						obj.innerText = message.asciiValue;
+					const tdObjs2 = document.querySelectorAll("td[${secondAddress}='"+message.address+"']");
+					for(let obj of tdObjs2) {
+						// Exchange higher 2 characters
+						const text = obj.innerText.padStart(4,'0');
+						const newText = value + text.substr(2,2);
+						obj.innerText = newText.padStart(4,'0');
 					}
 				}   break;
 
@@ -254,11 +394,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 					// HEX numbers
 					const objs = document.querySelectorAll("td[address='"+message.address+"']");
 					for(let obj of objs) {
-						obj.title = message.text;
-					}
-					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
 						obj.title = message.text;
 					}
                 }   break;
@@ -279,13 +414,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 						obj.style.backgroundColor = message.color;
 						obj.style.borderRadius = '3px';
 					}
-					// ASCII
-					const spanObjs = document.querySelectorAll("span[address='"+message.address+"']");
-					for(let obj of spanObjs) {
-						obj.style.color = "white";
-						obj.style.backgroundColor = message.color;
-						obj.style.borderRadius = '3px';
-					}
 				 }   break;
 
 				case 'setMemoryTable':
@@ -298,106 +426,9 @@ export class MemoryDumpViewWord extends MemoryDumpView {
            }
         });
 
+		//# sourceURL=memorydumpviewword.js
 		</script>
 `;
-		return html;
-	}
-
-
-	/**
-	 * Creates one html table out of a meta block.
-	 * @param index The number of the memory block, starting at 0.
-	 * Used for the id.
-	 * @param metaBlock The block to convert.
-	 */
-	protected createHtmlTable(metaBlock: MetaBlock): string {
-		if (!metaBlock.data)
-			return '';
-
-		const format=
-`			<table style="">
-				<colgroup>
-					<col>
-					<col width="10em">
-					<col span="%d" width="20em">
-				</colgroup>
-
-			%s
-			</table>
-		`;
-
-		// Create a string with the table itself.
-		let table = '';
-		let address=metaBlock.address;
-		let i = 0;
-		const data = metaBlock.data;
-		const len=data.length;
-
-		const addressColor = Settings.launch.memoryViewer.addressColor;
-		const bytesColor = Settings.launch.memoryViewer.bytesColor;
-
-		// Table column headers
-		table += '<tr>\n<th>Address:</th> <th></th>';
-		for(let k=0; k<MEM_COLUMNS; k++) {
-			table += '<th>+' + (2*k).toString(16).toUpperCase() + '</th>';
-		}
-		table += '\n</tr>';
-
-		// Table contents
-		for (let k=0; k<len-1; k+=2) {
-			// Address but bound to 64k to forecome wrap arounds
-			const addr64k=address&0xFFFF;
-			// Check start of line
-			if(i == 0) {
-				// start of a new line
-				let addrText=Utility.getHexString(addr64k,4) + ':';
-				table+='<tr>\n<td addressLine="'+addr64k + '" style="color:' + addressColor + '; border-radius:3px; cursor: pointer" onmouseover="mouseOverAddress(this)">' + addrText + '</td>\n';
-				table += '<td> </td>\n';
-			}
-
-			// Print value
-			const value = (this.littleEndian) ? data[k] + 256 * data[k + 1] : data[k+1] + 256 * data[k];
-			let valueText = Utility.getHexString(value, 4);
-
-			// Check if in address range
-			if(metaBlock.isInRange(address))
-				valueText = this.addEmphasizeInRange(valueText);
-			else
-				valueText = this.addDeemphasizeNotInRange(valueText);
-
-			// Check if label points directly to this address
-			if (Labels.getLabelsForNumber64k(addr64k).length > 0)
-				valueText = this.addEmphasizeLabelled(valueText);
-
-			// Compare with prev value.
-			const prevData=metaBlock.prevData;
-			if (prevData) {
-				if (prevData.length>0) {
-					const prevValue=prevData[k];
-					if (value!=prevValue) {
-						// Change html emphasizes
-						valueText=this.addEmphasizeChanged(valueText);
-					}
-				}
-			}
-
-			// Create html cell
-			table+='<td address="'+addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
-
-			// Check end of line
-			if (i == MEM_COLUMNS-1) {
-				// end of a new line
-				table += '</tr>\n';
-			}
-
-			// Next column
-			address += 2;
-			i++;
-			if(i >= MEM_COLUMNS)
-				i = 0;
-		}
-
-		const html = util.format(format, MEM_COLUMNS, table);
 		return html;
 	}
 
@@ -406,6 +437,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	 * Sets the html code to display the memory dump.
 	 * Is called only once at creation time as it does not hold the actual data.
 	 */
+	// TODO: Remove
+	/*
 	protected setHtml() {
 		const format= `<!DOCTYPE html>
 		<html lang="en">
@@ -456,5 +489,5 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		const html = util.format(format, scripts+tables, legend);
 		this.vscodePanel.webview.html = html;
 	}
-
+*/
 }

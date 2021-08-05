@@ -289,11 +289,36 @@ export class MemoryDump {
 	 * @param value The new value.
 	 */
 	public setValueFor(address: number, value: number) {
-		for(let mb of this.metaBlocks) {
+		for (let mb of this.metaBlocks) {
 			const index = address - mb.address;
 			const data = mb.data;
-			if(data && index >= 0 && index < data.length)
+			if (data && index >= 0 && index < data.length)
 				data[index] = value;
+		}
+	}
+
+
+	/**
+	 * Sets the word value for all matching addresses in the metablocks.
+	 * @param address The address which value should be changed.
+	 * @param value The new value.
+	 * @param littleEndian or big endian.
+	 */
+	public setWordValueFor(address: number, value: number, littleEndian: boolean) {
+		for (let mb of this.metaBlocks) {
+			const index = address - mb.address;
+			const data = mb.data;
+			if (data && index >= 0 && index + 1 < data.length) {
+				if (littleEndian) {
+					data[index] = value & 0xFF;
+					data[index + 1] = value >> 8;
+				}
+				else {
+					// Big endian
+					data[index + 1] = value & 0xFF;
+					data[index] = value >> 8;
+				}
+			}
 		}
 	}
 
