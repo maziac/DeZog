@@ -1500,7 +1500,20 @@ This opens a memory dump view 3 memory blocks.
 Please note that if you enter overlapping blocks the dump will merge them in the display.
 
 
-You can open a special memory viewer, the Register Memory View, with:
+If you have data organized in words instead of bytes, you can open the memory viewer in word mode:
+
+~~~
+-mvw 8001h 900 [big]
+~~~
+
+![](images/memoryviewer3.jpg)
+
+By default the view opens in little endian but by speciyfing "big" as the last argument the viewer shows the values as big endian.
+
+The color coding for registers works here as well. E.g. in the picture above HL points to 8001h. Therefore the lower half of F131h gets a green color.
+
+
+There is also a special memory viewer, the Register Memory View. open it with:
 ~~~
 -rmv
 ~~~

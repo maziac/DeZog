@@ -1,7 +1,19 @@
 <li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added "-msetb" and "-msetw" commands: See help ("-h") in the debug console. With mset you can change single memory locations or fill a complete area. You can fill by byte or word and use little or big endian.
+	<br>Added "-msetb" and "-msetw" console commands: See help ("-h") in the debug console. With mset you can change single
+	memory locations or fill a complete area. You can fill by byte or word and use little or big endian.
 </li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span>
+	<br>Added console command "-mvw" to display a memory viewer that displays the memory organized in words instead of bytes. You can use either little or big endian.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-changed">FIXED</span>
+	<br>Register colors in memory views were not updated if the memory view was not focused.
+</li>
+
 <li>
 	<span class="changelog-badge changelog-badge-changed">FIXED</span>
 	<br>Memory views were not updated if the debug session was restarted.
