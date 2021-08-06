@@ -187,7 +187,10 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		table += '\n</tr>';
 
 		// Table contents
-		for (let k=0; k<len-1; k+=2) {
+		const littleEndian = this.littleEndian;
+		let firstAddress;
+		let secondAddress;
+		for (let k = 0; k < len - 1; k += 2) {
 			// Address but bound to 64k to forecome wrap arounds
 			const addr64k=address&0xFFFF;
 			// Check start of line
@@ -201,6 +204,18 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			// Print value
 			const value = this.getWord(data, k);
 			let valueText = Utility.getHexString(value, 4);
+
+			// Split the text in 2 parts
+			const addr64k2 = (addr64k + 1) & 0xFFFF;
+			if (littleEndian) {
+				firstAddress = addr64k;
+				secondAddress = addr64k2;
+			}
+			else {
+				firstAddress = addr64k2;
+				secondAddress = addr64k;
+			}
+			valueText = '<span address="' + secondAddress + '">' + valueText.substr(0, 2) + '</span><span address2="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -225,9 +240,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			}
 
 			// Create html cell
-			const addr64k2 = (addr64k + 1) & 0xFFFF;
-			table += '<td address="' + addr64k + '" address2="' + addr64k2 + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
-			//table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText + '</td>\n';
+			table += '<td ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
 			// Check end of line
 			if (i == MEM_COLUMNS-1) {
@@ -252,14 +265,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 	 * Creates the script (i.e. functions) for all blocks (html tables).
 	 */
 	protected createHtmlScript(): string {
-		// Handle endianness
-		let firstAddress = 'address';
-		let secondAddress = 'address';
-		if (this.littleEndian)
-			secondAddress += '2';
-		else
-			firstAddress += '2';
-
 		// The html script
 		const html = `
 		<script>
@@ -370,8 +375,13 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				case 'setAddressColor':
 				{
 					// HEX
-					const objs = document.querySelectorAll("td[address='"+message.address+"']");
+					const objs = document.querySelectorAll("span[address='"+message.address+"']");
 					for(let obj of objs) {
+						obj.style.backgroundColor = message.color;
+						obj.style.borderRadius = '3px';
+					}
+					const objs2 = document.querySelectorAll("span[address2='"+message.address+"']");
+					for(let obj of objs2) {
 						obj.style.backgroundColor = message.color;
 						obj.style.borderRadius = '3px';
 					}
@@ -393,62 +403,4 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 		return html;
 	}
 
-
-	/**
-	 * Sets the html code to display the memory dump.
-	 * Is called only once at creation time as it does not hold the actual data.
-	 */
-	// TODO: Remove
-	/*
-	protected setHtml() {
-		const format= `<!DOCTYPE html>
-		<html lang="en">
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Dump</title>
-		</head>
-
-		<body style="font-family: Courier">
-
-		%s
-
-		%s
-
-		</body>
-		</html>`;
-
-
-		// Add a legend to the table with registers and colors.
-		let legend = `
-		<br>
-		Legend:<br>
-		`;
-		const regColors = Settings.launch.memoryViewer.registerPointerColors;
-		const regColorsLen = regColors.length;
-		for(let k=0; k<regColorsLen; k+=2) {
-			const color = regColors[k+1];
-			//legend += '<span style="background-color: ' + color + ';borderRadius: 3px">' + regColors[k] + ' = ' + color + '</span><br>';
-			legend += '<span style="background-color: ' + color + ';border-radius: 3px">&nbsp; ' + regColors[k] + ' &nbsp;</span> &nbsp;&nbsp; ';
-		}
-
-		// Loop through all metablocks
-		let tables;
-		const vertBreak=this.getHtmlVertBreak();
-		let i=0;
-		for(let mb of this.memDump.metaBlocks) {
-			const table = this.createHtmlTableTemplate(i, mb);
-			tables=(tables)? tables+vertBreak+table:table;
-			// Next
-			i++;
-		}
-
-		// Add functions
-		const scripts=this.createHtmlScript();
-
-		// Add html body
-		const html = util.format(format, scripts+tables, legend);
-		this.vscodePanel.webview.html = html;
-	}
-*/
 }

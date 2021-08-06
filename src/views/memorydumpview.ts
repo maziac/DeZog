@@ -57,14 +57,6 @@ export class MemoryDumpView extends BaseView {
 	constructor() {
 		super();
 		MemoryDumpView.MemoryViews.push(this);
-
-		// Handle hide/unhide -> update the register pointers.
-		if (this.vscodePanel) {
-			this.vscodePanel.onDidChangeViewState(e => {
-				// Update register pointers (Note: the visible parameter that is passed is wrong, it is a 'focused' information.
-				this.setColorsForRegisterPointers();
-			});
-		}
 	}
 
 
@@ -212,6 +204,15 @@ export class MemoryDumpView extends BaseView {
 			text: formattedString
 		};
 		this.sendMessageToWebView(msg);
+	}
+
+
+	/**
+	 * View is informed that a register has changed (manually).
+	 */
+	public async updateRegisterChanged(): Promise<void> {
+		// Set colors for register pointers
+		this.setColorsForRegisterPointers();
 	}
 
 

@@ -2,6 +2,7 @@
 
 # 2.3.0
 - Added "-msetb/w" command: See help ("-h"). With mset you can change single memory locations or fill a complete area.
+- Fix: register colors in memory views now also updated if the memory view is not focused.
 
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.

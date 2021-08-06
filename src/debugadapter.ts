@@ -571,6 +571,11 @@ export class DebugSessionClass extends DebugSession {
 			// Remote requests to generate a StoppedEvent e.g. because the PC or the
 			// SP has been changed manually.
 			this.sendEvent(new StoppedEvent(reason, DebugSessionClass.THREAD_ID));
+			// If register has changed (I think this is the only reason at the moment)
+			// then also inform the memory views.
+			if (reason == 'register changed') {
+				BaseView.staticCallUpdateRegisterChanged();
+			}
 		});
 
 		Remote.on('coverage', coveredAddresses => {

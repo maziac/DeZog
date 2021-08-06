@@ -30,6 +30,18 @@ export class BaseView {
 
 
 	/**
+	 * Is called when a register was changed manually.
+	 * Used to update the register colors in the memory views.
+	 */
+	public static async staticCallUpdateRegisterChanged(): Promise<void> {
+		// Loop all views
+		for (const view of BaseView.staticViews) {
+			await view.updateRegisterChanged();
+		}
+	}
+
+
+	/**
 	 * Is called on 'update' event.
 	 * First calls the static update functions.
 	 * Afterwards the update functions of all views.
@@ -47,6 +59,11 @@ export class BaseView {
 		}
 	}
 
+
+	/**
+	 * Updates all views but without getting values from the
+	 * Remote.
+	 */
 	protected static staticCallUpdateWithoutRemote() {
 		// Loop all views
 		for (const view of BaseView.staticViews) {
@@ -89,6 +106,7 @@ export class BaseView {
 	 * The DebugAdapter/vscode uses this to update e.g. the WATCHes.
 	 */
 	public static sendChangeEvent = () => {};
+
 
 	/**
 	 * Registers the sendChangeEvent function.
@@ -167,6 +185,14 @@ export class BaseView {
 	 */
 	protected sendMessageToWebView(message: any, baseView: BaseView=this) {
 		baseView.vscodePanel.webview.postMessage(message);
+	}
+
+
+	/**
+	 * View is informed that a register has changed (manually).
+	 */
+	public async updateRegisterChanged(): Promise<void> {
+		// Overwrite this.
 	}
 
 

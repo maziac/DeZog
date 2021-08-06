@@ -1276,7 +1276,7 @@ export class RemoteBase extends EventEmitter {
 		await this.setRegisterValue(register, value);
 		await this.getRegistersFromEmulator();
 		await this.getCallStackFromEmulator();
-		this.emit('stoppedEvent', register+' changed');
+		this.emit('stoppedEvent', 'register changed');
 	}
 
 
