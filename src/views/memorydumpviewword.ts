@@ -215,7 +215,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '">' + valueText.substr(0, 2) + '</span><span address2="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
+			valueText = '<span address="' + secondAddress + '">' + valueText.substr(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))
@@ -240,7 +240,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			}
 
 			// Create html cell
-			table += '<td ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
+			table += '<td address="' + addr64k + '" ondblclick="makeEditable(this)" onmouseover="mouseOverValue(this)" style="color:' + bytesColor + '">' + valueText +'</td>\n';
 
 			// Check end of line
 			if (i == MEM_COLUMNS-1) {
@@ -357,7 +357,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
             switch (message.command) {
 				case 'valueInfoText':
 				{
-					// HEX numbers
 					const objs = document.querySelectorAll("td[address='"+message.address+"']");
 					for(let obj of objs) {
 						obj.title = message.text;
@@ -374,14 +373,8 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 				case 'setAddressColor':
 				{
-					// HEX
 					const objs = document.querySelectorAll("span[address='"+message.address+"']");
 					for(let obj of objs) {
-						obj.style.backgroundColor = message.color;
-						obj.style.borderRadius = '3px';
-					}
-					const objs2 = document.querySelectorAll("span[address2='"+message.address+"']");
-					for(let obj of objs2) {
 						obj.style.backgroundColor = message.color;
 						obj.style.borderRadius = '3px';
 					}
