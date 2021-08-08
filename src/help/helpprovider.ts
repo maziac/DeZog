@@ -46,7 +46,7 @@ export class HelpProvider implements vscode.WebviewViewProvider {
 
 
 	/**
-	 * Returns the html code to display the calculator.
+	 * Returns the html code to display the DeZog help.
 	 */
 	public setMainHtml() {
 		if (!this.webview)
