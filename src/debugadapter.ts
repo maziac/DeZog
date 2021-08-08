@@ -3249,6 +3249,10 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 					response.body = {value: formattedString};
 					response.success = true;
 				}
+				// Update
+				this.update();
+				// TODO: Soll ich generell updaten, oder dass dem MemoryDumpVar überlassen. Hier aber das Problem. Dass der nichts vom DebugAdapter oder Remote weiss.
+				// Wenn ich generell update, kann ich dei Spezialbehandlung für die Register weglassen.
 			}
 		}
 		this.sendResponse(response);

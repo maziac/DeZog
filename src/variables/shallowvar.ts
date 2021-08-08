@@ -359,7 +359,7 @@ export class StackVar extends ShallowVar {
 		const data=await Remote.readMemoryDump(address, 2);
 		const memWord = data[0] + (data[1]<<8);
 		// Pass formatted string to vscode
-		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined)
+		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined);
 		return formattedString;
 	}
 }
@@ -733,6 +733,48 @@ export class MemDumpVar extends ShallowVar {
 		else
 			return Settings.launch.formatting.watchWord;	// word
 	}
+
+
+	/**
+	 * Sets the value of the variable.
+	 * The formatted read data is returned in the Promise.
+	 * @param name The name of data. E.g. '[0]' or '[12]'
+	 * @param value The value to set.
+	 * @returns A Promise with the formatted string. undefined if not implemented.
+	 */
+	public async setValue(name: string, value: number): Promise<string> {
+		// Get index (strip brackets)
+		const indexString = name.substr(1, name.length - 2);
+		const index = parseInt(indexString);
+
+		// Get address
+		const address = this.addr + index * this.elemSize;
+
+		// Change neg to pos
+		if (value < 0)
+			value += 0x10000;
+
+		// Write data
+		const dataWrite = new Uint8Array(this.elemSize);
+		for (let i = 0; i < this.elemSize; i++) {
+			dataWrite[i] = value & 0xFF;
+			value = value >>> 8;
+		}
+		await Remote.writeMemoryDump(address, dataWrite);
+
+		// Retrieve memory values, to see if they really have been set.
+		const data = await Remote.readMemoryDump(address, this.elemSize);
+		let readValue = 0;
+		for (let i = this.elemSize - 1; i >= 0; i--) {
+			readValue = readValue << 8;
+			readValue += data[i] & 0xFF;
+		}
+
+		// Pass formatted string to vscode
+		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, Settings.launch.formatting.stackVar, undefined); // TODO: choose right formatting
+		return formattedString;
+	};
+
 }
 
 
