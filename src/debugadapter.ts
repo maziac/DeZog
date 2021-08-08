@@ -1128,9 +1128,11 @@ export class DebugSessionClass extends DebugSession {
 		ref = this.listVariables.addObject(containerVar);
 		scopes.push(new Scope("Labels", ref));
 
-		let item = await this.evaluatelabelExpression('main');
+		let item = await this.evaluateLabelExpression('main');
 		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
-		item = await this.evaluatelabelExpression('lbl1');
+		item = await this.evaluateLabelExpression('main');
+		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
+		item = await this.evaluateLabelExpression('lbl1');
 		containerVar.addItem('lbl1', item.labelVar, item.type, item.value, item.indexedVariables);
 
 
@@ -2105,7 +2107,7 @@ export class DebugSessionClass extends DebugSession {
 		this.sendResponse(response);
 	}
 
-	protected async evaluatelabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
+	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
@@ -3229,6 +3231,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		const name = args.name;
 		const value = Utility.parseValue(args.value);
 
+		ShallowVar.clearChanged();
+
 		// Get variable object
 		const varObj = this.listVariables.getObject(ref);
 		response.success = false;	// will be changed if successful.
@@ -3250,12 +3254,57 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 					response.success = true;
 				}
 				// Update
-				this.update();
+				//this.update();
 				// TODO: Soll ich generell updaten, oder dass dem MemoryDumpVar überlassen. Hier aber das Problem. Dass der nichts vom DebugAdapter oder Remote weiss.
-				// Wenn ich generell update, kann ich dei Spezialbehandlung für die Register weglassen.
+				// Wenn ich generell update, kann ich die Spezialbehandlung für die Register weglassen.
 			}
 		}
 		this.sendResponse(response);
+
+		// Now check what has been changed.
+		if (ShallowVar.pcChanged)
+			await this.pcHasBeenChanged();
+		if (ShallowVar.spChanged)
+			await this.spHasBeenChanged();
+		if (ShallowVar.pcChanged || ShallowVar.spChanged || ShallowVar.otherRegisterChanged)
+			await this.anyRegisterHasBeenChanged();
+		if (ShallowVar.memoryChanged)
+			await this.memoryHasBeenChanged();
+		ShallowVar.clearChanged();
+	}
+
+
+	/**
+	 * Should be called if PC is manually changed.
+	 */
+	protected async pcHasBeenChanged() {
+		this.sendEvent(new StoppedEvent("PC changed", DebugSessionClass.THREAD_ID));
+	}
+
+
+	/**
+	 * Should be called if SP is manually changed.
+	 */
+	protected async spHasBeenChanged() {
+		this.sendEvent(new InvalidatedEvent(['variables']));
+	}
+
+
+	/**
+	 * Should be called if any register is manually changed.
+	 * Also for PC or SP. In that case both functions are called.
+	 */
+	protected async anyRegisterHasBeenChanged() {
+		BaseView.staticCallUpdateRegisterChanged();
+	}
+
+
+	/**
+	 * Should be called if memory content has been manually changed.
+	 */
+	protected async memoryHasBeenChanged() {
+		this.sendEvent(new InvalidatedEvent(['variables']));
+		await BaseView.staticCallUpdateFunctions();
 	}
 
 
@@ -3283,7 +3332,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			}
 		}
 		// Now change Program Counter
-		await Remote.setProgramCounterWithEmit(addr&0xFFFF);
+		await Remote.setProgramCounterWithEmit(addr & 0xFFFF);
+		// Update vscode
+		await this.pcHasBeenChanged();
 	}
 
 

@@ -15,6 +15,23 @@ import {StepHistory} from '../remotes/cpuhistory';
  * Variables know how to retrieve the data from the remote.
  */
 export class ShallowVar {
+	// Static bools to remember if some data type has been changed.
+	// Is used to inform vscode about changes.
+	public static pcChanged = false;
+	public static spChanged = false;
+	public static otherRegisterChanged = false;	// Other than pc and sp
+	public static memoryChanged = false;
+
+
+	// Clears all remembered flags.
+	public static clearChanged() {
+		this.pcChanged = false;
+		this.spChanged = false;
+		this.otherRegisterChanged = false;
+		this.memoryChanged = false;
+	}
+
+
 	/// Override this. It should retrieve the contents of the variable. E.g. by communicating with the remote.
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		return [];
@@ -210,12 +227,18 @@ export class RegistersMainVar extends ShallowVar {
 		// Set value (works always for registers.
 		if (!isNaN(value)) {
 			// Handle PC special
-			if (name=="PC")
+			if (name == "PC") {
 				await Remote.setProgramCounterWithEmit(value);
-			if (name=="SP")
+				ShallowVar.pcChanged = true;
+			}
+			if (name == "SP") {
 				await Remote.setStackPointerWithEmit(value);
-			else
+				ShallowVar.spChanged = true;
+			}
+			else {
 				await Remote.setRegisterValueWithEmit(name, value);
+				ShallowVar.otherRegisterChanged = true;
+			}
 		}
 		//await Remote.getRegisters()
 		const formatted = Remote.getVarFormattedReg(name);
@@ -353,6 +376,7 @@ export class StackVar extends ShallowVar {
 			data[0] = value & 0xFF;
 			data[1] = value >>> 8;
 			await Remote.writeMemoryDump(address, data);
+			ShallowVar.memoryChanged = true;
 		}
 
 		// Retrieve memory values, to see if they really have been set.
@@ -761,6 +785,7 @@ export class MemDumpVar extends ShallowVar {
 			value = value >>> 8;
 		}
 		await Remote.writeMemoryDump(address, dataWrite);
+		ShallowVar.memoryChanged = true;
 
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(address, this.elemSize);
@@ -771,7 +796,7 @@ export class MemDumpVar extends ShallowVar {
 		}
 
 		// Pass formatted string to vscode
-		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, Settings.launch.formatting.stackVar, undefined); // TODO: choose right formatting
+		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, this.formatString(), undefined);
 		return formattedString;
 	};
 
