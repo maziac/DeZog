@@ -9,7 +9,6 @@ import {Settings/*, ListFile*/} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
-import {StepHistory} from './cpuhistory';
 import {Disassembly, DisassemblyClass} from '../misc/disassembly';
 import {MemoryBank, MemoryModel} from './Paging/memorymodel';
 import {Log} from '../log';
@@ -1242,42 +1241,6 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getSlots(): number[]|undefined {
 		return Z80Registers.getSlots();
-	}
-
-
-	/**
-	 * Change the program counter and emit 'stoppedEvent'.
-	 * @param address The new address for the program counter.
-	 */
-	public async setProgramCounterWithEmit(address: number): Promise<void> {
-		StepHistory.clear();
-		await this.setRegisterValueWithEmit('PC', address);
-	}
-
-	/**
-	 * Change the SP and emit 'stoppedEvent'.
-	 * @param address The new address for the stack pointer.
-	 */
-	public async setStackPointerWithEmit(address: number): Promise<void> {
-		StepHistory.clear();
-		await this.setRegisterValueWithEmit('SP', address);
-	}
-
-
-	/**
-	 * Sets the value of a register and emits a 'stoppedEvent'
-	 * This is used by the ShallowVariables when a register is changed.
-	 * So that all register values are updated (e.g. in case you change
-	 * register "C" also "BC" should be updated.
-	 * @param register The register to set, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
-	 * @param value The new register value.
-	 */
-	public async setRegisterValueWithEmit(register: string, value: number) {
-		await this.setRegisterValue(register, value);
-		await this.getRegistersFromEmulator();
-		await this.getCallStackFromEmulator();
-//		this.emit('stoppedEvent', 'register changed');
-		// TODO: Vielleciht kann ich die "Emit" funktionen löschen
 	}
 
 

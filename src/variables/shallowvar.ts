@@ -226,17 +226,18 @@ export class RegistersMainVar extends ShallowVar {
 	public async setValue(name: string, value: number): Promise<string> {
 		// Set value (works always for registers.
 		if (!isNaN(value)) {
+			await Remote.setRegisterValue(name, value);
+			await Remote.getRegistersFromEmulator();
 			// Handle PC special
 			if (name == "PC") {
-				await Remote.setProgramCounterWithEmit(value);
+				StepHistory.clear();
 				ShallowVar.pcChanged = true;
 			}
 			if (name == "SP") {
-				await Remote.setStackPointerWithEmit(value);
+				StepHistory.clear();
 				ShallowVar.spChanged = true;
 			}
 			else {
-				await Remote.setRegisterValueWithEmit(name, value);
 				ShallowVar.otherRegisterChanged = true;
 			}
 		}
