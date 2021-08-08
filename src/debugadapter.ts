@@ -436,6 +436,7 @@ export class DebugSessionClass extends DebugSession {
 				// This ['variables'] seems to work:
 				// See https://github.com/microsoft/debug-adapter-protocol/issues/171#issuecomment-754753935
 				this.sendEvent(new InvalidatedEvent(['variables']));
+				// Note: Calling this.memoryHasBeenChanged would result in an infinite loop.
 			});
 
 			// Set root path
@@ -571,17 +572,6 @@ export class DebugSessionClass extends DebugSession {
 			//	this.terminate(err.message);
 			return err.message;
 		}
-
-		Remote.on('stoppedEvent', reason => {
-			// Remote requests to generate a StoppedEvent e.g. because the PC or the
-			// SP has been changed manually.
-			this.sendEvent(new StoppedEvent(reason, DebugSessionClass.THREAD_ID));
-			// If register has changed (I think this is the only reason at the moment)
-			// then also inform the memory views.
-			if (reason == 'register changed') {
-				BaseView.staticCallUpdateRegisterChanged();
-			}
-		});
 
 		Remote.on('coverage', coveredAddresses => {
 			// coveredAddresses: Only diff of addresses since last step-command.
@@ -3266,8 +3256,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			await this.pcHasBeenChanged();
 		if (ShallowVar.spChanged)
 			await this.spHasBeenChanged();
-		if (ShallowVar.pcChanged || ShallowVar.spChanged || ShallowVar.otherRegisterChanged)
-			await this.anyRegisterHasBeenChanged();
+		if (ShallowVar.otherRegisterChanged)
+			await this.otherRegisterHasBeenChanged();
 		if (ShallowVar.memoryChanged)
 			await this.memoryHasBeenChanged();
 		ShallowVar.clearChanged();
@@ -3278,7 +3268,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * Should be called if PC is manually changed.
 	 */
 	protected async pcHasBeenChanged() {
+		await Remote.getCallStackFromEmulator();
 		this.sendEvent(new StoppedEvent("PC changed", DebugSessionClass.THREAD_ID));
+		await BaseView.staticCallUpdateRegisterChanged();
 	}
 
 
@@ -3286,16 +3278,19 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * Should be called if SP is manually changed.
 	 */
 	protected async spHasBeenChanged() {
+		await Remote.getCallStackFromEmulator();
 		this.sendEvent(new InvalidatedEvent(['variables']));
+		await BaseView.staticCallUpdateRegisterChanged();
 	}
 
 
 	/**
-	 * Should be called if any register is manually changed.
+	 * Should be called if any  other register is manually changed.
 	 * Also for PC or SP. In that case both functions are called.
 	 */
-	protected async anyRegisterHasBeenChanged() {
-		BaseView.staticCallUpdateRegisterChanged();
+	protected async otherRegisterHasBeenChanged() {
+		this.sendEvent(new InvalidatedEvent(['variables']));
+		await BaseView.staticCallUpdateRegisterChanged();
 	}
 
 
@@ -3332,7 +3327,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			}
 		}
 		// Now change Program Counter
-		await Remote.setProgramCounterWithEmit(addr & 0xFFFF);
+		await Remote.setRegisterValue('PC', addr & 0xFFFF);
+		await Remote.getRegistersFromEmulator();
+		StepHistory.clear();
 		// Update vscode
 		await this.pcHasBeenChanged();
 	}
