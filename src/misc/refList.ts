@@ -13,9 +13,11 @@ export class RefList<type> extends Array<type> {
 	 * Use this instead of a simple push if you need to get the reference id to the object.
 	 * If you don't need the id you can use push or unshift.
 	 * @param obj The object to add.
-	 * @returns The index of the object in the list. I.e. a unique reference number (!=0) to the object.
+	 * @returns The index of the object in the list. I.e. a unique reference number (!=0) to the object. Or if obj is undefined it returns 0.
 	 */
 	public addObject(obj: any): number {
+		if (obj == undefined)
+			return 0;
 		this.push(obj);
 		const id = this.length;
 		return id;

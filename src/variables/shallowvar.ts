@@ -734,3 +734,81 @@ export class MemDumpVar extends ShallowVar {
 			return Settings.launch.formatting.watchWord;	// word
 	}
 }
+
+
+
+/**
+ * The ContainerVar class acts as a container for other variables.
+ * It is e.g. used for labels added by the user.
+ */
+export class ContainerVar extends ShallowVar {
+	// List to add objects to get references.
+	protected list: RefList<ShallowVar>;
+
+	// The array which holds the variables.
+	public varList = new Array<DebugProtocol.Variable>();
+
+
+	/**
+	 * Constructor: Remember list.
+	 */
+	constructor(list: RefList<ShallowVar>) {
+		super();
+		this.list = list;
+	}
+
+
+	/**
+	 * Returns the variables with references.
+	 * @returns A Promise with the all variables
+	 */
+	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+		return this.varList;
+	}
+
+
+	/**
+	 * Adds a new item to the list.
+	 * @param name The name of the variable/label.
+	 * @param item The shallow var to display.
+	 * @param type A description shown in the UI.
+	 * @param value Only used if ref != 0. The value to show.
+	 * @param indexedVariables The elem count or 0.
+	 */
+	public addItem(name: string, item: ShallowVar, type: string, value: string, indexedVariables: number) {
+		let ref = this.list.addObject(item);
+		this.varList.push({
+			name,
+			type,
+			value,
+			indexedVariables,
+			variablesReference: ref
+		});
+	}
+
+
+	/**
+	 * Checks if allowed to change the value.
+	 * If not returns a string with an error message.
+	 * @param name The name of data.
+	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
+	 */
+	public changeable(name: string): string | undefined {
+		// Change normally not allowed if in reverse debugging
+		//if (StepHistory.isInStepBackMode())
+		//	return 'Altering values not allowed in time-travel mode.';
+		// Otherwise allow
+		//return undefined;
+		return 'Use -addLabel/-removeLabel to change the list of variables.';
+	}
+
+
+	/**
+	 * Clears the list.
+	 */
+	public clear() {
+		this.varList.length = 0;
+	}
+
+}
+

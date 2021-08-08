@@ -10,7 +10,7 @@ import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {RefList} from './misc/refList';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -55,8 +55,12 @@ export class DebugSessionClass extends DebugSession {
 	/// The text document used for the temporary disassembly.
 	protected disasmTextDoc: vscode.TextDocument;
 
-	/// A list for the variables (references)
+	/// A list for the VARIABLES (references)
 	protected listVariables = new RefList<ShallowVar>();
+
+	/// The list of labels that are shown in the VARIABLES section.
+	// Cleared on a launchRequest.
+	protected varLabels = new Array<string>(); // new ContainerVar();
 
 	/// Only one thread is supported.
 	public static THREAD_ID = 1;
@@ -421,9 +425,10 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
-			// Init static views
+			// Initialize
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
+			this.varLabels.length = 0;
 
 			// Action on changed value (i.e. when the user changed a value
 			// vscode is informed and will e.g. update the watches.)
@@ -1116,11 +1121,18 @@ export class DebugSessionClass extends DebugSession {
 		ref = this.listVariables.addObject(varStack);
 		scopes.push(new Scope("Local Stack", ref));
 
-		// Create variable object for the stack
-		//const varLabels = new ArrayVar(;
+
+
 		// Add to list and get reference ID
-		ref = 0; //this.listVariables.addObject(varStack);
+		const containerVar = new ContainerVar(this.listVariables);
+		ref = this.listVariables.addObject(containerVar);
 		scopes.push(new Scope("Labels", ref));
+
+		let item = await this.evaluatelabelExpression('main');
+		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
+		item = await this.evaluatelabelExpression('lbl1');
+		containerVar.addItem('lbl1', item.labelVar, item.type, item.value, item.indexedVariables);
+
 
 		// Send response
 		response.body = {scopes: scopes};
@@ -2066,7 +2078,7 @@ export class DebugSessionClass extends DebugSession {
 					}
 
 					// Add to list
-					const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
+					const ref = this.listVariables.addObject(labelVar);
 					// Response
 					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
 					response.body = {
@@ -2093,182 +2105,175 @@ export class DebugSessionClass extends DebugSession {
 		this.sendResponse(response);
 	}
 
-	protected async evaluatelabelExpression(expression: string) {
-		let responseBody = {
-			result: '',
-			variablesReference: 0,
-			type: '',
-			indexedVariables: 0
-		};
+	protected async evaluatelabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
+		// Check if it is a label (or double register). A label may have a special formatting:
+		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
+		// or even a complete struct
+		// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
+		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
+		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
+		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
+		const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
+		if (match) {
+			let labelString = match[1];
+			let lblIndexString = match[3];
+			let lblType = match[5];
+			let elemCountString = match[7];
+			// Defaults
+			if (labelString) {
+				let labelValue;
+				let lastLabel;
+				let modulePrefix;
+				let lblIndex = 0;
+				let elemCount = 1;	// Use 1 as default
+				let elemSize = 1;	// Use 1 as default (if no type/size given)
 
-		// WATCH or else
-		try {
+				// First check for module name and local label prefix (sjasmplus).
+				const pcLongAddr = Remote.getPCLong();
+				const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+				// Local label and prefix
+				lastLabel = entry.lastLabel;
+				modulePrefix = entry.modulePrefix;
+				// Convert label (+expression)
+				labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
 
-			// Check if it is a label (or double register). A label may have a special formatting:
-			// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
-			// or even a complete struct
-			// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
-			// If the count is > 1 then an array is displayed. If left then 1 is assumed.
-			// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
-			// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-			const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
-			if (match) {
-				let labelString = match[1];
-				let lblIndexString = match[3];
-				let lblType = match[5];
-				let elemCountString = match[7];
-				// Defaults
-				if (labelString) {
-					let labelValue;
-					let lastLabel;
-					let modulePrefix;
-					let lblIndex = 0;
-					let elemCount = 1;	// Use 1 as default
-					let elemSize = 1;	// Use 1 as default (if no type/size given)
+				if (isNaN(labelValue))
+					throw Error("Could not parse label.");
 
-					// First check for module name and local label prefix (sjasmplus).
-					const pcLongAddr = Remote.getPCLong();
-					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-					// Local label and prefix
-					lastLabel = entry.lastLabel;
-					modulePrefix = entry.modulePrefix;
-					// Convert label (+expression)
-					labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
+				// Get size from type
+				if (lblType) {
+					//elemSize = Labels.getNumberFromString64k(lblType);
+					elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
+					if (isNaN(elemSize))
+						throw Error("Could not parse element size.");
+					if (elemSize <= 0)
+						throw Error("Element size must be > 0, is " + elemSize + ".");
+				}
 
-					if (isNaN(labelValue))
-						throw Error("Could not parse label.");
+				// And index "[x]"
+				if (lblIndexString) {
+					lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
+					if (isNaN(lblIndex))
+						throw Error("Could not parse index.");
+					if (lblIndex < 0)
+						throw Error("Index must be > 0, is " + lblIndex + ".");
+				}
 
-					// Get size from type
-					if (lblType) {
-						//elemSize = Labels.getNumberFromString64k(lblType);
-						elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
-						if (isNaN(elemSize))
-							throw Error("Could not parse element size.");
-						if (elemSize <= 0)
-							throw Error("Element size must be > 0, is " + elemSize + ".");
-					}
-
-					// And index "[x]"
-					if (lblIndexString) {
-						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
-						if (isNaN(lblIndex))
-							throw Error("Could not parse index.");
-						if (lblIndex < 0)
-							throw Error("Index must be > 0, is " + lblIndex + ".");
-					}
-
-					// Check count
-					if (elemCountString) {
-						elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
-						if (isNaN(elemCount))
-							throw Error("Could not parse element count.");
-						if (elemCount <= 0)
-							throw Error("Element count must be > 0, is " + elemCount + ".");
+				// Check count
+				if (elemCountString) {
+					elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
+					if (isNaN(elemCount))
+						throw Error("Could not parse element count.");
+					if (elemCount <= 0)
+						throw Error("Element count must be > 0, is " + elemCount + ".");
+				}
+				else {
+					// If no count is given try to estimate it by calculating the distance to
+					// the next label.
+					// Note: labelValue is 64k only. So first check if the label name is simply a name without calculation.
+					// If yes, use it. If no use labelValue.
+					let distAddr = Labels.getNumberForLabel(labelString);
+					// If not a long address then use the 64k value
+					if (distAddr == undefined)
+						distAddr = labelValue;
+					// Try to get the distance to the next label:
+					// Note: Does not work for structs as the next label would
+					// be inside the struct.
+					elemCount = Labels.getDistanceToNextLabel(distAddr!) || 1;
+					// Check special case
+					if (!lblType && elemCount == 2) {
+						// Special case: 1 word. Exchange size and count
+						elemSize = 2;
+						elemCount = 1;
 					}
 					else {
-						// If no count is given try to estimate it by calculating the distance to
-						// the next label.
-						// Note: labelValue is 64k only. So first check if the label name is simply a name without calculation.
-						// If yes, use it. If no use labelValue.
-						let distAddr = Labels.getNumberForLabel(labelString);
-						// If not a long address then use the 64k value
-						if (distAddr == undefined)
-							distAddr = labelValue;
-						// Try to get the distance to the next label:
-						// Note: Does not work for structs as the next label would
-						// be inside the struct.
-						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 1;
-						// Check special case
-						if (!lblType && elemCount == 2) {
-							// Special case: 1 word. Exchange size and count
-							elemSize = 2;
+						// Divide elemCount by elemSize
+						elemCount = Math.floor((elemCount + elemSize - 1) / elemSize);
+						// Limit minimal number
+						if (elemCount < 1)
 							elemCount = 1;
-						}
-						else {
-							// Divide elemCount by elemSize
-							elemCount = Math.floor((elemCount + elemSize - 1) / elemSize);
-							// Limit minimal number
-							if (elemCount < 1)
-								elemCount = 1;
-							// Limit max. number
-							if (elemCount > 1000)
-								elemCount = 1000;
-						}
+						// Limit max. number
+						if (elemCount > 1000)
+							elemCount = 1000;
 					}
+				}
 
-					// Add index
-					const indexOffset = lblIndex * elemSize;
-					const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
+				// Add index
+				const indexOffset = lblIndex * elemSize;
+				const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
 
-					// Create fullLabel
-					//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
-					// Create a label variable
-					let labelVar;
-					let formattedValue = '';
-					// Check for sub labels (i.e. check for struct)
-					let props;
-					let propsLength = 0
-					if (lblType != undefined) {
-						props = Labels.getSubLabels(lblType);
-						propsLength = props.length;
-					}
-					// Get sub properties
-					if (elemSize <= 2 && propsLength == 0) {
-						// Check for single value or array (no sub properties)
-						if (elemCount <= 1) {
-							// Single value
-							// Read memory
-							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-							let memVal = memory[0];
-							if (elemSize == 1)
-								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
-							else {
-								memVal += 256 * memory[1];
-								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
-							}
-						}
+				// Create fullLabel
+				//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
+				// Create a label variable
+				let labelVar;
+				let formattedValue = '';
+				// Check for sub labels (i.e. check for struct)
+				let props;
+				let propsLength = 0
+				if (lblType != undefined) {
+					props = Labels.getSubLabels(lblType);
+					propsLength = props.length;
+				}
+				// Get sub properties
+				if (elemSize <= 2 && propsLength == 0) {
+					// Check for single value or array (no sub properties)
+					if (elemCount <= 1) {
+						// Single value
+						// Read memory
+						const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
+						let memVal = memory[0];
+						if (elemSize == 1)
+							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
 						else {
-							// Simple memdump
-							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+							memVal += 256 * memory[1];
+							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
 						}
 					}
 					else {
-						// Not 1 or 2 was given as size but e.g. a struct label
-						if (propsLength > 0) {
-							// Structure
-							labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
-						}
-						if (!labelVar) {
-							// Simple memdump
-							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
-						}
+						// Simple memdump
+						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
 					}
+				}
+				else {
+					// Not 1 or 2 was given as size but e.g. a struct label
+					if (propsLength > 0) {
+						// Structure
+						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+					}
+					if (!labelVar) {
+						// Simple memdump
+						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+					}
+				}
 
-					// Add to list
-					const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
-					// Response
-					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
-					responseBody = {
-						result: formattedValue,
-						variablesReference: ref,
-						type: description,
-						//presentationHint: ,
-						//namedVariables: elemCount,
-						indexedVariables: elemCount
-					}
-				}	// If labelString
-			}	// If match
-		}	// try
-		catch (e) {
-			// Return empty response
-			responseBody = {
-				result: e.message,
-				variablesReference: 0,
-				type: '',
-				indexedVariables: 0
-			}
-			return;
-		}
+				const description = Utility.getLongAddressString(labelValue64k);
+				return {
+					labelVar,
+					value: formattedValue,
+					type: description,
+
+					indexedVariables: elemCount
+				};
+				/*
+				// Add to list
+				const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
+				// Response
+				const description = Utility.getLongAddressString(labelValue64k);
+				*/
+					// labelValue64k is anyhow a 64k address
+				/*
+				return {
+					value: formattedValue,
+					variablesReference: ref,
+//						type: description,
+					//presentationHint: ,
+					//namedVariables: elemCount,
+			//		indexedVariables: elemCount
+				}*/
+			}	// If labelString
+		}	// If match
+
+		throw Error('Error');	// TODO
 	}
 
 
@@ -3220,29 +3225,29 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	* Called eg. if user changes a register value.
 	*/
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
-		const ref=args.variablesReference;
-		const name=args.name;
-		const value=Utility.parseValue(args.value);
+		const ref = args.variablesReference;
+		const name = args.name;
+		const value = Utility.parseValue(args.value);
 
 		// Get variable object
-		const varObj=this.listVariables.getObject(ref);
-		response.success=false;	// will be changed if successful.
+		const varObj = this.listVariables.getObject(ref);
+		response.success = false;	// will be changed if successful.
 
 		// Safety check
 		if (varObj) {
 			// Variables can be changed only if not in reverse debug mode
-			const msg=varObj.changeable();
+			const msg = varObj.changeable();
 			if (msg) {
 				// Change not allowed e.g. if in reverse debugging
-				response.message=msg;
+				response.message = msg;
 			}
 			else {
 				// Set value
-				const formattedString=await varObj.setValue(name, value);
+				const formattedString = await varObj.setValue(name, value);
 				// Send response
 				if (formattedString) {
-					response.body={value: formattedString};
-					response.success=true;
+					response.body = {value: formattedString};
+					response.success = true;
 				}
 			}
 		}
