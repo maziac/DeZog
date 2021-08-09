@@ -813,8 +813,8 @@ export class DebugSessionClass extends DebugSession {
 		const fetchAddresses = new Array<number>();
 		let frameCount = 0;
 
-		// Clear all variables
-		this.listVariables.length = 0;
+		// Clear all temporary variables
+		this.listVariables.tmpList.clear();
 
 		// Get the call stack trace.
 		let callStack;
@@ -1064,7 +1064,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): Promise<void> {
-		this.listVariables.tmpList.clear();		// Clear temporary list.
+		//this.listVariables.tmpList.clear();		// Clear temporary list.
 		const scopes = new Array<Scope>();
 		const frameId = args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
@@ -2068,7 +2068,7 @@ export class DebugSessionClass extends DebugSession {
 					}
 
 					// Add to list
-					const ref = this.listVariables.addObject(labelVar);
+					const ref = this.listVariables.tmpList.addObject(labelVar);
 					// Response
 					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
 					response.body = {
