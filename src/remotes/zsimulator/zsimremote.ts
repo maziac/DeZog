@@ -1143,7 +1143,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 			}
 
 			// Otherwise pass to super class
-			response+=super.dbgExec(cmd);
+			response += await super.dbgExec(cmd);
 			return response;
 		}
 		catch (e) {
