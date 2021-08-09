@@ -8,7 +8,7 @@ import {Log} from './log';
 import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
-import {RefList} from './misc/refList';
+import {RefList} from './misc/reflist';
 import {Settings, SettingsParameters} from './settings';
 import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
@@ -1118,13 +1118,20 @@ export class DebugSessionClass extends DebugSession {
 		ref = this.listVariables.addObject(containerVar);
 		scopes.push(new Scope("Labels", ref));
 
+		// TODO: do this with persistent variable references
+		for (const expr of this.varLabels) {
+			const item = await this.evaluateLabelExpression(expr);
+			containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
+		}
+
+		/*
 		let item = await this.evaluateLabelExpression('main');
 		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
-		item = await this.evaluateLabelExpression('main');
-		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
+		item = await this.evaluateLabelExpression('main,2');
+		containerVar.addItem('main,2', item.labelVar, item.type, item.value, item.indexedVariables);
 		item = await this.evaluateLabelExpression('lbl1');
 		containerVar.addItem('lbl1', item.labelVar, item.type, item.value, item.indexedVariables);
-
+		*/
 
 		// Send response
 		response.body = {scopes: scopes};
@@ -1756,8 +1763,8 @@ export class DebugSessionClass extends DebugSession {
 		if (cmd == '-help' || cmd == '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
-			output = await this.evalLOGPOINT(tokens);
+		else if (cmd == '-addvar') {
+			output = await this.evalAddVar(tokens);
 		}
 		else if (cmd == '-ASSERTION' || cmd == '-assertion') {
 			output = await this.evalASSERTION(tokens);
@@ -1770,6 +1777,9 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-label' || cmd == '-l') {
 			output = await this.evalLabel(tokens);
+		}
+		else if (cmd == '-LOGPOINT' || cmd == '-logpoint') {
+			output = await this.evalLOGPOINT(tokens);
 		}
 		else if (cmd == '-md') {
 			output = await this.evalMemDump(tokens);
@@ -2280,6 +2290,12 @@ export class DebugSessionClass extends DebugSession {
 "-ASSERTION enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERTION breakpoints.
+"-addvar expression": Adds a variable/label to the VARIABLES pane. (Syntax is similar to the expressions in the WATCH panel.
+	However, data in the VARIABLES panel can be modified.)
+	- expression: See WATCHes in the DeZog help. In brief an expression is: label,type/size,count.
+		- label: One of your labels or an numeric address
+		- type/size: The size of your data structure. If you use a type (STRUCT) you should give the STRUCT name here.
+		- count: The number of elements to show.
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
@@ -2351,30 +2367,59 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
-	 * Evaluates a given expression.
+	 * Adds an expression (a label) into the VARIABLES pane.
+	 * Similar to WATCHes but in the VARIABLES pane it is also possible to
+	 * modify data.
 	 * @param tokens The arguments. I.e. the expression to evaluate.
  	 * @returns A Promise with a text to print.
 	 */
+	protected async evalAddVar(tokens: Array<string>): Promise<string> {
+		// Concatenate all tokens, i.e. spaces are of no interest
+		const expr = tokens.join(' ').trim();	// restore expression
+		if (expr.length == 0) {
+			// Error Handling: No arguments
+			throw new Error("Expression/label expected.");
+		}
+
+		try {
+			// Evaluate expression and create Variabels
+			//const item =
+			await this.evaluateLabelExpression(expr);
+			//containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
+			this.varLabels.push(expr);
+			return 'OK';
+		}
+		catch (e) {
+			return 'Error: ' + e.message;
+		}
+	}
+
+
+	/**
+	 * Evaluates a given expression.
+	 * @param tokens The arguments. I.e. the expression to evaluate.
+	 * @returns A Promise with a text to print.
+	 */
 	protected async evalEval(tokens: Array<string>): Promise<string> {
-		const expr=tokens.join(' ').trim();	// restore expression
-		if (expr.length==0) {
+		const expr = tokens.join(' ').trim();	// restore expression
+		if (expr.length == 0) {
 			// Error Handling: No arguments
 			throw new Error("Expression expected.");
 		}
 		// Evaluate expression
 		let result;
 		// Evaluate
-		const value=Utility.evalExpression(expr);
+		const value = Utility.evalExpression(expr);
 		// convert to decimal
-		result=value.toString();
+		result = value.toString();
 		// convert also to hex
-		result+=', '+value.toString(16).toUpperCase()+'h';
+		result += ', ' + value.toString(16).toUpperCase() + 'h';
 		// convert also to bin
-		result+=', '+value.toString(2)+'b';
+		result += ', ' + value.toString(2) + 'b';
 		// check for label
-		const labels=Labels.getLabelsPlusIndexForNumber64k(value);
-		if (labels.length>0) {
-			result+=', '+labels.join(', ');
+		const labels = Labels.getLabelsPlusIndexForNumber64k(value);
+		if (labels.length > 0) {
+			result += ', ' + labels.join(', ');
 		}
 
 		return result;
@@ -2388,8 +2433,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async evalExec(tokens: Array<string>): Promise<string> {
 		// Execute
-		const machineCmd=tokens.join(' ');
-		const textData=await Remote.dbgExec(machineCmd);
+		const machineCmd = tokens.join(' ');
+		const textData = await Remote.dbgExec(machineCmd);
 		// Return value
 		return textData;
 	}
@@ -2397,7 +2442,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 	/**
 	 * Evaluates a label.
-	 * @param tokens The arguments. I.e. the label.
+	 * evalEval almost gives the same information, but evalLabel allows
+	 * to use wildcards.
+	 * @param tokens The arguments. I.e. the label. E.g. "main" or "mai*".
  	 * @returns A Promise with a text to print.
 	 */
 	protected async evalLabel(tokens: Array<string>): Promise<string> {
