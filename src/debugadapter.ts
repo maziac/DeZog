@@ -8,7 +8,6 @@ import {Log} from './log';
 import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
-import {RefList} from './misc/reflist';
 import {Settings, SettingsParameters} from './settings';
 import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
@@ -30,6 +29,8 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
+import {VarRefList} from './misc/varreflist';
+import {RefList} from './misc/reflist';
 
 
 
@@ -56,11 +57,13 @@ export class DebugSessionClass extends DebugSession {
 	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the VARIABLES (references)
-	protected listVariables = new RefList<ShallowVar>();
+	protected listVariables = new VarRefList<ShallowVar>();
 
 	/// The list of labels that are shown in the VARIABLES section.
 	// Cleared on a launchRequest.
-	protected varLabels = new Array<string>(); // new ContainerVar();
+	protected containerVar: ContainerVar;
+	// And the reference to it.
+	protected containerVarRef: number;
 
 	/// Only one thread is supported.
 	public static THREAD_ID = 1;
@@ -428,7 +431,9 @@ export class DebugSessionClass extends DebugSession {
 			// Initialize
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
-			this.varLabels.length = 0;
+			this.listVariables.clear();
+			this.containerVar = new ContainerVar(this.listVariables);
+			this.containerVarRef = this.listVariables.addObject(this.containerVar);
 
 			// Action on changed value (i.e. when the user changed a value
 			// vscode is informed and will e.g. update the watches.)
@@ -1059,6 +1064,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): Promise<void> {
+		this.listVariables.tmpList.clear();		// Clear temporary list.
 		const scopes = new Array<Scope>();
 		const frameId = args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
@@ -1079,13 +1085,13 @@ export class DebugSessionClass extends DebugSession {
 		// Create variable object for Registers
 		const varRegistersMain = new RegistersMainVar();
 		// Add to list and get reference ID
-		let ref = this.listVariables.addObject(varRegistersMain);
+		let ref = this.listVariables.tmpList.addObject(varRegistersMain);
 		scopes.push(new Scope("Registers", ref));
 
 		// Create variable object for secondary Registers
 		const varRegisters2 = new RegistersSecondaryVar();
 		// Add to list and get reference ID
-		const ref2 = this.listVariables.addObject(varRegisters2);
+		const ref2 = this.listVariables.tmpList.addObject(varRegisters2);
 		scopes.push(new Scope("Registers 2", ref2));
 
 		// Get address
@@ -1095,43 +1101,25 @@ export class DebugSessionClass extends DebugSession {
 			// Create variable object for Disassembly
 			const varDisassembly = new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
 			// Add to list and get reference ID
-			const ref = this.listVariables.addObject(varDisassembly);
+			const ref = this.listVariables.tmpList.addObject(varDisassembly);
 			scopes.push(new Scope("Disassembly", ref));
 		}
 
 		// Create variable object for MemorySlots
 		const varMemorySlots = new MemorySlotsVar();
 		// Add to list and get reference ID
-		ref = this.listVariables.addObject(varMemorySlots);
+		ref = this.listVariables.tmpList.addObject(varMemorySlots);
 		scopes.push(new Scope("Memory", ref));
 
 		// Create variable object for the stack
 		const varStack = new StackVar(frame.stack, frame.stackStartAddress);
 		// Add to list and get reference ID
-		ref = this.listVariables.addObject(varStack);
+		ref = this.listVariables.tmpList.addObject(varStack);
 		scopes.push(new Scope("Local Stack", ref));
 
-
-
 		// Add to list and get reference ID
-		const containerVar = new ContainerVar(this.listVariables);
-		ref = this.listVariables.addObject(containerVar);
-		scopes.push(new Scope("Labels", ref));
+		scopes.push(new Scope("Labels", this.containerVarRef));
 
-		// TODO: do this with persistent variable references
-		for (const expr of this.varLabels) {
-			const item = await this.evaluateLabelExpression(expr);
-			containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
-		}
-
-		/*
-		let item = await this.evaluateLabelExpression('main');
-		containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
-		item = await this.evaluateLabelExpression('main,2');
-		containerVar.addItem('main,2', item.labelVar, item.type, item.value, item.indexedVariables);
-		item = await this.evaluateLabelExpression('lbl1');
-		containerVar.addItem('lbl1', item.labelVar, item.type, item.value, item.indexedVariables);
-		*/
 
 		// Send response
 		response.body = {scopes: scopes};
@@ -2107,7 +2095,16 @@ export class DebugSessionClass extends DebugSession {
 		this.sendResponse(response);
 	}
 
-	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
+
+	/**
+	 * Evaluates an expression/label and creates the ShallowVar structures.
+	 * @param expression E.g. "main,2,10"
+	 * @param refList The RefList to add sub variables to. I.e. this.listVariables.tmpList for Watches.
+	 * And this.listVariables for Variables (VARIABLES pane).
+	 * @returns All that is required for the VARIABLES pane or WATCHES.
+	 */
+	// TODO: Use also for watches.
+	protected async evaluateLabelExpression(expression: string, refList: RefList<ShallowVar>): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
@@ -2240,7 +2237,7 @@ export class DebugSessionClass extends DebugSession {
 					// Not 1 or 2 was given as size but e.g. a struct label
 					if (propsLength > 0) {
 						// Structure
-						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, refList);
 					}
 					if (!labelVar) {
 						// Simple memdump
@@ -2256,22 +2253,6 @@ export class DebugSessionClass extends DebugSession {
 
 					indexedVariables: elemCount
 				};
-				/*
-				// Add to list
-				const ref = (labelVar) ? this.listVariables.addObject(labelVar) : 0;
-				// Response
-				const description = Utility.getLongAddressString(labelValue64k);
-				*/
-					// labelValue64k is anyhow a 64k address
-				/*
-				return {
-					value: formattedValue,
-					variablesReference: ref,
-//						type: description,
-					//presentationHint: ,
-					//namedVariables: elemCount,
-			//		indexedVariables: elemCount
-				}*/
 			}	// If labelString
 		}	// If match
 
@@ -2383,10 +2364,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		try {
 			// Evaluate expression and create Variabels
-			//const item =
-			await this.evaluateLabelExpression(expr);
-			//containerVar.addItem('main', item.labelVar, item.type, item.value, item.indexedVariables);
-			this.varLabels.push(expr);
+			const item = await this.evaluateLabelExpression(expr, this.listVariables);
+			this.containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
 			return 'OK';
 		}
 		catch (e) {
@@ -3290,10 +3269,6 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 					response.body = {value: formattedString};
 					response.success = true;
 				}
-				// Update
-				//this.update();
-				// TODO: Soll ich generell updaten, oder dass dem MemoryDumpVar überlassen. Hier aber das Problem. Dass der nichts vom DebugAdapter oder Remote weiss.
-				// Wenn ich generell update, kann ich die Spezialbehandlung für die Register weglassen.
 			}
 		}
 		this.sendResponse(response);

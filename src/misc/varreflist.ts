@@ -16,8 +16,10 @@ export class VarRefList<type> extends RefList<type> {
 	// Temporary IDs start at this value. I.e. everything below is a persistent ID.
 	protected TMP_ID_START = 100_000;
 
-	// Temporary list
-	protected tmpObjs = new RefList<type>();
+	// Temporary list. Can also be used independently.
+	// To add a temporary object use: this.tmpList.addObject(...).
+	public tmpList = new RefList<type>(this.TMP_ID_START);
+
 
 	/**
 	 * Adds an object to the list and returns it's index.
@@ -27,17 +29,6 @@ export class VarRefList<type> extends RefList<type> {
 	public addObject(obj: any): number {
 		const id = super.addObject(obj);
 		Utility.assert(id < this.TMP_ID_START, 'RefList Error: Too many persistent variables.');
-		return id;
-	}
-
-
-	/**
-	 * Adds a temporary object.
-	 */
-	public addTmpObject(obj: any): number {
-		let id = this.tmpObjs.addObject(obj);
-		if (id != 0)
-			id += this.TMP_ID_START;
 		return id;
 	}
 
@@ -53,15 +44,7 @@ export class VarRefList<type> extends RefList<type> {
 			return super.getObject(ref);
 		}
 		// Temporary variable
-		return this.tmpObjs.getObject(ref - this.TMP_ID_START);
-	}
-
-
-	/**
-	 * Removes all temporary variables.
-	 */
-	public clearTemporary() {
-		this.tmpObjs.clear();
+		return this.tmpList.getObject(ref);
 	}
 
 
@@ -70,6 +53,6 @@ export class VarRefList<type> extends RefList<type> {
 	*/
 	public clear() {
 		super.clear();
-		this.clearTemporary();
+		this.tmpList.clear();
 	}
 }

@@ -24,6 +24,7 @@ suite('RefList', () => {
 	test('1 var', () => {
 		const origObj = new Object();
 		const r = refs.addObject(origObj);
+		assert.equal(r, 1);
 		// Checks
 		let obj = refs.getObject(r);
 		assert.equal(obj, origObj);
@@ -42,6 +43,21 @@ suite('RefList', () => {
 		let obj = refs.getObject(r1);
 		assert.equal(obj, origObj1);
 		obj = refs.getObject(r2);
+		assert.equal(obj, origObj2);
+	});
+
+	test('2 vars, startIndex', () => {
+		const rs = new RefList<Object>(10);
+		const origObj1 = new Object();
+		const r1 = rs.addObject(origObj1);
+		assert.equal(r1, 11);
+		const origObj2 = new Object();
+		const r2 = rs.addObject(origObj2);
+		assert.equal(r2, 12);
+		// Checks
+		let obj = rs.getObject(r1);
+		assert.equal(obj, origObj1);
+		obj = rs.getObject(r2);
 		assert.equal(obj, origObj2);
 	});
 

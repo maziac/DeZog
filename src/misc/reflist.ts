@@ -1,11 +1,29 @@
 
-import { Log } from '../log';
+import {Log} from '../log';
+import {Utility} from './utility';
 
 
 /**
  * Class for associating IDs with objects.
  */
 export class RefList<type> extends Array<type> {
+
+	// The start index, usually 0.
+	protected startIndex = 0;
+
+
+	/**
+	 * Constructor.
+	 * @param startIndex (Default = 0) An optional start index which is added to the
+	 * ref value.
+	 * E.g. if 0 (or empty) the first returned ref starts at 1.
+	 */
+	constructor(startIndex = 0) {
+		super();
+		Utility.assert(startIndex >= 0, "RefList: startIndex wrong.");
+		this.startIndex = startIndex;
+	}
+
 
 	/**
 	 * Adds an object to the list and returns it's index.
@@ -19,7 +37,7 @@ export class RefList<type> extends Array<type> {
 			return 0;
 		this.push(obj);
 		const id = this.length;
-		return id;
+		return id + this.startIndex;
 	}
 
 
@@ -29,6 +47,7 @@ export class RefList<type> extends Array<type> {
 	 * @returns The object or undefined if not found.
 	 */
 	public getObject(ref: number): any {
+		ref -= this.startIndex;
 		if (ref <= 0 || ref > this.length) {
 			Log.log('RefList Error: reference ' + ref + ' not found!');
 			return undefined;
