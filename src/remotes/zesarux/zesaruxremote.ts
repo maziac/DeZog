@@ -128,7 +128,7 @@ export class ZesaruxRemote extends RemoteBase {
 		zSocket.on('close', () => {
 			if(this.terminating)
 				return;
-			this.listFrames.length = 0;
+			this.listFrames.clear();
 			this.breakpoints.length = 0;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');

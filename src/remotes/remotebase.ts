@@ -1,6 +1,6 @@
 
 import {Z80RegistersClass, Z80_REG, Z80Registers} from './z80registers';
-import {RefList} from '../misc/refList';
+import {RefList} from '../misc/reflist';
 import {CallStackFrame} from '../callstackframe';
 import {EventEmitter} from 'events';
 import {GenericWatchpoint, GenericBreakpoint} from '../genericwatchpoint';

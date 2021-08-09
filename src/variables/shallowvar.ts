@@ -3,7 +3,7 @@ import { Labels } from '../labels/labels';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { Settings } from '../settings'
 import { Utility } from '../misc/utility';
-import { RefList } from '../misc/refList';
+import { RefList } from '../misc/reflist';
 import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';

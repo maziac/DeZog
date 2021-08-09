@@ -1,7 +1,7 @@
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
-import {RefList} from '../misc/refList';
+import {RefList} from '../misc/reflist';
 import {CallStackFrame} from '../callstackframe';
 import {Remote} from './remotefactory';
 import {Labels} from '../labels/labels';
