@@ -4,7 +4,6 @@ import { Log } from '../log';
 
 /**
  * Class for associating IDs with objects.
- * Used e.g. for the variable references.
  */
 export class RefList<type> extends Array<type> {
 
@@ -30,8 +29,8 @@ export class RefList<type> extends Array<type> {
 	 * @returns The object or undefined if not found.
 	 */
 	public getObject(ref: number): any {
-		if(ref<=0 || ref>this.length) {
-			Log.log('Error: reference '+ref+' not found!');
+		if (ref <= 0 || ref > this.length) {
+			Log.log('RefList Error: reference ' + ref + ' not found!');
 			return undefined;
 		}
 		const obj = this[ref-1];
@@ -56,6 +55,14 @@ export class RefList<type> extends Array<type> {
 		if (this.length == 0)
 			return undefined;
 		return this[this.length-1];
+	}
+
+
+	/**
+	 * Removes all variables.
+	*/
+	public clear() {
+		this.length = 0;
 	}
 
 }
