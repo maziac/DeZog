@@ -43,12 +43,20 @@ vscode -> ZXDebug: variablesRequest(varID)
 vscode <-- ZXDebug: response(variables)
 
 
-== hovering, watch ==
+== hovering ==
 
 vscode -> ZXDebug: evaluateRequest(expression, frameID, context)
 vscode <-- ZXDebug: response(result, varID)
 
-note over vscode, ZXDebug: If the expression/variable is opened in the WATCH area
+
+== watch ==
+
+note over vscode, ZXDebug: evaluateRequest is not only done on first input but on every step.
+
+vscode -> ZXDebug: evaluateRequest(expression, frameID, context)
+vscode <-- ZXDebug: response(result, varID)
+
+note over vscode, ZXDebug: if the evaluate Request does not return a simple value but a varID.\nvarIDs are stored only temporarily until the next step.
 
 vscode -> ZXDebug: variablesRequest(varID)
 vscode <-- ZXDebug: response(variables)

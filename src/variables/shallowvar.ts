@@ -90,24 +90,13 @@ export class ShallowVarConst extends ShallowVar {
 export class DisassemblyVar extends ShallowVarConst {
 
 	/// The address the disassembly should start
-	private addr: number;
+	public address: number;
 
 	/// The number of lines for the disassembly
-	private count: number;
+	public count: number;
 
 	/// Pointer to the disassembly history.
 	protected disassemblyHistory: Array<{address: number, text: string}>;
-
-	/**
-	 * Constructor.
-	 * @param addr The address the disassembly should start
-	 * @param count The number of lines for the disassembly
-	 */
-	public constructor(addr: number, count: number) {
-		super();
-		this.addr = addr&0xFFFF;
-		this.count = count;
-	}
 
 
 	/**
@@ -118,10 +107,10 @@ export class DisassemblyVar extends ShallowVarConst {
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
 		// Get code memory
 		const size=4*this.count;	// 4 is the max size of an opcode
-		const data=await Remote.readMemoryDump(this.addr, size);
+		const data=await Remote.readMemoryDump(this.address, size);
 
 		// Disassemble
-		const dasmArray=DisassemblyClass.get(this.addr, data, this.count);
+		const dasmArray=DisassemblyClass.get(this.address, data, this.count);
 
 		// Add extra info
 		const list=new Array<DebugProtocol.Variable>();
@@ -297,12 +286,11 @@ export class StackVar extends ShallowVar {
 	private stackAddress: number;	/// The start address of the stack.
 
 	/**
-	 * Constructor.
+	 * Sets stack array and address.
 	 * @param stack The array containing the pushed data (address + value).
 	 * @param stackAddress The start address of the stack (the top). The stack grows to bottom.
 	 */
-	public constructor(stack: Array<number>, stackAddress: number) {
-		super();
+	public setFrameAddress(stack: Array<number>, stackAddress: number) {
 		this.stack = stack;
 		this.stackAddress = stackAddress;
 	}
