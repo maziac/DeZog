@@ -59,11 +59,21 @@ export class DebugSessionClass extends DebugSession {
 	/// A list for the VARIABLES (references)
 	protected listVariables = new VarRefList<ShallowVar>();
 
+	// A list with the expressions used in the WATCHes panel.
+	// This is a very dynamic list. At threadsRequest the list is cleared.
+	// Then for every evaluateRequest the expression is added.
+	// A new variable (evaluateLabelsRequest) is only done if the expression does
+	// not exist yet in the list. Because, if it exists, the variable reference
+	// exists as well.
+
 	/// The list of labels that are shown in the VARIABLES section.
-	// Cleared on a launchRequest.
 	protected containerVar: ContainerVar;
-	// And the reference to it.
-	protected containerVarRef: number;
+
+	/// The disassembly that is shown in the VARIABLES section.
+	protected disassemblyVar: DisassemblyVar;
+
+	/// The local stack that is shown in the VARIABLES section.
+	protected localStackVar: StackVar;
 
 	/// Only one thread is supported.
 	public static THREAD_ID = 1;
@@ -426,14 +436,12 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
+	protected scopes: Array<Scope>;
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
 			// Initialize
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
-			this.listVariables.clear();
-			this.containerVar = new ContainerVar(this.listVariables);
-			this.containerVarRef = this.listVariables.addObject(this.containerVar);
 
 			// Action on changed value (i.e. when the user changed a value
 			// vscode is informed and will e.g. update the watches.)
@@ -451,6 +459,21 @@ export class DebugSessionClass extends DebugSession {
 			// Save args
 			Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
+
+			// Persistent variable references
+			this.listVariables.clear();
+			this.containerVar = new ContainerVar(this.listVariables);
+			this.disassemblyVar = new DisassemblyVar();
+			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
+			this.localStackVar = new StackVar();
+			this.scopes = [
+				new Scope("Registers", this.listVariables.addObject(new RegistersMainVar())),
+				new Scope("Registers 2", this.listVariables.addObject(new RegistersSecondaryVar())),
+				new Scope("Disassembly", this.listVariables.addObject(this.disassemblyVar)),
+				new Scope("Memory Banks", this.listVariables.addObject(new MemorySlotsVar())),
+				new Scope("Local Stack", this.listVariables.addObject(this.localStackVar)),
+				new Scope("Labels", this.listVariables.addObject(this.containerVar)),
+			];
 		}
 		catch (e) {
 			// Some error occurred
@@ -1065,7 +1088,6 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): Promise<void> {
 		//this.listVariables.tmpList.clear();		// Clear temporary list.
-		const scopes = new Array<Scope>();
 		const frameId = args.frameId;
 		//const frame = this.listFrames.getObject(frameId);
 		let frame;
@@ -1077,52 +1099,19 @@ export class DebugSessionClass extends DebugSession {
 		}
 		if (!frame) {
 			// No frame found, send empty response
-			response.body = {scopes: scopes};
+			response.body = {scopes: []};
 			this.sendResponse(response);
 			return;
 		}
 
-		// Create variable object for Registers
-		const varRegistersMain = new RegistersMainVar();
-		// Add to list and get reference ID
-		let ref = this.listVariables.tmpList.addObject(varRegistersMain);
-		scopes.push(new Scope("Registers", ref));
-
-		// Create variable object for secondary Registers
-		const varRegisters2 = new RegistersSecondaryVar();
-		// Add to list and get reference ID
-		const ref2 = this.listVariables.tmpList.addObject(varRegisters2);
-		scopes.push(new Scope("Registers 2", ref2));
-
-		// Get address
-		if (frame) {
-			// use address
-			const addr = frame.addr & 0xFFFF;
-			// Create variable object for Disassembly
-			const varDisassembly = new DisassemblyVar(addr, Settings.launch.disassemblerArgs.numberOfLines);
-			// Add to list and get reference ID
-			const ref = this.listVariables.tmpList.addObject(varDisassembly);
-			scopes.push(new Scope("Disassembly", ref));
-		}
-
-		// Create variable object for MemorySlots
-		const varMemorySlots = new MemorySlotsVar();
-		// Add to list and get reference ID
-		ref = this.listVariables.tmpList.addObject(varMemorySlots);
-		scopes.push(new Scope("Memory", ref));
+		// Set disassembly address
+		this.disassemblyVar.address = frame.addr & 0xFFFF;
 
 		// Create variable object for the stack
-		const varStack = new StackVar(frame.stack, frame.stackStartAddress);
-		// Add to list and get reference ID
-		ref = this.listVariables.tmpList.addObject(varStack);
-		scopes.push(new Scope("Local Stack", ref));
-
-		// Add to list and get reference ID
-		scopes.push(new Scope("Labels", this.containerVarRef));
-
+		this.localStackVar.setFrameAddress(frame.stack, frame.stackStartAddress);
 
 		// Send response
-		response.body = {scopes: scopes};
+		response.body = {scopes: this.scopes};
 		this.sendResponse(response);
 	}
 
@@ -1841,6 +1830,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		// Check if its a debugger command
 		const expression = args.expression.trim();
+		console.log('evaluateRequest: ' + expression);	// TODO: REMOVE log.
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
 		if (cmd == undefined) {
@@ -1926,161 +1916,15 @@ export class DebugSessionClass extends DebugSession {
 
 		// WATCH or else
 		try {
+			const result = await this.evaluateLabelExpression(expression, this.listVariables.tmpList);
+			const ref = this.listVariables.tmpList.addObject(result.labelVar);
+			response.body = {
+				result: result.value,
+				variablesReference: ref,
+				type: result.type,
+				indexedVariables: result.indexedVariables
+			}
 
-			// Check if it is a label (or double register). A label may have a special formatting:
-			// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
-			// or even a complete struct
-			// "invaders,INVADER,5" = Address: invaders, INVADER STRUCT, 5 elements
-			// If the count is > 1 then an array is displayed. If left then 1 is assumed.
-			// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
-			// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-			const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
-			if (match) {
-				let labelString = match[1];
-				let lblIndexString = match[3];
-				let lblType = match[5];
-				let elemCountString = match[7];
-				// Defaults
-				if (labelString) {
-					let labelValue;
-					let lastLabel;
-					let modulePrefix;
-					let lblIndex = 0;
-					let elemCount = 1;	// Use 1 as default
-					let elemSize = 1;	// Use 1 as default (if no type/size given)
-
-					// First check for module name and local label prefix (sjasmplus).
-					const pcLongAddr = Remote.getPCLong();
-					const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-					// Local label and prefix
-					lastLabel = entry.lastLabel;
-					modulePrefix = entry.modulePrefix;
-					// Convert label (+expression)
-					labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
-
-					if (isNaN(labelValue))
-						throw Error("Could not parse label.");
-
-					// Get size from type
-					if (lblType) {
-						//elemSize = Labels.getNumberFromString64k(lblType);
-						elemSize = Utility.evalExpression(lblType, true, modulePrefix, lastLabel);
-						if (isNaN(elemSize))
-							throw Error("Could not parse element size.");
-						if (elemSize <= 0)
-							throw Error("Element size must be > 0, is " + elemSize + ".");
-					}
-
-					// And index "[x]"
-					if (lblIndexString) {
-						lblIndex = Utility.evalExpression(lblIndexString, false, modulePrefix, lastLabel);
-						if (isNaN(lblIndex))
-							throw Error("Could not parse index.");
-						if (lblIndex < 0)
-							throw Error("Index must be > 0, is " + lblIndex + ".");
-					}
-
-					// Check count
-					if (elemCountString) {
-						elemCount = Utility.evalExpression(elemCountString, true, modulePrefix, lastLabel);
-						if (isNaN(elemCount))
-							throw Error("Could not parse element count.");
-						if (elemCount <= 0)
-							throw Error("Element count must be > 0, is " + elemCount + ".");
-					}
-					else {
-						// If no count is given try to estimate it by calculating the distance to
-						// the next label.
-						// Note: labelValue is 64k only. So first check if the label name is simply a name without calculation.
-						// If yes, use it. If no use labelValue.
-						let distAddr = Labels.getNumberForLabel(labelString);
-						// If not a long address then use the 64k value
-						if (distAddr == undefined)
-							distAddr = labelValue;
-						// Try to get the distance to the next label:
-						// Note: Does not work for structs as the next label would
-						// be inside the struct.
-						elemCount = Labels.getDistanceToNextLabel(distAddr!) || 1;
-						// Check special case
-						if (!lblType && elemCount == 2) {
-							// Special case: 1 word. Exchange size and count
-							elemSize = 2;
-							elemCount = 1;
-						}
-						else {
-							// Divide elemCount by elemSize
-							elemCount = Math.floor((elemCount + elemSize - 1) / elemSize);
-							// Limit minimal number
-							if (elemCount < 1)
-								elemCount = 1;
-							// Limit max. number
-							if (elemCount > 1000)
-								elemCount = 1000;
-						}
-					}
-
-					// Add index
-					const indexOffset = lblIndex * elemSize;
-					const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
-
-					// Create fullLabel
-					//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
-					// Create a label variable
-					let labelVar;
-					let formattedValue = '';
-					// Check for sub labels (i.e. check for struct)
-					let props;
-					let propsLength = 0
-					if (lblType != undefined) {
-						props = Labels.getSubLabels(lblType);
-						propsLength = props.length;
-					}
-					// Get sub properties
-					if (elemSize <= 2 && propsLength == 0) {
-						// Check for single value or array (no sub properties)
-						if (elemCount <= 1) {
-							// Single value
-							// Read memory
-							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-							let memVal = memory[0];
-							if (elemSize == 1)
-								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
-							else {
-								memVal += 256 * memory[1];
-								formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
-							}
-						}
-						else {
-							// Simple memdump
-							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
-						}
-					}
-					else {
-						// Not 1 or 2 was given as size but e.g. a struct label
-						if (propsLength > 0) {
-							// Structure
-							labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
-						}
-						if (!labelVar) {
-							// Simple memdump
-							labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
-						}
-					}
-
-					// Add to list
-					const ref = this.listVariables.tmpList.addObject(labelVar);
-					// Response
-					const description = Utility.getLongAddressString(labelValue64k);	// labelValue64k is anyhow a 64k address
-					response.body = {
-						result: formattedValue,
-						variablesReference: ref,
-						type: description,
-						//presentationHint: ,
-						//namedVariables: elemCount,
-						indexedVariables: elemCount
-					}
-				}	// If labelString
-			}	// If match
 		}	// try
 		catch (e) {
 			// Return empty response
@@ -2091,6 +1935,7 @@ export class DebugSessionClass extends DebugSession {
 			this.sendResponse(response);
 			return;
 		}
+		
 		// Default: return nothing
 		this.sendResponse(response);
 	}
@@ -2250,7 +2095,6 @@ export class DebugSessionClass extends DebugSession {
 					labelVar,
 					value: formattedValue,
 					type: description,
-
 					indexedVariables: elemCount
 				};
 			}	// If labelString
