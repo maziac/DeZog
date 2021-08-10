@@ -3,12 +3,40 @@
 //import {Utility} from './utility';
 
 
+/**
+ * The additional values that have to be stored for the variable
+ * and that are returned on a 'get'.
+ */
+interface WatchesResponse {
+	/** The result of the evaluate request. */
+	result: string;
 
+	/** The optional type of the evaluate result.
+		This attribute should only be returned by a debug adapter if the client has passed the value true for the 'supportsVariableType' capability of the 'initialize' request.
+	*/
+	type: string;
+	/** Properties of a evaluate result that can be used to determine how to render the result in the UI. */
+
+	variablesReference: number;
+
+	/** The number of indexed child variables.
+		The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
+		The value should be less than or equal to 2147483647 (2^31-1).
+	*/
+	indexedVariables?: number;
+}
+
+
+/**
+ * The items that are stored in the list.
+ */
 interface WatchExpression {
 	// The expression, e.g. "main+4, 2, 5"
 	expression: string;
 	// If it was used recently.
 	used: boolean;
+	// The complete response for the evaluateRequest
+	respBody: WatchesResponse;
 }
 
 
@@ -44,34 +72,49 @@ export class WatchesList {
 
 	/**
 	 * Check if expression is in the list.
-	 * If not it is added.
-	 * The 'used' flag is set to true for the expression.
+	 * The 'used' flag is set to true for the expression if it was found.
 	 * @param expression The expression string to check for.
-	 * @returns true if the expression is in the list. false if not.
+	 * @returns The associated response or undefined if not found.
 	 */
-	public using(expression: string): boolean {
+	public get(expression: string): WatchesResponse|undefined {
 		// Search for expression
 		for (const watch of this.list) {
 			if (watch.expression == expression) {
 			 	watch.used = true;
-				return true;
+				return watch.respBody;
 			}
 		}
 		// Not found
+		return undefined;
+	}
+
+
+	/**
+	 * Adds an item to the list.
+	 * @param expression The expression to store.
+	 * @param respBody The complete response with the variable reference.
+	 */
+	public push(expression: string, respBody: WatchesResponse) {
 		this.list.push({
 			expression,
-			used: true
+			used: true,
+			respBody
 		});
-		return false;
 	}
 
 
 	/**
 	 * Removes all entires with 'used' == false flags.
+	 * Note: Unused entries are removed with one step delay.
+	 * That is: when the WATCH is removed this does not have any immediate
+	 * effect. Only the next step will notice that the watch is not used.
+	 * Then at the step after the entry is finally removed here.
 	 */
 	public clearUnused() {
 		// Create new list with only used==true.
 		const newList = this.list.filter(entry => entry.used);
 		this.list = newList;
+		// Mark all remaining as 'used'=false
+		this.list.forEach(entry => entry.used = false);
 	}
 }

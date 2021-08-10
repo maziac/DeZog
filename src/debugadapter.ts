@@ -31,6 +31,7 @@ import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {VarRefList} from './misc/varreflist';
 import {RefList} from './misc/reflist';
+import {WatchesList} from './misc/watcheslist';
 
 
 
@@ -60,11 +61,7 @@ export class DebugSessionClass extends DebugSession {
 	protected listVariables = new VarRefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel.
-	// This is a very dynamic list. At threadsRequest the list is cleared.
-	// Then for every evaluateRequest the expression is added.
-	// A new variable (evaluateLabelsRequest) is only done if the expression does
-	// not exist yet in the list. Because, if it exists, the variable reference
-	// exists as well.
+	protected watchesList = new WatchesList();
 
 	/// The list of labels that are shown in the VARIABLES section.
 	protected containerVar: ContainerVar;
@@ -792,6 +789,9 @@ export class DebugSessionClass extends DebugSession {
 	 * Returns the one and only "thread".
 	 */
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
+		// Clear the unused variables from the watches list
+		this.watchesList.clearUnused();
+
 		// Just return a default thread.
 		response.body = {
 			threads: [
@@ -1914,16 +1914,25 @@ export class DebugSessionClass extends DebugSession {
 		}	// Hover
 
 
-		// WATCH or else
+		// WATCH
 		try {
-			const result = await this.evaluateLabelExpression(expression, this.listVariables.tmpList);
-			const ref = this.listVariables.tmpList.addObject(result.labelVar);
-			response.body = {
-				result: result.value,
-				variablesReference: ref,
-				type: result.type,
-				indexedVariables: result.indexedVariables
+			// Check if variable for this expression already exists
+			let respBody = this.watchesList.get(expression);
+			if (!respBody) {
+				// Create a variable
+				const result = await this.evaluateLabelExpression(expression, this.listVariables);
+				const ref = this.listVariables.addObject(result.labelVar);
+				respBody = {
+					result: result.value,
+					variablesReference: ref,
+					type: result.type,
+					indexedVariables: result.indexedVariables
+				}
+				// Remember
+				if(ref != 0)
+					this.watchesList.push(expression, respBody);
 			}
+			response.body = respBody;
 
 		}	// try
 		catch (e) {
@@ -1935,7 +1944,7 @@ export class DebugSessionClass extends DebugSession {
 			this.sendResponse(response);
 			return;
 		}
-		
+
 		// Default: return nothing
 		this.sendResponse(response);
 	}
