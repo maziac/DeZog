@@ -29,7 +29,6 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
-import {VarRefList} from './misc/varreflist';
 import {RefList} from './misc/reflist';
 import {WatchesList} from './misc/watcheslist';
 
@@ -58,7 +57,7 @@ export class DebugSessionClass extends DebugSession {
 	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the VARIABLES (references)
-	protected listVariables = new VarRefList<ShallowVar>();
+	protected listVariables = new RefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel.
 	protected watchesList = new WatchesList();
@@ -835,9 +834,6 @@ export class DebugSessionClass extends DebugSession {
 		let doDisassembly = false;
 		const fetchAddresses = new Array<number>();
 		let frameCount = 0;
-
-		// Clear all temporary variables
-		this.listVariables.tmpList.clear();
 
 		// Get the call stack trace.
 		let callStack;
