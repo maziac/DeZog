@@ -1807,7 +1807,7 @@ export class DebugSessionClass extends DebugSession {
 			const panel = new TextView(viewTitle, output);
 			await panel.update();
 			// Send empty response
-			return '';
+			return 'OK';
 		}
 		else {
 			// Output text to console
@@ -1819,14 +1819,21 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Is called when hovering or when an expression is added to the watches.
 	 * Or if commands are input in the debug console.
-	 * both have different formats:
+	 * All have different formats:
 	 * - hovering: "word", e.g. "data_b60" or ".loop" or "HL"
 	 * - debug console: starts with "-", e.g. "-wpmem enable"
+	 * - watch: anything else.
+	 * args.context contains info that the request comes from the console, watch panel or hovering.
+	 * 'watch': evaluate is run in a watch.
+     * 'repl': evaluate is run from REPL console.
+     * 'hover': evaluate is run from a data hover.
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
+		Log.log('evaluate.expression: ' + args.expression);
+		Log.log('evaluate.context: ' + args.context);
+
 		// Check if its a debugger command
 		const expression = args.expression.trim();
-		console.log('evaluateRequest: ' + expression);	// TODO: REMOVE log.
 		const tokens = expression.split(' ');
 		const cmd = tokens.shift();
 		if (cmd == undefined) {
@@ -1834,114 +1841,113 @@ export class DebugSessionClass extends DebugSession {
 			return;
 		}
 
-		// Check for debug console
-		if (expression.startsWith('-')) {
-			try {
-				if (expression.startsWith('-')) {
-					const text = await this.evaluateCommand(expression);
-					this.sendEvalResponse(text, response);
+		// Check context
+		switch (args.context) {
+			// Debug Console
+			case 'repl':
+				let text;
+				try {
+					text = await this.evaluateCommand(expression);
+					response.body = {result: text + "\n\n", type: undefined, presentationHint: undefined, variablesReference: 0, namedVariables: undefined, indexedVariables: undefined};
 				}
-			}
-			catch (err) {
-				let output = "Error";
-				if (err.message)
-					output += ': ' + err.message;
-				this.sendEvalResponse(output, response);
-			}
-			return;
-		}
-
-		// Hover or WATCH
-		Log.log('evaluate.expression: ' + args.expression);
-		Log.log('evaluate.context: ' + args.context);
-		Log.log('evaluate.format: ' + args.format);
-
-		// Check for hover
-		if (args.context == 'hover') {
-			let formattedValue = '';
-			try {
-				// Check for registers
-				if (Z80RegistersClass.isRegister(expression)) {
-					formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
+				catch (err) {
+					text = "Error";
+					if (err.message)
+						text += ': ' + err.message;
 				}
-				else {
-					// Label
-					// Check if a 2nd line (memory content) is required
-					if (!Z80RegistersClass.isSingleRegister(expression)) {
-						// If hovering only the label address + byte and word contents are shown.
-						// First check for module name and local label prefix (sjasmplus).
-						const pcLongAddr = Remote.getPCLong();
-						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-						// Local label and prefix
-						const lastLabel = entry.lastLabel;
-						const modulePrefix = entry.modulePrefix;
-						// Get label value
-						const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
-						if (labelValue != undefined) {
-							// Get content
-							const memDump = await Remote.readMemoryDump(labelValue, 2);
-							// Format byte
-							const memByte = memDump[0];
-							const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
-							// Format word
-							const memWord = memByte + 256 * memDump[1];
-							const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
-							// Format output
-							const addrString = Utility.getHexString(labelValue, 4) + 'h';
-							if (!formattedValue)
-								formattedValue = expression + ': ' + addrString;
-							// Second line
-							formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
+				response.body = {
+					result: text + "\n\n",
+					type: undefined,
+					presentationHint: undefined,
+					variablesReference: 0,
+					namedVariables: undefined,
+					indexedVariables: undefined
+				};
+				break;
+
+			// Hover
+			case 'hover':
+				let formattedValue = '';
+				try {
+					// Check for registers
+					if (Z80RegistersClass.isRegister(expression)) {
+						formattedValue = await Utility.getFormattedRegister(expression, Z80RegisterHoverFormat);
+					}
+					else {
+						// Label
+						// Check if a 2nd line (memory content) is required
+						if (!Z80RegistersClass.isSingleRegister(expression)) {
+							// If hovering only the label address + byte and word contents are shown.
+							// First check for module name and local label prefix (sjasmplus).
+							const pcLongAddr = Remote.getPCLong();
+							const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+							// Local label and prefix
+							const lastLabel = entry.lastLabel;
+							const modulePrefix = entry.modulePrefix;
+							// Get label value
+							const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+							if (labelValue != undefined) {
+								// Get content
+								const memDump = await Remote.readMemoryDump(labelValue, 2);
+								// Format byte
+								const memByte = memDump[0];
+								const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+								// Format word
+								const memWord = memByte + 256 * memDump[1];
+								const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+								// Format output
+								const addrString = Utility.getHexString(labelValue, 4) + 'h';
+								if (!formattedValue)
+									formattedValue = expression + ': ' + addrString;
+								// Second line
+								formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
+							}
 						}
 					}
 				}
-			}
-			catch {
-				// Ignore any error during hover.
-			}
-			// Response
-			response.body = {
-				result: formattedValue,
-				variablesReference: 0
-			}
-			// Return
-			this.sendResponse(response);
-			return;
-		}	// Hover
-
-
-		// WATCH
-		try {
-			// Check if variable for this expression already exists
-			let respBody = this.watchesList.get(expression);
-			if (!respBody) {
-				// Create a variable
-				const result = await this.evaluateLabelExpression(expression, this.listVariables);
-				const ref = this.listVariables.addObject(result.labelVar);
-				respBody = {
-					result: result.value,
-					variablesReference: ref,
-					type: result.type,
-					indexedVariables: result.indexedVariables
+				catch {
+					// Ignore any error during hovering.
 				}
-				// Remember
-				if(ref != 0)
-					this.watchesList.push(expression, respBody);
-			}
-			response.body = respBody;
+				// Response
+				response.body = {
+					result: formattedValue,
+					variablesReference: 0
+				}
+				break;
 
-		}	// try
-		catch (e) {
-			// Return empty response
-			response.body = {
-				result: e.message,
-				variablesReference: 0
-			}
-			this.sendResponse(response);
-			return;
+			// Watch
+			case 'watch':
+				try {
+					// Check if variable for this expression already exists
+					let respBody = this.watchesList.get(expression);
+					if (!respBody) {
+						// Create a variable
+						const result = await this.evaluateLabelExpression(expression, this.listVariables);
+						const ref = this.listVariables.addObject(result.labelVar);
+						respBody = {
+							result: result.value,
+							variablesReference: ref,
+							type: result.type,
+							indexedVariables: result.indexedVariables
+						}
+						// Remember
+						if (ref != 0)
+							this.watchesList.push(expression, respBody);
+					}
+					response.body = respBody;
+
+				}	// try
+				catch (e) {
+					// Return empty response
+					response.body = {
+						result: e.message,
+						variablesReference: 0
+					}
+				}
+				break;
 		}
 
-		// Default: return nothing
+		// Respond
 		this.sendResponse(response);
 	}
 
@@ -1953,7 +1959,6 @@ export class DebugSessionClass extends DebugSession {
 	 * And this.listVariables for Variables (VARIABLES pane).
 	 * @returns All that is required for the VARIABLES pane or WATCHES.
 	 */
-	// TODO: Use also for watches.
 	protected async evaluateLabelExpression(expression: string, refList: RefList<ShallowVar>): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
@@ -2214,6 +2219,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		try {
 			// Evaluate expression and create Variabels
 			const item = await this.evaluateLabelExpression(expr, this.listVariables);
+			if (!item.labelVar)
+				throw Error(expr + ' does not contain a label.');
 			this.containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
 			return 'OK';
 		}
@@ -3082,6 +3089,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param text The text to display in the debug console.
 	 * @param response The response object.
 	 */
+	// TODO : REMOVE
 	protected sendEvalResponse(text: string, response: DebugProtocol.EvaluateResponse) {
 		response.body={result: text+"\n\n", type: undefined, presentationHint: undefined, variablesReference: 0, namedVariables: undefined, indexedVariables: undefined};
 		this.sendResponse(response);

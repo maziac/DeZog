@@ -1,9 +1,11 @@
 # Changelog
 
 # 2.3.0
+- Added "-addvar" command to add variables/labels to the VARIABLEs pane.
 - Added "-mvw" to display a memory viewer that display the memory organized in words instead of bytes.
 - Added "-msetb/w" command: See help ("-h"). With mset you can change single memory locations or fill a complete area.
 - Fix: register colors in memory views now also updated if the memory view is not focused.
+- Refactored/optimized variable references.
 
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.

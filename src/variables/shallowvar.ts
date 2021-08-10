@@ -855,7 +855,7 @@ export class ContainerVar extends ShallowVar {
 		//	return 'Altering values not allowed in time-travel mode.';
 		// Otherwise allow
 		//return undefined;
-		return 'Use -addLabel/-removeLabel to change the list of variables.';
+		return 'Use -addVar/-rmVar to change the list of variables.';
 	}
 
 
