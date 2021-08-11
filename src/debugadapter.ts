@@ -789,7 +789,9 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
 		// Clear the unused variables from the watches list
-		this.watchesList.clearUnused();
+		const removedRefs = this.watchesList.clearUnused();
+		// And remove the variables from the global list
+		this.listVariables.removeObjects(removedRefs);
 
 		// Just return a default thread.
 		response.body = {

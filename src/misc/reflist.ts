@@ -5,6 +5,9 @@ import {Utility} from './utility';
 
 /**
  * Class for associating IDs with objects.
+ * Note:
+ * Use of length is unreliable as the list may contain also undefined items.
+ * This happens when entries are removed.
  */
 export class RefList<type> extends Array<type> {
 
@@ -35,6 +38,14 @@ export class RefList<type> extends Array<type> {
 	public addObject(obj: any): number {
 		if (obj == undefined)
 			return 0;
+		// First check if there maybe is an undefined entry (because of 'remove')
+		const foundIndex = this.indexOf(undefined as any);
+		if (foundIndex >= 0) {
+			// Re-use
+			this[foundIndex] = obj;
+			return foundIndex + this.startIndex + 1;
+		}
+		// New entry
 		this.push(obj);
 		const id = this.length;
 		return id + this.startIndex;
@@ -52,7 +63,10 @@ export class RefList<type> extends Array<type> {
 			Log.log('RefList Error: reference ' + ref + ' not found!');
 			return undefined;
 		}
-		const obj = this[ref-1];
+		const obj = this[ref - 1];
+		if (obj == undefined) {
+			Log.log('RefList Error: reference ' + ref + ' not found (inside)!');
+		}
 		return obj;
 	}
 
@@ -78,8 +92,24 @@ export class RefList<type> extends Array<type> {
 
 
 	/**
+	 * Removes the variables that are passed as references.
+	 * Note: this can lead to undefined entries in the array.
+	 * @param refs An array with the variable references to remove.
+	 */
+	public removeObjects(refs: number[]) {
+		const length = this.length;
+		for (const ref of refs) {
+			const i = ref - this.startIndex - 1;
+			if (i >= 0 && i < length) {
+				this[i] = undefined as any;
+			}
+		}
+	}
+
+
+	/**
 	 * Removes all variables.
-	*/
+	 */
 	public clear() {
 		this.length = 0;
 	}

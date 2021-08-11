@@ -31,18 +31,29 @@ suite('WatchesList', () => {
 	});
 
 	test('clearUnused', () => {
-		wl.push('a', {val: 1} as any);
-		wl.push('b', {val: 2} as any);
-		wl.clearUnused();
+		wl.push('a', {variablesReference: 1} as any);
+		wl.push('b', {variablesReference: 2}  as any);
+		let removedRefs = wl.clearUnused();
+		assert.equal(removedRefs.length, 0);
 
 		// Checks
-		let resp = wl.get('a') as any;
-		assert.equal(resp.val, 1);
+		let respBody = wl.get('a') as any;
+		assert.equal(respBody.variablesReference, 1);
 
-		wl.clearUnused();	// Should remove 'b'
+		removedRefs = wl.clearUnused();	// Should remove 'b'
+		assert.equal(removedRefs.length, 1);
+		assert.equal(removedRefs[0], 2);
 
-		resp = wl.get('b');
-		assert.equal(resp, undefined);
+		respBody = wl.get('b');
+		assert.equal(respBody, undefined);
+
+		// Next call will removed everything
+		removedRefs = wl.clearUnused();
+		assert.equal(removedRefs.length, 1);
+
+		// Now everything is removed
+		removedRefs = wl.clearUnused();
+		assert.equal(removedRefs.length, 0);
 	});
 
 });

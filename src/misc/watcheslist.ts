@@ -109,12 +109,18 @@ export class WatchesList {
 	 * That is: when the WATCH is removed this does not have any immediate
 	 * effect. Only the next step will notice that the watch is not used.
 	 * Then at the step after the entry is finally removed here.
+	 * @returns The array of removed references. Is used to remove the references
+	 * from the global variables list, too.
 	 */
-	public clearUnused() {
+	public clearUnused(): Array<number> {
+		// Get list of to-be-removed entries.
+		const removedRefs = this.list.filter(entry => entry.used == false).map(entry => entry.respBody.variablesReference);
 		// Create new list with only used==true.
 		const newList = this.list.filter(entry => entry.used);
 		this.list = newList;
 		// Mark all remaining as 'used'=false
 		this.list.forEach(entry => entry.used = false);
+		// Return
+		return removedRefs;
 	}
 }
