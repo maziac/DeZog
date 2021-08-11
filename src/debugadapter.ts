@@ -29,8 +29,8 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
-import {RefList} from './misc/reflist';
 import {WatchesList} from './misc/watcheslist';
+import {RemovableRefList} from './misc/removablereflist';
 
 
 
@@ -57,7 +57,7 @@ export class DebugSessionClass extends DebugSession {
 	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the VARIABLES (references)
-	protected listVariables = new RefList<ShallowVar>();
+	protected listVariables = new RemovableRefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel.
 	protected watchesList = new WatchesList();
@@ -1924,7 +1924,7 @@ export class DebugSessionClass extends DebugSession {
 					let respBody = this.watchesList.get(expression);
 					if (!respBody) {
 						// Create a variable
-						const result = await this.evaluateLabelExpression(expression, this.listVariables);
+						const result = await this.evaluateLabelExpression(expression);
 						const ref = this.listVariables.addObject(result.labelVar);
 						respBody = {
 							result: result.value,
@@ -1957,11 +1957,9 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Evaluates an expression/label and creates the ShallowVar structures.
 	 * @param expression E.g. "main,2,10"
-	 * @param refList The RefList to add sub variables to. I.e. this.listVariables.tmpList for Watches.
-	 * And this.listVariables for Variables (VARIABLES pane).
 	 * @returns All that is required for the VARIABLES pane or WATCHES.
 	 */
-	protected async evaluateLabelExpression(expression: string, refList: RefList<ShallowVar>): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
+	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
@@ -2094,7 +2092,7 @@ export class DebugSessionClass extends DebugSession {
 					// Not 1 or 2 was given as size but e.g. a struct label
 					if (propsLength > 0) {
 						// Structure
-						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, refList);
+						labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
 					}
 					if (!labelVar) {
 						// Simple memdump
@@ -2220,7 +2218,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		try {
 			// Evaluate expression and create Variabels
-			const item = await this.evaluateLabelExpression(expr, this.listVariables);
+			const item = await this.evaluateLabelExpression(expr);
 			if (!item.labelVar)
 				throw Error(expr + ' does not contain a label.');
 			this.containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);

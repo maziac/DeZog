@@ -1,5 +1,6 @@
 
 import {Log} from '../log';
+import {RefList} from './reflist';
 
 
 /**
@@ -8,7 +9,7 @@ import {Log} from '../log';
  * Use of length is unreliable as the list may contain also undefined items.
  * This happens when entries are removed.
  */
-export class RefList<type> extends Array<type> {
+export class RemovableRefList<type> extends RefList<type> {
 
 	/**
 	 * Adds an object to the list and returns it's index.
@@ -20,6 +21,13 @@ export class RefList<type> extends Array<type> {
 	public addObject(obj: any): number {
 		if (obj == undefined)
 			return 0;
+		// First check if there maybe is an undefined entry (because of 'remove')
+		const foundIndex = this.indexOf(undefined as any);
+		if (foundIndex >= 0) {
+			// Re-use
+			this[foundIndex] = obj;
+			return foundIndex + 1;
+		}
 		// New entry
 		this.push(obj);
 		const id = this.length;
@@ -38,6 +46,9 @@ export class RefList<type> extends Array<type> {
 			return undefined;
 		}
 		const obj = this[ref - 1];
+		if (obj == undefined) {
+			Log.log('RefList Error: reference ' + ref + ' not found (inside)!');
+		}
 		return obj;
 	}
 
@@ -46,9 +57,11 @@ export class RefList<type> extends Array<type> {
 	 * @returns The first element of the array. undefined if array is empty.
 	 */
 	public first(): any {
-		if (this.length == 0)
-			return undefined;
-		return this[0];
+		for (const obj of this) {
+			if (obj)
+				return obj;
+		}
+		return undefined;
 	}
 
 
@@ -56,9 +69,29 @@ export class RefList<type> extends Array<type> {
 	 * @returns The last element of the array. undefined if array is empty.
 	 */
 	public last(): any {
-		if (this.length == 0)
-			return undefined;
-		return this[this.length-1];
+		// Skip undefined entries
+		for (let i = this.length - 1; i >= 0; i--) {
+			const obj = this[i];
+			if (obj)
+				return obj;
+		}
+		return undefined;
+	}
+
+
+	/**
+	 * Removes the variables that are passed as references.
+	 * Note: this can lead to undefined entries in the array.
+	 * @param refs An array with the variable references to remove.
+	 */
+	public removeObjects(refs: number[]) {
+		const length = this.length;
+		for (const ref of refs) {
+			const i = ref - 1;
+			if (i >= 0 && i < length) {
+				this[i] = undefined as any;
+			}
+		}
 	}
 
 
