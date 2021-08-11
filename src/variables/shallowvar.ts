@@ -8,6 +8,7 @@ import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';
+import {RemovableRefList} from '../misc/removablereflist';
 
 
 /**
@@ -799,7 +800,7 @@ export class MemDumpVar extends ShallowVar {
  */
 export class ContainerVar extends ShallowVar {
 	// List to add objects to get references.
-	protected list: RefList<ShallowVar>;
+	protected list: RemovableRefList<ShallowVar>;
 
 	// The array which holds the variables.
 	public varList = new Array<DebugProtocol.Variable>();
@@ -808,7 +809,7 @@ export class ContainerVar extends ShallowVar {
 	/**
 	 * Constructor: Remember list.
 	 */
-	constructor(list: RefList<ShallowVar>) {
+	constructor(list: RemovableRefList<ShallowVar>) {
 		super();
 		this.list = list;
 	}
@@ -819,7 +820,19 @@ export class ContainerVar extends ShallowVar {
 	 * @returns A Promise with the all variables
 	 */
 	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
-		return this.varList;
+		// Add the index hover text to each item
+		const dynList = this.varList.map((entry, index) => {
+			const description = entry.type + '\n\n(Use "-rmvar ' + index + '" to remove)';
+			const cloneObj = {
+				name: entry.name,
+				type: description,
+				value: entry.value,
+				indexedVariables: entry.indexedVariables,
+				variablesReference: entry.variablesReference
+			};
+			return cloneObj;
+		});
+		return dynList;
 	}
 
 
@@ -840,6 +853,21 @@ export class ContainerVar extends ShallowVar {
 			indexedVariables,
 			variablesReference: ref
 		});
+	}
+
+
+	/**
+	 * Removes an item from the list.
+	 * @param index The index to remove. Note: other indexes of following
+	 * items change as well.
+	 * If index is not in range an exception is thrown.
+	 */
+	public removeItem(index: number) {
+		if (index < 0 || index >= this.varList.length)
+			throw Error("No such index: " + index);
+		const ref = this.varList[index].variablesReference;
+		this.varList.splice(index, 1);
+		this.list.removeObjects([ref]);
 	}
 
 

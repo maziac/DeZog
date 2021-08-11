@@ -1786,6 +1786,9 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
 			output = await this.evalWPMEM(tokens);
 		}
+		else if (cmd == '-rmvar') {
+			output = await this.evalRemoveVar(tokens);
+		}
 		else if (cmd == '-sprites') {
 			output = await this.evalSprites(tokens);
 		}
@@ -2206,7 +2209,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * Similar to WATCHes but in the VARIABLES pane it is also possible to
 	 * modify data.
 	 * @param tokens The arguments. I.e. the expression to evaluate.
- 	 * @returns A Promise with a text to print.
+	 * @returns A Promise with a text to print.
 	 */
 	protected async evalAddVar(tokens: Array<string>): Promise<string> {
 		// Concatenate all tokens, i.e. spaces are of no interest
@@ -2222,6 +2225,30 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			if (!item.labelVar)
 				throw Error(expr + ' does not contain a label.');
 			this.containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
+			return 'OK';
+		}
+		catch (e) {
+			return 'Error: ' + e.message;
+		}
+	}
+
+
+	/**
+	 * Removes an expression (a label) from the VARIABLES pane.
+	 * In contrast to evalAddVar this is done by index.
+	 * @param tokens The arguments. The index number to remove.
+     * @returns A Promise with a text to print.
+	 */
+	protected async evalRemoveVar(tokens: Array<string>): Promise<string> {
+		if (tokens.length != 1) {
+			// Error Handling: 1 arg expected
+			throw new Error("1 argument, the index of the variable, expected.");
+		}
+
+		// Get index
+		try {
+			const index = parseInt(tokens[0]);
+			this.containerVar.removeItem(index);
 			return 'OK';
 		}
 		catch (e) {
