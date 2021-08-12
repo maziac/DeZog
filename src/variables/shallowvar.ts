@@ -805,7 +805,7 @@ export class ContainerVar extends ShallowVar {
 	protected list: RemovableRefList<ShallowVar>;
 
 	// The array which holds the variables.
-	public varList = new Array<DebugProtocol.Variable>();
+	public varList = new Array<DebugProtocol.Variable|ImmediateValue>();
 
 
 	/**
@@ -823,24 +823,34 @@ export class ContainerVar extends ShallowVar {
 	 * @param count The number of bytes to display.
 	 * @returns A Promise with the all variables
 	 */
-	// TODO: start, count muss in alle shallow vars rein.
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
 		count = count || (this.varList.length-start);
-		const end = start + count;
 		// Add the index hover text to each item
-		const dynList: DebugProtocol.Variable[] = [];
-		for (let i = start; i < end; i++) {
-			const entry = this.varList[i];
+		const dynList = new Array<DebugProtocol.Variable>(count);
+		for (let i = 0; i < count; i++) {
+			const entry = this.varList[i + start];
 			const description = entry.type + '\n\n(Use "-rmvar ' + i + '" to remove)';
-			const cloneObj = {
-				name: entry.name,
-				type: description,
-				value: entry.value,
-				indexedVariables: entry.indexedVariables,
-				variablesReference: entry.variablesReference
-			};
-			dynList.push(cloneObj);
+			if (entry instanceof ImmediateValue) {
+				// ImmediateMemValue
+				dynList[i] = {
+					name: entry.name,
+					type: description,
+					value: await entry.getValue(),
+					indexedVariables: 0,
+					variablesReference: 0
+				};
+			}
+			else {
+				// ShallowVar
+				dynList[i] = {
+					name: entry.name,
+					type: description,
+					value: entry.value,
+					indexedVariables: entry.indexedVariables,
+					variablesReference: entry.variablesReference
+				};
+			}
 		}
 		return dynList;
 	}
@@ -851,18 +861,26 @@ export class ContainerVar extends ShallowVar {
 	 * @param name The name of the variable/label.
 	 * @param item The shallow var to display.
 	 * @param type A description shown in the UI.
-	 * @param value Only used if ref != 0. The value to show.
 	 * @param indexedVariables The elem count or 0.
 	 */
-	public addItem(name: string, item: ShallowVar, type: string, value: string, indexedVariables: number) {
-		let ref = this.list.addObject(item);
-		this.varList.push({
-			name,
-			type,
-			value,
-			indexedVariables,
-			variablesReference: ref
-		});
+	public addItem(name: string, item: ShallowVar | ImmediateValue, type: string, indexedVariables: number) {
+		if (item instanceof ImmediateValue) {
+			// Use an ImmediateMemValue
+			item.name = name;
+			this.varList.push(item);
+		}
+		else {
+			// Use ShallowVar
+			let ref = this.list.addObject(item);
+			this.varList.push({
+				name,
+				type,
+				value: '',
+				indexedVariables,
+				variablesReference: ref
+			});
+		}
+
 	}
 
 
@@ -875,9 +893,15 @@ export class ContainerVar extends ShallowVar {
 	public removeItem(index: number) {
 		if (index < 0 || index >= this.varList.length)
 			throw Error("No such index: " + index);
-		const ref = this.varList[index].variablesReference;
+
+		const item = this.varList[index];
+		if (!(item instanceof ImmediateValue)) { // For some reason DebugProtocol.Variable does not compile
+			// Remove variable
+			const ref = item.variablesReference;
+			this.list.removeObjects([ref]);
+		};
+		// Remove from own list
 		this.varList.splice(index, 1);
-		this.list.removeObjects([ref]);
 	}
 
 
@@ -902,6 +926,36 @@ export class ContainerVar extends ShallowVar {
 	 */
 	public clear() {
 		this.varList.length = 0;
+	}
+
+}
+
+
+/**
+ * This class can be used for immediate values that need to be returned.
+ * I.e. values without a variable reference.
+ * In this case a callback is passed which is called everytime the
+ * 'getValue' method is called.
+ * ImmediateValue can be part of ContainerVar.
+ */
+export class ImmediateValue {
+
+	// The displayed name.
+	public name: string;
+
+	// The description (shown on hover)
+	public type: string;
+
+	// The value to return as a function.
+	public getValue: () => Promise<string>;
+
+	/**
+	 * Constructor.
+	 * @param getValueCallback The function that is called to return the value.
+	 */
+	constructor(description: string, getValueCallback: () => Promise<string>) {
+		this.type = description;
+		this.getValue = getValueCallback;
 	}
 
 }

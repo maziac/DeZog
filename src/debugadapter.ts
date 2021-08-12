@@ -9,7 +9,7 @@ import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar, ImmediateValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -1927,13 +1927,19 @@ export class DebugSessionClass extends DebugSession {
 					let respBody = this.watchesList.get(expression);
 					if (!respBody) {
 						// Create a variable
-						const result = await this.evaluateLabelExpression(expression);
-						const ref = this.listVariables.addObject(result.labelVar);
+						const item = await this.evaluateLabelExpression(expression);
+						const label = item.labelVar;
+						let ref = 0;
+						let value = '';
+						if (label instanceof ShallowVar)
+							ref = this.listVariables.addObject(item.labelVar);
+						else
+							value = await label.getValue();
 						respBody = {
-							result: result.value,
+							result: value, // TODO: Do better. I.e. store result.labelVar somewhere, so that it does not need to be evaluated all the time.
 							variablesReference: ref,
-							type: result.type,
-							indexedVariables: result.indexedVariables
+							type: item.type,
+							indexedVariables: item.indexedVariables
 						}
 						// Remember
 						if (ref != 0)
@@ -1962,7 +1968,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param expression E.g. "main,2,10"
 	 * @returns All that is required for the VARIABLES pane or WATCHES.
 	 */
-	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar, value: string, type: string, indexedVariables: number}> {
+	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar|ImmediateValue, type: string, indexedVariables: number}> {
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
@@ -2055,6 +2061,8 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 
+				// TODO: elemsize begrenzen und Fehler wenn größer 6. Wird dann aufgrund von Rundungen nicht mehr richtig dargestellt.
+
 				// Add index
 				const indexOffset = lblIndex * elemSize;
 				const labelValue64k = (labelValue + indexOffset) & 0xFFFF;
@@ -2063,7 +2071,6 @@ export class DebugSessionClass extends DebugSession {
 				//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 				// Create a label variable
 				let labelVar;
-				let formattedValue = '';
 				// Check for sub labels (i.e. check for struct)
 				let props;
 				let propsLength = 0
@@ -2072,25 +2079,19 @@ export class DebugSessionClass extends DebugSession {
 					propsLength = props.length;
 				}
 				// Get sub properties
-				if (elemSize <= 2 && propsLength == 0) {
+				if (/*elemSize <= 2 &&*/ propsLength == 0) {
 					// Check for single value or array (no sub properties)
 					if (elemCount <= 1) {
-						// Single value
-
-						// TODO: this should also return a ShallowVar, not just the value !!!!!
-
-						// Read memory
-						const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-						let memVal = memory[0];
-						// TODO: Error: elmsize==3 not working
-						if (elemSize == 1)
-							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
-						else {
-							memVal += 256 * memory[1];
-							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
-						}
-
-						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+						// Create variable
+						const description = Utility.getLongAddressString(labelValue64k);
+						// TODO: muss noch testen, ob elemSize > 2 wirklich funktioniert.
+						labelVar = new ImmediateValue(description, async () => {
+							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
+							let memVal = 0;
+							for (let i = elemSize - 1; i >= 0; i--)
+								memVal = 256 * memVal + memory[i];
+							return await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
+						});
 					}
 					else {
 						// Simple memdump
@@ -2112,7 +2113,6 @@ export class DebugSessionClass extends DebugSession {
 				const description = Utility.getLongAddressString(labelValue64k);
 				return {
 					labelVar,
-					value: '', //formattedValue,
 					type: description,
 					indexedVariables: elemCount
 				};
@@ -2230,11 +2230,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		}
 
 		try {
-			// Evaluate expression and create Variabels
+			// Evaluate expression and create variables
 			const item = await this.evaluateLabelExpression(expr);
-			if (!item.labelVar)
-				throw Error(expr + ' does not contain a label.');
-			this.containerVar.addItem(expr, item.labelVar, item.type, item.value, item.indexedVariables);
+			this.containerVar.addItem(expr, item.labelVar, item.type, item.indexedVariables);
 			return 'OK';
 		}
 		catch (e) {
