@@ -2134,6 +2134,7 @@ export class DebugSessionClass extends DebugSession {
 		- label: One of your labels or an numeric address
 		- type/size: The size of your data structure. If you use a type (STRUCT) you should give the STRUCT name here.
 		- count: The number of elements to show.
+	See also "-rmvar index"
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
@@ -2169,13 +2170,16 @@ the value correspondends to a label.
 	You can concat several ranges.
 	Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
-"-WPMEM enable|disable|status":
-	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
-	- status: Shows enable status of WPMEM watchpoints.
+"-rmvar index": Remove an expression/label from the VARIABLES pane.
+	-index: the index of the expression/label to remove. Indexes start at 0. You can hover
+	the expression/label to find it's number (or simply count from top to bottom, top starts with 0).
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
 	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
+"-WPMEM enable|disable|status":
+	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
+	- status: Shows enable status of WPMEM watchpoints.
 
 Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
