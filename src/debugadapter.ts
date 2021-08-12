@@ -1881,33 +1881,33 @@ export class DebugSessionClass extends DebugSession {
 					else {
 						// Label
 						// Check if a 2nd line (memory content) is required
-						if (!Z80RegistersClass.isSingleRegister(expression)) {
-							// If hovering only the label address + byte and word contents are shown.
-							// First check for module name and local label prefix (sjasmplus).
-							const pcLongAddr = Remote.getPCLong();
-							const entry = Labels.getFileAndLineForAddress(pcLongAddr);
-							// Local label and prefix
-							const lastLabel = entry.lastLabel;
-							const modulePrefix = entry.modulePrefix;
-							// Get label value
-							const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
-							if (labelValue != undefined) {
-								// Get content
-								const memDump = await Remote.readMemoryDump(labelValue, 2);
-								// Format byte
-								const memByte = memDump[0];
-								const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
-								// Format word
-								const memWord = memByte + 256 * memDump[1];
-								const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
-								// Format output
-								const addrString = Utility.getHexString(labelValue, 4) + 'h';
-								if (!formattedValue)
-									formattedValue = expression + ': ' + addrString;
-								// Second line
-								formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
-							}
+						//if (!Z80RegistersClass.isSingleRegister(expression)) {
+						// If hovering only the label address + byte and word contents are shown.
+						// First check for module name and local label prefix (sjasmplus).
+						const pcLongAddr = Remote.getPCLong();
+						const entry = Labels.getFileAndLineForAddress(pcLongAddr);
+						// Local label and prefix
+						const lastLabel = entry.lastLabel;
+						const modulePrefix = entry.modulePrefix;
+						// Get label value
+						const labelValue = Utility.evalExpression(expression, true, modulePrefix, lastLabel);
+						if (labelValue != undefined) {
+							// Get content
+							const memDump = await Remote.readMemoryDump(labelValue, 2);
+							// Format byte
+							const memByte = memDump[0];
+							const formattedByte = Utility.numberFormattedSync(memByte, 1, Settings.launch.formatting.watchByte, true);
+							// Format word
+							const memWord = memByte + 256 * memDump[1];
+							const formattedWord = Utility.numberFormattedSync(memWord, 2, Settings.launch.formatting.watchWord, true);
+							// Format output
+							const addrString = Utility.getHexString(labelValue, 4) + 'h';
+							if (!formattedValue)
+								formattedValue = expression + ': ' + addrString;
+							// Second line
+							formattedValue += '\n(' + addrString + ')b=' + formattedByte + '\n(' + addrString + ')w=' + formattedWord;
 						}
+						//}
 					}
 				}
 				catch {
@@ -2076,15 +2076,21 @@ export class DebugSessionClass extends DebugSession {
 					// Check for single value or array (no sub properties)
 					if (elemCount <= 1) {
 						// Single value
+
+						// TODO: this should also return a ShallowVar, not just the value !!!!!
+
 						// Read memory
 						const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
 						let memVal = memory[0];
+						// TODO: Error: elmsize==3 not working
 						if (elemSize == 1)
 							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
 						else {
 							memVal += 256 * memory[1];
 							formattedValue = await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchWord, undefined);
 						}
+
+						labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
 					}
 					else {
 						// Simple memdump
@@ -2106,7 +2112,7 @@ export class DebugSessionClass extends DebugSession {
 				const description = Utility.getLongAddressString(labelValue64k);
 				return {
 					labelVar,
-					value: formattedValue,
+					value: '', //formattedValue,
 					type: description,
 					indexedVariables: elemCount
 				};

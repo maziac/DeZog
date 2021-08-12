@@ -33,8 +33,12 @@ export class ShallowVar {
 	}
 
 
-	/// Override this. It should retrieve the contents of the variable. E.g. by communicating with the remote.
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	/**
+	 *  Override this. It should retrieve the contents of the variable. E.g. by communicating with the remote.
+	 * @param start The start index of the array. E.g. only the range [100..199] should be displayed.
+	 * @param count The number of bytes to display.
+	 */
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		return [];
 	}
 
@@ -105,24 +109,29 @@ export class DisassemblyVar extends ShallowVarConst {
 	 * @returns A Promise with the disassembly.
 	 * A list with all disassembled lines is passed (as variables).
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+		count = count || (this.count - start);
+		const end = start + count;
+
 		// Get code memory
-		const size=4*this.count;	// 4 is the max size of an opcode
-		const data=await Remote.readMemoryDump(this.address, size);
+		const size = 4 * this.count;	// 4 is the max size of an opcode
+		const data = await Remote.readMemoryDump(this.address, size);
 
 		// Disassemble
-		const dasmArray=DisassemblyClass.get(this.address, data, this.count);
+		const dasmArray = DisassemblyClass.get(this.address, data, this.count);
 
 		// Add extra info
-		const list=new Array<DebugProtocol.Variable>();
-		for (const entry of dasmArray) {
-			const address=entry.address;
+		const list = new Array<DebugProtocol.Variable>();
+		const dasmFiltered = dasmArray.filter((value, index) => (index >= start && index < end));
+		for (const entry of dasmFiltered) {
+			const address = entry.address;
 			// Add to list
-			const addrString=Format.getHexString(address).toUpperCase();
-			const labels=Labels.getLabelsForNumber64k(address);
-			let addrLabel=addrString;
+			const addrString = Format.getHexString(address).toUpperCase();
+			const labels = Labels.getLabelsForNumber64k(address);
+			let addrLabel = addrString;
 			if (labels)
-				addrLabel=labels.join(',\n');
+				addrLabel = labels.join(',\n');
 			list.push({
 				name: addrString,
 				type: addrLabel,
@@ -155,22 +164,27 @@ export class MemorySlotsVar extends ShallowVarConst {
 	 * @returns A Promise with the memory page data is available.
 	 * A list with start/end address and name (bank name) is passed.
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+
 		// Get code memory
-		const memoryBanks=await Remote.getMemoryBanks();
+		const memoryBanks = await Remote.getMemoryBanks();
+		count = count || (memoryBanks.length - start);
 		// Convert array
-		let slot=-1;
-		const segments=memoryBanks.map(bank => {
-			const name=Utility.getHexString(bank.start, 4)+'-'+Utility.getHexString(bank.end, 4);
+		let slot = -1;
+		const segments = new Array<DebugProtocol.Variable>(count);
+		for (let i = 0; i < count; i++) {
+			const bank = memoryBanks[i+start];
+			const name = Utility.getHexString(bank.start, 4) + '-' + Utility.getHexString(bank.end, 4);
 			slot++;
-			const slotString=slot.toString();
-			return {
-				name: slotString+": "+name,
-				type: "Slot "+slotString,
+			const slotString = slot.toString();
+			segments[i] = {
+				name: slotString + ": " + name,
+				type: "Slot " + slotString,
 				value: bank.name,
 				variablesReference: 0
 			};
-		});
+		};
 
 		// Return
 		return segments;
@@ -188,18 +202,20 @@ export class RegistersMainVar extends ShallowVar {
 	 * @returns A Promise with the register values.
 	 * A list with all register values is passed (as variables).
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
-		//await Remote.getRegisters();
-		const registers=new Array<DebugProtocol.Variable>();
-		const regNames=this.registerNames();
-		for (const regName of regNames) {
-			const formattedValue=Remote.getVarFormattedReg(regName);
-			registers.push({
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+		const regNames = this.registerNames();
+		count = count || (regNames.length - start);
+		const registers = new Array<DebugProtocol.Variable>(count);
+		for (let i = 0; i < count; i++) {
+			const regName = regNames[i + start];
+			const formattedValue = Remote.getVarFormattedReg(regName);
+			registers[i] = {
 				name: regName,
 				type: formattedValue,
 				value: formattedValue,
 				variablesReference: 0
-			});
+			};
 		}
 		return registers;
 	}
@@ -301,49 +317,32 @@ export class StackVar extends ShallowVar {
 	 * Formats the stack.
 	 * @returns A Promise with the stack values.
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
-		const stackList=new Array<DebugProtocol.Variable>();
-		// Check if stack available
-		const stackDepth = this.stack.length;
-		if(stackDepth == 0) {
-			// Return empty
-			return stackList;
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+		count = count || (this.stack.length - start);
+
+		// Calculate tabsizing array
+		const format = Settings.launch.formatting.stackVar;
+		const tabSizes = Utility.calculateTabSizes(format, 2);
+
+		// Create list
+		const stackList = new Array<DebugProtocol.Variable>(count);
+		let undefText = "unknown";
+		for (let i = 0; i < count; i++) {
+			const index = i + start;
+			const value = this.stack[index];
+			const formatted = await Utility.numberFormatted('', value, 2, format, tabSizes, undefText);
+			stackList[i] = {
+				name: Utility.getHexString(this.stackAddress - 2 * index, 4),
+				type: formatted,
+				value: formatted,
+				variablesReference: 0
+			};
+			// Next
+			undefText = undefined as any;
 		}
 
-		return new Promise<Array<DebugProtocol.Variable>>(resolve => {
-			// Calculate tabsizing array
-			const format=Settings.launch.formatting.stackVar;
-			const tabSizes=Utility.calculateTabSizes(format, 2);
-
-			// Loop list as recursive function
-			let index=0;
-			let value=this.stack[0];
-			const undefText="unknown";
-			const recursiveFunction=(formatted) => {
-				stackList.push({
-					name: Utility.getHexString(this.stackAddress-2*index, 4),
-					type: formatted,
-					value: formatted,
-					variablesReference: 0
-				});
-				// Next
-				index++;
-				if (index<this.stack.length) {
-					// Next
-					value=this.stack[index];
-					Utility.numberFormatted('', value, 2, format, tabSizes, undefined)
-						.then(recursiveFunction);
-				}
-				else {
-					// end, call handler
-					resolve(stackList);
-				}
-			};
-
-			// Call recursively
-			Utility.numberFormatted('', value, 2, format, tabSizes, undefText)
-				.then(recursiveFunction);
-		});
+		return stackList;
 	}
 
 
@@ -514,10 +513,15 @@ export class SubStructVar extends ShallowVar {
 	 * Returns the properties.
 	 * @returns A Promise with the properties.
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		if (!this.propArray)
 			this.createPropArray();
-		return this.propArray;
+		start = start || 0;
+		count = count || (this.propArray.length - start);
+		const end = start + count;
+		// Return range
+		const arrRange = this.propArray.filter((value, index) => (index >= start && index <= end));
+		return arrRange;
 	}
 }
 
@@ -601,17 +605,15 @@ export class StructVar extends SubStructVar {
 	 * Retrieves the memory.
 	 * @returns A Promise with the properties.
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		// Check if memory has been retrieved
 		if (!this.memory) {
 			// Retrieve memory values
 			const countBytes = this.count * this.elemSize;
 			this.memory = await Remote.readMemoryDump(this.getAddress(), countBytes);
 		}
-		// Check if properties array exists.
-		if (!this.propArray)
-			this.createPropArray();
-		return this.propArray;
+		// Check if properties array exists and create
+		return await super.getContent(start, count);
 	}
 
 
@@ -687,10 +689,10 @@ export class MemDumpVar extends ShallowVar {
 	 * @param count The number of bytes to display.
 	 * Note: start, count are only used for arrays.
 	 */
-	public async getContent(start?: number, count?: number): Promise<Array<DebugProtocol.Variable>> {
-		Utility.assert(start != undefined);
-		Utility.assert(count != undefined);
-		let addr = this.addr + (start!);
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+		count = count || (this.totalCount - start);
+		let addr = this.addr + start;
 		const elemSize = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
@@ -705,7 +707,7 @@ export class MemDumpVar extends ShallowVar {
 		}
 		else {
 			// Get memory
-			memory = await Remote.readMemoryDump(addr, count! * elemSize);
+			memory = await Remote.readMemoryDump(addr, count * elemSize);
 		}
 
 		// Calculate tabsizing array
@@ -726,7 +728,7 @@ export class MemDumpVar extends ShallowVar {
 			// Add to array
 			const descr = Utility.getHexString(addr_i, 4) + 'h'
 			memArray.push({
-				name: "[" + (start! + i) + "]",
+				name: "[" + (start + i) + "]",
 				type: descr,
 				value: formatted,
 				variablesReference: 0
@@ -817,12 +819,20 @@ export class ContainerVar extends ShallowVar {
 
 	/**
 	 * Returns the variables with references.
+	 * @param start The start index of the array. E.g. only the range [100..199] should be displayed.
+	 * @param count The number of bytes to display.
 	 * @returns A Promise with the all variables
 	 */
-	public async getContent(): Promise<Array<DebugProtocol.Variable>> {
+	// TODO: start, count muss in alle shallow vars rein.
+	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
+		start = start || 0;
+		count = count || (this.varList.length-start);
+		const end = start + count;
 		// Add the index hover text to each item
-		const dynList = this.varList.map((entry, index) => {
-			const description = entry.type + '\n\n(Use "-rmvar ' + index + '" to remove)';
+		const dynList: DebugProtocol.Variable[] = [];
+		for (let i = start; i < end; i++) {
+			const entry = this.varList[i];
+			const description = entry.type + '\n\n(Use "-rmvar ' + i + '" to remove)';
 			const cloneObj = {
 				name: entry.name,
 				type: description,
@@ -830,8 +840,8 @@ export class ContainerVar extends ShallowVar {
 				indexedVariables: entry.indexedVariables,
 				variablesReference: entry.variablesReference
 			};
-			return cloneObj;
-		});
+			dynList.push(cloneObj);
+		}
 		return dynList;
 	}
 
