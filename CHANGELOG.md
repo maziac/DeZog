@@ -1,7 +1,7 @@
 # Changelog
 
 # 2.3.0
-- Added "-addvar/rmvar" command to add/remove variables/labels to the VARIABLEs pane.
+- Added "-addexpr/rmexpr" command to add/remove expressions (variables/labels) to the VARIABLEs pane.
 - Added "-mvw" to display a memory viewer that display the memory organized in words instead of bytes.
 - Added "-msetb/w" command: See help ("-h"). With mset you can change single memory locations or fill a complete area.
 - Fix: register colors in memory views now also updated if the memory view is not focused.

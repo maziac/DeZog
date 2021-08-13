@@ -468,7 +468,7 @@ export class DebugSessionClass extends DebugSession {
 				new Scope("Disassembly", this.listVariables.addObject(this.disassemblyVar)),
 				new Scope("Memory Banks", this.listVariables.addObject(new MemorySlotsVar())),
 				new Scope("Local Stack", this.listVariables.addObject(this.localStackVar)),
-				new Scope("Labels", this.listVariables.addObject(this.containerVar)),
+				new Scope("Expressions", this.listVariables.addObject(this.containerVar)),
 			];
 		}
 		catch (e) {
@@ -1738,8 +1738,8 @@ export class DebugSessionClass extends DebugSession {
 		if (cmd == '-help' || cmd == '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-addvar') {
-			output = await this.evalAddVar(tokens);
+		else if (cmd == '-addexpr') {
+			output = await this.evaladdexpr(tokens);
 		}
 		else if (cmd == '-ASSERTION' || cmd == '-assertion') {
 			output = await this.evalASSERTION(tokens);
@@ -1786,7 +1786,7 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
 			output = await this.evalWPMEM(tokens);
 		}
-		else if (cmd == '-rmvar') {
+		else if (cmd == '-rmexpr') {
 			output = await this.evalRemoveVar(tokens);
 		}
 		else if (cmd == '-sprites') {
@@ -2141,13 +2141,13 @@ export class DebugSessionClass extends DebugSession {
 "-ASSERTION enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERTION breakpoints.
-"-addvar expression": Adds a variable/label to the VARIABLES pane. (Syntax is similar to the expressions in the WATCH panel.
+"-addexpr expression": Adds a variable/label to the VARIABLES pane. (Syntax is similar to the expressions in the WATCH panel.
 	However, data in the VARIABLES panel can be modified.)
 	- expression: See WATCHes in the DeZog help. In brief an expression is: label,type/size,count.
 		- label: One of your labels or an numeric address
 		- type/size: The size of your data structure. If you use a type (STRUCT) you should give the STRUCT name here.
 		- count: The number of elements to show.
-	See also "-rmvar index"
+	See also "-rmexpr index"
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
@@ -2183,7 +2183,7 @@ the value correspondends to a label.
 	You can concat several ranges.
 	Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
-"-rmvar index": Remove an expression/label from the VARIABLES pane.
+"-rmexpr index": Remove an expression/label from the VARIABLES pane.
 	-index: the index of the expression/label to remove. Indexes start at 0. You can hover
 	the expression/label to find it's number (or simply count from top to bottom, top starts with 0).
 "-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
@@ -2228,7 +2228,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param tokens The arguments. I.e. the expression to evaluate.
 	 * @returns A Promise with a text to print.
 	 */
-	protected async evalAddVar(tokens: Array<string>): Promise<string> {
+	protected async evaladdexpr(tokens: Array<string>): Promise<string> {
 		// Concatenate all tokens, i.e. spaces are of no interest
 		const expr = tokens.join(' ').trim();	// restore expression
 		if (expr.length == 0) {
@@ -2250,7 +2250,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 	/**
 	 * Removes an expression (a label) from the VARIABLES pane.
-	 * In contrast to evalAddVar this is done by index.
+	 * In contrast to evaladdexpr this is done by index.
 	 * @param tokens The arguments. The index number to remove.
      * @returns A Promise with a text to print.
 	 */
