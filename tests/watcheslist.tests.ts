@@ -11,40 +11,40 @@ suite('WatchesList', () => {
 	});
 
 
-	test('empty', () => {
+	test('empty', async () => {
 		// Checks
-		let resp = wl.get('something');
+		let resp = await wl.get('something');
 		assert.equal(resp, undefined);
 	});
 
-	test('push/get', () => {
+	test('push/get', async () => {
 		wl.push('a', {val: 1} as any);
 		wl.push('b', {val: 2} as any);
 
 		// Checks
-		let resp = wl.get('a') as any;
+		let resp = await wl.get('a') as any;
 		assert.equal(resp.val, 1);
-		resp = wl.get('b') as any;
+		resp = await wl.get('b') as any;
 		assert.equal(resp.val, 2);
-		resp = wl.get('c');
+		resp = await wl.get('c');
 		assert.equal(resp, undefined);
 	});
 
-	test('clearUnused', () => {
+	test('clearUnused', async () => {
 		wl.push('a', {variablesReference: 1} as any);
 		wl.push('b', {variablesReference: 2}  as any);
 		let removedRefs = wl.clearUnused();
 		assert.equal(removedRefs.length, 0);
 
 		// Checks
-		let respBody = wl.get('a') as any;
+		let respBody = await wl.get('a') as any;
 		assert.equal(respBody.variablesReference, 1);
 
-		removedRefs = wl.clearUnused();	// Should remove 'b'
+		removedRefs = await wl.clearUnused();	// Should remove 'b'
 		assert.equal(removedRefs.length, 1);
 		assert.equal(removedRefs[0], 2);
 
-		respBody = wl.get('b');
+		respBody = await wl.get('b');
 		assert.equal(respBody, undefined);
 
 		// Next call will removed everything
