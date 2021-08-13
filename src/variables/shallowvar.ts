@@ -482,9 +482,7 @@ export class SubStructVar extends ShallowVar {
 					if (len <= 2) {
 						// Byte or word
 						const mem = this.parentStruct.getMemory();
-						let value = mem[memIndex];
-						if (len > 1)
-							value += 256 * mem[memIndex + 1];
+						const value = Utility.getUintFromMemory(mem, memIndex, len, true);	// TODO: also for big endian?
 						elem.value = Utility.getHexString(value, 2 * len) + 'h';
 					}
 					else {
@@ -833,10 +831,11 @@ export class ContainerVar extends ShallowVar {
 			const description = entry.type + '\n\n(Use "-rmvar ' + i + '" to remove)';
 			if (entry instanceof ImmediateValue) {
 				// ImmediateMemValue
+				const value = await entry.getValue();
 				dynList[i] = {
 					name: entry.name,
 					type: description,
-					value: await entry.getValue(),
+					value,
 					indexedVariables: 0,
 					variablesReference: 0
 				};

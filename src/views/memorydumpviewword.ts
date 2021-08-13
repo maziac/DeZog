@@ -134,20 +134,6 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 
 
 	/**
-	 * Returns a word from an UInt8Array.
-	 * Uses big or little endian coding depending on this.littleEndian.
-	 * @param data The array.
-	 * @param k The index into the array.
-	 */
-	protected getWord(data: Uint8Array, k: number): number {
-		if (this.littleEndian)
-			return data[k] + 256 * data[k + 1];
-		// big endian
-		return data[k + 1] + 256 * data[k];
-	}
-
-
-	/**
 	 * Creates one html table out of a meta block.
 	 * @param index The number of the memory block, starting at 0.
 	 * Used for the id.
@@ -202,7 +188,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			}
 
 			// Print value
-			const value = this.getWord(data, k);
+			const value = Utility.getUintFromMemory(data, k, 2, this.littleEndian);
 			let valueText = Utility.getHexString(value, 4);
 
 			// Split the text in 2 parts
@@ -230,11 +216,11 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 			// Compare with prev value.
 			const prevData=metaBlock.prevData;
 			if (prevData) {
-				if (prevData.length>0) {
-					const prevValue = this.getWord(prevData, k);
-					if (value!=prevValue) {
+				if (prevData.length > 0) {
+					const prevValue = Utility.getUintFromMemory(prevData, k, 2, this.littleEndian);
+					if (value != prevValue) {
 						// Change html emphasizes
-						valueText=this.addEmphasizeChanged(valueText);
+						valueText = this.addEmphasizeChanged(valueText);
 					}
 				}
 			}

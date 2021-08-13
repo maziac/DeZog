@@ -245,10 +245,7 @@ export class MemoryDump {
 			if (data && index >= 0 && index < data.length) {
 				if (index + 1 >= data.length)
 					return NaN;
-				if (littleEndian)
-					return data[index] + 256 * data[index + 1];
-				// Big endian:
-				return data[index + 1] + 256 * data[index];
+				return Utility.getUintFromMemory(data, index, 2, littleEndian)
 			}
 		}
 		// Nothing found
@@ -272,10 +269,7 @@ export class MemoryDump {
 					return NaN;
 				if (index + 1 >= data.length)
 					return NaN;
-				if (littleEndian)
-					return data[index] + 256 * data[index + 1];
-				// Big endian:
-				return data[index + 1] + 256 * data[index];
+				return Utility.getUintFromMemory(data, index, 2, littleEndian)
 			}
 		}
 		// Nothing found

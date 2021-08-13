@@ -699,6 +699,7 @@ export class Utility {
 		return valString;
 	}
 
+
 	/**
 	 * Convert value to flags string.
 	 * Useful to convert the F register number into a human readable string.
@@ -707,16 +708,42 @@ export class Utility {
 		// Interpret byte as Z80 flags:
 		// Zesarux: (e.g. "SZ5H3PNC")
 		// S Z X H X P/V N C
-		let res=(flagValue&0x80)? 'S':'-';	// S=sign
-		res+=(flagValue&0x40)? 'Z':'-';	// Z=zero
-		res+=(flagValue&0x20)? '1':'-';
-		res+=(flagValue&0x10)? 'H':'-';	// H=Half Carry
-		res+=(flagValue&0x08)? '1':'-';
-		res+=(flagValue&0x04)? 'P':'-';	// P/V=Parity/Overflow
-		res+=(flagValue&0x02)? 'N':'-';	// N=Add/Subtract
-		res+=(flagValue&0x01)? 'C':'-';	// C=carry
+		let res = (flagValue & 0x80) ? 'S' : '-';	// S=sign
+		res += (flagValue & 0x40) ? 'Z' : '-';	// Z=zero
+		res += (flagValue & 0x20) ? '1' : '-';
+		res += (flagValue & 0x10) ? 'H' : '-';	// H=Half Carry
+		res += (flagValue & 0x08) ? '1' : '-';
+		res += (flagValue & 0x04) ? 'P' : '-';	// P/V=Parity/Overflow
+		res += (flagValue & 0x02) ? 'N' : '-';	// N=Add/Subtract
+		res += (flagValue & 0x01) ? 'C' : '-';	// C=carry
 		return res;
 	}
+
+
+	/**
+	 * Convert a bytes from memory into a number.
+	 * Little or big endian.
+	 * @param memory The memory array.
+	 * @param index The start index for conversion.
+	 * @param count (Optional, defaults to 1) The number of bytes to convert.
+	 * @param little_endian (optional) set to false for big endian.
+	 */
+	public static getUintFromMemory(memory: Uint8Array, index: number, count = 1, littleEndian = true) {
+		let memVal = 0;
+		if (littleEndian) {
+			// Little endian
+			for (let i = index + count - 1; i >= index; i--)
+				memVal = 256 * memVal + memory[i];
+		}
+		else {
+			// Big endian
+			const end = index + count;
+			for (let i = index; i < end; i++)
+				memVal = 256 * memVal + memory[i];
+		}
+		return memVal;
+	}
+
 
 	/**
 	 * Returns the formatted register value. Does a request to the Remote to obtain the register value.

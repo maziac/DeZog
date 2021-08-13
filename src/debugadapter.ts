@@ -29,7 +29,7 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
-import {WatchesList} from './misc/watcheslist';
+import {WatchesList, WatchesResponse} from './misc/watcheslist';
 import {RemovableRefList} from './misc/removablereflist';
 
 
@@ -1924,29 +1924,38 @@ export class DebugSessionClass extends DebugSession {
 			case 'watch':
 				try {
 					// Check if variable for this expression already exists
-					let respBody = this.watchesList.get(expression);
+					let respBody = await this.watchesList.get(expression);
 					if (!respBody) {
 						// Create a variable
 						const item = await this.evaluateLabelExpression(expression);
 						const label = item.labelVar;
-						let ref = 0;
-						let value = '';
-						if (label instanceof ShallowVar)
-							ref = this.listVariables.addObject(item.labelVar);
-						else
-							value = await label.getValue();
-						respBody = {
-							result: value, // TODO: Do better. I.e. store result.labelVar somewhere, so that it does not need to be evaluated all the time.
-							variablesReference: ref,
-							type: item.type,
-							indexedVariables: item.indexedVariables
+						let respBodyOrValue: WatchesResponse | ImmediateValue;
+						if (label instanceof ShallowVar) {
+							// A real variable
+							const ref = this.listVariables.addObject(item.labelVar);
+							respBodyOrValue = {
+								result: '',
+								variablesReference: ref,
+								type: item.type,
+								indexedVariables: item.indexedVariables
+							};
+							respBody = respBodyOrValue;
+						}
+						else {
+							// An (immediate) value
+							const result = await label.getValue();
+							respBodyOrValue = label;
+							respBody = {
+								result,
+								variablesReference: 0,
+								type: label.type,
+								indexedVariables: 0
+							};
 						}
 						// Remember
-						if (ref != 0)
-							this.watchesList.push(expression, respBody);
+						this.watchesList.push(expression, respBodyOrValue);
 					}
 					response.body = respBody;
-
 				}	// try
 				catch (e) {
 					// Return empty response
@@ -2082,14 +2091,12 @@ export class DebugSessionClass extends DebugSession {
 				if (/*elemSize <= 2 &&*/ propsLength == 0) {
 					// Check for single value or array (no sub properties)
 					if (elemCount <= 1) {
+						const littleEndian = true;
 						// Create variable
 						const description = Utility.getLongAddressString(labelValue64k);
-						// TODO: muss noch testen, ob elemSize > 2 wirklich funktioniert.
 						labelVar = new ImmediateValue(description, async () => {
 							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-							let memVal = 0;
-							for (let i = elemSize - 1; i >= 0; i--)
-								memVal = 256 * memVal + memory[i];
+							const memVal = Utility.getUintFromMemory(memory, 0, elemCount, littleEndian);
 							return await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
 						});
 					}

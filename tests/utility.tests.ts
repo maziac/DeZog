@@ -709,4 +709,86 @@ suite('Utility', () => {
 	});
 
 
+
+	suite('getUintFromMemory', () => {
+
+		suite('little endian', () => {
+
+			test('byte', async () => {
+				const values = [1, 2, 3, 4, 255];
+				const mem = new Uint8Array(values);
+
+				for (let i = 0; i < values.length; i++) {
+					const val = Utility.getUintFromMemory(mem, i, 1, true);
+					assert.equal(val, values[i]);
+				}
+			});
+
+			test('word', async () => {
+				const values = [1, 200, 200, 4, 255];
+				const mem = new Uint8Array(values);
+
+				for (let i = 0; i < values.length - 1; i++) {
+					const val = Utility.getUintFromMemory(mem, i, 2, true);
+					const compVal = values[i] + values[i + 1] * 256;
+					assert.equal(val, compVal);
+				}
+			});
+
+
+			test('count = 5', async () => {
+				const values = [1, 2, 3, 4, 255];
+				const mem = new Uint8Array([1, ...values]);
+
+				const val = Utility.getUintFromMemory(mem, 1, 5, true);
+				const compVal = values[0]
+					+ values[1] * 256
+					+ values[2] * 256 * 256
+					+ values[3] * 256 * 256 * 256
+					+ values[4] * 256 * 256 * 256 * 256;
+				assert.equal(val, compVal);
+			});
+
+		});
+
+		suite('big endian', () => {
+
+			test('byte', async () => {
+				const values = [1, 2, 3, 4, 255];
+				const mem = new Uint8Array(values);
+
+				for (let i = 0; i < values.length; i++) {
+					const val = Utility.getUintFromMemory(mem, i, 1, false);
+					assert.equal(val, values[i]);
+				}
+			});
+
+			test('word', async () => {
+				const values = [1, 200, 200, 4, 255];
+				const mem = new Uint8Array(values);
+
+				for (let i = 0; i < values.length - 1; i++) {
+					const val = Utility.getUintFromMemory(mem, i, 2, false);
+					const compVal = values[i+1] + values[i] * 256;
+					assert.equal(val, compVal);
+				}
+			});
+
+
+			test('count = 5', async () => {
+				const values = [1, 2, 3, 4, 255];
+				const mem = new Uint8Array([1, ...values]);
+
+				const val = Utility.getUintFromMemory(mem, 1, 5, false);
+				const compVal = values[4]
+					+ values[3] * 256
+					+ values[2] * 256 * 256
+					+ values[1] * 256 * 256 * 256
+					+ values[0] * 256 * 256 * 256 * 256;
+				assert.equal(val, compVal);
+			});
+
+		});
+	});
+
 });

@@ -2,12 +2,14 @@
 //import {Log} from '../log';
 //import {Utility} from './utility';
 
+import {ImmediateValue} from "../variables/shallowvar";
+
 
 /**
  * The additional values that have to be stored for the variable
  * and that are returned on a 'get'.
  */
-interface WatchesResponse {
+export interface WatchesResponse {
 	/** The result of the evaluate request. */
 	result: string;
 
@@ -36,7 +38,7 @@ interface WatchExpression {
 	// If it was used recently.
 	used: boolean;
 	// The complete response for the evaluateRequest
-	respBody: WatchesResponse;
+	respBodyOrValue: WatchesResponse|ImmediateValue;
 }
 
 
@@ -76,12 +78,22 @@ export class WatchesList {
 	 * @param expression The expression string to check for.
 	 * @returns The associated response or undefined if not found.
 	 */
-	public get(expression: string): WatchesResponse|undefined {
+	public async get(expression: string): Promise<WatchesResponse|undefined> {
 		// Search for expression
 		for (const watch of this.list) {
 			if (watch.expression == expression) {
-			 	watch.used = true;
-				return watch.respBody;
+				watch.used = true;
+				let respBody = watch.respBodyOrValue;
+				if (respBody instanceof ImmediateValue) {
+					// Create an immediate result value
+					const result = await respBody.getValue();
+					respBody = {
+						result,
+						type: respBody.type,
+						variablesReference: 0
+					}
+				}
+				return respBody;
 			}
 		}
 		// Not found
@@ -94,11 +106,11 @@ export class WatchesList {
 	 * @param expression The expression to store.
 	 * @param respBody The complete response with the variable reference.
 	 */
-	public push(expression: string, respBody: WatchesResponse) {
+	public push(expression: string, respBodyOrValue: WatchesResponse|ImmediateValue) {
 		this.list.push({
 			expression,
 			used: true,
-			respBody
+			respBodyOrValue
 		});
 	}
 
@@ -114,7 +126,8 @@ export class WatchesList {
 	 */
 	public clearUnused(): Array<number> {
 		// Get list of to-be-removed entries.
-		const removedRefs = this.list.filter(entry => entry.used == false).map(entry => entry.respBody.variablesReference);
+		const removedEntries = this.list.filter(entry => (entry.used == false && !(entry instanceof ImmediateValue)));
+		const removedRefs = removedEntries.map(entry => (entry.respBodyOrValue as WatchesResponse).variablesReference);
 		// Create new list with only used==true.
 		const newList = this.list.filter(entry => entry.used);
 		this.list = newList;
