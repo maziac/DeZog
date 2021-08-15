@@ -383,10 +383,10 @@ export class StackVar extends ShallowVar {
  * Object used for the SubStructVar to store elements in the array.
  */
 interface SubStructItems {
-	// The displayed name.
-	name: string,
-	// The displayed description.
-	type: string,
+	// The corresponding address and size.
+	address: number,
+	// The size (1 or 2). Only used if itemRef is a function call.
+	elemSize: number;
 	// The reference to the variable or (in case of an immediate value)
 	// the callback which return the result string.
 	itemRef: number | (() => string);
@@ -402,8 +402,8 @@ interface SubStructItems {
  * The SubStructVars refer to it.
  */
 export class SubStructVar extends ShallowVar {
-	// Holds an array with structure properties.
-	protected propArray: Array<SubStructItems>;
+	// Holds a map with name and with the structure properties.
+	protected propMap = new Map<string, SubStructItems>();
 
 
 	/**
@@ -436,9 +436,6 @@ export class SubStructVar extends ShallowVar {
 	 * reference to a parent struct which retrieves the memory for all sub structs.
 	 */
 	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
-		// Create array for struct
-		this.propArray = [];
-
 		// Check for parent
 		if (!parentStruct)
 			return;
@@ -477,15 +474,15 @@ export class SubStructVar extends ShallowVar {
 				const subProps = Labels.getSubLabels(fullName);
 				const memIndex = relIndex + prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
-				const elem: SubStructItems = {
-					name: prevName,
-					type: Utility.getHexString(address, 4) + 'h',
+				const item: SubStructItems = {
+					address,
+					elemSize: 0,
 					itemRef: 0,
 					indexedVariables: 0
 				};
 				if (subProps.length > 0) {
 					// Node
-					elem.itemRef = list.addObject(new SubStructVar(relIndex, 1, len, fullName, subProps, list, parentStruct));
+					item.itemRef = list.addObject(new SubStructVar(relIndex, 1, len, fullName, subProps, list, parentStruct));
 				}
 				else {
 					// Leaf
@@ -493,7 +490,8 @@ export class SubStructVar extends ShallowVar {
 					// Get value depending on len: 1 byte, 1 word or array.
 					if (len <= 2) {
 						// Byte or word
-						elem.itemRef = () => {
+						item.elemSize = len;
+						item.itemRef = () => {
 							const mem = parentStruct.getMemory();
 							const value = Utility.getUintFromMemory(mem, memIndex, len, true);	// Is done only for little endian, if wanted it could be extended to big endian
 							const result = Utility.getHexString(value, 2 * len) + 'h';
@@ -504,12 +502,12 @@ export class SubStructVar extends ShallowVar {
 						// Array
 						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1);
 						memDumpVar.setParent(parentStruct, memIndex);
-						elem.itemRef = list.addObject(memDumpVar);
-						elem.indexedVariables = len;
+						item.itemRef = list.addObject(memDumpVar);
+						item.indexedVariables = len;
 					}
 				}
 				// Add to array
-				this.propArray.push(elem);
+				this.propMap.set(name, item);
 			}
 			else {
 				// Calculate last index
@@ -528,31 +526,38 @@ export class SubStructVar extends ShallowVar {
 	 */
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
-		count = count || (this.propArray.length - start);
+		count = count || (this.propMap.size - start);
 		const end = start + count;
 		// Return range
-		const arrRange = this.propArray.filter((value, index) => (index >= start && index <= end));
-		// Convert to DebugVariable array
-		const dbgVarArray = arrRange.map(item => {
-			let value = '';
-			let ref = 0;
-			if (typeof item.itemRef == 'number') {
-				// Variables reference
-				ref = item.itemRef;
+		let index = 0;
+		const dbgVarArray = new Array<DebugProtocol.Variable>();
+		for (const [name, item] of this.propMap) {
+			if (index >= end)
+				break;	// stop
+			if (index >= start) {
+				// Add item to array for display
+				let value = '';
+				let ref = 0;
+				if (typeof item.itemRef == 'number') {
+					// Variables reference
+					ref = item.itemRef;
+				}
+				else {
+					// Callback which retrieves the result
+					value = item.itemRef();
+				}
+				const result: DebugProtocol.Variable = {
+					name: name,
+					type: Utility.getHexString(item.address, 4) + 'h',
+					value,
+					variablesReference: ref,
+					indexedVariables: item.indexedVariables
+				};
+				dbgVarArray.push(result);
 			}
-			else {
-				// Callback which retrieves the result
-				value = item.itemRef();
-			}
-			const result: DebugProtocol.Variable = {
-				name: item.name,
-				type: item.type,
-				value,
-				variablesReference: ref,
-				indexedVariables: item.indexedVariables
-			};
-			return result;
-		});
+			// Next
+			index++;
+		}
 		return dbgVarArray;
 	}
 
@@ -565,22 +570,25 @@ export class SubStructVar extends ShallowVar {
 	 * @returns A Promise with the formatted string. undefined if not implemented.
 	 */
 	public async setValue(name: string, value: number): Promise<string> {
-		return 'hmpf';
-		/*
-		// Get index (strip brackets)
-		const indexString = name.substr(1, name.length - 2);
-		const index = parseInt(indexString);
+		// Get item
+		const item = this.propMap.get(name)!;
+		// Check if value is not an object itself
+		if (typeof item.itemRef == 'number')
+			return '';	// Variables reference
+
+		// Otherwise change the value.
 
 		// Get address
-		const address = this.addr + index * this.elemSize;
+		const address = item.address;	// TODO Change type to address
+		// Note: item.elemSize is <= 2
 
 		// Change neg to pos
 		if (value < 0)
 			value += 0x10000;
 
 		// Write data
-		const dataWrite = new Uint8Array(this.elemSize);
-		for (let i = 0; i < this.elemSize; i++) {
+		const dataWrite = new Uint8Array(item.elemSize);
+		for (let i = 0; i < item.elemSize; i++) {
 			dataWrite[i] = value & 0xFF;
 			value = value >>> 8;
 		}
@@ -588,19 +596,28 @@ export class SubStructVar extends ShallowVar {
 		ShallowVar.memoryChanged = true;
 
 		// Retrieve memory values, to see if they really have been set.
-		const data = await Remote.readMemoryDump(address, this.elemSize);
+		const data = await Remote.readMemoryDump(address, item.elemSize);
 		let readValue = 0;
-		for (let i = this.elemSize - 1; i >= 0; i--) {
+		for (let i = item.elemSize - 1; i >= 0; i--) {
 			readValue = readValue << 8;
 			readValue += data[i] & 0xFF;
 		}
 
 		// Pass formatted string to vscode
-		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, this.formatString(), undefined);
+		const formattedString = Utility.numberFormatted(name, readValue, item.elemSize, this.formatString(item.elemSize), undefined);
 		return formattedString;
-		*/
-
 	};
+
+
+	/**
+	 * The format to use.
+	 */
+	protected formatString(elemSize: number): string {
+		if (elemSize == 1)
+			return Settings.launch.formatting.watchByte;	// byte
+		else
+			return Settings.launch.formatting.watchWord;	// word
+	}
 
 }
 
@@ -663,16 +680,15 @@ export class StructVar extends SubStructVar {
 			super.createPropArray(relIndex, count, elemSize, struct, props, list, this);
 		}
 		else {
-			// Create array
-			this.propArray = [];
 			// Create a number of nodes
 			let relIndex = 0;
 			for (let i = 0; i < count; i++) {
 				let labelVar;
 				const address = this.getAddress() + i * elemSize;
-				const elem: SubStructItems = {
-					name: '[' + i + ']',
-					type: Utility.getHexString(address, 4) + 'h',
+				const name = '[' + i + ']';
+				const item: SubStructItems = {
+					address,
+					elemSize: 0,
 					itemRef: 0,
 					indexedVariables: 0
 				};
@@ -684,10 +700,10 @@ export class StructVar extends SubStructVar {
 					// Simple array
 					labelVar = new MemDumpVar(this.getAddress(), elemSize, 1);
 					labelVar.setParent(this, relIndex);
-					elem.indexedVariables = elemSize;
+					item.indexedVariables = elemSize;
 				}
-				elem.itemRef = list.addObject(labelVar);
-				this.propArray.push(elem);
+				item.itemRef = list.addObject(labelVar);
+				this.propMap.set(name, item);
 				// Next
 				relIndex += elemSize;
 			}
