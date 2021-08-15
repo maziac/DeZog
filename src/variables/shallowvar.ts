@@ -419,7 +419,9 @@ export class SubStructVar extends ShallowVar {
 	 */
 	public constructor(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		super();
-		this.createPropArray(relIndex, count, elemSize, struct, props, list, parentStruct);
+		if (parentStruct) {
+			this.createPropArray(relIndex, count, elemSize, struct, props, list, parentStruct);
+		}
 	}
 
 
@@ -432,14 +434,9 @@ export class SubStructVar extends ShallowVar {
 	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
 	 * @param props An array of names of the direct properties of the struct.
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
-	 * @param parentStruct If undefined the method does nothing. Otherwise it is the
-	 * reference to a parent struct which retrieves the memory for all sub structs.
+	 * @param parentStruct A reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
-		// Check for parent
-		if (!parentStruct)
-			return;
-
+	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
 		// Now create a new variable for each
 		const unsortedMap = new Map<number, string>();
 		for (const prop of props) {
@@ -496,7 +493,7 @@ export class SubStructVar extends ShallowVar {
 							const value = Utility.getUintFromMemory(mem, memIndex, len, true);	// Is done only for little endian, if wanted it could be extended to big endian
 							const result = Utility.getHexString(value, 2 * len) + 'h';
 							return result;
-						}
+						};
 					}
 					else {
 						// Array
@@ -507,7 +504,7 @@ export class SubStructVar extends ShallowVar {
 					}
 				}
 				// Add to array
-				this.propMap.set(name, item);
+				this.propMap.set(prevName, item);
 			}
 			else {
 				// Calculate last index
@@ -522,41 +519,32 @@ export class SubStructVar extends ShallowVar {
 
 	/**
 	 * Returns the properties.
+	 * Ignores start and count for a struct.
 	 * @returns A Promise with the properties.
 	 */
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
-		start = start || 0;
-		count = count || (this.propMap.size - start);
-		const end = start + count;
 		// Return range
-		let index = 0;
 		const dbgVarArray = new Array<DebugProtocol.Variable>();
 		for (const [name, item] of this.propMap) {
-			if (index >= end)
-				break;	// stop
-			if (index >= start) {
-				// Add item to array for display
-				let value = '';
-				let ref = 0;
-				if (typeof item.itemRef == 'number') {
-					// Variables reference
-					ref = item.itemRef;
-				}
-				else {
-					// Callback which retrieves the result
-					value = item.itemRef();
-				}
-				const result: DebugProtocol.Variable = {
-					name: name,
-					type: Utility.getHexString(item.address, 4) + 'h',
-					value,
-					variablesReference: ref,
-					indexedVariables: item.indexedVariables
-				};
-				dbgVarArray.push(result);
+			// Add item to array for display
+			let value = '';
+			let ref = 0;
+			if (typeof item.itemRef == 'number') {
+				// Variables reference
+				ref = item.itemRef;
 			}
-			// Next
-			index++;
+			else {
+				// Callback which retrieves the result
+				value = item.itemRef();
+			}
+			const result: DebugProtocol.Variable = {
+				name: name,
+				type: Utility.getHexString(item.address, 4) + 'h',
+				value,
+				variablesReference: ref,
+				indexedVariables: item.indexedVariables
+			};
+			dbgVarArray.push(result);
 		}
 		return dbgVarArray;
 	}
@@ -579,7 +567,7 @@ export class SubStructVar extends ShallowVar {
 		// Otherwise change the value.
 
 		// Get address
-		const address = item.address;	// TODO Change type to address
+		const address = item.address;
 		// Note: item.elemSize is <= 2
 
 		// Change neg to pos
@@ -655,7 +643,7 @@ export class StructVar extends SubStructVar {
 	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, list: RefList<ShallowVar>) {
 		super(0, count, size, struct, props, list);
 		this.baseAddress = addr;
-		this.createPropArray(0, count, size, struct, props, list);
+		this.createPropArray(0, count, size, struct, props, list, undefined as any);
 		// The amount of bytes to retrieve:
 		this.countBytes = count * size;
 	}
@@ -674,7 +662,7 @@ export class StructVar extends SubStructVar {
 	 * @param parentStruct If undefined the method does nothing. Otherwise it is the
 	 * reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
+	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
 		// But only if more than 1 element
 		if (count <= 1) {
 			super.createPropArray(relIndex, count, elemSize, struct, props, list, this);
