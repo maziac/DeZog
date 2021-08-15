@@ -402,19 +402,8 @@ interface SubStructItems {
  * The SubStructVars refer to it.
  */
 export class SubStructVar extends ShallowVar {
-	// The parent of the sub structure (which holds the memory contents.
-	protected parentStruct: StructVar;
-
 	// Holds an array with structure properties.
 	protected propArray: Array<SubStructItems>;
-
-	// The data is copied from the constructor for lazy initialization.
-	protected relIndex: number;
-	protected count: number;
-	protected elemSize: number;
-	protected struct: string;
-	protected props: Array<string>;
-	protected list: RefList<ShallowVar>;
 
 
 	/**
@@ -430,32 +419,35 @@ export class SubStructVar extends ShallowVar {
 	 */
 	public constructor(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		super();
-		// Save all arguments
-		this.relIndex = relIndex;  // TODO: Remove all members
-		this.count = count;
-		this.elemSize = elemSize;
-		this.struct = struct.trim();;
-		this.props = props;
-		this.list = list;
-		if (parentStruct) {
-			this.parentStruct = parentStruct;
-			this.createPropArray();
-		}
+		this.createPropArray(relIndex, count, elemSize, struct, props, list, parentStruct);
 	}
 
 
 	/**
 	 * Creates the propArray.
+	 * @param relIndex The relative address inside the parent's memory dump.
+	 * @param count The count of elements to display. The count of elements in the struct
+	 * (each can have a different size).
+	 * @param elemSize The size of this object. All elements together.
+	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
+	 * @param props An array of names of the direct properties of the struct.
+	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
+	 * @param parentStruct If undefined the method does nothing. Otherwise it is the
+	 * reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray() {
+	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		// Create array for struct
 		this.propArray = [];
 
+		// Check for parent
+		if (!parentStruct)
+			return;
+
 		// Now create a new variable for each
 		const unsortedMap = new Map<number, string>();
-		for (const prop of this.props) {
+		for (const prop of props) {
 			// Get the relative address
-			const relAddr = Labels.getNumberFromString64k(this.struct + '.' + prop);
+			const relAddr = Labels.getNumberFromString64k(struct + '.' + prop);
 			unsortedMap.set(relAddr, prop);
 		}
 		// Sort map by indices
@@ -467,7 +459,7 @@ export class SubStructVar extends ShallowVar {
 		// Get all lengths of the leafs and dive into nodes
 		let prevName;
 		let prevIndex;
-		let lastIndex = this.elemSize;
+		let lastIndex = elemSize;
 		for (const [index, name] of sortedMap) {
 			if (prevName) {
 				let len;
@@ -481,10 +473,10 @@ export class SubStructVar extends ShallowVar {
 					len = lastIndex - prevIndex;
 				}
 				// Check for leaf or node
-				const fullName = this.struct + '.' + prevName;
+				const fullName = struct + '.' + prevName;
 				const subProps = Labels.getSubLabels(fullName);
-				const memIndex = this.relIndex + prevIndex;
-				const address = this.parentStruct.getAddress() + memIndex;
+				const memIndex = relIndex + prevIndex;
+				const address = parentStruct.getAddress() + memIndex;
 				const elem: SubStructItems = {
 					name: prevName,
 					type: Utility.getHexString(address, 4) + 'h',
@@ -493,16 +485,16 @@ export class SubStructVar extends ShallowVar {
 				};
 				if (subProps.length > 0) {
 					// Node
-					elem.itemRef = this.list.addObject(new SubStructVar(this.relIndex, 1, len, fullName, subProps, this.list, this.parentStruct));
+					elem.itemRef = list.addObject(new SubStructVar(relIndex, 1, len, fullName, subProps, list, parentStruct));
 				}
 				else {
 					// Leaf
-					const memIndex = this.relIndex + prevIndex;
+					const memIndex = relIndex + prevIndex;
 					// Get value depending on len: 1 byte, 1 word or array.
 					if (len <= 2) {
 						// Byte or word
 						elem.itemRef = () => {
-							const mem = this.parentStruct.getMemory();
+							const mem = parentStruct.getMemory();
 							const value = Utility.getUintFromMemory(mem, memIndex, len, true);	// Is done only for little endian, if wanted it could be extended to big endian
 							const result = Utility.getHexString(value, 2 * len) + 'h';
 							return result;
@@ -510,9 +502,9 @@ export class SubStructVar extends ShallowVar {
 					}
 					else {
 						// Array
-						const memDumpVar = new MemDumpVar(this.parentStruct.getAddress(), this.elemSize, 1);
-						memDumpVar.setParent(this.parentStruct, memIndex);
-						elem.itemRef = this.list.addObject(memDumpVar);
+						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1);
+						memDumpVar.setParent(parentStruct, memIndex);
+						elem.itemRef = list.addObject(memDumpVar);
 						elem.indexedVariables = len;
 					}
 				}
@@ -628,6 +620,10 @@ export class StructVar extends SubStructVar {
 	// To store the base address.
 	protected baseAddress: number;
 
+	// The total number of bytes to read.
+	protected countBytes: number;
+
+
 	/**
 	 * Constructor.
 	 * @param addr The address of the memory dump
@@ -636,53 +632,64 @@ export class StructVar extends SubStructVar {
 	 * @param size The size of this object. All elements together.
 	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
 	 * @param props An array of names of the direct properties of the struct.
+	 * @param parentStruct Not used at this level.
 	 * @param list The list of variables. The constructor adds the variables to it.
 	 */
 	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, list: RefList<ShallowVar>) {
 		super(0, count, size, struct, props, list);
-		this.parentStruct = this;	// Set to this because super class needs it for some functions.
 		this.baseAddress = addr;
-		this.createPropArray();
+		this.createPropArray(0, count, size, struct, props, list);
+		// The amount of bytes to retrieve:
+		this.countBytes = count * size;
 	}
 
 
 	/**
 	 * Creates the propArray.
 	 * On top level this is really an array.
+	 * @param relIndex The relative address inside the parent's memory dump.
+	 * @param count The count of elements to display. The count of elements in the struct
+	 * (each can have a different size).
+	 * @param elemSize The size of this object. All elements together.
+	 * @param struct 'b'=byte, 'w'=word or 'bw' for byte and word.
+	 * @param props An array of names of the direct properties of the struct.
+	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
+	 * @param parentStruct If undefined the method does nothing. Otherwise it is the
+	 * reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	protected createPropArray() {
+	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		// But only if more than 1 element
-		if (this.count <= 1) {
-			super.createPropArray();
+		if (count <= 1) {
+			super.createPropArray(relIndex, count, elemSize, struct, props, list, this);
 		}
 		else {
 			// Create array
 			this.propArray = [];
 			// Create a number of nodes
 			let relIndex = 0;
-			for (let i = 0; i < this.count; i++) {
+			for (let i = 0; i < count; i++) {
 				let labelVar;
-				const address = this.getAddress() + i * this.elemSize;
+				const address = this.getAddress() + i * elemSize;
 				const elem: SubStructItems = {
 					name: '[' + i + ']',
 					type: Utility.getHexString(address, 4) + 'h',
 					itemRef: 0,
 					indexedVariables: 0
 				};
-				if (this.props.length) {
+				if (props.length) {
 					// Sub structure
-					labelVar = new SubStructVar(relIndex, 1, this.elemSize, this.struct, this.props, this.list, this.parentStruct);
+					labelVar = new SubStructVar(relIndex, 1, elemSize, struct, props, list, this);
 				}
 				else {
 					// Simple array
-					labelVar = new MemDumpVar(this.getAddress(), this.elemSize, 1);
-					labelVar.setParent(this.parentStruct, relIndex);
-					elem.indexedVariables = this.elemSize;
+					labelVar = new MemDumpVar(this.getAddress(), elemSize, 1);
+					labelVar.setParent(this, relIndex);
+					elem.indexedVariables = elemSize;
 				}
-				elem.itemRef = this.list.addObject(labelVar);
+				elem.itemRef = list.addObject(labelVar);
 				this.propArray.push(elem);
 				// Next
-				relIndex += this.elemSize;
+				relIndex += elemSize;
 			}
 		}
 	}
@@ -694,9 +701,7 @@ export class StructVar extends SubStructVar {
 	 * @returns A Promise with the properties.
 	 */
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
-		// Retrieve memory values each time
-		const countBytes = this.count * this.elemSize;
-		this.memory = await Remote.readMemoryDump(this.getAddress(), countBytes);
+		this.memory = await Remote.readMemoryDump(this.getAddress(), this.countBytes);
 		// Check if properties array exists and create
 		return await super.getContent(start, count);
 	}
