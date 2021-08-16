@@ -216,7 +216,7 @@ The list is (also with old unused entries) is available until the end of a debug
 There are 2 lists involved:
 
 - DebugSessionClass.listVariables: This list associates variable references with objects.
-- ExpressionsList: The list associates expressions with ShallowVars.
+- DebugSessionClass.expressionsList: The list associates expressions with ShallowVars.
 
 Variable references are used in several places, namely: the VARIABLES, the WATCH and the CALL STACK pane.
 For most of the variables the references are set at the start of a debug session and not changed anymore.

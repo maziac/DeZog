@@ -29,7 +29,7 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
-import {ExpressionsList, WatchesResponse} from './misc/watcheslist';
+import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
 
 
@@ -59,8 +59,8 @@ export class DebugSessionClass extends DebugSession {
 	/// A list for the VARIABLES (references)
 	protected listVariables = new RefList<ShallowVar>();
 
-	// A list with the expressions used in the WATCHes panel.
-	protected watchesList = new ExpressionsList();
+	// A list with the expressions used in the WATCHes panel and the Expressions section in the VARIABLES pane.
+	protected expressionsList = new Map<string, ExpressionVariable>();
 
 	/// The list of labels that are shown in the VARIABLES section.
 	protected containerVar: ContainerVar;
@@ -1952,9 +1952,9 @@ export class DebugSessionClass extends DebugSession {
 	 * @param expression E.g. "main,2,10"
 	 * @returns All that is required for the VARIABLES pane or WATCHES.
 	 */
-	protected async evaluateLabelExpression(expression: string): Promise<WatchesResponse> {
+	protected async evaluateLabelExpression(expression: string): Promise<ExpressionVariable> {
 		// Check if expression has been evaluated already
-		const response = await this.watchesList.get(expression);
+		const response = await this.expressionsList.get(expression);
 		if (response)
 			return response;
 
@@ -2100,12 +2100,14 @@ export class DebugSessionClass extends DebugSession {
 
 				const description = Utility.getLongAddressString(labelValue64k);
 				const varRef = this.listVariables.addObject(labelVar);
-				return {
+				const exprVar = {
 					description,
 					immediateValue,
 					varRef,
 					count: elemCount
 				};
+				this.expressionsList.set(expression, exprVar);
+				return exprVar;
 			}	// If labelString
 		}	// If match
 
