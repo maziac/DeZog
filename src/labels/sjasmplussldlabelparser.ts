@@ -73,7 +73,7 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * As the SLD file is easy to read only one pass is required.
 	 */
 	public loadAsmListFile(config: AsmConfigBase) {
-		this.config=config;
+		this.config = config;
 		const sldConfig = this.config as SjasmplusConfig;
 
 		// Check that excludeFiles and srcDirs is not used.
@@ -119,12 +119,12 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			throw Error("'" + this.config.path + "' is empty.");
 		// First line
 		const fields = lines[0].split('|');
-		if (fields[1]!='SLD.data.version')
+		if (fields[1] != 'SLD.data.version')
 			throw Error("'" + this.config.path + "': SLD data version not found.");
 		const version = fields[2] || '0';
 		const requiredVersion = 1;
 		if (parseInt(version) < requiredVersion)
-			throw Error("'" + this.config.path + "': SLD data version "+version+" is too old. Need SLD version "+requiredVersion+". Please update sjasmplus to at least version 1.18.0.");
+			throw Error("'" + this.config.path + "': SLD data version " + version + " is too old. Need SLD version " + requiredVersion + ". Please update sjasmplus to at least version 1.18.0.");
 	}
 
 
@@ -132,21 +132,21 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 * Parses the complete file to get the bank size.
 	 */
 	protected parseForBankSizeAndSldOpt(lines: Array<string>) {
-		let keywords: string[]=[];
+		let keywords: string[] = [];
 		let bankSize;
 		for (const line of lines) {
 			// Split the fields, e.g. "main.asm|3||0|-1|-1|Z|pages.size: 16384, pages.count: 8, slots.count: 4, slots.adr: 0, 16384, 32768, 49152"
-			const fields=line.split('|');
+			const fields = line.split('|');
 
 			// Check for right type
-			const type=fields[6];
-			if (type=='Z') {
+			const type = fields[6];
+			if (type == 'Z') {
 				// Parse bank size
-				const data=fields[7];
+				const data = fields[7];
 				// Delete anything not a number or ,
-				const numberString=data.replace(/[^0-9,]/g, '');
+				const numberString = data.replace(/[^0-9,]/g, '');
 				// Interprete only the first number
-				bankSize=parseInt(numberString);
+				bankSize = parseInt(numberString);
 			}
 
 			// Check for SLD OPT
@@ -155,25 +155,25 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 				// "||K|KEYWORDS|WPMEM,LOGPOINT,ASSERTION"
 				keywords = fields[4].split(','); // "WPMEM,LOGPOINT,ASSERTION"
 			}
-			if (bankSize!=undefined&&keywords!=undefined)
+			if (bankSize != undefined && keywords != undefined)
 				break;
 		}
 
 		// Check
-		if (bankSize==undefined)
+		if (bankSize == undefined)
 			throw Error("Could not find bank size in SLD file.");
-		this.bankSize=bankSize;
+		this.bankSize = bankSize;
 
 		// Check for keywords
-		const kws=["WPMEM", "LOGPOINT", "ASSERTION"];
-		let missing: string[]=[];
+		const kws = ["WPMEM", "LOGPOINT", "ASSERTION"];
+		let missing: string[] = [];
 		for (const kw of kws) {
-			if (keywords.indexOf(kw)<0)
+			if (keywords.indexOf(kw) < 0)
 				missing.push(kw);
 		}
-		if (missing.length>0) {
-			const missingStr=missing.join(', ');
-			this.warnings+="The assembler file is missing the 'SLDOPT COMMENT "+missingStr+"' statement. Use of "+missingStr+" is not possible.";
+		if (missing.length > 0) {
+			const missingStr = missing.join(', ');
+			this.warnings += "The assembler file is missing the 'SLDOPT COMMENT " + missingStr + "' statement. Use of " + missingStr + " is not possible.";
 		}
 	}
 
@@ -185,26 +185,26 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 	 */
 	protected parseFileLabelAddress(line: string) {
 		// Split the fields, e.g. "main.asm|15||0|11|24576|F|screen_top"
-		const fields=line.split('|');
+		const fields = line.split('|');
 
 		// Get filename
-		let sourceFile=fields[0];
+		let sourceFile = fields[0];
 		// Check for comment or SLD.data.version
-		if (sourceFile=='')
+		if (sourceFile == '')
 			return;
 		// Convert (also use srcDirs)
-		sourceFile=Utility.getRelSourceFilePath(sourceFile, this.config.srcDirs);
+		sourceFile = Utility.getRelSourceFilePath(sourceFile, this.config.srcDirs);
 
 		// Definition file/line not required
 
 		// Get page (bank) (-1 if not a memory address)
-		const page=parseInt(fields[4]);
+		const page = parseInt(fields[4]);
 		// Get value
-		let value=parseInt(fields[5]);
+		let value = parseInt(fields[5]);
 		// Note: An EQU could have a value bigger than 0xFFFF
 
 		// Get type
-		const type=fields[6];
+		const type = fields[6];
 
 		// Get label
 		const label = fields[7];
@@ -258,10 +258,10 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 			case 'T':	// Instruction trace data
 				{
 					// Change value to contain page info
-					const address=this.createLongAddress(value, page);
+					const address = this.createLongAddress(value, page);
 
 					// Get line number
-					const lineNr=parseInt(fields[1])-1;
+					const lineNr = parseInt(fields[1]) - 1;
 
 					// Store values to associate address with line number and (last) label.
 					this.fileLineNrs.set(address, {
@@ -301,9 +301,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 					*/
 
 					// Check if a new array need to be created
-					let lineArray=this.lineArrays.get(sourceFile);
+					let lineArray = this.lineArrays.get(sourceFile);
 					if (!lineArray) {
-						lineArray=new Array<number>();
+						lineArray = new Array<number>();
 						this.lineArrays.set(sourceFile, lineArray);
 					}
 					// Store long address

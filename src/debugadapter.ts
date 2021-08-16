@@ -398,6 +398,14 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
+		// Check list file's modified date to warn the user if it has been build in between.
+		const fileDate = Labels.getListFileDate();
+		const lastModDate = Labels.lastModifiedDate;
+		if (fileDate.getTime() != lastModDate.getTime()) {
+			// Warn the user
+			this.showWarning('The list/sld file has been modified. If you continue you might encounter wrong labels and disassembly.');
+		}
+
 		// Restart history
 		StepHistory.init();
 		// Reset all decorations

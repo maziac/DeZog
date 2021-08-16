@@ -5,6 +5,7 @@ import {Z80Registers} from '../remotes/z80registers';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
+import * as fs from 'fs';
 
 
 /**
@@ -59,6 +60,13 @@ export interface NextLabelDistance {
  *
  */
 export class LabelsClass {
+
+	/// The (youngest) list file's modified date.
+	/// (Used for restart.)
+	public lastModifiedDate: Date;
+
+	/// The files (stored only for lastModifiedDate.)
+	protected filePaths = new Array<string>();
 
 	/// Map that associates memory addresses (PC values) with line numbers
 	/// and files.
@@ -163,6 +171,7 @@ export class LabelsClass {
 		this.watchPointLines.length = 0;
 		this.assertionLines.length = 0;
 		this.logPointLines.length = 0;
+		this.filePaths.length = 0;
 		this.smallValuesMaximum = smallValuesMaximum;
 		this.bankSize = 0;
 		this.warnings = undefined as any;
@@ -202,6 +211,7 @@ export class LabelsClass {
 	 */
 	public readListFiles(mainConfig: any) {
 		this.warnings = '';
+
 		// sjasmplus
 		if (mainConfig.sjasmplus) {
 			for (const config of mainConfig.sjasmplus) {
@@ -213,21 +223,29 @@ export class LabelsClass {
 				const warnings = parser.getWarnings();
 				if (warnings)
 					this.warnings += 'sjasmplus sld parser warnings:\n' + warnings;
+				// Store path
+				this.filePaths.push(config.path);
 			}
 		}
 
 		// z80asm
 		if (mainConfig.z80asm) {
 			const parser = new Z80asmLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
-			for (const config of mainConfig.z80asm)
+			for (const config of mainConfig.z80asm) {
 				parser.loadAsmListFile(config);
+				// Store path
+				this.filePaths.push(config.path);
+			}
 		}
 
 		// z88dk
 		if (mainConfig.z88dk) {
 			const parser = new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
-			for (const config of mainConfig.z88dk)
+			for (const config of mainConfig.z88dk) {
 				parser.loadAsmListFile(config);
+				// Store path
+				this.filePaths.push(config.path);
+			}
 		}
 
 		// Add new assemblers here ...
@@ -238,6 +256,42 @@ export class LabelsClass {
 			this.warnings = undefined as any;
 		// Finish
 		this.finish();
+
+		// Get file's modified date
+		this.lastModifiedDate = this.getListFileDate();
+	}
+
+
+	/**
+	 * @returns The (youngest) date of the list file(s).
+	 * (Used to compare on restart.)
+	 */
+	public getListFileDate(): Date {
+		let date = new Date(0);
+
+		// Iterate all files
+		for (const path of this.filePaths) {
+				// Find youngest date
+				date = this.youngestDate(date, path);
+		}
+
+		// Return
+		return date;
+	}
+
+
+	/**
+	 * Retrieves the file's last modified date and compares it with the given date.
+	 * Whichever date is younger is returned.
+	 * @param date The date to compare with.
+	 * @param path The file's path.
+	 * @returns The youngest date of both.
+	 */
+	protected youngestDate(date: Date, path: string) {
+		const stats = fs.statSync(path)
+		const fileDate = new Date(stats.mtimeMs);
+		const youngestDate = (date < fileDate) ? fileDate : date;
+		return youngestDate;
 	}
 
 
