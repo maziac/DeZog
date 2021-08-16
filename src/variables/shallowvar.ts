@@ -982,12 +982,7 @@ export class ContainerVar extends ShallowVar {
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
 	public changeable(name: string): string | undefined {
-		// Change normally not allowed if in reverse debugging
-		//if (StepHistory.isInStepBackMode())
-		//	return 'Altering values not allowed in time-travel mode.';
-		// Otherwise allow
-		//return undefined;
-		return 'Use -addexpr/-delexpr to change the list of variables.';
+		return 'Use -addexpr/-delexpr to change the list of expressions.';
 	}
 
 
