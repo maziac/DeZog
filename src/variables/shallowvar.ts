@@ -857,7 +857,7 @@ export class MemDumpVar extends ShallowVar {
 		const index = parseInt(indexString);
 
 		// Get address
-		const address = this.addr + index * this.elemSize;
+		const address = this.addr + this.memOffset + index * this.elemSize;
 
 		// Change neg to pos
 		if (value < 0)

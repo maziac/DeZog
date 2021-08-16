@@ -3207,7 +3207,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * Should be called if memory content has been manually changed.
 	 */
 	protected async memoryHasBeenChanged() {
-		this.sendEvent(new InvalidatedEvent(['variables']));
+		//this.sendEvent(new InvalidatedEvent(['variables'])); // Not required. The VARIABLES and the WATCHes will be updated anyway. If uncommented then the WATCHes are not highlighted on a change.
 		await BaseView.staticCallUpdateFunctions();
 	}
 
