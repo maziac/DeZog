@@ -985,7 +985,7 @@ export class ContainerVar extends ShallowVar {
 	 * items change as well.
 	 * If index is not in range an exception is thrown.
 	 */
-	public removeItem(index: number) {
+	public deleteItem(index: number) {
 		if (index < 0 || index >= this.varList.length)
 			throw Error("No such index: " + index);
 

@@ -1739,7 +1739,7 @@ export class DebugSessionClass extends DebugSession {
 			output = await this.evalHelp(tokens);
 		}
 		else if (cmd == '-addexpr') {
-			output = await this.evaladdexpr(tokens);
+			output = await this.evalAddExpr(tokens);
 		}
 		else if (cmd == '-ASSERTION' || cmd == '-assertion') {
 			output = await this.evalASSERTION(tokens);
@@ -1787,7 +1787,7 @@ export class DebugSessionClass extends DebugSession {
 			output = await this.evalWPMEM(tokens);
 		}
 		else if (cmd == '-delexpr') {
-			output = await this.evalRemoveVar(tokens);
+			output = await this.evalDeleteExpr(tokens);
 		}
 		else if (cmd == '-sprites') {
 			output = await this.evalSprites(tokens);
@@ -2228,7 +2228,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param tokens The arguments. I.e. the expression to evaluate.
 	 * @returns A Promise with a text to print.
 	 */
-	protected async evaladdexpr(tokens: Array<string>): Promise<string> {
+	protected async evalAddExpr(tokens: Array<string>): Promise<string> {
 		// Concatenate all tokens, i.e. spaces are of no interest
 		const expr = tokens.join(' ').trim();	// restore expression
 		if (expr.length == 0) {
@@ -2249,12 +2249,12 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
-	 * Removes an expression (a label) from the VARIABLES pane.
+	 * Deletes an expression (a label) from the VARIABLES pane.
 	 * In contrast to evaladdexpr this is done by index.
 	 * @param tokens The arguments. The index number to remove.
      * @returns A Promise with a text to print.
 	 */
-	protected async evalRemoveVar(tokens: Array<string>): Promise<string> {
+	protected async evalDeleteExpr(tokens: Array<string>): Promise<string> {
 		if (tokens.length != 1) {
 			// Error Handling: 1 arg expected
 			throw new Error("1 argument, the index of the variable, expected.");
@@ -2263,7 +2263,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Get index
 		try {
 			const index = parseInt(tokens[0]);
-			this.containerVar.removeItem(index);
+			this.containerVar.deleteItem(index);
 			return 'OK';
 		}
 		catch (e) {
