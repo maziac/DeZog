@@ -29,7 +29,7 @@ import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
-import {WatchesList, WatchesResponse} from './misc/watcheslist';
+import {ExpressionsList, WatchesResponse} from './misc/watcheslist';
 import {RefList} from './misc/reflist';
 
 
@@ -60,7 +60,7 @@ export class DebugSessionClass extends DebugSession {
 	protected listVariables = new RefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel.
-	protected watchesList = new WatchesList();
+	protected watchesList = new ExpressionsList();
 
 	/// The list of labels that are shown in the VARIABLES section.
 	protected containerVar: ContainerVar;
@@ -458,7 +458,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Persistent variable references
 			this.listVariables.clear();
-			this.containerVar = new ContainerVar(this.listVariables);
+			this.containerVar = new ContainerVar();
 			this.disassemblyVar = new DisassemblyVar();
 			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
 			this.localStackVar = new StackVar();
@@ -1918,39 +1918,19 @@ export class DebugSessionClass extends DebugSession {
 			// Watch
 			case 'watch':
 				try {
-					// Check if variable for this expression already exists
-					let respBody = await this.watchesList.get(expression);
-					if (!respBody) {
-						// Create a variable
-						const item = await this.evaluateLabelExpression(expression);
-						const label = item.labelVar;
-						let respBodyOrValue: WatchesResponse | ImmediateValue;
-						if (label instanceof ShallowVar) {
-							// A real variable
-							const ref = this.listVariables.addObject(item.labelVar);
-							respBodyOrValue = {
-								result: '',
-								variablesReference: ref,
-								type: item.type,
-								indexedVariables: item.indexedVariables
-							};
-							respBody = respBodyOrValue;
-						}
-						else {
-							// An (immediate) value
-							const result = await label.getValue();
-							respBodyOrValue = label;
-							respBody = {
-								result,
-								variablesReference: 0,
-								type: label.type,
-								indexedVariables: 0
-							};
-						}
-						// Remember
-						this.watchesList.push(expression, respBodyOrValue);
+					// Create or get a variable (either a variable reference or an immediate value)
+					const item = await this.evaluateLabelExpression(expression);
+					let result = '';
+					if (item.immediateValue) {
+						// Fill in immediate value (varRef is 0)
+						result = await item.immediateValue.getValue();
 					}
-					response.body = respBody;
+					response.body = {
+						result,
+						variablesReference: item.varRef,
+						type: item.description,
+						indexedVariables: item.count
+					};
 				}	// try
 				catch (e) {
 					// Return empty response
@@ -1972,7 +1952,12 @@ export class DebugSessionClass extends DebugSession {
 	 * @param expression E.g. "main,2,10"
 	 * @returns All that is required for the VARIABLES pane or WATCHES.
 	 */
-	protected async evaluateLabelExpression(expression: string): Promise<{labelVar: ShallowVar|ImmediateValue, type: string, indexedVariables: number}> {
+	protected async evaluateLabelExpression(expression: string): Promise<WatchesResponse> {
+		// Check if expression has been evaluated already
+		const response = await this.watchesList.get(expression);
+		if (response)
+			return response;
+
 		// Check if it is a label (or double register). A label may have a special formatting:
 		// Example: "LBL_TEXT[x],w,10"  = Address: LBL_TEXT+2*x, 10 words
 		// or even a complete struct
@@ -2075,6 +2060,7 @@ export class DebugSessionClass extends DebugSession {
 				//const fullLabel = Utility.createFullLabel(labelString, "", lastLabel);	// Note: the module name comes from the PC location, this could be irritating. Therefore it is left off.
 				// Create a label variable
 				let labelVar;
+				let immediateValue;
 				// Check for sub labels (i.e. check for struct)
 				let props;
 				let propsLength = 0
@@ -2089,7 +2075,7 @@ export class DebugSessionClass extends DebugSession {
 						const littleEndian = true;
 						// Create variable
 						const description = Utility.getLongAddressString(labelValue64k);
-						labelVar = new ImmediateValue(description, async () => {
+						immediateValue = new ImmediateValue(description, async () => {
 							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
 							const memVal = Utility.getUintFromMemory(memory, 0, elemCount, littleEndian);
 							return await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
@@ -2113,10 +2099,12 @@ export class DebugSessionClass extends DebugSession {
 				}
 
 				const description = Utility.getLongAddressString(labelValue64k);
+				const varRef = this.listVariables.addObject(labelVar);
 				return {
-					labelVar,
-					type: description,
-					indexedVariables: elemCount
+					description,
+					immediateValue,
+					varRef,
+					count: elemCount
 				};
 			}	// If labelString
 		}	// If match
@@ -2234,7 +2222,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		try {
 			// Evaluate expression and create variables
 			const item = await this.evaluateLabelExpression(expr);
-			this.containerVar.addItem(expr, item.labelVar, item.type, item.indexedVariables);
+			this.containerVar.addItem(expr, item.immediateValue, item.varRef, item.description, item.count);
 			return 'OK';
 		}
 		catch (e) {

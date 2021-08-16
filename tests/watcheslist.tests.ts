@@ -1,13 +1,13 @@
 
 import * as assert from 'assert';
-import {WatchesList} from '../src/misc/watcheslist';
+import {ExpressionsList} from '../src/misc/watcheslist';
 
 suite('WatchesList', () => {
 
-	let wl: WatchesList;
+	let wl: ExpressionsList;
 
 	setup(() => {
-		wl = new WatchesList();
+		wl = new ExpressionsList();
 	});
 
 

@@ -888,26 +888,21 @@ export class MemDumpVar extends ShallowVar {
 }
 
 
+/**
+ * Special object to hold either a reference or apointer to an immediate value object.
+ */
+interface VarOrImmediate extends DebugProtocol.Variable {
+	immediateValue: ImmediateValue;
+}
+
 
 /**
  * The ContainerVar class acts as a container for other variables.
  * It is e.g. used for labels added by the user.
  */
 export class ContainerVar extends ShallowVar {
-	// List to add objects to get references.
-	protected list: RefList	<ShallowVar>;
-
 	// The array which holds the variables.
-	public varList = new Array<DebugProtocol.Variable|ImmediateValue>();
-
-
-	/**
-	 * Constructor: Remember list.
-	 */
-	constructor(list: RefList<ShallowVar>) {
-		super();
-		this.list = list;
-	}
+	public varList = new Array<VarOrImmediate>();
 
 
 	/**
@@ -924,27 +919,18 @@ export class ContainerVar extends ShallowVar {
 		for (let i = 0; i < count; i++) {
 			const entry = this.varList[i + start];
 			const description = entry.type + '\n\n(Use "-delexpr ' + i + '" to remove)';
-			if (entry instanceof ImmediateValue) {
+			let value = '';
+			if (entry.immediateValue) {
 				// ImmediateMemValue
-				const value = await entry.getValue();
-				dynList[i] = {
-					name: entry.name,
-					type: description,
-					value,
-					indexedVariables: 0,
-					variablesReference: 0
-				};
+				value = await entry.immediateValue.getValue();
 			}
-			else {
-				// ShallowVar
-				dynList[i] = {
-					name: entry.name,
-					type: description,
-					value: entry.value,
-					indexedVariables: entry.indexedVariables,
-					variablesReference: entry.variablesReference
-				};
-			}
+			dynList[i] = {
+				name: entry.name,
+				type: description,
+				value,
+				indexedVariables: entry.indexedVariables,
+				variablesReference: entry.variablesReference
+			};
 		}
 		return dynList;
 	}
@@ -953,28 +939,20 @@ export class ContainerVar extends ShallowVar {
 	/**
 	 * Adds a new item to the list.
 	 * @param name The name of the variable/label.
-	 * @param item The shallow var to display.
-	 * @param type A description shown in the UI.
-	 * @param indexedVariables The elem count or 0.
+	 * @param immediateValue If not undefined the immediate valeu to use instead of a variable reference.
+	 * @param varRef The variable reference to use. 0 if unused.
+	 * @param description A description shown in the UI on hovering.
+	 * @param count The elem count or 0.
 	 */
-	public addItem(name: string, item: ShallowVar | ImmediateValue, type: string, indexedVariables: number) {
-		if (item instanceof ImmediateValue) {
-			// Use an ImmediateMemValue
-			item.name = name;
-			this.varList.push(item);
-		}
-		else {
-			// Use ShallowVar
-			let ref = this.list.addObject(item);
-			this.varList.push({
-				name,
-				type,
-				value: '',
-				indexedVariables,
-				variablesReference: ref
-			});
-		}
-
+	public addItem(name: string, immediateValue: ImmediateValue, varRef: number, description: string, count: number) {
+		this.varList.push({
+			name,
+			type: description,
+			value: '',
+			indexedVariables: count,
+			variablesReference: varRef,
+			immediateValue
+		});
 	}
 
 

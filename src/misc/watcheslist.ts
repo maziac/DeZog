@@ -9,34 +9,31 @@ import {ImmediateValue} from "../variables/shallowvar";
  * The additional values that have to be stored for the variable
  * and that are returned on a 'get'.
  */
-export interface WatchesResponse {
-	/** The result of the evaluate request. */
-	result: string;
+export interface WatchesResponse { // TODO: rename
+	// A description shown on hovering.
+	description: string;
 
-	/** The optional type of the evaluate result.
-		This attribute should only be returned by a debug adapter if the client has passed the value true for the 'supportsVariableType' capability of the 'initialize' request.
-	*/
-	type: string;
-	/** Properties of a evaluate result that can be used to determine how to render the result in the UI. */
+	// An immediate value object or a reference to the variable.
+	// If set varRef is 0.
+	immediateValue: ImmediateValue;
 
-	variablesReference: number;
+	// The variables reference.
+	// If used the nimmediateValue is undefined.
+	varRef: number;
 
-	/** The number of indexed child variables.
-		The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
-		The value should be less than or equal to 2147483647 (2^31-1).
-	*/
-	indexedVariables?: number;
+	// The number of indexed child variables.
+	count: number;
 }
 
 
 /**
  * The items that are stored in the list.
  */
-interface WatchExpression {
+interface WatchExpression {// TODO: rename
 	// The expression, e.g. "main+4, 2, 5"
 	expression: string;
 	// The complete response for the evaluateRequest
-	respBodyOrValue: WatchesResponse|ImmediateValue;
+	respBodyOrValue: WatchesResponse;
 }
 
 
@@ -56,7 +53,7 @@ interface WatchExpression {
  * not exist yet in the list. Because, if it exists, the variable reference
  * exists as well.
  */
-export class WatchesList {
+export class ExpressionsList {
 
 	// The list of expressions.
 	protected list: Array<WatchExpression>;
@@ -76,20 +73,11 @@ export class WatchesList {
 	 * @param expression The expression string to check for.
 	 * @returns The associated response or undefined if not found.
 	 */
-	public async get(expression: string): Promise<WatchesResponse|undefined> {
+	public get(expression: string): WatchesResponse|undefined {
 		// Search for expression
 		for (const watch of this.list) {
 			if (watch.expression == expression) {
-				let respBody = watch.respBodyOrValue;
-				if (respBody instanceof ImmediateValue) {
-					// Create an immediate result value
-					const result = await respBody.getValue();
-					respBody = {
-						result,
-						type: respBody.type,
-						variablesReference: 0
-					}
-				}
+				let respBody = watch.respBodyOrValue;	 // TODO: Rename repsonse body
 				return respBody;
 			}
 		}
@@ -103,7 +91,7 @@ export class WatchesList {
 	 * @param expression The expression to store.
 	 * @param respBody The complete response with the variable reference.
 	 */
-	public push(expression: string, respBodyOrValue: WatchesResponse|ImmediateValue) {
+	public push(expression: string, respBodyOrValue: WatchesResponse) {
 		this.list.push({
 			expression,
 			respBodyOrValue
