@@ -8,7 +8,6 @@ import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';
-import {RemovableRefList} from '../misc/removablereflist';
 
 
 
@@ -896,7 +895,7 @@ export class MemDumpVar extends ShallowVar {
  */
 export class ContainerVar extends ShallowVar {
 	// List to add objects to get references.
-	protected list: RemovableRefList<ShallowVar>;
+	protected list: RefList	<ShallowVar>;
 
 	// The array which holds the variables.
 	public varList = new Array<DebugProtocol.Variable|ImmediateValue>();
@@ -905,7 +904,7 @@ export class ContainerVar extends ShallowVar {
 	/**
 	 * Constructor: Remember list.
 	 */
-	constructor(list: RemovableRefList<ShallowVar>) {
+	constructor(list: RefList<ShallowVar>) {
 		super();
 		this.list = list;
 	}
@@ -981,6 +980,7 @@ export class ContainerVar extends ShallowVar {
 
 	/**
 	 * Removes an item from the list.
+	 * Note: The expression is not removed from the ExpressionsList or the variables list.
 	 * @param index The index to remove. Note: other indexes of following
 	 * items change as well.
 	 * If index is not in range an exception is thrown.
@@ -989,12 +989,6 @@ export class ContainerVar extends ShallowVar {
 		if (index < 0 || index >= this.varList.length)
 			throw Error("No such index: " + index);
 
-		const item = this.varList[index];
-		if (!(item instanceof ImmediateValue)) { // For some reason DebugProtocol.Variable does not compile
-			// Remove variable
-			const ref = item.variablesReference;
-			this.list.removeObjects([ref]);
-		};
 		// Remove from own list
 		this.varList.splice(index, 1);
 	}

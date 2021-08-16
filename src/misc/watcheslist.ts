@@ -35,8 +35,6 @@ export interface WatchesResponse {
 interface WatchExpression {
 	// The expression, e.g. "main+4, 2, 5"
 	expression: string;
-	// If it was used recently.
-	used: boolean;
 	// The complete response for the evaluateRequest
 	respBodyOrValue: WatchesResponse|ImmediateValue;
 }
@@ -82,7 +80,6 @@ export class WatchesList {
 		// Search for expression
 		for (const watch of this.list) {
 			if (watch.expression == expression) {
-				watch.used = true;
 				let respBody = watch.respBodyOrValue;
 				if (respBody instanceof ImmediateValue) {
 					// Create an immediate result value
@@ -109,31 +106,8 @@ export class WatchesList {
 	public push(expression: string, respBodyOrValue: WatchesResponse|ImmediateValue) {
 		this.list.push({
 			expression,
-			used: true,
 			respBodyOrValue
 		});
 	}
 
-
-	/**
-	 * Removes all entires with 'used' == false flags.
-	 * Note: Unused entries are removed with one step delay.
-	 * That is: when the WATCH is removed this does not have any immediate
-	 * effect. Only the next step will notice that the watch is not used.
-	 * Then at the step after the entry is finally removed here.
-	 * @returns The array of removed references. Is used to remove the references
-	 * from the global variables list, too.
-	 */
-	public clearUnused(): Array<number> {
-		// Get list of to-be-removed entries.
-		const removedEntries = this.list.filter(entry => (entry.used == false && !(entry instanceof ImmediateValue)));
-		const removedRefs = removedEntries.map(entry => (entry.respBodyOrValue as WatchesResponse).variablesReference);
-		// Create new list with only used==true.
-		const newList = this.list.filter(entry => entry.used);
-		this.list = newList;
-		// Mark all remaining as 'used'=false
-		this.list.forEach(entry => entry.used = false);
-		// Return
-		return removedRefs;
-	}
 }

@@ -30,30 +30,4 @@ suite('WatchesList', () => {
 		assert.equal(resp, undefined);
 	});
 
-	test('clearUnused', async () => {
-		wl.push('a', {variablesReference: 1} as any);
-		wl.push('b', {variablesReference: 2}  as any);
-		let removedRefs = wl.clearUnused();
-		assert.equal(removedRefs.length, 0);
-
-		// Checks
-		let respBody = await wl.get('a') as any;
-		assert.equal(respBody.variablesReference, 1);
-
-		removedRefs = await wl.clearUnused();	// Should remove 'b'
-		assert.equal(removedRefs.length, 1);
-		assert.equal(removedRefs[0], 2);
-
-		respBody = await wl.get('b');
-		assert.equal(respBody, undefined);
-
-		// Next call will removed everything
-		removedRefs = wl.clearUnused();
-		assert.equal(removedRefs.length, 1);
-
-		// Now everything is removed
-		removedRefs = wl.clearUnused();
-		assert.equal(removedRefs.length, 0);
-	});
-
 });

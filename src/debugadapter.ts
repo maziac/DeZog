@@ -30,7 +30,7 @@ import {MemoryArray} from './misc/memoryarray';
 import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {WatchesList, WatchesResponse} from './misc/watcheslist';
-import {RemovableRefList} from './misc/removablereflist';
+import {RefList} from './misc/reflist';
 
 
 
@@ -57,7 +57,7 @@ export class DebugSessionClass extends DebugSession {
 	protected disasmTextDoc: vscode.TextDocument;
 
 	/// A list for the VARIABLES (references)
-	protected listVariables = new RemovableRefList<ShallowVar>();
+	protected listVariables = new RefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel.
 	protected watchesList = new WatchesList();
@@ -788,11 +788,6 @@ export class DebugSessionClass extends DebugSession {
 	 * Returns the one and only "thread".
 	 */
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse): Promise<void> {
-		// Clear the unused variables from the watches list
-		const removedRefs = this.watchesList.clearUnused();
-		// And remove the variables from the global list
-		this.listVariables.removeObjects(removedRefs);
-
 		// Just return a default thread.
 		response.body = {
 			threads: [
