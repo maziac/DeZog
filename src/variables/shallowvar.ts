@@ -924,7 +924,7 @@ export class ContainerVar extends ShallowVar {
 		const dynList = new Array<DebugProtocol.Variable>(count);
 		for (let i = 0; i < count; i++) {
 			const entry = this.varList[i + start];
-			const description = entry.type + '\n\n(Use "-rmexpr ' + i + '" to remove)';
+			const description = entry.type + '\n\n(Use "-delexpr ' + i + '" to remove)';
 			if (entry instanceof ImmediateValue) {
 				// ImmediateMemValue
 				const value = await entry.getValue();
@@ -1012,7 +1012,7 @@ export class ContainerVar extends ShallowVar {
 		//	return 'Altering values not allowed in time-travel mode.';
 		// Otherwise allow
 		//return undefined;
-		return 'Use -addexpr/-rmexpr to change the list of variables.';
+		return 'Use -addexpr/-delexpr to change the list of variables.';
 	}
 
 
