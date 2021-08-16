@@ -965,6 +965,8 @@ export class ContainerVar extends ShallowVar {
 	 * If index is not in range an exception is thrown.
 	 */
 	public deleteItem(index: number) {
+		if (isNaN(index))
+			throw Error("No index");
 		if (index < 0 || index >= this.varList.length)
 			throw Error("No such index: " + index);
 

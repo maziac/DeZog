@@ -2152,6 +2152,7 @@ export class DebugSessionClass extends DebugSession {
 "-delexpr index": Remove an expression/label from the VARIABLES pane.
 	-index: the index of the expression/label to remove. Indexes start at 0. You can hover
 	the expression/label to find it's number (or simply count from top to bottom, top starts with 0).
+	You can also use 'all' to remove all expressions.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
 "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
@@ -2260,10 +2261,16 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			throw new Error("1 argument, the index of the variable, expected.");
 		}
 
-		// Get index
 		try {
-			const index = parseInt(tokens[0]);
-			this.containerVar.deleteItem(index);
+			// Check if all should be deleted
+			if (tokens[0].toLowerCase() == 'all') {
+				this.containerVar.clear();
+			}
+			else {
+				// Get index
+				const index = parseInt(tokens[0]);
+				this.containerVar.deleteItem(index);
+			}
 			return 'OK';
 		}
 		catch (e) {
