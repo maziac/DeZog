@@ -1559,7 +1559,7 @@ You can for example print a memory dump to the console with
 
 ### Altering Memory Contents
 
-You can alter memory contents directly within the Memory Viewer.
+You can alter memory contents directly within the Memory Viewer or you can alter it in the VARIABLES pane in the expressions section.
 
 But there are also a special commands to change memory contents, the
 ~~~
@@ -1745,11 +1745,31 @@ Notes:
 - It is not possible to change any memory contents in the WATCHes area. (vscode does not allow this). Instead you can change values in the [memory viewer](#memory-viewer) or with the ["-msetb/w"](#altering-memory-contents) command.
 
 
+### VARIABLES pane / Expressions section
+
+In the WATCHes pane you can view labels and memory structures but it has the drawback that it doesn't let you change the contents of variables (memory).
+Therefore there exists a very similar view in the VARIABLES pane under the 'Expressions' section.
+
+To add a new expression you need the '-addexpr' command.
+The syntax for an expression is the same as for WATCHes.
+But if you enter one it appears in VARIABLES/Expressions.
+
+Now, if you doubleclick on an entry you can alter it's value.
+At the same time all other views which show the same memory content are also updated.
+
+Here is an example usage:
+
+![](images/expressions.gif)
+
+To delete an expression use '-delexpr'.
+
+Use '-h' to see the full syntax.
+
 ### Change the Program Counter
 
 The PC can be changed via the menu. Click in a source line with an assmbly statement. Then do a right-click and choose "Move Program Counter to Cursor".
 
-You can as well simply change the PC in the VARIABLES panel and enter a new value.
+You can as well simply change the PC in the VARIABLES pane and enter a new value.
 
 
 ### 'Long Addresses' Explanation
