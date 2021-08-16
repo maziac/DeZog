@@ -889,7 +889,8 @@ export class MemDumpVar extends ShallowVar {
 
 
 /**
- * Special object to hold either a reference or apointer to an immediate value object.
+ * Special object to hold either a reference or a pointer to an immediate value object.
+ * Similar to ExpressionVariable.
  */
 interface VarOrImmediate extends DebugProtocol.Variable {
 	immediateValue?: () => Promise<string>;
