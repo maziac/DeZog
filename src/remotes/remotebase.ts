@@ -152,14 +152,79 @@ export class RemoteBase extends EventEmitter {
 	}
 
 
-	/// Do initialization.
-	/// E.g. create a socket or allocate memory.
-	/// This is called when the Remote is started by the debugger. I.e. at the start
-	/// of a debugging session..
-	/// When ready do a this.emit('initialized') or this.emit('error', exception);
-	/// Take care to implement the emits otherwise the system will hang on a start.
-	/// Please override.
+	/**
+	 * Do initialization.
+	 * E.g. create a socket or allocate memory.
+	 * This is called when the Remote is started by the debugger. I.e. at the start
+	 * of a debugging session.
+	 * When ready do a this.emit('initialized') or this.emit('error', exception);
+	 * Take care to implement the emits otherwise the system will hang on a start.
+	 * Please override.
+	 */
 	public async doInitialization(): Promise<void> {
+	}
+
+
+	/**
+	 * Loads the sna/nex file and the obj files.
+	 * Do not override.
+	 * Override
+	 */
+	public async loadExecutable(): Promise<void> {
+		// Load sna or nex file
+		const loadPath = Settings.launch.load;
+		if (loadPath)
+			await this.loadBin(loadPath);
+
+		// Load obj file(s) unit
+		for (const loadObj of Settings.launch.loadObjs) {
+			if (loadObj.path) {
+				// Convert start address
+				const start = Labels.getNumberFromString64k(loadObj.start);
+				if (isNaN(start))
+					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
+				await this.loadObj(loadObj.path, start);
+			}
+		}
+
+		// Load registers
+		await this.getRegistersFromEmulator();
+	}
+
+
+	/**
+	 * Loads sna or nex file. (or any other file type supported by remote.)
+	 * @param path The (absolute) path to the file.
+	 */
+	protected async loadBin(path: string): Promise<void> {
+		// Override
+		throw Error('Loading files is not supported.');
+	}
+
+
+	/**
+	 * Loads a obj file.
+	 * @param path The (absolute) path to the obj file.
+	 * @param address The address where the obj file starts.
+	 */
+	protected async loadObj(path: string, address: number): Promise<void> {
+		// Override
+		throw Error('Loading object files is not supported.');
+	}
+
+
+	/**
+	 * Retrieves the exec address from the Settings (if available) and sets PC to it.
+	 * Do not override.
+	 */
+	public async setLaunchExecAddress(): Promise<void> {
+		if (Settings.launch.execAddress) {
+			const execAddress = Labels.getNumberFromString64k(Settings.launch.execAddress);
+			if (isNaN(execAddress))
+				throw Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
+			// Set PC
+			await this.setRegisterValue("PC", execAddress);
+		}
 	}
 
 

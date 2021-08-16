@@ -96,27 +96,27 @@ export class ZSimRemote extends DzrpRemote {
 		super();
 		// Init
 		this.ulaScreenAddress = 0x4000;
-		this.timeoutRequest=false;
-		this.previouslyStoredPCHistory=-1;
-		this.tbblueRegisterSelectValue=0;
-		this.tbblueRegisterWriteHandler=new Map<number, (value: number) => void>();
-		this.tbblueRegisterReadHandler=new Map<number, () => number>();
-		this.passedTstates=0;
-		this.timeStep=Settings.launch.zsim.customCode.timeStep;
+		this.timeoutRequest = false;
+		this.previouslyStoredPCHistory = -1;
+		this.tbblueRegisterSelectValue = 0;
+		this.tbblueRegisterWriteHandler = new Map<number, (value: number) => void>();
+		this.tbblueRegisterReadHandler = new Map<number, () => number>();
+		this.passedTstates = 0;
+		this.timeStep = Settings.launch.zsim.customCode.timeStep;
 		this.nextStepTstates = 0;
 		this.stopCpu = true;
 		this.lastBpId = 0;
 		this.zxBorderColor = 7;	// White initially
 		// Set decoder
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();
+		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Reverse debugging / CPU history
-		if (Settings.launch.history.reverseDebugInstructionCount>0) {
+		if (Settings.launch.history.reverseDebugInstructionCount > 0) {
 			CpuHistoryClass.setCpuHistory(new ZSimCpuHistory());
-			CpuHistory.decoder=new DecodeStandardHistoryInfo();
+			CpuHistory.decoder = new DecodeStandardHistoryInfo();
 		}
 		// Code coverage
 		if (Settings.launch.history.codeCoverageEnabled)
-			this.codeCoverage=new CodeCoverageArray();
+			this.codeCoverage = new CodeCoverageArray();
 	}
 
 
@@ -124,7 +124,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * Is set/reset by the ZSimulatorView to request processing time.
 	 */
 	public setTimeoutRequest(on: boolean) {
-		this.timeoutRequest=on;
+		this.timeoutRequest = on;
 	}
 
 
@@ -150,11 +150,11 @@ export class ZSimRemote extends DzrpRemote {
 		this.ulaScreenAddress = (shadowScreen == 0) ? 5 * 0x4000 : 7 * 0x4000;
 
 		// bit 4: ROM select. ROM 0 is the 128k editor and menu system; ROM 1 contains 48K BASIC.
-		const romIndex=(value&0b010000)? 1:0;
-		this.memory.setSlot(0, 8+romIndex);
+		const romIndex = (value & 0b010000) ? 1 : 0;
+		this.memory.setSlot(0, 8 + romIndex);
 
 		// bit 5: If set, memory paging will be disabled
-		if (value&0b0100000) {
+		if (value & 0b0100000) {
 			// Disable further writes to this port
 			this.ports.registerSpecificOutPortFunction(0x7FFD, undefined);
 		}
@@ -169,7 +169,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param value The tbblue register to select.
 	 */
 	protected tbblueRegisterSelect(port: number, value: number) {
-		this.tbblueRegisterSelectValue=value;
+		this.tbblueRegisterSelectValue = value;
 	}
 
 
@@ -183,7 +183,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param value The tbblue register to select.
 	 */
 	protected tbblueRegisterWriteAccess(port: number, value: number) {
-		const func=this.tbblueRegisterWriteHandler.get(this.tbblueRegisterSelectValue);
+		const func = this.tbblueRegisterWriteHandler.get(this.tbblueRegisterSelectValue);
 		if (func)
 			func(value);
 	}
@@ -198,11 +198,11 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param port The port.
 	 */
 	protected tbblueRegisterReadAccess(port: number): number {
-		const func=this.tbblueRegisterReadHandler.get(this.tbblueRegisterSelectValue);
+		const func = this.tbblueRegisterReadHandler.get(this.tbblueRegisterSelectValue);
 		if (!func)
 			return 0;
 		// Get value
-		const value=func();
+		const value = func();
 		return value;
 	}
 
@@ -215,16 +215,16 @@ export class ZSimRemote extends DzrpRemote {
 	 * @param value The bank to map.
 	 */
 	protected tbblueMemoryManagementSlotsWrite(value: number) {
-		const slot=this.tbblueRegisterSelectValue&0x07;
-		if (value==0xFF) {
+		const slot = this.tbblueRegisterSelectValue & 0x07;
+		if (value == 0xFF) {
 			// Handle ROM specially
-			if (slot>1)
+			if (slot > 1)
 				return;	// not allowed
 			// Choose ROM bank according slot
-			if (slot==0)
-				value=0xFE;
+			if (slot == 0)
+				value = 0xFE;
 		}
-		else if (value>223)
+		else if (value > 223)
 			return;	// not existing bank
 
 		// Change the slot/bank
@@ -239,12 +239,12 @@ export class ZSimRemote extends DzrpRemote {
 	 * slot.
 	 */
 	protected tbblueMemoryManagementSlotsRead(): number {
-		const slot=this.tbblueRegisterSelectValue&0x07;
+		const slot = this.tbblueRegisterSelectValue & 0x07;
 		// Change the slot/bank
-		let bank=this.memory.getSlots()![slot];
+		let bank = this.memory.getSlots()![slot];
 		// Check for ROM = 0xFE
-		if (bank==0xFE)
-			bank=0xFF;
+		if (bank == 0xFE)
+			bank = 0xFF;
 		return bank;
 	}
 
@@ -259,7 +259,7 @@ export class ZSimRemote extends DzrpRemote {
 	 * - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	 */
 	protected configureMachine(memModel: string) {
-		Z80Registers.decoder=new Z80RegistersStandardDecoder();	// Required for the memory model.
+		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
 		this.ports = new Z80Ports(Settings.launch.zsim.defaultPortIn);
@@ -298,24 +298,24 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// 64K RAM, no ZX
 					// Memory Model
-					this.memoryModel=new MemoryModel();
-					this.memory=new SimulatedMemory(1, 1);
+					this.memoryModel = new MemoryModel();
+					this.memory = new SimulatedMemory(1, 1);
 				}
 				break;
 			case "ZX48K":
 				{
 					// ZX 48K
 					// Memory Model
-					this.memoryModel=new Zx48MemoryModel();
-					this.memory=new Zx48Memory();
+					this.memoryModel = new Zx48MemoryModel();
+					this.memory = new Zx48Memory();
 				}
 				break;
 			case "ZX128K":
 				{
 					// ZX 128K
 					// Memory Model
-					this.memoryModel=new Zx128MemoryModel();
-					this.memory=new Zx128Memory();
+					this.memoryModel = new Zx128MemoryModel();
+					this.memory = new Zx128Memory();
 					// Bank switching.
 					this.ports.registerSpecificOutPortFunction(0x7FFD, this.zx128BankSwitch.bind(this));
 					// Screen address is initially bank 5
@@ -326,10 +326,10 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// ZX Next
 					// Memory Model
-					this.memoryModel=new ZxNextMemoryModel();
-					this.memory=new ZxNextMemory();
+					this.memoryModel = new ZxNextMemoryModel();
+					this.memory = new ZxNextMemory();
 					// Bank switching.
-					for (let tbblueRegister=0x50; tbblueRegister<=0x57; tbblueRegister++) {
+					for (let tbblueRegister = 0x50; tbblueRegister <= 0x57; tbblueRegister++) {
 						this.tbblueRegisterWriteHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsWrite.bind(this));
 						this.tbblueRegisterReadHandler.set(tbblueRegister, this.tbblueMemoryManagementSlotsRead.bind(this));
 					}
@@ -342,7 +342,7 @@ export class ZSimRemote extends DzrpRemote {
 				}
 				break;
 			default:
-				throw Error("Unknown memory model: '"+memModel+"'.");
+				throw Error("Unknown memory model: '" + memModel + "'.");
 		}
 
 		// Convert labels if necessary.
@@ -355,7 +355,7 @@ export class ZSimRemote extends DzrpRemote {
 		});
 
 		// For restoring the state
-		this.serializeObjects=[
+		this.serializeObjects = [
 			this.z80Cpu,
 			this.memory,
 			this.zxBeeper,
@@ -363,16 +363,16 @@ export class ZSimRemote extends DzrpRemote {
 		];
 
 		// Initialize custom code e.g. for ports
-		const jsPath=Settings.launch.zsim.customCode.jsPath;
+		const jsPath = Settings.launch.zsim.customCode.jsPath;
 		if (jsPath) {
 			// Can throw an error
-			const jsCode=readFileSync(jsPath).toString();
+			const jsCode = readFileSync(jsPath).toString();
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			this.customCode=new CustomCode(jsCode);
+			this.customCode = new CustomCode(jsCode);
 			// Register custom code
 			this.ports.registerGenericInPortFunction(port => {
 				this.customCode.setTstates(this.passedTstates);
-				const value=this.customCode.readPort(port);
+				const value = this.customCode.readPort(port);
 				return value;
 			});
 			this.ports.registerGenericOutPortFunction((port, value) => {
@@ -397,7 +397,7 @@ export class ZSimRemote extends DzrpRemote {
 		this.configureMachine(Settings.launch.zsim.memoryModel);
 
 		// Load sna or nex file
-		const loadPath=Settings.launch.load;
+		const loadPath = Settings.launch.load;
 		if (loadPath)
 			await this.loadBin(loadPath);
 
@@ -405,18 +405,18 @@ export class ZSimRemote extends DzrpRemote {
 		for (let loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
 				// Convert start address
-				const start=Labels.getNumberFromString64k(loadObj.start);
+				const start = Labels.getNumberFromString64k(loadObj.start);
 				if (isNaN(start))
-					throw Error("Cannot evaluate 'loadObjs[].start' ("+loadObj.start+").");
+					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
 				await this.loadObj(loadObj.path, start);
 			}
 		}
 
 		// Set Program Counter to execAddress
 		if (Settings.launch.execAddress) {
-			const execAddress=Labels.getNumberFromString64k(Settings.launch.execAddress);
+			const execAddress = Labels.getNumberFromString64k(Settings.launch.execAddress);
 			if (isNaN(execAddress))
-				throw Error("Cannot evaluate 'execAddress' ("+Settings.launch.execAddress+").");
+				throw Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
 			// Set PC
 			await this.setRegisterValue("PC", execAddress);
 		}
@@ -433,7 +433,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public async disconnect(): Promise<void> {
 		// Stop running cpu
-		this.stopCpu=true;
+		this.stopCpu = true;
 		this.emit('closed')
 	}
 
@@ -447,112 +447,112 @@ export class ZSimRemote extends DzrpRemote {
 		// Set register in z80 cpu
 		switch (reg) {
 			case Z80_REG.PC:
-				this.z80Cpu.pc=value;
+				this.z80Cpu.pc = value;
 				break;
 			case Z80_REG.SP:
-				this.z80Cpu.sp=value;
+				this.z80Cpu.sp = value;
 				break;
 			case Z80_REG.AF:
-				this.z80Cpu.af=value;
+				this.z80Cpu.af = value;
 				break;
 			case Z80_REG.BC:
-				this.z80Cpu.bc=value;
+				this.z80Cpu.bc = value;
 				break;
 			case Z80_REG.DE:
-				this.z80Cpu.de=value;
+				this.z80Cpu.de = value;
 				break;
 			case Z80_REG.HL:
-				this.z80Cpu.hl=value;
+				this.z80Cpu.hl = value;
 				break;
 			case Z80_REG.IX:
-				this.z80Cpu.ix=value;
+				this.z80Cpu.ix = value;
 				break;
 			case Z80_REG.IY:
-				this.z80Cpu.iy=value;
+				this.z80Cpu.iy = value;
 				break;
 			case Z80_REG.AF2:
-				this.z80Cpu.af2=value;
+				this.z80Cpu.af2 = value;
 				break;
 			case Z80_REG.BC2:
-				this.z80Cpu.bc2=value;
+				this.z80Cpu.bc2 = value;
 				break;
 			case Z80_REG.DE2:
-				this.z80Cpu.de2=value;
+				this.z80Cpu.de2 = value;
 				break;
 			case Z80_REG.HL2:
-				this.z80Cpu.hl2=value;
+				this.z80Cpu.hl2 = value;
 				break;
 
 			case Z80_REG.IM:
-				this.z80Cpu.im=value;
+				this.z80Cpu.im = value;
 				break;
 
 			case Z80_REG.F:
-				this.z80Cpu.f=value;
+				this.z80Cpu.f = value;
 				break;
 			case Z80_REG.A:
-				this.z80Cpu.a=value;
+				this.z80Cpu.a = value;
 				break;
 			case Z80_REG.C:
-				this.z80Cpu.c=value;
+				this.z80Cpu.c = value;
 				break;
 			case Z80_REG.B:
-				this.z80Cpu.b=value;
+				this.z80Cpu.b = value;
 				break;
 			case Z80_REG.E:
-				this.z80Cpu.e=value;
+				this.z80Cpu.e = value;
 				break;
 			case Z80_REG.D:
-				this.z80Cpu.d=value;
+				this.z80Cpu.d = value;
 				break;
 			case Z80_REG.L:
-				this.z80Cpu.l=value;
+				this.z80Cpu.l = value;
 				break;
 			case Z80_REG.H:
-				this.z80Cpu.h=value;
+				this.z80Cpu.h = value;
 				break;
 			case Z80_REG.IXL:
-				this.z80Cpu.ixl=value;
+				this.z80Cpu.ixl = value;
 				break;
 			case Z80_REG.IXH:
-				this.z80Cpu.ixh=value;
+				this.z80Cpu.ixh = value;
 				break;
 			case Z80_REG.IYL:
-				this.z80Cpu.iyl=value;
+				this.z80Cpu.iyl = value;
 				break;
 			case Z80_REG.IYH:
-				this.z80Cpu.iyh=value;
+				this.z80Cpu.iyh = value;
 				break;
 
 			case Z80_REG.F2:
-				this.z80Cpu.f=value;
+				this.z80Cpu.f = value;
 				break;
 			case Z80_REG.A2:
-				this.z80Cpu.a=value;
+				this.z80Cpu.a = value;
 				break;
 			case Z80_REG.C2:
-				this.z80Cpu.c=value;
+				this.z80Cpu.c = value;
 				break;
 			case Z80_REG.B2:
-				this.z80Cpu.b=value;
+				this.z80Cpu.b = value;
 				break;
 			case Z80_REG.E2:
-				this.z80Cpu.e=value;
+				this.z80Cpu.e = value;
 				break;
 			case Z80_REG.D2:
-				this.z80Cpu.d=value;
+				this.z80Cpu.d = value;
 				break;
 			case Z80_REG.L2:
-				this.z80Cpu.l=value;
+				this.z80Cpu.l = value;
 				break;
 			case Z80_REG.H2:
-				this.z80Cpu.h=value;
+				this.z80Cpu.h = value;
 				break;
 			case Z80_REG.R:
-				this.z80Cpu.r=value;
+				this.z80Cpu.r = value;
 				break;
 			case Z80_REG.I:
-				this.z80Cpu.i=value;
+				this.z80Cpu.i = value;
 				break;
 		}
 	}
@@ -569,10 +569,10 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected storeHistoryInfo(pc: number) {
 		// Get history element
-		const hist=this.z80Cpu.getHistoryData();
+		const hist = this.z80Cpu.getHistoryData();
 		// Check if pc changed
-		if (pc!=this.previouslyStoredPCHistory) {
-			this.previouslyStoredPCHistory=pc;
+		if (pc != this.previouslyStoredPCHistory) {
+			this.previouslyStoredPCHistory = pc;
 			// Store
 			CpuHistory.pushHistoryInfo(hist);
 		}
@@ -592,22 +592,22 @@ export class ZSimRemote extends DzrpRemote {
 
 		while (true) {
 			//		Utility.timeDiff();
-			this.z80Cpu.error=undefined;
-			let breakReasonString='';
-			let breakNumber=BREAK_REASON_NUMBER.NO_REASON;
+			this.z80Cpu.error = undefined;
+			let breakReasonString = '';
+			let breakNumber = BREAK_REASON_NUMBER.NO_REASON;
 			//let bp;
 			let breakAddress;
 			let slots;
-			const longAddressesUsed=Labels.AreLongAddressesUsed();
-			if(longAddressesUsed)
-				slots=this.memory.getSlots();
+			const longAddressesUsed = Labels.AreLongAddressesUsed();
+			if (longAddressesUsed)
+				slots = this.memory.getSlots();
 			let pcLong = Z80Registers.createLongAddress(this.z80Cpu.pc, slots);
 			const leaveAtTstates = this.passedTstates + 5000 * 4;	// Break from loop at least after 2000 instructions (on average). This is to break in case of a halt.
 			try {
 				// Run the Z80-CPU in a loop
 				while (this.passedTstates < leaveAtTstates) {
 					// Store current registers and opcode
-					const prevPc=this.z80Cpu.pc;
+					const prevPc = this.z80Cpu.pc;
 					if (CpuHistory)
 						this.storeHistoryInfo(prevPc);
 
@@ -633,10 +633,10 @@ export class ZSimRemote extends DzrpRemote {
 					this.codeCoverage?.storeAddress(pcLong);
 
 					// Check if some CPU error occurred
-					if (this.z80Cpu.error!=undefined) {
+					if (this.z80Cpu.error != undefined) {
 						// E.g. an error in the custom code
-						breakNumber=BREAK_REASON_NUMBER.CPU_ERROR;
-						breakReasonString="CPU error: "+this.z80Cpu.error;
+						breakNumber = BREAK_REASON_NUMBER.CPU_ERROR;
+						breakReasonString = "CPU error: " + this.z80Cpu.error;
 						break;
 					}
 
@@ -646,57 +646,57 @@ export class ZSimRemote extends DzrpRemote {
 					// Note: Because of step-out this needs to be done before the other check.
 					// Convert to long address
 					if (longAddressesUsed)
-						slots=this.memory.getSlots();
-					pcLong=Z80Registers.createLongAddress(pc, slots);
-					const bpInner=this.tmpBreakpoints.get(pcLong);
+						slots = this.memory.getSlots();
+					pcLong = Z80Registers.createLongAddress(pc, slots);
+					const bpInner = this.tmpBreakpoints.get(pcLong);
 					if (bpInner) {
 						// To improve performance of condition and log breakpoints the condition check is also done below.
 						// So it is not required to go back up to the debug adapter, just to return here in case the condition is wrong.
 						// If condition is not true then don't consider the breakpoint.
 						// Get registers
-						const regs=this.z80Cpu.getRegisterData();
+						const regs = this.z80Cpu.getRegisterData();
 						Z80Registers.setCache(regs);
 						// Now check if condition met or if logpoint
 						let bp;
 						for (const bpElem of bpInner) {
 							try {
-								const {condition, log}=this.checkConditionAndLog(bpElem);
+								const {condition, log} = this.checkConditionAndLog(bpElem);
 								// Emit log?
 								if (log) {
 									// Convert and print
-									const evalLog=await Utility.evalLogString(log)
-									this.emit('debug_console', "Log: "+evalLog);
+									const evalLog = await Utility.evalLogString(log)
+									this.emit('debug_console', "Log: " + evalLog);
 								}
 								else {
 									// Not a logpoint.
 									// Condition met?
-									if (condition!=undefined) {
-										bp=bpElem;
+									if (condition != undefined) {
+										bp = bpElem;
 										break;
 									}
 								}
 							}
 							catch (e) {
 								// Some problem occurred, pass evaluation to DebugSessionClass
-								bp=bpElem;
+								bp = bpElem;
 								break;
 							}
 						}
 						// Breakpoint and condition OK
 						if (bp) {
-							breakNumber=BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-							breakAddress=pcLong;
+							breakNumber = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+							breakAddress = pcLong;
 							break;	// stop loop
 						}
 					}
 
 					// Check if watchpoint is hit
-					if (this.memory.hitAddress>=0) {
+					if (this.memory.hitAddress >= 0) {
 						// Yes, read or write access
-						breakNumber=(this.memory.hitAccess=='r')? BREAK_REASON_NUMBER.WATCHPOINT_READ:BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
-						const memAddress=this.memory.hitAddress;
+						breakNumber = (this.memory.hitAccess == 'r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+						const memAddress = this.memory.hitAddress;
 						// Calculate long address
-						breakAddress=Z80Registers.createLongAddress(memAddress, slots);
+						breakAddress = Z80Registers.createLongAddress(memAddress, slots);
 						// NOTE: Check for long watchpoint address could be done already here.
 						// However it is done anyway in the DzrpRemote.
 						break;
@@ -711,22 +711,22 @@ export class ZSimRemote extends DzrpRemote {
 
 					// Check if stopped from outside
 					if (this.stopCpu) {
-						breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
+						breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;	// Manual break
 						break;
 					}
 				}
 
 			}
 			catch (errorText) {
-				breakReasonString="Z80CPU Error: "+errorText;
+				breakReasonString = "Z80CPU Error: " + errorText;
 				console.log(breakReasonString);
-				breakNumber=BREAK_REASON_NUMBER.UNKNOWN;
+				breakNumber = BREAK_REASON_NUMBER.UNKNOWN;
 			};
 
 			// Check to leave
 			if (this.passedTstates < leaveAtTstates) {
 				// Stop immediately
-				this.stopCpu=true;
+				this.stopCpu = true;
 				// Send Notification
 				Utility.assert(this.continueResolve);
 				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
@@ -768,9 +768,9 @@ export class ZSimRemote extends DzrpRemote {
 			// Check if meanwhile a manual break happened
 			if (this.stopCpu) {
 				// Manual break: Create reason string
-				breakNumber=BREAK_REASON_NUMBER.MANUAL_BREAK;
-				breakAddress=0;
-				breakReasonString=await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
+				breakNumber = BREAK_REASON_NUMBER.MANUAL_BREAK;
+				breakAddress = 0;
+				breakReasonString = await this.constructBreakReasonString(breakNumber, breakAddress, '', '');
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
@@ -820,23 +820,23 @@ export class ZSimRemote extends DzrpRemote {
 	 * conditions on it's own.
 	 * This is done primarily for performance reasons.
 	 */
-/*
-	public async continue(): Promise<string> {
-		return new Promise<string>(async resolve => {
-			// Save resolve function when break-response is received
-			this.continueResolve=({breakReasonString}) => { // Note: here we need only breakReasonString
+	/*
+		public async continue(): Promise<string> {
+			return new Promise<string>(async resolve => {
+				// Save resolve function when break-response is received
+				this.continueResolve=({breakReasonString}) => { // Note: here we need only breakReasonString
+					// Clear registers
+					this.postStep();
+					resolve(breakReasonString);
+				}
+
+				// Send 'run' command
+				await this.sendDzrpCmdContinue();
 				// Clear registers
 				this.postStep();
-				resolve(breakReasonString);
-			}
-
-			// Send 'run' command
-			await this.sendDzrpCmdContinue();
-			// Clear registers
-			this.postStep();
-		});
-	}
-*/
+			});
+		}
+	*/
 
 
 	/**
@@ -865,12 +865,12 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected serializeState(): Uint8Array {
 		// Get size of all serialized objects
-		let size=0;
+		let size = 0;
 		for (const obj of this.serializeObjects)
 			size += obj.getSerializedSize();
 
 		// Allocate memory
-		const memBuffer = new MemBuffer(size+1);	// +1 for border color
+		const memBuffer = new MemBuffer(size + 1);	// +1 for border color
 
 		// Serialize own properties
 		memBuffer.write8(this.zxBorderColor);
@@ -969,17 +969,17 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async loadBinSna(filePath: string): Promise<void> {
 		// Load and parse file
-		const snaFile=new SnaFile();
+		const snaFile = new SnaFile();
 		snaFile.readFile(filePath);
 
 		// Set the border
 		await this.sendDzrpCmdSetBorder(snaFile.borderColor);
 
 		// Transfer 16k memory banks
-		const slots=this.memory.getSlots();
-		const slotCount=(slots) ?slots.length : 1;
-		const bankSize=0x10000/slotCount;
-		const convAddresses=[ // 0x10000 would be out of range,
+		const slots = this.memory.getSlots();
+		const slotCount = (slots) ? slots.length : 1;
+		const bankSize = 0x10000 / slotCount;
+		const convAddresses = [ // 0x10000 would be out of range,
 			0xC000, 0x10000, 0x8000, 0x10000,
 			0x10000, 0x4000, 0x10000, 0x10000
 		];
@@ -988,19 +988,19 @@ export class ZSimRemote extends DzrpRemote {
 			// Convert banks to 17 bit addresses (128K Spectrum)
 			if (!slots) {
 				// For e.g. ZX48 without banks
-				addr17=convAddresses[memBank.bank];
+				addr17 = convAddresses[memBank.bank];
 			}
 			else {
 				// For another banked machine
-				addr17=memBank.bank*0x4000;
+				addr17 = memBank.bank * 0x4000;
 			}
 			// Write data
-			let offs=0;
-			while (offs<=0x4000) {
-				const data=memBank.data.slice(offs, offs+bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
-				this.memory.writeMemoryData(addr17+offs, data);
+			let offs = 0;
+			while (offs <= 0x4000) {
+				const data = memBank.data.slice(offs, offs + bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
+				this.memory.writeMemoryData(addr17 + offs, data);
 				// Next
-				offs+=bankSize;
+				offs += bankSize;
 			}
 		}
 
@@ -1034,17 +1034,17 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected async loadBinNex(filePath: string): Promise<void> {
 		// Load and parse file
-		const nexFile=new NexFile();
+		const nexFile = new NexFile();
 		nexFile.readFile(filePath);
 
 		// Set the border
 		await this.sendDzrpCmdSetBorder(nexFile.borderColor);
 
 		// Transfer 16k memory banks
-		const slots=this.memory.getSlots();
-		const slotCount=(slots)? slots.length:1;
-		const bankSize=0x10000/slotCount;
-		const convAddresses=[ // 0x10000 would be out of range,
+		const slots = this.memory.getSlots();
+		const slotCount = (slots) ? slots.length : 1;
+		const bankSize = 0x10000 / slotCount;
+		const convAddresses = [ // 0x10000 would be out of range,
 			0xC000, 0x10000, 0x8000, 0x10000,
 			0x10000, 0x4000, 0x10000, 0x10000
 		];
@@ -1053,19 +1053,19 @@ export class ZSimRemote extends DzrpRemote {
 			// Convert banks to 17 bit addresses (128K Spectrum)
 			if (!slots) {
 				// For e.g. ZX48 without banks
-				addr17=convAddresses[memBank.bank];
+				addr17 = convAddresses[memBank.bank];
 			}
 			else {
 				// For another banked machine
-				addr17=memBank.bank*0x4000;
+				addr17 = memBank.bank * 0x4000;
 			}
 			// Write data
-			let offs=0;
-			while (offs<=0x4000) {
-				const data=memBank.data.slice(offs, offs+bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
-				this.memory.writeMemoryData(addr17+offs, data);
+			let offs = 0;
+			while (offs <= 0x4000) {
+				const data = memBank.data.slice(offs, offs + bankSize);	// Assumes that bankSize is always smaller as 0x4000 which is used in sna format
+				this.memory.writeMemoryData(addr17 + offs, data);
 				// Next
-				offs+=bankSize;
+				offs += bankSize;
 			}
 		}
 
@@ -1083,62 +1083,62 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
 		try {
-			let response='';
-			const tokens=cmd.split(' ');
-			const cmd_name=tokens.shift();
-			if (cmd_name=="help") {
+			let response = '';
+			const tokens = cmd.split(' ');
+			const cmd_name = tokens.shift();
+			if (cmd_name == "help") {
 				// Add this to the help text
-				response=`zsim specific commands:
+				response = `zsim specific commands:
 out port value: Output 'value' to 'port'. E.g. "zsim out 0x9000 0xFE"
 in port: Print input value from 'port'. E.g. "zsim in 0x8000"
 tstates set value: set t-states to 'value', then create a tick event. E.g. "zsim tstastes set 1000"
 tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim tstastes add 1000"
 `;
 			}
-			else if (cmd_name=="out") {
+			else if (cmd_name == "out") {
 				// Check count of arguments
-				if (tokens.length!=2) {
+				if (tokens.length != 2) {
 					throw new Error("Wrong number of arguments: port and value expected.");
 				}
 				// Get port and value
-				const port=Utility.parseValue(tokens[0]);
-				const value=Utility.parseValue(tokens[1]);
+				const port = Utility.parseValue(tokens[0]);
+				const value = Utility.parseValue(tokens[1]);
 				// Set port
 				this.z80Cpu.ports.write(port, value);
 				// Return
-				response="Wrote "+Utility.getHexString(value, 2)+"h to port "+Utility.getHexString(port, 4)+"h";
+				response = "Wrote " + Utility.getHexString(value, 2) + "h to port " + Utility.getHexString(port, 4) + "h";
 				return response;
 			}
-			else if (cmd_name=="in") {
+			else if (cmd_name == "in") {
 				// Check count of arguments
-				if (tokens.length!=1) {
+				if (tokens.length != 1) {
 					throw new Error("Wrong number of arguments: port expected.");
 				}
 				// Get port and value
-				const port=Utility.parseValue(tokens[0]);
+				const port = Utility.parseValue(tokens[0]);
 				// Get port
-				const value=this.z80Cpu.ports.read(port);
+				const value = this.z80Cpu.ports.read(port);
 				// Return
-				response="Read port "+Utility.getHexString(port, 4)+"h: "+Utility.getHexString(value, 2)+"h";
+				response = "Read port " + Utility.getHexString(port, 4) + "h: " + Utility.getHexString(value, 2) + "h";
 				return response;
 			}
-			else if (cmd_name=="tstates") {
+			else if (cmd_name == "tstates") {
 				// Check count of arguments
-				if (tokens.length!=2) {
+				if (tokens.length != 2) {
 					throw new Error("Wrong number of arguments.");
 				}
-				const subcmd=tokens[0];
-				const value=Utility.parseValue(tokens[1]);
-				if (subcmd=="set")
-					this.passedTstates=value;
-				else if (subcmd=="add")
-					this.passedTstates+=value;
+				const subcmd = tokens[0];
+				const value = Utility.parseValue(tokens[1]);
+				if (subcmd == "set")
+					this.passedTstates = value;
+				else if (subcmd == "add")
+					this.passedTstates += value;
 				else
-					throw Error("Expected 'set' or 'add' but got '"+subcmd+"'.");
+					throw Error("Expected 'set' or 'add' but got '" + subcmd + "'.");
 				this.customCode.setTstates(this.passedTstates);
 				this.customCode.tick();
 				// Return
-				response="T-states set to "+this.passedTstates+".";
+				response = "T-states set to " + this.passedTstates + ".";
 				return response;
 			}
 
@@ -1181,8 +1181,8 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
 	public async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
-		if (bp1Address==undefined) bp1Address=-1;	// unreachable
-		if (bp2Address==undefined) bp2Address=-1;	// unreachable
+		if (bp1Address == undefined) bp1Address = -1;	// unreachable
+		if (bp2Address == undefined) bp2Address = -1;	// unreachable
 		// Set the temporary breakpoints array
 		// Run the Z80-CPU in a loop
 		this.stopCpu = false;
@@ -1196,7 +1196,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 */
 	public async sendDzrpCmdPause(): Promise<void> {
 		// If running then pause
-		this.stopCpu=true;
+		this.stopCpu = true;
 	}
 
 
@@ -1208,7 +1208,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 */
 	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
 		this.lastBpId++;
-		bp.bpId=this.lastBpId;
+		bp.bpId = this.lastBpId;
 	}
 
 
@@ -1259,8 +1259,8 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * Sends the command to write a memory dump.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
- 	*/
-	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer|Uint8Array): Promise<void> {
+	  */
+	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		this.memory.writeBlock(address, dataArray);
 	}
 
@@ -1272,8 +1272,8 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param bank 8k memory bank number.
 	 * @param dataArray The data to write.
 	 * @throws An exception if e.g. the bank size does not match.
- 	*/
-	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer|Uint8Array): Promise<void> {
+	  */
+	public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
 		this.memory.writeBank(bank, dataArray);
 	}
 
@@ -1283,7 +1283,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param slot The slot to set
 	 * @param bank The 8k bank to associate the slot with.
 	 * @returns A Promise with an error=0 (no error).
- 	*/
+	  */
 	public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
 		this.memory.setSlot(slot, bank);
 		return 0;
@@ -1295,7 +1295,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * I.e. memory, registers etc.
 	 * @returns A Promise with state data. Format is unknown (remote specific).
 	 * Data will just be saved.
- 	*/
+	  */
 	public async sendDzrpCmdReadState(): Promise<Uint8Array> {
 		return this.serializeState();
 	}
@@ -1305,7 +1305,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * Sends the command to wite a previously saved state to the remote.
 	 * I.e. memory, registers etc.
 	 * @param The state data. Format is unknown (remote specific).
- 	*/
+	  */
 	public async sendDzrpCmdWriteState(stateData: Uint8Array): Promise<void> {
 		this.deserializeState(stateData);
 	}
@@ -1313,7 +1313,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 
 	/**
 	 * Sends the command to set the border.
- 	*/
+	  */
 	public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
 		// Set port for border
 		this.ports.write(0xFE, borderColor);

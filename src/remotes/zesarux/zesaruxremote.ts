@@ -20,7 +20,7 @@ const MIN_ZESARUX_VERSION = 8.1;
 class Zesarux {
 	static MAX_ZESARUX_BREAKPOINTS = 100;	///< max count of breakpoints.
 	static MAX_BREAKPOINT_CONDITION_LENGTH = 256; ///< breakpoint condition string length.
-	static MAX_MESSAGE_CATCH_BREAKPOINT = 4*32-1;	///< breakpoint condition should also be smaller than this.
+	static MAX_MESSAGE_CATCH_BREAKPOINT = 4 * 32 - 1;	///< breakpoint condition should also be smaller than this.
 }
 
 
@@ -34,7 +34,7 @@ class Zesarux {
 export class ZesaruxRemote extends RemoteBase {
 
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
-	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS-1;
+	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS - 1;
 
 	/// The breakpoint used for step-out.
 	static STEP_BREAKPOINT_ID = 100;
@@ -91,7 +91,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Override removeAllListeners to remove listeners also from socket.
 	 * @param event
 	 */
-	public removeAllListeners(event?: string|symbol|undefined): this {
+	public removeAllListeners(event?: string | symbol | undefined): this {
 		super.removeAllListeners();
 		// Additionally remove listeners from socket.
 		zSocket?.removeAllListeners();
@@ -107,11 +107,11 @@ export class ZesaruxRemote extends RemoteBase {
 
 		zSocket.on('log', msg => {
 			// A (breakpoint) log message from Zesarux was received
-			this.emit('debug_console', "Log: "+msg);
+			this.emit('debug_console', "Log: " + msg);
 		});
 
 		zSocket.on('warning', msg => {
-			if(this.terminating)
+			if (this.terminating)
 				return;
 			// Error message from Zesarux
 			msg = "ZEsarUX: " + msg;
@@ -119,14 +119,14 @@ export class ZesaruxRemote extends RemoteBase {
 		});
 
 		zSocket.on('error', err => {
-			if(this.terminating)
+			if (this.terminating)
 				return;
 			// and terminate
 			err.message += " (Error in connection to ZEsarUX!)";
 			this.emit('error', err);
 		});
 		zSocket.on('close', () => {
-			if(this.terminating)
+			if (this.terminating)
 				return;
 			this.listFrames.clear();
 			this.breakpoints.length = 0;
@@ -135,14 +135,14 @@ export class ZesaruxRemote extends RemoteBase {
 			this.emit('error', err);
 		});
 		zSocket.on('end', () => {
-			if(this.terminating)
+			if (this.terminating)
 				return;
 			// and terminate
 			const err = new Error('ZEsarUX terminated the connection!');
 			this.emit('error', err);
 		});
 		zSocket.on('connected', async () => {
-			if(this.terminating)
+			if (this.terminating)
 				return;
 
 			try {
@@ -152,7 +152,7 @@ export class ZesaruxRemote extends RemoteBase {
 					// e.g. "7.1-SN"
 					this.zesaruxVersion = parseFloat(data);
 					// Check version
-					if(this.zesaruxVersion < MIN_ZESARUX_VERSION) {
+					if (this.zesaruxVersion < MIN_ZESARUX_VERSION) {
 						zSocket.quit();
 						const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 						this.emit('error', err);
@@ -170,53 +170,38 @@ export class ZesaruxRemote extends RemoteBase {
 				await zSocket.sendAwait('set-debug-settings ' + debug_settings);
 
 				// Reset the cpu before loading.
-				if(Settings.launch.zrcp.resetOnLaunch)
+				if (Settings.launch.zrcp.resetOnLaunch)
 					await zSocket.sendAwait('hard-reset-cpu');
 
 				// Enter step-mode (stop)
 				await zSocket.sendAwait('enter-cpu-step');
 
 				//await zSocket.executeWhenQueueIsEmpty();
-				const waitBeforeMs=Settings.launch.zrcp.loadDelay;
+				const waitBeforeMs = Settings.launch.zrcp.loadDelay;
 				await Utility.timeout(waitBeforeMs);
 
-				// Load sna, nex or tap file
-				const loadPath = Settings.launch.load;
-				if (loadPath) {
-					await zSocket.sendAwait('smartload "'+Settings.launch.load+'"');	// Note: this also changes cpu to tbblue
-					//await zSocket.executeWhenQueueIsEmpty();
-				}
-
-				// Load obj file(s) unit
-				for(let loadObj of Settings.launch.loadObjs) {
-					if(loadObj.path) {
-						// Convert start address
-						const start = Labels.getNumberFromString64k(loadObj.start);
-						if(isNaN(start))
-							throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
-						await zSocket.sendAwait('load-binary ' + loadObj.path + ' ' + start + ' 0');	// 0 = load entire file
-					}
-				}
+				// Load executable
+				await this.loadExecutable();
 
 				// Get the machine type, e.g. tbblue, zx48k etc.
 				// Is required to find the right slot/bank paging.
 				// Distinguished are only: 48k, 128k and tbblue.
-				const mtResp=await zSocket.sendAwait('get-current-machine') as string;
-				const machineType=mtResp.toLowerCase();
-				if (machineType.indexOf("tbblue")>=0) {
+				const mtResp = await zSocket.sendAwait('get-current-machine') as string;
+				const machineType = mtResp.toLowerCase();
+				if (machineType.indexOf("tbblue") >= 0) {
 					// 8x8k banks
-					Z80Registers.decoder=new DecodeZesaruxRegisters(8);
-					this.memoryModel=new ZxNextMemoryModel();
+					Z80Registers.decoder = new DecodeZesaruxRegisters(8);
+					this.memoryModel = new ZxNextMemoryModel();
 				}
-				else if (machineType.indexOf("128k")>=0) {
+				else if (machineType.indexOf("128k") >= 0) {
 					// 4x16k banks
-					Z80Registers.decoder=new DecodeZesaruxRegisters(4);
-					this.memoryModel=new Zx128MemoryModel();
+					Z80Registers.decoder = new DecodeZesaruxRegisters(4);
+					this.memoryModel = new Zx128MemoryModel();
 				}
 				else {
 					// For all others no paging is assumed.
-					Z80Registers.decoder=new DecodeZesaruxRegisters(0);
-					this.memoryModel=new MemoryModel();
+					Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+					this.memoryModel = new MemoryModel();
 				}
 				// Init
 				this.memoryModel.init();
@@ -226,20 +211,12 @@ export class ZesaruxRemote extends RemoteBase {
 				Labels.convertLabelsTo(this.memoryModel);
 
 				// Set Program Counter to execAddress
-				let error;
-				if(Settings.launch.execAddress) {
-					const execAddress = Labels.getNumberFromString64k(Settings.launch.execAddress);
-					if(isNaN(execAddress)) {
-						error = new Error("Cannot evaluate 'execAddress' (" + Settings.launch.execAddress + ").");
-						return;
-					}
-					// Set PC
-					await this.setRegisterValue("PC", execAddress);
-				}
+				this.setLaunchExecAddress();
 
 				// Initialize more
 				await this.initAfterLoad();
 
+				/*
 				// Check for console.error
 				if (error) {
 					this.emit('error', error);
@@ -248,8 +225,12 @@ export class ZesaruxRemote extends RemoteBase {
 					// Send 'initialize' to Machine.
 					this.emit('initialized');
 				}
+				*/
+
+				// Send 'initialize' to Machine.
+				this.emit('initialized');
 			}
-			catch(e) {
+			catch (e) {
 				// Some error occurred
 				this.emit('error', e);
 			}
@@ -319,35 +300,35 @@ export class ZesaruxRemote extends RemoteBase {
 		Utility.assert(!CpuHistory.isInStepBackMode());
 
 		// Decode
-		const slotsString=await zSocket.sendAwait('get-memory-pages');
-		const slotsStringArray=slotsString.split(' ');
+		const slotsString = await zSocket.sendAwait('get-memory-pages');
+		const slotsStringArray = slotsString.split(' ');
 		// Check for no slots
 		let slots;
-		let count=slotsStringArray.length-1;
+		let count = slotsStringArray.length - 1;
 		switch (count) {
 			case 4:
 				// ZX128, e.g. RO1 RA5 RA2 RA0
-				for (let i=0; i<count; i++)
-					slotsStringArray[i]=slotsStringArray[i].substr(1);	// Skip "R"
-				// Flow through
+				for (let i = 0; i < count; i++)
+					slotsStringArray[i] = slotsStringArray[i].substr(1);	// Skip "R"
+			// Flow through
 			case 8:
 				// ZXNext
-				slots=new Array<number>(count);
-				for (let i=0; i<count; i++) {
-					const bankString=slotsStringArray[i];
-					const type=bankString.substr(0, 1);
-					const rest=bankString.substr(1);
-					let bankNumber=parseInt(rest);
-					if (type=='O') {
+				slots = new Array<number>(count);
+				for (let i = 0; i < count; i++) {
+					const bankString = slotsStringArray[i];
+					const type = bankString.substr(0, 1);
+					const rest = bankString.substr(1);
+					let bankNumber = parseInt(rest);
+					if (type == 'O') {
 						// Beginning with 0xFE is ROM
-						bankNumber+=0xFE;
+						bankNumber += 0xFE;
 					}
-					slots[i]=bankNumber;
+					slots[i] = bankNumber;
 				}
 				break;
 			default:
 				// No slots
-				slots=new Array<number>(count);
+				slots = new Array<number>(count);
 				break;
 		}
 		return slots;
@@ -385,10 +366,10 @@ export class ZesaruxRemote extends RemoteBase {
 			zSocket.send('set-register ' + register + '=' + value, data => {
 				// Get real value (should be the same as the set value)
 				this.getRegistersFromEmulator()
-				.then(() => {
-					const realValue = this.getRegisterValue(register);
-					resolve(realValue);
-				});
+					.then(() => {
+						const realValue = this.getRegisterValue(register);
+						resolve(realValue);
+					});
 			});
 		});
 	}
@@ -422,18 +403,18 @@ export class ZesaruxRemote extends RemoteBase {
 	 * - callerAddr: The caller address of the subroutine
 	 * Otherwise undefined.
 	 */
-	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
+	protected getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get type
-		const type=stackEntryValue.substr(5);
-		if (type=='call'||type=='rst') {
+		const type = stackEntryValue.substr(5);
+		if (type == 'call' || type == 'rst') {
 			// Get the addresses
 			return super.getStackEntryType(stackEntryValue);
 		}
 
-		return new Promise<{name: string, callerAddr: number}|undefined>(resolve => {
+		return new Promise<{name: string, callerAddr: number} | undefined>(resolve => {
 			if (type.includes('interrupt')) {
 				// Interrupt
-				const retAddr=parseInt(stackEntryValue, 16);
+				const retAddr = parseInt(stackEntryValue, 16);
 				resolve({name: this.getInterruptName(), callerAddr: retAddr});
 			}
 			else {
@@ -460,26 +441,26 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getStackFromEmulator(): Promise<Array<string>> {
 		return new Promise<Array<string>>(async resolve => {
 			// Get normal callstack
-			const stack=await super.getStackFromEmulator();
+			const stack = await super.getStackFromEmulator();
 			// Get e-stack
-			const depth=stack.length;
-			if (depth==0) {
+			const depth = stack.length;
+			if (depth == 0) {
 				resolve(stack);
 				return;
 			}
 			// Get extended stack from zesarux
-			zSocket.send('extended-stack get '+depth, data => {
-				data=data.replace(/\r/gm, "");
-				const zStack=data.split('\n');
-				let len=zStack.length-1;
+			zSocket.send('extended-stack get ' + depth, data => {
+				data = data.replace(/\r/gm, "");
+				const zStack = data.split('\n');
+				let len = zStack.length - 1;
 				zStack.splice(len);	// ignore last (is empty)
-				if (depth<len)
-					len=depth;
+				if (depth < len)
+					len = depth;
 				// Mix stacks
-				for (let i=0; i<len; i++) {
-					const type=zStack[i].substr(5);
+				for (let i = 0; i < len; i++) {
+					const type = zStack[i].substr(5);
 					// Add to original stack
-					stack[depth-1-i]+=type;
+					stack[depth - 1 - i] += type;
 				}
 				resolve(stack);
 			});
@@ -505,7 +486,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Handle code coverage
 				this.handleCodeCoverage();
 				// The reason is the 2nd line
-				const breakReasonString=this.getBreakReason(text);
+				const breakReasonString = this.getBreakReason(text);
 				// Read the spot history
 				await CpuHistory.getHistorySpotFromRemote();
 				// Call handler
@@ -526,10 +507,10 @@ export class ZesaruxRemote extends RemoteBase {
 	protected getBreakReason(text: string): string {
 		// The reason is the 2nd line
 		let result;
-		const textArray=text.split('\n');
+		const textArray = text.split('\n');
 		for (const reason of textArray)
-			if ((reason.indexOf('point hit')>=0)||(reason.indexOf('point fired')>=0)) {
-				result=reason;
+			if ((reason.indexOf('point hit') >= 0) || (reason.indexOf('point fired') >= 0)) {
+				result = reason;
 				break;
 			}
 		return result;
@@ -550,8 +531,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason.
 	 */
-	public async stepOver(): Promise<string|undefined> {
-		return new Promise<string|undefined>(resolve => {
+	public async stepOver(): Promise<string | undefined> {
+		return new Promise<string | undefined>(resolve => {
 			// Zesarux is very special in the 'step-over' behavior.
 			// In case of e.g a 'jp cc, addr' it will never return
 			// if the condition is met because
@@ -566,73 +547,73 @@ export class ZesaruxRemote extends RemoteBase {
 			// All others are executed with a step-into.
 			// Only exception is LDDR etc. Those are executed as step-over.
 			//this.getRegisters().then(() => {
-				const pc=Z80Registers.getPC();
-				zSocket.send('disassemble '+pc, disasm => {
-					// Check if this was a "CALL something" or "CALL n/z,something"
-					const opcode=disasm.substr(7, 4);
+			const pc = Z80Registers.getPC();
+			zSocket.send('disassemble ' + pc, disasm => {
+				// Check if this was a "CALL something" or "CALL n/z,something"
+				const opcode = disasm.substr(7, 4);
 
-					// For RST and CALL we break when SP reaches the current SP again.
-					// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
-					// reached if the stack is manipulated.
-					// A SP breakpoint might be hit when the stack is being manipulated, but at least it
-					// is hit and does not run forever.
-					if (opcode=="RST "||opcode=="CALL") {
-						// Set condition
-						const sp=Z80Registers.getSP();
-						const condition='SP>='+sp;
-						// We do a "run" instead of a step-into/over
-						// Set action first (no action).
-						const bpId=ZesaruxRemote.STEP_BREAKPOINT_ID;
-						// Clear register cache
-						//Z80Registers.clearCache();
-						// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
-						zSocket.send('set-breakpointaction '+bpId+' prints step-over', () => {
-							// set the breakpoint
-							zSocket.send('set-breakpoint '+bpId+' '+condition, () => {
-								// enable breakpoint
-								zSocket.send('enable-breakpoint '+bpId, () => {
-									// Run
-									zSocket.sendInterruptableRunCmd(async text => {
-										// (could take some time, e.g. until a breakpoint is hit)
-										// Clear register cache
-										await this.getRegistersFromEmulator();
-										await this.getCallStackFromEmulator();
-										// Handle code coverage
-										this.handleCodeCoverage();
-										// The break reason is in the returned text
-										const breakReasonString=this.getBreakReason(text);
-										// Disable breakpoint
-										zSocket.send('disable-breakpoint '+bpId, async () => {
-											// Read the spot history
-											await CpuHistory.getHistorySpotFromRemote();
+				// For RST and CALL we break when SP reaches the current SP again.
+				// This is better than setting a PC breakpoint. A PC breakpoint is maybe never
+				// reached if the stack is manipulated.
+				// A SP breakpoint might be hit when the stack is being manipulated, but at least it
+				// is hit and does not run forever.
+				if (opcode == "RST " || opcode == "CALL") {
+					// Set condition
+					const sp = Z80Registers.getSP();
+					const condition = 'SP>=' + sp;
+					// We do a "run" instead of a step-into/over
+					// Set action first (no action).
+					const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
+					// Clear register cache
+					//Z80Registers.clearCache();
+					// Note "prints" is required, so that a normal step over will not produce a breakpoint decoration.
+					zSocket.send('set-breakpointaction ' + bpId + ' prints step-over', () => {
+						// set the breakpoint
+						zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+							// enable breakpoint
+							zSocket.send('enable-breakpoint ' + bpId, () => {
+								// Run
+								zSocket.sendInterruptableRunCmd(async text => {
+									// (could take some time, e.g. until a breakpoint is hit)
+									// Clear register cache
+									await this.getRegistersFromEmulator();
+									await this.getCallStackFromEmulator();
+									// Handle code coverage
+									this.handleCodeCoverage();
+									// The break reason is in the returned text
+									const breakReasonString = this.getBreakReason(text);
+									// Disable breakpoint
+									zSocket.send('disable-breakpoint ' + bpId, async () => {
+										// Read the spot history
+										await CpuHistory.getHistorySpotFromRemote();
 
-											resolve(breakReasonString);
-										});
+										resolve(breakReasonString);
 									});
 								});
 							});
 						});
-					}
-					else {
-						// "normal" opcode, just check for repetitive ones
-						const cmd=(opcode=="LDIR"||opcode=="LDDR"||opcode=="CPIR"||opcode=="CPDR")? 'cpu-step-over':'cpu-step';
-						// Clear register cache
-						//Z80Registers.clearCache();
-						zSocket.send(cmd, async result => {
-							// Clear cache
-							await this.getRegistersFromEmulator();
-							await this.getCallStackFromEmulator();
-							// Handle code coverage
-							this.handleCodeCoverage();
-							// Call handler
-							const breakReasonString=this.getBreakReason(result);
-							// Read the spot history
-							await CpuHistory.getHistorySpotFromRemote();
-							resolve(breakReasonString);
+					});
+				}
+				else {
+					// "normal" opcode, just check for repetitive ones
+					const cmd = (opcode == "LDIR" || opcode == "LDDR" || opcode == "CPIR" || opcode == "CPDR") ? 'cpu-step-over' : 'cpu-step';
+					// Clear register cache
+					//Z80Registers.clearCache();
+					zSocket.send(cmd, async result => {
+						// Clear cache
+						await this.getRegistersFromEmulator();
+						await this.getCallStackFromEmulator();
+						// Handle code coverage
+						this.handleCodeCoverage();
+						// Call handler
+						const breakReasonString = this.getBreakReason(result);
+						// Read the spot history
+						await CpuHistory.getHistorySpotFromRemote();
+						resolve(breakReasonString);
 
-						});
-					}
-				});
+					});
+				}
+			});
 			//});
 		});
 	}
@@ -643,25 +624,25 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason.
 	 */
-	public async stepInto(): Promise<string|undefined> {
-		return new Promise<string|undefined>(resolve => {
+	public async stepInto(): Promise<string | undefined> {
+		return new Promise<string | undefined>(resolve => {
 			// Normal step into.
 			//this.getRegisters().then(() => {
-				//const pc=Z80Registers.getPC();
-				//zSocket.send('disassemble '+pc, instruction => {
-					// Clear register cache
-					//Z80Registers.clearCache();
-					zSocket.send('cpu-step', async result => {
-						// Clear cache
-						await this.getRegistersFromEmulator();
-						await this.getCallStackFromEmulator();
-						// Handle code coverage
-						this.handleCodeCoverage();
-						// Read the spot history
-						await CpuHistory.getHistorySpotFromRemote();
-						resolve(undefined);
-					});
-				//});
+			//const pc=Z80Registers.getPC();
+			//zSocket.send('disassemble '+pc, instruction => {
+			// Clear register cache
+			//Z80Registers.clearCache();
+			zSocket.send('cpu-step', async result => {
+				// Clear cache
+				await this.getRegistersFromEmulator();
+				await this.getCallStackFromEmulator();
+				// Handle code coverage
+				this.handleCodeCoverage();
+				// Read the spot history
+				await CpuHistory.getHistorySpotFromRemote();
+				resolve(undefined);
+			});
+			//});
 			//});
 		});
 	}
@@ -687,7 +668,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getTstates(): Promise<number> {
 		return new Promise<number>(resolve => {
 			zSocket.send('get-tstates-partial', data => {
-				const tStates=parseInt(data);
+				const tStates = parseInt(data);
 				resolve(tStates);
 			});
 		});
@@ -701,7 +682,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async getCpuFrequency(): Promise<number> {
 		return new Promise<number>(resolve => {
 			zSocket.send('get-cpu-frequency', data => {
-				const cpuFreq=parseInt(data);
+				const cpuFreq = parseInt(data);
 				resolve(cpuFreq);
 			});
 		});
@@ -713,35 +694,35 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	protected handleCodeCoverage() {
 		// Check if code coverage is enabled
-		if(!Settings.launch.history.codeCoverageEnabled)
+		if (!Settings.launch.history.codeCoverageEnabled)
 			return;
 
 		// Get coverage
 		zSocket.send('cpu-code-coverage get', data => {
 			// Check for error
-			if(data.startsWith('Error'))
+			if (data.startsWith('Error'))
 				return;
 			// Get slots
 			//this.getRegisters().then(() => {
-				// Get current slots
-				const slots=Z80Registers.getSlots();
-				// Parse data and collect addresses
-				const addresses=new Set<number>();
-				const length=data.length;
-				for (let k=0; k<length; k+=5) {
-					const addressString=data.substr(k, 4);
-					const address=parseInt(addressString, 16);
-					// Change to long address
-					// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
-					// But since ZEsarUX only returns 64k addresses it is all that
-					// can be done here.
-					const longAddress=Z80Registers.createLongAddress(address, slots);
-					addresses.add(longAddress);
-				}
-				// Clear coverage in ZEsarUX
-				zSocket.send('cpu-code-coverage clear');
-				// Emit code coverage event
-				this.emit('coverage', addresses);
+			// Get current slots
+			const slots = Z80Registers.getSlots();
+			// Parse data and collect addresses
+			const addresses = new Set<number>();
+			const length = data.length;
+			for (let k = 0; k < length; k += 5) {
+				const addressString = data.substr(k, 4);
+				const address = parseInt(addressString, 16);
+				// Change to long address
+				// Note: this is not 100% correct, i.e. if the slots have changed during execution the wrong values are displayed here.
+				// But since ZEsarUX only returns 64k addresses it is all that
+				// can be done here.
+				const longAddress = Z80Registers.createLongAddress(address, slots);
+				addresses.add(longAddress);
+			}
+			// Clear coverage in ZEsarUX
+			zSocket.send('cpu-code-coverage clear');
+			// Emit code coverage event
+			this.emit('coverage', addresses);
 			//});
 		});
 	}
@@ -760,80 +741,80 @@ export class ZesaruxRemote extends RemoteBase {
 
 			// Get current stackpointer
 			//this.getRegisters().then(() => {
-				// Get SP
-				const sp=Z80Registers.getSP();
+			// Get SP
+			const sp = Z80Registers.getSP();
 
-				// calculate the depth of the call stack
-				let depth=this.topOfStack-sp;
-				if (depth>ZesaruxRemote.MAX_STACK_ITEMS)
-					depth=ZesaruxRemote.MAX_STACK_ITEMS;
-				if (depth==0) {
-					// no call stack, nothing to step out, i.e. immediately return
-					resolve("Call stack empty");
-					return;
-				}
-				else if (depth<0) {
-					// Callstack corrupted?
-					resolve("SP above topOfStack. Stack corrupted?");
-					return;
-				}
+			// calculate the depth of the call stack
+			let depth = this.topOfStack - sp;
+			if (depth > ZesaruxRemote.MAX_STACK_ITEMS)
+				depth = ZesaruxRemote.MAX_STACK_ITEMS;
+			if (depth == 0) {
+				// no call stack, nothing to step out, i.e. immediately return
+				resolve("Call stack empty");
+				return;
+			}
+			else if (depth < 0) {
+				// Callstack corrupted?
+				resolve("SP above topOfStack. Stack corrupted?");
+				return;
+			}
 
-				// get stack from zesarux
-				zSocket.send('extended-stack get '+depth, data => {
-					data=data.replace(/\r/gm, "");
-					const zStack=data.split('\n');
-					zStack.splice(zStack.length-1);	// ignore last (is empty)
+			// get stack from zesarux
+			zSocket.send('extended-stack get ' + depth, data => {
+				data = data.replace(/\r/gm, "");
+				const zStack = data.split('\n');
+				zStack.splice(zStack.length - 1);	// ignore last (is empty)
 
-					// Loop through stack:
-					let bpSp=sp;
-					for (const addrTypeString of zStack) {
-						// Increase breakpoint address
-						bpSp+=2;
-						// Split address and type
-						const type=addrTypeString.substr(6);
-						if (type=="call"||type=="rst"||type.includes("interrupt")) {
-							//const addr = parseInt(addrTypeString,16);
-							// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
-							// Set action first (no action).
-							const bpId=ZesaruxRemote.STEP_BREAKPOINT_ID;
-							zSocket.send('set-breakpointaction '+bpId+' prints step-out', () => {
-								// Set the breakpoint.
-								// Note: PC=PEEKW(SP-2) finds an executed RET.
-								const condition='PC=PEEKW(SP-2) AND SP>='+bpSp;
-								zSocket.send('set-breakpoint '+bpId+' '+condition, () => {
-									// Enable breakpoint
-									zSocket.send('enable-breakpoint '+bpId, () => {
+				// Loop through stack:
+				let bpSp = sp;
+				for (const addrTypeString of zStack) {
+					// Increase breakpoint address
+					bpSp += 2;
+					// Split address and type
+					const type = addrTypeString.substr(6);
+					if (type == "call" || type == "rst" || type.includes("interrupt")) {
+						//const addr = parseInt(addrTypeString,16);
+						// Caller found, set breakpoint: when SP gets 2 bigger than the current value.
+						// Set action first (no action).
+						const bpId = ZesaruxRemote.STEP_BREAKPOINT_ID;
+						zSocket.send('set-breakpointaction ' + bpId + ' prints step-out', () => {
+							// Set the breakpoint.
+							// Note: PC=PEEKW(SP-2) finds an executed RET.
+							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
+							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+								// Enable breakpoint
+								zSocket.send('enable-breakpoint ' + bpId, () => {
 
+									// Clear register cache
+									//Z80Registers.clearCache();
+									// Run
+									zSocket.sendInterruptableRunCmd(async text => {
+										// (could take some time, e.g. until a breakpoint is hit)
 										// Clear register cache
-										//Z80Registers.clearCache();
-										// Run
-										zSocket.sendInterruptableRunCmd(async text => {
-											// (could take some time, e.g. until a breakpoint is hit)
-											// Clear register cache
-											await this.getRegistersFromEmulator();
-											await this.getCallStackFromEmulator();
-											// Handle code coverage
-											this.handleCodeCoverage();
-											// The reason is the 2nd line
-											const breakReasonString=this.getBreakReason(text);
-											// Disable breakpoint
-											zSocket.send('disable-breakpoint '+bpId, async () => {
-												// Read the spot history
-												await CpuHistory.getHistorySpotFromRemote();
-												resolve(breakReasonString);
-											});
+										await this.getRegistersFromEmulator();
+										await this.getCallStackFromEmulator();
+										// Handle code coverage
+										this.handleCodeCoverage();
+										// The reason is the 2nd line
+										const breakReasonString = this.getBreakReason(text);
+										// Disable breakpoint
+										zSocket.send('disable-breakpoint ' + bpId, async () => {
+											// Read the spot history
+											await CpuHistory.getHistorySpotFromRemote();
+											resolve(breakReasonString);
 										});
 									});
 								});
 							});
-							// Return on a CALL etc.
-							return;
-						}
+						});
+						// Return on a CALL etc.
+						return;
 					}
+				}
 
-					// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-					resolve(undefined);
-				});
+				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
+				resolve(undefined);
+			});
 			//});
 		});
 	}
@@ -850,7 +831,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Check if condition is used
-			if (wp.condition && wp.condition.length>0) {
+			if (wp.condition && wp.condition.length > 0) {
 				// OPEN: ZEsarUX does not allow for memory breakpoints plus conditions.
 				// Will most probably never be implemented by Cesar.
 				// I leave this open mainly as a reminder.
@@ -858,16 +839,16 @@ export class ZesaruxRemote extends RemoteBase {
 			}
 			else {
 				// This is the general case. Just add a breakpoint on memory access.
-				let type=0;
-				if (wp.access.indexOf('r')>=0)
-					type|=0x01;
-				if (wp.access.indexOf('w')>=0)
-					type|=0x02;
+				let type = 0;
+				if (wp.access.indexOf('r') >= 0)
+					type |= 0x01;
+				if (wp.access.indexOf('w') >= 0)
+					type |= 0x02;
 
 				// Create watchpoint with range
-				const size=wp.size;
-				let addr=wp.address&0xFFFF;
-				zSocket.send('set-membreakpoint '+addr.toString(16)+'h '+type+' '+size);
+				const size = wp.size;
+				let addr = wp.address & 0xFFFF;
+				zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h ' + type + ' ' + size);
 			}
 
 			// Return promise after last watchpoint set
@@ -884,9 +865,9 @@ export class ZesaruxRemote extends RemoteBase {
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Clear watchpoint with range
-			const size=wp.size;
-			let addr=wp.address&0xFFFF;
-			zSocket.send('set-membreakpoint '+addr.toString(16)+'h 0 '+size);
+			const size = wp.size;
+			let addr = wp.address & 0xFFFF;
+			zSocket.send('set-membreakpoint ' + addr.toString(16) + 'h 0 ' + size);
 			// Return promise after last watchpoint set
 			zSocket.executeWhenQueueIsEmpty().then(resolve);
 		});
@@ -942,7 +923,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param enable true=enable, false=disable.
 	 */
 	public async enableLogpointGroup(group: string, enable: boolean): Promise<void> {
-		if(this.logpoints.size>0)
+		if (this.logpoints.size > 0)
 			this.emit('warning', 'ZEsarUX does not support logpoints.');
 	}
 
@@ -961,8 +942,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Even complex parenthesis forms are supported, e.g. "(A & 0x7F) == 127".
 	 * @returns The zesarux format.
 	 */
-	protected convertCondition(condition?: string): string|undefined {
-		if(!condition || condition.length == 0)
+	protected convertCondition(condition?: string): string | undefined {
+		if (!condition || condition.length == 0)
 			return '';	// No condition
 
 		// Simplify assertions
@@ -973,12 +954,12 @@ export class ZesaruxRemote extends RemoteBase {
 		let regex = /\b[_a-z][\.0-9a-z_]*\b/gi;
 		let conds = condition.replace(regex, label => {
 			// Check if register
-			if(Z80RegistersClass.isRegister(label))
+			if (Z80RegistersClass.isRegister(label))
 				return label;
 			// Convert label to number.
 			let addr = Labels.getNumberForLabel(label);
 			// If undefined, don't touch it.
-			if(addr == undefined)
+			if (addr == undefined)
 				return label;
 			addr &= 0xFFFF;	// for conditions only 64k are used
 			return addr.toString();;
@@ -1105,7 +1086,7 @@ export class ZesaruxRemote extends RemoteBase {
 	public async setBreakpoint(bp: RemoteBreakpoint): Promise<number> {
 		// Check for logpoint (not supported)
 		if (bp.log) {
-			this.emit('warning', 'ZEsarUX does not support logpoints ("'+bp.log+'").');
+			this.emit('warning', 'ZEsarUX does not support logpoints ("' + bp.log + '").');
 			// set to unverified
 			bp.address = -1;
 			return 0;
@@ -1140,8 +1121,8 @@ export class ZesaruxRemote extends RemoteBase {
 		// Disable breakpoint
 		await this.removeBreakpointZesarux(bpId);
 		// Remove from list
-		let index=this.breakpoints.indexOf(bp);
-		Utility.assert(index!==-1, 'Breakpoint should be removed but does not exist.');
+		let index = this.breakpoints.indexOf(bp);
+		Utility.assert(index !== -1, 'Breakpoint should be removed but does not exist.');
 		this.breakpoints.splice(index, 1);
 	}
 
@@ -1150,7 +1131,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * Disables all breakpoints set in zesarux on startup.
 	 */
 	protected clearAllZesaruxBreakpoints() {
-		for(let i=1; i<=Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
+		for (let i = 1; i <= Zesarux.MAX_ZESARUX_BREAKPOINTS; i++) {
 			zSocket.send('disable-breakpoint ' + i);
 		}
 	}
@@ -1167,7 +1148,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * an EmulatorBreakpoint.
 	 * @returns A Promise with all breakpoints.
 	 */
-	public async setBreakpoints(path: string, givenBps:Array<RemoteBreakpoint>): Promise<Array<RemoteBreakpoint>> {
+	public async setBreakpoints(path: string, givenBps: Array<RemoteBreakpoint>): Promise<Array<RemoteBreakpoint>> {
 		// Do most of the work
 		const bps = await super.setBreakpoints(path, givenBps);
 		// But wait for the socket.
@@ -1182,8 +1163,8 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @returns A Promise with the result of the command.
 	 */
 	public async dbgExec(cmd: string): Promise<string> {
-		cmd=cmd.trim();
-		if (cmd.length==0) {
+		cmd = cmd.trim();
+		if (cmd.length == 0) {
 			// No command given
 			throw new Error('No command given.');
 		}
@@ -1207,23 +1188,23 @@ export class ZesaruxRemote extends RemoteBase {
 	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
 		return new Promise<Uint8Array>(resolve => {
 			// Use chunks
-			const chunkSize=0x10000;// 0x1000;
+			const chunkSize = 0x10000;// 0x1000;
 			// Retrieve memory values
-			const values=new Uint8Array(size);
-			let k=0;
-			while (size>0) {
-				const retrieveSize=(size>chunkSize)? chunkSize:size;
-				zSocket.send('read-memory '+address+' '+retrieveSize, data => {
-					const len=data.length;
-					Utility.assert(len/2==retrieveSize);
-					for (let i=0; i<len; i+=2) {
-						const valueString=data.substr(i, 2);
-						const value=parseInt(valueString, 16);
-						values[k++]=value;
+			const values = new Uint8Array(size);
+			let k = 0;
+			while (size > 0) {
+				const retrieveSize = (size > chunkSize) ? chunkSize : size;
+				zSocket.send('read-memory ' + address + ' ' + retrieveSize, data => {
+					const len = data.length;
+					Utility.assert(len / 2 == retrieveSize);
+					for (let i = 0; i < len; i += 2) {
+						const valueString = data.substr(i, 2);
+						const value = parseInt(valueString, 16);
+						values[k++] = value;
 					}
 				});
 				// Next chunk
-				size-=chunkSize;
+				size -= chunkSize;
 			}
 			// send data to handler
 			zSocket.executeWhenQueueIsEmpty().then(() => {
@@ -1241,26 +1222,26 @@ export class ZesaruxRemote extends RemoteBase {
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Use chunks
-			const chunkSize=0x10000; //0x1000;
-			let k=0;
-			let size=dataArray.length;
-			let chunkCount=0;
-			while (size>0) {
-				const sendSize=(size>chunkSize)? chunkSize:size;
+			const chunkSize = 0x10000; //0x1000;
+			let k = 0;
+			let size = dataArray.length;
+			let chunkCount = 0;
+			while (size > 0) {
+				const sendSize = (size > chunkSize) ? chunkSize : size;
 				// Convert array to long hex string.
-				let bytes='';
-				for (let i=0; i<sendSize; i++) {
-					bytes+=Utility.getHexString(dataArray[k++], 2);
+				let bytes = '';
+				for (let i = 0; i < sendSize; i++) {
+					bytes += Utility.getHexString(dataArray[k++], 2);
 				}
 				// Send
 				chunkCount++;
-				zSocket.send('write-memory-raw '+address+' '+bytes, () => {
+				zSocket.send('write-memory-raw ' + address + ' ' + bytes, () => {
 					chunkCount--;
-					if (chunkCount==0)
+					if (chunkCount == 0)
 						resolve();
 				});
 				// Next chunk
-				size-=chunkSize;
+				size -= chunkSize;
 			}
 		});
 	}
@@ -1277,11 +1258,11 @@ export class ZesaruxRemote extends RemoteBase {
 	public async writeMemory(address: number, value: number): Promise<number> {
 		return new Promise<number>(resolve => {
 			// Write byte
-			zSocket.send('write-memory '+address+' '+value, data => {
+			zSocket.send('write-memory ' + address + ' ' + value, data => {
 				// read byte
-				zSocket.send('read-memory '+address+' 1', data => {
+				zSocket.send('read-memory ' + address + ' 1', data => {
 					// call handler
-					const readValue=parseInt(data, 16);
+					const readValue = parseInt(data, 16);
 					resolve(readValue);
 				});
 			});
@@ -1298,8 +1279,8 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stateSave(filePath: string): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Save as zsf
-			filePath+=".zsf";
-			zSocket.send('snapshot-save '+filePath, data => {
+			filePath += ".zsf";
+			zSocket.send('snapshot-save ' + filePath, data => {
 				resolve();
 			});
 		});
@@ -1314,8 +1295,8 @@ export class ZesaruxRemote extends RemoteBase {
 	public async stateRestore(filePath: string): Promise<void> {
 		return new Promise<void>(resolve => {
 			// Load as zsf
-			filePath+=".zsf";
-			zSocket.send('snapshot-load '+filePath, async data => {
+			filePath += ".zsf";
+			zSocket.send('snapshot-load ' + filePath, async data => {
 				// Initialize more
 				await this.initAfterLoad();
 				// Clear register cache
@@ -1337,15 +1318,15 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async getTbblueRegister(registerNr: number): Promise<number> {
 		return new Promise<number>(resolve => {
-			zSocket.send('tbblue-get-register '+registerNr, data => {
+			zSocket.send('tbblue-get-register ' + registerNr, data => {
 				// Check for error
 				if (data.startsWith("ERROR")) {
 					resolve(0);
 					return;
 				}
 				// Value is returned as 2 digit hex number followed by "H", e.g. "00H"
-				const valueString=data.substr(0, 2);
-				const value=parseInt(valueString, 16);
+				const valueString = data.substr(0, 2);
+				const value = parseInt(valueString, 16);
 				// Call handler
 				resolve(value);
 			});
@@ -1360,20 +1341,20 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async getTbblueSpritesPalette(paletteNr: number): Promise<Array<number>> {
 		return new Promise<Array<number>>(resolve => {
-			const paletteNrString=(paletteNr==0)? 'first':'second';
-			zSocket.send('tbblue-get-palette sprite '+paletteNrString+' 0 256', data => {
-				const palette=new Array<number>(256);
+			const paletteNrString = (paletteNr == 0) ? 'first' : 'second';
+			zSocket.send('tbblue-get-palette sprite ' + paletteNrString + ' 0 256', data => {
+				const palette = new Array<number>(256);
 				// Check for error
 				if (!data.startsWith("ERROR")) {
 					// Palette is returned as 3 digit hex separated by spaces, e.g. "02D 168 16D 000"
-					for (let i=0; i<256; i++) {
-						const colorString=data.substr(i*4, 3);
-						const color=parseInt(colorString, 16);
+					for (let i = 0; i < 256; i++) {
+						const colorString = data.substr(i * 4, 3);
+						const color = parseInt(colorString, 16);
 						// ZEsarUX sends the data as RRRGGGBBB, we need to
 						// change this first to RRRGGGBB, 0000000B.
-						palette[i]=(color>>>1);
-						if (color&0x01)
-							palette[i]+=0x100;
+						palette[i] = (color >>> 1);
+						if (color & 0x01)
+							palette[i] += 0x100;
 					}
 				}
 				// Call handler
@@ -1396,11 +1377,11 @@ export class ZesaruxRemote extends RemoteBase {
 					return;
 				}
 				// Returns 4 decimal numbers, e.g. "0 175 0 192 "
-				const clip=data.split(' ');
-				const xl=parseInt(clip[0]);
-				const xr=parseInt(clip[1]);
-				const yt=parseInt(clip[2]);
-				const yb=parseInt(clip[3]);
+				const clip = data.split(' ');
+				const xl = parseInt(clip[0]);
+				const xr = parseInt(clip[1]);
+				const yt = parseInt(clip[2]);
+				const yb = parseInt(clip[3]);
 
 				// Get the control byte
 				this.getTbblueRegister(0x15).then(control => {
@@ -1420,23 +1401,23 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async getTbblueSprites(slot: number, count: number): Promise<Array<Uint8Array>> {
 		return new Promise<Array<Uint8Array>>(resolve => {
-			zSocket.send('tbblue-get-sprite '+slot+' '+count, data => {
-				const sprites=new Array<Uint8Array>();
+			zSocket.send('tbblue-get-sprite ' + slot + ' ' + count, data => {
+				const sprites = new Array<Uint8Array>();
 				// Check for error
 				if (!data.startsWith("ERROR")) {
 					// Sprites are returned one line per sprite, each line consist of 4x 2 digit hex values, e.g.
 					// "00 00 00 00"
 					// "00 00 00 00"
-					const spriteLines=data.split('\n');
+					const spriteLines = data.split('\n');
 					for (const line of spriteLines) {
-						if (line.length==0)
+						if (line.length == 0)
 							continue;
-						const sprite=new Uint8Array(5);
-						for (let i=0; i<5; i++) {
-							const attrString=line.substr(i*3, 2);
-							if (attrString.length>0) {
-								const attribute=parseInt(attrString, 16);
-								sprite[i]=attribute;
+						const sprite = new Uint8Array(5);
+						for (let i = 0; i < 5; i++) {
+							const attrString = line.substr(i * 3, 2);
+							if (attrString.length > 0) {
+								const attribute = parseInt(attrString, 16);
+								sprite[i] = attribute;
 							}
 						}
 						sprites.push(sprite);
@@ -1457,20 +1438,20 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async getTbblueSpritePatterns(index: number, count: number): Promise<Array<Array<number>>> {
 		return new Promise<Array<Array<number>>>(resolve => {
-			zSocket.send('tbblue-get-pattern '+index+' '+count, data => {
-				const patterns=new Array<Array<number>>();
+			zSocket.send('tbblue-get-pattern ' + index + ' ' + count, data => {
+				const patterns = new Array<Array<number>>();
 				// Check for error
 				if (!data.startsWith("ERROR")) {
 					// Sprite patterns are returned one line per pattern, each line consist of
 					// 256x 2 digit hex values, e.g. "E3 E3 E3 E3 E3 ..."
-					const patternLines=data.split('\n');
+					const patternLines = data.split('\n');
 					patternLines.pop();	// Last element is a newline only
 					for (const line of patternLines) {
-						const pattern=new Array<number>(256);
-						for (let i=0; i<256; i++) {
-							const attrString=line.substr(i*3, 2);
-							const attribute=parseInt(attrString, 16);
-							pattern[i]=attribute;
+						const pattern = new Array<number>(256);
+						for (let i = 0; i < 256; i++) {
+							const attrString = line.substr(i * 3, 2);
+							const attribute = parseInt(attrString, 16);
+							pattern[i] = attribute;
 						}
 						patterns.push(pattern);
 					}
@@ -1493,12 +1474,12 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @returns A Promise called after being quiet for the given timeout.
 	 */
-	public async waitForBeingQuietFor(timeout: number): Promise<void>{
+	public async waitForBeingQuietFor(timeout: number): Promise<void> {
 		return new Promise<void>(resolve => {
 			let timerId;
-			const timer=() => {
+			const timer = () => {
 				clearTimeout(timerId);
-				timerId=setTimeout(() => {
+				timerId = setTimeout(() => {
 					// Now there is at least 100ms quietness:
 					// Stop listening
 					zSocket.removeListener('queueChanged', timer);
@@ -1513,5 +1494,24 @@ export class ZesaruxRemote extends RemoteBase {
 		});
 	}
 
+
+
+	/**
+	 * Loads sna, nex or tap file.
+	 * @param path The (absolute) path to the file.
+	 */
+	public async loadBin(path: string): Promise<void> {
+		await zSocket.sendAwait('smartload "' + Settings.launch.load + '"');	// Note: this also changes cpu to tbblue
+	}
+
+
+	/**
+	 * Loads a obj file.
+	 * @param path The (absolute) path to the obj file.
+	 * @param address The address where the obj file starts.
+	 */
+	public async loadObj(path: string, address: number): Promise<void> {
+		await zSocket.sendAwait('load-binary ' + path + ' ' + address + ' 0');	// 0 = load entire file
+	}
 }
 

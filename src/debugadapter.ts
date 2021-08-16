@@ -393,17 +393,24 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Called when 'Restart' is pressed.
-	 * Disconnects and destroys the old emulator connection and sets up a new one.
+	 * Reload the program into the Remote.
 	 * @param response
 	 * @param args
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
-		// Stop machine
-		await this.disconnectAll();
-		// Allow promises to return
-		setTimeout(() => {
-			this.launch(response);
-		}, 200);	// Smaller than 200 throws an exception in 'continue' because Remote is not yet set to undefined
+		// Restart history
+		StepHistory.init();
+		// Reset all decorations
+		Decoration.clearAllDecorations();
+		// Reload the executable
+		await Remote.loadExecutable();
+		// Reset the PC
+		await Remote.setLaunchExecAddress();
+		// Respond
+		this.sendResponse(response);
+		// Reload PC
+		await this.pcHasBeenChanged();
+		this.sendEvent(new InvalidatedEvent(['variables']));	// SP might have been changed as well
 	}
 
 
