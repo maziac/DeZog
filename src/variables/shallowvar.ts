@@ -892,7 +892,7 @@ export class MemDumpVar extends ShallowVar {
  * Special object to hold either a reference or apointer to an immediate value object.
  */
 interface VarOrImmediate extends DebugProtocol.Variable {
-	immediateValue: ImmediateValue;
+	immediateValue?: () => Promise<string>;
 }
 
 
@@ -922,7 +922,7 @@ export class ContainerVar extends ShallowVar {
 			let value = '';
 			if (entry.immediateValue) {
 				// ImmediateMemValue
-				value = await entry.immediateValue.getValue();
+				value = await entry.immediateValue();
 			}
 			dynList[i] = {
 				name: entry.name,
@@ -939,12 +939,12 @@ export class ContainerVar extends ShallowVar {
 	/**
 	 * Adds a new item to the list.
 	 * @param name The name of the variable/label.
-	 * @param immediateValue If not undefined the immediate valeu to use instead of a variable reference.
+	 * @param immediateValue If not undefined the immediate value to use instead of a variable reference.
 	 * @param varRef The variable reference to use. 0 if unused.
 	 * @param description A description shown in the UI on hovering.
 	 * @param count The elem count or 0.
 	 */
-	public addItem(name: string, immediateValue: ImmediateValue, varRef: number, description: string, count: number) {
+	public addItem(name: string, immediateValue: (() => Promise<string>)|undefined, varRef: number, description: string, count: number) {
 		this.varList.push({
 			name,
 			type: description,
@@ -996,34 +996,3 @@ export class ContainerVar extends ShallowVar {
 	}
 
 }
-
-
-/**
- * This class can be used for immediate values that need to be returned.
- * I.e. values without a variable reference.
- * In this case a callback is passed which is called everytime the
- * 'getValue' method is called.
- * ImmediateValue can be part of ContainerVar.
- */
-export class ImmediateValue {
-
-	// The displayed name.
-	public name: string;
-
-	// The description (shown on hover)
-	public type: string;
-
-	// The value to return as a function.
-	public getValue: () => Promise<string>;
-
-	/**
-	 * Constructor.
-	 * @param getValueCallback The function that is called to return the value.
-	 */
-	constructor(description: string, getValueCallback: () => Promise<string>) {
-		this.type = description;
-		this.getValue = getValueCallback;
-	}
-
-}
-

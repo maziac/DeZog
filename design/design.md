@@ -206,7 +206,7 @@ vscode retrieves the list of variable references through 'getContent', afterward
 Unfortunately vscode is not very object oriented at that point. I.e. immediate values are returned
 immediately and not as an object as arrays or structs.
 The complicates the implementation a there are 2 ways to return a response to a request.
-(Internally DeZog therefore use the ImmediateValue as a special object.)
+(Internally DeZog therefore use the ExpressionVariable which holds either a variable reference or a callback function pointer to retireve the value.)
 
 **vscode has no way to tell DeZog that a variable reference is not used anymore.
 Therefore new variables can be added to the list but not removed anymore.**

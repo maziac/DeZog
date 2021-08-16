@@ -9,7 +9,7 @@ import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar, ImmediateValue} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -1923,7 +1923,7 @@ export class DebugSessionClass extends DebugSession {
 					let result = '';
 					if (item.immediateValue) {
 						// Fill in immediate value (varRef is 0)
-						result = await item.immediateValue.getValue();
+						result = await item.immediateValue();
 					}
 					response.body = {
 						result,
@@ -2074,12 +2074,11 @@ export class DebugSessionClass extends DebugSession {
 					if (elemCount <= 1) {
 						const littleEndian = true;
 						// Create variable
-						const description = Utility.getLongAddressString(labelValue64k);
-						immediateValue = new ImmediateValue(description, async () => {
+						immediateValue = async () => {
 							const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
 							const memVal = Utility.getUintFromMemory(memory, 0, elemCount, littleEndian);
 							return await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
-						});
+						};
 					}
 					else {
 						// Simple memdump
