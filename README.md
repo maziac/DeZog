@@ -117,7 +117,6 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 Next to implement:
 - Support for CSpect 'rewind' feature.
 - OpenMSX support: Was done by s0urceror and is available already on the 'openmsx' branch.
-- ZesaruxExt: Make ZesaruxExt publicly available. ZesaruxExt is a Zesarux fork with small enhancements like faster breakpoints.
 -->
 
 

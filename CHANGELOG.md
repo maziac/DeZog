@@ -8,6 +8,7 @@
 - Refactored/optimized variable references.
 - Disabled disturbing vscode's default debug inline values.
 - Added editor command "Disassembly at Cursor Position".
+- Removed ZesaruxExt as Remote.
 
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.

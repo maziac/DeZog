@@ -123,15 +123,6 @@ write-port                    Writes value at port
 zeng-is-master                Tells if ZENG is configured as master or not
 zxevo-get-nvram               Get ZX-Evo NVRAM value at index
 
-ZesaruxExt:
-check-extensions              Checks if extensions are available
-clear-all-fast-breakpoints    Clears all fast-breakpoints
-set-fast-breakpoint           Sets a PC breakpoint at desired address with condition and possibly a log message
-clear-fast-breakpoint         Clears one or more PC breakpoint(s) or watchpoints at the given address for the given size
-get-fast-breakpoint           Returns a PC breakpoint or watchpoint at the given address
-set-fast-watchpoint           Sets a memory watchpoint at desired address with condition
-get-all-fast-breakpoints      Prints all fast breakpoints and watchpoints
-
 */
 
 

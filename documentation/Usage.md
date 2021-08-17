@@ -408,7 +408,7 @@ Defines the formatting of the registers when displayed in the VARIABLES area. E.
 With DeZog you have the option to use different remotes.
 They are distinguished via the "remoteType":
 - "zsim": Internal Z80 Simulator
-- "zrcp": ZEsarUX (or ZesaruxExt) emulator
+- "zrcp": ZEsarUX emulator
 - "cspect": CSpect emulator
 - "zxnext": ZX Next connected via serial cable.
 
@@ -429,27 +429,26 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                     | Internal Z80 Simulator | ZEsarUX | ZesaruxExt | ZX Next  | CSpect   |
-|:------------------------|:-------------------|:--------|:-----------|:---------|:---------|
-| State                   | stable             | stable  | stable     | stable   | stable   |
-| Breakpoints             | yes                | yes     | yes/fast   | yes      | yes      |
-| Break reason output     | yes                | no      | yes        | yes      | yes      |
-| Conditional Breakpoints | yes                | yes     | yes/fast   | yes/slow | yes/slow |
-| WPMEM (Watchpoints) support | yes            | yes 2)  | yes/fast 2) | no      | no       |
-| ASSERTION support       | yes                | yes      | yes        | yes/slow | yes/slow |
-| LOGPOINT support        | yes                | no      | yes        | yes/slow | yes/slow |
-| Long addresses/breakpoints | yes             | yes     | yes        | yes      | yes      |
-| Extended callstack      | no                 | yes     | yes        | no       | no       |
-| Code coverage           | yes                | yes 1)  | yes        | no       | no       |
-| Reverse debugging       | true               | true    | true       | lite     | lite     |
-| ZX Next capable         | no                 | yes     | yes        | yes      | yes      |
-| Save/restore the state  | yes                | yes     | yes        | no       | no       |
-| Output of T-States      | yes                | yes     | yes        | no       | no       |
-| Display of sprite attributes/patterns | yes  | yes     | yes        | no       | yes      |
-| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes        | yes      | yes      |
-| Load .tap file through DeZog | no            | yes     | yes        | no       | no       |
-| Run Z80 Unit Tests      | yes                | yes     | yes        | no       | yes 3)   |
-| Comments     | slower than ZEsarUX or CSpect |         | Breakpoints are faster than in ZEsarUX | |
+|                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   |
+|:------------------------|:-------------------|:--------|:---------|:---------|
+| State                   | stable             | stable  | stable   | stable   |
+| Breakpoints             | yes                | yes     | yes      | yes      |
+| Break reason output     | yes                | no      | yes      | yes      |
+| Conditional Breakpoints | yes                | yes     | yes/slow | yes/slow |
+| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       |
+| ASSERTION support       | yes                | yes     | yes/slow | yes/slow |
+| LOGPOINT support        | yes                | no      | yes/slow | yes/slow |
+| Long addresses/breakpoints | yes             | yes     | yes      | yes      |
+| Extended callstack      | no                 | yes     | no       | no       |
+| Code coverage           | yes                | yes 1)  | no       | no       |
+| Reverse debugging       | true               | true    | lite     | lite     |
+| ZX Next capable         | no                 | yes     | yes      | yes      |
+| Save/restore the state  | yes                | yes     | no       | no       |
+| Output of T-States      | yes                | yes     | no       | no       |
+| Display of sprite attributes/patterns | yes  | yes     | no       | yes      |
+| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      |
+| Load .tap file through DeZog | no            | yes     | no       | no       |
+| Run Z80 Unit Tests      | yes                | yes     | no       | yes 3)   |
 
 Notes:
 - State:
@@ -458,7 +457,6 @@ Notes:
     - started: Development has started but is not ready, i.e. not usable.
     - planned: Development has not yet started.
 - slow/fast: "slow" means that the evaluation is done by DeZog. This involves stopping the emulator (the remote) at a break point and evaluating the breakpoint in DeZog. If the condition is false the emulator is 'continued'. "fast" means that the evaluation is done by the remote (the emulator) itself. Thus no communication with DeZog is involved and therefore it is much faster.
-- ZesaruxExt is not available at the moment.
 - 1 ) ZEsarUX code coverage uses 16 bit addresses only. I.e. if slots are changed during execution the shown info might be wrong. But in most cases the output will be just fine.
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 - 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
