@@ -3226,18 +3226,18 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
-		const realLineNr=lineNr;
-		let addr=Remote.getAddrForFileAndLine(filename, realLineNr);
-		if (addr<0)
+		const realLineNr = lineNr;
+		let addr = Remote.getAddrForFileAndLine(filename, realLineNr);
+		if (addr < 0)
 			return;
 		// Check if bank is the same
-		const slots=Remote.getSlots();
+		const slots = Remote.getSlots();
 		if (slots) {
 			const bank = Z80Registers.getBankFromAddress(addr);
 			if (bank >= 0) {
 				const slotIndex = Z80Registers.getSlotFromAddress(addr);
 				if (bank != slots[slotIndex]) {
-					this.showError("Cannot set PC to a location (address="+Utility.getHexString(addr&0xFFFF,4)+"h) of a bank (bank " + bank + ") hat is currently not paged in.");
+					this.showError("Cannot set PC to a location (address=" + Utility.getHexString(addr & 0xFFFF, 4) + "h) of a bank (bank " + bank + ") that is currently not paged in.");
 					return;
 				}
 			}
@@ -3252,6 +3252,46 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 
 	/**
+	 * Does a dissaembly to the debug console for the address at the cursor position.
+	 * @param filename The absolute file path.
+	 * @param lineNr The lineNr. Starts at 0.
+	 */
+	protected async disassemblyAtCursor(filename: string, lineNr: number): Promise<void> {
+		// Get address of file/line
+		const realLineNr = lineNr;
+		let addr = Remote.getAddrForFileAndLine(filename, realLineNr);
+		if (addr < 0)
+			return;
+		// Check if bank is the same
+		const slots = Remote.getSlots();
+		if (slots) {
+			const bank = Z80Registers.getBankFromAddress(addr);
+			if (bank >= 0) {
+				const slotIndex = Z80Registers.getSlotFromAddress(addr);
+				if (bank != slots[slotIndex]) {
+					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(addr & 0xFFFF, 4) + "h, bank=" + bank + ")");
+					return;
+				}
+			}
+		}
+
+		// Read the memory.
+		const lineCount = 1;
+		const size = 4 * lineCount;	// 4 is the max size of an opcode
+		addr &= 0xFFFF;
+		const data = await Remote.readMemoryDump(addr, size);
+
+		// Disassemble
+		const dasmArray = DisassemblyClass.get(addr, data, lineCount);
+
+		// Output
+		for (const addrInstr of dasmArray) {
+			this.debugConsoleAppendLine(Utility.getHexString(addrInstr.address, 4) + " " + addrInstr.instruction);
+		}
+	}
+
+
+	/**
 	 * Called from vscode when the user inputs a command in the command palette.
 	 * The method checks if the command is known and executes it.
 	 * If the command is unknown the super method is called.
@@ -3262,25 +3302,25 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
 		switch (command) {
 			case 'setPcToLine':
-				const filename=args[0];
-				const lineNr=args[1];
-				this.setPcToLine(filename, lineNr);	// No need for 'await'
+				{
+					const filename = args[0];
+					const lineNr = args[1];
+					this.setPcToLine(filename, lineNr);	// No need for 'await'
+				}
 				break;
 
-			/*
-			case 'exec-cmd':
-				this.cmdExec(args);
+			case 'disassemblyAtCursor':
+				{
+					const filename = args[0];
+					const lineNr = args[1];
+					this.disassemblyAtCursor(filename, lineNr);	// No need for 'await'
+				}
 				break;
-			case 'set-memory':
-				this.cmdSetMemory(args[0]);
-				break;
-			*/
+
 			default:
 				super.customRequest(command, response, args);
 				return;
 		}
-		// send response
-		//this.sendResponse(response);
 	}
 
 

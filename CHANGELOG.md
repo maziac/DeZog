@@ -7,6 +7,7 @@
 - Fix: register colors in memory views now also updated if the memory view is not focused.
 - Refactored/optimized variable references.
 - Disabled disturbing vscode's default debug inline values.
+- Added editor command "Disassembly at Cursor Position".
 
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.

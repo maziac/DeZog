@@ -89,16 +89,31 @@ export function activate(context: vscode.ExtensionContext) {
 	// Command to change the program counter via menu.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.movePCtoCursor', () => {
 		// Only allowed in debug context
-		if(!vscode.debug.activeDebugSession)
+		if (!vscode.debug.activeDebugSession)
 			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
-		if(!editor)
+		if (!editor)
 			return;
 		const position = editor.selection.active;
 		const filename = editor.document.fileName;
 		// Send to debug adapter
 		vscode.debug.activeDebugSession.customRequest('setPcToLine', [filename, position.line]);
+	}));
+
+	// Command to do a disassembly at the cursor's position.
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor', () => {
+		// Only allowed in debug context
+		if (!vscode.debug.activeDebugSession)
+			return;
+		// Get focussed editor/file and line
+		const editor = vscode.window.activeTextEditor;
+		if (!editor)
+			return;
+		const position = editor.selection.active;
+		const filename = editor.document.fileName;
+		// Send to debug adapter
+		vscode.debug.activeDebugSession.customRequest('disassemblyAtCursor', [filename, position.line]);
 	}));
 
 	// Command to disable code coverage display and analyzes.

@@ -175,6 +175,11 @@
 				"category": "dezog"
 			},
 			{
+				"command": "dezog.disassemblyAtCursor",
+				"title": "Disassembly at Cursor Position",
+				"category": "dezog"
+			},
+			{
 				"command": "dezog.clearAllDecorations",
 				"title": "Clear all decorations",
 				"category": "dezog"
@@ -236,6 +241,10 @@
 					"when": "false"
 				},
 				{
+					"command": "dezog.disassemblyAtCursor",
+					"when": "false"
+				},
+				{
 					"command": "dezog.clearAllDecorations"
 				},
 				{
@@ -263,6 +272,11 @@
 				{
 					"when": "resourceLangId == asm-collection && inDebugMode",
 					"command": "dezog.movePCtoCursor",
+					"group": "debug"
+				},
+				{
+					"when": "resourceLangId == asm-collection && inDebugMode",
+					"command": "dezog.disassemblyAtCursor",
 					"group": "debug"
 				}
 			]
