@@ -102,9 +102,9 @@ th {
 }
 
 #toc {
-height: 30em;
-overflow: scroll;
-overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+  height: 30em;
+  overflow: scroll;
+  overscroll-behavior: contain; /* Prevent scroll chaining to parent */
 }
 
 #toc_main {
