@@ -8,9 +8,7 @@ import {PackageInfo} from '../whatsnew/packageinfo';
 
 
 /**
- * A Webview that just shows some static text.
- * Is e.g. used to run an Emulator command and display it's output.
- * Singleton.
+ * A Webview that shows the help view in a window.
  */
 export class HelpView extends BaseView {
 

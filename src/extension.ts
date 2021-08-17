@@ -169,6 +169,11 @@ export function activate(context: vscode.ExtensionContext) {
 	const configProvider = new DeZogConfigurationProvider()
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
 
+	// Registers the debug inline value provider
+	const asmDocSelector: vscode.DocumentSelector = {scheme: 'file'};
+	const inlineValuesProvider = new DeZogInlineValuesProvider();
+	context.subscriptions.push(vscode.languages.registerInlineValuesProvider(asmDocSelector, inlineValuesProvider));
+
 	/*
 	Actually this did not work very well for other reasons:
 	It's better to retrieve the file/lineNr from the PC value.
@@ -209,6 +214,33 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 	//console.log("Extension DEACTIVATED");
 }
+
+
+
+/**
+ * This debug inline values provider simply provides nothing.
+ * This is to prevent that the default debug inline values provider is used instead,
+ * which would show basically garbage.
+ *
+ * So for settings.json "debug.inlineValues":
+ * - false: The inline provider is not called
+ * - true/"auto": The inline provider is called but returns nothing.
+ *
+ * I'm not using the vscode approach for debug values but decorations instead because:
+ * - The decorations implementation is ready and working fine. To change would give
+ *   no advantage other than additional effort and bugs.
+ * - vscode only shows the inline values for the currently debugged file.
+ *   The decorations show them on all files, i.e. it is easier to follow where the
+ *   instruction history came from.
+ */
+class DeZogInlineValuesProvider implements vscode.InlineValuesProvider {
+	//onDidChangeInlineValues?: vscode.Event<void> | undefined;
+	provideInlineValues(document: vscode.TextDocument, viewPort: vscode.Range, context: vscode.InlineValueContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.InlineValue[]> {
+		return undefined;
+	}
+
+};
+
 
 
 /**

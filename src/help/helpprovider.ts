@@ -6,6 +6,9 @@ import {HelpView} from './helpview';
 //import {UnifiedPath} from '../misc/unifiedpath';
 
 
+/**
+ * Shows the help table of contents in the side bar.
+ */
 export class HelpProvider implements vscode.WebviewViewProvider {
 	// The webview is stored here.
 	protected webview: vscode.Webview;
