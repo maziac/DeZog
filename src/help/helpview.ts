@@ -101,6 +101,12 @@ th {
   background: var(--vscode-merge-incomingHeaderBackground);
 }
 
+#toc {
+height: 30em;
+overflow: scroll;
+overscroll-behavior: contain; /* Prevent scroll chaining to parent */
+}
+
 #toc_main {
   position: fixed;
   right: 1em;

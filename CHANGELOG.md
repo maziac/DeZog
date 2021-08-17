@@ -9,6 +9,7 @@
 - Disabled disturbing vscode's default debug inline values.
 - Added editor command "Disassembly at Cursor Position".
 - Removed ZesaruxExt as Remote.
+- Fixed #63: Help View: TOC is now scrollable.
 
 # 2.2.5
 - Fixed: Memory views were not updated if the debug session was restarted. See #59.
