@@ -1,6 +1,6 @@
 <li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added "-addexpr" and "-delexpr" console commands: See help ("-h") in the debug console. With addexpr you can add labels to the VARIABLES pane. With delexpr you can remove it. Functionality is similar to the WATCHes pane. But if you add labels to VARIABLES you are able to modify values. The WATCHes pane just allows to display values.
+	<br>Added "-addexpr" and "-delexpr" console commands: See help ("-h") in the debug console. With addexpr you can add expressions/labels to the VARIABLES pane. With delexpr you can remove them. Functionality is similar to the WATCHes pane. But if you add labels to VARIABLES you are able to modify the values. The WATCHes pane just allows to display values.
 </li>
 
 <li>
@@ -10,12 +10,18 @@
 
 <li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added console command "-mvw" to display a memory viewer that displays the memory organized in words instead of bytes. You can use either little or big endian.
+	<br>Added console command "-mvw" to display a memory viewer that displays the memory organized in words instead of
+	bytes. You can use either little or big endian.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span>
+	<br>Added new editor command. Rightclick in your sources and choose "Disassembly at Cursor Position". This will output the disassembly of the instruction at the cursor position in the debug console.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Debug session restart (the green debug button with the circle arrow) now behaves differently. In the past it has been simply a short cut for STOP and RUN a new debug session. Now it just reloads the binary file and restarts it. I.e. all additional setup you have done, e.g. adding memory views through the console, will persist now (until you stop the debug session with the red square button).
+	<br>Debug session restart (the green debug button with the circle arrow) now behaves differently. In the past it has been simply a shortcut for STOP and RUN a new debug session. Now it just reloads the binary file and restarts it. I.e. all additional setup you have done so far, e.g. adding memory views, will persist now (until you stop the debug session with the red square button).
 </li>
 
 <li>
@@ -27,3 +33,9 @@
 	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
 	<br>Memory views were not updated if the debug session was restarted.
 </li>
+
+<li>
+	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
+	<br>DeZog Help: The table of contents is now scrollable.
+</li>
+
