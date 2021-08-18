@@ -98,8 +98,11 @@ export class DisassemblyClass extends Disassembler {
 	/**
 	 * Returns the file path of the temporary disassembly file.
 	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
+	 * Or undefined if Settings.launch not yet created.
 	 */
 	public static getAbsFilePath(): string {
+		if (!Settings.launch)
+			return undefined as any;
 		const relPath=Utility.getRelTmpFilePath(TmpDasmFileName);
 		const absPath=Utility.getAbsFilePath(relPath);
 		return absPath;

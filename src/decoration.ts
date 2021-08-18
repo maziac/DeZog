@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Labels, SourceFileEntry } from './labels/labels';
+import {Labels, SourceFileEntry} from './labels/labels';
 //import {Log} from './log';
 //import { Settings } from './settings';
 import {Disassembly, DisassemblyClass} from './misc/disassembly';
@@ -20,7 +20,7 @@ class DecorationFileMap {
 	public decoType: vscode.TextEditorDecorationType;
 
 	/// Holds a map with filenames associated with the lines.
-	public fileMap: Map<string, Array<vscode.Range>|Array<vscode.DecorationOptions>>;
+	public fileMap: Map<string, Array<vscode.Range> | Array<vscode.DecorationOptions>>;
 }
 
 
@@ -108,14 +108,14 @@ export class DecorationClass {
 			gutterIconSize: 'auto',
 			light: {
 				// this color will be used in light color themes
-//				backgroundColor: '#89C2D3',
+				//				backgroundColor: '#89C2D3',
 				after: {
 					color: "#808080",
 				}
 			},
 			dark: {
 				// this color will be used in dark color themes
-//				backgroundColor: '#022031',
+				//				backgroundColor: '#022031',
 				after: {
 					color: "#808080",
 				}
@@ -185,7 +185,7 @@ export class DecorationClass {
 		decoFileMap.fileMap = new Map<string, Array<vscode.DecorationOptions>>();
 		this.decorationFileMaps.set(this.HISTORY_SPOT, decoFileMap);
 
-		this.unassignedCodeCoverageAddresses=new Set<number>();
+		this.unassignedCodeCoverageAddresses = new Set<number>();
 
 		// Watch the text editors to decorate them.
 		vscode.window.onDidChangeActiveTextEditor(editor => {
@@ -235,14 +235,14 @@ export class DecorationClass {
 	 * @param mapName E.g. COVERAGE, REVERSE_DEBUG, SHORT_HISTORY or BREAK.
 	 */
 	protected clearDecorations(mapName: string) {
-		const map=this.decorationFileMaps.get(mapName) as DecorationFileMap;
+		const map = this.decorationFileMaps.get(mapName) as DecorationFileMap;
 		map.fileMap.clear();
-		const editors=vscode.window.visibleTextEditors;
+		const editors = vscode.window.visibleTextEditors;
 		for (const editor of editors) {
 			editor.setDecorations(map.decoType, []);
 		}
 		// Additionally clear array
-		if (mapName==this.COVERAGE)
+		if (mapName == this.COVERAGE)
 			this.unassignedCodeCoverageAddresses.clear();
 	}
 
@@ -253,7 +253,7 @@ export class DecorationClass {
 	public clearAllDecorations() {
 		for (const [, map] of this.decorationFileMaps) {
 			map.fileMap.clear();
-			const editors=vscode.window.visibleTextEditors;
+			const editors = vscode.window.visibleTextEditors;
 			for (const editor of editors) {
 				editor.setDecorations(map.decoType, []);
 			}
@@ -268,9 +268,9 @@ export class DecorationClass {
 	 */
 	public clearAllButCodeCoverageDecorations() {
 		for (const [name, map] of this.decorationFileMaps) {
-			if (name!=this.COVERAGE) {
+			if (name != this.COVERAGE) {
 				map.fileMap.clear();
-				const editors=vscode.window.visibleTextEditors;
+				const editors = vscode.window.visibleTextEditors;
 				for (const editor of editors) {
 					editor.setDecorations(map.decoType, []);
 				}
@@ -283,8 +283,8 @@ export class DecorationClass {
 	 * Sets decorations for all types.
 	 * Coverage, revers debug, breaks, short history.
 	 */
-	protected setAllDecorations(editor: vscode.TextEditor|undefined) {
-		if(!editor)
+	protected setAllDecorations(editor: vscode.TextEditor | undefined) {
+		if (!editor)
 			return;
 
 		// Go through all coverage maps
@@ -301,11 +301,11 @@ export class DecorationClass {
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
 		// Get filename
-		const edFilename=editor.document.fileName;
+		const edFilename = editor.document.fileName;
 
 		// Special case for disassembly file and coverage.
-		if (fileMapName==this.COVERAGE) {
-			if (edFilename==DisassemblyClass.getAbsFilePath()) {
+		if (fileMapName == this.COVERAGE) {
+			if (edFilename == DisassemblyClass.getAbsFilePath()) {
 				// Handle disassembly file
 				this.setDisasmCoverageDecoration(editor);
 				return;	// Skip normal case
@@ -318,8 +318,8 @@ export class DecorationClass {
 
 		// Get lines
 		const fileMap = decoMap.fileMap;
-		const decorations=fileMap.get(edFilename);
-		if(decorations) {
+		const decorations = fileMap.get(edFilename);
+		if (decorations) {
 			// Set decorations
 			editor.setDecorations(decoMap.decoType, decorations);
 		}
@@ -331,11 +331,11 @@ export class DecorationClass {
 	 */
 	public setDisasmCoverageDecoration(editor: vscode.TextEditor) {
 		// Coverage
-		const lines=Disassembly.getLinesForAddresses(this.unassignedCodeCoverageAddresses);
-		const decorations=lines.map(lineNr => new vscode.Range(lineNr, 0, lineNr, 1000));
+		const lines = Disassembly.getLinesForAddresses(this.unassignedCodeCoverageAddresses);
+		const decorations = lines.map(lineNr => new vscode.Range(lineNr, 0, lineNr, 1000));
 		if (decorations) {
 			// Set decorations
-			const decoMap=this.decorationFileMaps.get(this.COVERAGE) as DecorationFileMap;
+			const decoMap = this.decorationFileMaps.get(this.COVERAGE) as DecorationFileMap;
 			editor.setDecorations(decoMap.decoType, decorations);
 		}
 	}
@@ -357,23 +357,23 @@ export class DecorationClass {
 		//fileMap.clear();
 		coveredAddresses.forEach(addr => {
 			// Get file location for address
-			let location=Labels.getFileAndLineForAddress(addr);
+			let location = Labels.getFileAndLineForAddress(addr);
 			let filename = location.fileName;
-			if (filename.length==0) {
+			if (filename.length == 0) {
 				// No file found, so remember address
 				this.unassignedCodeCoverageAddresses.add(addr);
 				return;
 			}
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.Range>;
-			if(!lines) {
+			if (!lines) {
 				// Create a new
 				lines = new Array<vscode.Range>();
 				fileMap.set(filename, lines);
 			}
-			const lineNr=location.lineNr;
+			const lineNr = location.lineNr;
 			// REMARK: Could be optimized. Here it is possible that coverage for that line already exists and would then be added 2 or more times.
-			const range = new vscode.Range(lineNr,0, lineNr,1000);
+			const range = new vscode.Range(lineNr, 0, lineNr, 1000);
 			// Add address to set
 			lines.push(range);
 		});
@@ -404,25 +404,25 @@ export class DecorationClass {
 			// Get file location for address
 			const location = this.getFileAndLineForAddress(addr);
 			const filename = location.fileName;
-			if(filename.length == 0)
+			if (filename.length == 0)
 				return;
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.Range>;
-			if(!lines) {
+			if (!lines) {
 				// Create a new
 				lines = new Array<vscode.Range>();
 				fileMap.set(filename, lines);
 			}
 			// Add address to set
 			const lineNr = location.lineNr;
-			const range = new vscode.Range(lineNr,0, lineNr,1000);
+			const range = new vscode.Range(lineNr, 0, lineNr, 1000);
 			// Add address to set
 			lines.push(range);
 		});
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
+		for (const editor of editors) {
 			this.setDecorations(editor, this.REVERSE_DEBUG);
 		}
 	}
@@ -444,23 +444,23 @@ export class DecorationClass {
 		// Get file location for pc
 		const location = this.getFileAndLineForAddress(pc);
 		const filename = location.fileName;
-		if(filename.length > 0) {
+		if (filename.length > 0) {
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.DecorationOptions>;
-			if(!lines) {
+			if (!lines) {
 				// Create a new
 				lines = new Array<vscode.DecorationOptions>();
 				fileMap.set(filename, lines);
 			}
 			const lineNr = location.lineNr;
 			const deco = {
-				range: new vscode.Range(lineNr,0, lineNr,1000),
+				range: new vscode.Range(lineNr, 0, lineNr, 1000),
 				hoverMessage: undefined,
 				renderOptions: {
-				  after: {
-					  contentText: text,
-					  margin: "1.5em"
-				  },
+					after: {
+						contentText: text,
+						margin: "1.5em"
+					},
 				},
 			};
 
@@ -470,7 +470,7 @@ export class DecorationClass {
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
+		for (const editor of editors) {
 			this.setDecorations(editor, this.BREAK);
 		}
 	}
@@ -517,16 +517,16 @@ export class DecorationClass {
 		});
 
 		// Loop over all addresses
-		for(const [locString, entry] of addressMap) {
+		for (const [locString, entry] of addressMap) {
 			// Get file location for address
 			//const location = Labels.getFileAndLineForAddress(addr);
 			const k = locString.indexOf(';');
-			const filename = locString.substr(k+1);
-			if(filename.length == 0)
+			const filename = locString.substr(k + 1);
+			if (filename.length == 0)
 				break;
 			// Get filename set
 			let lines = fileMap.get(filename) as Array<vscode.DecorationOptions>;
-			if(!lines) {
+			if (!lines) {
 				// Create a new
 				lines = new Array<vscode.DecorationOptions>();
 				fileMap.set(filename, lines);
@@ -563,7 +563,7 @@ export class DecorationClass {
 
 		// Loop through all open editors.
 		const editors = vscode.window.visibleTextEditors;
-		for(const editor of editors) {
+		for (const editor of editors) {
 			this.setDecorations(editor, this.HISTORY_SPOT);
 		}
 	}
@@ -574,14 +574,14 @@ export class DecorationClass {
 	 * @param addr The address to convert.
 	 */
 	protected getFileAndLineForAddress(addr: number): SourceFileEntry {
-		const location=Labels.getFileAndLineForAddress(addr);
-		if (location.fileName.length==0) {
+		const location = Labels.getFileAndLineForAddress(addr);
+		if (location.fileName.length == 0) {
 			// Try disasm file
-			const lineNr=Disassembly.getLineForAddress(addr);
-			if (lineNr!=undefined) {
+			const lineNr = Disassembly.getLineForAddress(addr);
+			if (lineNr != undefined) {
 				// Use disassembly file
-				location.fileName=DisassemblyClass.getAbsFilePath();
-				location.lineNr=lineNr;
+				location.fileName = DisassemblyClass.getAbsFilePath();
+				location.lineNr = lineNr;
 			}
 		}
 		return location;

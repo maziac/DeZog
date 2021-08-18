@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.3.1
+- Fixed #65: Uncaught errors.
+
 # 2.3.0
 - Added "-addexpr/delexpr" command to add/remove expressions (variables/labels) to the VARIABLEs pane.
 - Added "-mvw" to display a memory viewer that display the memory organized in words instead of bytes.
