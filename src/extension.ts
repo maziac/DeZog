@@ -10,6 +10,7 @@ import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
 import {GlobalStorage} from './globalstorage';
+import {TestRunner} from './z80unittests/testrunner';
 
 
 
@@ -220,6 +221,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Initialize the Coverage singleton.
 	DecorationClass.Initialize();
+
+	// Initialize the unit tester.
+	TestRunner.Initialize();
+	//Tester.createTests();
 }
 
 
