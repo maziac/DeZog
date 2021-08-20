@@ -130,10 +130,43 @@ export class TestRunner {
 			contents = new TextDecoder().decode(rawContent);
 		}
 
-		// some custom logic to fill in test.children from the contents...
-		for (let j = 0; j < 2; j++) {
-			const test = this.controller.createTestItem(j.toString(), j.toString(), undefined);
-			file.children.add(test);
+		// Run the js file to find the tests in the array suiteStack.
+		try {
+			const testSuite = require(file.uri!.fsPath);
+			const suites = testSuite.suiteStack[0].children;
+			for(const suite of suites)
+				this.createTestHierarchy(file, suite);
+		}
+		catch (e) {
+			console.log(e);
+		}
+	}
+
+
+	/**
+	 * Create the test hierarchy from the given structure in suite.
+	 * @param parentTestItem The parent.
+	 * @param suite A structure that is created inside the test file.
+	 */
+	protected static createTestHierarchy(parentTestItem: vscode.TestItem, suite) {
+		// Add suite
+		const suiteId = parentTestItem.id + '.' + suite.name;
+		const suiteItem = this.controller.createTestItem(suiteId, suite.name, parentTestItem.uri);
+		parentTestItem.children.add(suiteItem);
+
+		// Add children
+		for (const child of suite.children) {
+			// Suite or test case
+			if (child.children) {
+				// Suite
+				this.createTestHierarchy(suiteItem, child);
+			}
+			else {
+				// Test case
+				const item = this.controller.createTestItem(suiteId + '.' + child.name, child.name, suiteItem.uri);
+				// Add
+				suiteItem.children.add(item);
+			}
 		}
 	}
 
