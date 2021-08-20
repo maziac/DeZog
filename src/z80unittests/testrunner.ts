@@ -13,11 +13,17 @@ export class TestRunner {
 	// Pointer to the test controller.
 	protected static controller: vscode.TestController;
 
+	// Diagnostics collection (for errors found in test files)
+	protected static diagnostics: vscode.DiagnosticCollection;
+
 
 	/**
 	 * Initialize the Tester.
 	 */
 	public static Initialize() {
+		// Create diagnostics (for errors in test files)
+		this.diagnostics = vscode.languages.createDiagnosticCollection('Z80 Unit Test File errors');
+
 		// Create dezog test controller
 		this.controller = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -132,13 +138,24 @@ export class TestRunner {
 
 		// Run the js file to find the tests in the array suiteStack.
 		try {
-			const testSuite = require(file.uri!.fsPath);
+			const testSuite = Utility.require(file.uri!.fsPath);
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
 				this.createTestHierarchy(file, suite);
+			// Clear diagnostics
+			this.diagnostics.delete(file.uri!);
 		}
 		catch (e) {
 			console.log(e);
+			// Append to debug console
+			let errorText = "Error parsing file '" + file.uri!.fsPath + "'";
+			if (e.line != undefined)
+				errorText += " at " + e.line + ":" + e.column;
+			errorText += ": " + e.message;
+
+			// Add to diagnostics
+			const diag = new vscode.Diagnostic(new vscode.Range(e.line-1, e.column, e.line-1, e.column), e.message);
+			this.diagnostics.set(file.uri!, [diag]);
 		}
 	}
 

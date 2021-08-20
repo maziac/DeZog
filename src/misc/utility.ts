@@ -1072,6 +1072,62 @@ export class Utility {
 
 
 	/**
+	 * Does a normal 'require'.
+	 * But if an error occurs it parses the output for the line number.
+	 * 'line' and 'column' is added to the thrown error.
+	 */
+	public static require(path: string): any {
+		try {
+			return require(path);
+		}
+		catch (e) {
+			// e.stack contains the error location with the line number.
+			//const stack = e.stack.replace(/\s+/g, ' ');
+			const match = /.*?:(\d+):(\d+)/.exec(e.stack);
+			if (match) {
+				// Add line/column to error.
+				// Extract line number.
+				const line = parseInt(match[1]);
+				// Extract column number.
+				const column = parseInt(match[2]);
+				// Return
+				e.line = line;
+				e.column = column;
+			}
+			// Throw
+			throw e;
+
+			/*
+			// Now fix the line number
+
+			// Read the original file
+			const text = fs.readFileSync(path).toString();
+			const texts = text.split('\n');
+			// Find the line
+			let i = 0;
+			let k = line;
+			for (const t of texts) {
+				i++;
+				if (/^\s*$/.exec(t))
+					continue;
+				k--;
+				if (k <= 0)
+					break;
+			}
+
+			// Return line and column
+			e.line = i;
+			e.column = column;
+			*/
+
+			/*
+			'ReferenceError: xsuite is not defined\n\tat Object.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm:20:1)\n\tat Module._compile (internal/modules/cjs/loader.js:1125:30)\n\tat Object..js (internal/modules/cjs/loader.js:1155:10)\n\tat Module.load (internal/modules/cjs/loader.js:982:32)\n\tat internal/modules/cjs/loader.js:823:14\n\tat Function.<anonymous> (electron/js2c/asar_bundle.js:5:12913)\n\tat Function.<anonymous> (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/C…ostProcess.js:90:14919)\n\tat Function._callActivate (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:14592)\n\tat /Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:12789\n\tat processTicksAndRejections (internal/process/task_queues.js:93:5)\n\tat async Promise.all (index 14)\n\tat async Promise.all (index 0)'
+			*/
+		}
+	}
+
+
+	/**
 	 * Returns a Buffer from a string. The buffer is 0-terminated.
 	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
 	 * @returns A Buffer (0-terminated)
