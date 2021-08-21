@@ -287,7 +287,11 @@ export class TestRunner {
 			}
 			catch (e) {
 				// Test failure
-				run.failed(test, new vscode.TestMessage(e.message), Date.now() - start);
+				const testMsg = new vscode.TestMessage(e.message);
+				const line = e.position.line;
+				const col = e.position.column;
+				testMsg.location = new vscode.Location(test.uri!, new vscode.Range(line, col, line, col));
+				run.failed(test, testMsg, Date.now() - start);
 			}
 
 			// Run child tests
@@ -313,7 +317,7 @@ export class TestRunner {
 		// Get 'required' context
 		const tcContext = this.tcContexts.get(test)!;
 		// Execute
-		tcContext.testFunc!();
+		tcContext.testFunc!();	// TODO: also async functions
 		await Utility.timeout(2000);
 	}
 
