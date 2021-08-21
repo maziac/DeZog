@@ -136,20 +136,23 @@ export class TestRunner {
 			contents = new TextDecoder().decode(rawContent);
 		}
 
+		// Clear diagnostics
+		this.diagnostics.delete(file.uri!);
 		// Run the js file to find the tests in the array suiteStack.
 		try {
 			const testSuite = Utility.requireFromString(contents);
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
 				this.createTestHierarchy(file, suite);
-			// Clear diagnostics
-			this.diagnostics.delete(file.uri!);
 		}
 		catch (e) {
 			console.log(e);
 			// Add to diagnostics
-			const diag = new vscode.Diagnostic(new vscode.Range(e.line-1, e.column, e.line-1, e.column), e.message);
-			this.diagnostics.set(file.uri!, [diag]);
+			const pos = e.position;
+			if (pos) {
+				const diag = new vscode.Diagnostic(new vscode.Range(pos.line, pos.column, pos.line, pos.column), e.message);
+				this.diagnostics.set(file.uri!, [diag]);
+			}
 		}
 	}
 
@@ -164,6 +167,10 @@ export class TestRunner {
 		const suiteId = parentTestItem.id + '.' + suite.name;
 		const suiteItem = this.controller.createTestItem(suiteId, suite.name, parentTestItem.uri);
 		parentTestItem.children.add(suiteItem);
+		// Add location
+		const pos = suite.position;
+		if(pos)
+			suiteItem.range = new vscode.Range(pos.line, pos.column, pos.line, pos.column);
 
 		// Add children
 		for (const child of suite.children) {
@@ -175,6 +182,10 @@ export class TestRunner {
 			else {
 				// Test case
 				const item = this.controller.createTestItem(suiteId + '.' + child.name, child.name, suiteItem.uri);
+				// Add location
+				const pos = child.position;
+				if (pos)
+					item.range = new vscode.Range(pos.line, pos.column, pos.line, pos.column);
 				// Add
 				suiteItem.children.add(item);
 			}

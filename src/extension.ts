@@ -12,6 +12,25 @@ import {HelpProvider} from './help/helpprovider';
 import {GlobalStorage} from './globalstorage';
 import {TestRunner} from './z80unittests/testrunner';
 
+/*
+let aa = 1;
+
+(() => {
+	let aa1 = aa;
+
+	function f() {
+		let aaf = aa1;
+	};
+
+	(() => {
+		let aa2 = aa;
+		let aa3 = aa1;
+		f();
+	})();
+})();
+*/
+
+//var thisline = new Error().lineNumber;
 
 
 /**
@@ -27,6 +46,19 @@ import {TestRunner} from './z80unittests/testrunner';
  */
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
+
+	/*
+	let ut;
+	try {
+		ut = Utility.require('/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm');
+
+		//ut.suiteStack[0].func();
+	}
+	catch(e) {
+		console.log(e);
+	}
+	ut = ut;
+	*/
 
 	// Init package info
 	PackageInfo.Init(context);

@@ -1084,17 +1084,21 @@ export class Utility {
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.
-			//const stack = e.stack.replace(/\s+/g, ' ');
-			const match = /.*?:(\d+):(\d+)/.exec(e.stack);
-			if (match) {
-				// Add line/column to error.
-				// Extract line number.
-				const line = parseInt(match[1]);
-				// Extract column number.
-				const column = parseInt(match[2]);
-				// Return
-				e.line = line;
-				e.column = column;
+			// Remove windows \r
+			const stackWo = e.stack.replace(/\r/g, '');
+			const stack = stackWo.split('\n');
+			if (stack.length > 1) {
+				const firstAt = stack[1];
+				const match = /.*?:(\d+):(\d+)/.exec(firstAt);
+				if (match) {
+					// Add line/column to error.
+					// Extract line number.
+					const line = parseInt(match[1]) - 1;
+					// Extract column number.
+					const column = parseInt(match[2]) - 1;
+					// Return
+					e.position = {line, column};
+				}
 			}
 			// Throw
 			throw e;
