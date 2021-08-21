@@ -52,6 +52,7 @@
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.15.1",
 		"posthtml-toc": "^1.0.3",
+		"require-from-string": "^2.0.2",
 		"rng": "^0.2.2",
 		"showdown": "^1.9.1",
 		"ts-node": "^8.10.2",

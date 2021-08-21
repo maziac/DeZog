@@ -5,6 +5,7 @@ import { Remote } from '../remotes/remotefactory';
 import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
+import * as requireFromString from 'require-from-string';
 
 
 /**
@@ -1076,9 +1077,9 @@ export class Utility {
 	 * But if an error occurs it parses the output for the line number.
 	 * 'line' and 'column' is added to the thrown error.
 	 */
-	public static require(path: string): any {
+	public static requireFromString(path: string): any {
 		try {
-			return require(path);
+			return requireFromString(path);
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.

@@ -138,7 +138,7 @@ export class TestRunner {
 
 		// Run the js file to find the tests in the array suiteStack.
 		try {
-			const testSuite = Utility.require(file.uri!.fsPath);
+			const testSuite = Utility.requireFromString(contents);
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
 				this.createTestHierarchy(file, suite);
@@ -147,12 +147,6 @@ export class TestRunner {
 		}
 		catch (e) {
 			console.log(e);
-			// Append to debug console
-			let errorText = "Error parsing file '" + file.uri!.fsPath + "'";
-			if (e.line != undefined)
-				errorText += " at " + e.line + ":" + e.column;
-			errorText += ": " + e.message;
-
 			// Add to diagnostics
 			const diag = new vscode.Diagnostic(new vscode.Range(e.line-1, e.column, e.line-1, e.column), e.message);
 			this.diagnostics.set(file.uri!, [diag]);
