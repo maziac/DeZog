@@ -1073,13 +1073,14 @@ export class Utility {
 
 
 	/**
-	 * Does a normal 'require'.
-	 * But if an error occurs it parses the output for the line number.
+	 * Does a 'require' but on a string.
+	 * If an error occurs it parses the output for the line number.
 	 * 'line' and 'column' is added to the thrown error.
+	 * @param contents The js file as a string.
 	 */
-	public static requireFromString(path: string): any {
+	public static requireFromString(contents: string): any {
 		try {
-			return requireFromString(path);
+			return requireFromString(contents);
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.
