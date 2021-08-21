@@ -4,6 +4,18 @@ import {Utility} from '../misc/utility';
 
 
 /**
+ * Additional data for the test cases.
+ */
+interface TestCaseContext {
+	// The 'require' context.
+	requireContext: any;	// TODO: maybe I don't need this.
+
+	// The test function (inside the user's test file)
+	testFunc?: () => void;
+}
+
+
+/**
  * The test runner for the vscode testing api.
  * Watches for file changes an collects the tests.
  * Tests can be run from the vscode UI.
@@ -16,11 +28,17 @@ export class TestRunner {
 	// Diagnostics collection (for errors found in test files)
 	protected static diagnostics: vscode.DiagnosticCollection;
 
+	// Contains additional data for the test cases, i.e. the require context.
+	protected static tcContexts: WeakMap<vscode.TestItem, TestCaseContext>;
+
 
 	/**
 	 * Initialize the Tester.
 	 */
 	public static Initialize() {
+		// Init
+		this.tcContexts = new Map<vscode.TestItem, TestCaseContext>();
+
 		// Create diagnostics (for errors in test files)
 		this.diagnostics = vscode.languages.createDiagnosticCollection('Z80 Unit Test File errors');
 
@@ -141,12 +159,13 @@ export class TestRunner {
 		// Run the js file to find the tests in the array suiteStack.
 		try {
 			const testSuite = Utility.requireFromString(contents);
+			this.tcContexts.set(file, {requireContext: testSuite});
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
 				this.createTestHierarchy(file, suite);
 		}
 		catch (e) {
-			console.log(e);
+			//console.log(e);
 			// Add to diagnostics
 			const pos = e.position;
 			if (pos) {
@@ -165,7 +184,8 @@ export class TestRunner {
 	protected static createTestHierarchy(parentTestItem: vscode.TestItem, suite) {
 		// Add suite
 		const suiteId = parentTestItem.id + '.' + suite.name;
-		const suiteItem = this.controller.createTestItem(suiteId, suite.name, parentTestItem.uri);
+		const tcContext = this.tcContexts.get(parentTestItem)!;
+		const suiteItem = this.createTestItem(suiteId, suite.name, parentTestItem.uri, tcContext);
 		parentTestItem.children.add(suiteItem);
 		// Add location
 		const pos = suite.position;
@@ -181,7 +201,8 @@ export class TestRunner {
 			}
 			else {
 				// Test case
-				const item = this.controller.createTestItem(suiteId + '.' + child.name, child.name, suiteItem.uri);
+				const item = this.createTestItem(suiteId + '.' + child.name, child.name, suiteItem.uri, tcContext);
+				this.tcContexts.set(item, {requireContext: tcContext, testFunc: child.func});
 				// Add location
 				const pos = child.position;
 				if (pos)
@@ -190,6 +211,23 @@ export class TestRunner {
 				suiteItem.children.add(item);
 			}
 		}
+	}
+
+
+	/**
+	 * Creates a test item and creates a reference to the context weak map.
+	 * @param testId The unique id.
+	 * @param label The human readable name.
+	 * @param uri The file reference.
+	 * @param tcContext The 'require' context inherited from the parent.
+	 */
+	protected static createTestItem(testId: string, label: string, uri: vscode.Uri|undefined, tcContext: TestCaseContext): vscode.TestItem {
+		// Create normal test item
+		const item = this.controller.createTestItem(testId, label, uri);
+		// Add additional data
+		this.tcContexts.set(item, tcContext);
+		// Return
+		return item;
 	}
 
 
@@ -271,6 +309,11 @@ export class TestRunner {
 	 * @param test The TestItem.
 	 */
 	protected static async runTestCase(test: vscode.TestItem) {
+		console.log(test);
+		// Get 'required' context
+		const tcContext = this.tcContexts.get(test)!;
+		// Execute
+		tcContext.testFunc!();
 		await Utility.timeout(2000);
 	}
 
