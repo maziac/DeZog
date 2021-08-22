@@ -464,7 +464,7 @@ export class DebugSessionClass extends DebugSession {
 			});
 
 			// Set root path
-			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;
+			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;  // TODO: is this multiroot capable?
 			Utility.setRootPath(rootFolder);
 
 			// Save args

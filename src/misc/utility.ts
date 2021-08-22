@@ -1088,6 +1088,8 @@ export class Utility {
 			const stackWo = e.stack.replace(/\r/g, '');
 			const stack = stackWo.split('\n');
 			if (stack.length > 1) {
+				// Try this pattern:
+				// 'ReferenceError: xsuite is not defined\n\tat Object.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm:20:1)\n...'
 				const firstAt = stack[1];
 				const match = /.*?:(\d+):(\d+)/.exec(firstAt);
 				if (match) {
@@ -1099,32 +1101,22 @@ export class Utility {
 					// Return
 					e.position = {line, column};
 				}
+				else {
+					// Try this pattern:
+					// ':192\n\tawait dezogExecAddr(address, sp, a, f, bc, de, hl);\n\t^^^^^\n\nSyntaxError: await is only valid in async functions and the top level bodies of modules\n\tat wrapSafe (internal/modules/cjs/loader.js:1033:16)\n...'
+					const line0 = stack[0];
+					const match2 = /^:(\d+)$/.exec(line0);
+					if (match2) {
+						// Add line/column to error.
+						// Extract line number.
+						const line = parseInt(match2[1]) - 1;
+						// Return
+						e.position = {line, column: 0};
+					}
+				}
 			}
 			// Throw
 			throw e;
-
-			/*
-			// Now fix the line number
-
-			// Read the original file
-			const text = fs.readFileSync(path).toString();
-			const texts = text.split('\n');
-			// Find the line
-			let i = 0;
-			let k = line;
-			for (const t of texts) {
-				i++;
-				if (/^\s*$/.exec(t))
-					continue;
-				k--;
-				if (k <= 0)
-					break;
-			}
-
-			// Return line and column
-			e.line = i;
-			e.column = column;
-			*/
 
 			/*
 			'ReferenceError: xsuite is not defined\n\tat Object.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm:20:1)\n\tat Module._compile (internal/modules/cjs/loader.js:1125:30)\n\tat Object..js (internal/modules/cjs/loader.js:1155:10)\n\tat Module.load (internal/modules/cjs/loader.js:982:32)\n\tat internal/modules/cjs/loader.js:823:14\n\tat Function.<anonymous> (electron/js2c/asar_bundle.js:5:12913)\n\tat Function.<anonymous> (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/C…ostProcess.js:90:14919)\n\tat Function._callActivate (/Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:14592)\n\tat /Volumes/SDDPCIE2TB/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/services/extensions/node/extensionHostProcess.js:90:12789\n\tat processTicksAndRejections (internal/process/task_queues.js:93:5)\n\tat async Promise.all (index 14)\n\tat async Promise.all (index 0)'
