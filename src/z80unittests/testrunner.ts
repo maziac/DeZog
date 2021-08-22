@@ -173,6 +173,7 @@ export class TestRunner {
 		try {
 			const testSuite = Utility.requireFromString(contents);
 			testSuite.setDezogExecAddr(this.execAddr);
+			//testSuite.setDezogExecAddr(this.testCall);
 			this.tcContexts.set(file, {requireContext: testSuite});
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
@@ -311,9 +312,15 @@ export class TestRunner {
 			catch (e) {
 				// Test failure
 				const testMsg = new vscode.TestMessage(e.message);
-				const line = e.position.line;
-				const col = e.position.column;
-				testMsg.location = new vscode.Location(test.uri!, new vscode.Range(line, col, line, col));
+				let range = test.range;
+				if (e.position) {
+					const line = e.position.line;
+					const col = e.position.column;
+					range = new vscode.Range(line, col, line, col);
+				}
+				if (range) {
+					testMsg.location = new vscode.Location(test.uri!, range);
+				}
 				run.failed(test, testMsg, Date.now() - start);
 			}
 
@@ -352,11 +359,17 @@ export class TestRunner {
 
 		// Execute
 		//tcContext.requireContext.dezogExecAddr = this.execAddr;
-		tcContext.testFunc!();	// TODO: also async functions
+		await tcContext.testFunc!();	// TODO: also async functions
+
 
 		await Utility.timeout(2000);
 	}
 
+
+	public static async testCall(address) {
+		console.log("iiii", address);
+		await Utility.timeout(2000);
+	}
 
 	/**
 	 * Returns the unit tests launch configuration. I.e. the configuration
@@ -581,6 +594,7 @@ export class TestRunner {
 		// Use 4 bytes
 		const call = new Uint8Array([0xCD /*CALL*/, address & 0xFF, address >>> 8, 0x00 /*NOP*/]);	// "CALL address : NOP"
 		sp -= 4;
+
 		await Remote.writeMemoryDump(sp, call);
 		// Set slot/bank to Unit test address
 		const bank = Z80Registers.getBankFromAddress(address);
@@ -597,14 +611,10 @@ export class TestRunner {
 		await Remote.setRegisterValue("DE", de);
 		await Remote.setRegisterValue("HL", hl);
 
-		// Remember end address as success adddress (if bp is reached here the test case succeeds)
+		// Remember end address as success address (if bp is reached here the test case succeeds)
 		const successAddr = sp + 3;
 
-		// Run
-		/*
-		if (Z80UnitTests.utLabels)
-			Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
-		*/
+
 		// Init
 		StepHistory.clear();
 		await Remote.getRegistersFromEmulator();
@@ -617,14 +627,14 @@ export class TestRunner {
 		}
 
 		// Run or Debug
-		await this.RemoteContinue(da);
+		await TestRunner.RemoteContinue(da);
 
 		// Check pc
 		await Remote.getRegistersFromEmulator();
 		const pc = Remote.getPC();
 		if (pc != successAddr) {
 			// Some failure
-			throw Error("Test case did not finish. Maybe some error occured.");	// TODO: Get better info from Remote.
+			throw Error("Test case did not finish. Maybe some error occurred.");	// TODO: Get better info from Remote.
 		}
 	}
 
@@ -647,9 +657,19 @@ export class TestRunner {
 			Remote.stopProcessing();
 		}
 		else {
-			// Run: Continue
-			await Remote.continue();
-			Remote.stopProcessing();
+			return new Promise<void>((resolve, reject) => {
+				// Start timeout
+				const timerId: NodeJS.Timeout = setTimeout(() => {
+					const error = new Error('Timeout');
+					reject(error);
+				}, 3000);	// 3 secs timeout
+				// Run: Continue
+				Remote.continue().then(() => {
+					clearTimeout(timerId);
+					Remote.stopProcessing();
+					resolve();
+				});
+			});
 		}
 	}
 
