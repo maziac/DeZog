@@ -134,7 +134,7 @@ export class Z80UnitTests {
 	/// Set to true if unit tests are cancelled.
 	protected static cancelled = false;
 
-	/// Stroes the covered accresses for all unit tests.
+	/// Stores the covered addresses for all unit tests.
 	protected static allCoveredAddresses: Set<number>;
 
 	/// Caches the last received addresses (from Emulator)
