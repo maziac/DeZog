@@ -6,8 +6,9 @@ suite('CodeCoverageArray', () => {
 
 	test('no data', () => {
 		const cov=new CodeCoverageArray();
-		const addrs=cov.getAddresses();
+		const addrs = cov.getAddresses();
 		assert.equal(0, addrs.size);
+		assert.equal(1, addrs.size);
 	});
 
 	test('one address', () => {

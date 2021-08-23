@@ -1077,10 +1077,11 @@ export class Utility {
 	 * If an error occurs it parses the output for the line number.
 	 * 'line' and 'column' is added to the thrown error.
 	 * @param contents The js file as a string.
+	 * @param fileName Optional filename to use.
 	 */
-	public static requireFromString(contents: string): any {
+	public static requireFromString(contents: string, fileName?: string): any {
 		try {
-			return requireFromString(contents);
+			return requireFromString(contents, fileName);
 		}
 		catch (e) {
 			// e.stack contains the error location with the line number.

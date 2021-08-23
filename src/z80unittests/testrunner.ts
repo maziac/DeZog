@@ -10,6 +10,7 @@ import {StepHistoryClass} from '../remotes/stephistory';
 import {Labels} from '../labels/labels';
 import {DebugSessionClass} from '../debugadapter';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
+import {RemoteBreakpoint} from '../remotes/remotebase';
 
 
 /**
@@ -171,8 +172,8 @@ export class TestRunner {
 		this.diagnostics.delete(file.uri!);
 		// Run the js file to find the tests in the array suiteStack.
 		try {
-			const testSuite = Utility.requireFromString(contents);
-			testSuite.setDezogExecAddr(this.execAddr);
+			const testSuite = Utility.requireFromString(contents, 'dezog.unittest.js');
+			//testSuite.setDezogContext(this.execAddr, Remote);
 			//testSuite.setDezogExecAddr(this.testCall);
 			this.tcContexts.set(file, {requireContext: testSuite});
 			const suites = testSuite.suiteStack[0].children;
@@ -355,10 +356,12 @@ export class TestRunner {
 		//if (debug)
 		//	this.debugTests();
 		//else
-		await this.runTests();	// TODO rename to preareTest
+		await this.runTests();	// TODO rename to prepareTest
 
 		// Execute
 		//tcContext.requireContext.dezogExecAddr = this.execAddr;
+
+		tcContext.requireContext.setDezogContext(this.execAddr, Remote);
 		await tcContext.testFunc!();	// TODO: also async functions
 
 
@@ -588,22 +591,25 @@ export class TestRunner {
 	 * @param a Register DE
 	 * @param a Register HL
 	 */
-	protected static async execAddr(address: number, sp: number, a: number, f: number, bc: number, de: number, hl: number): Promise<void> {
+	protected static async execAddr(address: number, sp: number, a: number, f: number, bc: number, de: number, hl: number): Promise<{sp: number, a: number, f: number, bc: number, de: number, hl: number}> {
 		const da: DebugSessionClass = undefined as any;
+
 		// Create machine code to call the tested subroutine at SP address
 		// Use 4 bytes
 		const call = new Uint8Array([0xCD /*CALL*/, address & 0xFF, address >>> 8, 0x00 /*NOP*/]);	// "CALL address : NOP"
 		sp -= 4;
-
 		await Remote.writeMemoryDump(sp, call);
+
 		// Set slot/bank to Unit test address
 		const bank = Z80Registers.getBankFromAddress(address);
 		if (bank >= 0) {
 			const slot = Z80Registers.getSlotFromAddress(address)
 			await Remote.setSlot(slot, bank);
 		}
+
 		// Set PC
 		await Remote.setRegisterValue("PC", sp);	// Start at "CALL addr"
+		await Remote.setRegisterValue("SP", sp);
 		// Set other registers
 		await Remote.setRegisterValue("A", a);
 		await Remote.setRegisterValue("F", f);
@@ -613,7 +619,9 @@ export class TestRunner {
 
 		// Remember end address as success address (if bp is reached here the test case succeeds)
 		const successAddr = sp + 3;
-
+		// Success breakpoints
+		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, address: successAddr, condition: '', log: undefined};
+		await Remote.setBreakpoint(successBp);
 
 		// Init
 		StepHistory.clear();
@@ -636,6 +644,15 @@ export class TestRunner {
 			// Some failure
 			throw Error("Test case did not finish. Maybe some error occurred.");	// TODO: Get better info from Remote.
 		}
+
+		// Return all registers // TODO: also hl2 etc.
+		sp = Remote.getRegisterValue("SP");
+		a = Remote.getRegisterValue("A");
+		f = Remote.getRegisterValue("F");
+		bc = Remote.getRegisterValue("BC");
+		de = Remote.getRegisterValue("DE");
+		hl = Remote.getRegisterValue("HL");
+		return {sp, a, f, bc, de, hl};
 	}
 
 
