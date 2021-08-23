@@ -356,7 +356,13 @@ export class TestRunner {
 		//if (debug)
 		//	this.debugTests();
 		//else
-		await this.runTests();	// TODO rename to prepareTest
+		try {
+			await this.runTests();	// TODO rename to prepareTest
+		}
+		catch (e) {
+			vscode.window.showErrorMessage(e.message);
+			throw Error('Problem starting the Remote.');
+		}
 
 		// Execute
 		//tcContext.requireContext.dezogExecAddr = this.execAddr;
@@ -465,113 +471,110 @@ export class TestRunner {
  	* and communication takes place directly with the emulator.
  	*/
 	protected static async runTests(): Promise<void> {
-		try {
-			// Mode
-			//this.debug = false;
-			//this.cancelled = false;
+		// Mode
+		//this.debug = false;
+		//this.cancelled = false;
 
-			// Get unit test launch config
-			const configuration = this.getUnitTestsLaunchConfig();
+		// Get unit test launch config
+		const configuration = this.getUnitTestsLaunchConfig();
 
-			// Setup settings
-			const rootFolder = Utility.getRootPath();
-			Settings.Init(configuration, rootFolder);
-			Settings.CheckSettings();
+		// Setup settings
+		const rootFolder = Utility.getRootPath();
+		Settings.Init(configuration, rootFolder);
+		Settings.CheckSettings();
 
-			// Reset all decorations
-			//Decoration.clearAllDecorations();
+		// Reset all decorations
+		//Decoration.clearAllDecorations();
 
-			// Create the registers
-			Z80RegistersClass.createRegisters();
+		// Create the registers
+		Z80RegistersClass.createRegisters();
 
-			// Start emulator.
-			RemoteFactory.createRemote(configuration.remoteType);
+		// Start emulator.
+		RemoteFactory.createRemote(configuration.remoteType);
 
-			// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
-			if (!(CpuHistory as any)) {
-				// If not create a lite (step) history
-				CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-				StepHistory.decoder = Z80Registers.decoder;
-			}
+		// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
+		if (!(CpuHistory as any)) {
+			// If not create a lite (step) history
+			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
+			StepHistory.decoder = Z80Registers.decoder;
+		}
 
-			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-			Labels.init(configuration.smallValuesMaximum);
-			Remote.readListFiles(configuration);
+		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+		Labels.init(configuration.smallValuesMaximum);
+		Remote.readListFiles(configuration);
 
-			return new Promise<void>((resolve, reject) => {
-				// Events
-				Remote.once('initialized', async () => {
+		return new Promise<void>(async (resolve, reject) => {
+			// Events
+			Remote.once('initialized', async () => {
+				try {
+					// Initialize Cpu- or StepHistory.
+					StepHistory.init();  // might call the socket
+
+					// Execute command to enable wpmem, logpoints, assertions.
+					await Remote.enableLogpointGroup(undefined, true);
 					try {
-						// Initialize Cpu- or StepHistory.
-						StepHistory.init();  // might call the socket
-
-						// Execute command to enable wpmem, logpoints, assertions.
-						await Remote.enableLogpointGroup(undefined, true);
-						try {
-							await Remote.enableWPMEM(true);
-						}
-						catch (e) {
-							// It's not essential anymore to have watchpoints running.
-							// So catch this error from CSpect and show a warning instead
-							vscode.window.showWarningMessage(e.message);
-						}
-						await Remote.enableAssertionBreakpoints(true);
-
-						//await Z80UnitTests.initUnitTests();
-
-						// Load the initial unit test routine (provided by the user)
-						//await this.execAddr(Z80UnitTests.addrStart);
-
-						// End
-						resolve();
+						await Remote.enableWPMEM(true);
 					}
 					catch (e) {
-						// Some error occurred
-						//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
-						reject(e);
+						// It's not essential anymore to have watchpoints running.
+						// So catch this error from CSpect and show a warning instead
+						vscode.window.showWarningMessage(e.message);
 					}
-				});
+					await Remote.enableAssertionBreakpoints(true);
 
-				Remote.on('coverage', coveredAddresses => {
-					// Cache covered addresses (since last unit test)
-					//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
-					/*
-					if (!Z80UnitTests.lastCoveredAddresses)
-						Z80UnitTests.lastCoveredAddresses = new Set<number>();
-					coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
-					*/
-				});
+					//await Z80UnitTests.initUnitTests();
 
-				Remote.on('warning', message => {
-					// Some problem occurred
-					vscode.window.showWarningMessage(message);
-				});
+					// Load the initial unit test routine (provided by the user)
+					//await this.execAddr(Z80UnitTests.addrStart);
 
-				Remote.on('debug_console', message => {
-					// Show the message in the debug console
-					vscode.debug.activeDebugConsole.appendLine(message);
-
-				});
-
-				Remote.once('error', e => {
-					// Some error occurred
-					//Z80UnitTests.stopUnitTests(undefined, err.message); // TODO
-					reject(e);
-				});
-
-
-				// Connect to debugger.
-				Remote.init().catch(e => {
+					// End
+					resolve();
+				}
+				catch (e) {
 					// Some error occurred
 					//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
 					reject(e);
-				});
+				}
 			});
-		}
-		catch (e) {
-			// Some error occurred
-			//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
-		}
+
+			Remote.on('coverage', coveredAddresses => {
+				// Cache covered addresses (since last unit test)
+				//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
+				/*
+				if (!Z80UnitTests.lastCoveredAddresses)
+					Z80UnitTests.lastCoveredAddresses = new Set<number>();
+				coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
+				*/
+			});
+
+			Remote.on('warning', message => {
+				// Some problem occurred
+				vscode.window.showWarningMessage(message);
+			});
+
+			Remote.on('debug_console', message => {
+				// Show the message in the debug console
+				vscode.debug.activeDebugConsole.appendLine(message);
+
+			});
+
+			Remote.once('error', e => {
+				// Some error occurred
+				//Z80UnitTests.stopUnitTests(undefined, err.message); // TODO
+				reject(e);
+			});
+
+
+			// Connect to debugger.
+			try {
+				await Remote.init();
+			}
+			catch (e) {
+				// Some error occurred
+				//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
+				reject(e);
+			};
+		});
 	}
 
 
