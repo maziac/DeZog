@@ -174,8 +174,9 @@ export class TestRunner {
 		this.diagnostics.delete(file.uri!);
 		// Run the js file to find the tests in the array suiteStack.
 		try {
+			//const otherContext = Utility.requireFromString('var aabb = 5;', 'testfile.js');
 			const testSuite = Utility.requireFromString(contents, this.fakeTestScriptFileName);
-			//testSuite.setDezogDiscoverContext(Utility);
+			//testSuite.setDezogInitContext(otherContext);
 			this.tcContexts.set(file, {requireContext: testSuite});
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
@@ -378,8 +379,9 @@ export class TestRunner {
 		}
 		catch (e) {
 			// Add the line number
-			const position = Utility.getLineNumberFromError(e, 0, this.fakeTestScriptFileName);
-			e.position = position;
+			if (!e.position) {
+				e.position = Utility.getLineNumberFromError(e, 0, this.fakeTestScriptFileName);
+			}
 			throw e;
 		}
 
@@ -397,11 +399,11 @@ export class TestRunner {
 	public static async allocFromStack(sp: number, length: number, fillByte: number) {
 		sp -= length + 2;	// plus 1 byte before and after for memory guardians
 		const buffer = new Uint8Array(length + 2);
-		buffer.fill(fillByte, 1, length - 2);
+		buffer.fill(fillByte, 1, length+1);
 		buffer[0] = 0;	// mem guard
-		buffer[length - 1] = 0;	// mem guard
+		buffer[length + 1] = 0;	// mem guard
 		await Remote.writeMemoryDump(sp, buffer);
-		return sp;
+		return sp+1;
 	}
 
 

@@ -531,8 +531,8 @@ export class Settings {
 
 		if (!Settings.launch.topOfStack)
 			Settings.launch.topOfStack = '0x10000';
-		if (unitTests)
-			Settings.launch.topOfStack = 'UNITTEST_STACK';
+		//if (unitTests)
+		//	Settings.launch.topOfStack = 'UNITTEST_STACK';
 
 		if (Settings.launch.load) {
 			const uload = UnifiedPath.getUnifiedPath(Settings.launch.load)
