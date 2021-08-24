@@ -222,7 +222,7 @@ export class LabelsClass {
 				// Warnings
 				const warnings = parser.getWarnings();
 				if (warnings)
-					this.warnings += 'sjasmplus sld parser warnings:\n' + warnings;
+					this.warnings += 'sjasmplus sld parser warnings (' + config.path + '):\n' + warnings;
 				// Store path
 				this.filePaths.push(config.path);
 			}

@@ -1632,14 +1632,13 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with the value.
 	  */
 	public async sendDzrpCmdGetTbblueReg(register: number): Promise<number> {
-		Utility.assert(false);
-		return 0;
+		throw Error("Reading Tbblue registers is not supported.");
 	}
 
 
 	/**
 	 * Sends the command to get a sprites palette.
-	 * @param index o/1. The first or the second palette.
+	 * @param index 0/1. The first or the second palette.
 	 * @returns An array with 256 entries with the 9 bit color.
 	  */
 	public async sendDzrpCmdGetSpritesPalette(index: number): Promise<Array<number>> {

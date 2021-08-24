@@ -10,7 +10,6 @@ import {StepHistoryClass} from '../remotes/stephistory';
 import {Labels} from '../labels/labels';
 import {DebugSessionClass} from '../debugadapter';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
-import {RemoteBreakpoint} from '../remotes/remotebase';
 
 
 /**
@@ -367,7 +366,11 @@ export class TestRunner {
 		// Execute
 		//tcContext.requireContext.dezogExecAddr = this.execAddr;
 
-		tcContext.requireContext.setDezogContext(this.execAddr, Remote);
+		const spStr = Settings.launch.topOfStack;
+		let sp = Labels.getNumberForLabel(spStr) || 0;
+		sp &= 0xFFFF;
+
+		tcContext.requireContext.setDezogContext(sp, this, Remote);
 		await tcContext.testFunc!();	// TODO: also async functions
 
 
@@ -375,10 +378,36 @@ export class TestRunner {
 	}
 
 
-	public static async testCall(address) {
-		console.log("iiii", address);
-		await Utility.timeout(2000);
+	/**
+	 * Allocates a few bytes from the stack.
+	 * @param sp current stack position. (64k address)
+	 * @param length Length in bytes.
+	 * @param fillByte The area is prefilled with this byte. Default to 0xDD.
+	 * @returns The 64k address of the start of the memory.
+	 */
+	public static async allocFromStack(sp: number, length: number, fillByte: number) {
+		sp -= length + 2;	// plus 1 byte before and after for memory guardians
+		const buffer = new Uint8Array(length + 2);
+		buffer.fill(fillByte, 1, length - 2);
+		buffer[0] = 0;	// mem guard
+		buffer[length - 1] = 0;	// mem guard
+		await Remote.writeMemoryDump(sp, buffer);
+		return sp;
 	}
+
+
+	/**
+	 * Returns the 64k address of a label.
+	 * @param label The label as a string, e.g. 'string.byte_to_string'
+	 * @returns The 64k value.
+	 */
+	public static getLabel64k(label) {
+		const result = Labels.getNumberForLabel(label);
+		if (result == undefined)
+			throw Error("Label '" + label + "' is not defined.");
+		return result;
+	}
+
 
 	/**
 	 * Returns the unit tests launch configuration. I.e. the configuration
@@ -586,7 +615,7 @@ export class TestRunner {
 	 * increments sp accordingly and starts the remote at address.
 	 * Returns if a breakpoint is hit.
 	 * Either the one at return address or any other (assertion) which would be a failed test case.
-	 * @param address The (long) address of the unit test. // TODO: really long address?
+	 * @param address The (long) address of the unit test. Can also be a string (label). // TODO: really long address?
 	 * @param sp Stack pointer. Needs to give room for "call addr".
 	 * @param a Register A
 	 * @param a Register F
@@ -594,21 +623,30 @@ export class TestRunner {
 	 * @param a Register DE
 	 * @param a Register HL
 	 */
-	protected static async execAddr(address: number, sp: number, a: number, f: number, bc: number, de: number, hl: number): Promise<{sp: number, a: number, f: number, bc: number, de: number, hl: number}> {
+	protected static async execAddr(address: number|string, sp: number, a: number, f: number, bc: number, de: number, hl: number): Promise<{sp: number, a: number, f: number, bc: number, de: number, hl: number}> {
 		const da: DebugSessionClass = undefined as any;
+
+		// Check address
+		if (typeof address == 'string')
+			address = Labels.getNumberForLabel(address) || 0;
+		else if (typeof address != 'number')
+			throw Error("call: address should be a number or a label (string).");
+
+		// Get bank and slot	// Set slot/bank to Unit test address
+		const bank = Z80Registers.getBankFromAddress(address);
+		if (bank >= 0) {
+			// TODO: Still needs to be tested
+			const slot = Z80Registers.getSlotFromAddress(address)
+			await Remote.setSlot(slot, bank);
+		}
+		// Reduce to 64k address
+		address &= 0xFFFF;
 
 		// Create machine code to call the tested subroutine at SP address
 		// Use 4 bytes
 		const call = new Uint8Array([0xCD /*CALL*/, address & 0xFF, address >>> 8, 0x00 /*NOP*/]);	// "CALL address : NOP"
 		sp -= 4;
 		await Remote.writeMemoryDump(sp, call);
-
-		// Set slot/bank to Unit test address
-		const bank = Z80Registers.getBankFromAddress(address);
-		if (bank >= 0) {
-			const slot = Z80Registers.getSlotFromAddress(address)
-			await Remote.setSlot(slot, bank);
-		}
 
 		// Set PC
 		await Remote.setRegisterValue("PC", sp);	// Start at "CALL addr"
@@ -620,16 +658,24 @@ export class TestRunner {
 		await Remote.setRegisterValue("DE", de);
 		await Remote.setRegisterValue("HL", hl);
 
-		// Remember end address as success address (if bp is reached here the test case succeeds)
-		const successAddr = sp + 3;
-		// Success breakpoints
-		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, address: successAddr, condition: '', log: undefined};
-		await Remote.setBreakpoint(successBp);
-
 		// Init
 		StepHistory.clear();
 		await Remote.getRegistersFromEmulator();
 		await Remote.getCallStackFromEmulator();
+
+		// Remember end address as success address (if bp is reached here the test case succeeds)
+		let successAddr = (sp + 3) & 0xFFFF;
+		/*
+		// Convert to long address?
+		const longAddressesUsed = Labels.AreLongAddressesUsed();
+		if (longAddressesUsed) {
+			const slots = Remote.getSlots();
+			successAddr = Z80Registers.createLongAddress(successAddr, slots);
+		}
+		// Success breakpoints
+		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, address: successAddr, condition: '', log: undefined};
+		await Remote.setBreakpoint(successBp);
+		*/
 
 		// Special handling for zsim: Re-init custom code.
 		if (Remote instanceof ZSimRemote) {
@@ -638,12 +684,12 @@ export class TestRunner {
 		}
 
 		// Run or Debug
-		await TestRunner.RemoteContinue(da);
+		await TestRunner.RemoteStepOver(da);
 
 		// Check pc
 		await Remote.getRegistersFromEmulator();
 		const pc = Remote.getPC();
-		if (pc != successAddr) {
+		if (pc != (successAddr & 0xFFFF)) {
 			// Some failure
 			throw Error("Test case did not finish. Maybe some error occurred.");	// TODO: Get better info from Remote.
 		}
@@ -662,7 +708,7 @@ export class TestRunner {
 	/**
 	 * Starts Continue directly or through the debug adapter.
 	 */
-	protected static async RemoteContinue(da: DebugSessionClass | undefined): Promise<void> {
+	protected static async RemoteStepOver(da: DebugSessionClass | undefined): Promise<void> {
 		// Check if cancelled
 		//if (Z80UnitTests.cancelled) // TODO: ?
 		//	return;
@@ -684,7 +730,7 @@ export class TestRunner {
 					reject(error);
 				}, 3000);	// 3 secs timeout
 				// Run: Continue
-				Remote.continue().then(() => {
+				Remote.stepOver().then(() => {
 					clearTimeout(timerId);
 					Remote.stopProcessing();
 					resolve();
