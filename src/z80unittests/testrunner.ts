@@ -44,6 +44,9 @@ export class TestRunner {
 	/// Stores the covered addresses for the unit test.
 	protected static allCoveredAddresses: Set<number>;
 
+	/// The filename used for the test script (which, in reality, is passed as string).
+	protected static fakeTestScriptFileName = 'dezog.unittest.js';
+
 
 	/**
 	 * Initialize the Tester.
@@ -171,9 +174,8 @@ export class TestRunner {
 		this.diagnostics.delete(file.uri!);
 		// Run the js file to find the tests in the array suiteStack.
 		try {
-			const testSuite = Utility.requireFromString(contents, 'dezog.unittest.js');
-			//testSuite.setDezogContext(this.execAddr, Remote);
-			//testSuite.setDezogExecAddr(this.testCall);
+			const testSuite = Utility.requireFromString(contents, this.fakeTestScriptFileName);
+			//testSuite.setDezogDiscoverContext(Utility);
 			this.tcContexts.set(file, {requireContext: testSuite});
 			const suites = testSuite.suiteStack[0].children;
 			for(const suite of suites)
@@ -370,9 +372,16 @@ export class TestRunner {
 		let sp = Labels.getNumberForLabel(spStr) || 0;
 		sp &= 0xFFFF;
 
-		tcContext.requireContext.setDezogContext(sp, this, Remote);
-		await tcContext.testFunc!();	// TODO: also async functions
-
+		tcContext.requireContext.setDezogTestContext(sp, this, Remote);
+		try {
+			await tcContext.testFunc!();	// TODO: also async functions
+		}
+		catch (e) {
+			// Add the line number
+			const position = Utility.getLineNumberFromError(e, 0, this.fakeTestScriptFileName);
+			e.position = position;
+			throw e;
+		}
 
 		await Utility.timeout(2000);
 	}
@@ -607,6 +616,17 @@ export class TestRunner {
 	}
 
 
+	/**
+	 * Checks the validity of a register.
+	 */
+	protected static checkRegister(reg: number, name: string) {
+		if (reg == undefined)
+			throw Error("Register " + name + " is undefined.");
+		const typ = typeof reg;
+		if (typ != 'number')
+			throw Error("Register " + name + " is not a number, but a " + typ + ".");
+	}
+
 
 	/**
 	 * Executes the sub routine (to test) at 'address'.
@@ -625,6 +645,13 @@ export class TestRunner {
 	 */
 	protected static async execAddr(address: number|string, sp: number, a: number, f: number, bc: number, de: number, hl: number): Promise<{sp: number, a: number, f: number, bc: number, de: number, hl: number}> {
 		const da: DebugSessionClass = undefined as any;
+
+		// Check values
+		this.checkRegister(a, 'a');
+		this.checkRegister(f, 'f');
+		this.checkRegister(bc, 'bc');
+		this.checkRegister(de, 'de');
+		this.checkRegister(hl, 'hl');
 
 		// Check address
 		if (typeof address == 'string')

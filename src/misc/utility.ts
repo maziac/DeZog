@@ -1126,6 +1126,63 @@ export class Utility {
 	}
 
 
+
+	/**
+	 * Returns the line (and column) number of the current execution location.
+	 * @param depth The depth. O = current line. 1 = caller function etc.
+	 * @param file (Optional) The file name. Other files are ignored during depth search.
+	 * E.g. 'dezog.unittest.js'
+	 * @returns {line, column} The line number and column. Lines/columns start at 0. undefined if something was wrong.
+	 */
+	public static getLineNumber(depth = 0, file?: string): {line: number, column: number} | undefined {
+		try {
+			throw new Error('getLineNumber');
+		}
+		catch (e) {
+			return this.getLineNumberFromError(e, depth, file);
+		}
+		return undefined;
+	}
+
+
+
+	/**
+	 * Returns the line (and column) number from the givven Error.
+	 * @param e An error that was thrown.
+	 * @param depth The depth. O = current line. 1 = caller function etc.
+	 * @param file (Optional) The file name. Other files are ignored during depth search.
+	 * E.g. 'dezog.unittest.js'
+	 * @returns {line, column} The line number and column. Lines/columns start at 0. undefined if something was wrong.
+	 */
+	public static getLineNumberFromError(e: Error, depth = 0, file?: string): {line: number, column: number} | undefined {
+		if (e && e.stack) {
+			// e.stack contains the error location with the line number.
+			// Remove windows \r
+			const stackWo = e.stack.replace(/\r/g, '');
+			const stackWhole = stackWo.split('\n');
+			let stack;
+			if (file)
+				stack = stackWhole.filter(line => line.includes(file));
+			else
+				stack = stackWhole;
+			const index = depth + 1;
+			const indexAt = stack[index];
+			const match = /.*?:(\d+):(\d+)/.exec(indexAt);
+			// If asynchronous we have to step up until we find a line number.
+			if (match) {
+				// Add line/column to error.
+				// Extract line number.
+				const line = parseInt(match[1]) - 1;
+				// Extract column number.
+				const column = parseInt(match[2]) - 1;
+				return {line, column};
+			}
+		}
+		return undefined;
+	}
+
+
+
 	/**
 	 * Returns a Buffer from a string. The buffer is 0-terminated.
 	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
