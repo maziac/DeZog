@@ -263,44 +263,44 @@ export class Z80UnitTests {
 
 
 	/**
-	 * Start the unit tests, either partial or full.
-	 * If unit test cases are run (opposed to debugged) the vscode UI is not used
-	 * and communication takes place directly with the emulator.
-	 */
-	protected static runTests() {
-		try {
-			// Mode
-			this.debug = false;
-			this.cancelled = false;
+	  * Start the unit tests, either partial or full.
+	  * If unit test cases are run (opposed to debugged) the vscode UI is not used
+	  * and communication takes place directly with the emulator.
+	  */
+	protected static async runTests(): Promise<void> {
+		// Mode
+		this.debug = false;
+		this.cancelled = false;
 
-			// Get unit test launch config
-			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+		// Get unit test launch config
+		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
-			// Setup settings
-			const rootFolder = Utility.getRootPath();
-			Settings.Init(configuration, rootFolder);
-			Settings.CheckSettings();
+		// Setup settings
+		const rootFolder = Utility.getRootPath();
+		Settings.Init(configuration, rootFolder);
+		Settings.CheckSettings();
 
-			// Reset all decorations
-			Decoration.clearAllDecorations();
+		// Reset all decorations
+		Decoration.clearAllDecorations();
 
-			// Create the registers
-			Z80RegistersClass.createRegisters();
+		// Create the registers
+		Z80RegistersClass.createRegisters();
 
-			// Start emulator.
-			RemoteFactory.createRemote(configuration.remoteType);
+		// Start emulator.
+		RemoteFactory.createRemote(configuration.remoteType);
 
-			// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
-			if (!(CpuHistory as any)) {
-				// If not create a lite (step) history
-				CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-				StepHistory.decoder = Z80Registers.decoder;
-			}
+		// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
+		if (!(CpuHistory as any)) {
+			// If not create a lite (step) history
+			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
+			StepHistory.decoder = Z80Registers.decoder;
+		}
 
-			// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-			Labels.init(configuration.smallValuesMaximum);
-			Remote.readListFiles(configuration);
+		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+		Labels.init(configuration.smallValuesMaximum);
+		Remote.readListFiles(configuration);
 
+		return new Promise<void>(async (resolve, reject) => {
 			// Events
 			Remote.once('initialized', async () => {
 				try {
@@ -322,11 +322,16 @@ export class Z80UnitTests {
 					await Z80UnitTests.initUnitTests();
 
 					// Load the initial unit test routine (provided by the user)
-					Z80UnitTests.execAddr(Z80UnitTests.addrStart);
+					await this.execAddr(Z80UnitTests.addrStart);
+
+					// End
+					resolve();
 				}
 				catch (e) {
 					// Some error occurred
-					Z80UnitTests.stopUnitTests(undefined, e.message);
+					Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
+					//reject(e);
+					resolve();
 				}
 			});
 
@@ -349,22 +354,25 @@ export class Z80UnitTests {
 
 			});
 
-			Remote.once('error', err => {
+			Remote.once('error', e => {
 				// Some error occurred
-				Z80UnitTests.stopUnitTests(undefined, err.message);
+				Z80UnitTests.stopUnitTests(undefined, e.message);
+				//reject(e);
+				resolve();
 			});
 
 
 			// Connect to debugger.
-			Remote.init().catch(e => {
+			try {
+				await Remote.init();
+			}
+			catch (e) {
 				// Some error occurred
 				Z80UnitTests.stopUnitTests(undefined, e.message);
-			});
-		}
-		catch (e) {
-			// Some error occurred
-			Z80UnitTests.stopUnitTests(undefined, e.message);
-		}
+				//reject(e);
+				resolve();
+			};
+		});
 	}
 
 
@@ -692,7 +700,7 @@ export class Z80UnitTests {
 
 		// Check if code for unit tests is really present
 		// (In case labels are present but the actual code has not been loaded.)
-		const opcode=await Remote.readMemory(Z80UnitTests.addrTestWrapper);
+		const opcode = await Remote.readMemory(Z80UnitTests.addrTestWrapper & 0xFFFF);	// TODO: Check if 64k address is OK here
 		// Should start with DI (=0xF3)
 		if (opcode != 0xF3)
 			throw Error("Code for unit tests is not present.");
