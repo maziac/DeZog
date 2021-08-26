@@ -49,6 +49,7 @@
 		"gif-writer": "^0.9.4",
 		"glob": "^7.1.6",
 		"jsonc-parser": "^2.3.1",
+		"minimatch": "^3.0.4",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.15.1",
 		"posthtml-toc": "^1.0.3",

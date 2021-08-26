@@ -94,10 +94,6 @@ export class TestRunner {
 	 * Initially discover all files/tests.
 	 */
 	protected static discoverAllFilesInWorkspace(): Promise<vscode.FileSystemWatcher[]> {
-		if (!vscode.workspace.workspaceFolders) {
-			const emptyArray: vscode.FileSystemWatcher[] = []; // handle the case of no open folders
-			return new Promise<vscode.FileSystemWatcher[]>(resolve => emptyArray);
-		}
 
 		return Promise.all(
 			vscode.workspace.workspaceFolders.map(async workspaceFolder => {
@@ -367,7 +363,6 @@ export class TestRunner {
 		}
 
 		// Execute
-		//tcContext.requireContext.dezogExecAddr = this.execAddr;
 
 		const spStr = Settings.launch.topOfStack;
 		let sp = Labels.getNumberForLabel(spStr) || 0;
