@@ -692,7 +692,7 @@ export class Settings {
 
 	/**
 	 * Returns all xxxListFiles parameters in an array.
-	 * This is used to run checks on the common parameters.
+	 * This is used to start the file watcher.
 	 * @param configuration The launch configuration, e.g. Settings.launch.
 	 * @returns An array of list file parameters.
 	 */

@@ -12,7 +12,7 @@ import * as vscode from 'vscode';
  * Usage:
  * ~~~
  * const fw = new FileWatcher();
- * fw.start('*.js', (uri: vscod.Uri, deleted: boolean) => {
+ * fw.start('*.js', (filePath: string, deleted: boolean) => {
  *    ...
  * });
  * ...
@@ -41,7 +41,7 @@ export class FileWatcher extends vscode.Disposable {
 	 * @param filePattern E.g .'**​/*.ut.js'
 	 * @param fileChanged A function that is called when a file is created, changed or deleted.
 	 */
-	public start(filePattern: string, fileChanged: (uri: vscode.Uri, deleted: boolean) => void) {
+	public start(filePattern: string, fileChanged: (filePath: string, deleted: boolean) => void) {
 		// Handle the case of no open folders
 		if (!vscode.workspace.workspaceFolders) {
 			const emptyArray: vscode.FileSystemWatcher[] = [];
@@ -56,17 +56,17 @@ export class FileWatcher extends vscode.Disposable {
 				const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 
 				// When files are created
-				watcher.onDidCreate(uri => fileChanged(uri, false));
+				watcher.onDidCreate(uri => fileChanged(uri.fsPath, false));
 
 				// When files do change
-				watcher.onDidChange(uri => fileChanged(uri, false));
+				watcher.onDidChange(uri => fileChanged(uri.fsPath, false));
 
 				// When files are deleted
-				watcher.onDidDelete(uri => fileChanged(uri, true));
+				watcher.onDidDelete(uri => fileChanged(uri.fsPath, true));// TODO: Need to test that on each new creation of sld file a delete occurs beforehand. Otherwise the detection of deleted test cases becomes more difficult.
 
 				// Now initially scan all files
 				for (const uri of await vscode.workspace.findFiles(pattern)) {
-					fileChanged(uri, false);
+					fileChanged(uri.fsPath, false);
 				}
 
 				this.watchers.push(watcher);

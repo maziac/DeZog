@@ -44,9 +44,6 @@ export class TestRunner {
 	/// Stores the covered addresses for the unit test.
 	protected static allCoveredAddresses: Set<number>;
 
-	/// The filename used for the test script (which, in reality, is passed as string).
-	protected static fakeTestScriptFileName = 'dezog.unittest.js';
-
 
 	/**
 	 * Initialize the Tester.
@@ -56,7 +53,7 @@ export class TestRunner {
 		this.tcContexts = new Map<vscode.TestItem, TestCaseContext>();
 
 		// Create diagnostics (for errors in test files)
-		this.diagnostics = vscode.languages.createDiagnosticCollection('Z80 Unit Test File errors');
+		//this.diagnostics = vscode.languages.createDiagnosticCollection('Z80 Unit Test File errors');
 
 		// Create dezog test controller
 		this.controller = vscode.tests.createTestController(
@@ -67,13 +64,7 @@ export class TestRunner {
 		// First, create the `resolveHandler`. This may initially be called with
 		// "undefined" to ask for all tests in the workspace to be discovered, usually
 		// when the user opens the Test Explorer for the first time.
-		this.controller.resolveHandler = async test => {
-			if (!test) {
-				await this.discoverAllFilesInWorkspace();
-			} else {
-				await this.parseTestsInFileContents(test);
-			}
-		};
+		this.controller.resolveHandler = this.resolveTests;
 
 		// When text documents are open, parse tests in them.
 		vscode.workspace.onDidOpenTextDocument(doc => this.parseTestsInDocument(doc));
@@ -87,6 +78,16 @@ export class TestRunner {
 		this.controller.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, (request, token) => {
 			this.runDebugHandler(request, token);
 		});
+	}
+
+
+	/**
+	 * Overwrite this.
+	 * Is called if the user expands a test item to populate the item.
+	 * For the first time it is called with 'undefined'.
+	 * @param testItem The test item to populate or  undefined.
+	 */
+	protected static resolveTests(testItem: vscode.TestItem) {
 	}
 
 

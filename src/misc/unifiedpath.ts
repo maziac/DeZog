@@ -21,8 +21,8 @@ export class UnifiedPath {
 
 	// Just pass these functions:
 	public static basename=redirectedPath.basename;
-	public static dirname=redirectedPath.dirname;
-	public static join=redirectedPath.join;
+	public static dirname = redirectedPath.dirname;
+	public static resolve = redirectedPath.resolve;
 
 	/**
 	 * Needs to check posix and windows.
@@ -34,6 +34,15 @@ export class UnifiedPath {
 		if(OrigPath.win32.isAbsolute(path))
 			return true;
 		return false;
+	}
+
+
+	/**
+	 * Like 'join' but afterwards converts to unified path.
+	 */
+	public static join(...paths: string[]): string {
+		const s = redirectedPath.join(...paths);
+		return this.getUnifiedPath(s);
 	}
 
 

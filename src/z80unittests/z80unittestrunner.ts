@@ -1,21 +1,76 @@
 import * as vscode from 'vscode';
-import { DebugSessionClass } from './debugadapter';
-import { RemoteFactory, Remote } from './remotes/remotefactory';
-import { Labels } from './labels/labels';
-import { RemoteBreakpoint } from './remotes/remotebase';
-import { LabelsClass } from './labels/labels';
-import { Settings } from './settings';
+import { DebugSessionClass } from '../debugadapter';
+import { RemoteFactory, Remote } from '../remotes/remotefactory';
+import {Labels, LabelsClass } from '../labels/labels';
+import { RemoteBreakpoint } from '../remotes/remotebase';
+import { Settings } from '../settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
-import { Utility } from './misc/utility';
-import { Decoration } from './decoration';
-import {StepHistory, CpuHistory, CpuHistoryClass} from './remotes/cpuhistory';
-import {Z80RegistersClass, Z80Registers} from './remotes/z80registers';
-import {StepHistoryClass} from './remotes/stephistory';
-import {ZSimRemote} from './remotes/zsimulator/zsimremote';
+import { Utility } from '../misc/utility';
+import { Decoration } from '../decoration';
+import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
+import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
+import {StepHistoryClass} from '../remotes/stephistory';
+import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import * as path from 'path';
 import {TestRunner} from './testrunner';
+import {FileWatcher} from '../misc/filewatcher';
+import {UnifiedPath} from '../misc/unifiedpath';
 
+
+/**
+ * An item that represents a unti test and connect the vscode TestItem,
+ * the unit test and the file watcher.
+ */
+class UnitTestCaseNew {
+	// A map that contains children unit tests.
+	protected children: Array<UnitTestCaseNew>;
+
+	// Pointer to the parent test item (suite).
+	protected parent?: UnitTestCaseNew;
+
+	// The id of theu nit test, e.g. a file path
+	//public id: string;
+
+	// Pointer to the corresponding test item.
+	public testItem: vscode.TestItem;
+
+	// Pointer to an optional file watcher.
+	public fileWatcher?: FileWatcher;
+
+
+	/**
+	 * Constructor.
+	 */
+	constructor(testItem: vscode.TestItem, parent?: UnitTestCaseNew) {
+		this.children = [];
+		if (parent) {
+			this.parent = parent;
+			parent.children.push(this);
+			parent.testItem.children.add(testItem);
+		}
+	}
+
+	/**
+	 * Delete a test item and it's children.
+	 * Removes the file watcher.
+	 */
+	public delete() {
+		// Delete test item
+		this.testItem.parent?.children.delete(this.testItem.id);
+		// Remove from parent
+		if (this.parent) {
+			const reducedList = this.parent.children.filter(item => item != this);
+			this.parent.children = reducedList;
+		}
+		// Delete children
+		for (const child of this.children) {
+			child.parent = undefined;
+			child.delete();
+		}
+	}
+
+}
 
 
 /// Some definitions for colors.
@@ -148,6 +203,195 @@ export class Z80UnitTestRunner extends TestRunner {
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("DeZog Unit Tests");
 
+	// The map of file watchers. Key is the file path.
+	protected static fileWatchers: Map<string, FileWatcher>;
+
+	// Maps the filename (=id) to the test item.
+	protected static testItems: Map<string, vscode.TestItem>;
+
+	// Maps the sld/list files to launch configs.
+	protected static listFileContexts: Map<string, any>;
+
+
+	/**
+	 * Create the test items.
+	 * Due to the nature how the test items are discovered they are all
+	 * discovered at once when this function is called first with 'undefined'.
+	 * Otherwise it should not be called anymore by vscode.
+	 * 'resolveTests' should be called only once. Every test item is populated,
+	 * so there is no need to call it anymore afterwards.
+	 * If there are changes to the tet cases it will be handled by the file watchers.
+	 * @param testItem If undefined create all test cases. Otherwise do nothing.
+	 */
+	protected static resolveTests(testItem: vscode.TestItem) {
+		if (testItem)
+			return;
+		if (!vscode.workspace.workspaceFolders)
+			return;
+
+		// Init
+		// TODO: think about disposing the file watchers
+		this.testItems = new Map<string, vscode.TestItem>();
+		this.listFileContexts = new Map<string, any>();
+
+		// Root item hierarchy:
+		// workspacefolder[i]
+		//  |-- unit test config [j] (from launch.json)
+		//  |   |-- Unit test label [k1]
+		//  |-- unit test config [j+1] (from launch.json)
+		//  |   |-- Unit test label [k2]
+		// workspacefolder[i+1]
+		//  |-- ...
+
+		// Loop over all workspaces
+		// TODO: test what happens if a new workspace was added. Most probably the resolveTests is not called!
+		for (const ws of vscode.workspace.workspaceFolders) {
+			// Retrieve all unit test configs
+			const wsFolder = ws.uri.fsPath;
+			const filePath = UnifiedPath.join(wsFolder, '.vscode/launch.json');
+			// Create test item for workspace
+			let testWorkspace = this.testItems.get(wsFolder);
+			if (!testWorkspace) {
+				const idFile = wsFolder;
+				testWorkspace = this.controller.createTestItem(idFile, UnifiedPath.basename(wsFolder));
+				this.controller.items.add(testWorkspace);
+				this.testItems.set(wsFolder, testWorkspace);
+			}
+			// Start file watcher on launch.json
+			const fwLaunchJson = new FileWatcher();	// The launch.json file wather is never stopped (unless the window/dezog is closed)
+			fwLaunchJson.start(filePath, this.launchJsonFileChanged);
+			// Call once initially
+			this.launchJsonFileChanged(filePath);
+		}
+	}
+
+
+	/**
+	 * Called whenever the launch.json file has changed on disk.
+	 * @param filePath Absolute fie path.
+	 * @param deleted If true the file has been deleted.
+	 */
+	protected static launchJsonFileChanged(filePath: string, deleted = false) {
+		// Get workspace folder from launch.json path
+		const wsFolder = UnifiedPath.resolve(UnifiedPath.dirname(filePath), '..');
+		// Get all previous test items
+		const wsFolderWith = wsFolder + '/';
+		const removeFiles = new Set([...this.testItems.keys()].filter(id => id.startsWith(wsFolderWith)));
+
+		// Get parent test item
+		const testWorkspace = this.testItems.get(wsFolder)!;
+		Utility.assert(testWorkspace);
+
+		// Read launch.json
+		if (!deleted) {
+			try {
+				// Get launch configs
+				const configs = this.getUnitTestsLaunchConfigs(filePath);
+				// Loop over all unit test launch configs (usually 1)
+				for (const config of configs) {
+					// Get all list files
+					const listFiles = Settings.GetAllAssemblerListFiles(config);
+
+					// Loop over all list files
+					for (const listFile of listFiles) {
+						const filePath = UnifiedPath.join(wsFolder, listFile.path);
+						// Create test item for file
+						let testFile = this.testItems.get(filePath);
+						if (testFile) {
+							// Remove from removable list
+							removeFiles.delete(filePath);
+						}
+						else {
+							// Create new test item
+							const idFile = filePath;
+							testFile = this.controller.createTestItem(idFile, Utility.getRelFilePath(filePath));
+							testWorkspace.children.add(testFile);
+							this.testItems.set(idFile, testFile);
+						}
+						// Watch for list file
+						const fwListFile = new FileWatcher();
+						fwListFile.start(filePath, this.listFileChanged);
+						// Call once initially
+						this.listFileChanged(filePath);
+					}
+				}
+			}
+			catch (e) {
+				// Ignore, e.g. errors in launch.json
+			}
+		}
+
+		// If launch.json was deleted remove file watchers
+		for (const filePath of removeFiles) {
+			// REmove file watcher
+			const fw = this.fileWatchers.get(filePath)!;
+			Utility.assert(fw);
+			fw.dispose();
+			this.fileWatchers.delete(filePath);
+			// Remove test item
+			testWorkspace.children.delete(filePath);
+			this.listFileContexts.delete(filePath);
+			this.testItems.delete(filePath);
+			// Remove test items (the labels)
+		}
+	}
+
+
+	/**
+	 * Called whenever the sld7list file has changed on disk.
+	 * @param filePath Absolute fie path.
+	 * @param deleted If true the file has been deleted.
+	 */
+	protected static listFileChanged(filePath: string, deleted = false) {
+		// Get all previous test items
+		const filePathWith = filePath + '#';
+		const removeFiles = new Set([...this.testItems.keys()].filter(id => id.startsWith(filePathWith)));
+
+		// Read list file / create labels
+		if (!deleted) {
+			try {
+				// Get parent test item
+				const testFile = this.testItems.get(filePath)!;
+				Utility.assert(testFile);
+				// Get context
+				const context = this.listFileContexts.get(filePath);
+				Utility.setRootPath(context.wsFolder);
+				// Read labels from sld/list file
+				const labels = new LabelsClass();
+				// Now parse for Unit test labels, i.e. starting with "UT_"
+				const utLabels = this.getAllUtLabels(labels);
+				// Create an test item for each unit test
+				for (const utLabel of utLabels) {
+					const id = filePathWith + utLabel.label;
+					let testItem = this.testItems.get(id);
+					if (testItem) {
+						// Remove from removable list
+						removeFiles.delete(id);
+					}
+					else {
+						// Create new test item
+						testItem = this.controller.createTestItem(id, utLabel.label);
+						testFile.children.add(testFile);
+						this.testItems.set(id, testItem);
+					}
+					// TODO: Add hierarchy of the test items
+				}
+			}
+			catch (e) {
+				// Ignore, e.g. errors in launch.json
+				deleted = true;
+			}
+		}
+
+		// If file was deleted remove file watchers
+		for (const filePath of removeFiles) {
+			const fw = this.fileWatchers.get(filePath)!;
+			Utility.assert(fw);
+			fw.dispose();
+			this.fileWatchers.delete(filePath);
+		}
+	}
+
 
 	/**
 	 * Execute all unit tests.
@@ -162,7 +406,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		for (const wsFolder of wsFolders) {
 			// Set root folder
 			const rootFolder = wsFolder.uri.fsPath;
-			await Z80UnitTests.runAllProjectUnitTests(rootFolder);
+			await Z80UnitTestRunner.runAllProjectUnitTests(rootFolder);
 		}
 	}
 
@@ -177,21 +421,21 @@ export class Z80UnitTestRunner extends TestRunner {
 			// All test cases
 			let lblFileLines: UnitTestCase[] = [];
 			try {
-				lblFileLines = Z80UnitTests.getAllUnitTests(rootFolder);
+				lblFileLines = Z80UnitTestRunner.getAllUnitTests(rootFolder);
 			}
 			catch {}
 			if (lblFileLines.length == 0) {
 				resolve();
 				return;
 			}
-			Z80UnitTests.partialUtLabels = lblFileLines.map(lfl => lfl.label);
+			Z80UnitTestRunner.partialUtLabels = lblFileLines.map(lfl => lfl.label);
 			// Set callback
-			Z80UnitTests.finishedCallback = () => {
-				Z80UnitTests.finishedCallback = undefined;
+			Z80UnitTestRunner.finishedCallback = () => {
+				Z80UnitTestRunner.finishedCallback = undefined;
 				resolve();
 			};
 			// Start
-			Z80UnitTests.runTestsCheck();
+			Z80UnitTestRunner.runTestsCheck();
 		});
 	}
 
@@ -201,13 +445,13 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	public static runPartialUnitTests(rootFolder: string) {
 		// Get list of test case labels
-		Z80UnitTests.partialUtLabels = [];
-		for (const [tcLabel,] of Z80UnitTests.testCaseMap)
-			Z80UnitTests.partialUtLabels.push(tcLabel);
+		Z80UnitTestRunner.partialUtLabels = [];
+		for (const [tcLabel,] of Z80UnitTestRunner.testCaseMap)
+			Z80UnitTestRunner.partialUtLabels.push(tcLabel);
 		// Set root folder
 		Utility.setRootPath(rootFolder);
 		// Start
-		Z80UnitTests.runTestsCheck();
+		Z80UnitTestRunner.runTestsCheck();
 	}
 
 
@@ -218,7 +462,7 @@ export class Z80UnitTestRunner extends TestRunner {
 	 * true: unit tests are run with debugger.
 	 */
 	protected static async terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
-		Z80UnitTests.debug = debug;
+		Z80UnitTestRunner.debug = debug;
 		return new Promise<void>(async resolve => {
 			// Wait until vscode debugger has stopped.
 			if (Remote) {
@@ -274,7 +518,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		this.cancelled = false;
 
 		// Get unit test launch config
-		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+		const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 
 		// Setup settings
 		const rootFolder = Utility.getRootPath();
@@ -320,17 +564,17 @@ export class Z80UnitTestRunner extends TestRunner {
 					}
 					await Remote.enableAssertionBreakpoints(true);
 
-					await Z80UnitTests.initUnitTests();
+					await Z80UnitTestRunner.initUnitTests();
 
 					// Load the initial unit test routine (provided by the user)
-					await this.execAddr(Z80UnitTests.addrStart);
+					await this.execAddr(Z80UnitTestRunner.addrStart);
 
 					// End
 					resolve();
 				}
 				catch (e) {
 					// Some error occurred
-					Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
+					Z80UnitTestRunner.stopUnitTests(undefined, e.message);// TODO
 					//reject(e);
 					resolve();
 				}
@@ -338,10 +582,10 @@ export class Z80UnitTestRunner extends TestRunner {
 
 			Remote.on('coverage', coveredAddresses => {
 				// Cache covered addresses (since last unit test)
-				//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
-				if (!Z80UnitTests.lastCoveredAddresses)
-					Z80UnitTests.lastCoveredAddresses = new Set<number>();
-				coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
+				//Z80UnitTestRunner.lastCoveredAddresses = coveredAddresses;
+				if (!Z80UnitTestRunner.lastCoveredAddresses)
+					Z80UnitTestRunner.lastCoveredAddresses = new Set<number>();
+				coveredAddresses.forEach(Z80UnitTestRunner.lastCoveredAddresses.add, Z80UnitTestRunner.lastCoveredAddresses);
 			});
 
 			Remote.on('warning', message => {
@@ -357,7 +601,7 @@ export class Z80UnitTestRunner extends TestRunner {
 
 			Remote.once('error', e => {
 				// Some error occurred
-				Z80UnitTests.stopUnitTests(undefined, e.message);
+				Z80UnitTestRunner.stopUnitTests(undefined, e.message);
 				//reject(e);
 				resolve();
 			});
@@ -369,7 +613,7 @@ export class Z80UnitTestRunner extends TestRunner {
 			}
 			catch (e) {
 				// Some error occurred
-				Z80UnitTests.stopUnitTests(undefined, e.message);
+				Z80UnitTestRunner.stopUnitTests(undefined, e.message);
 				//reject(e);
 				resolve();
 			};
@@ -390,7 +634,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		for (const wsFolder of wsFolders) {
 			// Set root folder
 			const rootFolder = wsFolder.uri.fsPath;
-			await Z80UnitTests.debugAllProjectUnitTests(rootFolder);
+			await Z80UnitTestRunner.debugAllProjectUnitTests(rootFolder);
 		}
 	}
 
@@ -405,21 +649,21 @@ export class Z80UnitTestRunner extends TestRunner {
 			// All test cases
 			let lblFileLines: UnitTestCase[] = [];
 			try {
-				lblFileLines = Z80UnitTests.getAllUnitTests(rootFolder);
+				lblFileLines = Z80UnitTestRunner.getAllUnitTests(rootFolder);
 			}
 			catch {}
 			if (lblFileLines.length == 0) {
 				resolve();
 				return;
 			}
-			Z80UnitTests.partialUtLabels = lblFileLines.map(lfl => lfl.label);
+			Z80UnitTestRunner.partialUtLabels = lblFileLines.map(lfl => lfl.label);
 			// Set callback
-			Z80UnitTests.finishedCallback = () => {
-				Z80UnitTests.finishedCallback = undefined;
+			Z80UnitTestRunner.finishedCallback = () => {
+				Z80UnitTestRunner.finishedCallback = undefined;
 				resolve();
 			};
 			// Start
-			Z80UnitTests.debugTestsCheck();
+			Z80UnitTestRunner.debugTestsCheck();
 		});
 	}
 
@@ -432,13 +676,13 @@ export class Z80UnitTestRunner extends TestRunner {
 		this.debug = true;
 		this.cancelled = false;
 		// Get list of test case labels
-		Z80UnitTests.partialUtLabels = [];
-		for (const [tcLabel,] of Z80UnitTests.testCaseMap)
-			Z80UnitTests.partialUtLabels.push(tcLabel);
+		Z80UnitTestRunner.partialUtLabels = [];
+		for (const [tcLabel,] of Z80UnitTestRunner.testCaseMap)
+			Z80UnitTestRunner.partialUtLabels.push(tcLabel);
 		// Set root folder
 		Utility.setRootPath(rootFolder);
 		// Start
-		Z80UnitTests.debugTestsCheck();
+		Z80UnitTestRunner.debugTestsCheck();
 	}
 
 
@@ -447,7 +691,7 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	public static async cmdCancelAllUnitTests() {
 		Remote.emit('terminated');
-		await Z80UnitTests.cancelUnitTests();
+		await Z80UnitTestRunner.cancelUnitTests();
 	}
 
 
@@ -461,18 +705,18 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Cancel the unit tests
 		this.cancelled = true;
 		const text = "Unit tests cancelled.";
-		Z80UnitTests.dbgOutput(text);
-		await Z80UnitTests.stopUnitTests(undefined);
+		Z80UnitTestRunner.dbgOutput(text);
+		await Z80UnitTestRunner.stopUnitTests(undefined);
 		//	ds.customRequest("terminate");
 		// Fail the current test
 		/*
-		Z80UnitTests.countFailed++;
-		if (Z80UnitTests.countFailed>Z80UnitTests.countExecuted)
-			Z80UnitTests.countFailed=Z80UnitTests.countExecuted;
+		Z80UnitTestRunner.countFailed++;
+		if (Z80UnitTestRunner.countFailed>Z80UnitTestRunner.countExecuted)
+			Z80UnitTestRunner.countFailed=Z80UnitTestRunner.countExecuted;
 		*/
-		if (Z80UnitTests.countExecuted > 0)
-			Z80UnitTests.countExecuted--;
-		Z80UnitTests.unitTestsFinished();
+		if (Z80UnitTestRunner.countExecuted > 0)
+			Z80UnitTestRunner.countExecuted--;
+		Z80UnitTestRunner.unitTestsFinished();
 	}
 
 
@@ -493,7 +737,7 @@ export class Z80UnitTestRunner extends TestRunner {
 	protected static debugTests() {
 		try {
 			// Get unit test launch config
-			const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+			const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 			const configName: string = configuration.name;
 
 			// Start debugger
@@ -514,7 +758,7 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	public static clearTestCaseList() {
 		// Clear map
-		Z80UnitTests.testCaseMap.clear();
+		Z80UnitTestRunner.testCaseMap.clear();
 	}
 
 
@@ -527,59 +771,43 @@ export class Z80UnitTestRunner extends TestRunner {
 	public static async execUnitTestCase(tcLabel: string): Promise<number> {
 		return new Promise<number>((resolve) => {
 			// Remember its resolve function.
-			Z80UnitTests.testCaseMap.set(tcLabel, resolve);
+			Z80UnitTestRunner.testCaseMap.set(tcLabel, resolve);
 		});
 	}
 
 
 	/**
-	 * Returns the unit tests launch configuration. I.e. the configuration
+	 * Returns the unit tests launch configurations. I.e. the configuration
 	 * from .vscode/launch.json with property unitTests set to true.
+	 * @param launchJsonPath The absolute path to the .vscode/launch.json file.
+	 * @returns Array of unit test configs or empty array.
+	 * Throws an exception if launch.json cannot be parsed. Or if file does not exist.
 	 */
-	protected static getUnitTestsLaunchConfig(): any {
-		const launchJsonFile = ".vscode/launch.json";
-		const launchPath = Utility.getAbsFilePath(launchJsonFile);
-		const launchData = readFileSync(launchPath, 'utf8');
+	protected static getUnitTestsLaunchConfigs(launchJsonPath: string): any {
+		const launchData = readFileSync(launchJsonPath, 'utf8');
 		const parseErrors: jsonc.ParseError[] = [];
 		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
 
 		// Check for error
 		if (parseErrors.length > 0) {
 			// Error
-			throw Error("Parse error while reading " + launchJsonFile + ".");
+			throw Error("Parse error while reading " + launchJsonPath + ".");
 		}
 
 		// Find the right configuration
-		let configuration;
+		const configurations = [];
 		for (const config of launch.configurations) {
 			if (config.unitTests) {
 				// Check if there is already unit test configuration:
 				// Only one is allowed.
-				if (configuration)
-					throw Error("More than one unit test launch configuration found. Only one is allowed.");
-				configuration = config;
+				//if (configuration)
+				//	throw Error("More than one unit test launch configuration //found. Only one is allowed.");
+				//configuration = config;
+				configurations.push(config);
 			}
 		}
 
-
-		// Load user list and labels files
-		if (!configuration) {
-			// No configuration found, Error
-			throw Error('No unit test configuration found in ' + launchPath + '.');
-		}
-
-		// Change path to absolute path
-		const listFiles = Settings.GetAllAssemblerListFiles(configuration);
-		if (!listFiles) {
-			// No list file given: Error
-			throw Error('No list file given in unit test configuration.');
-		}
-		for (let listFile of listFiles) {
-			const path = listFile.path;
-			listFile.path = Utility.getAbsFilePath(path);
-		}
-
-		return configuration;
+		return configurations;
 	}
 
 
@@ -595,7 +823,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Set root path
 		Utility.setRootPath(rootFolder);
 
-		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
+		const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 
 		// Setup settings
 		Settings.Init(configuration, rootFolder);
@@ -617,12 +845,12 @@ export class Z80UnitTestRunner extends TestRunner {
 		return new Promise<UnitTestCase[]>((resolve, reject) => {
 			try {
 				// Read all list files.
-				const labels = Z80UnitTests.loadLabelsFromConfiguration();
+				const labels = Z80UnitTestRunner.loadLabelsFromConfiguration();
 				// Check if unit tests available
-				if (!Z80UnitTests.AreUnitTestsAvailable(labels))
+				if (!Z80UnitTestRunner.AreUnitTestsAvailable(labels))
 					return resolve([]);	// Return empty array
 				// Get the unit test labels
-				const utLabels = Z80UnitTests.getAllUtLabels(labels);
+				const utLabels = Z80UnitTestRunner.getAllUtLabels(labels);
 				resolve(utLabels);
 			}
 			catch (e) {
@@ -632,15 +860,16 @@ export class Z80UnitTestRunner extends TestRunner {
 		});
 	}
 	*/
+	// TODO: REMOVE
 	public static getAllUnitTests(rootFolder: string): UnitTestCase[] {
 		let allUtLabels: UnitTestCase[] = [];
 		try {
 			// Read all list files.
-			const labels = Z80UnitTests.loadLabelsFromConfiguration(rootFolder);
+			const labels = Z80UnitTestRunner.loadLabelsFromConfiguration(rootFolder);
 			// Check if unit tests available
-			if (Z80UnitTests.AreUnitTestsAvailable(labels)) {
+			if (Z80UnitTestRunner.AreUnitTestsAvailable(labels)) {
 				// Get the unit test labels
-				allUtLabels = Z80UnitTests.getAllUtLabels(labels);
+				allUtLabels = Z80UnitTestRunner.getAllUtLabels(labels);
 			}
 		}
 		catch (e) {
@@ -679,42 +908,42 @@ export class Z80UnitTestRunner extends TestRunner {
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
 		// Now read all the unit tests.
-		Z80UnitTests.outputSummary = '';
-		Z80UnitTests.countFailed = 0;
-		Z80UnitTests.countExecuted = 0;
-		Z80UnitTests.timeoutHandle = undefined;
-		Z80UnitTests.currentFail = true;
+		Z80UnitTestRunner.outputSummary = '';
+		Z80UnitTestRunner.countFailed = 0;
+		Z80UnitTestRunner.countExecuted = 0;
+		Z80UnitTestRunner.timeoutHandle = undefined;
+		Z80UnitTestRunner.currentFail = true;
 
-		if (!Z80UnitTests.AreUnitTestsAvailable(Labels))
+		if (!Z80UnitTestRunner.AreUnitTestsAvailable(Labels))
 			throw Error("Unit tests not enabled in assembler sources.");
 
 		// Get the unit test code
-		Z80UnitTests.addrStart = Z80UnitTests.getLongAddressForLabel("UNITTEST_START");
-		Z80UnitTests.addrTestWrapper = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
-		Z80UnitTests.addrCall = Z80UnitTests.getLongAddressForLabel("UNITTEST_CALL_ADDR");
-		Z80UnitTests.addrCall ++;
-		Z80UnitTests.addrTestReadySuccess = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
-		//Z80UnitTests.addrTestReadyReturnFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
-		//Z80UnitTests.addrTestReadyFailure = Z80UnitTests.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
-		//const stackMinWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
-		//const stackMaxWatchpoint = Z80UnitTests.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
+		Z80UnitTestRunner.addrStart = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_START");
+		Z80UnitTestRunner.addrTestWrapper = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
+		Z80UnitTestRunner.addrCall = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_CALL_ADDR");
+		Z80UnitTestRunner.addrCall ++;
+		Z80UnitTestRunner.addrTestReadySuccess = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
+		//Z80UnitTestRunner.addrTestReadyReturnFailure = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
+		//Z80UnitTestRunner.addrTestReadyFailure = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
+		//const stackMinWatchpoint = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
+		//const stackMaxWatchpoint = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
 
 		// Check if code for unit tests is really present
 		// (In case labels are present but the actual code has not been loaded.)
-		const opcode = await Remote.readMemory(Z80UnitTests.addrTestWrapper & 0xFFFF);	// TODO: Check if 64k address is OK here
+		const opcode = await Remote.readMemory(Z80UnitTestRunner.addrTestWrapper & 0xFFFF);	// TODO: Check if 64k address is OK here
 		// Should start with DI (=0xF3)
 		if (opcode != 0xF3)
 			throw Error("Code for unit tests is not present.");
 
 		// Labels not yet known.
-		Z80UnitTests.utLabels = undefined as unknown as Array<string>;
+		Z80UnitTestRunner.utLabels = undefined as unknown as Array<string>;
 
 		// Success and failure breakpoints
-		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadySuccess, condition: '',	log: undefined };
+		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
-		//const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyFailure, condition: '', log: undefined};
+		//const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadyFailure, condition: '', log: undefined};
 		//await Remote.setBreakpoint(failureBp1);
-		//const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTests.addrTestReadyReturnFailure, condition: '', log: undefined};
+		//const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadyReturnFailure, condition: '', log: undefined};
 		//await Remote.setBreakpoint(failureBp2);
 
 		// Stack watchpoints
@@ -747,10 +976,10 @@ export class Z80UnitTestRunner extends TestRunner {
 				// Handle coverage
 				Remote.on('coverage', coveredAddresses => {
 					// Cache covered addresses (since last unit test)
-					//Z80UnitTests.lastCoveredAddresses = coveredAddresses;
-					if (!Z80UnitTests.lastCoveredAddresses)
-						Z80UnitTests.lastCoveredAddresses = new Set<number>();
-					coveredAddresses.forEach(Z80UnitTests.lastCoveredAddresses.add, Z80UnitTests.lastCoveredAddresses);
+					//Z80UnitTestRunner.lastCoveredAddresses = coveredAddresses;
+					if (!Z80UnitTestRunner.lastCoveredAddresses)
+						Z80UnitTestRunner.lastCoveredAddresses = new Set<number>();
+					coveredAddresses.forEach(Z80UnitTestRunner.lastCoveredAddresses.add, Z80UnitTestRunner.lastCoveredAddresses);
 				});
 
 				// After initialization vscode might send breakpoint requests
@@ -763,17 +992,17 @@ export class Z80UnitTestRunner extends TestRunner {
 					await Utility.timeout(500);
 
 				// Init unit tests
-				await Z80UnitTests.initUnitTests();
+				await Z80UnitTestRunner.initUnitTests();
 				// Start unit tests after a short while
-				Z80UnitTests.startUnitTestsWhenQuiet(debugAdapter);
+				Z80UnitTestRunner.startUnitTestsWhenQuiet(debugAdapter);
 			}
 			catch(e) {
-				Z80UnitTests.stopUnitTests(debugAdapter, e.message);
+				Z80UnitTestRunner.stopUnitTests(debugAdapter, e.message);
 			}
 		});
 
 		debugAdapter.on('break', () => {
-			Z80UnitTests.onBreak(debugAdapter);
+			Z80UnitTestRunner.onBreak(debugAdapter);
 		});
 	}
 
@@ -791,7 +1020,7 @@ export class Z80UnitTestRunner extends TestRunner {
 			const pc = Remote.getPCLong();
 			//const sp = Z80Registers.parseSP(data);
 			// Check if test case was successful
-			Z80UnitTests.checkUnitTest(pc, debugAdapter);
+			Z80UnitTestRunner.checkUnitTest(pc, debugAdapter);
 			// Otherwise another break- or watchpoint was hit or the user stepped manually.
 		//});
 	}
@@ -827,7 +1056,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		da.waitForBeingQuietFor(1000)
 		.then(() => {
 			// Load the initial unit test routine (provided by the user)
-			Z80UnitTests.execAddr(Z80UnitTests.addrStart, da);
+			Z80UnitTestRunner.execAddr(Z80UnitTestRunner.addrStart, da);
 		});
 	}
 
@@ -855,8 +1084,8 @@ export class Z80UnitTestRunner extends TestRunner {
 
 			// Run
 			/*
-			if (Z80UnitTests.utLabels)
-				Z80UnitTests.dbgOutput('UnitTest: '+Z80UnitTests.utLabels[0]+' da.emulatorContinue()');
+			if (Z80UnitTestRunner.utLabels)
+				Z80UnitTestRunner.dbgOutput('UnitTest: '+Z80UnitTestRunner.utLabels[0]+' da.emulatorContinue()');
 			*/
 			// Init
 			StepHistory.clear();
@@ -870,7 +1099,7 @@ export class Z80UnitTestRunner extends TestRunner {
 			}
 
 			// Run or Debug
-			Z80UnitTests.RemoteContinue(da);
+			Z80UnitTestRunner.RemoteContinue(da);
 		});
 	}
 
@@ -882,7 +1111,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Start asynchronously
 		(async () => {
 			// Check if cancelled
-			if (Z80UnitTests.cancelled)
+			if (Z80UnitTestRunner.cancelled)
 				return;
 			// Init
 			Remote.startProcessing();
@@ -898,7 +1127,7 @@ export class Z80UnitTestRunner extends TestRunner {
 				// Run: Continue
 				await Remote.continue();
 				Remote.stopProcessing();
-				Z80UnitTests.onBreak();
+				Z80UnitTestRunner.onBreak();
 			}
 		})();
 	}
@@ -910,30 +1139,30 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	protected static nextUnitTest(da?: DebugSessionClass) {
 		// Increase count
-		Z80UnitTests.countExecuted ++;
-		Z80UnitTests.currentFail = false;
+		Z80UnitTestRunner.countExecuted ++;
+		Z80UnitTestRunner.currentFail = false;
 		// Get Unit Test label
-		const label = Z80UnitTests.utLabels[0];
+		const label = Z80UnitTestRunner.utLabels[0];
 		// Calculate address
 		const address = Labels.getNumberForLabel(label) as number;
 		Utility.assert(address != undefined);
 
 		// Set timeout
-		if(!Z80UnitTests.debug) {
-			clearTimeout(Z80UnitTests.timeoutHandle);
+		if(!Z80UnitTestRunner.debug) {
+			clearTimeout(Z80UnitTestRunner.timeoutHandle);
 			const toMs=1000*Settings.launch.unitTestTimeout;
-			Z80UnitTests.timeoutHandle = setTimeout(() => {
+			Z80UnitTestRunner.timeoutHandle = setTimeout(() => {
 				// Clear timeout
-				clearTimeout(Z80UnitTests.timeoutHandle);
-				Z80UnitTests.timeoutHandle = undefined;
+				clearTimeout(Z80UnitTestRunner.timeoutHandle);
+				Z80UnitTestRunner.timeoutHandle = undefined;
 				// Failure: Timeout. Send a break.
 				Remote.pause();
 			}, toMs);
 		}
 
 		// Start at test case address.
-		Z80UnitTests.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
-		Z80UnitTests.execAddr(address, da);
+		Z80UnitTestRunner.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
+		Z80UnitTestRunner.execAddr(address, da);
 	}
 
 
@@ -945,11 +1174,11 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	protected static async checkUnitTest(pc: number, da?: DebugSessionClass): Promise<void> {
 		// Check if it was a timeout
-		let timeoutFailure = !Z80UnitTests.debug;
-		if(Z80UnitTests.timeoutHandle) {
+		let timeoutFailure = !Z80UnitTestRunner.debug;
+		if(Z80UnitTestRunner.timeoutHandle) {
 			// Clear timeout
-			clearTimeout(Z80UnitTests.timeoutHandle);
-			Z80UnitTests.timeoutHandle = undefined;
+			clearTimeout(Z80UnitTestRunner.timeoutHandle);
+			Z80UnitTestRunner.timeoutHandle = undefined;
 			timeoutFailure = false;
 		}
 
@@ -963,31 +1192,31 @@ export class Z80UnitTestRunner extends TestRunner {
 				return;
 			}
 			// Count failure
-			if(!Z80UnitTests.currentFail) {
+			if(!Z80UnitTestRunner.currentFail) {
 				// Count only once
-				Z80UnitTests.currentFail = true;
-				Z80UnitTests.countFailed ++;
+				Z80UnitTestRunner.currentFail = true;
+				Z80UnitTestRunner.countFailed ++;
 			}
 		}
 
 		// Check if this was the init routine that is started
 		// before any test case:
-		if(!Z80UnitTests.utLabels) {
+		if(!Z80UnitTestRunner.utLabels) {
 			// Use the test case list
-			Z80UnitTests.utLabels = Z80UnitTests.partialUtLabels!;
+			Z80UnitTestRunner.utLabels = Z80UnitTestRunner.partialUtLabels!;
 			// Error check
-			if (!Z80UnitTests.utLabels || Z80UnitTests.utLabels.length == 0) {
+			if (!Z80UnitTestRunner.utLabels || Z80UnitTestRunner.utLabels.length == 0) {
 				// No unit tests found -> disconnect
-				Z80UnitTests.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
+				Z80UnitTestRunner.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
 				return;
 			}
 			// Check if we break on the first unit test.
-			if(Z80UnitTests.debug && !Settings.launch.startAutomatically ) {
-				const firstLabel = Z80UnitTests.utLabels[0];
+			if(Z80UnitTestRunner.debug && !Settings.launch.startAutomatically ) {
+				const firstLabel = Z80UnitTestRunner.utLabels[0];
 				const firstAddr = Labels.getNumberForLabel(firstLabel) as number;
 				if(firstAddr == undefined) {
 					// Error
-					Z80UnitTests.stopUnitTests(da, "Couldn't find address for first unit test label '" + firstLabel + "'.");
+					Z80UnitTestRunner.stopUnitTests(da, "Couldn't find address for first unit test label '" + firstLabel + "'.");
 					return;
 				}
 				const firstUtBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
@@ -995,33 +1224,33 @@ export class Z80UnitTestRunner extends TestRunner {
 			}
 
 			// Start unit tests
-			Z80UnitTests.nextUnitTest(da);
+			Z80UnitTestRunner.nextUnitTest(da);
 			return;
 		}
 
 		// Was a real test case.
 
 		// OK or failure
-		const tcSuccess = (pc == Z80UnitTests.addrTestReadySuccess);
+		const tcSuccess = (pc == Z80UnitTestRunner.addrTestReadySuccess);
 
 		// Count failure
 		if(!tcSuccess) {
-			if(!Z80UnitTests.currentFail) {
+			if(!Z80UnitTestRunner.currentFail) {
 				// Count only once
-				Z80UnitTests.currentFail = true;
-				Z80UnitTests.countFailed ++;
+				Z80UnitTestRunner.currentFail = true;
+				Z80UnitTestRunner.countFailed ++;
 			}
 		}
 
 		// Get the test case label.
-		const label = Z80UnitTests.utLabels[0];
+		const label = Z80UnitTestRunner.utLabels[0];
 
 		// In debug mode do break after one step. The step is required to put the PC at the right place.
 		if(da && !tcSuccess) {
 			// Do some additional output.
-			if(Z80UnitTests.utLabels) {
+			if(Z80UnitTestRunner.utLabels) {
 				if(pc == this.addrTestReadySuccess)
-					Z80UnitTests.dbgOutput(label + ' PASSED.');
+					Z80UnitTestRunner.dbgOutput(label + ' PASSED.');
 			}
 			return;
 		}
@@ -1030,16 +1259,16 @@ export class Z80UnitTestRunner extends TestRunner {
 		let tcResult: TestCaseResult = TestCaseResult.TIMEOUT;
 		if(!timeoutFailure) {
 			// No timeout
-			tcResult = (Z80UnitTests.currentFail) ? TestCaseResult.FAILED : TestCaseResult.OK;
+			tcResult = (Z80UnitTestRunner.currentFail) ? TestCaseResult.FAILED : TestCaseResult.OK;
 		}
 
 		// Send result to calling extension (i.e. test adapter)
-		const resolveFunction = Z80UnitTests.testCaseMap.get(label);
+		const resolveFunction = Z80UnitTestRunner.testCaseMap.get(label);
 		if(resolveFunction) {
 			// Inform calling party
 			resolveFunction(tcResult);
 			// Delete from map
-			Z80UnitTests.testCaseMap.delete(label);
+			Z80UnitTestRunner.testCaseMap.delete(label);
 		}
 
 		// Print test case name, address and result.
@@ -1052,27 +1281,27 @@ export class Z80UnitTestRunner extends TestRunner {
 
 		const addr = Labels.getNumberForLabel(label) || 0;
 		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
-		Z80UnitTests.dbgOutput(outTxt);
-		Z80UnitTests.outputSummary += outTxt + '\n';
+		Z80UnitTestRunner.dbgOutput(outTxt);
+		Z80UnitTestRunner.outputSummary += outTxt + '\n';
 
 		// Collect coverage:
 		// Get covered addresses (since last unit test) and add to collection.
-		if (Z80UnitTests.lastCoveredAddresses) {
-			const target=Z80UnitTests.allCoveredAddresses;
-			Z80UnitTests.lastCoveredAddresses.forEach(target.add, target);
-			Z80UnitTests.lastCoveredAddresses = undefined as any;
+		if (Z80UnitTestRunner.lastCoveredAddresses) {
+			const target=Z80UnitTestRunner.allCoveredAddresses;
+			Z80UnitTestRunner.lastCoveredAddresses.forEach(target.add, target);
+			Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
 		}
 
 		// Next unit test
-		Z80UnitTests.utLabels.shift();
-		if(Z80UnitTests.utLabels.length == 0) {
+		Z80UnitTestRunner.utLabels.shift();
+		if(Z80UnitTestRunner.utLabels.length == 0) {
 			// End the unit tests
-			Z80UnitTests.dbgOutput("All tests ready.");
-			Z80UnitTests.stopUnitTests(da);
-			Z80UnitTests.unitTestsFinished();
+			Z80UnitTestRunner.dbgOutput("All tests ready.");
+			Z80UnitTestRunner.stopUnitTests(da);
+			Z80UnitTestRunner.unitTestsFinished();
 			return;
 		}
-		Z80UnitTests.nextUnitTest(da);
+		Z80UnitTestRunner.nextUnitTest(da);
 	}
 
 
@@ -1082,10 +1311,10 @@ export class Z80UnitTestRunner extends TestRunner {
 	 */
 	protected static unitTestsFinished() {
 		// Summary
-		Z80UnitTests.printSummary();
+		Z80UnitTestRunner.printSummary();
 		// Inform
-		if (Z80UnitTests.finishedCallback)
-			Z80UnitTests.finishedCallback();
+		if (Z80UnitTestRunner.finishedCallback)
+			Z80UnitTestRunner.finishedCallback();
 	}
 
 
@@ -1110,11 +1339,11 @@ export class Z80UnitTestRunner extends TestRunner {
 	 * to the caller (i.e. the test case adapter).
 	 */
 	protected static CancelAllRemainingResults() {
-		for(const [, resolveFunc] of Z80UnitTests.testCaseMap) {
+		for(const [, resolveFunc] of Z80UnitTestRunner.testCaseMap) {
 			// Return an error code
 			resolveFunc(TestCaseResult.CANCELLED);
 		}
-		Z80UnitTests.testCaseMap.clear();
+		Z80UnitTestRunner.testCaseMap.clear();
 	}
 
 
@@ -1126,13 +1355,13 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Async
 		return new Promise<void>(async resolve => {
 			// Clear timeout
-			clearTimeout(Z80UnitTests.timeoutHandle);
-			Z80UnitTests.timeoutHandle=undefined;
+			clearTimeout(Z80UnitTestRunner.timeoutHandle);
+			Z80UnitTestRunner.timeoutHandle=undefined;
 			// Clear remaining test cases
-			Z80UnitTests.CancelAllRemainingResults();
+			Z80UnitTestRunner.CancelAllRemainingResults();
 
 			// Show coverage
-			Decoration.showCodeCoverage(Z80UnitTests.allCoveredAddresses);
+			Decoration.showCodeCoverage(Z80UnitTestRunner.allCoveredAddresses);
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (debugAdapter) {
@@ -1141,9 +1370,9 @@ export class Z80UnitTestRunner extends TestRunner {
 			}
 
 			// Show remaining covered addresses
-			if (Z80UnitTests.lastCoveredAddresses) {
-				Decoration.showCodeCoverage(Z80UnitTests.lastCoveredAddresses);
-				Z80UnitTests.lastCoveredAddresses = undefined as any;
+			if (Z80UnitTestRunner.lastCoveredAddresses) {
+				Decoration.showCodeCoverage(Z80UnitTestRunner.lastCoveredAddresses);
+				Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
 			}
 
 			// For reverse debugging.
@@ -1201,16 +1430,16 @@ export class Z80UnitTestRunner extends TestRunner {
 		const projectName = path.basename(Utility.getRootPath());
 		this.unitTestOutput.appendLine('UNITTEST SUMMARY, ' + projectName + ':');
 		this.unitTestOutput.appendLine('Date: ' + new Date().toString() + '\n\n');
-		this.unitTestOutput.appendLine(Z80UnitTests.outputSummary);
+		this.unitTestOutput.appendLine(Z80UnitTestRunner.outputSummary);
 
-		const color = (Z80UnitTests.countFailed>0) ? Color.FgRed : Color.FgGreen;
-		const countPassed = Z80UnitTests.countExecuted - Z80UnitTests.countFailed;
+		const color = (Z80UnitTestRunner.countFailed>0) ? Color.FgRed : Color.FgGreen;
+		const countPassed = Z80UnitTestRunner.countExecuted - Z80UnitTestRunner.countFailed;
 		this.unitTestOutput.appendLine('');
-		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTests.countExecuted);
+		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTestRunner.countExecuted);
 		this.unitTestOutput.appendLine('Passed test cases: ' + countPassed);
-		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: '+Z80UnitTests.countFailed));
-		if (Z80UnitTests.countExecuted>0)
-			this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTests.countExecuted) + '% passed.'));
+		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: '+Z80UnitTestRunner.countFailed));
+		if (Z80UnitTestRunner.countExecuted>0)
+			this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTestRunner.countExecuted) + '% passed.'));
 		this.unitTestOutput.appendLine('');
 
 		this.unitTestOutput.appendLine(emphasize);

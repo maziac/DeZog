@@ -84,39 +84,101 @@ For each found test case label a test case is returned to vscode.
 
 ~~~puml
 hide footbox
-title Continue
 participant vscode as "vscode\nTestController"
-participant TestRunner
+'participant TestRunner
 participant Z80UnitTestRunner
+participant FWlaunch as "FileWatcher\nlaunch.json"
+participant FWlist as "FileWatcher\nsld/list files"
 'participant DebugAdapter
 participant Remote
 
 == Init ==
-note over Z80UnitTestRunner: watch for launch.json document\nor file changes
-vscode <- Z80UnitTestRunner: createFileSystemWatcher
-vscode <- Z80UnitTestRunner: onDidOpen/ChangeTextDocument
+vscode <- Z80UnitTestRunner: createTestController
+
+== First opening test cases ==
+vscode -> Z80UnitTestRunner: resolveTests
+note over Z80UnitTestRunner: watch for launch.json file changes
+loop All workspaces
+     vscode <- Z80UnitTestRunner: createTestItem (suite)
+     Z80UnitTestRunner -> FWlaunch: constructor
+     activate FWlaunch
+     Z80UnitTestRunner -> FWlaunch: start('launch.json')
+end
 
 == Idle ==
-alt launch.json document/file changed
-     alt launch.json file changed
-          vscode -> Z80UnitTestRunner: launchJsonFileChanged
-     end
-     vscode -> Z80UnitTestRunner: launchJsonDocumentChanged
+alt launch.json file changed
+     FWlaunch -> Z80UnitTestRunner: launch,json file changed
      note over Z80UnitTestRunner: Read launch.json\nand get sld/list\nfiles
      note over Z80UnitTestRunner: watch for sld/list document\nor file changes
-     vscode <- Z80UnitTestRunner: createFileSystemWatcher
-     vscode <- Z80UnitTestRunner: onDidOpen/ChangeTextDocument
+     loop All sld/list files
+          vscode <- Z80UnitTestRunner: createTestItem (suite)
+          Z80UnitTestRunner -> FWlist: constructor
+          activate FWlist
+          Z80UnitTestRunner -> FWlist: start(sld/list files)
+     end
 end
 
-alt sld/list document or file changed
-     alt sld/list file changed
-          vscode -> Z80UnitTestRunner: sldListFileChanged
+alt sld/list file changed
+     FWlist -> Z80UnitTestRunner: sld/list file changed
+     note over Z80UnitTestRunner: Generate labels
+     note over Z80UnitTestRunner: Obtain the Unit Test labels
+     Z80UnitTestRunner -> Remote: ???
+     Z80UnitTestRunner <-- Remote: ???
+     vscode <- Z80UnitTestRunner: createTestItem(sdl/list file)\nparent item
+     loop Over all Unit Test labels
+          note over Z80UnitTestRunner: Create test items
+          vscode <- Z80UnitTestRunner: createTestItem(label)
      end
-     vscode -> Z80UnitTestRunner: sldListDocumentChanged
-     note over Z80UnitTestRunner: Read launch.json\nand the sld/list files
-     note over Z80UnitTestRunner: Obtain the Unit Test labels\nand create test items
-     vscode <- Z80UnitTestRunner: createTestItem
 end
+~~~
+
+
+~~~puml
+title Deletion of launch.json
+hide footbox
+participant vscode as "vscode\nTestController"
+'participant TestRunner
+participant Z80UnitTestRunner
+participant FWlaunch as "FileWatcher\nlaunch.json"
+participant FWlist as "FileWatcher\nsld/list files"
+'participant DebugAdapter
+'participant Remote
+
+activate FWlaunch
+activate FWlist
+
+Z80UnitTestRunner <- FWlaunch: file deleted
+Z80UnitTestRunner -> FWlist: dispose
+deactivate FWlist
+
+note over Z80UnitTestRunner: Delete parent\ntest items
+loop All sld/list files
+     Z80UnitTestRunner -> vscode: items.delete\n(sld/list files)
+~~~
+
+
+~~~puml
+title Deletion of sld/list file
+hide footbox
+participant vscode as "vscode\nTestController"
+'participant TestRunner
+participant Z80UnitTestRunner
+participant FWlaunch as "FileWatcher\nlaunch.json"
+participant FWlist as "FileWatcher\nsld/list files"
+'participant DebugAdapter
+'participant Remote
+
+activate FWlaunch
+activate FWlist
+
+Z80UnitTestRunner <- FWlist: file deleted
+Z80UnitTestRunner -> FWlist: dispose
+vscode <- Z80UnitTestRunner: delete test items (files)
+deactivate FWlist
+
+note over Z80UnitTestRunner: Delete parent\ntest items
+loop All sld/list files
+     Z80UnitTestRunner -> vscode: items.delete\n(sld/list file)
 ~~~
 
 
@@ -129,7 +191,7 @@ Either in Run or in Debug mode.
 hide footbox
 title Continue
 participant vscode as "vscode\nTestController"
-participant TestRunner
+'participant TestRunner
 participant Z80UnitTestRunner
 participant runItem
 'participant DebugAdapter
@@ -141,6 +203,11 @@ note over Z80UnitTestRunner: create profiles for Run and Debug
 vscode <- Z80UnitTestRunner: createRunProfile('Run')
 vscode <- Z80UnitTestRunner: createRunProfile('Debug')
 
+Z80UnitTestRunner -> Remote: terminate
+note over Z80UnitTestRunner: Settings.Init\nLabels.init
+Z80UnitTestRunner -> Remote: readListFiles
+Z80UnitTestRunner <- Remote: initialized
+
 == Test Case started by User ==
 alt Run profile
      vscode -> Z80UnitTestRunner: testRunHandler(TestItem[])
@@ -150,6 +217,13 @@ alt Run profile
      loop testItem : TestItem[]
      Z80UnitTestRunner -> runItem: started(testItem)
      Z80UnitTestRunner -> Z80UnitTestRunner: runTestCase(testItem)
+
+     Z80UnitTestRunner -> Z80UnitTestRunner: execAddr
+     Z80UnitTestRunner -> Z80UnitTestRunner: RemoteContinue
+     Z80UnitTestRunner -> Remote: continue
+     Z80UnitTestRunner <-- Remote
+     Z80UnitTestRunner -> Z80UnitTestRunner: onBreak
+
      Z80UnitTestRunner -> runItem: passed/failed(testItem)
      vscode <- runItem: update UI
 end
