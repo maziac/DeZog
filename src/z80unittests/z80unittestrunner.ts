@@ -183,8 +183,6 @@ export class RootTestSuite extends UnitTestSuite {
 			const wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
 			// Start file watcher on launch.json
 			wsSuite.addFileWatcher();
-			// Call once initially
-			wsSuite.fileChanged();
 			// Add
 			this.addChild(wsSuite);
 		}
@@ -366,9 +364,6 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 					this.fileChanged();
 				});
 			}
-
-			// Create sub items once
-			this.delayedFileChanged();
 		}
 		catch (e) {
 			// Ignore, e.g. errors in launch.json

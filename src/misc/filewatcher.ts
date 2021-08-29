@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
+import {existsSync} from 'fs';
 
 
 /**
  * This class handles file changes.
- * Some entity can register for a certain file glob and is informed on any change of the file.
+ * Some entity can register for a certain file and is informed on any change of the file.
  * I.e. observed changes are:
  * - onDidCreate (file)
  * - onDidChange (file)
@@ -12,7 +13,7 @@ import * as vscode from 'vscode';
  * Usage:
  * ~~~
  * const fw = new FileWatcher();
- * fw.start('*.js', (filePath: string, deleted: boolean) => {
+ * fw.start('/.../launch.json', (filePath: string, deleted: boolean) => {
  *    ...
  * });
  * ...
@@ -22,7 +23,7 @@ import * as vscode from 'vscode';
 export class FileWatcher extends vscode.Disposable {
 
 	// Pointer to the watcher. Required only for disposable.
-	protected watchers: vscode.FileSystemWatcher[];
+	protected watcher: vscode.FileSystemWatcher;
 
 
 	/**
@@ -31,47 +32,30 @@ export class FileWatcher extends vscode.Disposable {
 	 */
 	constructor() {
 		super(() => {
-			this.watchers.forEach(watcher => watcher.dispose())
+			this.watcher.dispose();
 		});
 	}
 
 
 	/**
 	 * Starts watching.
-	 * @param filePattern E.g .'**​/*.ut.js'
+	 * @param fileName Absolute filename, e.g. '/.../launch.json'
 	 * @param fileChanged A function that is called when a file is created, changed or deleted.
 	 */
-	public start(filePattern: string, fileChanged: (filePath: string, deleted: boolean) => void) {
-		// Handle the case of no open folders
-		if (!vscode.workspace.workspaceFolders) {
-			const emptyArray: vscode.FileSystemWatcher[] = [];
-			return new Promise<vscode.FileSystemWatcher[]>(resolve => emptyArray);
-		}
+	public start(fileName: string, fileChanged: (filePath: string, deleted: boolean) => void) {
+		this.watcher = vscode.workspace.createFileSystemWatcher(fileName);
 
+			// When files are created
+		this.watcher.onDidCreate(uri => fileChanged(uri.fsPath, false));
 
-		return Promise.all(
-			// Loop over all workspace folders (in case of multiroot)
-			vscode.workspace.workspaceFolders?.map(async workspaceFolder => {
-				const pattern = new vscode.RelativePattern(workspaceFolder, filePattern);
-				const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+			// When files do change
+		this.watcher.onDidChange(uri => fileChanged(uri.fsPath, false));
 
-				// When files are created
-				watcher.onDidCreate(uri => fileChanged(uri.fsPath, false));
+			// When files are deleted
+		this.watcher.onDidDelete(uri => fileChanged(uri.fsPath, true));// TODO: Need to test that on each new creation of sld file a delete occurs beforehand. Otherwise the detection of deleted test cases becomes more difficult.
 
-				// When files do change
-				watcher.onDidChange(uri => fileChanged(uri.fsPath, false));
-
-				// When files are deleted
-				watcher.onDidDelete(uri => fileChanged(uri.fsPath, true));// TODO: Need to test that on each new creation of sld file a delete occurs beforehand. Otherwise the detection of deleted test cases becomes more difficult.
-
-				// Now initially scan all files
-				for (const uri of await vscode.workspace.findFiles(pattern)) {
-					fileChanged(uri.fsPath, false);
-				}
-
-				this.watchers.push(watcher);
-				return watcher;
-			})
-		);
+		// Check if file exists and call the fileChanged function initially
+		if (existsSync(fileName))
+			fileChanged(fileName, false);
 	}
 }
