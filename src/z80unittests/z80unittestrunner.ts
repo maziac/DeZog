@@ -130,6 +130,9 @@ export class RootTestSuite extends UnitTestSuite {
 	// The singleton instance
 	protected static singleton: RootTestSuite;
 
+	// A map that remembers the workspaces/launch json associations
+	protected wsTsMap: Map<string, UnitTestSuiteLaunchJson>;
+
 
 	/**
 	 * Init the test controller and listen for all files.
@@ -144,6 +147,8 @@ export class RootTestSuite extends UnitTestSuite {
 	 */
 	constructor() {
 		super(undefined as any, undefined as any);
+		// A map that remembers the workspaces
+		this.wsTsMap = new Map<string, UnitTestSuiteLaunchJson>();
 		// Create dezog test controller
 		UnitTestCaseB.controller = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -172,19 +177,41 @@ export class RootTestSuite extends UnitTestSuite {
 			return;
 
 		// Init
-		// TODO: think about disposing the file watchers
 		this.children = [];	// just in case
 
 		// Loop over all workspaces
-		// TODO: test what happens if a new workspace was added. Most probably the resolveTests is not called!
-		for (const ws of vscode.workspace.workspaceFolders) {
+		this.addWorkspaces(vscode.workspace.workspaceFolders);
+
+		// And observe changes to the workspace
+		vscode.workspace.onDidChangeWorkspaceFolders(e => {
+			// Add workspaces
+			this.addWorkspaces(e.added);
+			// Remove workspaces
+			for (const ws of e.removed) {
+				const wsFolder = ws.uri.fsPath;
+				const tsSuite = this.wsTsMap.get(wsFolder)!;
+				tsSuite.delete();	// And dispose
+				this.wsTsMap.delete(wsFolder);
+			}
+		});
+	}
+
+
+	/**
+	 * Add workspaces.
+	 * @param workspaces A list of workspaces to watch.
+	 */
+	protected addWorkspaces(workspaces: readonly vscode.WorkspaceFolder[], ) {
+		for (const ws of workspaces) {
 			// Retrieve all unit test configs
 			const wsFolder = ws.uri.fsPath;
 			const wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
 			// Start file watcher on launch.json
 			wsSuite.addFileWatcher();
-			// Add
+			// Add child
 			this.addChild(wsSuite);
+			// Remember test suite
+			this.wsTsMap.set(wsFolder, wsSuite);
 		}
 	}
 
