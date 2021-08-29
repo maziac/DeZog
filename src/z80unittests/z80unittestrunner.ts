@@ -149,7 +149,9 @@ export class RootTestSuite extends UnitTestSuite {
 			'maziac.dezog.z80unittest.controller',
 			'Z80 Unit Tests'
 		);
-		UnitTestCaseB.controller.resolveHandler = this.resolveTests;
+		UnitTestCaseB.controller.resolveHandler = (testItem) => {
+			this.resolveTests(testItem);
+		}
 	}
 
 
@@ -163,7 +165,7 @@ export class RootTestSuite extends UnitTestSuite {
 	 * If there are changes to the tet cases it will be handled by the file watchers.
 	 * @param testItem If undefined create all test cases. Otherwise do nothing.
 	 */
-	protected resolveTests(testItem: vscode.TestItem) {
+	protected resolveTests(testItem: vscode.TestItem|undefined) {
 		if (testItem)
 			return;
 		if (!vscode.workspace.workspaceFolders)
@@ -183,6 +185,8 @@ export class RootTestSuite extends UnitTestSuite {
 			wsSuite.addFileWatcher();
 			// Call once initially
 			wsSuite.fileChanged();
+			// Add
+			this.addChild(wsSuite);
 		}
 	}
 
@@ -344,7 +348,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	constructor(wsFolder: string, config: any) {
 		super(wsFolder + '#' + config.name, config.name);
 		this.wsFolder = wsFolder;
-		this.config = config;
+		this.config = Settings.Init(config, wsFolder);
 		this.fileWatchers = [];
 
 		// Read launch.json
@@ -404,7 +408,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	public delayedFileChanged() {
 		// Remove old structures (+ children)
 		this.deleteChildren();
-		this.parent?.testItem.children.delete(this.testItem.id);
+		//this.parent?.testItem.children.delete(this.testItem.id);
 
 		// Read labels from sld/list file
 		const labels = new LabelsClass();
@@ -423,7 +427,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 		const map = this.convertLabelsToMap(utLabels);
 
 		// Convert into test suite/cases
-		this.createTestSuite(map, this.config.name, this);
+		this.createTestSuite(map, '');
 	}
 
 
@@ -433,18 +437,24 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param map A map of maps. An entry with a map of length 0 is a leaf,
 	 * i.e. a test case. Others are test suites.
 	 */
-	protected createTestSuite(map: Map<string, any>, name: string, parent: UnitTestSuite) {
-		const fullId = parent.testItem.id + '.' + name;
+	protected createTestSuite(map: Map<string, any>, name: string, parent?: UnitTestSuite) {
 		// Check if test suite or test case
 		let testItem;
-		if (map.size == 0) {
-			// It has no children, it is a leaf, i.e. a test case
-			testItem = new UnitTestCaseB(fullId, name);
+		if (parent) {
+			const fullId = parent.testItem.id + '.' + name;
+			if (map.size == 0) {
+				// It has no children, it is a leaf, i.e. a test case
+				testItem = new UnitTestCaseB(fullId, name);
+			}
+			else {
+				testItem = new UnitTestSuite(fullId, name);
+			}
+			parent.addChild(testItem);
 		}
 		else {
-			testItem = new UnitTestSuite(fullId, name);
+			// Root
+			testItem = this;
 		}
-		parent.addChild(testItem);
 		for (const [key, childMap] of map) {
 			this.createTestSuite(childMap, key, testItem);
 		}

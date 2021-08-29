@@ -469,6 +469,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Save args
 			Settings.Init(args, rootFolder);
+			Settings.launch = args;
 			Settings.CheckSettings();
 
 			// Persistent variable references
