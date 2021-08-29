@@ -13,7 +13,7 @@ import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import * as path from 'path';
-import {TestRunner} from './testrunner';
+//import {TestRunner} from './testrunner';
 import {FileWatcher} from '../misc/filewatcher';
 import {UnifiedPath} from '../misc/unifiedpath';
 
@@ -42,11 +42,9 @@ class UnitTestCaseB {	// TODO: rename
 	/**
 	 * Constructor.
 	 */
-	constructor(testItem: vscode.TestItem, parent: UnitTestSuite) {
-		this.testItem = testItem;
-		if (parent) {
-			parent.addChild(this);
-		}
+	constructor(id: string, label: string) {
+		if(id)
+			this.testItem = UnitTestCaseB.controller.createTestItem(id, label);
 	}
 
 
@@ -71,8 +69,9 @@ class UnitTestSuite extends UnitTestCaseB {
 	/**
 	 * Constructor.
 	 */
-	constructor(testItem: vscode.TestItem, parent: UnitTestSuite) {
-		super(testItem, parent);
+
+	constructor(id: string, label: string) {
+		super(id, label);
 		this.children = [];
 	}
 
@@ -105,11 +104,20 @@ class UnitTestSuite extends UnitTestCaseB {
 	 */
 	public delete() {
 		super.delete();
+		this.deleteChildren();
+	}
+
+	/**
+	 * Deletes all children.
+	 * Calls delete on each child.
+	 */
+	public deleteChildren() {
 		// Delete children
 		for (const child of this.children) {
 			child.parent = undefined;
 			child.delete();
 		}
+		this.children = [];
 	}
 }
 
@@ -118,14 +126,26 @@ class UnitTestSuite extends UnitTestCaseB {
  * The root test suite. Used to hold all other test suites.
  * Is associated with a test controller but not with a test item.
  */
-class RootTestSuite extends UnitTestSuite {
+export class RootTestSuite extends UnitTestSuite {
+	// The singleton instance
+	protected static singleton: RootTestSuite;
+
+
+	/**
+	 * Init the test controller and listen for all files.
+	 */
+	public static Init() {
+		this.singleton = new RootTestSuite();
+	}
+
+
 	/**
 	 * Constructor.
 	 */
 	constructor() {
 		super(undefined as any, undefined as any);
 		// Create dezog test controller
-		this.controller = vscode.tests.createTestController(
+		UnitTestCaseB.controller = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
 			'Z80 Unit Tests'
 		);
@@ -158,9 +178,7 @@ class RootTestSuite extends UnitTestSuite {
 		for (const ws of vscode.workspace.workspaceFolders) {
 			// Retrieve all unit test configs
 			const wsFolder = ws.uri.fsPath;
-			// Create test item for workspace
-			const testWorkspace = this.controller.createTestItem(wsFolder, UnifiedPath.basename(wsFolder));
-			const wsSuite = new UnitTestSuiteLaunchJson(testWorkspace, this);
+			const wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
 			// Start file watcher on launch.json
 			wsSuite.addFileWatcher();
 			// Call once initially
@@ -198,8 +216,33 @@ class RootTestSuite extends UnitTestSuite {
  * and especially the launch.json file.
  */
 class UnitTestSuiteLaunchJson extends UnitTestSuite {
+	// The path to the workspace.
+	protected wsFolder: string;
+
 	// Pointer to an optional file watcher.
 	public fileWatcher?: FileWatcher;
+
+
+	/**
+	 * Constructor.
+	 * @param wsFolder Workspace folder
+	 */
+
+	constructor(wsFolder: string, label: string) {
+		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label);
+		this.wsFolder = wsFolder;
+	}
+
+
+	/**
+	 * Delete a test item and it's children.
+	 * Removes the file watcher.
+	 */
+	public delete() {
+		super.delete();
+		// Delete file watcher
+		this.fileWatcher?.dispose();
+	}
 
 
 	/**
@@ -225,12 +268,8 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 * Call if launch.json file has been changed.
 	 */
 	public fileChanged() {
-		// Get workspace folder from launch.json path
-		const wsFolder = UnifiedPath.resolve(UnifiedPath.dirname(this.testItem.id), '..');
-
-		// Get parent test item
-		const testWorkspace = this.testItems.get(wsFolder)!;
-		Utility.assert(testWorkspace);
+		// Delete all children
+		this.deleteChildren();
 
 		// Read launch.json
 		try {
@@ -241,13 +280,91 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 			// Loop over all unit test launch configs (usually 1)
 			for (const config of configs) {
 				// Create new test item
-				const configId = wsFolder + '#' + config.name;
-				const vscodeTestConfig = UnitTestCaseB.controller.createTestItem(configId, config.name);
-				const testConfig = new UnitTestSuiteConfig(vscodeTestConfig, config);
+				const testConfig = new UnitTestSuiteConfig(this.wsFolder, config);
 				this.addChild(testConfig);
-				// Create sub childs
-				testConfig.createChildren();
+				// Create sub children
+				testConfig.delayedFileChanged();
 			}
+		}
+		catch (e) {
+			// Ignore, e.g. errors in launch.json
+		}
+	}
+
+
+	/**
+	 * Returns the unit tests launch configurations. I.e. the configuration
+	 * from .vscode/launch.json with property unitTests set to true.
+	 * @param launchJsonPath The absolute path to the .vscode/launch.json file.
+	 * @returns Array of unit test configs or empty array.
+	 * Throws an exception if launch.json cannot be parsed. Or if file does not exist.
+	 */
+	protected getUnitTestsLaunchConfigs(launchJsonPath: string): any {
+		const launchData = readFileSync(launchJsonPath, 'utf8');
+		const parseErrors: jsonc.ParseError[] = [];
+		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
+
+		// Check for error
+		if (parseErrors.length > 0) {
+			// Error
+			throw Error("Parse error while reading " + launchJsonPath + ".");
+		}
+
+		// Find the right configurations
+		const configurations = launch.configurations.filter(config => config.unitTests);
+
+		return configurations;
+	}
+
+}
+
+
+/**
+ * Extends the base class with functionality for handling launch.json configs.
+ */
+class UnitTestSuiteConfig extends UnitTestSuite {
+	// The workspace folder.
+	protected wsFolder: string;
+
+	// Pointer to the launch.json config
+	protected config: any;
+
+	// A file watcher for each sld/list file.
+	protected fileWatchers: FileWatcher[];
+
+	// Timer for "debouncing"
+	protected timerId: NodeJS.Timeout;
+
+
+	/**
+	 * Constructor.
+	 * @param wsFolder Workspace folder.
+	 * @param config launch.json configuration.
+	 */
+	constructor(wsFolder: string, config: any) {
+		super(wsFolder + '#' + config.name, config.name);
+		this.wsFolder = wsFolder;
+		this.config = config;
+		this.fileWatchers = [];
+
+		// Read launch.json
+		try {
+			// Get all list files
+			const listFiles = Settings.GetAllAssemblerListFiles(this.config);
+
+			// Loop over all list files
+			for (const listFile of listFiles) {
+				// Create a new file watcher
+				const fw = new FileWatcher();
+				this.fileWatchers.push(fw);
+				const filePath = UnifiedPath.join(this.wsFolder, listFile.path);
+				fw.start(filePath, () => {
+					this.fileChanged();
+				});
+			}
+
+			// Create sub items once
+			this.delayedFileChanged();
 		}
 		catch (e) {
 			// Ignore, e.g. errors in launch.json
@@ -261,170 +378,132 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 	public delete() {
 		super.delete();
-		// Delete file watcher
-		this.fileWatcher?.dispose();
-	}
-}
-
-
-/**
- * Extends the base class with functionality for handling launch.json configs.
- */
-class UnitTestSuiteConfig extends UnitTestSuite {
-	// Pointer to the launch.json config
-	protected config: any;
-
-
-	/**
-	 * Constructor.
-	 */
-	constructor(testItem: vscode.TestItem, config: any) {
-		super(testItem);
-		this.config = config;
+		// Delete file watchers
+		this.fileWatchers.forEach(element => element.dispose());
 	}
 
 
 	/**
-	 * Checks for the sld/list files for the configuration
-	 * and creates a child for each file.
+	 * Called if a sld/list file changes.
+	 * Start a timer to wait for other file changes (changes of other list files).
 	 */
-	public createChildren() {
-		// Get workspace folder from launch.json path
-		const wsFolder = UnifiedPath.resolve(UnifiedPath.dirname(this.testItem.id), '..');
-
-		// Get parent test item
-		const testWorkspace = this.testItems.get(wsFolder)!;
-		Utility.assert(testWorkspace);
-
-		// Read launch.json
-		try {
-			// Get all list files
-			const listFiles = Settings.GetAllAssemblerListFiles(this.config);
-
-			// Loop over all list files
-			for (const listFile of listFiles) {
-				// Create new test item
-				const filePath = UnifiedPath.join(wsFolder, listFile.path);
-				const testSuite = new UnitTestSuiteListFile(filePath);
-				this.addChild(testSuite);
-				// Create sub childs
-				testSuite.fileChanged();
-			}
-		}
-		catch (e) {
-			// Ignore, e.g. errors in launch.json
-		}
-	}
-}
-
-
-
-/**
- * Special handling for sl/list files.
- */
-class UnitTestSuiteListFile extends UnitTestSuiteLaunchJson {
-	// The absolute path to the sld/list file.
-	protected filePath: string;
-
-	// The path to the workspace.
-	protected workspace: string;
-
-
-	/**
-	 * Constructor.
-	 */
-	constructor(testItem: vscode.TestItem, filePath: string, workspace: string) {
-		super(filePath, Utility.getRelFilePath(filePath));
-		this.filePath = filePath;
-		this.workspace = workspace;
+	protected fileChanged() {
+		// "Debounce" with a timer in case several files are touched at the same time.
+		clearTimeout(this.timerId);
+		this.timerId = setTimeout(() => {
+			this.delayedFileChanged();
+		}, 1000);
 	}
 
 
 	/**
-	 * Called if sld/list file has been changed.
+	 * Called if a sld/list file changed and no change happened for 1 second.
+	 * Creates labels from the list files.
+	 * From the UT-labels test suites and test cases are created.
 	 */
-	public fileChanged() {
-		// Get parent test item
-		const testFile = this.testItems.get(filePath)!;
-		Utility.assert(testFile);
-		// Get context
-		const context = this.listFileContexts.get(filePath);
-		Utility.setRootPath(context.wsFolder);
+	public delayedFileChanged() {
+		// Remove old structures (+ children)
+		this.deleteChildren();
+		this.parent?.testItem.children.delete(this.testItem.id);
+
 		// Read labels from sld/list file
 		const labels = new LabelsClass();
-		// Now parse for Unit test labels, i.e. starting with "UT_"
-		const utLabels = this.getAllUtLabels(labels);
-		// Create an test item for each unit test
-		for (const utLabel of utLabels) {
-			const id = filePathWith + utLabel.label;
-			let testItem = this.testItems.get(id);
-			if (testItem) {
-				// Remove from removable list
-				removeFiles.delete(id);
-			}
-			else {
-				// Create new test item
-				testItem = this.controller.createTestItem(id, utLabel.label);
-				testFile.children.add(testFile);
-				this.testItems.set(id, testItem);
-			}
-			// TODO: Add hierarchy of the test items
-		}
-
-
-
-
-		const filePath = UnifiedPath.join(wsFolder, listFile.path);
-		// Create test item for file
-		let testFile = this.testItems.get(filePath);
-		if (testFile) {
-			// Remove from removable list
-			removeFiles.delete(filePath);
-		}
-		else {
-			// Create new test item
-			const idFile = filePath;
-			testFile = this.controller.createTestItem(idFile, Utility.getRelFilePath(filePath));
-			testWorkspace.children.add(testFile);
-			this.testItems.set(idFile, testFile);
-		}
-		// Watch for list file
-		const fwListFile = new FileWatcher();
-		fwListFile.start(filePath, this.listFileChanged);
-		// Call once initially
-		this.listFileChanged(filePath);
-
-
-		// Get workspace folder from launch.json path
-		const wsFolder = UnifiedPath.resolve(UnifiedPath.dirname(this.testItem.id), '..');
-
-		// Get parent test item
-		const testWorkspace = this.testItems.get(wsFolder)!;
-		Utility.assert(testWorkspace);
-
-		// Read launch.json
+		Utility.setRootPath(this.wsFolder);
 		try {
-			// Get launch configs
-			const launchJsonPath = this.testItem.id;
-			const configs = this.getUnitTestsLaunchConfigs(launchJsonPath);
-
-			// Loop over all unit test launch configs (usually 1)
-			for (const config of configs) {
-				// Create new test item
-				const configId = wsFolder + '#' + config.name;
-				const vscodeTestConfig = UnitTestCaseB.controller.createTestItem(configId, config.name);
-				const testConfig = new UnitTestSuiteConfig(vscodeTestConfig, config);
-				this.addChild(testConfig);
-				// Create sub childs
-				testConfig.createChildren();
-			}
+			labels.readListFiles(this.config);
 		}
 		catch (e) {
-			// Ignore, e.g. errors in launch.json
+			console.log(e);
+			throw e;
 		}
+		// Now parse for Unit test labels, i.e. starting with "UT_"
+		const utLabels = this.getAllUtLabels(labels);
 
+		// Convert labels into intermediate map
+		const map = this.convertLabelsToMap(utLabels);
+
+		// Convert into test suite/cases
+		this.createTestSuite(map, this.config.name, this);
 	}
+
+
+	/**
+	 * Create a test suite object from the given map.
+	 * Calls itself recursively.
+	 * @param map A map of maps. An entry with a map of length 0 is a leaf,
+	 * i.e. a test case. Others are test suites.
+	 */
+	protected createTestSuite(map: Map<string, any>, name: string, parent: UnitTestSuite) {
+		const fullId = parent.testItem.id + '.' + name;
+		// Check if test suite or test case
+		let testItem;
+		if (map.size == 0) {
+			// It has no children, it is a leaf, i.e. a test case
+			testItem = new UnitTestCaseB(fullId, name);
+		}
+		else {
+			testItem = new UnitTestSuite(fullId, name);
+		}
+		parent.addChild(testItem);
+		for (const [key, childMap] of map) {
+			this.createTestSuite(childMap, key, testItem);
+		}
+	}
+
+
+	/**
+	 * Returns all labels that start with "UT_".
+	 * @returns An array with label names.
+	 */
+	protected getAllUtLabels(labels: LabelsClass): UnitTestCase[] {
+		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
+		// Convert to filenames and line numbers.
+		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
+			const location = labels.getLocationOfLabel(label)!
+			Utility.assert(location, "'getAllUtLabels'");
+			return {label, file: Utility.getAbsFilePath(location.file), line: location.lineNr};
+		});
+		return labelFilesLines;
+	}
+
+
+	/**
+	 * Function that converts the string labels in a test suite map structure.
+	 * @param lblLocations List of unit test labels.
+	 */
+	protected convertLabelsToMap(lblLocations: UnitTestCase[]): Map<string, any> {
+		const labels = lblLocations.map(lblLoc => lblLoc.label);
+		const labelMap = new Map<string, any>();
+		for (const label of labels) {
+			const parts = label.split('.');
+			let map = labelMap;
+			// E.g. "ut_string" "UTT_byte_to_string"
+			for (const part of parts) {
+				// Check if entry exists
+				let nextMap = map.get(part);
+				// Check if already existent
+				if (!nextMap) {
+					// Create entry
+					nextMap = new Map<string, any>();
+					map.set(part, nextMap);
+				}
+				// Next
+				map = nextMap;
+			}
+		}
+		/*
+		// Note: an entry with a map of length 0 is a leaf, i.e. a testcase. Others are test suites.
+		if (labelMap.size == 0) {
+			// Return an empty suite
+			return undefined;
+		}
+		*/
+		return labelMap;
+	}
+
 }
+
+
 
 
 
@@ -497,7 +576,7 @@ export interface UnitTestCase {
  * 3. Manipulates memory and PC register to call a specific unit test.
  * 4. Loops over all found unit tests.
  */
-export class Z80UnitTestRunner extends TestRunner {
+export class Z80UnitTestRunner {
 	/// This array will contain the names of all UT test cases.
 	protected static utLabels: Array<string>;
 
@@ -580,166 +659,6 @@ export class Z80UnitTestRunner extends TestRunner {
 	protected static rootSuite: UnitTestSuite;
 
 
-	/**
-	 * Called whenever the launch.json file has changed on disk.
-	 * @param filePath Absolute fie path.
-	 * @param deleted If true the file has been deleted.
-	 */
-	protected static launchJsonFileChanged(filePath: string, deleted = false) {
-		// Get workspace folder from launch.json path
-		const wsFolder = UnifiedPath.resolve(UnifiedPath.dirname(filePath), '..');
-		// Get all previous test items
-		const wsFolderWith = wsFolder + '/';
-		const removeFiles = new Set([...this.testItems.keys()].filter(id => id.startsWith(wsFolderWith)));
-
-		// Get parent test item
-		const testWorkspace = this.testItems.get(wsFolder)!;
-		Utility.assert(testWorkspace);
-
-		// Read launch.json
-		if (!deleted) {
-			try {
-				// Get launch configs
-				const configs = this.getUnitTestsLaunchConfigs(filePath);
-				// Loop over all unit test launch configs (usually 1)
-				for (const config of configs) {
-					// Get all list files
-					const listFiles = Settings.GetAllAssemblerListFiles(config);
-
-					// Loop over all list files
-					for (const listFile of listFiles) {
-						const filePath = UnifiedPath.join(wsFolder, listFile.path);
-						// Create test item for file
-						let testFile = this.testItems.get(filePath);
-						if (testFile) {
-							// Remove from removable list
-							removeFiles.delete(filePath);
-						}
-						else {
-							// Create new test item
-							const idFile = filePath;
-							testFile = this.controller.createTestItem(idFile, Utility.getRelFilePath(filePath));
-							testWorkspace.children.add(testFile);
-							this.testItems.set(idFile, testFile);
-						}
-						// Watch for list file
-						const fwListFile = new FileWatcher();
-						fwListFile.start(filePath, this.listFileChanged);
-						// Call once initially
-						this.listFileChanged(filePath);
-					}
-				}
-			}
-			catch (e) {
-				// Ignore, e.g. errors in launch.json
-			}
-		}
-
-		// If launch.json was deleted remove file watchers
-		for (const filePath of removeFiles) {
-			// REmove file watcher
-			const fw = this.fileWatchers.get(filePath)!;
-			Utility.assert(fw);
-			fw.dispose();
-			this.fileWatchers.delete(filePath);
-			// Remove test item
-			testWorkspace.children.delete(filePath);
-			this.listFileContexts.delete(filePath);
-			this.testItems.delete(filePath);
-			// Remove test items (the labels)
-		}
-	}
-
-
-	/**
-	 * Returns the unit tests launch configurations. I.e. the configuration
-	 * from .vscode/launch.json with property unitTests set to true.
-	 * @param launchJsonPath The absolute path to the .vscode/launch.json file.
-	 * @returns Array of unit test configs or empty array.
-	 * Throws an exception if launch.json cannot be parsed. Or if file does not exist.
-	 */
-	protected getUnitTestsLaunchConfigs(launchJsonPath: string): any {
-		const launchData = readFileSync(launchJsonPath, 'utf8');
-		const parseErrors: jsonc.ParseError[] = [];
-		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
-
-		// Check for error
-		if (parseErrors.length > 0) {
-			// Error
-			throw Error("Parse error while reading " + launchJsonPath + ".");
-		}
-
-		// Find the right configuration
-		const configurations: any[] = [];
-		for (const config of launch.configurations) {
-			if (config.unitTests) {
-				// Check if there is already unit test configuration:
-				// Only one is allowed.
-				//if (configuration)
-				//	throw Error("More than one unit test launch configuration //found. Only one is allowed.");
-				//configuration = config;
-				configurations.push(config);
-			}
-		}
-
-		return configurations;
-	}
-
-
-	/**
-	 * Called whenever the sld7list file has changed on disk.
-	 * @param filePath Absolute fie path.
-	 * @param deleted If true the file has been deleted.
-	 */
-	protected static listFileChanged(filePath: string, deleted = false) {
-		// Get all previous test items
-		const filePathWith = filePath + '#';
-		const removeFiles = new Set([...this.testItems.keys()].filter(id => id.startsWith(filePathWith)));
-
-		// Read list file / create labels
-		if (!deleted) {
-			try {
-				// Get parent test item
-				const testFile = this.testItems.get(filePath)!;
-				Utility.assert(testFile);
-				// Get context
-				const context = this.listFileContexts.get(filePath);
-				Utility.setRootPath(context.wsFolder);
-				// Read labels from sld/list file
-				const labels = new LabelsClass();
-				// Now parse for Unit test labels, i.e. starting with "UT_"
-				const utLabels = this.getAllUtLabels(labels);
-				// Create an test item for each unit test
-				for (const utLabel of utLabels) {
-					const id = filePathWith + utLabel.label;
-					let testItem = this.testItems.get(id);
-					if (testItem) {
-						// Remove from removable list
-						removeFiles.delete(id);
-					}
-					else {
-						// Create new test item
-						testItem = this.controller.createTestItem(id, utLabel.label);
-						testFile.children.add(testFile);
-						this.testItems.set(id, testItem);
-					}
-					// TODO: Add hierarchy of the test items
-				}
-			}
-			catch (e) {
-				// Ignore, e.g. errors in launch.json
-				deleted = true;
-			}
-		}
-
-		// If file was deleted remove file watchers
-		for (const filePath of removeFiles) {
-			const fw = this.fileWatchers.get(filePath)!;
-			Utility.assert(fw);
-			fw.dispose();
-			this.fileWatchers.delete(filePath);
-		}
-	}
 
 
 	/**
@@ -867,7 +786,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		this.cancelled = false;
 
 		// Get unit test launch config
-		const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
+		let configuration;//  = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 
 		// Setup settings
 		const rootFolder = Utility.getRootPath();
@@ -1086,7 +1005,7 @@ export class Z80UnitTestRunner extends TestRunner {
 	protected static debugTests() {
 		try {
 			// Get unit test launch config
-			const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
+			let configuration;// = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 			const configName: string = configuration.name;
 
 			// Start debugger
@@ -1140,7 +1059,7 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Set root path
 		Utility.setRootPath(rootFolder);
 
-		const configuration = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
+		let configuration;// = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
 
 		// Setup settings
 		Settings.Init(configuration, rootFolder);
@@ -1186,7 +1105,7 @@ export class Z80UnitTestRunner extends TestRunner {
 			// Check if unit tests available
 			if (Z80UnitTestRunner.AreUnitTestsAvailable(labels)) {
 				// Get the unit test labels
-				allUtLabels = Z80UnitTestRunner.getAllUtLabels(labels);
+		//		allUtLabels = Z80UnitTestRunner.getAllUtLabels(labels);
 			}
 		}
 		catch (e) {
@@ -1632,22 +1551,6 @@ export class Z80UnitTestRunner extends TestRunner {
 		// Inform
 		if (Z80UnitTestRunner.finishedCallback)
 			Z80UnitTestRunner.finishedCallback();
-	}
-
-
-	/**
-	 * Returns all labels that start with "UT_".
-	 * @returns An array with label names.
-	 */
-	protected static getAllUtLabels(labels: LabelsClass): UnitTestCase[] {
-		const utLabels = labels.getLabelsForRegEx('.*\\bUT_\\w*$', '');	// case sensitive
-		// Convert to filenames and line numbers.
-		const labelFilesLines: UnitTestCase[] = utLabels.map(label => {
-			const location = labels.getLocationOfLabel(label)!
-			Utility.assert(location, "'getAllUtLabels'");
-			return {label, file:Utility.getAbsFilePath(location.file), line:location.lineNr};
-		});
-		return labelFilesLines;
 	}
 
 
