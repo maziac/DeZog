@@ -176,9 +176,6 @@ export class RootTestSuite extends UnitTestSuite {
 		if (!vscode.workspace.workspaceFolders)
 			return;
 
-		// Init
-		this.children = [];	// just in case
-
 		// Loop over all workspaces
 		this.addWorkspaces(vscode.workspace.workspaceFolders);
 
@@ -311,8 +308,6 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 				// Create new test item
 				const testConfig = new UnitTestSuiteConfig(this.wsFolder, config);
 				this.addChild(testConfig);
-				// Create sub children
-				testConfig.delayedFileChanged();
 			}
 		}
 		catch (e) {
@@ -386,8 +381,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 				// Create a new file watcher
 				const fw = new FileWatcher();
 				this.fileWatchers.push(fw);
-				const filePath = UnifiedPath.join(this.wsFolder, listFile.path);
-				fw.start(filePath, () => {
+				fw.start(listFile.path, () => {
 					this.fileChanged();
 				});
 			}
@@ -414,11 +408,11 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	 * Start a timer to wait for other file changes (changes of other list files).
 	 */
 	protected fileChanged() {
-		// "Debounce" with a timer in case several files are touched at the same time.
+		// "Debounce" with a timer in case several files are touched at the same time
 		clearTimeout(this.timerId);
 		this.timerId = setTimeout(() => {
 			this.delayedFileChanged();
-		}, 1000);
+		}, 200);
 	}
 
 
