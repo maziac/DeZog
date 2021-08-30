@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.3.2
+- Fixed #69: No code coverage on Windows.
+
 # 2.3.1
 - Fixed #65: Uncaught errors.
 
