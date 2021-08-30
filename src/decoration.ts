@@ -3,6 +3,7 @@ import {Labels, SourceFileEntry} from './labels/labels';
 //import {Log} from './log';
 //import { Settings } from './settings';
 import {Disassembly, DisassemblyClass} from './misc/disassembly';
+import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 
 
@@ -301,7 +302,7 @@ export class DecorationClass {
 	 */
 	protected setDecorations(editor: vscode.TextEditor, fileMapName: string) {
 		// Get filename
-		const edFilename = editor.document.fileName;
+		const edFilename = UnifiedPath.getUnifiedPath(editor.document.fileName);
 
 		// Special case for disassembly file and coverage.
 		if (fileMapName == this.COVERAGE) {
