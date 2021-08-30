@@ -29,9 +29,6 @@ import {UnifiedPath} from '../misc/unifiedpath';
  * plus the rootSuite which is a suite without parent and testItem references.
  */
 class UnitTestCaseB {	// TODO: rename
-	// Pointer to the test controller.
-	protected static controller: vscode.TestController;
-
 	// Pointer to the parent test item (suite).
 	//public parent?: UnitTestSuite;
 
@@ -44,7 +41,7 @@ class UnitTestCaseB {	// TODO: rename
 	 */
 	constructor(id: string, label: string) {
 		if(id)
-			this.testItem = UnitTestCaseB.controller.createTestItem(id, label);
+			this.testItem = RootTestSuite.testController.createTestItem(id, label);
 	}
 
 
@@ -130,8 +127,8 @@ class UnitTestSuite extends UnitTestCaseB {
  * Is associated with a test controller but not with a test item.
  */
 export class RootTestSuite extends UnitTestSuite {
-	// The singleton instance
-	protected static singleton: RootTestSuite;
+	// Pointer to the test controller.
+	public static testController: vscode.TestController;
 
 	// A map that remembers the workspaces/launch json associations
 	protected wsTsMap: Map<string, UnitTestSuiteLaunchJson>;
@@ -141,27 +138,15 @@ export class RootTestSuite extends UnitTestSuite {
 
 
 	/**
-	 * Init the test controller and listen for all files.
-	 */
-	public static Init() {
-		this.singleton = new RootTestSuite();
-	}
-
-
-	/**
 	 * Constructor.
 	 */
-	constructor() {
+	constructor(testController: vscode.TestController) {
 		super(undefined as any, undefined as any);
 		// A map that remembers the workspaces
 		this.wsTsMap = new Map<string, UnitTestSuiteLaunchJson>();
 		this.wsFwMap = new Map<string, FileWatcher>();
-		// Create dezog test controller
-		UnitTestCaseB.controller = vscode.tests.createTestController(
-			'maziac.dezog.z80unittest.controller',
-			'Z80 Unit Tests'
-		);
-		UnitTestCaseB.controller.resolveHandler = (testItem) => {
+		RootTestSuite.testController = testController;
+		testController.resolveHandler = (testItem) => {
 			this.resolveTests(testItem);
 		}
 	}
@@ -246,11 +231,9 @@ export class RootTestSuite extends UnitTestSuite {
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
 	public addChild(child: UnitTestCaseB) {
-	//	child.parent?.removeChild(child);
 		this.children.push(child);
-	//	child.parent = this;
 		// Add vscode item
-		UnitTestCaseB.controller.items.add(child.testItem);
+		RootTestSuite.testController.items.add(child.testItem);
 	}
 
 
@@ -261,7 +244,7 @@ export class RootTestSuite extends UnitTestSuite {
 		const reducedList = this.children.filter(item => item != child);
 		this.children = reducedList;
 		// Delete vscode test item
-		UnitTestCaseB.controller.items.delete(child.testItem.id);
+		RootTestSuite.testController.items.delete(child.testItem.id);
 	}
 }
 
@@ -706,18 +689,48 @@ export class Z80UnitTestRunner {
 	// Maps the sld/list files to launch configs.
 	protected static listFileContexts: Map<string, any>;
 
-	// The unit test case root object. It contains the unit test (suite)
-	// hierarchy:
-	// rootSuite
-	// |-- workspacefolder[i]
-	// |   |-- unit test config [j] (from launch.json)
-	// |   |   |-- Unit test label [k1]
-	// |   |-- unit test config [j+1] (from launch.json)
-	// |   |   |-- Unit test label [k2]
-	// |-- workspacefolder[i+1]
-	//     |-- ...
-	protected static rootSuite: UnitTestSuite;
+	// The root of all test cases.
+	protected static rootTestSuite: RootTestSuite;
 
+	// Pointer to the test controller.
+	protected static testController: vscode.TestController;
+
+
+	/**
+	 * Called to initialize the test controller.
+	 */
+	public static Init() {
+		// Create test controller
+		this.testController = vscode.tests.createTestController(
+			'maziac.dezog.z80unittest.controller',
+			'Z80 Unit Tests'
+		);
+		// For test case discovery
+		this.rootTestSuite = new RootTestSuite(this.testController);
+		// Add profiles for test case execution
+		this.testController.createRunProfile('Run', vscode.TestRunProfileKind.Run, (request, token) => {
+			this.runHandler(request, token);
+		});
+
+		this.testController.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, (request, token) => {
+			this.runDebugHandler(request, token);
+		});
+	}
+
+
+	/**
+	 * Runs a test case. (Not debug)
+	 */
+	protected static async runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
+	}
+
+	
+	/**
+	 * Runs a test case. (debug)
+	 */
+	protected static async runDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
+		// TODO
+	}
 
 
 

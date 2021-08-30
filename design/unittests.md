@@ -97,6 +97,7 @@ participant UnitTestCase
 Z80UnitTestRunner -> RootTestSuite: constructor
 activate RootTestSuite
 vscode <- RootTestSuite: createTestController
+activate vscode
 
 == First opening of test cases ==
 vscode -> RootTestSuite: resolveTests(undefined)

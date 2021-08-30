@@ -10,7 +10,7 @@ import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
 import {GlobalStorage} from './globalstorage';
-import {RootTestSuite} from './z80unittests/z80unittestrunner';
+import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 
 /*
 let aa = 1;
@@ -255,9 +255,7 @@ export function activate(context: vscode.ExtensionContext) {
 	DecorationClass.Initialize();
 
 	// Initialize the unit tester.
-	RootTestSuite.Init();
-//	TestRunner.Initialize();
-	//Tester.createTests();
+	Z80UnitTestRunner.Init();
 }
 
 
