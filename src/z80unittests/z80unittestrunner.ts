@@ -33,7 +33,7 @@ class UnitTestCaseB {	// TODO: rename
 	protected static controller: vscode.TestController;
 
 	// Pointer to the parent test item (suite).
-	public parent?: UnitTestSuite;
+	//public parent?: UnitTestSuite;
 
 	// Pointer to the corresponding test item.
 	public testItem: vscode.TestItem;
@@ -53,10 +53,12 @@ class UnitTestCaseB {	// TODO: rename
 	 */
 	public delete() {
 		// Remove from parent
+		/*
 		if (this.parent) {
 			// Delete from parent
 			this.parent.removeChild(this);
 		}
+		*/
 	}
 }
 
@@ -80,9 +82,9 @@ class UnitTestSuite extends UnitTestCaseB {
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
 	public addChild(child: UnitTestCaseB) {
-		child.parent?.removeChild(child);
+	//	child.parent?.removeChild(child);
 		this.children.push(child);
-		child.parent = this;
+	//	child.parent = this;
 		// Add vscode item
 		this.testItem.children.add(child.testItem);
 	}
@@ -114,7 +116,8 @@ class UnitTestSuite extends UnitTestCaseB {
 	public deleteChildren() {
 		// Delete children
 		for (const child of this.children) {
-			child.parent = undefined;
+			//child.parent = undefined;
+			this.testItem.children.delete(child.testItem.id);
 			child.delete();
 		}
 		this.children = [];
@@ -242,9 +245,9 @@ export class RootTestSuite extends UnitTestSuite {
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
 	public addChild(child: UnitTestCaseB) {
-		child.parent?.removeChild(child);
+	//	child.parent?.removeChild(child);
 		this.children.push(child);
-		child.parent = this;
+	//	child.parent = this;
 		// Add vscode item
 		UnitTestCaseB.controller.items.add(child.testItem);
 	}

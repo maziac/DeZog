@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import {existsSync} from 'fs';
+import {Utility} from './utility';
 
 
 /**
@@ -21,6 +22,9 @@ export class FileWatcher extends vscode.Disposable {
 	/// Remembers the file path (just for onDidCreate)
 	protected filePath: string;
 
+	// For debugging: check which file watchers are present.
+	protected static filePaths: string[] = [];	// TODO: Remove after debugging
+
 
 	/**
 	 * Constructor.
@@ -29,9 +33,19 @@ export class FileWatcher extends vscode.Disposable {
 	constructor(filePath: string) {
 		super(() => {
 			this.watcher.dispose();
+			// Remove filepath on dispose
+			for (let k = FileWatcher.filePaths.length - 1; k >= 0; k--) {
+				if (FileWatcher.filePaths[k] == this.filePath) {
+					// Remove
+					FileWatcher.filePaths.splice(k, 1);
+					return;
+				}
+			}
+			Utility.assert(false, "Not found: " + this.filePath);
 		});
 		this.watcher = vscode.workspace.createFileSystemWatcher(filePath);
 		this.filePath = filePath;
+		FileWatcher.filePaths.push(filePath);
 	}
 
 
@@ -40,7 +54,7 @@ export class FileWatcher extends vscode.Disposable {
 	 * And as well if the file exists at this moment.
 	 */
 	public onDidCreate(func) {
-		this.watcher.onDidCreate(() => {
+		this.watcher.onDidCreate((fname) => {
 			func(this.filePath)
 		});
 
@@ -54,7 +68,7 @@ export class FileWatcher extends vscode.Disposable {
 	 * Just route.
 	 */
 	public onDidChange(func) {
-		this.watcher.onDidChange(() => {
+		this.watcher.onDidChange((fname) => {
 			func(this.filePath)
 		});
 	}
@@ -64,7 +78,7 @@ export class FileWatcher extends vscode.Disposable {
 	 * Just route.
 	 */
 	public onDidDelete(func) {
-		this.watcher.onDidDelete(() => {
+		this.watcher.onDidDelete((fname) => {
 			func(this.filePath)
 		});
 	}
