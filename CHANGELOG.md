@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.3.3
+- "startAutomatically=true" is now honored on restart.
+
 # 2.3.2
 - Fixed #69: No code coverage on Windows.
 

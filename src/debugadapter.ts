@@ -416,6 +416,12 @@ export class DebugSessionClass extends DebugSession {
 		await Remote.setLaunchExecAddress();
 		// Respond
 		this.sendResponse(response);
+
+		// Now start if "startAutomatically" is true
+		if (Settings.launch.startAutomatically) {
+			await this.remoteContinue();
+		}
+
 		// Reload PC
 		await this.pcHasBeenChanged();
 		this.sendEvent(new InvalidatedEvent(['variables']));	// SP might have been changed as well
@@ -688,8 +694,6 @@ export class DebugSessionClass extends DebugSession {
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
-						// The ContinuedEvent is necessary in case vscode was stopped and a restart is done. Without, vscode would stay stopped.
-						this.sendEventContinued();
 						setTimeout(() => {
 							// Delay call because the breakpoints are set afterwards.
 							this.handleRequest(undefined, async () => {
