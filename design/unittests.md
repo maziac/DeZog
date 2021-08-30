@@ -85,100 +85,37 @@ For each found test case label a test case is returned to vscode.
 ~~~puml
 hide footbox
 participant vscode as "vscode\nTestController"
-'participant TestRunner
 participant Z80UnitTestRunner
-participant FWlaunch as "FileWatcher\nlaunch.json"
-participant FWlist as "FileWatcher\nsld/list files"
-'participant DebugAdapter
-participant Remote
+participant RootTestSuite
+participant UnitTestSuiteLaunchJson
+participant UnitTestSuiteConfig
+participant UnitTestSuite
+participant UnitTestCase
+
 
 == Init ==
-vscode <- Z80UnitTestRunner: createTestController
+Z80UnitTestRunner -> RootTestSuite: constructor
+activate RootTestSuite
+vscode <- RootTestSuite: createTestController
 
-== First opening test cases ==
-vscode -> Z80UnitTestRunner: resolveTests
-note over Z80UnitTestRunner: watch for launch.json file changes
-loop All workspaces
-     vscode <- Z80UnitTestRunner: createTestItem (suite)
-     Z80UnitTestRunner -> FWlaunch: constructor
-     activate FWlaunch
-     Z80UnitTestRunner -> FWlaunch: start('launch.json')
-end
+== First opening of test cases ==
+vscode -> RootTestSuite: resolveTests(undefined)
+note over RootTestSuite: Create FileWatcher for\nall workspaces (launch.json)
+RootTestSuite -> UnitTestSuiteLaunchJson: constructor
+activate UnitTestSuiteLaunchJson
 
-== Idle ==
-alt launch.json file changed
-     FWlaunch -> Z80UnitTestRunner: launch,json file changed
-     note over Z80UnitTestRunner: Read launch.json\nand get sld/list\nfiles
-     note over Z80UnitTestRunner: watch for sld/list document\nor file changes
-     loop All sld/list files
-          vscode <- Z80UnitTestRunner: createTestItem (suite)
-          Z80UnitTestRunner -> FWlist: constructor
-          activate FWlist
-          Z80UnitTestRunner -> FWlist: start(sld/list files)
-     end
-end
+note over UnitTestSuiteLaunchJson: Create a UnitTestSuiteConfig for\neach unit test configuration\nin launch.json
+UnitTestSuiteLaunchJson -> UnitTestSuiteConfig: constructor
+activate UnitTestSuiteConfig
 
-alt sld/list file changed
-     FWlist -> Z80UnitTestRunner: sld/list file changed
-     note over Z80UnitTestRunner: Generate labels
-     note over Z80UnitTestRunner: Obtain the Unit Test labels
-     Z80UnitTestRunner -> Remote: ???
-     Z80UnitTestRunner <-- Remote: ???
-     vscode <- Z80UnitTestRunner: createTestItem(sdl/list file)\nparent item
-     loop Over all Unit Test labels
-          note over Z80UnitTestRunner: Create test items
-          vscode <- Z80UnitTestRunner: createTestItem(label)
-     end
-end
-~~~
+note over UnitTestSuiteConfig: Get and watch all list files
+note over UnitTestSuiteConfig: Create all labels and\nsearch for "UT_" labels
+note over UnitTestSuiteConfig: Create test suites and\ntest cases from the labels
 
-
-~~~puml
-title Deletion of launch.json
-hide footbox
-participant vscode as "vscode\nTestController"
-'participant TestRunner
-participant Z80UnitTestRunner
-participant FWlaunch as "FileWatcher\nlaunch.json"
-participant FWlist as "FileWatcher\nsld/list files"
-'participant DebugAdapter
-'participant Remote
-
-activate FWlaunch
-activate FWlist
-
-Z80UnitTestRunner <- FWlaunch: file deleted
-Z80UnitTestRunner -> FWlist: dispose
-deactivate FWlist
-
-note over Z80UnitTestRunner: Delete parent\ntest items
-loop All sld/list files
-     Z80UnitTestRunner -> vscode: items.delete\n(sld/list files)
-~~~
-
-
-~~~puml
-title Deletion of sld/list file
-hide footbox
-participant vscode as "vscode\nTestController"
-'participant TestRunner
-participant Z80UnitTestRunner
-participant FWlaunch as "FileWatcher\nlaunch.json"
-participant FWlist as "FileWatcher\nsld/list files"
-'participant DebugAdapter
-'participant Remote
-
-activate FWlaunch
-activate FWlist
-
-Z80UnitTestRunner <- FWlist: file deleted
-Z80UnitTestRunner -> FWlist: dispose
-vscode <- Z80UnitTestRunner: delete test items (files)
-deactivate FWlist
-
-note over Z80UnitTestRunner: Delete parent\ntest items
-loop All sld/list files
-     Z80UnitTestRunner -> vscode: items.delete\n(sld/list file)
+UnitTestSuiteConfig -> UnitTestSuite: constructor
+activate UnitTestSuite
+UnitTestSuiteConfig -> UnitTestCase: constructor
+activate UnitTestCase
 ~~~
 
 

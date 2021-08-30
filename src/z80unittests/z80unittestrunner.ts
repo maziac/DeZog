@@ -208,6 +208,7 @@ export class RootTestSuite extends UnitTestSuite {
 
 	/**
 	 * Add workspaces.
+	 * A workspace exists in the test controller only if a launch.json exists for it.
 	 * @param workspaces A list of workspaces to watch.
 	 */
 	protected addWorkspaces(workspaces: readonly vscode.WorkspaceFolder[], ) {
@@ -219,7 +220,7 @@ export class RootTestSuite extends UnitTestSuite {
 			const filePath = UnifiedPath.join(wsFolder, '.vscode/launch.json');
 			const fileWatcher = new FileWatcher(filePath);
 			this.wsFwMap.set(wsFolder, fileWatcher)!;
-			let wsSuite;
+			let wsSuite: UnitTestSuiteLaunchJson;
 
 			fileWatcher.onDidCreate(() => {
 				wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
@@ -273,9 +274,6 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	// The path to the workspace.
 	protected wsFolder: string;
 
-	// Pointer to an optional file watcher.
-	public fileWatcher?: FileWatcher;
-
 
 	/**
 	 * Constructor.
@@ -284,6 +282,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 
 	constructor(wsFolder: string, label: string) {
 		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label);
+		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
 	}
@@ -366,6 +365,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	 */
 	constructor(wsFolder: string, config: any) {
 		super(wsFolder + '#' + config.name, config.name);
+		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config, wsFolder);
 		this.fileWatchers = [];
@@ -389,7 +389,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 				fw.onDidDelete(() => {
 					// Note: it might be (if several list files are used) that
 					// only one file was deleted.
-					// On a build nomrally all files should be recreated, but
+					// On a build normally all files should be recreated, but
 					// in a pathological case one might be removed.
 					// In that case parsing would fail.
 					this.fileChanged();
