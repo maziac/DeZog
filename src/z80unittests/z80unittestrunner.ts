@@ -133,6 +133,9 @@ export class RootTestSuite extends UnitTestSuite {
 	// A map that remembers the workspaces/launch json associations
 	protected wsTsMap: Map<string, UnitTestSuiteLaunchJson>;
 
+	// A map that remembers the workspaces/file watcher associations
+	protected wsFwMap: Map<string, FileWatcher>;
+
 
 	/**
 	 * Init the test controller and listen for all files.
@@ -149,6 +152,7 @@ export class RootTestSuite extends UnitTestSuite {
 		super(undefined as any, undefined as any);
 		// A map that remembers the workspaces
 		this.wsTsMap = new Map<string, UnitTestSuiteLaunchJson>();
+		this.wsFwMap = new Map<string, FileWatcher>();
 		// Create dezog test controller
 		UnitTestCaseB.controller = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -186,9 +190,14 @@ export class RootTestSuite extends UnitTestSuite {
 			// Remove workspaces
 			for (const ws of e.removed) {
 				const wsFolder = ws.uri.fsPath;
+				// Delete test suite
 				const tsSuite = this.wsTsMap.get(wsFolder)!;
 				tsSuite.delete();	// And dispose
 				this.wsTsMap.delete(wsFolder);
+				// Delete file watcher
+				const fw = this.wsFwMap.get(wsFolder)!;
+				fw.dispose();
+				this.wsFwMap.delete(wsFolder);
 			}
 		});
 	}
@@ -202,13 +211,29 @@ export class RootTestSuite extends UnitTestSuite {
 		for (const ws of workspaces) {
 			// Retrieve all unit test configs
 			const wsFolder = ws.uri.fsPath;
-			const wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
-			// Start file watcher on launch.json
-			wsSuite.addFileWatcher();
-			// Add child
-			this.addChild(wsSuite);
-			// Remember test suite
-			this.wsTsMap.set(wsFolder, wsSuite);
+
+			// The test id is at the same time the file name (if test item is a file)
+			const filePath = UnifiedPath.join(wsFolder, '.vscode/launch.json');
+			const fileWatcher = new FileWatcher(filePath);
+			this.wsFwMap.set(wsFolder, fileWatcher)!;
+			let wsSuite;
+
+			fileWatcher.onDidCreate(() => {
+				wsSuite = new UnitTestSuiteLaunchJson(wsFolder, path.basename(wsFolder));
+				// Add child
+				this.addChild(wsSuite);
+				// Remember test suite
+				this.wsTsMap.set(wsFolder, wsSuite);
+			});
+
+			fileWatcher.onDidChange(() => {
+				wsSuite.fileChanged();
+			});
+
+
+			fileWatcher.onDidDelete(() => {
+				wsSuite.delete();
+			});
 		}
 	}
 
@@ -257,36 +282,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	constructor(wsFolder: string, label: string) {
 		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label);
 		this.wsFolder = wsFolder;
-	}
-
-
-	/**
-	 * Delete a test item and it's children.
-	 * Removes the file watcher.
-	 */
-	public delete() {
-		super.delete();
-		// Delete file watcher
-		this.fileWatcher?.dispose();
-	}
-
-
-	/**
-	 * Adds a file watcher.
-	 */
-	public addFileWatcher() {
-		// The test id is at the same time the file name (if test item is a file)
-		const filePath = this.testItem.id;
-		this.fileWatcher = new FileWatcher();
-		this.fileWatcher.start(filePath, (path, deleted) => {
-			// Deleted?
-			if (deleted) {
-				this.delete();
-				return;
-			}
-			// File changed
-			this.fileChanged();
-		});
+		this.fileChanged();
 	}
 
 
@@ -379,9 +375,20 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 			// Loop over all list files
 			for (const listFile of listFiles) {
 				// Create a new file watcher
-				const fw = new FileWatcher();
+				const fw = new FileWatcher(listFile.path);
 				this.fileWatchers.push(fw);
-				fw.start(listFile.path, () => {
+				fw.onDidCreate(() => {
+					this.fileChanged();
+				});
+				fw.onDidChange(() => {
+					this.fileChanged();
+				});
+				fw.onDidDelete(() => {
+					// Note: it might be (if several list files are used) that
+					// only one file was deleted.
+					// On a build nomrally all files should be recreated, but
+					// in a pathological case one might be removed.
+					// In that case parsing would fail.
 					this.fileChanged();
 				});
 			}
@@ -411,7 +418,10 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 		// "Debounce" with a timer in case several files are touched at the same time
 		clearTimeout(this.timerId);
 		this.timerId = setTimeout(() => {
-			this.delayedFileChanged();
+			try {
+				this.delayedFileChanged();
+			}
+			catch (e) {}
 		}, 200);
 	}
 
@@ -424,7 +434,9 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	public delayedFileChanged() {
 		// Remove old structures (+ children)
 		this.deleteChildren();
-		//this.parent?.testItem.children.delete(this.testItem.id);
+
+		if (this.config.name == 'Unit_Tests2')
+			console.log();
 
 		// Read labels from sld/list file
 		const labels = new LabelsClass();
@@ -438,6 +450,25 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 		}
 		// Now parse for Unit test labels, i.e. starting with "UT_"
 		const utLabels = this.getAllUtLabels(labels);
+
+
+		if (utLabels == undefined || utLabels.length == 0) {
+
+			// Read labels from sld/list file
+			const labels = new LabelsClass();
+			Utility.setRootPath(this.wsFolder);
+			try {
+				labels.readListFiles(this.config);
+			}
+			catch (e) {
+				console.log(e);
+				throw e;
+			}
+			// Now parse for Unit test labels, i.e. starting with "UT_"
+			const utLabels = this.getAllUtLabels(labels);
+			console.log(utLabels);
+
+		}
 
 		// Convert labels into intermediate map
 		const map = this.convertLabelsToMap(utLabels);

@@ -444,11 +444,11 @@ export class Settings {
 			launchCfg.zsim.customCode.debug = false;
 		if (launchCfg.zsim.customCode.jsPath != undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.jsPath);
-			launchCfg.zsim.customCode.jsPath = Utility.getAbsFilePath(path);
+			launchCfg.zsim.customCode.jsPath = Utility.getAbsFilePath(path, rootFolder);
 		}
 		if (launchCfg.zsim.customCode.uiPath != undefined) {
 			const path = UnifiedPath.getUnifiedPath(launchCfg.zsim.customCode.uiPath);
-			launchCfg.zsim.customCode.uiPath = Utility.getAbsFilePath(path);
+			launchCfg.zsim.customCode.uiPath = Utility.getAbsFilePath(path, rootFolder);
 		}
 		if (launchCfg.zsim.customCode.timeStep == undefined) {
 			// In fact: never call tick()
@@ -482,7 +482,7 @@ export class Settings {
 					disableBanking: fp.disableBanking || false
 				};
 				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
 				return file;
 			});
 		}
@@ -500,7 +500,7 @@ export class Settings {
 					excludeFiles: fpExclFiles || []
 				};
 				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
 				return file;
 			});
 		}
@@ -522,7 +522,7 @@ export class Settings {
 					mapFile: undefined as any
 				};
 				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile);
 				return file;
@@ -537,7 +537,7 @@ export class Settings {
 
 		if (launchCfg.load) {
 			const uload = UnifiedPath.getUnifiedPath(launchCfg.load)
-			launchCfg.load = Utility.getAbsFilePath(uload);
+			launchCfg.load = Utility.getAbsFilePath(uload, rootFolder);
 		}
 		else
 			launchCfg.load = '';
@@ -547,7 +547,7 @@ export class Settings {
 		for (let loadObj of launchCfg.loadObjs) {
 			if (loadObj.path) {
 				const loadObjPath = UnifiedPath.getUnifiedPath(loadObj.path)
-				loadObj.path = Utility.getAbsFilePath(loadObjPath);
+				loadObj.path = Utility.getAbsFilePath(loadObjPath, rootFolder);
 			}
 			else
 				loadObj.path = '';
@@ -557,7 +557,7 @@ export class Settings {
 			launchCfg.tmpDir = '.tmp';
 		launchCfg.tmpDir = UnifiedPath.getUnifiedPath(launchCfg.tmpDir);
 		launchCfg.tmpDir = Utility.getAbsFilePath
-			(launchCfg.tmpDir);
+			(launchCfg.tmpDir, rootFolder);
 		if (isNaN(launchCfg.smallValuesMaximum))
 			launchCfg.smallValuesMaximum = 255;
 		if (launchCfg.disassemblerArgs == undefined)

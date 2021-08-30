@@ -9,53 +9,63 @@ import {existsSync} from 'fs';
  * - onDidCreate (file)
  * - onDidChange (file)
  * - onDidDelete (file)
- *
- * Usage:
- * ~~~
- * const fw = new FileWatcher();
- * fw.start('/.../launch.json', (filePath: string, deleted: boolean) => {
- *    ...
- * });
- * ...
- * fw.dispose();  // Free the file watchers.
- * ~~~
+ * When not needed anymore you need to call 'dispose()' on the file viewer to free it.
+ * Compared to the vscode.FileSystemWatcher the FileWatcher class should be used on exact file names only.
+ * Not on glob patterns.
  */
 export class FileWatcher extends vscode.Disposable {
 
 	// Pointer to the watcher. Required only for disposable.
 	protected watcher: vscode.FileSystemWatcher;
 
+	/// Remembers the file path (just for onDidCreate)
+	protected filePath: string;
+
 
 	/**
 	 * Constructor.
 	 * Dispose if not required any more.
 	 */
-	constructor() {
+	constructor(filePath: string) {
 		super(() => {
 			this.watcher.dispose();
+		});
+		this.watcher = vscode.workspace.createFileSystemWatcher(filePath);
+		this.filePath = filePath;
+	}
+
+
+	/**
+	 * When files are created this function is called.
+	 * And as well if the file exists at this moment.
+	 */
+	public onDidCreate(func) {
+		this.watcher.onDidCreate(() => {
+			func(this.filePath)
+		});
+
+		// Check, to call initially
+		if (existsSync(this.filePath))
+			func(this.filePath);
+	}
+
+
+	/**
+	 * Just route.
+	 */
+	public onDidChange(func) {
+		this.watcher.onDidChange(() => {
+			func(this.filePath)
 		});
 	}
 
 
 	/**
-	 * Starts watching.
-	 * @param fileName Absolute filename, e.g. '/.../launch.json'
-	 * @param fileChanged A function that is called when a file is created, changed or deleted.
+	 * Just route.
 	 */
-	public start(fileName: string, fileChanged: (filePath: string, deleted: boolean) => void) {
-		this.watcher = vscode.workspace.createFileSystemWatcher(fileName);
-
-			// When files are created
-		this.watcher.onDidCreate(uri => fileChanged(uri.fsPath, false));
-
-			// When files do change
-		this.watcher.onDidChange(uri => fileChanged(uri.fsPath, false));
-
-			// When files are deleted
-		this.watcher.onDidDelete(uri => fileChanged(uri.fsPath, true));// TODO: Need to test that on each new creation of sld file a delete occurs beforehand. Otherwise the detection of deleted test cases becomes more difficult.
-
-		// Check if file exists and call the fileChanged function initially
-		if (existsSync(fileName))
-			fileChanged(fileName, false);
+	public onDidDelete(func) {
+		this.watcher.onDidDelete(() => {
+			func(this.filePath)
+		});
 	}
 }
