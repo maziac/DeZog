@@ -383,7 +383,7 @@ export class DebugSessionClass extends DebugSession {
 		response.body.supportsConditionalBreakpoints = true;
 
 		// Handles debug 'Restart'
-		response.body.supportsRestartRequest = true;
+		response.body.supportsRestartRequest = false;//true;
 
 		this.sendResponse(response);
 
@@ -403,15 +403,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param args
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
-		// Check list file's modified date to warn the user if it has been build in between.
-		const fileDate = Labels.getListFileDate();	// TODO : Remove list file date
-		const lastModDate = Labels.lastModifiedDate;
-		if (fileDate.getTime() != lastModDate.getTime()) {
-			// Warn the user
-			this.showWarning('The list/sld file has been modified. If you continue you might encounter wrong labels and disassembly.');
-		}
-
-		// Inform in debug cosole.
+		// Inform in debug console.
 		this.debugConsoleAppendLine('==================================');
 
 		// Remove all windows (e.g. MemoryViews)
