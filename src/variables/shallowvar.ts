@@ -8,6 +8,7 @@ import { Remote } from '../remotes/remotefactory';
 import { Format } from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';
+import {ExpressionVariable} from '../misc/expressionvariable';
 
 
 
@@ -892,10 +893,12 @@ export class MemDumpVar extends ShallowVar {
  * Special object to hold either a reference or a pointer to an immediate value object.
  * Similar to ExpressionVariable.
  */
+/* TODO: remove.
 interface VarOrImmediate extends DebugProtocol.Variable {
-	immediateValue?: () => Promise<string>;
+	//immediateValue?: () => Promise<string>;
+	expressionItem?: ExpressionVariable;
 }
-
+*/
 
 /**
  * The ContainerVar class acts as a container for other variables.
@@ -903,7 +906,21 @@ interface VarOrImmediate extends DebugProtocol.Variable {
  */
 export class ContainerVar extends ShallowVar {
 	// The array which holds the variables.
-	public varList = new Array<VarOrImmediate>();
+	public varList = new Array<string>();
+
+	// Pointer to the debug adapter's expression list.
+	// The variables are referenced through it.
+	protected expressionList: Map<string, ExpressionVariable>;
+
+
+	/**
+	 * Constructor.
+	 * @param expressionList The debug adapter's expression list for referencing the variable.
+	 */
+	constructor(expressionList: Map<string, ExpressionVariable>) {
+		super();
+		this.expressionList = expressionList;
+	}
 
 
 	/**
@@ -918,19 +935,22 @@ export class ContainerVar extends ShallowVar {
 		// Add the index hover text to each item
 		const dynList = new Array<DebugProtocol.Variable>(count);
 		for (let i = 0; i < count; i++) {
-			const entry = this.varList[i + start];
-			const description = entry.type + '\n\n(Use "-delexpr ' + i + '" to remove)';
+			const name = this.varList[i + start];
+			// Get var item
+			const entry = this.expressionList.get(name)!;
+			Utility.assert(entry);
+			const description = entry.description + '\n\n(Use "-delexpr ' + i + '" to remove)';
 			let value = '';
 			if (entry.immediateValue) {
 				// ImmediateMemValue
 				value = await entry.immediateValue();
 			}
 			dynList[i] = {
-				name: entry.name,
+				name: name,
 				type: description,
 				value,
-				indexedVariables: entry.indexedVariables,
-				variablesReference: entry.variablesReference
+				indexedVariables: entry.count,
+				variablesReference: entry.varRef
 			};
 		}
 		return dynList;
@@ -939,21 +959,14 @@ export class ContainerVar extends ShallowVar {
 
 	/**
 	 * Adds a new item to the list.
-	 * @param name The name of the variable/label.
+	 * @param name The name of the variable/label. I.e. the expression.
 	 * @param immediateValue If not undefined the immediate value to use instead of a variable reference.
 	 * @param varRef The variable reference to use. 0 if unused.
 	 * @param description A description shown in the UI on hovering.
 	 * @param count The elem count or 0.
 	 */
-	public addItem(name: string, immediateValue: (() => Promise<string>)|undefined, varRef: number, description: string, count: number) {
-		this.varList.push({
-			name,
-			type: description,
-			value: '',
-			indexedVariables: count,
-			variablesReference: varRef,
-			immediateValue
-		});
+	public addItem(name: string) {
+		this.varList.push(name);
 	}
 
 

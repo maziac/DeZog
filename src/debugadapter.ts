@@ -394,16 +394,59 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Called when 'Restart' is pressed.
 	 * Reload the program into the Remote.
+	 * Tries to do this without changing any other state.
+	 * But if the date of the list file has changed a reload of the
+	 * labels is required. Therefore also the MemoryViews are closed.
+	 * And also the expressions in the VARIABLES section are removed because the label might have changed.
+	 * Clear all variables
 	 * @param response
 	 * @param args
 	 */
 	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
 		// Check list file's modified date to warn the user if it has been build in between.
-		const fileDate = Labels.getListFileDate();
+		const fileDate = Labels.getListFileDate();	// TODO : Remove list file date
 		const lastModDate = Labels.lastModifiedDate;
 		if (fileDate.getTime() != lastModDate.getTime()) {
 			// Warn the user
 			this.showWarning('The list/sld file has been modified. If you continue you might encounter wrong labels and disassembly.');
+		}
+
+		// Inform in debug cosole.
+		this.debugConsoleAppendLine('==================================');
+
+		// Remove all windows (e.g. MemoryViews)
+		//BaseView.staticCloseAll();
+		// Restart (reload) everything
+		try {
+			// Init labels
+			Labels.init(Settings.launch.smallValuesMaximum);
+			// Read labels
+			Remote.readListFiles(Settings.launch);
+
+			const addr = (Labels.getNumberForLabel('invaders')||0) & 0xFFFF;
+			console.log(addr);
+
+		}
+		catch (e) {
+			// Some error occurred
+			this.terminate('Labels: ' + e.message);
+			// Send response anyway
+			this.sendResponse(response);
+			return;
+		}
+
+		// Create new variables/expressions
+		const expressions = [...this.expressionsList.keys()];
+		//const varRefs = [...this.expressionsList.values()].map(item => item.varRef);
+		this.expressionsList.clear();
+		// Clearing is improved by removing the varRefs from the listVariables completely.
+		//for (const varRef of varRefs) {
+		//	this.listVariables.delete(varRef);
+		//}
+		// Create new expression variables
+		for (const expr of expressions) {
+			const item = await this.evaluateLabelExpression(expr);
+			this.expressionsList.set(expr, item);
 		}
 
 		// Restart history
@@ -414,6 +457,7 @@ export class DebugSessionClass extends DebugSession {
 		await Remote.loadExecutable();
 		// Reset the PC
 		await Remote.setLaunchExecAddress();
+		this.debugConsoleAppendLine('Restarted at PC=' + Utility.getHexString(Remote.getPC(), 4) + 'h\n');
 		// Respond
 		this.sendResponse(response);
 
@@ -424,7 +468,12 @@ export class DebugSessionClass extends DebugSession {
 
 		// Reload PC
 		await this.pcHasBeenChanged();
-		this.sendEvent(new InvalidatedEvent(['variables']));	// SP might have been changed as well
+
+		// SP might have been changed as well:
+		this.sendEvent(new InvalidatedEvent(['variables']));
+
+		// Update memory views
+		this.update('restart');
 	}
 
 
@@ -479,7 +528,8 @@ export class DebugSessionClass extends DebugSession {
 
 			// Persistent variable references
 			this.listVariables.clear();
-			this.containerVar = new ContainerVar();
+			this.expressionsList.clear();
+			this.containerVar = new ContainerVar(this.expressionsList);
 			this.disassemblyVar = new DisassemblyVar();
 			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
 			this.localStackVar = new StackVar();
@@ -2243,8 +2293,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 
 		try {
 			// Evaluate expression and create variables
-			const item = await this.evaluateLabelExpression(expr);
-			this.containerVar.addItem(expr, item.immediateValue, item.varRef, item.description, item.count);
+			await this.evaluateLabelExpression(expr);
+			this.containerVar.addItem(expr);
 			return 'OK';
 		}
 		catch (e) {

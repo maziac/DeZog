@@ -43,6 +43,19 @@ export class RefList<type> extends Array<type> {
 
 
 	/**
+	 * Deletes an entry.
+	 * Does this by simply setting to undefined.
+	 * So at least the memory is freed, but still an entry in the list remains.
+	 */
+	/*
+	public delete(ref: number) {
+		if (ref <= 0 || ref > this.length)
+			return;
+		this[ref - 1] = undefined as any;
+	}
+	*/
+
+	/**
 	 * @returns The first element of the array. undefined if array is empty.
 	 */
 	public first(): any {
