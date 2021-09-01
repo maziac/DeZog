@@ -1950,23 +1950,43 @@ export class DebugSessionClass extends DebugSession {
 		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
 		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
 		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-		//const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
-		const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^;,]*))?(,\s*([^;,]*))?(,\s*([^;,]*))?/.exec(expression); // Also evaluates a 4th component
-		if (!match)
-			throw Error('Error in expression: ' + expression);
 
-		let labelString = match[1];	// May also contain a number (e.g. address)
-		//if (labelString == undefined)
-		//	throw Error('No label found in expression: ' + expression);
+		// Get everything before ;
+		let text = expression;
+		const k = text.indexOf(';');
+		if (k >= 0)
+			text = text.slice(0, k);
 
-		let lblIndexString = match[3];
-		let lblType = match[5];
-		let elemCountString = match[7];
-		let endianess = match[9] || '';
-		endianess = endianess.trim();
+		// Tokenize
+		const tokens = text.split(',');
+		if (tokens.length > 4)
+			throw Error("Too many components in expression: " + expression);
+
+		// Label
+		let labelString = (tokens[0] || '').trim();	// May also contain a number (e.g. address)
+		if (!labelString)
+			throw Error("No expression found.");
+
+		// Index inside label
+		const matchIndex = /(.*)[^\[]*\[([^\]]+)\]/.exec(labelString);
+		let lblIndexString = '';
+		if (matchIndex) {
+			labelString = matchIndex[1].trim();
+			lblIndexString = matchIndex[2].trim();
+		}
+
+		// Label type etc.
+		let lblType = (tokens[1] || '').trim();
+		let elemCountString = (tokens[2] || '').trim();
+
+		// Endianess
+		const endianess = (tokens[3] || 'little').trim().toLowerCase();
 		let littleEndian = true;
 		if (endianess == 'big')
 			littleEndian = false;	// At the moment it is used only for immediate values
+		else if (endianess != 'little') {
+			throw Error("Unknwon endianes: " + endianess);
+		}
 
 		// Defaults
 		let labelValue;
@@ -1986,7 +2006,7 @@ export class DebugSessionClass extends DebugSession {
 		labelValue = Utility.evalExpression(labelString, true, modulePrefix, lastLabel);
 
 		if (isNaN(labelValue))
-			throw Error("Could not parse label.");
+			throw Error("Could not parse label: " + labelString);
 
 		// Get size from type
 		if (lblType) {
@@ -2074,18 +2094,18 @@ export class DebugSessionClass extends DebugSession {
 			}
 			else {
 				// Simple memdump
-				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian);
 			}
 		}
 		else {
 			// Not 1 or 2 was given as size but e.g. a struct label
 			if (propsLength > 0) {
 				// Structure
-				labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables);
+				labelVar = new StructVar(labelValue64k, elemCount, elemSize, lblType, props, this.listVariables, littleEndian);
 			}
 			if (!labelVar) {
 				// Simple memdump
-				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize);
+				labelVar = new MemDumpVar(labelValue64k, elemCount, elemSize, littleEndian);
 			}
 		}
 
@@ -2115,10 +2135,12 @@ export class DebugSessionClass extends DebugSession {
 	- status: Shows enable status of ASSERTION breakpoints.
 "-addexpr expression": Adds a variable/label to the VARIABLES pane. (Syntax is similar to the expressions in the WATCH panel.
 	However, data in the VARIABLES panel can be modified.)
-	- expression: See WATCHes in the DeZog help. In brief an expression is: label,type/size,count.
+	- expression: See WATCHes in the DeZog help. In brief an expression is: label,type/size,count,endianess.
 		- label: One of your labels or an numeric address
 		- type/size: The size of your data structure. If you use a type (STRUCT) you should give the STRUCT name here.
 		- count: The number of elements to show.
+		- endianess: 'little' (default) or 'big'.
+		You can omit everything other than the label.
 	See also "-delexpr index"
 "-dasm address count": Disassembles a memory area. count=number of lines.
 "-delexpr index": Remove an expression/label from the VARIABLES pane.

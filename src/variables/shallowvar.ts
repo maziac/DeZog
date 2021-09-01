@@ -11,7 +11,6 @@ import {StepHistory} from '../remotes/cpuhistory';
 import {ExpressionVariable} from '../misc/expressionvariable';
 
 
-
 /**
  * Represents a variable.
  * Variables know how to retrieve the data from the remote.
@@ -405,6 +404,9 @@ export class SubStructVar extends ShallowVar {
 	// Holds a map with name and with the structure properties.
 	protected propMap = new Map<string, SubStructItems>();
 
+	// If the value should be interpreted as little endian or not.
+	protected littleEndian: boolean;
+
 
 	/**
 	 * Constructor.
@@ -419,7 +421,8 @@ export class SubStructVar extends ShallowVar {
 	 */
 	public constructor(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct?: StructVar) {
 		super();
-		if (parentStruct) {
+		if (parentStruct) {	// In case this is called in the constructor of StructVar
+			this.littleEndian = parentStruct.littleEndian;
 			this.createPropArray(relIndex, count, elemSize, struct, props, list, parentStruct);
 		}
 	}
@@ -490,14 +493,14 @@ export class SubStructVar extends ShallowVar {
 						item.elemSize = len;
 						item.itemRef = () => {
 							const mem = parentStruct.getMemory();
-							const value = Utility.getUintFromMemory(mem, memIndex, len, true);	// Is done only for little endian, if wanted it could be extended to big endian
+							const value = Utility.getUintFromMemory(mem, memIndex, len, this.littleEndian);	// Is done only for little endian, if wanted it could be extended to big endian
 							const result = Utility.getHexString(value, 2 * len) + 'h';
 							return result;
 						};
 					}
 					else {
 						// Array
-						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1);
+						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1, parentStruct.littleEndian);
 						memDumpVar.setParent(parentStruct, memIndex);
 						item.itemRef = list.addObject(memDumpVar);
 						item.indexedVariables = len;
@@ -570,26 +573,15 @@ export class SubStructVar extends ShallowVar {
 		const address = item.address;
 		// Note: item.elemSize is <= 2
 
-		// Change neg to pos
-		if (value < 0)
-			value += 0x10000;
-
 		// Write data
 		const dataWrite = new Uint8Array(item.elemSize);
-		for (let i = 0; i < item.elemSize; i++) {
-			dataWrite[i] = value & 0xFF;
-			value = value >>> 8;
-		}
+		Utility.setUintToMemory(value, dataWrite, 0, item.elemSize, this.littleEndian);
 		await Remote.writeMemoryDump(address, dataWrite);
 		ShallowVar.memoryChanged = true;
 
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(address, item.elemSize);
-		let readValue = 0;
-		for (let i = item.elemSize - 1; i >= 0; i--) {
-			readValue = readValue << 8;
-			readValue += data[i] & 0xFF;
-		}
+		let readValue = Utility.getUintFromMemory(data, 0, item.elemSize, this.littleEndian);
 
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, readValue, item.elemSize, this.formatString(item.elemSize), undefined);
@@ -639,10 +631,12 @@ export class StructVar extends SubStructVar {
 	 * @param props An array of names of the direct properties of the struct.
 	 * @param parentStruct Not used at this level.
 	 * @param list The list of variables. The constructor adds the variables to it.
+	 * @param littleEndian If the value should be interpreted as little endian or not.
 	 */
-	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, list: RefList<ShallowVar>) {
+	public constructor(addr: number, count: number, size: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, littleEndian = true) {
 		super(0, count, size, struct, props, list);
 		this.baseAddress = addr;
+		this.littleEndian = littleEndian;
 		this.createPropArray(0, count, size, struct, props, list, undefined as any);
 		// The amount of bytes to retrieve:
 		this.countBytes = count * size;
@@ -686,7 +680,7 @@ export class StructVar extends SubStructVar {
 				}
 				else {
 					// Simple array
-					labelVar = new MemDumpVar(this.getAddress(), elemSize, 1);
+					labelVar = new MemDumpVar(this.getAddress(), elemSize, 1, this.littleEndian);
 					labelVar.setParent(this, relIndex);
 					item.indexedVariables = elemSize;
 				}
@@ -749,19 +743,24 @@ export class MemDumpVar extends ShallowVar {
 	// The offset (in bytes) where the displayed memory begins.
 	protected memOffset: number;
 
+	// If the value should be interpreted as little endian or not.
+	protected littleEndian: boolean;
+
 
 	/**
 	 * Constructor.
 	 * @param addr The address of the memory dump.
 	 * @param totalCount The element count.
 	 * @param elemSize The element size. byte=1, word=2.
+	 * @param littleEndian If the value should be interpreted as little endian or not.
 	 */
-	public constructor(addr: number, totalCount: number, elemSize: number) {
+	public constructor(addr: number, totalCount: number, elemSize: number, littleEndian = true) {
 		super();
 		this.addr = addr;
 		this.totalCount = totalCount;
 		this.elemSize = elemSize;
 		this.memOffset = 0;
+		this.littleEndian = littleEndian;
 	}
 
 
@@ -807,15 +806,9 @@ export class MemDumpVar extends ShallowVar {
 		// Calculate tabsizing array
 		const tabSizes = Utility.calculateTabSizes(format, elemSize);
 		// Format all array elements
-		let k = offset;
 		for (let i = 0; i < count!; i++) {
 			// Get value
-			let value = memory[k++];
-			let mult = 1;
-			for (let j = 1; j < elemSize; j++) {
-				mult *= 256;
-				value += mult * memory[k++];
-			}
+			const value = Utility.getUintFromMemory(memory, i * this.elemSize, this.elemSize, this.littleEndian);
 			// Format
 			const addr_i = addr + offset + i * elemSize;
 			const formatted = Utility.numberFormattedSync(value, elemSize, format, false, undefined, undefined, tabSizes);
@@ -849,12 +842,9 @@ export class MemDumpVar extends ShallowVar {
 		// Get address
 		const address = this.addr + this.memOffset + index * this.elemSize;
 
-		// Change neg to pos
-		if (value < 0)
-			value += 0x10000;
-
 		// Write data
 		const dataWrite = new Uint8Array(this.elemSize);
+		Utility.setUintToMemory(value, dataWrite, 0, this.elemSize, this.littleEndian);
 		for (let i = 0; i < this.elemSize; i++) {
 			dataWrite[i] = value & 0xFF;
 			value = value >>> 8;
@@ -864,11 +854,8 @@ export class MemDumpVar extends ShallowVar {
 
 		// Retrieve memory values, to see if they really have been set.
 		const data = await Remote.readMemoryDump(address, this.elemSize);
-		let readValue = 0;
-		for (let i = this.elemSize - 1; i >= 0; i--) {
-			readValue = readValue << 8;
-			readValue += data[i] & 0xFF;
-		}
+		// Get value
+		const readValue = Utility.getUintFromMemory(data, 0, this.elemSize, this.littleEndian);
 
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, this.formatString(), undefined);
@@ -902,7 +889,7 @@ export class ImmediateMemoryValue {
 	protected size: number;
 
 	// If the value should be interpreted as little endian or not.
-	protected littleEndian: boolean;	
+	protected littleEndian: boolean;
 
 
 	/**
