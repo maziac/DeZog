@@ -28,7 +28,7 @@ export class Utility {
 	 */
 	public static getBoundary(value: number, boundary: number): number {
 		// Boundary check
-		if(value < 0)	// Always return 0 for negative values
+		if (value < 0)	// Always return 0 for negative values
 			return 0;
 		const boundValue = value - (value % boundary);
 		return boundValue;
@@ -41,9 +41,9 @@ export class Utility {
 	 * @param size The number of digits for the resulting string.
 	 * @returns E.g. "AF" or "0BC8"
 	 */
-	public static getHexString(value: number|undefined, size: number): string {
-		if (value!=undefined) {
-			const s=value.toString(16).toUpperCase().padStart(size,'0');
+	public static getHexString(value: number | undefined, size: number): string {
+		if (value != undefined) {
+			const s = value.toString(16).toUpperCase().padStart(size, '0');
 			return s;
 		}
 		// Undefined
@@ -59,10 +59,10 @@ export class Utility {
 	 * @returns E.g. "F7A4h @bank5" or "F7A4h"
 	 */
 	public static getLongAddressString(value: number): string {
-		let addrString=this.getHexString(value&0xFFFF, 4)+'h';
-		const bank=value>>>16;
-		if (bank>0)
-			addrString+=" @bank"+(bank-1);
+		let addrString = this.getHexString(value & 0xFFFF, 4) + 'h';
+		const bank = value >>> 16;
+		if (bank > 0)
+			addrString += " @bank" + (bank - 1);
 		return addrString;
 	}
 
@@ -86,10 +86,10 @@ export class Utility {
 	public static stripComment(line: string): string {
 		// find comment character
 		const k = line.indexOf(';');
-		if(k < 0)
+		if (k < 0)
 			return line;	// no comment
 		// Return anything but the comment
-		return line.substr(0,k);
+		return line.substr(0, k);
 	}
 
 
@@ -109,7 +109,7 @@ export class Utility {
 	public static parseValue(valueString: string): number {
 
 		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?[0-9]+)([^0-9]*))?('([\S ]+)')?/i.exec(valueString);
-		if(!match)
+		if (!match)
 			return NaN;	// Error during parsing
 
 		const ghex = match[3];	// 0x or $
@@ -130,48 +130,48 @@ export class Utility {
 		const gchar = match[18];	// ASCII character
 
 		// Hex
-		if(ghex) {
-			if(ghex_empty)
+		if (ghex) {
+			if (ghex_empty)
 				return NaN;
 			return parseInt(ghex, 16);
 		}
-		if(ghexh) {
-			if(ghexh_empty)
+		if (ghexh) {
+			if (ghexh_empty)
 				return NaN;
 			return parseInt(ghexh, 16);
 		}
 
 		// Decimal
-		if(gdec) {
-			if(gdec_empty)
+		if (gdec) {
+			if (gdec_empty)
 				return NaN;
 			return parseInt(gdec, 10);;
 		}
 		// Bits
-		if(gbit) {
-			if(gbit_empty)
+		if (gbit) {
+			if (gbit_empty)
 				return NaN;
 			return parseInt(gbit, 2);
 		}
 
 		// Check if status flag value
-		if(gflags) {
-			if(gflags_empty)
+		if (gflags) {
+			if (gflags_empty)
 				return NaN;
 			gflags = gflags.toLowerCase()
 			let flags = 0;
-			if(gflags.includes('s')) flags |= 0x80;
-			if(gflags.includes('z')) flags |= 0x40;
-			if(gflags.includes('h')) flags |= 0x10;
-			if(gflags.includes('p')) flags |= 0x04;
-			if(gflags.includes('n')) flags |= 0x02;
-			if(gflags.includes('c')) flags |= 0x01;
+			if (gflags.includes('s')) flags |= 0x80;
+			if (gflags.includes('z')) flags |= 0x40;
+			if (gflags.includes('h')) flags |= 0x10;
+			if (gflags.includes('p')) flags |= 0x04;
+			if (gflags.includes('n')) flags |= 0x02;
+			if (gflags.includes('c')) flags |= 0x01;
 			return flags;
 		}
 
 		// ASCII character
-		if(gchar) {
-			if(gchar.length < 1)
+		if (gchar) {
+			if (gchar.length < 1)
 				return NaN;
 			return gchar.charCodeAt(0);
 		}
@@ -205,7 +205,7 @@ export class Utility {
 					try {
 						res = Remote.getRegisterValue(p1);
 					}
-					catch {};
+					catch {}
 				}
 			}
 			if (isNaN(res)) {
@@ -263,7 +263,7 @@ export class Utility {
 		}
 		catch (e) {
 			// Rethrow
-			throw Error("Error evaluating '"+expr+"': " + e.message);
+			throw Error("Error evaluating '" + expr + "': " + e.message);
 		}
 	}
 
@@ -331,43 +331,43 @@ export class Utility {
 		//await Remote.getRegisters();	// Make sure that registers are available.
 
 		// Replace does not work asynchrounously, therefore we need to store the results in arrays.
-		const offsets: Array<number>=[];
+		const offsets: Array<number> = [];
 		const promises: Array<Promise<string>> = [];
 
 		const regex = /\${(.*?)(:(.*?))?}/g;
 		const reAt = /([bw]@)?\((.*?)\)/i;
-		let offsCorrection=0;
+		let offsCorrection = 0;
 		logString = logString.replace(regex, (match, statement /*p1*/, p2, format /*p3*/, offset) => {
 			// 'statement' contains the statement, e.g. "b@(HL)".
 			// 'format' contains the formatting, e.g. "hex".
-			let promise=new Promise<string>(async resolve => {
-				let size=1;
+			let promise = new Promise<string>(async resolve => {
+				let size = 1;
 				try {
 					let value;
-					const reMatch=reAt.exec(statement);
+					const reMatch = reAt.exec(statement);
 					if (reMatch) {
 						// Found something like "b@(HL)", "w@(LABEL)" or "(DE)".
-						size=(reMatch[1]?.startsWith('w'))? 2:1;
+						size = (reMatch[1]?.startsWith('w')) ? 2 : 1;
 						// Get value of 'inner'
-						const addrString=reMatch[2];
-						const addr=Utility.evalExpression(addrString);
+						const addrString = reMatch[2];
+						const addr = Utility.evalExpression(addrString);
 						// Get memory contents
-						const memValues=await Remote.readMemoryDump(addr, size);
-						value=memValues[0];
-						if (size>1)
-							value+=memValues[1]<<8;
+						const memValues = await Remote.readMemoryDump(addr, size);
+						value = memValues[0];
+						if (size > 1)
+							value += memValues[1] << 8;
 					}
 					else {
 						// It's a simple value, register or label.
-						value=Utility.evalExpression(statement, true);
-						if (Z80RegistersClass.isRegister(statement)&&statement.length>1)
-							size=2;	// Two byte register, e.g. "DE"
+						value = Utility.evalExpression(statement, true);
+						if (Z80RegistersClass.isRegister(statement) && statement.length > 1)
+							size = 2;	// Two byte register, e.g. "DE"
 					}
 
 					// Now format value
-					let formatString=format||'unsigned';
-					formatString='${'+formatString+'}';
-					const result=await this.numberFormatted('', value, size, formatString, undefined);
+					let formatString = format || 'unsigned';
+					formatString = '${' + formatString + '}';
+					const result = await this.numberFormatted('', value, size, formatString, undefined);
 					resolve(result);
 				}
 				catch (e) {
@@ -376,29 +376,29 @@ export class Utility {
 				}
 			});
 			// Store
-			offset-=offsCorrection;
+			offset -= offsCorrection;
 			offsets.push(offset);
 			promises.push(promise);
-			offsCorrection+=match.length;
+			offsCorrection += match.length;
 			return '';
 		});
 
 		// Wait on all promises
-		const data=await Promise.all(promises);
+		const data = await Promise.all(promises);
 
 		// Create string
-		let result='';
+		let result = '';
 		let replacement;
-		let i=0;
-		while (replacement=data.shift()) {
-			const offset=offsets.shift() as number;
-			const length=offset-i;
-			result+=logString.substr(i, length);
-			i=offset;
-			result+=replacement;
+		let i = 0;
+		while (replacement = data.shift()) {
+			const offset = offsets.shift() as number;
+			const length = offset - i;
+			result += logString.substr(i, length);
+			i = offset;
+			result += replacement;
 		}
 		// Add last
-		result+=logString.substr(i);
+		result += logString.substr(i);
 
 		return result;
 	}
@@ -418,40 +418,40 @@ export class Utility {
 	 */
 	public static calculateTabSizes(format: string, size: number): any {
 		// Test if format string includes tabs
-		if(!format.includes('\t'))
+		if (!format.includes('\t'))
 			return null;	// no tabs
 		// Replace every formatting with maximum size replacement
 		const result = format.replace(/\${([^}]*?:)?([^:]*?)(:[\s\S]*?)?}/g, (match, p1, p2, p3) => {
 			let usedSize = size;
 			// Check modifier p1
-			const modifier = (p1 == null) ? '' : p1.substr(0, p1.length-1);
-			switch(modifier) {
+			const modifier = (p1 == null) ? '' : p1.substr(0, p1.length - 1);
+			switch (modifier) {
 				case 'b@':
 					usedSize = 1;
 					break;
 				case 'w@':
 					usedSize = 2;
 					break;
-				}
+			}
 			// Check formatting
-			switch(p2) {
+			switch (p2) {
 				case 'name':
 					return "nn";
 				case 'hex':
-					return "h".repeat(2*usedSize);
+					return "h".repeat(2 * usedSize);
 				case 'dhex':
-					if(usedSize == 2)
+					if (usedSize == 2)
 						return "hhhhh";
-					// Otherwise just like 'hex'.
-					// Flow through.
+				// Otherwise just like 'hex'.
+				// Flow through.
 				case 'hex':
-					return "h".repeat(2*usedSize);
+					return "h".repeat(2 * usedSize);
 				case 'bits':
-					return "b".repeat(8*usedSize);
+					return "b".repeat(8 * usedSize);
 				case 'unsigned':
-					return (Math.pow(256, usedSize)-1).toString();
+					return (Math.pow(256, usedSize) - 1).toString();
 				case 'signed':
-					return '-' + (Math.pow(256, usedSize)/2).toString();
+					return '-' + (Math.pow(256, usedSize) / 2).toString();
 				case 'char':
 					return "c";
 				case 'flags':
@@ -512,35 +512,35 @@ export class Utility {
 	 * A Promise is required because it might be that for formatting it is required to
 	 * get more data from the remote.
 	 */
-	public static async numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string>|undefined, undefText = "undefined"): Promise<string> {
+	public static async numberFormatted(name: string, value: number, size: number, format: string, tabSizeArr: Array<string> | undefined, undefText = "undefined"): Promise<string> {
 		// Safety check
-		if(value == undefined) {
+		if (value == undefined) {
 			return undefText;
 		}
 
 		// Variables
 		let memWord = 0;
-		let regsAsWell=false;
+		let regsAsWell = false;
 
 		// Check if registers might be returned as well.
 		// Return registers only if 'name' itself is not a register.
 		if (!Z80RegistersClass.isRegister(name)) {
-			regsAsWell=true;
+			regsAsWell = true;
 			//await Remote.getRegisters();
 		}
 
 		// Check first if we need to retrieve address values
-		const matchAddr=/(\${b@:|\${w@:)/.exec(format);
+		const matchAddr = /(\${b@:|\${w@:)/.exec(format);
 		if (matchAddr) {
 			// Retrieve memory values
-			const data=await Remote.readMemoryDump(value, 2);
-			const b1=data[0]
-			const b2=data[1];
-			memWord=(b2<<8)+b1;
+			const data = await Remote.readMemoryDump(value, 2);
+			const b1 = data[0]
+			const b2 = data[1];
+			memWord = (b2 << 8) + b1;
 		}
 
 		// Formatting
-		const valString=Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
+		const valString = Utility.numberFormattedSync(value, size, format, regsAsWell, name, memWord, tabSizeArr);
 
 		// Return
 		return valString;
@@ -582,22 +582,22 @@ export class Utility {
 			// This assures that } can also be used inside a ${...}
 			const k = p.lastIndexOf('}');
 			//const k=p.indexOf('}');
-			if(k < 0) {
+			if (k < 0) {
 				// Not a ${...} -> continue
 				return p;
 			}
-			const p1 = p.substr(0,k);
-			const restP = p.substr(k+1);
+			const p1 = p.substr(0, k);
+			const restP = p.substr(k + 1);
 			// Complete '${...}' found. now check content
 			const innerMatch = /^([^\|]*?:)?([^\|]*?)(\|[\s\S]*?)?(\|[\s\S]*?)?$/.exec(p1);
-			if(innerMatch == undefined)
-				return '${'+p1+'???}' + restP;
+			if (innerMatch == undefined)
+				return '${' + p1 + '???}' + restP;
 			// Modifier
 			let usedValue;
 			let usedSize;
 			let modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
-			modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length-1);
-			switch(modifier) {
+			modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length - 1);
+			switch (modifier) {
 				case 'b@':
 					usedValue = wordAtAddress & 0xFF;	// use byte at address
 					usedSize = 1;
@@ -618,58 +618,58 @@ export class Utility {
 			innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substr(1);
 			let endLabelSeparator = innerMatch[4];	// e.g. ', '
 			endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substr(1);
-			switch(formatting) {
+			switch (formatting) {
 				case 'name':
 					return name + restP;
 				case 'dhex':
-					if(usedSize == 2) {
-						return Utility.getHexString(usedValue>>8,2) + ' ' + Utility.getHexString(usedValue&0xFF,2) + restP;
+					if (usedSize == 2) {
+						return Utility.getHexString(usedValue >> 8, 2) + ' ' + Utility.getHexString(usedValue & 0xFF, 2) + restP;
 					}
-					// Otherwise just like 'hex'.
-					// Flow through.
+				// Otherwise just like 'hex'.
+				// Flow through.
 				case 'hex':
-					return Utility.getHexString(usedValue,2*usedSize) + restP;
+					return Utility.getHexString(usedValue, 2 * usedSize) + restP;
 				case 'bits':
-					return Utility.getBitsString(usedValue,usedSize*8) + restP;
+					return Utility.getBitsString(usedValue, usedSize * 8) + restP;
 				case 'unsigned':
 					return usedValue.toString() + restP;
 				case 'signed':
-					const maxValue = Math.pow(256,usedSize);
-					const halfMaxValue = maxValue/2;
-					return ((usedValue >=  halfMaxValue) ? usedValue-maxValue : usedValue).toString() + restP;
+					const maxValue = Math.pow(256, usedSize);
+					const halfMaxValue = maxValue / 2;
+					return ((usedValue >= halfMaxValue) ? usedValue - maxValue : usedValue).toString() + restP;
 				case 'char':
 					const s = Utility.getASCIIChar(usedValue);
 					return s + restP
 				case 'flags':
 					// Interpret byte as Z80 flags:
-					const res=this.getFlagsString(usedValue);
+					const res = this.getFlagsString(usedValue);
 					return res + restP;
 
 				case 'labels':
-				{
-					// calculate labels
-					const labels = Labels.getLabelsForNumber64k(value, regsAsWell);
-					// format
-					if(labels && labels.length > 0)
-						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
-					// No label
-					return '' + restP;
-				}
+					{
+						// calculate labels
+						const labels = Labels.getLabelsForNumber64k(value, regsAsWell);
+						// format
+						if (labels && labels.length > 0)
+							return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
+						// No label
+						return '' + restP;
+					}
 
 				case 'labelsplus':
-				{
-					// calculate labels
-					const labels = Labels.getLabelsPlusIndexForNumber64k(value, regsAsWell);
-					// format
-					if(labels && labels.length > 0)
-						return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
-					// No label
-					return '' + restP;
-				}
+					{
+						// calculate labels
+						const labels = Labels.getLabelsPlusIndexForNumber64k(value, regsAsWell);
+						// format
+						if (labels && labels.length > 0)
+							return modifier + labels.join(innerLabelSeparator) + endLabelSeparator + restP;
+						// No label
+						return '' + restP;
+					}
 
 				default:
 					// unknown formatting
-					return '${'+1+'???}' + restP;
+					return '${' + 1 + '???}' + restP;
 			}
 		});
 
@@ -727,8 +727,9 @@ export class Utility {
 	 * @param index The start index for conversion.
 	 * @param count (Optional, defaults to 1) The number of bytes to convert.
 	 * @param little_endian (optional) set to false for big endian.
+	 * @returns a number
 	 */
-	public static getUintFromMemory(memory: Uint8Array, index: number, count = 1, littleEndian = true) {
+	public static getUintFromMemory(memory: Uint8Array, index: number, count = 1, littleEndian = true): number {
 		let memVal = 0;
 		if (littleEndian) {
 			// Little endian
@@ -742,6 +743,40 @@ export class Utility {
 				memVal = 256 * memVal + memory[i];
 		}
 		return memVal;
+	}
+
+
+	/**
+	 * Converts a number into a series of bytes for the memory.
+	 * Little or big endian.
+	 * @param memVal The value to convert.
+	 * @param memory The memory target array.
+	 * @param index The start index for conversion.
+	 * @param count (Optional, defaults to 1) The number of bytes to convert.
+	 * @param little_endian (optional) set to false for big endian.
+	 * @returns a number
+	 */
+	public static setUintToMemory(memVal: number, memory: Uint8Array, index: number, count = 1, littleEndian = true) {
+		// Change neg to pos
+		if (memVal < 0)
+			memVal += (0x1) << (8 * count);
+
+		const end = index + count;
+		if (littleEndian) {
+			// Little endian
+			for (let i = index; i < end; i++) {
+				memory[i] = memVal & 0xFF;
+				memVal >>= 8;
+			}
+		}
+		else {
+			// Big endian
+			const end = index + count;
+			for (let i = end - 1; i >= index; i--) {
+				memory[i] = memVal & 0xFF;
+				memVal >>= 8;
+			}
+		}
 	}
 
 

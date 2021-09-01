@@ -1,11 +1,11 @@
 //import { Log } from './log';
-import { Labels } from '../labels/labels';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { Settings } from '../settings'
-import { Utility } from '../misc/utility';
-import { RefList } from '../misc/reflist';
-import { Remote } from '../remotes/remotefactory';
-import { Format } from '../disassembler/format';
+import {Labels} from '../labels/labels';
+import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {Settings} from '../settings'
+import {Utility} from '../misc/utility';
+import {RefList} from '../misc/reflist';
+import {Remote} from '../remotes/remotefactory';
+import {Format} from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';
 import {ExpressionVariable} from '../misc/expressionvariable';
@@ -64,7 +64,7 @@ export class ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
-	public changeable(name: string): string|undefined {
+	public changeable(name: string): string | undefined {
 		// Change normally not allowed if in reverse debugging
 		if (StepHistory.isInStepBackMode())
 			return 'Altering values not allowed in time-travel mode.';
@@ -84,7 +84,7 @@ export class ShallowVarConst extends ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'You cannot alter this value.'
 	 */
-	public changeable(name: string): string|undefined {
+	public changeable(name: string): string | undefined {
 		return 'You cannot alter this value.';
 	}
 }
@@ -175,7 +175,7 @@ export class MemorySlotsVar extends ShallowVarConst {
 		let slot = -1;
 		const segments = new Array<DebugProtocol.Variable>(count);
 		for (let i = 0; i < count; i++) {
-			const bank = memoryBanks[i+start];
+			const bank = memoryBanks[i + start];
 			const name = Utility.getHexString(bank.start, 4) + '-' + Utility.getHexString(bank.end, 4);
 			slot++;
 			const slotString = slot.toString();
@@ -259,7 +259,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
-	public changeable(name: string): string|undefined {
+	public changeable(name: string): string | undefined {
 		// Change normally not allowed if in reverse debugging
 		if (StepHistory.isInStepBackMode())
 			return 'Altering values not allowed in time-travel mode.';
@@ -273,7 +273,7 @@ export class RegistersMainVar extends ShallowVar {
 	 */
 	protected registerNames(): Array<string> {
 		return ["PC", "SP", "A", "F", "HL", "DE", "BC", "IX", "IY",
-				"B", "C", "D", "E", "H", "L"];
+			"B", "C", "D", "E", "H", "L"];
 	}
 
 }
@@ -357,10 +357,10 @@ export class StackVar extends ShallowVar {
 	 */
 	public async setValue(name: string, value: number): Promise<string> {
 		// Check if address and value are valid
-		const address = Utility.parseValue(name+'h');
-		if(!isNaN(address) && !isNaN(value)) {
+		const address = Utility.parseValue(name + 'h');
+		if (!isNaN(address) && !isNaN(value)) {
 			// Change neg to pos
-			if(value < 0)
+			if (value < 0)
 				value += 0x10000;
 			const data = new Uint8Array(2);
 			data[0] = value & 0xFF;
@@ -370,8 +370,8 @@ export class StackVar extends ShallowVar {
 		}
 
 		// Retrieve memory values, to see if they really have been set.
-		const data=await Remote.readMemoryDump(address, 2);
-		const memWord = data[0] + (data[1]<<8);
+		const data = await Remote.readMemoryDump(address, 2);
+		const memWord = data[0] + (data[1] << 8);
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, memWord, 2, Settings.launch.formatting.stackVar, undefined);
 		return formattedString;
@@ -835,17 +835,6 @@ export class MemDumpVar extends ShallowVar {
 
 
 	/**
-	 * The format to use.
-	 */
-	protected formatString(): string {
-		if (this.elemSize == 1)
-			return Settings.launch.formatting.watchByte;	// byte
-		else
-			return Settings.launch.formatting.watchWord;	// word
-	}
-
-
-	/**
 	 * Sets the value of the variable.
 	 * The formatted read data is returned in the Promise.
 	 * @param name The name of data. E.g. '[0]' or '[12]'
@@ -886,19 +875,103 @@ export class MemDumpVar extends ShallowVar {
 		return formattedString;
 	};
 
+
+	/**
+	 * The format to use.
+	 */
+	protected formatString(): string {
+		if (this.elemSize == 1)
+			return Settings.launch.formatting.watchByte;	// byte
+		else
+			return Settings.launch.formatting.watchWord;	// word
+	}
 }
 
 
 /**
- * Special object to hold either a reference or a pointer to an immediate value object.
- * Similar to ExpressionVariable.
+ * Represents an immediate value.
+ * This has no reference to a variable but directly checks the memory contents.
+ * It may be included in the returned item from the debug adapter 'evaluateLabelExpression'.
+ * It's been used by the ContainerVar.
  */
-/* TODO: remove.
-interface VarOrImmediate extends DebugProtocol.Variable {
-	//immediateValue?: () => Promise<string>;
-	expressionItem?: ExpressionVariable;
+export class ImmediateMemoryValue {
+	// The 64k address.
+	protected address64k: number;
+
+	// The size of the value, the count of bytes.
+	protected size: number;
+
+	// If the value should be interpreted as little endian or not.
+	protected littleEndian: boolean;	
+
+
+	/**
+	 * Constructor.
+	 * Throws an exception if size is bigger than 6. Otherwise there would be an
+	 * inaccuracy.
+	 * @param addr64k The 64k address.
+	 * @param size The size of the value, the count of bytes.
+	 * @param littleEndian If the value should be interpreted as little endian or not.
+	 */
+	constructor(addr64k: number, size: number, littleEndian = true) {
+		if (size > 6)
+			throw Error('The size of an element must be smaller than 7.');
+		this.address64k = addr64k;
+		this.size = size;
+		this.littleEndian = littleEndian;
+	}
+
+
+	/**
+	 * Reads the memory and returns the value as a string,
+	 * formatted as set in the settings.
+	 * @returns The value as a string.
+	 */
+	// TODO: test 3 or more bytes. Test bigger 6 also.
+	public async getValue(): Promise<string> {
+		const memory = await Remote.readMemoryDump(this.address64k, this.size);
+		const memVal = Utility.getUintFromMemory(memory, 0, this.size, this.littleEndian);
+		return await Utility.numberFormatted('', memVal, this.size, this.formatString(), undefined);
+	};
+
+
+	/**
+	 * Sets the value of the variable.
+	 * The formatted read data is returned in the Promise.
+	 * @param value The value to set.
+	 * @returns A Promise with the formatted string. undefined if not implemented.
+	 */
+	public async setValue(value: number): Promise<string> {
+		// Write data
+		const dataWrite = new Uint8Array(this.size);
+		Utility.setUintToMemory(value, dataWrite, 0, this.size, this.littleEndian);
+		await Remote.writeMemoryDump(this.address64k, dataWrite);
+		ShallowVar.memoryChanged = true;
+
+		// Retrieve memory values, to see if they really have been set.
+		const data = await Remote.readMemoryDump(this.address64k, this.size);
+		// Convert
+		const readValue = Utility.getUintFromMemory(data, 0, this.size, this.littleEndian);
+
+		// Pass formatted string to vscode
+		const formattedString = Utility.numberFormatted('', readValue, this.size, this.formatString(), undefined);
+		return formattedString;
+	}
+
+
+	/**
+	 * The format to use.
+	 */
+	protected formatString(): string {
+		switch (this.size) {
+			case 1: return Settings.launch.formatting.watchByte;	// byte
+			case 2: return Settings.launch.formatting.watchWord;	// word
+			default: return "${hex}h,\t${unsigned}u,\t${signed}i";
+		}
+	}
+
 }
-*/
+
 
 /**
  * The ContainerVar class acts as a container for other variables.
@@ -931,7 +1004,7 @@ export class ContainerVar extends ShallowVar {
 	 */
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
-		count = count || (this.varList.length-start);
+		count = count || (this.varList.length - start);
 		// Add the index hover text to each item
 		const dynList = new Array<DebugProtocol.Variable>(count);
 		for (let i = 0; i < count; i++) {
@@ -943,7 +1016,7 @@ export class ContainerVar extends ShallowVar {
 			let value = '';
 			if (entry.immediateValue) {
 				// ImmediateMemValue
-				value = await entry.immediateValue();
+				value = await entry.immediateValue.getValue();
 			}
 			dynList[i] = {
 				name: name,
@@ -991,11 +1064,34 @@ export class ContainerVar extends ShallowVar {
 	/**
 	 * Checks if allowed to change the value.
 	 * If not returns a string with an error message.
-	 * @param name The name of data.
+	 * @param name The name of the label/expression, e.g. "label,1,1"
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
 	public changeable(name: string): string | undefined {
-		return 'Use -addexpr/-delexpr to change the list of expressions.';
+		const item = this.expressionList.get(name)!;
+		Utility.assert(item);
+		if (!item.immediateValue)
+			return 'Use -addexpr/-delexpr to change the list of expressions.';
+		// Otherwise change the immediate value.
+		return undefined;
+	}
+
+
+	/**
+	 * Sets the value of the variable.
+	 * The formatted read data is returned in the Promise.
+	 * @param name The name of (immediate) data, i.e. the expression, e.g. "label,1,1".
+	 * @param value The value to set.
+	 * @returns A Promise with the formatted string. undefined if not implemented.
+	 */
+	public async setValue(name: string, value: number): Promise<string> {
+		// Get immediate function (Check has been done already in 'changeable')
+		const item = this.expressionList.get(name)!;
+		Utility.assert(item);
+		const immediateValue = item.immediateValue!;	// Already checked for undefined in 'changeable'
+
+		// Set value
+		return await immediateValue.setValue(value);
 	}
 
 

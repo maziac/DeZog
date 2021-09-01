@@ -9,7 +9,7 @@ import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -382,90 +382,14 @@ export class DebugSessionClass extends DebugSession {
 		// Supports conditional breakpoints
 		response.body.supportsConditionalBreakpoints = true;
 
-		// Handles debug 'Restart'
-		response.body.supportsRestartRequest = false;//true;
+		// Handles debug 'Restart'.
+		// If set to false the vscode restart button still occurs and
+		// vscode internally calls disconnect and launchRequest.
+		response.body.supportsRestartRequest = false;
 
 		this.sendResponse(response);
 
 		// Note: The InitializedEvent will be send when the socket connection has been successful. Afterwards the breakpoints are set.
-	}
-
-
-	/**
-	 * Called when 'Restart' is pressed.
-	 * Reload the program into the Remote.
-	 * Tries to do this without changing any other state.
-	 * But if the date of the list file has changed a reload of the
-	 * labels is required. Therefore also the MemoryViews are closed.
-	 * And also the expressions in the VARIABLES section are removed because the label might have changed.
-	 * Clear all variables
-	 * @param response
-	 * @param args
-	 */
-	protected async restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): Promise<void> {
-		// Inform in debug console.
-		this.debugConsoleAppendLine('==================================');
-
-		// Remove all windows (e.g. MemoryViews)
-		//BaseView.staticCloseAll();
-		// Restart (reload) everything
-		try {
-			// Init labels
-			Labels.init(Settings.launch.smallValuesMaximum);
-			// Read labels
-			Remote.readListFiles(Settings.launch);
-
-			const addr = (Labels.getNumberForLabel('invaders')||0) & 0xFFFF;
-			console.log(addr);
-
-		}
-		catch (e) {
-			// Some error occurred
-			this.terminate('Labels: ' + e.message);
-			// Send response anyway
-			this.sendResponse(response);
-			return;
-		}
-
-		// Create new variables/expressions
-		const expressions = [...this.expressionsList.keys()];
-		//const varRefs = [...this.expressionsList.values()].map(item => item.varRef);
-		this.expressionsList.clear();
-		// Clearing is improved by removing the varRefs from the listVariables completely.
-		//for (const varRef of varRefs) {
-		//	this.listVariables.delete(varRef);
-		//}
-		// Create new expression variables
-		for (const expr of expressions) {
-			const item = await this.evaluateLabelExpression(expr);
-			this.expressionsList.set(expr, item);
-		}
-
-		// Restart history
-		StepHistory.init();
-		// Reset all decorations
-		Decoration.clearAllDecorations();
-		// Reload the executable
-		await Remote.loadExecutable();
-		// Reset the PC
-		await Remote.setLaunchExecAddress();
-		this.debugConsoleAppendLine('Restarted at PC=' + Utility.getHexString(Remote.getPC(), 4) + 'h\n');
-		// Respond
-		this.sendResponse(response);
-
-		// Now start if "startAutomatically" is true
-		if (Settings.launch.startAutomatically) {
-			await this.remoteContinue();
-		}
-
-		// Reload PC
-		await this.pcHasBeenChanged();
-
-		// SP might have been changed as well:
-		this.sendEvent(new InvalidatedEvent(['variables']));
-
-		// Update memory views
-		this.update('restart');
 	}
 
 
@@ -1984,7 +1908,7 @@ export class DebugSessionClass extends DebugSession {
 					let result = '';
 					if (item.immediateValue) {
 						// Fill in immediate value (varRef is 0)
-						result = await item.immediateValue();
+						result = await item.immediateValue.getValue();
 					}
 					response.body = {
 						result,
@@ -2026,7 +1950,8 @@ export class DebugSessionClass extends DebugSession {
 		// If the count is > 1 then an array is displayed. If left then 1 is assumed.
 		// If the type is left, 'b' is assumed, e.g. "LBL_TEXT,,5" will show an array of 5 bytes.
 		// If both are omitted, e.g. "LBL_TEXT" just the byte value contents of LBL_TEXT is shown.
-		const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
+		//const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^\s,]*))?(,\s*([^;,]*))?/.exec(expression);
+		const match = /^@?([^\s,\[]+)\s*(\[\s*(\S*)\s*\])?(,\s*([^;,]*))?(,\s*([^;,]*))?(,\s*([^;,]*))?/.exec(expression); // Also evaluates a 4th component
 		if (!match)
 			throw Error('Error in expression: ' + expression);
 
@@ -2037,6 +1962,12 @@ export class DebugSessionClass extends DebugSession {
 		let lblIndexString = match[3];
 		let lblType = match[5];
 		let elemCountString = match[7];
+		let endianess = match[9] || '';
+		endianess = endianess.trim();
+		let littleEndian = true;
+		if (endianess == 'big')
+			littleEndian = false;	// At the moment it is used only for immediate values
+
 		// Defaults
 		let labelValue;
 		let lastLabel;
@@ -2138,13 +2069,8 @@ export class DebugSessionClass extends DebugSession {
 				throw Error('The size of an element must be smaller than 7.');
 			// Check for single value or array (no sub properties)
 			if (elemCount <= 1) {
-				const littleEndian = true;
 				// Create variable
-				immediateValue = async () => {
-					const memory = await Remote.readMemoryDump(labelValue64k, elemSize);
-					const memVal = Utility.getUintFromMemory(memory, 0, elemCount, littleEndian);
-					return await Utility.numberFormatted(labelString, memVal, elemSize, Settings.launch.formatting.watchByte, undefined);
-				};
+				immediateValue = new ImmediateMemoryValue(labelValue64k, elemSize, littleEndian);
 			}
 			else {
 				// Simple memdump
@@ -3196,7 +3122,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Safety check
 		if (varObj) {
 			// Variables can be changed only if not in reverse debug mode
-			const msg = varObj.changeable();
+			const msg = varObj.changeable(name);
 			if (msg) {
 				// Change not allowed e.g. if in reverse debugging
 				response.message = msg;
@@ -3220,8 +3146,10 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			await this.spHasBeenChanged();
 		if (ShallowVar.otherRegisterChanged)
 			await this.otherRegisterHasBeenChanged();
-		if (ShallowVar.memoryChanged)
+		if (ShallowVar.memoryChanged) {
 			await this.memoryHasBeenChanged();
+			this.sendEvent(new InvalidatedEvent(['variables']));	// E.g. the disasembly would need to be updated on memory change
+		}
 		ShallowVar.clearChanged();
 	}
 

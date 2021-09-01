@@ -1568,7 +1568,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Sends the command to write a memory dump.
-	 * @param address The memory start address.
+	 * @param address The memory start address (64k).
 	 * @param dataArray The data to write.
 	  */
 	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer | Uint8Array): Promise<void> {

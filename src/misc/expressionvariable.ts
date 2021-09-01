@@ -1,3 +1,4 @@
+import {ImmediateMemoryValue} from "../variables/shallowvar";
 
 /**
  * The data here represents a variable held in the expressions list.
@@ -9,10 +10,10 @@ export interface ExpressionVariable {
 
 	// An immediate value object or a reference to the variable.
 	// If set varRef is 0.
-	immediateValue?: () => Promise<string>;
+	immediateValue?: ImmediateMemoryValue;
 
 	// The variables reference.
-	// If used the nimmediateValue is undefined.
+	// If used the immediateValue is undefined.
 	varRef: number;
 
 	// The number of indexed child variables.
