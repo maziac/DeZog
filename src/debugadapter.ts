@@ -11,7 +11,7 @@ import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
 import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
-import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers,} from './remotes/z80registers';
+import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
@@ -1810,8 +1810,8 @@ export class DebugSessionClass extends DebugSession {
 	 * - watch: anything else.
 	 * args.context contains info that the request comes from the console, watch panel or hovering.
 	 * 'watch': evaluate is run in a watch.
-     * 'repl': evaluate is run from REPL console.
-     * 'hover': evaluate is run from a data hover.
+	 * 'repl': evaluate is run from REPL console.
+	 * 'hover': evaluate is run from a data hover.
 	 */
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): Promise<void> {
 		Log.log('evaluate.expression: ' + args.expression);
@@ -2125,10 +2125,10 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Prints a help text for the debug console commands.
 	 * @param tokens The arguments. Unused.
- 	 * @param A Promise with a text to print.
+	   * @param A Promise with a text to print.
 	 */
 	protected async evalHelp(tokens: Array<string>): Promise<string> {
-		const output=
+		const output =
 			`Allowed commands are:
 "-ASSERTION enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
@@ -2247,7 +2247,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * Deletes an expression (a label) from the VARIABLES pane.
 	 * In contrast to evaladdexpr this is done by index.
 	 * @param tokens The arguments. The index number to remove.
-     * @returns A Promise with a text to print.
+	 * @returns A Promise with a text to print.
 	 */
 	protected async evalDeleteExpr(tokens: Array<string>): Promise<string> {
 		if (tokens.length != 1) {
@@ -2307,7 +2307,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Executes a command in the emulator.
 	 * @param tokens The arguments. I.e. the command for the emulator.
- 	 * @returns A Promise with a text to print.
+	   * @returns A Promise with a text to print.
 	 */
 	protected async evalExec(tokens: Array<string>): Promise<string> {
 		// Execute
@@ -2323,31 +2323,31 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * evalEval almost gives the same information, but evalLabel allows
 	 * to use wildcards.
 	 * @param tokens The arguments. I.e. the label. E.g. "main" or "mai*".
- 	 * @returns A Promise with a text to print.
+	   * @returns A Promise with a text to print.
 	 */
 	protected async evalLabel(tokens: Array<string>): Promise<string> {
-		const expr=tokens.join(' ').trim();	// restore expression
-		if (expr.length==0) {
+		const expr = tokens.join(' ').trim();	// restore expression
+		if (expr.length == 0) {
 			// Error Handling: No arguments
 			return "Label expected.";
 		}
 
 		// Find label with regex, every star is translated into ".*"
-		const rString='^'+expr.replace(/\*/g, '.*?')+'$';
+		const rString = '^' + expr.replace(/\*/g, '.*?') + '$';
 		// Now search all labels
-		const labels=Labels.getLabelsForRegEx(rString);
-		let result='';
-		if (labels.length>0) {
+		const labels = Labels.getLabelsForRegEx(rString);
+		let result = '';
+		if (labels.length > 0) {
 			labels.map(label => {
 				let value = Labels.getNumberForLabel(label);
 				if (value != undefined)
 					value &= 0xFFFF;
-				result+=label+': '+Utility.getHexString(value, 4)+'h\n';
+				result += label + ': ' + Utility.getHexString(value, 4) + 'h\n';
 			})
 		}
 		else {
 			// No label found
-			result='No label matches.';
+			result = 'No label matches.';
 		}
 		// return result
 		return result;
@@ -2448,7 +2448,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param endiannessString The string to check.
 	 * @returns true for 'little' or undefined and 'false for 'big'.
 	 */
-	protected isLittleEndianString(endiannessString: string|undefined) {
+	protected isLittleEndianString(endiannessString: string | undefined) {
 		let littleEndian = true;
 		if (endiannessString != undefined) {
 			const s = endiannessString.toLowerCase();
@@ -2575,34 +2575,34 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async evalMemSave(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length<2) {
+		if (tokens.length < 2) {
 			// Error Handling: No arguments
 			throw Error("Address and size expected.");
 		}
 
 		// Address
-		const addressString=tokens[0];
-		const address=Utility.evalExpression(addressString);
-		if (address<0||address>0xFFFF)
-			throw Error("Address ("+address+") out of range.");
+		const addressString = tokens[0];
+		const address = Utility.evalExpression(addressString);
+		if (address < 0 || address > 0xFFFF)
+			throw Error("Address (" + address + ") out of range.");
 
 		// Size
-		const sizeString=tokens[1];
-		const size=Utility.evalExpression(sizeString);
-		if (size<0||size>0xFFFF)
-			throw Error("Size ("+size+") out of range.");
+		const sizeString = tokens[1];
+		const size = Utility.evalExpression(sizeString);
+		if (size < 0 || size > 0xFFFF)
+			throw Error("Size (" + size + ") out of range.");
 
 		// Get filename
-		const filename=tokens[2];
+		const filename = tokens[2];
 		if (!filename)
 			throw Error("No filename given.");
 
 		// Get memory
-		const data=await Remote.readMemoryDump(address, size);
+		const data = await Remote.readMemoryDump(address, size);
 
 		// Save to .tmp/filename
-		const relPath=Utility.getRelTmpFilePath(filename);
-		const absPath=Utility.getAbsFilePath(relPath);
+		const relPath = Utility.getRelTmpFilePath(filename);
+		const absPath = Utility.getAbsFilePath(relPath);
 		fs.writeFileSync(absPath, data);
 
 		// Send response
@@ -2697,7 +2697,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		for (let k = 0; k < tokens.length; k += 2) {
 			const start = addrSizes[k];
 			const size = addrSizes[k + 1]
-			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + 2*size - 1) & 0xFFFF, 4) + 'h');
+			panel.addBlock(start, size, Utility.getHexString(start & 0xFFFF, 4) + 'h-' + Utility.getHexString((start + 2 * size - 1) & 0xFFFF, 4) + 'h');
 		}
 		panel.mergeBlocks();
 		await panel.update();
@@ -2732,11 +2732,11 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Shows a a small disassembly in the console.
 	 * @param tokens The arguments. I.e. the address and size.
- 	 * @returns A Promise with a text to print.
+	   * @returns A Promise with a text to print.
 	 */
 	protected async evalDasm(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
-		if (tokens.length==0) {
+		if (tokens.length == 0) {
 			// Error Handling: No arguments
 			throw new Error("Address and number of lines expected.");
 		}
@@ -2747,28 +2747,28 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		}
 
 		// Get address
-		const addressString=tokens[0];
-		const address=Utility.evalExpression(addressString);
+		const addressString = tokens[0];
+		const address = Utility.evalExpression(addressString);
 
 		// Get size
-		const countString=tokens[1];
-		let count=10;	// Default
-		if(tokens.length>1) {
+		const countString = tokens[1];
+		let count = 10;	// Default
+		if (tokens.length > 1) {
 			// Count given
-			count=Utility.evalExpression(countString);
+			count = Utility.evalExpression(countString);
 		}
 
 
 		// Get memory
-		const data=await Remote.readMemoryDump(address, 4*count);
+		const data = await Remote.readMemoryDump(address, 4 * count);
 
 		// Disassembly
-		const dasmArray=DisassemblyClass.get(address, data, count);
+		const dasmArray = DisassemblyClass.getLines(address, data, count);
 
 		// Convert to text
-		let txt='';
+		let txt = '';
 		for (const line of dasmArray) {
-			txt+=Utility.getHexString(line.address, 4)+'\t'+line.instruction+'\n';
+			txt += Utility.getHexString(line.address, 4) + '\t' + line.instruction + '\n';
 		}
 
 		// Send response
@@ -2779,32 +2779,32 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * LOGPOINTS. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a probably error text.
+	   * @returns A Promise<string> with a probably error text.
 	 */
 	protected async evalLOGPOINT(tokens: Array<string>): Promise<string> {
-		const param=tokens[0]||'';
-		const group=tokens[1];
-		if (param=='enable'||param=='disable') {
+		const param = tokens[0] || '';
+		const group = tokens[1];
+		if (param == 'enable' || param == 'disable') {
 			// Enable or disable all WPMEM watchpoints
-			const enable=(param=='enable');
+			const enable = (param == 'enable');
 			await Remote.enableLogpointGroup(group, enable);
 		}
-		else if (param=='status') {
+		else if (param == 'status') {
 			// Just show
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '"+param+"'");
+			throw new Error("Unknown argument: '" + param + "'");
 		}
 
 		// Always show enable status of all Logpoints
-		let result='LOGPOINT groups:';
-		const enableMap=Remote.logpointsEnabled;
-		if (enableMap.size==0)
-			result+=' none';
+		let result = 'LOGPOINT groups:';
+		const enableMap = Remote.logpointsEnabled;
+		if (enableMap.size == 0)
+			result += ' none';
 		else {
 			for (const [group, enable] of enableMap) {
-				result+='\n  '+group+': '+((enable)? 'enabled':'disabled');
+				result += '\n  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled');
 			}
 		}
 		return result;
@@ -2814,42 +2814,42 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * ASSERTION. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a probably error text.
+	   * @returns A Promise<string> with a probably error text.
 	 */
 	protected async evalASSERTION(tokens: Array<string>): Promise<string> {
-		const param=tokens[0]||'';
-		if (param=='enable'||param=='disable') {
+		const param = tokens[0] || '';
+		if (param == 'enable' || param == 'disable') {
 			// Enable or disable all ASSERTION breakpoints
-			const enable=(param=='enable');
+			const enable = (param == 'enable');
 			await Remote.enableAssertionBreakpoints(enable);
 		}
-		else if (param=='status') {
+		else if (param == 'status') {
 			// Just show
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '"+param+"'");
+			throw new Error("Unknown argument: '" + param + "'");
 		}
 
 		// Show enable status of all ASSERTION breakpoints
-		const enable=Remote.assertionBreakpointsEnabled;
-		const enableString=(enable)? 'enabled':'disabled';
-		let result='ASSERTION breakpoints are '+enableString+'.\n';;
+		const enable = Remote.assertionBreakpointsEnabled;
+		const enableString = (enable) ? 'enabled' : 'disabled';
+		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';;
 		if (enable) {
 			// Also list all assertion breakpoints
-			const abps=Remote.getAllAssertionBreakpoints();
+			const abps = Remote.getAllAssertionBreakpoints();
 			for (const abp of abps) {
 				result += Utility.getLongAddressString(abp.address);
 				const labels = Labels.getLabelsForLongAddress(abp.address);
-				if (labels.length>0) {
-					const labelsString=labels.join(', ');
-					result+=' ('+labelsString+')';
+				if (labels.length > 0) {
+					const labelsString = labels.join(', ');
+					result += ' (' + labelsString + ')';
 				}
 				// Condition, remove the brackets
-				result+=', Condition: '+Utility.getAssertionFromCondition(abp.condition)+'\n';
+				result += ', Condition: ' + Utility.getAssertionFromCondition(abp.condition) + '\n';
 			}
-			if (abps.length==0)
-				result+='No ASSERTION breakpoints.\n';
+			if (abps.length == 0)
+				result += 'No ASSERTION breakpoints.\n';
 		}
 		return result;
 	}
@@ -2858,42 +2858,42 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * WPMEM. Enable/disable/status.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a text to print.
+	   * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalWPMEM(tokens: Array<string>): Promise<string> {
-		const param=tokens[0]||'';
-		if (param=='enable'||param=='disable') {
+		const param = tokens[0] || '';
+		if (param == 'enable' || param == 'disable') {
 			// Enable or disable all WPMEM watchpoints
-			const enable=(param=='enable');
+			const enable = (param == 'enable');
 			await Remote.enableWPMEM(enable);
 		}
-		else if (param=='status') {
+		else if (param == 'status') {
 			// Just show
 		}
 		else {
 			// Unknown argument
-			throw Error("Unknown argument: '"+param+"'");
+			throw Error("Unknown argument: '" + param + "'");
 		}
 
 		// Show enable status of all WPMEM watchpoints
-		const enable=Remote.wpmemEnabled;
-		const enableString=(enable)? 'enabled':'disabled';
-		let result='WPMEM watchpoints are '+enableString+'.\n';
+		const enable = Remote.wpmemEnabled;
+		const enableString = (enable) ? 'enabled' : 'disabled';
+		let result = 'WPMEM watchpoints are ' + enableString + '.\n';
 		if (enable) {
 			// Also list all watchpoints
-			const wps=Remote.getAllWpmemWatchpoints();
+			const wps = Remote.getAllWpmemWatchpoints();
 			for (const wp of wps) {
 				result += Utility.getLongAddressString(wp.address);
-				const labels=Labels.getLabelsForLongAddress(wp.address);
-				if (labels.length>0) {
-					const labelsString=labels.join(', ');
-					result+=' ('+labelsString+')';
+				const labels = Labels.getLabelsForLongAddress(wp.address);
+				if (labels.length > 0) {
+					const labelsString = labels.join(', ');
+					result += ' (' + labelsString + ')';
 				}
 				// Condition, remove the brackets
-				result+=', size='+wp.size+'\n';
+				result += ', size=' + wp.size + '\n';
 			}
-			if (wps.length==0)
-				result+='No WPMEM watchpoints.\n';
+			if (wps.length == 0)
+				result += 'No WPMEM watchpoints.\n';
 		}
 		return result;
 	}
@@ -2902,68 +2902,68 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Show the sprite patterns in a view.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a text to print.
+	   * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalSpritePatterns(tokens: Array<string>): Promise<string> {
 		// Evaluate arguments
 		let title;
-		let params: Array<number>|undefined=[];
-		if (tokens.length==0) {
+		let params: Array<number> | undefined = [];
+		if (tokens.length == 0) {
 			// The view should choose the visible sprites automatically
-			title='Sprite Patterns: 0-63';
+			title = 'Sprite Patterns: 0-63';
 			params.push(0);
 			params.push(64);
 		}
 		else {
 			// Create title
-			title='Sprite Patterns: '+tokens.join(' ');
+			title = 'Sprite Patterns: ' + tokens.join(' ');
 			// Get slot and count/endslot
 			while (true) {
 				// Get parameter
-				const param=tokens.shift();
+				const param = tokens.shift();
 				if (!param)
 					break;
 				// Evaluate
-				const match=/([^+-]*)(([-+])(.*))?/.exec(param);
+				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
 				if (!match) // Error Handling
-					throw new Error("Can't parse: '"+param+"'");
+					throw new Error("Can't parse: '" + param + "'");
 				// start slot
-				const start=Utility.parseValue(match[1]);
+				const start = Utility.parseValue(match[1]);
 				if (isNaN(start))	// Error Handling
-					throw new Error("Expected slot but got: '"+match[1]+"'");
+					throw new Error("Expected slot but got: '" + match[1] + "'");
 				// count
-				let count=1;
+				let count = 1;
 				if (match[3]) {
-					count=Utility.parseValue(match[4]);
+					count = Utility.parseValue(match[4]);
 					if (isNaN(count))	// Error Handling
-						throw new Error("Can't parse: '"+match[4]+"'");
-					if (match[3]=="-")	// turn range into count
-						count+=1-start;
+						throw new Error("Can't parse: '" + match[4] + "'");
+					if (match[3] == "-")	// turn range into count
+						count += 1 - start;
 				}
 				// Check
-				if (count<=0)	// Error Handling
-					throw new Error("Not allowed count: '"+match[0]+"'");
+				if (count <= 0)	// Error Handling
+					throw new Error("Not allowed count: '" + match[0] + "'");
 				// Add
 				params.push(start);
 				params.push(count);
 			}
 
-			const slotString=tokens[0]||'0';
-			const slot=Utility.parseValue(slotString);
+			const slotString = tokens[0] || '0';
+			const slot = Utility.parseValue(slotString);
 			if (isNaN(slot)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected slot but got: '"+slotString+"'");
+				throw new Error("Expected slot but got: '" + slotString + "'");
 			}
-			const countString=tokens[1]||'1';
-			const count=Utility.parseValue(countString);
+			const countString = tokens[1] || '1';
+			const count = Utility.parseValue(countString);
 			if (isNaN(count)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected count but got: '"+countString+"'");
+				throw new Error("Expected count but got: '" + countString + "'");
 			}
 		}
 
 		// Create new view
-		const panel=new ZxNextSpritePatternsView(title, params);
+		const panel = new ZxNextSpritePatternsView(title, params);
 		await panel.update();
 
 		// Send response
@@ -2974,68 +2974,68 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Show the sprites in a view.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a text to print.
+	   * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalSprites(tokens: Array<string>): Promise<string> {
 		// First check for tbblue
 		// Evaluate arguments
 		let title;
-		let params: Array<number>|undefined;
-		if (tokens.length==0) {
+		let params: Array<number> | undefined;
+		if (tokens.length == 0) {
 			// The view should choose the visible sprites automatically
-			title='Visible Sprites';
+			title = 'Visible Sprites';
 		}
 		else {
 			// Create title
-			title='Sprites: '+tokens.join(' ');
+			title = 'Sprites: ' + tokens.join(' ');
 			// Get slot and count/endslot
-			params=[];
+			params = [];
 			while (true) {
 				// Get parameter
-				const param=tokens.shift();
+				const param = tokens.shift();
 				if (!param)
 					break;
 				// Evaluate
-				const match=/([^+-]*)(([-+])(.*))?/.exec(param);
+				const match = /([^+-]*)(([-+])(.*))?/.exec(param);
 				if (!match) // Error Handling
-					throw new Error("Can't parse: '"+param+"'");
+					throw new Error("Can't parse: '" + param + "'");
 				// start slot
-				const start=Utility.parseValue(match[1]);
+				const start = Utility.parseValue(match[1]);
 				if (isNaN(start))	// Error Handling
-					throw new Error("Expected slot but got: '"+match[1]+"'");
+					throw new Error("Expected slot but got: '" + match[1] + "'");
 				// count
-				let count=1;
+				let count = 1;
 				if (match[3]) {
-					count=Utility.parseValue(match[4]);
+					count = Utility.parseValue(match[4]);
 					if (isNaN(count))	// Error Handling
-						throw new Error("Can't parse: '"+match[4]+"'");
-					if (match[3]=="-")	// turn range into count
-						count+=1-start;
+						throw new Error("Can't parse: '" + match[4] + "'");
+					if (match[3] == "-")	// turn range into count
+						count += 1 - start;
 				}
 				// Check
-				if (count<=0)	// Error Handling
-					throw new Error("Not allowed count: '"+match[0]+"'");
+				if (count <= 0)	// Error Handling
+					throw new Error("Not allowed count: '" + match[0] + "'");
 				// Add
 				params.push(start);
 				params.push(count);
 			}
 
-			const slotString=tokens[0]||'0';
-			const slot=Utility.parseValue(slotString);
+			const slotString = tokens[0] || '0';
+			const slot = Utility.parseValue(slotString);
 			if (isNaN(slot)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected slot but got: '"+slotString+"'");
+				throw new Error("Expected slot but got: '" + slotString + "'");
 			}
-			const countString=tokens[1]||'1';
-			const count=Utility.parseValue(countString);
+			const countString = tokens[1] || '1';
+			const count = Utility.parseValue(countString);
 			if (isNaN(count)) {
 				// Error Handling: Unknown argument
-				throw new Error("Expected count but got: '"+countString+"'");
+				throw new Error("Expected count but got: '" + countString + "'");
 			}
 		}
 
 		// Create new view
-		const panel=new ZxNextSpritesView(title, params);
+		const panel = new ZxNextSpritesView(title, params);
 		await panel.update();
 
 		// Send response
@@ -3046,48 +3046,48 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Save/restore the state.
 	 * @param tokens The arguments. 'save'/'restore'
- 	 * @returns A Promise<string> with a text to print.
+	   * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalStateSaveRestore(tokens: Array<string>): Promise<string> {
-		const param=tokens[0]||'';
-		const stateName=tokens[1];
-		if (!stateName&&
-			(param=='save'||param=='restore'||param=='clear'))
+		const param = tokens[0] || '';
+		const stateName = tokens[1];
+		if (!stateName &&
+			(param == 'save' || param == 'restore' || param == 'clear'))
 			throw new Error("Parameter missing: You need to add a name for the state, e.g. '0', '1' or more descriptive 'start'");
 
-		if (param=='save') {
+		if (param == 'save') {
 			// Save current state
 			await this.stateSave(stateName);
 			// Send response
-			return "Saved state '"+stateName+"'.";
+			return "Saved state '" + stateName + "'.";
 		}
-		else if (param=='restore') {
+		else if (param == 'restore') {
 			// Restores the state
 			await this.stateRestore(stateName);
-			return "Restored state '"+stateName+"'.";
+			return "Restored state '" + stateName + "'.";
 		}
-		else if (param=='list') {
+		else if (param == 'list') {
 			// List all files in the state dir.
 			let files;
 			try {
-				const dir=Utility.getAbsStateFileName('');
-				files=fs.readdirSync(dir);
+				const dir = Utility.getAbsStateFileName('');
+				files = fs.readdirSync(dir);
 			}
 			catch {}
 			let text;
-			if (files==undefined||files.length==0)
-				text="No states saved yet.";
+			if (files == undefined || files.length == 0)
+				text = "No states saved yet.";
 			else
-				text="All states:\n"+files.join('\n');
+				text = "All states:\n" + files.join('\n');
 			return text;
 		}
-		else if (param=='clearall') {
+		else if (param == 'clearall') {
 			// Removes the files in the states directory
 			try {
-				const dir=Utility.getAbsStateFileName('');
-				const files=fs.readdirSync(dir);
+				const dir = Utility.getAbsStateFileName('');
+				const files = fs.readdirSync(dir);
 				for (const file of files) {
-					const path=Utility.getAbsStateFileName(file);
+					const path = Utility.getAbsStateFileName(file);
 					fs.unlinkSync(path);
 				}
 			}
@@ -3096,20 +3096,20 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			}
 			return "All states deleted.";
 		}
-		else if (param=='clear') {
+		else if (param == 'clear') {
 			// Removes one state
 			try {
-				const path=Utility.getAbsStateFileName(stateName);
+				const path = Utility.getAbsStateFileName(stateName);
 				fs.unlinkSync(path);
 			}
 			catch (e) {
 				return e.message;
 			}
-			return "State '"+stateName+"' deleted.";
+			return "State '" + stateName + "' deleted.";
 		}
 		else {
 			// Unknown argument
-			throw new Error("Unknown argument: '"+param+"'");
+			throw new Error("Unknown argument: '" + param + "'");
 		}
 	}
 
@@ -3117,17 +3117,17 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Debug commands. Not shown publicly.
 	 * @param tokens The arguments.
- 	 * @returns A Promise<string> with a text to print.
+	   * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalDebug(tokens: Array<string>): Promise<string> {
-		const param1=tokens[0]||'';
-		let unknownArg=param1;
+		const param1 = tokens[0] || '';
+		let unknownArg = param1;
 		// Unknown argument
-		throw new Error("Unknown argument: '"+unknownArg+"'");
+		throw new Error("Unknown argument: '" + unknownArg + "'");
 	}
 
 
-    /**
+	/**
 	* Called eg. if user changes a register value.
 	*/
 	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments) {
@@ -3250,35 +3250,62 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Does a dissaembly to the debug console for the address at the cursor position.
 	 * @param filename The absolute file path.
-	 * @param lineNr The lineNr. Starts at 0.
+	 * @param fromLineNr The line. Starts at 0.
+	 * @param toLineNr The line. Starts at 0.
 	 */
-	protected async disassemblyAtCursor(filename: string, lineNr: number): Promise<void> {
+	protected async disassemblyAtCursor(filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
 		// Get address of file/line
-		const realLineNr = lineNr;
-		let addr = Remote.getAddrForFileAndLine(filename, realLineNr);
-		if (addr < 0)
+		let fromAddr;
+		while (fromLineNr <= toLineNr) {
+			fromAddr = Remote.getAddrForFileAndLine(filename, fromLineNr)
+			if (fromAddr >= 0)
+				break;
+			fromLineNr++;
+		}
+		let toAddr;
+		while (fromLineNr <= toLineNr) {
+			toAddr = Remote.getAddrForFileAndLine(filename, toLineNr)
+			if (toAddr >= 0)
+				break;
+			toLineNr--;
+		}
+		if (fromAddr < 0)
 			return;
+
 		// Check if bank is the same
 		const slots = Remote.getSlots();
 		if (slots) {
-			const bank = Z80Registers.getBankFromAddress(addr);
-			if (bank >= 0) {
-				const slotIndex = Z80Registers.getSlotFromAddress(addr);
-				if (bank != slots[slotIndex]) {
-					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(addr & 0xFFFF, 4) + "h, bank=" + bank + ")");
+			const fromBank = Z80Registers.getBankFromAddress(fromAddr);
+			if (fromBank >= 0) {
+				const slotIndex = Z80Registers.getSlotFromAddress(fromAddr);
+				if (fromBank != slots[slotIndex]) {
+					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(fromBank & 0xFFFF, 4) + "h, bank=" + fromBank + ")");
+					return;
+				}
+			}
+			const toBank = Z80Registers.getBankFromAddress(toAddr);
+			if (toBank >= 0) {
+				const slotIndex = Z80Registers.getSlotFromAddress(toAddr);
+				if (toBank != slots[slotIndex]) {
+					this.debugConsoleAppendLine("Memory currently not paged in.  (address=" + Utility.getHexString(toBank & 0xFFFF, 4) + "h, bank=" + toBank + ")");
 					return;
 				}
 			}
 		}
 
 		// Read the memory.
-		const lineCount = 1;
-		const size = 4 * lineCount;	// 4 is the max size of an opcode
-		addr &= 0xFFFF;
-		const data = await Remote.readMemoryDump(addr, size);
+		this.debugConsoleAppendLine('');
+		let size = (toAddr - fromAddr + 1) & 0xFFFF;
+		if (size > 0x800) {
+			size = 0x800;
+			this.debugConsoleAppendLine('Note: Disassembly limited to ' + size + ' bytes.');
+		}
+		fromAddr &= 0xFFFF
+		toAddr &= 0xFFFF;
+		const data = await Remote.readMemoryDump(fromAddr, size + 3);
 
 		// Disassemble
-		const dasmArray = DisassemblyClass.get(addr, data, lineCount);
+		const dasmArray = DisassemblyClass.getDasmMemory(fromAddr, data);
 
 		// Output
 		for (const addrInstr of dasmArray) {
@@ -3308,8 +3335,9 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			case 'disassemblyAtCursor':
 				{
 					const filename = args[0];
-					const lineNr = args[1];
-					this.disassemblyAtCursor(filename, lineNr);	// No need for 'await'
+					const fromLineNr = args[1];
+					const toLineNr = args[2];
+					this.disassemblyAtCursor(filename, fromLineNr, toLineNr);	// No need for 'await'
 				}
 				break;
 
@@ -3339,11 +3367,11 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 */
 	protected async stateSave(stateName: string): Promise<void> {
 		// Save state
-		const filePath=Utility.getAbsStateFileName(stateName);
+		const filePath = Utility.getAbsStateFileName(stateName);
 		try {
 			// Make sure .tmp/states directory exists
 			try {
-				const dir=Utility.getAbsStateFileName('');
+				const dir = Utility.getAbsStateFileName('');
 				fs.mkdirSync(dir);
 			}
 			catch {}
@@ -3351,7 +3379,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			await Remote.stateSave(filePath);
 		}
 		catch (e) {
-			const errTxt="Can't save '"+filePath+"': "+e.message;
+			const errTxt = "Can't save '" + filePath + "': " + e.message;
 			throw new Error(errTxt);
 		}
 	}
@@ -3371,12 +3399,12 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		let filePath;
 		try {
 			// Read data
-			filePath=Utility.getAbsStateFileName(stateName);
+			filePath = Utility.getAbsStateFileName(stateName);
 			// Restore state
 			await Remote.stateRestore(filePath);
 		}
 		catch (e) {
-			const errTxt="Can't load '"+filePath+"': "+e.message;
+			const errTxt = "Can't load '" + filePath + "': " + e.message;
 			throw new Error(errTxt);
 		}
 		// Clear history
@@ -3416,7 +3444,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param text The output string.
 	 */
 	protected debugConsoleIndentedText(text: string) {
-		this.debugConsoleAppendLine(this.debugConsoleIndentation+text);
+		this.debugConsoleAppendLine(this.debugConsoleIndentation + text);
 	}
 }
 

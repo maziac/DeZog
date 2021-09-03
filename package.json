@@ -176,7 +176,7 @@
 			},
 			{
 				"command": "dezog.disassemblyAtCursor",
-				"title": "Disassembly at Cursor Position",
+				"title": "Disassembly at Cursor",
 				"category": "dezog"
 			},
 			{

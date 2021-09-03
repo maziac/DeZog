@@ -119,7 +119,7 @@ export class DisassemblyVar extends ShallowVarConst {
 		const data = await Remote.readMemoryDump(this.address, size);
 
 		// Disassemble
-		const dasmArray = DisassemblyClass.get(this.address, data, this.count);
+		const dasmArray = DisassemblyClass.getLines(this.address, data, this.count);
 
 		// Add extra info
 		const list = new Array<DebugProtocol.Variable>();
