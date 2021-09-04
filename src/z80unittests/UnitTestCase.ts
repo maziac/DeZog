@@ -19,49 +19,85 @@ import {UnifiedPath} from '../misc/unifiedpath';
  * - A unit test itself (the UT label)
  * plus the rootSuite which is a suite without parent and testItem references.
  */
-class UnitTestCase {
-	// Pointer to the parent test item (suite).
-	//public parent?: UnitTestSuite;
+export class UnitTestCaseBase {
 
 	// Pointer to the corresponding test item.
 	public testItem: vscode.TestItem;
 
+	// A weak map that associates vscode test cases with "real" UnitTestCases.
+	public static tcMap = new Map<vscode.TestItem, UnitTestCaseBase>();
+
 
 	/**
 	 * Constructor.
+	 * @param id The unique id. File name plus assembly label.
+	 * @param label The human readable name of the unit test.
+	 * @param filePath An optional file path.
 	 */
-	constructor(id: string, label: string) {
-		if(id)
-			this.testItem = RootTestSuite.testController.createTestItem(id, label);
+	constructor(id: string, label: string, filePath?: string) {
+		if (id) {
+			let uri;
+			if (filePath)
+				uri = vscode.Uri.file(filePath);
+			this.testItem = RootTestSuite.testController.createTestItem(id, label, uri);
+			UnitTestCaseBase.tcMap.set(this.testItem, this);
+		}
 	}
 
 
 	/**
-	 * Delete a test item and it's children.
+	 * Returns the "real" UnitTestCase for a vscode test item.
 	 */
-	public delete() {
-		// Remove from parent
-		/*
-		if (this.parent) {
-			// Delete from parent
-			this.parent.removeChild(this);
-		}
-		*/
+	public static getUnitTestCase(item: vscode.TestItem): UnitTestCaseBase {
+		const ut = UnitTestCaseBase.tcMap.get(item);
+		Utility.assert(ut);
+		return ut!;
 	}
 }
 
 
-class UnitTestSuite extends UnitTestCase {
-	// A map that contains children unit tests.
-	protected children: Array<UnitTestSuite | UnitTestCase>;
+/**
+ * A test case.
+ * Additionally contains information for executing the test case, e.g. the label.
+ */
+class UnitTestCase extends UnitTestCaseBase {
+	// The label for execution. E.g. "Testsuite.UT_clear_screen"
+	public utLabel: string;
 
 
 	/**
 	 * Constructor.
+	 * @param id The unique id. File name plus assembly label.
+	 * @param label The human readable name of the unit test.
+	 * @param utLabel The (assembly) label of the unit test.
+	 * @param filePath An optional file path.
 	 */
 
-	constructor(id: string, label: string) {
-		super(id, label);
+	constructor(id: string, label: string, utLabel: string, filePath: string) {
+		super(id, label, filePath);
+		this.utLabel = utLabel;
+	}
+}
+
+
+/**
+ * A test suite containing other test suites or test cases.
+ */
+class UnitTestSuite extends UnitTestCase {
+	// A map that contains children unit tests.
+	protected children: Array<UnitTestSuite | UnitTestCaseBase>;
+
+
+	/**
+	 * Constructor.
+	 * @param id The unique id. File name plus assembly label.
+	 * @param label The human readable name of the unit test.
+	 * @param utLabel The (assembly) label of the unit test.
+	 * @param filePath An optional file path.
+	 */
+
+	constructor(id: string, label: string, utLabel: string, filePath: string) {
+		super(id, label, utLabel, filePath);
 		this.children = [];
 	}
 
@@ -69,7 +105,7 @@ class UnitTestSuite extends UnitTestCase {
 	/**
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
-	public addChild(child: UnitTestCase) {
+	public addChild(child: UnitTestCaseBase) {
 	//	child.parent?.removeChild(child);
 		this.children.push(child);
 	//	child.parent = this;
@@ -81,7 +117,7 @@ class UnitTestSuite extends UnitTestCase {
 	/**
 	 * Removes a child from the list.
 	 */
-	public removeChild(child: UnitTestCase) {
+	public removeChild(child: UnitTestCaseBase) {
 		const reducedList = this.children.filter(item => item != child);
 		this.children = reducedList;
 		// Delete vscode test item
@@ -93,7 +129,6 @@ class UnitTestSuite extends UnitTestCase {
 	 * Delete a test suite and it's children.
 	 */
 	public delete() {
-		super.delete();
 		this.deleteChildren();
 	}
 
@@ -106,7 +141,6 @@ class UnitTestSuite extends UnitTestCase {
 		for (const child of this.children) {
 			//child.parent = undefined;
 			this.testItem.children.delete(child.testItem.id);
-			child.delete();
 		}
 		this.children = [];
 	}
@@ -132,7 +166,8 @@ export class RootTestSuite extends UnitTestSuite {
 	 * Constructor.
 	 */
 	constructor(testController: vscode.TestController) {
-		super(undefined as any, undefined as any);
+		super(undefined as any, undefined as any, undefined as any, undefined as any);
+		UnitTestCaseBase.tcMap.clear();
 		// A map that remembers the workspaces
 		this.wsTsMap = new Map<string, UnitTestSuiteLaunchJson>();
 		this.wsFwMap = new Map<string, FileWatcher>();
@@ -221,7 +256,7 @@ export class RootTestSuite extends UnitTestSuite {
 	/**
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
-	public addChild(child: UnitTestCase) {
+	public addChild(child: UnitTestCaseBase) {
 		this.children.push(child);
 		// Add vscode item
 		RootTestSuite.testController.items.add(child.testItem);
@@ -231,7 +266,7 @@ export class RootTestSuite extends UnitTestSuite {
 	/**
 	 * Removes a child from the list.
 	 */
-	public removeChild(child: UnitTestCase) {
+	public removeChild(child: UnitTestCaseBase) {
 		const reducedList = this.children.filter(item => item != child);
 		this.children = reducedList;
 		// Delete vscode test item
@@ -255,7 +290,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label);
+		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label, undefined as any, undefined as any);
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -338,7 +373,7 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name);
+		super(wsFolder + '#' + config.name, config.name, undefined as any, undefined as any);
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config, wsFolder);
@@ -412,9 +447,6 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 		// Remove old structures (+ children)
 		this.deleteChildren();
 
-		if (this.config.name == 'Unit_Tests2')
-			console.log();
-
 		// Read labels from sld/list file
 		const labels = new LabelsClass();
 		Utility.setRootPath(this.wsFolder);
@@ -428,30 +460,11 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 		// Now parse for Unit test labels, i.e. starting with "UT_"
 		const utLabels = this.getAllUtLabels(labels);
 
-
-		if (utLabels == undefined || utLabels.length == 0) {
-
-			// Read labels from sld/list file
-			const labels = new LabelsClass();
-			Utility.setRootPath(this.wsFolder);
-			try {
-				labels.readListFiles(this.config);
-			}
-			catch (e) {
-				console.log(e);
-				throw e;
-			}
-			// Now parse for Unit test labels, i.e. starting with "UT_"
-			const utLabels = this.getAllUtLabels(labels);
-			console.log(utLabels);
-
-		}
-
 		// Convert labels into intermediate map
 		const map = this.convertLabelsToMap(utLabels);
 
 		// Convert into test suite/cases
-		this.createTestSuite(map, '');
+		this.createTestSuite(labels, map, '');
 	}
 
 
@@ -461,26 +474,43 @@ class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param map A map of maps. An entry with a map of length 0 is a leaf,
 	 * i.e. a test case. Others are test suites.
 	 */
-	protected createTestSuite(map: Map<string, any>, name: string, parent?: UnitTestSuite) {
+	protected createTestSuite(labels: LabelsClass, map: Map<string, any>, name: string, parent?: UnitTestSuite) {
 		// Check if test suite or test case
 		let testItem;
 		if (parent) {
 			const fullId = parent.testItem.id + '.' + name;
+			let fullUtLabel = '';;
+			if (parent.utLabel)
+				fullUtLabel = parent.utLabel + '.';
+			fullUtLabel += name;
+			// Get file/line  location
+			const location = labels.getLocationOfLabel(fullUtLabel)!;
+			let file;
+			if (location) {
+				file = Utility.getAbsFilePath(location.file);
+			}
+			// Suite or test case
 			if (map.size == 0) {
 				// It has no children, it is a leaf, i.e. a test case
-				testItem = new UnitTestCase(fullId, name);
+				Utility.assert(file);
+				testItem = new UnitTestCase(fullId, name, fullUtLabel, file);
 			}
 			else {
-				testItem = new UnitTestSuite(fullId, name);
+				testItem = new UnitTestSuite(fullId, name, fullUtLabel, file);
 			}
 			parent.addChild(testItem);
+			// Now the location inside the file
+			if (location) {
+				const vsTest: vscode.TestItem = testItem.testItem;
+				vsTest.range = new vscode.Range(location.lineNr, 0, location.lineNr, 0);
+			}
 		}
 		else {
 			// Root
 			testItem = this;
 		}
 		for (const [key, childMap] of map) {
-			this.createTestSuite(childMap, key, testItem);
+			this.createTestSuite(labels, childMap, key, testItem);
 		}
 	}
 

@@ -12,12 +12,13 @@ import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
-import {RootTestSuite} from './UnitTestCase';
+import {UnitTestCaseBase, RootTestSuite} from './UnitTestCase';
 
 
 
 
 /// Some definitions for colors.
+// TODO: Do I need the colors still?
 enum Color {
 	Reset = "\x1b[0m",
 	Bright = "\x1b[1m",
@@ -180,6 +181,60 @@ export class Z80UnitTestRunner {
 	 * Runs a test case. (Not debug)
 	 */
 	protected static async runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
+		const run = this.testController.createTestRun(request);
+		const queue: vscode.TestItem[] = [];
+
+		// Loop through all included tests, or all known tests, and add them to our queue
+		if (request.include) {
+			request.include.forEach(test => queue.push(test));
+		} else {
+			this.testController.items.forEach(test => queue.push(test));
+		}
+
+		// For every test that was queued, try to run it. Call run.passed() or run.failed().
+		// The `TestMessage` can contain extra information, like a failing location or
+		// a diff output. But here we'll just give it a textual message.
+		while (queue.length > 0 && !token.isCancellationRequested) {
+			const test = queue.shift()!;
+
+			// Skip tests the user asked to exclude
+			if (request.exclude?.includes(test))
+				continue;
+
+			// If it has children it is a test suite, otherwise a test case
+			if (test.children.size == 0) {
+				// Run the test case
+				const start = Date.now();
+				try {
+					run.started(test);
+					await this.runTestCase(test);
+					run.passed(test, Date.now() - start);
+				}
+				catch (e) {
+					// Test failure
+					const testMsg = new vscode.TestMessage(e.message);
+					let range = test.range;
+					if (e.position) {
+						const line = e.position.line;
+						const col = e.position.column;
+						range = new vscode.Range(line, col, line, col);
+					}
+					if (range) {
+						testMsg.location = new vscode.Location(test.uri!, range);
+					}
+					run.failed(test, testMsg, Date.now() - start);
+				}
+			}
+			else {
+				// Run child tests
+				const tmp: vscode.TestItem[] = [];
+				test.children.forEach(item => tmp.push(item));
+				queue.unshift(...tmp);
+			}
+		}
+
+		// Make sure to end the run after all tests have been executed:
+		run.end();
 	}
 
 
@@ -190,6 +245,59 @@ export class Z80UnitTestRunner {
 		// TODO
 	}
 
+
+	/**
+	 * Runs a single test case.
+	 * Throws an exception on failure.
+	 * Np exception if passed correctly.
+	 * @param test The TestItem.
+	 */
+	protected static async runTestCase(test: vscode.TestItem) {
+		console.log(test);
+		const ut = UnitTestCaseBase.getUnitTestCase(test);
+		console.log(ut);
+
+		/*
+		// Get 'required' context
+		const tcContext = this.tcContexts.get(test)!;
+
+		this.allCoveredAddresses = new Set<number>();
+		await this.terminateEmulator();
+
+		// Debugger not active anymore, start tests
+		//this.cancelled = false;
+		//if (debug)
+		//	this.debugTests();
+		//else
+		try {
+			await this.runTests();	// TODO rename to prepareTest
+		}
+		catch (e) {
+			vscode.window.showErrorMessage(e.message);
+			throw Error('Problem starting the Remote.');
+		}
+
+		// Execute
+		//tcContext.requireContext.dezogExecAddr = this.execAddr;
+
+		const spStr = Settings.launch.topOfStack;
+		let sp = Labels.getNumberForLabel(spStr) || 0;
+		sp &= 0xFFFF;
+
+		tcContext.requireContext.setDezogTestContext(sp, this, Remote);
+		try {
+			await tcContext.testFunc!();	// TODO: also async functions
+		}
+		catch (e) {
+			// Add the line number
+			if (!e.position) {
+				e.position = Utility.getLineNumberFromError(e, 0, this.fakeTestScriptFileName);
+			}
+			throw e;
+		}
+*/
+		await Utility.timeout(2000);
+	}
 
 
 	/**
