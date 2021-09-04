@@ -277,7 +277,7 @@ export class Z80UnitTests {
 
 		// Setup settings
 		const rootFolder = Utility.getRootPath();
-		Settings.Init(configuration, rootFolder);
+		Settings.launch = Settings.Init(configuration, rootFolder);
 		Settings.CheckSettings();
 
 		// Reset all decorations
@@ -597,7 +597,7 @@ export class Z80UnitTests {
 		const configuration = Z80UnitTests.getUnitTestsLaunchConfig();
 
 		// Setup settings
-		Settings.Init(configuration, rootFolder);
+		Settings.launch = Settings.Init(configuration, rootFolder);
 		Settings.CheckSettings();
 
 		// Get labels

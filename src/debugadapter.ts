@@ -439,8 +439,7 @@ export class DebugSessionClass extends DebugSession {
 			Utility.setRootPath(rootFolder);
 
 			// Save args
-			Settings.Init(args, rootFolder);
-			Settings.launch = args;
+			Settings.launch = Settings.Init(args, rootFolder);
 			Settings.CheckSettings();
 
 			// Persistent variable references

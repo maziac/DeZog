@@ -351,7 +351,7 @@ suite('Labels', () => {
 				labels.bankSize = 16384
 
 				// Is used during conversion (Z80Registers.getBankFromAddress)
-				Settings.Init({} as any, '');
+				Settings.launch = Settings.Init({} as any, '');
 				Z80RegistersClass.createRegisters();
 				const memMdl = new ZxNextMemoryModel();
 				memMdl.init();
@@ -389,7 +389,7 @@ suite('Labels', () => {
 				labels.bankSize = 8192
 
 				// Is used during conversion (Z80Registers.getBankFromAddress)
-				Settings.Init({} as any, '');
+				Settings.launch = Settings.Init({} as any, '');
 				Z80RegistersClass.createRegisters();
 				const memMdl = new Zx128MemoryModel();
 				memMdl.init();
