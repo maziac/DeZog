@@ -9,7 +9,7 @@ import {RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ContainerVar, ImmediateMemoryValue} from './variables/shallowvar';
+import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
 import {RemoteFactory, Remote} from './remotes/remotefactory';
@@ -61,9 +61,6 @@ export class DebugSessionClass extends DebugSession {
 
 	// A list with the expressions used in the WATCHes panel and the Expressions section in the VARIABLES pane.
 	protected expressionsList = new Map<string, ExpressionVariable>();
-
-	/// The list of labels that are shown in the VARIABLES section.
-	protected containerVar: ContainerVar;
 
 	/// The disassembly that is shown in the VARIABLES section.
 	protected disassemblyVar: DisassemblyVar;
@@ -449,7 +446,6 @@ export class DebugSessionClass extends DebugSession {
 			// Persistent variable references
 			this.listVariables.clear();
 			this.expressionsList.clear();
-			this.containerVar = new ContainerVar(this.expressionsList);
 			this.disassemblyVar = new DisassemblyVar();
 			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
 			this.localStackVar = new StackVar();
@@ -458,8 +454,7 @@ export class DebugSessionClass extends DebugSession {
 				new Scope("Registers 2", this.listVariables.addObject(new RegistersSecondaryVar())),
 				new Scope("Disassembly", this.listVariables.addObject(this.disassemblyVar)),
 				new Scope("Memory Banks", this.listVariables.addObject(new MemorySlotsVar())),
-				new Scope("Local Stack", this.listVariables.addObject(this.localStackVar)),
-				new Scope("Expressions", this.listVariables.addObject(this.containerVar)),
+				new Scope("Local Stack", this.listVariables.addObject(this.localStackVar))
 			];
 		}
 		catch (e) {
@@ -1746,9 +1741,6 @@ export class DebugSessionClass extends DebugSession {
 		if (cmd == '-help' || cmd == '-h') {
 			output = await this.evalHelp(tokens);
 		}
-		else if (cmd == '-addexpr') {
-			output = await this.evalAddExpr(tokens);
-		}
 		else if (cmd == '-ASSERTION' || cmd == '-assertion') {
 			output = await this.evalASSERTION(tokens);
 		}
@@ -1793,9 +1785,6 @@ export class DebugSessionClass extends DebugSession {
 		}
 		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
 			output = await this.evalWPMEM(tokens);
-		}
-		else if (cmd == '-delexpr') {
-			output = await this.evalDeleteExpr(tokens);
 		}
 		else if (cmd == '-sprites') {
 			output = await this.evalSprites(tokens);
@@ -2161,20 +2150,7 @@ export class DebugSessionClass extends DebugSession {
 "-ASSERTION enable|disable|status":
 	- enable|disable: Enables/disables all breakpoints caused by ASSERTIONs set in the sources. All ASSERTIONs are by default enabled after startup of the debugger.
 	- status: Shows enable status of ASSERTION breakpoints.
-"-addexpr expression": Adds a variable/label to the VARIABLES pane. (Syntax is similar to the expressions in the WATCH panel.
-	However, data in the VARIABLES panel can be modified.)
-	- expression: See WATCHes in the DeZog help. In brief an expression is: label,type/size,count,endianess.
-		- label: One of your labels or an numeric address
-		- type/size: The size of your data structure. If you use a type (STRUCT) you should give the STRUCT name here.
-		- count: The number of elements to show.
-		- endianess: 'little' (default) or 'big'.
-		You can omit everything other than the label.
-	See also "-delexpr index"
 "-dasm address count": Disassembles a memory area. count=number of lines.
-"-delexpr index": Remove an expression/label from the VARIABLES pane.
-	-index: the index of the expression/label to remove. Indexes start at 0. You can hover
-	the expression/label to find it's number (or simply count from top to bottom, top starts with 0).
-	You can also use 'all' to remove all expressions.
 "-eval expr": Evaluates an expression. The expression might contain mathematical expressions and also labels. It will also return the label if
 the value correspondends to a label.
 "-exec|e cmd args": cmd and args are directly passed to ZEsarUX. E.g. "-exec get-registers".
@@ -2241,63 +2217,6 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		it hangs if it hangs. (Use 'setProgress' to debug.)
 		*/
 		return output;
-	}
-
-
-	/**
-	 * Adds an expression (a label) into the VARIABLES pane.
-	 * Similar to WATCHes but in the VARIABLES pane it is also possible to
-	 * modify data.
-	 * @param tokens The arguments. I.e. the expression to evaluate.
-	 * @returns A Promise with a text to print.
-	 */
-	protected async evalAddExpr(tokens: Array<string>): Promise<string> {
-		// Concatenate all tokens, i.e. spaces are of no interest
-		const expr = tokens.join(' ').trim();	// restore expression
-		if (expr.length == 0) {
-			// Error Handling: No arguments
-			throw new Error("Expression/label expected.");
-		}
-
-		try {
-			// Evaluate expression and create variables
-			await this.evaluateLabelExpression(expr);
-			this.containerVar.addItem(expr);
-			return 'OK';
-		}
-		catch (e) {
-			return 'Error: ' + e.message;
-		}
-	}
-
-
-	/**
-	 * Deletes an expression (a label) from the VARIABLES pane.
-	 * In contrast to evaladdexpr this is done by index.
-	 * @param tokens The arguments. The index number to remove.
-	 * @returns A Promise with a text to print.
-	 */
-	protected async evalDeleteExpr(tokens: Array<string>): Promise<string> {
-		if (tokens.length != 1) {
-			// Error Handling: 1 arg expected
-			throw new Error("1 argument, the index of the variable, expected.");
-		}
-
-		try {
-			// Check if all should be deleted
-			if (tokens[0].toLowerCase() == 'all') {
-				this.containerVar.clear();
-			}
-			else {
-				// Get index
-				const index = parseInt(tokens[0]);
-				this.containerVar.deleteItem(index);
-			}
-			return 'OK';
-		}
-		catch (e) {
-			return 'Error: ' + e.message;
-		}
 	}
 
 
