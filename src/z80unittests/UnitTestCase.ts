@@ -19,7 +19,7 @@ import {UnifiedPath} from '../misc/unifiedpath';
  * - A unit test itself (the UT label)
  * plus the rootSuite which is a suite without parent and testItem references.
  */
-class UnitTestCase {	// TODO: rename
+class UnitTestCase {
 	// Pointer to the parent test item (suite).
 	//public parent?: UnitTestSuite;
 

@@ -913,7 +913,6 @@ export class ImmediateMemoryValue {
 	 * formatted as set in the settings.
 	 * @returns The value as a string.
 	 */
-	// TODO: test 3 or more bytes. Test bigger 6 also.
 	public async getValue(): Promise<string> {
 		const memory = await Remote.readMemoryDump(this.address64k, this.size);
 		const memVal = Utility.getUintFromMemory(memory, 0, this.size, this.littleEndian);

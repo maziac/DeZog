@@ -435,7 +435,7 @@ export class DebugSessionClass extends DebugSession {
 			});
 
 			// Set root path
-			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;  // TODO: is this multiroot capable?
+			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;
 			Utility.setRootPath(rootFolder);
 
 			// Save args
@@ -1709,6 +1709,11 @@ export class DebugSessionClass extends DebugSession {
 			if (formattedString) {
 				response.body = {value: formattedString};
 				response.success = true;
+				if (ShallowVar.memoryChanged) {
+					await this.memoryHasBeenChanged();
+					this.sendEvent(new InvalidatedEvent(['variables']));	// E.g. the disassembly would need to be updated on memory change
+				}
+				ShallowVar.clearChanged();
 			}
 		}
 		this.sendResponse(response);
@@ -3116,7 +3121,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			await this.otherRegisterHasBeenChanged();
 		if (ShallowVar.memoryChanged) {
 			await this.memoryHasBeenChanged();
-			this.sendEvent(new InvalidatedEvent(['variables']));	// E.g. the disasembly would need to be updated on memory change
+			this.sendEvent(new InvalidatedEvent(['variables']));	// E.g. the disassembly would need to be updated on memory change
 		}
 		ShallowVar.clearChanged();
 	}

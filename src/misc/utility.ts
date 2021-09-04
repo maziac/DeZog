@@ -763,19 +763,20 @@ export class Utility {
 			memVal += (0x1) << (8 * count);
 
 		const end = index + count;
+		// Note: bit wise operators would work on 32 bits only.
 		if (littleEndian) {
 			// Little endian
 			for (let i = index; i < end; i++) {
-				memory[i] = memVal & 0xFF;
-				memVal >>= 8;
+				memory[i] = memVal % 256;
+				memVal = Math.trunc(memVal / 256);
 			}
 		}
 		else {
 			// Big endian
 			const end = index + count;
 			for (let i = end - 1; i >= index; i--) {
-				memory[i] = memVal & 0xFF;
-				memVal >>= 8;
+				memory[i] = memVal % 0x100;
+				memVal = Math.trunc(memVal / 0x100);
 			}
 		}
 	}
