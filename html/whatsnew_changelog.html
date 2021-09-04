@@ -1,41 +1,23 @@
 <li>
-	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added "-addexpr" and "-delexpr" console commands: See help ("-h") in the debug console. With addexpr you can add expressions/labels to the VARIABLES pane. With delexpr you can remove them. Functionality is similar to the WATCHes pane. But if you add labels to VARIABLES you are able to modify the values. The WATCHes pane just allows to display values.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added "-msetb" and "-msetw" console commands: See help ("-h") in the debug console. With mset you can change single memory locations or fill a complete area. You can fill by byte or word and use little or big endian.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added console command "-mvw" to display a memory viewer that displays the memory organized in words instead of
-	bytes. You can use either little or big endian.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>Added new editor command. Rightclick in your sources and choose "Disassembly at Cursor Position". This will output the disassembly of the instruction at the cursor position in the debug console.
+	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
+	<br>Setting expressions: For years vscode was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this and released 2.3: the 'Expressions' section was added to the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. With this also the commands '-addexpr' and '-delexpr' have been removed.
+	Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Debug session restart (the green debug button with the circle arrow) now behaves differently. In the past it has been simply a shortcut for STOP and RUN a new debug session. Now it just reloads the binary file and restarts it. I.e. all additional setup you have done so far, e.g. adding memory views, will persist now (until you stop the debug session with the red square button).
+	<br>Debug session restart: the behavior has been reverted somewhat. It is now possible to re-assemble your sources and do a restart. Additionally also the launch.json is re-read.
+	On the flip-side of this the memory views are closed on a restart.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-new">NEW</span>
+	<br>"Disassembly at Cursor" has been optimized. now not only 1 line is disassembled. If you have selected a few lines all of these lines are disassembled.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>Register colors in memory views were not updated if the memory view was not focused.
+	<br>Windows: the code coverage was not shown at all. This is fixed. You should see now all covered lines with a dark green background color.
 </li>
 
-<li>
-	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>Memory views were not updated if the debug session was restarted.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>DeZog Help: The table of contents is now scrollable.
-</li>
 
