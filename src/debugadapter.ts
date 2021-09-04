@@ -387,6 +387,9 @@ export class DebugSessionClass extends DebugSession {
 		// vscode internally calls disconnect and launchRequest.
 		response.body.supportsRestartRequest = false;
 
+		// Allows to set values in the watch pane.
+		response.body.supportsSetExpression = true;
+
 		this.sendResponse(response);
 
 		// Note: The InitializedEvent will be send when the socket connection has been successful. Afterwards the breakpoints are set.
@@ -1691,6 +1694,30 @@ export class DebugSessionClass extends DebugSession {
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
+	}
+
+
+	/**
+	 * Sets the value of an expression from the WATCH pane.
+	 * Does so only for the top level. I.e. if top level is an L-value.
+	 * E.g. a byte to change.
+	 * For structures or memory array is is already supported by the
+	 * StructVar and MemDumpVar.
+	 */
+	protected async setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, request?: DebugProtocol.Request) {
+		response.success = false;	// will be changed if successful.
+		// Get immediate value
+		const item = this.expressionsList.get(args.expression);
+		if (item && item.immediateValue) {
+			// Now set the value.
+			const value = Utility.parseValue(args.value);
+			const formattedString = await item.immediateValue.setValue(value);
+			if (formattedString) {
+				response.body = {value: formattedString};
+				response.success = true;
+			}
+		}
+		this.sendResponse(response);
 	}
 
 
