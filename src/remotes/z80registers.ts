@@ -453,6 +453,8 @@ export class Z80RegistersClass {
 		if (!Labels.AreLongAddressesUsed())
 			return address;
 		// Calculate long address
+		if (this.funcCreateLongAddress == undefined)
+			throw Error("Internal error: Maybe the memory model is wrong.");
 		const result=this.funcCreateLongAddress(address, slots);
 		return result;
 	}
@@ -464,7 +466,8 @@ export class Z80RegistersClass {
 	 * @return The upper bits of the address (shifted).
 	 */
 	public getSlotFromAddress(addr: number): number {
-		Utility.assert(this.funcGetSlotFromAddress);
+		if (this.funcGetSlotFromAddress == undefined)
+			throw Error("Internal error: Maybe the memory model is wrong.");
 		const slotIndex=this.funcGetSlotFromAddress(addr&0xFFFF);
 		return slotIndex;
 	}

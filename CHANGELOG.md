@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.3.3
+- The restart behavior was reverted to some degree. Now it is possible to do a re-compile of the assembler sources followed by a restart because the labels are re-read.
+- Fixed memory model for ZEsarUX >= 9.2: Symptom: Breakpoints could not be set.
+- "Disassembly at Cursor" now also allows to select an area that should be disassembled.
+
 # 2.3.2
 - Fixed #69: No code coverage on Windows.
 

@@ -198,11 +198,12 @@ Big values are typically addresses. Here you can give the boundary between these
 
 If you just restart a debug session with
 ![](images/vscode_restart_button.jpg)
-the launch.json is not re-read.
-That means in order to make sure that your changed launch.json is used, save it and make sure the current debug session is stopped with
+the launch.json and the sld/list files are re-read.
+
+I.e. in the same way as if you'd had stopped with
 ![](images/vscode_stop_button.jpg)
-then start it via
-![](images/vscode_continue_button.jpg)
+and then started via
+![](images/vscode_continue_button.jpg).
 
 
 ### Assembler Configuration

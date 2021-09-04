@@ -61,10 +61,6 @@ export interface NextLabelDistance {
  */
 export class LabelsClass {
 
-	/// The (youngest) list file's modified date.
-	/// (Used for restart.)
-	public lastModifiedDate: Date;
-
 	/// The files (stored only for lastModifiedDate.)
 	protected filePaths = new Array<string>();
 
@@ -256,27 +252,6 @@ export class LabelsClass {
 			this.warnings = undefined as any;
 		// Finish
 		this.finish();
-
-		// Get file's modified date
-		this.lastModifiedDate = this.getListFileDate();
-	}
-
-
-	/**
-	 * @returns The (youngest) date of the list file(s).
-	 * (Used to compare on restart.)
-	 */
-	public getListFileDate(): Date {
-		let date = new Date(0);
-
-		// Iterate all files
-		for (const path of this.filePaths) {
-				// Find youngest date
-				date = this.youngestDate(date, path);
-		}
-
-		// Return
-		return date;
 	}
 
 
