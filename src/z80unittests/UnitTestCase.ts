@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {LabelsClass } from '../labels/labels';
-import { Settings } from '../settings';
+import { Settings, SettingsParameters } from '../settings';
 import * as jsonc from 'jsonc-parser';
 import { readFileSync } from 'fs';
 import { Utility } from '../misc/utility';
@@ -53,6 +53,28 @@ export class UnitTestCaseBase {
 		Utility.assert(ut);
 		return ut!;
 	}
+
+
+	/**
+	 * Searches the parents until it finds the config (UnitTestSuiteConfig)
+	 * from the launch.json.
+	 * @returns The config test suite or undefined.
+	 */
+	public getConfigParent(): UnitTestSuiteConfig | undefined {
+		let testItem = this.testItem.parent;
+		let testConfig;
+		while (testItem) {
+			// Get "real" test
+			testConfig = UnitTestCaseBase.getUnitTestCase(testItem) as UnitTestSuiteConfig;
+			Utility.assert(testConfig);
+			if (testConfig instanceof UnitTestSuiteConfig) {
+				return testConfig;
+			}
+			// Next
+			testItem = testItem.parent;
+		}
+		return undefined;
+	}
 }
 
 
@@ -60,7 +82,7 @@ export class UnitTestCaseBase {
  * A test case.
  * Additionally contains information for executing the test case, e.g. the label.
  */
-class UnitTestCase extends UnitTestCaseBase {
+export class UnitTestCase extends UnitTestCaseBase {
 	// The label for execution. E.g. "Testsuite.UT_clear_screen"
 	public utLabel: string;
 
@@ -87,7 +109,7 @@ class UnitTestSuite extends UnitTestCase {
 	// A map that contains children unit tests.
 	protected children: Array<UnitTestSuite | UnitTestCaseBase>;
 
-
+// TODO: maybe no filepath required here.
 	/**
 	 * Constructor.
 	 * @param id The unique id. File name plus assembly label.
@@ -353,12 +375,12 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 /**
  * Extends the base class with functionality for handling launch.json configs.
  */
-class UnitTestSuiteConfig extends UnitTestSuite {
+export class UnitTestSuiteConfig extends UnitTestSuite {
 	// The workspace folder.
-	protected wsFolder: string;
+	public wsFolder: string;
 
 	// Pointer to the launch.json config
-	protected config: any;
+	public config: SettingsParameters;
 
 	// A file watcher for each sld/list file.
 	protected fileWatchers: FileWatcher[];

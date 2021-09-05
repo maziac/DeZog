@@ -12,7 +12,7 @@ import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
-import {UnitTestCaseBase, RootTestSuite} from './UnitTestCase';
+import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig} from './UnitTestCase';
 
 
 
@@ -154,11 +154,17 @@ export class Z80UnitTestRunner {
 	// Pointer to the test controller.
 	protected static testController: vscode.TestController;
 
+	// The currently used (and setup) test configuration.
+	protected static testConfig: UnitTestSuiteConfig | undefined;
 
 	/**
 	 * Called to initialize the test controller.
 	 */
 	public static Init() {
+		// Init
+		this.testConfig = undefined;
+		this.allCoveredAddresses = new Set<number>();
+		this.lastCoveredAddresses = new Set<number>();
 		// Create test controller
 		this.testController = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -203,11 +209,15 @@ export class Z80UnitTestRunner {
 
 			// If it has children it is a test suite, otherwise a test case
 			if (test.children.size == 0) {
+				// Get "real" unit test
+				const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
+				// Setup the test config
+				await this.setupTestCase(ut);
 				// Run the test case
 				const start = Date.now();
 				try {
 					run.started(test);
-					await this.runTestCase(test);
+					await this.runTestCase(ut);
 					run.passed(test, Date.now() - start);
 				}
 				catch (e) {
@@ -247,15 +257,178 @@ export class Z80UnitTestRunner {
 
 
 	/**
+	 * Sets up the test case.
+	 * Goes up the parents until it finds the unit test config.
+	 * Then (if not yet done before) it starts up the Remote to be
+	 * able to execute a single test case.
+	 */
+	protected static async setupTestCase(ut: UnitTestCase) {
+		// Clear coverage for this unit test.
+		this.lastCoveredAddresses.clear();
+
+		// Check for parent config
+		const testConfig = ut.getConfigParent();
+		if (!testConfig)
+			throw Error("No test config found.");
+		// Check if already setup
+		if (this.testConfig == testConfig)
+			return;
+		this.testConfig = testConfig;
+
+		// Terminate any probably runnning instance
+		await this.terminateRemote(false);
+
+		// Prepare running of the test case
+
+		// Mode
+		//this.debug = false;
+		//this.cancelled = false;
+
+		// Get unit test launch config
+		const configuration = this.testConfig!.config;
+
+		// Setup root folder
+		Utility.setRootPath(this.testConfig!.wsFolder);
+
+		// Reset all decorations
+		this.allCoveredAddresses.clear();	// TODO: Does this work in multiroot or are only the coverred lines of the last workspace shown?
+		Decoration.clearAllDecorations();
+
+		// Create the registers
+		Z80RegistersClass.createRegisters();
+
+		// Start emulator.
+		RemoteFactory.createRemote(configuration.remoteType);
+
+		// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
+		if (!(CpuHistory as any)) {
+			// If not create a lite (step) history
+			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
+			StepHistory.decoder = Z80Registers.decoder;
+		}
+
+		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
+		Labels.init(configuration.smallValuesMaximum);
+		Remote.readListFiles(configuration);
+
+		return new Promise<void>(async (resolve, reject) => {
+			// Events
+			Remote.once('initialized', async () => {
+				try {
+					// Initialize Cpu- or StepHistory.
+					StepHistory.init();  // might call the socket
+
+					// Execute command to enable wpmem, logpoints, assertions.
+					await Remote.enableLogpointGroup(undefined, true);
+					try {
+						await Remote.enableWPMEM(true);
+					}
+					catch (e) {
+						// It's not essential anymore to have watchpoints running.
+						// So catch this error from CSpect and show a warning instead
+						vscode.window.showWarningMessage(e.message);
+					}
+					await Remote.enableAssertionBreakpoints(true);
+
+					// Initialize
+					await this.initUnitTests();
+
+					// End
+					resolve();
+				}
+				catch (e) {
+					// Some error occurred
+					//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
+					reject(e);
+				}
+			});
+
+			Remote.on('coverage', coveredAddresses => {
+				// Cache covered addresses (since last unit test)
+				coveredAddresses.forEach(this.lastCoveredAddresses.add, this.lastCoveredAddresses);
+				Decoration.showCodeCoverage(coveredAddresses);
+			});
+
+			Remote.on('warning', message => {
+				// Some problem occurred
+				vscode.window.showWarningMessage(message);
+			});
+
+			Remote.on('debug_console', message => {
+				// Show the message in the debug console
+				vscode.debug.activeDebugConsole.appendLine(message);
+
+			});
+
+			Remote.once('error', e => {
+				// Some error occurred
+				//Z80UnitTests.stopUnitTests(undefined, err.message); // TODO
+				reject(e);
+			});
+
+
+			// Connect to debugger.
+			try {
+				await Remote.init();
+			}
+			catch (e) {
+				// Some error occurred
+				//Z80UnitTests.stopUnitTests(undefined, e.message);// TODO
+				reject(e);
+			};
+		});
+	}
+
+
+	/**
+	 * Checks if the debugger is active. If yes terminates it and
+	 * executes the unit tests.
+	 * @param debug false: unit tests are run without debugger,
+	 * true: unit tests are run with debugger.
+	 */
+	protected static async terminateRemote(debug: boolean): Promise<void> {
+		//Z80UnitTests.debug = debug;
+		return new Promise<void>(async resolve => {
+			// Wait until vscode debugger has stopped.
+			if (Remote) {
+				// Terminate emulator
+				await Remote.terminate();
+				RemoteFactory.removeRemote();
+			}
+
+			// (Unfortunately there is no event for this, so we need to wait)
+			Utility.delayedCall(time => {
+				// After 5 secs give up
+				if (time >= 5.0) {
+					// Give up
+					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+					resolve();
+					return true;
+				}
+				// New coverage set
+				this.allCoveredAddresses = new Set<number>();
+				// Check for active debug session
+				if (vscode.debug.activeDebugSession)
+					return false;  // Try again
+				resolve();
+				return true;  // Stop
+			});
+		});
+	}
+
+	/**
 	 * Runs a single test case.
 	 * Throws an exception on failure.
 	 * Np exception if passed correctly.
 	 * @param test The TestItem.
 	 */
-	protected static async runTestCase(test: vscode.TestItem) {
-		console.log(test);
-		const ut = UnitTestCaseBase.getUnitTestCase(test);
-		console.log(ut);
+	protected static async runTestCase(ut: UnitTestCase) {
+		// Start the part that is executed before each unit test
+		await this.execAddr(this.addrStart);
+		// Start the unit test
+		const utAddr = this.getLongAddressForLabel(ut.utLabel);
+		await this.execAddr(utAddr);
+
 
 		/*
 		// Get 'required' context
@@ -300,298 +473,6 @@ export class Z80UnitTestRunner {
 	}
 
 
-	/**
-	 * Execute all unit tests.
-	 */
-	public static async runAllUnitTests() {
-		// Safety check
-		const wsFolders = vscode.workspace.workspaceFolders;
-		if (!wsFolders)
-			return;
-
-		// Loop over all projects (for multiroot)
-		for (const wsFolder of wsFolders) {
-			// Set root folder
-			const rootFolder = wsFolder.uri.fsPath;
-			await Z80UnitTestRunner.runAllProjectUnitTests(rootFolder);
-		}
-	}
-
-
-	/**
-	 * Runs all tests of one projects.
-	 * Does not return before all tests are done.
-	 * @param rootFolder The root folder of the project.
-	 */
-	protected static async runAllProjectUnitTests(rootFolder: string): Promise<void> {
-		return new Promise<void>(resolve => {
-			// All test cases
-			let lblFileLines: any[] = [];
-			try {
-				lblFileLines = Z80UnitTestRunner.getAllUnitTests(rootFolder);
-			}
-			catch {}
-			if (lblFileLines.length == 0) {
-				resolve();
-				return;
-			}
-			Z80UnitTestRunner.partialUtLabels = lblFileLines.map(lfl => lfl.label);
-			// Set callback
-			Z80UnitTestRunner.finishedCallback = () => {
-				Z80UnitTestRunner.finishedCallback = undefined;
-				resolve();
-			};
-			// Start
-			Z80UnitTestRunner.runTestsCheck();
-		});
-	}
-
-
-	/**
-	 * Execute some unit tests in debug mode.
-	 */
-	public static runPartialUnitTests(rootFolder: string) {
-		// Get list of test case labels
-		Z80UnitTestRunner.partialUtLabels = [];
-		for (const [tcLabel,] of Z80UnitTestRunner.testCaseMap)
-			Z80UnitTestRunner.partialUtLabels.push(tcLabel);
-		// Set root folder
-		Utility.setRootPath(rootFolder);
-		// Start
-		Z80UnitTestRunner.runTestsCheck();
-	}
-
-
-	/**
-	 * Checks if the debugger is active. If yes terminates it and
-	 * executes the unit tests.
-	 * @param debug false: unit tests are run without debugger,
-	 * true: unit tests are run with debugger.
-	 */
-	protected static async terminateEmulatorAndStartTests(debug: boolean): Promise<void> {
-		Z80UnitTestRunner.debug = debug;
-		return new Promise<void>(async resolve => {
-			// Wait until vscode debugger has stopped.
-			if (Remote) {
-				// Terminate emulator
-				await Remote.terminate();
-				RemoteFactory.removeRemote();
-			}
-
-			// (Unfortunately there is no event for this, so we need to wait)
-			Utility.delayedCall(time => {
-				// After 5 secs give up
-				if (time >= 5.0) {
-					// Give up
-					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
-					resolve();
-					return true;
-				}
-				// New coverage set
-				this.allCoveredAddresses = new Set<number>();
-				// Check for active debug session
-				if (vscode.debug.activeDebugSession)
-					return false;  // Try again
-				// Debugger not active anymore, start tests
-				this.cancelled = false;
-				if (debug)
-					this.debugTests();
-				else
-					this.runTests();
-				resolve();
-				return true;  // Stop
-			});
-		});
-	}
-
-
-	/**
-	 * Checks first if a debug session is active, terminates it
-	 * and then starts the unit tests.
-	 */
-	protected static runTestsCheck() {
-		this.terminateEmulatorAndStartTests(false);
-	}
-
-
-	/**
-	  * Start the unit tests, either partial or full.
-	  * If unit test cases are run (opposed to debugged) the vscode UI is not used
-	  * and communication takes place directly with the emulator.
-	  */
-	protected static async runTests(): Promise<void> {
-		// Mode
-		this.debug = false;
-		this.cancelled = false;
-
-		// Get unit test launch config
-		let configuration;//  = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
-
-		// Setup settings
-		const rootFolder = Utility.getRootPath();
-		Settings.launch = Settings.Init(configuration, rootFolder);
-		Settings.CheckSettings();
-
-		// Reset all decorations
-		Decoration.clearAllDecorations();
-
-		// Create the registers
-		Z80RegistersClass.createRegisters();
-
-		// Start emulator.
-		RemoteFactory.createRemote(configuration.remoteType);
-
-		// Check if a cpu history object has been created. (Note: this is only required for debug but done for both)
-		if (!(CpuHistory as any)) {
-			// If not create a lite (step) history
-			CpuHistoryClass.setCpuHistory(new StepHistoryClass());
-			StepHistory.decoder = Z80Registers.decoder;
-		}
-
-		// Reads the list file and also retrieves all occurrences of WPMEM, ASSERTION and LOGPOINT.
-		Labels.init(configuration.smallValuesMaximum);
-		Remote.readListFiles(configuration);
-
-		return new Promise<void>(async (resolve, reject) => {
-			// Events
-			Remote.once('initialized', async () => {
-				try {
-					// Initialize Cpu- or StepHistory.
-					StepHistory.init();  // might call the socket
-
-					// Execute command to enable wpmem, logpoints, assertions.
-					await Remote.enableLogpointGroup(undefined, true);
-					try {
-						await Remote.enableWPMEM(true);
-					}
-					catch (e) {
-						// It's not essential anymore to have watchpoints running.
-						// So catch this error from CSpect and show a warning instead
-						vscode.window.showWarningMessage(e.message);
-					}
-					await Remote.enableAssertionBreakpoints(true);
-
-					await Z80UnitTestRunner.initUnitTests();
-
-					// Load the initial unit test routine (provided by the user)
-					await this.execAddr(Z80UnitTestRunner.addrStart);
-
-					// End
-					resolve();
-				}
-				catch (e) {
-					// Some error occurred
-					Z80UnitTestRunner.stopUnitTests(undefined, e.message);// TODO
-					//reject(e);
-					resolve();
-				}
-			});
-
-			Remote.on('coverage', coveredAddresses => {
-				// Cache covered addresses (since last unit test)
-				//Z80UnitTestRunner.lastCoveredAddresses = coveredAddresses;
-				if (!Z80UnitTestRunner.lastCoveredAddresses)
-					Z80UnitTestRunner.lastCoveredAddresses = new Set<number>();
-				coveredAddresses.forEach(Z80UnitTestRunner.lastCoveredAddresses.add, Z80UnitTestRunner.lastCoveredAddresses);
-			});
-
-			Remote.on('warning', message => {
-				// Some problem occurred
-				vscode.window.showWarningMessage(message);
-			});
-
-			Remote.on('debug_console', message => {
-				// Show the message in the debug console
-				vscode.debug.activeDebugConsole.appendLine(message);
-
-			});
-
-			Remote.once('error', e => {
-				// Some error occurred
-				Z80UnitTestRunner.stopUnitTests(undefined, e.message);
-				//reject(e);
-				resolve();
-			});
-
-
-			// Connect to debugger.
-			try {
-				await Remote.init();
-			}
-			catch (e) {
-				// Some error occurred
-				Z80UnitTestRunner.stopUnitTests(undefined, e.message);
-				//reject(e);
-				resolve();
-			};
-		});
-	}
-
-
-	/**
-	 * Execute all unit tests in debug mode.
-	 */
-	public static async debugAllUnitTests() {
-		// Safety check
-		const wsFolders = vscode.workspace.workspaceFolders;
-		if (!wsFolders)
-			return;
-
-		// Loop over all projects (for multiroot)
-		for (const wsFolder of wsFolders) {
-			// Set root folder
-			const rootFolder = wsFolder.uri.fsPath;
-			await Z80UnitTestRunner.debugAllProjectUnitTests(rootFolder);
-		}
-	}
-
-
-	/**
-	 * Runs all tests of one projects in debug mode.
-	 * Does not return before all tests are done.
-	 * @param rootFolder The root folder of the project.
-	 */
-	protected static async debugAllProjectUnitTests(rootFolder: string): Promise<void> {
-		return new Promise<void>(resolve => {
-			// All test cases
-			let lblFileLines: any[] = [];
-			try {
-				lblFileLines = Z80UnitTestRunner.getAllUnitTests(rootFolder);
-			}
-			catch {}
-			if (lblFileLines.length == 0) {
-				resolve();
-				return;
-			}
-			Z80UnitTestRunner.partialUtLabels = lblFileLines.map(lfl => lfl.label);
-			// Set callback
-			Z80UnitTestRunner.finishedCallback = () => {
-				Z80UnitTestRunner.finishedCallback = undefined;
-				resolve();
-			};
-			// Start
-			Z80UnitTestRunner.debugTestsCheck();
-		});
-	}
-
-
-	/**
-	 * Execute some unit tests in debug mode.
-	 */
-	public static debugPartialUnitTests(rootFolder: string) {
-		// Mode
-		this.debug = true;
-		this.cancelled = false;
-		// Get list of test case labels
-		Z80UnitTestRunner.partialUtLabels = [];
-		for (const [tcLabel,] of Z80UnitTestRunner.testCaseMap)
-			Z80UnitTestRunner.partialUtLabels.push(tcLabel);
-		// Set root folder
-		Utility.setRootPath(rootFolder);
-		// Start
-		Z80UnitTestRunner.debugTestsCheck();
-	}
-
 
 	/**
 	 * Command execution: Cancel all unit tests.
@@ -624,15 +505,6 @@ export class Z80UnitTestRunner {
 		if (Z80UnitTestRunner.countExecuted > 0)
 			Z80UnitTestRunner.countExecuted--;
 		Z80UnitTestRunner.unitTestsFinished();
-	}
-
-
-	/**
-	 * Start the unit tests but checks first if the debugger is active and
-	 * terminates it.
-	 */
-	protected static debugTestsCheck() {
-		this.terminateEmulatorAndStartTests(true);
 	}
 
 
@@ -780,38 +652,28 @@ export class Z80UnitTestRunner {
 	 * Initializes the unit tests. Is called after the emulator has been setup.
 	 */
 	protected static async initUnitTests(): Promise<void> {
+		// Get the unit test code
+		this.addrStart = this.getLongAddressForLabel("UNITTEST_START");
+		this.addrTestWrapper = this.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
+		this.addrCall = this.getLongAddressForLabel("UNITTEST_CALL_ADDR");
+		this.addrCall++;
+		this.addrTestReadySuccess = this.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS")
+
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
 		// Now read all the unit tests.
-		Z80UnitTestRunner.outputSummary = '';
-		Z80UnitTestRunner.countFailed = 0;
-		Z80UnitTestRunner.countExecuted = 0;
-		Z80UnitTestRunner.timeoutHandle = undefined;
-		Z80UnitTestRunner.currentFail = true;
-
-		if (!Z80UnitTestRunner.AreUnitTestsAvailable(Labels))
-			throw Error("Unit tests not enabled in assembler sources.");
-
-		// Get the unit test code
-		Z80UnitTestRunner.addrStart = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_START");
-		Z80UnitTestRunner.addrTestWrapper = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
-		Z80UnitTestRunner.addrCall = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_CALL_ADDR");
-		Z80UnitTestRunner.addrCall ++;
-		Z80UnitTestRunner.addrTestReadySuccess = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
-		//Z80UnitTestRunner.addrTestReadyReturnFailure = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_RETURN_FAILURE");
-		//Z80UnitTestRunner.addrTestReadyFailure = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_TEST_READY_FAILURE_BREAKPOINT");
-		//const stackMinWatchpoint = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_MIN_STACK_GUARD");
-		//const stackMaxWatchpoint = Z80UnitTestRunner.getLongAddressForLabel("UNITTEST_MAX_STACK_GUARD");
+		this.timeoutHandle = undefined;
+		this.currentFail = true;
 
 		// Check if code for unit tests is really present
-		// (In case labels are present but the actual code has not been loaded.)
-		const opcode = await Remote.readMemory(Z80UnitTestRunner.addrTestWrapper & 0xFFFF);	// TODO: Check if 64k address is OK here
+		// (In case labels are present but the actual code was not loaded.)
+		const opcode = await Remote.readMemory(this.addrTestWrapper & 0xFFFF);
 		// Should start with DI (=0xF3)
 		if (opcode != 0xF3)
 			throw Error("Code for unit tests is not present.");
 
 		// Labels not yet known.
-		Z80UnitTestRunner.utLabels = undefined as unknown as Array<string>;
+		//this.utLabels = undefined as unknown as Array<string>;
 
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '',	log: undefined };
@@ -877,7 +739,7 @@ export class Z80UnitTestRunner {
 		});
 
 		debugAdapter.on('break', () => {
-			Z80UnitTestRunner.onBreak(debugAdapter);
+			this.onBreak(debugAdapter);
 		});
 	}
 
@@ -888,16 +750,12 @@ export class Z80UnitTestRunner {
 	 * @param debugAdapter The debugAdapter (in debug mode) or undefined for the run mode.
 	 */
 	protected static onBreak(debugAdapter?: DebugSessionClass) {
-		// The program was run and a break occurred.
-		// Get current pc
-		//Remote.getRegisters().then(() => {
-			// Parse the PC value
-			const pc = Remote.getPCLong();
-			//const sp = Z80Registers.parseSP(data);
-			// Check if test case was successful
-			Z80UnitTestRunner.checkUnitTest(pc, debugAdapter);
-			// Otherwise another break- or watchpoint was hit or the user stepped manually.
-		//});
+		// Parse the PC value
+		//const pc = Remote.getPCLong();
+		////const sp = Z80Registers.parseSP(data);
+		// Check if test case was successful
+		Z80UnitTestRunner.checkUnitTest(debugAdapter);
+		// Otherwise another break- or watchpoint was hit or the user stepped manually.
 	}
 
 
@@ -912,7 +770,7 @@ export class Z80UnitTestRunner {
 		if (loc)
 			addr = loc.address;
 		if (addr == undefined) {
-			throw Error("Z80 unit Tests: Couldn't find the unit test wrapper (" + label + "). Did you forget to use the macro?");
+			throw Error("Unit tests are not enabled in the enabled sources. Label " + label + " is not found. Did you forget to use the 'UNITTEST_INITIALIZE' macro ?");
 		}
 		return addr;
 	}
@@ -931,7 +789,7 @@ export class Z80UnitTestRunner {
 		da.waitForBeingQuietFor(1000)
 		.then(() => {
 			// Load the initial unit test routine (provided by the user)
-			Z80UnitTestRunner.execAddr(Z80UnitTestRunner.addrStart, da);
+	//		Z80UnitTestRunner.execAddr(Z80UnitTestRunner.addrStart, da);
 		});
 	}
 
@@ -940,104 +798,64 @@ export class Z80UnitTestRunner {
 	 * Executes the sub routine at 'addr'.
 	 * Used to call the unit test initialization subroutine and the unit
 	 * tests.
-	 * @param address The (long) address of the unit test.
+	 * @param address The (long) address to call.
 	 * @param da The debug adapter.
 	 */
-	protected static execAddr(address: number, da?: DebugSessionClass) {
+	protected static async execAddr(address: number, da?: DebugSessionClass) {
 		// Set memory values to test case address.
-		const callAddr=new Uint8Array([address&0xFF, address>>>8]);
-		Remote.writeMemoryDump(this.addrCall, callAddr).then(async () => {
-			// Set slot/bank to Unit test address
-			const bank = Z80Registers.getBankFromAddress(address);
-			if (bank >= 0) {
-				const slot = Z80Registers.getSlotFromAddress(address)
-				await Remote.setSlot(slot, bank);
-			}
-			// Set PC
-			const addr64k = this.addrTestWrapper & 0xFFFF;
-			await Remote.setRegisterValue("PC", addr64k);
+		const callAddr = new Uint8Array([address & 0xFF, (address >>> 8) & 0xFF]);
 
-			// Run
-			/*
-			if (Z80UnitTestRunner.utLabels)
-				Z80UnitTestRunner.dbgOutput('UnitTest: '+Z80UnitTestRunner.utLabels[0]+' da.emulatorContinue()');
-			*/
-			// Init
-			StepHistory.clear();
-			await Remote.getRegistersFromEmulator();
-			await Remote.getCallStackFromEmulator();
+		await Remote.writeMemoryDump(this.addrCall & 0xFFFF, callAddr);
 
-			// Special handling for zsim: Re-init custom code.
-			if (Remote instanceof ZSimRemote) {
-				const zsim = Remote as ZSimRemote;
-				zsim.customCode?.reload();
-			}
+		// Set slot/bank to Unit test address
+		const bank = Z80Registers.getBankFromAddress(address);
+		if (bank >= 0) {
+			const slot = Z80Registers.getSlotFromAddress(address)
+			await Remote.setSlot(slot, bank);
+		}
+		// Set PC
+		const addr64k = this.addrTestWrapper & 0xFFFF;
+		await Remote.setRegisterValue("PC", addr64k);
 
-			// Run or Debug
-			Z80UnitTestRunner.RemoteContinue(da);
-		});
+		// Init
+		StepHistory.clear();
+		await Remote.getRegistersFromEmulator();
+		await Remote.getCallStackFromEmulator();
+
+		// Special handling for zsim: Re-init custom code.
+		if (Remote instanceof ZSimRemote) {
+			const zsim = Remote as ZSimRemote;
+			zsim.customCode?.reload();
+		}
+
+		// Run or Debug
+		await this.RemoteContinue(da);
 	}
 
 
 	/**
 	 * Starts Continue directly or through the debug adapter.
 	 */
-	protected static RemoteContinue(da: DebugSessionClass|undefined) {
-		// Start asynchronously
-		(async () => {
-			// Check if cancelled
-			if (Z80UnitTestRunner.cancelled)
-				return;
-			// Init
-			Remote.startProcessing();
-			// Run or Debug
-			if (da) {
-				// With vscode UI
-				da.sendEventContinued();
-				// Debug: Continue
-				await da.remoteContinue();
-				Remote.stopProcessing();
-			}
-			else {
-				// Run: Continue
-				await Remote.continue();
-				Remote.stopProcessing();
-				Z80UnitTestRunner.onBreak();
-			}
-		})();
-	}
-
-
-	/**
-	 * Executes the next test case.
-	 * @param da The debug adapter.
-	 */
-	protected static nextUnitTest(da?: DebugSessionClass) {
-		// Increase count
-		Z80UnitTestRunner.countExecuted ++;
-		Z80UnitTestRunner.currentFail = false;
-		// Get Unit Test label
-		const label = Z80UnitTestRunner.utLabels[0];
-		// Calculate address
-		const address = Labels.getNumberForLabel(label) as number;
-		Utility.assert(address != undefined);
-
-		// Set timeout
-		if(!Z80UnitTestRunner.debug) {
-			clearTimeout(Z80UnitTestRunner.timeoutHandle);
-			const toMs=1000*Settings.launch.unitTestTimeout;
-			Z80UnitTestRunner.timeoutHandle = setTimeout(() => {
-				// Clear timeout
-				clearTimeout(Z80UnitTestRunner.timeoutHandle);
-				Z80UnitTestRunner.timeoutHandle = undefined;
-				// Failure: Timeout. Send a break.
-				Remote.pause();
-			}, toMs);
+	protected static async RemoteContinue(da: DebugSessionClass | undefined): Promise<void> {
+		// Check if cancelled
+		//if (Z80UnitTestRunner.cancelled)
+		//	return;
+		// Init
+		Remote.startProcessing();
+		// Run or Debug
+		if (da) {
+			// With vscode UI
+			da.sendEventContinued();
+			// Debug: Continue
+			await da.remoteContinue();
+			Remote.stopProcessing();
 		}
-
-		// Start at test case address.
-		Z80UnitTestRunner.dbgOutput('TestCase ' + label + '(0x' + address.toString(16) + ') started.');
-		Z80UnitTestRunner.execAddr(address, da);
+		else {
+			// Run: Continue
+			await Remote.continue();
+			Remote.stopProcessing();
+			await this.checkUnitTest(da);
+		}
 	}
 
 
@@ -1045,9 +863,14 @@ export class Z80UnitTestRunner {
 	 * Checks if the test case was OK or a fail.
 	 * Or undetermined.
 	 * @param da The debug adapter.
-	 * @param pc The program counter to check.
 	 */
-	protected static async checkUnitTest(pc: number, da?: DebugSessionClass): Promise<void> {
+	protected static async checkUnitTest(da?: DebugSessionClass): Promise<void> {
+		// Collect coverage:
+		// Get covered addresses (since last unit test) and add to collection.
+		const target = this.allCoveredAddresses;
+		this.lastCoveredAddresses.forEach(target.add, target);
+		this.lastCoveredAddresses.clear();
+
 		// Check if it was a timeout
 		let timeoutFailure = !Z80UnitTestRunner.debug;
 		if(Z80UnitTestRunner.timeoutHandle) {
@@ -1058,125 +881,30 @@ export class Z80UnitTestRunner {
 		}
 
 		// Check if test case ended successfully or not
-		if (pc != this.addrTestReadySuccess) {
+		const pc = Remote.getPCLong();
+		// OK or failure
+		const tcSuccess = (pc == this.addrTestReadySuccess);
+		if (!tcSuccess) {
 			// Undetermined. Test case not ended yet.
 			// Check if in debug or run mode.
 			if(da) {
 				// In debug mode: Send break to give vscode control
-				await da.sendEventBreakAndUpdate();  // No need for 'await'
+				await da.sendEventBreakAndUpdate();
 				return;
 			}
-			// Count failure
-			if(!Z80UnitTestRunner.currentFail) {
-				// Count only once
-				Z80UnitTestRunner.currentFail = true;
-				Z80UnitTestRunner.countFailed ++;
-			}
+			// Else: Test case failure
+			throw Error("Test case failed.");
 		}
-
-		// Check if this was the init routine that is started
-		// before any test case:
-		if(!Z80UnitTestRunner.utLabels) {
-			// Use the test case list
-			Z80UnitTestRunner.utLabels = Z80UnitTestRunner.partialUtLabels!;
-			// Error check
-			if (!Z80UnitTestRunner.utLabels || Z80UnitTestRunner.utLabels.length == 0) {
-				// No unit tests found -> disconnect
-				Z80UnitTestRunner.stopUnitTests(da, "Couldn't start unit tests. No unit tests found. Unit test labels should start with 'UT_'.");
-				return;
-			}
-			// Check if we break on the first unit test.
-			if(Z80UnitTestRunner.debug && !Settings.launch.startAutomatically ) {
-				const firstLabel = Z80UnitTestRunner.utLabels[0];
-				const firstAddr = Labels.getNumberForLabel(firstLabel) as number;
-				if(firstAddr == undefined) {
-					// Error
-					Z80UnitTestRunner.stopUnitTests(da, "Couldn't find address for first unit test label '" + firstLabel + "'.");
-					return;
-				}
-				const firstUtBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: firstAddr, condition: '',	log: undefined };
-				await Remote.setBreakpoint(firstUtBp);
-			}
-
-			// Start unit tests
-			Z80UnitTestRunner.nextUnitTest(da);
-			return;
-		}
-
-		// Was a real test case.
-
-		// OK or failure
-		const tcSuccess = (pc == Z80UnitTestRunner.addrTestReadySuccess);
-
-		// Count failure
-		if(!tcSuccess) {
-			if(!Z80UnitTestRunner.currentFail) {
-				// Count only once
-				Z80UnitTestRunner.currentFail = true;
-				Z80UnitTestRunner.countFailed ++;
-			}
-		}
-
-		// Get the test case label.
-		const label = Z80UnitTestRunner.utLabels[0];
-
-		// In debug mode do break after one step. The step is required to put the PC at the right place.
-		if(da && !tcSuccess) {
-			// Do some additional output.
-			if(Z80UnitTestRunner.utLabels) {
-				if(pc == this.addrTestReadySuccess)
-					Z80UnitTestRunner.dbgOutput(label + ' PASSED.');
-			}
-			return;
-		}
-
-		// Determine test case result.
-		let tcResult: TestCaseResult = TestCaseResult.TIMEOUT;
-		if(!timeoutFailure) {
-			// No timeout
-			tcResult = (Z80UnitTestRunner.currentFail) ? TestCaseResult.FAILED : TestCaseResult.OK;
-		}
-
-		// Send result to calling extension (i.e. test adapter)
-		const resolveFunction = Z80UnitTestRunner.testCaseMap.get(label);
-		if(resolveFunction) {
-			// Inform calling party
-			resolveFunction(tcResult);
-			// Delete from map
-			Z80UnitTestRunner.testCaseMap.delete(label);
-		}
-
-		// Print test case name, address and result.
-		let tcResultStr;
-		switch(tcResult) {
-			case TestCaseResult.OK: tcResultStr = colorize(Color.FgGreen, 'OK'); break;
-			case TestCaseResult.FAILED: tcResultStr = colorize(Color.FgRed, 'Fail'); break;
-			case TestCaseResult.TIMEOUT: tcResultStr = colorize(Color.FgRed, 'Fail (timeout, ' + Settings.launch.unitTestTimeout + 's)'); break;
-		}
-
-		const addr = Labels.getNumberForLabel(label) || 0;
-		const outTxt = label + ' (0x' + addr.toString(16) + '):\t' + tcResultStr;
-		Z80UnitTestRunner.dbgOutput(outTxt);
-		Z80UnitTestRunner.outputSummary += outTxt + '\n';
 
 		// Collect coverage:
 		// Get covered addresses (since last unit test) and add to collection.
+		/*
 		if (Z80UnitTestRunner.lastCoveredAddresses) {
 			const target=Z80UnitTestRunner.allCoveredAddresses;
 			Z80UnitTestRunner.lastCoveredAddresses.forEach(target.add, target);
 			Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
 		}
-
-		// Next unit test
-		Z80UnitTestRunner.utLabels.shift();
-		if(Z80UnitTestRunner.utLabels.length == 0) {
-			// End the unit tests
-			Z80UnitTestRunner.dbgOutput("All tests ready.");
-			Z80UnitTestRunner.stopUnitTests(da);
-			Z80UnitTestRunner.unitTestsFinished();
-			return;
-		}
-		Z80UnitTestRunner.nextUnitTest(da);
+		*/
 	}
 
 

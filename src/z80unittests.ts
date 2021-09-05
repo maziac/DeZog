@@ -799,7 +799,7 @@ export class Z80UnitTests {
 	/**
 	 * Returns the long address for a label. Checks it and throws an error if it does not exist.
 	 * @param label The label eg. "UNITTEST_TEST_WRAPPER"
-	 * @returns An address.
+	 * @returns A (long) address.
 	 */
 	protected static getLongAddressForLabel(label: string): number {
 		const loc = Labels.getLocationOfLabel(label);
