@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { DebugSessionClass } from '../debugadapter';
 import { RemoteFactory, Remote } from '../remotes/remotefactory';
-import {Labels, LabelsClass } from '../labels/labels';
+import {Labels, LabelsClass, SourceFileEntry } from '../labels/labels';
 import { RemoteBreakpoint } from '../remotes/remotebase';
 import { Settings } from '../settings';
 import { Utility } from '../misc/utility';
@@ -224,13 +224,15 @@ export class Z80UnitTestRunner {
 					// Test failure
 					const testMsg = new vscode.TestMessage(e.message);
 					let range = test.range;
-					if (e.position) {
-						const line = e.position.line;
-						const col = e.position.column;
-						range = new vscode.Range(line, col, line, col);
+					const position: SourceFileEntry = e.position;
+					let uri = test.uri;
+					if (position) {
+						uri = vscode.Uri.file(position.fileName);
+						const line = position.lineNr;
+						range = new vscode.Range(line, 0, line, 0);
 					}
 					if (range) {
-						testMsg.location = new vscode.Location(test.uri!, range);
+						testMsg.location = new vscode.Location(uri!, range);
 					}
 					run.failed(test, testMsg, Date.now() - start);
 				}
@@ -469,7 +471,7 @@ export class Z80UnitTestRunner {
 			throw e;
 		}
 */
-		await Utility.timeout(2000);
+	//	await Utility.timeout(2000);
 	}
 
 
@@ -893,7 +895,10 @@ export class Z80UnitTestRunner {
 				return;
 			}
 			// Else: Test case failure
-			throw Error("Test case failed.");
+			// Get location
+			const error = new Error("Test case failed.") as any;
+			error.position = Labels.getFileAndLineForAddress(pc);
+			throw error;
 		}
 
 		// Collect coverage:
