@@ -190,6 +190,9 @@ export class Z80UnitTestRunner {
 		const run = this.testController.createTestRun(request);
 		const queue: vscode.TestItem[] = [];
 
+		// Init
+		this.testConfig = undefined;
+
 		// Loop through all included tests, or all known tests, and add them to our queue
 		if (request.include) {
 			request.include.forEach(test => queue.push(test));
@@ -213,6 +216,14 @@ export class Z80UnitTestRunner {
 				const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
 				// Setup the test config
 				await this.setupTestCase(ut);
+				// Set timeout
+				const toMs = 1000 * Settings.launch.unitTestTimeout;
+				let timedOut = false;
+				const timeoutHandle = setTimeout(() => {
+					timedOut = true;
+					// Failure: Timeout. Send a break.
+					Remote.pause();
+				}, toMs);
 				// Run the test case
 				const start = Date.now();
 				try {
@@ -222,7 +233,8 @@ export class Z80UnitTestRunner {
 				}
 				catch (e) {
 					// Test failure
-					const testMsg = new vscode.TestMessage(e.message);
+					const msg = (timedOut) ? "Timeout! (" + Settings.launch.unitTestTimeout + "s)" : e.message;
+					const testMsg = new vscode.TestMessage(msg);
 					let range = test.range;
 					const position: SourceFileEntry = e.position;
 					let uri = test.uri;
@@ -235,6 +247,9 @@ export class Z80UnitTestRunner {
 						testMsg.location = new vscode.Location(uri!, range);
 					}
 					run.failed(test, testMsg, Date.now() - start);
+				}
+				finally {
+					clearTimeout(timeoutHandle);
 				}
 			}
 			else {
