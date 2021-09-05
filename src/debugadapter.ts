@@ -31,6 +31,7 @@ import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
+import {PromiseCallbacks} from './misc/promisecallbacks';
 
 
 
@@ -49,6 +50,12 @@ enum DbgAdapterState {
 export class DebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
 	protected static state = DbgAdapterState.NORMAL;
+
+	/// Functions set in 'unitTestsStart'. Will be called after debugger
+	/// is started and initialized.
+	//protected static unitTestStartResolve: ((da: DebugSessionClass) => void) | undefined;
+	//protected static unitTestStartReject: ((reason: any) => void) | undefined;
+	protected static unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
 	protected dasmAddressQueue = new Array<number>();
@@ -152,6 +159,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param handler
 	 * @returns If it was not possible to start unit test: false.
 	 */
+	// TODO: remove
 	public static unitTests(configName: string, handler: (da: DebugSessionClass) => void): boolean {
 		Utility.assert(handler);
 
@@ -181,6 +189,44 @@ export class DebugSessionClass extends DebugSession {
 
 		return true;
 	}
+
+
+	/**
+	 * Start the unit tests.
+	 * @param configName The debug launch configuration name.
+	 * @param handler
+	 * @returns If it was not possible to start unit test: false.
+	 */
+	public static unitTestsStart(configName: string): Promise<DebugSessionClass> {
+		// Return if currently a debug session is running
+		if (vscode.debug.activeDebugSession)
+			throw Error("There is already an active debug session.");
+		if (this.state != DbgAdapterState.NORMAL)
+			throw Error("Debugger state is wrong.");
+
+		// Need to find the corresponding workspace uri
+		const rootFolder = Utility.getRootPath();
+		let workspaceFolder;
+		const wsFolders = vscode.workspace.workspaceFolders || [];
+		for (const wsFolder of wsFolders) {
+			if (wsFolder.uri.fsPath == rootFolder) {
+				workspaceFolder = wsFolder;
+				break;
+			}
+		}
+		Utility.assert(workspaceFolder);
+
+		// Start debugger
+		//this.unitTestHandler = handler;
+		this.state = DbgAdapterState.UNITTEST;
+		vscode.debug.startDebugging(workspaceFolder, configName);
+
+		// The promise is fulfilled after launch of the debugger.
+		return new Promise<DebugSessionClass>((resolve, reject) => {
+			this.unitTestsStartCallbacks = new PromiseCallbacks<DebugSessionClass>(resolve, reject);
+		});
+	}
+
 
 	/**
 	 * Checks if the method (functionality) is implemented by the Remote.
@@ -579,6 +625,10 @@ export class DebugSessionClass extends DebugSession {
 		catch (err) {
 			// Some error occurred during loading, e.g. file not found.
 			//	this.terminate(err.message);
+			if (DebugSessionClass.unitTestsStartCallbacks) {
+				DebugSessionClass.unitTestsStartCallbacks.reject(err);
+				DebugSessionClass.unitTestsStartCallbacks = undefined;
+			}
 			return err.message;
 		}
 
@@ -606,7 +656,7 @@ export class DebugSessionClass extends DebugSession {
 			});
 		});
 
-		return new Promise<undefined>(async resolve => {	// For now there is no unsuccessful (reject) execution
+		return new Promise<undefined>(async (resolve, reject) => {	// For now there is no unsuccessful (reject) execution
 			Remote.once('initialized', async (text) => {
 				// Print text if available, e.g. "dbg_uart_if initialized".
 				if (text) {
@@ -652,9 +702,9 @@ export class DebugSessionClass extends DebugSession {
 
 				// Check if program should be automatically started
 				StepHistory.clear();
-				if (DebugSessionClass.unitTestHandler) {
-					// Handle continue/stop in the z80unittests.
-					this.emit('initialized');
+				if (DebugSessionClass.unitTestsStartCallbacks) {
+					DebugSessionClass.unitTestsStartCallbacks.resolve(this);
+					DebugSessionClass.unitTestsStartCallbacks = undefined;
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
@@ -682,6 +732,11 @@ export class DebugSessionClass extends DebugSession {
 				// Some error occurred
 				const error = e.message || "Error";
 				this.terminate('Init remote: ' + error);
+				reject(e);
+				if (DebugSessionClass.unitTestsStartCallbacks) {
+					DebugSessionClass.unitTestsStartCallbacks.reject(e);
+					DebugSessionClass.unitTestsStartCallbacks = undefined;
+				}
 			}
 		});
 	}
@@ -3380,6 +3435,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
 	 * @param handler This handler is called after being quiet for the given timeout.
 	 */
+	// TODO: Remove. Remote is used directly.
 	public async waitForBeingQuietFor(timeout: number): Promise<void> {
 		await Remote.waitForBeingQuietFor(timeout);
 	}
