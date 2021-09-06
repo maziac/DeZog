@@ -170,3 +170,78 @@ Z80UnitTestRunner -> runItem: end
 deactivate runItem
 
 ~~~
+
+
+
+## Required tests
+
+
+Test for zsim, zrcp, cspect and zxnext.
+
+Test groups of test cases:
+
+- run single test case
+- run group of test
+- run complete configuration
+- run complete launch.json (several configs)
+- run multiroot tests
+- debug single test case
+- debug group of test
+- debug complete configuration
+- debug complete launch.json (several configs)
+- debug multiroot tests
+
+Do these testing in following configurations:
+- All test cases pass
+- Run all with some failing test cases
+     - run: should run til the end and show failures at the end
+     - debug:
+          - should stop at the first failure. Test case should be marked as failed.
+          - **Important:** a 'continue' should not mark the test case as passed.
+- Have Breakpoints in the sources
+     - run: should not affect
+     - debug: should stop at the BP. It should be possible to continue and stop at the next BP. Or run to the end. A BP should not affect the pass/fail status.
+- An test case with an endless loop.
+     - run: should timeout.
+     - debug: should run forever (no timeout) until user presses 'pause'.
+- An error in the UNITTEST_INITIALIZE code
+     - run: should make all test cases fail.
+     - debug: should fail at first execution. Break at (user) initialization code.
+- Terminate:
+     - run/debug: The test cases should be interruptable. (Exception: zxnext)
+          - Manual termination of long running tests. Use long tests or add a Utility.timeout to the test case to fake long tests.
+          - Disconnect socket.
+
+
+
+
+# Unit tests written in java script
+
+I wanted to setup unit tests from javascript and just execute the z80 subroutine (that should be tested) from that javascript code.
+
+The sources here reflect this attempt.
+z80unittests/testrunner.ts: The main test execution/discovery.
+
+Although it did work I discovered some drawbacks with this approach and in the end decided not to follow this way.
+
+Advantages:
+
+- the memory comparison could be done easier
+- it would have been possible to stimulate also the ports (zsim)
+- Uses less Z80 resources (program and memory)
+- For simple tests no additional build target would be required
+
+Disadvantages:
+
+- Inconvenient: To get the value of a label I need to call an extra function. In Assembler I can use the label directly.
+- Many function calls in js require an 'await'. This would be error prone.
+- The user has to learn js syntax.
+- The js has to be executed in worker threads, otherwise an infinite loop can hang the complete dezog.
+- User must now specify topOfStack in launch.json.
+- From a reference in the js code to a label you can't jump directly to the label/function like it is possible in assembler unit tests with ASM-code-lens.
+- You still need a special configuration/build for testdata. To read and write testdata. Alternatively one could follow the following strategies:
+  - small memory areas (some bytes) could be allocated on the stack.
+  - When not writing to the screen one can use the area.
+  - If you don't use ROM routines you can map RAM memory into the ROM area.
+  - Or you can use code area that you know for sure is not in use, but problematic if there are WPMEMs set.
+- User can't debug the js code. I.e. he can't look at intermediate values.
