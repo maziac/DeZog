@@ -343,6 +343,8 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
+		// Send a 'break' request to emulator to stop it if it is running. (Note: does have an effect only on cspect.)
+		await Remote?.pause();
 		// Disconnect Remote etc.
 		await this.disconnectAll();
 		// Send response
@@ -374,7 +376,7 @@ export class DebugSessionClass extends DebugSession {
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
 		// Disconnect
-		await Remote?.disconnect();	// No await: This may take longer than 1 sec and vscode shows an error after 1 sec.
+		await Remote?.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
