@@ -188,7 +188,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Distinguished are only: 48k, 128k and tbblue.
 				const mtResp = await zSocket.sendAwait('get-current-machine') as string;
 				const machineType = mtResp.toLowerCase();
-				if (machineType.indexOf("tbblue") >= 0 || machineType.indexOf("ZX Spectrum Next") >= 0) {
+				if (machineType.indexOf("tbblue") >= 0 || machineType.indexOf("zx spectrum next") >= 0) {
 					// "ZX Spectrum Next" since zesarux 9.2.
 					// 8x8k banks
 					Z80Registers.decoder = new DecodeZesaruxRegisters(8);
