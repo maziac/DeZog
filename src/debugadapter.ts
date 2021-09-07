@@ -255,6 +255,8 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public terminate(message?: string) {
 		(async () => {
+			// Make sure every decoration gets output (improtan for debugging unit tests)
+			this.processDelayedDecorations();
 			//DebugSessionClass.state=DbgAdapterState.NORMAL;
 			if (message)
 				this.showError(message);
@@ -1080,6 +1082,15 @@ export class DebugSessionClass extends DebugSession {
 		// events like 'historySpot' would be lost.
 		// Note: codeCoverage is handled differently because it is not sent during
 		// step-back.
+		this.processDelayedDecorations();
+	}
+
+
+	/**
+	 * This is called at the end of a stack trace request btu also when a unit test case was finished debugging.
+	 * Writes everything in 'delayedDecorations' into the decorations.
+	 */
+	protected processDelayedDecorations() {
 		for (const func of this.delayedDecorations)
 			func();
 		this.delayedDecorations.length = 0;
@@ -1252,10 +1263,11 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check if in unit test mode
 		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
-			if (Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString)) {
-				// Send no break
-				return undefined as any;
+			if (!Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString)) {
+				this.sendEventBreakAndUpdate();
 			}
+			// Send no further break
+			return undefined as any;
 		}
 
 		// Send break
@@ -1343,8 +1355,8 @@ export class DebugSessionClass extends DebugSession {
 	 * This handles the display in the vscode UI.
 	 * If the command can be handled in a short amount of time (e.g. in 1 sec)
 	 * then the response is sent after the command.
-	 * When the response is received by vscode it changed the current highlighted line
-	 * into an unhighlighted state and shows the 'pause' button.
+	 * When the response is received by vscode it changes the current highlighted line
+	 * into an un-highlighted state and shows the 'pause' button.
 	 * I.e. for short commands this could lead to flickering, but if the
 	 * UI is changed after command no flickering appears.
 	 * On the other hand, if a command takes too long it is necessary to show

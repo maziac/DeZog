@@ -265,7 +265,7 @@ export class Z80UnitTestRunner {
 				let timedOut = false;
 				let timeoutHandle;
 				if (!this.debug) {
-					const toMs = 1000 * Settings.launch.unitTestTimeout;
+					const toMs = 1000 * Settings.launch.unitTestTimeout * 100; // TODO: *100 for debugging
 					timeoutHandle = setTimeout(() => {
 						timedOut = true;
 						// Failure: Timeout. Send a break.
@@ -310,6 +310,9 @@ export class Z80UnitTestRunner {
 
 		// Make sure to end the run after all tests have been executed:
 		run.end();
+
+		// Stop debugger
+		await this.stopUnitTests(this.debugAdapter);
 	}
 
 
@@ -1034,37 +1037,41 @@ export class Z80UnitTestRunner {
 	 * Stops the unit tests.
 	 * @param errMessage If set an optional error message is shown.
 	 */
+	// TODO: Remove debugAdapter
 	protected static async stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string): Promise<void> {
 		// Async
 		return new Promise<void>(async resolve => {
 			// Clear timeout
-			clearTimeout(Z80UnitTestRunner.timeoutHandle);
-			Z80UnitTestRunner.timeoutHandle=undefined;
-			// Clear remaining test cases
-			Z80UnitTestRunner.CancelAllRemainingResults();
+			clearTimeout(this.timeoutHandle);
+			this.timeoutHandle=undefined;
 
 			// Show coverage
-			Decoration.showCodeCoverage(Z80UnitTestRunner.allCoveredAddresses);
+			//Decoration.showCodeCoverage(Z80UnitTestRunner.allCoveredAddresses);
+			//this.debugAdapter.sendEventBreakAndUpdate();
+
+			//await Utility.timeout(3000);
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
-			if (debugAdapter) {
+			if (this.debugAdapter) {
 				Remote.stopProcessing();	// To show the coverage after continue to end
-				await debugAdapter.waitForBeingQuietFor(300);
+				//this.debugAdapter.sendEventBreakAndUpdate();
+				//await Utility.timeout(1);
+				await Remote.waitForBeingQuietFor(300);
 			}
-
 			// Show remaining covered addresses
+/*
 			if (Z80UnitTestRunner.lastCoveredAddresses) {
 				Decoration.showCodeCoverage(Z80UnitTestRunner.lastCoveredAddresses);
 				Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
 			}
-
+*/
 			// For reverse debugging.
 			StepHistory.clear();
 
 			// Exit
-			if (debugAdapter) {
+			if (this.debugAdapter) {
 				this.cancelled = true;	// Avoid calling the cancel routine.
-				debugAdapter.terminate(errMessage);
+				this.debugAdapter.terminate(errMessage);
 			}
 			else {
 				// Stop emulator
