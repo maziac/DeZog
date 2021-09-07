@@ -27,7 +27,6 @@ import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './misc/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
-import {Z80UnitTests} from './z80unittests';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
@@ -342,16 +341,6 @@ export class DebugSessionClass extends DebugSession {
 	 * - when the ZEsarUX socket connection is terminated
 	 */
 	protected async disconnectAll(): Promise<void> {
-		// Clear all decorations
-		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
-			// Cancel unit tests
-			Z80UnitTests.cancelUnitTests();
-			// Clear decoration
-			Decoration?.clearAllButCodeCoverageDecorations();
-		}
-		else
-			Decoration?.clearAllDecorations();
-		DebugSessionClass.state = DbgAdapterState.NORMAL;
 		// Close views, e.g. register memory view
 		await BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
@@ -370,6 +359,18 @@ export class DebugSessionClass extends DebugSession {
 					return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 				});
 		}
+
+		// Clear all decorations
+		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+			// Cancel unit tests
+			Z80UnitTestRunner.cancelUnitTests();
+			// Clear decoration
+			Decoration?.clearAllButCodeCoverageDecorations();
+		}
+		else {
+			Decoration?.clearAllDecorations();
+		}
+		DebugSessionClass.state = DbgAdapterState.NORMAL;
 	}
 
 

@@ -294,7 +294,14 @@ export class Z80UnitTestRunner {
 					if (range) {
 						testMsg.location = new vscode.Location(uri!, range);
 					}
-					run.failed(test, testMsg, Date.now() - start);
+					if (e.skipped) {
+						// In case unit test was cancelled
+						run.skipped(test);
+					}
+					else {
+						// "Normal" test case failure
+						run.failed(test, testMsg, Date.now() - start);
+					}
 				}
 				finally {
 					clearTimeout(timeoutHandle);
@@ -312,7 +319,9 @@ export class Z80UnitTestRunner {
 		run.end();
 
 		// Stop debugger
-		await this.stopUnitTests(this.debugAdapter);
+		if (Remote) {
+			await this.stopUnitTests(this.debugAdapter);
+		}
 	}
 
 
@@ -586,25 +595,16 @@ export class Z80UnitTestRunner {
 	/**
 	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
 	 */
-	public static async cancelUnitTests() {
+	public static async cancelUnitTests(): Promise<void> {
 		// Avoid calling twice
-		if (this.cancelled)
-			return;
+		//if (this.cancelled)
+		//	return;
 		// Cancel the unit tests
-		this.cancelled = true;
-		const text = "Unit tests cancelled.";
-		Z80UnitTestRunner.dbgOutput(text);
-		await Z80UnitTestRunner.stopUnitTests(undefined);
-		//	ds.customRequest("terminate");
-		// Fail the current test
-		/*
-		Z80UnitTestRunner.countFailed++;
-		if (Z80UnitTestRunner.countFailed>Z80UnitTestRunner.countExecuted)
-			Z80UnitTestRunner.countFailed=Z80UnitTestRunner.countExecuted;
-		*/
-		if (Z80UnitTestRunner.countExecuted > 0)
-			Z80UnitTestRunner.countExecuted--;
-		Z80UnitTestRunner.unitTestsFinished();
+		//this.cancelled = true;
+	//	await this.stopUnitTests(undefined);
+		const error = Error("Unit test cancelled.") as any;
+		error.skipped = true;
+		this.waitOnDebugger?.reject(error);
 	}
 
 
@@ -953,7 +953,7 @@ export class Z80UnitTestRunner {
 				new PromiseCallbacks<void>(this, 'waitOnDebugger', resolve, reject);
 			});
 			await this.debugAdapter.remoteContinue();
-			Remote.stopProcessing();
+			Remote?.stopProcessing();
 			// Note: after the first call to debugAdapter.remoteContinue the vscode will take over until dbgCheckUnitTest will finally return (in 'finish')
 			await finish;
 			console.log();
@@ -1043,7 +1043,7 @@ export class Z80UnitTestRunner {
 		return new Promise<void>(async resolve => {
 			// Clear timeout
 			clearTimeout(this.timeoutHandle);
-			this.timeoutHandle=undefined;
+			this.timeoutHandle = undefined;
 
 			// Show coverage
 			//Decoration.showCodeCoverage(Z80UnitTestRunner.allCoveredAddresses);
@@ -1053,18 +1053,18 @@ export class Z80UnitTestRunner {
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (this.debugAdapter) {
-				Remote.stopProcessing();	// To show the coverage after continue to end
+				//Remote.stopProcessing();	// To show the coverage after continue to end
 				//this.debugAdapter.sendEventBreakAndUpdate();
 				//await Utility.timeout(1);
 				await Remote.waitForBeingQuietFor(300);
 			}
 			// Show remaining covered addresses
-/*
-			if (Z80UnitTestRunner.lastCoveredAddresses) {
-				Decoration.showCodeCoverage(Z80UnitTestRunner.lastCoveredAddresses);
-				Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
-			}
-*/
+			/*
+						if (Z80UnitTestRunner.lastCoveredAddresses) {
+							Decoration.showCodeCoverage(Z80UnitTestRunner.lastCoveredAddresses);
+							Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
+						}
+			*/
 			// For reverse debugging.
 			StepHistory.clear();
 
