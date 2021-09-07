@@ -32,6 +32,7 @@ import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
 import {PromiseCallbacks} from './misc/promisecallbacks';
+import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 
 
 
@@ -223,30 +224,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// The promise is fulfilled after launch of the debugger.
 		return new Promise<DebugSessionClass>((resolve, reject) => {
-			this.unitTestsStartCallbacks = new PromiseCallbacks<DebugSessionClass>(resolve, reject);
+			new PromiseCallbacks<DebugSessionClass>(this, 'unitTestsStartCallbacks', resolve, reject);
 		});
 	}
-
-
-	/**
-	 * Checks if the method (functionality) is implemented by the Remote.
-	 */
-	/*
-	protected RemoteHasMethod(name: string): boolean {
-		Utility.assert(Remote);
-		let remote=Remote;
-		let found=false;
-		while (remote=Object.getPrototypeOf(remote)) {
-			const className=remote.constructor.name;
-			if (className=="RemoteBase")
-				break;	// Stop at RemoteBase
-			const methodNames=Object.getOwnPropertyNames(remote);
-			found=(methodNames.indexOf(name)>=0);
-			if (found) break;
-		}
-		return found;
-	}
-	*/
 
 
 	/**
@@ -531,7 +511,6 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {
-		DebugSessionClass.state = DbgAdapterState.NORMAL;
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
 
@@ -578,7 +557,7 @@ export class DebugSessionClass extends DebugSession {
 		// Call the unit test handler. It will subscribe on events.
 		if (DebugSessionClass.unitTestHandler) {
 			DebugSessionClass.state = DbgAdapterState.UNITTEST;
-			DebugSessionClass.unitTestHandler(this);
+			DebugSessionClass.unitTestHandler(this); // TODO: still required?
 		}
 
 		// Reset all decorations
@@ -627,10 +606,7 @@ export class DebugSessionClass extends DebugSession {
 		catch (err) {
 			// Some error occurred during loading, e.g. file not found.
 			//	this.terminate(err.message);
-			if (DebugSessionClass.unitTestsStartCallbacks) {
-				DebugSessionClass.unitTestsStartCallbacks.reject(err);
-				DebugSessionClass.unitTestsStartCallbacks = undefined;
-			}
+			DebugSessionClass.unitTestsStartCallbacks?.reject(err);
 			return err.message;
 		}
 
@@ -706,7 +682,6 @@ export class DebugSessionClass extends DebugSession {
 				StepHistory.clear();
 				if (DebugSessionClass.unitTestsStartCallbacks) {
 					DebugSessionClass.unitTestsStartCallbacks.resolve(this);
-					DebugSessionClass.unitTestsStartCallbacks = undefined;
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
@@ -735,10 +710,7 @@ export class DebugSessionClass extends DebugSession {
 				const error = e.message || "Error";
 				this.terminate('Init remote: ' + error);
 				reject(e);
-				if (DebugSessionClass.unitTestsStartCallbacks) {
-					DebugSessionClass.unitTestsStartCallbacks.reject(e);
-					DebugSessionClass.unitTestsStartCallbacks = undefined;
-				}
+				DebugSessionClass.unitTestsStartCallbacks?.reject(e);
 			}
 		});
 	}
@@ -1278,16 +1250,24 @@ export class DebugSessionClass extends DebugSession {
 		// Display T-states and time
 		await this.endStepInfo();
 
-		// React depending on internal state.
-		if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
-			// Send break
-			return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
+		// Check if in unit test mode
+		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+			if (Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString)) {
+				// Send no break
+				return undefined as any;
+			}
+		}
+
+		// Send break
+		return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
+/* TODO: remove
 		}
 		else {
 			// For the unit tests
 			this.emit("break");
 			return undefined as any;
 		}
+	*/
 	}
 
 

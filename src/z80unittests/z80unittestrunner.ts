@@ -13,6 +13,7 @@ import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
 import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig} from './UnitTestCase';
+import {PromiseCallbacks} from '../misc/promisecallbacks';
 
 
 
@@ -159,6 +160,10 @@ export class Z80UnitTestRunner {
 
 	// The currently used (and setup) test configuration.
 	protected static testConfig: UnitTestSuiteConfig | undefined;
+
+	// Used for returning test cases from the debugger.
+	protected static waitOnDebugger: PromiseCallbacks<void> | undefined;
+
 
 	/**
 	 * Called to initialize the test controller.
@@ -339,17 +344,6 @@ export class Z80UnitTestRunner {
 		// Setup root folder
 		Utility.setRootPath(this.testConfig!.wsFolder);
 
-		// Mode
-		if (this.debug) {
-			// Start debugger
-			const configName = testConfig.testItem.label;
-			const success = DebugSessionClass.unitTests(configName, this.handleDebugAdapter);
-			if (!success) {
-				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
-				throw Error("General error executing test cases.");
-			}
-		}
-
 		// Reset all decorations
 		this.allCoveredAddresses.clear();	// TODO: Does this work in multiroot or are only the coverred lines of the last workspace shown?
 		Decoration.clearAllDecorations();
@@ -515,10 +509,11 @@ export class Z80UnitTestRunner {
 			throw e;
 		}
 
-		this.debugAdapter.on('break', () => {
+	/*	this.debugAdapter.on('break', () => {
 			// Check if test case was successful
-			this.checkUnitTest();
+			this.dbgCheckUnitTest();
 		});
+		*/
 	}
 
 
@@ -841,10 +836,12 @@ export class Z80UnitTestRunner {
 			}
 		});
 
+		/*
 		debugAdapter.on('break', () => {
 			// Check if test case was successful
-			this.checkUnitTest();
+			this.dbgCheckUnitTest();
 		});
+		*/
 	}
 
 
@@ -857,7 +854,7 @@ export class Z80UnitTestRunner {
 		//const pc = Remote.getPCLong();
 		////const sp = Z80Registers.parseSP(data);
 		// Check if test case was successful
-		Z80UnitTestRunner.checkUnitTest();
+		Z80UnitTestRunner.dbgCheckUnitTest('');
 		// Otherwise another break- or watchpoint was hit or the user stepped manually.
 	}
 
@@ -937,7 +934,7 @@ export class Z80UnitTestRunner {
 
 	/**
 	 * Starts Continue directly or through the debug adapter.
-	 */
+	 */ // TODO: separate in 2 function: run and debug
 	protected static async RemoteContinue(): Promise<void> {
 		// Check if cancelled
 		//if (Z80UnitTestRunner.cancelled)
@@ -949,15 +946,30 @@ export class Z80UnitTestRunner {
 			// With vscode UI
 			this.debugAdapter.sendEventContinued();
 			// Debug: Continue
+			const finish = new Promise<void>((resolve, reject) => {
+				new PromiseCallbacks<void>(this, 'waitOnDebugger', resolve, reject);
+			});
 			await this.debugAdapter.remoteContinue();
 			Remote.stopProcessing();
-			await this.checkUnitTest();
+			// Note: after the first call to debugAdapter.remoteContinue the vscode will take over until dbgCheckUnitTest will finally return (in 'finish')
+			await finish;
+			console.log();
 		}
 		else {
 			// Run: Continue
 			await Remote.continue();
 			Remote.stopProcessing();
-			await this.checkUnitTest();
+			// There are 2 possibilities to get here:
+			// a) the test case is passed
+			// b) the test case stopped because of an ASSERTION, i.e. it is failed
+			const pc = Remote.getPCLong();
+			// OK or failure
+			if(pc != this.addrTestReadySuccess) {
+				// Failure: get location
+				const error = new Error("Test case failed.") as any;
+				error.position = Labels.getFileAndLineForAddress(pc);
+				throw error;
+			}
 		}
 	}
 
@@ -965,51 +977,30 @@ export class Z80UnitTestRunner {
 	/**
 	 * Checks if the test case was OK or a fail.
 	 * Or undetermined.
+	 * There are 3 possibilities to get here:
+	 * a) the test case is passed
+	 * b) the test case stopped because of an ASSERTION, i.e. it is failed
+	 * c) a user breakpoint was hit or the user paused the execution
+	 * The c) is the ricky one because the Promise is not fulfilled in this situation.
+	 * @param breakReasonString Contains the break reason, e.g. the assert.
+	 * @returns true If test case has been finished.
 	 */
-	protected static async checkUnitTest(): Promise<void> {
-		// Collect coverage: // TODO: Maybe can be removed
-		// Get covered addresses (since last unit test) and add to collection.
-		const target = this.allCoveredAddresses;
-		this.lastCoveredAddresses.forEach(target.add, target);
-		this.lastCoveredAddresses.clear();
-
-		// Check if it was a timeout
-		let timeoutFailure = !Z80UnitTestRunner.debug;
-		if(Z80UnitTestRunner.timeoutHandle) {
-			// Clear timeout
-			clearTimeout(Z80UnitTestRunner.timeoutHandle);
-			Z80UnitTestRunner.timeoutHandle = undefined;
-			timeoutFailure = false;
-		}
-
+	public static dbgCheckUnitTest(breakReasonString: string): boolean {
+		Utility.assert(this.waitOnDebugger);
 		// Check if test case ended successfully or not
 		const pc = Remote.getPCLong();
 		// OK or failure
-		const tcSuccess = (pc == this.addrTestReadySuccess);
-		if (!tcSuccess) {
-			// Undetermined. Test case not ended yet.
-			// Check if in debug or run mode.
-			if (this.debugAdapter) {
-				// In debug mode: Send break to give vscode control
-				await this.debugAdapter.sendEventBreakAndUpdate();
-				return;
+		if (pc == this.addrTestReadySuccess) {
+			// Success
+			this.waitOnDebugger!.resolve();
+			return true;
+		}
+		else {
+			// Without breakReasonString it was a simple breakpoint.
+			if (breakReasonString) {
 			}
-			// Else: Test case failure
-			// Get location
-			const error = new Error("Test case failed.") as any;
-			error.position = Labels.getFileAndLineForAddress(pc);
-			throw error;
+			return false;
 		}
-
-		// Collect coverage:
-		// Get covered addresses (since last unit test) and add to collection.
-		/*
-		if (Z80UnitTestRunner.lastCoveredAddresses) {
-			const target=Z80UnitTestRunner.allCoveredAddresses;
-			Z80UnitTestRunner.lastCoveredAddresses.forEach(target.add, target);
-			Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
-		}
-		*/
 	}
 
 

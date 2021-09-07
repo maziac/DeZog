@@ -7,67 +7,67 @@ hide footbox
 
 
 participant vscode
-participant ZXDebug as "DebugSessionClass"
+participant DeZog as "DebugSessionClass"
 'participant ZXSocket as "Zesarux\nSocket"
 
 == step  ==
 
-vscode -> ZXDebug: threadsRequest()
-vscode <-- ZXDebug: response(thread)‚
+vscode -> DeZog: threadsRequest()
+vscode <-- DeZog: response(thread)‚
 
-vscode -> ZXDebug: stackTraceRequest(thread)
-vscode <-- ZXDebug: response(frames)
+vscode -> DeZog: stackTraceRequest(thread)
+vscode <-- DeZog: response(frames)
 
-vscode -> ZXDebug: scopesRequest(frameID/selected frame)
-vscode <-- ZXDebug: response(scope names + their varID)
+vscode -> DeZog: scopesRequest(frameID/selected frame)
+vscode <-- DeZog: response(scope names + their varID)
 
-vscode -> ZXDebug: variablesRequest(varID)
-vscode <-- ZXDebug: response(variables)
+vscode -> DeZog: variablesRequest(varID)
+vscode <-- DeZog: response(variables)
 
-note over vscode, ZXDebug: The evaluateRequest may also come earlier. Also before the scopes request.
-vscode -> ZXDebug: evaluateRequest(expression, frameID)
-vscode <-- ZXDebug: response(result)
+note over vscode, DeZog: The evaluateRequest may also come earlier. Also before the scopes request.
+vscode -> DeZog: evaluateRequest(expression, frameID)
+vscode <-- DeZog: response(result)
 
 == select in CALL STACK area  ==
 
-vscode -> ZXDebug: scopesRequest(frameID/selected frame)
-vscode <-- ZXDebug: response(scope names + their varID)
+vscode -> DeZog: scopesRequest(frameID/selected frame)
+vscode <-- DeZog: response(scope names + their varID)
 
-vscode -> ZXDebug: variablesRequest(varID)
-vscode <-- ZXDebug: response(variables)
+vscode -> DeZog: variablesRequest(varID)
+vscode <-- DeZog: response(variables)
 
 
 == open scope in VARIABLES ares  ==
 
-vscode -> ZXDebug: variablesRequest(varID)
-vscode <-- ZXDebug: response(variables)
+vscode -> DeZog: variablesRequest(varID)
+vscode <-- DeZog: response(variables)
 
 
 == hovering ==
 
-vscode -> ZXDebug: evaluateRequest(expression, frameID, context)
-vscode <-- ZXDebug: response(result, varID)
+vscode -> DeZog: evaluateRequest(expression, frameID, context)
+vscode <-- DeZog: response(result, varID)
 
 
 == watch ==
 
-note over vscode, ZXDebug: evaluateRequest is not only done on first input but on every step.
+note over vscode, DeZog: evaluateRequest is not only done on first input but on every step.
 
-vscode -> ZXDebug: evaluateRequest(expression, frameID, context)
-vscode <-- ZXDebug: response(result, varID)
+vscode -> DeZog: evaluateRequest(expression, frameID, context)
+vscode <-- DeZog: response(result, varID)
 
-note over vscode, ZXDebug: if the evaluate Request does not return a simple value but a varID.\nvarIDs are stored only temporarily until the next step.
+note over vscode, DeZog: if the evaluate Request does not return a simple value but a varID.\nvarIDs are stored only temporarily until the next step.
 
-vscode -> ZXDebug: variablesRequest(varID)
-vscode <-- ZXDebug: response(variables)
+vscode -> DeZog: variablesRequest(varID)
+vscode <-- DeZog: response(variables)
 
 
 == disconnect ==
 
-vscode -> ZXDebug: disconnectRequest()
+vscode -> DeZog: disconnectRequest()
 
-note over ZXDebug: Disconnect socket etc.
+note over DeZog: Disconnect socket etc.
 
-vscode <-- ZXDebug: response(result, varID)
+vscode <-- DeZog: response(result, varID)
 ````
 
