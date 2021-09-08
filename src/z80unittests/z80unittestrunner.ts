@@ -10,7 +10,7 @@ import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
-import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig} from './UnitTestCase';
+import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, UnitTestSuite} from './UnitTestCase';
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 
 
@@ -194,14 +194,21 @@ export class Z80UnitTestRunner {
 			if (request.exclude?.includes(test))
 				continue;
 
-			// If it has children it is a test suite, otherwise a test case
-			if (test.children.size == 0) {
+			// Check if there are children
+			if (test.children.size > 0) {
+				// Run child tests
+				const tmp: vscode.TestItem[] = [];
+				test.children.forEach(item => tmp.push(item));
+				queue.unshift(...tmp);
+			}
+
+			// Get "real" unit test
+			const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
+			if (!(ut instanceof UnitTestSuite)) {
 				let timeoutHandle;
 				this.timedOut = false;
 				this.currentTestStart = Date.now();
 				try {
-					// Get "real" unit test
-					const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
 					// Setup the test config
 					if (this.debug)
 						await this.setupDebugTestCase(ut);
@@ -236,12 +243,6 @@ export class Z80UnitTestRunner {
 					clearTimeout(timeoutHandle);
 					this.currentTestItem = undefined;
 				}
-			}
-			else {
-				// Run child tests
-				const tmp: vscode.TestItem[] = [];
-				test.children.forEach(item => tmp.push(item));
-				queue.unshift(...tmp);
 			}
 		}
 

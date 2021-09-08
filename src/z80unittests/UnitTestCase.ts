@@ -105,7 +105,7 @@ export class UnitTestCase extends UnitTestCaseBase {
 /**
  * A test suite containing other test suites or test cases.
  */
-class UnitTestSuite extends UnitTestCase {
+export class UnitTestSuite extends UnitTestCase {
 	// A map that contains children unit tests.
 	protected children: Array<UnitTestSuite | UnitTestCaseBase>;
 
