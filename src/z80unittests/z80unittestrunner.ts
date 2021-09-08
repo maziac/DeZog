@@ -105,6 +105,9 @@ export class Z80UnitTestRunner {
 	// Is true during test case setup (assembler) code
 	protected static testCaseSetup: boolean;
 
+	// Set to true if test timeout occurs.
+	protected static timedOut: boolean;
+
 
 	/**
 	 * Called to initialize the test controller.
@@ -194,7 +197,7 @@ export class Z80UnitTestRunner {
 			// If it has children it is a test suite, otherwise a test case
 			if (test.children.size == 0) {
 				let timeoutHandle;
-				let timedOut = false;
+				this.timedOut = false;
 				this.currentTestStart = Date.now();
 				try {
 					// Get "real" unit test
@@ -206,9 +209,9 @@ export class Z80UnitTestRunner {
 						await this.setupRunTestCase(ut);
 					// Set timeout
 					if (!this.debug) {
-						const toMs = 1000 * Settings.launch.unitTestTimeout * 100; // TODO: *100 for debugging
+						const toMs = 1000 * Settings.launch.unitTestTimeout;
 						timeoutHandle = setTimeout(() => {
-							timedOut = true;
+							this.timedOut = true;
 							// Failure: Timeout. Send a break.
 							Remote.pause();
 						}, toMs);
@@ -224,23 +227,9 @@ export class Z80UnitTestRunner {
 						// Simply ignore
 					}
 					else {
-						// Some unspecified test failure or timeout
-						const msg = (timedOut) ? "Timeout! (" + Settings.launch.unitTestTimeout + "s)" : e.message;
-						const testMsg = new vscode.TestMessage(msg);
-						let range = test.range;
-						// TODO: position raus
-						const position: SourceFileEntry = e.position;
-						let uri = test.uri;
-						if (position) {
-							uri = vscode.Uri.file(position.fileName);
-							const line = position.lineNr;
-							range = new vscode.Range(line, 10000, line, 10000);
-						}
-						if (range) {
-							testMsg.location = new vscode.Location(uri!, range);
-						}
-						// "Normal" test case failure
-						run.failed(test, testMsg, Date.now() - this.currentTestStart);
+						// Some unspecified test failure
+						const pc = Remote.getPCLong();
+						this.testFailed(e.message, pc);
 					}
 				}
 				finally {
@@ -494,7 +483,7 @@ export class Z80UnitTestRunner {
 			return;
 
 
-		await Utility.timeout(2000);	// TODO: remove
+		//await Utility.timeout(2000);	// TODO: remove
 
 		// Start the unit test
 		const utAddr = this.getLongAddressForLabel(ut.utLabel);
@@ -622,7 +611,7 @@ export class Z80UnitTestRunner {
 		}
 		else {
 			// Run: Continue
-			const breakReasonString =  await Remote.continue();
+			let reasonString =  await Remote.continue();
 			Remote.stopProcessing();
 			// There are 2 possibilities to get here:
 			// a) the test case is passed
@@ -635,7 +624,10 @@ export class Z80UnitTestRunner {
 			}
 			else {
 				// Failure
-				this.testFailed(breakReasonString, pc);
+				if (this.timedOut) {
+					reasonString = "Timeout (" + Settings.launch.unitTestTimeout + "s)";
+				}
+				this.testFailed(reasonString, pc);
 			}
 		}
 	}
