@@ -185,58 +185,12 @@
 				"command": "dezog.clearAllDecorations",
 				"title": "Clear all decorations",
 				"category": "dezog"
-			},
-			{
-				"command": "dezog.runAllUnitTests",
-				"title": "Run all unit tests",
-				"category": "dezog"
-			},
-			{
-				"command": "dezog.debugAllUnitTests",
-				"title": "Run all unit tests in debug mode",
-				"category": "dezog"
-			},
-			{
-				"command": "dezog.cancelUnitTests",
-				"title": "Cancels all running unit test cases.",
-				"category": "dezog"
-			},
-			{
-				"command": "dezog.getAllUnitTests",
-				"title": "Get all unit test case labels.",
-				"category": "dezog-partial-unit-testing"
-			},
-			{
-				"command": "dezog.initUnitTests",
-				"title": "Initializes partial unit testing.",
-				"category": "dezog-partial-unit-testing"
-			},
-			{
-				"command": "dezog.execUnitTestCase",
-				"title": "(Delayed) execution of one unit test case.",
-				"category": "dezog-partial-unit-testing"
-			},
-			{
-				"command": "dezog.runPartialUnitTests",
-				"title": "Run all unit test cases (from execUnitTestCase).",
-				"category": "dezog-partial-unit-testing"
-			},
-			{
-				"command": "dezog.debugPartialUnitTests",
-				"title": "Run all unit test cases (from execUnitTestCase) in debug mode.",
-				"category": "dezog-partial-unit-testing"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
 					"command": "dezog.whatsNew"
-				},
-				{
-					"command": "dezog.runAllUnitTests"
-				},
-				{
-					"command": "dezog.debugAllUnitTests"
 				},
 				{
 					"command": "dezog.movePCtoCursor",
@@ -248,26 +202,6 @@
 				},
 				{
 					"command": "dezog.clearAllDecorations"
-				},
-				{
-					"command": "dezog.getAllUnitTests",
-					"when": "false"
-				},
-				{
-					"command": "dezog.execUnitTestCase",
-					"when": "false"
-				},
-				{
-					"command": "dezog.debugPartialUnitTests",
-					"when": "false"
-				},
-				{
-					"command": "dezog.runPartialUnitTests",
-					"when": "false"
-				},
-				{
-					"command": "dezog.initUnitTests",
-					"when": "false"
 				}
 			],
 			"editor/context": [

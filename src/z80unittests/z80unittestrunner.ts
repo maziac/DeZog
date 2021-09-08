@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { DebugSessionClass } from '../debugadapter';
 import { RemoteFactory, Remote } from '../remotes/remotefactory';
-import {Labels, LabelsClass, SourceFileEntry } from '../labels/labels';
+import {Labels, SourceFileEntry } from '../labels/labels';
 import { RemoteBreakpoint } from '../remotes/remotebase';
 import { Settings } from '../settings';
 import { Utility } from '../misc/utility';
@@ -10,64 +10,10 @@ import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
-import * as path from 'path';
-import {FileWatcher} from '../misc/filewatcher';
 import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig} from './UnitTestCase';
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 
 
-
-
-/// Some definitions for colors.
-// TODO: Do I need the colors still?
-enum Color {
-	Reset = "\x1b[0m",
-	Bright = "\x1b[1m",
-	Dim = "\x1b[2m",
-	Underscore = "\x1b[4m",
-	Blink = "\x1b[5m",
-	Reverse = "\x1b[7m",
-	Hidden = "\x1b[8m",
-
-	FgBlack = "\x1b[30m",
-	FgRed = "\x1b[31m",
-	FgGreen = "\x1b[32m",
-	FgYellow = "\x1b[33m",
-	FgBlue = "\x1b[34m",
-	FgMagenta = "\x1b[35m",
-	FgCyan = "\x1b[36m",
-	FgWhite = "\x1b[37m",
-
-	BgBlack = "\x1b[40m",
-	BgRed = "\x1b[41m",
-	BgGreen = "\x1b[42m",
-	BgYellow = "\x1b[43m",
-	BgBlue = "\x1b[44m",
-	BgMagenta = "\x1b[45m",
-	BgCyan = "\x1b[46m",
-	BgWhite = "\x1b[47m",
-}
-
-/**
- * Colorize a string
- * @param color The color, e.g. '\x1b[36m' for cyan, see https://coderwall.com/p/yphywg/printing-colorful-text-in-terminal-when-run-node-js-script.
- * @param text The string to colorize.
- */
-function colorize(color: string, text: string): string {
-	//return color + text + '\x1b[0m';
-	return text;	// No easy colorizing possible in output channel.
-}
-
-
-/**
- * Enumeration for the returned test case pass or failure.
- */
-enum TestCaseResult {
-	OK = 0,
-	FAILED = 1,
-	TIMEOUT = 2,
-	CANCELLED = 3,	// Test cases have been cancelled, e.g. manually or the connection might have been lost or whatever.
-}
 
 
 /**
@@ -86,12 +32,6 @@ class TestCasesCancelled extends Error {
  * 4. Loops over all found unit tests.
  */
 export class Z80UnitTestRunner {
-	/// This array will contain the names of all UT test cases.
-	protected static utLabels: Array<string>;
-
-	/// This array will contain the names of the test cases that should be run.
-	protected static partialUtLabels: Array<string> | undefined;
-
 	/// A map for the test case labels and their resolve functions. The resolve
 	/// function is called when the test cases has been executed.
 	/// result:
@@ -114,13 +54,6 @@ export class Z80UnitTestRunner {
 	/// At the end of the test this address is reached on success.
 	protected static addrTestReadySuccess: number;
 
-	/// Is filled with the summary of tests and results.
-	protected static outputSummary: string;
-
-	/// Counts number of failed and total test cases.
-	protected static countFailed: number;
-	protected static countExecuted: number;
-
 	/// Is set if the current  test case fails.
 	protected static currentFail: boolean;
 
@@ -142,21 +75,8 @@ export class Z80UnitTestRunner {
 	/// Caches the last received addresses (from Emulator)
 	protected static lastCoveredAddresses: Set<number>;
 
-	/// Called when the unit test have finished.
-	/// Used to know when the async function is over.
-	protected static finishedCallback?: () => void;
-
 	/// The output channel for the unit tests
 	protected static unitTestOutput = vscode.window.createOutputChannel("DeZog Unit Tests");
-
-	// The map of file watchers. Key is the file path.
-	protected static fileWatchers: Map<string, FileWatcher>;
-
-	// Maps the filename (=id) to the test item.
-	protected static testItems: Map<string, vscode.TestItem>;
-
-	// Maps the sld/list files to launch configs.
-	protected static listFileContexts: Map<string, any>;
 
 	// The root of all test cases.
 	protected static rootTestSuite: RootTestSuite;
@@ -170,12 +90,6 @@ export class Z80UnitTestRunner {
 	// Used for returning test cases from the debugger.
 	protected static waitOnDebugger: PromiseCallbacks<void> | undefined;
 
-
-	// If the user stopped in a test case, the pass/fail is marked as undetermined.
-	// As we cannot distinguish a normal breakpoint from an assertion.
-	// Only used in debug.
-	protected static undetermined: boolean;
-
 	// The current test run.
 	protected static currentTestRun: vscode.TestRun | undefined;
 
@@ -187,6 +101,9 @@ export class Z80UnitTestRunner {
 
 	// Remembers if the current test case was failed.
 	protected static currentTestFailed: boolean;
+
+	// Is true during test case setup (assembler) code
+	protected static testCaseSetup: boolean;
 
 
 	/**
@@ -216,33 +133,25 @@ export class Z80UnitTestRunner {
 
 
 	/**
-	 * Runs a test case. (Not debug)
+	 * Runs one or several test cases. (Not debug)
 	 */
 	protected static async runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
 		this.debug = false;
-		this.runOrDebugHandler(request, token);
+		await this.runOrDebugHandler(request, token);
 		// Stop emulator
-		await Remote.disconnect();
+		//await Remote.disconnect();
 		// Remove event handling for the emulator
-		Remote.removeAllListeners();
+		//Remote.removeAllListeners();
 	}
 
 
 	/**
-	 * Runs a test case. (debug)
+	 * Runs one or several test cases. (debug)
 	 */
 	protected static async runDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
 		// Start with debugger
 		this.debug = true;
 		await this.runOrDebugHandler(request, token);
-		/*
-		// Exit
-		if (this.debugAdapter) {
-			this.debugAdapter.terminate();
-		}
-		// Remove event handling for the emulator
-		Remote.removeAllListeners();
-		*/
 	}
 
 
@@ -254,6 +163,7 @@ export class Z80UnitTestRunner {
 	 */
 	protected static async runOrDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
 		const run = this.testController.createTestRun(request);
+		this.currentTestRun = run;
 		const queue: vscode.TestItem[] = [];
 
 		// Register function to terminate if requested
@@ -283,30 +193,27 @@ export class Z80UnitTestRunner {
 
 			// If it has children it is a test suite, otherwise a test case
 			if (test.children.size == 0) {
-				// Get "real" unit test
-				const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
-				// Setup the test config
-				this.undetermined = false;
-				if (this.debug)
-					await this.setupDebugTestCase(ut);
-				else
-					await this.setupRunTestCase(ut);
-				// Set timeout
-				let timedOut = false;
 				let timeoutHandle;
-				if (!this.debug) {
-					const toMs = 1000 * Settings.launch.unitTestTimeout * 100; // TODO: *100 for debugging
-					timeoutHandle = setTimeout(() => {
-						timedOut = true;
-						// Failure: Timeout. Send a break.
-						Remote.pause();
-					}, toMs);
-				}
-				// Run the test case
-				const start = Date.now();
+				let timedOut = false;
+				this.currentTestStart = Date.now();
 				try {
-					this.currentTestFailed = false;
-					this.currentTestRun = run;
+					// Get "real" unit test
+					const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
+					// Setup the test config
+					if (this.debug)
+						await this.setupDebugTestCase(ut);
+					else
+						await this.setupRunTestCase(ut);
+					// Set timeout
+					if (!this.debug) {
+						const toMs = 1000 * Settings.launch.unitTestTimeout * 100; // TODO: *100 for debugging
+						timeoutHandle = setTimeout(() => {
+							timedOut = true;
+							// Failure: Timeout. Send a break.
+							Remote.pause();
+						}, toMs);
+					}
+					// Run the test case
 					this.currentTestItem = test;
 					this.currentTestStart = Date.now();
 					run.started(test);
@@ -321,6 +228,7 @@ export class Z80UnitTestRunner {
 						const msg = (timedOut) ? "Timeout! (" + Settings.launch.unitTestTimeout + "s)" : e.message;
 						const testMsg = new vscode.TestMessage(msg);
 						let range = test.range;
+						// TODO: position raus
 						const position: SourceFileEntry = e.position;
 						let uri = test.uri;
 						if (position) {
@@ -332,12 +240,11 @@ export class Z80UnitTestRunner {
 							testMsg.location = new vscode.Location(uri!, range);
 						}
 						// "Normal" test case failure
-						run.failed(test, testMsg, Date.now() - start);
+						run.failed(test, testMsg, Date.now() - this.currentTestStart);
 					}
 				}
 				finally {
 					clearTimeout(timeoutHandle);
-					this.currentTestRun = undefined;
 					this.currentTestItem = undefined;
 				}
 			}
@@ -354,7 +261,7 @@ export class Z80UnitTestRunner {
 
 		// Stop debugger
 		if (Remote) {
-			await this.stopUnitTests(this.debugAdapter);
+			await this.stopUnitTests();
 		}
 	}
 
@@ -379,7 +286,7 @@ export class Z80UnitTestRunner {
 		this.testConfig = testConfig;
 
 		// Terminate any probably runnning instance
-		await this.terminateRemote(false);
+		await this.terminateRemote();
 		this.debugAdapter = undefined as any;
 
 		// Prepare running of the test case
@@ -388,10 +295,15 @@ export class Z80UnitTestRunner {
 		const configuration = this.testConfig!.config;
 
 		// Setup root folder
-		Utility.setRootPath(this.testConfig!.wsFolder);
+		const rootFolder = this.testConfig!.wsFolder;
+		Utility.setRootPath(rootFolder);
+
+		// Setup settings
+		Settings.launch = Settings.Init(configuration, rootFolder);
+		Settings.CheckSettings();
 
 		// Reset all decorations
-		this.allCoveredAddresses.clear();	// TODO: Does this work in multiroot or are only the coverred lines of the last workspace shown?
+		this.allCoveredAddresses.clear();	// TODO: Does this work in multiroot or are only the covered lines of the last workspace shown?
 		Decoration.clearAllDecorations();
 
 		// Create the registers
@@ -461,7 +373,6 @@ export class Z80UnitTestRunner {
 
 			Remote.once('error', e => {
 				// Some error occurred
-				//Z80UnitTests.stopUnitTests(undefined, err.message); // TODO
 				reject(e);
 			});
 
@@ -494,7 +405,7 @@ export class Z80UnitTestRunner {
 		this.testConfig = testConfig;
 
 		// Terminate any probably running instance
-		await this.terminateRemote(false);
+		await this.terminateRemote();
 
 		// Setup root folder
 		Utility.setRootPath(testConfig!.wsFolder);
@@ -506,7 +417,6 @@ export class Z80UnitTestRunner {
 			this.debugAdapter = await DebugSessionClass.unitTestsStart(configName);
 		}
 		catch (e) {
-			vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
 			throw e;
 		}
 
@@ -524,53 +434,24 @@ export class Z80UnitTestRunner {
 			}
 			await Remote.enableAssertionBreakpoints(true);
 
-			// Handle coverage
-			/*
-			Remote.on('coverage', coveredAddresses => {
-				// Cache covered addresses (since last unit test)
-				//Z80UnitTestRunner.lastCoveredAddresses = coveredAddresses;
-				if (!Z80UnitTestRunner.lastCoveredAddresses)
-					Z80UnitTestRunner.lastCoveredAddresses = new Set<number>();
-				coveredAddresses.forEach(Z80UnitTestRunner.lastCoveredAddresses.add, Z80UnitTestRunner.lastCoveredAddresses);
-			});
-			*/
-
-			// After initialization vscode might send breakpoint requests
-			// to set the breakpoints.
-			// Unfortunately this request is sent only if breakpoints exist.
-			// I.e. there is no safe way to wait for something to
-			// know when vscode is ready.
-			// So just wait some time:
-			//if (Settings.launch.startAutomatically)
 			await Utility.timeout(500);	// TODO: Remove one wait
 
 			// Init unit tests
 			await this.initUnitTests();
 			// Start unit tests after a short while
-			//Z80UnitTestRunner.startUnitTestsWhenQuiet(debugAdapter);
 			await Remote.waitForBeingQuietFor(1000);
 		}
 		catch (e) {
-	//		Z80UnitTestRunner.stopUnitTests(debugAdapter, e.message);
 			throw e;
 		}
-
-	/*	this.debugAdapter.on('break', () => {
-			// Check if test case was successful
-			this.dbgCheckUnitTest();
-		});
-		*/
 	}
 
 
 	/**
 	 * Checks if the debugger is active. If yes terminates it and
 	 * executes the unit tests.
-	 * @param debug false: unit tests are run without debugger,
-	 * true: unit tests are run with debugger.
 	 */
-	protected static async terminateRemote(debug: boolean): Promise<void> {
-		//Z80UnitTests.debug = debug;
+	protected static async terminateRemote(): Promise<void> {
 		return new Promise<void>(async resolve => {
 			// Wait until vscode debugger has stopped.
 			if (Remote) {
@@ -588,8 +469,6 @@ export class Z80UnitTestRunner {
 					resolve();
 					return true;
 				}
-				// New coverage set
-				this.allCoveredAddresses = new Set<number>();
 				// Check for active debug session
 				if (vscode.debug.activeDebugSession)
 					return false;  // Try again
@@ -599,6 +478,7 @@ export class Z80UnitTestRunner {
 		});
 	}
 
+
 	/**
 	 * Runs a single test case.
 	 * Throws an exception on failure.
@@ -607,22 +487,19 @@ export class Z80UnitTestRunner {
 	 */
 	protected static async runTestCase(ut: UnitTestCase) {
 		// Start the part that is executed before each unit test
+		this.testCaseSetup = true;
+		this.currentTestFailed = false;
 		await this.execAddr(this.addrStart);
+		if (this.currentTestFailed)
+			return;
+
+
+		await Utility.timeout(2000);	// TODO: remove
+
 		// Start the unit test
 		const utAddr = this.getLongAddressForLabel(ut.utLabel);
+		this.testCaseSetup = false;
 		await this.execAddr(utAddr);
-
-		await Utility.timeout(2000);
-	}
-
-
-
-	/**
-	 * Command execution: Cancel all unit tests.
-	 */
-	public static async cmdCancelAllUnitTests() {
-		Remote.emit('terminated');
-		await Z80UnitTestRunner.cancelUnitTests();
 	}
 
 
@@ -630,155 +507,8 @@ export class Z80UnitTestRunner {
 	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
 	 */
 	public static async cancelUnitTests(): Promise<void> {
-		// Avoid calling twice
-		//if (this.cancelled)
-		//	return;
-		// Cancel the unit tests
-		//this.cancelled = true;
-	//	await this.stopUnitTests(undefined);
 		const error = new TestCasesCancelled("Unit test cancelled.");
-		//this.undetermined = true; TODO REMOVE undetermined
 		this.waitOnDebugger?.reject(error);
-	}
-
-
-	/**
-	 * Start the unit tests, either partial or full, in debug mode.
-	 * Debug mode simulates the vscode UI to start debugging and to press continue
-	 * after each unit test case.
-	 */
-	protected static debugTests() {
-		try {
-			// Get unit test launch config
-			let configuration;// = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
-			const configName: string = configuration.name;
-
-			// Start debugger
-			const success = DebugSessionClass.unitTests(configName, this.handleDebugAdapter);
-			if (!success) {
-				vscode.window.showErrorMessage("Couldn't start unit tests. Is maybe a debug session active?");
-			}
-		}
-		catch (e) {
-			vscode.window.showErrorMessage(e.message);
-		}
-	}
-
-
-	/**
-	 * Clears the map of test cases.
-	 * Is called at first when starting (partial) unit test cases.
-	 */
-	public static clearTestCaseList() {
-		// Clear map
-		Z80UnitTestRunner.testCaseMap.clear();
-	}
-
-
-	/**
-	 * "Executes" one unit test case.
-	 * The test case is just remembered and executed later.
-	 * Whenever the test case is executed the result is passed in the promise.
-	 * @param tcLabels An array with the unit test case labels.
-	 */
-	public static async execUnitTestCase(tcLabel: string): Promise<number> {
-		return new Promise<number>((resolve) => {
-			// Remember its resolve function.
-			Z80UnitTestRunner.testCaseMap.set(tcLabel, resolve);
-		});
-	}
-
-
-
-
-
-
-	/**
-	 * Loads all labels from the launch.json unit test configuration and
-	 * returns a new labels object.
-	 * Reads in all labels files.
-	 * @param rootFolder The root folder of the project.
-	 * @returns A labels object.
-	 */
-	protected static loadLabelsFromConfiguration(rootFolder: string): LabelsClass {
-		// Set root path
-		Utility.setRootPath(rootFolder);
-
-		let configuration;// = Z80UnitTestRunner.getUnitTestsLaunchConfigs();
-
-		// Setup settings
-		Settings.launch = Settings.Init(configuration, rootFolder);
-		Settings.CheckSettings();
-
-		// Get labels
-		const labels = new LabelsClass();
-		labels.readListFiles(configuration);
-		return labels;
-	}
-
-
-	/**
-	 * Retrieves a list of strings with the labels of all unit tests.
-	 * @returns A list of strings with the label names of the unit tests or a single string with the error text.
-	 */
-	/*
-	public static async getAllUnitTests(): Promise<UnitTestCase[]> {
-		return new Promise<UnitTestCase[]>((resolve, reject) => {
-			try {
-				// Read all list files.
-				const labels = Z80UnitTestRunner.loadLabelsFromConfiguration();
-				// Check if unit tests available
-				if (!Z80UnitTestRunner.AreUnitTestsAvailable(labels))
-					return resolve([]);	// Return empty array
-				// Get the unit test labels
-				const utLabels = Z80UnitTestRunner.getAllUtLabels(labels);
-				resolve(utLabels);
-			}
-			catch (e) {
-				// Error
-				reject(e.message || "Unknown error.");
-			}
-		});
-	}
-	*/
-	// TODO: REMOVE
-	public static getAllUnitTests(rootFolder: string): any[] {
-		let allUtLabels: any[] = [];
-		try {
-			// Read all list files.
-			const labels = Z80UnitTestRunner.loadLabelsFromConfiguration(rootFolder);
-			// Check if unit tests available
-			if (Z80UnitTestRunner.AreUnitTestsAvailable(labels)) {
-				// Get the unit test labels
-		//		allUtLabels = Z80UnitTestRunner.getAllUtLabels(labels);
-			}
-		}
-		catch (e) {
-			// Re-throw
-			const msg = e.message || "Unknown error.";
-			throw Error("Z80 Unit Tests: " + msg);
-		}
-		return allUtLabels;
-	}
-
-
-	/**
-	 * Check for z80asm:
-	 * In z80asm the labels will be visible in the list file for the macro definition.
-	 * Even if no unit test has been defined.
-	 * This can be checked. In that case the addresses for all labels are the same.	protected
-	 */
-	protected static AreUnitTestsAvailable(labels: LabelsClass): boolean {
-		const firstLabel = labels.getNumberForLabel("UNITTEST_TEST_WRAPPER");
-		const lastLabel = labels.getNumberForLabel("UNITTEST_MAX_STACK_GUARD");
-
-		if(firstLabel == lastLabel) {
-			// Note: this is also true if both labels are not defined (undefined == undefined)
-			return false;
-		}
-
-		// Everything fine
-		return true;
 	}
 
 
@@ -812,66 +542,6 @@ export class Z80UnitTestRunner {
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
-		//const failureBp1: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadyFailure, condition: '', log: undefined};
-		//await Remote.setBreakpoint(failureBp1);
-		//const failureBp2: RemoteBreakpoint={bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadyReturnFailure, condition: '', log: undefined};
-		//await Remote.setBreakpoint(failureBp2);
-
-		// Stack watchpoints
-		//const stackMinWp: GenericWatchpoint = { address: stackMinWatchpoint, size: 2, access: 'rw', condition: '' };
-		//const stackMaxWp: GenericWatchpoint = { address: stackMaxWatchpoint, size: 2, access: 'rw', condition: '' };
-		//await Remote.setWatchpoint(stackMinWp);
-		//await Remote.setWatchpoint(stackMaxWp);
-	}
-
-
-	/**
-	 * Handles the states of the debug adapter. Will be called after setup
-	 * @param debugAdapter The debug adapter.
-	 */
-	// TODO: remove
-	protected static handleDebugAdapter(debugAdapter: DebugSessionClass) {
-		debugAdapter.on('initialized', async () => {
-			try {
-				// Execute command to enable wpmem, logpoints, assertions.
-				await Remote.enableLogpointGroup(undefined, true);
-				try {
-					await Remote.enableWPMEM(true);
-				}
-				catch (e) {
-					// It's not essential anymore to have watchpoints running.
-					// So catch this error from CSpect and show a warning instead
-					vscode.window.showWarningMessage(e.message);
-				}
-				await Remote.enableAssertionBreakpoints(true);
-
-				// Handle coverage
-				Remote.on('coverage', coveredAddresses => {
-					// Cache covered addresses (since last unit test)
-					//Z80UnitTestRunner.lastCoveredAddresses = coveredAddresses;
-					if (!Z80UnitTestRunner.lastCoveredAddresses)
-						Z80UnitTestRunner.lastCoveredAddresses = new Set<number>();
-					coveredAddresses.forEach(Z80UnitTestRunner.lastCoveredAddresses.add, Z80UnitTestRunner.lastCoveredAddresses);
-				});
-
-				// After initialization vscode might send breakpoint requests
-				// to set the breakpoints.
-				// Unfortunately this request is sent only if breakpoints exist.
-				// I.e. there is no safe way to wait for something to
-				// know when vscode is ready.
-				// So just wait some time:
-				if (Settings.launch.startAutomatically)
-					await Utility.timeout(500);
-
-				// Init unit tests
-				await Z80UnitTestRunner.initUnitTests();
-				// Start unit tests after a short while
-				Z80UnitTestRunner.startUnitTestsWhenQuiet(debugAdapter);
-			}
-			catch(e) {
-				Z80UnitTestRunner.stopUnitTests(debugAdapter, e.message);
-			}
-		});
 	}
 
 
@@ -889,24 +559,6 @@ export class Z80UnitTestRunner {
 			throw Error("Unit tests are not enabled in the enabled sources. Label " + label + " is not found. Did you forget to use the 'UNITTEST_INITIALIZE' macro ?");
 		}
 		return addr;
-	}
-
-
-	/**
-	 * Waits a few 100ms until traffic is quiet on the zSocket interface.
-	 * The problem that is solved here:
-	 * After starting the vscode sends the source file breakpoints.
-	 * But there is no signal to tell when all are sent.
-	 * If we don't wait we would miss a few and we wouldn't break.
-	 * @param da The debug emulator.
-	 */
-	protected static startUnitTestsWhenQuiet(da: DebugSessionClass) {
-		// Wait
-		da.waitForBeingQuietFor(1000)
-		.then(() => {
-			// Load the initial unit test routine (provided by the user)
-	//		Z80UnitTestRunner.execAddr(Z80UnitTestRunner.addrStart, da);
-		});
 	}
 
 
@@ -950,11 +602,8 @@ export class Z80UnitTestRunner {
 
 	/**
 	 * Starts Continue directly or through the debug adapter.
-	 */ // TODO: separate in 2 function: run and debug
+	 */
 	protected static async RemoteContinue(): Promise<void> {
-		// Check if cancelled
-		//if (Z80UnitTestRunner.cancelled)
-		//	return;
 		// Init
 		Remote.startProcessing();
 		// Run or Debug
@@ -1020,7 +669,6 @@ export class Z80UnitTestRunner {
 			if (breakReasonString?.toLowerCase().startsWith('assertion')) {
 				this.testFailed(breakReasonString, pc);
 			}
-//			this.undetermined = true;
 			return false;
 		}
 	}
@@ -1055,53 +703,22 @@ export class Z80UnitTestRunner {
 	 * Make the test item pass.
 	 */
 	protected static testPassed() {
-		this.currentTestRun?.passed(this.currentTestItem!, Date.now() - this.currentTestStart);
-	}
-
-
-	/**
-	 * Called when all unit tests have finished.
-	 * Will print the summary and display the decorations for the line coverage.
-	 */
-	protected static unitTestsFinished() {
-		// Summary
-		Z80UnitTestRunner.printSummary();
-		// Inform
-		if (Z80UnitTestRunner.finishedCallback)
-			Z80UnitTestRunner.finishedCallback();
-	}
-
-
-	/**
-	 * Sends a CANCELLED for all still open running test cases
-	 * to the caller (i.e. the test case adapter).
-	 */
-	protected static CancelAllRemainingResults() {
-		for(const [, resolveFunc] of Z80UnitTestRunner.testCaseMap) {
-			// Return an error code
-			resolveFunc(TestCaseResult.CANCELLED);
+		// Don't allow passing during test case setup
+		if (!this.testCaseSetup) {
+			this.currentTestRun?.passed(this.currentTestItem!, Date.now() - this.currentTestStart);
 		}
-		Z80UnitTestRunner.testCaseMap.clear();
 	}
 
 
 	/**
 	 * Stops the unit tests.
-	 * @param errMessage If set an optional error message is shown.
 	 */
-	// TODO: Remove debugAdapter
-	protected static async stopUnitTests(debugAdapter: DebugSessionClass|undefined, errMessage?: string): Promise<void> {
+	protected static async stopUnitTests(): Promise<void> {
 		// Async
 		return new Promise<void>(async resolve => {
 			// Clear timeout
 			clearTimeout(this.timeoutHandle);
 			this.timeoutHandle = undefined;
-
-			// Show coverage
-			//Decoration.showCodeCoverage(Z80UnitTestRunner.allCoveredAddresses);
-			//this.debugAdapter.sendEventBreakAndUpdate();
-
-			//await Utility.timeout(3000);
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (this.debugAdapter) {
@@ -1110,27 +727,18 @@ export class Z80UnitTestRunner {
 				//await Utility.timeout(1);
 				await Remote.waitForBeingQuietFor(300);
 			}
-			// Show remaining covered addresses
-			/*
-						if (Z80UnitTestRunner.lastCoveredAddresses) {
-							Decoration.showCodeCoverage(Z80UnitTestRunner.lastCoveredAddresses);
-							Z80UnitTestRunner.lastCoveredAddresses = undefined as any;
-						}
-			*/
+
 			// For reverse debugging.
 			StepHistory.clear();
 
 			// Exit
 			if (this.debugAdapter) {
 				this.cancelled = true;	// Avoid calling the cancel routine.
-				await Remote.terminate(errMessage);
+				await Remote.terminate();
 			}
 			else {
 				// Stop emulator
 				await Remote.disconnect();
-				// Show error
-				if (errMessage)
-					vscode.window.showErrorMessage(errMessage);
 			}
 
 			// Remove event handling for the emulator
@@ -1138,53 +746,6 @@ export class Z80UnitTestRunner {
 
 			resolve();
 		});
-	}
-
-
-	/**
-	 * Prints out text to the clients debug console.
-	 * @param txt The text to print.
-	 */
-	protected static dbgOutput(txt: string) {
-		// Safety check
-		if(!vscode.debug.activeDebugConsole)
-			return;
-
-		// Only newline?
-		if(!txt)
-			txt = '';
-		vscode.debug.activeDebugConsole.appendLine('UNITTEST: ' + txt);
-		//zSocket.logSocket.log('UNITTEST: ' + txt);
-	}
-
-
-	/**
-	 * Prints out a test case and result summary.
-	 */
-	protected static printSummary() {
-
-
-		// Print summary
-		const emphasize = '+-------------------------------------------------';
-		this.unitTestOutput.show();
-		this.unitTestOutput.appendLine('');
-		this.unitTestOutput.appendLine(emphasize);
-		const projectName = path.basename(Utility.getRootPath());
-		this.unitTestOutput.appendLine('UNITTEST SUMMARY, ' + projectName + ':');
-		this.unitTestOutput.appendLine('Date: ' + new Date().toString() + '\n\n');
-		this.unitTestOutput.appendLine(Z80UnitTestRunner.outputSummary);
-
-		const color = (Z80UnitTestRunner.countFailed>0) ? Color.FgRed : Color.FgGreen;
-		const countPassed = Z80UnitTestRunner.countExecuted - Z80UnitTestRunner.countFailed;
-		this.unitTestOutput.appendLine('');
-		this.unitTestOutput.appendLine('Total test cases: ' + Z80UnitTestRunner.countExecuted);
-		this.unitTestOutput.appendLine('Passed test cases: ' + countPassed);
-		this.unitTestOutput.appendLine(colorize(color, 'Failed test cases: '+Z80UnitTestRunner.countFailed));
-		if (Z80UnitTestRunner.countExecuted>0)
-			this.unitTestOutput.appendLine(colorize(color, Math.round(100*countPassed/Z80UnitTestRunner.countExecuted) + '% passed.'));
-		this.unitTestOutput.appendLine('');
-
-		this.unitTestOutput.appendLine(emphasize);
 	}
 
 }

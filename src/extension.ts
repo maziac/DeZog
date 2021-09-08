@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { DebugSessionClass } from './debugadapter';
-import { Z80UnitTests } from './z80unittests';
 import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
 import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
@@ -168,64 +167,6 @@ export function activate(context: vscode.ExtensionContext) {
 		Decoration?.clearAllDecorations();
 	}));
 
-	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.runAllUnitTests', () => {
-		Z80UnitTests.runAllUnitTests();
-	}));
-
-	// Command to run (some) unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugAllUnitTests', () => {
-		Z80UnitTests.debugAllUnitTests();
-	}));
-
-
-	/*
-	 The following commands are for the test adapter extension.
-	 A typical sequence is:
-	 1. getAllUnitTests: The test-adapter retrieves the list of available unit test cases.
-	 2. initUnitTests: Initializes a unit test case run.
-	 3. execUnitTestCase: Executes a unit test case and returns a TestCaseResult.
-	 Note: This command just adds the test case to a list. The real execution is delayed until startUnitTests.
-	 4. runUnitTests: Runs the unit tests.
-	*/
-
-	// Command to get a list of all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.getAllUnitTests', async (rootFolder: string)  => {
-		try {
-			return await Z80UnitTests.getAllUnitTests(rootFolder);
-		}
-		catch (e) {
-			// Return empty list in case no unit tests are configured.
-			//vscode.window.showErrorMessage(e.message); Don't show an error, otherwise it would be shown every time that no configuration is found.
-			return [];
-		}
-	}));
-
-	// Command to initialize partial unit testing
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.initUnitTests', () => {
-		Z80UnitTests.clearTestCaseList();
-	}));
-
-	// Command to (delayed) execution of a single unit test case
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.execUnitTestCase', (tcLabel: string) => {
-		return Z80UnitTests.execUnitTestCase(tcLabel);
-	}));
-
-	// Command to execute all unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.runPartialUnitTests', (rootFolder: string) => {
-		// Send to debug adapter
-		Z80UnitTests.runPartialUnitTests(rootFolder);
-	}));
-
-	// Command to run (some) unit tests
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.debugPartialUnitTests', (rootFolder: string) => {
-		Z80UnitTests.debugPartialUnitTests(rootFolder);
-	}));
-
-	// Command to cancel the unit tests. E.g. during debugging of one unit test.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.cancelUnitTests', async () => {
-		await Z80UnitTests.cmdCancelAllUnitTests();
-	}));
 
 	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider()
