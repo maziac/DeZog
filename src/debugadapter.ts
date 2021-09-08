@@ -250,28 +250,20 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Exit from the debugger.
+	 * Call Remote.terminate instead. The debug adapter listens for the
+	 * 'terminate' event and will execute the 'terminate' function.
 	 * @param message If defined the message is shown to the user as error.
 	 */
-	public terminate(message?: string) {
-		(async () => {
-			// Make sure every decoration gets output (improtan for debugging unit tests)
-			this.processDelayedDecorations();
-			//DebugSessionClass.state=DbgAdapterState.NORMAL;
-			if (message)
-				this.showError(message);
-			Log.log("Exit debugger!");
-			// Remove all listeners
-			this.removeAllListeners();	// Don't react on events anymore
-			// Terminate
-			/* Not necessary: the TerminatedRequest results in a disconnectRequest.
-			try {
-				await Remote?.disconnect();
-			}
-			catch {};
-			*/
-			this.sendEvent(new TerminatedEvent());
-			//this.sendEvent(new ExitedEvent());
-		})();
+	protected terminate(message?: string) {
+		// Make sure every decoration gets output (important for debugging unit tests)
+		this.processDelayedDecorations();
+		//DebugSessionClass.state=DbgAdapterState.NORMAL;
+		if (message)
+			this.showError(message);
+		Log.log("Exit debugger!");
+		// Remove all listeners
+		this.removeAllListeners();	// Don't react on events anymore
+		this.sendEvent(new TerminatedEvent());
 	}
 
 
@@ -553,7 +545,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		catch (e) {
 			// Some error occurred
-			this.terminate('Labels: ' + e.message);
+			Remote.terminate('Labels: ' + e.message);
 			return "Error while initializing labels.";
 		}
 
@@ -587,12 +579,13 @@ export class DebugSessionClass extends DebugSession {
 
 		Remote.once('error', err => {
 			// Some error occurred
+			Remote.disconnect();
 			this.terminate(err.message);
 		});
 
-		Remote.once('terminated', () => {
+		Remote.once('terminated', message => {
 			// Emulator has been terminated (e.g. by unit tests)
-			this.terminate();
+			this.terminate(message);
 		});
 
 		// Check if a cpu history object has been created by the Remote.
@@ -711,7 +704,7 @@ export class DebugSessionClass extends DebugSession {
 			catch (e) {
 				// Some error occurred
 				const error = e.message || "Error";
-				this.terminate('Init remote: ' + error);
+				Remote.terminate('Init remote: ' + error);
 				reject(e);
 				DebugSessionClass.unitTestsStartCallbacks?.reject(e);
 			}

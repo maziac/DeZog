@@ -21,17 +21,17 @@ import {Log} from '../log';
  * Are used in DZRP as well, so be cautious when changing values.
  */
 export enum BREAK_REASON_NUMBER {
-	NO_REASON=0,		// 0=no break reason (e.g.a step-over)
-	MANUAL_BREAK=1,		// 1=User (manual) break
-	BREAKPOINT_HIT=2,	// 2=breakpoint hit
-	WATCHPOINT_READ=3,	// 3=watchpoint hit read access
-	WATCHPOINT_WRITE=4,	// 4=watchpoint hit write access
-	CPU_ERROR=5,		// 5=CPU error, e.g. error in custom javascript code
+	NO_REASON = 0,		// 0=no break reason (e.g.a step-over)
+	MANUAL_BREAK = 1,		// 1=User (manual) break
+	BREAKPOINT_HIT = 2,	// 2=breakpoint hit
+	WATCHPOINT_READ = 3,	// 3=watchpoint hit read access
+	WATCHPOINT_WRITE = 4,	// 4=watchpoint hit write access
+	CPU_ERROR = 5,		// 5=CPU error, e.g. error in custom javascript code
 
 	// Internally used
-	STEPPING_NOT_ALLOWED=100,	// For ZxNextRemote if trying to step code used for debugging.
+	STEPPING_NOT_ALLOWED = 100,	// For ZxNextRemote if trying to step code used for debugging.
 
-	UNKNOWN=255		// 255=some other error
+	UNKNOWN = 255		// 255=some other error
 };
 
 
@@ -76,7 +76,7 @@ export interface RemoteBreakpoint extends GenericBreakpoint {
 export class RemoteBase extends EventEmitter {
 
 	// Maximum stack items to handle.
-	static MAX_STACK_ITEMS=100;
+	static MAX_STACK_ITEMS = 100;
 
 	/// The top of the stack. Used to limit the call stack.
 	/// 64k address.
@@ -86,28 +86,28 @@ export class RemoteBase extends EventEmitter {
 	protected listFrames: RefList<CallStackFrame>;
 
 	/// Mirror of the remote's breakpoints.
-	protected breakpoints=new Array<RemoteBreakpoint>();
+	protected breakpoints = new Array<RemoteBreakpoint>();
 
 	/// The WPMEM watchpoints can only be enabled/disabled alltogether.
-	public wpmemEnabled=false;
+	public wpmemEnabled = false;
 
 	/// The virtual stack used during reverse debugging.
 	protected reverseDbgStack: RefList<CallStackFrame>;
 
 	/// Stores the wpmem watchpoints (this is a smaller list, if watchpoints can be given manually)
-	protected wpmemWatchpoints=new Array<GenericWatchpoint>();
+	protected wpmemWatchpoints = new Array<GenericWatchpoint>();
 
 	/// Stores the assertion breakpoints
-	protected assertionBreakpoints=new Array<GenericBreakpoint>();
+	protected assertionBreakpoints = new Array<GenericBreakpoint>();
 
 	/// The assertion breakpoints can only be enabled/disabled alltogether.
-	public assertionBreakpointsEnabled=false;
+	public assertionBreakpointsEnabled = false;
 
 	/// Stores the log points
-	protected logpoints=new Map<string, Array<GenericBreakpoint>>();
+	protected logpoints = new Map<string, Array<GenericBreakpoint>>();
 
 	/// The logpoints can be enabled/disabled per group.
-	public logpointsEnabled=new Map<string, boolean>();
+	public logpointsEnabled = new Map<string, boolean>();
 
 	/// Memory slots. Contain the used banks.
 	/// If undefined the data has to be retrieved from the remote.
@@ -235,11 +235,11 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected createWatchPoints(watchPointLines: Array<{address: number, line: string}>): Array<GenericWatchpoint> {
 		// convert labels in watchpoints.
-		const watchpoints=new Array<GenericWatchpoint>();
+		const watchpoints = new Array<GenericWatchpoint>();
 
-		let i=-1;
+		let i = -1;
 		for (let entry of watchPointLines) {
-			i=i+1;
+			i = i + 1;
 			// WPMEM:
 			// Syntax:
 			// WPMEM [addr [, length [, access]]]
@@ -301,7 +301,7 @@ export class RemoteBase extends EventEmitter {
 				watchpoints.push({address: entryAddress, size: length, access: access, condition: cond || ''});
 			}
 			catch (e) {
-				throw Error("Problem with WPMEM. Could not evaluate: '"+entry.line+"': "+e.message+"");
+				throw Error("Problem with WPMEM. Could not evaluate: '" + entry.line + "': " + e.message + "");
 			}
 		}
 
@@ -315,7 +315,7 @@ export class RemoteBase extends EventEmitter {
 	 * @return An array with assertions (GenericWatchpoints).
 	 */
 	protected createAssertions(assertionLines: Array<{address: number, line: string}>): Array<GenericBreakpoint> {
-		const assertionMap=new Map<number, GenericBreakpoint>();
+		const assertionMap = new Map<number, GenericBreakpoint>();
 		// Convert ASSERTIONS to watchpoints
 		for (let entry of assertionLines) {
 			// ASSERTION:
@@ -335,48 +335,48 @@ export class RemoteBase extends EventEmitter {
 			// ASSERTIONs are breakpoints with "inverted" condition.
 			// Now check more thoroughly: group1=var, group2=comparison, group3=expression
 			try {
-				const matchAssertion=/^ASSERTION(.*)/.exec(entry.line);
+				const matchAssertion = /^ASSERTION(.*)/.exec(entry.line);
 				if (!matchAssertion)
 					continue;
 
 				// Get part of the string after the "ASSERTION"
-				const part=matchAssertion[1].trim();
+				const part = matchAssertion[1].trim();
 
 				// Check if no condition was set = ASSERTION false = Always break
-				let conds='';
-				if (part.length>0) {
+				let conds = '';
+				if (part.length > 0) {
 					// Some condition is set
-					const regex=/\s*([^;]*)/i;
-					let match=regex.exec(part);
+					const regex = /\s*([^;]*)/i;
+					let match = regex.exec(part);
 					if (!match)	// At least one match should be found
 						throw Error("Expecting 'ASSERTION expr'.");
-					conds=match[1];
+					conds = match[1];
 				}
 
 				// Negate the expression
-				conds=Utility.getConditionFromAssertion(conds);
+				conds = Utility.getConditionFromAssertion(conds);
 
 				// Check if ASSERTION for that address already exists.
-				if (conds.length>0) {
-					let bp=assertionMap.get(entry.address);
+				if (conds.length > 0) {
+					let bp = assertionMap.get(entry.address);
 					if (bp) {
 						// Already exists: just add condition.
-						bp.condition='('+bp.condition+') || ('+conds+')';
+						bp.condition = '(' + bp.condition + ') || (' + conds + ')';
 					}
 					else {
 						// Breakpoint for address does not yet exist. Create a new one.
-						const assertionBp={address: entry.address, condition: conds, log: undefined};
+						const assertionBp = {address: entry.address, condition: conds, log: undefined};
 						assertionMap.set(entry.address, assertionBp);
 					}
 				}
 			}
 			catch (e) {
-				console.log("Problem with ASSERTION. Could not evaluate: '"+entry.line+"': "+e.message+"");
+				console.log("Problem with ASSERTION. Could not evaluate: '" + entry.line + "': " + e.message + "");
 			}
 		}
 
 		// Convert map to array.
-		const assertionsArray=Array.from(assertionMap.values());
+		const assertionsArray = Array.from(assertionMap.values());
 
 		return assertionsArray;
 	}
@@ -389,7 +389,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	protected createLogPoints(logPointLines: Array<{address: number, line: string}>): Map<string, Array<GenericBreakpoint>> {
 		// convert labels in watchpoints.
-		const logpoints=new Map<string, Array<GenericBreakpoint>>();
+		const logpoints = new Map<string, Array<GenericBreakpoint>>();
 		for (let entry of logPointLines) {
 			// LOGPOINT:
 			// Syntax:
@@ -397,26 +397,26 @@ export class RemoteBase extends EventEmitter {
 			// e.g. LOGPOINT [SPRITES] Status=${A}, Counter=${(sprite.counter):unsigned}
 
 			// Now check more thoroughly i.e. for comma
-			const match=/^LOGPOINT\b(\s*\[\s*(\w*)\s*\])?\s*(.*)/gm.exec(entry.line);
+			const match = /^LOGPOINT\b(\s*\[\s*(\w*)\s*\])?\s*(.*)/gm.exec(entry.line);
 			if (match) {
 				// get arguments
-				const group=match[2]||"DEFAULT";
-				const logMsg='['+group+'] '+match[3];
+				const group = match[2] || "DEFAULT";
+				const logMsg = '[' + group + '] ' + match[3];
 				// Create group if not existent
-				let array=logpoints.get(group);
+				let array = logpoints.get(group);
 				if (!array) {
-					array=new Array<GenericBreakpoint>();
+					array = new Array<GenericBreakpoint>();
 					logpoints.set(group, array);
 				}
 				// Convert labels
 				try {
-					const log=this.evalLogMessage(logMsg);
+					const log = this.evalLogMessage(logMsg);
 					// set watchpoint
 					array.push({address: entry.address, condition: '', log: log});
 				}
 				catch (e) {
 					// Show error
-					console.log("Problem with LOGPOINT. Could not evaluate: '"+entry.line+"': "+e.message+"");
+					console.log("Problem with LOGPOINT. Could not evaluate: '" + entry.line + "': " + e.message + "");
 				}
 			}
 		}
@@ -432,44 +432,44 @@ export class RemoteBase extends EventEmitter {
 	 * @param logMsg A message in log format, e.g. "Status=${w@(status_byte):unsigned}"
 	 * @returns The converted string. I.e. label names are converted to numbers.
 	 */
-	public evalLogMessage(logMsg: string|undefined): string|undefined {
+	public evalLogMessage(logMsg: string | undefined): string | undefined {
 		if (!logMsg)
 			return undefined
 
 		// Search all "${...}""
-		const result=logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
+		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
 			// Check syntax
-			const matchInner=/(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner);
+			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner);
 			if (!matchInner)
-				throw Error("Log message format error: '"+match+"' in '"+logMsg+"'");
-			const end=(matchInner[6])? ':'+matchInner[6]:'';
-			let addr=matchInner[3]||'';
+				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
+			const end = (matchInner[6]) ? ':' + matchInner[6] : '';
+			let addr = matchInner[3] || '';
 			if (addr.length) {
-				const access=matchInner[2]||'';
+				const access = matchInner[2] || '';
 				// Check if it is a register
 				if (Z80RegistersClass.isRegister(addr)) {
 					// e.g. addr == "HL" in "(HL)"
-					return "${"+access+"("+addr+")"+end+"}";
+					return "${" + access + "(" + addr + ")" + end + "}";
 				}
 				else {
 					// Check variable for label
 					try {
 						//console.log('evalLogMessage: ' + logMsg + ': ' + addr);
-						const converted=Utility.evalExpression(addr, false);
-						return "${"+access+"("+converted.toString()+")"+end+"}";
+						const converted = Utility.evalExpression(addr, false);
+						return "${" + access + "(" + converted.toString() + ")" + end + "}";
 					}
 					catch (e) {
 						// If it cannot be converted (e.g. a register name) an exception will be thrown.
-						throw Error("Log message format error: "+e.message+" in '"+logMsg+"'");
+						throw Error("Log message format error: " + e.message + " in '" + logMsg + "'");
 					}
 				}
 			}
 			else {
 				// Should be a register (Note: this is not 100% fool proof since there are more registers defined than allowed in logs)
-				const reg=matchInner[4];
+				const reg = matchInner[4];
 				if (!Z80RegistersClass.isRegister(reg))
-					throw Error("Log message format error: Unsupported register '"+reg+"' in '"+logMsg+"'");
-				return "${"+reg+end+"}";
+					throw Error("Log message format error: Unsupported register '" + reg + "' in '" + logMsg + "'");
+				return "${" + reg + end + "}";
 			}
 		});
 
@@ -490,12 +490,12 @@ export class RemoteBase extends EventEmitter {
 		Labels.readListFiles(configuration);
 
 		// Check for warnings
-		const warnings=Labels.getWarnings();
+		const warnings = Labels.getWarnings();
 		if (warnings)
 			this.emit('warning', warnings);
 
 		// Calculate top of stack, execAddress
-		this.topOfStack=Labels.getNumberFromString64k(Settings.launch.topOfStack);
+		this.topOfStack = Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' (" + Settings.launch.topOfStack + ").");
 		// "Correct" the value if 0
@@ -518,13 +518,15 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Terminates the remote.
 	 * This should disconnect the socket and un-use all data.
-	 * Called e.g. when the unit tests want to terminate the emulator or on a 'restartRequest'.
+	 * Called e.g. when the unit tests want to terminate the emulator
+	 * or when an error occurs.
 	 * Emits the "this.emit('terminated')".
 	 * No need to override.
+	 * @param message If defined the message is shown to the user as error.
 	 */
-	public async terminate(): Promise<void> {
+	public async terminate(message?: string): Promise<void> {
 		await this.disconnect();
-		this.emit('terminated');
+		this.emit('terminated', message);
 	}
 
 
@@ -550,7 +552,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns PC + (bank_nr+1)<<16
 	 */
 	public getPCLong(): number {
-		const pcLong=Z80Registers.getPCLong();
+		const pcLong = Z80Registers.getPCLong();
 		return pcLong;
 	}
 
@@ -562,7 +564,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param register The register to return, e.g. "BC" or "A'". Note: the register name has to exist. I.e. it should be tested before.
 	 */
 	public getRegisterValue(register: string): number {
-		const value=Z80Registers.getRegValueByName(register);
+		const value = Z80Registers.getRegValueByName(register);
 		return value;
 	}
 
@@ -574,10 +576,10 @@ export class RemoteBase extends EventEmitter {
 	 * @returns An array of strings with register names that match. If no matching register is found returns an empty array.
 	 */
 	public getRegistersEqualTo(value: number): Array<string> {
-		let resRegs: Array<string>=[];
+		let resRegs: Array<string> = [];
 		if (Z80Registers.valid()) {
-			const regs=["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
-			resRegs=regs.filter(reg => value==Z80Registers.getRegValueByName(reg));
+			const regs = ["HL", "DE", "IX", "IY", "SP", "BC", "HL'", "DE'", "BC'"];
+			resRegs = regs.filter(reg => value == Z80Registers.getRegValueByName(reg));
 		}
 		return resRegs;
 	}
@@ -644,20 +646,20 @@ export class RemoteBase extends EventEmitter {
 	 *   Could be a long address.
 	 *   Otherwise undefined.
 	 */
-	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number}|undefined> {
+	protected async getStackEntryType(stackEntryValue: string): Promise<{name: string, callerAddr: number} | undefined> {
 		// Get the 3 bytes before address.
-		const addr=parseInt(stackEntryValue, 16);
-		const data=await this.readMemoryDump(addr-3, 3);
+		const addr = parseInt(stackEntryValue, 16);
+		const data = await this.readMemoryDump(addr - 3, 3);
 		let calledAddr;
 		let callerAddr;
 		// Check for Call
-		const opc3=data[0];	// get first of the 3 bytes
-		if (opc3==0xCD	// CALL nn
-			||(opc3&0b11000111)==0b11000100) 	// CALL cc,nn
+		const opc3 = data[0];	// get first of the 3 bytes
+		if (opc3 == 0xCD	// CALL nn
+			|| (opc3 & 0b11000111) == 0b11000100) 	// CALL cc,nn
 		{
 			// It was a CALL, get address.
-			calledAddr=(data[2]<<8)+data[1];
-			callerAddr=addr-3;
+			calledAddr = (data[2] << 8) + data[1];
+			callerAddr = addr - 3;
 		}
 		else {
 			/*
@@ -688,20 +690,20 @@ export class RemoteBase extends EventEmitter {
 		}
 
 		// Nothing found?
-		if (calledAddr==undefined) {
+		if (calledAddr == undefined) {
 			return undefined;
 		}
 
 		// Convert to long address if necessary
 		if (Labels.AreLongAddressesUsed()) {
-			const slots=this.getSlots();
-			callerAddr=Z80Registers.createLongAddress(callerAddr, slots);
-			calledAddr=Z80Registers.createLongAddress(calledAddr, slots);
+			const slots = this.getSlots();
+			callerAddr = Z80Registers.createLongAddress(callerAddr, slots);
+			calledAddr = Z80Registers.createLongAddress(calledAddr, slots);
 		}
 
 		// Found: get label
-		const labelCalledAddrArr=Labels.getLabelsForLongAddress(calledAddr);
-		const labelCalledAddr=(labelCalledAddrArr.length>0)? labelCalledAddrArr[0]:Utility.getHexString(calledAddr&0xFFFF, 4)+'h';
+		const labelCalledAddrArr = Labels.getLabelsForLongAddress(calledAddr);
+		const labelCalledAddr = (labelCalledAddrArr.length > 0) ? labelCalledAddrArr[0] : Utility.getHexString(calledAddr & 0xFFFF, 4) + 'h';
 
 		// Return
 		return {name: labelCalledAddr, callerAddr};
@@ -714,26 +716,26 @@ export class RemoteBase extends EventEmitter {
 	* 64k addresses.
 	* @returns The stack, i.e. the word values from topOfStack to SP.
 	* But no more than about 100 elements.
-    * The values are returned as hex string, an additional info might follow.
+	* The values are returned as hex string, an additional info might follow.
 	* This is e.g. used for the ZEsarUX extended stack info.
 	*/
 	public async getStackFromEmulator(): Promise<Array<string>> {
 		//await this.getRegisters();
-		const sp=Z80Registers.getSP();
+		const sp = Z80Registers.getSP();
 		// calculate the depth of the call stack
-		const tos=this.topOfStack;
-		let depth=tos-sp; // 2 bytes per word
-		if (depth>2*RemoteBase.MAX_STACK_ITEMS) depth=2*RemoteBase.MAX_STACK_ITEMS;
+		const tos = this.topOfStack;
+		let depth = tos - sp; // 2 bytes per word
+		if (depth > 2 * RemoteBase.MAX_STACK_ITEMS) depth = 2 * RemoteBase.MAX_STACK_ITEMS;
 
 		// Check if callstack need to be called
-		const zStack: Array<string>=[];
-		if (depth>0) {
+		const zStack: Array<string> = [];
+		if (depth > 0) {
 			// Get stack
-			const data=await this.readMemoryDump(sp, depth);
+			const data = await this.readMemoryDump(sp, depth);
 
 			// Create stack
-			for (let i=depth-2; i>=0; i-=2) {
-				const value=(data[i+1]<<8)+data[i];
+			for (let i = depth - 2; i >= 0; i -= 2) {
+				const value = (data[i + 1] << 8) + data[i];
 				zStack.push(Utility.getHexString(value, 4));
 			}
 		}
@@ -809,16 +811,16 @@ export class RemoteBase extends EventEmitter {
 	 * @returns E.g. "__MAIN__" or "__MAIN-2__" if main is not at topOfStack.
 	 */
 	public getMainName(sp: number) {
-		let part="";
+		let part = "";
 		if (this.topOfStack) {
-			const diff=this.topOfStack-sp;
-			if (diff!=0) {
-				if (diff>0)
-					part="+";
-				part+=diff.toString();
+			const diff = this.topOfStack - sp;
+			if (diff != 0) {
+				if (diff > 0)
+					part = "+";
+				part += diff.toString();
 			}
 		}
-		return "__MAIN"+part+"__";
+		return "__MAIN" + part + "__";
 	}
 
 
@@ -826,8 +828,8 @@ export class RemoteBase extends EventEmitter {
 	 * @param ref The reference number to the frame.
 	 * @returns The associated frame or undefined.
 	 */
-	public getFrame(ref: number): CallStackFrame|undefined {
-		const frame=this.listFrames.getObject(ref);
+	public getFrame(ref: number): CallStackFrame | undefined {
+		const frame = this.listFrames.getObject(ref);
 		return frame;
 	}
 
@@ -868,7 +870,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason
 	 */
-	public async stepOver(): Promise<string|undefined> {
+	public async stepOver(): Promise<string | undefined> {
 		Utility.assert(false);	// override this
 		return undefined;
 	}
@@ -879,7 +881,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string with the break reason.
 	 * Or 'undefined' if no reason
 	 */
-	public async stepInto(): Promise<string|undefined> {
+	public async stepInto(): Promise<string | undefined> {
 		Utility.assert(false);	// override this
 		return undefined;
 	}
@@ -890,7 +892,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns A Promise with a string containing the break reason.
 	 * 'breakReasonString' a possibly text with the break reason.
 	 */
-	public async stepOut(): Promise<string|undefined> {
+	public async stepOut(): Promise<string | undefined> {
 		Utility.assert(false);	// override this
 		return undefined;
 	}
@@ -901,7 +903,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param watchPoints A list of addresses to put a guard on.
 	 */
 	public setWPMEMArray(watchPoints: Array<GenericWatchpoint>) {
-		this.wpmemWatchpoints=[...watchPoints];
+		this.wpmemWatchpoints = [...watchPoints];
 	}
 
 
@@ -917,7 +919,7 @@ export class RemoteBase extends EventEmitter {
 			else
 				await this.removeWatchpoint(wp);
 		}
-		this.wpmemEnabled=enable;
+		this.wpmemEnabled = enable;
 	}
 
 
@@ -955,7 +957,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param assertionBreakpoints A list of addresses to put a guard on.
 	 */
 	public setASSERTIONArray(assertionBreakpoints: Array<GenericBreakpoint>) {
-		this.assertionBreakpoints=[...assertionBreakpoints];
+		this.assertionBreakpoints = [...assertionBreakpoints];
 	}
 
 
@@ -964,7 +966,7 @@ export class RemoteBase extends EventEmitter {
 	 * Promise is called when ready.
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableAssertionBreakpoints(enable: boolean): Promise<void>{
+	public async enableAssertionBreakpoints(enable: boolean): Promise<void> {
 		Utility.assert(false);	// override this
 	}
 
@@ -981,8 +983,8 @@ export class RemoteBase extends EventEmitter {
 	 * @param logpoints A list of addresses with messages to put a logpoint on.
 	 */
 	public setLOGPOINTArray(logpoints: Map<string, Array<GenericBreakpoint>>) {
-		this.logpoints=logpoints;
-		this.logpointsEnabled=new Map<string, boolean>();
+		this.logpoints = logpoints;
+		this.logpointsEnabled = new Map<string, boolean>();
 		// All groups:
 		for (const [group] of this.logpoints) {
 			this.logpointsEnabled.set(group, false);
@@ -1013,20 +1015,20 @@ export class RemoteBase extends EventEmitter {
 	 * @param group The group to enable/disable. If undefined: all groups. E.g. "UNITTEST".
 	 * @param enable true=enable, false=disable.
 	 */
-	public async enableLogpointGroup(group: string|undefined, enable: boolean): Promise<void> {
+	public async enableLogpointGroup(group: string | undefined, enable: boolean): Promise<void> {
 		let lPoints;
 
 		// Check if one group or all
 		if (group) {
 			// 1 group:
-			const array=this.logpoints.get(group);
+			const array = this.logpoints.get(group);
 			if (!array)
-				throw Error("Group '"+group+"' unknown.");
-			lPoints=new Map<string, GenericBreakpoint[]>([[group, array]]);
+				throw Error("Group '" + group + "' unknown.");
+			lPoints = new Map<string, GenericBreakpoint[]>([[group, array]]);
 		}
 		else {
 			// All groups:
-			lPoints=this.logpoints;
+			lPoints = this.logpoints;
 		}
 
 		// Loop over all selected groups
@@ -1042,11 +1044,11 @@ export class RemoteBase extends EventEmitter {
 	 * @returns Returns a list of all enabled lopgoints from all groups.
 	 */
 	protected getEnabledLogpoints(): Array<GenericBreakpoint> {
-		const result=new Array<GenericBreakpoint>();
+		const result = new Array<GenericBreakpoint>();
 		// Loop over all selected groups
 		for (const [grp, arr] of this.logpoints) {
 			// Set group state
-			const enabled=this.logpointsEnabled.get(grp);
+			const enabled = this.logpointsEnabled.get(grp);
 			// Add
 			if (enabled)
 				result.push(...arr);
@@ -1098,19 +1100,19 @@ export class RemoteBase extends EventEmitter {
 
 		try {
 			// get all old breakpoints for the path
-			const oldBps=this.breakpoints.filter(bp => bp.filePath==path);
+			const oldBps = this.breakpoints.filter(bp => bp.filePath == path);
 
 			// Create new breakpoints
-			const currentBps=new Array<RemoteBreakpoint>();
+			const currentBps = new Array<RemoteBreakpoint>();
 			givenBps.forEach(bp => {
 				let ebp;
 				let error;
 				// Get PC value of that line
-				let addr=this.getAddrForFileAndLine(path, bp.lineNr);
+				let addr = this.getAddrForFileAndLine(path, bp.lineNr);
 				// Check if valid line
-				if (addr>=0) {
+				if (addr >= 0) {
 					// Now search last line with that pc
-					const file=this.getFileAndLineForAddress(addr);
+					const file = this.getFileAndLineForAddress(addr);
 					// Check if right file
 					if (path.valueOf() == file.fileName.valueOf()) {
 						// create breakpoint object
@@ -1133,8 +1135,8 @@ export class RemoteBase extends EventEmitter {
 			});
 
 			// Now check which breakpoints are new or removed (this includes 'changed').
-			const newBps=currentBps.filter(bp => bp.address>=0&&oldBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
-			const removedBps=oldBps.filter(bp => bp.address>=0&&currentBps.filter(obp => (obp.condition==bp.condition)&&(obp.log==bp.log)&&(obp.address==bp.address)).length==0);
+			const newBps = currentBps.filter(bp => bp.address >= 0 && oldBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
+			const removedBps = oldBps.filter(bp => bp.address >= 0 && currentBps.filter(obp => (obp.condition == bp.condition) && (obp.log == bp.log) && (obp.address == bp.address)).length == 0);
 
 			// Catch communication problems
 			try {
@@ -1184,13 +1186,13 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Now search last line with that pc
-		let file=Labels.getFileAndLineForAddress(address);
+		let file = Labels.getFileAndLineForAddress(address);
 		if (!file.fileName) {
 			// Search also the disassembled file
-			const lineNr=Disassembly.getLineForAddress(address);
-			if (lineNr!=undefined) {
-				file.fileName=DisassemblyClass.getAbsFilePath();
-				file.lineNr=lineNr;
+			const lineNr = Disassembly.getLineForAddress(address);
+			if (lineNr != undefined) {
+				file.fileName = DisassemblyClass.getAbsFilePath();
+				file.lineNr = lineNr;
 			}
 		}
 		return file;
@@ -1205,13 +1207,13 @@ export class RemoteBase extends EventEmitter {
 	 * @returns The associated address. -1 if file or line does not exist.
 	 */
 	public getAddrForFileAndLine(fileName: string, lineNr: number): number {
-		let addr=Labels.getAddrForFileAndLine(fileName, lineNr);
-		if (addr<0) {
+		let addr = Labels.getAddrForFileAndLine(fileName, lineNr);
+		if (addr < 0) {
 			// Check disassembly
-			const absFilePath=DisassemblyClass.getAbsFilePath();
-			if (fileName==absFilePath) {
+			const absFilePath = DisassemblyClass.getAbsFilePath();
+			if (fileName == absFilePath) {
 				// Get address from line number
-				addr=Disassembly.getAddressForLine(lineNr);
+				addr = Disassembly.getAddressForLine(lineNr);
 			}
 		}
 		return addr;
@@ -1260,7 +1262,7 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async readMemory(address: number): Promise<number> {
 		// Read
-		const realValue=await this.readMemoryDump(address, 1);
+		const realValue = await this.readMemoryDump(address, 1);
 		return realValue[0];
 	}
 
@@ -1275,10 +1277,10 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async writeMemory(address: number, value: number): Promise<number> {
 		// Write
-		const data=new Uint8Array([value]);
+		const data = new Uint8Array([value]);
 		await this.writeMemoryDump(address, data);
 		// Read
-		const realValue=await this.readMemory(address);
+		const realValue = await this.readMemory(address);
 		return realValue;
 	}
 
@@ -1291,9 +1293,9 @@ export class RemoteBase extends EventEmitter {
 	 */
 	public async getMemoryBanks(): Promise<MemoryBank[]> {
 		// Get the slots
-		const slots=this.getSlots();
+		const slots = this.getSlots();
 		// Convert
-		const pages=this.memoryModel.getMemoryBanks(slots);
+		const pages = this.memoryModel.getMemoryBanks(slots);
 		// Return
 		return pages;
 	}
@@ -1304,7 +1306,7 @@ export class RemoteBase extends EventEmitter {
 	 * Reads the slots/banks association.
 	 * @returns A Promise with a slot array containing the refernced banks or undefined if no slots are used.
 	 */
-	public getSlots(): number[]|undefined {
+	public getSlots(): number[] | undefined {
 		return Z80Registers.getSlots();
 	}
 
@@ -1465,104 +1467,104 @@ export class RemoteBase extends EventEmitter {
 	protected async calcStepBp(stepOver: boolean): Promise<[Opcode, number, number?]> {
 		// Make sure the registers are there
 		//await this.getRegisters();
-		const pc=this.getPC();
+		const pc = this.getPC();
 		// Get opcodes
-		const opcodes=await this.readMemoryDump(pc, 4);
+		const opcodes = await this.readMemoryDump(pc, 4);
 
 		// Get opcode length and calculate "normal" breakpoint address
-		const buffer=new BaseMemory(pc, opcodes);
-		const opcode=Opcode.getOpcodeAt(buffer, pc);
-		let bpAddr1=pc+opcode.length;
+		const buffer = new BaseMemory(pc, opcodes);
+		const opcode = Opcode.getOpcodeAt(buffer, pc);
+		let bpAddr1 = pc + opcode.length;
 		let bpAddr2;
-		const ocFlags=opcode.flags;
+		const ocFlags = opcode.flags;
 
 		// Special handling for RST 08 (esxdos) as stepInto may not work
 		// if the emulator simulates this.
-		if (ocFlags&OpcodeFlag.BRANCH_ADDRESS
-			&& (ocFlags&OpcodeFlag.CONDITIONAL)==0
-			&& opcode.code==0xCF) {
+		if (ocFlags & OpcodeFlag.BRANCH_ADDRESS
+			&& (ocFlags & OpcodeFlag.CONDITIONAL) == 0
+			&& opcode.code == 0xCF) {
 			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
 			if (stepOver) {
 				// For stepOver nothing is required normally.
 				// However, as we have a spare breakpoint (bpAddr2),
 				// we can set it to the next PC. So that even if
 				// esxdosRst was not set a stepOver would stop.
-				bpAddr1=pc+1;
-				bpAddr2=bpAddr1+1;
+				bpAddr1 = pc + 1;
+				bpAddr2 = bpAddr1 + 1;
 			}
 			else {
 				// If stepInto we need a breakpoint at the jump address 8 (RST 08) but also the bpAddr1 if call is simulated.
-				bpAddr2=0x0008;
+				bpAddr2 = 0x0008;
 			}
 		}
 		// Check for RET
-		else if (ocFlags&OpcodeFlag.RET) {
-			const sp=this.getRegisterValue("SP");
+		else if (ocFlags & OpcodeFlag.RET) {
+			const sp = this.getRegisterValue("SP");
 			// Get return address
-			const retArr=await this.readMemoryDump(sp, 2);
-			const retAddr=retArr[0]+(retArr[1]<<8);
+			const retArr = await this.readMemoryDump(sp, 2);
+			const retAddr = retArr[0] + (retArr[1] << 8);
 			// If unconditional only one breakpoint is required
-			if (ocFlags&OpcodeFlag.CONDITIONAL)
-				bpAddr2=retAddr;
+			if (ocFlags & OpcodeFlag.CONDITIONAL)
+				bpAddr2 = retAddr;
 			else
-				bpAddr1=retAddr;
+				bpAddr1 = retAddr;
 		}
 		// Check for stepOver and CALL/RST
-		else if (stepOver&&(ocFlags&OpcodeFlag.CALL)) {
+		else if (stepOver && (ocFlags & OpcodeFlag.CALL)) {
 			// If call and step over we don't need to check the additional
 			// branch address.
 		}
 		// Check for branches (JP, JR, CALL, RST, DJNZ)
-		else if (ocFlags&OpcodeFlag.BRANCH_ADDRESS) {
-			if (ocFlags&OpcodeFlag.CONDITIONAL) {
+		else if (ocFlags & OpcodeFlag.BRANCH_ADDRESS) {
+			if (ocFlags & OpcodeFlag.CONDITIONAL) {
 				// No step over or no CALL/RST
-				bpAddr2=opcode.value;
+				bpAddr2 = opcode.value;
 			}
 			else {
 				// All others:
-				bpAddr1=opcode.value;
+				bpAddr1 = opcode.value;
 			}
 		}
-		else if (ocFlags&OpcodeFlag.STOP) {
+		else if (ocFlags & OpcodeFlag.STOP) {
 			// In this category there are also the special branches
 			// like:
 			// JP(HL), JP(IX), JP(IY)
-			if (opcodes[0]==0xE9) {
+			if (opcodes[0] == 0xE9) {
 				// JP (HL)
-				bpAddr1=this.getRegisterValue("HL");;
+				bpAddr1 = this.getRegisterValue("HL");;
 			}
-			else if (opcodes[0]==0xDD&&opcodes[1]==0xE9) {
+			else if (opcodes[0] == 0xDD && opcodes[1] == 0xE9) {
 				// JP (IX)
-				bpAddr1=this.getRegisterValue("IX");;
+				bpAddr1 = this.getRegisterValue("IX");;
 			}
-			else if (opcodes[0]==0xFD&&opcodes[1]==0xE9) {
+			else if (opcodes[0] == 0xFD && opcodes[1] == 0xE9) {
 				// JP (IY)
-				bpAddr1=this.getRegisterValue("IY");
+				bpAddr1 = this.getRegisterValue("IY");
 			}
 		}
 		else {
 			// Other special instructions
-			if (opcodes[0]==0xED) {
-				if (opcodes[1]==0xB0||opcodes[1]==0xB8
-					||opcodes[1]==0xB1||opcodes[1]==0xB9
-					||opcodes[1]==0xB2||opcodes[1]==0xBA
-					||opcodes[1]==0xB3||opcodes[1]==0xBB) {
+			if (opcodes[0] == 0xED) {
+				if (opcodes[1] == 0xB0 || opcodes[1] == 0xB8
+					|| opcodes[1] == 0xB1 || opcodes[1] == 0xB9
+					|| opcodes[1] == 0xB2 || opcodes[1] == 0xBA
+					|| opcodes[1] == 0xB3 || opcodes[1] == 0xBB) {
 					// LDIR/LDDR/CPIR/CPDR/INIR/INDR/OTIR/OTDR
 					if (!stepOver)
-						bpAddr2=pc;
+						bpAddr2 = pc;
 				}
 			}
-			else if (opcodes[0]==0x76) {
+			else if (opcodes[0] == 0x76) {
 				// HALT
 				if (!stepOver)
-					bpAddr2=pc;
+					bpAddr2 = pc;
 			}
 		}
 
 		// Make sure that breakpoints wrap around
-		bpAddr1&=0xFFFF;
+		bpAddr1 &= 0xFFFF;
 		if (bpAddr2)
-			bpAddr2&=0xFFFF;
+			bpAddr2 &= 0xFFFF;
 
 		// Return either 1 or 2 breakpoints
 		return [opcode, bpAddr1, bpAddr2];

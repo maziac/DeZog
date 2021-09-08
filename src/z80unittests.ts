@@ -1151,7 +1151,7 @@ export class Z80UnitTests {
 			// Exit
 			if (debugAdapter) {
 				this.cancelled = true;	// Avoid calling the cancel routine.
-				debugAdapter.terminate(errMessage);
+				//debugAdapter.terminate(errMessage);
 			}
 			else {
 				// Stop emulator

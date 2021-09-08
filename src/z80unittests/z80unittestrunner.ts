@@ -70,6 +70,12 @@ enum TestCaseResult {
 }
 
 
+/**
+ * Exception for the case the test cases were cancelled.
+ */
+class TestCasesCancelled extends Error {
+}
+
 
 /**
  * This class takes care of executing the unit tests.
@@ -165,6 +171,24 @@ export class Z80UnitTestRunner {
 	protected static waitOnDebugger: PromiseCallbacks<void> | undefined;
 
 
+	// If the user stopped in a test case, the pass/fail is marked as undetermined.
+	// As we cannot distinguish a normal breakpoint from an assertion.
+	// Only used in debug.
+	protected static undetermined: boolean;
+
+	// The current test run.
+	protected static currentTestRun: vscode.TestRun | undefined;
+
+	// The current test item.
+	protected static currentTestItem: vscode.TestItem | undefined;
+
+	// The current test start time.
+	protected static currentTestStart: number;
+
+	// Remembers if the current test case was failed.
+	protected static currentTestFailed: boolean;
+
+
 	/**
 	 * Called to initialize the test controller.
 	 */
@@ -232,6 +256,11 @@ export class Z80UnitTestRunner {
 		const run = this.testController.createTestRun(request);
 		const queue: vscode.TestItem[] = [];
 
+		// Register function to terminate if requested
+		token.onCancellationRequested(async () => {
+			await Remote?.terminate();	// Will also terminate the debug adapter.
+		});
+
 		// Init
 		this.testConfig = undefined;
 
@@ -257,6 +286,7 @@ export class Z80UnitTestRunner {
 				// Get "real" unit test
 				const ut = UnitTestCaseBase.getUnitTestCase(test) as UnitTestCase;
 				// Setup the test config
+				this.undetermined = false;
 				if (this.debug)
 					await this.setupDebugTestCase(ut);
 				else
@@ -275,36 +305,40 @@ export class Z80UnitTestRunner {
 				// Run the test case
 				const start = Date.now();
 				try {
+					this.currentTestFailed = false;
+					this.currentTestRun = run;
+					this.currentTestItem = test;
+					this.currentTestStart = Date.now();
 					run.started(test);
 					await this.runTestCase(ut);
-					run.passed(test, Date.now() - start);
 				}
 				catch (e) {
-					// Test failure
-					const msg = (timedOut) ? "Timeout! (" + Settings.launch.unitTestTimeout + "s)" : e.message;
-					const testMsg = new vscode.TestMessage(msg);
-					let range = test.range;
-					const position: SourceFileEntry = e.position;
-					let uri = test.uri;
-					if (position) {
-						uri = vscode.Uri.file(position.fileName);
-						const line = position.lineNr;
-						range = new vscode.Range(line, 10000, line, 10000);
-					}
-					if (range) {
-						testMsg.location = new vscode.Location(uri!, range);
-					}
-					if (e.skipped) {
-						// In case unit test was cancelled
-						run.skipped(test);
+					if (e instanceof TestCasesCancelled) {
+						// Simply ignore
 					}
 					else {
+						// Some unspecified test failure or timeout
+						const msg = (timedOut) ? "Timeout! (" + Settings.launch.unitTestTimeout + "s)" : e.message;
+						const testMsg = new vscode.TestMessage(msg);
+						let range = test.range;
+						const position: SourceFileEntry = e.position;
+						let uri = test.uri;
+						if (position) {
+							uri = vscode.Uri.file(position.fileName);
+							const line = position.lineNr;
+							range = new vscode.Range(line, 10000, line, 10000);
+						}
+						if (range) {
+							testMsg.location = new vscode.Location(uri!, range);
+						}
 						// "Normal" test case failure
 						run.failed(test, testMsg, Date.now() - start);
 					}
 				}
 				finally {
 					clearTimeout(timeoutHandle);
+					this.currentTestRun = undefined;
+					this.currentTestItem = undefined;
 				}
 			}
 			else {
@@ -578,7 +612,7 @@ export class Z80UnitTestRunner {
 		const utAddr = this.getLongAddressForLabel(ut.utLabel);
 		await this.execAddr(utAddr);
 
-	//	await Utility.timeout(2000);
+		await Utility.timeout(2000);
 	}
 
 
@@ -602,8 +636,8 @@ export class Z80UnitTestRunner {
 		// Cancel the unit tests
 		//this.cancelled = true;
 	//	await this.stopUnitTests(undefined);
-		const error = Error("Unit test cancelled.") as any;
-		error.skipped = true;
+		const error = new TestCasesCancelled("Unit test cancelled.");
+		//this.undetermined = true; TODO REMOVE undetermined
 		this.waitOnDebugger?.reject(error);
 	}
 
@@ -838,27 +872,6 @@ export class Z80UnitTestRunner {
 				Z80UnitTestRunner.stopUnitTests(debugAdapter, e.message);
 			}
 		});
-
-		/*
-		debugAdapter.on('break', () => {
-			// Check if test case was successful
-			this.dbgCheckUnitTest();
-		});
-		*/
-	}
-
-
-	/**
-	 * A break occurred. E.g. the test case stopped because it is finished
-	 * or because of an error (ASSERTION).
-		 */
-	protected static onBreak(d) {
-		// Parse the PC value
-		//const pc = Remote.getPCLong();
-		////const sp = Z80Registers.parseSP(data);
-		// Check if test case was successful
-		Z80UnitTestRunner.dbgCheckUnitTest('');
-		// Otherwise another break- or watchpoint was hit or the user stepped manually.
 	}
 
 
@@ -960,18 +973,20 @@ export class Z80UnitTestRunner {
 		}
 		else {
 			// Run: Continue
-			await Remote.continue();
+			const breakReasonString =  await Remote.continue();
 			Remote.stopProcessing();
 			// There are 2 possibilities to get here:
 			// a) the test case is passed
-			// b) the test case stopped because of an ASSERTION, i.e. it is failed
+			// b) the test case stopped because of an ASSERTION or WPMEM, i.e. it is failed
 			const pc = Remote.getPCLong();
 			// OK or failure
-			if(pc != this.addrTestReadySuccess) {
-				// Failure: get location
-				const error = new Error("Test case failed.") as any;
-				error.position = Labels.getFileAndLineForAddress(pc);
-				throw error;
+			if (pc == this.addrTestReadySuccess) {
+				// Passed
+				this.testPassed();
+			}
+			else {
+				// Failure
+				this.testFailed(breakReasonString, pc);
 			}
 		}
 	}
@@ -995,15 +1010,52 @@ export class Z80UnitTestRunner {
 		// OK or failure
 		if (pc == this.addrTestReadySuccess) {
 			// Success
+			if (!this.currentTestFailed)
+				this.testPassed();
 			this.waitOnDebugger!.resolve();
 			return true;
 		}
 		else {
-			// Without breakReasonString it was a simple breakpoint.
-			if (breakReasonString) {
+			// The pass/fail is distinguished by the breakReasonString text.
+			if (breakReasonString?.toLowerCase().startsWith('assertion')) {
+				this.testFailed(breakReasonString, pc);
 			}
+//			this.undetermined = true;
 			return false;
 		}
+	}
+
+
+	/**
+	 * Make the test item fail. Create a TestMessage. I.e. an error occurred now create the failure
+	 * which contains the line number.
+	 * Note: vscode will only display the first of the test messages.
+	 * @param reason The text to show.
+	 * @param pc The associated address for file/line information.
+	 */
+	protected static testFailed(reason?: string, pc?: number) {
+		const testMsg = new vscode.TestMessage(reason || "Failure.");
+		if (pc != undefined) {
+			const position: SourceFileEntry = Labels.getFileAndLineForAddress(pc);
+			if (position) {
+				const uri = vscode.Uri.file(position.fileName);
+				const line = position.lineNr;
+				const range = new vscode.Range(line, 10000, line, 10000);
+				testMsg.location = new vscode.Location(uri!, range);
+			}
+		}
+		// "Normal" test case failure
+		this.currentTestRun?.failed(this.currentTestItem!, testMsg, Date.now() - this.currentTestStart);
+		// Remember
+		this.currentTestFailed = true;
+	}
+
+
+	/**
+	 * Make the test item pass.
+	 */
+	protected static testPassed() {
+		this.currentTestRun?.passed(this.currentTestItem!, Date.now() - this.currentTestStart);
 	}
 
 
@@ -1071,7 +1123,7 @@ export class Z80UnitTestRunner {
 			// Exit
 			if (this.debugAdapter) {
 				this.cancelled = true;	// Avoid calling the cancel routine.
-				this.debugAdapter.terminate(errMessage);
+				await Remote.terminate(errMessage);
 			}
 			else {
 				// Stop emulator
