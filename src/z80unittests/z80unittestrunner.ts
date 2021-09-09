@@ -10,7 +10,7 @@ import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
-import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, UnitTestSuite} from './UnitTestCase';
+import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, UnitTestSuite} from './unittestcase';
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 
 
