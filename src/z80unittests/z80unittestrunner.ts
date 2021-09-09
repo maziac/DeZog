@@ -580,9 +580,11 @@ export class Z80UnitTestRunner {
 		await Remote.getCallStackFromEmulator();
 
 		// Special handling for zsim: Re-init custom code.
-		if (Remote instanceof ZSimRemote) {
-			const zsim = Remote as ZSimRemote;
-			zsim.customCode?.reload();
+		if (this.testCaseSetup) {
+			if (Remote instanceof ZSimRemote) {
+				const zsim = Remote as ZSimRemote;
+				zsim.customCode?.reload();
+			}
 		}
 
 		// Run or Debug

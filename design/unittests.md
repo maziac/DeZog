@@ -127,7 +127,7 @@ Either in Run or in Debug mode.
 
 ~~~puml
 hide footbox
-title Continue
+title Init
 participant vscode as "vscode\nTestController"
 'participant TestRunner
 participant Z80UnitTestRunner
@@ -135,7 +135,6 @@ participant runItem
 'participant DebugAdapter
 participant Remote
 
-== Init ==
 note over Z80UnitTestRunner: create profiles for Run and Debug
 
 vscode <- Z80UnitTestRunner: createRunProfile('Run')
@@ -145,22 +144,49 @@ Z80UnitTestRunner -> Remote: terminate
 note over Z80UnitTestRunner: Settings.Init\nLabels.init
 Z80UnitTestRunner -> Remote: readListFiles
 Z80UnitTestRunner <- Remote: initialized
+~~~
 
-== Test Case started by User ==
-alt Run profile
-     vscode -> Z80UnitTestRunner: testRunHandler(TestItem[])
-     vscode <- Z80UnitTestRunner: createTestRun
-     vscode --> runItem
-     activate runItem
-     loop testItem : TestItem[]
+~~~puml
+hide footbox
+title Continue (Run)
+participant vscode as "vscode\nTestController"
+'participant TestRunner
+participant Z80UnitTestRunner
+participant runItem
+'participant DebugAdapter
+participant Remote
+
+vscode -> Z80UnitTestRunner: testRunHandler(TestItem[])
+Z80UnitTestRunner -> Z80UnitTestRunner: runOrDebugRunHandler\n(TestItem[])
+vscode <- Z80UnitTestRunner: createTestRun
+vscode --> runItem
+activate runItem
+
+Z80UnitTestRunner -> Z80UnitTestRunner: setupRunTestCase
+
+alt If not already done
+     Z80UnitTestRunner -> Remote: terminate
+     note over Z80UnitTestRunner: Settings.Init\ncreateRemote()\nLabels.init
+     Z80UnitTestRunner -> Remote: readListFiles
+     Z80UnitTestRunner -> Remote: init
+     Z80UnitTestRunner <- Remote: initialized
+end
+
+loop testItem : TestItem[]
      Z80UnitTestRunner -> runItem: started(testItem)
      Z80UnitTestRunner -> Z80UnitTestRunner: runTestCase(testItem)
 
-     Z80UnitTestRunner -> Z80UnitTestRunner: execAddr
-     Z80UnitTestRunner -> Z80UnitTestRunner: RemoteContinue
+     Z80UnitTestRunner -> Z80UnitTestRunner: execAddr(startAddr)\n[init code for each\ntest case]
+     Z80UnitTestRunner -> Remote: writeMemoryDump(startAddr);
+     Z80UnitTestRunner -> Remote: setRegisterValue("PC");
      Z80UnitTestRunner -> Remote: continue
      Z80UnitTestRunner <-- Remote
-     Z80UnitTestRunner -> Z80UnitTestRunner: onBreak
+
+     Z80UnitTestRunner -> Z80UnitTestRunner: execAddr(testAddr)\n[the test case itself]
+     Z80UnitTestRunner -> Remote: writeMemoryDump(testAddr);
+     Z80UnitTestRunner -> Remote: setRegisterValue("PC");
+     Z80UnitTestRunner -> Remote: continue
+     Z80UnitTestRunner <-- Remote
 
      Z80UnitTestRunner -> runItem: passed/failed(testItem)
      vscode <- runItem: update UI
