@@ -105,11 +105,12 @@ export class Z80UnitTestRunner {
 		// Add profiles for test case execution
 		this.testController.createRunProfile('Run', vscode.TestRunProfileKind.Run, (request, token) => {
 			this.runHandler(request, token);
-		});
+		}); // TODO: requires dispose
 
 		this.testController.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, (request, token) => {
 			this.runDebugHandler(request, token);
-		});
+		});// TODO: requires dispose
+
 	}
 
 

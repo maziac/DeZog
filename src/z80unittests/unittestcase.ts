@@ -83,7 +83,7 @@ export class UnitTestCaseBase {
  * Additionally contains information for executing the test case, e.g. the label.
  */
 export class UnitTestCase extends UnitTestCaseBase {
-	// The label for execution. E.g. "Testsuite.UT_clear_screen"
+	// The label for execution. E.g. "TestSuite.UT_clear_screen"
 	public utLabel: string;
 
 
@@ -337,6 +337,10 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 				// Create new test item
 				const testConfig = new UnitTestSuiteConfig(this.wsFolder, config);
 				this.addChild(testConfig);
+				// Add line number
+				const vsTest: vscode.TestItem = testConfig.testItem;
+				const lineNr = config.__lineNr;
+				vsTest.range = new vscode.Range(lineNr, 0, lineNr, 0);
 			}
 		}
 		catch (e) {
@@ -365,6 +369,15 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 
 		// Find the right configurations
 		const configurations = launch.configurations.filter(config => config.unitTests);
+
+		// Find the right lines for the configs, i.e. search for "name": config.name
+		for (const config of configurations) {
+			const regStr = '"name"\\s*:\\s*"' + config.name + '"';
+			const regex = new RegExp(regStr);
+			const lineNr = Utility.getLineNumberInText(regex, launchData);
+			// Add this additional info
+			config.__lineNr = lineNr;
+		}
 
 		return configurations;
 	}
@@ -395,7 +408,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name, undefined as any, undefined as any);
+		super(wsFolder + '#' + config.name, config.name, undefined as any, UnifiedPath.join(wsFolder, '.vscode', 'launch.json'));
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config, wsFolder);

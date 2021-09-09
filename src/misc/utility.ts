@@ -1233,6 +1233,42 @@ export class Utility {
 	}
 
 
+	/**
+	 * Returns the line number of a regex found in a text.
+	 * @param regex The regular expression to search for.
+	 * @param text The text being searched.
+	 * @returns The line number.
+	 */
+	public static getLineNumberInText(regex: RegExp, text: string) {
+		// Search the string
+		const match = regex.exec(text);
+		if (!match)
+			return undefined;
+		// Now get the line number by counting the \n
+		const tmp = text.substring(0, match.index);
+		const lineNr = this.countOccurencesOf('\n', tmp);
+		return lineNr;
+	}
+
+
+	/**
+	 * Counts the number of occurrences of one string in the other string.
+	 * @param search The string to count.
+	 * @param text Searhcend in this string.
+	 * @returns Number of occurrences.
+	 */
+	public static countOccurencesOf(search: string, text: string) {
+		let count = -1;
+		const len = search.length;
+		let pos = -len;
+		do {
+			count++;
+			pos += len;
+			pos = text.indexOf(search, pos);
+		} while (pos > -1);
+		return count;
+	}
+
 
 	/**
 	 * Own assert function that additionally does a log
