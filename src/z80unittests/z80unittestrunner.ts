@@ -32,14 +32,6 @@ class TestCasesCancelled extends Error {
  * 4. Loops over all found unit tests.
  */
 export class Z80UnitTestRunner {
-	/// A map for the test case labels and their resolve functions. The resolve
-	/// function is called when the test cases has been executed.
-	/// result:
-	///   0 = passed
-	///   1 = failed
-	///   2 = timeout
-	protected static testCaseMap = new Map<string, (result: number) => void>();
-
 	/// The unit test initialization routine. The user has to provide
 	/// it and the label.
 	protected static addrStart: number;
@@ -65,18 +57,6 @@ export class Z80UnitTestRunner {
 
 	/// For debugging. Pointer to debug adapter class.
 	protected static debugAdapter: DebugSessionClass;
-
-	/// Set to true if unit tests are cancelled.
-	protected static cancelled = false;
-
-	/// Stores the covered addresses for all unit tests.
-	protected static allCoveredAddresses: Set<number>;
-
-	/// Caches the last received addresses (from Emulator)
-	protected static lastCoveredAddresses: Set<number>;
-
-	/// The output channel for the unit tests
-	protected static unitTestOutput = vscode.window.createOutputChannel("DeZog Unit Tests");
 
 	// The root of all test cases.
 	protected static rootTestSuite: RootTestSuite;
@@ -115,8 +95,6 @@ export class Z80UnitTestRunner {
 	public static Init() {
 		// Init
 		this.testConfig = undefined;
-		this.allCoveredAddresses = new Set<number>();
-		this.lastCoveredAddresses = new Set<number>();
 		// Create test controller
 		this.testController = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -263,9 +241,6 @@ export class Z80UnitTestRunner {
 	 * able to execute a single test case.
 	 */
 	protected static async setupRunTestCase(ut: UnitTestCase) {
-		// Clear coverage for this unit test.
-		this.lastCoveredAddresses.clear();
-
 		// Check for parent config
 		const testConfig = ut.getConfigParent();
 		if (!testConfig)
@@ -293,7 +268,6 @@ export class Z80UnitTestRunner {
 		Settings.CheckSettings();
 
 		// Reset all decorations
-		this.allCoveredAddresses.clear();	// TODO: Does this work in multiroot or are only the covered lines of the last workspace shown?
 		Decoration.clearAllDecorations();
 
 		// Create the registers
@@ -345,8 +319,6 @@ export class Z80UnitTestRunner {
 			});
 
 			Remote.on('coverage', coveredAddresses => {
-				// Cache covered addresses (since last unit test)
-				coveredAddresses.forEach(this.lastCoveredAddresses.add, this.lastCoveredAddresses);
 				Decoration.showCodeCoverage(coveredAddresses);
 			});
 
@@ -728,7 +700,6 @@ export class Z80UnitTestRunner {
 
 			// Exit
 			if (this.debugAdapter) {
-				this.cancelled = true;	// Avoid calling the cancel routine.
 				await Remote.terminate();
 			}
 			else {
