@@ -193,6 +193,14 @@ export class Z80UnitTestRunner {
 						await this.setupDebugTestCase(ut);
 					else
 						await this.setupRunTestCase(ut);
+				}
+				catch (e) {
+					// Output error
+					vscode.window.showErrorMessage(e.message);
+					// Leave loop
+					break;
+				}
+				try {
 					// Set timeout
 					if (!this.debug) {
 						const toMs = 1000 * Settings.launch.unitTestTimeout;

@@ -23,7 +23,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime=Settings.launch.cspect.socketTimeout*1000;
+		this.cmdRespTimeoutTime = Settings.launch.cspect.socketTimeout * 1000;
 	}
 
 
@@ -32,18 +32,18 @@ export class CSpectRemote extends DzrpBufferRemote {
 	/// When ready it emits this.emit('initialized') or this.emit('error', Error(...));
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
-	public async doInitialization(): Promise<void>  {
+	public async doInitialization(): Promise<void> {
 		// Init socket
-		this.socket=new Socket();
+		this.socket = new Socket();
 		this.socket.unref();
 
 		// React on-open
 		this.socket.on('connect', async () => {
 			LogSocket.log('CSpectRemote: Connected to server!');
 
-			this.receivedData=Buffer.alloc(0);
-			this.expectedLength=4;	// for length
-			this.receivingHeader=true;
+			this.receivedData = Buffer.alloc(0);
+			this.expectedLength = 4;	// for length
+			this.receivingHeader = true;
 			this.stopChunkTimeout();
 
 			// Check for unsupported settings
@@ -56,16 +56,16 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Handle disconnect
 		this.socket.on('close', hadError => {
-			LogSocket.log('CSpectRemote: closed connection: '+hadError);
+			LogSocket.log('CSpectRemote: closed connection: ' + hadError);
 			console.log('Close.');
 			// Error
-			const err=new Error('CSpect plugin terminated the connection!');
+			const err = new Error('CSpect plugin terminated the connection!');
 			this.emit('error', err);
 		});
 
 		// Handle errors
 		this.socket.on('error', err => {
-			LogSocket.log('CSpectRemote: Error: '+err);
+			LogSocket.log('CSpectRemote: Error: ' + err);
 			console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
@@ -78,8 +78,8 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Start socket connection
 		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port=Settings.launch.cspect.port;
-		const hostname=Settings.launch.cspect.hostname;
+		const port = Settings.launch.cspect.port;
+		const hostname = Settings.launch.cspect.hostname;
 		this.socket.connect(port, hostname);
 	}
 
@@ -90,23 +90,28 @@ export class CSpectRemote extends DzrpBufferRemote {
 	public async disconnect(): Promise<void> {
 		if (!this.socket)
 			return;
+		// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
+		await this.pause();
+
 		return new Promise<void>(resolve => {
-			this.socket.removeAllListeners();
+			this.socket?.removeAllListeners();
 			// Timeout is required because socket.end() does not call the
-			// callback it it is already closed and the state cannot
+			// callback if it is already closed and the state cannot
 			// reliable be determined.
 			const timeout = setTimeout(() => {
 				if (resolve) {
 					resolve();
-					resolve=undefined as any;
+					resolve = undefined as any;
 				}
+				this.socket = undefined as any;
 			}, 1000);	// 1 sec
-			this.socket.end(() => {
+			this.socket?.end(() => {
 				if (resolve) {
 					resolve();
-					resolve=undefined as any;
+					resolve = undefined as any;
 					clearTimeout(timeout);
 				}
+				this.socket = undefined as any;
 			});
 		});
 	}
@@ -119,10 +124,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 		// Send buffer
 		return new Promise<void>(resolve => {
 			// Send data
-			const txt=this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('>>> CSpectRemote: Sending '+txt);
+			const txt = this.dzrpCmdBufferToString(buffer);
+			LogSocket.log('>>> CSpectRemote: Sending ' + txt);
 			this.socket.write(buffer, () => {
-					resolve();
+				resolve();
 			});
 		});
 	}
@@ -157,11 +162,11 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * error is 0 on success. 0xFF if version numbers not match.
 	 * Other numbers indicate an error on remote side.
 	 */
-	protected async sendDzrpCmdInit(): Promise<{error: string|undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
-		const result=await super.sendDzrpCmdInit();
+	protected async sendDzrpCmdInit(): Promise<{error: string | undefined, programName: string, dzrpVersion: string, machineType: DzrpMachineType}> {
+		const result = await super.sendDzrpCmdInit();
 		if (result.error) {
 			// An error occured. Add some help.
-			result.error+="\nTry updating the DeZog (CSpect) Plugin (https://github.com/maziac/DeZogPlugin/releases)."
+			result.error += "\nTry updating the DeZog (CSpect) Plugin (https://github.com/maziac/DeZogPlugin/releases)."
 		};
 		return result;
 	}

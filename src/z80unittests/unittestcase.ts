@@ -338,9 +338,11 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 				const testConfig = new UnitTestSuiteConfig(this.wsFolder, config);
 				this.addChild(testConfig);
 				// Add line number
-				const vsTest: vscode.TestItem = testConfig.testItem;
 				const lineNr = config.__lineNr;
-				vsTest.range = new vscode.Range(lineNr, 0, lineNr, 0);
+				if (lineNr != undefined) {
+					const vsTest: vscode.TestItem = testConfig.testItem;
+					vsTest.range = new vscode.Range(lineNr, 0, lineNr, 0);
+				}
 			}
 		}
 		catch (e) {

@@ -121,73 +121,9 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public constructor() {
 		super();
-
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
-
-		/*
-		this._runtime.on('stopOnStep', () => {
-			this.sendEvent(new StoppedEvent('step', ZesaruxDebugSession.THREAD_ID));
-		});
-		this._runtime.on('stopOnBreakpoint', () => {
-			this.sendEvent(new StoppedEvent('breakpoint', ZesaruxDebugSession.THREAD_ID));
-		});
-		this._runtime.on('stopOnException', () => {
-			this.sendEvent(new StoppedEvent('exception', ZesaruxDebugSession.THREAD_ID));
-		});
-		this._runtime.on('breakpointValidated', (bp: ZesaruxBreakpoint) => {
-			this.sendEvent(new BreakpointEvent('changed', <DebugProtocol.Breakpoint>{ verified: bp.verified, id: bp.id }));
-		});
-		this._runtime.on('output', (text, filePath, line, column) => {
-			const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`);
-			e.body.source = this.createSource(filePath);
-			e.body.line = this.convertDebuggerLineToClient(line);
-			e.body.column = this.convertDebuggerColumnToClient(column);
-			this.sendEvent(e);
-		});
-		this._runtime.on('end', () => {
-			this.sendEvent(new TerminatedEvent());
-		});
-		*/
-	}
-
-
-	/**
-	 * Start the unit tests.
-	 * @param configName The debug launch configuration name.
-	 * @param handler
-	 * @returns If it was not possible to start unit test: false.
-	 */
-	// TODO: remove
-	public static unitTests(configName: string, handler: (da: DebugSessionClass) => void): boolean {
-		Utility.assert(handler);
-
-		// Return if currently a debug session is running
-		if (vscode.debug.activeDebugSession)
-			return false;
-		if (this.state != DbgAdapterState.NORMAL)
-			return false;
-
-		// Need to find the corresponding workspace folder
-		const rootFolder = Utility.getRootPath();
-		let workspaceFolder;
-		const wsFolders = vscode.workspace.workspaceFolders || [];
-		for (const wsFolder of wsFolders) {
-			if (wsFolder.uri.fsPath == rootFolder) {
-				workspaceFolder = wsFolder;
-				break;
-			}
-		}
-		if (!workspaceFolder)
-			return false;
-
-		// Start debugger
-		this.unitTestHandler = handler;
-		this.state = DbgAdapterState.UNITTEST;
-		vscode.debug.startDebugging(workspaceFolder, configName);
-
-		return true;
 	}
 
 
@@ -257,7 +193,7 @@ export class DebugSessionClass extends DebugSession {
 	protected terminate(message?: string) {
 		// Make sure every decoration gets output (important for debugging unit tests)
 		this.processDelayedDecorations();
-		//DebugSessionClass.state=DbgAdapterState.NORMAL;
+		DebugSessionClass.state=DbgAdapterState.NORMAL;
 		if (message)
 			this.showError(message);
 		Log.log("Exit debugger!");
@@ -316,8 +252,6 @@ export class DebugSessionClass extends DebugSession {
 	 * - If user presses circled arrow/restart.
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
-		// Send a 'break' request to emulator to stop it if it is running. (Note: does have an effect only on cspect.)
-		await Remote?.pause();
 		// Disconnect Remote etc.
 		await this.disconnectAll();
 		// Send response
@@ -1266,14 +1200,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// Send break
 		return new StoppedEvent('break', DebugSessionClass.THREAD_ID);
-/* TODO: remove
-		}
-		else {
-			// For the unit tests
-			this.emit("break");
-			return undefined as any;
-		}
-	*/
 	}
 
 
