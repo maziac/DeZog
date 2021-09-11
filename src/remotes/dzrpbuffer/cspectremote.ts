@@ -141,7 +141,10 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * REMARK: Enable CSpect watchpoints when problem is solved in CSpect.
 	 */
 	public async enableWPMEM(enable: boolean): Promise<void> {
-		throw Error("There is no support for watchpoints for CSpect.");
+		if (this.wpmemWatchpoints.length > 0) {
+			// Only if watchpoints exist
+			throw Error("There is no support for watchpoints for CSpect.");
+		}
 	}
 
 
