@@ -1,4 +1,6 @@
 
+
+
 /**
  * Holds the reference and reject callback.
  * On creation these are assigned to a property of an object.
@@ -48,6 +50,34 @@ export class PromiseCallbacks<T> {
 		this.obj = obj;
 		this.property = property;
 		obj[property] = this;
+	}
+
+
+	/**
+	 * Sets a timeout. After the timeout the Promise will be rejected.
+	 * @param timeout time in ms.
+	 */
+	public timeoutAfter(timeout: number) {
+		// Set time out
+		const timeoutHandle = setTimeout(() => {
+			this.reject(Error("Timeout (" + timeout + "ms)"));
+		}, timeout);
+
+		// Clear timer in resolve
+		const prevResolve = this.resolve;
+		this.resolve = (elem: T) => {
+			clearTimeout(timeoutHandle);
+			prevResolve(elem);
+		}
+
+		// Clear timer in reject
+		const prevReject = this.reject;
+		if (prevReject) {
+			this.reject = (error: Error) => {
+				clearTimeout(timeoutHandle);
+				prevReject(error);
+			}
+		}
 	}
 
 }

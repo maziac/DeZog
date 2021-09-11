@@ -103,12 +103,18 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 * Clears the history cache. Is called on each "normal (forward)" step.
 	 */
 	public clear() {
+		/*
 		(async () => {
 			this.history.length=0;
 			this.historyIndex=-1;
 			this.revDbgHistory.length=0;
 			this.reverseDbgStack=undefined as any;
 		})();
+		*/
+		this.history.length = 0;
+		this.historyIndex = -1;
+		this.revDbgHistory.length = 0;
+		this.reverseDbgStack = undefined as any;
 	}
 
 

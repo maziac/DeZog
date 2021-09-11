@@ -227,7 +227,7 @@ Do these testing in following configurations:
 - Have Breakpoints in the sources
      - run: should not affect
      - debug: should stop at the BP. It should be possible to continue and stop at the next BP. Or run to the end. A BP should not affect the pass/fail status.
-- An test case with an endless loop.
+- A test case with an endless loop.
      - run: should timeout.
      - debug: should run forever (no timeout) until user presses 'pause'.
 - An error in the UNITTEST_INITIALIZE code

@@ -17,13 +17,6 @@ import {PromiseCallbacks} from '../misc/promisecallbacks';
 
 
 /**
- * Exception for the case the test cases were cancelled.
- */
-class TestCasesCancelled extends Error {
-}
-
-
-/**
  * This class takes care of executing the unit tests.
  * It basically
  * 1. Reads the list file to find the unit test labels.
@@ -48,9 +41,6 @@ export class Z80UnitTestRunner {
 
 	/// Is set if the current  test case fails.
 	protected static currentFail: boolean;
-
-	/// The handle for the timeout.
-	protected static timeoutHandle;
 
 	/// Debug mode or run mode.
 	protected static debug = false;
@@ -90,6 +80,9 @@ export class Z80UnitTestRunner {
 
 	// Set to true while tests are executed.
 	protected static testRunActive: boolean;
+
+	// Set to true during cancelling unit tests.
+	protected static stoppingTests: boolean;
 
 
 	/**
@@ -145,8 +138,12 @@ export class Z80UnitTestRunner {
 	 */
 	protected static async runOrDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
 		// Only allow one test run at a time
-		if (this.testRunActive)
+		if (this.testRunActive) {
+			// Cancel unit tests
+			await this.stopUnitTests();
 			return;
+		}
+		this.stoppingTests = false;
 		this.testRunActive = true;
 
 		// Create test run
@@ -156,7 +153,7 @@ export class Z80UnitTestRunner {
 
 		// Register function to terminate if requested
 		token.onCancellationRequested(async () => {
-			await Remote?.terminate();	// Will also terminate the debug adapter.
+			await this.stopUnitTests();	// Will also terminate the debug adapter.
 		});
 
 		// Init
@@ -172,7 +169,7 @@ export class Z80UnitTestRunner {
 		// For every test that was queued, try to run it. Call run.passed() or run.failed().
 		// The `TestMessage` can contain extra information, like a failing location or
 		// a diff output. But here we'll just give it a textual message.
-		while (queue.length > 0 && !token.isCancellationRequested) {
+		while (!this.stoppingTests && queue.length > 0 && !token.isCancellationRequested) {
 			const test = queue.shift()!;
 
 			// Skip tests the user asked to exclude
@@ -220,16 +217,14 @@ export class Z80UnitTestRunner {
 					this.currentTestItem = test;
 					this.currentTestStart = Date.now();
 					run.started(test);
+
+					await Utility.timeout(1000);
 					await this.runTestCase(ut);
 				}
 				catch (e) {
-					if (e instanceof TestCasesCancelled) {
-						// Clear test queue
-						queue.length = 0;
-					}
-					else {
+					if (!this.stoppingTests) {
 						// Some unspecified test failure
-						const pc = Remote.getPCLong();
+						const pc = Remote?.getPCLong();
 						this.testFailed(e.message, pc);
 					}
 				}
@@ -249,6 +244,7 @@ export class Z80UnitTestRunner {
 		}
 
 		// Test run finished
+		this.stoppingTests = true;
 		this.testRunActive = false;
 	}
 
@@ -482,15 +478,6 @@ export class Z80UnitTestRunner {
 
 
 	/**
-	 *  Command to cancel the unit tests. E.g. during debugging of one unit test.
-	 */
-	public static async cancelUnitTests(): Promise<void> {
-		const error = new TestCasesCancelled("Unit test cancelled.");
-		this.waitOnDebugger?.reject(error);
-	}
-
-
-	/**
 	 * Initializes the unit tests. Is called after the emulator has been setup.
 	 */
 	protected static async initUnitTests(): Promise<void> {
@@ -504,7 +491,6 @@ export class Z80UnitTestRunner {
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
 		// Now read all the unit tests.
-		this.timeoutHandle = undefined;
 		this.currentFail = true;
 
 		// Check if code for unit tests is really present
@@ -694,37 +680,43 @@ export class Z80UnitTestRunner {
 
 
 	/**
-	 * Stops the unit tests.
+	 *  Command to cancel the unit tests.
+	 *  Called from the debug adapter.
+	 */
+	public static async cancelUnitTests(): Promise<void> {
+		this.stoppingTests = true;
+		this.waitOnDebugger?.reject(Error("Unit test cancelled."));
+	}
+
+
+	/**
+	 * Stops all unit tests.
+	 * Called by the test runner.
 	 */
 	protected static async stopUnitTests(): Promise<void> {
 		// Async
 		return new Promise<void>(async resolve => {
-			// Clear timeout
-			clearTimeout(this.timeoutHandle);
-			this.timeoutHandle = undefined;
+			this.stoppingTests = true;
+
+			// Call reject if on.
+			this.waitOnDebugger?.reject(Error("Unit tests cancelled"));
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (this.debugAdapter) {
 				//Remote.stopProcessing();	// To show the coverage after continue to end
 				//this.debugAdapter.sendEventBreakAndUpdate();
 				//await Utility.timeout(1);
-				await Remote.waitForBeingQuietFor(300);
+				await Remote?.waitForBeingQuietFor(300);
 			}
 
 			// For reverse debugging.
 			StepHistory.clear();
 
 			// Exit
-			if (this.debugAdapter) {
-				await Remote.terminate();
-			}
-			else {
-				// Stop emulator
-				await Remote.disconnect();
-			}
+			await Remote?.terminate();
 
 			// Remove event handling for the emulator
-			Remote.removeAllListeners();
+			Remote?.removeAllListeners();
 
 			resolve();
 		});
