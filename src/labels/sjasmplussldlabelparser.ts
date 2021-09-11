@@ -160,8 +160,9 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		}
 
 		// Check
-		if (bankSize == undefined)
-			throw Error("Could not find bank size in SLD file.");
+		if (bankSize == undefined) {
+			throw Error("Could not find bank size in SLD file. Did you forget to set the 'DEVICE' in your assembler file?");
+		}
 		this.bankSize = bankSize;
 
 		// Check for keywords
