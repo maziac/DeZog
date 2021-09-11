@@ -88,6 +88,9 @@ export class Z80UnitTestRunner {
 	// Set to true if test timeout occurs.
 	protected static timedOut: boolean;
 
+	// Set to true while tests are executed.
+	protected static testRunActive: boolean;
+
 
 	/**
 	 * Called to initialize the test controller.
@@ -95,6 +98,7 @@ export class Z80UnitTestRunner {
 	public static Init() {
 		// Init
 		this.testConfig = undefined;
+		this.testRunActive = false;
 		// Create test controller
 		this.testController = vscode.tests.createTestController(
 			'maziac.dezog.z80unittest.controller',
@@ -120,10 +124,6 @@ export class Z80UnitTestRunner {
 	protected static async runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
 		this.debug = false;
 		await this.runOrDebugHandler(request, token);
-		// Stop emulator
-		//await Remote.disconnect();
-		// Remove event handling for the emulator
-		//Remote.removeAllListeners();
 	}
 
 
@@ -144,6 +144,12 @@ export class Z80UnitTestRunner {
 	 * @param request The original request from vscode.
 	 */
 	protected static async runOrDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
+		// Only allow one test run at a time
+		if (this.testRunActive)
+			return;
+		this.testRunActive = true;
+
+		// Create test run
 		const run = this.testController.createTestRun(request);
 		this.currentTestRun = run;
 		const queue: vscode.TestItem[] = [];
@@ -218,7 +224,8 @@ export class Z80UnitTestRunner {
 				}
 				catch (e) {
 					if (e instanceof TestCasesCancelled) {
-						// Simply ignore
+						// Clear test queue
+						queue.length = 0;
 					}
 					else {
 						// Some unspecified test failure
@@ -240,6 +247,9 @@ export class Z80UnitTestRunner {
 		if (Remote) {
 			await this.stopUnitTests();
 		}
+
+		// Test run finished
+		this.testRunActive = false;
 	}
 
 
@@ -463,9 +473,6 @@ export class Z80UnitTestRunner {
 		await this.execAddr(this.addrStart);
 		if (this.currentTestFailed)
 			return;
-
-
-		//await Utility.timeout(2000);	// TODO: remove
 
 		// Start the unit test
 		const utAddr = this.getLongAddressForLabel(ut.utLabel);

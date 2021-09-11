@@ -1,6 +1,6 @@
 
 /**
- * Represents a watchpoint used byDebugAdapter in a very generic form,
+ * Represents a watchpoint used by the DebugAdapter in a very generic form,
  * i.e. not machine specific.
  * Watchpoints are NOT identified by an ID but instead by the address and size.
  *
@@ -19,7 +19,7 @@ export interface GenericWatchpoint {
  */
 export interface GenericBreakpoint {
 	bpId?: number,	///< An optional number bigger than 0. E.g. not used by ZEsarUX but by DZRP.
-	address: number, ///< The PC address to break on
+	address: number, ///< The PC (long) address to break on
 	condition?: string,	///< The additional conditions. '' if no condition set.
 	log?: string,	///< If set the log will be printed instead of stopping execution.
 	error?: string	///< An informative error text. E.g. used for additional info if a breakpoint could not be set.

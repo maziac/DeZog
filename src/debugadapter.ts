@@ -193,7 +193,6 @@ export class DebugSessionClass extends DebugSession {
 	protected terminate(message?: string) {
 		// Make sure every decoration gets output (important for debugging unit tests)
 		this.processDelayedDecorations();
-		DebugSessionClass.state=DbgAdapterState.NORMAL;
 		if (message)
 			this.showError(message);
 		Log.log("Exit debugger!");
@@ -289,7 +288,7 @@ export class DebugSessionClass extends DebugSession {
 		// Clear all decorations
 		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
 			// Cancel unit tests
-			Z80UnitTestRunner.cancelUnitTests();
+			await Z80UnitTestRunner.cancelUnitTests();
 			// Clear decoration
 			Decoration?.clearAllButCodeCoverageDecorations();
 		}

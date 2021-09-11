@@ -487,7 +487,28 @@ export class ZesaruxRemote extends RemoteBase {
 				// Handle code coverage
 				this.handleCodeCoverage();
 				// The reason is the 2nd line
-				const breakReasonString = this.getBreakReason(text);
+				let breakReasonString = this.getBreakReason(text);
+
+				// Check if it was an ASSERTION
+				const pcLong = this.getPCLong();
+				const abps = this.assertionBreakpoints.filter(abp => abp.address == pcLong);
+				for (const abp of abps) {
+					let conditionTrue = true;
+					if (abp.condition != undefined) {
+						try {
+							const evalCond = Utility.evalExpression(abp.condition, true);
+							conditionTrue = (evalCond != 0);
+						}
+						catch (e) {}	// Ignore errors
+					}
+					if (conditionTrue) {
+						const assertionCond = Utility.getAssertionFromCondition(abp.condition);
+						//reasonString = "Assertion failed: " + assertionCond;
+						const replaced = Utility.replaceVarsWithValues(assertionCond);
+						breakReasonString = "Assertion failed: " + replaced;
+					}
+				}
+
 				// Read the spot history
 				await CpuHistory.getHistorySpotFromRemote();
 				// Call handler
