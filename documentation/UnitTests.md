@@ -12,7 +12,7 @@ It is recommended to use the sjasmplus assembler but you can also use other asse
 
 The [unit_tests.inc](unit_tests.inc) file provides macros in sjasmplus syntax.
 
-For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well. (Note: it has less macros defined as the sjasmplus inc file.)
+For other assemblers you most probably need an .inc file in a different format. Here is a [unit_tests_savannah.inc](unit_tests_savannah.inc) in a format that e.g. Savannah's z80asm would understand. Maybe this can be used for other assemblers as well. (Note: it has less macros defined as the sjasmplus inc file but you can extend on your own.)
 
 Note: the z88dk z80asm is not supported as it lacks native support for macros.
 
@@ -186,7 +186,7 @@ This macro can be used in conditions that you want to test that your subroutine 
 
 You provide the initialization routine via the macro UNITTEST_INITIALIZE.
 Directly after the macro write your initialization code.
-Note that you don't need to provide a stack for the unit tests it is setup automatically inside the UNITTEST_INITIALIZE macro.
+Note that you don't need to provide a stack for the unit tests it is setup automatically inside the UNITTEST_INITIALIZE macro and SP is set to it. The stack's size is 50 words. If you need more you can change it inside the macro.
 Furthermore during execution of all unit test cases the interrupts are disabled. If, for some reason, you need interrupts active then you have to enable them ('ei') at the start of each unit test case.
 
 Your initialization code may look like.
@@ -198,17 +198,16 @@ Your initialization code may look like.
     ret
 ~~~
 
-You need to end your initialization with a 'ret'.
+You need to end your initialization with a 'ret'. If you don't have any needs for additional initialization just put the ```ret```after the UNITTEST_INITIALIZE macro.
 
-Please note that the code is executed only once for each unit test run. I.e. not before each unit test case.
-If you need to initialize something at the start of your unit test then please add the code to the unit test.
+Please note that the code is executed again for each unit test run.
 
 
 ## Setup the launch.json
 
 You need to create a special configuration in side the launch.json for the unit tests.
 At best you copy a working configuration, change its name (to e.g. "Unit Tests") and change/add a few properties:
-- the property 'unitTests' need to be added and set to true. Note that only one configuration is allowed to have this property set to true.
+- the property 'unitTests' need to be added and set to true. If you like you can have several unit test configurations in one launch.json.
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
 - 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
 If you like you can set this set this to true, but then you need to set a breakpoint inside your unit test if you debug it otherwise the unit test will be finished before you can see anything in the debugger.

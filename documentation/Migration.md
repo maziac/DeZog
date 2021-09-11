@@ -10,6 +10,11 @@ Instead, in the WATCHes pane, you can now right click and select 'Set value' to 
 
 From migration point of view: If you've added '-addexpr' or '-delexpr' to the "commandsAfterLaunch" section of your launch.json file, you would have to remve them.
 
+## Unit tests
+
+The UNITTEST_INITIALIZE macro is now executed not only once for all unit tests but before each single unit test.
+
+You can setup now more than one unit test configuration in teh launch.json.
 
 # Migrate from DeZog 2.2 to DeZog 2.3
 

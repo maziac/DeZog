@@ -1077,8 +1077,9 @@ export class RemoteBase extends EventEmitter {
 	/**
 	 * Clears one breakpoint.
 	 * Breakpoint is removed at the Remote and removed from the 'breakpoints' array.
+	 * Also used by unit tests.
 	 */
-	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
+	public async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		Utility.assert(false);	// override this
 	}
 

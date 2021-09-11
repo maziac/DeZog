@@ -574,7 +574,7 @@ export class Settings {
 		if (!launchCfg.disassemblerArgs.hasOwnProperty("esxdosRst"))
 			launchCfg.disassemblerArgs.esxdosRst = false;
 		if (launchCfg.startAutomatically == undefined)
-			launchCfg.startAutomatically = (unitTests) ? false : false;
+			launchCfg.startAutomatically = false;
 		if (launchCfg.commandsAfterLaunch == undefined)
 			launchCfg.commandsAfterLaunch = [];
 		if (launchCfg.zrcp.skipInterrupt == undefined)

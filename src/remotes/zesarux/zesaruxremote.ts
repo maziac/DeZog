@@ -1136,7 +1136,7 @@ export class ZesaruxRemote extends RemoteBase {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
+	public async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		const bpId = bp.bpId;
 		if (!bpId)
 			return;	// 0 or undefined

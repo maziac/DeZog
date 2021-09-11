@@ -1190,7 +1190,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Clears one breakpoint.
 	 */
-	protected async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
+	public async removeBreakpoint(bp: RemoteBreakpoint): Promise<void> {
 		// Remove from list
 		let index = this.breakpoints.indexOf(bp);
 		Utility.assert(index !== -1, 'Breakpoint should be removed but does not exist.');

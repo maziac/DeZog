@@ -321,6 +321,17 @@ export class Z80UnitTestRunner {
 					}
 					await Remote.enableAssertionBreakpoints(true);
 
+					if (this.debug) {
+						// After initialization vscode might send breakpoint requests
+						// to set the breakpoints.
+						// Unfortunately this request is sent only if breakpoints exist.
+						// I.e. there is no safe way to wait for something to
+						// know when vscode is ready.
+						// So just wait some time:
+						if (Settings.launch.startAutomatically)
+							await Utility.timeout(500);
+					}
+
 					// Initialize
 					await this.initUnitTests();
 
@@ -470,10 +481,23 @@ export class Z80UnitTestRunner {
 		if (this.currentTestFailed)
 			return;
 
-		// Start the unit test
+		// If not 'startAutomatically' then set a BP at the start of the unit test
 		const utAddr = this.getLongAddressForLabel(ut.utLabel);
+		let breakpoint;
+		if (this.debug && !Settings.launch.startAutomatically) {
+			// Set breakpoint
+			breakpoint = {bpId: 0, filePath: '', lineNr: -1, address: utAddr, condition: '', log: undefined};
+			await Remote.setBreakpoint(breakpoint);
+		}
+
+		// Start the unit test
 		this.testCaseSetup = false;
 		await this.execAddr(utAddr);
+
+		// Remove breakpoint
+		if (breakpoint) {
+			await Remote?.removeBreakpoint(breakpoint);
+		}
 	}
 
 
