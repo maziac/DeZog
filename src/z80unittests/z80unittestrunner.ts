@@ -218,7 +218,7 @@ export class Z80UnitTestRunner {
 					this.currentTestStart = Date.now();
 					run.started(test);
 
-					await Utility.timeout(1000);
+					//await Utility.timeout(1000);
 					await this.runTestCase(ut);
 				}
 				catch (e) {

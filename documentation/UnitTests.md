@@ -209,7 +209,7 @@ You need to create a special configuration in side the launch.json for the unit 
 At best you copy a working configuration, change its name (to e.g. "Unit Tests") and change/add a few properties:
 - the property 'unitTests' need to be added and set to true. If you like you can have several unit test configurations in one launch.json.
 - the property 'topOfStack' is not required and ignored if set. Instead an own stack (with default size of 50 words) is used.
-- 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of the tests. I.e. it will stop at the start of the first test.
+- 'startAutomatically': The default is false for unit tests. I.e. if you run a unit test in debug mode it will automatically break at the start of each test.
 If you like you can set this set this to true, but then you need to set a breakpoint inside your unit test if you debug it otherwise the unit test will be finished before you can see anything in the debugger.
 - You need not enable WPMEM, ASSERTION or LOGPOINT. They are automatically enabled for unit tests.
 - You must remove any occurrence of 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated automatically and the PC (program counter) is set accordingly.
@@ -220,41 +220,25 @@ If you like you can set this set this to true, but then you need to set a breakp
 For most unit tests you shouldn't need much (ZX) HW, ie. you could run them in the internal Z80 simulator (zsim).
 If you need more sophisticated HW emulation use ZEsarUX or CSpect.
 The internal simulator and ZEsarUX support memory breakpoints which can be an advantage if you make use of WPMEM in your sources.
-If you use ZEsarUX or CSpect make sure it is running (just like in a normal debugging session).
-Make sure that no "normal" debug session is currently running.
+If you use ZEsarUX or CSpect first make sure your normal debug setup is working (i.e. you are able to run a normal debugging session).
 
-Press F1 for the command palette to appear.
-Enter "dezog: Run all unit tests".
+DeZog discovers unit tests in the sources automatically. If it finds a unit test configuration in the launch.json it will appear under the test panel.
+You find it by pressing the vscode's test icon in the side bar.
+![](images/unittest_sidebar_icon.jpg)
+Without any unit test configuration only the name of your project will appear here.
+![](images/unittest_just_project.jpg)
+If you add a unit test configuration that will appear here as well.
+![](images/unittest_project_and_config.jpg)
 
-DeZog will connect ZEsarUX and execute the unit tests.
-At the end you get a summary like this (in the vscode "OUTPUT" panel channel "DeZog Unit Tests"):
-~~~
-+-------------------------------------------------
-UNITTEST SUMMARY:
-Date: Wed Jun 12 2019 19:10:43 GMT+0200 (CEST)
+Once you add unit tests with corresponding labels (i.e. labels that starts with "UT_") and assemble your code the unit tests will appear:
 
-ut_sprites.UT_get_hl_from_a (0x8182):	Fail
-ut_sprites.UT_get_ix_from_a (0x822a):	OK
-ut_sprites.UT_get_x_from_ix (0x82df):	OK
-ut_sprites.UT_get_y_from_ix (0x833c):	OK
-ut_sprites.UT_add_3_sprites (0x83e1):	OK
-ut_sprites.UT_add_sprite_index_255 (0x8508):	OK
-...
-ut_audio.ut_sound.UT_get_and_allocate_tone_register_block3 (0xadb0):	OK
-ut_audio.ut_sound.UT_get_and_allocate_tone_register_block_two (0xae9f):	OK
-ut_audio.ut_sound.UT_get_and_allocate_tone_register_all_blocked (0xaf17):	OK
-ut_audio.ut_sound.UT_free_tone_register1 (0xaf54):	OK
-ut_audio.ut_sound.UT_free_tone_register2 (0xafa8):	OK
-ut_audio.ut_sound.UT_free_tone_register3 (0xb00e):	OK
-ut_audio.ut_sound.UT_choose_tone_register (0xb08b):	OK
+![](images/unittest_discovered.jpg)
 
-Total test cases: 65
-Passed test cases: 64
-Failed test cases: 1
-98% passed.
+To run or debug the test cases press one of the buttons:
+![](images/unittest_run_debug_icons.jpg)
 
-+-------------------------------------------------
-~~~
+After the run you see the passed and failed test cases:
+![](images/unittest_run.jpg)
 
 You will notice that the executed lines in the sources have turned to a green background.
 ![](images/unittest_coverage.jpg)
@@ -271,12 +255,10 @@ The PC stops at the test because A is obviously not 0.
 
 # When Does a Test Case Fail
 
-Obviously a unit test case fails if the checked condition (the TEST_... macros) fails.
+Obviously a unit test case fails if the checked condition (the TEST_... macros or the ASSERTION statements) fails.
 But there are a few other cases when a test case fails:
-- unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration.
-- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if you an ASSERTION fails somewhere. If in debug mode the code execution also stops at the particular line of code. So you can directly investigate what happened. You will also see the values used in the ASSERTION so you can directly see what went wrong.
-
-Note: During debug if you continue from a break condition, e.g. an ASSERTION, and reach the end of the unit test, the unit test will be counted as pass. If it's run (not debugged) it will, of course, not reach the end and counted as fail.
+- unitTestTimeout: If the test case does not return within this time the test case has failed. Default is 1 sec (unit is secs). If this is not enough you can change the value (for all test cases) in the launch configuration. During debugging the timeout is not used.
+- breakpoint hit: When a breakpoint is hit the test case has failed. This will happen if you for example have memory guard (WPMEM) and the unit test has e.g. written into a guarded memory area. This can also happen if an ASSERTION fails somewhere else in the code. If in debug mode the code execution also stops at the particular line of code. So you can directly investigate what happened. If not in debug mode you can click on the red failed button and vscode will take you to the place in the code where the assertion happened. You will also see the values used in the ASSERTION so you can directly see what went wrong.
 
 
 # Code Coverage
@@ -287,7 +269,7 @@ The coverage decoration is also available when running the unit tests in debug m
 It is reset whenever you start a new debug session or a new unit test.
 If you need to clear the coverage decoration at some other point go tp the command palette and enter "dezog: Clear the current code coverage decoration"
 
-Note: Code coverage is not supported in "cspect" or "zxnext".
+Note: Code coverage is only rudimentary supported in "cspect" or "zxnext".
 
 
 # A note about banking
@@ -300,21 +282,10 @@ The memory test macros like TEST_MEMORY_BYTE etc. do work with 64k addresses. I.
 So, if you want to test memory of some other bank then make sure that you page it in before.
 
 
-# What Else
 
-## Test Explorer
+# Supported file types
 
-Use another extension, [z80-unit-tests](https://github.com/maziac/z80-unit-tests), to execute the unit tests not via the command palette but via the Test Explorer UI.
-
-From that UI it is also possible to execute specific unit tests without executing the rest.
-
-Example:
-![](images/unittest_test_explorer.jpg)
-
-
-# Caveats
-
-If you use a .sna file the inherited start address is simply ignored.
-You can use .sna, .nex and plain .obj files for unit tests. .tap files will not work as the loading is emulated.
+For unit testing you can use .sna, .nex and plain .obj files.
+.tap files will not work.
 
 
