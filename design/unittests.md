@@ -1,11 +1,28 @@
 # Unit Tests
 
+## History
+
+Since v1.59 (2021) vscode implements an own testing api.
+Therefore the separate z80-unit-test extension was abandoned and integrated into DeZog.
+The additional "Z80 Unit Test" extension is not required anymore.
+
+
+## Design
+
+There are basically 2 classes:
+- Testrunner: Handles the basic communication with vscode and examines which (test) files have been updated. I.e. discovers tests and executes tests.
+- Z80UnitTestRunner: Extends the class and handles the Z80 labels and communication with the Remote.
+
+And there are basically 2 modes:
+- Test Discovery
+- Test Execution
+
 ~~~
-┌──────────────────────────────────────────────┐
-│                                              │
-│                 Z80UnitTests                 │
-│                                              │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐       ┌──────────────────┐
+│                                              │       │                  │
+│              Z80UnitTestRunner               │◀─────▶│   UnitTestCase   │
+│                                              │       │                  │
+└──────────────────────────────────────────────┘       └──────────────────┘
      ▲                 ▲                  ▲
      │                 │                  │
      ▼                 ▼                  ▼
@@ -24,53 +41,19 @@
                └──────────────┘
 ~~~
 
-Z80UnitTests is a static class that controls the DebugAdapter and Emulator.
+Z80UnitTestRunner is a static class that controls the DebugAdapter and Emulator.
 It basically
 1. Reads the list file to find the unit test labels. Those beginning with "UT_".
 2. Loads the binary into the emulator.
 3. Manipulates memory and PC register to call a specific unit test.
 4. Loops over all found unit tests.
 
-While the unit tests are executed the coverage is determined.
-While executing a trace log is written. After the test the trace file is evaluated.
-With the disassembler it is determined what code in the binary and in the file are really code lines (and not data).
-This code is evaluated against the trace log. Addresses that are not in the trace log are "uncovered".
-
-Coverage is handled differently if debugging a testcase or if the testcases are simply run.
-
-If all testcases are run (not debugged) a summary is written afterwards with all OK and failed testacses.
-It will also list how many lines of the file are "uncovered": as source code lines and also as percentage.
-
-If a specific (or several) testcases are debugged no summary is written but the covered lines are shown in the gutter.
-
-
-# Coverage
-
-While the unit tests are executed the ZEsarUX cpu-code-coverage is enabled.
-This records all executed addresses.
-When the unit tests are passed (or on every break) the code coverage is read, the addresses are converted to source code locations and the vscode is told to mark (decorate) the covered lines.
-
-
-======================
-
-# New Z80 Unit Tests
-
-# TestRunner / Z80UnitTestRunner
-
-## History
-
-Since v1.59 (2021) vscode implements an own testing api.
-Therefore the separate z80-unit-test extension was abandoned and integrated into DeZog.
-
-## Design
-
-There are basically 2 classes:
-- Testrunner: Handles the basic communication with vscode and examines which (test) files have been updated. I.e. discovers tests and executes tests.
-- Z80UnitTestRunner: Extends the class and handles the Z80 labels and communication with the Remote.
-
-And there are basically 2 modes:
-- Test Discovery
-- Test Execution
+The Z80UnitTestRunner creates a rot test suite, the RootTestSuite.
+From it several other test suites and test cases are created.
+Some represent the workspace (the unit tests are multiroot capable), some the configuration (launch.json) and the rest the test suites and eventually the test cases.
+The UnitTestCase classes listen for file changes and might change there structure on the fly.
+The vscode UI is immediately updated. But only on a file changed, not on a document change.
+I.e. the user has to save or even assemble to see any changes.
 
 
 ### Test Discovery
@@ -201,7 +184,6 @@ deactivate runItem
 
 ## Required tests
 
-
 Test for zsim, zrcp, cspect and zxnext.
 
 Test groups of test cases:
@@ -241,7 +223,9 @@ Do these testing in following configurations:
 
 
 
-# Unit tests written in java script
+# Remark: Unit tests written in java script
+
+Aug-2021:
 
 I wanted to setup unit tests from javascript and just execute the z80 subroutine (that should be tested) from that javascript code.
 
