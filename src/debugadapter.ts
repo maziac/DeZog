@@ -637,6 +637,15 @@ export class DebugSessionClass extends DebugSession {
 			// Initialize Remote
 			try {
 				await Remote.init();
+				if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
+					// Special handling for zsim: Re-init custom code.
+					if (Remote instanceof ZSimRemote) {
+						const zsim = Remote as ZSimRemote;
+						if (zsim.customCode) {
+							zsim.customCode.execute();
+						}
+					}
+				}
 			}
 			catch (e) {
 				// Some error occurred

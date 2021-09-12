@@ -15,7 +15,11 @@ import {DiagnosticsHandler} from '../../diagnosticshandler';
  */
 class CustomCodeAPI extends EventEmitter {
 	// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
-	public tstates: number=0;
+	public tstates: number = 0;
+
+	// If the code is run from a unit test it contains the unit test (assembler code) label.
+	// Otherwise it is undefined.
+	public unitTestLabel: string | undefined;
 
 
 	// Pointer to the object who will receive 'sendToCustomUi'.
@@ -25,9 +29,10 @@ class CustomCodeAPI extends EventEmitter {
 	 * Constructor.
 	 * @param parent The custom code class for communication.
 	 */
-	constructor(parent: CustomCode) {
+	constructor(parent: CustomCode, unitTestLabel?: string) {
 		super();
-		this.parent=parent;
+		this.parent = parent;
+		this.unitTestLabel = unitTestLabel;
 	}
 
 
@@ -47,7 +52,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * command.
 	 */
 	public sendToCustomUi(message: any) {
-		LogCustomCode.log('sendToCustomUi: '+JSON.stringify(message));
+		LogCustomCode.log('sendToCustomUi: ' + JSON.stringify(message));
 		// Send message
 		this.parent.emit('sendToCustomUi', message);
 	}
@@ -79,7 +84,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * @return A value, e.g. 0x7F.
 	 * If no port is found then undefined is returned.
 	 */
-	public readPort: (port: number) => number|undefined = (port) => undefined;
+	public readPort: (port: number) => number | undefined = (port) => undefined;
 
 
 	/**
@@ -88,7 +93,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * @param port the port number, e.g. 0x8000
 	 * @param value A value to set, e.g. 0x7F.
 	 */
-	public writePort: (port: number, value: number) => void=(port, value) => {};
+	public writePort: (port: number, value: number) => void = (port, value) => {};
 
 	/**
 	 * Simulates pulsing the processor's INT (or NMI) pin.
@@ -108,7 +113,7 @@ class CustomCodeAPI extends EventEmitter {
 	 * You can also leave this empty and set the values initially from the UI code.
 	 * Note: The custom logic is instantiated before the UI.
 	 */
-	public uiReady: () => void=() => {};
+	public uiReady: () => void = () => {};
 
 
 	/**
@@ -146,7 +151,7 @@ export class CustomCode extends EventEmitter {
 				throw e;
 			}
 		}
-		.call(context);
+			.call(context);
 	}
 
 
@@ -190,17 +195,30 @@ export class CustomCode extends EventEmitter {
 	 */
 	constructor(jsPath: string) {
 		super();
-		// Load for the first time
+		// Load the file
 		this.load(jsPath);
 	}
 
 
 	/**
 	 * Reloads the custom javascript code.
+	 * @param jsPath Absolute path to the file.
 	 */
-	public reload() {
+	public load(jsPath: string) {
+		// Can throw an error
+		this.jsCode = readFileSync(jsPath).toString();
+		this.jsPath = jsPath;
+	}
+	
+
+	/**
+	 * Reloads the custom javascript code.
+	 * @param unitTestLabel If called by the unit tests this contains the unit test case label.
+	 * Otherwise it is undefined.
+	 */
+	public execute(unitTestLabel?: string) {
 		// Create an API object
-		this.api = new CustomCodeAPI(this);
+		this.api = new CustomCodeAPI(this, unitTestLabel);
 
 		// Create new empty context
 		this.context = {tmpAPI: this.api};
@@ -239,19 +257,6 @@ API.log('-------------------------------------\\n');`
 
 
 	/**
-	 * Reloads the custom javascript code.
-	 * @param jsPath Absolute path to the file.
-	 */
-	public load(jsPath: string) {
-		// Can throw an error
-		this.jsCode = readFileSync(jsPath).toString();
-		this.jsPath = jsPath;
-		// And load
-		this.reload();
-	}
-
-
-	/**
 	 * This is called once at the start as soon as the UI is ready to
 	 * sent and receive message.
 	 * You can override this to e.g. sent first initialized values to the UI.
@@ -271,17 +276,17 @@ API.log('-------------------------------------\\n');`
 	 * @return A value, e.g. 0x7F.
 	 * If no port is found then undefined is returned.
 	 */
-	public readPort(port: number): number|undefined {
+	public readPort(port: number): number | undefined {
 		this.logTstates();
-		LogCustomCode.log('API.readPort('+Utility.getHexString(port,4)+'h)');
+		LogCustomCode.log('API.readPort(' + Utility.getHexString(port, 4) + 'h)');
 		// Catch probably errors.
 		let value;
 		try {
-			value=this.api.readPort(port);
-			LogCustomCode.log('  Reading value ' + Utility.getHexString(value,2) + 'h for port ' + Utility.getHexString(port,4) + 'h');
+			value = this.api.readPort(port);
+			LogCustomCode.log('  Reading value ' + Utility.getHexString(value, 2) + 'h for port ' + Utility.getHexString(port, 4) + 'h');
 		}
 		catch (e) {
-			this.throwError("Error during executing custom java script in 'readPort': "+e.message);
+			this.throwError("Error during executing custom java script in 'readPort': " + e.message);
 		}
 		return value;	// Might be undefined
 	}
@@ -295,13 +300,13 @@ API.log('-------------------------------------\\n');`
 	 */
 	public writePort(port: number, value: number) {
 		this.logTstates();
-		LogCustomCode.log('API.writePort('+Utility.getHexString(port, 4)+'h , '+Utility.getHexString(value, 2)+'h)');
+		LogCustomCode.log('API.writePort(' + Utility.getHexString(port, 4) + 'h , ' + Utility.getHexString(value, 2) + 'h)');
 		// Catch probably errors.
 		try {
 			this.api.writePort(port, value);
-			}
+		}
 		catch (e) {
-			this.throwError("Error during executing custom java script in 'writePort': "+e.message);
+			this.throwError("Error during executing custom java script in 'writePort': " + e.message);
 		}
 	}
 
@@ -314,8 +319,8 @@ API.log('-------------------------------------\\n');`
 	 * command.
 	 */
 	public receivedFromCustomUi(message: any) {
-		LogCustomCode.log('API.receivedFromCustomUi: '+JSON.stringify(message));
-		if (this.api.receivedFromCustomUi==undefined) {
+		LogCustomCode.log('API.receivedFromCustomUi: ' + JSON.stringify(message));
+		if (this.api.receivedFromCustomUi == undefined) {
 			// Log that a message has been received without receiver.
 			LogCustomCode.log("  But no custom 'this.receivedFromCustomUi' defined.");
 		}
@@ -325,7 +330,7 @@ API.log('-------------------------------------\\n');`
 				this.api.receivedFromCustomUi(message);
 			}
 			catch (e) {
-				this.throwError("Error during executing custom java script in 'API.receivedFromCustomUi': "+e.message);
+				this.throwError("Error during executing custom java script in 'API.receivedFromCustomUi': " + e.message);
 			}
 		}
 	}
@@ -336,7 +341,7 @@ API.log('-------------------------------------\\n');`
 	 * @param tstates The number of tstates since beginning of simulation, beginning of the debug session which starts at 0.
 	 */
 	public setTstates(tstates: number) {
-		this.api.tstates=tstates;
+		this.api.tstates = tstates;
 	}
 
 
@@ -344,7 +349,7 @@ API.log('-------------------------------------\\n');`
 	 * Logs the t-states.
 	 */
 	public logTstates() {
-		LogCustomCode.log('tick: tstates='+this.api.tstates);
+		LogCustomCode.log('tick: tstates=' + this.api.tstates);
 	}
 
 
@@ -354,7 +359,7 @@ API.log('-------------------------------------\\n');`
 	 * this is called.
 	 */
 	public tick() {
-		if (this.api.tick==undefined)
+		if (this.api.tick == undefined)
 			return;	// No interest in 'tick'
 
 		// Catch probably errors.
@@ -363,7 +368,7 @@ API.log('-------------------------------------\\n');`
 			this.api.tick();
 		}
 		catch (e) {
-			this.throwError("Error during executing custom java script in 'tick': "+e.message);
+			this.throwError("Error during executing custom java script in 'tick': " + e.message);
 		}
 	}
 

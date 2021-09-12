@@ -478,6 +478,15 @@ export class Z80UnitTestRunner {
 	 * @param test The TestItem.
 	 */
 	protected static async runTestCase(ut: UnitTestCase) {
+		const utLabel = ut.utLabel;
+		// Special handling for zsim: Re-init custom code.
+		if (Remote instanceof ZSimRemote) {
+			const zsim = Remote as ZSimRemote;
+			if (zsim.customCode) {
+				zsim.customCode.execute(utLabel);
+			}
+		}
+
 		// Start the part that is executed before each unit test
 		this.testCaseSetup = true;
 		this.currentTestFailed = false;
@@ -486,7 +495,7 @@ export class Z80UnitTestRunner {
 			return;
 
 		// If not 'startAutomatically' then set a BP at the start of the unit test
-		const utAddr = this.getLongAddressForLabel(ut.utLabel);
+		const utAddr = this.getLongAddressForLabel(utLabel);
 		let breakpoint;
 		if (this.debug && !Settings.launch.startAutomatically) {
 			// Set breakpoint
@@ -580,14 +589,6 @@ export class Z80UnitTestRunner {
 		StepHistory.clear();
 		await Remote.getRegistersFromEmulator();
 		await Remote.getCallStackFromEmulator();
-
-		// Special handling for zsim: Re-init custom code.
-		if (this.testCaseSetup) {
-			if (Remote instanceof ZSimRemote) {
-				const zsim = Remote as ZSimRemote;
-				zsim.customCode?.reload();
-			}
-		}
 
 		// Run or Debug
 		await this.RemoteContinue();

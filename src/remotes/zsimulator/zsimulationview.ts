@@ -289,6 +289,7 @@ export class ZSimulationView extends BaseView {
 				if (jsPath) {
 					// Can throw an error
 					this.simulator.customCode.load(jsPath);
+					this.simulator.customCode.execute();
 				}
 				// Reload the custom UI code
 				this.setHtml();

@@ -51,6 +51,11 @@ The API contains the ports (in and out) and a time base.
 // The t-states that have passesd since start of simulation/start of debug session which starts at 0.
 API.tstates: number;
 
+// If the code is run from a unit test it contains the unit test (assembler code) label.
+// Otherwise it is undefined.
+API.unitTestLabel: string | undefined;
+
+
 /**
  * Emits a message. Normally this means it is send to the ZSimulationView.
  * Is called by the custom javascript code.
@@ -450,4 +455,25 @@ Your custom code (and the UI) is stimulated the same way as if the Z80 CPU would
 
 Save states will not work for the custom javascript code.
 I.e. save/restore state will work but no state of the custom code is saved/restored.
+
+
+# Unit tests
+
+For unit tests ou use an own configuration in the launch.json (see ![](UnitTests.md)).
+So you can have also a different peripheral simulation file.
+This is not necessary but can be useful if you want to simulate a specific behavior for your unit tests.
+During unit tests the UI is pretty useless, i.e. you are mostly dealing with custom logic, i.e. the "jsPath" file.
+
+For each unit test case the custom logic code is run again.
+The API offers a special property that contains the current executed test case label.
+
+~~~js
+API.unitTestLabel: string | undefined;
+~~~
+
+Example: unitTestLabel = "Port.UT_port_add_1"
+
+By evaluating this you can read different values for the ports depending on the unit test being executed.
+
+An example can also be found here: [z80-peripherals-sample](https://github.com/maziac/z80-peripherals-sample).
 
