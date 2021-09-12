@@ -259,7 +259,8 @@ sjasmplus --sld=main.sld --fullpath main.asm
 ~~~
 
 Inside one of your asm files you need to set a few more options:
-- Use ```DEVICE something``` to set a device. Otherwise the SLD file will be empty. You can e.g. use ```ZXSPECTRUM48```, ```ZXSPECTRUM128```, ```ZXSPECTRUMNEXT``` or for a non-spectrum pure Z80 system without any banking: **```NOSLOT64K```**
+- Use ```DEVICE something``` to set a device. Otherwise the SLD file will be empty. You can e.g. use ```ZXSPECTRUM48```, ```ZXSPECTRUM128```, ```ZXSPECTRUMNEXT```.
+- If you use a non ZX Spectrum like device, e.g. a pure Z80 system without any banking, then you need to choose: **```NOSLOT64K```** If you would not set any device it will default to NONE which will let sjasmplus not create any data in the sld file.
 - Add a line ```SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION``` to use DeZog's WPMEM, LOGPOINT and ASSERTION features. If ```SLDOPT ...``` is omitted sjasmplus will remove the info from the SLD file.
 
 E.g. you could start your main.asm with:

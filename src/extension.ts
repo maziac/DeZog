@@ -10,6 +10,7 @@ import {WhatsNewView} from './whatsnew/whatsnewview';
 import {HelpProvider} from './help/helpprovider';
 import {GlobalStorage} from './globalstorage';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
+import {DiagnosticsHandler} from './diagnosticshandler';
 
 /*
 let aa = 1;
@@ -64,6 +65,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Init global storage
 	GlobalStorage.Init(context);
+
+	// Init/subscribe diagnostics
+	DiagnosticsHandler.Init(context);
 
 	// Save the extension path also to PackageInfo
 	const extPath = context.extensionPath;

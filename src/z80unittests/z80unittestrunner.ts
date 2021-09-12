@@ -12,6 +12,7 @@ import {StepHistoryClass} from '../remotes/stephistory';
 import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, UnitTestSuite} from './unittestcase';
 import {PromiseCallbacks} from '../misc/promisecallbacks';
+import {DiagnosticsHandler} from '../diagnosticshandler';
 
 
 
@@ -102,11 +103,11 @@ export class Z80UnitTestRunner {
 		// Add profiles for test case execution
 		this.testController.createRunProfile('Run', vscode.TestRunProfileKind.Run, (request, token) => {
 			this.runHandler(request, token);
-		}); // TODO: requires dispose
+		});
 
 		this.testController.createRunProfile('Debug', vscode.TestRunProfileKind.Debug, (request, token) => {
 			this.runDebugHandler(request, token);
-		});// TODO: requires dispose
+		});
 
 	}
 
@@ -137,6 +138,9 @@ export class Z80UnitTestRunner {
 	 * @param request The original request from vscode.
 	 */
 	protected static async runOrDebugHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken) {
+		// Clear any diagnostics
+		DiagnosticsHandler.clear();
+
 		// Only allow one test run at a time
 		if (this.testRunActive) {
 			// Cancel unit tests

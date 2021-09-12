@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
 import * as requireFromString from 'require-from-string';
+import * as vm from 'vm';
+
 
 
 /**
@@ -1107,19 +1109,84 @@ export class Utility {
 		return assertionCond;
 	}
 
+	/**
+	 * Does a 'require' but on a string.
+	 * If an error occurs it parses the output for the line number.
+	 * 'line' and 'column' is added to the thrown error.
+	 * @param code The js file as a string.
+	 * @param filename Optional filename to use.
+	 */
+	public static runInContext(code: string, context: any, filename?: string, lineOffset = 0, timeout?: number): any {
+		try {
+			// Contextify the object.
+			vm.createContext(context);
+			// Run
+			vm.runInContext(code, context, {timeout, filename, lineOffset});
+		}
+		catch (e) {
+			// e.stack contains the error location with the line number.
+			// E.g. '/Volumes/SDDPCIE2TB/Projects/Z80/asm/z80-peripherals-sample/simulation/ports.js:93\nxAPI.tick = () => {\n^\n\nReferenceError: xAPI is not defined\n\tat /Volumes/SDDPCIE2TB/Projects/Z80/asm/z80-peripherals-sample/simulation/ports.js:93:1\n\tat Script.runInContext (vm.js:143:18)\n\tat Object.runInContext (vm.js:294:6)\n\tat Function.runInContext (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/misc/utility.js:1028:16)\n\tat Function.runInContext (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/remo…mcode.js:183:20)\n\tat CustomCode.load (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/remotes/zsimulator/customcode.js:195:14)\n\tat new CustomCode (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/remotes/zsimulator/customcode.js:114:14)\n\tat ZSimRemote.configureMachine (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/remotes/zsimulator/zsimremote.js:286:31)\n\tat ZSimRemote.<anonymous> (/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/out/src/remotes/zsimulator/zsimremote.js:311:18)'
+			if (filename) {
+				// Remove windows \r
+				const stackWo = e.stack.replace(/\r/g, '');
+				const stack = stackWo.split('\n');
+				let errorText = '';
+				for (const stackLine of stack) {
+					// Search for "at "
+					if (stackLine.startsWith('\tat ')) {
+						// Check if this line is e.g. '/Volumes/.../ports.js:93:1'
+						const regex = new RegExp(filename + ':(\\d+):(\\d+)');
+						const match = regex.exec(stackLine);
+						if (match) {
+							// Add line/column to error.
+							// Extract line number.
+							const line = parseInt(match[1]) - 1;
+							// Extract column
+							const column = parseInt(match[2]) - 1;
+							// Return
+							(e as any).position = {line, column};
+						}
+						else {
+							// Other wise use line number of first line.
+							// '/Volumes/.../ports.js:93'
+							const regexFirst = new RegExp(filename + ':(\\d+)');
+							const matchFirst = regexFirst.exec(stack[0]);
+							if (matchFirst) {
+								// Extract line number.
+								const line = parseInt(matchFirst[1]) - 1;
+								// Return
+								(e as any).position = {line, column: 0};
+							}
+						}
+						break;
+					}
+
+					// Belongs to error text
+					errorText += stackLine + '\n';
+				}
+				e.message=errorText || "Unknown error";
+			}
+
+			// Re-throw
+			throw e;
+		}
+	}
+
+
 
 	/**
 	 * Does a 'require' but on a string.
 	 * If an error occurs it parses the output for the line number.
 	 * 'line' and 'column' is added to the thrown error.
-	 * @param contents The js file as a string.
+	 * @param code The js file as a string.
 	 * @param fileName Optional filename to use.
 	 */
-	public static requireFromString(contents: string, fileName?: string): any {
+	public static requireFromString(code: string, fileName?: string): any {
 		try {
-			return requireFromString(contents, fileName);
+			return requireFromString(code, fileName);
 		}
 		catch (e) {
+			// e.stack contains the error location with the line number.
 			// e.stack contains the error location with the line number.
 			// Remove windows \r
 			const stackWo = e.stack.replace(/\r/g, '');
@@ -1136,7 +1203,7 @@ export class Utility {
 					// Extract column number.
 					const column = parseInt(match[2]) - 1;
 					// Return
-					e.position = {line, column};
+					(e as any).position = {line, column};
 				}
 				else {
 					// Try this pattern:
@@ -1148,11 +1215,12 @@ export class Utility {
 						// Extract line number.
 						const line = parseInt(match2[1]) - 1;
 						// Return
-						e.position = {line, column: 0};
+						(e as any).position = {line, column: 0};
 					}
 				}
 			}
-			// Throw
+
+			// Re-throw
 			throw e;
 
 			/*

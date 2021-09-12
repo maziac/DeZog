@@ -16,7 +16,7 @@ There are 2 parts you can add:
 - the UI, which is referred to as "Custom UI".
 
 The business logic is directly added as javascript code to the simulator.
-The UI code is added to the ZSimulator view.
+The UI code is added to the simulator view.
 
 There is an example project provided that shows how to implement the simulation into a project: [z80-peripherals-sample](https://github.com/maziac/z80-peripherals-sample).
 
@@ -128,7 +128,7 @@ participant custom as "Custom Code"
 note over zsim: ld bc,0x8000\nld a,0x6B\nout (c),a
 zsim -> custom: API.writePort(0x8000, 0x6B)
 alt address is correct
-note over custom: Do something
+	note over custom: Do something
 end
 ~~~
 
@@ -142,9 +142,9 @@ note over zsim: ld bc,0x9000\nin a,(c)
 zsim -> custom: API.readPort(0x9000)
 
 alt address is correct
-zsim <- custom: 0xF7
-else
-zsim <- custom: undefined
+	zsim <- custom: 0xF7
+else else
+	zsim <- custom: undefined
 end
 ~~~
 

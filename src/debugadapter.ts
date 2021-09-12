@@ -32,6 +32,7 @@ import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
 import {PromiseCallbacks} from './misc/promisecallbacks';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
+import {DiagnosticsHandler} from './diagnosticshandler';
 
 
 
@@ -377,6 +378,9 @@ export class DebugSessionClass extends DebugSession {
 	protected scopes: Array<Scope>;
 	protected async launchRequest(response: DebugProtocol.LaunchResponse, args: SettingsParameters) {
 		try {
+			// Clear any diagnostics
+			DiagnosticsHandler.clear();
+
 			// Initialize
 			BaseView.staticInit();
 			ZxNextSpritePatternsView.staticInit();
@@ -435,7 +439,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Launches the emulator. Can be called from launchRequest and restartRequest.
+	 * Launches the emulator. is called from launchRequest.
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {

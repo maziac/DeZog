@@ -3,9 +3,10 @@ import {BaseView} from '../../views/baseview';
 import {ZSimRemote} from './zsimremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
-import {readFileSync} from 'fs';
 import {LogCustomCode} from '../../log';
 import {GlobalStorage} from '../../globalstorage';
+import {readFileSync} from 'fs';
+import {DiagnosticsHandler} from '../../diagnosticshandler';
 
 
 /**
@@ -281,12 +282,13 @@ export class ZSimulationView extends BaseView {
 				this.sendToCustomLogic(innerMsg);
 				break;
 			case 'reloadCustomLogicAndUi':
+				// Clear any diagnostics
+				DiagnosticsHandler.clear();
 				// Reload the custom code
 				const jsPath=Settings.launch.zsim.customCode?.jsPath;
 				if (jsPath) {
 					// Can throw an error
-					const jsCode=readFileSync(jsPath).toString();
-					this.simulator.customCode.load(jsCode);
+					this.simulator.customCode.load(jsPath);
 				}
 				// Reload the custom UI code
 				this.setHtml();

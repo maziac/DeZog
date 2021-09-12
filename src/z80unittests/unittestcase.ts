@@ -250,7 +250,7 @@ export class RootTestSuite extends UnitTestSuite {
 			const wsFolder = ws.uri.fsPath;
 
 			// The test id is at the same time the file name (if test item is a file)
-			const filePath = UnifiedPath.join(wsFolder, '.vscode/launch.json');
+			const filePath = UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder);
 			const fileWatcher = new FileWatcher(filePath);
 			this.wsFwMap.set(wsFolder, fileWatcher)!;
 			let wsSuite: UnitTestSuiteLaunchJson;
@@ -302,6 +302,17 @@ export class RootTestSuite extends UnitTestSuite {
  * and especially the launch.json file.
  */
 class UnitTestSuiteLaunchJson extends UnitTestSuite {
+
+	/**
+	 * Static function to get the launch.json path.
+	 * @param wsFolder Path to the workspace folder.
+	 * @returns The complete path, adding '.vscode/launch.json'.
+	 */
+	public static getlaunchJsonPath(wsFolder: string): string {
+		return UnifiedPath.join(wsFolder, '.vscode', 'launch.json');
+	}
+
+
 	// The path to the workspace.
 	protected wsFolder: string;
 
@@ -312,7 +323,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(UnifiedPath.join(wsFolder, '.vscode/launch.json'), label, undefined as any, undefined as any);
+		super(UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder), label, undefined as any, UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -410,7 +421,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name, undefined as any, UnifiedPath.join(wsFolder, '.vscode', 'launch.json'));
+		super(wsFolder + '#' + config.name, config.name, undefined as any, UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
 		this.config = Settings.Init(config, wsFolder);

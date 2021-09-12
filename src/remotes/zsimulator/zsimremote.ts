@@ -21,7 +21,6 @@ import {ZxNextMemory} from './zxnextmemory';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
 import {CustomCode} from './customcode';
-import {readFileSync} from 'fs';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 
 
@@ -365,10 +364,8 @@ export class ZSimRemote extends DzrpRemote {
 		// Initialize custom code e.g. for ports
 		const jsPath = Settings.launch.zsim.customCode.jsPath;
 		if (jsPath) {
-			// Can throw an error
-			const jsCode = readFileSync(jsPath).toString();
 			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			this.customCode = new CustomCode(jsCode);
+			this.customCode = new CustomCode(jsPath);
 			// Register custom code
 			this.ports.registerGenericInPortFunction(port => {
 				this.customCode.setTstates(this.passedTstates);

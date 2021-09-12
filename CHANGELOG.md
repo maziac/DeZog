@@ -6,6 +6,7 @@
 - Fixed memory model for ZEsarUX >= 9.2: Symptom: Breakpoints could not be set.
 - "Disassembly at Cursor" now also allows to select an area that should be disassembled.
 - CSpect is paused now before terminating the socket connection.
+- Better peripherals simulation error messaging (now added to diagnostics).
 
 # 2.3.2
 - Fixed #69: No code coverage on Windows.

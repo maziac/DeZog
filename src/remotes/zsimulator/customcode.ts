@@ -1,11 +1,17 @@
 import {EventEmitter} from 'events';
 import {LogCustomCode} from '../../log';
 import {Utility} from '../../misc/utility';
+import {readFileSync} from 'fs';
+import {DiagnosticsHandler} from '../../diagnosticshandler';
 
 
 
 /**
- * A class that communicates directly with the custom javascript code.)
+ * A class that communicates directly with the custom javascript code.
+ * The problem here is that an infinite loop in the custom code can make DeZog hang.
+ * It is not possible to move this to worker threads as this would mean every
+ * Z80 instruction would have to be executed asynchronously (performance penalty).
+ * The problem can be solved if the Z80 simulator is completely moved to a webview.
  */
 class CustomCodeAPI extends EventEmitter {
 	// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
@@ -126,21 +132,43 @@ export class CustomCode extends EventEmitter {
 
 	/**
 	 * Static method that calls 'eval' with a context.
+	 * Not used anymore, see runInContext.
 	 */
 	protected static evalInContext(js, context) {
-		//# Return the results of the in-line anonymous function we call with the passed context
+		// Return the results of the in-line anonymous function we call with the passed context
 		return function () {
-			//js='';
 			try {
 				return eval(js);
 			}
 			catch (e) {
 				// In case of an error try to find where it occurred
+				e.message = 'Custom Code: ' + e.message;
 				throw e;
 			}
 		}
 		.call(context);
 	}
+
+
+	/**
+	 * Static method that calls 'eval' with a context.
+	 */
+	protected static runInContext(js: string, context: any, filename: string, lineOffset: number) {
+		try {
+			// Run with a timeout of 2000ms. Note: the timeout does not apply if
+			// a function (e.g. readPort) is called later unfortunately.
+			Utility.runInContext(js, context, filename, lineOffset, 2000);
+		}
+		catch (e) {
+			// In case of an error try to find where it occurred
+			e.message = 'Custom Code: ' + e.message;
+			if (e.position) {
+				DiagnosticsHandler.add(e.message, filename, e.position.line, e.position.column);
+			}
+			throw e;
+		}
+	}
+
 
 	// The context the javascript code is executed.
 	// Remains.
@@ -149,17 +177,21 @@ export class CustomCode extends EventEmitter {
 	// For 'reload' the js code text is stored here.
 	protected jsCode: string;
 
+	// The absolute path is stored here, for error reporting.
+	protected jsPath: string;
+
 	// The api object is stored here.
 	protected api: CustomCodeAPI;
 
 
-	// Constructor.
-	constructor(jsCode: string) {
+	/**
+	 *  Constructor.
+	 * @param jsPath Absolute path to the file.
+	 */
+	constructor(jsPath: string) {
 		super();
-		// Create an API object
-		this.api = new CustomCodeAPI(this);
 		// Load for the first time
-		this.load(jsCode);
+		this.load(jsPath);
 	}
 
 
@@ -167,22 +199,14 @@ export class CustomCode extends EventEmitter {
 	 * Reloads the custom javascript code.
 	 */
 	public reload() {
-		this.load(this.jsCode);
-	}
-
-
-	/**
-	 * Reloads the custom javascript code.
-	 */
-	public load(jsCode: string) {
-		// Remember
-		this.jsCode = jsCode;
+		// Create an API object
+		this.api = new CustomCodeAPI(this);
 
 		// Create new empty context
-		this.context={tmpAPI: this.api};
+		this.context = {tmpAPI: this.api};
 
-		// Execute/initialize the javascript
-		CustomCode.evalInContext(`
+		// Add surrounding code
+		const preamble = `
 // Preamble:
 const global = this;
 const API = global.tmpAPI;
@@ -196,17 +220,35 @@ API.debugBreak();
 API.log('\\n=====================================');
 API.log('Custom code: init start');
 
-${jsCode}
+`;
+		const allCode = `${preamble}${this.jsCode}
 
 API.log('Custom code: init end');
-API.log('-------------------------------------\\n');`,
-			this.context);	// This fills the context with the complete program.
+API.log('-------------------------------------\\n');`
+		// Find line offset
+		const lineOffset = Utility.countOccurencesOf('\n', preamble);
 
-		// Required for test case
-		//this.context.tmpAPI = undefined;
-		//this.context = undefined;
+		// Execute/initialize the javascript
+		CustomCode.runInContext(
+			allCode,
+			this.context,	// This fills the context with the complete program.
+			this.jsPath,
+			-lineOffset
+		);
 	}
 
+
+	/**
+	 * Reloads the custom javascript code.
+	 * @param jsPath Absolute path to the file.
+	 */
+	public load(jsPath: string) {
+		// Can throw an error
+		this.jsCode = readFileSync(jsPath).toString();
+		this.jsPath = jsPath;
+		// And load
+		this.reload();
+	}
 
 
 	/**
