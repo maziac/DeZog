@@ -481,9 +481,7 @@ export class Z80UnitTestRunner {
 		// Special handling for zsim: Re-init custom code.
 		if (Remote instanceof ZSimRemote) {
 			const zsim = Remote as ZSimRemote;
-			if (zsim.customCode) {
-				zsim.customCode.execute(utLabel);
-			}
+			zsim.customCode?.execute(utLabel);
 		}
 
 		// Start the part that is executed before each unit test

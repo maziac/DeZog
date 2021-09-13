@@ -360,27 +360,6 @@ export class ZSimRemote extends DzrpRemote {
 			this.zxBeeper,
 			// this.ports // Note: ports are not serialized anymore. Since customCode.
 		];
-
-		// Initialize custom code e.g. for ports
-		const jsPath = Settings.launch.zsim.customCode.jsPath;
-		if (jsPath) {
-			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
-			this.customCode = new CustomCode(jsPath);
-			// Register custom code
-			this.ports.registerGenericInPortFunction(port => {
-				this.customCode.setTstates(this.passedTstates);
-				const value = this.customCode.readPort(port);
-				return value;
-			});
-			this.ports.registerGenericOutPortFunction((port, value) => {
-				this.customCode.setTstates(this.passedTstates);
-				this.customCode.writePort(port, value);
-			});
-			// Register on interrupt event
-			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
-				this.z80Cpu.generateInterrupt(non_maskable, data);
-			});
-		}
 	}
 
 
@@ -418,10 +397,32 @@ export class ZSimRemote extends DzrpRemote {
 			await this.setRegisterValue("PC", execAddress);
 		}
 
+
+		// Initialize custom code e.g. for ports.
+		// Note: is done after loadNex as this also sets one port for the border.
+		// But the customCode is not yet executed. (Because of unit tests).
+		const jsPath = Settings.launch.zsim.customCode.jsPath;
+		if (jsPath) {
+			//jsCode="<b>Error: reading file '"+jsPath+"':"+e.message+"</b>";
+			this.customCode = new CustomCode(jsPath);
+			// Register custom code
+			this.ports.registerGenericInPortFunction(port => {
+				this.customCode.setTstates(this.passedTstates);
+				const value = this.customCode.readPort(port);
+				return value;
+			});
+			this.ports.registerGenericOutPortFunction((port, value) => {
+				this.customCode.setTstates(this.passedTstates);
+				this.customCode.writePort(port, value);
+			});
+			// Register on interrupt event
+			this.customCode.on('interrupt', (non_maskable: boolean, data: number) => {
+				this.z80Cpu.generateInterrupt(non_maskable, data);
+			});
+		}
 		// Ready
 		this.emit('initialized')
 	}
-
 
 	/**
 	 * Stops the simulator.
