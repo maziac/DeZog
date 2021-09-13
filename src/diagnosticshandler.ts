@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {CustomCode} from './remotes/zsimulator/customcode';
 
 
 /**
@@ -17,6 +18,7 @@ export class DiagnosticsHandler {
 	public static Init(context: vscode.ExtensionContext) {
 		this.diagnosticsCollection = vscode.languages.createDiagnosticCollection("DeZog");
 		context.subscriptions.push(this.diagnosticsCollection);
+		CustomCode.addDiagnosticsErrorFunc = this.add;
 	}
 
 	/**

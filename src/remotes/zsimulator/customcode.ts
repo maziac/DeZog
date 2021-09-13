@@ -2,7 +2,6 @@ import {EventEmitter} from 'events';
 import {LogCustomCode} from '../../log';
 import {Utility} from '../../misc/utility';
 import {readFileSync} from 'fs';
-import {DiagnosticsHandler} from '../../diagnosticshandler';
 
 
 
@@ -13,7 +12,7 @@ import {DiagnosticsHandler} from '../../diagnosticshandler';
  * Z80 instruction would have to be executed asynchronously (performance penalty).
  * The problem can be solved if the Z80 simulator is completely moved to a webview.
  */
-class CustomCodeAPI extends EventEmitter {
+export class CustomCodeAPI extends EventEmitter {
 	// The t-states that have passesd since start of simulation/start of debug session which starts at 0.
 	public tstates: number = 0;
 
@@ -135,6 +134,10 @@ class CustomCodeAPI extends EventEmitter {
  */
 export class CustomCode extends EventEmitter {
 
+	// Function used to add an error to the diagnostics.
+	public static addDiagnosticsErrorFunc: ((message: string, filepath: string, line: number, column: number) => void) | undefined;
+
+
 	/**
 	 * Static method that calls 'eval' with a context.
 	 * Not used anymore, see runInContext.
@@ -148,6 +151,7 @@ export class CustomCode extends EventEmitter {
 			catch (e) {
 				// In case of an error try to find where it occurred
 				e.message = 'Custom Code: ' + e.message;
+				// Re-throw
 				throw e;
 			}
 		}
@@ -167,9 +171,11 @@ export class CustomCode extends EventEmitter {
 		catch (e) {
 			// In case of an error try to find where it occurred
 			e.message = 'Custom Code: ' + e.message;
-			if (e.position) {
-				DiagnosticsHandler.add(e.message, e.position.filename, e.position.line, e.position.column);
+			// Add diagnostics message
+			if (this.addDiagnosticsErrorFunc && e.position) {
+				this.addDiagnosticsErrorFunc(e.message, e.position.filename, e.position.line, e.position.column);
 			}
+			// Re-throw
 			throw e;
 		}
 	}
