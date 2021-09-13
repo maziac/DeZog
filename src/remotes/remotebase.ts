@@ -1484,7 +1484,8 @@ export class RemoteBase extends EventEmitter {
 		if (ocFlags & OpcodeFlag.BRANCH_ADDRESS
 			&& (ocFlags & OpcodeFlag.CONDITIONAL) == 0
 			&& opcode.code == 0xCF) {
-			// Note: The opcode length for RST 08 is already adjusted by the disassembler.
+			// Note: The opcode length for RST 08 is adjusted by the disassembler.
+			// But with the implementation below, we don't require this.
 			if (stepOver) {
 				// For stepOver nothing is required normally.
 				// However, as we have a spare breakpoint (bpAddr2),
@@ -1496,6 +1497,10 @@ export class RemoteBase extends EventEmitter {
 			else {
 				// If stepInto we need a breakpoint at the jump address 8 (RST 08) but also the bpAddr1 if call is simulated.
 				bpAddr2 = 0x0008;
+				// If the call is simulated (e.g. cspect) than it uses esxdos.
+				// I.e. put the other BP at pc+2.
+				// If it is not simulated the bpAddr2 is always hit.
+				bpAddr1 = pc + 2;
 			}
 		}
 		// Check for RET
