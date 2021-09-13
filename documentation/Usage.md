@@ -754,16 +754,23 @@ The "cspect" configuration allows the following additional parameters:
 - "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
 You don't have to enter a hostname, the default is "localhost".
 
-Note: You can start CSpect with the "-remote" option. In that case CSpect will not show it's debugger screen when stopped.
 
-
-### macOS
+#### Command line
 
 To run CSpect under macOS or Linux you need to install Mono first.
-A typical commandline to start CSpect looks like:
+Here is a commandline to start CSpect that works best for me:
 ~~~
-mono CSpect.exe -w4 -zxnext -nextrom -exit -brk -tv -r -v -debug
+mono CSpect.exe -w4 -zxnext -mmc=./ -exit -brk -tv -r -v -debug
 ~~~
+
+Note: For Windows you can remove the call to 'mono' simply.
+
+A few explanations:
+- with "-mmc=./" the CSpect/ZXNext will use the current dir as the "root" dir. You can also give any other path here but note that it is important to keep the "/" at the end.
+- "-debug": Starts up with the debugger on. I.e. CSpect does not start to run before told to. (But this is more a matter of taste.)
+- "-zxnext": Is important to enable the ZXNext HW.
+- "-nextrom": It's easier not to enable this. If not included the CSpect will simulate the esxdos calls. Enabling and using an img file seem to result in problems sometimes most probably because not everything is initialized correctly always.
+- "-remote": Is not really required. It hides the CSpect's debugger display.
 
 
 

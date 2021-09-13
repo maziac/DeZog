@@ -1,6 +1,16 @@
+spec
 <li>
 	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Setting expressions: For years vscode was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this and released 2.3: the 'Expressions' section was added to the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. With this also the commands '-addexpr' and '-delexpr' have been removed.
+	<br>Unit tests: Since version 1.60 vscode contains an API for executing unit tests. DeZog v2.4 has been changed to use it. This means: the "Z80 Unit Tests" extension is not required anymore, you should de-install it. In general you should be able to use the new UI without any configuration change. Apart from that please read the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">migration</a> document.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
+	<br>Setting expressions: For years vscode was not able to set values in the WACTHes pane. Last month I decided to
+	implement a workaround for this and released 2.3: the 'Expressions' section was added to the VARIABLES pane. This
+	was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the
+	'Expressions' from the VARIABLES pane again. With this also the commands '-addexpr' and '-delexpr' have been
+	removed.
 	Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
 </li>
 

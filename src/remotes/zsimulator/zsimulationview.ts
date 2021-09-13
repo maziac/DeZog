@@ -17,8 +17,8 @@ export class ZSimulationView extends BaseView {
 
 	// The max. number of message in the queue. If reached the ZSimulationView will ask
 	// for processing time.
-	static MESSAGE_HIGH_WATERMARK=100;
-	static MESSAGE_LOW_WATERMARK=10;
+	static MESSAGE_HIGH_WATERMARK = 100;
+	static MESSAGE_LOW_WATERMARK = 10;
 
 	// A map to hold the values of the simulated ports.
 	protected simulatedPorts: Map<number, number>;	// Port <-> value
@@ -123,10 +123,10 @@ export class ZSimulationView extends BaseView {
 
 		// Add title
 		Utility.assert(this.vscodePanel);
-		this.vscodePanel.title='Z80 Simulator - '+Settings.launch.zsim.memoryModel;
+		this.vscodePanel.title = 'Z80 Simulator - ' + Settings.launch.zsim.memoryModel;
 
 		// Read path for additional javascript code
-		this.customUiPath=Settings.launch.zsim.customCode.uiPath;
+		this.customUiPath = Settings.launch.zsim.customCode.uiPath;
 
 		// Initial html page.
 		this.setHtml();
@@ -277,15 +277,15 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'sendToCustomLogic':
 				// Unwrap message
-				const innerMsg=message.value;
-				LogCustomCode.log("UI: UIAPI.sendToCustomLogic: "+JSON.stringify(innerMsg));
+				const innerMsg = message.value;
+				LogCustomCode.log("UI: UIAPI.sendToCustomLogic: " + JSON.stringify(innerMsg));
 				this.sendToCustomLogic(innerMsg);
 				break;
 			case 'reloadCustomLogicAndUi':
 				// Clear any diagnostics
 				DiagnosticsHandler.clear();
 				// Reload the custom code
-				const jsPath=Settings.launch.zsim.customCode?.jsPath;
+				const jsPath = Settings.launch.zsim.customCode?.jsPath;
 				if (jsPath) {
 					// Can throw an error
 					this.simulator.customCode.load(jsPath);
@@ -298,15 +298,15 @@ export class ZSimulationView extends BaseView {
 				break;
 			case 'log':
 				// Log a message
-				const text=message.args.map(elem => elem.toString()).join(', ');
-				LogCustomCode.log("UI: "+text);
+				const text = message.args.map(elem => elem.toString()).join(', ');
+				LogCustomCode.log("UI: " + text);
 				break;
 			case 'countOfProcessedMessages':
 				// For balancing the number of processed messages (since last time) is provided.;
-				this.countOfOutstandingMessages-=message.value;
-				Utility.assert(this.countOfOutstandingMessages>=0);
+				this.countOfOutstandingMessages -= message.value;
+				Utility.assert(this.countOfOutstandingMessages >= 0);
 				// For balancing: Remove request for procesing time
-				if (this.countOfOutstandingMessages<=ZSimulationView.MESSAGE_LOW_WATERMARK) {
+				if (this.countOfOutstandingMessages <= ZSimulationView.MESSAGE_LOW_WATERMARK) {
 					this.simulator.setTimeoutRequest(false);
 				}
 				break;
@@ -324,11 +324,11 @@ export class ZSimulationView extends BaseView {
 	 * This needs to be evaluated inside the web view.
 	 * @param baseView The webview to post to. Can be omitted, default is 'this'.
 	 */
-	protected sendMessageToWebView(message: any, baseView: BaseView=this) {
+	protected sendMessageToWebView(message: any, baseView: BaseView = this) {
 		this.countOfOutstandingMessages++;
 		super.sendMessageToWebView(message, baseView);
 		// For balancing: Ask for processing time if messages cannot be processed in time.
-		if (this.countOfOutstandingMessages>=ZSimulationView.MESSAGE_HIGH_WATERMARK) {
+		if (this.countOfOutstandingMessages >= ZSimulationView.MESSAGE_HIGH_WATERMARK) {
 			this.simulator.setTimeoutRequest(true);
 		}
 	}
@@ -357,56 +357,56 @@ export class ZSimulationView extends BaseView {
 			case 'key_Digit3':
 			case 'key_Digit4':
 			case 'key_Digit5':
-				port=0xF7FE;
+				port = 0xF7FE;
 				break;
 			case 'key_Digit6':
 			case 'key_Digit7':
 			case 'key_Digit8':
 			case 'key_Digit9':
 			case 'key_Digit0':
-				port=0xEFFE;
+				port = 0xEFFE;
 				break;
 			case 'key_KeyQ':
 			case 'key_KeyW':
 			case 'key_KeyE':
 			case 'key_KeyR':
 			case 'key_KeyT':
-				port=0xFBFE;
+				port = 0xFBFE;
 				break;
 			case 'key_KeyY':
 			case 'key_KeyU':
 			case 'key_KeyI':
 			case 'key_KeyO':
 			case 'key_KeyP':
-				port=0xDFFE;
+				port = 0xDFFE;
 				break;
 			case 'key_KeyA':
 			case 'key_KeyS':
 			case 'key_KeyD':
 			case 'key_KeyF':
 			case 'key_KeyG':
-				port=0xFDFE;
+				port = 0xFDFE;
 				break;
 			case 'key_KeyH':
 			case 'key_KeyJ':
 			case 'key_KeyK':
 			case 'key_KeyL':
 			case 'key_Enter':
-				port=0xBFFE;
+				port = 0xBFFE;
 				break;
 			case 'key_ShiftLeft':	// CAPS
 			case 'key_KeyZ':
 			case 'key_KeyX':
 			case 'key_KeyC':
 			case 'key_KeyV':
-				port=0xFEFE;
+				port = 0xFEFE;
 				break;
 			case 'key_KeyB':
 			case 'key_KeyN':
 			case 'key_KeyM':
 			case 'key_ShiftRight':	// SYMBOL
 			case 'key_Space':
-				port=0x7FFE;
+				port = 0x7FFE;
 				break;
 			default:
 				Utility.assert(false);
@@ -424,7 +424,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyP':
 			case 'key_Enter':
 			case 'key_Space':
-				bit=0b00001;
+				bit = 0b00001;
 				break;
 			case 'key_KeyZ':
 			case 'key_KeyS':
@@ -434,7 +434,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyO':
 			case 'key_KeyL':
 			case 'key_ShiftRight':	// SYMBOL
-				bit=0b00010;
+				bit = 0b00010;
 				break;
 			case 'key_KeyX':
 			case 'key_KeyD':
@@ -444,7 +444,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyI':
 			case 'key_KeyK':
 			case 'key_KeyM':
-				bit=0b00100;
+				bit = 0b00100;
 				break;
 			case 'key_KeyC':
 			case 'key_KeyF':
@@ -454,7 +454,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyU':
 			case 'key_KeyJ':
 			case 'key_KeyN':
-				bit=0b01000;
+				bit = 0b01000;
 				break;
 			case 'key_KeyV':
 			case 'key_KeyG':
@@ -464,7 +464,7 @@ export class ZSimulationView extends BaseView {
 			case 'key_KeyY':
 			case 'key_KeyH':
 			case 'key_KeyB':
-				bit=0b10000;
+				bit = 0b10000;
 				break;
 			default:
 				Utility.assert(false);
@@ -473,12 +473,12 @@ export class ZSimulationView extends BaseView {
 
 		// Get port value
 		Utility.assert(this.simulatedPorts);
-		let value=this.simulatedPorts.get(port)!;
-		Utility.assert(value!=undefined);
+		let value = this.simulatedPorts.get(port)!;
+		Utility.assert(value != undefined);
 		if (on)
-			value&=~bit;
+			value &= ~bit;
 		else
-			value|=bit;
+			value |= bit;
 		// And set
 		this.simulatedPorts.set(port, value);
 	}
@@ -525,14 +525,14 @@ export class ZSimulationView extends BaseView {
 			let borderColor;
 
 			// Update values
-			if (Settings.launch.zsim.cpuLoadInterruptRange>0)
-				cpuLoad=(this.simulator.z80Cpu.cpuLoad*100).toFixed(0).toString();
+			if (Settings.launch.zsim.cpuLoadInterruptRange > 0)
+				cpuLoad = (this.simulator.z80Cpu.cpuLoad * 100).toFixed(0).toString();
 
 			// Visual Memory
 			if (Settings.launch.zsim.visualMemory) {
-				slots=this.simulator.getSlots();
-				const banks=this.simulator.memoryModel.getMemoryBanks(slots);
-				slotNames=banks.map(bank => bank.name);
+				slots = this.simulator.getSlots();
+				const banks = this.simulator.memoryModel.getMemoryBanks(slots);
+				slotNames = banks.map(bank => bank.name);
 				visualMem = this.simulator.memory.getVisualMemory();
 			}
 
@@ -584,8 +584,8 @@ export class ZSimulationView extends BaseView {
 		const resourcePath = vscode.Uri.file(extPath);
 		const vscodeResPath = this.vscodePanel.webview.asWebviewUri(resourcePath).toString();
 
-		let html=
-`
+		let html =
+			`
 <head>
 	<meta charset="utf-8">
 	<base href="${vscodeResPath}/">
@@ -629,8 +629,8 @@ width:70px;
 `;
 
 		// CPU Load
-		if (Settings.launch.zsim.cpuLoadInterruptRange>0) {
-			html+=
+		if (Settings.launch.zsim.cpuLoadInterruptRange > 0) {
+			html +=
 				`<!-- Z80 CPU load -->
 <p>
 	<label>Z80 CPU load:</label>
@@ -773,7 +773,7 @@ width:70px;
 
 		// Add code for the screen
 		if (Settings.launch.zsim.ulaScreen) {
-			html+=
+			html +=
 				`<!-- Display the screen gif -->
 <canvas id="screen_img_id" width="256" height="192" style="image-rendering:pixelated; border:${Settings.launch.zsim.zxBorderWidth}px solid white; outline: 1px solid var(--vscode-foreground); width:95%; height:95%">
 </canvas>
@@ -1055,22 +1055,22 @@ joystickObjs.push({
 
 		// Space for logging
 		html +=
-`<p id="log"></p>
+			`<p id="log"></p>
 `;
 
 		// Custom javascript code area
-		let jsCode='';
+		let jsCode = '';
 		if (this.customUiPath) {
 			try {
-				jsCode=readFileSync(this.customUiPath).toString();
+				jsCode = readFileSync(this.customUiPath).toString();
 			}
 			catch (e) {
-				jsCode="<b>Error: reading file '"+this.customUiPath+"':"+e.message+"</b>";
+				jsCode = "<b>Error: reading file '" + this.customUiPath + "':" + e.message + "</b>";
 			}
 		}
 
-		html+=
-`<!-- Room for extra/user editable javascript/html code -->
+		html +=
+			`<!-- Room for extra/user editable javascript/html code -->
 <p>
 	<div id="js_code_id">
 	${jsCode}
@@ -1079,9 +1079,9 @@ joystickObjs.push({
 
 `;
 
-		if (Settings.launch.zsim.customCode.debug ) {
-			html+=
-`<!-- Debug Area -->
+		if (Settings.launch.zsim.customCode.debug) {
+			html +=
+				`<!-- Debug Area -->
 <hr>
 
 <details open="true">
@@ -1094,13 +1094,13 @@ joystickObjs.push({
 `;
 		}
 
-		html+=
-`</body>
+		html +=
+			`</body>
 </html>
 `;
 
-		this.vscodePanel.webview.html='';
-		this.vscodePanel.webview.html=html;
+		this.vscodePanel.webview.html = '';
+		this.vscodePanel.webview.html = html;
 	}
 
 }

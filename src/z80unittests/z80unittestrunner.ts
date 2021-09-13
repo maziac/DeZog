@@ -228,8 +228,7 @@ export class Z80UnitTestRunner {
 				catch (e) {
 					if (!this.stoppingTests) {
 						// Some unspecified test failure
-						const pc = Remote?.getPCLong();
-						this.testFailed(e.message, pc);
+						this.testFailed(e.message, e.position);
 					}
 				}
 				finally {
@@ -633,7 +632,7 @@ export class Z80UnitTestRunner {
 				if (this.timedOut) {
 					reasonString = "Timeout (" + Settings.launch.unitTestTimeout + "s)";
 				}
-				this.testFailed(reasonString, pc);
+				this.testFailed(reasonString);
 			}
 		}
 	}
@@ -665,7 +664,7 @@ export class Z80UnitTestRunner {
 		else {
 			// The pass/fail is distinguished by the breakReasonString text.
 			if (breakReasonString?.toLowerCase().startsWith('assertion')) {
-				this.testFailed(breakReasonString, pc);
+				this.testFailed(breakReasonString);
 			}
 			return false;
 		}
@@ -677,17 +676,29 @@ export class Z80UnitTestRunner {
 	 * which contains the line number.
 	 * Note: vscode will only display the first of the test messages.
 	 * @param reason The text to show.
-	 * @param pc The associated address for file/line information.
+	 * @param position (Optional) if error was located already it is set here. Otherwise the pc is used for locating.
 	 */
-	protected static testFailed(reason?: string, pc?: number) {
+	protected static testFailed(reason?: string, position?: {filename, line, column}) {
 		const testMsg = new vscode.TestMessage(reason || "Failure.");
-		if (pc != undefined) {
-			const position: SourceFileEntry = Labels.getFileAndLineForAddress(pc);
-			if (position) {
-				const uri = vscode.Uri.file(position.fileName);
-				const line = position.lineNr;
-				const range = new vscode.Range(line, 10000, line, 10000);
-				testMsg.location = new vscode.Location(uri!, range);
+		if (position) {
+			// Use existing position
+			const uri = vscode.Uri.file(position.filename);
+			const line = position.line;
+			const column = position.column;
+			const range = new vscode.Range(line, column, line, column);
+			testMsg.location = new vscode.Location(uri!, range);
+		}
+		else {
+			// Get pc for position
+			const pc = Remote?.getPCLong();
+			if (pc != undefined) {
+				const positionPc: SourceFileEntry = Labels.getFileAndLineForAddress(pc);
+				if (positionPc) {
+					const uri = vscode.Uri.file(positionPc.fileName);
+					const line = positionPc.lineNr;
+					const range = new vscode.Range(line, 10000, line, 10000);
+					testMsg.location = new vscode.Location(uri!, range);
+				}
 			}
 		}
 		// "Normal" test case failure

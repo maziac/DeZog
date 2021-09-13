@@ -168,7 +168,7 @@ export class CustomCode extends EventEmitter {
 			// In case of an error try to find where it occurred
 			e.message = 'Custom Code: ' + e.message;
 			if (e.position) {
-				DiagnosticsHandler.add(e.message, filename, e.position.line, e.position.column);
+				DiagnosticsHandler.add(e.message, e.position.filename, e.position.line, e.position.column);
 			}
 			throw e;
 		}
@@ -209,7 +209,7 @@ export class CustomCode extends EventEmitter {
 		this.jsCode = readFileSync(jsPath).toString();
 		this.jsPath = jsPath;
 	}
-	
+
 
 	/**
 	 * Reloads the custom javascript code.
@@ -264,8 +264,10 @@ API.log('-------------------------------------\\n');`
 	 * Note: The custom logic is instantiated before the UI.
 	 */
 	public uiReady() {
-		LogCustomCode.log('API.uiReady() called.');
-		this.api.uiReady();
+		if (this.api) {
+			LogCustomCode.log('API.uiReady() called.');
+			this.api.uiReady();
+		}
 	}
 
 

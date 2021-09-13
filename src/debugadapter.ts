@@ -597,14 +597,24 @@ export class DebugSessionClass extends DebugSession {
 					}
 				}
 
-				// At the end, if remote type == ZX simulator, open its window.
-				// Note: it was done this way and not in the Remote itself, otherwise
-				// there would be a dependency in RemoteFactory to vscode which in turn /// makes problems for the Unittests.
-				if (Settings.launch.remoteType == "zsim") {
+
+				// Special handling for custom code
+				if (Remote instanceof ZSimRemote) {
+					// Start custom code (if not unit test)
+					const zsim = Remote as ZSimRemote;
+					if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
+						// Special handling for zsim: Re-init custom code.
+						zsim.customCode?.execute();
+					}
+
+					// At the end, if remote type == ZX simulator, open its window.
+					// Note: it was done this way and not in the Remote itself, otherwise
+					// there would be a dependency in RemoteFactory to vscode which in turn
+					/// makes problems for the Unittests.
 					// Adds a window that displays the ZX screen.
-					const remote = Remote as ZSimRemote;
-					new ZSimulationView(remote);
+					new ZSimulationView(zsim);
 				}
+
 
 				// Socket is connected, allow setting breakpoints
 				this.sendEvent(new InitializedEvent());
@@ -637,15 +647,6 @@ export class DebugSessionClass extends DebugSession {
 			// Initialize Remote
 			try {
 				await Remote.init();
-				if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
-					// Special handling for zsim: Re-init custom code.
-					if (Remote instanceof ZSimRemote) {
-						const zsim = Remote as ZSimRemote;
-						if (zsim.customCode) {
-							zsim.customCode.execute();
-						}
-					}
-				}
 			}
 			catch (e) {
 				// Some error occurred

@@ -1115,6 +1115,8 @@ export class Utility {
 	 * 'line' and 'column' is added to the thrown error.
 	 * @param code The js file as a string.
 	 * @param filename Optional filename to use.
+	 * @throws An Error with an additional property 'position' that contains
+	 * {filename, line, column}.
 	 */
 	public static runInContext(code: string, context: any, filename?: string, lineOffset = 0, timeout?: number): any {
 		try {
@@ -1144,7 +1146,7 @@ export class Utility {
 							// Extract column
 							const column = parseInt(match[2]) - 1;
 							// Return
-							(e as any).position = {line, column};
+							(e as any).position = {filename, line, column};
 						}
 						else {
 							// Other wise use line number of first line.
@@ -1155,7 +1157,7 @@ export class Utility {
 								// Extract line number.
 								const line = parseInt(matchFirst[1]) - 1;
 								// Return
-								(e as any).position = {line, column: 0};
+								(e as any).position = {filename, line, column: 0};
 							}
 						}
 						break;
@@ -1164,7 +1166,7 @@ export class Utility {
 					// Belongs to error text
 					errorText += stackLine + '\n';
 				}
-				e.message=errorText || "Unknown error";
+				e.message = errorText || "Unknown error";
 			}
 
 			// Re-throw
