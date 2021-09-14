@@ -3,6 +3,7 @@ import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
 import {DzrpMachineType} from '../dzrp/dzrpremote';
+import {GenericWatchpoint} from '../../genericwatchpoint';
 //import {Utility} from '../../misc/utility';
 
 
@@ -145,6 +146,15 @@ export class CSpectRemote extends DzrpBufferRemote {
 			// Only if watchpoints exist
 			throw Error("There is no support for watchpoints for CSpect.");
 		}
+	}
+
+
+	/**
+	 * This throws an exception. Used and catched by the unit tests.
+	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
+	 */
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
+		throw Error("Watchpoints not supported.");
 	}
 
 

@@ -13,6 +13,7 @@ import {ZSimRemote} from '../remotes/zsimulator/zsimremote';
 import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, UnitTestSuite} from './unittestcase';
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 import {DiagnosticsHandler} from '../diagnosticshandler';
+import {GenericWatchpoint} from '../genericwatchpoint';
 
 
 
@@ -39,6 +40,12 @@ export class Z80UnitTestRunner {
 
 	/// At the end of the test this address is reached on success.
 	protected static addrTestReadySuccess: number;
+
+	/// The address below the stack. Used for checking stack overflow.
+	protected static stackBottom: number;
+
+	/// The address above the stack. Used for checking stack overflow.
+	protected static stackTop: number;
 
 	/// Is set if the current  test case fails.
 	protected static currentFail: boolean;
@@ -521,6 +528,8 @@ export class Z80UnitTestRunner {
 		this.addrCall = this.getLongAddressForLabel("UNITTEST_CALL_ADDR");
 		this.addrCall++;
 		this.addrTestReadySuccess = this.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS")
+		this.stackBottom = this.getLongAddressForLabel("UNITTEST_STACK_BOTTOM");
+		this.stackTop= this.getLongAddressForLabel("UNITTEST_STACK");
 
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
@@ -540,6 +549,18 @@ export class Z80UnitTestRunner {
 		// Success and failure breakpoints
 		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '',	log: undefined };
 		await Remote.setBreakpoint(successBp);
+
+		// Stack watchpoints
+		try {
+			const stackMinWp: GenericWatchpoint = {address: this.stackBottom, size: 2, access: 'rw', condition: ''};
+			const stackMaxWp: GenericWatchpoint = {address: this.stackTop, size: 2, access: 'rw', condition: ''};
+			await Remote.setWatchpoint(stackMinWp);
+			await Remote.setWatchpoint(stackMaxWp);
+		}
+		catch (e) {
+			// CSpect does not implement watchpoints.
+			// Silently ignore.
+		}
 	}
 
 
@@ -647,8 +668,16 @@ export class Z80UnitTestRunner {
 	 * @param breakReasonString Contains the break reason, e.g. the assert.
 	 * @returns true If test case has been finished.
 	 */
-	public static dbgCheckUnitTest(breakReasonString: string): boolean {
+	public static async dbgCheckUnitTest(breakReasonString: string): Promise<boolean> {
 		Utility.assert(this.waitOnDebugger);
+		// Check the stack
+		const bottom = await Remote.readMemoryDump(this.stackBottom, 2);
+		if (bottom[0] != 0xCD || bottom[1] != 0xCD)
+			this.testFailed('Stack corrupted (bottom).');
+		const top = await Remote.readMemoryDump(this.stackTop, 2);
+		if (top[0] != 0xCD || top[1] != 0xCD)
+			this.testFailed('Stack corrupted (top).');
+
 		// Check if test case ended successfully or not
 		const pc = Remote.getPCLong();
 		// OK or failure

@@ -1204,7 +1204,8 @@ export class DebugSessionClass extends DebugSession {
 
 		// Check if in unit test mode
 		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
-			if (!Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString)) {
+			const finished = await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
+			if (!finished) {
 				this.sendEventBreakAndUpdate();
 			}
 			// Send no further break
