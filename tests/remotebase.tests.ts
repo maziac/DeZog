@@ -300,7 +300,8 @@ suite('RemoteBase', () => {
 
 			let [opcode, bp1, bp2] = await rem.calcStepBp(false);	// stepInto
 			assert.equal(0xCF, opcode.code);
-			assert.equal(0x8001, bp1);
+			//assert.equal(0x8001, bp1);
+			assert.equal(0x8002, bp1);	// Changed for esxdos simulation (1 address after)
 			assert.equal(0x0008, bp2);
 		});
 
