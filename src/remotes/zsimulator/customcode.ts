@@ -161,12 +161,21 @@ export class CustomCode extends EventEmitter {
 
 	/**
 	 * Static method that calls 'eval' with a context.
+	 * @param js The js code.
+	 * @param context The context to run in.
+	 * @param filename File name that is used for error reporting.
+	 * @param lineOffset The number added to the lines for error reporting.
+	 * Used to skip the preamble.
+	 * @param timeout A timeout that occurs if the script takes too long.
+	 * Is used to catch any infinite loop. But it does work only on the main
+	 * program, executed now. Function that are called later may cause a infinite loop
+	 * without a timeout.
 	 */
-	protected static runInContext(js: string, context: any, filename: string, lineOffset: number) {
+	protected static runInContext(js: string, context: any, filename: string, lineOffset: number, timeout = 2000) {
 		try {
 			// Run with a timeout of 2000ms. Note: the timeout does not apply if
 			// a function (e.g. readPort) is called later unfortunately.
-			Utility.runInContext(js, context, filename, lineOffset, 2000);
+			Utility.runInContext(js, context, filename, lineOffset, timeout);
 		}
 		catch (e) {
 			// In case of an error try to find where it occurred
@@ -221,8 +230,12 @@ export class CustomCode extends EventEmitter {
 	 * Reloads the custom javascript code.
 	 * @param unitTestLabel If called by the unit tests this contains the unit test case label.
 	 * Otherwise it is undefined.
+	 * @param timeout A timeout that occurs if the script takes too long.
+	 * Is used to catch any infinite loop. But it does work only on the main
+	 * program, executed now. Function that are called later may cause a infinite loop
+	 * without a timeout.
 	 */
-	public execute(unitTestLabel?: string) {
+	public execute(unitTestLabel?: string, timeout = 2000) {
 		// Create an API object
 		this.api = new CustomCodeAPI(this, unitTestLabel);
 
@@ -257,7 +270,8 @@ API.log('-------------------------------------\\n');`
 			allCode,
 			this.context,	// This fills the context with the complete program.
 			this.jsPath,
-			-lineOffset
+			-lineOffset,
+			timeout
 		);
 	}
 

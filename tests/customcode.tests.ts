@@ -98,16 +98,16 @@ suite('CustomCode', () => {
 		const custom = new CustomCode(jsPath);
 		custom.execute();
 		// @ts-ignore: protected access
-		const context=custom.context;
+		const context = custom.context;
 
 		// Catch interrupt
 		let interruptNon_maskable: boolean;
 		let interruptData: number;
-		let interruptOccurred=false;
+		let interruptOccurred = false;
 		custom.on('interrupt', (non_maskable: boolean, data: number) => {
-			interruptOccurred=true;
-			interruptNon_maskable=non_maskable;
-			interruptData=data;
+			interruptOccurred = true;
+			interruptNon_maskable = non_maskable;
+			interruptData = data;
 		});
 
 		custom.setTstates(0);
@@ -119,6 +119,48 @@ suite('CustomCode', () => {
 		assert.equal(true, interruptOccurred);
 		assert.equal(false, interruptNon_maskable!);
 		assert.equal(0xF1, interruptData!);
+	});
+
+
+	/**
+	 * Tests timeout in main js code.
+	 * But timeout does not work for functions that are called later.
+	 */
+	test('timeout', () => {
+		const custom = new CustomCode('./tests/data/customcode/infiniteloop.jsfile');
+		try {
+			custom.execute(undefined, 200);
+		}
+		catch (e) {
+			assert.equal(e.code, 'ERR_SCRIPT_EXECUTION_TIMEOUT');
+			return;
+		}
+		assert.fail("We should not get here.");
+	});
+
+
+	test('unitTestLabel', () => {
+		const custom = new CustomCode('./tests/data/customcode/unittestlabel.jsfile');
+
+		// Label: undefined
+		custom.execute();
+		let result = custom.readPort(0x9000);
+		assert.equal(0xF0, result);
+
+		// Label: ut1
+		custom.execute('ut1');
+		result = custom.readPort(0x9000);
+		assert.equal(1, result);
+
+		// Label: ut2
+		custom.execute('ut2');
+		result = custom.readPort(0x9000);
+		assert.equal(2, result);
+
+		// Label: ut3
+		custom.execute('ut3');
+		result = custom.readPort(0x9000);
+		assert.equal(3, result);
 	});
 
 });
