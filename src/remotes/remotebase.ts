@@ -1246,7 +1246,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Writes a memory dump.
-	 * @param address The memory start address.
+	 * @param address The 64k memory start address.
 	 * @param dataArray The data to write.
 	 */
 	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {

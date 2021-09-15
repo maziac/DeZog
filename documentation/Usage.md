@@ -767,6 +767,8 @@ Note: For Windows you can remove the call to 'mono' simply.
 
 A few explanations:
 - with "-mmc=./" the CSpect/ZXNext will use the current dir as the "root" dir. You can also give any other path here but note that it is important to keep the "/" at the end.
+- You can either use forward (/) or backslashes (\\), on Windows, in the mmc path. Even on Windows you can use forward slashes.
+- If you quote the path (e.g. because it contains spaces) AND you are using backslashes then you have to use double backslashes (\\\\).
 - "-debug": Starts up with the debugger on. I.e. CSpect does not start to run before told to. (But this is more a matter of taste.)
 - "-zxnext": Is important to enable the ZXNext HW.
 - "-nextrom": It's easier not to enable this. If not included the CSpect will simulate the esxdos calls. Enabling and using an img file seem to result in problems sometimes most probably because not everything is initialized correctly always.
@@ -1246,7 +1248,7 @@ This will observe 2 addresses at the bottom and 2 addresses at the top.
 
 Caveats:
 
-- Other than for sjasmplus WPMEMs are evaluated also in not assembled areas, e.g. in case the surrounding IF/ENDIF is not valid.
+- Other than for sjasmplus WPMEMs are evaluated also in not assembled areas in the list file, e.g. in case the surrounding IF/ENDIF is not valid.
 - The 'memory breakpoints' used in ZEsarUX have 2 specific limitations:
     - Imagine you have set a watchpoint WPMEM at address 4000h.
 If a byte is written to 4000h, e.g. with "LD (4000h),A" the break will occur, no problem.

@@ -218,11 +218,13 @@ export class Z80UnitTestRunner {
 					// Set timeout
 					if (!this.debug) {
 						const toMs = 1000 * Settings.launch.unitTestTimeout;
-						timeoutHandle = setTimeout(() => {
-							this.timedOut = true;
-							// Failure: Timeout. Send a break.
-							Remote.pause();
-						}, toMs);
+						if (toMs > 0) {
+							timeoutHandle = setTimeout(() => {
+								this.timedOut = true;
+								// Failure: Timeout. Send a break.
+								Remote.pause();
+							}, toMs);
+						}
 					}
 					// Run the test case
 					this.currentTestItem = test;
@@ -497,6 +499,11 @@ export class Z80UnitTestRunner {
 		await this.execAddr(this.addrStart);
 		if (this.currentTestFailed)
 			return;
+		// Check if timeout already expired (can only happen during dezog debugging)
+		if (this.timedOut) {
+			this.testFailed('Timeout during test case setup.');
+			return;
+		}
 
 		// If not 'startAutomatically' then set a BP at the start of the unit test
 		const utAddr = this.getLongAddressForLabel(utLabel);
@@ -527,9 +534,7 @@ export class Z80UnitTestRunner {
 		this.addrTestWrapper = this.getLongAddressForLabel("UNITTEST_TEST_WRAPPER");
 		this.addrCall = this.getLongAddressForLabel("UNITTEST_CALL_ADDR");
 		this.addrCall++;
-		this.addrTestReadySuccess = this.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS")
-		this.stackBottom = this.getLongAddressForLabel("UNITTEST_STACK_BOTTOM");
-		this.stackTop= this.getLongAddressForLabel("UNITTEST_STACK");
+		this.addrTestReadySuccess = this.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
 
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.
@@ -635,7 +640,7 @@ export class Z80UnitTestRunner {
 		}
 		else {
 			// Run: Continue
-			let reasonString =  await Remote.continue();
+			let reasonString = await Remote.continue();
 			Remote.stopProcessing();
 			// There are 2 possibilities to get here:
 			// a) the test case is passed
@@ -670,14 +675,6 @@ export class Z80UnitTestRunner {
 	 */
 	public static async dbgCheckUnitTest(breakReasonString: string): Promise<boolean> {
 		Utility.assert(this.waitOnDebugger);
-		// Check the stack
-		const bottom = await Remote.readMemoryDump(this.stackBottom, 2);
-		if (bottom[0] != 0xCD || bottom[1] != 0xCD)
-			this.testFailed('Stack corrupted (bottom).');
-		const top = await Remote.readMemoryDump(this.stackTop, 2);
-		if (top[0] != 0xCD || top[1] != 0xCD)
-			this.testFailed('Stack corrupted (top).');
-
 		// Check if test case ended successfully or not
 		const pc = Remote.getPCLong();
 		// OK or failure

@@ -337,8 +337,8 @@ Response (Length=1):
 
 
 Note 1:
-Normally the remote will simply do a Continue (run) when it receives this command unitl one of the breakpoints is hit.
-If an 'alternate command' is given the remote might execute the alternate ommand instead. I.e. in that case the breakpoints are ignored, i.e. not set.
+Normally the remote will simply do a Continue (run) when it receives this command until one of the breakpoints is hit.
+If an 'alternate command' is given the remote might execute the alternate command instead. I.e. in that case the breakpoints are ignored, i.e. not set.
 The alternate commands are optimization to allow to execute the commands more effectively, i.e. faster.
 
 Alternate commands:

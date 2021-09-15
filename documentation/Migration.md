@@ -3,15 +3,7 @@ This guide will provide some info what to do to update your projects from an ear
 
 # Migrate from DeZog 2.3 to DeZog 2.4
 
-## Expressions
-
-Setting expressions: For years the vscode/debug-adapter was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this: the 'Expressions' section in the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. I.e. also the commands '-addexpr' and '-delexpr' have been removed.
-Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
-
-From migration point of view: If you've added '-addexpr' or '-delexpr' to the "commandsAfterLaunch" section of your launch.json file, you would have to remove them.
-
 ## Unit tests
-
 
 Unit tests are now fully integrated into the vscode testing API. It is available since vscode v1.60.
 Prior to this the "Z80 Unit Tests" extension was required to run unit tests. With version 2.4 no additional extension is required anymore and you should remove the "Z80 Unit Tests" extension.
@@ -22,7 +14,22 @@ The UNITTEST_INITIALIZE macro is now executed not only once for all unit tests b
 
 You can setup now more than one unit test configuration in the launch.json.
 
-The unit test Z80 macors have not been changed. I.e. all your unit tests should still run. Without any change in configuration you should be able to see the tests if you click on vscode's test icon in the sidebar.
+The unit test Z80 macros have not been changed. I.e. all your unit tests should still run. Without any change in configuration you should be able to see the tests if you click on vscode's test icon in the sidebar.
+
+If you are using custom code for your unit tests you should be able to use it without change.
+However there is a new option that you can read the currently executed unit test label from your custom code.
+With this you could implement different behavior depending on the executed unit test.
+See [UnitTest.md](UnitTest.md).
+
+
+
+## Expressions
+
+Setting expressions: For years the vscode/debug-adapter was not able to set values in the WACTHes pane. Last month I decided to implement a workaround for this: the 'Expressions' section in the VARIABLES pane. This was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the 'Expressions' from the VARIABLES pane again. I.e. also the commands '-addexpr' and '-delexpr' have been removed.
+Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
+
+From migration point of view: If you've added '-addexpr' or '-delexpr' to the "commandsAfterLaunch" section of your launch.json file, you would have to remove them.
+
 
 # Migrate from DeZog 2.2 to DeZog 2.3
 

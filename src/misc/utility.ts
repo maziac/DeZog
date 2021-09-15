@@ -1,7 +1,7 @@
-import { Labels } from '../labels/labels';
-import { Settings } from '../settings';
-import { Z80RegistersClass } from '../remotes/z80registers';
-import { Remote } from '../remotes/remotefactory';
+import {Labels} from '../labels/labels';
+import {Settings} from '../settings';
+import {Z80RegistersClass} from '../remotes/z80registers';
+import {Remote} from '../remotes/remotefactory';
 import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
@@ -792,26 +792,26 @@ export class Utility {
 	 */
 	public static async getFormattedRegister(regIn: string, formatMap: any): Promise<string> {
 		// Every register has a formatting otherwise it's not a valid register name
-		const reg=regIn.toUpperCase();
-		const format=formatMap.get(reg);
-		Utility.assert(format!=undefined, 'Register '+reg+' does not exist.');
+		const reg = regIn.toUpperCase();
+		const format = formatMap.get(reg);
+		Utility.assert(format != undefined, 'Register ' + reg + ' does not exist.');
 
 		//await Remote.getRegisters();
 		// Get value of register
-		const value=Remote.getRegisterValue(reg);
+		const value = Remote.getRegisterValue(reg);
 
 		// do the formatting
 		let rLen;
-		if (reg=="IXH"||reg=="IXL"||reg=="IYH"||reg=="IYL") {
+		if (reg == "IXH" || reg == "IXL" || reg == "IYH" || reg == "IYL") {
 			// Value length = 1 byte
-			rLen=1;
+			rLen = 1;
 		}
 		else {
-			rLen=reg.length;
-			if (reg[rLen-1]=='\'')--rLen;	// Don't count the "'" in the register name
+			rLen = reg.length;
+			if (reg[rLen - 1] == '\'') --rLen;	// Don't count the "'" in the register name
 		}
 
-		const formattedRegister=await Utility.numberFormatted(reg, value, rLen, format, undefined);
+		const formattedRegister = await Utility.numberFormatted(reg, value, rLen, format, undefined);
 		return formattedRegister;
 	}
 
@@ -824,15 +824,15 @@ export class Utility {
 	 */
 	public static getRelFilePath(absFilePath: string): string {
 		//const filePath = path.relative(Utility.rootPath || '', absFilePath);
-		let filePath=absFilePath;
-		let rootPath=Utility.rootPath;
+		let filePath = absFilePath;
+		let rootPath = Utility.rootPath;
 		if (rootPath) {
 			if (!rootPath.endsWith('/'))
-				rootPath+='/';
+				rootPath += '/';
 			// If window paths, then make sure both path start with lower case letters for comparison. rootPath does already.
-			const lcFilePath=UnifiedPath.getUnifiedPath(filePath);
+			const lcFilePath = UnifiedPath.getUnifiedPath(filePath);
 			if (lcFilePath.startsWith(rootPath))
-				filePath=filePath.substr(rootPath.length);
+				filePath = filePath.substr(rootPath.length);
 		}
 		return filePath;
 	}
@@ -845,11 +845,11 @@ export class Utility {
 	 * @returns An absolute path
 	 */
 	public static getAbsFilePath(relFilePath: string, rootPath?: string): string {
-		if(UnifiedPath.isAbsolute(relFilePath))
+		if (UnifiedPath.isAbsolute(relFilePath))
 			return relFilePath;
 		// Change from relative to absolute
 		const usedRootPath = (rootPath) ? rootPath : Utility.rootPath || '';
-		const filePath=UnifiedPath.join(usedRootPath, relFilePath);
+		const filePath = UnifiedPath.join(usedRootPath, relFilePath);
 		return filePath;
 	}
 
@@ -865,8 +865,8 @@ export class Utility {
 			return srcPath;
 		// Check all sources directories and try to locate the srcPath file.
 		for (let srcDir of srcDirs) {
-			const fPath=UnifiedPath.join(srcDir, srcPath);
-			const absFPath=Utility.getAbsFilePath(fPath);
+			const fPath = UnifiedPath.join(srcDir, srcPath);
+			const absFPath = Utility.getAbsFilePath(fPath);
 			if (fs.existsSync(absFPath))
 				return absFPath;
 		}
@@ -888,8 +888,8 @@ export class Utility {
 
 		// Check all sources directories and try to locate the srcPath file.
 		for (let srcDir of srcDirs) {
-			const fPath=UnifiedPath.join(srcDir, srcPath);
-			const absFPath=Utility.getAbsFilePath(fPath);
+			const fPath = UnifiedPath.join(srcDir, srcPath);
+			const absFPath = Utility.getAbsFilePath(fPath);
 			if (fs.existsSync(absFPath))
 				return fPath;
 		}
@@ -904,7 +904,7 @@ export class Utility {
 	 * @returns The relative file path, e.g. ".tmp/state0.bin".
 	 */
 	public static getRelTmpFilePath(fileName: string): string {
-		const relFilePath=UnifiedPath.join(Settings.launch.tmpDir, fileName);
+		const relFilePath = UnifiedPath.join(Settings.launch.tmpDir, fileName);
 		return relFilePath;
 	}
 
@@ -916,8 +916,8 @@ export class Utility {
 	 * @returns The abs file path, e.g. "/Volumes/.../.tmp/state_0.bin".
 	 */
 	public static getAbsStateFileName(stateName: string): string {
-		const fPath=UnifiedPath.join('states', stateName)
-		const relPath=Utility.getRelTmpFilePath(fPath);
+		const fPath = UnifiedPath.join('states', stateName)
+		const relPath = Utility.getRelTmpFilePath(fPath);
 		return Utility.getAbsFilePath(relPath);
 	}
 
@@ -964,15 +964,15 @@ export class Utility {
 	public static removeAllTmpFiles() {
 		const dir = Settings.launch.tmpDir;
 		// Check if dir exists
-		if(!fs.existsSync(dir))
+		if (!fs.existsSync(dir))
 			return;
 		// Loop through all files
 		const fileNames = fs.readdirSync(dir);
-		for(let fName of fileNames) {
+		for (let fName of fileNames) {
 			// Check that filename starts with "TMP_"
-			if(fName.startsWith("TMP_")) {
+			if (fName.startsWith("TMP_")) {
 				// Remove file
-				const absFName = Utility.getAbsFilePath(fName,dir);
+				const absFName = Utility.getAbsFilePath(fName, dir);
 				fs.unlinkSync(absFName);
 			}
 		}
@@ -994,15 +994,15 @@ export class Utility {
 	public static delayedCall(handler: (time: number) => boolean, interval = 0.1) {
 		let count = 0;
 		const f = () => {
-			const time = count*interval;
+			const time = count * interval;
 			const result = handler(time);
-			if(result)
+			if (result)
 				return;
 			// Set timeout to wait for next try
-			count ++;
+			count++;
 			setTimeout(() => {
 				f();
-			}, interval*1000);
+			}, interval * 1000);
 		};
 
 		// Start waiting
@@ -1018,8 +1018,8 @@ export class Utility {
 	 * @param value buffer[index] = value&0xFF; buffer[index+1] = value>>>8;
 	 */
 	public static setWord(buffer: Buffer, index: number, value: number) {
-		buffer[index]=value&0xFF;
-		buffer[index+1]=value>>>8;
+		buffer[index] = value & 0xFF;
+		buffer[index + 1] = value >>> 8;
 	}
 
 
@@ -1031,7 +1031,7 @@ export class Utility {
 	 * @return buffer[index] + (buffer[index+1]<<8)
 	 */
 	public static getWord(buffer: Buffer, index: number): number {
-		const value=buffer[index]+(buffer[index+1]<<8);
+		const value = buffer[index] + (buffer[index + 1] * 256);
 		return value;
 	}
 
@@ -1043,13 +1043,13 @@ export class Utility {
 	 */
 	public static getStringFromBuffer(data: Buffer, startIndex: number): string {
 		// Get string
-		let result='';
-		const len=data.length;
-		for (let i=startIndex; i<len; i++) {
-			const char=data[i];
-			if (char==0)
+		let result = '';
+		const len = data.length;
+		for (let i = startIndex; i < len; i++) {
+			const char = data[i];
+			if (char == 0)
 				break;
-			result+=String.fromCharCode(char);
+			result += String.fromCharCode(char);
 		}
 		return result;
 	}
@@ -1061,22 +1061,22 @@ export class Utility {
 	 * @param start The start index inside the buffer.
 	 * @param count The max. number of data items to show.
 	 */
-	public static getStringFromData(data: Buffer, start=0, count=-1): string {
-		if (count==-1)
-			count=data.length;
-		if (start+count>data.length)
-			count=data.length-start;
-		if (count<=0)
+	public static getStringFromData(data: Buffer, start = 0, count = -1): string {
+		if (count == -1)
+			count = data.length;
+		if (start + count > data.length)
+			count = data.length - start;
+		if (count <= 0)
 			return "---";
 
-		let result="";
-		let printCount=count;
-		if (printCount>300)
-			printCount=300;
-		for (let i=0; i<printCount; i++)
-		result+=data[i+start].toString()+" ";
-		if (printCount!=count)
-			result+="...";
+		let result = "";
+		let printCount = count;
+		if (printCount > 300)
+			printCount = 300;
+		for (let i = 0; i < printCount; i++)
+			result += data[i + start].toString() + " ";
+		if (printCount != count)
+			result += "...";
 		return result;
 	}
 
@@ -1088,9 +1088,9 @@ export class Utility {
 	 * @returns E.g. "!(A == 7)"
 	 */
 	public static getConditionFromAssertion(assertionExpression: string) {
-		if (assertionExpression.trim().length==0)
-			assertionExpression='false';
-		return '!('+assertionExpression+')';
+		if (assertionExpression.trim().length == 0)
+			assertionExpression = 'false';
+		return '!(' + assertionExpression + ')';
 	}
 
 
@@ -1101,11 +1101,11 @@ export class Utility {
 	 * @param bpCondition E.g. "!(A == 7)"
 	 * @returns E.g. "A == 7"
 	 */
-	public static getAssertionFromCondition(bpCondition: string|undefined) {
+	public static getAssertionFromCondition(bpCondition: string | undefined) {
 		if (!bpCondition)
 			return '';
-		let assertionCond=bpCondition.substr(2);	// cut off "!("
-		assertionCond=assertionCond.substr(0, assertionCond.length-1);	// cut off trailing ")"
+		let assertionCond = bpCondition.substr(2);	// cut off "!("
+		assertionCond = assertionCond.substr(0, assertionCond.length - 1);	// cut off trailing ")"
 		return assertionCond;
 	}
 
@@ -1294,11 +1294,11 @@ export class Utility {
 	 * @param text A String. If 'undefined' a Buffer with just a 0 is returned.
 	 * @returns A Buffer (0-terminated)
 	 */
-	public static getBufferFromString(text: string|undefined): Buffer {
-		if (text==undefined)
-			text='';
-		const zeroText=text+String.fromCharCode(0);
-		const buf=Buffer.from(zeroText, 'ascii');
+	public static getBufferFromString(text: string | undefined): Buffer {
+		if (text == undefined)
+			text = '';
+		const zeroText = text + String.fromCharCode(0);
+		const buf = Buffer.from(zeroText, 'ascii');
 		return buf;
 	}
 
@@ -1353,11 +1353,11 @@ export class Utility {
 					console.log();
 				};
 				*/
-				throw Error("'assert' error. "+(message||""));
+				throw Error("'assert' error. " + (message || ""));
 			}
 			catch (err) {
 				// Log
-				Log.log('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n'+err.stack+'\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
+				Log.log('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n' + err.stack + '\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
 				// Rethrow
 				throw err;
 			}
@@ -1389,12 +1389,12 @@ export class Utility {
 	 * @returns Differential time in ms.
 	 */
 	public static timeDiff(): number {
-		const time=new Date().getMilliseconds();
-		const diff=time-this.previousTimeDiffValue;
-		this.previousTimeDiffValue=time;
+		const time = new Date().getMilliseconds();
+		const diff = time - this.previousTimeDiffValue;
+		this.previousTimeDiffValue = time;
 		return diff;
 	}
-	static previousTimeDiffValue: number=0;
+	static previousTimeDiffValue: number = 0;
 
 
 	/**
@@ -1413,13 +1413,13 @@ export class Utility {
 	 * it is already divided by 'repetitions'.
 	 */
 	public static measure(algorithm: () => void, repetitions: number = 100000): number {
-		const t0=new Date().getTime();
-		for (let i=repetitions; i>0; i--) {
+		const t0 = new Date().getTime();
+		for (let i = repetitions; i > 0; i--) {
 			algorithm();
 		}
-		const t1=new Date().getTime();
-		const diff=(t1-t0)/repetitions;
-		const diffns=diff*1000000;	// convert to ns
+		const t1 = new Date().getTime();
+		const diff = (t1 - t0) / repetitions;
+		const diffns = diff * 1000000;	// convert to ns
 		return diffns;
 	}
 }

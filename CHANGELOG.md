@@ -7,6 +7,7 @@
 - "Disassembly at Cursor" now also allows to select an area that should be disassembled.
 - CSpect is paused now before terminating the socket connection.
 - Better peripherals simulation error messaging (now added to diagnostics).
+- zxnext: Fixed stepping with ASSERTION at the same address. Stepping continued instead if ASSERTION was true.
 
 # 2.3.2
 - Fixed #69: No code coverage on Windows.
