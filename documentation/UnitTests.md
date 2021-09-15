@@ -289,3 +289,11 @@ For unit testing you can use .sna, .nex and plain .obj files.
 .tap files will not work.
 
 
+# Caveats
+
+CSpect:
+As already mentioned watchpoints are not supported with CSpect. The unit tests use watchpoints to check if there is a stack overflow. So, with CSpect the stack is not checked.
+
+ZEsarUX:
+There is a special oddity that ASSERTIONs are not shown when stepping. If you let it run the program will stop at any not met ASSERTION but not if you step over (or into).
+
