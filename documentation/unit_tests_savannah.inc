@@ -17,7 +17,7 @@ UNITTEST_TEST_READY_SUCCESS:    jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint wi
 
 
 ; Stack
-        defw 0
+UNITTEST_STACK_BOTTOM:  defw 0
         defs 2*50	; Stack depth of 50 should be enough
 UNITTEST_STACK:   defw 0
 

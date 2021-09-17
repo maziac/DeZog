@@ -14,7 +14,9 @@ The UNITTEST_INITIALIZE macro is now executed not only once for all unit tests b
 
 You can setup now more than one unit test configuration in the launch.json.
 
-The unit test Z80 macros have not been changed. I.e. all your unit tests should still run. Without any change in configuration you should be able to see the tests if you click on vscode's test icon in the sidebar.
+The unit test Z80 macros have been slightly changed what makes it necessary to update the
+[unit_tests.inc](unit_tests.inc) (or the [unit_tests_savannah.inc](unit_tests_savannah.inc)) file.
+Other than that all your unit tests should still run. Without any change in configuration you should be able to see the tests if you click on vscode's test icon in the sidebar.
 
 If you are using custom code for your unit tests you should be able to use it without change.
 However there is a new option that you can read the currently executed unit test label from your custom code.

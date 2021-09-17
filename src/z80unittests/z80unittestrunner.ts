@@ -539,6 +539,14 @@ export class Z80UnitTestRunner {
 		this.addrCall = this.getLongAddressForLabel("UNITTEST_CALL_ADDR");
 		this.addrCall++;
 		this.addrTestReadySuccess = this.getLongAddressForLabel("UNITTEST_TEST_READY_SUCCESS");
+		this.stackTop = this.getLongAddressForLabel("UNITTEST_STACK");
+
+		try {
+			this.stackBottom = this.getLongAddressForLabel("UNITTEST_STACK_BOTTOM");
+		}
+		catch (e) {
+			throw Error("An error occurred with the 'UNITTEST_INITIALIZE' macro. Did you forget to update it for DeZog version 2.4?");
+		}
 
 		// The Z80 binary has been loaded.
 		// The debugger stopped before starting the program.

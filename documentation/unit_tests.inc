@@ -22,6 +22,7 @@
         jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
 
 ; Stack
+@UNITTEST_STACK_BOTTOM:
         defw 0
         defs 2*50	; Stack depth of 50 should be enough
 @UNITTEST_STACK:
