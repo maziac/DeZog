@@ -725,8 +725,8 @@ export class ZSimRemote extends DzrpRemote {
 				// Stop immediately
 				this.stopCpu = true;
 				// Send Notification
-				Utility.assert(this.continueResolve);
-				this.continueResolve!({breakNumber, breakAddress, breakReasonString});
+				Utility.assert(this.funcContinueResolve);
+				this.funcContinueResolve!({breakNumber, breakAddress, breakReasonString});
 				return;
 			}
 
@@ -771,9 +771,9 @@ export class ZSimRemote extends DzrpRemote {
 
 				// Send Notification
 				//LogGlobal.log("cpuContinue, continueResolve="+(this.continueResolve!=undefined));
-				Utility.assert(this.continueResolve);
-				if (this.continueResolve)
-					this.continueResolve({breakNumber, breakAddress, breakReasonString});
+				Utility.assert(this.funcContinueResolve);
+				if (this.funcContinueResolve)
+					this.funcContinueResolve({breakNumber, breakAddress, breakReasonString});
 				return;
 			}
 		}

@@ -306,12 +306,12 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			const breakReasonString = "Cannot step at address " + Utility.getHexString(breakAddress, 4) + "h.";
 			this.emit('warning', breakReasonString);
 			const breakNumber = BREAK_REASON_NUMBER.STEPPING_NOT_ALLOWED;
-			this.continueResolve!({breakNumber, breakAddress, breakReasonString});
+			this.funcContinueResolve!({breakNumber, breakAddress, breakReasonString});
 			return;
 		}
 
 		// Remember old resolve function
-		const originalContinueResolve = this.continueResolve!;
+		const originalContinueResolve = this.funcContinueResolve!;
 		const resolveWithBp = async ({breakNumber, breakAddress, breakReasonString}) => {
 			// Store breakpoint if breakpoint was hit
 			this.breakedAddress = undefined;
@@ -374,15 +374,15 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		if (oldBreakedAddress == undefined) {
 			// "Normal" case.
 			// Catch resolve method to store the breakpoint ID.
-			Utility.assert(this.continueResolve);
-			this.continueResolve = resolveWithBp;
+			Utility.assert(this.funcContinueResolve);
+			this.funcContinueResolve = resolveWithBp;
 			this.lastCmdContinueTime = Date.now();
 			await super.sendDzrpCmdContinue(bp1Address, bp2Address);
 		}
 		else {
 			// Continuing from a breakpoint.
 			// Setup intermediate resolve function.
-			this.continueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
+			this.funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Store new breakpoint if breakpoint was hit
 				this.breakedAddress = undefined;
 				if (breakNumber == BREAK_REASON_NUMBER.BREAKPOINT_HIT)
@@ -398,7 +398,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 				}
 				else {
 					// Restore resolve function
-					this.continueResolve = resolveWithBp;
+					this.funcContinueResolve = resolveWithBp;
 					// Restore the breakpoint (the other breakpoints are already set)
 					oldOpcode = await this.sendDzrpCmdSetBreakpoints([oldBreakedAddress]);
 					// Continue

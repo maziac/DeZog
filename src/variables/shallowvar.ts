@@ -4,7 +4,7 @@ import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Settings} from '../settings'
 import {Utility} from '../misc/utility';
 import {RefList} from '../misc/reflist';
-import {Remote} from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import {Format} from '../disassembler/format';
 import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';

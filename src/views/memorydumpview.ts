@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import {Remote} from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import {Utility} from '../misc/utility';
 import {Labels} from '../labels/labels';

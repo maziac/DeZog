@@ -3,7 +3,7 @@ import {StepHistoryClass} from './stephistory';
 import {HistoryInstructionInfo} from './decodehistinfo';
 import {RefList} from '../misc/reflist';
 import {CallStackFrame} from '../callstackframe';
-import {Remote} from './remotefactory';
+import {Remote} from '../remotes/remotebase';
 import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
 import {DecodeHistoryInfo} from './decodehistinfo';

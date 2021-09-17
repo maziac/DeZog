@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import {existsSync} from 'fs';
-import {Utility} from './utility';
+//import {Utility} from './utility';
 
 
 /**
@@ -23,7 +23,7 @@ export class FileWatcher extends vscode.Disposable {
 	protected filePath: string;
 
 	// For debugging: check which file watchers are present.
-	protected static filePaths: string[] = [];	// TODO: Remove after debugging
+	//protected static filePaths: string[] = [];	// Could also be removed after debugging
 
 
 	/**
@@ -34,6 +34,7 @@ export class FileWatcher extends vscode.Disposable {
 		super(() => {
 			this.watcher.dispose();
 			// Remove filepath on dispose
+			/*
 			for (let k = FileWatcher.filePaths.length - 1; k >= 0; k--) {
 				if (FileWatcher.filePaths[k] == this.filePath) {
 					// Remove
@@ -42,10 +43,11 @@ export class FileWatcher extends vscode.Disposable {
 				}
 			}
 			Utility.assert(false, "Not found: " + this.filePath);
+			*/
 		});
 		this.watcher = vscode.workspace.createFileSystemWatcher(filePath);
 		this.filePath = filePath;
-		FileWatcher.filePaths.push(filePath);
+		//FileWatcher.filePaths.push(filePath);
 	}
 
 

@@ -1,4 +1,4 @@
-import {RemoteBase} from './remotebase';
+import {Remote, RemoteBase} from './remotebase';
 import {ZSimRemote} from './zsimulator/zsimremote';
 import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
@@ -18,16 +18,16 @@ export class RemoteFactory {
 	public static createRemote(remoteType: string) {
 		switch (remoteType) {
 			case 'zrcp':	// ZEsarUX Remote Control Protocol
-				RemoteFactory.setRemote(new ZesaruxRemote());
+				RemoteFactory.setGlobalRemote(new ZesaruxRemote());
 				break;
 			case 'cspect':	// CSpect socket
-				RemoteFactory.setRemote(new CSpectRemote());
+				RemoteFactory.setGlobalRemote(new CSpectRemote());
 				break;
 			case 'zxnext':	// The ZX Next USB/serial connection
-				RemoteFactory.setRemote(new ZxNextSocketRemote());
+				RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
 				break;
 			case 'zsim':	// Simulator
-				RemoteFactory.setRemote(new ZSimRemote());
+				RemoteFactory.setGlobalRemote(new ZSimRemote());
 				break;
 			case 'mame':
 				Utility.assert(false);	// needs to be implemented
@@ -42,18 +42,18 @@ export class RemoteFactory {
 	/**
 	 * Sets the emulator variable.
 	 */
-	protected static setRemote(emulator: RemoteBase) {
-		Remote = emulator;
+	protected static setGlobalRemote(remote: RemoteBase) {
+		RemoteBase.setGlobalRemote(remote);
 	}
 
 	/**
 	 * Clears the emulator variable.
 	 */
 	public static removeRemote() {
-		Remote = undefined as any;
+		if (Remote)
+			Remote.dispose();
 	}
 
 }
 
 
-export let Remote: RemoteBase;

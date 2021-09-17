@@ -109,7 +109,6 @@ export class UnitTestSuite extends UnitTestCase {
 	// A map that contains children unit tests.
 	protected children: Array<UnitTestSuite | UnitTestCaseBase>;
 
-// TODO: maybe no filepath required here.
 	/**
 	 * Constructor.
 	 * @param id The unique id. File name plus assembly label.

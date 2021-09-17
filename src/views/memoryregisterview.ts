@@ -1,5 +1,5 @@
-import { Remote } from '../remotes/remotefactory';
-import { MemoryDumpView } from './memorydumpview';
+import {Remote} from '../remotes/remotebase';
+import {MemoryDumpView} from './memorydumpview';
 
 
 

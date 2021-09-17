@@ -1,5 +1,4 @@
-
-import { Remote } from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import * as util from 'util';
 import { ZxNextSpritePatternsView} from './zxnextspritepatternsview';
 import {ImageConvert} from '../misc/imageconvert';

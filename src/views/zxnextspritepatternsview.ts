@@ -1,5 +1,5 @@
 import * as util from 'util';
-import { Remote } from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import { BaseView } from './baseview';
 import {ImageConvert} from '../misc/imageconvert';
 import {WebviewPanel} from 'vscode';

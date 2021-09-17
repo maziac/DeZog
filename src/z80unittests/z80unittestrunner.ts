@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
-import { DebugSessionClass } from '../debugadapter';
-import { RemoteFactory, Remote } from '../remotes/remotefactory';
-import {Labels, SourceFileEntry } from '../labels/labels';
-import { RemoteBreakpoint } from '../remotes/remotebase';
-import { Settings } from '../settings';
-import { Utility } from '../misc/utility';
-import { Decoration } from '../decoration';
+import {DebugSessionClass} from '../debugadapter';
+import {RemoteFactory} from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
+import {Labels, SourceFileEntry} from '../labels/labels';
+import {RemoteBreakpoint} from '../remotes/remotebase';
+import {Settings} from '../settings';
+import {Utility} from '../misc/utility';
+import {Decoration} from '../decoration';
 import {StepHistory, CpuHistory, CpuHistoryClass} from '../remotes/cpuhistory';
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from '../remotes/stephistory';
@@ -14,6 +15,7 @@ import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, Unit
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 import {DiagnosticsHandler} from '../diagnosticshandler';
 import {GenericWatchpoint} from '../genericwatchpoint';
+import {ZxNextSocketRemote} from '../remotes/dzrpbuffer/zxnextsocketremote';
 
 
 
@@ -216,7 +218,8 @@ export class Z80UnitTestRunner {
 				}
 				try {
 					// Set timeout
-					if (!this.debug) {
+					if (!this.debug && !(Remote instanceof ZxNextSocketRemote)) {
+						// Timeout/break not possible with ZXNext.
 						const toMs = 1000 * Settings.launch.unitTestTimeout;
 						if (toMs > 0) {
 							timeoutHandle = setTimeout(() => {
@@ -434,7 +437,7 @@ export class Z80UnitTestRunner {
 			}
 			await Remote.enableAssertionBreakpoints(true);
 
-			await Utility.timeout(500);	// TODO: Remove one wait
+			//	await Utility.timeout(500);	// TODO: Remove one wait
 
 			// Init unit tests
 			await this.initUnitTests();
@@ -520,7 +523,8 @@ export class Z80UnitTestRunner {
 
 		// Remove breakpoint
 		if (breakpoint) {
-			await Remote?.removeBreakpoint(breakpoint);
+			if (Remote)
+				await Remote.removeBreakpoint(breakpoint);
 		}
 	}
 
@@ -552,7 +556,7 @@ export class Z80UnitTestRunner {
 		//this.utLabels = undefined as unknown as Array<string>;
 
 		// Success and failure breakpoints
-		const successBp: RemoteBreakpoint = { bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '',	log: undefined };
+		const successBp: RemoteBreakpoint = {bpId: 0, filePath: '', lineNr: -1, address: Z80UnitTestRunner.addrTestReadySuccess, condition: '', log: undefined};
 		await Remote.setBreakpoint(successBp);
 
 		// Stack watchpoints
@@ -633,7 +637,9 @@ export class Z80UnitTestRunner {
 				new PromiseCallbacks<void>(this, 'waitOnDebugger', resolve, reject);
 			});
 			await this.debugAdapter.remoteContinue();
-			Remote?.stopProcessing();
+			if (Remote)
+				Remote.stopProcessing();
+
 			// Note: after the first call to debugAdapter.remoteContinue the vscode will take over until dbgCheckUnitTest will finally return (in 'finish')
 			await finish;
 			console.log();
@@ -749,7 +755,8 @@ export class Z80UnitTestRunner {
 	 */
 	public static async cancelUnitTests(): Promise<void> {
 		this.stoppingTests = true;
-		this.waitOnDebugger?.reject(Error("Unit test cancelled."));
+		if (this.waitOnDebugger)
+			this.waitOnDebugger.reject(Error("Unit test cancelled."));
 	}
 
 
@@ -763,24 +770,28 @@ export class Z80UnitTestRunner {
 			this.stoppingTests = true;
 
 			// Call reject if on.
-			this.waitOnDebugger?.reject(Error("Unit tests cancelled"));
+			if (this.waitOnDebugger)
+				this.waitOnDebugger.reject(Error("Unit tests cancelled"));
 
 			// Wait a little bit for pending messages (The vscode could hang on waiting on a response for getRegisters)
 			if (this.debugAdapter) {
 				//Remote.stopProcessing();	// To show the coverage after continue to end
 				//this.debugAdapter.sendEventBreakAndUpdate();
 				//await Utility.timeout(1);
-				await Remote?.waitForBeingQuietFor(300);
+				if (Remote)
+					await Remote.waitForBeingQuietFor(300);
 			}
 
 			// For reverse debugging.
 			StepHistory.clear();
 
-			// Exit
-			await Remote?.terminate();
-
-			// Remove event handling for the emulator
-			Remote?.removeAllListeners();
+			if (Remote) {
+				// Exit
+				await Remote.terminate();
+				// Remove event handling for the emulator
+				Remote.removeAllListeners();
+				Remote.dispose();
+			}
 
 			resolve();
 		});

@@ -450,7 +450,7 @@ The following table gives an overview.
 | Display of sprite attributes/patterns | yes  | yes     | no       | yes      |
 | Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      |
 | Load .tap file through DeZog | no            | yes     | no       | no       |
-| Run Z80 Unit Tests      | yes                | yes     | no       | yes 3)   |
+| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   |
 
 Notes:
 - State:
@@ -462,6 +462,7 @@ Notes:
 - 1 ) ZEsarUX code coverage uses 16 bit addresses only. I.e. if slots are changed during execution the shown info might be wrong. But in most cases the output will be just fine.
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 - 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
+- 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
 
 
 ### The Internal Z80 Simulator

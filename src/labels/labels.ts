@@ -1,6 +1,6 @@
 import {Utility} from '../misc/utility';
 import {MemoryModel} from '../remotes/Paging/memorymodel';
-import {Remote} from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import {Z80Registers} from '../remotes/z80registers';
 import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';

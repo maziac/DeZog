@@ -91,6 +91,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	public async disconnect(): Promise<void> {
 		if (!this.socket)
 			return;
+
 		// Send a 'break' request to emulator to stop it if it is running. (Note: does work only with cspect.)
 		await this.pause();
 
@@ -102,18 +103,15 @@ export class CSpectRemote extends DzrpBufferRemote {
 			const timeout = setTimeout(() => {
 				if (resolve) {
 					resolve();
-					resolve = undefined as any;
 				}
-				this.socket = undefined as any;
 			}, 1000);	// 1 sec
 			this.socket?.end(() => {
 				if (resolve) {
 					resolve();
-					resolve = undefined as any;
 					clearTimeout(timeout);
 				}
-				this.socket = undefined as any;
 			});
+			this.socket = undefined as any;
 		});
 	}
 

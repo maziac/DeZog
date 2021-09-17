@@ -12,7 +12,8 @@ import {Settings, SettingsParameters} from './settings';
 import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
-import {RemoteFactory, Remote} from './remotes/remotefactory';
+import {RemoteFactory} from './remotes/remotefactory';
+import {Remote} from './remotes/remotebase';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
 import {BaseView} from './views/baseview';
@@ -82,10 +83,6 @@ export class DebugSessionClass extends DebugSession {
 	/// Counts the number of stackTraceRequests.
 	protected stackTraceResponses = new Array<DebugProtocol.StackTraceResponse>();
 
-	/// Will be set by startUnitTests to indicate that
-	/// unit tests are running and to emit events to the caller.
-	protected static unitTestHandler: ((da: DebugSessionClass) => void) | undefined;
-
 	/// This array contains functions which are pushed on an emit (e.g. 'historySpot', not 'coverage')
 	/// and which are executed after a stackTrace.
 	/// The reason is that the disasm.asm file will not exist before and emits
@@ -154,7 +151,6 @@ export class DebugSessionClass extends DebugSession {
 		Utility.assert(workspaceFolder);
 
 		// Start debugger
-		//this.unitTestHandler = handler;
 		this.state = DbgAdapterState.UNITTEST;
 		vscode.debug.startDebugging(workspaceFolder, configName);
 
@@ -277,7 +273,7 @@ export class DebugSessionClass extends DebugSession {
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
-		RemoteFactory.removeRemote();
+		RemoteFactory.removeRemote(); // Also disposes
 		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
 		if (this.disasmTextDoc) {
 			vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
@@ -486,12 +482,6 @@ export class DebugSessionClass extends DebugSession {
 			return "Error while initializing labels.";
 		}
 
-		// Call the unit test handler. It will subscribe on events.
-		if (DebugSessionClass.unitTestHandler) {
-			DebugSessionClass.state = DbgAdapterState.UNITTEST;
-			DebugSessionClass.unitTestHandler(this); // TODO: still required?
-		}
-
 		// Reset all decorations
 		Decoration.clearAllDecorations();
 
@@ -641,7 +631,6 @@ export class DebugSessionClass extends DebugSession {
 						this.sendEvent(new StoppedEvent('stop on start', DebugSessionClass.THREAD_ID));
 					}
 				}
-				DebugSessionClass.unitTestHandler = undefined;
 			});
 
 			// Initialize Remote
@@ -3353,21 +3342,6 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Send event
 		this.sendEvent(new StoppedEvent('restore', DebugSessionClass.THREAD_ID));
 	}
-
-
-	/**
-	 * This is a hack:
-	 * After starting the vscode sends the source file breakpoints.
-	 * But there is no signal to tell when all are sent.
-	 * So this function waits as long as there is still traffic to the emulator.
-	 * @param timeout Timeout in ms. For this time traffic has to be quiet.
-	 * @param handler This handler is called after being quiet for the given timeout.
-	 */
-	// TODO: Remove. Remote is used directly.
-	public async waitForBeingQuietFor(timeout: number): Promise<void> {
-		await Remote.waitForBeingQuietFor(timeout);
-	}
-
 
 
 	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {

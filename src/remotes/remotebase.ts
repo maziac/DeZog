@@ -82,6 +82,15 @@ export class RemoteBase extends EventEmitter {
 	/// 64k address.
 	public topOfStack: number;
 
+
+	/**
+	 * Sets the global Remote variable.
+	 */
+	public static setGlobalRemote(remote: RemoteBase) {
+		Remote = remote;
+	}
+
+
 	/// A list for the frames (call stack items). Is cached here.
 	protected listFrames: RefList<CallStackFrame>;
 
@@ -121,6 +130,14 @@ export class RemoteBase extends EventEmitter {
 	/// Override this.
 	constructor() {
 		super();
+	}
+
+
+	/**
+	 * Call this to dispose any resources.
+	 */
+	public dispose() {
+		Remote = undefined as any;
 	}
 
 
@@ -1577,3 +1594,5 @@ export class RemoteBase extends EventEmitter {
 	}
 }
 
+
+export let Remote: RemoteBase;

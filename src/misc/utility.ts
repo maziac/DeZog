@@ -1,7 +1,7 @@
 import {Labels} from '../labels/labels';
 import {Settings} from '../settings';
 import {Z80RegistersClass} from '../remotes/z80registers';
-import {Remote} from '../remotes/remotefactory';
+import {Remote} from '../remotes/remotebase';
 import * as fs from 'fs';
 import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';

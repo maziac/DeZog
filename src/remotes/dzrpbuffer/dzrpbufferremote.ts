@@ -350,9 +350,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 		if (recSeqno==0) {
 			// Notification.
 			// Call resolve of 'continue'
-			if (this.continueResolve) {
-				const continueHandler=this.continueResolve;
-				this.continueResolve=undefined;
+			if (this.funcContinueResolve) {
+				const continueHandler=this.funcContinueResolve;
+				this.funcContinueResolve=undefined;
 				// Get data
 				const breakNumber=data[2];
 				let breakAddress=Utility.getWord(data, 3);

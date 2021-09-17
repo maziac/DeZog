@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER} from '../remotebase';
+import {RemoteBase, RemoteBreakpoint, BREAK_REASON_NUMBER, Remote} from '../remotebase';
 import {GenericWatchpoint, GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersClass, Z80_REG, Z80Registers} from '../z80registers';
 import {MemBank16k} from './membank16k';
@@ -14,7 +14,7 @@ import {TimeWait} from '../../misc/timewait';
 import {Log} from '../../log';
 import {Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {Remote} from '../remotefactory';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';
 
 
 
@@ -112,7 +112,10 @@ export enum DzrpMachineType {
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected continueResolve?: ({breakNumber, breakAddress, breakReasonString}) => void;
+	protected funcContinueResolve?: ({breakNumber, breakAddress, breakReasonString}) => void;
+
+	// The associated Promise resolve. Stored here to be called at dispose.
+	protected continueResolve?: PromiseCallbacks<string>;
 
 	// This flag is used to pause a step-out.
 	protected pauseStep = false;
@@ -146,6 +149,22 @@ export class DzrpRemote extends RemoteBase {
 	/// Override this.
 	constructor() {
 		super();
+	}
+
+
+	/**
+	 * Checks if there still is an open promise and runs it.
+	 */
+	public dispose() {
+		// Check for open promise
+		if (this.continueResolve) {
+			// Call just to end
+			this.continueResolve.resolve('');
+			this.continueResolve = undefined;
+			this.funcContinueResolve = undefined;
+		}
+		// As last
+		super.dispose();
 	}
 
 
@@ -215,7 +234,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Override.
 	 * Stops the emulator.
-	 * This will disconnect the socket to zesarux and un-use all data.
+	 * This will disconnect e.g. any socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
 	 * @param handler is called after the connection is disconnected.
 	 */
@@ -843,6 +862,10 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async continue(): Promise<string> {
 		return new Promise<string>(async resolve => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Use a custom function here to evaluate breakpoint condition and log string.
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				try {
@@ -858,7 +881,7 @@ export class DzrpRemote extends RemoteBase {
 					// Check for continue
 					if (condition == undefined) {
 						// Continue
-						this.continueResolve = funcContinueResolve;
+						this.funcContinueResolve = funcContinueResolve;
 						await this.sendDzrpCmdContinue();
 					}
 					else {
@@ -868,20 +891,22 @@ export class DzrpRemote extends RemoteBase {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
 						// return
-						resolve(breakReasonString);
+						this.continueResolve!.resolve(breakReasonString);
 					}
 				}
 				catch (e) {
 					// Clear registers
-					await this.getRegistersFromEmulator();
-					await this.getCallStackFromEmulator();
+					try {
+						await this.getRegistersFromEmulator();
+						await this.getCallStackFromEmulator();
+					} catch (e) {};	// Ignore if error already happened
 					const reason: string = e.message;
-					resolve(reason);
+					this.continueResolve!.resolve(reason);
 				}
 			};
 
 			// Send 'run' command
-			this.continueResolve = funcContinueResolve;
+			this.funcContinueResolve = funcContinueResolve;
 			await this.sendDzrpCmdContinue();
 		});
 	}
@@ -906,6 +931,10 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOver(stepOver = true): Promise<string | undefined> {
 		return new Promise<string | undefined>(async resolve => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
 				// Give vscode a little time
@@ -923,7 +952,7 @@ export class DzrpRemote extends RemoteBase {
 					//	[, bp1, bp2]=await this.calcStepBp(stepOver);
 					// Note: we need to use the original bp addresses
 					// Continue
-					this.continueResolve = funcContinueResolve;
+					this.funcContinueResolve = funcContinueResolve;
 					await this.sendDzrpCmdContinue(bp1, bp2);
 				}
 				else {
@@ -932,7 +961,7 @@ export class DzrpRemote extends RemoteBase {
 					// Clear registers
 					await this.getCallStackFromEmulator();
 					// return
-					resolve(breakReasonString);
+					this.continueResolve!.resolve(breakReasonString);
 				}
 			};
 
@@ -941,7 +970,7 @@ export class DzrpRemote extends RemoteBase {
 			let [, bp1, bp2] = await this.calcStepBp(stepOver);
 			//this.emit('debug_console', instruction);
 			// Send 'run' command
-			this.continueResolve = funcContinueResolve;
+			this.funcContinueResolve = funcContinueResolve;
 			// Send command to 'continue'
 			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
@@ -967,6 +996,10 @@ export class DzrpRemote extends RemoteBase {
 	 */
 	public async stepOut(): Promise<string | undefined> {
 		return new Promise<string | undefined>(async resolve => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Get current SP
 			const startSp = Z80Registers.getRegValue(Z80_REG.SP);
 			let prevSp = startSp;
@@ -1007,7 +1040,7 @@ export class DzrpRemote extends RemoteBase {
 						// Calculate the breakpoints to use for step-over
 						let [, bp1, bp2] = await this.calcStepBp(true);
 						// Continue
-						this.continueResolve = funcContinueResolve;
+						this.funcContinueResolve = funcContinueResolve;
 						prevPc = Z80Registers.getPC();
 						await this.sendDzrpCmdContinue(bp1, bp2);
 					}
@@ -1018,7 +1051,7 @@ export class DzrpRemote extends RemoteBase {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
 						// return
-						resolve(breakReasonString);
+						this.continueResolve!.resolve(breakReasonString);
 					}
 				}
 				catch (e) {
@@ -1026,14 +1059,14 @@ export class DzrpRemote extends RemoteBase {
 					await this.getRegistersFromEmulator();
 					await this.getCallStackFromEmulator();
 					const reason: string = e;
-					resolve(reason);
+					this.continueResolve!.resolve(reason);
 				}
 			};
 
 			// Calculate the breakpoints to use for step-over
 			let [, bp1, bp2] = await this.calcStepBp(true);
 			// Send 'run' command
-			this.continueResolve = funcContinueResolve;
+			this.funcContinueResolve = funcContinueResolve;
 			prevPc = Z80Registers.getPC();
 			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
@@ -1178,7 +1211,7 @@ export class DzrpRemote extends RemoteBase {
 		this.breakpoints.push(bp);
 
 		// If running then add also to temporary list
-		if (this.continueResolve) {
+		if (this.funcContinueResolve) {
 			this.addTmpBreakpoint(bp);
 		}
 
@@ -1197,7 +1230,7 @@ export class DzrpRemote extends RemoteBase {
 		this.breakpoints.splice(index, 1);
 
 		// If running then add remove to temporary list
-		if (this.continueResolve) {
+		if (this.funcContinueResolve) {
 			this.removeTmpBreakpoint(bp);
 		}
 

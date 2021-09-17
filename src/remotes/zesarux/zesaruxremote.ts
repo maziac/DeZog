@@ -9,6 +9,7 @@ import {Z80RegistersClass, Z80Registers} from '../z80registers';
 import {DecodeZesaruxRegisters} from './decodezesaruxdata';
 import {CpuHistory, CpuHistoryClass} from '../cpuhistory';
 import {MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
+import {PromiseCallbacks} from '../../misc/promisecallbacks';
 
 
 
@@ -32,12 +33,14 @@ class Zesarux {
  * the ZesaruxSocket.
  */
 export class ZesaruxRemote extends RemoteBase {
-
 	/// Max count of breakpoints. Note: Number 100 is used for stepOut.
 	static MAX_USED_BREAKPOINTS = Zesarux.MAX_ZESARUX_BREAKPOINTS - 1;
 
 	/// The breakpoint used for step-out.
 	static STEP_BREAKPOINT_ID = 100;
+
+	// The associated Promise resolve. Stored here to be called at dispose.
+	protected continueResolve?: PromiseCallbacks<string|undefined>;
 
 	/// Array that contains free breakpoint IDs.
 	private freeBreakpointIds = new Array<number>();
@@ -56,6 +59,21 @@ export class ZesaruxRemote extends RemoteBase {
 		// Reverse debugging / CPU history
 		CpuHistoryClass.setCpuHistory(new ZesaruxCpuHistory());
 		CpuHistory.decoder = new DecodeZesaruxHistoryInfo();
+	}
+
+
+	/**
+	 * Checks if there still is an open promise and runs it.
+	 */
+	public dispose() {
+		// Check for open promise
+		if (this.continueResolve) {
+			// Call just to end
+			this.continueResolve.resolve('');
+			this.continueResolve = undefined;
+		}
+		// As last
+		super.dispose();
 	}
 
 
@@ -478,6 +496,10 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async continue(): Promise<string> {
 		return new Promise<string>(resolve => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Run
 			zSocket.sendInterruptableRunCmd(async text => {
 				// (could take some time, e.g. until a breakpoint is hit)
@@ -512,7 +534,7 @@ export class ZesaruxRemote extends RemoteBase {
 				// Read the spot history
 				await CpuHistory.getHistorySpotFromRemote();
 				// Call handler
-				resolve(breakReasonString);
+				this.continueResolve!.resolve(breakReasonString);
 			});
 		});
 	}
@@ -568,7 +590,11 @@ export class ZesaruxRemote extends RemoteBase {
 			// Therefore the CALL and RST are executed with a "run".
 			// All others are executed with a step-into.
 			// Only exception is LDDR etc. Those are executed as step-over.
-			//this.getRegisters().then(() => {
+
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			const pc = Z80Registers.getPC();
 			zSocket.send('disassemble ' + pc, disasm => {
 				// Check if this was a "CALL something" or "CALL n/z,something"
@@ -609,7 +635,7 @@ export class ZesaruxRemote extends RemoteBase {
 										// Read the spot history
 										await CpuHistory.getHistorySpotFromRemote();
 
-										resolve(breakReasonString);
+										this.continueResolve!.resolve(breakReasonString);
 									});
 								});
 							});
@@ -631,8 +657,7 @@ export class ZesaruxRemote extends RemoteBase {
 						const breakReasonString = this.getBreakReason(result);
 						// Read the spot history
 						await CpuHistory.getHistorySpotFromRemote();
-						resolve(breakReasonString);
-
+						this.continueResolve!.resolve(breakReasonString);
 					});
 				}
 			});
@@ -648,12 +673,11 @@ export class ZesaruxRemote extends RemoteBase {
 	 */
 	public async stepInto(): Promise<string | undefined> {
 		return new Promise<string | undefined>(resolve => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Normal step into.
-			//this.getRegisters().then(() => {
-			//const pc=Z80Registers.getPC();
-			//zSocket.send('disassemble '+pc, instruction => {
-			// Clear register cache
-			//Z80Registers.clearCache();
 			zSocket.send('cpu-step', async result => {
 				// Clear cache
 				await this.getRegistersFromEmulator();
@@ -662,10 +686,8 @@ export class ZesaruxRemote extends RemoteBase {
 				this.handleCodeCoverage();
 				// Read the spot history
 				await CpuHistory.getHistorySpotFromRemote();
-				resolve(undefined);
+				this.continueResolve!.resolve(undefined);
 			});
-			//});
-			//});
 		});
 	}
 
@@ -761,8 +783,10 @@ export class ZesaruxRemote extends RemoteBase {
 			// Then a breakpoint is created that triggers when an executed RET is found  the SP changes to that address.
 			// I.e. when the RET (or (RET cc) gets executed.
 
-			// Get current stackpointer
-			//this.getRegisters().then(() => {
+			// Remember the promise resolve for dispose
+			Utility.assert(!this.continueResolve);
+			this.continueResolve = new PromiseCallbacks<string>(this, 'continueResolve', resolve);
+
 			// Get SP
 			const sp = Z80Registers.getSP();
 
@@ -772,12 +796,12 @@ export class ZesaruxRemote extends RemoteBase {
 				depth = ZesaruxRemote.MAX_STACK_ITEMS;
 			if (depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
-				resolve("Call stack empty");
+				this.continueResolve!.resolve("Call stack empty");
 				return;
 			}
 			else if (depth < 0) {
 				// Callstack corrupted?
-				resolve("SP above topOfStack. Stack corrupted?");
+				this.continueResolve!.resolve("SP above topOfStack. Stack corrupted?");
 				return;
 			}
 
@@ -823,7 +847,7 @@ export class ZesaruxRemote extends RemoteBase {
 										zSocket.send('disable-breakpoint ' + bpId, async () => {
 											// Read the spot history
 											await CpuHistory.getHistorySpotFromRemote();
-											resolve(breakReasonString);
+											this.continueResolve!.resolve(breakReasonString);
 										});
 									});
 								});
@@ -835,9 +859,8 @@ export class ZesaruxRemote extends RemoteBase {
 				}
 
 				// If we reach here the stack was either empty or did not contain any call, i.e. nothing to step out to.
-				resolve(undefined);
+				this.continueResolve!.resolve(undefined);
 			});
-			//});
 		});
 	}
 
