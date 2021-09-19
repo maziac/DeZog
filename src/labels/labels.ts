@@ -599,9 +599,13 @@ export class LabelsClass {
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Address file conversion
-		const entry = this.fileLineNrs.get(address);
-		if (!entry)
-			return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
+		let entry = this.fileLineNrs.get(address);
+		if (!entry) {
+			entry = this.fileLineNrs.get(address & 0xFFFF);	// Try 64k address, in case some sld file was without banking.
+			if (!entry) {
+				return {fileName: '', lineNr: 0, modulePrefix: undefined, lastLabel: undefined};
+			}
+		}
 
 		const filePath = Utility.getAbsFilePath(entry.fileName);
 		return {fileName: filePath, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel};

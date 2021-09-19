@@ -545,7 +545,9 @@ export class DzrpRemote extends RemoteBase {
 	 * [] if no breakpoint found.
 	 */
 	protected getBreakpointsByAddress(bpAddress: number): Array<GenericBreakpoint> {
-		const foundBps = this.tmpBreakpoints.get(bpAddress) || [];
+		let foundBps = this.tmpBreakpoints.get(bpAddress);
+		if (!foundBps) // Try 64k address
+			foundBps = this.tmpBreakpoints.get(bpAddress&0xFFFF) || [];
 		// Nothing found
 		return foundBps;
 	}
