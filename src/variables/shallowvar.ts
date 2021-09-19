@@ -438,7 +438,6 @@ export class SubStructVar extends ShallowVar {
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 * @param parentStruct A reference to a parent struct which retrieves the memory for all sub structs.
 	 */
-	// TODO:count removal
 	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
 		// Now create a new variable for each
 		const unsortedMap = new Map<number, string>();
@@ -473,7 +472,7 @@ export class SubStructVar extends ShallowVar {
 				// Check for leaf or node
 				const fullName = struct + '.' + prevName;
 				const subProps = Labels.getSubLabels(fullName);
-				const memIndex = /*relIndex +*/ prevIndex;
+				const memIndex = prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
 				const item: SubStructItems = {
 					address,
@@ -487,7 +486,6 @@ export class SubStructVar extends ShallowVar {
 				}
 				else {
 					// Leaf
-					//const memIndex = relIndex + prevIndex;
 					// Get value depending on len: 1 byte, 1 word or array.
 					if (len <= 2) {
 						// Byte or word
@@ -509,7 +507,7 @@ export class SubStructVar extends ShallowVar {
 					}
 					else {
 						// Array
-						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1, parentStruct.littleEndian); // Todo: Hier sollte nicht parent struct getAddress, sondern nur parentStruct übergeben werden
+						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1, parentStruct.littleEndian);
 						memDumpVar.setParent(parentStruct, memIndex);
 						item.itemRef = list.addObject(memDumpVar);
 						item.indexedVariables = len;
@@ -517,10 +515,6 @@ export class SubStructVar extends ShallowVar {
 				}
 				// Add to array
 				this.propMap.set(prevName, item);
-			}
-			else {
-				// Calculate last index
-			//	lastIndex += index; // TODO: remove
 			}
 			// Next
 			prevName = name;
@@ -794,7 +788,7 @@ export class MemDumpVar extends ShallowVar {
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
 		count = count || (this.totalCount - start);
-		let addr = this.addr + start; // addr aus parentstruct, TODO
+		let addr = this.addr + start;
 		const elemSize = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();

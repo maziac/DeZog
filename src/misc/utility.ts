@@ -195,7 +195,7 @@ export class Utility {
 		const regString = 'pc|sp|af|bc|de|hl|ix|iy|a|f|b|c|d|e|h|l';
 		const regex = new RegExp('\\b(' + regString + '|' + regString.toUpperCase() + ')\\b');
 		const match = regex.exec(expr);
-		return (match != undefined); // TODO: unit tests
+		return (match != undefined);
 	}
 
 
