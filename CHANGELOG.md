@@ -8,6 +8,7 @@
 - CSpect is paused now before terminating the socket connection.
 - Better peripherals simulation error messaging (now added to diagnostics).
 - zxnext: Fixed stepping with ASSERTION at the same address. Stepping continued instead if ASSERTION was true.
+- Fixed: an error in displaying memory arrays inside STRUCTs.
 
 # 2.3.2
 - Fixed #69: No code coverage on Windows.

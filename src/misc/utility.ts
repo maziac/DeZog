@@ -185,6 +185,21 @@ export class Utility {
 
 
 	/**
+	 * Checks if the expression contains any main register.
+	 * This is used to evaluate if the expression is constant or could potentially
+	 * change on each debugging step.
+	 * @param expr The expression to evaluate. May contain math expressions , registers and labels.
+	 * @returns true if expression contains registers.
+	 */
+	public static exprContainsMainRegisters(expr: string): boolean {
+		const regString = 'pc|sp|af|bc|de|hl|ix|iy|a|f|b|c|d|e|h|l';
+		const regex = new RegExp('\\b(' + regString + '|' + regString.toUpperCase() + ')\\b');
+		const match = regex.exec(expr);
+		return (match != undefined); // TODO: unit tests
+	}
+
+
+	/**
 	 * Replaces all registers and labels with numbers.
 	 * Works in the 64k space only. I.e. long addresses are changed to 64k addresses.
 	 * Example:

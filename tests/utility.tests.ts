@@ -249,6 +249,48 @@ suite('Utility', () => {
 	});
 
 
+	suite('exprContainsMainRegisters', () => {
+
+		test('standard', () => {
+			assert.ok(Utility.exprContainsMainRegisters('pc'));
+			assert.ok(Utility.exprContainsMainRegisters('sp'));
+			assert.ok(Utility.exprContainsMainRegisters('af'));
+			assert.ok(Utility.exprContainsMainRegisters('bc'));
+			assert.ok(Utility.exprContainsMainRegisters('de'));
+			assert.ok(Utility.exprContainsMainRegisters('hl'));
+			assert.ok(Utility.exprContainsMainRegisters('ix'));
+			assert.ok(Utility.exprContainsMainRegisters('iy'));
+			assert.ok(Utility.exprContainsMainRegisters('a'));
+			assert.ok(Utility.exprContainsMainRegisters('f'));
+			assert.ok(Utility.exprContainsMainRegisters('b'));
+			assert.ok(Utility.exprContainsMainRegisters('c'));
+			assert.ok(Utility.exprContainsMainRegisters('d'));
+			assert.ok(Utility.exprContainsMainRegisters('e'));
+			assert.ok(Utility.exprContainsMainRegisters('h'));
+			assert.ok(Utility.exprContainsMainRegisters('l'));
+		});
+
+		test('upper case', () => {
+			assert.ok(Utility.exprContainsMainRegisters('HL'));
+		});
+
+		test('no reg', () => {
+			assert.ok(!Utility.exprContainsMainRegisters('HL1'));
+			assert.ok(!Utility.exprContainsMainRegisters('1234'));
+			assert.ok(!Utility.exprContainsMainRegisters('1bc'));
+			assert.ok(!Utility.exprContainsMainRegisters('ade'));
+		});
+
+		test('embedded', () => {
+			assert.ok(Utility.exprContainsMainRegisters(' HL '));
+			assert.ok(Utility.exprContainsMainRegisters('+de'));
+			assert.ok(Utility.exprContainsMainRegisters('+c*6'));
+			assert.ok(Utility.exprContainsMainRegisters('-label+a'));
+			assert.ok(!Utility.exprContainsMainRegisters('-label+as'));
+		});
+	});
+
+
 	suite('replaceVarsWithValues', () => {
 
 		setup(() => {

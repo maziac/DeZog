@@ -69,7 +69,7 @@ export class DebugSessionClass extends DebugSession {
 	protected listVariables = new RefList<ShallowVar>();
 
 	// A list with the expressions used in the WATCHes panel and the Expressions section in the VARIABLES pane.
-	protected expressionsList = new Map<string, ExpressionVariable>();
+	protected constExpressionsList = new Map<string, ExpressionVariable>();
 
 	/// The disassembly that is shown in the VARIABLES section.
 	protected disassemblyVar: DisassemblyVar;
@@ -400,7 +400,7 @@ export class DebugSessionClass extends DebugSession {
 
 			// Persistent variable references
 			this.listVariables.clear();
-			this.expressionsList.clear();
+			this.constExpressionsList.clear();
 			this.disassemblyVar = new DisassemblyVar();
 			this.disassemblyVar.count = Settings.launch.disassemblerArgs.numberOfLines;
 			this.localStackVar = new StackVar();
@@ -1673,7 +1673,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, request?: DebugProtocol.Request) {
 		response.success = false;	// will be changed if successful.
 		// Get immediate value
-		const item = this.expressionsList.get(args.expression);
+		const item = this.constExpressionsList.get(args.expression);
 		if (item && item.immediateValue) {
 			// Now set the value.
 			const value = Utility.parseValue(args.value);
@@ -1932,7 +1932,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async evaluateLabelExpression(expression: string): Promise<ExpressionVariable> {
 		// Check if expression has been evaluated already
-		const response = await this.expressionsList.get(expression);
+		const response = await this.constExpressionsList.get(expression);
 		if (response)
 			return response;
 
@@ -1978,7 +1978,7 @@ export class DebugSessionClass extends DebugSession {
 		if (endianess == 'big')
 			littleEndian = false;	// At the moment it is used only for immediate values
 		else if (endianess != 'little') {
-			throw Error("Unknwon endianes: " + endianess);
+			throw Error("Unknown endianes: " + endianess);
 		}
 
 		// Defaults
@@ -2110,7 +2110,13 @@ export class DebugSessionClass extends DebugSession {
 			varRef,
 			count: elemCount
 		};
-		this.expressionsList.set(expression, exprVar);
+
+		// Check if the address is constant, i.e. it does not contain a register
+		const exprContainsRegs = Utility.exprContainsMainRegisters(labelString);
+		if (!exprContainsRegs) {
+			// Store, it's address is constant
+			this.constExpressionsList.set(expression, exprVar);
+		}
 		return exprVar;
 	}
 
