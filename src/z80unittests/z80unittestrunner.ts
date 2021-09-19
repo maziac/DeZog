@@ -437,7 +437,9 @@ export class Z80UnitTestRunner {
 			}
 			await Remote.enableAssertionBreakpoints(true);
 
-			//	await Utility.timeout(500);	// TODO: Remove one wait
+			// We need to give vscode a little time to set the breakpoints.
+			// Unfortunately there is no way to tell when vscode is finished or that it even has started.
+			await Utility.timeout(500);
 
 			// Init unit tests
 			await this.initUnitTests();
@@ -530,7 +532,7 @@ export class Z80UnitTestRunner {
 
 
 	/**
-	 * Initializes the unit tests. Is called after the emulator has been setup.
+	 * Initializes the unit tests. Is called after the Remote/the emulator has been setup.
 	 */
 	protected static async initUnitTests(): Promise<void> {
 		// Get the unit test code
