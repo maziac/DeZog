@@ -376,6 +376,7 @@ export class Z80UnitTestRunner {
 
 			Remote.once('error', e => {
 				// Some error occurred
+				Remote?.dispose();
 				reject(e);
 			});
 
