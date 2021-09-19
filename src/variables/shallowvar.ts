@@ -438,6 +438,7 @@ export class SubStructVar extends ShallowVar {
 	 * @param list The list of variables. The constructor adds the 2 pseudo variables to it.
 	 * @param parentStruct A reference to a parent struct which retrieves the memory for all sub structs.
 	 */
+	// TODO:count removal
 	protected createPropArray(relIndex: number, count: number, elemSize: number, struct: string, props: Array<string>, list: RefList<ShallowVar>, parentStruct: StructVar) {
 		// Now create a new variable for each
 		const unsortedMap = new Map<number, string>();
@@ -446,6 +447,7 @@ export class SubStructVar extends ShallowVar {
 			const relAddr = Labels.getNumberFromString64k(struct + '.' + prop);
 			unsortedMap.set(relAddr, prop);
 		}
+
 		// Sort map by indices
 		const sortedMap = new Map([...unsortedMap.entries()].sort(
 			(a, b) => a[0] - b[0]	// Sort numbers (first element)
@@ -455,7 +457,7 @@ export class SubStructVar extends ShallowVar {
 		// Get all lengths of the leafs and dive into nodes
 		let prevName;
 		let prevIndex;
-		let lastIndex = elemSize;
+		let lastIndex = relIndex + elemSize;
 		for (const [index, name] of sortedMap) {
 			if (prevName) {
 				let len;
@@ -471,7 +473,7 @@ export class SubStructVar extends ShallowVar {
 				// Check for leaf or node
 				const fullName = struct + '.' + prevName;
 				const subProps = Labels.getSubLabels(fullName);
-				const memIndex = relIndex + prevIndex;
+				const memIndex = /*relIndex +*/ prevIndex;
 				const address = parentStruct.getAddress() + memIndex;
 				const item: SubStructItems = {
 					address,
@@ -481,25 +483,33 @@ export class SubStructVar extends ShallowVar {
 				};
 				if (subProps.length > 0) {
 					// Node
-					item.itemRef = list.addObject(new SubStructVar(relIndex, 1, len, fullName, subProps, list, parentStruct));
+					item.itemRef = list.addObject(new SubStructVar(prevIndex, 1, len, fullName, subProps, list, parentStruct));
 				}
 				else {
 					// Leaf
-					const memIndex = relIndex + prevIndex;
+					//const memIndex = relIndex + prevIndex;
 					// Get value depending on len: 1 byte, 1 word or array.
 					if (len <= 2) {
 						// Byte or word
 						item.elemSize = len;
-						item.itemRef = () => {
-							const mem = parentStruct.getMemory();
-							const value = Utility.getUintFromMemory(mem, memIndex, len, this.littleEndian);	// Is done only for little endian, if wanted it could be extended to big endian
-							const result = Utility.getHexString(value, 2 * len) + 'h';
-							return result;
-						};
+						if (len == 0) {
+							// Edge case: STRUCT ends with a label but no size
+							item.itemRef = () => {
+								return '';
+							}
+						}
+						else {
+							item.itemRef = () => {
+								const mem = parentStruct.getMemory();
+								const value = Utility.getUintFromMemory(mem, memIndex, len, this.littleEndian);	// Is done only for little endian, if wanted it could be extended to big endian
+								const result = Utility.getHexString(value, 2 * len) + 'h';
+								return result;
+							};
+						}
 					}
 					else {
 						// Array
-						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1, parentStruct.littleEndian);
+						const memDumpVar = new MemDumpVar(parentStruct.getAddress(), elemSize, 1, parentStruct.littleEndian); // Todo: Hier sollte nicht parent struct getAddress, sondern nur parentStruct übergeben werden
 						memDumpVar.setParent(parentStruct, memIndex);
 						item.itemRef = list.addObject(memDumpVar);
 						item.indexedVariables = len;
@@ -510,7 +520,7 @@ export class SubStructVar extends ShallowVar {
 			}
 			else {
 				// Calculate last index
-				lastIndex += index;
+			//	lastIndex += index; // TODO: remove
 			}
 			// Next
 			prevName = name;
@@ -705,7 +715,7 @@ export class StructVar extends SubStructVar {
 
 
 	/**
-	 * Returns the cached memory. If not existing yet it is fetched.
+	 * Returns the cached memory.
 	 */
 	public getMemory() {
 		return this.memory;
@@ -784,7 +794,7 @@ export class MemDumpVar extends ShallowVar {
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		start = start || 0;
 		count = count || (this.totalCount - start);
-		let addr = this.addr + start;
+		let addr = this.addr + start; // addr aus parentstruct, TODO
 		const elemSize = this.elemSize;
 		const memArray = new Array<DebugProtocol.Variable>();
 		const format = this.formatString();
@@ -807,7 +817,7 @@ export class MemDumpVar extends ShallowVar {
 		// Format all array elements
 		for (let i = 0; i < count!; i++) {
 			// Get value
-			const value = Utility.getUintFromMemory(memory, i * this.elemSize, this.elemSize, this.littleEndian);
+			const value = Utility.getUintFromMemory(memory, offset + i * this.elemSize, this.elemSize, this.littleEndian);
 			// Format
 			const addr_i = addr + offset + i * elemSize;
 			const formatted = Utility.numberFormattedSync(value, elemSize, format, false, undefined, undefined, tabSizes);
