@@ -103,7 +103,7 @@ Examples:
 
 For testing memory contents and some other tasks there are a few predefined test macros available.
 
-Here is the complete list of available macros for sjasmplus:
+Here are some of the available macros for sjasmplus:
 - TEST_MEMORY_BYTE addr, value: (addr) == value
 - TEST_MEMORY_WORD addr, value: (addr) == value
 - TEST_STRING addr, string, term0: Compares 2 strings (addr and string)
@@ -178,7 +178,7 @@ There are a few macros defined for testing:
 - TEST_UNCHANGED_H
 - TEST_UNCHANGED_L
 
-Furthermore the macro USE_ALL_REGS fills all registers with predefined values A, BC, DE, HL, IX, IY and the shadow registers. (USE_ALL_REGS2 is the same with different values.)
+Furthermore the macro USE_ALL_REGS fills all registers with predefined values for A, BC, DE, HL, IX, IY and the shadow registers.
 This macro can be used in conditions that you want to test that your subroutine does not use one of the registers by accident. Or in other words: with using this macro you make sure that no register has any meaningful value by accident.
 
 

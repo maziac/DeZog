@@ -189,7 +189,7 @@ New:
 
 ### zrcp (ZEsarUX)
 
-"skipInterrupts" and "resetOnLaunch" are no global parameters anymore. They have been moved to the "zrcp" parameters.
+"skipInterrupt" and "resetOnLaunch" are no global parameters anymore. They have been moved to the "zrcp" parameters.
 
 ### sjasmplus
 
