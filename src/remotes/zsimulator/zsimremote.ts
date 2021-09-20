@@ -1069,6 +1069,9 @@ export class ZSimRemote extends DzrpRemote {
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
+
+		// Set IM (Interrupt Mode) to 1 for ZX Spectrum.
+		await this.sendDzrpCmdSetRegister(Z80_REG.IM, 1);
 	}
 
 

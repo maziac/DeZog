@@ -193,7 +193,7 @@ export interface ZSimType {
 	// there is also a printout of the correspondent time. This is calculated via the CPU frequency here.
 	cpuFrequency: number,
 
-	// If enabled the simulated CPU performance is throttled to fit the given PU frequency.
+	// If enabled the simulated CPU performance is throttled to fit the given CPU frequency.
 	// Is enabled by default.If disabled the CPU will be simulated as fast as possible.
 	limitSpeed: boolean;
 
