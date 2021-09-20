@@ -1412,11 +1412,18 @@ export class DebugSessionClass extends DebugSession {
 				this.decorateBreak(breakReason);
 			}
 
+
 			// Print T-states
 			if (!stepBackMode) {
 				// Display T-states and time
 				await this.endStepInfo();
 			}
+
+			// Check if in unit test mode
+			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
+			}
+
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		}, 100);
@@ -1581,6 +1588,11 @@ export class DebugSessionClass extends DebugSession {
 				await this.endStepInfo();
 			}
 
+			// Check if in unit test mode
+			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
+			}
+
 			// Send event
 			return new StoppedEvent('step', DebugSessionClass.THREAD_ID);
 		});
@@ -1621,6 +1633,11 @@ export class DebugSessionClass extends DebugSession {
 			if (!stepBackMode) {
 				// Display info
 				await this.endStepInfo();
+			}
+
+			// Check if in unit test mode
+			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+				await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			}
 
 			// Send event
@@ -2661,7 +2678,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	/**
 	 * Shows a a small disassembly in the console.
 	 * @param tokens The arguments. I.e. the address and size.
-	   * @returns A Promise with a text to print.
+	 * @returns A Promise with a text to print.
 	 */
 	protected async evalDasm(tokens: Array<string>): Promise<string> {
 		// Check count of arguments
