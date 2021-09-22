@@ -84,7 +84,7 @@ suite('Utility', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			Z80Registers.setCache("PC=6005 SP=6094 AF=cf8c BC=0100 HL=02df DE=0fc9 IX=663c IY=5c3a AF'=0044 BC'=050e HL'=2758 DE'=0047 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
@@ -297,7 +297,7 @@ suite('Utility', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			Z80Registers.setCache("PC=1110 SP=2120 AF=3130 BC=4140 HL=5150 DE=6160 IX=A1A0 IY=B1B0 AF'=3332 BC'=4342 HL'=5352 DE'=6362 I=3f R=5e  F=S---3P-- F'=-Z---P-- MEMPTR=0000 IM1 IFF-- VPS: 0");
@@ -532,7 +532,7 @@ suite('Utility', () => {
 				const cfg: any={
 					remoteType: 'zrcp'
 				};
-				Settings.launch = Settings.Init(cfg, '');
+				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters();
 				Z80Registers.decoder=new DecodeZesaruxRegisters(0);
 				RemoteFactory.createRemote(cfg.remoteType);
@@ -620,7 +620,7 @@ suite('Utility', () => {
 			const cfg: any={
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
 			(Remote as any).configureMachine("RAM");

@@ -31,7 +31,7 @@ suite('ZesaruxCpuHistory', () => {
 		const cfg: any={
 			remoteType: 'zrcp'
 		};
-		Settings.launch = Settings.Init(cfg, '');
+		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.createRegisters();
 	});
 

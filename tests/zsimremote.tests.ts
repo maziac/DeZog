@@ -30,7 +30,7 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
 		});
@@ -75,7 +75,7 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
 			// @ts-ignore: protected access
@@ -233,7 +233,7 @@ suite('ZSimRemote', () => {
 					codeCoverageEnabled: false
 				}
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
 			// @ts-ignore

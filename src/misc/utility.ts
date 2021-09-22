@@ -7,6 +7,7 @@ import {UnifiedPath} from './unifiedpath';
 import {Log} from '../log';
 import * as requireFromString from 'require-from-string';
 import * as vm from 'vm';
+import * as jsonc from 'jsonc-parser';
 
 
 
@@ -1352,6 +1353,85 @@ export class Utility {
 			pos = text.indexOf(search, pos);
 		} while (pos > -1);
 		return count;
+	}
+
+
+	/**
+	 * Static function to get the launch.json path.
+	 * @param wsFolder Path to the workspace folder.
+	 * @returns The complete path, adding '.vscode/launch.json'.
+	 */
+	public static getlaunchJsonPath(wsFolder: string): string {
+		return UnifiedPath.join(wsFolder, '.vscode', 'launch.json');
+	}
+
+
+	/**
+	 * Reads a launch.json file and substitutes the variables in it.
+	 * E.g. the ${workspaceFolder}.
+	 * Note:
+	 * These are the possible variable substitutions:
+	 * ${workspaceFolder} - the path of the folder opened in VS Code
+	 * ${workspaceFolderBasename} - the name of the folder opened in VS Code without any slashes (/)
+	 * ${file} - the current opened file
+	 * ${fileWorkspaceFolder} - the current opened file's workspace folder
+	 * ${relativeFile} - the current opened file relative to workspaceFolder
+	 * ${relativeFileDirname} - the current opened file's dirname relative to workspaceFolder
+	 * ${fileBasename} - the current opened file's basename
+	 * ${fileBasenameNoExtension} - the current opened file's basename with no file extension
+	 * ${fileDirname} - the current opened file's dirname
+	 * ${fileExtname} - the current opened file's extension
+	 * ${cwd} - the task runner's current working directory on startup
+	 * ${lineNumber} - the current selected line number in the active file
+	 * ${selectedText} - the current selected text in the active file
+	 * ${execPath} - the path to the running VS Code executable
+	 * ${defaultBuildTask} - the name of the default build task
+	 * ${pathSeparator} - the character used by the operating system to separate components in file paths
+	 *
+	 * Examples:
+	 * ${workspaceFolder} - /home/your-username/your-project
+	 * ${workspaceFolderBasename} - your-project
+	 *
+	 * For this here only ${workspaceFolder} and ${workspaceFolderBasename} are substituted.
+	 * The others make no sense anyway (i.e. in the context of unit test
+	 * where this is used.)
+	 * @param launchJsonPath The path to '.vscode/launch.json' is in.
+	 * @param launchData (Optional) if the file has been read already it
+	 * can be passed here so that it will not be read again.
+	 */
+	public static readLaunchJson(launchJsonPath: string, launchData?: string): any {
+		// Read file
+		if (launchData == undefined) {
+			launchData = fs.readFileSync(launchJsonPath, 'utf8');
+		}
+
+		// Substitute variables
+		const dotVscodeFolder = UnifiedPath.dirname(launchJsonPath);
+		const workspaceFolder = UnifiedPath.dirname(dotVscodeFolder);
+		const workspaceFolderBasename = UnifiedPath.basename(workspaceFolder);
+
+		const substData = launchData.replace(/\${.*}/g, variable => {
+			switch (variable) {
+				case '${workspaceFolder}':
+					return workspaceFolder;
+				case '${workspaceFolderBasename}':
+					return workspaceFolderBasename;
+				default:
+					return variable;
+			}
+		});
+		// Parse json
+		const parseErrors: jsonc.ParseError[] = [];
+		const launch = jsonc.parse(substData, parseErrors, {allowTrailingComma: true});
+
+		// Check for error
+		if (parseErrors.length > 0) {
+			// Error
+			throw Error("Parse error while reading " + launchJsonPath + ".");
+		}
+
+		// Return
+		return launch;
 	}
 
 

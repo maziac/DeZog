@@ -12,7 +12,7 @@ suite('Settings', () => {
 		test('CheckSettings - remoteType none', () => {
 			const cfgEmpty: any = {
 			};
-			Settings.launch = Settings.Init(cfgEmpty, '');
+			Settings.launch = Settings.Init(cfgEmpty);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Should fail without remoteType.");
@@ -20,7 +20,7 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'something'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Should fail with wrong remoteType.");
@@ -31,7 +31,7 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Should not fail with remoteType=zesarux.");
@@ -42,7 +42,7 @@ suite('Settings', () => {
 			const cfg: any={
 				remoteType: 'zxnext'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Should not fail with remoteType=zxnext.");
@@ -53,7 +53,7 @@ suite('Settings', () => {
 			const cfg: any={
 				remoteType: 'zsim'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Should not fail with remoteType=zsim.");
@@ -64,7 +64,7 @@ suite('Settings', () => {
 			const cfg: any = {
 				remoteType: 'zrcp'
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Should not fail with default config.");
@@ -80,7 +80,7 @@ suite('Settings', () => {
 			};
 
 			// File does not exist -> Exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -96,7 +96,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does exist.");
@@ -110,7 +110,7 @@ suite('Settings', () => {
 			};
 
 			// File does not exist -> Exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -124,7 +124,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does exist.");
@@ -139,7 +139,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: There should be an exception if 'load' and 'execAddress' are used together.");
@@ -156,7 +156,7 @@ suite('Settings', () => {
 			};
 
 			// File 2 does not exist -> Exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: file does not exist.");
@@ -173,7 +173,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
 				Settings.CheckSettings();
 			}, "Check failed: files do exist.");
@@ -191,7 +191,7 @@ suite('Settings', () => {
 			};
 
 			// File does exist -> No exception
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 			assert.throws(() => {
 				Settings.CheckSettings();
 			}, "Check failed: 'start' should be defined.");

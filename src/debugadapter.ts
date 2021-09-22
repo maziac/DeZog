@@ -390,13 +390,10 @@ export class DebugSessionClass extends DebugSession {
 				// Note: Calling this.memoryHasBeenChanged would result in an infinite loop.
 			});
 
-			// Set root path
-			const rootFolder = args.rootFolder || vscode.workspace.workspaceFolders![0].uri.fsPath;
-			Utility.setRootPath(rootFolder);
-
 			// Save args
-			Settings.launch = Settings.Init(args, rootFolder);
+			Settings.launch = Settings.Init(args);
 			Settings.CheckSettings();
+			Utility.setRootPath(Settings.launch.rootFolder);
 
 			// Persistent variable references
 			this.listVariables.clear();
@@ -435,7 +432,7 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Launches the emulator. is called from launchRequest.
+	 * Launches the emulator. Is called from launchRequest.
 	 * @param response
 	 */
 	protected async launch(response: DebugProtocol.Response) {

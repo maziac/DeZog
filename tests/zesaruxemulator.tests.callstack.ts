@@ -12,7 +12,7 @@ suite('ZesaruxEmulator', () => {
 	setup(() => {
 		const cfg: any={
 		};
-		Settings.launch = Settings.Init(cfg, '');
+		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.Init();
 	});
 

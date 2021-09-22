@@ -289,13 +289,10 @@ export class Z80UnitTestRunner {
 		// Get unit test launch config
 		const configuration = this.testConfig!.config;
 
-		// Setup root folder
-		const rootFolder = this.testConfig!.wsFolder;
-		Utility.setRootPath(rootFolder);
-
 		// Setup settings
-		Settings.launch = Settings.Init(configuration, rootFolder);
+		Settings.launch = Settings.Init(configuration);
 		Settings.CheckSettings();
+		Utility.setRootPath(Settings.launch.rootFolder);
 
 		// Reset all decorations
 		Decoration.clearAllDecorations();

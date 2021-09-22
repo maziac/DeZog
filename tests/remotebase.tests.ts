@@ -15,7 +15,7 @@ suite('RemoteBase', () => {
 		const cfg: any = {
 			remoteType: 'zsim'
 		};
-		Settings.launch = Settings.Init(cfg, '');
+		Settings.launch = Settings.Init(cfg);
 		Z80RegistersClass.createRegisters();
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();
 		// Restore 'rst 8' opcode

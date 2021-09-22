@@ -1,12 +1,10 @@
 import * as vscode from 'vscode';
-import {LabelsClass } from '../labels/labels';
-import { Settings, SettingsParameters } from '../settings';
-import * as jsonc from 'jsonc-parser';
-import { readFileSync } from 'fs';
-import { Utility } from '../misc/utility';
+import {LabelsClass} from '../labels/labels';
+import {Settings, SettingsParameters} from '../settings';
+import {readFileSync} from 'fs';
+import {Utility} from '../misc/utility';
 import * as path from 'path';
 import {FileWatcher} from '../misc/filewatcher';
-import {UnifiedPath} from '../misc/unifiedpath';
 
 
 /**
@@ -127,9 +125,9 @@ export class UnitTestSuite extends UnitTestCase {
 	 * Adds a child. If necessary removes the child from its old parent.
 	 */
 	public addChild(child: UnitTestCaseBase) {
-	//	child.parent?.removeChild(child);
+		//	child.parent?.removeChild(child);
 		this.children.push(child);
-	//	child.parent = this;
+		//	child.parent = this;
 		// Add vscode item
 		this.testItem.children.add(child.testItem);
 	}
@@ -209,7 +207,7 @@ export class RootTestSuite extends UnitTestSuite {
 	 * If there are changes to the tet cases it will be handled by the file watchers.
 	 * @param testItem If undefined create all test cases. Otherwise do nothing.
 	 */
-	protected resolveTests(testItem: vscode.TestItem|undefined) {
+	protected resolveTests(testItem: vscode.TestItem | undefined) {
 		if (testItem)
 			return;
 		if (!vscode.workspace.workspaceFolders)
@@ -243,13 +241,13 @@ export class RootTestSuite extends UnitTestSuite {
 	 * A workspace exists in the test controller only if a launch.json exists for it.
 	 * @param workspaces A list of workspaces to watch.
 	 */
-	protected addWorkspaces(workspaces: readonly vscode.WorkspaceFolder[], ) {
+	protected addWorkspaces(workspaces: readonly vscode.WorkspaceFolder[],) {
 		for (const ws of workspaces) {
 			// Retrieve all unit test configs
 			const wsFolder = ws.uri.fsPath;
 
 			// The test id is at the same time the file name (if test item is a file)
-			const filePath = UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder);
+			const filePath = Utility.getlaunchJsonPath(wsFolder);
 			const fileWatcher = new FileWatcher(filePath);
 			this.wsFwMap.set(wsFolder, fileWatcher)!;
 			let wsSuite: UnitTestSuiteLaunchJson;
@@ -302,16 +300,6 @@ export class RootTestSuite extends UnitTestSuite {
  */
 class UnitTestSuiteLaunchJson extends UnitTestSuite {
 
-	/**
-	 * Static function to get the launch.json path.
-	 * @param wsFolder Path to the workspace folder.
-	 * @returns The complete path, adding '.vscode/launch.json'.
-	 */
-	public static getlaunchJsonPath(wsFolder: string): string {
-		return UnifiedPath.join(wsFolder, '.vscode', 'launch.json');
-	}
-
-
 	// The path to the workspace.
 	protected wsFolder: string;
 
@@ -322,7 +310,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder), label, undefined as any, UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder));
+		super(Utility.getlaunchJsonPath(wsFolder), label, undefined as any, Utility.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -369,15 +357,11 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 * Throws an exception if launch.json cannot be parsed. Or if file does not exist.
 	 */
 	protected getUnitTestsLaunchConfigs(launchJsonPath: string): any {
+		// Read file for the line numbers.
 		const launchData = readFileSync(launchJsonPath, 'utf8');
-		const parseErrors: jsonc.ParseError[] = [];
-		const launch = jsonc.parse(launchData, parseErrors, {allowTrailingComma: true});
 
-		// Check for error
-		if (parseErrors.length > 0) {
-			// Error
-			throw Error("Parse error while reading " + launchJsonPath + ".");
-		}
+		// Parse file
+		const launch = Utility.readLaunchJson(launchJsonPath, launchData);
 
 		// Find the right configurations
 		const configurations = launch.configurations.filter(config => config.unitTests);
@@ -420,10 +404,10 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 	 * @param config launch.json configuration.
 	 */
 	constructor(wsFolder: string, config: any) {
-		super(wsFolder + '#' + config.name, config.name, undefined as any, UnitTestSuiteLaunchJson.getlaunchJsonPath(wsFolder));
+		super(wsFolder + '#' + config.name, config.name, undefined as any, Utility.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'config';
 		this.wsFolder = wsFolder;
-		this.config = Settings.Init(config, wsFolder);
+		this.config = Settings.Init(config);
 		this.fileWatchers = [];
 
 		// Read launch.json

@@ -328,7 +328,7 @@ export class Settings {
 	 * @param rootFolder Path to the root folder.
 	 * @returns An "enhanced" launchCfg. E.g. default values are set.
 	 */
-	static Init(launchCfg: SettingsParameters, rootFolder: string): SettingsParameters {
+	static Init(launchCfg: SettingsParameters): SettingsParameters {
 		if (!launchCfg) {
 			launchCfg = {
 				remoteType: <any>undefined,
@@ -357,6 +357,9 @@ export class Settings {
 				unitTestTimeout: <any>undefined,
 			}
 		}
+
+		// Check rootFolder
+		const rootFolder = launchCfg.rootFolder || '';	// Will be checked in the CheckSettings.
 
 		// Check for default values (for some reasons the default values from the package.json are not used)
 		if (launchCfg.unitTests == undefined)
@@ -464,9 +467,6 @@ export class Settings {
 			launchCfg.zxnext.port = 12000;
 		if (!launchCfg.zxnext.socketTimeout)
 			launchCfg.zxnext.socketTimeout = 0.8;	// 0.8 secs, needs to be short to show a warning fast if debugged program is running.
-
-		if (!launchCfg.rootFolder)
-			launchCfg.rootFolder = rootFolder;
 
 		// sjasmplus
 		if (launchCfg.sjasmplus) {
@@ -718,6 +718,13 @@ export class Settings {
 	 * Note: file paths are already expanded to absolute paths.
 	 */
 	public static CheckSettings() {
+		// Check root folder
+		const rootFolder = Settings.launch.rootFolder;
+		if (!rootFolder)
+			throw Error("'rootFolder' is empty");
+		if(!fs.existsSync(rootFolder))
+			throw Error("'rootFolder' path("+rootFolder+") does not exist.");
+
 		// Check remote type
 		const rType=Settings.launch.remoteType;
 		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];

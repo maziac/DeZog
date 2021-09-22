@@ -18,7 +18,7 @@ suite('Z80Cpu', () => {
 					"vsyncInterrupt": true
 				}
 			};
-			Settings.launch = Settings.Init(cfg, '');
+			Settings.launch = Settings.Init(cfg);
 		});
 
 
@@ -119,7 +119,7 @@ suite('Z80Cpu', () => {
 						Z80N: true
 					}
 				};
-				Settings.launch = Settings.Init(cfg, '');
+				Settings.launch = Settings.Init(cfg);
 				cpu=new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
 				z80=cpu.z80;
 				mem=cpu.memory;
