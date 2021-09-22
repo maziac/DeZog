@@ -226,6 +226,7 @@
 				"configurationAttributes": {
 					"launch": {
 						"required": [
+							"name",
 							"remoteType",
 							"rootFolder"
 						],
@@ -233,7 +234,7 @@
 							"remoteType": {
 								"type": "string",
 								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zxsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
-								"default": "zrcp"
+								"default": "zsim"
 							},
 							"zrcp": {
 								"hostname": {
@@ -684,90 +685,187 @@
 					{
 						"type": "dezog",
 						"request": "launch",
-						"name": "Simulator",
+						"name": "Simulator - ZX Spectrum+Next",
 						"remoteType": "zsim",
 						"zsim": {
-							"memoryModel": "ZX48K",
-							"vsyncInterrupt": true,
+							"Z80N": true,
+							"visualMemory": true,
+							"memoryModel": "ZXNEXT",
 							"ulaScreen": true,
-							"zxKeyboard": true
+							"zxBorderWidth": 20,
+							"vsyncInterrupt": true,
+							"zxKeyboard": true,
+							"zxBeeper": true
+						},
+						"disassemblerArgs": {
+							"esxdosRst": true
 						},
 						"sjasmplus": [
 							{
-								"path": "your_sld_file"
+								"path": "Add your assembler list or sld file"
 							}
 						],
-						"topOfStack": "your_stack_top",
-						"load": "your_sna_or_nex_file"
-					},
-					{
-						"type": "dezog",
-						"request": "launch",
-						"name": "ZEsarUX",
-						"remoteType": "zrcp",
-						"sjasmplus": [
-							{
-								"path": "your_sld_file"
-							}
+						"commandsAfterLaunch": [
+							"-logpoint enable",
+							"-assertion enable",
+							"-wpmem enable"
 						],
-						"topOfStack": "your_stack_top",
-						"load": "your_sna_or_nex_file"
-					},
-					{
-						"type": "dezog",
-						"request": "launch",
-						"name": "CSpect",
-						"remoteType": "cspect",
-						"sjasmplus": [
-							{
-								"path": "your_sld_file"
-							}
-						],
-						"topOfStack": "your_stack_top",
-						"load": "your_sna_or_nex_file"
-					},
-					{
-						"type": "dezog",
-						"request": "launch",
-						"name": "ZXNext",
-						"remoteType": "zxnext",
-						"sjasmplus": [
-							{
-								"path": "your_sld_file"
-							}
-						],
-						"topOfStack": "your_stack_top",
-						"load": "your_sna_or_nex_file"
+						"startAutomatically": false,
+						"rootFolder": "${workspaceFolder}",
+						"load": "Add your .nex or .sna file to load",
+						"topOfStack": "Add your top of stack / label name"
 					}
 				],
 				"configurationSnippets": [
 					{
-						"label": "DeZog: Launch",
-						"description": "Configuration for DeZog.",
+						"label": "DeZog: Simulator - ZX Spectrum+Next",
+						"description": "Configuration for DeZog to use the internal simulator for a ZX Spectrum but with memory banking from the ZX Next as well as with the extended Z80N opcodes. Can be used to simulate a ZX 48K and additionally the Z80N opcodes and banking if needed.",
 						"body": {
 							"type": "dezog",
 							"request": "launch",
-							"name": "DeZog",
+							"name": "Simulator - ZX Spectrum+Next",
 							"remoteType": "zsim",
 							"zsim": {
-								"memoryModel": "RAM"
+								"Z80N": true,
+								"visualMemory": true,
+								"memoryModel": "ZXNEXT",
+								"ulaScreen": true,
+								"zxBorderWidth": 20,
+								"vsyncInterrupt": true,
+								"zxKeyboard": true,
+								"zxBeeper": true
 							},
-							"zrcp": {},
-							"cspect": {},
-							"zxnext": {
-								"port": "/dev/tty.usbserial"
-							},
-							"topOfStack": "stack_top",
-							"sjasmplus": [
-								{
-									"path": "path_to_your_assembler_file.list"
-								}
-							],
 							"disassemblerArgs": {
 								"esxdosRst": true
 							},
-							"load": "path_to_your_sna_file.sna",
-							"codeCoverage": false
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable",
+								"-wpmem enable"
+							],
+							"startAutomatically": false,
+							"rootFolder": "${workspaceFolder}",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: top of stack / label name}"
+						}
+					},
+
+
+					{
+						"label": "DeZog: Simulator - Bare Z80",
+						"description": "Configuration for DeZog to use the internal simulator for a bare Z80 without an peripherals or memory banking.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Simulator - Bare Z80",
+							"remoteType": "zsim",
+							"zsim": {
+								"visualMemory": true,
+								"memoryModel": "RAM"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable",
+								"-wpmem enable"
+							],
+							"startAutomatically": false,
+							"rootFolder": "${workspaceFolder}",
+							"loadObj": "${2:The .obj file to load}",
+							"execAddress": "${3:The start address / label name}",
+							"topOfStack": "${4: top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: CSpect",
+						"description": "Configuration for DeZog to use the CSpect emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "CSpect",
+							"remoteType": "cspect",
+							"disassemblerArgs": {
+								"esxdosRst": true
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable"
+							],
+							"startAutomatically": false,
+							"rootFolder": "${workspaceFolder}",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: top of stack / label name}"
+						}
+					},
+
+
+					{
+						"label": "DeZog: ZEsarUX",
+						"description": "Configuration for DeZog to use the ZEsarUX emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "ZEsarUX",
+							"remoteType": "zesarux",
+							"disassemblerArgs": {
+								"esxdosRst": true
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable",
+								"-wpmem enable"
+							],
+							"startAutomatically": false,
+							"rootFolder": "${workspaceFolder}",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: top of stack / label name}"
+						}
+					},
+
+
+					{
+						"label": "DeZog: ZX Next",
+						"description": "Configuration for DeZog to use the ZX Next as for remote debugging.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "ZX Next",
+							"remoteType": "zxnext",
+							"disassemblerArgs": {
+								"esxdosRst": true
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable"
+							],
+							"startAutomatically": false,
+							"rootFolder": "${workspaceFolder}",
+							"load": "${2:.nex or .sna file to load}",
+							"topOfStack": "${3: top of stack / label name}"
 						}
 					}
 				]
