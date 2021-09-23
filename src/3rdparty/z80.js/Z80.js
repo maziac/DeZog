@@ -3541,7 +3541,7 @@ let cycle_counts_dd = [
          b = (r_bc & 0xff00) >>> 8;
       };
 
-      // 0x31: ADD HL,nn
+      // 0x34: ADD HL,nn
       ed_instructions[0x34] = () => {
          let r_hl = l + (h << 8);
          pc = (pc + 1) & 0xFFFF;
@@ -3553,7 +3553,7 @@ let cycle_counts_dd = [
          h = (r_hl & 0xff00) >>> 8;
       };
 
-      // 0x32: ADD DE,A
+      // 0x35: ADD DE,A
       ed_instructions[0x35] = () => {
          let r_de = e + (d << 8);
          pc = (pc + 1) & 0xFFFF;
@@ -3565,7 +3565,7 @@ let cycle_counts_dd = [
          d = (r_de & 0xff00) >>> 8;
       };
 
-      // 0x33: ADD BC,A
+      // 0x36: ADD BC,A
       ed_instructions[0x36] = () => {
          let r_bc = c + (b << 8);
          pc = (pc + 1) & 0xFFFF;
