@@ -754,7 +754,6 @@
 							"topOfStack": "${3: top of stack / label name}"
 						}
 					},
-
 					{
 						"label": "DeZog: Simulator - Bare Z80",
 						"description": "Configuration for DeZog to use the internal simulator for a bare Z80 without an peripherals or memory banking.",
@@ -784,7 +783,6 @@
 							"topOfStack": "${4: top of stack / label name}"
 						}
 					},
-
 					{
 						"label": "DeZog: CSpect",
 						"description": "Configuration for DeZog to use the CSpect emulator.",
@@ -811,8 +809,6 @@
 							"topOfStack": "${3: top of stack / label name}"
 						}
 					},
-
-
 					{
 						"label": "DeZog: ZEsarUX",
 						"description": "Configuration for DeZog to use the ZEsarUX emulator.",
@@ -840,8 +836,6 @@
 							"topOfStack": "${3: top of stack / label name}"
 						}
 					},
-
-
 					{
 						"label": "DeZog: ZX Next",
 						"description": "Configuration for DeZog to use the ZX Next as for remote debugging.",
@@ -868,8 +862,6 @@
 							"topOfStack": "${3: top of stack / label name}"
 						}
 					},
-
-
 					{
 						"label": "DeZog: Unit Tests",
 						"description": "Configuration for DeZog to use the internal simulator for unit tests.",
