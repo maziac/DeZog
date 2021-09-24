@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "2.4.0-5",
+	"version": "2.4.0-6",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -755,7 +755,6 @@
 						}
 					},
 
-
 					{
 						"label": "DeZog: Simulator - Bare Z80",
 						"description": "Configuration for DeZog to use the internal simulator for a bare Z80 without an peripherals or memory banking.",
@@ -785,6 +784,7 @@
 							"topOfStack": "${4: top of stack / label name}"
 						}
 					},
+
 					{
 						"label": "DeZog: CSpect",
 						"description": "Configuration for DeZog to use the CSpect emulator.",
@@ -866,6 +866,40 @@
 							"rootFolder": "${${workspaceFolder}workspaceFolder}",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: top of stack / label name}"
+						}
+					},
+
+
+					{
+						"label": "DeZog: Unit Tests",
+						"description": "Configuration for DeZog to use the internal simulator for unit tests.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "Unit Tests - Simulator",
+							"unitTests": true,
+							"presentation": {
+								"hidden": true
+							},
+							"remoteType": "zsim",
+							"zsim": {
+								"Z80N": true,
+								"visualMemory": true,
+								"memoryModel": "ZXNEXT"
+							},
+							"sjasmplus": [
+								{
+									"path": "${1:Assembler list or sld file}"
+								}
+							],
+							"commandsAfterLaunch": [
+								"-logpoint enable",
+								"-assertion enable",
+								"-wpmem enable"
+							],
+							"startAutomatically": true,
+							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"load": "${2:.nex or .sna file to load}"
 						}
 					}
 				]

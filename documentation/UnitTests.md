@@ -213,6 +213,48 @@ At best you copy a working configuration, change its name (to e.g. "Unit Tests")
 If you like you can set this set this to true, but then you need to set a breakpoint inside your unit test if you debug it otherwise the unit test will be finished before you can see anything in the debugger.
 - You need not enable WPMEM, ASSERTION or LOGPOINT. They are automatically enabled for unit tests.
 - You must remove any occurrence of 'execAddr' because it is superfluous. For unit tests the addresses of the labels are calculated automatically and the PC (program counter) is set accordingly.
+- you should add
+	~~~
+		"presentation": {
+			"hidden": true
+		}
+	~~~
+  This will hide the configuration from the debug launch panel.
+
+Here is an example setup:
+~~~
+{
+	"type": "dezog",
+	"request": "launch",
+	"name": "Unit Tests - Simulator",
+	"unitTests": true,
+	"presentation": {
+		"hidden": true
+	},
+	"remoteType": "zsim",
+	"zsim": {
+		"Z80N": true,
+		"visualMemory": true,
+		"memoryModel": "RAM"
+	},
+	"sjasmplus": [
+		{
+			"path": "<your sld file>"
+		}
+	],
+	"commandsAfterLaunch": [
+		"-logpoint enable",
+		"-assertion enable",
+		"-wpmem enable"
+	],
+	"startAutomatically": true,
+	"rootFolder": "${workspaceFolder}",
+	"load": "<your nex/sna file"
+}
+~~~
+
+Note: if you are not compiling for a ZX Spectrum you can use "loadObj" instead of "load".
+
 
 
 ## Start the Unit Tests

@@ -196,14 +196,8 @@ Big values are typically addresses. Here you can give the boundary between these
 - unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
 
 
-If you just restart a debug session with
-![](images/vscode_restart_button.jpg)
-the launch.json and the sld/list files are re-read.
-
-I.e. in the same way as if you'd had stopped with
-![](images/vscode_stop_button.jpg)
-and then started via
-![](images/vscode_continue_button.jpg).
+Some pre-defined launch.json debug configuration exist as configuration snippets and can be chosen by start to type 'dezog' inside the launch.json:
+![](images/configuration_snippet.gif)  // TODO: gif recorden
 
 
 ### Assembler Configuration

@@ -83,9 +83,8 @@ export class SjasmplusSldLabelParser extends LabelParserBase {
 		// Init (in case of several sld files)
 		this.lastLabel = undefined as any;
 
-		// Get bank size
-		const sldLinesFull = readFileSync(sldConfig.path).toString().split('\n');
 		// Strip away windows line ending
+		const sldLinesFull = readFileSync(sldConfig.path).toString().split('\n');
 		const sldLines = sldLinesFull.map(line => line.trimRight());
 		this.checkSldVersion(sldLines);
 
