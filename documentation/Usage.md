@@ -196,8 +196,8 @@ Big values are typically addresses. Here you can give the boundary between these
 - unitTestTimeout: the timeout for each unit test. Default is 1s. Change this only if one of your unit test lasts longer.
 
 
-Some pre-defined launch.json debug configuration exist as configuration snippets and can be chosen by start to type 'dezog' inside the launch.json:
-![](images/configuration_snippet.gif)  // TODO: gif recorden
+Some pre-defined launch.json debug configuration exist as configuration snippets and can be chosen by starting to type 'dezog' inside the launch.json or by using the "Add Configuration..." button:
+![](images/conf_snippet.gif)
 
 
 ### Assembler Configuration
