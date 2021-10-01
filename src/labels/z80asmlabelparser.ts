@@ -10,7 +10,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 
 	// Regex to find labels
 	// Allow labels without ":"
-	protected labelRegEx=/^[0-9a-f]+[\s0-9a-f]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
+	protected labelRegEx=/^[0-9a-f]+[\s0-9a-f\.]*\s+>?([^;\s0-9][^;\s]*):\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
 
 	// Find the bytes after the address
 	protected matchBytesRegEx=/^[0-9a-f]+((\s[\.0-9a-f]+)+)/i;
