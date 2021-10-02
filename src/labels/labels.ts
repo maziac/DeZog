@@ -527,6 +527,13 @@ export class LabelsClass {
 		for (let [label,] of this.numberForLabel) {
 			// Get all parts of the label
 			const parts = label.split('.');
+			// Special case: I.e. z80asm allows labels like ".label"
+			// but that doesn't mean they are hierarchly ordered:
+			if (parts[0] == '') {
+				// Label starts with '.'
+				parts.shift();	// Remove first entry
+				parts[0] = '.' + parts[0];	// Re-add the '.'
+			}
 			let map = this.labelsHierarchy;
 			for (const part of parts) {
 				// Check if already existing
