@@ -11,6 +11,7 @@
 - Fixed: an error in displaying memory arrays inside STRUCTs.
 - When loading a .nex file the IM (interrupt mode) is set to 1 per default.
 - Improved label parsing for z80asm list file.
+- Coverage decoration now is half-transparent to allow that a selection is visible at the same time.
 
 # 2.3.2
 - Fixed #69: No code coverage on Windows.

@@ -85,11 +85,11 @@ export class DecorationClass {
 			gutterIconSize: 'auto',
 			light: {
 				// this color will be used in light color themes
-				backgroundColor: '#d5efc3',
+				backgroundColor: '#d5efc3a0',
 			},
 			dark: {
 				// this color will be used in dark color themes
-				backgroundColor: '#093003',
+				backgroundColor: '#09300390',
 			}
 			/*
 			light: {
