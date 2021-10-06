@@ -138,16 +138,11 @@ export class DebugSessionClass extends DebugSession {
 		if (this.state != DbgAdapterState.NORMAL)
 			throw Error("Debugger state is wrong.");
 
-		// Need to find the corresponding workspace uri
+
+		// Need to find the corresponding workspace folder
 		const rootFolder = Utility.getRootPath();
-		let workspaceFolder;
-		const wsFolders = vscode.workspace.workspaceFolders || [];
-		for (const wsFolder of wsFolders) {
-			if (wsFolder.uri.fsPath == rootFolder) {
-				workspaceFolder = wsFolder;
-				break;
-			}
-		}
+		const rootFolderUri = vscode.Uri.file(rootFolder);
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(rootFolderUri);
 		Utility.assert(workspaceFolder);
 
 		// Start debugger

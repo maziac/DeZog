@@ -247,12 +247,12 @@ export class DzrpRemote extends RemoteBase {
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
-		Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
+		//Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
 		// Get regs
 		const regs = await this.sendDzrpCmdGetRegisters();
 		// And set
 		Z80Registers.setCache(regs);
-		Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
+		//Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
 	}
 
 
