@@ -750,7 +750,7 @@
 								"-wpmem enable"
 							],
 							"startAutomatically": false,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: top of stack / label name}"
 						}
@@ -778,7 +778,7 @@
 								"-wpmem enable"
 							],
 							"startAutomatically": false,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"loadObj": "${2:The .obj file to load}",
 							"execAddress": "${3:The start address / label name}",
 							"topOfStack": "${4: top of stack / label name}"
@@ -805,7 +805,7 @@
 								"-assertion enable"
 							],
 							"startAutomatically": false,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: top of stack / label name}"
 						}
@@ -832,7 +832,7 @@
 								"-wpmem enable"
 							],
 							"startAutomatically": false,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: top of stack / label name}"
 						}
@@ -858,7 +858,7 @@
 								"-assertion enable"
 							],
 							"startAutomatically": false,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
 							"topOfStack": "${3: top of stack / label name}"
 						}
@@ -891,7 +891,7 @@
 								"-wpmem enable"
 							],
 							"startAutomatically": true,
-							"rootFolder": "${${workspaceFolder}workspaceFolder}",
+							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}"
 						}
 					}
