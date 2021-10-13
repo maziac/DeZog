@@ -29,7 +29,8 @@ suite('Settings', () => {
 
 		test('CheckSettings - remoteType=zesarux', () => {
 			const cfg: any = {
-				remoteType: 'zrcp'
+				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 			};
 			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
@@ -40,7 +41,8 @@ suite('Settings', () => {
 
 		test('CheckSettings - remoteType=zxnext', () => {
 			const cfg: any={
-				remoteType: 'zxnext'
+				remoteType: 'zxnext',
+				rootFolder: './tests/data',
 			};
 			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
@@ -51,7 +53,8 @@ suite('Settings', () => {
 
 		test('CheckSettings - remoteType=zsim', () => {
 			const cfg: any={
-				remoteType: 'zsim'
+				remoteType: 'zsim',
+				rootFolder: './tests/data',
 			};
 			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
@@ -62,7 +65,8 @@ suite('Settings', () => {
 
 		test('CheckSettings - Default', () => {
 			const cfg: any = {
-				remoteType: 'zrcp'
+				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 			};
 			Settings.launch = Settings.Init(cfg);
 			assert.doesNotThrow(() => {
@@ -71,11 +75,26 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - listFiles 1', () => {
+		test('CheckSettings - No rootFolder', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
 				sjasmplus: [
-					{ path: "./tests/data/settings/filenotexists.list" }
+					{path: "./tests/data/settings/file.list"}
+				]
+			};
+			Settings.launch = Settings.Init(cfg);
+			assert.throws(() => {
+				Settings.CheckSettings();
+			}, "Exception expected (because no rootFolder given).");
+		});
+
+
+		test('CheckSettings - listFiles 1', () => {
+			const cfg: any = {
+				remoteType: 'zrcp',
+				rootFolder: './tests/data',
+				sjasmplus: [
+					{ path: "./settings/filenotexists.list" }
 				]
 			};
 
@@ -90,8 +109,9 @@ suite('Settings', () => {
 		test('CheckSettings - listFiles 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 				sjasmplus: [
-					{ path: "./tests/data/settings/file.list" }
+					{ path: "./settings/file.list" }
 				]
 			};
 
@@ -106,7 +126,8 @@ suite('Settings', () => {
 		test('CheckSettings - load 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./tests/data/settings/filenotexists.sna"
+				rootFolder: './tests/data',
+				load: "./settings/filenotexists.sna"
 			};
 
 			// File does not exist -> Exception
@@ -120,7 +141,8 @@ suite('Settings', () => {
 		test('CheckSettings - load 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./tests/data/settings/file.sna"
+				rootFolder: './tests/data',
+				load: "./settings/file.sna"
 			};
 
 			// File does exist -> No exception
@@ -134,7 +156,8 @@ suite('Settings', () => {
 		test('CheckSettings - load and execAddress', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
-				load: "./tests/data/settings/file.sna",
+				rootFolder: './tests/data',
+				load: "./settings/file.sna",
 				execAddress: "1234"
 			};
 
@@ -149,9 +172,10 @@ suite('Settings', () => {
 		test('CheckSettings - loadObj 1', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./tests/data/settings/file2notexists.obj", start: "1234" }
+					{ path: "./settings/file1.obj", start: "1234" },
+					{ path: "./settings/file2notexists.obj", start: "1234" }
 				]
 			};
 
@@ -166,9 +190,10 @@ suite('Settings', () => {
 		test('CheckSettings - loadObj 2', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./tests/data/settings/file2.obj", start: "1234" }
+					{ path: "./settings/file1.obj", start: "1234" },
+					{ path: "./settings/file2.obj", start: "1234" }
 				]
 			};
 
@@ -184,9 +209,10 @@ suite('Settings', () => {
 		test('CheckSettings - loadObj start', () => {
 			const cfg: any = {
 				remoteType: 'zrcp',
+				rootFolder: './tests/data',
 				loadObjs: [
-					{ path: "./tests/data/settings/file1.obj", start: "1234" },
-					{ path: "./tests/data/settings/file2.obj" }
+					{ path: "./settings/file1.obj", start: "1234" },
+					{ path: "./settings/file2.obj" }
 				]
 			};
 
