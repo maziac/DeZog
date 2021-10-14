@@ -1,6 +1,6 @@
 # Changelog
 
-# 2.4.0-x
+# 2.4.0
 - Unit tests now use the vscode test API.
 - The restart behavior was reverted to some degree. Now it is possible to do a re-compile of the assembler sources followed by a restart because the labels are re-read.
 - Fixed memory model for ZEsarUX >= 9.2: Symptom: Breakpoints could not be set.
