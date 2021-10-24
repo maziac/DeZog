@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { BaseMemory } from './basememory';
+import {BaseMemory} from './basememory';
 
 
 export class Format {
@@ -13,9 +13,9 @@ export class Format {
 	 * @param countDigits The number of digits.
 	 * @returns a string, e.g. "04fd".
 	 */
-	public static getHexString(value:number, countDigits = 4): string {
+	public static getHexString(value: number, countDigits = 4): string {
 		let s = value.toString(16);
-		if(!Format.hexNumbersLowerCase)
+		if (!Format.hexNumbersLowerCase)
 			s = s.toUpperCase();
 		return Format.fillDigits(s, '0', countDigits);
 	}
@@ -25,9 +25,9 @@ export class Format {
 	 * If string is smaller than countDigits the string is filled with 'fillCharacter'.
 	 * Used to fill a number up with '0' or spaces.
 	 */
-	public static fillDigits(valueString:string, fillCharacter: string, countDigits: number): string {
-		const repeat = countDigits-valueString.length;
-		if(repeat <= 0)
+	public static fillDigits(valueString: string, fillCharacter: string, countDigits: number): string {
+		const repeat = countDigits - valueString.length;
+		if (repeat <= 0)
 			return valueString;
 		const res = fillCharacter.repeat(repeat) + valueString;
 		return res;
@@ -41,10 +41,10 @@ export class Format {
 	 * @param totalLength The total filled length of the resulting string
 	 * @returns s + ' ' (several spaces)
 	 */
-	public static addSpaces(s:string, totalLength: number): string {
+	public static addSpaces(s: string, totalLength: number): string {
 		const countString = s.length;
 		const repeat = totalLength - countString;
-		if(repeat <= 0)
+		if (repeat <= 0)
 			return s;
 		const res = s + ' '.repeat(repeat);
 		return res;
@@ -60,17 +60,17 @@ export class Format {
 	 */
 	public static getVariousConversionsForByte(byteValue: number): string {
 		// byte
-		if(byteValue < 0)
+		if (byteValue < 0)
 			byteValue = 0x100 + byteValue;
 		let result = byteValue.toString();
 		// Negative?
 		let convValue = byteValue;
-		if(convValue >= 0x80) {
+		if (convValue >= 0x80) {
 			convValue -= 0x100;
 			result += ', ' + Format.fillDigits(convValue.toString(), ' ', 4);
 		}
 		// Check for ASCII
-		if(byteValue >= 32 /*space*/ && byteValue <= 126 /*tilde*/)
+		if (byteValue >= 32 /*space*/ && byteValue <= 126 /*tilde*/)
 			result += ", '" + String.fromCharCode(byteValue) + "'";
 		// return
 		return result;
@@ -102,7 +102,7 @@ export class Format {
 		let result = wordValue.toString();
 		// Negative?
 		let convValue = wordValue;
-		if(convValue >= 0x8000) {
+		if (convValue >= 0x8000) {
 			convValue -= 0x10000;
 			result += ', ' + this.fillDigits(convValue.toString(), ' ', 6);
 		}
@@ -123,19 +123,19 @@ export class Format {
 	 * @param size The size of the opcode. Only used to display the opcode byte values and only used if memory is defined.
 	 * @param mainString The opcode string, e.g. "LD HL,35152"
 	 */
-	public static formatDisassembly(memory: BaseMemory|undefined, opcodesLowerCase: boolean, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string): string {
+	public static formatDisassembly(memory: BaseMemory | undefined, opcodesLowerCase: boolean, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string): string {
 		let line = '';
 
 		// Add address field?
-		if(clmnsAddress > 0) {
-			line = Format.addSpaces(Format.getHexString(address)+' ', clmnsAddress);
+		if (clmnsAddress > 0) {
+			line = Format.addSpaces(Format.getHexString(address) + ' ', clmnsAddress);
 		}
 
 		// Add bytes of opcode?
 		let bytesString = '';
-		if(memory) {
-			for(let i=0; i<size; i++) {
-				const memVal = memory.getValueAt(address+i);
+		if (memory) {
+			for (let i = 0; i < size; i++) {
+				const memVal = memory.getValueAt(address + i);
 				bytesString += Format.getHexString(memVal, 2) + ' ';
 			}
 		}
@@ -144,11 +144,11 @@ export class Format {
 		// Add opcode (or defb)
 		const arr = mainString.split(' ');
 		assert(arr.length > 0, 'formatDisassembly');
-		arr[0] = Format.addSpaces(arr[0], clmnsOpcodeFirstPart-1);	// 1 is added anyway when joining
+		arr[0] = Format.addSpaces(arr[0], clmnsOpcodeFirstPart - 1);	// 1 is added anyway when joining
 		let resMainString = arr.join(' ');
-		resMainString = Format.addSpaces(resMainString+' ', clmsnOpcodeTotal);
+		resMainString = Format.addSpaces(resMainString + ' ', clmsnOpcodeTotal);
 
-		line +=  resMainString;
+		line += resMainString;
 
 		// return
 		return line;

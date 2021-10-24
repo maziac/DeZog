@@ -21,16 +21,16 @@ export class BaseMemory {
 	 * @param sizeOrArr The size of the memory area or an Uint8Array.
 	 * If array the array is used as is. i.e. it is not copied.
 	 */
-	constructor(startAddress: number, sizeOrArr: number|Uint8Array) {
-		if (typeof sizeOrArr=='number') {
-			const size=sizeOrArr as number;
-			this.memory=new Uint8Array(size);
+	constructor(startAddress: number, sizeOrArr: number | Uint8Array) {
+		if (typeof sizeOrArr == 'number') {
+			const size = sizeOrArr as number;
+			this.memory = new Uint8Array(size);
 		}
 		else {
-			this.memory=sizeOrArr as Uint8Array;
+			this.memory = sizeOrArr as Uint8Array;
 		}
-		this.startAddress=startAddress;
-		this.size=this.memory.length;;
+		this.startAddress = startAddress;
+		this.size = this.memory.length;;
 	}
 
 
@@ -50,12 +50,12 @@ export class BaseMemory {
 	 * @returns It's value.
 	 */
 	public getValueAt(address: number) {
-		address &= (MAX_MEM_SIZE-1);
-		let index=address-this.startAddress;
-		if (index<0) {
+		address &= (MAX_MEM_SIZE - 1);
+		let index = address - this.startAddress;
+		if (index < 0) {
 			// wrap around
 			//index=MAX_MEM_SIZE+address-this.startAddress;
-			index+=MAX_MEM_SIZE;
+			index += MAX_MEM_SIZE;
 		}
 		Utility.assert(index >= 0, 'getValueAt 1');
 		Utility.assert(index < this.size, 'getValueAt 2');
@@ -63,13 +63,13 @@ export class BaseMemory {
 	}
 
 
-		/**
-	 * Returns the word memory value at address.
-	 * @param address The address to retrieve.
-	 * @returns It's value.
-	 */
+	/**
+ * Returns the word memory value at address.
+ * @param address The address to retrieve.
+ * @returns It's value.
+ */
 	public getWordValueAt(address: number) {
-		const word = this.getValueAt(address) + 256*this.getValueAt(address+1);
+		const word = this.getValueAt(address) + 256 * this.getValueAt(address + 1);
 		return word;
 	}
 
@@ -80,7 +80,7 @@ export class BaseMemory {
 	 * @returns It's value.
 	 */
 	public getBigEndianWordValueAt(address: number) {
-		const word = 256*this.getValueAt(address) + this.getValueAt(address+1);
+		const word = 256 * this.getValueAt(address) + this.getValueAt(address + 1);
 		return word;
 	}
 }

@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { BaseMemory, MAX_MEM_SIZE } from './basememory';
+import {readFileSync} from 'fs';
+import {BaseMemory, MAX_MEM_SIZE} from './basememory';
 
 
 
@@ -32,10 +32,10 @@ export class Memory extends BaseMemory {
 	/**
 	 * Constructor: Initializes memory.
 	 */
- 	constructor () {
+	constructor() {
 		super(0, MAX_MEM_SIZE);
 		// Init memory
-		for(let i=0; i<MAX_MEM_SIZE; i++) {
+		for (let i = 0; i < MAX_MEM_SIZE; i++) {
 			this.memory[i] = 0;
 			this.memoryAttr[i] = MemAttribute.UNUSED;
 		}
@@ -47,10 +47,10 @@ export class Memory extends BaseMemory {
 	 * @param origin The start address of the memory area.
 	 * @param memory The memory area.
 	 */
-	public setMemory(origin:number, memory: Uint8Array) {
+	public setMemory(origin: number, memory: Uint8Array) {
 		const size = memory.length;
-		for(let i=0; i<size; i++) {
-			const addr = (origin+i) & (MAX_MEM_SIZE-1);
+		for (let i = 0; i < size; i++) {
+			const addr = (origin + i) & (MAX_MEM_SIZE - 1);
 			this.memory[addr] = memory[i];
 			this.memoryAttr[addr] |= MemAttribute.ASSIGNED;
 		}
@@ -86,7 +86,7 @@ export class Memory extends BaseMemory {
 	 * @param attr The attribute to set (e.g. CODE or DATA)
 	 */
 	public addAttributeAt(address: number, length: number, attr: MemAttribute) {
-		for(let i=0; i<length; i++)
+		for (let i = 0; i < length; i++)
 			this.memoryAttr[address++] |= attr;
 	}
 
@@ -97,7 +97,7 @@ export class Memory extends BaseMemory {
 	 * @param attr The attribute to set (e.g. CODE or DATA)
 	 */
 	public setAttributesAt(address: number, length: number, attr: MemAttribute) {
-		for(let i=0; i<length; i++)
+		for (let i = 0; i < length; i++)
 			this.memoryAttr[address++] = attr;
 	}
 
@@ -111,10 +111,10 @@ export class Memory extends BaseMemory {
 	 * @param attr The attribute to set (e.g. CODE or DATA)
 	 */
 	public clrAssignedAttributesAt(address: number, length: number) {
-		for(let i=0; i<length; i++) {
-			if(this.memoryAttr[address] != MemAttribute.UNUSED)
+		for (let i = 0; i < length; i++) {
+			if (this.memoryAttr[address] != MemAttribute.UNUSED)
 				this.memoryAttr[address] = MemAttribute.ASSIGNED;
-			address	++;
+			address++;
 		}
 	}
 }

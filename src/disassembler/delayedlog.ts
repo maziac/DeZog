@@ -33,11 +33,11 @@ export class DelayedLog {
 	 * Saves the logs to this logging object.
 	 * @param handler 'handler' should return the string to be logged.
 	 */
-	public static log(handler:() => string) {
-		if(this.logDisabled)
+	public static log(handler: () => string) {
+		if (this.logDisabled)
 			return;
-		const lastIndex = this.queue.length-1;
-		if(lastIndex < 0)
+		const lastIndex = this.queue.length - 1;
+		if (lastIndex < 0)
 			return;
 		// Get current log lines
 		const logObj = this.queue[lastIndex];
@@ -52,13 +52,13 @@ export class DelayedLog {
 	 * 'handler' is called if the key is found.
 	 * @param handler 'handler' should return the string to be logged but is only called if the key is correct.
 	 */
-	public static logIf(key: any, handler:() => string) {
-		if(this.logDisabled)
+	public static logIf(key: any, handler: () => string) {
+		if (this.logDisabled)
 			return;
-		if(!this.keyList.has(key))
+		if (!this.keyList.has(key))
 			return;
-		const lastIndex = this.queue.length-1;
-		if(lastIndex < 0)
+		const lastIndex = this.queue.length - 1;
+		if (lastIndex < 0)
 			return;
 		// Get current log lines
 		const logObj = this.queue[lastIndex];
@@ -73,7 +73,7 @@ export class DelayedLog {
 	 * Has to be ended with endLog.
 	 */
 	public static startLog() {
-		if(this.logDisabled)
+		if (this.logDisabled)
 			return;
 		// Create new log object
 		const logObj = new DelayedLog();
@@ -88,12 +88,12 @@ export class DelayedLog {
 	 *
 	 */
 	public static stopLog() {
-		if(this.logDisabled)
+		if (this.logDisabled)
 			return;
 		const logObj = this.queue.pop();
-		if(!logObj)
+		if (!logObj)
 			return;
-		if(!logObj.key)
+		if (!logObj.key)
 			return;
 		// Log
 		console.log(this.getNumber(logObj.key) + ':');
@@ -107,13 +107,13 @@ export class DelayedLog {
 	 * Increase tabulator.
 	 */
 	public static pushTab() {
-		if(this.logDisabled)
+		if (this.logDisabled)
 			return;
-		const lastIndex = this.queue.length-1;
-		if(lastIndex < 0)
+		const lastIndex = this.queue.length - 1;
+		if (lastIndex < 0)
 			return;
 		const logObj = this.queue[lastIndex];
-		logObj.tabLevel ++;
+		logObj.tabLevel++;
 	}
 
 
@@ -121,13 +121,13 @@ export class DelayedLog {
 	 * Decrease tabulator.
 	 */
 	public static popTab() {
-		if(this.logDisabled)
+		if (this.logDisabled)
 			return;
-		const lastIndex = this.queue.length-1;
-		if(lastIndex < 0)
+		const lastIndex = this.queue.length - 1;
+		if (lastIndex < 0)
 			return;
 		const logObj = this.queue[lastIndex];
-		logObj.tabLevel --;
+		logObj.tabLevel--;
 	}
 
 

@@ -11,14 +11,14 @@ export class Comment {
 
 	/// Adds a line to the 'before'-comment.
 	public addBefore(line: string) {
-		if(!this.linesBefore)
+		if (!this.linesBefore)
 			this.linesBefore = Array<string>();
 		this.linesBefore.push(line);
 	}
 
 	/// Adds a line to the 'after'-comment.
 	public addAfter(line: string) {
-		if(!this.linesAfter)
+		if (!this.linesAfter)
 			this.linesAfter = Array<string>();
 		this.linesAfter.push(line);
 	}
@@ -33,16 +33,16 @@ export class Comment {
 	 * @param disableComments If true, then no comment is written.
 	 * @returns E.g. ";comment", "SUB001:\t; comment", ";comment"
 	 */
-	public static getLines(comment: Comment|undefined, statement: string, disableComments: boolean): Array<string> {
-		if (!disableComments&&comment) {
+	public static getLines(comment: Comment | undefined, statement: string, disableComments: boolean): Array<string> {
+		if (!disableComments && comment) {
 			const arr = new Array<string>();
-			if(comment.linesBefore)
+			if (comment.linesBefore)
 				arr.push(...comment.linesBefore);
 			let text = statement;
-			if(comment.inlineComment)
+			if (comment.inlineComment)
 				text += '\t' + comment.inlineComment;
 			arr.push(text);
-			if(comment.linesAfter)
+			if (comment.linesAfter)
 				arr.push(...comment.linesAfter);
 			return arr;
 		}

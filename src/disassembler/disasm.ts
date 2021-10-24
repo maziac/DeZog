@@ -1,16 +1,16 @@
 //import * as util from 'util';
 import * as assert from 'assert';
-import { DelayedLog } from './delayedlog';
-import { MAX_MEM_SIZE } from './basememory';
-import { Memory, MemAttribute } from './memory';
-import { Opcode, OpcodeFlag } from './opcode';
-import { NumberType, getNumberTypeAsString } from './numbertype'
-import { DisLabel } from './dislabel';
-import { Comment } from './comment';
-import { SubroutineStatistics } from './statistics';
-import { EventEmitter } from 'events';
-import { Format } from './format';
-import { readFileSync } from 'fs';
+import {DelayedLog} from './delayedlog';
+import {MAX_MEM_SIZE} from './basememory';
+import {Memory, MemAttribute} from './memory';
+import {Opcode, OpcodeFlag} from './opcode';
+import {NumberType, getNumberTypeAsString} from './numbertype'
+import {DisLabel} from './dislabel';
+import {Comment} from './comment';
+import {SubroutineStatistics} from './statistics';
+import {EventEmitter} from 'events';
+import {Format} from './format';
+import {readFileSync} from 'fs';
 
 
 
@@ -27,13 +27,13 @@ export class Disassembler extends EventEmitter {
 	public memory = new Memory();
 
 	/// The labels.
-	public labels: Map<number,DisLabel>;
+	public labels: Map<number, DisLabel>;
 
 	/// The reverted labels map. Created when a callgraph is output.
 	protected revertedLabelMap: Map<string, number>;
 
 	/// Temporarily offset labels. Just an offset number of the address of the real label.
-	protected offsetLabels: Map<number,number>;
+	protected offsetLabels: Map<number, number>;
 
 	/// Here the association from an address to it's parent, i.e. the subroutine it
 	// belongs to is stored for each address.
@@ -49,13 +49,13 @@ export class Disassembler extends EventEmitter {
 	protected subroutineStatistics = new Map<DisLabel, SubroutineStatistics>();
 
 	/// The statistics maximum
-	protected statisticsMax: SubroutineStatistics = { sizeInBytes:0, countOfInstructions: 0, CyclomaticComplexity: 0 };
+	protected statisticsMax: SubroutineStatistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
 
 	/// The statistics minimum
-	protected statisticsMin: SubroutineStatistics = { sizeInBytes:Number.MAX_SAFE_INTEGER, countOfInstructions: Number.MAX_SAFE_INTEGER, CyclomaticComplexity: Number.MAX_SAFE_INTEGER };
+	protected statisticsMin: SubroutineStatistics = {sizeInBytes: Number.MAX_SAFE_INTEGER, countOfInstructions: Number.MAX_SAFE_INTEGER, CyclomaticComplexity: Number.MAX_SAFE_INTEGER};
 
 	/// Labels that should be marked (with a color) are put here. String contains the color of the label for the dot graphic.
-	protected dotMarkedLabels = new Map<number|string, string>();
+	protected dotMarkedLabels = new Map<number | string, string>();
 
 	// dot-color for warning-marks for labels.
 	protected dotWarningMark = 'lightblue';
@@ -93,13 +93,13 @@ export class Disassembler extends EventEmitter {
 	public labelIntrptPrefix = "INTRPT";
 
 
-    /// If set the disassemble will automatically add address 0 or the SNA address to the labels.
+	/// If set the disassemble will automatically add address 0 or the SNA address to the labels.
 	public automaticAddresses = true;
 
 
 	/// Column areas. e.g. area for the bytes shown before each command
 	public clmnsAddress = 5;		///< size for the address at the beginning of each line. If 0 no address is shown.
-	public clmnsBytes = 4*3 + 1;	///< 4* length of hex-byte
+	public clmnsBytes = 4 * 3 + 1;	///< 4* length of hex-byte
 	public clmnsOpcodeFirstPart = 4 + 1;	///< First part of the opcodes, e.g. "LD" in "LD A,7"
 	public clmsnOpcodeTotal = 5 + 6 + 1;		///< Total length of the opcodes. After this an optional comment may start.
 
@@ -120,7 +120,7 @@ export class Disassembler extends EventEmitter {
 	/// An array that either contains label names or addresses,
 	/// but both as string. If defined only the labels inside this
 	/// list are used for the dot graphics.
-	public graphLabels = new Array<string|number>();
+	public graphLabels = new Array<string | number>();
 
 	/// The disassembled lines.
 	protected disassembledLines: Array<string>;
@@ -145,7 +145,7 @@ export class Disassembler extends EventEmitter {
 
 
 	// For DeZog. Used to turn off any comments in the disassembled text.
-	public disableCommentsInDisassembly=false;
+	public disableCommentsInDisassembly = false;
 
 
 	/**
@@ -158,18 +158,18 @@ export class Disassembler extends EventEmitter {
 			let valueName;
 			let label;
 			let offsString = '';
-			if(this.labels)
+			if (this.labels)
 				label = this.labels.get(value);
-			if(!label) {
+			if (!label) {
 				// Check for offset label
 				const offs = this.offsetLabels.get(value);
-				if(offs) {
-					label = this.labels.get(value+offs);
-					if(label)
-						offsString = (offs > 0) ? ''+(-offs) : '+'+(-offs);
+				if (offs) {
+					label = this.labels.get(value + offs);
+					if (label)
+						offsString = (offs > 0) ? '' + (-offs) : '+' + (-offs);
 				}
 			}
-			if(label)
+			if (label)
 				valueName = label.name + offsString;
 			return valueName;
 		});
@@ -180,21 +180,21 @@ export class Disassembler extends EventEmitter {
 	 * or the SNA address.
 	 */
 	public addAutomaticAddresses() {
-		if(!this.automaticAddresses)
+		if (!this.automaticAddresses)
 			return;
 
 		// If a SNA address is already given, omit address 0
-		if(this.snaStartAddress >= 0) {
+		if (this.snaStartAddress >= 0) {
 			// Use sna address
 			this.addressQueue.push(this.snaStartAddress);
 		}
 		else {
 			// Use address 0.
 			// Check for code label at address 0.
-			if(this.memory.getAttributeAt(0) & MemAttribute.ASSIGNED) {
+			if (this.memory.getAttributeAt(0) & MemAttribute.ASSIGNED) {
 				// Check if label exists
 				let label0 = this.labels.get(0);
-				if(!label0) {
+				if (!label0) {
 					this.setFixedCodeLabel(0, 'ORG_0000');
 				}
 				else {
@@ -212,7 +212,7 @@ export class Disassembler extends EventEmitter {
 	 * Make sure to run 'disassemble' beforehand.
 	 */
 	public getDisassemblyLines(): string[] {
-		if(!this.disassembledLines) {
+		if (!this.disassembledLines) {
 			this.emit('warning', 'No disassembly was done.');
 			return [''];
 		}
@@ -236,7 +236,7 @@ export class Disassembler extends EventEmitter {
 	 * An array of strings with the disassembly.
 	 */
 	public disassemble() {
-        // Add address 0
+		// Add address 0
 		this.addAutomaticAddresses();
 
 		// Collect labels
@@ -290,10 +290,10 @@ export class Disassembler extends EventEmitter {
 		this.disassembledLines.push(...disLines);
 
 		// Remove any preceeding empty lines
-		while(this.disassembledLines.length) {
-			if(this.disassembledLines[0].length > 0)
+		while (this.disassembledLines.length) {
+			if (this.disassembledLines[0].length > 0)
 				break;
-				this.disassembledLines.splice(0,1);
+			this.disassembledLines.splice(0, 1);
 		}
 	}
 
@@ -303,7 +303,7 @@ export class Disassembler extends EventEmitter {
 	 * @param origin The start address of the memory area.
 	 * @param memory The memory area.
 	 */
-	public setMemory(origin:number, memory: Uint8Array) {
+	public setMemory(origin: number, memory: Uint8Array) {
 		this.memory.setMemory(origin, memory);
 		// Set start label
 		//this.setLabel(origin, 'BIN_START_'+origin, NumberType.DATA_LBL);
@@ -331,9 +331,9 @@ export class Disassembler extends EventEmitter {
 		const header = sna.slice(0, 27);
 		const bin = sna.slice(27);
 		// Read start address
-		const sp = header[23] + 256*header[24];	// Stackpointer
-		const spIndex = sp-0x4000;
-		const start = bin[spIndex] + 256*bin[spIndex+1];	// Get start address from stack
+		const sp = header[23] + 256 * header[24];	// Stackpointer
+		const spIndex = sp - 0x4000;
+		const start = bin[spIndex] + 256 * bin[spIndex + 1];	// Get start address from stack
 		this.setMemory(0x4000, bin);
 
 		/* In most cases (snapshot) this is a random address, so it does not make sense to use it as a label:
@@ -353,8 +353,8 @@ export class Disassembler extends EventEmitter {
 	 */
 	public clearLabels() {
 		// get new arrays/maps.
-		this.labels = new Map<number,DisLabel>();
-		this.offsetLabels = new Map<number,number>();
+		this.labels = new Map<number, DisLabel>();
+		this.offsetLabels = new Map<number, number>();
 		this.addressQueue = new Array<number>();
 		// ? Maybe the address Parents are missing here.
 	}
@@ -366,10 +366,10 @@ export class Disassembler extends EventEmitter {
 	 */
 	public initLabels() {
 		// get new arrays/maps.
-		this.labels = new Map<number,DisLabel>();
-		this.offsetLabels = new Map<number,number>();
-		this.addressParents=new Array<DisLabel>();
-		this.addressComments=new Map<number, Comment>();
+		this.labels = new Map<number, DisLabel>();
+		this.offsetLabels = new Map<number, number>();
+		this.addressParents = new Array<DisLabel>();
+		this.addressComments = new Map<number, Comment>();
 	}
 
 
@@ -386,9 +386,9 @@ export class Disassembler extends EventEmitter {
 	public setLabel(address: number, name?: string, type = NumberType.CODE_LBL) {
 		// Check if label already set.
 		let label = this.labels.get(address);
-		if(label) {
+		if (label) {
 			// Exists already, just overwrite the name
-			if(!label.name || !label.isFixed)	// Don't overwrite names given for fixed addresses.
+			if (!label.name || !label.isFixed)	// Don't overwrite names given for fixed addresses.
 				(label.name as any) = name;
 			return;
 		}
@@ -399,12 +399,12 @@ export class Disassembler extends EventEmitter {
 		(label.name as any) = name;	// allow undefined
 		// Check if out of range
 		const attr = this.memory.getAttributeAt(address);
-		if(attr & MemAttribute.ASSIGNED) {
-			if(type == NumberType.CODE_LBL
-				|| type == NumberType.CODE_LOCAL_LBL
-				|| type == NumberType.CODE_LOCAL_LOOP
-				|| type == NumberType.CODE_RST
-				|| type == NumberType.CODE_SUB
+		if (attr & MemAttribute.ASSIGNED) {
+			if (type == NumberType.CODE_LBL
+				|| type == NumberType.CODE_LOCAL_LBL
+				|| type == NumberType.CODE_LOCAL_LOOP
+				|| type == NumberType.CODE_RST
+				|| type == NumberType.CODE_SUB
 			)
 				this.addressQueue.push(address);
 		}
@@ -426,18 +426,18 @@ export class Disassembler extends EventEmitter {
 	public setFixedCodeLabel(address: number, name?: string) {
 		// Check if label already set.
 		let label = this.labels.get(address);
-		if(!label) {
+		if (!label) {
 			// Create new label
 			label = new DisLabel(NumberType.CODE_LBL);
 			this.labels.set(address, label);
 		}
 
 		// Set name
-		if(name)
+		if (name)
 			(label.name as any) = name;
 		// Check if out of range
 		const attr = this.memory.getAttributeAt(address);
-		if(attr & MemAttribute.ASSIGNED)
+		if (attr & MemAttribute.ASSIGNED)
 			this.addressQueue.push(address);
 		else
 			label.isEqu = true;	 // out of range -> EQU
@@ -462,7 +462,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	public setJmpTable(address: number, count: number) {
 		// Loop over all jmp addresses
-		for(let i=0; i<count; i++) {
+		for (let i = 0; i < count; i++) {
 			// Get address
 			let jmpAddress = this.memory.getWordValueAt(address);
 			// Set label
@@ -484,13 +484,13 @@ export class Disassembler extends EventEmitter {
 	 */
 	public useMameTraceFile(path: string) {
 		const trace = readFileSync(path).toString();
-		if(trace.length < 5)
+		if (trace.length < 5)
 			return;
-	/* Doesn't make sense:
-		// Use first address as start address
-		const startAddress = trace.substr(0,5);
-		this.setLabel(parseInt(startAddress, 16), 'TR_LBL_MAIN_START_'+ startAddress);
-	*/
+		/* Doesn't make sense:
+			// Use first address as start address
+			const startAddress = trace.substr(0,5);
+			this.setLabel(parseInt(startAddress, 16), 'TR_LBL_MAIN_START_'+ startAddress);
+		*/
 		// Loop over the complete trace file
 		const buffer = new Array<boolean>(MAX_MEM_SIZE);	// initialized to undefined
 		let k = 0;
@@ -499,23 +499,23 @@ export class Disassembler extends EventEmitter {
 		do {
 			//const text = trace.substr(k,100);
 			//console.log('log: "' + text + '"');
-			const addressString = trace.substr(k,5);
-			if(addressString.length == 5 && addressString[4] == ':') {
+			const addressString = trace.substr(k, 5);
+			if (addressString.length == 5 && addressString[4] == ':') {
 				// Use address
 				const addr = parseInt(addressString, 16);
 				buffer[addr] = true;
 				k += 5;
 				// Check if previous opcode was a 'jp (hl)'
 				const memAttr = this.memory.getAttributeAt(addr);
-				if(jpHlRef) {
+				if (jpHlRef) {
 					// If so: add a label with a reference
 					this.setFoundLabel(addr, new Set([jpHlRef]), NumberType.CODE_LBL, memAttr);
 					jpHlRef = undefined;
 				}
 				// check if opcode is a "jp (hl)"
-				if(memAttr & MemAttribute.ASSIGNED) {
-					const opcodeString = trace.substr(k,10);
-					if(opcodeString == ' jp   (hl)') {
+				if (memAttr & MemAttribute.ASSIGNED) {
+					const opcodeString = trace.substr(k, 10);
+					if (opcodeString == ' jp   (hl)') {
 						// remember address
 						jpHlRef = addr;
 						k += 10;
@@ -525,10 +525,10 @@ export class Disassembler extends EventEmitter {
 			// next
 			k = trace.indexOf('\n', k) + 1;
 			//lineNr ++;
-		} while(k != 0);
+		} while (k != 0);
 		// Now add the addresses to the queue
-		for(let addr=0; addr<MAX_MEM_SIZE; addr++) {
-			if(buffer[addr])
+		for (let addr = 0; addr < MAX_MEM_SIZE; addr++) {
+			if (buffer[addr])
 				this.addressQueue.push(addr);
 		}
 	}
@@ -556,9 +556,9 @@ export class Disassembler extends EventEmitter {
 	public getEquLabelsDisassembly(): Array<string> {
 		let firstLabel = true;
 		const lines = new Array<string>();
-		for(let [address, label] of this.labels) {
+		for (let [address, label] of this.labels) {
 			// Check if EQU
-			if(label.isEqu) {
+			if (label.isEqu) {
 				if (firstLabel) {
 					if (!this.disableCommentsInDisassembly) {
 						// At the start of the EQU area print a comment.
@@ -568,10 +568,10 @@ export class Disassembler extends EventEmitter {
 					firstLabel = false;
 				}
 				// "Disassemble"
-				const statement =  Format.addSpaces(label.name+':', this.clmnsBytes-1) + ' ' + this.rightCase('EQU ') + Format.fillDigits(Format.getHexString(address,4), ' ', 5) +'h';
+				const statement = Format.addSpaces(label.name + ':', this.clmnsBytes - 1) + ' ' + this.rightCase('EQU ') + Format.fillDigits(Format.getHexString(address, 4), ' ', 5) + 'h';
 				// Comment
 				const comment = this.addressComments.get(address);
-				const commentLines=Comment.getLines(comment, statement, this.disableCommentsInDisassembly);
+				const commentLines = Comment.getLines(comment, statement, this.disableCommentsInDisassembly);
 				// Store
 				lines.push(...commentLines);
 			}
@@ -597,7 +597,7 @@ export class Disassembler extends EventEmitter {
 		let opcode;
 
 		// get new address from queue
-		while((address = this.addressQueue.shift()) != undefined) {
+		while ((address = this.addressQueue.shift()) != undefined) {
 			//console.log('address=0x' + address.toString(16));
 			// disassemble until stop-code
 			//console.log('===');
@@ -605,28 +605,28 @@ export class Disassembler extends EventEmitter {
 				//console.log('addr=' + address.toString(16));
 				// Check if memory has already been disassembled
 				let attr = this.memory.getAttributeAt(address);
-				if(attr & MemAttribute.CODE)
+				if (attr & MemAttribute.CODE)
 					break;	// Yes, already disassembled
-				if(!(attr & MemAttribute.ASSIGNED)) {
+				if (!(attr & MemAttribute.ASSIGNED)) {
 					// Error: trying to disassemble unassigned memory areas
-					if(!this.no_warning_disassemble_unassigned_memory)
+					if (!this.no_warning_disassemble_unassigned_memory)
 						this.emit('warning', 'Trying to disassemble unassigned memory area at 0x' + address.toString(16) + '.');
 					break;
 				}
 
 				// Read memory value
 				opcode = Opcode.getOpcodeAt(this.memory, address);
-				if(this.DBG_COLLECT_LABELS)
+				if (this.DBG_COLLECT_LABELS)
 					console.log(Format.getHexString(address) + '\t' + opcode.disassemble().mnemonic);
 
 				// Check if memory area has already been PARTLY disassembled
 				const len = opcode.length;
 				let memAddress = address;
 				let quitDoWhile = false;
-				for(let i=1; i<len; i++) {
-					memAddress ++;
+				for (let i = 1; i < len; i++) {
+					memAddress++;
 					attr = this.memory.getAttributeAt(memAddress);
-					if(attr & MemAttribute.CODE) {
+					if (attr & MemAttribute.CODE) {
 						// It has already been disassembled -> error.
 						const otherOpcode = Opcode.getOpcodeAt(this.memory, memAddress);
 						// emit warning
@@ -639,7 +639,7 @@ export class Disassembler extends EventEmitter {
 						break;
 					}
 				}
-				if(quitDoWhile)
+				if (quitDoWhile)
 					break;
 
 				// Mark memory area
@@ -653,21 +653,21 @@ export class Disassembler extends EventEmitter {
 				*/
 
 				// Check opcode for labels
-				if(!this.disassembleForLabel(address, opcode)) {
+				if (!this.disassembleForLabel(address, opcode)) {
 					return;
 				}
 
 				// Check for stop code. (JP, JR, RET)
-				if(opcode.flags & OpcodeFlag.STOP)
+				if (opcode.flags & OpcodeFlag.STOP)
 					break;
 
 				// Next address
 				address += opcode.length;
 
 				// Check for end of disassembly (JP, RET)
-			} while(!(opcode.flags & OpcodeFlag.STOP));
+			} while (!(opcode.flags & OpcodeFlag.STOP));
 
-			if(this.DBG_COLLECT_LABELS)
+			if (this.DBG_COLLECT_LABELS)
 				console.log('\n');
 		}
 	}
@@ -683,9 +683,9 @@ export class Disassembler extends EventEmitter {
 	protected setFoundLabel(address: number, referenceAddresses: Set<number>, type: NumberType, attr: MemAttribute) {
 		// Check if label already exists
 		let label = this.labels.get(address);
-		if(label) {
+		if (label) {
 			// label already exists: prioritize
-			if(label.type < type)
+			if (label.type < type)
 				label.type = type;
 		}
 		else {
@@ -693,14 +693,14 @@ export class Disassembler extends EventEmitter {
 			label = new DisLabel(type);
 			this.labels.set(address, label);
 			// Check if out of range
-			if(!(attr & MemAttribute.ASSIGNED))
+			if (!(attr & MemAttribute.ASSIGNED))
 				label.isEqu = true;
 		}
 
 		// Add reference(s). Do a union of both sets.
 		//label.references = new Set([...label.references, ...referenceAddresses]);
-		for(let ref of referenceAddresses) {
-			if(ref != address) {
+		for (let ref of referenceAddresses) {
+			if (ref != address) {
 				label.references.add(ref);
 			}
 		}
@@ -713,26 +713,26 @@ export class Disassembler extends EventEmitter {
 	 * is not continuous.
 	 */
 	protected setSpecialLabels() {
-		if(this.automaticAddresses) {
+		if (this.automaticAddresses) {
 			// Do special SNA handling. I.e. check if the SNA start address is meaningful
-			if(this.snaStartAddress >= 0) {
+			if (this.snaStartAddress >= 0) {
 				const label = this.labels.get(this.snaStartAddress);
-				if(!label)	// if not found by other means.
-					this.setLabel(this.snaStartAddress, 'SNA_LBL_MAIN_START_'+this.snaStartAddress.toString(16).toUpperCase(), NumberType.CODE_LBL);
+				if (!label)	// if not found by other means.
+					this.setLabel(this.snaStartAddress, 'SNA_LBL_MAIN_START_' + this.snaStartAddress.toString(16).toUpperCase(), NumberType.CODE_LBL);
 			}
 		}
 
 		// Check whole memory
 		let prevAttr = 0;
-		for(let addr=0; addr<MAX_MEM_SIZE; addr++) {
+		for (let addr = 0; addr < MAX_MEM_SIZE; addr++) {
 			const memAttr = this.memory.getAttributeAt(addr);
-			if((prevAttr ^ memAttr) & MemAttribute.ASSIGNED) {
+			if ((prevAttr ^ memAttr) & MemAttribute.ASSIGNED) {
 				// Assignment status changed
-				if(memAttr & MemAttribute.ASSIGNED) {
+				if (memAttr & MemAttribute.ASSIGNED) {
 					// Is assigned now, set a label (maybe)
 					const label = this.labels.get(addr);
-					if(!label) {
-						this.setLabel(addr, 'BIN_START_'+Format.getHexString(addr).toUpperCase(), NumberType.DATA_LBL);
+					if (!label) {
+						this.setLabel(addr, 'BIN_START_' + Format.getHexString(addr).toUpperCase(), NumberType.DATA_LBL);
 					}
 				}
 			}
@@ -765,33 +765,33 @@ export class Disassembler extends EventEmitter {
 		// Check the whole memory
 		let prevAttr = 0;
 		let prevCodeAddr = -1;
-		for(let address=0x0000; address<MAX_MEM_SIZE; address++) {
+		for (let address = 0x0000; address < MAX_MEM_SIZE; address++) {
 			// check memory attribute
 			const memAttr = this.memory.getAttributeAt(address);
 
 			// Only if not the SNA address
-			if(address != this.snaStartAddress) {
-				if(memAttr & MemAttribute.CODE_FIRST
-				&& memAttr & MemAttribute.ASSIGNED) {
+			if (address != this.snaStartAddress) {
+				if (memAttr & MemAttribute.CODE_FIRST
+					&& memAttr & MemAttribute.ASSIGNED) {
 					// Check if label exists
 					const label = this.labels.get(address);
-					if(!label) {
+					if (!label) {
 						// Only if label not yet exists
 
 						// Check for transition unassigned or data (= not CODE) to code
-						if(!(prevAttr & MemAttribute.ASSIGNED)
-						|| !(prevAttr & MemAttribute.CODE)) {
+						if (!(prevAttr & MemAttribute.ASSIGNED)
+							|| !(prevAttr & MemAttribute.CODE)) {
 							// Only if not the SNA address
-							if(address != this.snaStartAddress) {
+							if (address != this.snaStartAddress) {
 								// Assign label
 								this.setFixedCodeLabel(address, this.labelIntrptPrefix);
 								foundInterrupts.push(address);
 							}
 						}
 						// Check for transition from stop code
-						else if(prevCodeAddr >= 0) {
+						else if (prevCodeAddr >= 0) {
 							const opcode = Opcode.getOpcodeAt(this.memory, prevCodeAddr);
-							if(opcode.flags & OpcodeFlag.STOP) {
+							if (opcode.flags & OpcodeFlag.STOP) {
 								// Assign label
 								this.setFixedCodeLabel(address, this.labelIntrptPrefix);
 								foundInterrupts.push(address);
@@ -803,21 +803,21 @@ export class Disassembler extends EventEmitter {
 
 			// Backup values
 			prevAttr = memAttr;
-			if(!(memAttr & MemAttribute.CODE))
+			if (!(memAttr & MemAttribute.CODE))
 				prevCodeAddr = -1;
-			if(memAttr & MemAttribute.CODE_FIRST)
+			if (memAttr & MemAttribute.CODE_FIRST)
 				prevCodeAddr = address;
 		}
 
 		// Add numbers
 		const count = foundInterrupts.length;
-		if(count > 1) {
-			for(let index=0; index<count; index++) {
+		if (count > 1) {
+			for (let index = 0; index < count; index++) {
 				const addr = foundInterrupts[index];
 				const label = this.labels.get(addr);
 				assert(label, 'findInterruptLabels');
-				if(label)
-					label.name += index+1;
+				if (label)
+					label.name += index + 1;
 			}
 		}
 	}
@@ -827,7 +827,7 @@ export class Disassembler extends EventEmitter {
 	 * Sorts all labels by address.
 	 */
 	protected sortLabels() {
-		this.labels = new Map([...this.labels.entries()].sort(([a], [b]) => a-b ));
+		this.labels = new Map([...this.labels.entries()].sort(([a], [b]) => a - b));
 	}
 
 
@@ -842,7 +842,7 @@ export class Disassembler extends EventEmitter {
 	protected disassembleForLabel(opcodeAddress: number, opcode: Opcode): boolean {
 
 		// Check for branching etc. (CALL, RST, JP, JR)
-		if(opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
+		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 			// It is a label.
 
 			// Get branching memory attribute
@@ -851,14 +851,14 @@ export class Disassembler extends EventEmitter {
 
 			// Create new label or prioritize if label already exists
 			let vType = opcode.valueType;
-			if(vType == NumberType.CODE_LOCAL_LBL) {
+			if (vType == NumberType.CODE_LOCAL_LBL) {
 				// A relative jump backwards will become a "loop"
-				if(branchAddress <= opcodeAddress)
+				if (branchAddress <= opcodeAddress)
 					vType = NumberType.CODE_LOCAL_LOOP;
 			}
-			else if(vType == NumberType.CODE_LBL) {
+			else if (vType == NumberType.CODE_LBL) {
 				// Treat JP to unassigned memory area as a CALL.
-				if(!(attr & MemAttribute.ASSIGNED))
+				if (!(attr & MemAttribute.ASSIGNED))
 					vType = NumberType.CODE_SUB;
 			}
 
@@ -866,22 +866,22 @@ export class Disassembler extends EventEmitter {
 			this.setFoundLabel(branchAddress, new Set([opcodeAddress]), vType, attr);
 
 			// Check if code from the branching address has already been disassembled
-			if(!(attr & MemAttribute.CODE)) {
+			if (!(attr & MemAttribute.CODE)) {
 				// It has not been disassembled yet
-				if(attr & MemAttribute.ASSIGNED) {
+				if (attr & MemAttribute.ASSIGNED) {
 					// memory location exists, so queue it for disassembly
-					if(vType != NumberType.CODE_RST || this.rstDontFollowAddresses.indexOf(branchAddress) < 0) {
+					if (vType != NumberType.CODE_RST || this.rstDontFollowAddresses.indexOf(branchAddress) < 0) {
 						// But only if it is not a RST address which was banned by the user.
 						this.addressQueue.push(branchAddress);
 					}
 				}
 			}
 		}
-		else if(opcode.valueType == NumberType.DATA_LBL) {
+		else if (opcode.valueType == NumberType.DATA_LBL) {
 			// It's a data label, like "LD A,(nn)"
 			let address = opcode.value;
 			// Check if it the top of stack
-			if(opcode.flags & OpcodeFlag.LOAD_STACK_TOP) {
+			if (opcode.flags & OpcodeFlag.LOAD_STACK_TOP) {
 				// yes, top of stack i.e. "LD SP,nn".
 				// In this case the data 2 byte below is shown as last stack element
 				const offs = -2;
@@ -890,7 +890,7 @@ export class Disassembler extends EventEmitter {
 				// change address
 				address += offs;
 				// add comment
-				if(!this.addressComments.get(address)) {
+				if (!this.addressComments.get(address)) {
 					const comment = new Comment();
 					comment.addBefore('; Last element of stack:');
 					this.addressComments.set(address, comment);
@@ -917,11 +917,11 @@ export class Disassembler extends EventEmitter {
 	 * 2. Another label is created at the start of the opcode.
 	 */
 	protected adjustCodePointingLabels() {
-		const changeMap = new Map<number,DisLabel>();
+		const changeMap = new Map<number, DisLabel>();
 
 		// Loop through all labels
-		for( let [address, label] of this.labels) {
-			switch(label.type) {
+		for (let [address, label] of this.labels) {
+			switch (label.type) {
 				case NumberType.CODE_LBL:
 				case NumberType.CODE_LOCAL_LBL:
 				case NumberType.CODE_LOCAL_LOOP:
@@ -929,19 +929,19 @@ export class Disassembler extends EventEmitter {
 				case NumberType.CODE_SUB:
 				case NumberType.DATA_LBL:
 					const memAttr = this.memory.getAttributeAt(address);
-					if(memAttr & MemAttribute.CODE) {
-						if(!(memAttr & MemAttribute.CODE_FIRST)) {
+					if (memAttr & MemAttribute.CODE) {
+						if (!(memAttr & MemAttribute.CODE_FIRST)) {
 							// Hit in the middle of an opcode.
 							// Remember to change:
 							changeMap.set(address, label);
 						}
 					}
-				break;
+					break;
 			}
 		}
 
 		// Now change labels in original map
-		for( let [address, label] of changeMap) {
+		for (let [address, label] of changeMap) {
 			// Search start of opcode.
 			let addrStart = address;
 			let attr;
@@ -949,7 +949,7 @@ export class Disassembler extends EventEmitter {
 				addrStart--;
 				assert(address - addrStart <= 4, 'adjustSelfModifyingLabels');	// Opcode should be smaller than 5 bytes
 				attr = this.memory.getAttributeAt(addrStart);
-			} while(!(attr & MemAttribute.CODE_FIRST));
+			} while (!(attr & MemAttribute.CODE_FIRST));
 			// Use label and put it to the new address
 			this.setFoundLabel(addrStart, label.references, label.type, attr);
 			// Remove old label
@@ -976,21 +976,21 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected addFlowThroughReferences() {
 		// Loop through all labels
-		for( let [address, label] of this.labels) {
-			switch(label.type) {
+		for (let [address, label] of this.labels) {
+			switch (label.type) {
 				case NumberType.CODE_LBL:
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
 
-				// Find the next label that is reached not by a JP, JR or CALL
-				const found = this.findNextFlowThroughLabel(address);
-				if(found) {
-					// add reference
-					const foundLabel = found.label;
-					if(label != foundLabel) {
-						foundLabel.references.add(found.address);
+					// Find the next label that is reached not by a JP, JR or CALL
+					const found = this.findNextFlowThroughLabel(address);
+					if (found) {
+						// add reference
+						const foundLabel = found.label;
+						if (label != foundLabel) {
+							foundLabel.references.add(found.address);
+						}
 					}
-				}
 
 			}
 		}
@@ -1008,10 +1008,10 @@ export class Disassembler extends EventEmitter {
 	 * @param address The start address of the path.
 	 * @returns The found label or undefined if nothing found.
 	 */
-	protected findNextFlowThroughLabel(address: number,): {label: DisLabel, address: number}|undefined {
+	protected findNextFlowThroughLabel(address: number,): {label: DisLabel, address: number} | undefined {
 		// Check if memory exists
 		let memAttr = this.memory.getAttributeAt(address);
-		if(!(memAttr & MemAttribute.ASSIGNED)) {
+		if (!(memAttr & MemAttribute.ASSIGNED)) {
 			return undefined;
 		}
 
@@ -1019,17 +1019,17 @@ export class Disassembler extends EventEmitter {
 		let opcode = Opcode.getOpcodeAt(this.memory, address);
 
 		// Loop over addresses
-		while(!(opcode.flags & OpcodeFlag.STOP)) {
+		while (!(opcode.flags & OpcodeFlag.STOP)) {
 			// Next address
 			const prevAddress = address;
 			address += opcode.length;
 
 			// Check if label exists
 			const foundLabel = this.labels.get(address);
-			if(foundLabel) {
+			if (foundLabel) {
 				// Check if it is LBL or SUB
 				const type = foundLabel.type;
-				switch(type) {
+				switch (type) {
 					case NumberType.CODE_LBL:
 					case NumberType.CODE_SUB:
 						return {label: foundLabel, address: prevAddress};
@@ -1038,7 +1038,7 @@ export class Disassembler extends EventEmitter {
 
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if(!(memAttr & MemAttribute.ASSIGNED)) {
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				return undefined;
 			}
 
@@ -1063,18 +1063,18 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected turnLBLintoSUB() {
 		// Loop through all labels
-		for( let [address, label] of this.labels) {
-			if(label.type == NumberType.CODE_LBL) {
+		for (let [address, label] of this.labels) {
+			if (label.type == NumberType.CODE_LBL) {
 				// Log
 				DelayedLog.startLog();
 				// Find a "RET" on the path
 				const addrsArray = new Array<number>();
 				const retFound = this.findRET(address, addrsArray);
-				if(retFound) {
+				if (retFound) {
 					// Debug
 					DelayedLog.logIf(address, () =>
-					'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
-					DelayedLog.logIf(address, () =>  'turnLBLintoSUB: Turned Label ' + getNumberTypeAsString(label.type) + ' into CODE_SUB.');
+						'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
+					DelayedLog.logIf(address, () => 'turnLBLintoSUB: Turned Label ' + getNumberTypeAsString(label.type) + ' into CODE_SUB.');
 
 					// It is a subroutine, so turn the LBL into a SUB.
 					label.type = NumberType.CODE_SUB;
@@ -1099,21 +1099,21 @@ export class Disassembler extends EventEmitter {
 
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if(!(memAttr & MemAttribute.ASSIGNED)) {
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
 				return false;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
-			if(addrsArray.indexOf(address) >= 0) {
+			if (addrsArray.indexOf(address) >= 0) {
 				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
 				return false;	// already checked
 			}
 			// Check if a label for address exists that already is a subroutine.
 			const addrLabel = this.labels.get(address);
-			if(addrLabel) {
+			if (addrLabel) {
 				const type = addrLabel.type;
-				if(type == NumberType.CODE_SUB
-				|| type == NumberType.CODE_RST) {
+				if (type == NumberType.CODE_SUB
+					|| type == NumberType.CODE_RST) {
 					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. address belongs already to a SUB.');
 					return true;
 				}
@@ -1124,7 +1124,7 @@ export class Disassembler extends EventEmitter {
 			opcodeClone = {...opcode};	// Required otherwise opcode is overwritten on next call to 'getOpcodeAt' if it's the same opcode.
 
 			// Check if RET
-			if(opcodeClone.flags & OpcodeFlag.RET) {
+			if (opcodeClone.flags & OpcodeFlag.RET) {
 				DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': SUB FOUND. RET code = ' + opcodeClone.name + '.');
 				return true;
 			}
@@ -1133,13 +1133,13 @@ export class Disassembler extends EventEmitter {
 			addrsArray.push(address);
 
 			// And maybe branch address (but not a CALL)
-			if(opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
+			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	DelayedLog.pushTab();
+					DelayedLog.log(() => 'findRET: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.'); DelayedLog.pushTab();
 					const res = this.findRET(branchAddress, addrsArray);
 					DelayedLog.popTab();
-					if(res)
+					if (res)
 						return true;	// SUB found
 				}
 			}
@@ -1147,7 +1147,7 @@ export class Disassembler extends EventEmitter {
 			// Now check next address
 			address += opcodeClone.length;
 
-		} while(!(opcodeClone.flags & OpcodeFlag.STOP));
+		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 
 		// no RET
 		return false;
@@ -1167,8 +1167,8 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected findLocalLabelsInSubroutines() {
 		// Loop through all labels
-		for( let [address, label] of this.labels) {
-			switch(label.type) {
+		for (let [address, label] of this.labels) {
+			switch (label.type) {
 				case NumberType.CODE_LBL:
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
@@ -1180,33 +1180,33 @@ export class Disassembler extends EventEmitter {
 					// Now reduce array. I.e. only a coherent block will be treated as a subroutine.
 					this.reduceSubroutineAddresses(address, addrsArray);
 					// Iterate array
-					for(let addr of addrsArray) {
+					for (let addr of addrsArray) {
 						// Don't check start address
-						if(addr == address)
+						if (addr == address)
 							continue;
 						// get corresponding label
 						const addrLabel = this.labels.get(addr);
 						// Check label
-						if(!addrLabel)
+						if (!addrLabel)
 							continue;
 						// Check label type (not for RST)
-						if(addrLabel.type != NumberType.CODE_LBL
-						&& addrLabel.type != NumberType.CODE_SUB)
+						if (addrLabel.type != NumberType.CODE_LBL
+							&& addrLabel.type != NumberType.CODE_SUB)
 							continue;
-						if(addrLabel.isFixed)
+						if (addrLabel.isFixed)
 							continue;
 						// It is a CODE_LBL. Check references.
 						const refs = addrLabel.references;
 						let outsideFound = false;
-						for(const ref of refs) {
-							if(addrsArray.indexOf(ref) < 0) {
+						for (const ref of refs) {
+							if (addrsArray.indexOf(ref) < 0) {
 								// Found an address outside of the subroutine,
 								// I.e. leave the label unchanged.
 								outsideFound = true;
 								break;
 							}
 						}
-						if(!outsideFound) {
+						if (!outsideFound) {
 							// Debug
 							DelayedLog.logIf(addr, () =>
 								'Addresses: ' + addrsArray.map(addr => addr.toString(16)).join(' '));
@@ -1217,9 +1217,9 @@ export class Disassembler extends EventEmitter {
 							addrLabel.type = NumberType.CODE_LOCAL_LBL;
 							// If any reference addr is bigger than address use CODE_LOCAL_LOOP,
 							// otherwise CODE_LOCAL_LBL
-							for(const ref of refs) {
+							for (const ref of refs) {
 								const diff = ref - addr;
-								if(diff >= 0 && diff <= 128) {
+								if (diff >= 0 && diff <= 128) {
 									// Use loop
 									addrLabel.type = NumberType.CODE_LOCAL_LOOP;
 									break;
@@ -1249,12 +1249,12 @@ export class Disassembler extends EventEmitter {
 
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if(!(memAttr & MemAttribute.ASSIGNED)) {
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
 				break;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
-			if(addrsArray.indexOf(address) >= 0) {
+			if (addrsArray.indexOf(address) >= 0) {
 				DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
 				break;	// already checked
 			}
@@ -1267,10 +1267,10 @@ export class Disassembler extends EventEmitter {
 			addrsArray.push(address);
 
 			// And maybe branch address
-			if(opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
+			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					const branchAddress = opcodeClone.value;
-					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.');	DelayedLog.pushTab();
+					DelayedLog.log(() => 'getSubroutineAddresses: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.'); DelayedLog.pushTab();
 					this.getSubroutineAddresses(branchAddress, addrsArray);
 					DelayedLog.popTab();
 				}
@@ -1279,7 +1279,7 @@ export class Disassembler extends EventEmitter {
 			// Now check next address
 			address += opcodeClone.length;
 
-		} while(!(opcodeClone.flags & OpcodeFlag.STOP));
+		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 	}
 
 
@@ -1298,9 +1298,9 @@ export class Disassembler extends EventEmitter {
 		// It's just required to disassemble the straight line of addresses, no branches.
 		addrsArray.length = 0;	// clear array
 		let nextAddress = address;
-		for(const addr of array) {
+		for (const addr of array) {
 			// Check for coherent block
-			if(addr != nextAddress)
+			if (addr != nextAddress)
 				break;
 
 			// get opcode
@@ -1321,18 +1321,18 @@ export class Disassembler extends EventEmitter {
 	 * Afterwards it removes all self-references in Labels.references.
 	 */
 	protected addParentReferences() {
-		for( let [address, label] of this.labels) {
+		for (let [address, label] of this.labels) {
 			// Get all addresses belonging to a subroutine and set the parent values of
 			// the associated labels.
 			const type = label.type;
-			if(type == NumberType.CODE_SUB
+			if (type == NumberType.CODE_SUB
 				|| type == NumberType.CODE_RST
 				|| type == NumberType.CODE_LBL) {
 				// Collect all addresses belonging to a subroutine
 				DelayedLog.startLog();
 				this.setSubroutineParent(address, label);
 				DelayedLog.logIf(address, () =>
-					''+Format.getHexString(address,4)+' processed.'
+					'' + Format.getHexString(address, 4) + ' processed.'
 				);
 				DelayedLog.stopLog();
 			}
@@ -1340,22 +1340,22 @@ export class Disassembler extends EventEmitter {
 
 		// Remove self references, e.g. a subroutine that includes a loop that
 		// jumps to itself.
-		for( let [address, label] of this.labels) {
+		for (let [address, label] of this.labels) {
 			const refs = label.references;
 			let anyRefOutside = false;
-			for(let ref of refs) {
+			for (let ref of refs) {
 				const addr = ref;
 				const parentLabel = this.addressParents[addr];
-				if(parentLabel == label) {
+				if (parentLabel == label) {
 					// self-reference:
 					// Check if reference is a call:
 					const memAttr = this.memory.getAttributeAt(ref);
-					assert(memAttr &  MemAttribute.ASSIGNED);
-					assert(memAttr &  MemAttribute.CODE);
-					assert(memAttr &  MemAttribute.CODE_FIRST);
+					assert(memAttr & MemAttribute.ASSIGNED);
+					assert(memAttr & MemAttribute.CODE);
+					assert(memAttr & MemAttribute.CODE_FIRST);
 					// Check opcode
 					const opcode = Opcode.getOpcodeAt(this.memory, ref);
-					if(!(opcode.flags & OpcodeFlag.CALL)) {
+					if (!(opcode.flags & OpcodeFlag.CALL)) {
 						// No, it was no call, so it must be a jump. Remove reference.
 						refs.delete(ref);
 					}
@@ -1367,15 +1367,15 @@ export class Disassembler extends EventEmitter {
 			}
 
 			// Check if sub routine cannot be called from outside.
-			if(!anyRefOutside &&
-				(label.type == NumberType.CODE_SUB || label.type == NumberType.CODE_RST)
+			if (!anyRefOutside &&
+				(label.type == NumberType.CODE_SUB || label.type == NumberType.CODE_RST)
 				&& refs.size > 0) {
 				// If there is no call/jp from outside the subroutine itself and if label
 				// is a subroutine then the CALL did only come from the subroutine
 				// itself -> do a warning. Maybe this was a programming error in the assembler code.
 				// Note: It is also checked if there is no ref at all to exclude the interrupts.
-				this.emit('warning', 'Address: ' + Format.getHexString(address,4) + 'h. A subroutine was found that calls itself recursively but is not called from any other location.');
-				this.dotMarkedLabels.set(address,this.dotWarningMark);
+				this.emit('warning', 'Address: ' + Format.getHexString(address, 4) + 'h. A subroutine was found that calls itself recursively but is not called from any other location.');
+				this.dotMarkedLabels.set(address, this.dotWarningMark);
 			}
 		}
 	}
@@ -1400,24 +1400,24 @@ export class Disassembler extends EventEmitter {
 
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if(!(memAttr & MemAttribute.ASSIGNED)) {
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory not assigned.');
 				break;
 			}
 
 			// Check if parent already assigned
 			const memLabel = this.addressParents[address];
-			if(memLabel) {
+			if (memLabel) {
 				DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': returns. memory already checked.');
 				break;	// already checked
 			}
 
 			// Check if label is sub routine
 			const label = this.labels.get(address);
-			if(label) {
-				if(label != parentLabel) {	// Omit start address
+			if (label) {
+				if (label != parentLabel) {	// Omit start address
 					const type = label.type;
-					if(type == NumberType.CODE_SUB
+					if (type == NumberType.CODE_SUB
 						|| type == NumberType.CODE_RST
 						|| type == NumberType.CODE_LBL
 					)
@@ -1435,8 +1435,8 @@ export class Disassembler extends EventEmitter {
 			DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': added. ' + opcodeClone.name);
 
 			// And maybe branch address
-			if(opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-//				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
+			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+				//				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
 				// Check if a label exists to either a subroutine or another absolute label.
 				const branchAddress = opcodeClone.value;
 				/*const branchLabel = this.labels.get(branchAddress);
@@ -1445,8 +1445,8 @@ export class Disassembler extends EventEmitter {
 					|| branchLabel.type == NumberType.CODE_SUB
 					|| branchLabel.type == NumberType.CODE_RST)
 					*/
-					{
-					DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n');	DelayedLog.pushTab();
+				{
+					DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': branching to ' + DelayedLog.getNumber(branchAddress) + '.\n'); DelayedLog.pushTab();
 					this.setSubroutineParent(branchAddress, parentLabel);
 					DelayedLog.popTab();
 				}
@@ -1455,7 +1455,7 @@ export class Disassembler extends EventEmitter {
 			// Now check next address
 			address += opcodeClone.length;
 
-		} while(!(opcodeClone.flags & OpcodeFlag.STOP));
+		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 
 		DelayedLog.log(() => 'setSubroutineParent: address=' + DelayedLog.getNumber(address) + ': stop.\n');
 	}
@@ -1470,17 +1470,17 @@ export class Disassembler extends EventEmitter {
 	 * This is for call-graphs and for the comments in the listing.
 	 */
 	protected addCallsListToLabels() {
-		for( let [, label] of this.labels) {
-			switch(label.type) {
+		for (let [, label] of this.labels) {
+			switch (label.type) {
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_RST:
 				case NumberType.CODE_LBL:
 					// go through references
 					const refs = label.references;
-					for(const ref of refs) {
+					for (const ref of refs) {
 						// Get parent
-						const parent =  this.addressParents[ref];
-						if(parent) {
+						const parent = this.addressParents[ref];
+						if (parent) {
 							// add label to call list of parent
 							parent.calls.push(label);
 						}
@@ -1497,39 +1497,39 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected countStatistics() {
 		// Loop through all labels
-		for( let [address, label] of this.labels) {
-			if(label.isEqu)
+		for (let [address, label] of this.labels) {
+			if (label.isEqu)
 				continue;
-			switch(label.type) {
+			switch (label.type) {
 				case NumberType.CODE_RST:
 					// Check if rst is turned off
-					if(this.rstDontFollowAddresses.indexOf(address) >= 0) {
-						const statistics = {sizeInBytes:0, countOfInstructions:0, CyclomaticComplexity:0};
+					if (this.rstDontFollowAddresses.indexOf(address) >= 0) {
+						const statistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
 						this.subroutineStatistics.set(label, statistics);
 						break;	// Don't count statistics.
 					}
 
-					// Otherwise flow through.
+				// Otherwise flow through.
 				case NumberType.CODE_SUB:
 				case NumberType.CODE_LBL:
 					// Get all addresses belonging to the subroutine
 					const addresses = new Array<number>();
 					const statistics = this.countAddressStatistic(address, addresses);
-					statistics.CyclomaticComplexity ++;	// Add 1 as default
+					statistics.CyclomaticComplexity++;	// Add 1 as default
 					this.subroutineStatistics.set(label, statistics);
 					// Get max
-					if(statistics.sizeInBytes > this.statisticsMax.sizeInBytes)
+					if (statistics.sizeInBytes > this.statisticsMax.sizeInBytes)
 						this.statisticsMax.sizeInBytes = statistics.sizeInBytes;
-					if(statistics.countOfInstructions > this.statisticsMax.countOfInstructions)
+					if (statistics.countOfInstructions > this.statisticsMax.countOfInstructions)
 						this.statisticsMax.countOfInstructions = statistics.countOfInstructions;
-					if(statistics.CyclomaticComplexity > this.statisticsMax.CyclomaticComplexity)
+					if (statistics.CyclomaticComplexity > this.statisticsMax.CyclomaticComplexity)
 						this.statisticsMax.CyclomaticComplexity = statistics.CyclomaticComplexity;
 					// Get min
-					if(statistics.sizeInBytes < this.statisticsMin.sizeInBytes)
+					if (statistics.sizeInBytes < this.statisticsMin.sizeInBytes)
 						this.statisticsMin.sizeInBytes = statistics.sizeInBytes;
-					if(statistics.countOfInstructions < this.statisticsMin.countOfInstructions)
+					if (statistics.countOfInstructions < this.statisticsMin.countOfInstructions)
 						this.statisticsMin.countOfInstructions = statistics.countOfInstructions;
-					if(statistics.CyclomaticComplexity < this.statisticsMin.CyclomaticComplexity)
+					if (statistics.CyclomaticComplexity < this.statisticsMin.CyclomaticComplexity)
 						this.statisticsMin.CyclomaticComplexity = statistics.CyclomaticComplexity;
 			}
 		}
@@ -1544,18 +1544,18 @@ export class Disassembler extends EventEmitter {
 	 * all addresses of the subroutine. Used to escape from loops.
 	 * @returns statistics: size so far, cyclomatic complexity.
 	 */
-	protected countAddressStatistic(address: number, addresses: Array<number>) : SubroutineStatistics {
-		let statistics = {sizeInBytes:0, countOfInstructions:0, CyclomaticComplexity:0};
+	protected countAddressStatistic(address: number, addresses: Array<number>): SubroutineStatistics {
+		let statistics = {sizeInBytes: 0, countOfInstructions: 0, CyclomaticComplexity: 0};
 
 		let opcodeClone;
 		do {
 			// Check if memory exists
 			const memAttr = this.memory.getAttributeAt(address);
-			if(!(memAttr & MemAttribute.ASSIGNED)) {
+			if (!(memAttr & MemAttribute.ASSIGNED)) {
 				return statistics;
 			}
 			// Unfortunately it needs to be checked if address has been checked already
-			if(addresses.indexOf(address) >= 0)
+			if (addresses.indexOf(address) >= 0)
 				return statistics;	// already checked
 			// Add to array
 			addresses.push(address);
@@ -1565,33 +1565,33 @@ export class Disassembler extends EventEmitter {
 
 			// Add statistics
 			statistics.sizeInBytes += opcodeClone.length;
-			statistics.countOfInstructions ++;
+			statistics.countOfInstructions++;
 			// Cyclomatic complexity: add 1 for each conditional branch
-			if(opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
 				// Now exclude unconditional CALLs, JPs and JRs
-				if(opcode.name.indexOf(',') >= 0 )
-					statistics.CyclomaticComplexity ++;
+				if (opcode.name.indexOf(',') >= 0)
+					statistics.CyclomaticComplexity++;
 			}
-			else if((opcodeClone.flags & OpcodeFlag.RET)
-					&& (opcodeClone.flags & OpcodeFlag.CONDITIONAL)) {
+			else if ((opcodeClone.flags & OpcodeFlag.RET)
+				&& (opcodeClone.flags & OpcodeFlag.CONDITIONAL)) {
 				// It is a conditional return
-				statistics.CyclomaticComplexity ++;
+				statistics.CyclomaticComplexity++;
 			}
 
 			// And maybe branch address
-			if(opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
-				if(!(opcodeClone.flags & OpcodeFlag.CALL)) {
+			if (opcodeClone.flags & OpcodeFlag.BRANCH_ADDRESS) {
+				if (!(opcodeClone.flags & OpcodeFlag.CALL)) {
 					// Only branch if no CALL, but for conditional and conditional JP or JR.
 					// At last check if the JP/JR might jump to a subroutine. This wouldn't be followed.
 					const branchAddress = opcodeClone.value;
 					const branchLabel = this.labels.get(branchAddress);
 					let isSUB = false;
-					if(branchLabel)
-						if(branchLabel.type == NumberType.CODE_SUB
-						|| branchLabel.type == NumberType.CODE_RST)
+					if (branchLabel)
+						if (branchLabel.type == NumberType.CODE_SUB
+							|| branchLabel.type == NumberType.CODE_RST)
 							isSUB = true;
 					// Only if no subroutine
-					if(!isSUB) {
+					if (!isSUB) {
 						const addStat = this.countAddressStatistic(branchAddress, addresses);
 						statistics.sizeInBytes += addStat.sizeInBytes;
 						statistics.countOfInstructions += addStat.countOfInstructions;
@@ -1605,14 +1605,14 @@ export class Disassembler extends EventEmitter {
 
 			// Stop at flow-through
 			const nextLabel = this.labels.get(address);
-			if(nextLabel) {
+			if (nextLabel) {
 				const type = nextLabel.type;
-				if(type == NumberType.CODE_SUB
-				|| type == NumberType.CODE_RST)
+				if (type == NumberType.CODE_SUB
+					|| type == NumberType.CODE_RST)
 					break;	// Stop when entering another subroutine.
 			}
 
-		} while(!(opcodeClone.flags & OpcodeFlag.STOP));
+		} while (!(opcodeClone.flags & OpcodeFlag.STOP));
 
 		// return
 		return statistics;
@@ -1626,8 +1626,8 @@ export class Disassembler extends EventEmitter {
 	/// Reason is that the count of digits for the local label numbers is not known upfront.
 	protected assignLabelNames() {
 		// Check if a custom function should be used.
-		if(this.funcAssignLabels) {
-			for(const [address,label] of this.labels) {
+		if (this.funcAssignLabels) {
+			for (const [address, label] of this.labels) {
 				label.name = this.funcAssignLabels(address);
 			}
 			return;
@@ -1648,42 +1648,42 @@ export class Disassembler extends EventEmitter {
 		let labelSelfModifyingCount = 0;
 
 		// Loop through all labels
-		for(const [address,label] of this.labels) {
+		for (const [address, label] of this.labels) {
 			const type = label.type;
-			switch(type) {
+			switch (type) {
 				// Count main labels
 				case NumberType.CODE_SUB:
 					labelSubCount++;
-				break;
+					break;
 				case NumberType.CODE_LBL:
 					labelLblCount++;
-				break;
+					break;
 				case NumberType.DATA_LBL:
 					const memAttr = this.memory.getAttributeAt(address);
-					if(memAttr & MemAttribute.CODE) {
+					if (memAttr & MemAttribute.CODE) {
 						labelSelfModifyingCount++;
 					}
 					else {
 						labelDataLblCount++;
 					}
-				break;
+					break;
 
 				// Collect local labels
 				case NumberType.CODE_LOCAL_LBL:
 				case NumberType.CODE_LOCAL_LOOP:
 					const parentLabel = this.addressParents[address];
 					//assert(parentLabel, 'assignLabelNames 1');
-					if(parentLabel) {
+					if (parentLabel) {
 						// This might not be set if address was set by addAddressToQueue.
 						const arr = (type == NumberType.CODE_LOCAL_LBL) ? localLabels : localLoops;
 						let labelsArray = arr.get(parentLabel);
-						if(!labelsArray) {
+						if (!labelsArray) {
 							labelsArray = new Array<DisLabel>();
 							arr.set(parentLabel, labelsArray);
 						}
 						labelsArray.push(label);
 					}
-				break;
+					break;
 			}
 		}
 
@@ -1702,34 +1702,34 @@ export class Disassembler extends EventEmitter {
 		let dataSelfModifyingIndex = 1;	// SELF_MOD
 
 		// Loop through all labels (labels is sorted by address)
-		for(const [address,label] of this.labels) {
+		for (const [address, label] of this.labels) {
 			// Check if label was already set (e.g. from commandline)
-			if(label.name)
+			if (label.name)
 				continue;
 
 			// Process label
 			const type = label.type;
-			switch(type) {
+			switch (type) {
 				case NumberType.CODE_SUB:
 					// Set name
 					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelSubPrefix + this.getIndex(subIndex, labelSubCountDigits);
 					// Next
 					subIndex++;
-				break;
+					break;
 				case NumberType.CODE_LBL:
 					// Set name
 					label.name = (label.belongsToInterrupt) ? this.labelIntrptPrefix : '' + this.labelLblPrefix + this.getIndex(lblIndex, labelLblCountDigits);
 					// Next
 					lblIndex++;
-				break;
+					break;
 				case NumberType.CODE_RST:
 					// Set name
-					label.name = this.labelRstPrefix + Format.getHexString(address,2);
-				break;
+					label.name = this.labelRstPrefix + Format.getHexString(address, 2);
+					break;
 				case NumberType.DATA_LBL:
 					// Check for self.modifying code
 					const memAttr = this.memory.getAttributeAt(address);
-					if(memAttr & MemAttribute.CODE) {
+					if (memAttr & MemAttribute.CODE) {
 						assert(memAttr & MemAttribute.CODE_FIRST, 'assignLabelNames 2');
 						// Yes, is self-modifying code.
 						// Set name
@@ -1744,7 +1744,7 @@ export class Disassembler extends EventEmitter {
 						// Next
 						dataLblIndex++;
 					}
-				break;
+					break;
 			}
 		}
 
@@ -1752,33 +1752,33 @@ export class Disassembler extends EventEmitter {
 
 		// Loop through all labels (labels is sorted by address)
 		// Local Labels:
-		for(const [parentLabel, childLabels] of localLabels) {
+		for (const [parentLabel, childLabels] of localLabels) {
 			const localPrefix = parentLabel.name.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
 			// Set names
 			let index = 1;
-			for(let child of childLabels) {
+			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
 				child.name = '.' + localPrefix + this.labelLocalLablePrefix;
-				if(count > 1)
+				if (count > 1)
 					child.name += indexString;
-				index ++;
+				index++;
 			}
 		}
 		// Local Loops:
-		for( let [parentLabel, childLabels] of localLoops) {
+		for (let [parentLabel, childLabels] of localLoops) {
 			const localPrefix = parentLabel.name.toLowerCase();
 			const count = childLabels.length;
 			const digitCount = count.toString().length;
 			// Set names
 			let index = 1;
-			for(let child of childLabels) {
+			for (let child of childLabels) {
 				const indexString = this.getIndex(index, digitCount);
 				child.name = '.' + localPrefix + this.labelLoopPrefix;
-				if(count > 1)
+				if (count > 1)
 					child.name += indexString;
-				index ++;
+				index++;
 			}
 		}
 	}
@@ -1790,10 +1790,10 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected addLabelComments() {
 		// Loop through all labels (labels is sorted by address)
-		for(const [address,label] of this.labels) {
+		for (const [address, label] of this.labels) {
 			// Only for the main labels
 			const type = label.type;
-			if(type != NumberType.CODE_SUB
+			if (type != NumberType.CODE_SUB
 				&& type != NumberType.CODE_RST
 				&& type != NumberType.CODE_LBL
 				&& type != NumberType.DATA_LBL)
@@ -1801,12 +1801,12 @@ export class Disassembler extends EventEmitter {
 
 			// Check if comment already exists
 			let comment = this.addressComments.get(address);
-			if(comment)
+			if (comment)
 				continue;
 
 			// Create comment
 			comment = this.getAddressComment(address);
-			if(comment)
+			if (comment)
 				this.addressComments.set(address, comment);
 		}
 	}
@@ -1823,11 +1823,11 @@ export class Disassembler extends EventEmitter {
 	 *  - the comment from addressComments is returned.
 	 * @param address The address.
 	 */
-	protected getAddressComment(address: number): Comment|undefined {
+	protected getAddressComment(address: number): Comment | undefined {
 		if (this.disableCommentsInDisassembly)
 			return undefined;
-		let comments=this.addressComments.get(address);
-		if(comments)
+		let comments = this.addressComments.get(address);
+		if (comments)
 			return comments;
 		return this.getLabelComments(address);
 	}
@@ -1840,9 +1840,9 @@ export class Disassembler extends EventEmitter {
 	 * @return The comment with statistics about the label. E.g. for
 	 * subroutines is tells the size , cyclomatic complexity, all callers and all callees.
 	 */
-	protected getLabelComments(address: number): Comment|undefined {
+	protected getLabelComments(address: number): Comment | undefined {
 		const addrLabel = this.labels.get(address);
-		if(!addrLabel)
+		if (!addrLabel)
 			return undefined;
 
 		const lineArray = new Array<string>();
@@ -1854,7 +1854,7 @@ export class Disassembler extends EventEmitter {
 		// Name
 		const type = addrLabel.type;
 		let name;
-		switch(type) {
+		switch (type) {
 			case NumberType.CODE_SUB: name = 'Subroutine'; break;
 			case NumberType.CODE_RST: name = 'Restart'; break;
 			case NumberType.DATA_LBL: name = 'Data'; break;
@@ -1862,94 +1862,94 @@ export class Disassembler extends EventEmitter {
 		}
 
 		// Aggregate output string
-		switch(type) {
+		switch (type) {
 			case NumberType.CODE_SUB:
 			case NumberType.CODE_RST:
-			{
-				// Line 2
-				line2 = 'Called by: ';
-				let first = true;
-				let recursiveFunction = false;
-				for(const ref of addrLabel.references) {
-					if(!first)
-						line2 += ', ';
-					const s = Format.getHexString(ref, 4) + 'h';
-					const parent = this.addressParents[ref];
-					if(parent) {
-						let parName;
-						if(parent == addrLabel) {
-							parName = 'self';
-							recursiveFunction = true;
+				{
+					// Line 2
+					line2 = 'Called by: ';
+					let first = true;
+					let recursiveFunction = false;
+					for (const ref of addrLabel.references) {
+						if (!first)
+							line2 += ', ';
+						const s = Format.getHexString(ref, 4) + 'h';
+						const parent = this.addressParents[ref];
+						if (parent) {
+							let parName;
+							if (parent == addrLabel) {
+								parName = 'self';
+								recursiveFunction = true;
+							}
+							else
+								parName = parent.name;
+							line2 += parName + '[' + s + ']';
 						}
 						else
-							parName = parent.name;
-						line2 += parName + '[' + s +']';
+							line2 += s;
+						first = false;
 					}
-					else
-						line2 += s;
-					first = false;
-				}
-				// Check if anything has been output
-				line2 += (addrLabel.references.size > 0) ? '.' : '-';
-
-				// Line 1
-				line1 = name;
-				const stat = this.subroutineStatistics.get(addrLabel);
-				if(stat)
-					line1 += ': ' + ((recursiveFunction) ? 'Recursive, ' : '') + 'Size=' + stat.sizeInBytes + ', CC=' + stat.CyclomaticComplexity + '.';
-				else
-					line1 += '.';
-
-				// Store lines
-				lineArray.push(line1);
-				lineArray.push(line2);
-
-				// Only if "Calls:" line is wanted
-				if(!addrLabel.isEqu) {
-					// Line 3
-					line3 = 'Calls: ';
-					first = true;
-					const callees = new Set<DisLabel>();
-					for(const callee of addrLabel.calls) {
-						callees.add(callee);
-					}
-					line3 += Array.from(callees).map(refLabel => refLabel.name).join(', ');
 					// Check if anything has been output
-					line3 += (callees.size > 0) ? '.' : '-';
+					line2 += (addrLabel.references.size > 0) ? '.' : '-';
 
-					lineArray.push(line3);
+					// Line 1
+					line1 = name;
+					const stat = this.subroutineStatistics.get(addrLabel);
+					if (stat)
+						line1 += ': ' + ((recursiveFunction) ? 'Recursive, ' : '') + 'Size=' + stat.sizeInBytes + ', CC=' + stat.CyclomaticComplexity + '.';
+					else
+						line1 += '.';
+
+					// Store lines
+					lineArray.push(line1);
+					lineArray.push(line2);
+
+					// Only if "Calls:" line is wanted
+					if (!addrLabel.isEqu) {
+						// Line 3
+						line3 = 'Calls: ';
+						first = true;
+						const callees = new Set<DisLabel>();
+						for (const callee of addrLabel.calls) {
+							callees.add(callee);
+						}
+						line3 += Array.from(callees).map(refLabel => refLabel.name).join(', ');
+						// Check if anything has been output
+						line3 += (callees.size > 0) ? '.' : '-';
+
+						lineArray.push(line3);
+					}
+					break;
 				}
-				break;
-			}
 
 			default:
-			{
-				line1 = name;
-				line1 += (refCount > 0) ? ' accessed by:' : ' not accessed.';
-				lineArray.push(line1);
+				{
+					line1 = name;
+					line1 += (refCount > 0) ? ' accessed by:' : ' not accessed.';
+					lineArray.push(line1);
 
-				// 2nd line
-				if(refCount > 0) {
-					// Second line: The references
-					const refArray = [...addrLabel.references].map(addr => {
-						let s = Format.getHexString(addr, 4) + 'h';
-						const parentLabel = this.addressParents[addr];
-						if(parentLabel) {
-							// Add e.g. start of subroutine
-							s += '(in ' + parentLabel.name + ')';
-						}
-						return s;
-					});
-					const line2 = refArray.join(', ');
-					lineArray.push(line2);
+					// 2nd line
+					if (refCount > 0) {
+						// Second line: The references
+						const refArray = [...addrLabel.references].map(addr => {
+							let s = Format.getHexString(addr, 4) + 'h';
+							const parentLabel = this.addressParents[addr];
+							if (parentLabel) {
+								// Add e.g. start of subroutine
+								s += '(in ' + parentLabel.name + ')';
+							}
+							return s;
+						});
+						const line2 = refArray.join(', ');
+						lineArray.push(line2);
+					}
+					break;
 				}
-				break;
-			}
 		}
 
 		// For EQU labels return everything in one line.
 		let comment = new Comment();
-		if(addrLabel.isEqu) {
+		if (addrLabel.isEqu) {
 			comment.inlineComment = '; ' + address.toString() + '. ' + lineArray.join(' ');
 		}
 		else {
@@ -1981,26 +1981,26 @@ export class Disassembler extends EventEmitter {
 		let commentAddr;
 		let commentLabelName;
 		let lineNr = 0;
-		for(const line of commentsLines) {
-			lineNr ++;
+		for (const line of commentsLines) {
+			lineNr++;
 			// Read in comments "before"
 			const match = /^\s*([^;]+)?(;.*)?(\S+)?/.exec(line)!;
 			assert(match);
 			const addressPart = match[1];
 			const commentPart = match[2];
 			const misc = match[3];
-			if(misc)  {
+			if (misc) {
 				// Unexpected line
 				throw Error('Unexpected line: "' + line + '", ' + commentsFile + ':' + lineNr + '.');
 			}
-			if(!addressPart && !commentPart) {
+			if (!addressPart && !commentPart) {
 				// Comment finished, line empty
-				if(commentAddr != undefined) {
+				if (commentAddr != undefined) {
 					// Set comment
 					this.addressComments.set(commentAddr, comment);
 					// Set label
-					if(commentLabelName) {
-						this.setLabel(commentAddr,commentLabelName, NumberType.DATA_LBL);	// Data label might be changed to something else.
+					if (commentLabelName) {
+						this.setLabel(commentAddr, commentLabelName, NumberType.DATA_LBL);	// Data label might be changed to something else.
 					}
 				}
 				// Next state
@@ -2011,8 +2011,8 @@ export class Disassembler extends EventEmitter {
 				continue;
 			}
 			// check for state change
-			if(addressPart) {
-				if(state == State.LinesBefore) {
+			if (addressPart) {
+				if (state == State.LinesBefore) {
 					// Next state
 					state = State.lineOn;
 				}
@@ -2020,7 +2020,7 @@ export class Disassembler extends EventEmitter {
 			}
 
 			// add lines
-			switch(state) {
+			switch (state) {
 				case State.LinesBefore:
 					comment.addBefore(commentPart);
 					break;
@@ -2028,19 +2028,19 @@ export class Disassembler extends EventEmitter {
 					comment.inlineComment = commentPart;
 					// Determine address and label
 					const match2 = /^(0x)?([0-9a-f]+)(\s+([\w\.]+))?/i.exec(addressPart);
-					if(match2) {
+					if (match2) {
 						const addrString = match2[2];
-						commentAddr = parseInt(addrString,16);
+						commentAddr = parseInt(addrString, 16);
 						commentLabelName = match2[4];
 						// Next state
 						state = State.LinesAfter;
 					}
-					else  {
+					else {
 						throw Error('Expected an address: "' + line + '", ' + commentsFile + ':' + lineNr + '.');
 					}
 					break;
 				case State.LinesAfter:
-					if(addressPart) {
+					if (addressPart) {
 						throw Error('Expected "after"-comment or newline: "' + line + '", ' + commentsFile + ':' + lineNr + '.');
 					}
 					comment.addAfter(match[2]);
@@ -2056,13 +2056,13 @@ export class Disassembler extends EventEmitter {
 	/**
 	 * Returns all (main) labels with address and comments.
 	 */
-    public getMainLabels(): string {
+	public getMainLabels(): string {
 		let text = '';
 
-		for(let [address, label] of this.labels) {
+		for (let [address, label] of this.labels) {
 
 			const type = label.type;
-			if(type != NumberType.CODE_SUB
+			if (type != NumberType.CODE_SUB
 				&& type != NumberType.CODE_LBL
 				&& type != NumberType.CODE_RST
 				&& type != NumberType.DATA_LBL)
@@ -2071,7 +2071,7 @@ export class Disassembler extends EventEmitter {
 			// Store address, label and comments
 			const addrLabelLine = Format.getHexString(address, 4) + '\t' + label.name;
 			const comment = this.getAddressComment(address);
-			const commentLines=Comment.getLines(comment, addrLabelLine, this.disableCommentsInDisassembly);
+			const commentLines = Comment.getLines(comment, addrLabelLine, this.disableCommentsInDisassembly);
 
 			text += commentLines.join('\n');
 
@@ -2094,36 +2094,36 @@ export class Disassembler extends EventEmitter {
 		let lines = new Array<string>();
 
 		// Check if anything to disassemble
-		if(this.labels.size == 0)
+		if (this.labels.size == 0)
 			return lines;
 
 		// Loop over all labels
 		let address = -1;
-		for(const [addr, label] of this.labels) {
-			if(label.isEqu)
+		for (const [addr, label] of this.labels) {
+			if (label.isEqu)
 				continue;	// Skip EQUs
 
 			// If first line, print ORG
-			if(address == -1) {
+			if (address == -1) {
 				// First line
 				// Print "ORG"
 				this.addEmptyLines(lines);
-				let orgLine=' '.repeat(this.clmnsBytes)+this.rightCase('ORG ')+Format.getHexString(addr)+'h';
+				let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
 				if (!this.disableCommentsInDisassembly)
-					orgLine+='; '+Format.getConversionForAddress(addr);
+					orgLine += '; ' + Format.getConversionForAddress(addr);
 				lines.push(orgLine);
 			}
 			else {
 				// Normal case. All other lines but first line.
 				const unassignedSize = addr - address;
-				if(unassignedSize < 0)
+				if (unassignedSize < 0)
 					continue;
 
 				// Print new "ORG"
 				this.addEmptyLines(lines);
-				let orgLine=' '.repeat(this.clmnsBytes)+this.rightCase('ORG ')+Format.getHexString(addr)+'h';
+				let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
 				if (!this.disableCommentsInDisassembly)
-					orgLine+='; '+Format.getConversionForAddress(addr);
+					orgLine += '; ' + Format.getConversionForAddress(addr);
 				lines.push(orgLine);
 			}
 
@@ -2134,18 +2134,18 @@ export class Disassembler extends EventEmitter {
 			let prevParent;
 
 			// disassemble until unassigned memory found
-			while(true) {
+			while (true) {
 				//console.log('disMem: address=0x' + address.toString(16))
 				// Check if memory has already been disassembled
 				let attr = this.memory.getAttributeAt(address);
-				if(!(attr & MemAttribute.ASSIGNED)) {
+				if (!(attr & MemAttribute.ASSIGNED)) {
 					break;	// E.g. an EQU label
 				}
 
 				// Get association of address
 				this.resetAddEmptyLine();
 				const parent = this.addressParents[address];
-				if(parent != prevParent) {
+				if (parent != prevParent) {
 					this.addEmptyLines(lines);
 					prevParent = parent;
 				}
@@ -2154,23 +2154,23 @@ export class Disassembler extends EventEmitter {
 				const addrLabel = this.labels.get(address);
 				const comment = this.addressComments.get(address);
 
-				if(addrLabel) {
+				if (addrLabel) {
 					// Add empty lines in case this is a SUB, LBL or DATA label
 					const type = addrLabel.type;
-					if(type == NumberType.CODE_SUB || type == NumberType.CODE_LBL || type == NumberType.DATA_LBL || type == NumberType.CODE_RST) {
+					if (type == NumberType.CODE_SUB || type == NumberType.CODE_LBL || type == NumberType.DATA_LBL || type == NumberType.CODE_RST) {
 						this.addEmptyLines(lines);
 					}
 					// Add label on separate line
 					let labelLine = addrLabel.name + ':';
-					if(this.clmnsAddress > 0) {
+					if (this.clmnsAddress > 0) {
 						labelLine = Format.addSpaces(Format.getHexString(address), this.clmnsAddress) + labelLine;
-						if(this.DBG_ADD_DEC_ADDRESS) {
+						if (this.DBG_ADD_DEC_ADDRESS) {
 							labelLine = Format.addSpaces(address.toString(), 5) + ' ' + labelLine;
 						}
 					}
 
 					// Add comments
-					const commentLines=Comment.getLines(comment, labelLine, this.disableCommentsInDisassembly);
+					const commentLines = Comment.getLines(comment, labelLine, this.disableCommentsInDisassembly);
 					lines.push(...commentLines);
 				}
 
@@ -2178,7 +2178,7 @@ export class Disassembler extends EventEmitter {
 				let addAddress;
 				let line;
 				let commentText;
-				if(attr & MemAttribute.CODE) {
+				if (attr & MemAttribute.CODE) {
 					// CODE
 
 					// Read opcode at address
@@ -2193,7 +2193,7 @@ export class Disassembler extends EventEmitter {
 
 				else {
 					// DATA
-					if(!(prevMemoryAttribute & MemAttribute.DATA))
+					if (!(prevMemoryAttribute & MemAttribute.DATA))
 						this.addEmptyLines(lines);
 
 					// Turn memory to data memory
@@ -2203,7 +2203,7 @@ export class Disassembler extends EventEmitter {
 					let memValue = this.memory.getValueAt(address);
 
 					// Disassemble the data line
-					let mainString = this.rightCase('DEFB ') +  Format.getHexString(memValue, 2) + 'h';
+					let mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';
 					commentText = Format.getVariousConversionsForByte(memValue);
 					line = this.formatDisassembly(address, 1, mainString);
 
@@ -2212,12 +2212,12 @@ export class Disassembler extends EventEmitter {
 				}
 
 				// Debug
-				if(this.DBG_ADD_DEC_ADDRESS) {
+				if (this.DBG_ADD_DEC_ADDRESS) {
 					line = Format.addSpaces(address.toString(), 5) + ' ' + line;
 				}
 
 				// If not done before, add comments
-				if(!comment || addrLabel) {
+				if (!comment || addrLabel) {
 					// main comment already added or no comment present
 					if (!this.disableCommentsInDisassembly && commentText && commentText.length > 0)
 						line += '\t; ' + commentText;
@@ -2225,7 +2225,7 @@ export class Disassembler extends EventEmitter {
 				}
 				else {
 					// Add comments
-					const commentLines=Comment.getLines(comment, line, this.disableCommentsInDisassembly);
+					const commentLines = Comment.getLines(comment, line, this.disableCommentsInDisassembly);
 					lines.push(...commentLines);
 				}
 
@@ -2234,7 +2234,7 @@ export class Disassembler extends EventEmitter {
 
 				// Check if the next address is not assigned and put out a comment
 				let attrEnd = this.memory.getAttributeAt(address);
-				if(address < 0x10000) {
+				if (address < 0x10000) {
 					if (!this.disableCommentsInDisassembly && !(attrEnd & MemAttribute.ASSIGNED)) {
 						lines.push('; ...');
 						lines.push('; ...');
@@ -2244,7 +2244,7 @@ export class Disassembler extends EventEmitter {
 
 				prevMemoryAttribute = attr;
 				// Log
-//				console.log('DISASSEMBLY: ' + lines[lines.length-1]);
+				//				console.log('DISASSEMBLY: ' + lines[lines.length-1]);
 			}
 		}
 
@@ -2272,7 +2272,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected getIndex(index: number, countDigits: number) {
 		const str = index.toString();
-		return '0'.repeat(countDigits-str.length) + str;
+		return '0'.repeat(countDigits - str.length) + str;
 	}
 
 
@@ -2282,9 +2282,9 @@ export class Disassembler extends EventEmitter {
 	 * @param lines Array to add the empty lines.
 	 */
 	protected addEmptyLines(lines: Array<string>) {
-		if(this.emptyLinesWritten)
+		if (this.emptyLinesWritten)
 			return;	// Already written
-		for(let i=0; i<this.numberOfLinesBetweenBlocks; i++) {
+		for (let i = 0; i < this.numberOfLinesBetweenBlocks; i++) {
 			lines.push('');
 		}
 		this.emptyLinesWritten = true;
@@ -2307,7 +2307,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	protected rightCase(s: string): string {
 		// Lowercase?
-		if(this.opcodesLowerCase)
+		if (this.opcodesLowerCase)
 			return s.toLowerCase();
 		return s;
 	}
@@ -2320,7 +2320,7 @@ export class Disassembler extends EventEmitter {
 	 */
 	public createRevertedLabelMap() {
 		this.revertedLabelMap = new Map<string, number>();
-		for(const [address, label] of this.labels) {
+		for (const [address, label] of this.labels) {
 			this.revertedLabelMap.set(label.getName(), address);
 		}
 	}
@@ -2330,16 +2330,16 @@ export class Disassembler extends EventEmitter {
 	 * Returns a map of chosen addresses, labels for creating the
 	 * dot graph.
 	 */
-	public getGraphLabels(addrString: number|string, chosenLabels?: Map<number, DisLabel>): Map<number, DisLabel> {
+	public getGraphLabels(addrString: number | string, chosenLabels?: Map<number, DisLabel>): Map<number, DisLabel> {
 		// Crete new map
-		if(!chosenLabels)
-			 chosenLabels = new Map<number, DisLabel>();
+		if (!chosenLabels)
+			chosenLabels = new Map<number, DisLabel>();
 
 		// Convert to number
 		let addr;
-		if(typeof(addrString) == 'string') {
+		if (typeof (addrString) == 'string') {
 			addr = this.revertedLabelMap.get(addrString);
-			if(!addr)
+			if (!addr)
 				throw Error('Could not find "' + addrString + '" while creating graph.');
 		}
 		else {
@@ -2348,15 +2348,15 @@ export class Disassembler extends EventEmitter {
 		}
 		// Now get label
 		const label = this.labels.get(addr);
-		if(!label)
+		if (!label)
 			throw Error('Could not find address for "' + addrString + '" while creating graph.');
 
-        // Check if already in map
-        if(!chosenLabels.get(addr)) {
+		// Check if already in map
+		if (!chosenLabels.get(addr)) {
 			// Save in new map
 			chosenLabels.set(addr, label);
 			// Also add the called sub routines
-			for(const called of label.calls) {
+			for (const called of label.calls) {
 				// Recursive
 				const callee = called.getName();
 				this.getGraphLabels(callee, chosenLabels);
@@ -2378,7 +2378,7 @@ export class Disassembler extends EventEmitter {
 	 * @param name The name of the graph.
 	 * @returns The dot graphic as text.
 	 */
-	public getCallGraph(labels: Map<number,DisLabel>): string {
+	public getCallGraph(labels: Map<number, DisLabel>): string {
 		const rankSame1 = new Array<string>();
 		const rankSame2 = new Array<string>();
 
@@ -2392,13 +2392,13 @@ export class Disassembler extends EventEmitter {
 		//const min = this.statisticsMin.sizeInBytes;
 		//const fontSizeFactor = (fontSizeMax-fontSizeMin) / (this.statisticsMax.sizeInBytes-min);
 		const min = this.statisticsMin.CyclomaticComplexity;
-		const complDiff = this.statisticsMax.CyclomaticComplexity-min
-		const fontSizeFactor = (fontSizeMax-fontSizeMin) / ((complDiff < 8) ? 8 : complDiff);
+		const complDiff = this.statisticsMax.CyclomaticComplexity - min
+		const fontSizeFactor = (fontSizeMax - fontSizeMin) / ((complDiff < 8) ? 8 : complDiff);
 
 		// Loop
-		for(const [address, label] of labels) {
+		for (const [address, label] of labels) {
 			const type = label.type;
-			if(type != NumberType.CODE_SUB
+			if (type != NumberType.CODE_SUB
 				&& type != NumberType.CODE_LBL
 				&& type != NumberType.CODE_RST)
 				continue;
@@ -2406,15 +2406,15 @@ export class Disassembler extends EventEmitter {
 
 			// Handle fill color (highlights)
 			let colorString = this.dotMarkedLabels.get(address);
-			if(!colorString) {
+			if (!colorString) {
 				// Now try also the label name
 				colorString = this.dotMarkedLabels.get(label.getName());
 			}
 
 			// Skip other labels
-			if(label.isEqu) {
+			if (label.isEqu) {
 				// output gray label to indicate an EQU label
-				if(!colorString)
+				if (!colorString)
 					colorString = 'lightgray';
 				text += label.name + ' [fontsize="' + fontSizeMin + '"];\n';
 				const nodeName = this.nodeFormat(label.name, label.id, address, undefined, undefined, undefined);
@@ -2425,7 +2425,7 @@ export class Disassembler extends EventEmitter {
 				// Size
 				const stats = this.subroutineStatistics.get(label)!;
 				assert(stats);
-				const fontSize = fontSizeMin + fontSizeFactor*(stats.CyclomaticComplexity-min);
+				const fontSize = fontSizeMin + fontSizeFactor * (stats.CyclomaticComplexity - min);
 
 				// Output
 				text += '"' + label.name + '" [fontsize="' + Math.round(fontSize) + '"];\n';
@@ -2435,34 +2435,34 @@ export class Disassembler extends EventEmitter {
 
 				// List each callee only once
 				const callees = new Set<DisLabel>();
-				for(const callee of label.calls) {
+				for (const callee of label.calls) {
 					callees.add(callee);
 				}
 				// Output all called labels in different color:
-				if(label.references.size == 0 || label.type == NumberType.CODE_LBL) {
+				if (label.references.size == 0 || label.type == NumberType.CODE_LBL) {
 					//const callers = this.getCallersOf(label);
-					if(!colorString)
+					if (!colorString)
 						colorString = 'lightyellow';
-					if(label.references.size == 0)
+					if (label.references.size == 0)
 						rankSame1.push(label.name);
 					else
 						rankSame2.push(label.name);
 				}
 
-				if(callees.size > 0)
-					text += '"' + label.name + '" -> { ' + Array.from(callees).map(refLabel => '"'+refLabel.name+'"').join(' ') + ' };\n';
+				if (callees.size > 0)
+					text += '"' + label.name + '" -> { ' + Array.from(callees).map(refLabel => '"' + refLabel.name + '"').join(' ') + ' };\n';
 			}
 
 			// Color
-			if(colorString)
+			if (colorString)
 				text += '"' + label.name + '" [fillcolor=' + colorString + ', style=filled];\n';
 		}
 
 		// Do some ranking.
 		// All labels without callers are ranked at the same level.
-		if(rankSame1.length > 0)
+		if (rankSame1.length > 0)
 			text += '\n{ rank=same; "' + rankSame1.join('", "') + '" };\n\n';
-		if(rankSame2.length > 0)
+		if (rankSame2.length > 0)
 			text += '\n{ rank=same; "' + rankSame2.join('", "') + '" };\n\n';
 
 		// ending
@@ -2488,12 +2488,12 @@ export class Disassembler extends EventEmitter {
 		try {
 			text = text.replace(/\${label}/g, labelName);
 			text = text.replace(/\${id}/g, labelId.toString());
-			text = text.replace(/\${address}/g, Format.getHexString(address,4));
+			text = text.replace(/\${address}/g, Format.getHexString(address, 4));
 			text = text.replace(/\${CC}/g, (cc) ? cc.toString() : '?');
 			text = text.replace(/\${size}/g, (size) ? size.toString() : '?');
 			text = text.replace(/\${instructions}/g, (instructions) ? instructions.toString() : '?');
 		}
-		catch(e) {
+		catch (e) {
 			throw Error('Dot format string wrong: ' + e);
 		}
 		return text;
@@ -2505,7 +2505,7 @@ export class Disassembler extends EventEmitter {
 	 * @param addr The address (node) to highlight.
 	 * @param colorString The color used for highlighting. E.g. "yellow".
 	 */
-	public setDotHighlightAddress(addr: number|string, colorString: string) {
+	public setDotHighlightAddress(addr: number | string, colorString: string) {
 		this.dotMarkedLabels.set(addr, colorString);
 	}
 
@@ -2522,18 +2522,18 @@ export class Disassembler extends EventEmitter {
 		// appearance
 		text += 'node [shape=box];\n';
 
-		for(const startAddress of startAddresses) {
+		for (const startAddress of startAddresses) {
 			// Start
 			const label = this.labels.get(startAddress);
-			const addressString = Format.getHexString(startAddress,4);
+			const addressString = Format.getHexString(startAddress, 4);
 			let name;
-			if(label)
+			if (label)
 				name = label.name;
-			if(!name)
+			if (!name)
 				name += '0x' + addressString;
 			const start = 'b' + addressString + 'start';
 			text += start + ' [label="' + name + '", fillcolor=lightgray, style=filled, shape=tab];\n';
-			text += start + ' -> b' + Format.getHexString(startAddress,4) + ';\n';
+			text += start + ' -> b' + Format.getHexString(startAddress, 4) + ';\n';
 			const end = 'b' + addressString + 'end';
 			text += end + ' [label="end", shape=doublecircle];\n';
 
@@ -2565,7 +2565,7 @@ export class Disassembler extends EventEmitter {
 	 * @param processedAddrsArray At the start an empty array. Is filled with all processed addresses.
 	 */
 	protected getBranchForAddress(address: number, addrsArray: Array<number>, processedAddrsArray: Array<number>): string {
-		const branch = 'b' + Format.getHexString(address,4);
+		const branch = 'b' + Format.getHexString(address, 4);
 		let text = branch + ' [label="';
 		let disTexts: Array<string> = [];
 		let opcode;
@@ -2585,11 +2585,11 @@ export class Disassembler extends EventEmitter {
 			address += opcode.length;
 
 			// stop if a label is found
-			if(this.labels.get(address))
+			if (this.labels.get(address))
 				break;
 
-		} while(!(opcode.flags & OpcodeFlag.BRANCH_ADDRESS) // branch-address includes a CALL
-			&& !(opcode.flags & OpcodeFlag.RET)
+		} while (!(opcode.flags & OpcodeFlag.BRANCH_ADDRESS) // branch-address includes a CALL
+		&& !(opcode.flags & OpcodeFlag.RET)
 			&& !(opcode.flags & OpcodeFlag.STOP));
 
 		// finish text
@@ -2597,14 +2597,14 @@ export class Disassembler extends EventEmitter {
 		text += '"];\n'
 
 		// Maybe branch
-		if(opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
+		if (opcode.flags & OpcodeFlag.BRANCH_ADDRESS) {
 			const branchAddress = opcode.value;
 			// Check if outside
-			if(addrsArray.indexOf(branchAddress) >= 0) {
+			if (addrsArray.indexOf(branchAddress) >= 0) {
 				// Inside
-				text += branch + ' -> b' + Format.getHexString(branchAddress,4) + ' [headport="n", tailport="e"];\n';
+				text += branch + ' -> b' + Format.getHexString(branchAddress, 4) + ' [headport="n", tailport="e"];\n';
 				// Check if already disassembled
-				if(processedAddrsArray.indexOf(branchAddress) < 0) {
+				if (processedAddrsArray.indexOf(branchAddress) < 0) {
 					// No, so disassemble
 					const textBranch = this.getBranchForAddress(branchAddress, addrsArray, processedAddrsArray);
 					text += textBranch;
@@ -2614,14 +2614,14 @@ export class Disassembler extends EventEmitter {
 
 
 		// Check if we need to call another branch
-		if(!(opcode.flags & OpcodeFlag.STOP)) {
+		if (!(opcode.flags & OpcodeFlag.STOP)) {
 			// Call another branch.
 			// Check if outside
-			if(addrsArray.indexOf(address) >= 0) {
+			if (addrsArray.indexOf(address) >= 0) {
 				// Inside
-				text += branch + ' -> b' + Format.getHexString(address,4) + ';\n';
+				text += branch + ' -> b' + Format.getHexString(address, 4) + ';\n';
 				// Check if already disassembled
-				if(processedAddrsArray.indexOf(address) < 0) {
+				if (processedAddrsArray.indexOf(address) < 0) {
 					// No, so disassemble
 					const textBranch = this.getBranchForAddress(address, addrsArray, processedAddrsArray);
 					text += textBranch;
@@ -2630,10 +2630,10 @@ export class Disassembler extends EventEmitter {
 		}
 
 		// Check if subroutine ends here (RET or JP)
-		if(opcode.flags & (OpcodeFlag.STOP|OpcodeFlag.RET)) {
+		if (opcode.flags & (OpcodeFlag.STOP | OpcodeFlag.RET)) {
 			// Subroutine ends
 			assert(addrsArray.length > 0);
-			text += branch + ' -> b' + Format.getHexString(addrsArray[0],4) + 'end;\n';
+			text += branch + ' -> b' + Format.getHexString(addrsArray[0], 4) + 'end;\n';
 		}
 
 		// Return
