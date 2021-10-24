@@ -131,14 +131,14 @@ export function activate(context: vscode.ExtensionContext) {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
 			return;
-		const position = editor.selection.active;
+		const position = editor.selection.anchor;
 		const filename = editor.document.fileName;
 		// Send to debug adapter
 		vscode.debug.activeDebugSession.customRequest('setPcToLine', [filename, position.line]);
 	}));
 
 	// Command to do a disassembly at the cursor's position.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor', async () => {
 		// Only allowed in debug context
 		if (!vscode.debug.activeDebugSession)
 			return;
@@ -146,24 +146,27 @@ export function activate(context: vscode.ExtensionContext) {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
 			return;
-		let from = editor.selection.anchor;
-		let to = editor.selection.active;
-		const filename = editor.document.fileName;
-		// Adjust
-		if (from.line > to.line) {
-			// exchange
-			const tmp = from;
-			from = to;
-			to = tmp;
+		// Go through all selections in case of multiple selections
+		for (const selection of editor.selections) {
+			let from = selection.anchor;
+			let to = selection.active;
+			const filename = editor.document.fileName;
+			// Adjust
+			if (from.line > to.line) {
+				// exchange
+				const tmp = from;
+				from = to;
+				to = tmp;
+			}
+			const fromLine = from.line;
+			let toLine = to.line;
+			if (toLine > fromLine) {
+				if (to.character == 0)
+					toLine--;
+			}
+			// Send to debug adapter
+			await vscode.debug.activeDebugSession.customRequest('disassemblyAtCursor', [filename, fromLine, toLine]);
 		}
-		const fromLine = from.line;
-		let toLine = to.line;
-		if (toLine > fromLine) {
-			if (to.character == 0)
-				toLine--;
-		}
-		// Send to debug adapter
-		vscode.debug.activeDebugSession.customRequest('disassemblyAtCursor', [filename, fromLine, toLine]);
 	}));
 
 	// Command to disable code coverage display and analyzes.

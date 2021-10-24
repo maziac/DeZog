@@ -179,7 +179,7 @@
 			},
 			{
 				"command": "dezog.disassemblyAtCursor",
-				"title": "Disassembly at Cursor",
+				"title": "Disassembly at Cursor / of Selection",
 				"category": "dezog"
 			},
 			{

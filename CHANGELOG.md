@@ -2,6 +2,8 @@
 
 # 2.4.1
 - Fixed opcode disassembly (Index of IX/IY and others).
+- Fixed response from custom request.
+- Allow multiple selections for "Disassembly at Cursor"
 
 # 2.4.0
 - Unit tests now use the vscode test API.

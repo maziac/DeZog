@@ -3260,13 +3260,14 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 	 * @param response	Used for responding.
 	 * @param args 	The arguments of the command. Usually just 1 text object.
 	 */
-	protected customRequest(command: string, response: DebugProtocol.Response, args: any) {
+	protected async customRequest(command: string, response: DebugProtocol.Response, args: any) {
 		switch (command) {
 			case 'setPcToLine':
 				{
 					const filename = args[0];
 					const lineNr = args[1];
-					this.setPcToLine(filename, lineNr);	// No need for 'await'
+					await this.setPcToLine(filename, lineNr);
+					this.sendResponse(response);
 				}
 				break;
 
@@ -3275,7 +3276,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 					const filename = args[0];
 					const fromLineNr = args[1];
 					const toLineNr = args[2];
-					this.disassemblyAtCursor(filename, fromLineNr, toLineNr);	// No need for 'await'
+					await this.disassemblyAtCursor(filename, fromLineNr, toLineNr);
+					this.sendResponse(response);
 				}
 				break;
 
