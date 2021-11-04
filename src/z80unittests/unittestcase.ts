@@ -279,8 +279,6 @@ export class RootTestSuite extends UnitTestSuite {
 	 */
 	public addChild(child: UnitTestCaseBase) {
 		this.children.push(child);
-		// Add vscode item
-		RootTestSuite.testController.items.add(child.testItem);
 	}
 
 
@@ -312,7 +310,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(Utility.getlaunchJsonPath(wsFolder), label, undefined as any, Utility.getlaunchJsonPath(wsFolder));
+		super(Utility.getlaunchJsonPath(wsFolder), label+'.x', undefined as any, Utility.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
@@ -332,6 +330,9 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 			const launchJsonPath = this.testItem.id;
 			const configs = this.getUnitTestsLaunchConfigs(launchJsonPath);
 
+			// Delete this test item for now.
+			RootTestSuite.testController.items.delete(this.testItem.id);
+
 			// Loop over all unit test launch configs (usually 1)
 			for (const config of configs) {
 				// Create new test item
@@ -343,6 +344,12 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 					const vsTest: vscode.TestItem = testConfig.testItem;
 					vsTest.range = new vscode.Range(lineNr, 0, lineNr, 0);
 				}
+			}
+
+			// If there are test configuration, add the test item.
+			// Note: in launch.json without dezog this will not show any test item.
+			if (this.children.length > 0) {
+				RootTestSuite.testController.items.add(this.testItem);
 			}
 		}
 		catch (e) {
