@@ -174,7 +174,7 @@ export class RootTestSuite extends UnitTestSuite {
 	// Pointer to the test controller.
 	public static testController: vscode.TestController;
 
-	// A map that remembers the workspaces/launch json associations
+	// A map that remembers the workspaces/launch.json associations
 	protected wsTsMap: Map<string, UnitTestSuiteLaunchJson>;
 
 	// A map that remembers the workspaces/file watcher associations
@@ -204,7 +204,7 @@ export class RootTestSuite extends UnitTestSuite {
 	 * Otherwise it should not be called anymore by vscode.
 	 * 'resolveTests' should be called only once. Every test item is populated,
 	 * so there is no need to call it anymore afterwards.
-	 * If there are changes to the tet cases it will be handled by the file watchers.
+	 * If there are changes to the test cases it will be handled by the file watchers.
 	 * @param testItem If undefined create all test cases. Otherwise do nothing.
 	 */
 	protected resolveTests(testItem: vscode.TestItem | undefined) {
@@ -264,9 +264,11 @@ export class RootTestSuite extends UnitTestSuite {
 				wsSuite.fileChanged();
 			});
 
-
 			fileWatcher.onDidDelete(() => {
-				wsSuite.delete();
+				// Remove child
+				this.removeChild(wsSuite);
+				// Forget test suite
+				this.wsTsMap.delete(wsFolder);
 			});
 		}
 	}
@@ -364,7 +366,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 		const launch = Utility.readLaunchJson(launchJsonPath, launchData);
 
 		// Find the right configurations
-		const configurations = launch.configurations.filter(config => config.unitTests);
+		const configurations = launch.configurations.filter(config => (config.type == 'dezog') && config.unitTests);
 
 		// Find the right lines for the configs, i.e. search for "name": config.name
 		for (const config of configurations) {
@@ -510,7 +512,7 @@ export class UnitTestSuiteConfig extends UnitTestSuite {
 		let testItem;
 		if (parent) {
 			const fullId = parent.testItem.id + '.' + name;
-			let fullUtLabel = '';;
+			let fullUtLabel = '';
 			if (parent.utLabel)
 				fullUtLabel = parent.utLabel + '.';
 			fullUtLabel += name;

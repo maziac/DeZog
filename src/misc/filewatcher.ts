@@ -22,6 +22,13 @@ export class FileWatcher extends vscode.Disposable {
 	/// Remembers the file path (just for onDidCreate)
 	protected filePath: string;
 
+	// USed for renaming, to track if file exists or not.
+	protected fileExists: boolean;
+
+	// Stores the function for creation or deletion.
+	protected funcCreate: (fileName: string) => void;
+
+
 	// For debugging: check which file watchers are present.
 	//protected static filePaths: string[] = [];	// Could also be removed after debugging
 
@@ -45,9 +52,12 @@ export class FileWatcher extends vscode.Disposable {
 			Utility.assert(false, "Not found: " + this.filePath);
 			*/
 		});
-		this.watcher = vscode.workspace.createFileSystemWatcher(filePath);
+		// Install the file watcher
 		this.filePath = filePath;
+		this.watcher = vscode.workspace.createFileSystemWatcher(this.filePath);
 		//FileWatcher.filePaths.push(filePath);
+		// Check if file already exists
+		this.fileExists = existsSync(this.filePath);
 	}
 
 
@@ -56,32 +66,48 @@ export class FileWatcher extends vscode.Disposable {
 	 * And as well if the file exists at this moment.
 	 */
 	public onDidCreate(func) {
-		this.watcher.onDidCreate((fname) => {
+		this.funcCreate = func;
+		this.watcher.onDidCreate(uri => {
+			this.fileExists = true;
 			func(this.filePath)
 		});
-
 		// Check, to call initially
-		if (existsSync(this.filePath))
+		if (this.fileExists)
 			func(this.filePath);
 	}
 
 
 	/**
-	 * Just route.
+	 * Calls 'func' on a change.
+	 * Unfortunately this is also called on a filename change.
+	 * Although it is better to handle this as a create.
+	 * Therefore it is tracked if the file exists or not.
 	 */
 	public onDidChange(func) {
-		this.watcher.onDidChange((fname) => {
-			func(this.filePath)
+		this.watcher.onDidChange(uri => {
+			// Check if filename has changed.
+			// I.e. filename was different and is now the filename we are looking for.
+			if (this.fileExists) {
+				// Treat as a normal file change.
+				func(this.filePath)
+			}
+			else {
+				// Treat as a file create
+				this.fileExists = true;
+				this.funcCreate(this.filePath);
+			}
 		});
 	}
 
 
 	/**
-	 * Just route.
+	 * This is called on file deletion.
+	 * It is also called if the file is renamed.
 	 */
 	public onDidDelete(func) {
-		this.watcher.onDidDelete((fname) => {
-			func(this.filePath)
+		this.watcher.onDidDelete(uri => {
+			this.fileExists = false;
+			func(this.filePath);
 		});
 	}
 }

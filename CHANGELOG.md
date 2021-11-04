@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.4.2
+- Unit tests hidden if workspace does not contain a Dezog launch.json.
+
 # 2.4.1
 - Fixed opcode disassembly (Index of IX/IY and others).
 - Fixed response from custom request.
