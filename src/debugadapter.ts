@@ -5,22 +5,20 @@ import {Breakpoint, DebugSession, InitializedEvent, Scope, Source, StackFrame, S
 import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Labels} from './labels/labels';
 import {Log} from './log';
-import {RemoteBreakpoint} from './remotes/remotebase';
+import {Remote, RemoteBreakpoint} from './remotes/remotebase';
 import {MemoryDumpView} from './views/memorydumpview';
 import {MemoryRegisterView} from './views/memoryregisterview';
 import {Settings, SettingsParameters} from './settings';
-import {DisassemblyVar, MemorySlotsVar as MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
+import {DisassemblyVar, ShallowVar, MemorySlotsVar, RegistersMainVar, RegistersSecondaryVar, StackVar, StructVar, MemDumpVar, ImmediateMemoryValue} from './variables/shallowvar';
 import {Utility} from './misc/utility';
 import {Z80RegisterHoverFormat, Z80RegistersClass, Z80Registers, } from './remotes/z80registers';
 import {RemoteFactory} from './remotes/remotefactory';
-import {Remote} from './remotes/remotebase';
 import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
 import {BaseView} from './views/baseview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
 import {MemAttribute} from './disassembler/memory';
 import {Decoration} from './decoration';
-import {ShallowVar} from './variables/shallowvar';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
@@ -151,7 +149,7 @@ export class DebugSessionClass extends DebugSession {
 
 		// The promise is fulfilled after launch of the debugger.
 		return new Promise<DebugSessionClass>((resolve, reject) => {
-			new PromiseCallbacks<DebugSessionClass>(this, 'unitTestsStartCallbacks', resolve, reject);
+			new PromiseCallbacks<DebugSessionClass>(this, 'unitTestsStartCallbacks', resolve, reject);	// NOSONAR
 		});
 	}
 
@@ -259,7 +257,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async disconnectAll(): Promise<void> {
 		// Close views, e.g. register memory view
-		await BaseView.staticCloseAll();
+		BaseView.staticCloseAll();
 		this.removeListener('update', BaseView.staticCallUpdateFunctions);
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
@@ -569,8 +567,8 @@ export class DebugSessionClass extends DebugSession {
 				for (const cmd of Settings.launch.commandsAfterLaunch) {
 					this.debugConsoleAppendLine(cmd);
 					try {
-						const text = await this.evaluateCommand(cmd);
-						this.debugConsoleAppendLine(text);
+						const outText = await this.evaluateCommand(cmd);
+						this.debugConsoleAppendLine(outText);
 					}
 					catch (err) {
 						// Some problem occurred
@@ -583,7 +581,7 @@ export class DebugSessionClass extends DebugSession {
 				// Special handling for custom code
 				if (Remote instanceof ZSimRemote) {
 					// Start custom code (if not unit test)
-					const zsim = Remote as ZSimRemote;
+					const zsim = Remote;
 					if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
 						// Special handling for zsim: Re-init custom code.
 						zsim.customCode?.execute();
@@ -592,9 +590,9 @@ export class DebugSessionClass extends DebugSession {
 					// At the end, if remote type == ZX simulator, open its window.
 					// Note: it was done this way and not in the Remote itself, otherwise
 					// there would be a dependency in RemoteFactory to vscode which in turn
-					/// makes problems for the Unittests.
+					// makes problems for the unit tests.
 					// Adds a window that displays the ZX screen.
-					new ZSimulationView(zsim);
+					new ZSimulationView(zsim); // NOSONAR
 				}
 
 
@@ -614,7 +612,7 @@ export class DebugSessionClass extends DebugSession {
 							// Delay call because the breakpoints are set afterwards.
 							this.handleRequest(undefined, async () => {
 								// Normal operation
-								return await this.remoteContinue();
+								return this.remoteContinue();
 							});
 						}, 500);
 					}
@@ -696,7 +694,7 @@ export class DebugSessionClass extends DebugSession {
 				// Add hover text
 				let txt = addrString;
 				const labels = Labels.getLabelsForNumber64k(foundCbp.address);
-				labels.map(lbl => txt += '\n' + lbl);
+				labels.forEach(lbl => txt += '\n' + lbl);
 				(bp as any).message = txt;
 			}
 
@@ -795,8 +793,8 @@ export class DebugSessionClass extends DebugSession {
 			sfrs.push(sf);
 			// Create array with addresses that need to be fetched for disassembly
 			if (!sf.source) {
-				const frame = callStack[index];
-				fetchAddresses.push(frame.addr);
+				const csFrame = callStack[index];
+				fetchAddresses.push(csFrame.addr);
 			}
 		}
 
@@ -1203,7 +1201,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public async sendEventBreakAndUpdate(): Promise<void> {
 		// Update memory dump etc.
-		await this.update();
+		this.update();
 		// Send event
 		this.sendEvent(new StoppedEvent('break', DebugSessionClass.THREAD_ID));
 	}
@@ -1310,7 +1308,7 @@ export class DebugSessionClass extends DebugSession {
 			this.stopProcessing();
 
 			// Update memory dump etc. (also in reverse debug because of the register display)
-			await this.update({step: true});
+			this.update({step: true});
 
 			// Show decorations
 			//await Remote.getRegisters();
@@ -2276,7 +2274,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		const labels = Labels.getLabelsForRegEx(rString);
 		let result = '';
 		if (labels.length > 0) {
-			labels.map(label => {
+			labels.forEach(label => {
 				let value = Labels.getNumberForLabel(label);
 				if (value != undefined)
 					value &= 0xFFFF;
@@ -2479,7 +2477,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			throw Error("Too many arguments.");
 		}
 
-		return await this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
+		return this.memSet(1, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/);
 	}
 
 
@@ -2502,7 +2500,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			throw Error("Too many arguments.");
 		}
 
-		return await this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
+		return this.memSet(2, tokens[0] /*address*/, tokens[1] /*value*/, tokens[2] /*repeat*/, tokens[3] /*endianness*/);
 	}
 
 
@@ -2741,8 +2739,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		if (enableMap.size == 0)
 			result += ' none';
 		else {
-			for (const [group, enable] of enableMap) {
-				result += '\n  ' + group + ': ' + ((enable) ? 'enabled' : 'disabled');
+			for (const [grp, enable] of enableMap) {
+				result += '\n  ' + grp + ': ' + ((enable) ? 'enabled' : 'disabled');
 			}
 		}
 		return result;
@@ -2758,8 +2756,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		const param = tokens[0] || '';
 		if (param == 'enable' || param == 'disable') {
 			// Enable or disable all ASSERTION breakpoints
-			const enable = (param == 'enable');
-			await Remote.enableAssertionBreakpoints(enable);
+			const paramEnable = (param == 'enable');
+			await Remote.enableAssertionBreakpoints(paramEnable);
 		}
 		else if (param == 'status') {
 			// Just show
@@ -2772,7 +2770,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		// Show enable status of all ASSERTION breakpoints
 		const enable = Remote.assertionBreakpointsEnabled;
 		const enableString = (enable) ? 'enabled' : 'disabled';
-		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';;
+		let result = 'ASSERTION breakpoints are ' + enableString + '.\n';
 		if (enable) {
 			// Also list all assertion breakpoints
 			const abps = Remote.getAllAssertionBreakpoints();
@@ -2802,8 +2800,8 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		const param = tokens[0] || '';
 		if (param == 'enable' || param == 'disable') {
 			// Enable or disable all WPMEM watchpoints
-			const enable = (param == 'enable');
-			await Remote.enableWPMEM(enable);
+			const paramEnable = (param == 'enable');
+			await Remote.enableWPMEM(paramEnable);
 		}
 		else if (param == 'status') {
 			// Just show
@@ -2870,20 +2868,20 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 				if (isNaN(start))	// Error Handling
 					throw new Error("Expected slot but got: '" + match[1] + "'");
 				// count
-				let count = 1;
+				let countValue = 1;
 				if (match[3]) {
-					count = Utility.parseValue(match[4]);
-					if (isNaN(count))	// Error Handling
+					countValue = Utility.parseValue(match[4]);
+					if (isNaN(countValue))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
 					if (match[3] == "-")	// turn range into count
-						count += 1 - start;
+						countValue += 1 - start;
 				}
 				// Check
-				if (count <= 0)	// Error Handling
+				if (countValue <= 0)	// Error Handling
 					throw new Error("Not allowed count: '" + match[0] + "'");
 				// Add
 				params.push(start);
-				params.push(count);
+				params.push(countValue);
 			}
 
 			const slotString = tokens[0] || '0';
@@ -2942,20 +2940,20 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 				if (isNaN(start))	// Error Handling
 					throw new Error("Expected slot but got: '" + match[1] + "'");
 				// count
-				let count = 1;
+				let countValue = 1;
 				if (match[3]) {
-					count = Utility.parseValue(match[4]);
-					if (isNaN(count))	// Error Handling
+					countValue = Utility.parseValue(match[4]);
+					if (isNaN(countValue))	// Error Handling
 						throw new Error("Can't parse: '" + match[4] + "'");
 					if (match[3] == "-")	// turn range into count
-						count += 1 - start;
+						countValue += 1 - start;
 				}
 				// Check
-				if (count <= 0)	// Error Handling
+				if (countValue <= 0)	// Error Handling
 					throw new Error("Not allowed count: '" + match[0] + "'");
 				// Add
 				params.push(start);
-				params.push(count);
+				params.push(countValue);
 			}
 
 			const slotString = tokens[0] || '0';
@@ -3239,7 +3237,7 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 			this.debugConsoleAppendLine('Note: Disassembly limited to ' + size + ' bytes.');
 		}
 		fromAddr &= 0xFFFF
-		toAddr &= 0xFFFF;
+		//toAddr &= 0xFFFF;
 		const data = await Remote.readMemoryDump(fromAddr, size + 3);
 
 		// Disassemble
@@ -3355,15 +3353,16 @@ For all commands (if it makes sense or not) you can add "-view" as first paramet
 		await Remote.getRegistersFromEmulator();
 		await Remote.getCallStackFromEmulator();
 		// Update memory etc.
-		await this.update();
+		this.update();
 		// Send event
 		this.sendEvent(new StoppedEvent('restore', DebugSessionClass.THREAD_ID));
 	}
 
 
+	/*
 	protected async terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments): Promise<void> {
 	}
-
+	*/
 
 	/**
 	 * Output indented text to the console.

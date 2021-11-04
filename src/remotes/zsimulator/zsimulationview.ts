@@ -97,8 +97,8 @@ export class ZSimulationView extends BaseView {
 				this.simulatedPorts.set(0xEFFE, 0xFF);	// Joystick 1 (right): Bits: xxxFUDRL, low active, keys 6-0
 
 				// Set call backs
-				for (const [port,] of this.simulatedPorts) {
-					this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
+				for (const [simPort,] of this.simulatedPorts) {
+					this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
 						const value = this.simulatedPorts.get(port)!;
 						return value;
 					});
@@ -113,8 +113,8 @@ export class ZSimulationView extends BaseView {
 		}
 
 		// Set callbacks for all simulated ports.
-		for (const [port,] of this.simulatedPorts) {
-			this.simulator.ports.registerSpecificInPortFunction(port, (port: number) => {
+		for (const [simPort,] of this.simulatedPorts) {
+			this.simulator.ports.registerSpecificInPortFunction(simPort, (port: number) => {
 				const value = this.simulatedPorts.get(port)!;
 				return value;
 			});
@@ -192,9 +192,9 @@ export class ZSimulationView extends BaseView {
 		// Update on timer
 		clearInterval(this.displayTimer);
 		// Get current time
-		const currentTime = Date.now();
-		this.lastVertSyncTime = currentTime;
-		this.nextUpdateTime = currentTime + this.displayTime;
+		const nowTime = Date.now();
+		this.lastVertSyncTime = nowTime;
+		this.nextUpdateTime = nowTime + this.displayTime;
 		// Start timer
 		this.displayTimer = setInterval(() => {
 			//Log.log("timer: do update");

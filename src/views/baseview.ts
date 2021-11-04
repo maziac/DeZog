@@ -105,7 +105,9 @@ export class BaseView {
 	 * a change. I.e. the user changed a memory value.
 	 * The DebugAdapter/vscode uses this to update e.g. the WATCHes.
 	 */
-	public static sendChangeEvent = () => {};
+	public static sendChangeEvent = () => {
+		// override
+	};
 
 
 	/**
