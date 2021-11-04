@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 import {DebugSessionClass} from '../debugadapter';
 import {RemoteFactory} from '../remotes/remotefactory';
-import {Remote} from '../remotes/remotebase';
+import {Remote, RemoteBreakpoint} from '../remotes/remotebase';
 import {Labels, SourceFileEntry} from '../labels/labels';
-import {RemoteBreakpoint} from '../remotes/remotebase';
 import {Settings} from '../settings';
 import {Utility} from '../misc/utility';
 import {Decoration} from '../decoration';
@@ -287,7 +286,7 @@ export class Z80UnitTestRunner {
 		// Prepare running of the test case
 
 		// Get unit test launch config
-		const configuration = this.testConfig!.config;
+		const configuration = this.testConfig.config;
 
 		// Setup settings
 		Settings.launch = Settings.Init(configuration);
@@ -385,7 +384,7 @@ export class Z80UnitTestRunner {
 			catch (e) {
 				// Some error occurred
 				reject(e);
-			};
+			}
 		});
 	}
 
@@ -409,15 +408,15 @@ export class Z80UnitTestRunner {
 		await this.terminateRemote();
 
 		// Setup root folder
-		Utility.setRootPath(testConfig!.wsFolder);
+		Utility.setRootPath(testConfig.wsFolder);
 
 		// Start debugger
 		this.debugAdapter = undefined as any;
 		try {
-			const configName = testConfig!.testItem.label;
+			const configName = testConfig.testItem.label;
 			this.debugAdapter = await DebugSessionClass.unitTestsStart(configName);
 		}
-		catch (e) {
+		catch (e) {	// NOSONAR
 			throw e;
 		}
 
@@ -444,7 +443,7 @@ export class Z80UnitTestRunner {
 			// Start unit tests after a short while
 			await Remote.waitForBeingQuietFor(1000);
 		}
-		catch (e) {
+		catch (e) {	// NOSONAR
 			throw e;
 		}
 	}
@@ -492,7 +491,7 @@ export class Z80UnitTestRunner {
 		const utLabel = ut.utLabel;
 		// Special handling for zsim: Re-init custom code.
 		if (Remote instanceof ZSimRemote) {
-			const zsim = Remote as ZSimRemote;
+			const zsim = Remote;
 			zsim.customCode?.execute(utLabel);
 		}
 
@@ -642,7 +641,7 @@ export class Z80UnitTestRunner {
 			this.debugAdapter.sendEventContinued();
 			// Debug: Continue
 			const finish = new Promise<void>((resolve, reject) => {
-				new PromiseCallbacks<void>(this, 'waitOnDebugger', resolve, reject);
+				new PromiseCallbacks<void>(this, 'waitOnDebugger', resolve, reject);	// NOSONAR
 			});
 			await this.debugAdapter.remoteContinue();
 			if (Remote)
@@ -724,7 +723,7 @@ export class Z80UnitTestRunner {
 			const line = position.line;
 			const column = position.column;
 			const range = new vscode.Range(line, column, line, column);
-			testMsg.location = new vscode.Location(uri!, range);
+			testMsg.location = new vscode.Location(uri, range);
 		}
 		else {
 			// Get pc for position
@@ -735,7 +734,7 @@ export class Z80UnitTestRunner {
 					const uri = vscode.Uri.file(positionPc.fileName);
 					const line = positionPc.lineNr;
 					const range = new vscode.Range(line, 10000, line, 10000);
-					testMsg.location = new vscode.Location(uri!, range);
+					testMsg.location = new vscode.Location(uri, range);
 				}
 			}
 		}
