@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.4.x
+- Unit tests: name for the workspace: removed accidentally added '.x' from the name.
+
 # 2.4.2
 - Unit tests hidden if workspace does not contain a Dezog launch.json.
 

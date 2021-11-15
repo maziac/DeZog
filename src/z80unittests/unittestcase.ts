@@ -310,7 +310,7 @@ class UnitTestSuiteLaunchJson extends UnitTestSuite {
 	 */
 
 	constructor(wsFolder: string, label: string) {
-		super(Utility.getlaunchJsonPath(wsFolder), label+'.x', undefined as any, Utility.getlaunchJsonPath(wsFolder));
+		super(Utility.getlaunchJsonPath(wsFolder), label, undefined as any, Utility.getlaunchJsonPath(wsFolder));
 		this.testItem.description = 'workspace';
 		this.wsFolder = wsFolder;
 		this.fileChanged();
