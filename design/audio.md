@@ -10,7 +10,7 @@ The data is serialized in between so not the full audio samples are sent but ins
 
 The ZSimulationView transfers the data to the web view at about the "updateFrequency".
 
-In ZxAudio it is decoded and audio frame buffer with the sampels are created and started at the right timing.
+In ZxAudioBeeper it is decoded and audio frame buffer with the samples are created and started at the right timing.
 
 
 # Overview
@@ -41,7 +41,7 @@ In ZxAudio it is decoded and audio frame buffer with the sampels are created and
       │                   │                   │
       │                   ▼                   │
       │        ┌─────────────────────┐        │
-      │        │       ZxAudio       │        │
+      │        │   ZxAudioBeeper     │        │
       │        └─────────────────────┘        │
       │                   │                   │
       │                   ▼                   │
@@ -85,18 +85,18 @@ If there did not happen any vertical interrupt before the updateFrequence time w
 
 Main is just a dispatcher. All messages that arrive here (e.g. display, audio) are sent to the right functions.
 
-Audio data is sent to ZxAudio.
+Audio data is sent to ZxAudioBeeper.
 
 
-# ZxAudio
+# ZxAudioBeeper
 
-ZxAudio receives the BeeperBuffer data and decodes it into samples and complete audio frames.
-Because of the problems with the floating point accuracy in "Web Audio API" the ZxAudio works with fixed frame sizes.
+ZxAudioBeeper receives the BeeperBuffer data and decodes it into samples and complete audio frames.
+Because of the problems with the floating point accuracy in "Web Audio API" the ZxAudioBeeper works with fixed frame sizes.
 This also means that a received BeeperBuffer may not fill a complete audio frame or could also fill more than 1 audio frame.
 
 When an audio frame is completely filled up is is enqueued for playing. This simply means it is started with a start time in the near future.
 
-If an audio frame is not filled up yet the ZxAudio simply waits for the next BeeperBuffer.
+If an audio frame is not filled up yet the ZxAudioBeeper simply waits for the next BeeperBuffer.
 
 
 ## Overfill
