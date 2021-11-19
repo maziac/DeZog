@@ -146,7 +146,7 @@ export class ZxAudioBeeper {
 	public setVolume(volume: number) {
 		this.volume = volume;
 		// Use a "ramp" otherwise changing the volume will introduce some noise
-		this.gainNode.gain.value = this.gainNode.gain.value;
+		this.gainNode.gain.value = this.gainNode.gain.value;	// NOSONAR: required, but I don't know why anymore.
 		this.gainNode.gain.linearRampToValueAtTime(volume, this.ctx.currentTime + 0.1)
 	}
 

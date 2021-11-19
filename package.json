@@ -73,7 +73,11 @@
 	},
 	"main": "./out/src/extension",
 	"activationEvents": [
-		"*"
+		"onDebugResolve:dezog",
+		"onCommand:dezog.clearAllDecorations",
+		"onCommand:dezog.help",
+		"onCommand:dezog.whatsNew",
+		"onView:dezog.helpview"
 	],
 	"contributes": {
 		"views": {
@@ -192,6 +196,9 @@
 			"commandPalette": [
 				{
 					"command": "dezog.whatsNew"
+				},
+				{
+					"command": "dezog.help"
 				},
 				{
 					"command": "dezog.movePCtoCursor",

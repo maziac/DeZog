@@ -1,7 +1,8 @@
 # Changelog
 
-# 2.4.x
+# 2.4.3
 - Unit tests: name for the workspace: removed accidentally added '.x' from the name.
+- activation event changed to be more specific and don't use "*" anymore.
 
 # 2.4.2
 - Unit tests hidden if workspace does not contain a Dezog launch.json.
