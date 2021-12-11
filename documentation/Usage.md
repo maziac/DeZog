@@ -749,6 +749,8 @@ The "cspect" configuration allows the following additional parameters:
 - "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
 You don't have to enter a hostname, the default is "localhost".
 
+Note: with a new version of CSpect it can easily happen that the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin) will not work anymore, i.e. it is not started together with CSpect and thus the socket connection from DeZog fails. In that case you have to wait until a new version of the plugin is released or compile it yourself.
+
 
 #### Command line
 
