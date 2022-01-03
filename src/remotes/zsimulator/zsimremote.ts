@@ -10,6 +10,7 @@ import {MemBuffer} from '../../misc/membuffer';
 import {CodeCoverageArray} from './codecovarray';
 import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhistory';
 import {ZSimCpuHistory} from './zsimcpuhistory';
+import {Zx16Memory} from './zx16memory';
 import {Zx48Memory} from './zx48memory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
@@ -298,6 +299,14 @@ export class ZSimRemote extends DzrpRemote {
 					// Memory Model
 					this.memoryModel = new MemoryModel();
 					this.memory = new SimulatedMemory(1, 1);
+				}
+				break;
+			case "ZX16K":
+				{
+					// ZX 16K
+					// Memory Model
+					this.memoryModel = new Zx48MemoryModel(true);
+					this.memory = new Zx16Memory();
 				}
 				break;
 			case "ZX48K":

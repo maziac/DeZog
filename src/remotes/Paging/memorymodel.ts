@@ -10,8 +10,8 @@ export interface MemoryBank {
 	/// Z80 end address of page.
 	end: number;
 
-	/// The name of the mapped memory area.
-	name: string;
+	/// The name of the mapped memory area. `N/A` stands for "not populated"
+	name: string | "N/A";
 };
 
 
@@ -74,9 +74,13 @@ export class MemoryModel {
  *
  * Is the base class and defines:
  * 0000-3FFF: ROM
- * 4000-FFFF: RAM
+ * 4000-FFFF: RAM (or 4000-8000 on 16K models)
  */
 export class Zx48MemoryModel extends MemoryModel {
+
+	constructor(private readonly is16KModel?: boolean) {
+		super();
+	}
 
 	/**
 	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
@@ -86,12 +90,18 @@ export class Zx48MemoryModel extends MemoryModel {
 	 */
 	public getMemoryBanks(slots: number[]|undefined): MemoryBank[] {
 		// Prepare array
-		const pages: Array<MemoryBank>=[
-		{start: 0x0000, end: 0x3FFF, name: "ROM"},
-		{start: 0x4000, end: 0xFFFF, name: "RAM"}
-		];
-		// Return
-		return pages;
+		if (this.is16KModel) {
+			return [
+				{start: 0x0000, end: 0x3FFF, name: "ROM"},
+				{start: 0x4000, end: 0x7FFF, name: "RAM"},
+				{start: 0x8000, end: 0xFFFF, name: "N/A"}
+			];
+		} else {
+			return [
+				{start: 0x0000, end: 0x3FFF, name: "ROM"},
+				{start: 0x4000, end: 0xFFFF, name: "RAM"}
+			];
+		}
 	}
 
 

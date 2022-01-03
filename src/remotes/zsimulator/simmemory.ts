@@ -2,6 +2,10 @@ import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
 
+// Not populated momery reads as 0xff from the Z80 bus
+const NOT_POPULATED_VALUE = 0xff;
+const NOT_POPULATED_VALUE_16 = 0xffff;
+const NOT_POPULATED_VALUE_32 = 0xffffffff;
 
 
 /**
@@ -29,11 +33,14 @@ export class SimulatedMemory implements Serializeable {
 	// If banking is used in a derived class this array will extend 64k.
 	protected memoryData: Uint8Array;
 
-	// Holds the slot assignments to the banks.
+	// Holds the slot assignments to the banks. In case of not populated slots, the index value is ignored
 	protected slots: number[];
 
 	// For each bank this array tells if it is ROM.
 	protected romBanks: boolean[];
+
+	// For each slot this array tells if it is populated or not.
+	protected populatedSlots: boolean[];
 
 	// The used bank size.
 	protected bankSize: number;
@@ -89,8 +96,12 @@ export class SimulatedMemory implements Serializeable {
 		// Create RAM
 		this.memoryData=new Uint8Array(bankCount*this.bankSize);
 		// No ROM at start
-		this.romBanks=new Array<boolean>(bankCount);	// All initialized to false.
+		this.romBanks=new Array<boolean>(bankCount);
 		this.romBanks.fill(false);
+
+		// No unpopulated slots at start
+		this.populatedSlots=new Array<boolean>(slotCount);
+		this.populatedSlots.fill(true);
 
 		// Calculate number of bits to shift to get the slot index from the address.
 		let sc=slotCount;
@@ -259,6 +270,9 @@ export class SimulatedMemory implements Serializeable {
 		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
 		// Read
 		const slotIndex=addr>>>this.shiftCount;
+		if (!this.populatedSlots[slotIndex]) {
+			return NOT_POPULATED_VALUE;
+		}
 		const bankNr=this.slots[slotIndex];
 		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
 		const value=this.memoryData[ramAddr];
@@ -286,8 +300,8 @@ export class SimulatedMemory implements Serializeable {
 		const slotIndex=addr>>>this.shiftCount;
 		const bankNr=this.slots[slotIndex];
 
-		// Don't write if ROM
-		if (this.romBanks[bankNr])
+		// Don't write if ROM or not populated
+		if (this.romBanks[bankNr] || !this.populatedSlots[slotIndex])
 			return;
 
 		// Convert to flat address
@@ -301,6 +315,9 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	public getMemory8(addr: number): number {
 		const slotIndex=addr>>>this.shiftCount;
+		if (!this.populatedSlots[slotIndex]) {
+			return NOT_POPULATED_VALUE;
+		}
 		const bankNr=this.slots[slotIndex];
 		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
 		const value=this.memoryData[ramAddr];
@@ -310,61 +327,62 @@ export class SimulatedMemory implements Serializeable {
 	// Reads 2 bytes.
 	// This is **not** used by the Z80 CPU.
 	public getMemory16(addr: number): number {
-		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		let value=mem[ramAddr];
-		// Second byte
-		address++;
-		if (address<this.bankSize) {
-			// No overflow, same bank, normal case
-			ramAddr++;
+		// First byte coordinates
+		const address=addr&(this.bankSize-1);
+		const slotIndex=addr>>>this.shiftCount;
+		if (address<this.bankSize-1) {
+			// Fast read
+			if (this.populatedSlots[slotIndex]) {
+				// Whole word in a populated slot
+				const bankNr=this.slots[slotIndex];
+				const ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+				return this.memoryData[ramAddr]+(this.memoryData[ramAddr+1]<<8);
+			} else {
+				// Whole word in a not-populated slot
+				return NOT_POPULATED_VALUE_16;
+			}
+		} else {
+			// Slow access, across slots
+			let value=this.getMemory8(addr++);
+			addr=addr&0xffff;
+			value+=this.getMemory8(addr)<<8;
+			return value;
 		}
-		else {
-			// Overflow
-			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
-			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*this.bankSize;	// Convert to flat address
-		}
-		value+=mem[ramAddr]<<8;
-		return value;
 	}
 
 	// Reads 4 bytes.
 	// This is **not** used by the Z80 CPU.
 	public getMemory32(addr: number): number {
-		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		let value=mem[ramAddr];
-		// Second byte
-		if (address<=this.bankSize-3) {  // E.g. 0x2000-3
-			// No overflow, same bank, normal case
-			value+=mem[++ramAddr]<<8;
-			value+=mem[++ramAddr]<<16;
-			value+=mem[++ramAddr]*256*65536;	// Otherwise the result might be negative
-		}
-		else {
-			// Overflow, do each part one-by-one
-			let mult=256;
-			for (let i=3; i>0; i--) {
-				addr++;
-				address=addr&(this.bankSize-1);
-				slotIndex=(addr&0xFFFF)>>>this.shiftCount;
-				bankNr=this.slots[slotIndex];
-				ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-				value+=mem[ramAddr]*mult;
-				// Next
-				mult*=256;
+		// First byte coordinates
+		const address=addr&(this.bankSize-1);
+		const slotIndex=addr>>>this.shiftCount;
+		if (address<this.bankSize-3) {
+			// Fast read
+			if (this.populatedSlots[slotIndex]) {
+				// Whole word in a populated slot
+				const bankNr=this.slots[slotIndex];
+				let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+				const mem=this.memoryData;
+				let value=mem[ramAddr];
+				value+=mem[++ramAddr]<<8;
+				value+=mem[++ramAddr]<<16;
+				value+=mem[++ramAddr]*256*65536;	// Otherwise the result might be negative
+				return value;
+			} else {
+				// Whole word in a not-populated slot
+				return NOT_POPULATED_VALUE_32;
 			}
+		} else {
+			// Slow access, across slots
+			let value=this.getMemory8(addr++);
+			addr=addr&0xffff;
+			value+=this.getMemory8(addr++)<<8;
+			addr=addr&0xffff;
+			value+=this.getMemory8(addr++)<<16;
+			addr=addr&0xffff;
+			value+=this.getMemory8(addr)*256*65536;	// Otherwise the result might be negative
+			return value;
 		}
-		return value;
 	}
 
 
@@ -374,6 +392,9 @@ export class SimulatedMemory implements Serializeable {
 		// First byte
 		let address=addr&(this.bankSize-1);
 		let slotIndex=addr>>>this.shiftCount;
+		if (!this.populatedSlots[slotIndex]) {
+			return;
+		}
 		let bankNr=this.slots[slotIndex];
 		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
 		const mem=this.memoryData;
@@ -385,25 +406,26 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
 		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		mem[ramAddr]=val&0xFF;
-		// Second byte
-		address++;
-		if (address<0x2000) {
-			// No overflow, same bank, normal case
-			ramAddr++;
+		const address=addr&(this.bankSize-1);
+		const slotIndex=addr>>>this.shiftCount;
+		if (address<this.bankSize-1) {
+			// Fast-write
+			if (this.populatedSlots[slotIndex]) {
+				// Whole word in a populated slot
+				const bankNr=this.slots[slotIndex];
+				let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
+				const mem=this.memoryData;
+				mem[ramAddr]=val&0xFF;
+				mem[ramAddr+1]=val>>>8;
+			} else {
+				// Whole word in a not-populated slot
+			}
+		} else {
+			// Slow access, across slots
+			this.setMemory8(addr++, val&0xFF);
+			addr=addr&0xffff;
+			this.setMemory8(addr, val>>>8);
 		}
-		else {
-			// Overflow
-			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
-			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*this.bankSize;	// Convert to flat address
-		}
-		mem[ramAddr]=val>>>8;
 	}
 
 	/**
@@ -448,6 +470,15 @@ export class SimulatedMemory implements Serializeable {
 	}
 	*/
 
+
+	/**
+	 * Sets a slot as not populated: the slot will read as 0xFF (floating data bus) 
+	 * and it won't react to writes. This will affect non-CPU slotted memory access as well.
+	 */
+	public setAsNotPopulatedSlot(slot: number) {
+		this.populatedSlots[slot] = false;
+	}
+
 	/**
 	 * Associates a slot with a bank number.
 	 */
@@ -478,15 +509,21 @@ export class SimulatedMemory implements Serializeable {
 			// Get memory bank
 			const slot=(addr&0xFFFF)>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
-			const bank=this.slots[slot];
-			let ramAddr=bank*this.bankSize+bankAddr;
-			// Get block within one bank
 			let blockEnd=bankAddr+size;
 			if (blockEnd>this.bankSize)
 				blockEnd=this.bankSize;
+			// Get block within one bank
 			const partBlockSize=blockEnd-bankAddr;
-			// Copy partial block
-			const partBlock=mem.subarray(ramAddr, ramAddr+partBlockSize);
+			let partBlock: Uint8Array;
+			if (this.populatedSlots[slot]) {
+				const bank=this.slots[slot];
+				let ramAddr=bank*this.bankSize+bankAddr;
+				// Copy partial block
+				partBlock=mem.subarray(ramAddr, ramAddr+partBlockSize);
+			} else {
+				partBlock = new Uint8Array(partBlockSize);
+				partBlock.fill(NOT_POPULATED_VALUE);
+			}
 			// Add to total block
 			totalBlock.set(partBlock, offset);
 			// Next
@@ -495,7 +532,6 @@ export class SimulatedMemory implements Serializeable {
 			addr+=partBlockSize;
 		}
 		return totalBlock;
-
 	}
 
 
@@ -516,17 +552,19 @@ export class SimulatedMemory implements Serializeable {
 			// Get memory bank
 			const slot=(addr&0xFFFF)>>>this.shiftCount;
 			const bankAddr=addr&(this.bankSize-1);
-			const bank=this.slots[slot];
-			let ramAddr=bank*this.bankSize+bankAddr;
 			// Get block within one bank
 			let blockEnd=bankAddr+size;
 			if (blockEnd>this.bankSize)
 				blockEnd=this.bankSize;
 			const partBlockSize=blockEnd-bankAddr;
-			// Copy partial block
-			const partBlock=totalBlock.subarray(offset, offset+partBlockSize);
-			// Copy to memory bank
-			mem.set(partBlock, ramAddr);
+			if (this.populatedSlots[slot]) {
+				const bank=this.slots[slot];
+				let ramAddr=bank*this.bankSize+bankAddr;
+				// Copy partial block
+				const partBlock=totalBlock.subarray(offset, offset+partBlockSize);
+				// Copy to memory bank
+				mem.set(partBlock, ramAddr);
+			}
 			// Next
 			offset+=partBlockSize;
 			size-=partBlockSize;
