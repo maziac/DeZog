@@ -2,6 +2,8 @@ import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
 
+// Not populated memory reads as 0xff from the Z80 bus
+const NOT_POPULATED_VALUE = 0xff;
 
 
 /**
@@ -27,31 +29,31 @@ interface SimWatchpoint {
 export class SimulatedMemory implements Serializeable {
 	// The memory in one big block.
 	// If banking is used in a derived class this array will extend 64k.
-	protected memoryData: Uint8Array;
+	private memoryData: Uint8Array;
 
 	// Holds the slot assignments to the banks.
 	protected slots: number[];
 
-	// For each bank this array tells if it is ROM.
+	// For each bank this array tells if it is ROM or read-only (e.g. not populated).
 	protected romBanks: boolean[];
 
 	// The used bank size.
-	protected bankSize: number;
+	private bankSize: number;
 
 	// The number of bits to shift to get the slot from the address
-	protected shiftCount: number;
+	private shiftCount: number;
 
 	// Visual memory: shows the access as an image.
 	// The image is just 1 pixel high.
-	protected visualMemory: Array<number>;
+	private visualMemory: Array<number>;
 
 	// The size of the visual memory.
-	protected VISUAL_MEM_SIZE_SHIFT=8;
+	private VISUAL_MEM_SIZE_SHIFT=8;
 
 	// Colors:
-	protected VISUAL_MEM_COL_READ=1;
-	protected VISUAL_MEM_COL_WRITE=2;
-	protected VISUAL_MEM_COL_PROG=3;
+	private VISUAL_MEM_COL_READ=1;
+	private VISUAL_MEM_COL_WRITE=2;
+	private VISUAL_MEM_COL_PROG=3;
 
 
 
@@ -89,7 +91,7 @@ export class SimulatedMemory implements Serializeable {
 		// Create RAM
 		this.memoryData=new Uint8Array(bankCount*this.bankSize);
 		// No ROM at start
-		this.romBanks=new Array<boolean>(bankCount);	// All initialized to false.
+		this.romBanks=new Array<boolean>(bankCount);
 		this.romBanks.fill(false);
 
 		// Calculate number of bits to shift to get the slot index from the address.
@@ -371,7 +373,6 @@ export class SimulatedMemory implements Serializeable {
 	// Sets one byte.
 	// This is **not** used by the Z80 CPU.
 	public setMemory8(addr: number, val: number) {
-		// First byte
 		let address=addr&(this.bankSize-1);
 		let slotIndex=addr>>>this.shiftCount;
 		let bankNr=this.slots[slotIndex];
@@ -407,7 +408,7 @@ export class SimulatedMemory implements Serializeable {
 	}
 
 	/**
-	 * Write to memoryData direcly.
+	 * Write to memoryData directly.
 	 * Is e.g. used during SNA / NEX file loading.
 	 * @param offset Offset into the memData. I.e. can be bigger than 0x10000.
 	 * @param data The data to write.
@@ -448,6 +449,16 @@ export class SimulatedMemory implements Serializeable {
 	}
 	*/
 
+
+	/**
+	 * Sets a bank as not populated: the slot will read as 0xFF (floating data bus)
+	 * and it won't react to writes.
+	 */
+	public setAsNotPopulatedBank(bank: number) {
+		this.romBanks[bank] = true;
+		this.writeBank(bank, new Uint8Array(this.bankSize).fill(NOT_POPULATED_VALUE));
+	}
+
 	/**
 	 * Associates a slot with a bank number.
 	 */
@@ -456,7 +467,7 @@ export class SimulatedMemory implements Serializeable {
 	}
 
 	/**
-	 * Returns the slots array.
+	 * Returns the slots array, or undefined if not paged.
 	 */
 	public getSlots(): number[]|undefined {
 		//return this.slots;
@@ -495,7 +506,6 @@ export class SimulatedMemory implements Serializeable {
 			addr+=partBlockSize;
 		}
 		return totalBlock;
-
 	}
 
 

@@ -173,10 +173,11 @@ export interface ZSimType {
 	// The sample rate used for audio. Defaults to 22050 Hz.
 	audioSampleRate: number,
 
-	// Memory model: ZX48k, ZX128K or ZXNext.
+	// Memory model: ZX16k, ZX48k, ZX128K or ZXNext.
 	// - "RAM": One memory area of 64K RAM, no banks.
-	// - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
-	// - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
+	// - "ZX16K": ROM and RAM as of the ZX Spectrum 16K.
+	// - "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
+	// - "ZX128K": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
 	memoryModel: string;
 

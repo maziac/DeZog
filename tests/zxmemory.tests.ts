@@ -3,10 +3,17 @@ import * as assert from 'assert';
 import {MemBuffer} from '../src/misc/membuffer';
 import {PagedMemory} from '../src/remotes/zsimulator/pagedmemory';
 
+// Simply publicly expose protected members
+class MemBufferInt extends MemBuffer {
+	public getReadOffset() {
+		return this.readOffset;
+	}
+}
+
 suite('PagedMemory', () => {
 	test('serialize/deserialize', () => {
-		let memBuffer;
-		let writeSize;
+		let memBuffer: MemBufferInt;
+		let writeSize: number;
 		{
 			const mem=new PagedMemory(8, 256);
 
@@ -37,7 +44,7 @@ suite('PagedMemory', () => {
 			writeSize=mem.getSerializedSize();
 
 			// Serialize
-			memBuffer=new MemBuffer(writeSize);
+			memBuffer=new MemBufferInt(writeSize);
 			mem.serialize(memBuffer);
 		}
 
@@ -46,7 +53,7 @@ suite('PagedMemory', () => {
 		rMem.deserialize(memBuffer);
 
 		// Check size
-		const readSize=(memBuffer as any).readOffset;
+		const readSize=memBuffer.getReadOffset();
 		assert.equal(writeSize, readSize);
 
 		// Test the slots/banks
@@ -147,5 +154,80 @@ suite('PagedMemory', () => {
 		assert.equal(0xEF01ABCD, result);
 	});
 
+
+	test('non populated slots', () => {
+		const mem=new PagedMemory(4, 8);
+		mem.setAsNotPopulatedBank(2);
+		mem.setMemory8(0x7FFC, 1);
+		mem.setMemory8(0x7FFD, 2);
+		mem.setMemory8(0x7FFE, 3);
+		mem.setMemory8(0x7FFF, 4);
+
+		mem.setMemory8(0xC000, 5);
+		mem.setMemory8(0xC001, 6);
+		mem.setMemory8(0xC002, 7);
+		mem.setMemory8(0xC003, 8);
+
+		// Not populated
+		assert.equal(0xFF, mem.getMemory8(0x8000));
+		assert.equal(0xFF, mem.getMemory8(0xBFFF));
+
+		// CPU write not working
+		mem.write8(0x8000, 42);
+		assert.equal(0xFF, mem.getMemory8(0x8000));
+		// non-CPU write working instead
+		mem.setMemory8(0x8000, 42);
+		assert.equal(42, mem.getMemory8(0x8000));
+		mem.setMemory8(0x8000, 0xFF);
+
+		// Test boundaries: byte read access
+		assert.equal(0x4, mem.getMemory8(0x7FFF));
+		assert.equal(0x5, mem.getMemory8(0xC000));
+
+		// Test boundaries: word read access
+		assert.equal(0x403, mem.getMemory16(0x7FFE));
+		assert.equal(0xFF04, mem.getMemory16(0x7FFF));
+		assert.equal(0xFFFF, mem.getMemory16(0x8000));
+		assert.equal(0xFFFF, mem.getMemory16(0xBFFE));
+		assert.equal(0x05FF, mem.getMemory16(0xBFFF));
+		assert.equal(0x0605, mem.getMemory16(0xC000));
+
+		// Test boundaries: dword read access
+		assert.equal(0x04030201, mem.getMemory32(0x7FFC));
+		assert.equal(0xFF040302, mem.getMemory32(0x7FFD));
+		assert.equal(0xFFFF0403, mem.getMemory32(0x7FFE));
+		assert.equal(0xFFFFFF04, mem.getMemory32(0x7FFF));
+		assert.equal(0xFFFFFFFF, mem.getMemory32(0x8000));
+		assert.equal(0xFFFFFFFF, mem.getMemory32(0xBFFC));
+		assert.equal(0x05FFFFFF, mem.getMemory32(0xBFFD));
+		assert.equal(0x0605FFFF, mem.getMemory32(0xBFFE));
+		assert.equal(0x070605FF, mem.getMemory32(0xBFFF));
+		assert.equal(0x08070605, mem.getMemory32(0xC000));
+
+		// Test boundaries: word write access
+		mem.setMemory16(0x7FFF, 0x0908);
+		assert.equal(0x0908, mem.getMemory16(0x7FFF));
+		mem.setMemory16(0xBFFF, 0x0a0b);
+		assert.equal(0x0A0b, mem.getMemory16(0xBFFF));
+
+		// Test readBlock
+		let buffer = mem.readBlock(0x7FFE, 4);
+		assert.deepEqual([0x3, 0x8, 0x09, 0xff], Array.from(buffer));
+		buffer = mem.readBlock(0xBFFE, 4);
+		assert.deepEqual([0xff, 0xB, 0xA, 0x6], Array.from(buffer));
+
+		// Test writeBlock
+		mem.writeBlock(0x7FFE, Uint8Array.from([0x10, 0x11, 0x12, 0x13]));
+		mem.writeBlock(0xBFFE, Uint8Array.from([0x20, 0x21, 0x22, 0x23]));
+
+		assert.equal(0x10, mem.read8(0x7FFE));
+		assert.equal(0x11, mem.read8(0x7FFF));
+		assert.equal(0x12, mem.read8(0x8000));
+		assert.equal(0x13, mem.read8(0x8001));
+		assert.equal(0x20, mem.read8(0xBFFE));
+		assert.equal(0x21, mem.read8(0xBFFF));
+		assert.equal(0x22, mem.read8(0xC000));
+		assert.equal(0x23, mem.read8(0xC001));
+	});
 });
 

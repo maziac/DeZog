@@ -10,8 +10,8 @@ export interface MemoryBank {
 	/// Z80 end address of page.
 	end: number;
 
-	/// The name of the mapped memory area.
-	name: string;
+	/// The name of the mapped memory area. `N/A` stands for "not populated"
+	name: string | "N/A";
 };
 
 
@@ -67,6 +67,41 @@ export class MemoryModel {
 
 }
 
+/**
+ * Class that takes care of the memory paging.
+ * I.e. it defines which memory bank to slot association is used.
+ *
+ * Is the base class and defines:
+ * 0000-3FFF: ROM
+ * 4000-7FFF: RAM
+ */
+ export class Zx16MemoryModel extends MemoryModel {
+
+	/**
+	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
+	 * @param slots Not used.
+	 * @returns An array with the available memory pages. Contains start and end address
+	 * and a name.
+	 */
+	public getMemoryBanks(slots: number[]|undefined): MemoryBank[] {
+		return [
+			{start: 0x0000, end: 0x3FFF, name: "ROM"},
+			{start: 0x4000, end: 0x7FFF, name: "RAM"},
+			{start: 0x8000, end: 0xFFFF, name: "N/A"}
+		];
+	}
+
+
+	/**
+	 * Returns the bank size.
+	 * @returns 0 in this case = no banks used.
+	 */
+	public getBankSize() {
+		return 0;
+	}
+
+}
+
 
 /**
  * Class that takes care of the memory paging.
@@ -85,13 +120,10 @@ export class Zx48MemoryModel extends MemoryModel {
 	 * and a name.
 	 */
 	public getMemoryBanks(slots: number[]|undefined): MemoryBank[] {
-		// Prepare array
-		const pages: Array<MemoryBank>=[
-		{start: 0x0000, end: 0x3FFF, name: "ROM"},
-		{start: 0x4000, end: 0xFFFF, name: "RAM"}
+		return [
+			{start: 0x0000, end: 0x3FFF, name: "ROM"},
+			{start: 0x4000, end: 0xFFFF, name: "RAM"}
 		];
-		// Return
-		return pages;
 	}
 
 
