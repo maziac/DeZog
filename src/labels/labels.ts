@@ -147,11 +147,6 @@ export class LabelsClass {
 	protected warnings: string;
 
 
-	// Constructor.
-	public constructor() {
-	}
-
-
 	/**
 	 * Initializes the lists/arrays.
 	 */

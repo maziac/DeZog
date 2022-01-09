@@ -52,7 +52,7 @@ export class ShallowVar {
 	 */
 	public async setValue(name: string, value: number): Promise<string> {
 		return undefined as any;
-	};
+	}
 
 
 	/**
@@ -183,7 +183,7 @@ export class MemorySlotsVar extends ShallowVarConst {
 				value: bank.name,
 				variablesReference: 0
 			};
-		};
+		}
 
 		// Return
 		return segments;
@@ -257,6 +257,7 @@ export class RegistersMainVar extends ShallowVar {
 	 * @param name The name of data.
 	 * @returns 'Altering values not allowed in time-travel mode.' or undefined.
 	 */
+	/* Identical to line 65:
 	public changeable(name: string): string | undefined {
 		// Change normally not allowed if in reverse debugging
 		if (StepHistory.isInStepBackMode())
@@ -264,6 +265,7 @@ export class RegistersMainVar extends ShallowVar {
 		// Otherwise allow
 		return undefined;
 	}
+	*/
 
 
 	/**
@@ -390,7 +392,7 @@ interface SubStructItems {
 	itemRef: number | (() => string);
 	// In case of array, the count:
 	indexedVariables: number
-};
+}
 
 
 /**
@@ -589,7 +591,7 @@ export class SubStructVar extends ShallowVar {
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, readValue, item.elemSize, this.formatString(item.elemSize), undefined);
 		return formattedString;
-	};
+	}
 
 
 	/**
@@ -704,7 +706,7 @@ export class StructVar extends SubStructVar {
 	public async getContent(start: number, count: number): Promise<Array<DebugProtocol.Variable>> {
 		this.memory = await Remote.readMemoryDump(this.getAddress(), this.countBytes);
 		// Check if properties array exists and create
-		return await super.getContent(start, count);
+		return super.getContent(start, count);
 	}
 
 
@@ -799,7 +801,7 @@ export class MemDumpVar extends ShallowVar {
 		if (this.parentStruct) {
 			// Use memory of parent
 			memory = this.parentStruct.getMemory();
-			offset += elemSize * start!;
+			offset += elemSize * start;
 		}
 		else {
 			// Get memory
@@ -809,7 +811,7 @@ export class MemDumpVar extends ShallowVar {
 		// Calculate tabsizing array
 		const tabSizes = Utility.calculateTabSizes(format, elemSize);
 		// Format all array elements
-		for (let i = 0; i < count!; i++) {
+		for (let i = 0; i < count; i++) {
 			// Get value
 			const value = Utility.getUintFromMemory(memory, offset + i * this.elemSize, this.elemSize, this.littleEndian);
 			// Format
@@ -863,7 +865,7 @@ export class MemDumpVar extends ShallowVar {
 		// Pass formatted string to vscode
 		const formattedString = Utility.numberFormatted(name, readValue, this.elemSize, this.formatString(), undefined);
 		return formattedString;
-	};
+	}
 
 
 	/**
@@ -920,8 +922,8 @@ export class ImmediateMemoryValue {
 	public async getValue(): Promise<string> {
 		const memory = await Remote.readMemoryDump(this.address64k, this.size);
 		const memVal = Utility.getUintFromMemory(memory, 0, this.size, this.littleEndian);
-		return await Utility.numberFormatted('', memVal, this.size, this.formatString(), undefined);
-	};
+		return Utility.numberFormatted('', memVal, this.size, this.formatString(), undefined);
+	}
 
 
 	/**
