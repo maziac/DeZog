@@ -151,7 +151,7 @@ A "normal" StepOver would first step-over "ld a,(hl)" but stay in the same line.
 The second step-over would step-over "inc hl" and the PC indicator moves to the next line.
 
 The **Improved StepOver** handling now basically repeats the "normal" StepOver as long as the resulting file/line is not changed.
-So a step over always moves to he next line.
+So a step over always moves to the next line.
 
 The StepInto handling is unchanged, i.e. with StepInto you could still step through the Z80 instructions one-by-one.
 
