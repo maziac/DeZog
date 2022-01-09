@@ -14,7 +14,7 @@ import {Zx16Memory} from './zx16memory';
 import {Zx48Memory} from './zx48memory';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModel, Zx128MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
+import {MemoryModel, Zx128MemoryModel, Zx16MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
 import {SimulatedMemory} from './simmemory';
 import {Zx128Memory} from './zx128memory';
 import {ZxNextMemory} from './zxnextmemory';
@@ -305,7 +305,7 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// ZX 16K
 					// Memory Model
-					this.memoryModel = new Zx48MemoryModel(true);
+					this.memoryModel = new Zx16MemoryModel();
 					this.memory = new Zx16Memory();
 				}
 				break;

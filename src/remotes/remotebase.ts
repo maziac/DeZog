@@ -1322,7 +1322,7 @@ export class RemoteBase extends EventEmitter {
 
 	/**
 	 * Reads the slots/banks association.
-	 * @returns A Promise with a slot array containing the refernced banks or undefined if no slots are used.
+	 * @returns A Promise with a slot array containing the referenced banks or undefined if no slots are used.
 	 */
 	public getSlots(): number[] | undefined {
 		return Z80Registers.getSlots();

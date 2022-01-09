@@ -23,8 +23,8 @@ export class Zx16Memory extends SimulatedMemory {
 		this.writeBank(0, rom);
 
 		// 8000-0xFFFF is not populated, read as 0xFF (floating bus)
-		this.setAsNotPopulatedSlot(2);
-		this.setAsNotPopulatedSlot(3);
+		this.setAsNotPopulatedBank(2);
+		this.setAsNotPopulatedBank(3);
 	}
 
 }
