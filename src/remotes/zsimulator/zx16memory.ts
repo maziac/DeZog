@@ -1,4 +1,4 @@
-import {SimulatedMemory} from './simmemory';
+import {BankType, SimulatedMemory} from './simmemory';
 import * as fs from 'fs';
 import {Utility} from '../../misc/utility';
 
@@ -14,7 +14,7 @@ export class Zx16Memory extends SimulatedMemory {
 	constructor() {
 		super(4, 4);
 		// 0000-0x3FFF is ROM
-		this.writableBanks[0] = false;
+		this.typeOfBanks[0] = BankType.ROM;
 		// Load ROMs
 		const romFilePath = Utility.getExtensionPath() + '/data/48.rom';
 		const romBuffer = fs.readFileSync(romFilePath);
@@ -24,9 +24,9 @@ export class Zx16Memory extends SimulatedMemory {
 
 		// 8000-0xFFFF is not populated, read as 0xFF (floating bus) and non-writable
 		this.fillBank(2, 0xFF);
-		this.writableBanks[2] = false;
+		this.typeOfBanks[2] = BankType.UNUSED;
 		this.fillBank(3, 0xFF);
-		this.writableBanks[2] = false;
+		this.typeOfBanks[3] = BankType.UNUSED;
 	}
 
 }

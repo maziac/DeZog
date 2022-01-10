@@ -15,6 +15,16 @@ interface SimWatchpoint {
 
 
 /**
+ * The memory in the banks can be ROM, RAM or completely unused.
+ */
+export enum BankType {
+	ROM = 0,	// Readonly memory, not writable by Z80 but writable from the debugger and e.g. loadBinSna/Nex.
+	RAM = 1,	// Readwrite memory, writable and readable by Z80 and the debugger
+	UNUSED = 2	// Not writable by Z80 and debugger. Will be filled with 0xFF.
+}
+
+
+/**
  * Represents the simulated memory.
  * It is a base class to allow memory paging etc.
  * The simulated memory always works with slots although they might not be visible
@@ -35,7 +45,7 @@ export class SimulatedMemory implements Serializeable {
 	// For each bank this array tells if it is writable or not.
 	// RAM is writable.
 	// ROM and unpopulated areas (see ZX16K) are  not writable.
-	protected writableBanks: boolean[];
+	protected typeOfBanks: BankType[];
 
 	// The used bank size.
 	protected bankSize: number;
@@ -90,8 +100,8 @@ export class SimulatedMemory implements Serializeable {
 		// Create RAM
 		this.memoryData = new Uint8Array(bankCount * this.bankSize);
 		// No ROM at start
-		this.writableBanks = new Array<boolean>(bankCount);
-		this.writableBanks.fill(true);
+		this.typeOfBanks = new Array<BankType>(bankCount);
+		this.typeOfBanks.fill(BankType.RAM);
 
 		// Calculate number of bits to shift to get the slot index from the address.
 		let sc = slotCount;
@@ -287,14 +297,13 @@ export class SimulatedMemory implements Serializeable {
 		const slotIndex = addr >>> this.shiftCount;
 		const bankNr = this.slots[slotIndex];
 
-		// Don't write if non-writable, e.g. ROM
-		if (!this.writableBanks[bankNr])
-			return;
-
-		// Convert to flat address
-		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));
-		// Write
-		this.memoryData[ramAddr] = val;
+		// Don't write if non-writable, e.g. ROM or UNUSED
+		if (this.typeOfBanks[bankNr] == BankType.RAM) {
+			// Convert to flat address
+			const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));
+			// Write
+			this.memoryData[ramAddr] = val;
+		}
 	}
 
 
@@ -417,11 +426,29 @@ export class SimulatedMemory implements Serializeable {
 		let size = data.length;
 		if (offset + size > this.memoryData.length)
 			size = this.memoryData.length - offset;
-		if (size <= 0)
-			return;	// Nothing to write
-		// Copy
-		const data2 = data.slice(0, size);
-		this.memoryData.set(data2, offset);
+
+		let start = 0;
+		const bankSize = this.bankSize;
+		while (size > 0) {
+			// Get associated bank
+			const bank = Math.floor(offset / bankSize);
+			const offsRemainder = offset % bankSize;
+			// Check boundaries
+			let minSize = size;
+			if (offsRemainder + minSize > bankSize)
+				minSize = bankSize - offsRemainder;
+			// Check if RAM, others are not written
+			const bankType = this.typeOfBanks[bank];
+			if (bankType == BankType.RAM) {
+				// Write data
+				const data2 = data.slice(start, minSize);
+				this.memoryData.set(data2, offset);
+			}
+			// Next
+			start += minSize;
+			offset += minSize;
+			size -= minSize;
+		}
 	}
 
 

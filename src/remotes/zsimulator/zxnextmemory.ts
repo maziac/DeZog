@@ -1,6 +1,7 @@
 import {Utility} from '../../misc/utility';
 import {PagedMemory} from './pagedmemory';
 import * as fs from 'fs';
+import {BankType} from './simmemory';
 
 
 /**
@@ -17,8 +18,8 @@ export class ZxNextMemory extends PagedMemory {
 		// In real ZX Next both is mapped to 0xFF and distinguished by the slot.
 		// Bank 0-253 are RAM.
 		// Note: the real ZX Next does not offer so many RAM banks.
-		this.writableBanks[0xFE] = false;
-		this.writableBanks[0xFF] = false;
+		this.typeOfBanks[0xFE] = BankType.ROM;
+		this.typeOfBanks[0xFF] = BankType.ROM;
 		// Bank configuration
 		this.slots = [0xFE, 0xFF, 10, 11, 4, 5, 0, 1];
 		// Load the  ROM
