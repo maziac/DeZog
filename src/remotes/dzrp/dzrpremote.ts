@@ -174,6 +174,7 @@ export class DzrpRemote extends RemoteBase {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
+		//
 	}
 
 
@@ -210,7 +211,6 @@ export class DzrpRemote extends RemoteBase {
 				default:
 					// Error: Unknown type
 					throw Error("Unknown machine type " + resp.machineType + " received.");
-					break;
 			}
 			this.memoryModel.init();
 			Labels.convertLabelsTo(this.memoryModel);
@@ -239,6 +239,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
+		//
 	}
 
 
@@ -328,8 +329,8 @@ export class DzrpRemote extends RemoteBase {
 			const data = await this.sendDzrpCmdReadMem(addr, count);
 			// Print
 			response = Utility.getHexString(addr, 4) + "h: ";
-			for (let i = 0; i < data.length; i++)
-				response += Utility.getHexString(data[i], 2) + "h ";
+			for (const dat of data)
+				response += Utility.getHexString(dat, 2) + "h ";
 		}
 		else if (cmd_name == "cmd_write_mem") {
 			if (cmdArray.length < 2) {
@@ -370,8 +371,8 @@ export class DzrpRemote extends RemoteBase {
 			const paletteNumber = Utility.parseValue(cmdArray[0]);
 			const palette = await this.sendDzrpCmdGetSpritesPalette(paletteNumber);
 			// Print
-			for (let i = 0; i < palette.length; i++)
-				response += Utility.getHexString(palette[i], 3) + " ";
+			for (const p of palette)
+				response += Utility.getHexString(p, 3) + " ";
 		}
 		else if (cmd_name == "cmd_get_sprites_clip_window_and_control") {
 			const clip = await this.sendDzrpCmdGetSpritesClipWindow();
@@ -901,7 +902,7 @@ export class DzrpRemote extends RemoteBase {
 					try {
 						await this.getRegistersFromEmulator();
 						await this.getCallStackFromEmulator();
-					} catch (e) {};	// Ignore if error already happened
+					} catch (e) {}	// Ignore if error already happened
 					const reason: string = e.message;
 					this.continueResolve!.resolve(reason);
 				}
@@ -1180,7 +1181,7 @@ export class DzrpRemote extends RemoteBase {
 			else {
 				// Remove breakpoint
 				if (lp.bpId) {
-					await await this.sendDzrpCmdRemoveBreakpoint(lp);
+					await this.sendDzrpCmdRemoveBreakpoint(lp);
 					lp.bpId = undefined;
 				}
 			}
@@ -1248,7 +1249,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		return await this.sendDzrpCmdReadMem(address, size);
+		return this.sendDzrpCmdReadMem(address, size);
 	}
 
 
