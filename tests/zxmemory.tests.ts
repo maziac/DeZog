@@ -15,7 +15,7 @@ suite('PagedMemory', () => {
 		let memBuffer: MemBufferInt;
 		let writeSize: number;
 		{
-			const mem=new PagedMemory(8, 256);
+			const mem = new PagedMemory(8, 256);
 
 			// Set slots
 			mem.setSlot(0, 253);
@@ -41,23 +41,23 @@ suite('PagedMemory', () => {
 			mem.write8(0xFFFF, 20);
 
 			// Get size
-			writeSize=mem.getSerializedSize();
+			writeSize = mem.getSerializedSize();
 
 			// Serialize
-			memBuffer=new MemBufferInt(writeSize);
+			memBuffer = new MemBufferInt(writeSize);
 			mem.serialize(memBuffer);
 		}
 
 		// Create a new object
-		const rMem=new PagedMemory(8, 256);
+		const rMem = new PagedMemory(8, 256);
 		rMem.deserialize(memBuffer);
 
 		// Check size
-		const readSize=memBuffer.getReadOffset();
+		const readSize = memBuffer.getReadOffset();
 		assert.equal(writeSize, readSize);
 
 		// Test the slots/banks
-		const slots=rMem.getSlots();
+		const slots = rMem.getSlots();
 		assert.equal(253, slots[0]);
 		assert.equal(200, slots[1]);
 		assert.equal(150, slots[2]);
@@ -83,15 +83,15 @@ suite('PagedMemory', () => {
 
 
 	test('writeBlock/readBlock', () => {
-		const mem=new PagedMemory(8, 256);
+		const mem = new PagedMemory(8, 256);
 
 		mem.writeBlock(0x0000, new Uint8Array([0xAB]));
-		let result=mem.readBlock(0x0000, 2);
+		let result = mem.readBlock(0x0000, 2);
 		assert.equal(0xAB, result[0]);
 		assert.equal(0, result[1]);
 
 		mem.writeBlock(0x1000, new Uint8Array([0xAB, 0x12, 0x13, 0x14, 0x15]));
-		result=mem.readBlock(0x1000, 5);
+		result = mem.readBlock(0x1000, 5);
 		assert.equal(0xAB, result[0]);
 		assert.equal(0x12, result[1]);
 		assert.equal(0x13, result[2]);
@@ -99,23 +99,23 @@ suite('PagedMemory', () => {
 		assert.equal(0x15, result[4]);
 
 		mem.writeBlock(0xFFFF, new Uint8Array([0xC0]));
-		result=mem.readBlock(0xFFFF, 1);
+		result = mem.readBlock(0xFFFF, 1);
 		assert.equal(0xC0, result[0]);
-		result=mem.readBlock(0x0000, 1);
+		result = mem.readBlock(0x0000, 1);
 		assert.equal(0xAB, result[0]);
 
 		mem.writeBlock(0xFFFF, new Uint8Array([0xD1, 0xD2]));
-		result=mem.readBlock(0xFFFF, 2);
+		result = mem.readBlock(0xFFFF, 2);
 		assert.equal(0xD1, result[0]);
 		assert.equal(0xD2, result[1]);
 
 		mem.writeBlock(0xFFFF, Buffer.from([0xE1, 0xE2]));
-		result=mem.readBlock(0xFFFF, 2);
+		result = mem.readBlock(0xFFFF, 2);
 		assert.equal(0xE1, result[0]);
 		assert.equal(0xE2, result[1]);
 
 		mem.writeBlock(0x3FFE, Buffer.from([0xF1, 0xF2, 0xF3, 0xF4]));
-		result=mem.readBlock(0x3FFE, 4);
+		result = mem.readBlock(0x3FFE, 4);
 		assert.equal(0xF1, result[0]);
 		assert.equal(0xF2, result[1]);
 		assert.equal(0xF3, result[2]);
@@ -123,40 +123,57 @@ suite('PagedMemory', () => {
 	});
 
 
-	test('setMemory/getMemory', () => {
-		const mem=new PagedMemory(8, 256);
+	test('getMemory', () => {
+		const mem = new PagedMemory(8, 256) as any;
 
-		mem.setMemory16(0x0000, 0x1234);
-		let result=mem.getMemory16(0x0000);
+		mem.memoryData[0] = 0x34;
+		mem.memoryData[1] = 0x12;
+		let result = mem.getMemory16(0x0000);
 		assert.equal(0x1234, result);
-		result=mem.getMemory16(0xFFFE);
-		assert.equal(0x0000, result);
-		result=mem.getMemory16(0x0002);
-		assert.equal(0x0000, result);
 
-		result=mem.getMemory8(0x0000);
-		assert.equal(0x34, result);
-		result=mem.getMemory8(0x0001);
-		assert.equal(0x12, result);
-
-		mem.setMemory16(0x0002, 0x5678);
-		result=mem.getMemory32(0x0000);
+		mem.memoryData[0] = 0x34;
+		mem.memoryData[1] = 0x12;
+		mem.memoryData[2] = 0x78;
+		mem.memoryData[3] = 0x56;
+		result = mem.getMemory32(0x0000);
 		assert.equal(0x56781234, result);
 
-		result=mem.getMemory16(0x0001);
-		assert.equal(0x7812, result);
+		mem.memoryData[0xFFFF] = 0x9A;
+		mem.memoryData[0xFFFE] = 0xBC;
+		mem.memoryData[0xFFFD] = 0xDE;
 
-		mem.setMemory16(0xFFFF, 0xABCD);
-		mem.setMemory16(0x0001, 0xEF01);
-		result=mem.getMemory16(0xFFFF);
-		assert.equal(0xABCD, result);
-		result=mem.getMemory32(0xFFFF);
-		assert.equal(0xEF01ABCD, result);
+		result = mem.getMemory16(0xFFFF);
+		assert.equal(0x349A, result);
+
+		result = mem.getMemory32(0xFFFF);
+		assert.equal(0x7812349A, result);
+
+		result = mem.getMemory32(0xFFFE);
+		assert.equal(0x12349ABC, result);
+
+		result = mem.getMemory32(0xFFFD);
+		assert.equal(0x349ABCDE, result);
+
+		const offs = mem.bankSize;
+		assert.equal(0x10000 / 8, offs);
+		mem.memoryData[offs - 1] = 0xC1;
+		mem.memoryData[offs] = 0xD2;
+		result = mem.getMemory16(offs - 1);
+		assert.equal(0xD2C1, result);
+
+		mem.memoryData[offs - 2] = 0xB0;
+		mem.memoryData[offs + 1] = 0xE3;
+		result = mem.getMemory32(offs - 2);
+		assert.equal(0xE3D2C1B0, result);
 	});
 
 
+	/* TODO: To be removed:
+	Many functions used here have been removed.
+	Also the test is not so useful anymore as there is no special behavior
+	for unpopulated banks. The banks are just filled with 0xFF.
 	test('non populated slots', () => {
-		const mem=new PagedMemory(4, 8);
+		const mem = new PagedMemory(4, 8) as any;
 		mem.fillBank(2, 0xFF);
 		mem.setMemory8(0x7FFC, 1);
 		mem.setMemory8(0x7FFD, 2);
@@ -229,5 +246,6 @@ suite('PagedMemory', () => {
 		assert.equal(0x22, mem.read8(0xC000));
 		assert.equal(0x23, mem.read8(0xC001));
 	});
+	*/
 });
 

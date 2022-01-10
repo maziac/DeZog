@@ -309,6 +309,7 @@ export class SimulatedMemory implements Serializeable {
 
 	// Reads one byte.
 	// This is **not** used by the Z80 CPU.
+	/* Not used:
 	public getMemory8(addr: number): number {
 		const slotIndex = addr >>> this.shiftCount;
 		const bankNr = this.slots[slotIndex];
@@ -316,9 +317,12 @@ export class SimulatedMemory implements Serializeable {
 		const value = this.memoryData[ramAddr];
 		return value;
 	}
+	*/
+
 
 	// Reads 2 bytes.
 	// This is **not** used by the Z80 CPU.
+	// Used to read the WORD at SP.
 	public getMemory16(addr: number): number {
 		// First byte
 		let address = addr & (this.bankSize - 1);
@@ -345,6 +349,7 @@ export class SimulatedMemory implements Serializeable {
 
 	// Reads 4 bytes.
 	// This is **not** used by the Z80 CPU.
+	// Used to read an opcode which is max. 4 bytes.
 	public getMemory32(addr: number): number {
 		// First byte
 		let address = addr & (this.bankSize - 1);
@@ -354,11 +359,12 @@ export class SimulatedMemory implements Serializeable {
 		const mem = this.memoryData;
 		let value = mem[ramAddr];
 		// Second byte
-		if (address <= this.bankSize - 3) {  // E.g. 0x2000-3
+		if (address < this.bankSize - 3) {  // E.g. 0x2000-3
 			// No overflow, same bank, normal case
 			value += mem[++ramAddr] << 8;
 			value += mem[++ramAddr] << 16;
-			value += mem[ramAddr] * 256 * 65536;	// Otherwise the result might be negative
+			// Otherwise the result might be negative:
+			value += mem[++ramAddr] * 256 * 65536;	 // NOSONAR
 		}
 		else {
 			// Overflow, do each part one-by-one
@@ -380,6 +386,7 @@ export class SimulatedMemory implements Serializeable {
 
 	// Sets one byte.
 	// This is **not** used by the Z80 CPU.
+	/* Not Used:
 	public setMemory8(addr: number, val: number) {
 		let address = addr & (this.bankSize - 1);
 		let slotIndex = addr >>> this.shiftCount;
@@ -388,10 +395,12 @@ export class SimulatedMemory implements Serializeable {
 		const mem = this.memoryData;
 		mem[ramAddr] = val & 0xFF;
 	}
+	*/
 
 
 	// Sets one word.
 	// This is **not** used by the Z80 CPU.
+	/* Not used:
 	public setMemory16(addr: number, val: number) {
 		// First byte
 		let address = addr & (this.bankSize - 1);
@@ -414,6 +423,8 @@ export class SimulatedMemory implements Serializeable {
 		}
 		mem[ramAddr] = val >>> 8;
 	}
+	*/
+
 
 	/**
 	 * Write to memoryData directly.
