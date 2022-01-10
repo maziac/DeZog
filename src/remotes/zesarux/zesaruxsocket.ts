@@ -1,7 +1,6 @@
-import { Log, LogSocketCommands } from '../../log';
+import { Log, LogSocketCommands, LogSocket } from '../../log';
 import { Socket } from 'net';
 import { Settings } from '../../settings';
-import { LogSocket } from '../../log';
 import {Utility} from '../../misc/utility';
 
 
@@ -162,7 +161,7 @@ enum SocketState {
 	CONNECTED_WAITING_ON_WELCOME_MSG,
 	CONNECTED
 
-};
+}
 
 
 /**

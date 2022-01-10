@@ -12,16 +12,16 @@ import {CpuHistoryClass, CpuHistory, DecodeStandardHistoryInfo} from '../cpuhist
 import {ZSimCpuHistory} from './zsimcpuhistory';
 import {Zx16Memory} from './zx16memory';
 import {Zx48Memory} from './zx48memory';
-import {GenericBreakpoint} from '../../genericwatchpoint';
-import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {MemoryModel, Zx128MemoryModel, Zx16MemoryModel, Zx48MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
-import {SimulatedMemory} from './simmemory';
 import {Zx128Memory} from './zx128memory';
 import {ZxNextMemory} from './zxnextmemory';
+import {MemoryModel, Zx16MemoryModel, Zx48MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
+import {SimulatedMemory} from './simmemory';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
 import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
+import {GenericBreakpoint} from '../../genericwatchpoint';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 
 
