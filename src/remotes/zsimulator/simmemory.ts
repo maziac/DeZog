@@ -2,9 +2,6 @@ import {MemBuffer, Serializeable} from '../../misc/membuffer';
 import {Utility} from '../../misc/utility';
 
 
-// Not populated memory reads as 0xff from the Z80 bus
-const NOT_POPULATED_VALUE = 0xff;
-
 
 /**
  * Watchpoint class used by 'watchPointMemory'.
@@ -29,32 +26,34 @@ interface SimWatchpoint {
 export class SimulatedMemory implements Serializeable {
 	// The memory in one big block.
 	// If banking is used in a derived class this array will extend 64k.
-	private memoryData: Uint8Array;
+	protected memoryData: Uint8Array;
 
 	// Holds the slot assignments to the banks.
 	protected slots: number[];
 
 	// For each bank this array tells if it is ROM or read-only (e.g. not populated).
-	protected romBanks: boolean[];
+	// For each bank this array tells if it is writable or not.
+	// RAM is writable.
+	// ROM and unpopulated areas (see ZX16K) are  not writable.
+	protected writableBanks: boolean[];
 
 	// The used bank size.
-	private bankSize: number;
+	protected bankSize: number;
 
 	// The number of bits to shift to get the slot from the address
-	private shiftCount: number;
+	protected shiftCount: number;
 
 	// Visual memory: shows the access as an image.
 	// The image is just 1 pixel high.
-	private visualMemory: Array<number>;
+	protected visualMemory: Array<number>;
 
 	// The size of the visual memory.
-	private VISUAL_MEM_SIZE_SHIFT=8;
+	protected VISUAL_MEM_SIZE_SHIFT = 8;
 
 	// Colors:
-	private VISUAL_MEM_COL_READ=1;
-	private VISUAL_MEM_COL_WRITE=2;
-	private VISUAL_MEM_COL_PROG=3;
-
+	protected VISUAL_MEM_COL_READ = 1;
+	protected VISUAL_MEM_COL_WRITE = 2;
+	protected VISUAL_MEM_COL_PROG = 3;
 
 
 	// Flag that is set if a watchpoint was hot.
@@ -82,35 +81,35 @@ export class SimulatedMemory implements Serializeable {
 	 * @param bankCount Number of banks.
 	 */
 	constructor(slotCount: number, bankCount: number) {
-		Utility.assert(bankCount>=slotCount);
+		Utility.assert(bankCount >= slotCount);
 		// Create visual memory
-		this.visualMemory=new Array<number>(1<<(16-this.VISUAL_MEM_SIZE_SHIFT));
+		this.visualMemory = new Array<number>(1 << (16 - this.VISUAL_MEM_SIZE_SHIFT));
 		this.clearVisualMemory();
 		// The "real" memory
-		this.bankSize=0x10000/slotCount;
+		this.bankSize = 0x10000 / slotCount;
 		// Create RAM
-		this.memoryData=new Uint8Array(bankCount*this.bankSize);
+		this.memoryData = new Uint8Array(bankCount * this.bankSize);
 		// No ROM at start
-		this.romBanks=new Array<boolean>(bankCount);
-		this.romBanks.fill(false);
+		this.writableBanks = new Array<boolean>(bankCount);
+		this.writableBanks.fill(true);
 
 		// Calculate number of bits to shift to get the slot index from the address.
-		let sc=slotCount;
-		let bits=0;
-		while (sc>1) {
+		let sc = slotCount;
+		let bits = 0;
+		while (sc > 1) {
 			bits++;
-			sc/=2;
+			sc /= 2;
 		}
-		this.shiftCount=16-bits;
+		this.shiftCount = 16 - bits;
 		// Associate banks with slots
-		this.slots=new Array<number>(slotCount);
-		for (let i=0; i<slotCount; i++)
-			this.slots[i]=i;
+		this.slots = new Array<number>(slotCount);
+		for (let i = 0; i < slotCount; i++)
+			this.slots[i] = i;
 
 		// Breakpoints
 		this.clearHit();
 		// Create watchpoint area
-		this.watchPointMemory=Array.from({length: 0x10000}, () => ({read: 0, write: 0}));
+		this.watchPointMemory = Array.from({length: 0x10000}, () => ({read: 0, write: 0}));
 	}
 
 
@@ -151,11 +150,11 @@ export class SimulatedMemory implements Serializeable {
 	 */
 	public getSerializedSize(): number {
 		// Create a MemBuffer to calculate the size.
-		const memBuffer=new MemBuffer();
+		const memBuffer = new MemBuffer();
 		// Serialize object to obtain size
 		this.serialize(memBuffer);
 		// Get size
-		const size=memBuffer.getSize();
+		const size = memBuffer.getSize();
 		return size;
 	}
 
@@ -179,14 +178,14 @@ export class SimulatedMemory implements Serializeable {
 	 */
 	public deserialize(memBuffer: MemBuffer) {
 		// Store slot/bank association
-		const slotLength=memBuffer.read8();
-		this.slots=[];
-		for (let i=0; i<slotLength; i++)
+		const slotLength = memBuffer.read8();
+		this.slots = [];
+		for (let i = 0; i < slotLength; i++)
 			this.slots.push(memBuffer.read8());
 
 		// Create memory banks
-		const buffer=memBuffer.readArrayBuffer();
-		Utility.assert(buffer.length==this.memoryData.byteLength);
+		const buffer = memBuffer.readArrayBuffer();
+		Utility.assert(buffer.length == this.memoryData.byteLength);
 		this.memoryData.set(buffer);
 
 		// Clear visual memory
@@ -201,13 +200,13 @@ export class SimulatedMemory implements Serializeable {
 	 * @param access 'r', 'w' or 'rw'.
 	 */
 	public setWatchpoint(address: number, size: number, access: string) {
-		const readAdd=access.includes('r')? 1:0;
-		const writeAdd=access.includes('w')? 1:0;
+		const readAdd = access.includes('r') ? 1 : 0;
+		const writeAdd = access.includes('w') ? 1 : 0;
 		// Set area
-		for (let i=0; i<size; i++) {
-			const wp=this.watchPointMemory[address&0xFFFF];
-			wp.read+=readAdd;
-			wp.write+=writeAdd;
+		for (let i = 0; i < size; i++) {
+			const wp = this.watchPointMemory[address & 0xFFFF];
+			wp.read += readAdd;
+			wp.write += writeAdd;
 			address++;
 		}
 	}
@@ -220,15 +219,15 @@ export class SimulatedMemory implements Serializeable {
 	 * @param access 'r', 'w' or 'rw'.
 	 */
 	public removeWatchpoint(address: number, size: number, access: string) {
-		const readAdd=access.includes('r')? 1:0;
-		const writeAdd=access.includes('w')? 1:0;
+		const readAdd = access.includes('r') ? 1 : 0;
+		const writeAdd = access.includes('w') ? 1 : 0;
 		// remove area
-		for (let i=0; i<size; i++) {
-			const wp=this.watchPointMemory[address&0xFFFF];
-			if (wp.read>0)
-				wp.read-=readAdd;
-			if(wp.write>0)
-				wp.write-=writeAdd;
+		for (let i = 0; i < size; i++) {
+			const wp = this.watchPointMemory[address & 0xFFFF];
+			if (wp.read > 0)
+				wp.read -= readAdd;
+			if (wp.write > 0)
+				wp.write -= writeAdd;
 			address++;
 		}
 	}
@@ -238,8 +237,8 @@ export class SimulatedMemory implements Serializeable {
 	 * Clears the hit flag and the arrays.
 	 */
 	public clearHit() {
-		this.hitAddress=-1;
-		this.hitAccess='';
+		this.hitAddress = -1;
+		this.hitAccess = '';
 	}
 
 
@@ -247,23 +246,23 @@ export class SimulatedMemory implements Serializeable {
 	// This is used by the Z80 CPU.
 	public read8(addr: number): number {
 		// Check for watchpoint access
-		const wp=this.watchPointMemory[addr];
+		const wp = this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if ((this.hitAddress<0)&&wp.read>0) {
+			if ((this.hitAddress < 0) && wp.read > 0) {
 				// Read access
-				this.hitAddress=addr;
-				this.hitAccess='r';
+				this.hitAddress = addr;
+				this.hitAccess = 'r';
 			}
 		}
 
 		// Visual memory
-		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_READ;
+		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_READ;
 		// Read
-		const slotIndex=addr>>>this.shiftCount;
-		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
-		const value=this.memoryData[ramAddr];
+		const slotIndex = addr >>> this.shiftCount;
+		const bankNr = this.slots[slotIndex];
+		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));	// Convert to flat address
+		const value = this.memoryData[ramAddr];
 		return value;
 	}
 
@@ -271,41 +270,41 @@ export class SimulatedMemory implements Serializeable {
 	// This is used by the Z80 CPU.
 	public write8(addr: number, val: number) {
 		// Check for watchpoint access
-		const wp=this.watchPointMemory[addr];
+		const wp = this.watchPointMemory[addr];
 		if (wp) {
 			// Check access
-			if ((this.hitAddress<0)&&wp.write>0) {
+			if ((this.hitAddress < 0) && wp.write > 0) {
 				// Write access
-				this.hitAddress=addr;
-				this.hitAccess='w';
+				this.hitAddress = addr;
+				this.hitAccess = 'w';
 			}
 		}
 
 		// Visual memory
-		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_WRITE;
+		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_WRITE;
 
 		// Convert to bank
-		const slotIndex=addr>>>this.shiftCount;
-		const bankNr=this.slots[slotIndex];
+		const slotIndex = addr >>> this.shiftCount;
+		const bankNr = this.slots[slotIndex];
 
-		// Don't write if ROM
-		if (this.romBanks[bankNr])
+		// Don't write if non-writable, e.g. ROM
+		if (!this.writableBanks[bankNr])
 			return;
 
 		// Convert to flat address
-		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));
+		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));
 		// Write
-		this.memoryData[ramAddr]=val;
+		this.memoryData[ramAddr] = val;
 	}
 
 
 	// Reads one byte.
 	// This is **not** used by the Z80 CPU.
 	public getMemory8(addr: number): number {
-		const slotIndex=addr>>>this.shiftCount;
-		const bankNr=this.slots[slotIndex];
-		const ramAddr=bankNr*this.bankSize+(addr&(this.bankSize-1));	// Convert to flat address
-		const value=this.memoryData[ramAddr];
+		const slotIndex = addr >>> this.shiftCount;
+		const bankNr = this.slots[slotIndex];
+		const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));	// Convert to flat address
+		const value = this.memoryData[ramAddr];
 		return value;
 	}
 
@@ -313,25 +312,25 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	public getMemory16(addr: number): number {
 		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		let value=mem[ramAddr];
+		let address = addr & (this.bankSize - 1);
+		let slotIndex = addr >>> this.shiftCount;
+		let bankNr = this.slots[slotIndex];
+		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
+		const mem = this.memoryData;
+		let value = mem[ramAddr];
 		// Second byte
 		address++;
-		if (address<this.bankSize) {
+		if (address < this.bankSize) {
 			// No overflow, same bank, normal case
 			ramAddr++;
 		}
 		else {
 			// Overflow
-			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
-			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*this.bankSize;	// Convert to flat address
+			slotIndex = ((addr + 1) & 0xFFFF) >>> this.shiftCount;
+			bankNr = this.slots[slotIndex];
+			ramAddr = bankNr * this.bankSize;	// Convert to flat address
 		}
-		value+=mem[ramAddr]<<8;
+		value += mem[ramAddr] << 8;
 		return value;
 	}
 
@@ -339,31 +338,31 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	public getMemory32(addr: number): number {
 		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		let value=mem[ramAddr];
+		let address = addr & (this.bankSize - 1);
+		let slotIndex = addr >>> this.shiftCount;
+		let bankNr = this.slots[slotIndex];
+		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
+		const mem = this.memoryData;
+		let value = mem[ramAddr];
 		// Second byte
-		if (address<=this.bankSize-3) {  // E.g. 0x2000-3
+		if (address <= this.bankSize - 3) {  // E.g. 0x2000-3
 			// No overflow, same bank, normal case
-			value+=mem[++ramAddr]<<8;
-			value+=mem[++ramAddr]<<16;
-			value+=mem[++ramAddr]*256*65536;	// Otherwise the result might be negative
+			value += mem[++ramAddr] << 8;
+			value += mem[++ramAddr] << 16;
+			value += mem[ramAddr] * 256 * 65536;	// Otherwise the result might be negative
 		}
 		else {
 			// Overflow, do each part one-by-one
-			let mult=256;
-			for (let i=3; i>0; i--) {
+			let mult = 256;
+			for (let i = 3; i > 0; i--) {
 				addr++;
-				address=addr&(this.bankSize-1);
-				slotIndex=(addr&0xFFFF)>>>this.shiftCount;
-				bankNr=this.slots[slotIndex];
-				ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-				value+=mem[ramAddr]*mult;
+				address = addr & (this.bankSize - 1);
+				slotIndex = (addr & 0xFFFF) >>> this.shiftCount;
+				bankNr = this.slots[slotIndex];
+				ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
+				value += mem[ramAddr] * mult;
 				// Next
-				mult*=256;
+				mult *= 256;
 			}
 		}
 		return value;
@@ -373,12 +372,12 @@ export class SimulatedMemory implements Serializeable {
 	// Sets one byte.
 	// This is **not** used by the Z80 CPU.
 	public setMemory8(addr: number, val: number) {
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		mem[ramAddr]=val&0xFF;
+		let address = addr & (this.bankSize - 1);
+		let slotIndex = addr >>> this.shiftCount;
+		let bankNr = this.slots[slotIndex];
+		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
+		const mem = this.memoryData;
+		mem[ramAddr] = val & 0xFF;
 	}
 
 
@@ -386,25 +385,25 @@ export class SimulatedMemory implements Serializeable {
 	// This is **not** used by the Z80 CPU.
 	public setMemory16(addr: number, val: number) {
 		// First byte
-		let address=addr&(this.bankSize-1);
-		let slotIndex=addr>>>this.shiftCount;
-		let bankNr=this.slots[slotIndex];
-		let ramAddr=bankNr*this.bankSize+address;	// Convert to flat address
-		const mem=this.memoryData;
-		mem[ramAddr]=val&0xFF;
+		let address = addr & (this.bankSize - 1);
+		let slotIndex = addr >>> this.shiftCount;
+		let bankNr = this.slots[slotIndex];
+		let ramAddr = bankNr * this.bankSize + address;	// Convert to flat address
+		const mem = this.memoryData;
+		mem[ramAddr] = val & 0xFF;
 		// Second byte
 		address++;
-		if (address<0x2000) {
+		if (address < 0x2000) {
 			// No overflow, same bank, normal case
 			ramAddr++;
 		}
 		else {
 			// Overflow
-			slotIndex=((addr+1)&0xFFFF)>>>this.shiftCount;
-			bankNr=this.slots[slotIndex];
-			ramAddr=bankNr*this.bankSize;	// Convert to flat address
+			slotIndex = ((addr + 1) & 0xFFFF) >>> this.shiftCount;
+			bankNr = this.slots[slotIndex];
+			ramAddr = bankNr * this.bankSize;	// Convert to flat address
 		}
-		mem[ramAddr]=val>>>8;
+		mem[ramAddr] = val >>> 8;
 	}
 
 	/**
@@ -415,13 +414,13 @@ export class SimulatedMemory implements Serializeable {
 	 */
 	public writeMemoryData(offset: number, data: Uint8Array) {
 		// Check size
-		let size=data.length;
-		if (offset+size>this.memoryData.length)
-			size=this.memoryData.length-offset;
-		if (size<=0)
+		let size = data.length;
+		if (offset + size > this.memoryData.length)
+			size = this.memoryData.length - offset;
+		if (size <= 0)
 			return;	// Nothing to write
 		// Copy
-		const data2=data.slice(0, size);
+		const data2 = data.slice(0, size);
 		this.memoryData.set(data2, offset);
 	}
 
@@ -429,7 +428,7 @@ export class SimulatedMemory implements Serializeable {
 	// Write 1 byte.
 	public setVisualProg(addr: number) {
 		// Visual memory
-		this.visualMemory[addr>>>this.VISUAL_MEM_SIZE_SHIFT]=this.VISUAL_MEM_COL_PROG;
+		this.visualMemory[addr >>> this.VISUAL_MEM_SIZE_SHIFT] = this.VISUAL_MEM_COL_PROG;
 	}
 
 
@@ -451,28 +450,34 @@ export class SimulatedMemory implements Serializeable {
 
 
 	/**
-	 * Sets a bank as not populated: the slot will read as 0xFF (floating data bus)
-	 * and it won't react to writes.
+	 * Fills the bank with a specific values.
+	 * Is e.g. used for un-populated banks (E.g. a ZX16K does not have memory attached above 0x8000.
+	 * The memory model will fill the values with 0xFF).
+	 * @param bank The bank to fill.
+	 * @param fillValue The byte value to fill.
 	 */
-	public setAsNotPopulatedBank(bank: number) {
-		this.romBanks[bank] = true;
-		this.writeBank(bank, new Uint8Array(this.bankSize).fill(NOT_POPULATED_VALUE));
+	public fillBank(bank: number, fillValue: number) {
+		const ramAddr = bank * this.bankSize;
+		this.memoryData.fill(fillValue, ramAddr, ramAddr + this.bankSize);
 	}
+
 
 	/**
 	 * Associates a slot with a bank number.
 	 */
 	public setSlot(slot: number, bank: number) {
-		this.slots[slot]=bank;
+		this.slots[slot] = bank;
 	}
+
 
 	/**
 	 * Returns the slots array, or undefined if not paged.
 	 */
-	public getSlots(): number[]|undefined {
+	public getSlots(): number[] | undefined {
 		//return this.slots;
 		return undefined;
 	}
+
 
 	/**
 	 * Reads a block of bytes.
@@ -480,30 +485,30 @@ export class SimulatedMemory implements Serializeable {
 	 * @param size The size of the block.
 	 */
 	public readBlock(startAddress: number, size: number): Uint8Array {
-		const totalBlock=new Uint8Array(size);
-		let offset=0;
+		const totalBlock = new Uint8Array(size);
+		let offset = 0;
 		// The block may span several banks.
-		let addr=startAddress;
-		const mem=this.memoryData;
-		while (size>0) {
+		let addr = startAddress;
+		const mem = this.memoryData;
+		while (size > 0) {
 			// Get memory bank
-			const slot=(addr&0xFFFF)>>>this.shiftCount;
-			const bankAddr=addr&(this.bankSize-1);
-			const bank=this.slots[slot];
-			let ramAddr=bank*this.bankSize+bankAddr;
+			const slot = (addr & 0xFFFF) >>> this.shiftCount;
+			const bankAddr = addr & (this.bankSize - 1);
+			const bank = this.slots[slot];
+			let ramAddr = bank * this.bankSize + bankAddr;
 			// Get block within one bank
-			let blockEnd=bankAddr+size;
-			if (blockEnd>this.bankSize)
-				blockEnd=this.bankSize;
-			const partBlockSize=blockEnd-bankAddr;
+			let blockEnd = bankAddr + size;
+			if (blockEnd > this.bankSize)
+				blockEnd = this.bankSize;
+			const partBlockSize = blockEnd - bankAddr;
 			// Copy partial block
-			const partBlock=mem.subarray(ramAddr, ramAddr+partBlockSize);
+			const partBlock = mem.subarray(ramAddr, ramAddr + partBlockSize);
 			// Add to total block
 			totalBlock.set(partBlock, offset);
 			// Next
-			offset+=partBlockSize;
-			size-=partBlockSize;
-			addr+=partBlockSize;
+			offset += partBlockSize;
+			size -= partBlockSize;
+			addr += partBlockSize;
 		}
 		return totalBlock;
 	}
@@ -514,33 +519,33 @@ export class SimulatedMemory implements Serializeable {
 	 * @param startAddress Start address.
 	 * @param totalBlock The block to write.
 	 */
-	public writeBlock(startAddress: number, totalBlock: Buffer|Uint8Array) {
+	public writeBlock(startAddress: number, totalBlock: Buffer | Uint8Array) {
 		if (!(totalBlock instanceof Uint8Array))
-			totalBlock=new Uint8Array(totalBlock);
-		let offset=0;
+			totalBlock = new Uint8Array(totalBlock);
+		let offset = 0;
 		// The block may span several banks.
-		let addr=startAddress;
-		let size=totalBlock.length;
-		const mem=this.memoryData;
-		while (size>0) {
+		let addr = startAddress;
+		let size = totalBlock.length;
+		const mem = this.memoryData;
+		while (size > 0) {
 			// Get memory bank
-			const slot=(addr&0xFFFF)>>>this.shiftCount;
-			const bankAddr=addr&(this.bankSize-1);
-			const bank=this.slots[slot];
-			let ramAddr=bank*this.bankSize+bankAddr;
+			const slot = (addr & 0xFFFF) >>> this.shiftCount;
+			const bankAddr = addr & (this.bankSize - 1);
+			const bank = this.slots[slot];
+			let ramAddr = bank * this.bankSize + bankAddr;
 			// Get block within one bank
-			let blockEnd=bankAddr+size;
-			if (blockEnd>this.bankSize)
-				blockEnd=this.bankSize;
-			const partBlockSize=blockEnd-bankAddr;
+			let blockEnd = bankAddr + size;
+			if (blockEnd > this.bankSize)
+				blockEnd = this.bankSize;
+			const partBlockSize = blockEnd - bankAddr;
 			// Copy partial block
-			const partBlock=totalBlock.subarray(offset, offset+partBlockSize);
+			const partBlock = totalBlock.subarray(offset, offset + partBlockSize);
 			// Copy to memory bank
 			mem.set(partBlock, ramAddr);
 			// Next
-			offset+=partBlockSize;
-			size-=partBlockSize;
-			addr+=partBlockSize;
+			offset += partBlockSize;
+			size -= partBlockSize;
+			addr += partBlockSize;
 		}
 		return totalBlock;
 	}
@@ -551,10 +556,10 @@ export class SimulatedMemory implements Serializeable {
 	 * @param bank The bank number.
 	 * @param block The block to write.
 	 */
-	public writeBank(bank: number, block: Buffer|Uint8Array) {
-		if (block.length!=this.bankSize)
-			throw Error("writeBank: Block length "+block.length+" not allowed. Expected "+this.bankSize+".");
-		let ramAddr=bank*this.bankSize;
+	public writeBank(bank: number, block: Buffer | Uint8Array) {
+		if (block.length != this.bankSize)
+			throw Error("writeBank: Block length " + block.length + " not allowed. Expected " + this.bankSize + ".");
+		const ramAddr = bank * this.bankSize;
 		this.memoryData.set(block, ramAddr);
 	}
 

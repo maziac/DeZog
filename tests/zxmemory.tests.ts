@@ -157,7 +157,7 @@ suite('PagedMemory', () => {
 
 	test('non populated slots', () => {
 		const mem=new PagedMemory(4, 8);
-		mem.setAsNotPopulatedBank(2);
+		mem.fillBank(2, 0xFF);
 		mem.setMemory8(0x7FFC, 1);
 		mem.setMemory8(0x7FFD, 2);
 		mem.setMemory8(0x7FFE, 3);

@@ -14,7 +14,7 @@ export class Zx16Memory extends SimulatedMemory {
 	constructor() {
 		super(4, 4);
 		// 0000-0x3FFF is ROM
-		this.romBanks[0] = true;
+		this.writableBanks[0] = false;
 		// Load ROMs
 		const romFilePath = Utility.getExtensionPath() + '/data/48.rom';
 		const romBuffer = fs.readFileSync(romFilePath);
@@ -22,9 +22,11 @@ export class Zx16Memory extends SimulatedMemory {
 		const rom = new Uint8Array(romBuffer.buffer, 0, size);
 		this.writeBank(0, rom);
 
-		// 8000-0xFFFF is not populated, read as 0xFF (floating bus)
-		this.setAsNotPopulatedBank(2);
-		this.setAsNotPopulatedBank(3);
+		// 8000-0xFFFF is not populated, read as 0xFF (floating bus) and non-writable
+		this.fillBank(2, 0xFF);
+		this.writableBanks[2] = false;
+		this.fillBank(3, 0xFF);
+		this.writableBanks[2] = false;
 	}
 
 }
