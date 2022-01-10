@@ -451,7 +451,7 @@ export class ZSimRemote extends DzrpRemote {
 	 */
 	protected setRegValue(reg: Z80_REG, value: number) {
 		// Set register in z80 cpu
-		switch (reg) {
+		switch (reg) {	// NOSONAR
 			case Z80_REG.PC:
 				this.z80Cpu.pc = value;
 				break;
@@ -727,7 +727,7 @@ export class ZSimRemote extends DzrpRemote {
 				breakReasonString = "Z80CPU Error: " + errorText;
 				console.log(breakReasonString);
 				breakNumber = BREAK_REASON_NUMBER.UNKNOWN;
-			};
+			}
 
 			// Check to leave
 			if (this.passedTstates < leaveAtTstates) {
@@ -1155,7 +1155,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 			response += await super.dbgExec(cmd);
 			return response;
 		}
-		catch (e) {
+		catch (e) {	// NOSONAR: is here for debugging purposes to set a breakpoint
 			// Rethrow
 			throw e;
 		}
@@ -1227,6 +1227,7 @@ tstates add value: add 'value' to t-states, then create a tick event. E.g. "zsim
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		//
 	}
 
 
