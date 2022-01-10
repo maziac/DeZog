@@ -10,9 +10,9 @@ export interface MemoryBank {
 	/// Z80 end address of page.
 	end: number;
 
-	/// The name of the mapped memory area. `N/A` stands for "not populated"
-	name: string | "N/A";
-};
+	/// The name of the mapped memory area.
+	name: string;
+}
 
 
 
@@ -24,14 +24,6 @@ export interface MemoryBank {
  * 0000-FFFF: RAM
  */
 export class MemoryModel {
-
-	/**
-	 * Constructor.
-	 */
-	constructor() {
-	}
-
-
 	/**
 	 * Initialize.
 	 * Set decoder.
@@ -87,7 +79,7 @@ export class MemoryModel {
 		return [
 			{start: 0x0000, end: 0x3FFF, name: "ROM"},
 			{start: 0x4000, end: 0x7FFF, name: "RAM"},
-			{start: 0x8000, end: 0xFFFF, name: "N/A"}
+			{start: 0x8000, end: 0xFFFF, name: "UNUSED"}
 		];
 	}
 
@@ -200,7 +192,7 @@ export class Zx128MemoryModel extends MemoryModel {
 		if (slots) {
 			let start=0x0000;
 			let i=0;
-			slots.map(bank => {
+			slots.forEach(bank => {
 				const end=start+this.bankSize-1;
 				const name=(i==0)? "ROM"+(bank&0x01):"BANK"+bank;
 				pages.push({start, end, name});
@@ -280,7 +272,7 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
 		// Fill array
 		if (slots) {
 			let start=0x0000;
-			slots.map(bank => {
+			slots.forEach(bank => {
 				const end=start+this.bankSize-1;
 				const name=(bank>=254)? "ROM":"BANK"+bank;
 				pages.push({start, end, name});

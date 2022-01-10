@@ -745,8 +745,7 @@ width:70px;
 				const bank = banks[i];
 				const pos = bank.start * 100 / 0x10000;
 				const width = (bank.end + 1 - bank.start) * 100 / 0x10000;
-				const classes = bank.name === "N/A" ? "border disabled" : "border";
-				const add = `<div class="${classes}" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
+				const add = `<div class="border" id="slot${i}_id" style="top:3.5em; left:${pos}%; width:${width}%; height: 2em">${bank.name}</div>
 			`;
 				html += add;
 			}
