@@ -62,7 +62,7 @@ export class Z80Cpu implements Serializeable {
 	 * @param vertInterruptFunc An optional function that is called on a vertical interrupt.
 	 * Can be used by teh caller to sync the display.
 	 */
-	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {
+	constructor(memory: SimulatedMemory, ports: Z80Ports, vertInterruptFunc = () => {}) {	// NOSONAR
 		this.vertInterruptFunc = vertInterruptFunc;
 		this.error=undefined;
 		this.memory=memory;
@@ -96,7 +96,7 @@ export class Z80Cpu implements Serializeable {
 				catch(e) {
 					this.error="io_read: "+e.message;
 					return 0;
-				};
+				}
 			},
 			io_write: (address, val) => {
 				try {
@@ -104,7 +104,7 @@ export class Z80Cpu implements Serializeable {
 				}
 				catch (e) {
 					this.error="io_write: "+e.message;
-				};
+				}
 			},
 			z80n_enabled: z80n_enabled
 		});
