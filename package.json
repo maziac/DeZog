@@ -334,82 +334,84 @@
 											},
 											"banks": {
 												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type.",
-												"type": {
+												"type": "object",
+												"properties": {
 												}
-										}
-									},
-									"ulaScreen": {
-										"type": "boolean",
-										"description": "If enabled it shows the contents of the ZX Spectrum screen.",
-										"default": true
-									},
-									"zxBorderWidth": {
-										"type": "number",
-										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
-										"default": true
-									},
-									"zxBeeper": {
-										"type": "boolean",
-										"description": "Enables ZX Spectrum sound through it's beeper.",
-										"default": true
-									},
-									"audioSampleRate": {
-										"type": "number",
-										"description": "The sample rate used for audio. Defaults to 22050 Hz.",
-										"default": 22050
-									},
-									"cpuLoadInterruptRange": {
-										"type": "number",
-										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
-										"default": 1
-									},
-									"Z80N": {
-										"type": "boolean",
-										"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
-										"default": false
-									},
-									"vsyncInterrupt": {
-										"type": "boolean",
-										"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
-										"default": false
-									},
-									"cpuFrequency": {
-										"type": "number",
-										"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
-										"default": 3500000
-									},
-									"limitSpeed": {
-										"type": "number",
-										"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
-										"default": false
-									},
-									"updateFrequency": {
-										"type": "number",
-										"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
-										"default": 10
-									},
-									"defaultPortIn": {
-										"type": "number",
-										"description": "The default value that is read if the read port is unused.",
-										"default": 255
-									},
-									"customCode": {
-										"debug": {
+											}
+										},
+										"ulaScreen": {
 											"type": "boolean",
-											"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+											"description": "If enabled it shows the contents of the ZX Spectrum screen.",
+											"default": true
+										},
+										"zxBorderWidth": {
+											"type": "number",
+											"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
+											"default": true
+										},
+										"zxBeeper": {
+											"type": "boolean",
+											"description": "Enables ZX Spectrum sound through it's beeper.",
+											"default": true
+										},
+										"audioSampleRate": {
+											"type": "number",
+											"description": "The sample rate used for audio. Defaults to 22050 Hz.",
+											"default": 22050
+										},
+										"cpuLoadInterruptRange": {
+											"type": "number",
+											"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+											"default": 1
+										},
+										"Z80N": {
+											"type": "boolean",
+											"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
 											"default": false
 										},
-										"jsPath": {
-											"type": "string",
-											"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+										"vsyncInterrupt": {
+											"type": "boolean",
+											"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
+											"default": false
 										},
-										"uiPath": {
-											"type": "string",
-											"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
-										},
-										"timeStep": {
+										"cpuFrequency": {
 											"type": "number",
-											"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+											"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+											"default": 3500000
+										},
+										"limitSpeed": {
+											"type": "number",
+											"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
+											"default": false
+										},
+										"updateFrequency": {
+											"type": "number",
+											"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
+											"default": 10
+										},
+										"defaultPortIn": {
+											"type": "number",
+											"description": "The default value that is read if the read port is unused.",
+											"default": 255
+										},
+										"customCode": {
+											"debug": {
+												"type": "boolean",
+												"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+												"default": false
+											},
+											"jsPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+											},
+											"uiPath": {
+												"type": "string",
+												"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+											},
+											"timeStep": {
+												"type": "number",
+												"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+											}
 										}
 									}
 								}
@@ -437,9 +439,9 @@
 							"rootFolder": {
 								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}.",
 								"type": "string"
-								},
+							},
 							"sjasmplus": {
-								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's sld file.)",
+								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here.)",
 								"type": "array",
 								"items": {
 									"type": "object",
@@ -449,7 +451,7 @@
 									"properties": {
 										"path": {
 											"type": "string",
-											"description": "Path to the assembler '*.list' file."
+											"description": "Path to the assembler '*.sld' file."
 										},
 										"srcDirs": {
 											"type": "array",
@@ -567,14 +569,14 @@
 							},
 							"execAddress": {
 								"type": "string",
-								"description": "The start address of program execution. Use a label or a number. Can only be omitted of a .sna file is loaded."
+								"description": "The start address of program execution. Use a label or a number. Can only be omitted if a .sna file is loaded."
 							},
 							"load": {
 								"type": "string",
-								"description": "(Optional) Load a .tap or .sna file into the emulator on startup of the debug session."
+								"description": "(Optional) Load a .nex or .sna file (or .tap in case of ZEsarUX) into the emulator on startup of the debug session."
 							},
 							"loadObjs": {
-								"description": "List of one or many object files, i.e. memory dumps. Contains of 'path' and 'start' address. (Optional)",
+								"description": "List of one or many object files, i.e. memory dumps. Contain 'path' and 'start' address. (Optional)",
 								"type": "array",
 								"items": {
 									"type": "object",
@@ -619,7 +621,7 @@
 									},
 									"codeCoverageEnabled": {
 										"type": "boolean",
-										"description": "Enables/disables code coverage. Default is 'true."
+										"description": "Enables/disables code coverage. Default is true."
 									}
 								}
 							},
