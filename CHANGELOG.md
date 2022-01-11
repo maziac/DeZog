@@ -3,6 +3,7 @@
 # 2.5.0
 - zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.
 - zsim: Added 'CUSTOM' memory model to define an arbitrary memory layout.
+- Fixed intellisense for the launch.json.
 
 # 2.4.3
 - Unit tests: name for the workspace: removed accidentally added '.x' from the name.

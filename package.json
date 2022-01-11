@@ -241,173 +241,204 @@
 						"properties": {
 							"remoteType": {
 								"type": "string",
-								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zxsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
+								"description": "It is possible to use DeZog with different remotes. Here you choose the type, i.e. 'zrcp' (ZEsarUX), 'zxnext' or 'zsim' (internal Z80 simulator). Note: Certain features or properties are not available in all types.",
 								"default": "zsim"
 							},
 							"zrcp": {
-								"hostname": {
-									"type": "string",
-									"description": "The hostname/IP address of the ZEsarUX Emulator."
-								},
-								"port": {
-									"type": "number",
-									"description": "The port of the ZEsarUX Emulator."
-								},
-								"loadDelay": {
-									"type": "number",
-									"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
-								},
-								"skipInterrupt": {
-									"type": "boolean",
-									"description": "Skips the interrupt during stepping. Defaults to false."
-								},
-								"resetOnLaunch": {
-									"type": "boolean",
-									"description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
-								},
-								"socketTimeout": {
-									"type": "number",
-									"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+								"description": "The configuration for the ZEsarUX emulator.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the ZEsarUX Emulator.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the ZEsarUX Emulator."
+									},
+									"loadDelay": {
+										"type": "number",
+										"description": "An additional delay before the assembler program is loaded in ZEsarUX. Use this only if you have problems starting the debug session on Windows. Default: 100ms on Windows, 0ms on other systems."
+									},
+									"skipInterrupt": {
+										"type": "boolean",
+										"description": "Skips the interrupt during stepping. Defaults to false."
+									},
+									"resetOnLaunch": {
+										"type": "boolean",
+										"description": "Resets the device after starting the debugger before starting the program to debug. Defaults to true."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
 								}
 							},
 							"cspect": {
-								"hostname": {
-									"type": "string",
-									"description": "The hostname/IP address of the CSpect socket."
-								},
-								"port": {
-									"type": "number",
-									"description": "The port of the CSpect socket."
-								},
-								"socketTimeout": {
-									"type": "number",
-									"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+								"description": "The configuration for the CSpect emulator.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the CSpect socket.",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "number",
+										"description": "The port of the CSpect socket."
+									},
+									"socketTimeout": {
+										"type": "number",
+										"description": "In secs. If no response is received within this time the connection is disconnected. Usually you don't need to change this value. Defaults to 5 seconds."
+									}
 								}
 							},
 							"zsim": {
-								"zxKeyboard": {
-									"type": "boolean",
-									"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
-									"default": true
-								},
-								"zxInterface2Joy": {
-									"type": "boolean",
-									"description": "If enabled the simulator shows  a pad to simulate the joysticks for ZX Interface 2.",
-									"default": true
-								},
-								"kempstonJoy": {
-									"type": "boolean",
-									"description": "If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.",
-									"default": true
-								},
-								"visualMemory": {
-									"type": "boolean",
-									"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
-									"default": true
-								},
-								"memoryModel": {
-									"type": "string",
-									"description": "Chooses the right memory model. I.e. how the memory maps if more than 64k is available.\nPossible values:\n'RAM': One memory area of 64K, no banks.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks). The default depends on the banking settings.",
-									"default": "RAM"
-								},
-								"ulaScreen": {
-									"type": "boolean",
-									"description": "If enabled it shows the contents of the ZX Spectrum screen.",
-									"default": true
-								},
-								"zxBorderWidth": {
-									"type": "number",
-									"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
-									"default": true
-								},
-								"zxBeeper": {
-									"type": "boolean",
-									"description": "Enables ZX Spectrum sound through it's beeper.",
-									"default": true
-								},
-								"audioSampleRate": {
-									"type": "number",
-									"description": "The sample rate used for audio. Defaults to 22050 Hz.",
-									"default": 22050
-								},
-								"cpuLoadInterruptRange": {
-									"type": "number",
-									"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
-									"default": 1
-								},
-								"Z80N": {
-									"type": "boolean",
-									"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
-									"default": false
-								},
-								"vsyncInterrupt": {
-									"type": "boolean",
-									"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
-									"default": false
-								},
-								"cpuFrequency": {
-									"type": "number",
-									"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
-									"default": 3500000
-								},
-								"limitSpeed": {
-									"type": "number",
-									"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
-									"default": false
-								},
-								"updateFrequency": {
-									"type": "number",
-									"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
-									"default": 10
-								},
-								"defaultPortIn": {
-									"type": "number",
-									"description": "The default value that is read if the read port is unused.",
-									"default": 255
-								},
-								"customCode": {
-									"debug": {
+								"description": "'The configuration of the internal Z80 simulator.",
+								"type": "object",
+								"properties": {
+									"zxKeyboard": {
 										"type": "boolean",
-										"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+										"description": "If enabled the simulator shows a keyboard to simulate keypresses.",
+										"default": true
+									},
+									"zxInterface2Joy": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows  a pad to simulate the joysticks for ZX Interface 2.",
+										"default": true
+									},
+									"kempstonJoy": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows a pad to simulate the Kempston joystick at port 0x1F.",
+										"default": true
+									},
+									"visualMemory": {
+										"type": "boolean",
+										"description": "If enabled the simulator shows the access to the memory (0-0xFFFF) visually while the program is running.",
+										"default": true
+									},
+									"memoryModel": {
+										"type": "string",
+										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, no banks.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
+										"default": "RAM"
+									},
+									"customMemory": {
+											"numberOfBanks": {
+												"type": "number",
+												"description": "The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks)."
+											},
+											"banks": {
+												"type": {
+												},
+												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type."
+										},
+										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
+										"default": "RAM"
+									},
+									"ulaScreen": {
+										"type": "boolean",
+										"description": "If enabled it shows the contents of the ZX Spectrum screen.",
+										"default": true
+									},
+									"zxBorderWidth": {
+										"type": "number",
+										"description": "The displayed border width in pixels. If set to 0 then no border is displayed. Works only if ulaScreen is set to true.",
+										"default": true
+									},
+									"zxBeeper": {
+										"type": "boolean",
+										"description": "Enables ZX Spectrum sound through it's beeper.",
+										"default": true
+									},
+									"audioSampleRate": {
+										"type": "number",
+										"description": "The sample rate used for audio. Defaults to 22050 Hz.",
+										"default": 22050
+									},
+									"cpuLoadInterruptRange": {
+										"type": "number",
+										"description": "The number of interrupts to calculate the CPU-load average from. 0 to disable.",
+										"default": 1
+									},
+									"Z80N": {
+										"type": "boolean",
+										"description": "Default is false. If enabled the Z80N extended instructions are supported. Default: If 'tbblueMemoryManagementSlots' defaults to true, otherwise false.",
 										"default": false
 									},
-									"jsPath": {
-										"type": "string",
-										"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+									"vsyncInterrupt": {
+										"type": "boolean",
+										"description": "Default is true if some ZX Spectrum feature is enabled otherwise false. If enabled an interrupt is generated after ca. 20ms (this assumes a CPU clock of 3.5MHz).",
+										"default": false
 									},
-									"uiPath": {
-										"type": "string",
-										"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
-									},
-									"timeStep": {
+									"cpuFrequency": {
 										"type": "number",
-										"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+										"description": "The CPU frequency is only used for output. I.e. when the t-states are printed there is also a printout of the correspondent time. This is calculated via the CPU frequency here.",
+										"default": 3500000
+									},
+									"limitSpeed": {
+										"type": "number",
+										"description": "If enabled the simulated CPU performance is throttled to fit the given PU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.",
+										"default": false
+									},
+									"updateFrequency": {
+										"type": "number",
+										"description": "The update frequency of the simulator view in Hz. Defaults to 10 Hz. Possible range is 5 to 100 Hz.",
+										"default": 10
+									},
+									"defaultPortIn": {
+										"type": "number",
+										"description": "The default value that is read if the read port is unused.",
+										"default": 255
+									},
+									"customCode": {
+										"debug": {
+											"type": "boolean",
+											"description": "If true the zsim simulator view is put in debug mode which makes it easier to develop additional javascript code (see jsPath).",
+											"default": false
+										},
+										"jsPath": {
+											"type": "string",
+											"description": "A relative path to additional javascript code that is included into the Z80 simulator."
+										},
+										"uiPath": {
+											"type": "string",
+											"description": "A relative path to additional javascript code that is included into the Z80 simulator view/UI. This code acts as UI for the code in 'jsPath'"
+										},
+										"timeStep": {
+											"type": "number",
+											"description": "You can set a time step (interval) to call the tick() function. If not set then tick() will not be called (although time/t-states still do advance)."
+										}
 									}
 								}
 							},
 							"zxnext": {
-								"hostname": {
-									"type": "string",
-									"description": "The hostname/IP address of the socket of the DeZog Serial Interface program. As this usually runs on the same PC as DeZog itself this parameter can be omitted (localhost).",
-									"default": "localhost"
-								},
-								"port": {
-									"type": "string",
-									"description": "The port number of the socket of the DeZog Serial Interface program.Defaults to 12000.",
-									"default": "12000"
+								"description": "The configuration for debugging on the ZXNEXT device.",
+								"type": "object",
+								"properties": {
+									"hostname": {
+										"type": "string",
+										"description": "The hostname/IP address of the socket of the DeZog Serial Interface program. As this usually runs on the same PC as DeZog itself this parameter can be omitted (localhost).",
+										"default": "localhost"
+									},
+									"port": {
+										"type": "string",
+										"description": "The port number of the socket of the DeZog Serial Interface program.Defaults to 12000.",
+										"default": "12000"
+									}
 								}
 							},
 							"unitTests": {
-								"type": "boolean",
-								"description": "Whether the configuration contains the unit tests or not. Default: false."
+								"description": "Whether the configuration contains the unit tests or not. Default: false.",
+								"type": "boolean"
 							},
 							"rootFolder": {
-								"type": "string",
-								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}."
-							},
+								"description": "The path of the root folder. All other paths are relative to this. Usually set to ${workspaceFolder}.",
+								"type": "string"
+								},
 							"sjasmplus": {
+								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's sld file.)",
 								"type": "array",
-								"description": "All sjasmplus list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
 								"items": {
 									"type": "object",
 									"required": [
@@ -416,7 +447,7 @@
 									"properties": {
 										"path": {
 											"type": "string",
-											"description": "Path to the assembler .list file."
+											"description": "Path to the assembler '*.list' file."
 										},
 										"srcDirs": {
 											"type": "array",
@@ -439,8 +470,8 @@
 								}
 							},
 							"z80asm": {
-								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
 								"items": {
 									"type": "object",
 									"required": [
@@ -467,8 +498,8 @@
 								}
 							},
 							"z88dk": {
-								"type": "array",
 								"description": "All list files. (Typically only one, but it's possible to add more here. E.g. a commented ROM disassembly could be added as complement to the program's list file.)",
+								"type": "array",
 								"items": {
 									"type": "object",
 									"required": [
@@ -541,8 +572,8 @@
 								"description": "(Optional) Load a .tap or .sna file into the emulator on startup of the debug session."
 							},
 							"loadObjs": {
-								"type": "array",
 								"description": "List of one or many object files, i.e. memory dumps. Contains of 'path' and 'start' address. (Optional)",
+								"type": "array",
 								"items": {
 									"type": "object",
 									"properties": {
@@ -562,124 +593,136 @@
 								"description": "Start automatically after launch. Default is false."
 							},
 							"commandsAfterLaunch": {
-								"type": "array",
 								"description": "An array with commands that are executed after the program-to-debug is loaded. With '-e' or '-exec' you can pass commands to the debugger directly.",
+								"type": "array",
 								"items": {
 									"type": "string"
 								}
 							},
 							"history": {
-								"reverseDebugInstructionCount": {
-									"type": "number",
-									"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
-								},
-								"spotCount": {
-									"type": "number",
-									"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
-								},
-								"spotShowRegisters": {
-									"type": "boolean",
-									"description": "If true it shows the changed register values in the spot history. You can disable the feature here. Defaults to true."
-								},
-								"codeCoverageEnabled": {
-									"type": "boolean",
-									"description": "Enables/disables code coverage. Default is 'true."
+								"description": "Configures the 'reverse debugging' (time travel).",
+								"type": "object",
+								"properties": {
+									"reverseDebugInstructionCount": {
+										"type": "number",
+										"description": "Sets the number of instructions for reverse debugging. If set to 0 then reverse debugging is turned off. Default is 10000."
+									},
+									"spotCount": {
+										"type": "number",
+										"description": "Sets the number of instructions to show in a spot. If you set this e.g. to 5 then the 5 previous and the 5 next instructions related to the current position are shown. Use 0 to disable. Default is 10."
+									},
+									"spotShowRegisters": {
+										"type": "boolean",
+										"description": "If true it shows the changed register values in the spot history. You can disable the feature here. Defaults to true."
+									},
+									"codeCoverageEnabled": {
+										"type": "boolean",
+										"description": "Enables/disables code coverage. Default is 'true."
+									}
 								}
 							},
 							"formatting": {
-								"registerVar": {
-									"type": "array",
-									"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\nNote: The ${b@:...} prefix is not allowed in for the VARIABLES section.",
-									"items": {
-										"type": "string"
+								"description": "Configures the display of values of DeZog. e.g. it is possible to customize how the registers are displayed or what is displayed on hovering.",
+								"type": "object",
+								"properties": {
+									"registerVar": {
+										"description": "Defines the formatting of the registers when displayed in the VARIABLES area. E.g. as hex value or as integer. Also allows to display labels and various other formats. Use:\n${name} = the name of the register, e.g. HL\n${hex} = value as hex, e.g. A9F5\n${dhex} = value as hex with space between bytes, e.g. A9 F5\n${unsigned} = value as unsigned, e.g. 1234\n$(signed) = value as signed, e.g. -59\n$(bits) = value as bits , e.g. 10011011\n$(flags) = value interpreted as status flags (only useful for F and F'), e.g. ZNC\n${labels} = value as label (or several labels)\n{labelsplus} = value as label (or several labels) plus an index/offset\n${pre:labels:join} = value as label (or several labels). If no label is found nothing is printed. If at least 1 label is found the 'pre' string is printed followed by the label(s). If more than 1 label is found they are concatenated with the 'join' string.\nNote: The ${b@:...} prefix is not allowed in for the VARIABLES section.",
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"registerHover": {
+										"description": "Format how the registers are displayed when hovering with the mouse. Is an array with 2 strings tuples. The first is an regex that checks the register. If fulfilled the 2nd is used to format the value.",
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									},
+									"bigValues": {
+										"type": "string",
+										"description": "The general formatting for address labels bigger than 'smallValuesMaximum'."
+									},
+									"smallValues": {
+										"type": "string",
+										"description": "The general formatting for small values like constants smaller/equal than 'smallValuesMaximum'."
+									},
+									"watchByte": {
+										"type": "string",
+										"description": "The 'byte' formatting for labels in the WATCHes area."
+									},
+									"watchWord": {
+										"type": "string",
+										"description": "The 'word' formatting for labels in the WATCHes area."
+									},
+									"stackVar": {
+										"type": "string",
+										"description": "Format for the pushed values in the STACK area."
 									}
-								},
-								"registerHover": {
-									"type": "array",
-									"description": "Format how the registers are displayed when hovering with the mouse. Is an array with 2 strings tuples. The first is an regex that checks the register. If fulfilled the 2nd is used to format the value.",
-									"items": {
-										"type": "string"
-									}
-								},
-								"bigValues": {
-									"type": "string",
-									"description": "The general formatting for address labels bigger than 'smallValuesMaximum'."
-								},
-								"smallValues": {
-									"type": "string",
-									"description": "The general formatting for small values like constants smaller/equal than 'smallValuesMaximum'."
-								},
-								"watchByte": {
-									"type": "string",
-									"description": "The 'byte' formatting for labels in the WATCHes area."
-								},
-								"watchWord": {
-									"type": "string",
-									"description": "The 'word' formatting for labels in the WATCHes area."
-								},
-								"stackVar": {
-									"type": "string",
-									"description": "Format for the pushed values in the STACK area."
 								}
 							},
 							"memoryViewer": {
-								"addressColor": {
-									"type": "string",
-									"description": "The text color of the address field."
-								},
-								"bytesColor": {
-									"type": "string",
-									"description": "The color of the bytes shown in hex."
-								},
-								"asciiColor": {
-									"type": "string",
-									"description": "The text color of the ascii field."
-								},
-								"addressHoverFormat": {
-									"type": "string",
-									"description": "see registerVarFormat. Format for the address when hovering."
-								},
-								"valueHoverFormat": {
-									"type": "string",
-									"description": "see registerVarFormat. Format for the value when hovering."
-								},
-								"registerPointerColors": {
-									"type": "array",
-									"description": "An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear.",
-									"items": [
-										{
+								"description": "The appearance of the memory viewer can be customized here. E.g. the colors or the hover display.",
+								"type": "object",
+								"properties": {
+									"addressColor": {
+										"type": "string",
+										"description": "The text color of the address field."
+									},
+									"bytesColor": {
+										"type": "string",
+										"description": "The color of the bytes shown in hex."
+									},
+									"asciiColor": {
+										"type": "string",
+										"description": "The text color of the ascii field."
+									},
+									"addressHoverFormat": {
+										"type": "string",
+										"description": "see registerVarFormat. Format for the address when hovering."
+									},
+									"valueHoverFormat": {
+										"type": "string",
+										"description": "see registerVarFormat. Format for the value when hovering."
+									},
+									"registerPointerColors": {
+										"type": "array",
+										"description": "An array with register/color pairs. All selected register will appear with the correspondent color in the memory view. Registers not chosen will not appear.",
+										"items": [
+											{
+												"type": "string"
+											},
+											{
+												"type": "string"
+											}
+										],
+										"default": [
+											"HL",
+											"darkgreen",
+											"DE",
+											"darkcyan",
+											"BC",
+											"dimgray",
+											"IX",
+											"darkorange",
+											"IY",
+											"darkviolet"
+										]
+									},
+									"registersMemoryView": {
+										"type": "array",
+										"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. [ 'HL', 'DE', 'IX' ].",
+										"items": {
 											"type": "string"
 										},
-										{
-											"type": "string"
-										}
-									],
-									"default": [
-										"HL",
-										"darkgreen",
-										"DE",
-										"darkcyan",
-										"BC",
-										"dimgray",
-										"IX",
-										"darkorange",
-										"IY",
-										"darkviolet"
-									]
-								},
-								"registersMemoryView": {
-									"type": "array",
-									"description": "An array of register to show in the register memory view. This view is automatically opened at startup and shows the memory the registers point to. E.g. [ 'HL', 'DE', 'IX' ].",
-									"items": {
-										"type": "string"
-									},
-									"default": [
-										"HL",
-										"DE",
-										"BC",
-										"IX",
-										"IY"
-									]
+										"default": [
+											"HL",
+											"DE",
+											"BC",
+											"IX",
+											"IY"
+										]
+									}
 								}
 							},
 							"unitTestTimeout": {
