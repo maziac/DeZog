@@ -320,21 +320,23 @@
 									},
 									"memoryModel": {
 										"type": "string",
-										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, no banks.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
+										"description": "Chooses the right memory model. I.e. how the memory maps to ROM and RAM and if and how paging is done.\nPossible values:\n- 'RAM': One memory area of 64K, no banks.\n- 'ZX16K': ROM and RAM as of the ZX Spectrum 16K.\n- 'ZX48K': ROM and RAM as of the ZX Spectrum 48K.\n- 'ZX128K': Banked memory as of the ZX Spectrum 48K (16k slots/banks).\n- 'ZXNEXT': Banked memory as of the ZX Next (8k slots/banks).\n- 'CUSTOM': A customizable memory model. You define the memory in the 'customMemory' property.",
 										"default": "RAM"
 									},
 									"customMemory": {
+										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
+										"type": "object",
+										"properties": {
 											"numberOfBanks": {
 												"type": "number",
-												"description": "The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks)."
+												"description": "The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks).",
+												"default": 4
 											},
 											"banks": {
+												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type.",
 												"type": {
-												},
-												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type."
-										},
-										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
-										"default": "RAM"
+												}
+										}
 									},
 									"ulaScreen": {
 										"type": "boolean",

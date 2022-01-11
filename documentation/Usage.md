@@ -578,9 +578,11 @@ You can either click on the buttons to simulate the joysticks or attach a gamepa
 ![](images/zsim_visual_memory.jpg)
 - "memoryModel": The used memory model (defaults to "RAM"), i.e.
     - "RAM": One memory area of 64K RAM, no banks.
-	- "ZX48": ROM and RAM as of the ZX Spectrum 48K.
-	- "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
-	- "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+	- "ZX16K": ROM and RAM as of the ZX Spectrum 16K.
+	- "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
+	- "ZX128K": Paged memory as of the ZX Spectrum 128K (16k slots/banks).
+	- "ZXNEXT": Paged memory as of the ZX Next (8k slots/banks).
+    - "CUSTOM": For a custom memory layout. See 'customMemory'.
 - "ulaScreen": true/false. Defaults to false. If enabled it shows the contents of the ZX Spectrum screen.
 ![](images/zsim_ula_screen.jpg)
 Note: The simulated ULA screen supports flashing of color attributes (bit 7 of color attribute). But this is stopped as long as you pause execution.
@@ -599,6 +601,19 @@ The status for the audio is experimental. It may or may not work for you.
 - "limitSpeed": If enabled the simulated CPU performance is throttled to fit the given CPU frequency. Is enabled by default. If disabled the CPU will be simulated as fast as possible.
 - "updateFrequency": The update frequency of the simulator view in Hz. Defaults to 10Hz. Possible range is 5 to 100 Hz.
 - "customCode": This enables the custom code to run inside the simulator, e.g. to simulate additional ports. See [zsimPeripherals.md](https://github.com/maziac/DeZog/blob/master/documentation/zsimPeripherals.md) for more details.
+- "customMemory": Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. E.g.
+    ~~~
+    "customMemory": {
+        "numberOfBanks": 4,
+        "banks": {
+            "0": "ROM",
+            "1": "RAM",
+            "2": "RAM"
+    }
+    ~~~
+    - 'numberOfBanks': The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks).
+    - 'banks': Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type. (In the example above bank number 4.) Reading from UNUSED memory areas will return 0xFF.
+    - Note: 'customMemory' can only model memory layouts without paging.
 
 
 ### ZEsarUX
