@@ -24,7 +24,7 @@ export class CustomMemory extends SimulatedMemory {
 				bankType = (BankType as any)[bankName];
 			this.bankTypes[b] = bankType;
 			if (bankType == BankType.UNUSED) {
-				// Fill unused bnks with 0xFF
+				// Fill unused banks with 0xFF
 				this.fillBank(b, 0xFF);
 			}
 		}

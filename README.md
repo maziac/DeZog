@@ -225,6 +225,7 @@ I would like to thank a few people for their support
 - [Kris Borowinski](https://github.com/kborowinski) for his tireless efforts testing DeZog.
 - [Peter Ped Helcmanovsky](https://github.com/ped7g) for his support to get the display of the relative-sprites correct and for the changes he implemented for DeZog in sjasmplus in the SLD format.
 - Cesar Wagener Moriana, [Dean Belfield](https://github.com/breakintoprogram), [Daren May](https://github.com/darenm) and [Patricia Curtis](https://luckyredfish.com/who-am-i/) for writing tutorials.
+- [Luciano Martorella](https://github.com/lmartorella) for his contribution of the 'ZX16K' memory model.
 
 
 # Tutorials
