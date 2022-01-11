@@ -1249,7 +1249,7 @@ export class DzrpRemote extends RemoteBase {
 	 * @returns A promise with an Uint8Array.
 	 */
 	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
-		return await this.sendDzrpCmdReadMem(address, size);
+		return this.sendDzrpCmdReadMem(address, size);
 	}
 
 
