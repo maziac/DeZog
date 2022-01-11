@@ -179,7 +179,22 @@ export interface ZSimType {
 	// - "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
 	// - "ZX128K": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
-	memoryModel: string;
+	// - "customMemory": The user can define an own memory model, see customMemory.
+	memoryModel: string,
+
+	/** A user defined memory.
+	 * "customMemory": {
+	 *	"numberOfBanks": 4,
+	 *		"banks": {
+	 *			"0": "ROM",
+	 *			"1": "RAM"
+	 *		}
+	 *	},
+	 */
+	customMemory: {
+		numberOfBanks: number,
+		banks: Map<string,string>
+	},
 
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
@@ -743,6 +758,32 @@ export class Settings {
 			// Check that file exists
 			if(!fs.existsSync(path))
 				throw Error("'path': File '" + path + "' does not exist.");
+		}
+
+		// Custom memory model
+		const customMemory = Settings.launch.zsim.customMemory;
+		if (customMemory) {
+			// Number of banks should be a power of 2
+			const nob = customMemory.numberOfBanks;
+			if (nob == undefined)
+				throw Error("In 'customMemory' you need to define 'numberOfBanks'.");
+			if ((nob > 0) && !(nob & (nob-1)))
+				throw Error("'numberOfBanks' needs to be bigger than 0 and a power of 2.");
+			// Test the bank names
+			for (const [bank, name] of customMemory.banks) {
+				const bankNr = Utility.parseValue(bank);
+				if (isNaN(bankNr))
+					throw Error("Cannot parse '" + bank + "' in 'customMemory'");
+				// Name should be "ROM", "RAM" or "UNUSED"
+				if (name != "ROM" && name != "RAM" && name != "UNUSED")
+					throw Error("Don't understand '" + name + "' in 'customMemory'. Should be 'ROM', 'RAM' or 'UNUSED'.");
+			}
+		}
+
+		// Check if customMemory is defined if it was chosen.
+		if (Settings.launch.zsim.memoryModel == 'customMemory') {
+			if (customMemory == undefined)
+				throw Error("If 'memoryModel' is set to 'customMemory', you need to define 'customMemory'.");
 		}
 
 		// Any special check
