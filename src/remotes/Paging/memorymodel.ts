@@ -1,4 +1,6 @@
+import {CustomMemoryType} from "../../settings";
 import {Z80Registers} from "../z80registers";
+import {BankType} from "../zsimulator/simmemory";
 
 
 
@@ -126,7 +128,6 @@ export class Zx48MemoryModel extends MemoryModel {
 	public getBankSize() {
 		return 0;
 	}
-
 }
 
 
@@ -282,5 +283,58 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
 		// Return
 		return pages;
 	}
+}
+
+
+
+/**
+ * Takes the custom memory model description and creates the description of the memory banks.
+ */
+export class CustomMemoryModel extends MemoryModel {
+
+	// The custom memory description.
+	protected memoryBanks: MemoryBank[] = [];
+
+	/**
+	 * Constructor.
+	 * @param customMemory The memory description.
+	 */
+	constructor(customMemory: CustomMemoryType) {
+		super();
+		const nob = customMemory.numberOfBanks;
+		const bankSize = 0x10000 / nob;
+		let addr = 0;
+		for (let i = 0; i < nob; i++) {
+			let bankName = customMemory.banks.get(i.toString());
+			if (bankName == undefined)
+				bankName =  BankType[BankType.UNUSED];
+			this.memoryBanks[i] = {
+				start: addr,
+				end: addr + bankSize - 1,
+				name: bankName
+			};
+		}
+	}
+
+
+	/**
+	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
+	 * @param slots Not used.
+	 * @returns An array with the available memory banks. Contains start and end address
+	 * and a name.
+	 */
+	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
+		return this.memoryBanks
+	}
+
+
+	/**
+	 * Returns the bank size.
+	 * @returns 0 in this case = no banks used.
+	 */
+	public getBankSize() {
+		return 0;
+	}
+
 }
 

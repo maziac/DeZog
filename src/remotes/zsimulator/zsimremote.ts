@@ -14,7 +14,7 @@ import {Zx16Memory} from './zx16memory';
 import {Zx48Memory} from './zx48memory';
 import {Zx128Memory} from './zx128memory';
 import {ZxNextMemory} from './zxnextmemory';
-import {MemoryModel, Zx16MemoryModel, Zx48MemoryModel, Zx128MemoryModel, ZxNextMemoryModel} from '../Paging/memorymodel';
+import {MemoryModel, Zx16MemoryModel, Zx48MemoryModel, Zx128MemoryModel, ZxNextMemoryModel, CustomMemoryModel} from '../Paging/memorymodel';
 import {SimulatedMemory} from './simmemory';
 import {SnaFile} from '../dzrp/snafile';
 import {NexFile} from '../dzrp/nexfile';
@@ -22,6 +22,7 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
+import {CustomMemory} from './custommemory';
 
 
 
@@ -346,6 +347,13 @@ export class ZSimRemote extends DzrpRemote {
 					this.ports.registerSpecificInPortFunction(0x253B, this.tbblueRegisterReadAccess.bind(this));
 					// Initially bank 10
 					this.ulaScreenAddress = 10 * 0x2000;
+				}
+				break;
+			case "customMemory":
+				{
+					// Custom Memory Model
+					this.memoryModel = new CustomMemoryModel(Settings.launch.zsim.customMemory);
+					this.memory = new CustomMemory(Settings.launch.zsim.customMemory);
 				}
 				break;
 			default:

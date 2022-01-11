@@ -147,6 +147,21 @@ export interface CustomCodeType {
 }
 
 
+/**
+ * The user can define a custom memory.
+ * Note: It is only possible to define 64k of memory.
+ * No paging mechanism.
+ */
+export interface CustomMemoryType {
+	// The number of banks to use, power of 2.
+	numberOfBanks: number,
+
+	// A map with the bank number, bank name combinations.
+	// E.g. "0": "ROM".
+	banks: Map<string, string>
+}
+
+
 /// Definitions for the 'zsim' remote type.
 export interface ZSimType {
 	// If enabled the simulator shows a keyboard to simulate keypresses.
@@ -774,7 +789,10 @@ export class Settings {
 				const bankNr = Utility.parseValue(bank);
 				if (isNaN(bankNr))
 					throw Error("Cannot parse '" + bank + "' in 'customMemory'");
+				if (!Number.isInteger(bankNr) || bankNr < 0 || bankNr >= nob)
+					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + ".");
 				// Name should be "ROM", "RAM" or "UNUSED"
+				// TODO Stattdessen mit Enum BankType vergleichen.
 				if (name != "ROM" && name != "RAM" && name != "UNUSED")
 					throw Error("Don't understand '" + name + "' in 'customMemory'. Should be 'ROM', 'RAM' or 'UNUSED'.");
 			}
