@@ -10,7 +10,8 @@
             "name": "Internal Simulator",
             "remoteType": "zsim",
             "zsim": {
-                "visualMemory": "ZX48"
+                "visualMemory": true,
+                "memoryModel": "ZX48K"
                 //"Z80N": true,
             },
             "z80asm": [
