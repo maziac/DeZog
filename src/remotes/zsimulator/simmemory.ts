@@ -45,7 +45,7 @@ export class SimulatedMemory implements Serializeable {
 	// For each bank this array tells if it is writable or not.
 	// RAM is writable.
 	// ROM and unpopulated areas (see ZX16K) are  not writable.
-	protected typeOfBanks: BankType[];
+	protected bankTypes: BankType[];
 
 	// The used bank size.
 	protected bankSize: number;
@@ -100,8 +100,8 @@ export class SimulatedMemory implements Serializeable {
 		// Create RAM
 		this.memoryData = new Uint8Array(bankCount * this.bankSize);
 		// No ROM at start
-		this.typeOfBanks = new Array<BankType>(bankCount);
-		this.typeOfBanks.fill(BankType.RAM);
+		this.bankTypes = new Array<BankType>(bankCount);
+		this.bankTypes.fill(BankType.RAM);
 
 		// Calculate number of bits to shift to get the slot index from the address.
 		let sc = slotCount;
@@ -298,7 +298,7 @@ export class SimulatedMemory implements Serializeable {
 		const bankNr = this.slots[slotIndex];
 
 		// Don't write if non-writable, e.g. ROM or UNUSED
-		if (this.typeOfBanks[bankNr] == BankType.RAM) {
+		if (this.bankTypes[bankNr] == BankType.RAM) {
 			// Convert to flat address
 			const ramAddr = bankNr * this.bankSize + (addr & (this.bankSize - 1));
 			// Write
@@ -449,7 +449,7 @@ export class SimulatedMemory implements Serializeable {
 			if (offsRemainder + minSize > bankSize)
 				minSize = bankSize - offsRemainder;
 			// Check if RAM, others are not written
-			const bankType = this.typeOfBanks[bank];
+			const bankType = this.bankTypes[bank];
 			if (bankType == BankType.RAM) {
 				// Write data
 				const data2 = data.slice(start, minSize);
@@ -576,10 +576,13 @@ export class SimulatedMemory implements Serializeable {
 			if (blockEnd > this.bankSize)
 				blockEnd = this.bankSize;
 			const partBlockSize = blockEnd - bankAddr;
-			// Copy partial block
-			const partBlock = totalBlock.subarray(offset, offset + partBlockSize);
-			// Copy to memory bank
-			mem.set(partBlock, ramAddr);
+			// Check if bank is used
+			if (this.bankTypes[bank] != BankType.UNUSED) {
+				// Copy partial block
+				const partBlock = totalBlock.subarray(offset, offset + partBlockSize);
+				// Copy to memory bank
+				mem.set(partBlock, ramAddr);
+			}
 			// Next
 			offset += partBlockSize;
 			size -= partBlockSize;

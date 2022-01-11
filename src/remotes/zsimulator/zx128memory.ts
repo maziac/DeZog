@@ -16,8 +16,8 @@ export class Zx128Memory extends PagedMemory {
 		super(4, 10);
 		// 0000-0x3FFF is ROM. This is located in banks 8 and 9
 		// Bank 0-7 is RAM.
-		this.typeOfBanks[8] = BankType.ROM;	// ROM 0
-		this.typeOfBanks[9] = BankType.ROM;	// ROM 1
+		this.bankTypes[8] = BankType.ROM;	// ROM 0
+		this.bankTypes[9] = BankType.ROM;	// ROM 1
 		// Bank configuration
 		this.slots = [8 /*ROM*/, 5, 2, 0];
 		// Load the  ROMs
