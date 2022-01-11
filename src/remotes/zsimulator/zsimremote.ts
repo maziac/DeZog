@@ -2,7 +2,7 @@ import {DzrpRemote} from '../dzrp/dzrpremote';
 import {Z80_REG, Z80Registers} from '../z80registers';
 import {Z80Ports} from './z80ports';
 import {Z80Cpu} from './z80cpu';
-import {Settings} from '../../settings';
+import {Settings, ZSimType} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {Labels} from '../../labels/labels';
@@ -252,23 +252,24 @@ export class ZSimRemote extends DzrpRemote {
 	/**
 	 * Configures the machine.
 	 * Loads the roms and sets up bank switching.
-	 * @param memModel The memory model:
+	 * @param zsim The zsim configuration, e.g. the memory model:
 	 * - "RAM": One memory area of 64K RAM, no banks.
 	 * - "ZX48": ROM and RAM as of the ZX Spectrum 48K.
 	 * - "ZX128": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	 * - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+	 * - "CUSTOM": User defined memory.
 	 */
-	protected configureMachine(memModel: string) {
+	protected configureMachine(zsim: ZSimType) {
 		Z80Registers.decoder = new Z80RegistersStandardDecoder();	// Required for the memory model.
 
 		// Create ports for paging
-		this.ports = new Z80Ports(Settings.launch.zsim.defaultPortIn);
+		this.ports = new Z80Ports(zsim.defaultPortIn);
 
 		// Check for beeper and border (both use the same port)
-		const zxBeeperEnabled = Settings.launch.zsim.zxBeeper;
-		const zxBorderWidth = Settings.launch.zsim.zxBorderWidth;	// 0 = no border
+		const zxBeeperEnabled = zsim.zxBeeper;
+		const zxBorderWidth = zsim.zxBorderWidth;	// 0 = no border
 		// Create the beeper simulation object (create always because of serialization)
-		this.zxBeeper = new ZxBeeper(Settings.launch.zsim.cpuFrequency, Settings.launch.zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
+		this.zxBeeper = new ZxBeeper(zsim.cpuFrequency, zsim.audioSampleRate, Settings.launch.zsim.updateFrequency);
 		// Check if beeper enabled
 		if (zxBeeperEnabled || zxBorderWidth > 0) {
 			// Add the port only if enabled
@@ -293,7 +294,7 @@ export class ZSimRemote extends DzrpRemote {
 		}
 
 		// Configure different memory models
-		switch (memModel) {
+		switch (zsim.memoryModel) {
 			case "RAM":
 				{
 					// 64K RAM, no ZX
@@ -349,15 +350,15 @@ export class ZSimRemote extends DzrpRemote {
 					this.ulaScreenAddress = 10 * 0x2000;
 				}
 				break;
-			case "customMemory":
+			case "CUSTOM":
 				{
 					// Custom Memory Model
-					this.memoryModel = new CustomMemoryModel(Settings.launch.zsim.customMemory);
-					this.memory = new CustomMemory(Settings.launch.zsim.customMemory);
+					this.memoryModel = new CustomMemoryModel(zsim.customMemory);
+					this.memory = new CustomMemory(zsim.customMemory);
 				}
 				break;
 			default:
-				throw Error("Unknown memory model: '" + memModel + "'.");
+				throw Error("Unknown memory model: '" + zsim.memoryModel + "'.");
 		}
 
 		// Convert labels if necessary.
@@ -386,7 +387,7 @@ export class ZSimRemote extends DzrpRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
 		// Decide what machine
-		this.configureMachine(Settings.launch.zsim.memoryModel);
+		this.configureMachine(Settings.launch.zsim);
 
 		// Load sna or nex file
 		const loadPath = Settings.launch.load;

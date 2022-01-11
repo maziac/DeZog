@@ -782,26 +782,30 @@ export class Settings {
 			const nob = customMemory.numberOfBanks;
 			if (nob == undefined)
 				throw Error("In 'customMemory' you need to define 'numberOfBanks'.");
-			if ((nob > 0) && !(nob & (nob-1)))
+			if ((nob <= 0) || (nob & (nob-1)))
 				throw Error("'numberOfBanks' needs to be bigger than 0 and a power of 2.");
 			// Test the bank names
-			for (const [bank, name] of customMemory.banks) {
+			const banks = customMemory.banks;
+			if (banks == undefined)
+				throw Error("In 'customMemory' you need to define 'banks'.");
+			for (const bank in banks) {
+				const name = banks[bank];
 				const bankNr = Utility.parseValue(bank);
 				if (isNaN(bankNr))
 					throw Error("Cannot parse '" + bank + "' in 'customMemory'");
 				if (!Number.isInteger(bankNr) || bankNr < 0 || bankNr >= nob)
-					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + ".");
+					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + "'.");
 				// Name should be "ROM", "RAM" or "UNUSED"
 				// TODO Stattdessen mit Enum BankType vergleichen.
 				if (name != "ROM" && name != "RAM" && name != "UNUSED")
-					throw Error("Don't understand '" + name + "' in 'customMemory'. Should be 'ROM', 'RAM' or 'UNUSED'.");
+					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be 'ROM', 'RAM' or 'UNUSED'.");
 			}
 		}
 
 		// Check if customMemory is defined if it was chosen.
-		if (Settings.launch.zsim.memoryModel == 'customMemory') {
+		if (Settings.launch.zsim.memoryModel == 'CUSTOM') {
 			if (customMemory == undefined)
-				throw Error("If 'memoryModel' is set to 'customMemory', you need to define 'customMemory'.");
+				throw Error("If 'memoryModel' is set to 'CUSTOM', you need to define 'customMemory'.");
 		}
 
 		// Any special check

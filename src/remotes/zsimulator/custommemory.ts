@@ -18,8 +18,10 @@ export class CustomMemory extends SimulatedMemory {
 		// Set all banks
 		const nob = customMemory.numberOfBanks;
 		for (let b = 0; b < nob; b++) {
-			let bankName = customMemory.banks.get(b.toString());
-			const bankType = (bankName == undefined) ? BankType.UNUSED : BankType[bankName];
+			let bankName = customMemory.banks[b.toString()];
+			let bankType = BankType.UNUSED;	// Default
+			if (bankName != undefined)
+				bankType = (BankType as any)[bankName];
 			this.bankTypes[b] = bankType;
 			if (bankType == BankType.UNUSED) {
 				// Fill unused bnks with 0xFF
