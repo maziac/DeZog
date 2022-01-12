@@ -1,35 +1,15 @@
 <li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Unit tests: Since version 1.60 vscode contains an API for executing unit tests. DeZog v2.4 has been changed to use it. This means: the "Z80 Unit Tests" extension is not required anymore, you should de-install it. In general you should be able to use the new UI without any configuration change. However you need to update the unit test macros. Please read the <a href="https://github.com/maziac/DeZog/blob/master/documentation/Migration.md">migration</a> document for more details.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Setting expressions: For years vscode was not able to set values in the WACTHes pane. Last month I decided to
-	implement a workaround for this and released 2.3: the 'Expressions' section was added to the VARIABLES pane. This
-	was bad timing. 4 weeks later with vscode 1.60 the setting of values was also supported by vscode. So I removed the
-	'Expressions' from the VARIABLES pane again. With this also the commands '-addexpr' and '-delexpr' have been
-	removed.
-	Instead, in the WATCHes pane, you can now right click and select 'Set value' to change the value.
-</li>
-
-<li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>Debug session restart: the behavior has been reverted somewhat. It is now possible to re-assemble your sources and do a restart. Additionally also the launch.json is re-read.
-	On the flip-side of this the memory views are closed on a restart.
+	<span class="changelog-badge changelog-badge-new">NEW</span>
+	<br>zsim: A new memory model for the ZX Spectrum 16k called "ZX16K" has been contributed by lmartorella.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>" / of Selection" has been optimized. Now not only 1 line is disassembled. If you have selected a few lines all of these lines are disassembled.
+	<br>zsim: A new custom memory model "CUSTOM" has been introduced that lets you define arbitrary memory layouts.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>Windows: the code coverage was not shown at all. This is fixed. You should see now all covered lines with a dark green background color.
+	<br>Intellisense for the launch.json has been fixed. Now there is better help for some of the properties.
 </li>
 
-<li>
-	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
-	<br>The code coverage decoration is now half-transparent. Any selected text is now visible also if the line has a code coverage decoration.
-</li>
