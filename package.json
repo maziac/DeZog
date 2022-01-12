@@ -44,6 +44,7 @@
 	},
 	"files": [],
 	"dependencies": {
+		"@bartificer/human-join": "^1.1.3",
 		"await-notify": "1.0.1",
 		"binary-file": "^0.2.3",
 		"gif-writer": "^0.9.4",
@@ -335,8 +336,7 @@
 											"banks": {
 												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type.",
 												"type": "object",
-												"properties": {
-												}
+												"properties": {}
 											}
 										},
 										"ulaScreen": {

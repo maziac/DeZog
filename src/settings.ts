@@ -1,7 +1,9 @@
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { Utility } from './misc/utility';
+import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
+import {Utility} from './misc/utility';
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
+import {BankType} from './remotes/zsimulator/simmemory';
+import * as hjoin from '@bartificer/human-join';
 
 
 
@@ -50,7 +52,7 @@ export interface Formatting {
 	/// Format how the registers are displayed in the VARIABLES area.
 	/// Is an array with 2 strings tuples. The first is an regex that checks the register.
 	/// If fulfilled the 2nd is used to format the value.
-	registerVar:  Array<string>;
+	registerVar: Array<string>;
 
 	/// Format how the registers are displayed when hovering with the mouse.
 	/// Is an array with 2 strings tuples. The first is an regex that checks the register.
@@ -208,7 +210,7 @@ export interface ZSimType {
 	 */
 	customMemory: {
 		numberOfBanks: number,
-		banks: Map<string,string>
+		banks: Map<string, string>
 	},
 
 	// The number of interrupts to calculate the average from. 0 to disable.
@@ -344,10 +346,10 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 export class Settings {
 
 	// Maximum number for history spot count.
-	protected static MAX_HISTORY_SPOT_COUNT=20;
+	protected static MAX_HISTORY_SPOT_COUNT = 20;
 
 	/// the representation of the launch.json
-	public static launch:  SettingsParameters;
+	public static launch: SettingsParameters;
 
 
 	/**
@@ -717,7 +719,7 @@ export class Settings {
 
 
 		// Unit test timeout
-		if(!launchCfg.unitTestTimeout)
+		if (!launchCfg.unitTestTimeout)
 			launchCfg.unitTestTimeout = 1;	///< 1000 ms
 
 		return launchCfg;
@@ -731,7 +733,7 @@ export class Settings {
 	 * @returns An array of list file parameters.
 	 */
 	public static GetAllAssemblerListFiles(configuration: any): Array<AsmConfigBase> {
-		const listFiles=new Array<AsmConfigBase>();
+		const listFiles = new Array<AsmConfigBase>();
 		if (configuration.sjasmplus)
 			listFiles.push(...configuration.sjasmplus);
 		if (configuration.z80asm)
@@ -753,25 +755,25 @@ export class Settings {
 		const rootFolder = Settings.launch.rootFolder;
 		if (!rootFolder)
 			throw Error("'rootFolder' is empty");
-		if(!fs.existsSync(rootFolder))
-			throw Error("'rootFolder' path("+rootFolder+") does not exist.");
+		if (!fs.existsSync(rootFolder))
+			throw Error("'rootFolder' path(" + rootFolder + ") does not exist.");
 
 		// Check remote type
-		const rType=Settings.launch.remoteType;
-		const allowedTypes=['zrcp', 'cspect', 'zxnext', 'zsim'];
-		const found=(allowedTypes.indexOf(rType)>=0);
+		const rType = Settings.launch.remoteType;
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim'];
+		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
-			throw Error("'remoteType': Remote type '"+rType+"' does not exist. Allowed are "+allowedTypes.join(', ')+".");
+			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
 		}
 
 		// List files (=Assembler configurations)
-		const listFiles=this.GetAllAssemblerListFiles(Settings.launch);
+		const listFiles = this.GetAllAssemblerListFiles(Settings.launch);
 		for (let listFile of listFiles) {
 			const path = listFile.path;
 			if (path == undefined)
 				throw Error("'path': You need to define a path to your file.");
 			// Check that file exists
-			if(!fs.existsSync(path))
+			if (!fs.existsSync(path))
 				throw Error("'path': File '" + path + "' does not exist.");
 		}
 
@@ -782,7 +784,7 @@ export class Settings {
 			const nob = customMemory.numberOfBanks;
 			if (nob == undefined)
 				throw Error("In 'customMemory' you need to define 'numberOfBanks'.");
-			if ((nob <= 0) || (nob & (nob-1)))
+			if ((nob <= 0) || (nob & (nob - 1)))
 				throw Error("'numberOfBanks' needs to be bigger than 0 and a power of 2.");
 			// Test the bank names
 			const banks = customMemory.banks;
@@ -796,9 +798,12 @@ export class Settings {
 				if (!Number.isInteger(bankNr) || bankNr < 0 || bankNr >= nob)
 					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + "'.");
 				// Name should be "ROM", "RAM" or "UNUSED"
-				// TODO Stattdessen mit Enum BankType vergleichen.
-				if (name != "ROM" && name != "RAM" && name != "UNUSED")
-					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be 'ROM', 'RAM' or 'UNUSED'.");
+				const bankType = (BankType as any)[name];
+				if (bankType == undefined) {
+					const arr = Utility.getEnumKeys(BankType);
+					const joined = hjoin.or.q.join(arr);
+					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be " + joined + ".");
+				}
 			}
 		}
 
@@ -811,35 +816,35 @@ export class Settings {
 		// Any special check
 		if (Settings.launch.z88dk) {
 			// Check for z88dk map file
-			const listFiles=Settings.launch.z88dk;
+			const listFiles = Settings.launch.z88dk;
 			for (const listFile of listFiles) {
-				const mapFile=listFile.mapFile;
-				if (mapFile==undefined)
+				const mapFile = listFile.mapFile;
+				if (mapFile == undefined)
 					throw Error("'z88dk.mapFile': For z88dk you have to define a map file.");
 				// Check that file exists
 				if (!fs.existsSync(mapFile))
-					throw Error("'z88dk.mapFile': '"+mapFile+"' does not exist.");
+					throw Error("'z88dk.mapFile': '" + mapFile + "' does not exist.");
 			}
 		}
 
 		// sna/tap
-		if(Settings.launch.load) {
+		if (Settings.launch.load) {
 			// Check that file exists
-			if(!fs.existsSync(Settings.launch.load))
+			if (!fs.existsSync(Settings.launch.load))
 				throw Error("'load': File '" + Settings.launch.load + "' does not exist.");
 			// If sna or tap is given it is not allowed to use an execAddress
-			if(Settings.launch.execAddress)
+			if (Settings.launch.execAddress)
 				throw Error("'execAddress': You load a .sna or .tap file. In that case the execution address is already known from the file and you cannot set it explicitly via 'execAddress'.");
 		}
 
 		// Object files
-		for(let loadObj of Settings.launch.loadObjs) {
+		for (let loadObj of Settings.launch.loadObjs) {
 			// Check that file exists
 			const path = loadObj.path;
-			if(!fs.existsSync(path))
+			if (!fs.existsSync(path))
 				throw Error("'loadObj.path': File '" + path + "' does not exist.");
 			// Check that start address is given
-			if(loadObj.start == undefined)
+			if (loadObj.start == undefined)
 				throw Error("'loadObj.start': You must specify a 'start' address for '" + path + "'.");
 		}
 	}

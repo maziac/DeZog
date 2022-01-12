@@ -112,7 +112,7 @@ export class Utility {
 	 */
 	public static parseValue(valueString: string): number {
 
-		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?[0-9]+)([^0-9]*))?('([\S ]+)')?/i.exec(valueString);
+		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?\d+)(\D*))?('([\S ]+)')?/i.exec(valueString);
 		if (!match)
 			return NaN;	// Error during parsing
 
@@ -149,7 +149,7 @@ export class Utility {
 		if (gdec) {
 			if (gdec_empty)
 				return NaN;
-			return parseInt(gdec, 10);;
+			return parseInt(gdec, 10);
 		}
 		// Bits
 		if (gbit) {
@@ -213,7 +213,7 @@ export class Utility {
 	 * @returns The 'expr' with all labels and registers replaced by numbers.
 	 */
 	public static replaceVarsWithValues(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): string {
-		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[01]+b|[0-9]+|'[\S ]+')/g, (match, p1) => {
+		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+|[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+|[a-fA-F0-9]+h|[01]+b|\d+|'[\S ]+')/g, (match, p1) => {
 			let res;
 			if (evalRegisters) {
 				// Check if it might be a register name.
@@ -495,9 +495,14 @@ export class Utility {
 	 * @returns An ASCII character. Some special values for not printable characters.
 	 */
 	public static getASCIIChar(value: number): string {
-		const res = (value == 0) ? '0\u0332' : ((value >= 32 && value < 127) ? String.fromCharCode(value) : '.');
-		return res;
+		if (value == 0)
+			return '0\u0332';
+		if (value >= 32 && value < 127)
+			return String.fromCharCode(value);
+		// For all other just return a dot
+		return '.';
 	}
+
 
 	/**
 	 * Same as getASCIIChar but returns &nbsp; instead of a space.
@@ -700,7 +705,7 @@ export class Utility {
 				let index = 0;
 				valString += '\t';	// to replace also the last string
 				valString = valString.replace(/(.*?)\t/g, (match, p1, offset) => {
-					const tabSize = tabSizeArr![index].length;
+					const tabSize = tabSizeArr[index].length;
 					//if(index == 0)
 					//	--tabSize;	// First line missing the space in front
 					++index;
@@ -1162,7 +1167,7 @@ export class Utility {
 							// Extract column
 							const column = parseInt(match[2]) - 1;
 							// Return
-							(e as any).position = {filename, line, column};
+							e.position = {filename, line, column};
 						}
 						else {
 							// Other wise use line number of first line.
@@ -1173,7 +1178,7 @@ export class Utility {
 								// Extract line number.
 								const line = parseInt(matchFirst[1]) - 1;
 								// Return
-								(e as any).position = {filename, line, column: 0};
+								e.position = {filename, line, column: 0};
 							}
 						}
 						break;
@@ -1221,7 +1226,7 @@ export class Utility {
 					// Extract column number.
 					const column = parseInt(match[2]) - 1;
 					// Return
-					(e as any).position = {line, column};
+					e.position = {line, column};
 				}
 				else {
 					// Try this pattern:
@@ -1233,7 +1238,7 @@ export class Utility {
 						// Extract line number.
 						const line = parseInt(match2[1]) - 1;
 						// Return
-						(e as any).position = {line, column: 0};
+						e.position = {line, column: 0};
 					}
 				}
 			}
@@ -1263,9 +1268,7 @@ export class Utility {
 		catch (e) {
 			return this.getLineNumberFromError(e, depth, file);
 		}
-		return undefined;
 	}
-
 
 
 	/**
@@ -1355,6 +1358,46 @@ export class Utility {
 		return count;
 	}
 
+
+	/**
+	 * Returns the enum keys frm an Enum.
+	 * Note: This will work only if the values are no strings. But e.g. numbers.
+	 * @param enumeration The typescript enumeration.
+	 * @returns An array with strings.
+	 */
+	public static getEnumKeys(enumeration: any): string[] {
+		const arr: string[] = [];
+		for (const key in Object.keys(enumeration)) {
+			const val = enumeration[key];
+			if (typeof val == "string")
+				arr.push(val);
+		}
+		return arr;
+	}
+
+
+	/**
+	 * Like 'join'
+	public static joinHuman(arr: string[], lastJoin = 'or', hyphen = "'"): string {
+		const len = arr.length;
+		if (len == 0)
+			return 'nothing';
+		if (len)
+			return "";
+		let joined = '';
+		const lastIndex = len - 1;
+		arr.forEach((value, index) => {
+			if (index != 0) {
+				if (index == lastIndex && lastJoin)
+					joined += ' ' + lastJoin + ' ';
+				else
+					joined += ', ';
+			}
+			joined += hyphen + value + hyphen;
+		});
+		return joined;
+	}
+	*/
 
 	/**
 	 * Static function to get the launch.json path.
