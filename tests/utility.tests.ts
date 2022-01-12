@@ -618,12 +618,15 @@ suite('Utility', () => {
 
 		setup(() => {
 			const cfg: any={
-				remoteType: 'zsim'
+				remoteType: 'zsim',
+				zsim: {
+					memoryModel: "RAM"
+				}
 			};
 			Settings.launch = Settings.Init(cfg);
 			Z80RegistersClass.createRegisters();
 			RemoteFactory.createRemote(cfg.remoteType);
-			(Remote as any).configureMachine("RAM");
+			(Remote as any).configureMachine(Settings.launch.zsim);
 		});
 
 		test('Register', async () => {

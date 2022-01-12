@@ -149,7 +149,7 @@ export class MemoryDumpView extends BaseView {
 				// Update value
 				mdv.memDump.setValueFor(address, realValue);
 			}
-		};
+		}
 		// Update html without getting data from remote
 		BaseView.staticCallUpdateWithoutRemote();
 		// Inform vscode

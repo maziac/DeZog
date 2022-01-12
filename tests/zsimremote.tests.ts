@@ -37,7 +37,7 @@ suite('ZSimRemote', () => {
 
 		test('Check ROM', () => {
 			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim.memoryModel);
+			zsim.configureMachine(Settings.launch.zsim);
 
 			// Check first 2 bytes
 			let value = zsim.memory.read8(0x0000);
@@ -79,7 +79,7 @@ suite('ZSimRemote', () => {
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
 			// @ts-ignore: protected access
-			zsim.configureMachine(Settings.launch.zsim.memoryModel);
+			zsim.configureMachine(Settings.launch.zsim);
 		});
 
 		test('Check ROM 0', () => {
@@ -237,7 +237,7 @@ suite('ZSimRemote', () => {
 			Z80RegistersClass.createRegisters();
 			zsim = new ZSimRemote();
 			// @ts-ignore
-			zsim.configureMachine(Settings.launch.zsim.memoryModel);
+			zsim.configureMachine(Settings.launch.zsim);
 		});
 
 		test('bank switching RAM', () => {
