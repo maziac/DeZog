@@ -1,12 +1,11 @@
 import {Z80RegistersClass, Z80Registers} from '../remotes/z80registers';
 import {StepHistoryClass} from './stephistory';
-import {HistoryInstructionInfo} from './decodehistinfo';
+import {HistoryInstructionInfo, DecodeHistoryInfo} from './decodehistinfo';
 import {RefList} from '../misc/reflist';
 import {CallStackFrame} from '../callstackframe';
 import {Remote} from '../remotes/remotebase';
 import {Labels} from '../labels/labels';
 import {Utility} from '../misc/utility';
-import {DecodeHistoryInfo} from './decodehistinfo';
 import {TimeWait} from '../misc/timewait';
 
 
@@ -347,14 +346,14 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 		// PUSH IX or IY
 		if(opcode0 == 0xDD || opcode0 == 0xFD) {
-			const opcode1=(opcodes>>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;
 			if(opcode1 == 0xE5)
 				return true;
 		}
 
 		// PUSH nnnn, ZXNext
 		if(opcode0 == 0xED) {
-			const opcode1=(opcodes>>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;
 			if(opcode1 == 0x8A)
 				return true;
 		}
@@ -371,7 +370,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 	 */
 	public isPop(opcodes: number): boolean {
 		// Check for POP
-		const opcode0=opcodes&0xFF;;
+		const opcode0=opcodes&0xFF;
 
 		// POP qq
 		const mask = 0b11001111;
@@ -380,7 +379,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 
 		// POP IX or IY
 		if(opcode0 == 0xDD || opcode0 == 0xFD) {
-			const opcode1=(opcodes>>>8)&0xFF;;
+			const opcode1=(opcodes>>>8)&0xFF;
 			if(opcode1 == 0xE1)
 				return true;
 		}
@@ -418,7 +417,7 @@ export class CpuHistoryClass extends StepHistoryClass {
 			case 0xDD:
 			case 0xFD:
 				{
-					const opcode1=(opcodes>>>8)&0xFF;;
+					const opcode1=(opcodes>>>8)&0xFF;
 					if(opcode1 == 0xE5) {
 						if(opcode0 == 0xDD)
 							value = Z80Registers.decoder.parseIX(line);	// PUSH IX

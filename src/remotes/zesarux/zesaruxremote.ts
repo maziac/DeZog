@@ -174,7 +174,6 @@ export class ZesaruxRemote extends RemoteBase {
 						zSocket.quit();
 						const err = new Error('Please update ZEsarUX. Need at least version ' + MIN_ZESARUX_VERSION + '.');
 						this.emit('error', err);
-						return;
 					}
 				});
 
@@ -796,12 +795,12 @@ export class ZesaruxRemote extends RemoteBase {
 				depth = ZesaruxRemote.MAX_STACK_ITEMS;
 			if (depth == 0) {
 				// no call stack, nothing to step out, i.e. immediately return
-				this.continueResolve!.resolve("Call stack empty");
+				this.continueResolve.resolve("Call stack empty");
 				return;
 			}
 			else if (depth < 0) {
 				// Callstack corrupted?
-				this.continueResolve!.resolve("SP above topOfStack. Stack corrupted?");
+				this.continueResolve.resolve("SP above topOfStack. Stack corrupted?");
 				return;
 			}
 
@@ -1007,7 +1006,7 @@ export class ZesaruxRemote extends RemoteBase {
 			if (addr == undefined)
 				return label;
 			addr &= 0xFFFF;	// for conditions only 64k are used
-			return addr.toString();;
+			return addr.toString();
 		});
 
 		// Convert operators

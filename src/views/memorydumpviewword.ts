@@ -92,7 +92,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				// Update value
 				mdv.memDump.setWordValueFor(address, realValue, true);	// Also write as little endian
 			}
-		};
+		}
 		// Update html without getting data from remote
 		BaseView.staticCallUpdateWithoutRemote();
 		// Inform vscode

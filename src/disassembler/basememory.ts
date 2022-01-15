@@ -23,14 +23,14 @@ export class BaseMemory {
 	 */
 	constructor(startAddress: number, sizeOrArr: number | Uint8Array) {
 		if (typeof sizeOrArr == 'number') {
-			const size = sizeOrArr as number;
+			const size = sizeOrArr;
 			this.memory = new Uint8Array(size);
 		}
 		else {
-			this.memory = sizeOrArr as Uint8Array;
+			this.memory = sizeOrArr;
 		}
 		this.startAddress = startAddress;
-		this.size = this.memory.length;;
+		this.size = this.memory.length;
 	}
 
 

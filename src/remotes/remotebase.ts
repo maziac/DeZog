@@ -32,7 +32,7 @@ export enum BREAK_REASON_NUMBER {
 	STEPPING_NOT_ALLOWED = 100,	// For ZxNextRemote if trying to step code used for debugging.
 
 	UNKNOWN = 255		// 255=some other error
-};
+}
 
 
 /**
@@ -179,6 +179,7 @@ export class RemoteBase extends EventEmitter {
 	 * Please override.
 	 */
 	public async doInitialization(): Promise<void> {
+		//
 	}
 
 
@@ -1181,7 +1182,7 @@ export class RemoteBase extends EventEmitter {
 			// Return
 			return currentBps;
 		}
-		catch (e) {
+		catch (e) { // NOSONAR.  Catch is here just for debugging.
 			throw e;
 		}
 	}
@@ -1334,6 +1335,7 @@ export class RemoteBase extends EventEmitter {
 	 * time.
 	 */
 	public async resetTstates(): Promise<void> {
+		//
 	}
 
 
@@ -1362,6 +1364,7 @@ export class RemoteBase extends EventEmitter {
 	 * e.g. coverage.
 	 */
 	public startProcessing() {
+		//
 	}
 
 
@@ -1372,6 +1375,7 @@ export class RemoteBase extends EventEmitter {
 	 * E.g. emit coverage.
 	 */
 	public stopProcessing() {
+		//
 	}
 
 
@@ -1448,6 +1452,7 @@ export class RemoteBase extends EventEmitter {
 	 * @returns State data.
 	 */
 	public async stateSave(filePath: string): Promise<void> {
+		//
 	}
 
 
@@ -1458,6 +1463,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param filePath The file path to retore from.
 	 */
 	public async stateRestore(filePath: string): Promise<void> {
+		//
 	}
 
 
@@ -1554,11 +1560,11 @@ export class RemoteBase extends EventEmitter {
 			// JP(HL), JP(IX), JP(IY)
 			if (opcodes[0] == 0xE9) {
 				// JP (HL)
-				bpAddr1 = this.getRegisterValue("HL");;
+				bpAddr1 = this.getRegisterValue("HL");
 			}
 			else if (opcodes[0] == 0xDD && opcodes[1] == 0xE9) {
 				// JP (IX)
-				bpAddr1 = this.getRegisterValue("IX");;
+				bpAddr1 = this.getRegisterValue("IX");
 			}
 			else if (opcodes[0] == 0xFD && opcodes[1] == 0xE9) {
 				// JP (IY)
