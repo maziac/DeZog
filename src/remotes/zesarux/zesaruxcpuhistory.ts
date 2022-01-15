@@ -112,8 +112,8 @@ export class ZesaruxCpuHistory extends CpuHistoryClass {
 	protected async getRemoteHistoryIndex(index: number): Promise<HistoryInstructionInfo|undefined> {
 		return new Promise<HistoryInstructionInfo | undefined>(resolve => {
 			Utility.assert(index >= 0);
-			zSocket.send('cpu-history get ' + index, data => { // 'cpu-history get' starts at 0 too
-				if(data.substr(0,5).toLowerCase() == 'error')
+			zSocket.send('cpu-history get ' + index, (data: string) => { // 'cpu-history get' starts at 0 too
+				if(data.substring(0,5).toLowerCase() == 'error')
 					resolve(undefined);
 				else
 					resolve(data);

@@ -200,7 +200,7 @@ export class MemoryDumpViewWord extends MemoryDumpView {
 				firstAddress = addr64k2;
 				secondAddress = addr64k;
 			}
-			valueText = '<span address="' + secondAddress + '">' + valueText.substr(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
+			valueText = '<span address="' + secondAddress + '">' + valueText.substring(0, 2) + '</span><span address="' + firstAddress + '">' + valueText.substr(2, 2) + '</span>';
 
 			// Check if in address range
 			if(metaBlock.isInRange(address))

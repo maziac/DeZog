@@ -503,7 +503,7 @@ export class ZesaruxSocket extends Socket {
 			const log = this.receivedDataChunk.substr(p+lenLog, k-p-lenLog);	// Without '\n'
 			this.emit('log', log);
 			// Remove log from string
-			this.receivedDataChunk = this.receivedDataChunk.substr(0,p) + this.receivedDataChunk.substr(k+1);	// With '\n'
+			this.receivedDataChunk = this.receivedDataChunk.substring(0,p) + this.receivedDataChunk.substring(k+1);	// With '\n'
 			// Next
 		}
 
@@ -555,7 +555,7 @@ export class ZesaruxSocket extends Socket {
 			splitData.splice(splitData.length-1,1);
 			let concData = splitData.join('\n');
 			// Remember state
-			this.zesaruxState = lastLine.substr(8);
+			this.zesaruxState = lastLine.substring(8);
 
 			// Remove corresponding command
 			let cEntry = this.queue.shift();
@@ -590,7 +590,7 @@ export class ZesaruxSocket extends Socket {
 			const interCmd = this.interruptableRunCmd;
 
 			// Check on error from zesarux
-			if(concData.substr(0,5).toLowerCase() == 'error') {
+			if(concData.substring(0,5).toLowerCase() == 'error') {
 				if(!cEntry || !(cEntry.suppressErrorHandling)) {
 					// send message through to UI
 					let msg = '';

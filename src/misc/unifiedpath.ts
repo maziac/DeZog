@@ -6,7 +6,7 @@ import * as OrigPath from 'path';
 //export const UnifiedPath=OrigPath.posix;
 
 
-const redirectedPath=OrigPath.posix;
+const redirectedPath = OrigPath.posix;
 
 /**
  * Works only on unix style paths regardless on which operating system
@@ -20,7 +20,7 @@ const redirectedPath=OrigPath.posix;
 export class UnifiedPath {
 
 	// Just pass these functions:
-	public static basename=redirectedPath.basename;
+	public static basename = redirectedPath.basename;
 	public static dirname = redirectedPath.dirname;
 	public static resolve = redirectedPath.resolve;
 
@@ -29,9 +29,9 @@ export class UnifiedPath {
 	 * Required because a path could now start with "c:/..." instead of "/".
 	 */
 	public static isAbsolute(path: string): boolean {
-		if(OrigPath.posix.isAbsolute(path))
+		if (OrigPath.posix.isAbsolute(path))
 			return true;
-		if(OrigPath.win32.isAbsolute(path))
+		if (OrigPath.win32.isAbsolute(path))
 			return true;
 		return false;
 	}
@@ -54,17 +54,17 @@ export class UnifiedPath {
 	 * @return The same path but all '\' converted to '/'.
 	 * If fpath is undefined an undefined value is returned.
 	 */
-	public static getUnifiedPath(fpath: string|undefined): string {
+	public static getUnifiedPath(fpath: string | undefined): string {
 		if (!fpath)
 			return undefined as any;
-		let uPath=fpath.replace(/\\/g, '/');
-		if (uPath.length>1) {
+		let uPath = fpath.replace(/\\/g, '/');
+		if (uPath.length > 1) {
 			// Check for windows path
-			let drive=uPath.substr(0,2);
+			let drive = uPath.substring(0, 2);
 			if (drive.endsWith(':')) {
 				// Change drive letter to lower case
-				drive=drive.toLowerCase();
-				uPath=drive+uPath.substr(2);
+				drive = drive.toLowerCase();
+				uPath = drive + uPath.substring(2);
 			}
 		}
 		return uPath;
@@ -80,8 +80,8 @@ export class UnifiedPath {
 	public static getUnifiedPathArray(fpaths: string[]): string[] {
 		if (!fpaths)
 			return undefined as any;
-		const uPath=fpaths.map(fpath =>
-			((fpath!=undefined) ? fpath.replace(/\\/g, '/') : undefined) as string);
+		const uPath = fpaths.map(fpath =>
+			((fpath != undefined) ? fpath.replace(/\\/g, '/') : undefined) as string);
 		return uPath;
 	}
 

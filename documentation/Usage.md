@@ -2,6 +2,8 @@
 
 This document describes the features of DeZog and how they can be used.
 
+If watched inside vscode you can use "CTRL-F" to search for certain topics.
+
 ## Support
 
 If you like DeZog please consider supporting it.
