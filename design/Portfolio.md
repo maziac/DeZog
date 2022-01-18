@@ -135,20 +135,20 @@ DeZog, developing the serial IF (dezogif) for ZX Next:
 ~~~
 
 
-## DeZog
+# DeZog
 
 The main program. An extension for vscode.
 It implements a debugger / a debug extension that allows source level debugging on several remotes, i.e. ZEsarUX emulator, CSpect emulator, internal Simulator and a ZX Next.
 
 
-## DeZogSerialInterface
+# DeZogSerialInterface
 
 A serial interface to connect DeZog with a ZX Next.
 In theory this could have been integrated in DeZog directly.
 It is a separate program as the serialport package has tendency to break dependencies in vscode.
 
 
-## DeZogPlugin
+# DeZogPlugin
 
 Plugin to connect the CSpect emulator with DeZog.
 
@@ -158,17 +158,14 @@ Plugin to connect the CSpect emulator with DeZog.
 A Z80 asssembler program which runs on the ZXNext and serves as (serial) interface between the debugged program and DeZog.
 
 
-## UartSocketPlugin
+# UartSocketPlugin
 
 A plugin for CSpect which connects the (ESP) UART (inside CSpect) with a socket.
 It's used for testing the real UART serial debugging.
 Once the ZX Next dezogif has some stability it is not required anymore.
 
 
-## z80-unit-tests
-
-Z80 Unit Test Adapter to work with DeZog.
-
+# Related
 
 ## z80-instruction-set
 
