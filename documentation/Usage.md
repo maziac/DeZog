@@ -839,9 +839,8 @@ Example launch.json configuration:
 ~~~
 
 The "zxnext" configuration allows the following additional parameters:
-- "port": The CSpect DeZog plugin port. If not changed  this defaults to 12000.
-- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
-You don't have to enter a hostname, the default is "localhost".
+- "port": The port used by the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) port. If not changed this defaults to 12000.
+- "hostname": The host's name. I.e. the IP of the machine where the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) port.is running. Typically "localhost" (the default).
 
 The default port is anyway 12000. So, if you don't change it, you just have to add:
 ~~~json

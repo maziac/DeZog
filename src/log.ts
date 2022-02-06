@@ -31,13 +31,13 @@ export class Log {
 	protected cache: Array<string>;
 
 	// The used cache length.
-	protected cacheLength=0;
+	protected cacheLength = 0;
 
 	// Stores info if logs have been removed from the cache.
-	protected cacheLogsLost=false;
+	protected cacheLogsLost = false;
 
 	// The time it is waited before the cached logs are output.
-	protected cacheTime=100;	// ms
+	protected cacheTime = 100;	// ms
 
 
 	/**
@@ -77,10 +77,10 @@ export class Log {
 	 * @param callerName If true the name of the calling method is shown.
 	 */
 	public init(channelOutput: any, callerName = true) {
-		if(this.logOutput)
+		if (this.logOutput)
 			this.logOutput.dispose();
 		this.logOutput = channelOutput;
-		if(callerName)
+		if (callerName)
 			this.callerNameIndex = 3;
 	}
 
@@ -93,16 +93,16 @@ export class Log {
 	 */
 	public log(...args) {
 		// check time
-		const diffTime=(Date.now()-this.lastLogTime)/1000;
-		let outputcache=false;
-		if(diffTime > PAUSE_LOG_TIME) {
+		const diffTime = (Date.now() - this.lastLogTime) / 1000;
+		let outputcache = false;
+		if (diffTime > PAUSE_LOG_TIME) {
 			// > 2 secs
 			this.outputCache();
 			this.write('...');
 			this.write('Pause for ' + diffTime + ' secs.');
 			this.write('...');
 			this.outputCache();
-			outputcache=true;	// Make sure this line is output
+			outputcache = true;	// Make sure this line is output
 		}
 		// write log
 		//const who = this.callerName();
@@ -130,12 +130,12 @@ export class Log {
 	 * @param args the values to write.
 	 */
 	protected write(...args) {
-		const text= args.map(elem => elem.toString()).join(', '); //util.format(format, ...args);
+		const text = args.map(elem => elem.toString()).join(', '); //util.format(format, ...args);
 		try {
 			// write
 			this.appendLine(text);
 		}
-		catch(e) {
+		catch (e) {
 		}
 	}
 
@@ -149,15 +149,15 @@ export class Log {
 		if (this.logOutput) {
 			if (this.cache) {
 				// Check for max length
-				if (this.cache.length>=this.cacheLength) {
+				if (this.cache.length >= this.cacheLength) {
 					this.cache.shift();
-					this.cacheLogsLost=true;
+					this.cacheLogsLost = true;
 				}
-				if (text==undefined)
+				if (text == undefined)
 					console.log("");
 				this.cache.push(text);
 				// Set timeout to print cached values
-				if (this.cache.length==1) {
+				if (this.cache.length == 1) {
 					setTimeout(() => {
 						this.outputCache();
 					}, this.cacheTime);
@@ -186,8 +186,8 @@ export class Log {
 				this.logOutput.appendLine(text);
 			}
 			// Clear cache
-			this.cache.length=0;
-			this.cacheLogsLost=false;
+			this.cache.length = 0;
+			this.cacheLogsLost = false;
 		}
 	}
 
@@ -197,9 +197,9 @@ export class Log {
 	 * @param length The cache length. If 0 the cache is disabled.
 	 */
 	public setCacheLength(length: number) {
-		this.cache=(length > 0) ? new Array<string>() : undefined as any;
-		this.cacheLength=length;
-		this.cacheLogsLost=false;
+		this.cache = (length > 0) ? new Array<string>() : undefined as any;
+		this.cacheLength = length;
+		this.cacheLogsLost = false;
 	}
 
 
@@ -211,6 +211,7 @@ export class Log {
 		// Diabled
 		return '';
 
+		/*
 		// Check if caller name is configured
 		if(this.callerNameIndex < 0)
 			return '';
@@ -227,16 +228,17 @@ export class Log {
 				return 'Unknown';
 			}
 		}
+		*/
 	}
 
 }
 
 
 /// Global logging is instantiated.
-export let LogGlobal=new Log();
+export let LogGlobal = new Log();
 
 /// Logging for custom code is instantiated.
-export let LogCustomCode=new Log();
+export let LogCustomCode = new Log();
 LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
