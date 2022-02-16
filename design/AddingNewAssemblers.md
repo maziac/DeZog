@@ -67,7 +67,7 @@ It is called subsequently for each line of the list file.
 You need to extract the label and address. I.e. all labels at the start of the line (normally ended by a ":") and all EQUs and their value.
 Note: You may omit EQUs if they are too complicated to parse, e.g. if these contain are calculation of other labels.
 
-Then call ```addLabelForNumber(value: number, label: string)```` to associate the label (or EQU) name with the value (address or number).
+Then call ```addLabelForNumber(value: number, label: string)``` to associate the label (or EQU) name with the value (address or number).
 If your assembler can differentiate local and global labels you should also add the LabelType.
 
 You can have a look at sjasmplus to see how the different types are used.
