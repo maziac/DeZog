@@ -128,7 +128,7 @@ If your assembler allows other one-line comment identifiers than ";", e.g. "//",
 DeZog can handle ['long addresses'](../documentation/Usage.md#long-addresses-explanation).
 Long addresses contain the address information 0x0000-0xFFFF plus the banking information (if there is one).
 
-If your assembler has no special banking support you don't have to take of this.
+If your assembler has no special banking support you don't have to take care of this.
 But if it is capable you should store the addresses with banking information.
 
 DeZog uses a very simply format to store the banking information inside the address:

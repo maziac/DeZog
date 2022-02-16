@@ -69,5 +69,5 @@ vscode -> DeZog: disconnectRequest()
 note over DeZog: Disconnect socket etc.
 
 vscode <-- DeZog: response(result, varID)
-````
+```
 
