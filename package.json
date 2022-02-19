@@ -55,7 +55,7 @@
 		"posthtml-toc": "^1.0.3",
 		"require-from-string": "^2.0.2",
 		"rng": "^0.2.2",
-		"showdown": "^2.0.0-alpha",
+		"showdown": "^2.0.0",
 		"ts-node": "^10.4.0",
 		"vscode-debugadapter": "^1.49.0",
 		"vscode-debugprotocol": "1.49.0"
