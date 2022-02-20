@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.5.1
+- Fixed handling of path with spaces when using loadObjs and ZEsarUX.
+
 # 2.5.0
 - zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.
 - zsim: Added 'CUSTOM' memory model to define an arbitrary memory layout.

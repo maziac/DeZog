@@ -298,7 +298,7 @@ export class ZesaruxRemote extends RemoteBase {
 		zSocket.send('clear-membreakpoints');
 
 		// Clear all breakpoints
-		zSocket.send('enable-breakpoints', () => {}, true);
+		zSocket.send('enable-breakpoints', () => {}, true);// NOSONAR
 		this.clearAllZesaruxBreakpoints();
 
 		// Init breakpoint array
@@ -826,14 +826,14 @@ export class ZesaruxRemote extends RemoteBase {
 							// Set the breakpoint.
 							// Note: PC=PEEKW(SP-2) finds an executed RET.
 							const condition = 'PC=PEEKW(SP-2) AND SP>=' + bpSp;
-							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {
+							zSocket.send('set-breakpoint ' + bpId + ' ' + condition, () => {	// NOSONAR
 								// Enable breakpoint
-								zSocket.send('enable-breakpoint ' + bpId, () => {
+								zSocket.send('enable-breakpoint ' + bpId, () => {	// NOSONAR
 
 									// Clear register cache
 									//Z80Registers.clearCache();
 									// Run
-									zSocket.sendInterruptableRunCmd(async text => {
+									zSocket.sendInterruptableRunCmd(async text => {	// NOSONAR
 										// (could take some time, e.g. until a breakpoint is hit)
 										// Clear register cache
 										await this.getRegistersFromEmulator();
@@ -1555,7 +1555,7 @@ export class ZesaruxRemote extends RemoteBase {
 	 * @param address The address where the obj file starts.
 	 */
 	public async loadObj(path: string, address: number): Promise<void> {
-		await zSocket.sendAwait('load-binary ' + path + ' ' + address + ' 0');	// 0 = load entire file
+		await zSocket.sendAwait('load-binary "' + path + '" ' + address + ' 0');	// 0 = load entire file
 	}
 }
 
