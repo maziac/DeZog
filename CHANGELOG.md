@@ -2,6 +2,7 @@
 
 # 2.5.1
 - Fixed handling of path with spaces when using loadObjs and ZEsarUX.
+- Fixed path for mapFile for z88dk.
 
 # 2.5.0
 - zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.

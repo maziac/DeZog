@@ -557,7 +557,7 @@ export class Settings {
 				if (fpPath)
 					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
 				if (fpMapFile)
-					file.mapFile = Utility.getAbsFilePath(fpMapFile);
+					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
 				return file;
 			});
 		}
