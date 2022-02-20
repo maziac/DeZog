@@ -389,11 +389,6 @@ export class ZSimRemote extends DzrpRemote {
 		// Decide what machine
 		this.configureMachine(Settings.launch.zsim);
 
-		// Load sna or nex file
-		const loadPath = Settings.launch.load;
-		if (loadPath)
-			await this.loadBin(loadPath);
-
 		// Load obj file(s) unit
 		for (let loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
@@ -403,6 +398,12 @@ export class ZSimRemote extends DzrpRemote {
 					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
 				await this.loadObj(loadObj.path, start);
 			}
+		}
+
+		// Load sna or nex file
+		const loadPath = Settings.launch.load;
+		if (loadPath) {
+			await this.loadBin(loadPath);
 		}
 
 		// Set Program Counter to execAddress

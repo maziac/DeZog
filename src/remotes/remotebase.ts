@@ -189,11 +189,6 @@ export class RemoteBase extends EventEmitter {
 	 * Override
 	 */
 	public async loadExecutable(): Promise<void> {
-		// Load sna or nex file
-		const loadPath = Settings.launch.load;
-		if (loadPath)
-			await this.loadBin(loadPath);
-
 		// Load obj file(s) unit
 		for (const loadObj of Settings.launch.loadObjs) {
 			if (loadObj.path) {
@@ -203,6 +198,12 @@ export class RemoteBase extends EventEmitter {
 					throw Error("Cannot evaluate 'loadObjs[].start' (" + loadObj.start + ").");
 				await this.loadObj(loadObj.path, start);
 			}
+		}
+
+		// Load sna or nex file
+		const loadPath = Settings.launch.load;
+		if (loadPath) {
+			await this.loadBin(loadPath);
 		}
 
 		// Load registers
@@ -457,7 +458,7 @@ export class RemoteBase extends EventEmitter {
 		// Search all "${...}""
 		const result = logMsg.replace(/\${\s*(.*?)\s*}/g, (match, inner) => {
 			// Check syntax
-			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner);
+			const matchInner = /(([bw]@)?\s*\(\s*(.*?)\s*\)|(\w*)\s*)\s*(:\s*(unsigned|signed|hex|bits|flags))?\s*/i.exec(inner); // NOSONAR
 			if (!matchInner)
 				throw Error("Log message format error: '" + match + "' in '" + logMsg + "'");
 			const end = (matchInner[6]) ? ':' + matchInner[6] : '';

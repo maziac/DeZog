@@ -184,6 +184,13 @@ Note: you can also omit this. In that case DeZog attaches to the emulator withou
     { "path": "out/graphics.bin", "start": "0x8000" }
 ],
 ~~~
+Note: "loadObjs" can also be used to load ZX81 *.p or *.81 files. These files are raw data files that are loaded to 0x4009 and could be loaded with
+~~~json
+"loadObjs": [
+    { "path": "myzx81.p", "start": "0x4009" }
+],
+~~~
+(you, of course, still would have to load the ZX81 ROM and to set the exec address.)
 - execAddress: for object files you can set the PC (program counter) start address. I.e. after loading the program will start at this address.
 - smallValuesMaximum: DeZog format numbers (labels, constants) basically in 2 ways depending on their size: 'small values' and 'big values'. Small values are typically constants like the maximum number of something you defined in your asm file.
 Big values are typically addresses. Here you can give the boundary between these 2 groups. bigValues usually also show their contents, i.e. the value at the address along the address itself. Usually 512 is a good boundary value.

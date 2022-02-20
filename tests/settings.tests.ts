@@ -5,7 +5,7 @@ import { Settings } from '../src/settings';
 suite('Settings', () => {
 
 	setup( () => {
-	});
+	}); // NOSONAR
 
 	suite('CheckSettings', () => {
 
