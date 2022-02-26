@@ -3,6 +3,7 @@
 # 2.5.1
 - Fixed handling of path with spaces when using loadObjs and ZEsarUX.
 - Fixed path for mapFile for z88dk.
+- Changed activation event to "onStartupFinished" otherwise unit tests will not show up before a debug session has been started.
 
 # 2.5.0
 - zsim: Added 'ZX16K' memory model, contributed by lmartorella '[zsim] Support for not-populated slots'.

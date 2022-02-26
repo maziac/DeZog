@@ -74,11 +74,7 @@
 	},
 	"main": "./out/src/extension",
 	"activationEvents": [
-		"onDebugResolve:dezog",
-		"onCommand:dezog.clearAllDecorations",
-		"onCommand:dezog.help",
-		"onCommand:dezog.whatsNew",
-		"onView:dezog.helpview"
+		"onStartupFinished"
 	],
 	"contributes": {
 		"views": {

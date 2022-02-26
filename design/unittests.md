@@ -48,7 +48,7 @@ It basically
 3. Manipulates memory and PC register to call a specific unit test.
 4. Loops over all found unit tests.
 
-The Z80UnitTestRunner creates a rot test suite, the RootTestSuite.
+The Z80UnitTestRunner creates a root test suite, the RootTestSuite.
 From it several other test suites and test cases are created.
 Some represent the workspace (the unit tests are multiroot capable), some the configuration (launch.json) and the rest the test suites and eventually the test cases.
 The UnitTestCase classes listen for file changes and might change there structure on the fly.
