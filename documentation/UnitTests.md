@@ -294,6 +294,11 @@ The debugger is started and will stop at the failing test. E.g.
 ![](images/unittest_coverage_failed_test.jpg)
 The PC stops at the test because A is obviously not 0.
 
+Note: The vscode unit testing has a few settings. In the default settings the test UI always switches to the file explorer after a testrun which I find annoying.
+Luckily this behavior can be changed by setting "testing.openTesting" to 'neverOpen' or 'openOnFailure':
+![](images/unittest_settings_open.jpg)
+
+
 
 # When Does a Test Case Fail
 
