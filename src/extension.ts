@@ -78,7 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const mjrMnrChanged = WhatsNewView.updateVersion(context);
 	if (mjrMnrChanged) {
 		// Major or minor version changed so show the whatsnew page.
-		new WhatsNewView();
+		new WhatsNewView();	// NOSONAR
 	}
 	// Register the additional command to view the "Whats' New" page.
 	context.subscriptions.push(vscode.commands.registerCommand("dezog.whatsNew", () => new WhatsNewView()));
@@ -252,7 +252,7 @@ class DeZogInlineValuesProvider implements vscode.InlineValuesProvider {
 		return undefined;
 	}
 
-};
+}
 
 
 
@@ -329,9 +329,9 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	}
 
 	// Enable to get a log of the commands only
-	if (false) {
+	if (false) {	// NOSONAR: For debugging
 		const channelOut = vscode.window.createOutputChannel("DeZog Socket Commands");
-		LogSocketCommands.init(channelOut, undefined);
+		LogSocketCommands.init(channelOut);
 	}
 }
 
