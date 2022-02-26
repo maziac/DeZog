@@ -88,20 +88,22 @@ export class Z80Ports {
 	 */
 	public read(port: number): number {
 		let value;
-		// Check for specific read function
-		const func=this.inPortMap.get(port);
-		if (func)
-			value=func(port);
 
-		// Check for general read function
-		if (value==undefined) {
-			if (this.genericInPortFunc)
-				value=this.genericInPortFunc(port);
+		// Check for general read function.
+		// Is done at first, so it can "override" other functions
+		if (this.genericInPortFunc)
+			value = this.genericInPortFunc(port);
+
+		// Check for specific read function
+		if (value == undefined) {
+			const func = this.inPortMap.get(port);
+			if (func)
+				value = func(port);
 		}
 
 		// Otherwise return default
-		if (value==undefined)
-			value=this.defaultPortIn;
+		if (value == undefined)
+			value = this.defaultPortIn;
 		return value;
 	}
 
@@ -111,15 +113,17 @@ export class Z80Ports {
 	 * Executes a custom method.
 	 */
 	public write(port: number, data: number) {
-		// Check for specific write function
-		const writefunc=this.outPortMap.get(port);
-		if (writefunc) {
-			writefunc(port, data);
-		}
+		// Note: more than one function could be executed.
 
 		// Check for a generic write function
 		if (this.genericOutPortFunc) {
 			this.genericOutPortFunc(port, data);
+		}
+
+		// Check for specific write function
+		const writefunc=this.outPortMap.get(port);
+		if (writefunc) {
+			writefunc(port, data);
 		}
 	}
 }
