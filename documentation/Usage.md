@@ -26,6 +26,15 @@ If you would like to contribute, e.g. by adding a new assembler or adding other 
 If you installed DeZog before [here](https://github.com/maziac/DeZog/blob/master/documentation/Migration.md) are a few tips to migrate to the current version.
 
 
+## Supported Assemblers
+
+- [sjasmplus](https://github.com/z00m128/sjasmplus) maintained by [Peter Ped Helcmanovsky](https://github.com/ped7g)
+- [Savannah-z80asm](https://savannah.nongnu.org/projects/z80asm/) (or z80asm) by Bas Wijnen
+- [z88dk-z80asm](https://github.com/z88dk/z88dk) (or z88dk)
+
+Futhermore, if you like to use the [fasmg](https://flatassembler.net) assembler, although it is not supported out-of-the-box, you find a description how to use it [here](https://sinclairzxworld.com/viewtopic.php?f=6&t=4572) (by [stevexyz](https://github.com/stevexyz)).
+
+
 ## General Usage
 
 A typical debug session with DeZog looks as follows:
@@ -226,7 +235,7 @@ To distinguish them I will call them
 a) the **Savannah-z80asm** (or z80asm) from Bas Wijnen, see https://savannah.nongnu.org/projects/z80asm/ and the
 b) the **z88dk-z80asm** (or z88dk) hosted here https://github.com/z88dk/z88dk (Note: on the site they host even another z80asm project which is a respawn of the original one.)
 
-DeZog supports the list file formats of both of them and additionally the sjasmplus (https://github.com/z00m128/sjasmplus).
+DeZog supports the list file formats of both of them and additionally the sjasmplus sld format (https://github.com/z00m128/sjasmplus).
 
 
 #### Background info: The list file
