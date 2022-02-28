@@ -867,12 +867,12 @@ The default port is anyway 12000. So, if you don't change it, you just have to a
 #### Setup
 
 Prerequisites:
-1. Install at least core 3.1.5 on the ZX Next.
+1. Install core 03.01.10 (or 03.01.05) on the ZX Next.
 2. You need an USB/Serial converter and a D-Sub female connector (9 pins). See next chapter on HW.
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
@@ -896,6 +896,7 @@ Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program
 You can now step through your code and set breakpoints.
 The debugger will stop at a breakpoint.
 
+Note: If one of the 2 joystick ports is used to connect the UART it is still possible to use the other joy port for a joystick and even a MD joystick would work fine.
 
 #### Pausing the Debugged Program
 
