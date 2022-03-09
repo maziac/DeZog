@@ -49,6 +49,7 @@
 		"binary-file": "^0.2.3",
 		"gif-writer": "^0.9.4",
 		"glob": "^7.2.0",
+		"intel-hex": "^0.1.2",
 		"jsonc-parser": "^3.0.0",
 		"node-gzip": "^1.1.2",
 		"posthtml": "^0.16.5",

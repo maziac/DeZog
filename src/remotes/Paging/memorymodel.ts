@@ -1,5 +1,6 @@
 import {CustomMemoryType} from "../../settings";
 import {Z80Registers} from "../z80registers";
+import { SlottedMemoryInfo } from "../zsimulator/custommemory";
 import {BankType} from "../zsimulator/simmemory";
 
 
@@ -292,30 +293,12 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
  */
 export class CustomMemoryModel extends MemoryModel {
 
-	// The custom memory description.
-	protected memoryBanks: MemoryBank[] = [];
-
 	/**
 	 * Constructor.
 	 * @param customMemory The memory description.
 	 */
-	constructor(customMemory: CustomMemoryType) {
+	constructor(private readonly info: SlottedMemoryInfo) {
 		super();
-		const nob = customMemory.numberOfBanks;
-		const bankSize = 0x10000 / nob;
-		let addr = 0;
-		for (let i = 0; i < nob; i++) {
-			let bankName = customMemory.banks[i.toString()];
-			if (bankName == undefined)
-				bankName = BankType[BankType.UNUSED];
-			this.memoryBanks.push({
-				start: addr,
-				end: addr + bankSize - 1,
-				name: bankName
-			});
-			// Next
-			addr += bankSize;
-		}
 	}
 
 
@@ -326,17 +309,30 @@ export class CustomMemoryModel extends MemoryModel {
 	 * and a name.
 	 */
 	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		return this.memoryBanks
+		slots = slots || this.info.slots;
+		const romCount = this.owner.romBanks.filter((b, i) => b && i !== this.owner.notPopulatedBank).length;
+		const ramCount = this.owner.romBanks.length - romCount;
+		return slots.map((bank, i) => {
+			const start = i * info.bankSize;
+			const end = start + info.bankSize - 1;
+			let name: string;
+			if (bank === info.notPopulatedBank) {
+				name = "N/A";
+			} else if (this.owner.romBanks[bank]) {
+				name = romCount > 1 ? `ROM${bank}` : "ROM";
+			} else {
+				name = ramCount > 1 ? `BANK${bank}` : "RAM";
+			}
+			return {start, end, name};
+		});
 	}
 
 
 	/**
 	 * Returns the bank size.
-	 * @returns 0 in this case = no banks used.
 	 */
 	public getBankSize() {
-		return 0;
+		return this.info.bankSize;
 	}
-
 }
 

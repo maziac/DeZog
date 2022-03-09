@@ -2,9 +2,6 @@ import {DebugProtocol} from 'vscode-debugprotocol/lib/debugProtocol';
 import {Utility} from './misc/utility';
 import * as fs from 'fs';
 import {UnifiedPath} from './misc/unifiedpath';
-import {BankType} from './remotes/zsimulator/simmemory';
-import * as hjoin from '@bartificer/human-join';
-
 
 
 /// Base for all assembler configurations.
@@ -151,17 +148,77 @@ export interface CustomCodeType {
 
 /**
  * The user can define a custom memory.
- * Note: It is only possible to define 64k of memory.
- * No paging mechanism.
  */
-export interface CustomMemoryType {
-	// The number of banks to use, power of 2.
-	numberOfBanks: number,
+export type CustomMemoryType = Array<ZSimCustomMemorySlot>;
 
-	// A map with the bank number, bank name combinations.
-	// E.g. "0": "ROM".
-	banks: Map<string, string>
+
+/**
+ * In JSON config numbers can be decimal or hex strings (NNNNh or 0xNNNN format).
+ */
+export type HexNumber = number | string;
+
+
+/**
+ * Custom layout of a `zsim` remote memory slot
+ */
+export interface ZSimCustomMemorySlot {
+	/**
+	 * The slot range (inclusive).
+	 * Slot size should not be smaller than 1K.
+	 */
+	range: [HexNumber, HexNumber];
+
+	/**
+	 * Optional. If specified, set the slot as ROM.
+	 * The content is the buffer content, or the path of the ROM content.
+	 * File content (or buffer) should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions)
+	 */
+	rom?: string | Uint8Array;
+
+	/**
+	 * Offset the ROM file
+	 */
+	romOffset?: HexNumber;
+
+	/**
+	 * If set, enables banking on such slot.
+	 */
+	banked?: {
+		/**
+		 * Count of banks that can be mapped on such slot
+		 */
+		count: number;
+
+		/**
+		 * Declare how banks are switched
+		 */
+		control?: {
+			/**
+			 * The I/O port that control the banks (lower 8-bit address)
+			 */
+			ioPort: HexNumber | { mask: HexNumber, match: HexNumber };
+
+			/**
+			 * List of the bits of the byte that forms the bank selector
+			 */
+			ioBitMap: number[];
+
+			/**
+			 * True if the port can be read back
+			 */
+			readwrite?: boolean;
+		}
+	}
 }
+
+
+// Standard ZX memory models: ZX16k, ZX48k, ZX128K or ZXNext.
+// - "RAM": One memory area of 64K RAM, no banks.
+// - "ZX16K": ROM and RAM as of the ZX Spectrum 16K.
+// - "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
+// - "ZX128K": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
+// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
+export type ZSimZxMemoryModel = "RAM" | "ZX16K" | "ZX48K" | "ZX128K" | "ZXNEXT";
 
 
 /// Definitions for the 'zsim' remote type.
@@ -196,8 +253,8 @@ export interface ZSimType {
 	// - "ZX48K": ROM and RAM as of the ZX Spectrum 48K.
 	// - "ZX128K": Banked memory as of the ZX Spectrum 48K (16k slots/banks).
 	// - "ZXNEXT": Banked memory as of the ZX Next (8k slots/banks).
-	// - "customMemory": The user can define an own memory model, see customMemory.
-	memoryModel: string,
+	// - "CUSTOM": The user can define an own memory model, see customMemory.
+	memoryModel: "RAM" | "ZX16K" | "ZX48K" | "ZX128K" | "ZXNEXT" | "CUSTOM",
 
 	/** A user defined memory.
 	 * "customMemory": {
@@ -208,10 +265,7 @@ export interface ZSimType {
 	 *		}
 	 *	},
 	 */
-	customMemory: {
-		numberOfBanks: number,
-		banks: Map<string, string>
-	},
+	customMemory: CustomMemoryType,
 
 	// The number of interrupts to calculate the average from. 0 to disable.
 	cpuLoadInterruptRange: number,
@@ -451,7 +505,7 @@ export class Settings {
 			launchCfg.zsim.visualMemory = true;
 		if (launchCfg.zsim.memoryModel == undefined)
 			launchCfg.zsim.memoryModel = "RAM";
-		launchCfg.zsim.memoryModel = launchCfg.zsim.memoryModel.toUpperCase();
+		launchCfg.zsim.memoryModel = typeof launchCfg.zsim.memoryModel === "string" ? (launchCfg.zsim.memoryModel.toUpperCase() as ZSimZxMemoryModel) : launchCfg.zsim.memoryModel;
 		if (launchCfg.zsim.Z80N == undefined)
 			launchCfg.zsim.Z80N = false;
 		if (launchCfg.zsim.vsyncInterrupt == undefined)
@@ -779,33 +833,6 @@ export class Settings {
 
 		// Custom memory model
 		const customMemory = Settings.launch.zsim.customMemory;
-		if (customMemory) {
-			// Number of banks should be a power of 2
-			const nob = customMemory.numberOfBanks;
-			if (nob == undefined)
-				throw Error("In 'customMemory' you need to define 'numberOfBanks'.");
-			if ((nob <= 0) || (nob & (nob - 1)))
-				throw Error("'numberOfBanks' needs to be bigger than 0 and a power of 2.");
-			// Test the bank names
-			const banks = customMemory.banks;
-			if (banks == undefined)
-				throw Error("In 'customMemory' you need to define 'banks'.");
-			for (const bank in banks) {
-				const name = banks[bank];
-				const bankNr = Utility.parseValue(bank);
-				if (isNaN(bankNr))
-					throw Error("Cannot parse '" + bank + "' in 'customMemory'");
-				if (!Number.isInteger(bankNr) || bankNr < 0 || bankNr >= nob)
-					throw Error("The bank number in 'customMemory' has to be a non-negative integer which is smaller than the numberOfBanks, but it is set to '" + bank + "'.");
-				// Name should be "ROM", "RAM" or "UNUSED"
-				const bankType = (BankType as any)[name];
-				if (bankType == undefined) {
-					const arr = Utility.getEnumKeys(BankType);
-					const joined = hjoin.or.q.join(arr);
-					throw Error("Don't understand '" + name + "' in 'customMemory.banks'. Should be " + joined + ".");
-				}
-			}
-		}
 
 		// Check if customMemory is defined if it was chosen.
 		if (Settings.launch.zsim.memoryModel == 'CUSTOM') {
