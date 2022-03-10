@@ -149,7 +149,7 @@ export interface CustomCodeType {
 /**
  * The user can define a custom memory.
  */
-export type CustomMemoryType = Array<ZSimCustomMemorySlot>;
+export type CustomMemoryType = Array<CustomMemorySlot>;
 
 
 /**
@@ -161,7 +161,7 @@ export type HexNumber = number | string;
 /**
  * Custom layout of a `zsim` remote memory slot
  */
-export interface ZSimCustomMemorySlot {
+export interface CustomMemorySlot {
 	/**
 	 * The slot range (inclusive).
 	 * Slot size should not be smaller than 1K.
@@ -171,44 +171,57 @@ export interface ZSimCustomMemorySlot {
 	/**
 	 * Optional. If specified, set the slot as ROM.
 	 * The content is the buffer content, or the path of the ROM content.
-	 * File content (or buffer) should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions)
+	 * File content should be in raw format (i.e. `.rom` and `.bin` extensions) or Intel HEX 8-bit format (`.hex` extensions).
+	 * Array content is flat and it should cover the whole bank span (if banked).
 	 */
 	rom?: string | Uint8Array;
 
 	/**
-	 * Offset the ROM file
+	 * (optional) display name of the slot
+	 */
+	name?: string;
+
+	/**
+	 * Offsets the ROM file/content
 	 */
 	romOffset?: HexNumber;
 
 	/**
 	 * If set, enables banking on such slot.
 	 */
-	banked?: {
-		/**
-		 * Count of banks that can be mapped on such slot
-		 */
-		count: number;
+	banked?: CustomMemoryBankInfo;
+}
 
-		/**
-		 * Declare how banks are switched
-		 */
-		control?: {
-			/**
-			 * The I/O port that control the banks (lower 8-bit address)
-			 */
-			ioPort: HexNumber | { mask: HexNumber, match: HexNumber };
+/**
+ * Description of Memory management unit (bank switcher) accessed via single I/O port
+ */
+export interface CustomMemoryMmuInfo {
+	/**
+	 * The I/O port that control the banks (lower 8-bit address)
+	 */
+	port: HexNumber | { mask: HexNumber, match: HexNumber };
 
-			/**
-			 * List of the bits of the byte that forms the bank selector
-			 */
-			ioBitMap: number[];
+	/**
+	 * List of the bits of the byte that forms the bank selector
+	 */
+	bitMap: number[];
+}
 
-			/**
-			 * True if the port can be read back
-			 */
-			readwrite?: boolean;
-		}
-	}
+export interface CustomMemoryBankInfo {
+	/**
+	 * Count of banks that can be mapped on such slot
+	 */
+	count: number;
+
+	/**
+	 * (optional) display names of the banks
+	 */
+	names?: string[];
+
+	/**
+	 * Optional memory management unit (bank switcher) accessed via single I/O port
+	 */
+	ioMmu?: CustomMemoryMmuInfo;
 }
 
 

@@ -1,7 +1,6 @@
-import {CustomMemoryType} from "../../settings";
 import {Z80Registers} from "../z80registers";
-import { SlottedMemoryInfo } from "../zsimulator/custommemory";
-import {BankType} from "../zsimulator/simmemory";
+import { CustomMemorySettings } from "../../custommemorysettings";
+import { BankType } from "../zsimulator/simmemory";
 
 
 
@@ -297,33 +296,46 @@ export class CustomMemoryModel extends MemoryModel {
 	 * Constructor.
 	 * @param customMemory The memory description.
 	 */
-	constructor(private readonly info: SlottedMemoryInfo) {
+	constructor(private readonly info: CustomMemorySettings) {
 		super();
 	}
 
 
 	/**
 	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
-	 * @param slots Not used.
 	 * @returns An array with the available memory banks. Contains start and end address
 	 * and a name.
 	 */
 	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
-		slots = slots || this.info.slots;
-		const romCount = this.owner.romBanks.filter((b, i) => b && i !== this.owner.notPopulatedBank).length;
-		const ramCount = this.owner.romBanks.length - romCount;
-		return slots.map((bank, i) => {
-			const start = i * info.bankSize;
-			const end = start + info.bankSize - 1;
-			let name: string;
-			if (bank === info.notPopulatedBank) {
-				name = "N/A";
-			} else if (this.owner.romBanks[bank]) {
-				name = romCount > 1 ? `ROM${bank}` : "ROM";
-			} else {
-				name = ramCount > 1 ? `BANK${bank}` : "RAM";
+		return this.info.slots.map(slot => {
+			let name = slot.name;
+			if (!name) {
+				let bankNumber: string | number = "";
+				if (slot.bankInfo.count > 1 && slots) {
+					// Find current bank index
+					const bank = slots[slot.firstSlotIdx];
+					bankNumber = (bank - slot.firstBankIdx) / (slot.size / this.info.uniformSlotSize);
+				}
+				name = slot.bankInfo.names && slot.bankInfo.names[bankNumber];
+				if (!name) {
+					switch (slot.type) {
+						case BankType.UNUSED:
+							name = "N/A";
+							break;
+						case BankType.ROM:
+							name = `ROM${bankNumber}`;
+							break;
+						case BankType.RAM:
+							name = `RAM${bankNumber}`;
+							break;
+					}
+				}
 			}
-			return {start, end, name};
+			return {
+				start: slot.begin,
+				end: slot.begin + slot.size - 1,
+				name
+			};
 		});
 	}
 
@@ -332,7 +344,7 @@ export class CustomMemoryModel extends MemoryModel {
 	 * Returns the bank size.
 	 */
 	public getBankSize() {
-		return this.info.bankSize;
+		return this.info.uniformSlotSize;
 	}
 }
 

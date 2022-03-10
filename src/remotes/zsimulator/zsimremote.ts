@@ -22,7 +22,8 @@ import {CustomCode} from './customcode';
 import {BeeperBuffer, ZxBeeper} from './zxbeeper';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
-import {CustomMemory, toSlottedMemory} from './custommemory';
+import {CustomMemory} from './custommemory';
+import {toCustomMemorySettings} from '../../custommemorysettings';
 
 
 
@@ -353,7 +354,7 @@ export class ZSimRemote extends DzrpRemote {
 			case "CUSTOM":
 				{
 					// Custom Memory Model
-					const slottedInfo =	toSlottedMemory(zsim.customMemory);
+					const slottedInfo =	toCustomMemorySettings(zsim.customMemory);
 					this.memoryModel = new CustomMemoryModel(slottedInfo);
 					this.memory = new CustomMemory(slottedInfo, this.z80Cpu.ports);
 				}
