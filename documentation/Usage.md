@@ -872,7 +872,7 @@ Prerequisites:
 
 
 Setup a debug session:
-1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
+1. In your ZX Next SD card exchange the ```enNextMf.rom``` in directory ```machines/next``` with the one from the [dezogif](https://github.com/maziac/dezogif) project. You find the ```enNextMf.rom``` binary in the [releases](https://github.com/maziac/dezogif/tree/main/releases) section. You need to download the correct ```enNextMf.rom``` for the core version you are using. Currently 03.01.10 and 03.01.05 are supported.
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
@@ -1547,7 +1547,7 @@ If you have data organized in words instead of bytes, you can open the memory vi
 
 ![](images/memoryviewer3.jpg)
 
-By default the view opens in little endian but by speciyfing "big" as the last argument the viewer shows the values as big endian.
+By default the view opens in little endian but by specifying "big" as the last argument the viewer shows the values as big endian.
 
 The color coding for registers works here as well. E.g. in the picture above HL points to 8001h. Therefore the lower half of F131h gets a green color.
 
@@ -1624,7 +1624,7 @@ Examples:
 - "-msetw 8000h AF34h 1 big" : Puts AFh into location 0x8000 and 34h into location 0x8001.
 - "-msetb 8000h 0 100h" : fills memory locations 0x8000 to 0x80FF with zeroes.
 - "-msetb fill_colors_ptr FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF02.
-- "-msetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everyting after a space is considered as a new argument.
+- "-msetb fill_colors_ptr+4 FEh": If fill_colors_ptr is e.g. 0xCF02 the value FEh is put into location 0xCF06. Note: There mustn't be any spaces in 'fill_colors_ptr+4'. Everything after a space is considered as a new argument.
 
 #### Sprites & Patterns
 
