@@ -1,4 +1,4 @@
-import {LogSocket} from '../../log';
+import {LogTransport} from '../../log';
 import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
@@ -82,7 +82,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 		// React on-open
 		this.serialPort.on('open', async () => {
-			LogSocket.log('ZxNextSerialRemote: Connected to server!');
+			LogTransport.log('ZxNextSerialRemote: Connected to server!');
 
 			this.receivedData = Buffer.alloc(0);
 			this.msgStartByteFound = false;
@@ -98,7 +98,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 		// Handle errors
 		this.serialPort.on('error', err => {
-			LogSocket.log('ZxNextSerialRemote: Error: ' + err);
+			LogTransport.log('ZxNextSerialRemote: Error: ' + err);
 			// Error
 			this.emit('error', err);
 		});
@@ -156,7 +156,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 			this.stopCmdRespTimeout();
 			const err = new Error('No response received from remote. A simple reason for this message is that the ZX Next is running the debugged program and cannot answer. In that case press the yellow NMI button on the ZX Next to pause execution. It can, of course, be also any other connection problem.');
 			// Log
-			LogSocket.log('Warning: ' + err.message);
+			LogTransport.log('Warning: ' + err.message);
 			// Show warning (only if a few moments have gone after the last CMD_CONTINUE)
 			const timeSpan = (Date.now() - this.lastCmdContinueTime);	// In ms
 			if (timeSpan > this.cmdContinueNoResponseErrorTime)
@@ -213,7 +213,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		return new Promise<void>((resolve, reject) => {
 			// Send data
 			const txt = this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('>>> ZxNextSerialRemote: Sending ' + txt);
+			LogTransport.log('>>> ZxNextSerialRemote: Sending ' + txt);
 			let outerError;
 			try {
 				this.serialPort?.write(buffer, (error) => {

@@ -1,4 +1,4 @@
-import { Log, LogSocket } from '../../log';
+import { Log, LogTransport } from '../../log';
 import { Socket } from 'net';
 import { Settings } from '../../settings';
 import {Utility} from '../../misc/utility';
@@ -224,7 +224,7 @@ export class ZesaruxSocket extends Socket {
 		// Wait on first text from zesarux after connection
 		const cEntry = new CommandEntry('connected', data => {
 			this.state = SocketState.CONNECTED;
-			LogSocket.log('First text from ZEsarUX received!');
+			LogTransport.log('First text from ZEsarUX received!');
 			this.emit('connected');	// data transmission may start now.
 		}, false, 0);
 		this.queue.push(cEntry);
@@ -245,12 +245,12 @@ export class ZesaruxSocket extends Socket {
 		});
 
 		this.on('close', () => {
-			LogSocket.log('Socket close: disconnected from server');
+			LogTransport.log('Socket close: disconnected from server');
 			this.state = SocketState.UNCONNECTED;
 		});
 
 		this.on('error', err => {
-			LogSocket.log('Socket: ' + err);
+			LogTransport.log('Socket: ' + err);
 			this.state = SocketState.UNCONNECTED;
 		});
 
@@ -259,7 +259,7 @@ export class ZesaruxSocket extends Socket {
 				case SocketState.CONNECTING:
 				{
 					const err = new Error('Connection timeout!');
-					LogSocket.log('Socket timeout: ' + err);
+					LogTransport.log('Socket timeout: ' + err);
 					this.emit('error', err);
 				}
 				break;
@@ -267,7 +267,7 @@ export class ZesaruxSocket extends Socket {
 				case SocketState.CONNECTED_WAITING_ON_WELCOME_MSG:
 				{
 					const err = new Error('Connected ZEsarUX, but ZEsarUX does not communicate!');
-					LogSocket.log('ZEsarUX does not communicate: ' + err);
+					LogTransport.log('ZEsarUX does not communicate: ' + err);
 					this.emit('error', err);
 				}
 				break;
@@ -275,7 +275,7 @@ export class ZesaruxSocket extends Socket {
 				case SocketState.CONNECTED:
 				{
 					const err = new Error('ZEsarUX did not answer in time!');
-					LogSocket.log('ZEsarUX did not answer in time: ' + err);
+					LogTransport.log('ZEsarUX did not answer in time: ' + err);
 					this.emit('error', err);
 				}
 				break;
@@ -284,7 +284,7 @@ export class ZesaruxSocket extends Socket {
 
 		this.on('end', () => {
 			this.state = SocketState.UNCONNECTED;
-			LogSocket.log('Socket end: disconnected from server');
+			LogTransport.log('Socket end: disconnected from server');
 		});
 
 		this.setTimeout(CONNECTION_TIMEOUT);
@@ -302,7 +302,7 @@ export class ZesaruxSocket extends Socket {
 			// and TCP_KEEPCNT
 			//keepAlive.setKeepAliveProbes(this, 1);
 
-			LogSocket.log('Socket: Connected to zesarux server!');
+			LogTransport.log('Socket: Connected to zesarux server!');
 		});
 
 	}
@@ -351,7 +351,7 @@ export class ZesaruxSocket extends Socket {
 	 * is not signalled to the user.
 	 * @param timeout The timeout in ms or 0 if no timeout should be used. Default is 100ms. Normally use -1 (or omit) to use the timeout from the Settings.
 	 */
-	public send(command: string, handler: {(data)} = (data) => {}, suppressErrorHandling = false, /*, timeout = -1*/) {
+	public send(command: string, handler: {(data)} = (data) => {}, suppressErrorHandling = false, /*, timeout = -1*/) {	// NOSONAR
 		const timeout = this.MSG_TIMEOUT;
 		// Create command entry
 		const cEntry = new CommandEntry(command, handler, suppressErrorHandling, timeout);
@@ -362,7 +362,7 @@ export class ZesaruxSocket extends Socket {
 			if (this.queue.length==1) {
 				if (this.interruptableRunCmd) {
 					// Interrupt the command: create an interrupt cmd
-					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
+					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);	// NOSONAR
 					// Insert as first command
 					this.queue.unshift(cBreak);
 					this.emitQueueChanged();
@@ -472,7 +472,7 @@ export class ZesaruxSocket extends Socket {
 	private receiveSocket(data: Buffer) {
 		const sData = data.toString();
 		if(!sData) {
-			LogSocket.log('Error: Received ' + data.length + ' bytes of undefined data!');
+			LogTransport.log('Error: Received ' + data.length + ' bytes of undefined data!');
 			return;
 		}
 		this.log('<=', sData);
@@ -525,7 +525,7 @@ export class ZesaruxSocket extends Socket {
 				// Check if command is in the queue
 				if (this.queue.length>0) {
 					// Interrupt the command: create an interrupt cmd
-					const cBreak=new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);
+					const cBreak = new CommandEntry('', () => {}, false, this.MSG_TIMEOUT);	// NOSONAR
 					// Insert as first command
 					this.queue.unshift(cBreak);
 					this.emitQueueChanged();
@@ -636,7 +636,7 @@ export class ZesaruxSocket extends Socket {
 	 * In fact it clears the queue.
 	 * @param handler is called after the connection is disconnected. Can be omitted.
 	 */
-	public async quit(handler = ()=>{}) {
+	public async quit(handler = () => {}) {	// NOSONAR
 		// Clear queues
 		this.queue.length = 0;
 		this.lastCallQueue.length = 0;
@@ -660,22 +660,22 @@ export class ZesaruxSocket extends Socket {
 		}
 		// The new listeners
 		this.once('error', () => {
-			LogSocket.log('Socket error (should be close).');
+			LogTransport.log('Socket error (should be close).');
 			func();
 			zSocket.end();
 		});
 		this.once('timeout', () => {
-			LogSocket.log('Socket timeout (should be close).');
+			LogTransport.log('Socket timeout (should be close).');
 			func();
 			zSocket.end();
 		});
 		this.once('close', () => {
-			LogSocket.log('Socket closed. OK.');
+			LogTransport.log('Socket closed. OK.');
 			this.state = SocketState.UNCONNECTED;
 			func();
 		});
 		this.once('end', () => {
-			LogSocket.log('Socket end. OK.');
+			LogTransport.log('Socket end. OK.');
 			this.state = SocketState.UNCONNECTED;
 			func();
 		});
@@ -699,12 +699,12 @@ export class ZesaruxSocket extends Socket {
 			//zSocket.destroy();
 			//return;
 			// Terminate connection
-			LogSocket.log('Quitting:');
+			LogTransport.log('Quitting:');
 			this.setTimeout(QUIT_TIMEOUT);
 			this.send('\n');	// Just for the case that we are waiting on a breakpoint.
-			this.send('cpu-history enabled no', () => {}, true);
-			this.send('cpu-code-coverage enabled no', () => {}, true);
-			this.send('extended-stack enabled no', () => {}, true);
+			this.send('cpu-history enabled no', () => {}, true);	// NOSONAR
+			this.send('cpu-code-coverage enabled no', () => {}, true);	// NOSONAR
+			this.send('extended-stack enabled no', () => {}, true);	// NOSONAR
 			this.send('clear-membreakpoints');
 			this.send('disable-breakpoints', () => {
 				this.send('quit');
@@ -743,7 +743,7 @@ export class ZesaruxSocket extends Socket {
 	 * @param text The text to log. Can contain newlines.
 	 */
 	protected log(prefix: string, text: string|undefined) {
-		if(!LogSocket.isEnabled())
+		if(!LogTransport.isEnabled())
 			return;
 
 		// Prefixes
@@ -756,7 +756,7 @@ export class ZesaruxSocket extends Socket {
 			text = "(undefined)";
 		const arr = text.split('\n');
 		for(const line of arr) {
-			LogSocket.log(prefix + line);
+			LogTransport.log(prefix + line);
 			prefix = nextPrefix;
 		}
 

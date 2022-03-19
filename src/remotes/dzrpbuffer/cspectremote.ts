@@ -1,4 +1,4 @@
-import {LogSocket} from '../../log';
+import {LogTransport} from '../../log';
 import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
 import {Socket} from 'net';
 import {Settings} from '../../settings';
@@ -40,7 +40,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// React on-open
 		this.socket.on('connect', async () => {
-			LogSocket.log('CSpectRemote: Connected to server!');
+			LogTransport.log('CSpectRemote: Connected to server!');
 
 			this.receivedData = Buffer.alloc(0);
 			this.expectedLength = 4;	// for length
@@ -57,7 +57,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Handle disconnect
 		this.socket.on('close', hadError => {
-			LogSocket.log('CSpectRemote: closed connection: ' + hadError);
+			LogTransport.log('CSpectRemote: closed connection: ' + hadError);
 			console.log('Close.');
 			// Error
 			const err = new Error('CSpect plugin terminated the connection!');
@@ -66,7 +66,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 
 		// Handle errors
 		this.socket.on('error', err => {
-			LogSocket.log('CSpectRemote: Error: ' + err);
+			LogTransport.log('CSpectRemote: Error: ' + err);
 			console.log('Error: ', err);
 			// Error
 			this.emit('error', err);
@@ -124,7 +124,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		return new Promise<void>(resolve => {
 			// Send data
 			const txt = this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('>>> CSpectRemote: Sending ' + txt);
+			LogTransport.log('>>> CSpectRemote: Sending ' + txt);
 			this.socket.write(buffer, () => {
 				resolve();
 			});

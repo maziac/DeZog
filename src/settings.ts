@@ -126,13 +126,13 @@ export interface ZxNextSocketType {	// TODO: Change name
 	hostname: string;
 
 	// The port of the socket that connects the serial port.
-	port: number;	// TODO: DEPRECATE
+	port: number;	// TODO: Remove
 
 	// The serial usb device.
 	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
 
 	/// The socket timeout in seconds.
-	socketTimeout: number;	// TODO: Rename to 'timeout'
+	socketTimeout: number;	// TODO: Remove
 }
 
 
