@@ -1,8 +1,7 @@
-import {Log, LogSocket} from '../../log';
-import {DzrpRemote, AlternateCommand, DzrpMachineType} from '../dzrp/dzrpremote';
+import {Log, LogTransport} from '../../log';
+import {DzrpRemote, AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
-import {DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Labels} from '../../labels/labels';
 
@@ -94,6 +93,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void>  {
+		//
 	}
 
 
@@ -107,7 +107,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		try {
 			await this.sendDzrpCmdClose();
 		}
-		catch {};
+		catch {}
 	}
 
 
@@ -126,7 +126,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 			this.stopCmdRespTimeout();
 			const err=new Error('No response received from remote.');
 			// Log
-			LogSocket.log('Warning: '+err.message);
+			LogTransport.log('Warning: ' + err.message);
 			// Show warning
 			this.emit('warning', err.message);
 			// Remove message / Queue next message
@@ -249,7 +249,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 			await this.sendBuffer(msg.buffer);
 		}
 		catch (error) {
-			LogSocket.log("SENT ERROR.");
+			LogTransport.log("SENT ERROR.");
 			console.log("SENT ERROR.");
 			this.emit('error', error);
 		}
@@ -307,8 +307,8 @@ export class DzrpBufferRemote extends DzrpRemote {
 			this.receivedData.copy(strippedBuffer, 0, 4, this.expectedLength);
 
 			// Log
-			const txt=this.dzrpRespBufferToString(this.receivedData);
-			LogSocket.log('<<< Remote: Received '+txt);
+			const txt = this.dzrpRespBufferToString(this.receivedData);
+			LogTransport.log('<<< Remote: Received ' + txt);
 
 			// Handle received buffer
 			this.receivedMsg(strippedBuffer);
@@ -378,9 +378,9 @@ export class DzrpBufferRemote extends DzrpRemote {
 			// Get sequence number
 			const seqno=msg.buffer[4];
 			// Check response
-			if (recSeqno!=seqno) {
-				const error=Error("DZRP: Received wrong SeqNo. '"+recSeqno+"' instead of expected '"+seqno+"'");
-				LogSocket.log("Error: "+error);
+			if (recSeqno != seqno) {
+				const error = Error("DZRP: Received wrong SeqNo. '" + recSeqno + "' instead of expected '" + seqno + "'");
+				LogTransport.log("Error: " + error);
 				this.emit('error', error);
 				return;
 			}
@@ -402,7 +402,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 		this.chunkTimeout=setTimeout(() => {
 			const err=new Error('Socket chunk timeout.');
 			// Log
-			LogSocket.log('Error: '+err.message);
+			LogTransport.log('Error: ' + err.message);
 			// Error
 			this.emit('error', err);
 		}, CHUNK_TIMEOUT);
@@ -672,7 +672,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 			accessCode+=0x01;
 		if (access.indexOf('w')>=0)
 			accessCode+=0x02;
-		await this.sendDzrpCmd(DZRP.CMD_ADD_WATCHPOINT, [
+		await this.sendDzrpCmd(DZRP.CMD_REMOVE_WATCHPOINT, [
 			address&0xFF,
 			(address>>>8)&0xFF,
 			(address>>>16)&0xFF, // bank
