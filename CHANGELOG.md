@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.5.2
+- Log in OUTPUT panel fixed. It was not possible to enable.
+- LogSocket renamed to LogTransport.
+- Fixed sendDzrpCmdRemoveWatchpoint.
+
 # 2.5.1
 - Fixed handling of path with spaces when using loadObjs and ZEsarUX.
 - Fixed path for mapFile for z88dk.
