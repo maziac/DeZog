@@ -63,14 +63,6 @@ export class Log {
 
 
 	/**
-	 * @return true if either logging to file or to channel is enabled (global logging).
-	 */
-	public static isEnabled(): boolean {
-		return LogGlobal.isEnabled();
-	}
-
-
-	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
 	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
@@ -242,4 +234,4 @@ export let LogCustomCode = new Log();
 LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
-export let LogSocket = new Log();
+export let LogTransport = new Log();

@@ -105,8 +105,8 @@
 					"scope": "resource",
 					"default": false
 				},
-				"dezog.log.socket": {
-					"description": "Write socket logs to an output panel.",
+				"dezog.log.transport": {
+					"description": "Write transport logs (socket, serial, etc.) to an output panel.",
 					"type": "boolean",
 					"scope": "resource",
 					"default": false

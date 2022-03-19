@@ -1,5 +1,16 @@
 This guide will provide some info what to do to update your projects from an earlier version.
 
+# Migrate from DeZog 2.5 to DeZog 2.6
+
+Major change is the integration of the serial port into DeZog.
+This removes the need for the extra program DeZogSerialInterface when connecting to a ZX Next via a serial interface.
+Along with this the launch.json parameters for the "zxnext" have been changed:
+- "port", "hostname" and "socketTimeout" have been removed.
+- "serial" has been added.
+
+For completeness: In the settings the "log.socket" pane has been renamed to "log.transport".
+But for most users this shouldn't make any difference.
+
 # Migrate from DeZog 2.4 to DeZog 2.5
 
 No required updates.

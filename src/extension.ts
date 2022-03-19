@@ -3,7 +3,7 @@ import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken 
 import { DebugSessionClass } from './debugadapter';
 import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
-import {LogSocket, LogCustomCode, Log } from './log';
+import {LogTransport, LogCustomCode, LogGlobal } from './log';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
@@ -101,9 +101,10 @@ export function activate(context: vscode.ExtensionContext) {
 	configureLogging(configuration);
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		// Logging changed
-		if (event.affectsConfiguration(extensionBaseName + '.logpanel')
-			|| event.affectsConfiguration(extensionBaseName+'.socket.logpanel')
-			|| event.affectsConfiguration(extensionBaseName+'.customcode.logpanel')) {
+		if (event.affectsConfiguration(extensionBaseName + '.log.global')
+			|| event.affectsConfiguration(extensionBaseName+'.log.transport')
+			|| event.affectsConfiguration(extensionBaseName + '.log.customCode')) {
+			const configuration = PackageInfo.getConfiguration();
 			configureLogging(configuration);
 		}
 		// 'donated' changed
@@ -307,25 +308,34 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Global log
 	{
 		const logToPanel = configuration.get<boolean>('log.global');
-		const channelName = (logToPanel) ? "DeZog" : undefined;
-		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-		Log.init(channelOut);
+		if (LogGlobal.isEnabled() != logToPanel) {
+			// State has changed
+			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog") : undefined;
+			// Enable or dispose
+			LogGlobal.init(channelOut);
+		}
 	}
 
 	// Custom code log
 	{
 		const logToPanel = configuration.get<boolean>('log.customCode');
-		const channelName = (logToPanel) ? "DeZog Custom Code" : undefined;
-		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-		LogCustomCode.init(channelOut);
+		if (LogCustomCode.isEnabled() != logToPanel) {
+			// State has changed
+			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog Custom Code") : undefined;
+			// Enable or dispose
+			LogCustomCode.init(channelOut);
+		}
 	}
 
-	// Socket log
+	// Transport log
 	{
 		const logToPanel = configuration.get<boolean>('log.transport');
-		const channelName = (logToPanel) ? "DeZog Transport" : undefined;
-		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
-		LogSocket.init(channelOut);
+		if (LogTransport.isEnabled() != logToPanel) {
+			// State has changed
+			const channelOut = logToPanel ? vscode.window.createOutputChannel("DeZog Transport") : undefined;
+			// Enable or dispose
+			LogTransport.init(channelOut);
+		}
 	}
 }
 
