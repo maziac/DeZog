@@ -1049,6 +1049,7 @@ To interrupt the debugged program an NMI can be used (pressing the yellow NMI bu
 As an NMI places the current PC on the stack and can occur anytime it can and will corrupt the stack **if** it happens while the debugged program is manipulating the SP.
 
 There is nothing to do about it other than
+- use core 03.01.10 (or bigger): it uses the "stackless NMI" feature. In that case an NMI will not write to memory. I.e. it cannot corrupt any memory.
 - never increase the SP if the value on the stack is still required
 - disable the M1 (NMI) button via the Next register 0x06 during these critical sections
 
