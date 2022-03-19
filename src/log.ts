@@ -251,6 +251,3 @@ LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
 export let LogSocket = new Log();	// TODO: Rename to LogTransport
-
-// Special socket logging
-export let LogSocketCommands: Log;	// TODO: Rename as well?

@@ -1,4 +1,4 @@
-import { Log, LogSocketCommands, LogSocket } from '../../log';
+import { Log, LogSocket } from '../../log';
 import { Socket } from 'net';
 import { Settings } from '../../settings';
 import {Utility} from '../../misc/utility';
@@ -433,10 +433,6 @@ export class ZesaruxSocket extends Socket {
 
 		// Send
 		this.write(command);
-
-		// Log only commands
-		if(LogSocketCommands)
-			LogSocketCommands.appendLine('>' + command + '<');
 	}
 
 

@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.6.0
+- zxnext configuration: The ZXNext can be connected via serial interface directly from DeZog. There is no need anymore to go through the extra program DeZogSerialInterface anymore.
+For this there are changes to the "zxnext" launch.json configuration.
+
 # 2.5.1
 - Fixed handling of path with spaces when using loadObjs and ZEsarUX.
 - Fixed path for mapFile for z88dk.
