@@ -191,7 +191,7 @@
 			},
 			{
 				"command": "dezog.serialport.list",
-				"title": "Get list of all available serial ports.",
+				"title": "Get list of all available serial ports",
 				"category": "DeZog"
 			}
 		],
