@@ -121,15 +121,18 @@ export interface CSpectType {
 
 
 // Definitions for ZX Next remote type.
-export interface ZxNextSocketType {
+export interface ZxNextSocketType {	// TODO: Change name
 	// The hostname/IP address of the socket that connects the serial port.
 	hostname: string;
 
 	// The port of the socket that connects the serial port.
-	port: number;
+	port: number;	// TODO: DEPRECATE
+
+	// The serial usb device.
+	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
 
 	/// The socket timeout in seconds.
-	socketTimeout: number;
+	socketTimeout: number;	// TODO: Rename to 'timeout'
 }
 
 
@@ -500,6 +503,7 @@ export class Settings {
 			launchCfg.zxnext.port = 12000;
 		if (!launchCfg.zxnext.socketTimeout)
 			launchCfg.zxnext.socketTimeout = 0.8;	// 0.8 secs, needs to be short to show a warning fast if debugged program is running.
+		// Note: for now 'serial' can be undefined, then the port is used instead.
 
 		// sjasmplus
 		if (launchCfg.sjasmplus) {

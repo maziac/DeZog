@@ -73,7 +73,7 @@ export class Log {
 	/**
 	 * Initializes the logging. I.e. enables/disables logging to
 	 * vscode channel and file.
-	 * @param channelOutput vscode.OutputChannel. If defined the name of the channel output.
+	 * @param channelOutput The vscode.OutputChannel.
 	 * @param callerName If true the name of the calling method is shown.
 	 */
 	public init(channelOutput: any, callerName = true) {
@@ -121,6 +121,14 @@ export class Log {
 	 */
 	public isEnabled(): boolean {
 		return (this.logOutput != undefined);
+	}
+
+
+	/**
+	 * Reveals the output channel in the UI.
+	 */
+	public show() {
+		this.logOutput?.show();
 	}
 
 
@@ -242,7 +250,7 @@ export let LogCustomCode = new Log();
 LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
-export let LogSocket = new Log();
+export let LogSocket = new Log();	// TODO: Rename to LogTransport
 
 // Special socket logging
-export let LogSocketCommands: Log;
+export let LogSocketCommands: Log;	// TODO: Rename as well?

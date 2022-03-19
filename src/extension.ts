@@ -11,6 +11,7 @@ import {HelpProvider} from './help/helpprovider';
 import {GlobalStorage} from './globalstorage';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DiagnosticsHandler} from './diagnosticshandler';
+import {SerialPort} from 'serialport';
 
 /*
 let aa = 1;
@@ -89,8 +90,24 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("dezog.helpview", helpProvider, {webviewOptions: {retainContextWhenHidden: false}})
 	);
+
 	// Command to show the DeZog Help
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.help', () => helpProvider.createHelpView()));
+
+	// Command to show the available serial ports
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.serialport.list', async () => {
+		const list = await SerialPort.list();	// PortInfo[]
+		if (list.length > 0) {
+			const items = list.map(item => item.path);
+			const selection = await vscode.window.showInformationMessage('Serial ports (click to copy):', ...items);
+			// Copy selected item to clipboard.
+			if(selection)
+				vscode.env.clipboard.writeText(selection);
+		}
+		else {
+			vscode.window.showInformationMessage('No serial port found!');
+		}
+	}));
 
 
 	// Enable e.g. logging.
@@ -102,7 +119,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		// Logging changed
 		if (event.affectsConfiguration(extensionBaseName + '.logpanel')
-			|| event.affectsConfiguration(extensionBaseName+'.socket.logpanel')
+			|| event.affectsConfiguration(extensionBaseName+'.socket.logpanel')	// TODO: rename to 'transport'
 			|| event.affectsConfiguration(extensionBaseName+'.customcode.logpanel')) {
 			configureLogging(configuration);
 		}
@@ -323,7 +340,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Socket log
 	{
 		const logToPanel = configuration.get<boolean>('socket.logpanel');
-		const channelName = (logToPanel) ? "DeZog Socket" : undefined;
+		const channelName = (logToPanel) ? "DeZog Socket" : undefined;	// TODO: Change name to 'Transport'
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogSocket.init(channelOut);
 	}

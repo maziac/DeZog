@@ -1124,7 +1124,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Removes one watchpoint from the remote.
 	 * Promises is execute when last watchpoint has been set.
-	 * @param wp The watchpoint to renove. Will set 'bpId' in the 'watchPoint' to undefined.
+	 * @param wp The watchpoint to remove. Will set 'bpId' in the 'watchPoint' to undefined.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		// Forget watchpoint

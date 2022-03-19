@@ -1,13 +1,14 @@
 import {LogSocket} from '../../log';
-import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
-import {Socket} from 'net';
+import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 import {Z80Registers} from '../z80registers';
-
+import {SerialPort} from 'serialport';
+//import * as Transform from 'stream';
+//import {EventEmitter} from 'events';
 
 
 // Each sent message has to start with this byte.
@@ -28,13 +29,13 @@ interface RestorableBreakpoint {
 
 
 /**
- * A ZX Next remote that is connected via a socket.
- * I.e. another program that converts socket to serial.
+ * A ZX Next remote that is connected via the serial interface.
+ * The serial interface itself is a USB device.
  */
-export class ZxNextSocketRemote extends DzrpBufferRemote {
+export class ZxNextSerialRemote extends DzrpBufferRemote {
 
-	// The socket connection.
-	public socket: Socket;
+	// The serial port instance.
+	protected serialPort: SerialPort | undefined;
 
 	// For restoring the breakpoints it is necessary to determine
 	// if a bp is currently restored or not.
@@ -71,13 +72,17 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
-		// Init socket
-		this.socket = new Socket();
-		this.socket.unref();
+		// Open the serial port
+		const serialPath = Settings.launch.zxnext.serial;
+		this.serialPort = new SerialPort({
+			path: serialPath,
+			baudRate: 921600,
+			autoOpen: false
+		});
 
 		// React on-open
-		this.socket.on('connect', async () => {
-			LogSocket.log('ZxNextSocketRemote: Connected to server!');
+		this.serialPort.on('open', async () => {
+			LogSocket.log('ZxNextSerialRemote: Connected to server!');
 
 			this.receivedData = Buffer.alloc(0);
 			this.msgStartByteFound = false;
@@ -92,34 +97,34 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		});
 
 		// Handle errors
-		this.socket.on('error', err => {
-			LogSocket.log('ZxNextSocketRemote: Error: ' + err);
+		this.serialPort.on('error', err => {
+			LogSocket.log('ZxNextSerialRemote: Error: ' + err);
 			// Error
 			this.emit('error', err);
 		});
 
 		// Receive data
-		this.socket.on('data', data => {
+		this.serialPort.on('data', data => {
 			this.dataReceived(data);
 		});
 
-		// Start socket connection
-		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port = Settings.launch.zxnext.port;
-		const hostname = Settings.launch.zxnext.hostname;
-		this.socket.connect(port, hostname);
+		// Start serial connection
+		this.serialPort.open();
 	}
 
 
 	/**
-	 * This will disconnect the socket.
+	 * This will disconnect the serial.
 	 */
 	public async disconnect(): Promise<void> {
-		if (!this.socket)
-			return;
 		return new Promise<void>(async resolve => {
+			if (!this.serialPort) {
+				resolve();
+				return;
+			}
 			await super.disconnect();
-			this.socket.end(() => {
+			this.serialPort.close(() => {
+				this.serialPort = undefined;
 				resolve();
 			});
 		});
@@ -201,17 +206,17 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * Writes the buffer to the socket port.
+	 * Writes the buffer to the serial port.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
 		return new Promise<void>((resolve, reject) => {
 			// Send data
 			const txt = this.dzrpCmdBufferToString(buffer);
-			LogSocket.log('>>> ZxNextSocketRemote: Sending ' + txt);
+			LogSocket.log('>>> ZxNextSerialRemote: Sending ' + txt);
 			let outerError;
 			try {
-				this.socket.write(buffer, (error) => {
+				this.serialPort?.write(buffer, (error) => {
 					if (!outerError) {
 						if (error)
 							throw error;
