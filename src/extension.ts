@@ -3,7 +3,7 @@ import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken 
 import { DebugSessionClass } from './debugadapter';
 import * as Net from 'net';
 import { DecorationClass, Decoration } from './decoration';
-import {LogSocket, LogCustomCode, LogSocketCommands, Log } from './log';
+import {LogSocket, LogCustomCode, Log } from './log';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
@@ -306,7 +306,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 	// Global log
 	{
-		const logToPanel = configuration.get<boolean>('logpanel');
+		const logToPanel = configuration.get<boolean>('log.global');
 		const channelName = (logToPanel) ? "DeZog" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		Log.init(channelOut);
@@ -314,7 +314,7 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 
 	// Custom code log
 	{
-		const logToPanel = configuration.get<boolean>('customcode.logpanel');
+		const logToPanel = configuration.get<boolean>('log.customCode');
 		const channelName = (logToPanel) ? "DeZog Custom Code" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogCustomCode.init(channelOut);
@@ -322,16 +322,10 @@ function configureLogging(configuration: vscode.WorkspaceConfiguration) {
 
 	// Socket log
 	{
-		const logToPanel = configuration.get<boolean>('socket.logpanel');
-		const channelName = (logToPanel) ? "DeZog Socket" : undefined;
+		const logToPanel = configuration.get<boolean>('log.transport');
+		const channelName = (logToPanel) ? "DeZog Transport" : undefined;
 		const channelOut = (channelName) ? vscode.window.createOutputChannel(channelName) : undefined;
 		LogSocket.init(channelOut);
-	}
-
-	// Enable to get a log of the commands only
-	if (false) {	// NOSONAR: For debugging
-		const channelOut = vscode.window.createOutputChannel("DeZog Socket Commands");
-		LogSocketCommands.init(channelOut);
 	}
 }
 

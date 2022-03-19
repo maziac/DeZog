@@ -243,6 +243,3 @@ LogCustomCode.setCacheLength(100);
 
 /// Socket logging.
 export let LogSocket = new Log();
-
-// Special socket logging
-export let LogSocketCommands: Log;
