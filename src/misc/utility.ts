@@ -456,8 +456,6 @@ export class Utility {
 			switch (p2) {
 				case 'name':
 					return "nn";
-				case 'hex':
-					return "h".repeat(2 * usedSize);
 				case 'dhex':
 					if (usedSize == 2)
 						return "hhhhh";
