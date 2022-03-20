@@ -39,6 +39,7 @@ export class CustomCodeAPI extends EventEmitter {
 	 * Just used to place a breakpoint.
 	 */
 	public debugBreak() {
+		//
 	}
 
 
@@ -92,7 +93,7 @@ export class CustomCodeAPI extends EventEmitter {
 	 * @param port the port number, e.g. 0x8000
 	 * @param value A value to set, e.g. 0x7F.
 	 */
-	public writePort: (port: number, value: number) => void = (port, value) => {};
+	public writePort: (port: number, value: number) => void = (port, value) => {};	// NOSONAR
 
 	/**
 	 * Simulates pulsing the processor's INT (or NMI) pin.
@@ -112,7 +113,7 @@ export class CustomCodeAPI extends EventEmitter {
 	 * You can also leave this empty and set the values initially from the UI code.
 	 * Note: The custom logic is instantiated before the UI.
 	 */
-	public uiReady: () => void = () => {};
+	public uiReady: () => void = () => {};	// NOSONAR
 
 
 	/**
@@ -403,5 +404,4 @@ API.log('-------------------------------------\\n');`
 		LogCustomCode.log(errorMessage);
 		throw Error(errorMessage);
 	}
-};
-
+}
