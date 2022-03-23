@@ -46,6 +46,6 @@ export class CustomMemory extends SimulatedMemory {
 	private readRomToBank(data: Uint8Array, bankId: number, offset: number) {
 		this.bankTypes[bankId] = BankType.ROM;
 		Utility.assert(data.length >= offset + this.bankSize, `ROM data length error`);
-		this.writeBank(bankId, data);
+		this.writeBank(bankId, data.slice(offset, this.bankSize + offset));
 	}
 }
