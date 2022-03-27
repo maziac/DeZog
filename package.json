@@ -322,18 +322,39 @@
 										"default": "RAM"
 									},
 									"customMemory": {
-										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Chooses the banks and their memory types. Please refer to the documentation.",
-										"type": "object",
-										"properties": {
-											"numberOfBanks": {
-												"type": "number",
-												"description": "The number of banks to use for the 64k address space. Each bank is of the same size (64k/numberOfBanks).",
-												"default": 4
-											},
-											"banks": {
-												"description": "Bank number/memory type pairs. E.g. \"0\": \"ROM\". Allowed for the memory type are 'ROM', 'RAM' and 'UNUSED'. Any not mentioned bank will automatically get the 'UNUSED' type.",
-												"type": "object",
-												"properties": {}
+										"description": "Only evaluated if 'memoryModel' is set to 'CUSTOM'. Define the memory layout as list of ranges in the 64k addressing space.",
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"range": {
+													"type": "array",
+													"description": "Array of two elements: first and last address of the slot. Minimum slot size and granularity is 1Kb",
+													"items": {
+														"type": ["string", "number"]
+													}
+												},
+												"name": {
+													"description": "The optional slot name",
+													"type": "string"
+												},
+												"rom": {
+													"description": "Optional path to a ROM file (binary or hex)",
+													"type": "string"
+												},
+												"romOffset": {
+													"description": "Optional offset for the ROM file",
+													"type": ["string", "number"]
+												},
+												"banked": {
+													"type": "object",
+													"properties": {
+														"count": {
+															"type": "number",
+															"description": "Number of memory banks that can be mapped in the current slot"
+														}
+													}
+												}
 											}
 										},
 										"ulaScreen": {
