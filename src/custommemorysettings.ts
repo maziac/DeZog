@@ -68,10 +68,10 @@ export interface CustomMemorySettings {
  * Return the MMU handler
  */
 const getMmuHandler = (mmu: CustomMemoryMmuInfo): ((ioPort: number, dataValue: number) => number) => {
-	const decodeBankBits = (byte: number, bitmap: number[]): number => {
+	const decodeBankBits = (byte: number, dataBits: number[]): number => {
 		let ret = 0;
-		for (let b = 0, val = 1; b < bitmap.length; b++, val <<= 1) {
-			const mask = 1 << bitmap[b];
+		for (let b = 0, val = 1; b < dataBits.length; b++, val <<= 1) {
+			const mask = 1 << dataBits[b];
 			if (byte & mask) {
 				ret += val;
 			}
@@ -90,7 +90,7 @@ const getMmuHandler = (mmu: CustomMemoryMmuInfo): ((ioPort: number, dataValue: n
 	return (port, value) => {
 		if ((port & mask) === match) {
 			// Address decoded. Now decode the data bus bits
-			return decodeBankBits(value, mmu.bitMap);
+			return decodeBankBits(value, mmu.dataBits);
 		} else {
 			return -1;
 		}

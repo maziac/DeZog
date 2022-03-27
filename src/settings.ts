@@ -163,8 +163,8 @@ export type HexNumber = number | string;
  */
 export interface CustomMemorySlot {
 	/**
-	 * The slot range (inclusive).
-	 * Slot size should not be smaller than 1K.
+	 * Array of two elements: first and last address of the slot (inclusive).
+	 * Minimum slot size and granularity is 1Kb.
 	 */
 	range: [HexNumber, HexNumber];
 
@@ -177,12 +177,12 @@ export interface CustomMemorySlot {
 	rom?: string | Uint8Array;
 
 	/**
-	 * (optional) display name of the slot
+	 * (optional) display name of the slot. If banked, it can be overridden by bank names
 	 */
 	name?: string;
 
 	/**
-	 * Offsets the ROM file/content
+	 * Optional offset of the ROM file/content
 	 */
 	romOffset?: HexNumber;
 
@@ -197,14 +197,16 @@ export interface CustomMemorySlot {
  */
 export interface CustomMemoryMmuInfo {
 	/**
-	 * The I/O port that control the banks (lower 8-bit address)
+	 * The I/O port that control the banks (full 16-bit address)
+	 * If an object, `mask` is a 16-bit mask to filter the current address (mask to 1), and `match` is the
+	 * address match of the result mask.
 	 */
 	port: HexNumber | { mask: HexNumber, match: HexNumber };
 
 	/**
-	 * List of the bits of the byte that forms the bank selector
+	 * List of the bit number (b0 to b7) of the port data value to forms the selected bank ID.
 	 */
-	bitMap: number[];
+	dataBits: number[];
 }
 
 export interface CustomMemoryBankInfo {
@@ -270,14 +272,8 @@ export interface ZSimType {
 	memoryModel: "RAM" | "ZX16K" | "ZX48K" | "ZX128K" | "ZXNEXT" | "CUSTOM",
 
 	/** A user defined memory.
-	 * "customMemory": {
-	 *	"numberOfBanks": 4,
-	 *		"banks": {
-	 *			"0": "ROM",
-	 *			"1": "RAM"
-	 *		}
-	 *	},
-	 */
+	 * Only evaluated if 'memoryModel' is set to 'CUSTOM'. Define the memory layout
+	 * as list of ranges (slots) in the 64k addressing space. */
 	customMemory: CustomMemoryType,
 
 	// The number of interrupts to calculate the average from. 0 to disable.
