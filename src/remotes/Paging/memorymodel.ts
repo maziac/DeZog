@@ -1,6 +1,7 @@
 import {Z80Registers} from "../z80registers";
 import { CustomMemorySettings } from "../../custommemorysettings";
 import { BankType } from "../zsimulator/simmemory";
+import { CustomMemory } from "../zsimulator/custommemory";
 
 
 
@@ -296,7 +297,7 @@ export class CustomMemoryModel extends MemoryModel {
 	 * Constructor.
 	 * @param customMemory The memory description.
 	 */
-	constructor(private readonly info: CustomMemorySettings) {
+	constructor(private readonly info: CustomMemorySettings, private readonly customMemory?: CustomMemory) {
 		super();
 	}
 
@@ -307,6 +308,7 @@ export class CustomMemoryModel extends MemoryModel {
 	 * and a name.
 	 */
 	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
+		slots = slots || (this.customMemory && this.customMemory.getSlots());
 		return this.info.slots.map(slot => {
 			let name = slot.name;
 			if (!name) {

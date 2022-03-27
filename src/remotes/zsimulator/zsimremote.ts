@@ -355,8 +355,8 @@ export class ZSimRemote extends DzrpRemote {
 				{
 					// Custom Memory Model
 					const slottedInfo =	toCustomMemorySettings(zsim.customMemory);
-					this.memoryModel = new CustomMemoryModel(slottedInfo);
 					this.memory = new CustomMemory(slottedInfo, this.ports);
+					this.memoryModel = new CustomMemoryModel(slottedInfo, this.memory as CustomMemory);
 				}
 				break;
 			default:
