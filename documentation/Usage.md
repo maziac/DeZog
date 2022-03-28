@@ -804,9 +804,10 @@ A few explanations:
 - "-nextrom": It's easier not to enable this. If not included the CSpect will simulate the esxdos calls. Enabling and using an img file seem to result in problems sometimes most probably because not everything is initialized correctly always.
 - "-remote": Is not really required. It hides the CSpect's debugger display.
 
+[iii](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#zx-next-serial)
 
-
-### ZX Next / Serial Interface
+[ggg](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#general-usage)
+### ZX Next / Serial Interface {#zx-next-serial}
 
 #### Overview
 
