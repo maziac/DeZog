@@ -758,7 +758,7 @@ export class Settings {
 		// Check 'serial' if 'zxnext' was selected
 		if (rType == 'zxnext') {
 			if (Settings.launch.zxnext.serial == undefined) {
-				throw Error("'For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
+				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
 			}
 		}
 

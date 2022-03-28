@@ -425,19 +425,9 @@
 								"description": "The configuration for debugging on the ZXNEXT device.",
 								"type": "object",
 								"properties": {
-									"hostname": {
-										"type": "string",
-										"description": "The hostname/IP address of the socket of the DeZog Serial Interface program. As this usually runs on the same PC as DeZog itself this parameter can be omitted (localhost).",
-										"default": "localhost"
-									},
-									"port": {
-										"type": "string",
-										"description": "Deprecated: Use the 'serial' port directly.\nThe port number of the socket of the DeZog Serial Interface program.Defaults to 12000.",
-										"default": "12000"
-									},
 									"serial": {
 										"type": "string",
-										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\"",
+										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\"",
 										"default": ""
 									}
 								}
@@ -909,12 +899,15 @@
 							"request": "launch",
 							"name": "ZX Next",
 							"remoteType": "zxnext",
+							"zxnext": {
+								"serial": "${1:the serial COM port}"
+							},
 							"disassemblerArgs": {
 								"esxdosRst": true
 							},
 							"sjasmplus": [
 								{
-									"path": "${1:Assembler list or sld file}"
+									"path": "${2:Assembler list or sld file}"
 								}
 							],
 							"commandsAfterLaunch": [
@@ -923,8 +916,8 @@
 							],
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
-							"load": "${2:.nex or .sna file to load}",
-							"topOfStack": "${3: top of stack / label name}"
+							"load": "${3:.nex or .sna file to load}",
+							"topOfStack": "${4: top of stack / label name}"
 						}
 					},
 					{
@@ -948,11 +941,6 @@
 								{
 									"path": "${1:Assembler list or sld file}"
 								}
-							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable",
-								"-wpmem enable"
 							],
 							"startAutomatically": true,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",

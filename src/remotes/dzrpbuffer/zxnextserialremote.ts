@@ -3,7 +3,7 @@ import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {GenericBreakpoint} from '../../genericwatchpoint';
+import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 import {Z80Registers} from '../z80registers';
 import {SerialPort} from 'serialport';
@@ -570,5 +570,25 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	}
 	public async stateRestore(filePath: string): Promise<void> {
 		throw Error("Saving and restoring the state is not supported with the ZX Next.");
+	}
+
+
+	/**
+	 * Unsupported functions.
+	 */
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported for 'zxnext'.");
+	}
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported for 'zxnext'.");
+	}
+	public async enableWPMEM(enable: boolean): Promise<void> {
+		if (this.wpmemWatchpoints.length > 0) {
+			// Only if watchpoints exist
+			throw Error("There is no support for watchpoints for 'zxnext'.");
+		}
+	}
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
+		throw Error("Watchpoints not supported for 'zxnext'.");
 	}
 }
