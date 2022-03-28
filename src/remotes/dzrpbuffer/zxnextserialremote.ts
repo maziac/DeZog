@@ -16,6 +16,10 @@ import {SerialPort} from 'serialport';
 // Therefore this byte is required to recognize when a message starts.
 const MESSAGE_START_BYTE = 0xA5;
 
+// Timeout until when a respose on a command should have been received.
+const CMD_RESP_TIMEOUT = 1000;	// 1000 ms = 1 s
+
+
 /**
  * Structure to hold the opcode to restore and the address of
  * the breakpoint.
@@ -63,7 +67,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime = Settings.launch.zxnext.socketTimeout * 1000;
+		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT * 1000;
 	}
 
 
