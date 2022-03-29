@@ -14,7 +14,7 @@ import {UnitTestCaseBase, UnitTestCase, RootTestSuite, UnitTestSuiteConfig, Unit
 import {PromiseCallbacks} from '../misc/promisecallbacks';
 import {DiagnosticsHandler} from '../diagnosticshandler';
 import {GenericWatchpoint} from '../genericwatchpoint';
-import {ZxNextSocketRemote} from '../remotes/dzrpbuffer/zxnextsocketremote';
+import {ZxNextSerialRemote} from '../remotes/dzrpbuffer/zxnextserialremote';
 
 
 
@@ -217,7 +217,7 @@ export class Z80UnitTestRunner {
 				}
 				try {
 					// Set timeout
-					if (!this.debug && !(Remote instanceof ZxNextSocketRemote)) {
+					if (!this.debug && !(Remote instanceof ZxNextSerialRemote)) {
 						// Timeout/break not possible with ZXNext.
 						const toMs = 1000 * Settings.launch.unitTestTimeout;
 						if (toMs > 0) {

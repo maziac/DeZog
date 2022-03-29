@@ -1,7 +1,7 @@
 {
 	"name": "dezog",
 	"displayName": "DeZog",
-	"version": "2.5.1",
+	"version": "2.6.0",
 	"publisher": "maziac",
 	"description": "Visual Studio Code Debugger for the Z80 and ZX Spectrum.",
 	"author": {
@@ -55,6 +55,7 @@
 		"posthtml-toc": "^1.0.3",
 		"require-from-string": "^2.0.2",
 		"rng": "^0.2.2",
+		"serialport": "^10.4.0",
 		"showdown": "^2.0.0",
 		"ts-node": "^10.4.0",
 		"vscode-debugadapter": "^1.49.0",
@@ -166,27 +167,32 @@
 			{
 				"command": "dezog.whatsNew",
 				"title": "Show 'What's New' page of this DeZog release.",
-				"category": "dezog"
+				"category": "DeZog"
 			},
 			{
 				"command": "dezog.help",
 				"title": "Show the DeZog Help page.",
-				"category": "dezog"
+				"category": "DeZog"
 			},
 			{
 				"command": "dezog.movePCtoCursor",
 				"title": "Move Program Counter to Cursor",
-				"category": "dezog"
+				"category": "DeZog"
 			},
 			{
 				"command": "dezog.disassemblyAtCursor",
 				"title": "Disassembly at Cursor / of Selection",
-				"category": "dezog"
+				"category": "DeZog"
 			},
 			{
 				"command": "dezog.clearAllDecorations",
 				"title": "Clear all decorations",
-				"category": "dezog"
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.serialport.list",
+				"title": "Get list of all available serial ports",
+				"category": "DeZog"
 			}
 		],
 		"menus": {
@@ -207,6 +213,9 @@
 				},
 				{
 					"command": "dezog.clearAllDecorations"
+				},
+				{
+					"command": "dezog.serialport.list"
 				}
 			],
 			"editor/context": [
@@ -416,15 +425,10 @@
 								"description": "The configuration for debugging on the ZXNEXT device.",
 								"type": "object",
 								"properties": {
-									"hostname": {
+									"serial": {
 										"type": "string",
-										"description": "The hostname/IP address of the socket of the DeZog Serial Interface program. As this usually runs on the same PC as DeZog itself this parameter can be omitted (localhost).",
-										"default": "localhost"
-									},
-									"port": {
-										"type": "string",
-										"description": "The port number of the socket of the DeZog Serial Interface program.Defaults to 12000.",
-										"default": "12000"
+										"description": "The name of the serial port interface, on macOS e.g. \"/dev/tty.usbserial-AQ\", on Windows e.g. \"COM8\"",
+										"default": ""
 									}
 								}
 							},
@@ -895,12 +899,15 @@
 							"request": "launch",
 							"name": "ZX Next",
 							"remoteType": "zxnext",
+							"zxnext": {
+								"serial": "${1:the serial COM port}"
+							},
 							"disassemblerArgs": {
 								"esxdosRst": true
 							},
 							"sjasmplus": [
 								{
-									"path": "${1:Assembler list or sld file}"
+									"path": "${2:Assembler list or sld file}"
 								}
 							],
 							"commandsAfterLaunch": [
@@ -909,8 +916,8 @@
 							],
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
-							"load": "${2:.nex or .sna file to load}",
-							"topOfStack": "${3: top of stack / label name}"
+							"load": "${3:.nex or .sna file to load}",
+							"topOfStack": "${4: top of stack / label name}"
 						}
 					},
 					{
@@ -934,11 +941,6 @@
 								{
 									"path": "${1:Assembler list or sld file}"
 								}
-							],
-							"commandsAfterLaunch": [
-								"-logpoint enable",
-								"-assertion enable",
-								"-wpmem enable"
 							],
 							"startAutomatically": true,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",

@@ -2,8 +2,8 @@ import {Remote, RemoteBase} from './remotebase';
 import {ZSimRemote} from './zsimulator/zsimremote';
 import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
-import {ZxNextSocketRemote} from './dzrpbuffer/zxnextsocketremote';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
+import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
 
 
 
@@ -24,7 +24,7 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new CSpectRemote());
 				break;
 			case 'zxnext':	// The ZX Next USB/serial connection
-				RemoteFactory.setGlobalRemote(new ZxNextSocketRemote());
+				RemoteFactory.setGlobalRemote(new ZxNextSerialRemote());
 				break;
 			case 'zsim':	// Simulator
 				RemoteFactory.setGlobalRemote(new ZSimRemote());

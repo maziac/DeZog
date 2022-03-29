@@ -121,15 +121,9 @@ export interface CSpectType {
 
 
 // Definitions for ZX Next remote type.
-export interface ZxNextSocketType {
-	// The hostname/IP address of the socket that connects the serial port.
-	hostname: string;
-
-	// The port of the socket that connects the serial port.
-	port: number;
-
-	/// The socket timeout in seconds.
-	socketTimeout: number;
+export interface ZxNextSerialType {
+	// The serial usb device.
+	serial: string;	// E.g. "/dev/cu.usbserial-AQ007PCD" on macOS
 }
 
 
@@ -260,7 +254,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	zsim: ZSimType;
 
 	// The special settings for the serial connection.
-	zxnext: ZxNextSocketType;
+	zxnext: ZxNextSerialType;
 
 	/// true if the configuration is for unit tests.
 	unitTests: false;
@@ -493,13 +487,8 @@ export class Settings {
 
 		// zxnext
 		if (!launchCfg.zxnext)
-			launchCfg.zxnext = {} as ZxNextSocketType;
-		if (launchCfg.zxnext.hostname == undefined)
-			launchCfg.zxnext.hostname = 'localhost';
-		if (launchCfg.zxnext.port == undefined)
-			launchCfg.zxnext.port = 12000;
-		if (!launchCfg.zxnext.socketTimeout)
-			launchCfg.zxnext.socketTimeout = 0.8;	// 0.8 secs, needs to be short to show a warning fast if debugged program is running.
+			launchCfg.zxnext = {} as ZxNextSerialType;
+		// Note: if 'serial' is undefined and type is 'zxnext', this will create an error
 
 		// sjasmplus
 		if (launchCfg.sjasmplus) {
@@ -764,6 +753,18 @@ export class Settings {
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
+		}
+
+		// Check 'serial' if 'zxnext' was selected
+		if (rType == 'zxnext') {
+			if (Settings.launch.zxnext.serial == undefined) {
+				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
+			}
+			// Check that the old properties are not used
+			const oldZxnext = Settings.launch.zxnext as any;
+			if (oldZxnext.port != undefined || oldZxnext.hostname != undefined || oldZxnext.socketTimeout != undefined) {
+				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
+			}
 		}
 
 		// List files (=Assembler configurations)

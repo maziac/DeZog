@@ -152,7 +152,7 @@ A typical configuration looks like this:
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
-    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
+    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
 - sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -805,7 +805,6 @@ A few explanations:
 - "-remote": Is not really required. It hides the CSpect's debugger display.
 
 
-
 ### ZX Next / Serial Interface
 
 #### Overview
@@ -813,56 +812,59 @@ A few explanations:
 The serial interface is the most complex setup as it requires communication with a real ZX Spectrum Next (HW):
 
 ~~~
-                                                                                         ┌──────────────────────────┐
-                                                                                         │         ZX Next          │
-                                                                                         │ ┌──────────────────────┐ │
-┌───────────────┐     ┌─────────────────┐                                                │ │   Debugged Program   │ │
-│               │     │                 │                                                │ └──────────▲───────────┘ │
-│               │     │                 │                                                │            │             │
-│               │     │                 │                                                │ ┌──────────▼───────────┐ │
-│    vscode     │     │      DeZog      │                                                │ │       dezogif        │ │
-│               │◀───▶│                 │                                                │ │          SW          │ │
-│               │     │                 │                                                │ └──────────▲───────────┘ │
-│               │     │                 │                                                │            │             │
-│               │     │                 │     ┌──────────────────────────┐               │          ┌─▼──┐          │
-└───────────────┘     └─────────────────┘     │  DeZog Serial Interface  │               │          │UART│          │
-                               ▲              │            SW            │               │          │HW  │          │
-                               │              └──────────────────────────┘               └──────────┴────┴──────────┘
-                               │                    ▲                ▲                                ▲
-                               │                    │                │                                │
-                      ┌────────▼────────────────────▼────────────────▼───────────────┐                ▼
-                      │  ┌──────────┐         ┌──────────┐     ┌──────────────┐      ├────┐     ┌──────────┐
-                      │  │  Socket  │◀───────▶│  Socket  │     │    Serial    │      │USB │     │USB/Serial│
-                      │  └──────────┘         └──────────┘     │COM, /dev/tty │◀────▶│HW  │◀───▶│Converter │
-                      │                                        └──────────────┘      ├────┘     │HW        │
-                      │                    macOS, Linux, Windows                     │          └──────────┘
-                      └──────────────────────────────────────────────────────────────┘
+                                                       ┌──────────────────────────┐
+┌───────────────┐     ┌─────────────────┐              │         ZX Next          │
+│               │     │                 │              │ ┌──────────────────────┐ │
+│               │     │                 │              │ │   Debugged Program   │ │
+│               │     │                 │              │ └──────────▲───────────┘ │
+│    vscode     │     │      DeZog      │              │            │             │
+│               │◀───▶│                 │              │ ┌──────────▼───────────┐ │
+│               │     │                 │              │ │       dezogif        │ │
+│               │     │                 │              │ │          SW          │ │
+│               │     │                 │              │ └──────────▲───────────┘ │
+└───────────────┘     └─────────────────┘              │            │             │
+                               ▲                       │          ┌─▼──┐          │
+                               │                       │          │UART│          │
+                               │                       │          │HW  │          │
+                               │                       └──────────┴────┴──────────┘
+                      ┌────────▼───────────────────┐                ▲
+                      │ ┌──────────────┐           │                │
+                      │ │    Serial    │           ├────┐           ▼
+                      │ │COM, /dev/tty │◀─────────▶│UART│     ┌──────────┐
+                      │ └──────────────┘           │HW  │◀───▶│  Cable   │
+                      │   macOS, Linux, Windows    ├────┘     └──────────┘
+                      └────────────────────────────┘
 ~~~
 
-DeZog does not directly talk to the USB/UART interface of your OS. Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
+Since version 2.6.0 DeZog can directly talk to the USB/UART interface of your OS.
+<!-- Instead it uses another program, the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) which offers a socket and translates all communication to the serial interface USB/UART.
 (Background: The reason for this additional program is that the node.js serialport binary package tends to break with new releases of vscode, see [here](https://cultivatehq.com/posts/how-we-built-a-visual-studio-code-extension-for-iot-prototyping/) for more details.)
+-->
 
 The serial interface needs to be connected to the UART of a [ZX Spectrum Next](https://www.specnext.com).
+<!--
 In order to communicate with the ZX Next special SW needs to run on the Next, the [dezogif](https://github.com/maziac/dezogif).
+-->
 
-
-Example launch.json configuration:
+Here is an example launch.json configuration for macOS:
 ~~~json
     "remoteType": "zxnext",
     "zxnext": {
-        "port": 12000
+        "serial": "/dev/tty.usbserial-AQ"
     }
 ~~~
 
-The "zxnext" configuration allows the following additional parameters:
-- "port": The port used by the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) port. If not changed this defaults to 12000.
-- "hostname": The host's name. I.e. the IP of the machine where the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) port.is running. Typically "localhost" (the default).
-
-The default port is anyway 12000. So, if you don't change it, you just have to add:
+Or for Windows:
 ~~~json
-    "remoteType": "zxnext"
+    "remoteType": "zxnext",
+    "zxnext": {
+        "serial": "COM8"
+    }
 ~~~
 
+For convenience a palette command exists that lists the connected serial ports:
+Press F1 and then enter "DeZog: Get list of all available serial ports".
+With the buttons you can directly copy the interface name to the clipboard.
 
 #### Setup
 
@@ -876,12 +878,6 @@ Setup a debug session:
 (Don't forget to make a backup of the original ```enNextMf.rom```.)
 2. Add a configuration as shown above in your launch.json (For an example look at the [z80-sample-program](https://github.com/maziac/z80-sample-program)).
 3. Connect your PC/Mac with the ZX Next via a serial connection. On the ZX Next use the joystick ports for the UART connection (preferable Joy 2).
-4. Start the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) in a terminal. For macos e.g. use:
-./dezogserialinterface-macos -socket 12000 -serial /dev/cu.usbserial-AQ007PCD
-Notes:
-    - Change the serial port ("-serial ...") to your needs.
-    - There exist also binaries for Linux and Windows.
-    - Check the [DeZogSerialInterface](https://github.com/maziac/DeZogSerialInterface) project for more options to test the connection.
 4. On the ZX Next press the yellow NMI button once to initialize the debugger on the ZX Next.
 ![](images/dezog_zxnext_main.jpg)
 (If you later need to re-initialize press "Symbol Shift", or CTRL on a PS2 keyboard, and while being pressed hit the yellow NMI button.)
@@ -892,6 +888,7 @@ You should see that the debugged program is transmitted to the ZX Next: the bord
 ![](images/dezog_zxnext_loading.jpg)
 
 Please use the [z80-sample-program](https://github.com/maziac/z80-sample-program) for your first tries. It already contains a working "ZXNext" launch.json configuration.
+You just need to change the "serial" property.
 
 You can now step through your code and set breakpoints.
 The debugger will stop at a breakpoint.

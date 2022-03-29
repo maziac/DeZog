@@ -1,19 +1,24 @@
 import {LogTransport} from '../../log';
-import {DzrpBufferRemote, CONNECTION_TIMEOUT} from './dzrpbufferremote';
-import {Socket} from 'net';
+import {DzrpBufferRemote} from './dzrpbufferremote';
 import {Settings} from '../../settings';
 import {Utility} from '../../misc/utility';
 import {BREAK_REASON_NUMBER} from '../remotebase';
-import {GenericBreakpoint} from '../../genericwatchpoint';
+import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 import {Z80Registers} from '../z80registers';
-
+import {SerialPort} from 'serialport';
+//import * as Transform from 'stream';
+//import {EventEmitter} from 'events';
 
 
 // Each sent message has to start with this byte.
 // The ZX Next transmit a lot of zeroes if the joy port is not configured.
 // Therefore this byte is required to recognize when a message starts.
 const MESSAGE_START_BYTE = 0xA5;
+
+// Timeout until when a respose on a command should have been received.
+const CMD_RESP_TIMEOUT = 1000;	// 1000 ms = 1 s
+
 
 /**
  * Structure to hold the opcode to restore and the address of
@@ -28,13 +33,13 @@ interface RestorableBreakpoint {
 
 
 /**
- * A ZX Next remote that is connected via a socket.
- * I.e. another program that converts socket to serial.
+ * A ZX Next remote that is connected via the serial interface.
+ * The serial interface itself is a USB device.
  */
-export class ZxNextSocketRemote extends DzrpBufferRemote {
+export class ZxNextSerialRemote extends DzrpBufferRemote {
 
-	// The socket connection.
-	public socket: Socket;
+	// The serial port instance.
+	protected serialPort: SerialPort | undefined;
 
 	// For restoring the breakpoints it is necessary to determine
 	// if a bp is currently restored or not.
@@ -62,7 +67,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime = Settings.launch.zxnext.socketTimeout * 1000;
+		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT * 1000;
 	}
 
 
@@ -71,13 +76,17 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	/// The successful emit takes place in 'onConnect' which should be called
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
-		// Init socket
-		this.socket = new Socket();
-		this.socket.unref();
+		// Open the serial port
+		const serialPath = Settings.launch.zxnext.serial;
+		this.serialPort = new SerialPort({
+			path: serialPath,
+			baudRate: 921600,
+			autoOpen: false
+		});
 
 		// React on-open
-		this.socket.on('connect', async () => {
-			LogTransport.log('ZxNextSocketRemote: Connected to server!');
+		this.serialPort.on('open', async () => {
+			LogTransport.log('ZxNextSerialRemote: Connected to server!');
 
 			this.receivedData = Buffer.alloc(0);
 			this.msgStartByteFound = false;
@@ -92,34 +101,34 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 		});
 
 		// Handle errors
-		this.socket.on('error', err => {
-			LogTransport.log('ZxNextSocketRemote: Error: ' + err);
+		this.serialPort.on('error', err => {
+			LogTransport.log('ZxNextSerialRemote: Error: ' + err);
 			// Error
 			this.emit('error', err);
 		});
 
 		// Receive data
-		this.socket.on('data', data => {
+		this.serialPort.on('data', data => {
 			this.dataReceived(data);
 		});
 
-		// Start socket connection
-		this.socket.setTimeout(CONNECTION_TIMEOUT);
-		const port = Settings.launch.zxnext.port;
-		const hostname = Settings.launch.zxnext.hostname;
-		this.socket.connect(port, hostname);
+		// Start serial connection
+		this.serialPort.open();
 	}
 
 
 	/**
-	 * This will disconnect the socket.
+	 * This will disconnect the serial.
 	 */
 	public async disconnect(): Promise<void> {
-		if (!this.socket)
-			return;
 		return new Promise<void>(async resolve => {
+			if (!this.serialPort) {
+				resolve();
+				return;
+			}
 			await super.disconnect();
-			this.socket.end(() => {
+			this.serialPort.close(() => {
+				this.serialPort = undefined;
 				resolve();
 			});
 		});
@@ -201,17 +210,17 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 
 
 	/**
-	 * Writes the buffer to the socket port.
+	 * Writes the buffer to the serial port.
 	 */
 	protected async sendBuffer(buffer: Buffer): Promise<void> {
 		// Send buffer
 		return new Promise<void>((resolve, reject) => {
 			// Send data
 			const txt = this.dzrpCmdBufferToString(buffer);
-			LogTransport.log('>>> ZxNextSocketRemote: Sending ' + txt);
+			LogTransport.log('>>> ZxNextSerialRemote: Sending ' + txt);
 			let outerError;
 			try {
-				this.socket.write(buffer, (error) => {
+				this.serialPort?.write(buffer, (error) => {
 					if (!outerError) {
 						if (error)
 							throw error;
@@ -328,7 +337,7 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 			const count = this.breakpointsAndOpcodes.length;
 			let memCount = count;
 			if (oldOpcode != undefined)
-				memCount + 1;
+				memCount++;
 			const memValues = new Array<{address: number, value: number}>(memCount);
 			let k = 0;
 			if (oldOpcode != undefined) {
@@ -561,5 +570,29 @@ export class ZxNextSocketRemote extends DzrpBufferRemote {
 	}
 	public async stateRestore(filePath: string): Promise<void> {
 		throw Error("Saving and restoring the state is not supported with the ZX Next.");
+	}
+
+
+	/**
+	 * Unsupported functions.
+	 */
+	public async enableWPMEM(enable: boolean): Promise<void> {
+		if (this.wpmemWatchpoints.length > 0) {
+			// Only if watchpoints exist
+			throw Error("There is no support for watchpoints with the ZX Next.");
+		}
+	}
+	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
+		throw Error("Watchpoints not supported with the ZX Next.");
+	}
+
+	/**
+	 * Unsupported DRZP commands.
+	 */
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported with the ZX Next.");
+	}
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported with the ZX Next.");
 	}
 }

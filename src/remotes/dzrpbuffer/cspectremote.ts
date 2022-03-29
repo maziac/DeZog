@@ -152,7 +152,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		throw Error("Watchpoints not supported.");
+		throw Error("Watchpoints not supported for CSpect.");
 	}
 
 

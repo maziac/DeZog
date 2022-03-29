@@ -1,9 +1,10 @@
 # Changelog
 
-# 2.5.2
+# 2.6.0
+- zxnext configuration: The ZXNext can be connected via serial interface directly from DeZog. There is no need anymore to go through the extra program DeZogSerialInterface.
+For this there are changes to the "zxnext" launch.json configuration.
 - Log in OUTPUT panel fixed. It was not possible to enable.
 - LogSocket renamed to LogTransport.
-- Fixed sendDzrpCmdRemoveWatchpoint.
 
 # 2.5.1
 - Fixed handling of path with spaces when using loadObjs and ZEsarUX.
