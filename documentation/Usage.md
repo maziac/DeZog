@@ -152,7 +152,7 @@ A typical configuration looks like this:
     - "zsim": Use the internal simulator. See [Internal Z80 Simulator](#the-internal-z80-simulator).
     - "zrcp": Use ZEsarUX through the ZRCP (ZEsarUX Remote Control Protocol) via a socket. See [ZEsarUX](#zesarux).
     - "cspect": Use of CSpect emulator with the DeZog plugin. See [CSpect](#cspect).
-    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [Serial Interface](#serial-interface).
+    - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
 - sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
 Please have a look at the [Listfile](#listfile) section.
@@ -804,10 +804,8 @@ A few explanations:
 - "-nextrom": It's easier not to enable this. If not included the CSpect will simulate the esxdos calls. Enabling and using an img file seem to result in problems sometimes most probably because not everything is initialized correctly always.
 - "-remote": Is not really required. It hides the CSpect's debugger display.
 
-[iii](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#zx-next-serial)
 
-[ggg](https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#general-usage)
-### ZX Next / Serial Interface {#zx-next-serial}
+### ZX Next / Serial Interface
 
 #### Overview
 

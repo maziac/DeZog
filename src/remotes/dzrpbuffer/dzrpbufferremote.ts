@@ -25,7 +25,7 @@ class MessageBuffer {
 	// The buffer to send
 	public buffer: Buffer;
 
-	// The function to chen the response is received.
+	// The function to call when the response is received.
 	public resolve: (buffer) => void;
 
 	// The function to call when the command times out.
