@@ -760,6 +760,11 @@ export class Settings {
 			if (Settings.launch.zxnext.serial == undefined) {
 				throw Error("For remoteType 'zxnext' you need to set the 'zxnext.serial' property for the serial interface.");
 			}
+			// Check that the old properties are not used
+			const oldZxnext = Settings.launch.zxnext as any;
+			if (oldZxnext.port != undefined || oldZxnext.hostname != undefined || oldZxnext.socketTimeout != undefined) {
+				throw Error("For 'zxnext' the properties 'port', 'hostname' and 'socketTimeout' are not used anymore. Use 'serial' instead.");
+			}
 		}
 
 		// List files (=Assembler configurations)

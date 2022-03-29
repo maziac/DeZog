@@ -576,19 +576,23 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/**
 	 * Unsupported functions.
 	 */
-	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
-		throw Error("Watchpoints are not supported for 'zxnext'.");
-	}
-	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
-		throw Error("Watchpoints are not supported for 'zxnext'.");
-	}
 	public async enableWPMEM(enable: boolean): Promise<void> {
 		if (this.wpmemWatchpoints.length > 0) {
 			// Only if watchpoints exist
-			throw Error("There is no support for watchpoints for 'zxnext'.");
+			throw Error("There is no support for watchpoints with the ZX Next.");
 		}
 	}
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
-		throw Error("Watchpoints not supported for 'zxnext'.");
+		throw Error("Watchpoints not supported with the ZX Next.");
+	}
+
+	/**
+	 * Unsupported DRZP commands.
+	 */
+	protected async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported with the ZX Next.");
+	}
+	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		throw Error("Watchpoints are not supported with the ZX Next.");
 	}
 }
