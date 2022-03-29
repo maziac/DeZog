@@ -2146,9 +2146,11 @@ the value correspondends to a label.
 "-help|h": This command. Do "-e help" to get all possible ZEsarUX commands.
 "-label|-l XXX": Returns the matching labels (XXX) with their values. Allows wildcard "*".
 "-LOGPOINT enable|disable|status [group]":
-	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected. All logpoints are by default disabled after startup of the debugger.
+	- enable|disable: Enables/disables all logpoints caused by LOGPOINTs of a certain group set in the sources. If no group is given all logpoints are affected.
+	All logpoints are by default disabled after startup of the debugger.
 	- status: Shows enable status of LOGPOINTs per group.
-"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes. But if chosen, words are output. Last argument is the endianness which is little endian by default.
+"-md address size [dec|hex] [word] [little|big]": Memory dump at 'address' with 'size' bytes. Output is in 'hex' (default) or 'dec'imal. Per default data will be grouped in bytes.
+  But if chosen, words are output. Last argument is the endianness which is little endian by default.
 "-msetb address value [repeat]:"
 	- address: The address to fill. Can also be a label or expression.
 	- value: The byte value to set.
@@ -2174,7 +2176,8 @@ the value correspondends to a label.
 	You can concat several ranges.
 	Example: "-patterns 10-15 20+3 33" will show sprite patterns at index 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 "-rmv": Shows the memory register view. I.e. a dynamic view with the memory contents the registers point to.
-"-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots. The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
+"-sprites [slot[+count|-endslot] [...]": Shows the tbblue sprite registers beginning at 'slot' until 'endslot' or a number of 'count' slots.
+  The values can be omitted. 'slot' defaults to 0 and 'count' to 1. You can concat several ranges.
 	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
@@ -2194,7 +2197,8 @@ Some examples:
 "-state restore 1": Restores the state 'from' 1.
 
 Notes:
-For all commands (if it makes sense or not) you can add "-view" as first parameter. This will redirect the output to a new view instead of the console. E.g. use "-help -view" to put the help text in an own view.
+For all commands (if it makes sense or not) you can add "-view" as first parameter. This will redirect the output to a new view instead of the console.
+E.g. use "-help -view" to put the help text in an own view.
 `;
 
 		this.sendEvent(new StoppedEvent('Value updated'));
