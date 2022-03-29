@@ -4,8 +4,9 @@ import { Settings } from '../src/settings';
 
 suite('Settings', () => {
 
-	setup( () => {
-	}); // NOSONAR
+	setup(() => {
+		//
+	});
 
 	suite('CheckSettings', () => {
 
@@ -39,15 +40,79 @@ suite('Settings', () => {
 		});
 
 
-		test('CheckSettings - remoteType=zxnext', () => {
-			const cfg: any={
-				remoteType: 'zxnext',
-				rootFolder: './tests/data',
-			};
-			Settings.launch = Settings.Init(cfg);
-			assert.doesNotThrow(() => {
-				Settings.CheckSettings();
-			}, "Should not fail with remoteType=zxnext.");
+
+		suite('CheckSettings - remoteType=zxnext', () => {
+
+			test('empty', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and serial not set.");
+			});
+
+			test('serial', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						serial: 'COM8'
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.doesNotThrow(() => {
+					Settings.CheckSettings();
+				}, "Should not fail with remoteType=zxnext.");
+			});
+
+			test('hostname obsolete', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						serial: 'COM8',
+						hostname: 'hname'
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and old parameters used.");
+			});
+
+			test('port obsolete', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						serial: 'COM8',
+						port: 'port'
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and old parameters used.");
+			});
+
+			test('socketTimeout obsolete', () => {
+				const cfg: any = {
+					remoteType: 'zxnext',
+					zxnext: {
+						serial: 'COM8',
+						socketTimeout: 500
+					},
+					rootFolder: './tests/data',
+				};
+				Settings.launch = Settings.Init(cfg);
+				assert.throws(() => {
+					Settings.CheckSettings();
+				}, "Should fail with remoteType=zxnext and old parameters used.");
+			});
+
 		});
 
 

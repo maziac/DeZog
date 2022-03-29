@@ -7,8 +7,6 @@ import {GenericBreakpoint, GenericWatchpoint} from '../../genericwatchpoint';
 import {Opcode, OpcodeFlag} from '../../disassembler/opcode';
 import {Z80Registers} from '../z80registers';
 import {SerialPort} from 'serialport';
-//import * as Transform from 'stream';
-//import {EventEmitter} from 'events';
 
 
 // Each sent message has to start with this byte.
