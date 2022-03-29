@@ -15,8 +15,10 @@
 		"z80-debug",
 		"dezog",
 		"zesarux",
+		"cspect",
 		"zx",
 		"spectrum",
+		"next",
 		"assembler",
 		"z80asm",
 		"sjasmplus"
