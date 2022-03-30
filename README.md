@@ -131,7 +131,7 @@ For more demanding projects you have the choice to install a real emulator.
 
 These are the options:
 
-- the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.15.1)
+- the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.15.2)
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.0)
 
 The different DeZog/emulator configurations have different advantages.
@@ -149,8 +149,6 @@ There are a few other extensions that are not required to work with DeZog but ma
 - [ASM Code Lens](https://github.com/maziac/asm-code-lens):
 	- Z80 assembler syntax highlighting
 	- completions, references, jump to label, renaming
-- [Z80 Unit-Tests](https://github.com/maziac/z80-unit-tests):
-	- an extension to start/debug Z80 unit tests from a graphical UI
 - [Z80 Instruction Set](https://github.com/maziac/z80-instruction-set):
 	- shows the opcode, affected flags and a description on hovering over a Z80 instruction
 - [Hex Hover Converter](https://github.com/maziac/hex-hover-converter):
@@ -230,9 +228,9 @@ I would like to thank a few people for their support
 # Tutorials
 
 Please note that the tutorials listed here are normally not updated when a new DeZog version arrives.
-Especially for changes in the 'launch.json' it might be some properties (names) have changed/removed/added.
+Especially for changes in the 'launch.json' it might happen that some properties (names) have changed/removed/added.
 
-Unfortunately all tutorials are a little bit outdated, i.e. there is none for Dezog v2.x yet only for the former 1.x versions. Any contributions are very welcome.
+Unfortunately all tutorials are a little bit outdated, i.e. there is none for Dezog v2.x yet only for the former 1.x versions. **Any contributions are very welcome.**
 
 I listed the tutorials here by date.
 
@@ -247,7 +245,7 @@ A great [tutorial](https://luckyredfish.com/coding-for-the-spectrum-next-emulato
 
 Date: Sep-2020, DeZog 1.4, Internal Z80 Simulator, ZEsarUX, CSpect
 
-A quite lengthy YouTube [video](https://www.youtube.com/watch?v=a16PG2YOqIg&t=4904s) showing a 'live' DeZog setup.
+A quite lengthy tutorial. But as a YouTube [video](https://www.youtube.com/watch?v=a16PG2YOqIg&t=4904s) it shows a 'live' DeZog setup.
 By [Retro Coder TV](https://www.twitch.tv/retrocodertv).
 
 

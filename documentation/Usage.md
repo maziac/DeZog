@@ -760,7 +760,8 @@ The remote type is "cspect".
 CSpect needs to run before the debug session starts and needs to be connected via a socket interface ([DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md)).
 CSpect does not offer a socket interface to DeZog by itself it needs the help of the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin).
 
-You need to install it first. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
+Since CSpect v2.15.2 the DeZogPlugin is included with CSpect.
+For earlier CSpect versions you would have to install it by yourself. Please see [here](https://github.com/maziac/DeZogPlugin/blob/master/Readme.md#plugin-installation).
 
 
 You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:
@@ -769,7 +770,7 @@ You need to enable CSpect in your Z80 program's launch.json configuration, e.g.:
 ~~~
 
 That should normally do.
-If you need to configure the port use:
+The default port is 11000. Only if you need to change that you would have to configure it in launch.json with:
 ~~~json
     "remoteType": "cspect",
     "cspect": {
@@ -778,11 +779,8 @@ If you need to configure the port use:
 ~~~
 
 The "cspect" configuration allows the following additional parameters:
-- "port": The CSpect DeZog plugin port. If not changed  this defaults to 10000.
-- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost".
-You don't have to enter a hostname, the default is "localhost".
-
-Note: with a new version of CSpect it can easily happen that the [Dezog CSpect Plugin](https://github.com/maziac/DeZogPlugin) will not work anymore, i.e. it is not started together with CSpect and thus the socket connection from DeZog fails. In that case you have to wait until a new version of the plugin is released or compile it yourself.
+- "port": The CSpect DeZog plugin port. If not changed  this defaults to 11000.
+- "hostname": The host's name. I.e. the IP of the machine that is running CSpect. If you are not doing any remote debugging this is typically "localhost" which is also the default. I.e. normally you don't have to enter a "hostname".
 
 
 #### Command line
