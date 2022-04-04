@@ -1,6 +1,8 @@
-; Example taken from sjasmplus documentation.
-; Values tweaked a little bit.
-; Mapping slot to 16k bank: ROM, 0, 5, entry bank
+; Program to test the nex file loading.
+; The created nex file is used in unit testing.
+; But the program can also be loaded in an emulator and tested.
+; Mapping slot to 16k banks: ROM, 5, 2, entry bank
+; Mapping to 8k banks: 254, 255, 10, 11, 4, 5, 2*entryBank, 2*entryBank+1
 
     SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
 
@@ -54,7 +56,7 @@ start:
     jr start
 
 
-    ; write everything into NEX file
+    ; Write everything into NEX file
     SAVENEX OPEN "main.nex", start, $6EDA, 52 /* Bank */
     SAVENEX CORE 3, 1, 5
     SAVENEX CFG 4, 1, 0, 1      ; green border, file handle in BC, reset NextRegs, 2MB required

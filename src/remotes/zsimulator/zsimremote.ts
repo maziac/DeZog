@@ -1085,6 +1085,14 @@ export class ZSimRemote extends DzrpRemote {
 			}
 		}
 
+		// Set the default slot/bank association
+		const entryBank8 = 2 * nexFile.entryBank;	// Convert 16k bank into 8k
+		const slotBanks = [254, 255, 10, 11, 4, 5, entryBank8, entryBank8 + 1];	// ROM, 5, 2, custom
+		for (let slot = 0; slot < 8; slot++) {
+			const bank8 = slotBanks[slot];
+			await this.sendDzrpCmdSetSlot(slot, bank8);
+		}
+
 		// Set the SP and PC registers
 		await this.sendDzrpCmdSetRegister(Z80_REG.SP, nexFile.sp);
 		await this.sendDzrpCmdSetRegister(Z80_REG.PC, nexFile.pc);
