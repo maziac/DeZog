@@ -184,7 +184,7 @@ Your assembler file:
     The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in parenthesis) directly or even a calculation, e.g. "label-2".
 
 - topOfStack: instead of a label you can also use a fixed number.
-- load: Load of a .nex, .sna (or .tap) file. See [launch.json - load](#launch-json---load)
+- load: Load of a .nex, .sna (or .tap) file. See [launch.json - load](#launchjson---load)
 Note: you can also omit this. In that case DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
 ~~~json
