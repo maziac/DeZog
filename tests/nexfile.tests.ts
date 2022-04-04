@@ -9,7 +9,7 @@ suite('NexFile related', () => {
 	test('NexFile - all used values', () => {
 		const nexFile = new NexFile();
 		nexFile.readFile('./tests/data/nexfiles/project/main.nex');
-		assert.equal(nexFile.entryBank, 52);
+		assert.equal(nexFile.entryBank, 42);
 		assert.equal(nexFile.borderColor, 4);
 		assert.equal(nexFile.pc, 0x7A12);
 		assert.equal(nexFile.sp, 0x6EDA);
@@ -18,9 +18,9 @@ suite('NexFile related', () => {
 		assert.equal(nexFile.memBanks.length, 5);
 		assert.equal(nexFile.memBanks[0].bank, 5);
 		assert.equal(nexFile.memBanks[1].bank, 2);
-		assert.equal(nexFile.memBanks[2].bank, 50);
-		assert.equal(nexFile.memBanks[3].bank, 51);
-		assert.equal(nexFile.memBanks[4].bank, 52);
+		assert.equal(nexFile.memBanks[2].bank, 40);
+		assert.equal(nexFile.memBanks[3].bank, 41);
+		assert.equal(nexFile.memBanks[4].bank, 42);
 	});
 
 
@@ -58,27 +58,26 @@ suite('NexFile related', () => {
 		const remote = new MockDzrpRemote() as any;
 		await remote.loadBinNex('./tests/data/nexfiles/project/main.nex');
 
-
 		assert.equal(remote.outSlotBanks[0], 254);
 		assert.equal(remote.outSlotBanks[1], 255);
 		assert.equal(remote.outSlotBanks[2], 10);
 		assert.equal(remote.outSlotBanks[3], 11);
 		assert.equal(remote.outSlotBanks[4], 4);
 		assert.equal(remote.outSlotBanks[5], 5);
-		assert.equal(remote.outSlotBanks[6], 2 * 52);
-		assert.equal(remote.outSlotBanks[7], 2 * 52 + 1);
+		assert.equal(remote.outSlotBanks[6], 2 * 42);
+		assert.equal(remote.outSlotBanks[7], 2 * 42 + 1);
 
 		assert.equal(remote.outBanks.size, 10);
 		assert.ok(remote.outBanks.has(2 * 5));
 		assert.ok(remote.outBanks.has(2 * 5 + 1));
 		assert.ok(remote.outBanks.has(2 * 2));
 		assert.ok(remote.outBanks.has(2 * 2 + 1));
-		assert.ok(remote.outBanks.has(2 * 50));
-		assert.ok(remote.outBanks.has(2 * 50 + 1));
-		assert.ok(remote.outBanks.has(2 * 51));
-		assert.ok(remote.outBanks.has(2 * 51 + 1));
-		assert.ok(remote.outBanks.has(2 * 52));
-		assert.ok(remote.outBanks.has(2 * 52 + 1));
+		assert.ok(remote.outBanks.has(2 * 40));
+		assert.ok(remote.outBanks.has(2 * 40 + 1));
+		assert.ok(remote.outBanks.has(2 * 41));
+		assert.ok(remote.outBanks.has(2 * 41 + 1));
+		assert.ok(remote.outBanks.has(2 * 42));
+		assert.ok(remote.outBanks.has(2 * 42 + 1));
 
 		assert.equal(remote.outBorderColor, 4);
 		assert.equal(remote.outPc, 0x7A12);
