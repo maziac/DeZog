@@ -8,52 +8,56 @@ suite('NexFile related', () => {
 
 	test('NexFile - all used values', () => {
 		const nexFile = new NexFile();
-		nexFile.readFile('./tests/data/nexfiles/project/example.nex');
-		assert.equal(nexFile.entryBank, 9);
+		nexFile.readFile('./tests/data/nexfiles/project/main.nex');
+		assert.equal(nexFile.entryBank, 52);
 		assert.equal(nexFile.borderColor, 4);
-		assert.equal(nexFile.pc, 0x7E12);
-		assert.equal(nexFile.sp, 0xFEDA);
+		assert.equal(nexFile.pc, 0x7A12);
+		assert.equal(nexFile.sp, 0x6EDA);
 
 		// Check the memory banks
-		assert.equal(nexFile.memBanks.length, 3);
+		assert.equal(nexFile.memBanks.length, 5);
 		assert.equal(nexFile.memBanks[0].bank, 5);
-		assert.equal(nexFile.memBanks[1].bank, 100);
-		assert.equal(nexFile.memBanks[2].bank, 101);
+		assert.equal(nexFile.memBanks[1].bank, 2);
+		assert.equal(nexFile.memBanks[2].bank, 50);
+		assert.equal(nexFile.memBanks[3].bank, 51);
+		assert.equal(nexFile.memBanks[4].bank, 52);
 	});
 
-	class MockDzrpRemote extends DzrpRemote {
-		public outBorderColor: number;
-		public outPc: number;
-		public outSp: number;
-		public outSlotBanks = new Array<number>(8);
-		public outBanks = new Set<number>();
-		public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
-			this.outBorderColor = borderColor;
-		}
-		public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
-			// Check that it is not assigned 2 times
-			assert.ok(!this.outBanks.has(bank));
-			this.outBanks.add(bank);
-		}
-		public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
-			this.outSlotBanks[slot] = bank;
-			return 0;
-		}
-		public async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
-			switch (regIndex) {
-				case Z80_REG.PC:
-					this.outPc = value;
-					break;
-				case Z80_REG.SP:
-					this.outSp = value;
-					break;
-			}
-		}
-	}
 
 	test('DzrpRemote - loadBinNex', async () => {
+		class MockDzrpRemote extends DzrpRemote {
+			public outBorderColor: number;
+			public outPc: number;
+			public outSp: number;
+			public outSlotBanks = new Array<number>(8);
+			public outBanks = new Set<number>();
+			public async sendDzrpCmdSetBorder(borderColor: number): Promise<void> {
+				this.outBorderColor = borderColor;
+			}
+			public async sendDzrpCmdWriteBank(bank: number, dataArray: Buffer | Uint8Array): Promise<void> {
+				// Check that it is not assigned 2 times
+				assert.ok(!this.outBanks.has(bank));
+				this.outBanks.add(bank);
+			}
+			public async sendDzrpCmdSetSlot(slot: number, bank: number): Promise<number> {
+				this.outSlotBanks[slot] = bank;
+				return 0;
+			}
+			public async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
+				switch (regIndex) {
+					case Z80_REG.PC:
+						this.outPc = value;
+						break;
+					case Z80_REG.SP:
+						this.outSp = value;
+						break;
+				}
+			}
+		}
+
 		const remote = new MockDzrpRemote() as any;
-		await remote.loadBinNex('./tests/data/nexfiles/project/example.nex');
+		await remote.loadBinNex('./tests/data/nexfiles/project/main.nex');
+
 
 		assert.equal(remote.outSlotBanks[0], 254);
 		assert.equal(remote.outSlotBanks[1], 255);
@@ -61,20 +65,24 @@ suite('NexFile related', () => {
 		assert.equal(remote.outSlotBanks[3], 11);
 		assert.equal(remote.outSlotBanks[4], 4);
 		assert.equal(remote.outSlotBanks[5], 5);
-		assert.equal(remote.outSlotBanks[6], 2 * 9);
-		assert.equal(remote.outSlotBanks[7], 2 * 9 + 1);
+		assert.equal(remote.outSlotBanks[6], 2 * 52);
+		assert.equal(remote.outSlotBanks[7], 2 * 52 + 1);
 
-		assert.equal(remote.outBanks.serializeState, 6);
+		assert.equal(remote.outBanks.size, 10);
 		assert.ok(remote.outBanks.has(2 * 5));
 		assert.ok(remote.outBanks.has(2 * 5 + 1));
-		assert.ok(remote.outBanks.has(2 * 100));
-		assert.ok(remote.outBanks.has(2 * 100 + 1));
-		assert.ok(remote.outBanks.has(2 * 101));
-		assert.ok(remote.outBanks.has(2 * 101 + 1));
+		assert.ok(remote.outBanks.has(2 * 2));
+		assert.ok(remote.outBanks.has(2 * 2 + 1));
+		assert.ok(remote.outBanks.has(2 * 50));
+		assert.ok(remote.outBanks.has(2 * 50 + 1));
+		assert.ok(remote.outBanks.has(2 * 51));
+		assert.ok(remote.outBanks.has(2 * 51 + 1));
+		assert.ok(remote.outBanks.has(2 * 52));
+		assert.ok(remote.outBanks.has(2 * 52 + 1));
 
 		assert.equal(remote.outBorderColor, 4);
-		assert.equal(remote.outPc, 0x7E12);
-		assert.equal(remote.outSp, 0xFEDA);
+		assert.equal(remote.outPc, 0x7A12);
+		assert.equal(remote.outSp, 0x6EDA);
 	});
 
 });

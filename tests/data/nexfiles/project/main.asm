@@ -61,5 +61,5 @@ start:
     SAVENEX CORE 3, 1, 5
     SAVENEX CFG 4, 1, 0, 1      ; green border, file handle in BC, reset NextRegs, 2MB required
     SAVENEX BAR 1, $E0, 50, 25  ; do load bar, red colour, start/load delays 50/25 frames
-    SAVENEX BANK 5, 0, 50, 51, 52    ; store the 16ki banks 5 (contains the code at 0x7E12), 100, 101
+    SAVENEX BANK 5, 2, 50, 51, 52    ; store the 16ki banks 5 (contains the code at 0x7E12), 100, 101
     SAVENEX CLOSE               ; (banks 100 and 101 are added just as example)
