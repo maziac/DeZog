@@ -1,0 +1,67 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "dezog",
+			"request": "launch",
+			"name": "CSpect - ZX Spectrum+Next",
+			"remoteType": "cspect",
+			"disassemblerArgs": {
+				"esxdosRst": true
+			},
+			"sjasmplus": [
+				{
+					"path": "main.sld"
+				}
+			],
+			"commandsAfterLaunch": [
+				"-logpoint enable",
+				"-assertion enable",
+				//"-wpmem enable",
+				"-mv $4000 4 $6000 4 $8000 4 $a000 4 $c000 4 $e000 4"
+			],
+			"startAutomatically": false,
+			"rootFolder": "${workspaceFolder}",
+			"load": "main.nex",
+			"topOfStack": "$6EDA"
+		},
+
+
+		{
+			"type": "dezog",
+			"request": "launch",
+			"name": "Simulator - ZX Spectrum+Next",
+			"remoteType": "zsim",
+			"zsim": {
+				"Z80N": true,
+				"visualMemory": true,
+				"memoryModel": "ZXNEXT",
+				"ulaScreen": true,
+				"zxBorderWidth": 20,
+				"vsyncInterrupt": true,
+				"zxKeyboard": true,
+				"zxBeeper": true
+			},
+			"disassemblerArgs": {
+				"esxdosRst": true
+			},
+			"sjasmplus": [
+				{
+					"path": "main.sld"
+				}
+			],
+			"commandsAfterLaunch": [
+				"-logpoint enable",
+				"-assertion enable",
+				//"-wpmem enable"
+			],
+			"startAutomatically": false,
+			"rootFolder": "${workspaceFolder}",
+			"load": "main.nex",
+			"topOfStack": "$6EDA"
+		}
+	]
+}

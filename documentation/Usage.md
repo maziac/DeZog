@@ -184,7 +184,7 @@ Your assembler file:
     The "topOfStack" is a string so that you can put a label name inside. But you can also set a number (in parenthesis) directly or even a calculation, e.g. "label-2".
 
 - topOfStack: instead of a label you can also use a fixed number.
-- load: The .nex, .sna (or .tap) file to load. On start of the debug session the file is loaded into the emulator. All emulators support SNA and NEX files. ZEsarUX can additionally load .tap files.
+- load: Load of a .nex, .sna (or .tap) file. See [launch.json - load](#launch-json---load)
 Note: you can also omit this. In that case DeZog attaches to the emulator without loading a program. Breakpoints and the list/assembler files can still be set.
 - loadObjs: Instead of a .nex, .sna or .tap file you can also directly load binary object files. You can load several object files and you have to give path and start address for each file, e.g.:
 ~~~json
@@ -216,6 +216,35 @@ Big values are typically addresses. Here you can give the boundary between these
 
 Some pre-defined launch.json debug configuration exist as configuration snippets and can be chosen by starting to type 'dezog' inside the launch.json or by using the "Add Configuration..." button:
 ![](images/conf_snippet.gif)
+
+#### launch.json - load
+
+In launch.json use
+~~~
+    "load": "<filename>"
+~~~
+
+to either load a .nex, .sna (or .tap) file. On start of the debug session the file is loaded into the emulator.
+.tap is only supported on ZEsarUX.
+On ZEsarUX the .nex, .sna or .tap file is loaded via ZEsarUX's "smartload" command.
+This will give the best emulation for .nex (and .tap) loading as the nex loading can be emulated as well.
+
+For all other remotes (cspect, zsim and zxnext) the .nex or .sna file loading is mainly copying the data into the emulators memory, setting a few registers and starting it.
+For the .sna file this should be fine.
+
+For the .nex file there can be some missing initializations.
+Most important to note are:
+- The loading screens are not displayed
+- The 'file handle address' (140) is ignored completely.
+
+In fact, only these action are executed by DeZog on .nex file loading:
+- The data is written to the right banks
+- The border color is set
+- The PC and SP are set according to the .nex file
+- The .nex file's 'entry bank' is set. I.e. the 16k slots are set to the banks ROM, 0, 5 and 'entry bank'.
+
+For a full description of the .nex file format see:
+[NEX File Format](https://wiki.specnext.dev/NEX_file_format)
 
 
 ### Assembler Configuration
