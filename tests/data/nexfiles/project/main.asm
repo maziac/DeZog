@@ -8,58 +8,58 @@
 
 	DEVICE ZXSPECTRUMNEXT
 
-    MMU $4000, 100
+    MMU $4000, 80
     ORG $4000
-    defb 100, 100, 0    ; $64
-    MMU $6000, 101
+    defb 80, 80, 0    ; $50
+    MMU $6000, 81
     ORG $6000
-    defb 101, 101, 0    ; $65
+    defb 81, 81, 0    ; $51
 
-    MMU $8000, 102
+    MMU $8000, 82
     ORG $8000
-    defb 102, 102, 0   ; $66
-    MMU $A000, 103
+    defb 82, 82, 0   ; $52
+    MMU $A000, 83
     ORG $A000
-    defb 103, 103, 0   ; $67
+    defb 83, 83, 0   ; $53
 
-    MMU $C000, 104
+    MMU $C000, 84
     ORG $C000
-    defb 104, 104, 0   ; $68
-    MMU $E000, 105
+    defb 84, 84, 0   ; $54
+    MMU $E000, 85
     ORG $E000
-    defb 105, 105, 0   ; $69
+    defb 85, 85, 0   ; $55
 
     MMU $6000, 11
     ORG $7A12
 start:
     ld a,($C000)
-    nop ; ASSERTION a == 104
+    nop ; ASSERTION a == 84
     ld a,($E000)
-    nop ; ASSERTION a == 105
+    nop ; ASSERTION a == 85
 
-    nextreg $56, 100
-    nextreg $57, 100 + 1
+    nextreg $56, 80
+    nextreg $57, 80 + 1
     ld a,($C000)
-    nop ; ASSERTION a == 100
+    nop ; ASSERTION a == 80
     ld a,($E000)
-    nop ; ASSERTION a == 101
+    nop ; ASSERTION a == 81
 
-    nextreg $56, 102
-    nextreg $57, 102 + 1
+    nextreg $56, 82
+    nextreg $57, 82 + 1
     ld a,($C000)
-    nop ; ASSERTION a == 102
+    nop ; ASSERTION a == 82
     ld a,($E000)
-    nop ; ASSERTION a == 103
+    nop ; ASSERTION a == 83
 
-    nextreg $56, 104
-    nextreg $57, 104 + 1
+    nextreg $56, 84
+    nextreg $57, 84 + 1
     jr start
 
 
     ; Write everything into NEX file
-    SAVENEX OPEN "main.nex", start, $6EDA, 52 /* Bank */
+    SAVENEX OPEN "main.nex", start, $6EDA, 42 /* Bank */
     SAVENEX CORE 3, 1, 5
     SAVENEX CFG 4, 1, 0, 1      ; green border, file handle in BC, reset NextRegs, 2MB required
     SAVENEX BAR 1, $E0, 50, 25  ; do load bar, red colour, start/load delays 50/25 frames
-    SAVENEX BANK 5, 2, 50, 51, 52    ; store the 16ki banks 5 (contains the code at 0x7E12), 100, 101
+    SAVENEX BANK 5, 2, 40, 41, 42    ; store the 16ki banks 5 (contains the code at 0x7E12), 100, 101
     SAVENEX CLOSE               ; (banks 100 and 101 are added just as example)

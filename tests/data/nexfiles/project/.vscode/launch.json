@@ -7,7 +7,7 @@
 		{
 			"type": "dezog",
 			"request": "launch",
-			"name": "CSpect - ZX Spectrum+Next",
+			"name": "CSpect",
 			"remoteType": "cspect",
 			"disassemblerArgs": {
 				"esxdosRst": true
@@ -28,7 +28,6 @@
 			"load": "main.nex",
 			"topOfStack": "$6EDA"
 		},
-
 
 		{
 			"type": "dezog",
@@ -62,6 +61,34 @@
 			"rootFolder": "${workspaceFolder}",
 			"load": "main.nex",
 			"topOfStack": "$6EDA"
-		}
+		},
+
+		{
+			"type": "dezog",
+			"request": "launch",
+			"name": "ZX Next",
+			"remoteType": "zxnext",
+			"zxnext": {
+				"serial": "/dev/tty.usbserial-AQ007PCD"
+			},
+			"disassemblerArgs": {
+				"esxdosRst": true
+			},
+			"sjasmplus": [
+				{
+					"path": "main.sld"
+				}
+			],
+			"commandsAfterLaunch": [
+				"-logpoint enable",
+				"-assertion enable",
+				"-wpmem enable",
+				"-mv $4000 4 $6000 4 $8000 4 $a000 4 $c000 4 $e000 4"
+			],
+			"startAutomatically": false,
+			"rootFolder": "${workspaceFolder}",
+			"load": "main.nex",
+			"topOfStack": "$6EDA"
+		},
 	]
 }
