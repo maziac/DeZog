@@ -55,7 +55,8 @@
 			"commandsAfterLaunch": [
 				"-logpoint enable",
 				"-assertion enable",
-				//"-wpmem enable"
+				"-wpmem enable",
+				"-mv $4000 4 $6000 4 $8000 4 $a000 4 $c000 4 $e000 4"
 			],
 			"startAutomatically": false,
 			"rootFolder": "${workspaceFolder}",

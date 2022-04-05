@@ -8,6 +8,19 @@
 
 	DEVICE ZXSPECTRUMNEXT
 
+
+    ; Default banks
+    ORG $4000
+    defb 1, 1, 0
+    ORG $6000
+    defb 2, 2, 0
+
+    ORG $8000
+    defb 3, 3, 0
+    ORG $A000
+    defb 4, 4, 0
+
+    ; Set banks 80-82
     MMU $4000, 80
     ORG $4000
     defb 80, 80, 0    ; $50
@@ -32,6 +45,17 @@
     MMU $6000, 11
     ORG $7A12
 start:
+    ; Default banks
+    ld a,($4000)
+    nop ; ASSERTION a == 1
+    ld a,($6000)
+    nop ; ASSERTION a == 2
+    ld a,($8000)
+    nop ; ASSERTION a == 3
+    ld a,($A000)
+    nop ; ASSERTION a == 4
+
+    ; Custom banks
     ld a,($C000)
     nop ; ASSERTION a == 84
     ld a,($E000)
