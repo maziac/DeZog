@@ -221,7 +221,7 @@ Some pre-defined launch.json debug configuration exist as configuration snippets
 
 In launch.json use
 ~~~
-    "load": "<filename>"
+    "load": "<filename.ext>"
 ~~~
 
 to either load a .nex, .sna (or .tap) file. On start of the debug session the file is loaded into the emulator.

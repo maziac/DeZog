@@ -240,7 +240,7 @@ export class DebugSessionClass extends DebugSession {
 	 * Not called:
 	 * - If user presses circled arrow/restart.
 	 */
-	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
+	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, _args: DebugProtocol.DisconnectArguments): Promise<void> {
 		// Disconnect Remote etc.
 		await this.disconnectAll();
 		// Send response
@@ -293,7 +293,7 @@ export class DebugSessionClass extends DebugSession {
 	 * 'initialize' request.
 	 * Respond with supported features.
 	 */
-	protected async initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): Promise<void> {
+	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
@@ -752,7 +752,7 @@ export class DebugSessionClass extends DebugSession {
 	/**
 	 * Returns the stack frames.
 	 */
-	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): Promise<void> {
+	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, _args: DebugProtocol.StackTraceArguments): Promise<void> {
 		// vscode sometimes sends 2 stack trace requests one after the other. Because the lists are cleared this can lead to race conditions.
 		this.stackTraceResponses.push(response);
 		if (this.stackTraceResponses.length > 1)
@@ -1121,7 +1121,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	public async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments): Promise<void> {
+	public async continueRequest(response: DebugProtocol.ContinueResponse, _args: DebugProtocol.ContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			let event;
 
@@ -1221,7 +1221,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected async pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments): Promise<void> {
+	protected async pauseRequest(response: DebugProtocol.PauseResponse, _args: DebugProtocol.PauseArguments): Promise<void> {
 		try {
 			this.pauseRequested = true;
 			// Pause the remote or the history
@@ -1243,7 +1243,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): Promise<void> {
+	protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, _args: DebugProtocol.ReverseContinueArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 			// Output
 			await this.startStepInfo('Reverse-Continue', true);
@@ -1333,7 +1333,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response	Sends the response. If undefined nothing is sent. Used by Unit Tests.
 	  * @param args
 	  */
-	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments): Promise<void> {
+	protected async nextRequest(response: DebugProtocol.NextResponse, _args: DebugProtocol.NextArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
 			await this.startStepInfo('Step-Over');
@@ -1489,7 +1489,7 @@ export class DebugSessionClass extends DebugSession {
 				// CPU clock
 				let clockStr = (cpuFreq * 1E-6).toPrecision(2);
 				if (clockStr.endsWith('.0'))
-					clockStr = clockStr.substr(0, clockStr.length - 2);
+					clockStr = clockStr.substring(0, clockStr.length - 2);
 				tStatesText += ', time: ' + time.toPrecision(3) + unit + '@' + clockStr + 'MHz';
 			}
 		}
@@ -1542,7 +1542,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments): Promise<void> {
+	protected async stepInRequest(response: DebugProtocol.StepInResponse, _args: DebugProtocol.StepInArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
 			await this.startStepInfo('Step-Into');
@@ -1594,7 +1594,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param response
 	 * @param args
 	 */
-	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments): Promise<void> {
+	protected async stepOutRequest(response: DebugProtocol.StepOutResponse, _args: DebugProtocol.StepOutArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
 			await this.startStepInfo('Step-Out');
@@ -1641,7 +1641,7 @@ export class DebugSessionClass extends DebugSession {
 	  * @param response
 	  * @param args
 	  */
-	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): Promise<void> {
+	protected async stepBackRequest(response: DebugProtocol.StepBackResponse, _args: DebugProtocol.StepBackArguments): Promise<void> {
 		this.handleRequest(response, async () => {
 
 			await this.startStepInfo('Step-Back', true);
@@ -1677,7 +1677,7 @@ export class DebugSessionClass extends DebugSession {
 	 * For structures or memory array is is already supported by the
 	 * StructVar and MemDumpVar.
 	 */
-	protected async setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, request?: DebugProtocol.Request) {
+	protected async setExpressionRequest(response: DebugProtocol.SetExpressionResponse, args: DebugProtocol.SetExpressionArguments, _request?: DebugProtocol.Request) {
 		response.success = false;	// will be changed if successful.
 		// Get immediate value
 		const item = this.constExpressionsList.get(args.expression);
@@ -1716,7 +1716,7 @@ export class DebugSessionClass extends DebugSession {
 		let viewTitle;
 		if (tokens[0] == '-view') {
 			tokens.shift();
-			viewTitle = cmd.substr(1) + ' ' + tokens.join(' ');	// strip '-'
+			viewTitle = cmd.substring(1) + ' ' + tokens.join(' ');	// strip '-'
 		}
 
 		// All commands start with "-"
@@ -2133,7 +2133,7 @@ export class DebugSessionClass extends DebugSession {
 	 * @param tokens The arguments. Unused.
 	   * @param A Promise with a text to print.
 	 */
-	protected async evalHelp(tokens: Array<string>): Promise<string> {
+	protected async evalHelp(_tokens: Array<string>): Promise<string> {
 		const output =
 			`Allowed commands are:
 "-ASSERTION enable|disable|status":
