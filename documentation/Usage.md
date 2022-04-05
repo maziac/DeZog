@@ -243,6 +243,8 @@ In fact, only these action are executed by DeZog on .nex file loading:
 - The PC and SP are set according to the .nex file
 - The .nex file's 'entry bank' is set. I.e. the 16k slots are set to the banks ROM, 0, 5 and 'entry bank'.
 
+On the other hand, as nex file loading is mainly a copy into the emulator's memory, it does not require any ZX Next OS. I.e. this can simplify the overall emulator setup.
+
 For a full description of the .nex file format see:
 [NEX File Format](https://wiki.specnext.dev/NEX_file_format)
 
@@ -540,7 +542,6 @@ It allows to test programs that does not make use of special HW features like th
 It specifically does not support:
 - ZX Next HW (other than memory bank switching)
 - Loading of .tap/.tzx files
-- Audio
 
 
 Performance:
