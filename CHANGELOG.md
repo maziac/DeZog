@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.6.1
+- entry point
+- Disallow starting a 2nd instance of DeZog.
+
 # 2.6.0
 - zxnext configuration: The ZXNext can be connected via serial interface directly from DeZog. There is no need anymore to go through the extra program DeZogSerialInterface.
 For this there are changes to the "zxnext" launch.json configuration.

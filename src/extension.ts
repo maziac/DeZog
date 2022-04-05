@@ -280,30 +280,31 @@ class DeZogInlineValuesProvider implements vscode.InlineValuesProvider {
  */
 class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 
+	// Is set if a DeZog instance is already running.
 	private _server?: Net.Server;
 
 	/**
 	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
- 	* soccket connection to it.
+ 	* socket connection to it.
  	*/
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-
-		// start port listener on launch of first debug session
+		// Check if (DeZog) already running
 		if (!this._server) {
-
-			// start listening on a random port
+			// Start port listener on launch of first debug session
+			// Start listening on a random port
 			this._server = Net.createServer(socket => {
 				const session = new DebugSessionClass();
 				session.setRunAsServer(true);
 				session.start(<NodeJS.ReadableStream>socket, socket);
 			}).listen(0);
+
+			// make VS Code connect to debug server instead of launching debug adapter
+			const addrInfo = this._server.address() as Net.AddressInfo;
+			Utility.assert(typeof addrInfo != 'string');
+			config.debugServer = addrInfo.port;
 		}
 
-		// make VS Code connect to debug server instead of launching debug adapter
-		const addrInfo = this._server.address() as Net.AddressInfo;
-		Utility.assert(typeof addrInfo != 'string');
-		config.debugServer = addrInfo.port;
-
+		// If DeZog is already running, no port is set, which makes the caller silently stop
 		return config;
 	}
 

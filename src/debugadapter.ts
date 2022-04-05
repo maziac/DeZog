@@ -295,6 +295,14 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	protected async initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): Promise<void> {
 
+		// Check if DeZog is already running
+		if (!response.success) {
+			response.success = false;
+			response.message = 'DeZog is already active. Only 1 instance is allowed.';
+			this.sendResponse(response);
+			return;
+		}
+
 		//const dbgSession = vscode.debug.activeDebugSession;
 		// build and return the capabilities of this debug adapter:
 		response.body = response.body || {};
