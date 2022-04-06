@@ -125,7 +125,7 @@ export class Z80RegistersClass {
 	/**
 	 * Creates a RegisterData object from the given registers.
 	 */
-	public static getRegisterData(PC: number, SP: number,
+	public static getRegisterData(PC: number, SP: number,	// NOSONAR
 		AF: number, BC: number, DE: number, HL: number,
 		IX: number, IY: number,
 		AF2: number, BC2: number, DE2: number, HL2: number,

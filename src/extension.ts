@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
-import { DebugSessionClass } from './debugadapter';
+import {WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken} from 'vscode';
+import {DebugSessionClass} from './debugadapter';
 import * as Net from 'net';
-import { DecorationClass, Decoration } from './decoration';
-import {LogTransport, LogCustomCode, LogGlobal } from './log';
+import {DecorationClass, Decoration} from './decoration';
+import {LogTransport, LogCustomCode, LogGlobal} from './log';
 import {Utility} from './misc/utility';
 import {PackageInfo} from './whatsnew/packageinfo';
 import {WhatsNewView} from './whatsnew/whatsnewview';
@@ -13,25 +13,6 @@ import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {SerialPort} from 'serialport';
 
-/*
-let aa = 1;
-
-(() => {
-	let aa1 = aa;
-
-	function f() {
-		let aaf = aa1;
-	};
-
-	(() => {
-		let aa2 = aa;
-		let aa3 = aa1;
-		f();
-	})();
-})();
-*/
-
-//var thisline = new Error().lineNumber;
 
 
 /**
@@ -47,19 +28,6 @@ let aa = 1;
  */
 export function activate(context: vscode.ExtensionContext) {
 	//console.log("Extension ACTIVATED");
-
-	/*
-	let ut;
-	try {
-		ut = Utility.require('/Volumes/SDDPCIE2TB/Projects/Z80/vscode/DeZog/src/firsttests2.ut.jsm');
-
-		//ut.suiteStack[0].func();
-	}
-	catch(e) {
-		console.log(e);
-	}
-	ut = ut;
-	*/
 
 	// Init package info
 	PackageInfo.Init(context);
@@ -292,7 +260,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 			// Start port listener on launch of first debug session
 			// Start listening on a random port
 			this._server = Net.createServer(socket => {
-				const session = new DebugSessionClass();
+				const session = DebugSessionClass.singleton();
 				session.setRunAsServer(true);
 				session.start(<NodeJS.ReadableStream>socket, socket);
 			}).listen(0);

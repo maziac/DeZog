@@ -49,11 +49,11 @@ enum DbgAdapterState {
  */
 export class DebugSessionClass extends DebugSession {
 	/// The state of the debug adapter (unit tests or not)
-	protected static state = DbgAdapterState.NORMAL;
+	protected state = DbgAdapterState.NORMAL;
 
 	/// Functions set in 'unitTestsStart'. Will be called after debugger
 	/// is started and initialized.
-	protected static unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
+	protected unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
 	protected dasmAddressQueue = new Array<number>();
@@ -110,6 +110,17 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
+	 * Create and return the singleton object.
+	 */
+	public static singleton(): DebugSessionClass {
+		if(!this.debugAdapterSingleton)
+			this.debugAdapterSingleton = new DebugSessionClass();
+		return this.debugAdapterSingleton;
+	}
+	protected static debugAdapterSingleton: DebugSessionClass;
+
+
+	/**
 	 * Creates a new debug adapter that is used for one debug session.
 	 * We configure the default implementation of a debug adapter here.
 	 */
@@ -120,19 +131,15 @@ export class DebugSessionClass extends DebugSession {
 		this.setDebuggerColumnsStartAt1(false);
 	}
 
-		public dispose() {
-			console.log('dispose');
-		}
 
 	/**
 	 * Start the unit tests.
 	 * @param configName The debug launch configuration name.
-	 * @param handler
 	 * @returns If it was not possible to start unit test: false.
 	 */
-	public static unitTestsStart(configName: string): Promise<DebugSessionClass> {
+	public unitTestsStart(configName: string): Promise<DebugSessionClass> {
 		// Return if currently a debug session is running
-		if (vscode.debug.activeDebugSession)
+		if (vscode.debug.activeDebugSession)	// TODO: REMOVE
 			throw Error("There is already an active debug session.");
 		if (this.state != DbgAdapterState.NORMAL)
 			throw Error("Debugger state is wrong.");
@@ -144,14 +151,17 @@ export class DebugSessionClass extends DebugSession {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(rootFolderUri);
 		Utility.assert(workspaceFolder);
 
+
+		// The promise is fulfilled after launch of the debugger.
+		const res = new Promise<DebugSessionClass>((resolve, reject) => {
+			new PromiseCallbacks<DebugSessionClass>(this, 'unitTestsStartCallbacks', resolve, reject);	// NOSONAR
+		});
+
 		// Start debugger
 		this.state = DbgAdapterState.UNITTEST;
 		vscode.debug.startDebugging(workspaceFolder, configName);
 
-		// The promise is fulfilled after launch of the debugger.
-		return new Promise<DebugSessionClass>((resolve, reject) => {
-			new PromiseCallbacks<DebugSessionClass>(this, 'unitTestsStartCallbacks', resolve, reject);	// NOSONAR
-		});
+		return res;
 	}
 
 
@@ -276,7 +286,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Clear all decorations
-		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+		if (this.state == DbgAdapterState.UNITTEST) {
 			// Cancel unit tests
 			await Z80UnitTestRunner.cancelUnitTests();
 			// Clear decoration
@@ -285,7 +295,7 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			Decoration?.clearAllDecorations();
 		}
-		DebugSessionClass.state = DbgAdapterState.NORMAL;
+		this.state = DbgAdapterState.NORMAL;
 	}
 
 
@@ -527,7 +537,7 @@ export class DebugSessionClass extends DebugSession {
 		catch (err) {
 			// Some error occurred during loading, e.g. file not found.
 			//	this.terminate(err.message);
-			DebugSessionClass.unitTestsStartCallbacks?.reject(err);
+			this.unitTestsStartCallbacks?.reject(err);
 			return err.message;
 		}
 
@@ -590,7 +600,7 @@ export class DebugSessionClass extends DebugSession {
 				if (Remote instanceof ZSimRemote) {
 					// Start custom code (if not unit test)
 					const zsim = Remote;
-					if (DebugSessionClass.state == DbgAdapterState.NORMAL) {
+					if (this.state == DbgAdapterState.NORMAL) {
 						// Special handling for zsim: Re-init custom code.
 						zsim.customCode?.execute();
 					}
@@ -611,8 +621,8 @@ export class DebugSessionClass extends DebugSession {
 
 				// Check if program should be automatically started
 				StepHistory.clear();
-				if (DebugSessionClass.unitTestsStartCallbacks) {
-					DebugSessionClass.unitTestsStartCallbacks.resolve(this);
+				if (this.unitTestsStartCallbacks) {
+					this.unitTestsStartCallbacks.resolve(this);
 				}
 				else {
 					if (Settings.launch.startAutomatically) {
@@ -640,7 +650,7 @@ export class DebugSessionClass extends DebugSession {
 				const error = e.message || "Error";
 				Remote.terminate('Init remote: ' + error);
 				reject(e);
-				DebugSessionClass.unitTestsStartCallbacks?.reject(e);
+				DebugSessionClass.singleton().unitTestsStartCallbacks?.reject(e);
 			}
 		});
 	}
@@ -1190,7 +1200,7 @@ export class DebugSessionClass extends DebugSession {
 		await this.endStepInfo();
 
 		// Check if in unit test mode
-		if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+		if (this.state == DbgAdapterState.UNITTEST) {
 			const finished = await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			if (!finished) {
 				this.sendEventBreakAndUpdate();
@@ -1418,7 +1428,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+			if (this.state == DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
 			}
 
@@ -1587,7 +1597,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+			if (this.state == DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReason);
 			}
 
@@ -1634,7 +1644,7 @@ export class DebugSessionClass extends DebugSession {
 			}
 
 			// Check if in unit test mode
-			if (DebugSessionClass.state == DbgAdapterState.UNITTEST) {
+			if (this.state == DbgAdapterState.UNITTEST) {
 				await Z80UnitTestRunner.dbgCheckUnitTest(breakReasonString);
 			}
 
@@ -3387,3 +3397,4 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 DebugSessionClass.run(DebugSessionClass);
+

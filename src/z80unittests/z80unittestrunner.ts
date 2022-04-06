@@ -414,7 +414,7 @@ export class Z80UnitTestRunner {
 		this.debugAdapter = undefined as any;
 		try {
 			const configName = testConfig.testItem.label;
-			this.debugAdapter = await DebugSessionClass.unitTestsStart(configName);
+			this.debugAdapter = await DebugSessionClass.singleton().unitTestsStart(configName);
 		}
 		catch (e) {	// NOSONAR
 			throw e;
