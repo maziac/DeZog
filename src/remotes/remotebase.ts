@@ -274,7 +274,7 @@ export class RemoteBase extends EventEmitter {
 				// Now check more thoroughly: group1=address, group3=length, group5=access, group7=condition
 				//const match = /^WPMEM(?=[,\s]|$)\s*([^\s,]*)?(\s*,\s*([^\s,]*)(\s*,\s*([^\s,]*)(\s*,\s*([^,]*))?)?)?/.exec(entry.line)
 				// All lines start with WPMEM, remove it
-				const line = entry.line.substr(5);
+				const line = entry.line.substring(5);
 				const subParts = line.split(',').map(s => s.trim());
 				// Get arguments
 				let addressString = subParts[0];

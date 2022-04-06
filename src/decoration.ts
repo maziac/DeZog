@@ -522,7 +522,7 @@ export class DecorationClass {
 			// Get file location for address
 			//const location = Labels.getFileAndLineForAddress(addr);
 			const k = locString.indexOf(';');
-			const filename = locString.substr(k + 1);
+			const filename = locString.substring(k + 1);
 			if (filename.length == 0)
 				break;
 			// Get filename set

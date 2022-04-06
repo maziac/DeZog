@@ -496,7 +496,7 @@ export class ZesaruxSocket extends Socket {
 				continue;
 			}
 			// Log found -> forward log
-			const log = this.receivedDataChunk.substr(p+lenLog, k-p-lenLog);	// Without '\n'
+			const log = this.receivedDataChunk.substring(p+lenLog, k);	// Without '\n'
 			this.emit('log', log);
 			// Remove log from string
 			this.receivedDataChunk = this.receivedDataChunk.substring(0,p) + this.receivedDataChunk.substring(k+1);	// With '\n'

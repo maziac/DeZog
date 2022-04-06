@@ -23,7 +23,7 @@ export enum Z80_REG {
 	IXL, IXH, IYL, IYH,
 	F2, A2, C2, B2, E2, D2, L2, H2,
 	R, I,
-};
+}
 
 
 
@@ -89,8 +89,8 @@ export class Z80RegistersClass {
 	 * the RegisterData.
 	 */
 	private _decoder: DecodeRegisterData;
-	public get decoder(): DecodeRegisterData {return this._decoder};
-	public set decoder(value: DecodeRegisterData) {this._decoder=value;};
+	public get decoder(): DecodeRegisterData {return this._decoder}
+	public set decoder(value: DecodeRegisterData) {this._decoder=value;}
 
 
 	/**
@@ -98,6 +98,7 @@ export class Z80RegistersClass {
      * @param slotCount The number of used slots (used for memory banks).
 	 */
 	constructor() {
+		//
 	}
 
 
@@ -179,7 +180,7 @@ export class Z80RegistersClass {
 				let keyWo = regName;
 				let rLen = keyWo.length;
 				if (keyWo[rLen - 1] == '\'')
-					keyWo = keyWo.substr(0, rLen - 1);	// Remove the "'" in the register name
+					keyWo = keyWo.substring(0, rLen - 1);	// Remove the "'" in the register name
 				const match = regRegex.exec(keyWo);
 				if (match == undefined)
 					continue;	// no match

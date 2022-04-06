@@ -93,7 +93,7 @@ export class Utility {
 		if (k < 0)
 			return line;	// no comment
 		// Return anything but the comment
-		return line.substr(0, k);
+		return line.substring(0, k);
 	}
 
 
@@ -412,12 +412,13 @@ export class Utility {
 		while (replacement = data.shift()) {
 			const offset = offsets.shift() as number;
 			const length = offset - i;
-			result += logString.substr(i, length);
+			//result += logString.substr(i, length);
+			result += logString.substring(i, i+length);
 			i = offset;
 			result += replacement;
 		}
 		// Add last
-		result += logString.substr(i);
+		result += logString.substring(i);
 
 		return result;
 	}
@@ -618,7 +619,7 @@ export class Utility {
 			let usedValue;
 			let usedSize;
 			let modifier = innerMatch[1];	// e.g. 'b@:' or 'w@:'
-			modifier = (modifier == null) ? '' : modifier.substr(0, modifier.length - 1);
+			modifier = (modifier == null) ? '' : modifier.substring(0, modifier.length - 1);
 			switch (modifier) {
 				case 'b@':
 					usedValue = wordAtAddress & 0xFF;	// use byte at address
@@ -637,9 +638,9 @@ export class Utility {
 			// Continue formatting
 			const formatting = innerMatch[2];	// e.g. 'hex' or 'name' or the pre-strign for labels
 			let innerLabelSeparator = innerMatch[3];	// e.g. ', '
-			innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substr(1);
+			innerLabelSeparator = (innerLabelSeparator == null) ? '' : innerLabelSeparator.substring(1);
 			let endLabelSeparator = innerMatch[4];	// e.g. ', '
-			endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substr(1);
+			endLabelSeparator = (endLabelSeparator == null) ? '' : endLabelSeparator.substring(1);
 			switch (formatting) {
 				case 'name':
 					return name + restP;
@@ -851,7 +852,7 @@ export class Utility {
 			// If window paths, then make sure both path start with lower case letters for comparison. rootPath does already.
 			const lcFilePath = UnifiedPath.getUnifiedPath(filePath);
 			if (lcFilePath.startsWith(rootPath))
-				filePath = filePath.substr(rootPath.length);
+				filePath = filePath.substring(rootPath.length);
 		}
 		return filePath;
 	}
@@ -1123,8 +1124,8 @@ export class Utility {
 	public static getAssertionFromCondition(bpCondition: string | undefined) {
 		if (!bpCondition)
 			return '';
-		let assertionCond = bpCondition.substr(2);	// cut off "!("
-		assertionCond = assertionCond.substr(0, assertionCond.length - 1);	// cut off trailing ")"
+		let assertionCond = bpCondition.substring(2);	// cut off "!("
+		assertionCond = assertionCond.substring(0, assertionCond.length - 1);	// cut off trailing ")"
 		return assertionCond;
 	}
 
