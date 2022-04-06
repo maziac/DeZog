@@ -53,8 +53,6 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Functions set in 'unitTestsStart'. Will be called after debugger
 	/// is started and initialized.
-	//protected static unitTestStartResolve: ((da: DebugSessionClass) => void) | undefined;
-	//protected static unitTestStartReject: ((reason: any) => void) | undefined;
 	protected static unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
 	/// The address queue for the disassembler. This contains all stepped addresses.
@@ -122,6 +120,9 @@ export class DebugSessionClass extends DebugSession {
 		this.setDebuggerColumnsStartAt1(false);
 	}
 
+		public dispose() {
+			console.log('dispose');
+		}
 
 	/**
 	 * Start the unit tests.
@@ -236,9 +237,8 @@ export class DebugSessionClass extends DebugSession {
 	 * End forcefully.
 	 * Is called
 	 * - when user presses red square
-	 * - when the ZEsarUX socket connection is terminated
-	 * Not called:
-	 * - If user presses circled arrow/restart.
+	 * - when the socket connection is terminated
+	 * - If user presses circled arrow/restart
 	 */
 	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, _args: DebugProtocol.DisconnectArguments): Promise<void> {
 		// Disconnect Remote etc.

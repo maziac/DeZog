@@ -1,8 +1,8 @@
 # Changelog
 
 # 2.6.1
-- entry point
-- Disallow starting a 2nd instance of DeZog.
+- Fix #84: The 'entry point' bank is now set after loading the nex file as it should be.
+- Disallowed starting a 2nd instance of DeZog.
 
 # 2.6.0
 - zxnext configuration: The ZXNext can be connected via serial interface directly from DeZog. There is no need anymore to go through the extra program DeZogSerialInterface.

@@ -57,6 +57,7 @@ export class PromiseCallbacks<T> {
 	 * Sets a timeout. After the timeout the Promise will be rejected.
 	 * @param timeout time in ms.
 	 */
+	/*
 	public timeoutAfter(timeout: number) {
 		// Set time out
 		const timeoutHandle = setTimeout(() => {
@@ -79,5 +80,5 @@ export class PromiseCallbacks<T> {
 			}
 		}
 	}
-
+	*/
 }

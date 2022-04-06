@@ -288,7 +288,6 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
  	* socket connection to it.
  	*/
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-		// Check if (DeZog) already running
 		if (!this._server) {
 			// Start port listener on launch of first debug session
 			// Start listening on a random port
@@ -297,16 +296,15 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 				session.setRunAsServer(true);
 				session.start(<NodeJS.ReadableStream>socket, socket);
 			}).listen(0);
-
-			// make VS Code connect to debug server instead of launching debug adapter
-			const addrInfo = this._server.address() as Net.AddressInfo;
-			Utility.assert(typeof addrInfo != 'string');
-			config.debugServer = addrInfo.port;
 		}
 
-		// If DeZog is already running, no port is set, which makes the caller silently stop
+		// Make VS Code connect to debug server instead of launching debug adapter
+		const addrInfo = this._server.address() as Net.AddressInfo;
+		Utility.assert(typeof addrInfo != 'string');
+		config.debugServer = addrInfo.port;
 		return config;
 	}
+
 
 	/**
 	 * End.
