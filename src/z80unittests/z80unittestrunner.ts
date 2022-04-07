@@ -280,7 +280,7 @@ export class Z80UnitTestRunner {
 		this.testConfig = testConfig;
 
 		// Terminate any probably runnning instance
-		await this.terminateRemote();
+		await DebugSessionClass.singleton().terminateRemote();
 		this.debugAdapter = undefined as any;
 
 		// Prepare running of the test case
@@ -405,7 +405,7 @@ export class Z80UnitTestRunner {
 		this.testConfig = testConfig;
 
 		// Terminate any probably running instance
-		await this.terminateRemote();
+		await DebugSessionClass.singleton().terminateRemote();
 
 		// Setup root folder
 		Utility.setRootPath(testConfig.wsFolder);
@@ -446,38 +446,6 @@ export class Z80UnitTestRunner {
 		catch (e) {	// NOSONAR
 			throw e;
 		}
-	}
-
-
-	/**
-	 * Checks if the debugger is active. If yes terminates it and
-	 * executes the unit tests.
-	 */
-	protected static async terminateRemote(): Promise<void> {
-		return new Promise<void>(async resolve => {
-			// Wait until vscode debugger has stopped.
-			if (Remote) {
-				// Terminate emulator
-				await Remote.terminate();
-				RemoteFactory.removeRemote();
-			}
-
-			// (Unfortunately there is no event for this, so we need to wait)
-			Utility.delayedCall(time => {
-				// After 5 secs give up
-				if (time >= 5.0) {
-					// Give up
-					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
-					resolve();
-					return true;
-				}
-				// Check for active debug session
-				if (vscode.debug.activeDebugSession)
-					return false;  // Try again
-				resolve();
-				return true;  // Stop
-			});
-		});
 	}
 
 

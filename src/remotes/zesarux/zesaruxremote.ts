@@ -597,7 +597,7 @@ export class ZesaruxRemote extends RemoteBase {
 			const pc = Z80Registers.getPC();
 			zSocket.send('disassemble ' + pc, (disasm: string) => {
 				// Check if this was a "CALL something" or "CALL n/z,something"
-				const opcode = disasm.substr(7, 4);
+				const opcode = disasm.substring(7, 7+4);
 
 				// For RST and CALL we break when SP reaches the current SP again.
 				// This is better than setting a PC breakpoint. A PC breakpoint is maybe never

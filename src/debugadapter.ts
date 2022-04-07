@@ -96,7 +96,7 @@ export class DebugSessionClass extends DebugSession {
 	/// key presses are still allowed.
 	/// This variable here is set every time a step (or similar) is done.
 	/// And reset when the function is finished. Should some other similar
-	/// request happen a response is send but the request is ignored otherwise.
+	/// request happen a response is sent but the request is ignored otherwise.
 	protected processingSteppingRequest = false;
 
 
@@ -108,13 +108,17 @@ export class DebugSessionClass extends DebugSession {
 	/// The text written to console on event 'debug_console' is indented by this amount.
 	protected debugConsoleIndentation = "  ";
 
+	/// Is true if a dezog debug session is running.
+	public running = false;
+
 
 	/**
 	 * Create and return the singleton object.
 	 */
 	public static singleton(): DebugSessionClass {
-		if(!this.debugAdapterSingleton)
+		if (!this.debugAdapterSingleton) {
 			this.debugAdapterSingleton = new DebugSessionClass();
+		}
 		return this.debugAdapterSingleton;
 	}
 	protected static debugAdapterSingleton: DebugSessionClass;
@@ -129,6 +133,26 @@ export class DebugSessionClass extends DebugSession {
 		// Init line numbering
 		this.setDebuggerLinesStartAt1(false);
 		this.setDebuggerColumnsStartAt1(false);
+		// Register for start/stop events
+		vscode.debug.onDidStartDebugSession(session => {
+			// Check if started
+			//console.log(session);
+			if (session.configuration.type == 'dezog')
+				this.running = true;
+		});
+		vscode.debug.onDidTerminateDebugSession(session => {
+			// Check if started
+			//console.log(session);
+			if (session.configuration.type == 'dezog')
+				this.running = false;
+		});
+
+		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
+			if (dbgSession?.configuration.type == 'dezog') {
+				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
+				this.debugConsoleSavedText = '';
+			}
+		});
 	}
 
 
@@ -200,6 +224,38 @@ export class DebugSessionClass extends DebugSession {
 		// Remove all listeners
 		this.removeAllListeners();	// Don't react on events anymore
 		this.sendEvent(new TerminatedEvent());
+	}
+
+
+	/**
+	 * Checks if the debugger is active. If yes terminate it.
+	 * This in turn will stop the debug session.
+	 */
+	public async terminateRemote(): Promise<void> {
+		return new Promise<void>(async resolve => {
+			// Wait until vscode debugger has stopped.
+			if (Remote) {
+				// Terminate emulator
+				await Remote.terminate();
+				RemoteFactory.removeRemote();
+			}
+
+			// (Unfortunately there is no event for this, so we need to wait)
+			Utility.delayedCall(time => {
+				// After 5 secs give up
+				if (time >= 5.0) {
+					// Give up
+					vscode.window.showErrorMessage('Could not terminate active debug session. Please try manually.');
+					resolve();
+					return true;
+				}
+				// Check for active debug session
+				if (this.running)
+					return false;  // Try again
+				resolve();
+				return true;  // Stop
+			});
+		});
 	}
 
 
@@ -430,12 +486,6 @@ export class DebugSessionClass extends DebugSession {
 
 		// Register to get a note when debug session becomes active
 		this.debugConsoleSavedText = '';
-		vscode.debug.onDidChangeActiveDebugSession(dbgSession => {
-			if (dbgSession) {
-				vscode.debug.activeDebugConsole.append(this.debugConsoleSavedText);
-				this.debugConsoleSavedText = '';
-			}
-		});
 
 		// Launch emulator
 		await this.launch(response);
@@ -3178,12 +3228,15 @@ E.g. use "-help -view" to put the help text in an own view.
 	 * @param filename The absolute file path.
 	 * @param lineNr The lineNr. Starts at 0.
 	 */
-	protected async setPcToLine(filename: string, lineNr: number): Promise<void> {
+	public async setPcToLine(filename: string, lineNr: number): Promise<void> {
 		// Get address of file/line
 		const realLineNr = lineNr;
 		let addr = Remote.getAddrForFileAndLine(filename, realLineNr);
-		if (addr < 0)
+		if (addr < 0) {
+			this.showError("No valid address at cursor.");
 			return;
+		}
+
 		// Check if bank is the same
 		const slots = Remote.getSlots();
 		if (slots) {
@@ -3206,12 +3259,12 @@ E.g. use "-help -view" to put the help text in an own view.
 
 
 	/**
-	 * Does a dissaembly to the debug console for the address at the cursor position.
+	 * Does a disassembly to the debug console for the address at the cursor position.
 	 * @param filename The absolute file path.
 	 * @param fromLineNr The line. Starts at 0.
 	 * @param toLineNr The line. Starts at 0.
 	 */
-	protected async disassemblyAtCursor(filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
+	public async disassemblyAtCursor(filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
 		// Get address of file/line
 		let fromAddr;
 		while (fromLineNr <= toLineNr) {
@@ -3268,42 +3321,6 @@ E.g. use "-help -view" to put the help text in an own view.
 		// Output
 		for (const addrInstr of dasmArray) {
 			this.debugConsoleAppendLine(Utility.getHexString(addrInstr.address, 4) + " " + addrInstr.instruction);
-		}
-	}
-
-
-	/**
-	 * Called from vscode when the user inputs a command in the command palette.
-	 * The method checks if the command is known and executes it.
-	 * If the command is unknown the super method is called.
-	 * @param command	The command, e.g. 'set-memory'
-	 * @param response	Used for responding.
-	 * @param args 	The arguments of the command. Usually just 1 text object.
-	 */
-	protected async customRequest(command: string, response: DebugProtocol.Response, args: any) {
-		switch (command) {
-			case 'setPcToLine':
-				{
-					const filename = args[0];
-					const lineNr = args[1];
-					await this.setPcToLine(filename, lineNr);
-					this.sendResponse(response);
-				}
-				break;
-
-			case 'disassemblyAtCursor':
-				{
-					const filename = args[0];
-					const fromLineNr = args[1];
-					const toLineNr = args[2];
-					await this.disassemblyAtCursor(filename, fromLineNr, toLineNr);
-					this.sendResponse(response);
-				}
-				break;
-
-			default:
-				super.customRequest(command, response, args);
-				return;
 		}
 	}
 

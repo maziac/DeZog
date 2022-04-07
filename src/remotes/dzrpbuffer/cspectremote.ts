@@ -178,7 +178,7 @@ export class CSpectRemote extends DzrpBufferRemote {
 		if (result.error) {
 			// An error occured. Add some help.
 			result.error += "\nTry updating the DeZog (CSpect) Plugin (https://github.com/maziac/DeZogPlugin/releases)."
-		};
+		}
 		return result;
 	}
 

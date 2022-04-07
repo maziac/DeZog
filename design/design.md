@@ -89,7 +89,7 @@ Helper classes:
                                                         │         │MameSocket│ │ ZesaruxSocket │ │CSpectSocket│ │ ZxNextSerial  │  │
                                                         │         └──────────┘ └───────────────┘ └────────────┘ └───────────────┘  │
                                                         │                                                                          │
-                                                        └──────────────────────────────────────────────────────────────────────────┘                   
+                                                        └──────────────────────────────────────────────────────────────────────────┘
 ~~~
 
 
@@ -112,12 +112,12 @@ DeZog is activated in the 'activate' function in extension.ts by registering the
 This happens e.g. when the Debugger is started.
 Short after 'DeZogConfigurationProvider::resolveDebugConfiguration' is called.
 As the debug adapter is entirely implemented in Typescript it lives in the same process as the extension which simplifies debugging the debug-adapter.
-So in 'resolveDebugConfiguration' the 'ZesaruxDebugSession' is instantiated
+So in 'resolveDebugConfiguration' the 'DebugSessionClass' is instantiated
 and started as server (socket). In the same function the server (socket) is also connected by the extension.
 
-Although the same process is used and therefore it is technically possible to directly call methods of the 'ZesaruxDebugSession' it is not done.
-Instead the intended way (through 'customRequest' which uses sockets) is chosen.
 
+The extension.ts calls some functions (setPcToLine, disassemblyAtCursor) directly on the debug adapter.
+It does not go through 'customRequest' through the socket.
 
 
 ## Showing variables, call stacks etc.

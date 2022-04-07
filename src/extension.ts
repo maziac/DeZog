@@ -109,9 +109,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	// Command to change the program counter via menu.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.movePCtoCursor', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.movePCtoCursor', async () => {
 		// Only allowed in debug context
-		if (!vscode.debug.activeDebugSession)
+		const session = DebugSessionClass.singleton();
+		if (!session.running)
+			return;
+		if (vscode.debug.activeDebugSession?.configuration.type != 'dezog')
 			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
@@ -120,14 +123,17 @@ export function activate(context: vscode.ExtensionContext) {
 		const position = editor.selection.anchor;
 		const filename = editor.document.fileName;
 		// Send to debug adapter
-		vscode.debug.activeDebugSession.customRequest('setPcToLine', [filename, position.line]);
+		await session.setPcToLine(filename, position.line);
 	}));
 
 	// Command to do a disassembly at the cursor's position.
 	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor', async () => {
 		// Only allowed in debug context
-		if (!vscode.debug.activeDebugSession)
+		const session = DebugSessionClass.singleton();
+		if (!session.running)
 			return;
+//		if (vscode.debug.activeDebugSession?.configuration.type != 'dezog')
+//			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
@@ -151,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
 					toLine--;
 			}
 			// Send to debug adapter
-			await vscode.debug.activeDebugSession.customRequest('disassemblyAtCursor', [filename, fromLine, toLine]);
+			await session.disassemblyAtCursor(filename, fromLine, toLine);
 		}
 	}));
 
@@ -162,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	// Register a configuration provider for 'dezog' debug type
-	const configProvider = new DeZogConfigurationProvider()
+	const configProvider = new DeZogConfigurationProvider();
 	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('dezog', configProvider));
 
 	// Registers the debug inline value provider
@@ -252,15 +258,34 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 	private _server?: Net.Server;
 
 	/**
+	 * The constr
+	constructor() {	// TODO: REMOVE
+		console.log("ii");
+	}
+	*/
+
+	/**
 	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
  	* socket connection to it.
  	*/
-	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+	resolveDebugConfigurationx(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration | undefined> {
+		/*
+		// Make sure singleton exists
+		const session = DebugSessionClass.singleton();
+		// Besser stoppen
+		if (session.isRunning())
+		{
+			// Show warning and vanish
+			vscode.window.showWarningMessage('DeZog is already active. Only one instance is available.');
+			// Returning undefined prevents any popup dialog boxes from vscode.
+			return undefined;
+		}
+
+		// Check if new listening server required
 		if (!this._server) {
 			// Start port listener on launch of first debug session
 			// Start listening on a random port
 			this._server = Net.createServer(socket => {
-				const session = DebugSessionClass.singleton();
 				session.setRunAsServer(true);
 				session.start(<NodeJS.ReadableStream>socket, socket);
 			}).listen(0);
@@ -270,7 +295,47 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 		const addrInfo = this._server.address() as Net.AddressInfo;
 		Utility.assert(typeof addrInfo != 'string');
 		config.debugServer = addrInfo.port;
+		*/
 		return config;
+	}
+	/**
+	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
+	  * socket connection to it.
+	  */
+	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+		return new Promise<DebugConfiguration | undefined>(async resolve => {
+
+			// Remove current debug session
+			const session = DebugSessionClass.singleton();
+			if (session.running) {
+				// Already running, show warning and return.
+				const result = await vscode.window.showWarningMessage('DeZog is already active. Only one instance is available.', 'Terminate current session', 'Cancel');
+				// Check user selection
+				if (result?.toLowerCase().startsWith('terminate')) {
+					// Terminate current session and start a new one
+					await session.terminateRemote();
+				}
+				else {
+					// Cancel. If undefined returned no popup will appear.
+					resolve(undefined);
+				}
+			}
+
+			// Check if (DeZog) already running
+			if (!this._server) {
+				// Start port listener on launch of first debug session (random port)
+				this._server = Net.createServer(socket => {
+					session.setRunAsServer(true);
+					session.start(<NodeJS.ReadableStream>socket, socket);
+				}).listen(0);
+			}
+
+			// Make VS Code connect to debug server
+			const addrInfo = this._server.address() as Net.AddressInfo;
+			Utility.assert(typeof addrInfo != 'string');
+			config.debugServer = addrInfo.port;
+			resolve(config);
+		});
 	}
 
 
