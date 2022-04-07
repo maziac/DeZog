@@ -259,43 +259,11 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 
 
 	/**
-	* Instantiates the Debug Adapter (DebugSessionClass) and sets up the
- 	* socket connection to it.
- 	*/
-	resolveDebugConfigurationx(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration | undefined> {
-		/*
-		// Make sure singleton exists
-		const session = DebugSessionClass.singleton();
-		// Besser stoppen
-		if (session.isRunning())
-		{
-			// Show warning and vanish
-			vscode.window.showWarningMessage('DeZog is already active. Only one instance is available.');
-			// Returning undefined prevents any popup dialog boxes from vscode.
-			return undefined;
-		}
-
-		// Check if new listening server required
-		if (!this._server) {
-			// Start port listener on launch of first debug session
-			// Start listening on a random port
-			this._server = Net.createServer(socket => {
-				session.setRunAsServer(true);
-				session.start(<NodeJS.ReadableStream>socket, socket);
-			}).listen(0);
-		}
-
-		// Make VS Code connect to debug server instead of launching debug adapter
-		const addrInfo = this._server.address() as Net.AddressInfo;
-		Utility.assert(typeof addrInfo != 'string');
-		config.debugServer = addrInfo.port;
-		*/
-		return config;
-	}
-	/**
-	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
-	  * socket connection to it.
-	  */
+	 * Instantiates DebugAdapter (DebugSessionClass) and sets up the
+	 * socket connection to it.
+	 * Is called once per vscode window.
+	 * I.e. each window has a separate environment.
+	 */
 	resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
 		return new Promise<DebugConfiguration | undefined>(async resolve => {
 
