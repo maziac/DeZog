@@ -163,7 +163,7 @@ export class DebugSessionClass extends DebugSession {
 	 */
 	public unitTestsStart(configName: string): Promise<DebugSessionClass> {
 		// Return if currently a debug session is running
-		if (vscode.debug.activeDebugSession)	// TODO: REMOVE
+		if (this.running)
 			throw Error("There is already an active debug session.");
 		if (this.state != DbgAdapterState.NORMAL)
 			throw Error("Debugger state is wrong.");

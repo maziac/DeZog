@@ -257,15 +257,9 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 	// Is set if a DeZog instance is already running.
 	private _server?: Net.Server;
 
-	/**
-	 * The constr
-	constructor() {	// TODO: REMOVE
-		console.log("ii");
-	}
-	*/
 
 	/**
-	* Instantiates DebugAdapter (DebugSessionClass) and sets up the
+	* Instantiates the Debug Adapter (DebugSessionClass) and sets up the
  	* socket connection to it.
  	*/
 	resolveDebugConfigurationx(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration | undefined> {
