@@ -115,6 +115,8 @@ As the debug adapter is entirely implemented in Typescript it lives in the same 
 So in 'resolveDebugConfiguration' the 'DebugSessionClass' is instantiated
 and started as server (socket). In the same function the server (socket) is also connected by the extension.
 
+The Debug Adapter (DebugSessionClass) is a singleton. But for each vscode Window is separate, i.e. each window has its own Debug Adapter.
+If the Debug Adapter is about to be restarted within a window (because user selected to start another instance) it is programmatically prohibited.
 
 The extension.ts calls some functions (setPcToLine, disassemblyAtCursor) directly on the debug adapter.
 It does not go through 'customRequest' through the socket.

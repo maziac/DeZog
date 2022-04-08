@@ -271,7 +271,7 @@ class DeZogConfigurationProvider implements vscode.DebugConfigurationProvider {
 			const session = DebugSessionClass.singleton();
 			if (session.running) {
 				// Already running, show warning and return.
-				const result = await vscode.window.showWarningMessage('DeZog is already active. Only one instance is available.', 'Terminate current session', 'Cancel');
+				const result = await vscode.window.showWarningMessage('DeZog is already active.', 'Terminate current session', 'Cancel');
 				// Check user selection
 				if (result?.toLowerCase().startsWith('terminate')) {
 					// Terminate current session and start a new one
