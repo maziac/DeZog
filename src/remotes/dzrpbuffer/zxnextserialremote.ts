@@ -14,7 +14,7 @@ import {SerialPort} from 'serialport';
 // Therefore this byte is required to recognize when a message starts.
 const MESSAGE_START_BYTE = 0xA5;
 
-// Timeout until when a respose on a command should have been received.
+// Timeout until when a response on a command should have been received.
 const CMD_RESP_TIMEOUT = 1000;	// 1000 ms = 1 s
 
 
@@ -65,7 +65,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 	/// Constructor.
 	constructor() {
 		super();
-		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT * 1000;
+		this.cmdRespTimeoutTime = CMD_RESP_TIMEOUT;
+
+		console.log('ZxNextSerialRemote: constructor()');
 	}
 
 
@@ -84,7 +86,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 		// React on-open
 		this.serialPort.on('open', async () => {
-			LogTransport.log('ZxNextSerialRemote: Connected to server!');
+			LogTransport.log('ZxNextSerialRemote: Connected to ZX Next!');
 
 			this.receivedData = Buffer.alloc(0);
 			this.msgStartByteFound = false;
@@ -100,7 +102,7 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 
 		// Handle errors
 		this.serialPort.on('error', err => {
-			LogTransport.log('ZxNextSerialRemote: Error: ' + err);
+			LogTransport.log('ZxNextSerialRemote: ' + err);
 			// Error
 			this.emit('error', err);
 		});
@@ -111,7 +113,28 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 		});
 
 		// Start serial connection
+		console.log('serialPort.open();');
 		this.serialPort.open();
+	}
+
+
+	/**
+	 * Closes the serial port.
+	 */
+	public async closeSerialPort(): Promise<void> {
+		return new Promise<void>(async resolve => {
+			if (this.serialPort) {
+				console.log('serialPort.close();');
+				this.serialPort.close(() => {
+					console.log('  serialPort.close() -> done');
+					this.serialPort = undefined;
+					resolve();
+				});
+				return;
+			}
+			// If no serialPort exists immediately return
+			resolve();
+		});
 	}
 
 
@@ -125,10 +148,9 @@ export class ZxNextSerialRemote extends DzrpBufferRemote {
 				return;
 			}
 			await super.disconnect();
-			this.serialPort.close(() => {
-				this.serialPort = undefined;
-				resolve();
-			});
+			// Close serial port
+			await this.closeSerialPort();
+			resolve();
 		});
 	}
 

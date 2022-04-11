@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.6.2
+- Fix #85: Serial port is not locked anymore.
+
 # 2.6.1
 - Fix #84: The 'entry point' bank is now set after loading the nex file as it should be.
 - Disallowed starting a 2nd instance of DeZog.

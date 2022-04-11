@@ -544,6 +544,7 @@ export class RemoteBase extends EventEmitter {
 	 * @param message If defined the message is shown to the user as error.
 	 */
 	public async terminate(message?: string): Promise<void> {
+		console.log('Remote.terminate(' + message +')');
 		await this.disconnect();
 		this.emit('terminated', message);
 	}

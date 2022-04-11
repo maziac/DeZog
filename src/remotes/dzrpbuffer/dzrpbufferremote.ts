@@ -101,7 +101,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 * Override if needed.
 	 * This will disconnect the socket and un-use all data.
 	 * Called e.g. when vscode sends a disconnectRequest
-	 * @param handler is called after the connection is disconnected.
 	 */
 	public async disconnect(): Promise<void> {
 		try {

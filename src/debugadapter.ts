@@ -328,7 +328,8 @@ export class DebugSessionClass extends DebugSession {
 		// Stop machine
 		this.removeAllListeners();	// Don't react on events anymore
 		// Disconnect
-		await Remote?.disconnect();
+		if(Remote)
+			await Remote.disconnect();
 		// Clear the history instance
 		CpuHistoryClass.removeCpuHistory();
 		// Clear Remote
