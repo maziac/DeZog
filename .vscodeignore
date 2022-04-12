@@ -1,8 +1,10 @@
 .vscode/**/*
 .gitignore
+.vscodeignore
 .github/**/*
 .travis.yml
 appveyor.yml
+tsconfig.json
 **/*.tests.*
 tests/**
 src/**
@@ -15,3 +17,5 @@ logs/**/*
 notes.md
 **/*.xcf
 documentation/extras
+*.vsix
+releases/
