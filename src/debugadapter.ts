@@ -81,7 +81,7 @@ export class DebugSessionClass extends DebugSession {
 
 	/// This array contains functions which are pushed on an emit (e.g. 'historySpot', not 'coverage')
 	/// and which are executed after a stackTrace.
-	/// The reason is that the disasm.asm file will not exist before and emits
+	/// The reason is that the disasm.list file will not exist before and emits
 	/// regarding this file would be lost.
 	protected delayedDecorations = new Array<() => void>();
 
@@ -1067,7 +1067,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// At the end of the stack trace request the collected decoration events
-		// are executed. This is because the disasm.asm did not exist before und thus
+		// are executed. This is because the disasm.list did not exist before und thus
 		// events like 'historySpot' would be lost.
 		// Note: codeCoverage is handled differently because it is not sent during
 		// step-back.

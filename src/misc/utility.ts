@@ -979,27 +979,6 @@ export class Utility {
 
 
 	/**
-	 * Removes all files in tmpDir that start with "TMP_".
-	 */
-	public static removeAllTmpFiles() {
-		const dir = Settings.launch.tmpDir;
-		// Check if dir exists
-		if (!fs.existsSync(dir))
-			return;
-		// Loop through all files
-		const fileNames = fs.readdirSync(dir);
-		for (let fName of fileNames) {
-			// Check that filename starts with "TMP_"
-			if (fName.startsWith("TMP_")) {
-				// Remove file
-				const absFName = Utility.getAbsFilePath(fName, dir);
-				fs.unlinkSync(absFName);
-			}
-		}
-	}
-
-
-	/**
 	 * Call the 'handler' in an interval until 'handler' returns true.
 	 * This can be used to wait on an event to happen, e.g. to poll
 	 * a variable.

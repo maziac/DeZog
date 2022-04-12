@@ -10,7 +10,7 @@ import {Labels} from "../labels/labels";
 
 
 /// The filename used for the temporary disassembly. ('./.tmp/disasm.list')
-const TmpDasmFileName='disasm.asm';
+const TmpDasmFileName='disasm.list';
 
 
 
@@ -145,7 +145,7 @@ export class DisassemblyClass extends Disassembler {
 
 	/**
 	 * Returns the file path of the temporary disassembly file.
-	 * @returns The relative file path, e.g. ".tmp/disasm.asm".
+	 * @returns The relative file path, e.g. ".tmp/disasm.list".
 	 * Or undefined if Settings.launch not yet created.
 	 */
 	public static getAbsFilePath(): string {

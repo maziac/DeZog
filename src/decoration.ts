@@ -39,7 +39,7 @@ class DecorationFileMap {
  * What makes it even more complicated is the fact that the disasm.asm file may not even exist
  * when a decoration comes in. And, furthermore, the file may exist already but change
  * its contents.
- * The disasm.asm is created during the stackTraceRequest.
+ * The disasm.list is created during the stackTraceRequest.
  * It requires decoration (like the other files) of
  * - coverage (green background)
  * - historySpot (the index numbers)
@@ -50,7 +50,7 @@ class DecorationFileMap {
  * (ordinary) file (in unassignedCodeCoverageAddresses).
  * Also 'coverage' is not emitted in case of reverse debugging.
  * 'historySpot', 'revDbg' and 'break' always contain the complete decoration information.
- * All those calls are delayed in the debugAdapter until the disasm.asm file is created in the
+ * All those calls are delayed in the debugAdapter until the disasm.list file is created in the
  * stackTraceRequest. This is already done in the debugAdapter.
  */
 export class DecorationClass {
