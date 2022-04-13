@@ -36,11 +36,11 @@ class MessageBuffer {
 /**
  * Conversion of SendDzrpCmd... functions as buffer and parsing of received messages.
  *
- * All sendDzrpCmd... methods are implemented. I.e. all commands are
+ * All sendDzrpCmd... methods are implemented. I.e. all commands
  * create a buffer to send. The buffer sending itself (sendBuffer) is
  * not implemented. Therefore the class needs to be derived.
  *
- * It receives the requests from the DebugSesssionClass and
+ * It receives the requests from the DebugSessionClass and
  * creates complete DZRP messages in a buffer.
  * At the end calls 'sendBuffer' which is not implemented.
  * I.e. this class needs derivation and overriding of method
