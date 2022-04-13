@@ -120,6 +120,19 @@ export interface CSpectType {
 }
 
 
+// Definitions for the MAME remote type.
+export interface MameType {
+	// The hostname/IP address of the MAME gdbstub socket.
+	hostname: string;
+
+	// The port of the MAME gdbstub socket.
+	port: number;
+
+	/// The socket timeout in seconds.
+	socketTimeout: number;
+}
+
+
 // Definitions for ZX Next remote type.
 export interface ZxNextSerialType {
 	// The serial usb device.
@@ -242,13 +255,16 @@ export interface ZSimType {
  */
 export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments {
 	/// The remote type: zesarux or zxnext.
-	remoteType: string;
+	remoteType: 'zrcp' | 'cspect' | 'zxnext' | 'zsim' | 'mame';
 
 	// The special settings for zrcp (ZEsarux).
 	zrcp: ZrcpType;
 
 	// The special settings for CSpect.
 	cspect: CSpectType;
+
+	// The special settings for MAME.
+	mame: MameType;
 
 	// The special settings for the internal Z80 simulator.
 	zsim: ZSimType;
@@ -361,6 +377,7 @@ export class Settings {
 				remoteType: <any>undefined,
 				zrcp: <any>undefined,
 				cspect: <any>undefined,
+				mame: <any>undefined,
 				zsim: <any>undefined,
 				zxnext: <any>undefined,
 				unitTests: <any>undefined,
@@ -421,6 +438,16 @@ export class Settings {
 			launchCfg.cspect.port = 11000;
 		if (!launchCfg.cspect.socketTimeout)
 			launchCfg.cspect.socketTimeout = 5;	// 5 secs
+
+		// mame
+		if (!launchCfg.mame)
+			launchCfg.mame = {} as MameType;
+		if (launchCfg.mame.hostname == undefined)
+			launchCfg.mame.hostname = 'localhost';
+		if (launchCfg.mame.port == undefined)
+			launchCfg.mame.port = 23000;
+		if (!launchCfg.mame.socketTimeout)
+			launchCfg.mame.socketTimeout = 5;	// 5 secs
 
 		// zsim
 		if (!launchCfg.zsim)
@@ -749,7 +776,7 @@ export class Settings {
 
 		// Check remote type
 		const rType = Settings.launch.remoteType;
-		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim'];
+		const allowedTypes = ['zrcp', 'cspect', 'zxnext', 'zsim', 'mame'];
 		const found = (allowedTypes.indexOf(rType) >= 0);
 		if (!found) {
 			throw Error("'remoteType': Remote type '" + rType + "' does not exist. Allowed are " + allowedTypes.join(', ') + ".");
