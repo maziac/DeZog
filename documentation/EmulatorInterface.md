@@ -69,94 +69,111 @@ n = not supported
 
 ### gdbstub
 
-The Remote communicates with MAME via the gdb remote protocol via a  socket. Mame needs to be started with the gdbstub lua script for this to work.
+The Remote communicates with MAME via the gdb remote protocol via a socket.
+MAME needs to be like so:
+~~~bash
+./mame -window pacman -debugger gdbstub -debug -debugger_port 11222
+~~~
 
 I.e. MAME uses gdb syntax for communicaton with DeZog.
 
-Here are the available commands:
+Here are the available commands in short:
 - CTRL-C: Break (stop debugger execution)
 - c: Continue
 - s: Step into
-- g: Read register
-- G: Write register
+- g: Read registers
+- G: Write registers
 - m: Read memory
 - M: Write memory
+- p: Read register
+- P: Write register
 - X: Load binary data
 - z: Clear breakpoint/watchpoint
 - Z: Set breakpoint/watchpoint
 
 Missing:
-- step-over, disassemble: not in serial protocol. done in gdb.
-- EmulatorClass info: not available.
-- Possibility to change the 'driver', e.g. Spectrum 48k or Spectrum 128k
+- no bank/paging info
 
-Problem:
-- for Mame there is normally not source (asm file) available. I.e. DeZog would in that case do short disassemblies.
-But to set a breakpoint a source file is required. As no source file is available there is no possibility to create a BP. I.e. an additional command to set/clear breakpoints is required. Or: one would have to create a disassembly file through a trace file.
+The gdbstub acts like a gdbserver.
+It communicates with the gdb at the client via a remote protocol:
+https://sourceware.org/gdb/onlinedocs/gdb/Overview.html#Overview
 
+Unfortunately the gdb at the client also needs to be aware of the target architecture (i.e. the cpu). Otherwise it does not work.
+I.e. vscode alone connected to MAME gdbstub will not work. At least not for Z80.
+Maybe it would work for x86 target processor architectures.
 
+Other reverse engineering IDEs support the Z80 architecture gdb e.g. through plugins.
+- [IDA: Extending IDA processor modules for GDB debugging (MAME)](https://malware.news/t/extending-ida-processor-modules-for-gdb-debugging/35136)
+- [Binary Ninja Debugger Plugin (BNDP): connect to MAME](https://binary.ninja/2020/05/06/debugger-showcase.html)
 
-
-### Mame debugger (accessible through lua)
-
-Init:
-[MAME]>
-debugger = manager:EmulatorClass():debugger()
-cpu = manager:EmulatorClass().devices[":maincpu"]
-space = cpu.spaces["program"]
-consolelog = debugger.consolelog
-errorlog = debugger.errorlog
+DeZog needs to implement that gdb part that understands the gdb remote protocol and the commands supported by the MAME gdbstub.
 
 
-consolelog can be read to retrieve the result of the commands (consolelog[#consolelog]).
-errorlog is inclear how to use it.
+The gdb protocol can be found [here](
+https://sourceware.org/gdb/onlinedocs/gdb/Overview.html#Overview).
+The MAME implementation [here](https://github.com/mamedev/mame/blob/master/src/osd/modules/debugger/debuggdbstub.cpp).
 
-- Get the state of the debugger: debugger.execution_state:
-	- "stop"
-	- "run"
-
-Commands:
-- Step:
-	- cpu:debug():step()
-	- debugger:command("step")
-- Continue:
-	- cpu:debug():go()
-	- debugger:command("go")
-- Stop:
-	- cpu:debug():step() (yes, step) or
-	- debugger.execution_state = "stop" or
-	- debugger:command("gvblank")
-- Get register: e.g.
-	- print(cpu.state["HL"].value)
-	- debugger:command("print hl")
-	- Value is in consolelog which can be retrieved such: print(consolelog[#consolelog])
-- Set register:
-	- cpu.state["BC"].value = tonumber("8000",16)
-- disassemble:
-	- debugger:command("dasm file.asm,0, 10") - **does only write disassembly to a file. Unusable!**
-- set-breakpoint / enable breakpoint
-	- debugger:command("bps 8000") - return it's number
-	- cpu:debug():bpset(0x8000)
-- disable-breakpoint
-	- cpu:debug():bpclr(1)
-	- debugger:command("bpclear 1")
-- watchpoint:
-	- cpu:debug():wpset(cpu.spaces["program"], "w", addr, 1)
-	- cpu:debug():wpclear(1)
-- read-memory:
-	- print(space:read_log_u8(addr))
-	- there is no memory dump function: only saving to file. Could maybe done in lua.
-- write-memory
-	- space:write_log_u8(32768,15)
-
-- get-stack-backtrace: not as such. need to be constructed through register and mem read.
-
-- breakpoint action, i.e. bp logs: MAME can do a printf to console. That could be transmitted to DeZog.
+| MAME gdb commands | Description | Reply |
+|-------------------|-------------|-------|
+| \x03 | CTRL-C. Break. Stop execution. | No reply |
+| '!' | Enable extended mode. In extended mode, the remote server is made persistent. The ‘R’ packet is used to restart the program being debugged. | 'OK' |
+| '?' | This is sent when connection is first established to query the reason the target halted. The reply is the same as for step and continue. This packet has a special interpretation when the target is in non-stop mode; see Remote Non-Stop. | See Stop Reply Packets |
+| '[c addr]' | Continue at addr, which is the address to resume. If addr is omitted, resume at current address. | See Stop Reply Packets |
+| 'D' | is used to detach GDB from the remote system. It is sent to the remote target before GDB disconnects via the detach command. | 'OK' or 'E nn' (Error) |
+| 'g' | Read general registers. | 'XX...' the hex values of all registers or 'E nn'|
+| 'G XX..' | Write general registers. | 'OK' or 'E nn'|
+| 'H op thread-id' | Set thread for subsequent operations. E.g. 'c' | 'OK' or 'E nn'|
+| 'k' | Kill. Closes session and socket. | No reply |
+| ‘m addr,length’ | Read length addressable memory units starting at address addr (see addressable memory unit). Note that addr may not be aligned to any particular boundary. | 'XX...' the hex values or 'E nn'|
+| ‘M addr,length:XX…’ | Write length addressable memory units starting at address addr (see addressable memory unit). The data is given by XX…; each byte is transmitted as a two-digit hexadecimal number. | 'OK' or 'E nn' (Error) |
+| ‘p n’ | Read the value of register n; n is in hex. See read registers packet, for a description of how the returned register value is encoded. | 'XX...' the hex value of the register or 'E nn'|
+| ‘P n…=r…’ | Write register n… with value r…. The register number n is in hexadecimal, and r… contains two hex digits for each byte in the register (target byte order). | 'OK' or 'E nn'|
+| ‘q name params…’ | General query (‘q’) and set (‘Q’). These packets are described fully in General Query Packets. | |
+| ‘s [addr]’ | Single step, resuming at addr. If addr is omitted, resume at same address. | See Stop Reply Packets |
+| ‘z type,addr,kind’ | Remove (‘z’) a type breakpoint or watchpoint starting at address address of kind kind. | ‘OK’, ‘’ not supported or ‘E NN’ for an error |
+| ‘Z type,addr,kind’ | Insert (‘z’) a type breakpoint or watchpoint starting at address address of kind kind. type is 0=SW BP, 1=HW BP, 2=write watchpoint, 3=read watchpoint, 4=access (rw) watchpoint.| ‘OK’, ‘’ not supported or ‘E NN’ for an error |
 
 
-### Open (MAME)
+### DZRP vs GDB Remote Protocol
 
-- state save/restore: I haven't checked if that is availablethrough lua.
+The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
+One major drawback we can see already: the MAME gdbstub does not support any information about the banking/paging.
+Note: gdb itself might support banking/paging via [overlays](https://docs.adacore.com/gdb-docs/html/gdb.html#Overlays).
+
+
+| Command               | MAME | Cmd  |
+|-----------------------|------|------|
+| CMD_INIT              | X    | !,?  |
+| CMD_CLOSE             | X    | D,k  |
+| CMD_GET_REGISTERS     | X    | g    |
+| CMD_SET_REGISTER      | X    | P    |
+| CMD_WRITE_BANK        |      |      |
+| CMD_CONTINUE          | X    | c    |
+| CMD_PAUSE             | X    | \x03, CTRL-C |
+| CMD_READ_MEM          | X    | m    |
+| CMD_WRITE_MEM         | X    | M    |
+| CMD_SET_SLOT          |      |      |
+| CMD_GET_TBBLUE_REG    |      |      |
+| CMD_SET_BORDER        |      |      |
+| CMD_SET_BREAKPOINTS   |      |      |
+| CMD_RESTORE_MEM       |      |      |
+| CMD_LOOPBACK	        |      |      |
+| CMD_GET_SPRITES_PALETTE |    |      |
+| CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL |  |  |
+| CMD_GET_SPRITES       |      |      |
+| CMD_GET_SPRITE_PATTERNS |    |      |
+| CMD_ADD_BREAKPOINT    | X    | Z0   |
+| CMD_REMOVE_BREAKPOINT | X    | z0   |
+| CMD_ADD_WATCHPOINT    | X    | Z2-4 |
+| CMD_REMOVE_WATCHPOINT | X    | z2-4 |
+| CMD_READ_STATE        |      |      |
+| CMD_WRITE_STATE       |      |      |
+
+
+#### How to get the program into the emulator
+
+a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
+b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.
 
 
 ## ZEsarUX
