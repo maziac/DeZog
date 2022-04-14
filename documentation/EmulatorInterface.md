@@ -170,7 +170,35 @@ Note: gdb itself might support banking/paging via [overlays](https://docs.adacor
 | CMD_WRITE_STATE       |      |      |
 
 
-#### How to get the program into the emulator
+### The gdb protocol in brief
+
+The client (DeZog) sends packets in the form
+~~~
+$packet-data#checksum
+~~~
+
+All data is ASCII and without spaces between the characters. But fields might be separated by ',', ';' or ':'.
+
+Each packet is acknowledged with a
+~~~
++
+~~~
+
+or NACKed with a
+~~~
+-
+~~~
+
+e.g. if the command has a bad checksum.
+
+The ACK/NACK is sent immediately and can be used to stop the timeout.
+
+The response/reply is sent after the ACK when the command has completed.
+For step and continue this means it is sent after the emulator has breaked.
+
+
+
+### How to get the program into the emulator
 
 a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
 b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.

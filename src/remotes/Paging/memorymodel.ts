@@ -36,7 +36,7 @@ export class MemoryModel {
 
 
 	/**
-	 * Returns the standard description, I.e. 0-3FFF = ROM, rest is RAM.
+	 * Returns the standard description, I.e. 0-FFFF =  RAM.
 	 * @param slots Not used.
 	 * @returns An array with the available memory pages. Contains start and end address
 	 * and a name.
@@ -60,6 +60,7 @@ export class MemoryModel {
 	}
 
 }
+
 
 /**
  * Class that takes care of the memory paging.
@@ -280,6 +281,31 @@ export class ZxNextMemoryModel extends Zx128MemoryModel {
 				start = end + 1;
 			});
 		}
+		// Return
+		return pages;
+	}
+}
+
+
+
+
+/**
+ * AllRomModel:
+ * Has no banks, or only one continuous 64k bank.
+ */
+export class AllRomModel extends MemoryModel {
+
+	/**
+	 * Returns 0-FFFF =  ROM.
+	 * @param slots Not used.
+	 * @returns An array with the available memory pages. Contains start and end address
+	 * and a name.
+	 */
+	public getMemoryBanks(slots: number[] | undefined): MemoryBank[] {
+		// Prepare array
+		const pages: Array<MemoryBank> = [
+			{start: 0x0000, end: 0xFFFF, name: "ROM"}
+		];
 		// Return
 		return pages;
 	}

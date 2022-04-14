@@ -445,7 +445,7 @@ export class Settings {
 		if (launchCfg.mame.hostname == undefined)
 			launchCfg.mame.hostname = 'localhost';
 		if (launchCfg.mame.port == undefined)
-			launchCfg.mame.port = 23000;
+			launchCfg.mame.port = 12000;
 		if (!launchCfg.mame.socketTimeout)
 			launchCfg.mame.socketTimeout = 5;	// 5 secs
 

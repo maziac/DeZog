@@ -4,6 +4,7 @@ import {CSpectRemote} from './dzrpbuffer/cspectremote';
 import {Utility} from '../misc/utility';
 import {ZesaruxRemote} from './zesarux/zesaruxremote';
 import {ZxNextSerialRemote} from './dzrpbuffer/zxnextserialremote';
+import {MameRemote} from './mame/mameremote';
 
 
 
@@ -30,7 +31,7 @@ export class RemoteFactory {
 				RemoteFactory.setGlobalRemote(new ZSimRemote());
 				break;
 			case 'mame':
-				Utility.assert(false);	// needs to be implemented
+				RemoteFactory.setGlobalRemote(new MameRemote());
 				break;
 			default:
 				Utility.assert(false);

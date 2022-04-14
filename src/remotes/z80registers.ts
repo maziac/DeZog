@@ -391,7 +391,7 @@ export class Z80RegistersClass {
 	 * @returns The value of the register.
 	 */
 	public getRegValue(reg: Z80_REG): number {
-		const name=Z80RegistersClass.registerNames[reg];
+		const name = Z80RegistersClass.registerNames[reg];
 		return this.decoder.getRegValueByName(name, this.RegisterCache);
 	}
 

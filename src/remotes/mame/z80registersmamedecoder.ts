@@ -1,13 +1,19 @@
-import {DecodeRegisterData, RegisterData} from './decoderegisterdata';
-import {Z80_REG} from './z80registers';
+import {RegisterData} from '../decoderegisterdata';
+import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
+
+
+
+// The index into the data string for certain registers.
+//enum MAME_REG {
+//}
 
 
 /**
- * The standard decoder for registers.
- * Can be used if no external remote is involved, e.g. for the internal
- * simulator or by DzrpRemote.
+ * Parses the register data received from the MAME gdbstub.
+ * The register data is stored as hex values in the data string.
+ * The index into the string depends on the register.
  */
-export class Z80RegistersStandardDecoder extends DecodeRegisterData {
+export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 
 	/**
 	 * Parses the register output for PC etc.
@@ -15,74 +21,68 @@ export class Z80RegistersStandardDecoder extends DecodeRegisterData {
 	 * @returns The value.
 	 */
 	public parsePC(data: RegisterData): number {
-		return data[Z80_REG.PC];
+		return 0xA5;
 	}
 
 	public parseSP(data: RegisterData): number {
-		return data[Z80_REG.SP];
+		return 0xA5;
 	}
 
 	public parseAF(data: RegisterData): number {
-		return data[Z80_REG.AF];
+		return 0xA5;
 	}
 
 	public parseBC(data: RegisterData): number {
-		return data[Z80_REG.BC];
+		return 0xA5;
 	}
 
 	public parseHL(data: RegisterData): number {
-		return data[Z80_REG.HL];
+		return 0xA5;
 	}
 
 	public parseDE(data: RegisterData): number {
-		return data[Z80_REG.DE];
+		return 0xA5;
 	}
 
 	public parseIX(data: RegisterData): number {
-		return data[Z80_REG.IX];
+		return 0xA5;
 	}
 
 	public parseIY(data: RegisterData): number {
-		return data[Z80_REG.IY];
+		return 0xA5;
 	}
 
 	public parseAF2(data: RegisterData): number {
-		return data[Z80_REG.AF2];
+		return 0xA5;
 	}
 
 	public parseBC2(data: RegisterData): number {
-		return data[Z80_REG.BC2];
+		return 0xA5;
 	}
 
 	public parseHL2(data: RegisterData): number {
-		return data[Z80_REG.HL2];
+		return 0xA5;
 	}
 
 	public parseDE2(data: RegisterData): number {
-		return data[Z80_REG.DE2];
+		return 0xA5;
 	}
 
 	public parseI(data: RegisterData): number {
-		return data[Z80_REG.IR]>>>8;
+		return 0xA5;
 	}
 
 	public parseR(data: RegisterData): number {
-		return data[Z80_REG.IR]&0xFF;
+		return 0xA5;
 	}
 
 	public parseIM(data: RegisterData): number {
-		return data[Z80_REG.IM];
+		return 0xA5;
 	}
 
 	public parseSlots(data: RegisterData): number[] {
-		// Decode slots
-		let i=Z80_REG.IM+1;
-		const slotCount=data[i++];
-		const slots=new Array<number>(slotCount);
-		for (let k=0; k<slotCount; k++) {
-			slots[k]=data[i++];
-		}
-		return slots;
+		// TODO: Do I use this ? What about parsePCLong?
+		return [];
 	}
 
 }

@@ -1,16 +1,16 @@
 import {Log, LogTransport} from '../../log';
-import {DzrpRemote, AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
+import {AlternateCommand, DzrpMachineType, DZRP, DZRP_VERSION, DZRP_PROGRAM_NAME} from '../dzrp/dzrpremote';
 import {Z80Registers, Z80RegistersClass, Z80_REG} from '../z80registers';
 import {Utility} from '../../misc/utility';
 import {GenericBreakpoint} from '../../genericwatchpoint';
 import {Labels} from '../../labels/labels';
+import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 
 
 
 /// Timeouts.
-export const CONNECTION_TIMEOUT = 1000;	///< 1 sec
-const CHUNK_TIMEOUT = 1000;	///< 1 sec
-//const QUIT_TIMEOUT=1000;	///< 1 sec
+export const CONNECTION_TIMEOUT = 1000;	// 1 sec
+const CHUNK_TIMEOUT = 1000;	// 1 sec
 
 
 
@@ -54,7 +54,7 @@ class MessageBuffer {
  *
  * This class does not implement any complex flow/state handling.
  */
-export class DzrpBufferRemote extends DzrpRemote {
+export class DzrpBufferRemote extends DzrpQeuedRemote {
 
 	// The message queue (used to serialize the sent messages).
 	protected messageQueue: Array<MessageBuffer>;
@@ -94,56 +94,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 	/// by 'doInitialization' after a successful connect.
 	public async doInitialization(): Promise<void> {
 		// Override this
-	}
-
-
-	/**
-	 * Override if needed.
-	 * This will disconnect the socket and un-use all data.
-	 * Called e.g. when vscode sends a disconnectRequest
-	 */
-	public async disconnect(): Promise<void> {
-		try {
-			await this.sendDzrpCmdClose();
-		}
-		catch {}
-	}
-
-
-	/**
-	 * Starts the command/response timeout.
-	 * If the timer elapses a warning is shown.
-	 * The message is removed from the message queue.
-	 * It is normal that this e.g. happens if a ZX Next is connected and has a running
-	 * (non-paused) program. In that case the UART is not configured for the joy ports
-	 * and is not able to receive anything at all.
-	 * @param respTimeoutTime The response timeout.
-	 */
-	protected startCmdRespTimeout(respTimeoutTime: number) {
-		this.stopCmdRespTimeout();
-		this.cmdRespTimeout = setTimeout(() => {
-			this.stopCmdRespTimeout();
-			const err = new Error('No response received from remote.');
-			// Log
-			LogTransport.log('Warning: ' + err.message);
-			// Show warning
-			this.emit('warning', err.message);
-			// Remove message / Queue next message
-			const msg = this.messageQueue.shift()!;
-			this.sendNextMessage();
-			// Pass error data to right consumer
-			msg.reject(err);
-		}, respTimeoutTime);
-	}
-
-
-	/**
-	 * Stops the command/response timeout.
-	 */
-	protected stopCmdRespTimeout() {
-		if (this.cmdRespTimeout)
-			clearTimeout(this.cmdRespTimeout);
-		this.cmdRespTimeout = undefined;
 	}
 
 
@@ -212,6 +162,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 	 */
 	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void) {
 
+		// TODO: REMOVE
 		const l = this.messageQueue.length;
 		if (l > 0) {
 			const prevMsg = this.messageQueue[l - 1];
@@ -227,40 +178,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 		entry.reject = reject;
 		// Add to queue
 		this.messageQueue.push(entry);
-	}
-
-
-	/**
-	 * If messageQueue is empty returns immediately.
-	 * Otherwise the first message in the queue is sent.
-	 */
-	protected async sendNextMessage(): Promise<void> {
-		if (this.messageQueue.length == 0)
-			return;
-
-		// Get next message from buffer
-		const msg = this.messageQueue[0];
-		if (!msg)
-			return;
-
-		try {
-			this.startCmdRespTimeout(msg.respTimeoutTime);
-			await this.sendBuffer(msg.buffer);
-		}
-		catch (error) {
-			LogTransport.log("SENT ERROR.");
-			console.log("SENT ERROR.");
-			this.emit('error', error);
-		}
-	}
-
-
-	/**
-	 * Override.
-	 * Writes the buffer to the serial port.
-	 */
-	protected async sendBuffer(buffer: Buffer): Promise<void> {
-		Utility.assert(false);
 	}
 
 
@@ -335,7 +252,7 @@ export class DzrpBufferRemote extends DzrpRemote {
 
 	/**
 	 * A DZRP response has been received.
-	 * It there are still messages in the queue the next message is sent.
+	 * If there are still messages in the queue the next message is sent.
 	 */
 	protected receivedMsg(data: Buffer) {
 		// Safety check
@@ -905,7 +822,6 @@ export class DzrpBufferRemote extends DzrpRemote {
 		}
 		await this.sendDzrpCmd(DZRP.CMD_RESTORE_MEM, buffer);
 	}
-	spec
 
 }
 
