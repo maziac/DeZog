@@ -214,7 +214,7 @@ For step and continue this means it is sent after the emulator has breaked.
 
 ### XML
 
-For g, ... to work the MAME gdbstub need to be set to XML mode.
+For 'g', 'G', 'p', and 'P to work the MAME gdbstub need to be set to XML mode.
 ~~~
 qXfer:features:read:target.xml:offset,length
 ~~~

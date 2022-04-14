@@ -110,6 +110,14 @@ export class MameRemote extends DzrpQeuedRemote {
 	 */
 	protected async onConnect(): Promise<void> {
 		try {
+			// Init
+			//const qReply =
+			await this.sendPacketData('?'); // Reply is ignored
+			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
+
+			// TODO: check <architecture>z80</architecture>
+
+
 			// Load executable
 			await this.loadExecutable();
 
