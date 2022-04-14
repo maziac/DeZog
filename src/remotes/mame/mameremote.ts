@@ -182,7 +182,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Find the '#' that ends the packet
 		do {
 			i++;
-			if (i < len)
+			if (i >= len)
 				return;	// End not yet found
 		} while (this.receivedData[i] != '#');
 		// Now skip checksum: The transport is considered reliable.
@@ -351,11 +351,13 @@ export class MameRemote extends DzrpQeuedRemote {
 			if (cmdArray.length == 0) {
 				// CTRL-C
 				packetData = CTRL_C;
+				cmd_name = 'CTRL-C';
 			}
 			else {
-				packetData = cmdArray[0];			}
+				packetData = cmdArray[0];
+				cmd_name = packetData;
+			}
 			response = await this.sendPacketData(packetData);
-			cmd_name = '$' + cmd_name + '#';
 		}
 		else if (cmd_name == "c") {
 			await this.sendDzrpCmdContinue();
@@ -442,7 +444,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		}
 
 		// Return string
-		let result = "Sent " + cmd_name + ".\nResponse received";
+		let result = "Sent: " + cmd_name + ".\nResponse received";
 		if (response)
 			result += ": " + response;
 		else

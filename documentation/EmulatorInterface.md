@@ -134,6 +134,21 @@ The MAME implementation [here](https://github.com/mamedev/mame/blob/master/src/o
 | ‘Z type,addr,kind’ | Insert (‘z’) a type breakpoint or watchpoint starting at address address of kind kind. type is 0=SW BP, 1=HW BP, 2=write watchpoint, 3=read watchpoint, 4=access (rw) watchpoint.| ‘OK’, ‘’ not supported or ‘E NN’ for an error |
 
 
+#### Stop Reply Packet
+
+The MAME gdb stub sends e.g:
+~~~
+T05
+~~~
+
+it adds 'watch', 'rwatch' or 'awatch' for a write, read or read/write watchpoint if that was hit.
+
+
+### Extended mode
+
+The MAME gdbstub sets an internal variable to true but it does nto act on it in any way.
+
+
 ### DZRP vs GDB Remote Protocol
 
 The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
@@ -144,7 +159,7 @@ Note: gdb itself might support banking/paging via [overlays](https://docs.adacor
 | Command               | MAME | Cmd  |
 |-----------------------|------|------|
 | CMD_INIT              | X    | !,?  |
-| CMD_CLOSE             | X    | D,k  |
+| CMD_CLOSE             | X    | D (MAME starts running wo debugger attached) |
 | CMD_GET_REGISTERS     | X    | g    |
 | CMD_SET_REGISTER      | X    | P    |
 | CMD_WRITE_BANK        |      |      |
@@ -196,6 +211,61 @@ The ACK/NACK is sent immediately and can be used to stop the timeout.
 The response/reply is sent after the ACK when the command has completed.
 For step and continue this means it is sent after the emulator has breaked.
 
+
+### XML
+
+For g, ... to work the MAME gdbstub need to be set to XML mode.
+~~~
+qXfer:features:read:target.xml:offset,length
+~~~
+
+It returns the xml which describes the target architecture and the registers.
+offset and length could restrict the size of the doc, or read it in chunks.
+
+For
+~~~
+qXfer:features:read:target.xml:00,FFFF
+~~~
+
+the MAME gdbstub returns:
+~~~
+
+Sent "qXfer:features:read:target.xml:00,FFFF".
+Response received: l<?xml version="1.0"?>
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target version="1.0">
+<architecture>z80</architecture>
+  <feature name="mame.z80">
+    <reg name="af" bitsize="16" type="int"/>
+    <reg name="bc" bitsize="16" type="int"/>
+    <reg name="de" bitsize="16" type="int"/>
+    <reg name="hl" bitsize="16" type="int"/>
+    <reg name="af'" bitsize="16" type="int"/>
+    <reg name="bc'" bitsize="16" type="int"/>
+    <reg name="de'" bitsize="16" type="int"/>
+    <reg name="hl'" bitsize="16" type="int"/>
+    <reg name="ix" bitsize="16" type="int"/>
+    <reg name="iy" bitsize="16" type="int"/>
+    <reg name="sp" bitsize="16" type="data_ptr"/>
+    <reg name="pc" bitsize="16" type="code_ptr"/>
+  </feature>
+</target>
+~~~
+
+for the Z80.
+
+
+### Registers
+
+The MAME gdbstub returns the registers in the order given from the XML.
+Here is an example:
+~~~
+40000000000000000000000000000000ffffffff00000000
+~~~
+
+I.e. 12 words in hex.
+
+Note: The IM and IR registers are not transferred.
 
 
 ### How to get the program into the emulator
