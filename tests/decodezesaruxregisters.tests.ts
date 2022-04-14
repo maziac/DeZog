@@ -8,11 +8,7 @@ suite('DecodeZesaruxRegisters', () => {
 
 	suite('Register parsing', () => {
 		const line = "PC=80cf SP=83f3 AF=0208 BC=0301 HL=4002 DE=2006 IX=fffe IY=5c3a AF'=1243 BC'=23fe HL'=f3da DE'=abcd I=23 R=4b  F=----3--- F'=-Z---P-- MEMPTR=0000 IM0 IFF12 VPS: 0";
-		let Decoder: any;
-
-		setup(() => {
-			Decoder=new DecodeZesaruxRegisters(8);
-		});
+		let Decoder = new DecodeZesaruxRegisters(8) as any;
 
 		test('PC', () => {
 			const compValue = 0x80cf;

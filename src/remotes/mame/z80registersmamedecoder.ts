@@ -33,51 +33,51 @@ export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 	 * @returns The value.
 	 */
 	public parsePC(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.PC, MAME_REG.PC + 2), 16);
+		return parseInt(data.substring(MAME_REG.PC, MAME_REG.PC + 4), 16);
 	}
 
 	public parseSP(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.SP, MAME_REG.SP + 2), 16);
+		return parseInt(data.substring(MAME_REG.SP, MAME_REG.SP + 4), 16);
 	}
 
 	public parseAF(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.AF, MAME_REG.AF + 2), 16);
+		return parseInt(data.substring(MAME_REG.AF, MAME_REG.AF + 4), 16);
 	}
 
 	public parseBC(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.BC, MAME_REG.BC + 2), 16);
+		return parseInt(data.substring(MAME_REG.BC, MAME_REG.BC + 4), 16);
 	}
 
 	public parseHL(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.HL, MAME_REG.HL + 2), 16);
+		return parseInt(data.substring(MAME_REG.HL, MAME_REG.HL + 4), 16);
 	}
 
 	public parseDE(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.DE, MAME_REG.DE + 2), 16);
+		return parseInt(data.substring(MAME_REG.DE, MAME_REG.DE + 4), 16);
 	}
 
 	public parseIX(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.IX, MAME_REG.IX + 2), 16);
+		return parseInt(data.substring(MAME_REG.IX, MAME_REG.IX + 4), 16);
 	}
 
 	public parseIY(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.IY, MAME_REG.IY + 2), 16);
+		return parseInt(data.substring(MAME_REG.IY, MAME_REG.IY + 4), 16);
 	}
 
 	public parseAF2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.AF2, MAME_REG.AF2 + 2), 16);
+		return parseInt(data.substring(MAME_REG.AF2, MAME_REG.AF2 + 4), 16);
 	}
 
 	public parseBC2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.BC2, MAME_REG.BC2 + 2), 16);
+		return parseInt(data.substring(MAME_REG.BC2, MAME_REG.BC2 + 4), 16);
 	}
 
 	public parseHL2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.HL2, MAME_REG.HL2 + 2), 16);
+		return parseInt(data.substring(MAME_REG.HL2, MAME_REG.HL2 + 4), 16);
 	}
 
 	public parseDE2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.DE2, MAME_REG.DE2 + 2), 16);
+		return parseInt(data.substring(MAME_REG.DE2, MAME_REG.DE2 + 4), 16);
 	}
 
 	public parseI(data: RegisterData): number {
