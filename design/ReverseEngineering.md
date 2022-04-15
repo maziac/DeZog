@@ -27,7 +27,7 @@ E.g. a session could look like:
 1. Start debug session (completely without list file, only object code).
 2. DeZog disassembles part of the code.
 3. The reverse engineer analyzes, steps through the code.
-4. The reverse engineer understood a subroutine and copies the code from the disassembly file to the list file.
+4. The reverse engineer understood a subroutine and copies the code from the disassembly file to the reversed engineered list file (rev.list, a self made file).
 As this is in list file format every line starts with an address.
 5. The reverse engineer adds comments and **changes labels**.
 6. The reverse engineer **presses a button to re-read the list file** without loosing machine state.
@@ -39,6 +39,66 @@ As this is in list file format every line starts with an address.
 
 Note:
 - *changes labels* is more difficult than it seems: It's easy to change the label itself at the start of the line. But the problem is that there might already be references to that label. So instead of simply editing the label the ASM Code Lens renaming function could be used.
+
+
+# Additional use of Banking Information
+
+If zsim is used the banking information is available for a dynamic analysis.
+Maybe the MAME gdbstub could be extended to provide that information as well (memory model + current bank/paging information).
+
+So for a certain "snapshot" z80dsmblr could do a static analysis.
+Addresses that belong to a certain page are put into different files.
+
+E.g. if the area 0xC000-0xFFFF is once used for bank1 this area is disassembled into "file_bank1.list".
+If the next time 0xC000-0xFFFF is used by bank2 it is disassembled into "file_bank2.list".
+
+Note: it is not required to really use different files. But it is important that the list file contains addresses with bank info, e.g.:
+~~~asm
+C000@1	3E 05		LD A,5
+C002@1  C9			RET
+~~~
+
+or for bank 2:
+~~~asm
+C000@2  01 00 00	LD BC,0
+C002@2  C3 00 C1	JP $C100@2
+~~~
+
+
+These files/line numbers can be associated with "long" addresses. I.e. an address which contains also the bank information.
+Breakpoints and stepping through the list file would be no problem.
+
+If the reverse engineer takes part of the code into the reverse engineered list file (rev.list) the banking info is copied as well.
+
+Any code in some of the other banks (e.g. at 0x8020) that refers to a bank will get that label, e.g.:
+~~~asm
+8020	01 00 00	CALL $C000@1
+~~~
+
+As the code is in a non-paged area it has a simple 64k address (i.e. 8020) only.
+
+At the time the code is disassembled (or better: executed by single step) it is known which bank is paged in.
+The call address could be assigned to the long address C000@1.
+
+If the reverse engineer had given a label name to it already in the ref.list file, the label could be used:
+~~~asm
+C000@1			MYSUB_BANK1:
+C000@1	3E 05		LD A,5
+C002@1  C9			RET
+~~~
+
+~~~asm
+8020	01 00 00	CALL MYSUB_BANK1
+~~~
+
+A problem arises if the same code at e.g. 8020 is used for different banks.
+E.g. if it is the entry point to any code/bank put into the 0xC000-0xFFFF area.
+E.g. if the first time in dynamic analysis bank 1 was paged in and the next time bank 2.
+In this case the 64k address should be used instead, e.g.:
+~~~asm
+8020	01 00 00	CALL $C000
+~~~
+
 
 
 # Other ideas
