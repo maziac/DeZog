@@ -179,56 +179,75 @@ export class MameRemote extends DzrpQeuedRemote {
 	protected dataReceived(data: string) {
 		LogTransport.log('dataReceived, count='+data.length);
 
-		// Add data to existing buffer
-		this.receivedData += data;
+		try {
+			// Add data to existing buffer
+			this.receivedData += data;
 
-		let i = 0;
-		const c = this.receivedData[i++];
-		switch (c) {
-			case '+':	// ACK
-				break;
-			case '-':	// NACK
-				// Only reason for this in MAME gdbstub is a wrong checksum
-				throw Error("Received NACK. Reason: checksum error.");
-			default:	// Unexpected
-				throw Error("No ACK received.");
+			let i = 0;
+			const c = this.receivedData[i++];
+			switch (c) {
+				case '+':	// ACK
+					break;
+				case '-':	// NACK
+					// Only reason for this in MAME gdbstub is a wrong checksum
+					throw Error("Received NACK. Reason: checksum error.");
+				default:	// Unexpected
+					throw Error("No ACK received.");
+			}
+
+			// For some commands (c, s) the '+' is treated as response
+			// and the actual stop reply as a notification.
+			// I.e. the 'c'(ontinue) command will return after the '+ is received.
+			const msg = this.messageQueue[0];
+			if (msg.customData.noReply) {
+				// E.g. c(ontinue)
+				this.receivedMsg();
+			}
+			else {
+				// All other commands
+
+				// Now the reply follows:
+				// $reply#HH  with HH the hex checksum.
+				const len = this.receivedData.length;
+				if (len < 4)	// Minimum length: '$#00'
+					return;
+				if (this.receivedData[i++] != '$')
+					throw Error("Wrong packet format. Expected '$'.");
+				// Find the '#' that ends the packet
+				do {
+					i++;
+					if (i >= len)
+						return;	// End not yet found
+				} while (this.receivedData[i] != '#');
+				// Now skip checksum: The transport is considered reliable.
+				// Checksum is not checked.
+				const packetLen = i + 3;	// E.g. '+$xxx#HH'
+				if (len < packetLen)
+					return;	// Not everything received yet.
+
+				// Complete packet received:
+				// Get packet data
+				const packetData = this.receivedData.substring(2, i);
+
+				// Wait for next data
+				this.receivedData = this.receivedData.substring(packetLen);	// Normally this returns an empty string
+
+				// Handle received buffer
+				this.receivedMsg(packetData);
+			}
 		}
-
-		// Now the reply follows:
-		// $reply#HH  with HH the hex checksum.
-		const len = this.receivedData.length;
-		if (len < 4)	// Minimum length: '$#00'
-			return;
-		if (this.receivedData[i++] != '$')
-			throw Error("Wrong packet format. Expected '$'.");
-		// Find the '#' that ends the packet
-		do {
-			i++;
-			if (i >= len)
-				return;	// End not yet found
-		} while (this.receivedData[i] != '#');
-		// Now skip checksum: The transport is considered reliable.
-		// Checksum is not checked.
-		const packetLen = i + 3;	// E.g. '+$xxx#HH'
-		if (len < packetLen)
-			return;	// Not everything received yet.
-
-		// Complete packet received:
-		// Get packet data
-		const packetData = this.receivedData.substring(2, i);
-
-		// Wait for next data
-		this.receivedData = this.receivedData.substring(packetLen);	// Normally this returns an empty string
-
-		// Handle received buffer
-		this.receivedMsg(packetData);
+		catch (e) {
+			this.receivedData = '';
+			// Rethrow
+			throw e;	// TODO: Connection is not closed on exception
+		}
 	}
 
 	/**
 	 * A response has been received.
 	 * If there are still messages in the queue the next message is sent.
 	 */
-	protected receivedMsg(packetData: string) {
+	protected receivedMsg(packetData?: string) {
 		// Check for notification
 		/*
 		if (recSeqno == 0) {
@@ -297,29 +316,26 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * $packet-data#checksum
 	 * The packet is answer with an ACK (NACK) followed by a reply/response.
 	 * @param packetData E.g. 'z0,C000,0' or '\x03' (CTRL_C) for break
+	 * @param withCtrlC Set to true if a break should be sent. A break is
+	 * never sent alone but always in conjunction with another command (e.g. 'g' to red registers).
+	 * in order to get a reply from the gdbstub.
 	 * @returns E.g. 'OK'
 	 */
-	protected async sendPacketData(packetData: string): Promise<string> {
+	protected async sendPacketData(packetData: string, withCtrlC?: boolean): Promise<string> {
 		return new Promise<string>(async (resolve, reject) => {
-			let packet;
-			// Check for CTRL-C (break)
-			if (packet == CTRL_C) {
-				// Break
-				packet = packetData;
-				LogTransport.log('>>> MameRemote: Sending CTRL-C');
-			}
-			else {
-				// Calculate checksum
-				const checkSum = this.checksum(packetData);
-				// Construct packet
-				packet = '$' + packetData + '#' + checkSum;
-				LogTransport.log('>>> MameRemote: Sending ' + packet);
-			}
+			// Calculate checksum
+			const checkSum = this.checksum(packetData);
+			// Construct packet
+			let packet = '$' + packetData + '#' + checkSum;
+			LogTransport.log('>>> MameRemote: Sending ' + (withCtrlC ? 'CTRL-C, ' : '') + packet);
+			if (withCtrlC)
+				packet = CTRL_C + packet;
 
 			// Convert to buffer
 			const buffer = Buffer.from(packet);
 			// Put into queue
-			this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
+			const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
+			entry.customData = {noReply: (packetData == 'c')};
 
 			// Try to send immediately
 			if (this.messageQueue.length == 1)
@@ -372,14 +388,14 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Get string
 			if (cmdArray.length == 0) {
 				// CTRL-C
-				packetData = CTRL_C;
-				cmd_name = 'CTRL-C';
+				cmd_name = 'CTRL-C, g';
+				response = await this.sendPacketData('g', true);
 			}
 			else {
 				packetData = cmdArray[0];
 				cmd_name = packetData;
+				response = await this.sendPacketData(packetData);
 			}
-			response = await this.sendPacketData(packetData);
 		}
 		else if (cmd_name == "c") {
 			await this.sendDzrpCmdContinue();
@@ -466,7 +482,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		}
 
 		// Return string
-		let result = "Sent: " + cmd_name + ".\nResponse received";
+		let result = "Sent: " + cmd_name + "\nResponse received";
 		if (response)
 			result += ": " + response;
 		else

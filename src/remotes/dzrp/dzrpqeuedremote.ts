@@ -20,6 +20,9 @@ class MessageBuffer {
 
 	// The function to call when the command times out.
 	public reject: (error) => void;
+
+	// Additional data. Transport specific.
+	public customData?: any;
 }
 
 
@@ -112,7 +115,7 @@ export class DzrpQeuedRemote extends DzrpRemote {
 	 * @param reject Called when the command/response timeout elapses.
 	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
 	 */
-	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void) {
+	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void): MessageBuffer {
 
 		// TODO: REMOVE
 		const l = this.messageQueue.length;
@@ -130,6 +133,8 @@ export class DzrpQeuedRemote extends DzrpRemote {
 		entry.reject = reject;
 		// Add to queue
 		this.messageQueue.push(entry);
+
+		return entry;
 	}
 
 

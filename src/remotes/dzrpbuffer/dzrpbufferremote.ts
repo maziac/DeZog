@@ -153,35 +153,6 @@ export class DzrpBufferRemote extends DzrpQeuedRemote {
 
 
 	/**
-	 * Puts a new message into the queue.
-	 * @param buffer The buffer to send.
-	 * @param respTimeoutTime The response timeout.
-	 * @param resolve Called with the data when a response is received.
-	 * @param reject Called when the command/response timeout elapses.
-	 * @returns A Promise. The resolve/reject functions are stored in the messageQueue.
-	 */
-	protected putIntoQueue(buffer: Buffer, respTimeoutTime: number, resolve: (buffer) => void, reject: (error) => void) {
-
-		// TODO: REMOVE
-		const l = this.messageQueue.length;
-		if (l > 0) {
-			const prevMsg = this.messageQueue[l - 1];
-			if (prevMsg[5] == DZRP.CMD_CONTINUE)
-				console.log();
-		}
-
-		// Create new buffer entry
-		const entry = new MessageBuffer();
-		entry.buffer = buffer;
-		entry.respTimeoutTime = respTimeoutTime;
-		entry.resolve = resolve;
-		entry.reject = reject;
-		// Add to queue
-		this.messageQueue.push(entry);
-	}
-
-
-	/**
 	 * Called when data has been received.
 	 */
 	protected dataReceived(data: Buffer) {

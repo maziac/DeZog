@@ -144,6 +144,18 @@ T05
 it adds 'watch', 'rwatch' or 'awatch' for a write, read or read/write watchpoint if that was hit.
 
 
+### Break (CTRL-C)
+
+To pause/break the server (DeZog) send a single 0x03 character.
+The gdbstub does not send any reply.
+
+To get a reply (also to know when to continue) DeZog will not send a sogle CTRL-C but follow it always by a register read to get a reply from the gdbstub.
+~~~
+CTRL-C
+$g#HH
+~~~
+
+
 ### Extended mode
 
 The MAME gdbstub sets an internal variable to true but it does nto act on it in any way.
