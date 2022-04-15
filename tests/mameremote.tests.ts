@@ -1,5 +1,7 @@
 import * as assert from 'assert';
+import {MameRemote} from '../src/remotes/mame/mameremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
+import {Settings} from '../src/settings';
 
 
 
@@ -83,7 +85,29 @@ suite('MameRemote', () => {
 			value = Decoder.parsePC(line);
 			assert.equal(0x8F9F, value);
 		});
+	});
 
+	suite('gdbstub', () => {
+
+		let mame;
+
+		setup(() => {
+			// Initialize Settings
+			const cfg: any = {
+				remoteType: 'mame'
+			};
+			Settings.launch = Settings.Init(cfg);
+			mame = new MameRemote() as any;
+		});
+
+		test('checksum', () => {
+			assert.equal(mame.checksum(''), '00');
+			assert.equal(mame.checksum('A'), '41');
+			assert.equal(mame.checksum('AB'), '83');
+			assert.equal(mame.checksum('ABC'), 'C6');
+			// Overflow:
+			assert.equal(mame.checksum('ABCD'), '0A');
+		});
 	});
 
 });
