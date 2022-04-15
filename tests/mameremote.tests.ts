@@ -108,6 +108,79 @@ suite('MameRemote', () => {
 			// Overflow:
 			assert.equal(mame.checksum('ABCD'), '0A');
 		});
+
+		test('parseXml', () => {
+			mame.parseXml('<architecture>z80</architecture>');	// Should not throw an error
+
+			assert.throws(() => {
+				mame.parseXml('<architecture>x86</architecture>');
+			}, Error, "Architecture 'x86' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+
+			assert.throws(() => {
+				mame.parseXml(`l<?xml version="1.0"?>
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target version="1.0">
+  <feature name="mame.z80">
+    <reg name="af" bitsize="16" type="int"/>
+    <reg name="bc" bitsize="16" type="int"/>
+    <reg name="de" bitsize="16" type="int"/>
+    <reg name="hl" bitsize="16" type="int"/>
+    <reg name="af'" bitsize="16" type="int"/>
+    <reg name="bc'" bitsize="16" type="int"/>
+    <reg name="de'" bitsize="16" type="int"/>
+    <reg name="hl'" bitsize="16" type="int"/>
+    <reg name="ix" bitsize="16" type="int"/>
+    <reg name="iy" bitsize="16" type="int"/>
+    <reg name="sp" bitsize="16" type="data_ptr"/>
+    <reg name="pc" bitsize="16" type="code_ptr"/>
+  </feature>
+</target>`);
+			}, Error, "No architecture found in reply from MAME.");
+
+			assert.throws(() => {
+				mame.parseXml(`l<?xml version="1.0"?>
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target version="1.0">
+<architecture>6510</architecture>
+  <feature name="mame.z80">
+    <reg name="af" bitsize="16" type="int"/>
+    <reg name="bc" bitsize="16" type="int"/>
+    <reg name="de" bitsize="16" type="int"/>
+    <reg name="hl" bitsize="16" type="int"/>
+    <reg name="af'" bitsize="16" type="int"/>
+    <reg name="bc'" bitsize="16" type="int"/>
+    <reg name="de'" bitsize="16" type="int"/>
+    <reg name="hl'" bitsize="16" type="int"/>
+    <reg name="ix" bitsize="16" type="int"/>
+    <reg name="iy" bitsize="16" type="int"/>
+    <reg name="sp" bitsize="16" type="data_ptr"/>
+    <reg name="pc" bitsize="16" type="code_ptr"/>
+  </feature>
+</target>`);
+			}, Error, "Architecture '6510' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+
+			// Does not throw
+			mame.parseXml(`l<?xml version="1.0"?>
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target version="1.0">
+<architecture>z80</architecture>
+  <feature name="mame.z80">
+    <reg name="af" bitsize="16" type="int"/>
+    <reg name="bc" bitsize="16" type="int"/>
+    <reg name="de" bitsize="16" type="int"/>
+    <reg name="hl" bitsize="16" type="int"/>
+    <reg name="af'" bitsize="16" type="int"/>
+    <reg name="bc'" bitsize="16" type="int"/>
+    <reg name="de'" bitsize="16" type="int"/>
+    <reg name="hl'" bitsize="16" type="int"/>
+    <reg name="ix" bitsize="16" type="int"/>
+    <reg name="iy" bitsize="16" type="int"/>
+    <reg name="sp" bitsize="16" type="data_ptr"/>
+    <reg name="pc" bitsize="16" type="code_ptr"/>
+  </feature>
+</target>`);
+			
+		});
 	});
 
 });

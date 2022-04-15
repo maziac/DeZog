@@ -115,8 +115,8 @@ export class MameRemote extends DzrpQeuedRemote {
 			await this.sendPacketData('?'); // Reply is ignored
 			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
 
-			// TODO: check <architecture>z80</architecture>
-
+			// Check the XML
+			this.parseXml(qXmlReply);
 
 			// Load executable
 			await this.loadExecutable();
@@ -154,6 +154,20 @@ export class MameRemote extends DzrpQeuedRemote {
 		catch {}
 	}
 
+
+	/**
+	 * Checks the XML received from MAME.
+	 * Throws an exception if the architecture is not 'z80'.
+	 */
+	protected parseXml(xml: string) {
+		// Check <architecture>z80</architecture>
+		const match = /<architecture>(.*)<\/architecture>/.exec(xml);
+		if (!match)
+			throw Error("No architecture found in reply from MAME.");
+		const architecture = match[1];
+		if (architecture != 'z80')
+			throw Error("Architecture '" + architecture + "' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
+	}
 
 
 	/**
