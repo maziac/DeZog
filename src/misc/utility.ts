@@ -98,6 +98,21 @@ export class Utility {
 
 
 	/**
+	 * Parses a hex string, but parses in little endian.
+	 * I.e. '12FA' returns 0xFA12.
+	 * @param hexString A string, e.g. '12FA'
+	 * @param index Starts from this index. If omitted starts at 0.
+	 * @returns The result, e.g. 0xFA12.
+	 */
+	public static parseHexWordLE(hexString: string, index = 0): number {
+		const sub1 = hexString.substring(index, index + 2);
+		const sub2 = hexString.substring(index+2, index + 4);
+		const value = parseInt(sub2, 16) * 256 + parseInt(sub1, 16);
+		return value;
+	}
+
+
+	/**
 	 * Parses a string and converts it to a number.
 	 * The string might be decimal or in an hex format.
 	 * If the string begins with '0x' or '$' or ends with 'h' or 'H'

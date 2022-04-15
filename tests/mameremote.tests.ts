@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import {MameRemote} from '../src/remotes/mame/mameremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
+import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';
 import {Settings} from '../src/settings';
 
 
@@ -179,7 +180,33 @@ suite('MameRemote', () => {
     <reg name="pc" bitsize="16" type="code_ptr"/>
   </feature>
 </target>`);
-			
+
+		});
+
+		test('parseStopReplyPacket', () => {
+			let result = mame.parseStopReplyPacket('T050a:0000;0b:0100;');
+			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
+			assert.equal(result.address, 0x0100);
+
+			result = mame.parseStopReplyPacket('T0500b:1234;');
+			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
+			assert.equal(result.address, 0x1234);
+
+			assert.throws(() => {
+				result = mame.parseStopReplyPacket('T050a:0000;');
+			}, Error, "No break address found.");
+
+			result = mame.parseStopReplyPacket('T05watch:FE12;a:0000;0b:0100;');
+			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
+			assert.equal(result.address, 0xFE12);
+
+			result = mame.parseStopReplyPacket('T05awatch:FE12;0a:0000;0b:0100;');
+			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
+			assert.equal(result.address, 0xFE12);
+
+			result = mame.parseStopReplyPacket('T05rwatch:FE12;0a:0000;0b:0100;');
+			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_READ);
+			assert.equal(result.address, 0xFE12);
 		});
 	});
 

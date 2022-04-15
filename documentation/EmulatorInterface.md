@@ -138,10 +138,14 @@ The MAME implementation [here](https://github.com/mamedev/mame/blob/master/src/o
 
 The MAME gdb stub sends e.g:
 ~~~
-T05
+T050a:0000;0b:0100;
 ~~~
 
-it adds 'watch', 'rwatch' or 'awatch' for a write, read or read/write watchpoint if that was hit.
+it adds 'watch', 'rwatch' or 'awatch' for a write, read or read/write watchpoint if that was hit, e.g.:
+~~~
+T05watch:A000;0a:0000;0b:0100;
+~~~
+
 
 
 ### Break (CTRL-C)

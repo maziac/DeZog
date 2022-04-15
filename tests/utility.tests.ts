@@ -169,6 +169,15 @@ suite('Utility', () => {
 	});
 
 
+	test('parseHexWordLE', () => {
+		assert.equal(Utility.parseHexWordLE('12FA'), 0xFA12);
+		assert.equal(Utility.parseHexWordLE('12F'), 0x0F12);
+		assert.equal(Utility.parseHexWordLE('12'), NaN);
+		assert.equal(Utility.parseHexWordLE('1'), NaN);
+		assert.equal(Utility.parseHexWordLE(''), NaN);
+	});
+
+
 	suite('parseValue', () => {
 
         test('decimal', () => {

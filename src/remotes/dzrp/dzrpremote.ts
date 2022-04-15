@@ -940,6 +940,9 @@ export class DzrpRemote extends RemoteBase {
 
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
+				// Handle temporary breakpoints
+				await this.clearTmpBreakpoints(bp1, bp2);
+
 				// Give vscode a little time
 				await this.timeWait.waitAtInterval();
 
@@ -948,6 +951,8 @@ export class DzrpRemote extends RemoteBase {
 
 				// Check for break condition
 				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
+
+				condition = '??';	 // TODO: REMOVE
 
 				// Check for continue
 				if (condition == undefined) {
@@ -977,6 +982,17 @@ export class DzrpRemote extends RemoteBase {
 			// Send command to 'continue'
 			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
+	}
+
+
+	/**
+	 * For a "real" DZRP protocol this function does nothing.
+	 * For "faked" DZRP this can be used to clear the temporary breakpoints
+	 * used for a step.
+	 * E.g. used by MAME.
+	 */
+	protected async clearTmpBreakpoints(bp1?: number, bp2?: number) {
+		//
 	}
 
 

@@ -8,7 +8,7 @@ import {DzrpQeuedRemote} from '../dzrp/dzrpqeuedremote';
 import {Z80RegistersMameDecoder} from './z80registersmamedecoder';
 import {AllRomModel} from '../Paging/memorymodel';
 import {Labels} from '../../labels/labels';
-import {Remote} from '../remotebase';
+import {BREAK_REASON_NUMBER, Remote} from '../remotebase';
 
 
 
@@ -112,7 +112,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		try {
 			// Init
 			//const qReply =
-			await this.sendPacketData('?'); // Reply is ignored
+			//await this.sendPacketData('?'); // Reply is ignored
 			const qXmlReply = await this.sendPacketData('qXfer:features:read:target.xml:00,FFFF');	// Enable 'g', 'G', 'p', and 'P commands
 
 			// Check the XML
@@ -163,7 +163,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Check <architecture>z80</architecture>
 		const match = /<architecture>(.*)<\/architecture>/.exec(xml);
 		if (!match)
-			throw Error("No architecture found in reply from MAME.");
+			throw Error("No architecture found in reply of MAME.");
 		const architecture = match[1];
 		if (architecture != 'z80')
 			throw Error("Architecture '" + architecture + "' is not supported by DeZog. Please select a driver/ROM in MAME with a 'z80' architecture.");
@@ -177,7 +177,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * 'receivedData'.
 	 */
 	protected dataReceived(data: string) {
-		LogTransport.log('dataReceived, count='+data.length);
+		LogTransport.log('dataReceived: ' + data + ', count=' + data.length);
 
 		try {
 			// Add data to existing buffer
@@ -199,42 +199,41 @@ export class MameRemote extends DzrpQeuedRemote {
 			// and the actual stop reply as a notification.
 			// I.e. the 'c'(ontinue) command will return after the '+ is received.
 			const msg = this.messageQueue[0];
-			if (msg.customData.noReply) {
+			if (msg?.customData.noReply) {
 				// E.g. c(ontinue)
 				this.receivedMsg();
+				// Note: normally there shouldn't be anything following.
+				// But in edge cases a notification could follow.
 			}
-			else {
-				// All other commands
 
-				// Now the reply follows:
-				// $reply#HH  with HH the hex checksum.
-				const len = this.receivedData.length;
-				if (len < 4)	// Minimum length: '$#00'
-					return;
-				if (this.receivedData[i++] != '$')
-					throw Error("Wrong packet format. Expected '$'.");
-				// Find the '#' that ends the packet
-				do {
-					i++;
-					if (i >= len)
-						return;	// End not yet found
-				} while (this.receivedData[i] != '#');
-				// Now skip checksum: The transport is considered reliable.
-				// Checksum is not checked.
-				const packetLen = i + 3;	// E.g. '+$xxx#HH'
-				if (len < packetLen)
-					return;	// Not everything received yet.
+			// Now decode the reply:
+			// $reply#HH  with HH the hex checksum.
+			const len = this.receivedData.length;
+			if (len < 4)	// Minimum length: '$#00'
+				return;
+			if (this.receivedData[i++] != '$')
+				throw Error("Wrong packet format. Expected '$'.");
+			// Find the '#' that ends the packet // TODO: Optimize
+			do {
+				i++;
+				if (i >= len)
+					return;	// End not yet found
+			} while (this.receivedData[i] != '#');
+			// Now skip checksum: The transport is considered reliable.
+			// Checksum is not checked.
+			const packetLen = i + 3;	// E.g. '+$xxx#HH'
+			if (len < packetLen)
+				return;	// Not everything received yet.
 
-				// Complete packet received:
-				// Get packet data
-				const packetData = this.receivedData.substring(2, i);
+			// Complete packet received:
+			// Get packet data
+			const packetData = this.receivedData.substring(2, i);
 
-				// Wait for next data
-				this.receivedData = this.receivedData.substring(packetLen);	// Normally this returns an empty string
+			// Wait for next data
+			this.receivedData = this.receivedData.substring(packetLen);	// Normally this returns an empty string
 
-				// Handle received buffer
-				this.receivedMsg(packetData);
-			}
+			// Handle received buffer
+			this.receivedMsg(packetData);
 		}
 		catch (e) {
 			this.receivedData = '';
@@ -275,19 +274,81 @@ export class MameRemote extends DzrpQeuedRemote {
 		else
 		*/
 		{
-			// Stop timeout
-			this.stopCmdRespTimeout();
-			// Get latest sent message
-			const msg = this.messageQueue[0];
-			Utility.assert(msg, "MAME: Response received without request.");
 
-			// Queue next message
-			this.messageQueue.shift();
-			this.sendNextMessage();
+			// Check if it is a Stop Reply Packet
+			if (packetData?.startsWith('T')) {
+				// Yes, a Stop Reply Packet which is treated as a notification.
+				// E.g. 'T050a:0000;0b:0100;'
 
-			// Pass received data to right consumer
-			msg.resolve(packetData);
+				// Call resolve of 'continue'
+				if (this.funcContinueResolve) {
+					const continueHandler = this.funcContinueResolve;
+					this.funcContinueResolve = undefined;
+					// Get break reason
+					const result = this.parseStopReplyPacket(packetData);
+					// Handle the break.
+					continueHandler({
+						breakNumber: result.breakReason,
+						breakAddress: result.address,
+						breakReasonString: ''
+					});
+				}
+			}
+			else {
+				// Stop timeout
+				this.stopCmdRespTimeout();
+				// Get latest sent message
+				const msg = this.messageQueue[0];
+				Utility.assert(msg, "MAME: Response received without request.");
+
+				// Queue next message
+				this.messageQueue.shift();
+				this.sendNextMessage();
+
+				// Pass received data to right consumer
+				msg.resolve(packetData);
+			}
 		}
+	}
+
+
+	/**
+	 * Returns the break reason.
+	 * Parses the Stop Reply Packet and retrieves the info.
+	 * E.g. 'T050a:0000;0b:0100;'
+	 * Note: it should have been checked already that it is a Stop Reply,
+	 * i.e. that it starts with 'T'.
+	 * @returns The break reason as string and the watchAddress if a watchpoint was hit.
+	 * For a normal breakpoint watchAddress is undefined.
+	 */
+	protected parseStopReplyPacket(packetData: string): {breakReason: number, address: number} {
+		packetData = packetData.toLowerCase();
+		// Get break reason
+		let k = packetData.indexOf(':');
+		const param = packetData.substring(3, k);	// Skip break signal (is always '5')
+		let address;
+		let breakReason;
+		if (param.endsWith('watch')) {
+			// Watchpoint hit
+			breakReason = param.startsWith('r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
+			k++;	// Skip ':'
+		}
+		else {
+			// Normal breakpoint
+			breakReason = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
+			// Search for PC register ('0b')
+			k = packetData.indexOf('0b:');
+			if (k < 0)
+				throw Error("No break address found.");
+			k += 3;	// Skip '0b:'
+		}
+
+		// Get watch or break address
+		//const addrString = packetData.substring(k, k + 4);
+		//address = parseInt(addrString, 16);
+		address = Utility.parseHexWordLE(packetData, k);
+
+		return {breakReason, address};
 	}
 
 
@@ -335,12 +396,29 @@ export class MameRemote extends DzrpQeuedRemote {
 			const buffer = Buffer.from(packet);
 			// Put into queue
 			const entry = this.putIntoQueue(buffer, this.cmdRespTimeoutTime, resolve, reject);
-			entry.customData = {noReply: (packetData == 'c')};
+			entry.customData = {
+				packet,	// TODO: Remove. Only used for debugging.
+				noReply: (packetData == 'c')
+			};
 
 			// Try to send immediately
 			if (this.messageQueue.length == 1)
 				this.sendNextMessage();
 		});
+	}
+
+
+	/**
+	 * Sends a packet to MAME that expects an 'OK' as reply.
+	 * If something else is received an exception is thrown.
+	 * @param packetData E.g. 'z1,C000,0'
+	 */
+	protected async sendPacketDataOk(packetData: string): Promise<void> {
+		// Send
+		const reply = await this.sendPacketData(packetData);
+		// Check reply for 'OK'
+		if (reply != 'OK')
+			throw Error("Communication error: MAME replied with an Error: '" + reply + "'");
 	}
 
 
@@ -507,14 +585,35 @@ export class MameRemote extends DzrpQeuedRemote {
 */
 
 	/**
+	 * If cache is empty retrieves the registers from
+	 * the Remote.
+	 */
+	public async getRegistersFromEmulator(): Promise<void> {
+		//Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
+		// Get regs
+		//const regs = await this.sendDzrpCmdGetRegisters();
+		// And set
+
+		//Z80Registers.setCache(regs);
+		//Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
+
+
+		const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
+		Z80Registers.setCache(regs);
+	}
+
+	/**
 	 * Sends the command to get all registers.
 	 * @returns An Uint16Array with the register data. Same order as in
 	 * 'Z80Registers.getRegisterData'.
 	 */
+	/*
 	public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
+		const resp = await this.sendPacketData('g');
+		const buffer = Uint16Array
 		return new Uint16Array();
 	}
-
+*/
 
 	/**
 	 * Sends the command to set a register value.
@@ -532,7 +631,45 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
 	 */
 	public async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+		try {
+			// Set temporary breakpoints
+			if (bp1Address != undefined) {
+				const bp1 = 'Z1,' + bp1Address.toString(16) + ',0';
+				await this.sendPacketDataOk(bp1);
+			}
+			if (bp2Address != undefined) {
+				const bp2 = 'Z1,' + bp2Address.toString(16) + ',0';
+				await this.sendPacketDataOk(bp2);
+			}
 
+			// C(ontinue)
+			await this.sendPacketData('c');
+		}
+		catch (e) {
+			this.emit('error', e);
+		}
+	}
+
+
+	/**
+	 * Removes temporary breakpoints that might have been set by a
+	 * step function.
+	 */
+	protected async clearTmpBreakpoints(bp1Address?: number, bp2Address?: number): Promise<void> {
+		try {
+			// Remove temporary breakpoints
+			if (bp1Address != undefined) {
+				const bp1 = 'z1,' + bp1Address.toString(16) + ',0';
+				await this.sendPacketDataOk(bp1);
+			}
+			if (bp2Address != undefined) {
+				const bp2 = 'z1,' + bp2Address.toString(16) + ',0';
+				await this.sendPacketDataOk(bp2);
+			}
+		}
+		catch (e) {
+			this.emit('error', e);
+		}
 	}
 
 
@@ -582,14 +719,37 @@ export class MameRemote extends DzrpQeuedRemote {
 
 
 	/**
+	 * Reads a memory.
+	 * @param address The memory start address.
+	 * @param size The memory size.
+	 * @returns A promise with an Uint8Array.
+	 */
+	public async readMemoryDump(address: number, size: number): Promise<Uint8Array> {
+		const cmd = 'm' + address.toString(16) + ',' + size.toString(16);
+		const resp = await this.sendPacketData(cmd);
+		// Parse the hex values
+		const buffer = new Uint8Array(size);
+		for (let i = 0; i < size; i++) {
+			const k = 2 * i;
+			const valString = resp.substring(k, k + 2);
+			const val = parseInt(valString, 16);
+			buffer[i] = val;
+		}
+		return buffer;
+	}
+
+
+	/**
 	 * Sends the command to retrieve a memory dump.
 	 * @param address The memory start address.
 	 * @param size The memory size.
 	 * @returns A promise with an Uint8Array.
 	 */
+	/*
 	public async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
 		return new Uint8Array();
 	}
+	*/
 
 
 	/**

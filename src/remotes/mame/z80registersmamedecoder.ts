@@ -1,3 +1,4 @@
+import {Utility} from '../../misc/utility';
 import {RegisterData} from '../decoderegisterdata';
 import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
@@ -28,56 +29,67 @@ enum MAME_REG {
 export class Z80RegistersMameDecoder extends Z80RegistersStandardDecoder {
 
 	/**
+	 * General parse function from index.
+	 * @param data The output from Mame.
+	 * @param index The index into the data string.
+	 * @returns The value.
+	 */
+	public parse(data: RegisterData, index: MAME_REG): number {
+		return Utility.parseHexWordLE(data, index);
+	}
+
+
+	/**
 	 * Parses the register output for PC etc.
-	 * @param data The output from zesarux.
+	 * @param data The output from Mame.
 	 * @returns The value.
 	 */
 	public parsePC(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.PC, MAME_REG.PC + 4), 16);
+		return this.parse(data, MAME_REG.PC);
 	}
 
 	public parseSP(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.SP, MAME_REG.SP + 4), 16);
+		return this.parse(data, MAME_REG.SP);
 	}
 
 	public parseAF(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.AF, MAME_REG.AF + 4), 16);
+		return this.parse(data, MAME_REG.AF);
 	}
 
 	public parseBC(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.BC, MAME_REG.BC + 4), 16);
+		return this.parse(data, MAME_REG.BC);
 	}
 
 	public parseHL(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.HL, MAME_REG.HL + 4), 16);
+		return this.parse(data, MAME_REG.HL);
 	}
 
 	public parseDE(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.DE, MAME_REG.DE + 4), 16);
+		return this.parse(data, MAME_REG.DE);
 	}
 
 	public parseIX(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.IX, MAME_REG.IX + 4), 16);
+		return this.parse(data, MAME_REG.IX);
 	}
 
 	public parseIY(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.IY, MAME_REG.IY + 4), 16);
+		return this.parse(data, MAME_REG.IY);
 	}
 
 	public parseAF2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.AF2, MAME_REG.AF2 + 4), 16);
+		return this.parse(data, MAME_REG.AF2);
 	}
 
 	public parseBC2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.BC2, MAME_REG.BC2 + 4), 16);
+		return this.parse(data, MAME_REG.BC2);
 	}
 
 	public parseHL2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.HL2, MAME_REG.HL2 + 4), 16);
+		return this.parse(data, MAME_REG.HL2);
 	}
 
 	public parseDE2(data: RegisterData): number {
-		return parseInt(data.substring(MAME_REG.DE2, MAME_REG.DE2 + 4), 16);
+		return this.parse(data, MAME_REG.DE2);
 	}
 
 	public parseI(data: RegisterData): number {
