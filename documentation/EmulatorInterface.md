@@ -166,7 +166,16 @@ The program in MAMe is running afterwards until a breakpoint is hit or until CTR
 Meanwhile it is still possible to send other commands, e.g. to retrieve registers or memory contents.
 
 If a c(continue) is sent while the program is already running (e.g. a c(ontinue) was already set) is ACKed with a '+' and nothing happens.
-It is enough to senda CTRL-C once to stop execution.
+It is enough to send a CTRL-C once to stop execution.
+
+
+# Detach
+
+The D(etach) command in MAME gdbstub just sets a variable that stops acting in 'wait_for_debugger'.
+
+# Kill
+
+The k(ill) command terminates MAME.
 
 
 ### Extended mode

@@ -151,10 +151,62 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Called e.g. when vscode sends a disconnectRequest
 	 */
 	public async disconnect(): Promise<void> {
-		try {
-			await this.sendDzrpCmdClose();
-		}
-		catch {}
+		// Send a k(ill) command
+		// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
+		//const resp =
+			await this.sendPacketData('k');
+
+		return new Promise<void>(resolve => {
+			if (!this.socket)
+				return;
+
+			this.socket?.removeAllListeners();
+			// Timeout is required because socket.end() does not call the
+			// callback if it is already closed and the state cannot
+			// reliable be determined.
+			const timeout = setTimeout(() => {
+				if (resolve) {
+					resolve();
+				}
+			}, 1000);	// 1 sec
+			this.socket?.end(() => {
+				if (resolve) {
+					resolve();
+					clearTimeout(timeout);
+				}
+			});
+			this.socket = undefined as any;
+		});
+	}
+
+
+	/**
+	 * Closes the socket.
+	 */
+	// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) is clarified
+	protected socketClose(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			const socket = this.socket;
+			if (!socket)
+				return;
+			this.socket = undefined as any;
+
+			socket.removeAllListeners();
+			// Timeout is required because socket.end() does not call the
+			// callback if it is already closed and the state cannot
+			// reliable be determined.
+			const timeout = setTimeout(() => {
+				if (resolve) {
+					resolve();
+				}
+			}, 10000);	// 1 sec
+			socket.end(() => {
+				if (resolve) {
+					resolve();
+					clearTimeout(timeout);
+				}
+			});
+		});
 	}
 
 
@@ -422,19 +474,21 @@ export class MameRemote extends DzrpQeuedRemote {
 		let cmd_name = cmdArray.shift();
 		if (cmd_name == "help") {
 			return `Send a command to MAME. Commands are:
-  b: Break
-  c: Continue
-  s: Step into
-  g: Read registers
-  G: Write registers
-  m: Read memory
-  M: Write memory
-  p: Read register
-  P: Write register
-  X: Load binary data
-  z: Clear breakpoint/watchpoint
-  Z: Set breakpoint/watchpoint
-  send xxx: Sends the raw ascii string xxx. The $/# and the checksum is added before sending. An empty string sends a CTRL-C (break).`;
+  send <cmd>:	<cmd> is the ASCII command, e.g.
+	c: Continue
+	s: Step into
+	g: Read registers
+	G: Write registers
+	m: Read memory
+	M: Write memory
+	p: Read register
+	P: Write register
+	z: Clear breakpoint/watchpoint
+	Z: Set breakpoint/watchpoint
+  send:  Without other parameter. Used to send a break (CTRL-C).
+  	The break is automatically followed by a 'p0b' (get PC register).
+  close: Closes the port.
+`;
 		}
 
 		let response = "";
@@ -452,85 +506,9 @@ export class MameRemote extends DzrpQeuedRemote {
 				response = await this.sendPacketData(packetData);
 			}
 		}
-		else if (cmd_name == "c") {
-			await this.sendDzrpCmdContinue();
-		}
-		else if (cmd_name == "b") {
-			await this.sendDzrpCmdPause();
-		}
-		else if (cmd_name == "r") {
-			const regs = await this.sendDzrpCmdGetRegisters();
-			// Registers
-			const regNames = ["PC", "SP", "AF", "BC", "DE", "HL", "IX", "IY", "AF'", "BC'", "DE'", "HL'", "IR", "IM"];
-			let i = 0;
-			for (const name of regNames) {
-				const value = regs[i];
-				response += "\n" + name + "(" + i + "): 0x" + Utility.getHexString(value, 4) + "/" + value;
-				i++;
-			}
-		}
-		else if (cmd_name == "P") {
-			if (cmdArray.length < 2) {
-				// Error
-				throw Error("Expecting 2 parameters: regIndex and value.");
-			}
-			const regIndex = Utility.parseValue(cmdArray[0]);
-			const value = Utility.parseValue(cmdArray[1]);
-			await this.sendDzrpCmdSetRegister(regIndex as Z80_REG, value);
-		}
-		else if (cmd_name == "m") {
-			if (cmdArray.length < 2) {
-				// Error
-				throw Error("Expecting at least 2 parameters: address and count.");
-			}
-			const addr = Utility.parseValue(cmdArray[0]);
-			const count = Utility.parseValue(cmdArray[1]);
-			const data = await this.sendDzrpCmdReadMem(addr, count);
-			// Print
-			response = Utility.getHexString(addr, 4) + "h: ";
-			for (const dat of data)
-				response += Utility.getHexString(dat, 2) + "h ";
-		}
-		else if (cmd_name == "M") {
-			if (cmdArray.length < 2) {
-				// Error
-				throw Error("Expecting at least 2 parameters: address and memory content list.");
-			}
-			const addr = Utility.parseValue(cmdArray.shift()!);
-			// Create test data
-			const length = cmdArray.length;
-			const data = new Uint8Array(length);
-			for (let i = 0; i < data.length; i++)
-				data[i] = Utility.parseValue(cmdArray[i]) & 0xFF;
-			await this.sendDzrpCmdWriteMem(addr, data);
-		}
-		else if (cmd_name == "z0") {
-			// "z0 address"
-			if (cmdArray.length != 1) {
-				// Error
-				throw Error("Expecting 1 parameters: address.");
-			}
-			const address = Utility.parseValue(cmdArray[0]);
-			// Create data to send
-			const longAddress = address;
-			const bp: GenericBreakpoint = {
-				address: longAddress
-			};
-			await this.sendDzrpCmdAddBreakpoint(bp);
-			response += '\n Breakpoint ID: ' + bp.bpId;
-		}
-		else if (cmd_name == "Z0") {
-			// "Z0 breakpointId"
-			if (cmdArray.length != 1) {
-				// Error
-				throw Error("Expecting 1 parameter: breakpoint ID.");
-			}
-			const bp: GenericBreakpoint = {
-				address: -1,	// not used
-				bpId: Utility.parseValue(cmdArray[0])
-			};
-			// Create data to send
-			await this.sendDzrpCmdRemoveBreakpoint(bp);
+		else if (cmd_name == "close") {
+			await this.socketClose();
+			response = 'Socket closed';
 		}
 		else {
 			throw Error("Error: not supported.");
