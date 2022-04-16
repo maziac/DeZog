@@ -6,18 +6,18 @@ import {Z80RegistersStandardDecoder} from '../z80registersstandarddecoder';
 
 // The index into the data string for certain registers.
 enum MAME_REG {
-	AF = 0,
-	BC = 4,
-	DE = 8,
-	HL = 12,
-	AF2 = 16,
-	BC2 = 20,
-	DE2 = 24,
-	HL2 = 28,
-	IX = 32,
-	IY = 36,
-	SP = 40,
-	PC = 44
+	AF = 0,		// 0
+	BC = 4,		// 1
+	DE = 8,		// 2
+	HL = 12,	// 3
+	AF2 = 16,	// 4
+	BC2 = 20,	// 5
+	DE2 = 24,	// 6
+	HL2 = 28,	// 7
+	IX = 32,	// 8
+	IY = 36,	// 9
+	SP = 40,	// 10 (0x0A)
+	PC = 44		// 11 (0x0B)
 }
 
 

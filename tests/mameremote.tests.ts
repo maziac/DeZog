@@ -2,7 +2,6 @@ import * as assert from 'assert';
 import {MameRemote} from '../src/remotes/mame/mameremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';
-import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings';
 
 

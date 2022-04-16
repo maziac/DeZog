@@ -217,7 +217,7 @@ export class Z80RegistersClass {
 
 
 	/**
-	 * Returns the register enum value for a geister string.
+	 * Returns the register enum value for a register string.
 	 * @param reg E.g. "HL" (case insensitive)
 	 * @returns E.g. Z80_REG.HL
 	 */

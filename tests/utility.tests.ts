@@ -178,6 +178,12 @@ suite('Utility', () => {
 	});
 
 
+	test('getHexWordStringLE', () => {
+		assert.equal(Utility.getHexWordStringLE(0x1234), '3412');
+		assert.equal(Utility.getHexWordStringLE(0x1234), '3412');
+	});
+
+
 	suite('parseValue', () => {
 
         test('decimal', () => {

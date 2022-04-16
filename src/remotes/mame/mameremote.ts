@@ -570,12 +570,77 @@ export class MameRemote extends DzrpQeuedRemote {
 	}
 */
 
+
 	/**
 	 * Sends the command to set a register value.
 	 * @param regIndex E.g. Z80_REG.BC or Z80_REG.A2
 	 * @param value A 1 byte or 2 byte value.
 	 */
 	public async sendDzrpCmdSetRegister(regIndex: Z80_REG, value: number): Promise<void> {
+		const permut = [
+			0x0B,	// PC -> MAME
+			0x0A,	// SP -> MAME
+			0x00,	// AF -> MAME
+			0x01,	// BC -> MAME
+			0x02,	// DE -> MAME
+			0x03,	// HL -> MAME
+			0x08,	// IX -> MAME
+			0x09,	// IY -> MAME
+			0x04,	// AF2 -> MAME
+			0x05,	// BC2 -> MAME
+			0x06,	// DE2 -> MAME
+			0x07,	// HL2 -> MAME
+		];
+
+		// Word registers:
+		if (regIndex <= Z80_REG.HL2) {
+			value &= 0xFFFF;
+			const mameRegIndex = permut[regIndex];
+			const cmdSet = 'p' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(value);
+			await this.sendPacketDataOk(cmdSet);
+			return;
+		}
+
+		// Byte registers:
+		if (regIndex >= Z80_REG.F && regIndex <= Z80_REG.H2) {
+			value &= 0xFF;
+			// Get the word register.
+			const byteRegIndex = regIndex - Z80_REG.F;
+			const dwordIndex = Math.floor(byteRegIndex / 2);
+			let dword = Z80Registers.getRegValue(dwordIndex);
+			// Now check which half should be changed
+			const half = byteRegIndex % 2;
+			if (half) {
+				// upper half should be changed, e.g. B of BC
+				dword = (dword & 0xFF) + 256 * value;
+			}
+			else {
+				// lower half should be changed, e.g. C of BC
+				dword = (dword & 0xFF00) + value;
+			}
+			// Change dword register
+			const mameRegIndex = permut[dwordIndex];
+			const cmdSet = 'p' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(dword);
+			await this.sendPacketDataOk(cmdSet);
+			return;
+		}
+
+		// All other registers are not supported
+		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");
+
+			/*
+
+	PC, SP,
+	AF, BC, DE, HL,
+	IX, IY,
+	AF2, BC2, DE2, HL2, IR,
+	IM,
+
+	F, A, C, B, E, D, L, H,
+	IXL, IXH, IYL, IYH,
+	F2, A2, C2, B2, E2, D2, L2, H2,
+	R, I,
+	*/
 
 	}
 

@@ -56,6 +56,19 @@ export class Utility {
 
 
 	/**
+	 * Returns a value as a 4 digit hex string in little endian.
+	 * I.e. the low byte comes first.
+	 * @param value A value, e.g. 0x1234
+	 * @returns Little endian string, e.g. "3412"
+	 */
+	public static getHexWordStringLE(value: number): string {
+		const hex = Utility.getHexString(value, 4);
+		// Exchange high and low
+		return hex.substring(2) + hex.substring(0, 2);
+	}
+
+
+	/**
 	 * Returns a hex string from a long address the string is in the format.
 	 * "F7A4h @bank5" for a long address and
 	 * "F7A4h" for a 64k address.
