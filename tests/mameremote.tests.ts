@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import {MameRemote} from '../src/remotes/mame/mameremote';
 import {Z80RegistersMameDecoder} from '../src/remotes/mame/z80registersmamedecoder';
 import {BREAK_REASON_NUMBER} from '../src/remotes/remotebase';
+import {Z80Registers, Z80RegistersClass} from '../src/remotes/z80registers';
 import {Settings} from '../src/settings';
 
 
@@ -57,7 +58,7 @@ suite('MameRemote', () => {
 */
 
 	suite('Z80RegistersMameDecoder', () => {
-		const line = "112233445566778899AABBCCDDEEFF1F2F3F4F5F6F7F8F9F";
+		const line = "2211443366558877aa99ccbbEEDD1FFF3F2F5F4F7F6F9F8F";
 		let Decoder = new Z80RegistersMameDecoder();
 
 		test('All registers', () => {
@@ -186,11 +187,11 @@ suite('MameRemote', () => {
 		test('parseStopReplyPacket', () => {
 			let result = mame.parseStopReplyPacket('T050a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
-			assert.equal(result.address, 0x0100);
+			assert.equal(result.address, 0x001);
 
 			result = mame.parseStopReplyPacket('T0500b:1234;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.BREAKPOINT_HIT);
-			assert.equal(result.address, 0x1234);
+			assert.equal(result.address, 0x3412);
 
 			assert.throws(() => {
 				result = mame.parseStopReplyPacket('T050a:0000;');
@@ -198,16 +199,47 @@ suite('MameRemote', () => {
 
 			result = mame.parseStopReplyPacket('T05watch:FE12;a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
-			assert.equal(result.address, 0xFE12);
+			assert.equal(result.address, 0x12FE);
 
 			result = mame.parseStopReplyPacket('T05awatch:FE12;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
-			assert.equal(result.address, 0xFE12);
+			assert.equal(result.address, 0x12FE);
 
 			result = mame.parseStopReplyPacket('T05rwatch:FE12;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_READ);
-			assert.equal(result.address, 0xFE12);
+			assert.equal(result.address, 0x12FE);
 		});
+	});
+
+
+	test('checkTmpBreakpoints', async () => {
+		class MockMame extends MameRemote {
+			protected async sendPacketDataOk(packetData: string): Promise<void> {
+				//
+			};
+		}
+
+		// Init
+		const cfg: any = {
+			remoteType: 'mame'
+		};
+		Settings.launch = Settings.Init(cfg);
+		const mockMame = new MockMame() as any;
+
+		// Set PC to 0xEC12
+		Z80RegistersClass.createRegisters();
+		Z80Registers.decoder = new Z80RegistersMameDecoder();
+		Z80Registers.setCache("0000000000000000000000000000000000000000000012EC");
+		assert.equal(mockMame.getPC(), 0xEC12);
+
+		// Check checkTmpBreakpoints
+		assert.ok(!await mockMame.checkTmpBreakpoints());
+		assert.ok(!await mockMame.checkTmpBreakpoints(0x1000));
+		assert.ok(!await mockMame.checkTmpBreakpoints(0x1000, 0x2000));
+		assert.ok(!await mockMame.checkTmpBreakpoints(undefined, 0x2000));
+
+		assert.ok(await mockMame.checkTmpBreakpoints(0xEC12));
+		assert.ok(await mockMame.checkTmpBreakpoints(0xFFFF, 0xEC12));
 	});
 
 });
