@@ -78,9 +78,9 @@ export class Z80RegistersClass {
 	 * Called during the launchRequest to create the singleton.
 	 */
 	public static createRegisters() {
-		Z80Registers=new Z80RegistersClass();
+		Z80Registers = new Z80RegistersClass();
 		// Init the registers
-		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.spec
+		Z80RegistersClass.Init();  // Needs to be done here to honor the formatting in the Settings.
 	}
 
 
@@ -90,12 +90,12 @@ export class Z80RegistersClass {
 	 */
 	private _decoder: DecodeRegisterData;
 	public get decoder(): DecodeRegisterData {return this._decoder}
-	public set decoder(value: DecodeRegisterData) {this._decoder=value;}
+	public set decoder(value: DecodeRegisterData) {this._decoder = value;}
 
 
 	/**
 	 * Constructor.
-     * @param slotCount The number of used slots (used for memory banks).
+	 * @param slotCount The number of used slots (used for memory banks).
 	 */
 	constructor() {
 		//
@@ -117,8 +117,8 @@ export class Z80RegistersClass {
 		}
 
 		// Formatting
-		Z80RegisterVarFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
-		Z80RegisterHoverFormat=Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerHover);
+		Z80RegisterVarFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerVar);
+		Z80RegisterHoverFormat = Z80RegistersClass.createFormattingMap(Settings.launch.formatting.registerHover);
 	}
 
 
@@ -133,26 +133,26 @@ export class Z80RegistersClass {
 		IM: number,
 		slots: number[]): Uint16Array {
 		// Store data in word array to save space
-		const regData=new Uint16Array(Z80_REG.IM+1+slots.length+1);
-		regData[Z80_REG.PC]=PC;
-		regData[Z80_REG.SP]=SP;
-		regData[Z80_REG.AF]=AF;
-		regData[Z80_REG.BC]=BC;
-		regData[Z80_REG.DE]=DE;
-		regData[Z80_REG.HL]=HL;
-		regData[Z80_REG.IX]=IX;
-		regData[Z80_REG.IY]=IY;
-		regData[Z80_REG.AF2]=AF2;
-		regData[Z80_REG.BC2]=BC2;
-		regData[Z80_REG.DE2]=DE2;
-		regData[Z80_REG.HL2]=HL2;
-		regData[Z80_REG.IR]=(I<<8)|R;
-		regData[Z80_REG.IM]=IM;
+		const regData = new Uint16Array(Z80_REG.IM + 1 + slots.length + 1);
+		regData[Z80_REG.PC] = PC;
+		regData[Z80_REG.SP] = SP;
+		regData[Z80_REG.AF] = AF;
+		regData[Z80_REG.BC] = BC;
+		regData[Z80_REG.DE] = DE;
+		regData[Z80_REG.HL] = HL;
+		regData[Z80_REG.IX] = IX;
+		regData[Z80_REG.IY] = IY;
+		regData[Z80_REG.AF2] = AF2;
+		regData[Z80_REG.BC2] = BC2;
+		regData[Z80_REG.DE2] = DE2;
+		regData[Z80_REG.HL2] = HL2;
+		regData[Z80_REG.IR] = (I << 8) | R;
+		regData[Z80_REG.IM] = IM;
 		// Store slot count + slots
-		let i=Z80_REG.IM+1;
-		regData[i++]=slots.length;
+		let i = Z80_REG.IM + 1;
+		regData[i++] = slots.length;
 		for (const slot of slots) {
-			regData[i++]=slot;
+			regData[i++] = slot;
 		}
 		return regData;
 	}
@@ -197,13 +197,13 @@ export class Z80RegistersClass {
 				continue;	// has already a format string
 			// set default format
 			let rLen;
-			if (regName == "IXH" || regName == "IXL" || regName == "IYH" || regName == "IYL" || regName=="IM") {
+			if (regName == "IXH" || regName == "IXL" || regName == "IYH" || regName == "IYL" || regName == "IM") {
 				// Value length = 1 byte
 				rLen = 1;
 			}
 			else {
 				rLen = regName.length;
-				if (regName[rLen - 1] == '\'')--rLen;	// Don't count the "'" in the register name
+				if (regName[rLen - 1] == '\'') --rLen;	// Don't count the "'" in the register name
 			}
 			if (rLen == 1)
 				formattingMap.set(regName, '${hex}h, ${unsigned}u');
@@ -221,9 +221,9 @@ export class Z80RegistersClass {
 	 * @param reg E.g. "HL" (case insensitive)
 	 * @returns E.g. Z80_REG.HL
 	 */
-	public static getEnumFromName(reg: string): Z80_REG|undefined {
+	public static getEnumFromName(reg: string): Z80_REG | undefined {
 		const regUpper = reg.toUpperCase();
-		const index=Z80RegistersClass.registerNames.indexOf(regUpper);
+		const index = Z80RegistersClass.registerNames.indexOf(regUpper);
 		if (index < 0)
 			return undefined;
 		return index;
@@ -261,27 +261,27 @@ export class Z80RegistersClass {
 	 * @returns false, NC is not met.
 	 */
 	public static isCcMetByFlag(cc: number, flags: number): boolean {
-		const testSet=((cc&0x01)!=0);
+		const testSet = ((cc & 0x01) != 0);
 		let condTest;
-		cc=(cc>>>1)&0x03;
+		cc = (cc >>> 1) & 0x03;
 		switch (cc) {
 			case 0:	// NZ, Z
-				condTest=((flags&Z80RegistersClass.FLAG_Z)!=0);
+				condTest = ((flags & Z80RegistersClass.FLAG_Z) != 0);
 				break;
 			case 1:	// NC, C
-				condTest=((flags&Z80RegistersClass.FLAG_C)!=0);
+				condTest = ((flags & Z80RegistersClass.FLAG_C) != 0);
 				break;
 			case 2:	// PO, PE
-				condTest=((flags&Z80RegistersClass.FLAG_PV)!=0);
+				condTest = ((flags & Z80RegistersClass.FLAG_PV) != 0);
 				break;
 			case 3:	// P, M
-				condTest=((flags&Z80RegistersClass.FLAG_S)!=0);
+				condTest = ((flags & Z80RegistersClass.FLAG_S) != 0);
 				break;
 			default:
 				Utility.assert(false);	// Impossible.
 		}
 
-		const ccIsTrue=(condTest==testSet);
+		const ccIsTrue = (condTest == testSet);
 		return ccIsTrue;
 	}
 
@@ -301,7 +301,7 @@ export class Z80RegistersClass {
 	 * Used by ZesaruxEmulator.getRegistersFromEmulator and the cpu history.
 	 */
 	public setCache(data: RegisterData) {
-		this.RegisterCache=data;
+		this.RegisterCache = data;
 	}
 
 
@@ -318,7 +318,7 @@ export class Z80RegistersClass {
 	 * Returns true if the register is available.
 	 */
 	public valid(): boolean {
-		return this.RegisterCache!=undefined;
+		return this.RegisterCache != undefined;
 	}
 
 
@@ -339,16 +339,16 @@ export class Z80RegistersClass {
 		const value = this.decoder.getRegValueByName(reg, this.RegisterCache);
 
 		// Special handling if IM is not available (e.g. for ZX Next)
-		if (reg=="IM") {
-			if (value==0xFF)
+		if (reg == "IM") {
+			if (value == 0xFF)
 				return "?";	// Unknown
 		}
 
 		// do the formatting
 		let rLen = reg.length;
-		if (reg[rLen-1]=='\'') --rLen;	// Don't count the "'" in the register name
-		if (rLen==3)
-			rLen=1;	// This is IXH, IXL, IYH, IYL
+		if (reg[rLen - 1] == '\'') --rLen;	// Don't count the "'" in the register name
+		if (rLen == 3)
+			rLen = 1;	// This is IXH, IXL, IYH, IYL
 
 		Utility.assert(this.valid());
 		const res = Utility.numberFormattedSync(value, rLen, format, false, reg);
@@ -415,10 +415,10 @@ export class Z80RegistersClass {
 	/**
 	 * @returns An array with the slots or undefined if no slots are used (e.g. ZX48K)
 	 */
-	public getSlots(): number[]|undefined {
+	public getSlots(): number[] | undefined {
 		// Use slots if a function exist to convert to long address.
-		if (this.funcCreateLongAddress!=undefined) {
-			const slots=this.decoder.parseSlots(this.RegisterCache);
+		if (this.funcCreateLongAddress != undefined) {
+			const slots = this.decoder.parseSlots(this.RegisterCache);
 			return slots;
 		}
 		// Otherwise, don't return slots
@@ -431,9 +431,9 @@ export class Z80RegistersClass {
 	 * @returns long address e.g. 0x57A000
 	 */
 	public getPCLong(): number {
-		const pc=this.getPC();
-		const slots=this.getSlots();
-		const pcLong=this.createLongAddress(pc, slots);
+		const pc = this.getPC();
+		const slots = this.getSlots();
+		const pcLong = this.createLongAddress(pc, slots);
 		return pcLong;
 	}
 
@@ -447,7 +447,7 @@ export class Z80RegistersClass {
 	 * I.e. a long address is always > 0xFFFF
 	 * a normal address is always <= 0xFFFF
 	 */
-	public createLongAddress(address: number, slots: number[]|undefined): number {
+	public createLongAddress(address: number, slots: number[] | undefined): number {
 		// Check for normal address
 		if (!slots)
 			return address;
@@ -456,7 +456,7 @@ export class Z80RegistersClass {
 		// Calculate long address
 		if (this.funcCreateLongAddress == undefined)
 			throw Error("Internal error: Maybe the memory model is wrong.");
-		const result=this.funcCreateLongAddress(address, slots);
+		const result = this.funcCreateLongAddress(address, slots);
 		return result;
 	}
 
@@ -469,7 +469,7 @@ export class Z80RegistersClass {
 	public getSlotFromAddress(addr: number): number {
 		if (this.funcGetSlotFromAddress == undefined)
 			throw Error("Internal error: Maybe the memory model is wrong.");
-		const slotIndex=this.funcGetSlotFromAddress(addr&0xFFFF);
+		const slotIndex = this.funcGetSlotFromAddress(addr & 0xFFFF);
 		return slotIndex;
 	}
 
@@ -483,8 +483,8 @@ export class Z80RegistersClass {
 	 * Returns -1 if 'addr' is not a long address.
 	 */
 	public getBankFromAddress(addr: number): number {
-		const bankPart=addr>>>16;
-		return bankPart-1;
+		const bankPart = addr >>> 16;
+		return bankPart - 1;
 	}
 
 	/**
@@ -495,7 +495,7 @@ export class Z80RegistersClass {
 	 * @return The corresponding long address, i.e. addr+((bank+1)<<16).
 	 */
 	public getLongAddressWithBank(addr: number, bank: number): number {
-		const longAddr=addr+((bank+1)<<16);
+		const longAddr = addr + ((bank + 1) << 16);
 		return longAddr;
 	}
 
@@ -507,10 +507,10 @@ export class Z80RegistersClass {
 	 * @param funcGetSlotFromAddress Function to extract the slot from the 64k address.
 	 */
 	public setSlotsAndBanks(
-		funcCreateLongAddress: ((address: number, slots: number[]) => number)|undefined,
-		funcGetSlotFromAddress: ((address: number) => number)|undefined) {
-		this.funcCreateLongAddress=funcCreateLongAddress!;
-		this.funcGetSlotFromAddress=funcGetSlotFromAddress!;
+		funcCreateLongAddress: ((address: number, slots: number[]) => number) | undefined,
+		funcGetSlotFromAddress: ((address: number) => number) | undefined) {
+		this.funcCreateLongAddress = funcCreateLongAddress!;
+		this.funcGetSlotFromAddress = funcGetSlotFromAddress!;
 	}
 
 }

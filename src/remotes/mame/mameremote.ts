@@ -247,67 +247,38 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * If there are still messages in the queue the next message is sent.
 	 */
 	protected receivedMsg(packetData?: string) {
-		// Check for notification
-		/*
-		if (recSeqno == 0) {
-			// Notification.
+		// Check if it is a Stop Reply Packet
+		if (packetData?.startsWith('T')) {
+			// Yes, a Stop Reply Packet which is treated as a notification.
+			// E.g. 'T050a:0000;0b:0100;'
+
 			// Call resolve of 'continue'
 			if (this.funcContinueResolve) {
 				const continueHandler = this.funcContinueResolve;
 				this.funcContinueResolve = undefined;
-				// Get data
-				const breakNumber = data[2];
-				let breakAddress = Utility.getWord(data, 3);
-				if (Labels.AreLongAddressesUsed()) {
-					const breakAddressBank = data[5];
-					breakAddress += breakAddressBank << 16;
-				}
-				// Get reason string
-				let breakReasonString = Utility.getStringFromBuffer(data, 6);
-				if (breakReasonString.length == 0)
-					breakReasonString = undefined as any;
-
+				// Get break reason
+				const result = this.parseStopReplyPacket(packetData);
 				// Handle the break.
-				continueHandler({breakNumber, breakAddress, breakReasonString});
+				continueHandler({
+					breakNumber: result.breakReason,
+					breakAddress: result.address,
+					breakReasonString: ''
+				});
 			}
 		}
-		else
-		*/
-		{
+		else {
+			// Stop timeout
+			this.stopCmdRespTimeout();
+			// Get latest sent message
+			const msg = this.messageQueue[0];
+			Utility.assert(msg, "MAME: Response received without request.");
 
-			// Check if it is a Stop Reply Packet
-			if (packetData?.startsWith('T')) {
-				// Yes, a Stop Reply Packet which is treated as a notification.
-				// E.g. 'T050a:0000;0b:0100;'
+			// Queue next message
+			this.messageQueue.shift();
+			this.sendNextMessage();
 
-				// Call resolve of 'continue'
-				if (this.funcContinueResolve) {
-					const continueHandler = this.funcContinueResolve;
-					this.funcContinueResolve = undefined;
-					// Get break reason
-					const result = this.parseStopReplyPacket(packetData);
-					// Handle the break.
-					continueHandler({
-						breakNumber: result.breakReason,
-						breakAddress: result.address,
-						breakReasonString: ''
-					});
-				}
-			}
-			else {
-				// Stop timeout
-				this.stopCmdRespTimeout();
-				// Get latest sent message
-				const msg = this.messageQueue[0];
-				Utility.assert(msg, "MAME: Response received without request.");
-
-				// Queue next message
-				this.messageQueue.shift();
-				this.sendNextMessage();
-
-				// Pass received data to right consumer
-				msg.resolve(packetData);
-			}
+			// Pass received data to right consumer
+			msg.resolve(packetData);
 		}
 	}
 
@@ -467,7 +438,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			if (cmdArray.length == 0) {
 				// CTRL-C
 				cmd_name = 'CTRL-C, g';
-				response = await this.sendPacketData('g', true);
+				response = await this.sendPacketData('p0b', true);	// Command is: read register 0b (PC)
 			}
 			else {
 				packetData = cmdArray[0];
@@ -654,8 +625,13 @@ export class MameRemote extends DzrpQeuedRemote {
 	/**
 	 * Removes temporary breakpoints that might have been set by a
 	 * step function.
+	 * Additionally it is checked if PC is currently at one of the bps.
+	 * @param bp1 First 64k breakpoint or undefined.
+	 * @param bp2 Second 64k breakpoint or undefined.
+	 * @returns true if one of the bps is equal to the PC.
+	 * Note: It has to be made sure that the PC (getPC()) contains the current value.
 	 */
-	protected async clearTmpBreakpoints(bp1Address?: number, bp2Address?: number): Promise<void> {
+	protected async checkTmpBreakpoints(bp1Address?: number, bp2Address?: number): Promise<boolean> {
 		try {
 			// Remove temporary breakpoints
 			if (bp1Address != undefined) {
@@ -666,10 +642,19 @@ export class MameRemote extends DzrpQeuedRemote {
 				const bp2 = 'z1,' + bp2Address.toString(16) + ',0';
 				await this.sendPacketDataOk(bp2);
 			}
+			// Check PC
+			if (bp1Address != undefined || bp2Address != undefined) {
+				const pc = this.getPC();
+				if (pc == bp1Address || pc == bp2Address)
+					return true;
+			}
 		}
 		catch (e) {
 			this.emit('error', e);
 		}
+
+		// Otherwise return false
+		return false;
 	}
 
 
@@ -677,6 +662,8 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Sends the command to pause a running program.
 	 */
 	public async sendDzrpCmdPause(): Promise<void> {
+		// Send CTRL-C:
+		await this.sendPacketData('p0b', true);	// Command is: read register 0b (PC)
 	}
 
 

@@ -940,14 +940,14 @@ export class DzrpRemote extends RemoteBase {
 
 			// Prepare for break: This function is called by the PAUSE (break) notification:
 			const funcContinueResolve = async ({breakNumber, breakAddress, breakReasonString}) => {
-				// Handle temporary breakpoints
-				await this.clearTmpBreakpoints(bp1, bp2);
-
 				// Give vscode a little time
 				await this.timeWait.waitAtInterval();
 
 				// Get registers
 				await this.getRegistersFromEmulator();
+
+				// Handle temporary breakpoints
+				await this.checkTmpBreakpoints(bp1, bp2);
 
 				// Check for break condition
 				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
@@ -973,7 +973,7 @@ export class DzrpRemote extends RemoteBase {
 				}
 			};
 
-			// Calculate the breakpoints to use for step-over
+			// Calculate the breakpoints (64k) to use for step-over
 			//await this.getRegisters();
 			let [, bp1, bp2] = await this.calcStepBp(stepOver);
 			//this.emit('debug_console', instruction);
@@ -989,10 +989,15 @@ export class DzrpRemote extends RemoteBase {
 	 * For a "real" DZRP protocol this function does nothing.
 	 * For "faked" DZRP this can be used to clear the temporary breakpoints
 	 * used for a step.
+	 * Additionally it is checked if PC is currently at one of the bps.
+	 * @param bp1 First 64k breakpoint or undefined.
+	 * @param bp2 Second 64k breakpoint or undefined.
+	 * @returns true if one of the bps is equal to the PC. But only if
+	 * temporary breakpoints are really cleared in this function.
 	 * E.g. used by MAME.
 	 */
-	protected async clearTmpBreakpoints(bp1?: number, bp2?: number) {
-		//
+	protected async checkTmpBreakpoints(bp1?: number, bp2?: number): Promise<boolean> {
+		return false;
 	}
 
 
