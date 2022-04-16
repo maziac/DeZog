@@ -112,7 +112,9 @@ export enum DzrpMachineType {
 export class DzrpRemote extends RemoteBase {
 
 	// The function to hold the Promise's resolve function for a continue request.
-	protected funcContinueResolve?: ({breakNumber, breakAddress, breakReasonString}) => void;
+	// Note:  The 'any' type is chosen here so that other Remotes (like MAME)
+	// can extend the parameter list.
+	protected funcContinueResolve?: ({breakNumber, breakAddress, breakReasonString}: any) => void;
 
 	// The associated Promise resolve. Stored here to be called at dispose.
 	protected continueResolve?: PromiseCallbacks<string>;
@@ -946,12 +948,6 @@ export class DzrpRemote extends RemoteBase {
 				// Get registers
 				await this.getRegistersFromEmulator();
 
-				// Handle temporary breakpoints
-				const tmpBpHit = await this.checkTmpBreakpoints(bp1, bp2);
-				if (tmpBpHit) {
-					breakNumber = BREAK_REASON_NUMBER.NO_REASON;
-				}
-
 				// Check for break condition
 				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
 
@@ -983,22 +979,6 @@ export class DzrpRemote extends RemoteBase {
 			// Send command to 'continue'
 			await this.sendDzrpCmdContinue(bp1, bp2);
 		});
-	}
-
-
-	/**
-	 * For a "real" DZRP protocol this function does nothing.
-	 * For "faked" DZRP this can be used to clear the temporary breakpoints
-	 * used for a step.
-	 * Additionally it is checked if PC is currently at one of the bps.
-	 * @param bp1 First 64k breakpoint or undefined.
-	 * @param bp2 Second 64k breakpoint or undefined.
-	 * @returns true if one of the bps is equal to the PC. But only if
-	 * temporary breakpoints are really cleared in this function.
-	 * E.g. used by MAME.
-	 */
-	protected async checkTmpBreakpoints(bp1?: number, bp2?: number): Promise<boolean> {
-		return false;
 	}
 
 

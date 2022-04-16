@@ -246,6 +246,7 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * A response has been received.
 	 * If there are still messages in the queue the next message is sent.
 	 */
+		// The function to hold the Promise's resolve function for a continue request.
 	protected receivedMsg(packetData?: string) {
 		// Check if it is a Stop Reply Packet
 		if (packetData?.startsWith('T')) {
@@ -262,7 +263,8 @@ export class MameRemote extends DzrpQeuedRemote {
 				continueHandler({
 					breakNumber: result.breakReason,
 					breakAddress: result.address,
-					breakReasonString: ''
+					breakReasonString: '',
+					pc: result.pc
 				});
 			}
 		}
@@ -296,8 +298,16 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @returns The break reason as string and the watchAddress if a watchpoint was hit.
 	 * For a normal breakpoint watchAddress is undefined.
 	 */
-	protected parseStopReplyPacket(packetData: string): {breakReason: number, address: number} {
+	protected parseStopReplyPacket(packetData: string): {breakReason: number, address: number, pc: number} {
 		packetData = packetData.toLowerCase();
+
+		// Search for PC register ('0b')
+		let i = packetData.indexOf('0b:');
+		if (i < 0)
+			throw Error("No break address (PC) found.");
+		i += 3;	// Skip '0b:'
+		const pc = Utility.parseHexWordLE(packetData, i);
+
 		// Get break reason
 		let k = packetData.indexOf(':');
 		const param = packetData.substring(3, k);	// Skip break signal (is always '5')
@@ -307,23 +317,15 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Watchpoint hit
 			breakReason = param.startsWith('r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
 			k++;	// Skip ':'
+			address = Utility.parseHexWordLE(packetData, k);
 		}
 		else {
 			// Normal breakpoint
 			breakReason = BREAK_REASON_NUMBER.BREAKPOINT_HIT;
-			// Search for PC register ('0b')
-			k = packetData.indexOf('0b:');
-			if (k < 0)
-				throw Error("No break address found.");
-			k += 3;	// Skip '0b:'
+			address = pc;
 		}
 
-		// Get watch or break address
-		//const addrString = packetData.substring(k, k + 4);
-		//address = parseInt(addrString, 16);
-		address = Utility.parseHexWordLE(packetData, k);
-
-		return {breakReason, address};
+		return {breakReason, address, pc};
 	}
 
 
@@ -602,22 +604,36 @@ export class MameRemote extends DzrpQeuedRemote {
 
 	/**
 	 * Sends the command to continue ('run') the program.
-	 * @param bp1Address The address of breakpoint 1 or undefined if not used.
-	 * @param bp2Address The address of breakpoint 2 or undefined if not used.
+	 * @param bp1 The address of breakpoint 1 or undefined if not used.
+	 * @param bp2 The address of breakpoint 2 or undefined if not used.
 	 */
-	public async sendDzrpCmdContinue(bp1Address?: number, bp2Address?: number): Promise<void> {
+	public async sendDzrpCmdContinue(bp1?: number, bp2?: number): Promise<void> {
 		try {
 			// Set temporary breakpoints
-			if (bp1Address != undefined) {
-				const bp1 = 'Z1,' + bp1Address.toString(16) + ',0';
-				await this.sendPacketDataOk(bp1);
+			if (bp1 != undefined) {
+				const bp1String = 'Z1,' + bp1.toString(16) + ',0';
+				await this.sendPacketDataOk(bp1String);
 			}
-			if (bp2Address != undefined) {
-				const bp2 = 'Z1,' + bp2Address.toString(16) + ',0';
-				await this.sendPacketDataOk(bp2);
+			if (bp2 != undefined) {
+				const bp2String = 'Z1,' + bp2.toString(16) + ',0';
+				await this.sendPacketDataOk(bp2String);
 			}
 
+			// Intercept the this.funcContinueResolve to check the temporary breakpoints.
+			// (for the break reason when stepping).
+			const originalFuncContinueResolve = this.funcContinueResolve!;
+			const funcIntermediateContinueResolve = async ({breakNumber, breakAddress, breakReasonString, pc}) => {
+				// Handle temporary breakpoints
+				const tmpBpHit = await this.checkTmpBreakpoints(pc, bp1, bp2);
+				if (tmpBpHit) {
+					breakNumber = BREAK_REASON_NUMBER.NO_REASON;
+				}
+				// Call "real" function
+				originalFuncContinueResolve({breakNumber, breakAddress, breakReasonString});
+			};
+
 			// C(ontinue)
+			this.funcContinueResolve = funcIntermediateContinueResolve;
 			await this.sendPacketData('c');
 		}
 		catch (e) {
@@ -630,35 +646,36 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * Removes temporary breakpoints that might have been set by a
 	 * step function.
 	 * Additionally it is checked if PC is currently at one of the bps.
+	 * @param pc The current PC value. If not available, it is retrieved for MAME
 	 * @param bp1 First 64k breakpoint or undefined.
 	 * @param bp2 Second 64k breakpoint or undefined.
 	 * @returns true if one of the bps is equal to the PC.
-	 * Note: It has to be made sure that the PC (getPC()) contains the current value.
 	 */
-	protected async checkTmpBreakpoints(bp1Address?: number, bp2Address?: number): Promise<boolean> {
+	protected async checkTmpBreakpoints(pc: number, bp1Address?: number, bp2Address?: number): Promise<boolean> {
+		let bpHit = false;
 		try {
 			// Remove temporary breakpoints
 			if (bp1Address != undefined) {
 				const bp1 = 'z1,' + bp1Address.toString(16) + ',0';
 				await this.sendPacketDataOk(bp1);
+				// Check PC
+				if (pc == bp1Address)
+					bpHit = true;
 			}
 			if (bp2Address != undefined) {
 				const bp2 = 'z1,' + bp2Address.toString(16) + ',0';
 				await this.sendPacketDataOk(bp2);
-			}
-			// Check PC
-			if (bp1Address != undefined || bp2Address != undefined) {
-				const pc = this.getPC();
-				if (pc == bp1Address || pc == bp2Address)
-					return true;
+				// Check PC
+				if (pc == bp2Address)
+					bpHit = true;
 			}
 		}
 		catch (e) {
 			this.emit('error', e);
 		}
 
-		// Otherwise return false
-		return false;
+		// Return
+		return bpHit;
 	}
 
 
