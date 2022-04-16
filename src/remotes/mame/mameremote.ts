@@ -544,31 +544,9 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * the Remote.
 	 */
 	public async getRegistersFromEmulator(): Promise<void> {
-		//Log.log('clearRegisters ->', Z80Registers.getCache() || "undefined");
-		// Get regs
-		//const regs = await this.sendDzrpCmdGetRegisters();
-		// And set
-
-		//Z80Registers.setCache(regs);
-		//Log.log('clearRegisters <-', Z80Registers.getCache() || "undefined");
-
-
 		const regs = await this.sendPacketData('g');	// Returns a string with the reg values as hex
 		Z80Registers.setCache(regs);
 	}
-
-	/**
-	 * Sends the command to get all registers.
-	 * @returns An Uint16Array with the register data. Same order as in
-	 * 'Z80Registers.getRegisterData'.
-	 */
-	/*
-	public async sendDzrpCmdGetRegisters(): Promise<Uint16Array> {
-		const resp = await this.sendPacketData('g');
-		const buffer = Uint16Array
-		return new Uint16Array();
-	}
-*/
 
 
 	/**
@@ -596,7 +574,7 @@ export class MameRemote extends DzrpQeuedRemote {
 		if (regIndex <= Z80_REG.HL2) {
 			value &= 0xFFFF;
 			const mameRegIndex = permut[regIndex];
-			const cmdSet = 'p' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(value);
+			const cmdSet = 'P' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(value);
 			await this.sendPacketDataOk(cmdSet);
 			return;
 		}
@@ -606,42 +584,27 @@ export class MameRemote extends DzrpQeuedRemote {
 			value &= 0xFF;
 			// Get the word register.
 			const byteRegIndex = regIndex - Z80_REG.F;
-			const dwordIndex = Math.floor(byteRegIndex / 2);
+			const dwordIndex = Math.floor(byteRegIndex / 2) + Z80_REG.AF;
 			let dword = Z80Registers.getRegValue(dwordIndex);
 			// Now check which half should be changed
 			const half = byteRegIndex % 2;
 			if (half) {
-				// upper half should be changed, e.g. B of BC
+				// Upper half should be changed, e.g. B of BC
 				dword = (dword & 0xFF) + 256 * value;
 			}
 			else {
-				// lower half should be changed, e.g. C of BC
+				// Lower half should be changed, e.g. C of BC
 				dword = (dword & 0xFF00) + value;
 			}
 			// Change dword register
 			const mameRegIndex = permut[dwordIndex];
-			const cmdSet = 'p' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(dword);
+			const cmdSet = 'P' + mameRegIndex.toString(16) + '=' + Utility.getHexWordStringLE(dword);
 			await this.sendPacketDataOk(cmdSet);
 			return;
 		}
 
 		// All other registers are not supported
-		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");
-
-			/*
-
-	PC, SP,
-	AF, BC, DE, HL,
-	IX, IY,
-	AF2, BC2, DE2, HL2, IR,
-	IM,
-
-	F, A, C, B, E, D, L, H,
-	IXL, IXH, IYL, IYH,
-	F2, A2, C2, B2, E2, D2, L2, H2,
-	R, I,
-	*/
-
+		throw Error("Changing register " + Z80_REG[regIndex] + "is not supported by MAME.");	// TODO: Output is not seen by the user
 	}
 
 
@@ -791,24 +754,20 @@ export class MameRemote extends DzrpQeuedRemote {
 
 
 	/**
-	 * Sends the command to retrieve a memory dump.
-	 * @param address The memory start address.
-	 * @param size The memory size.
-	 * @returns A promise with an Uint8Array.
-	 */
-	/*
-	public async sendDzrpCmdReadMem(address: number, size: number): Promise<Uint8Array> {
-		return new Uint8Array();
-	}
-	*/
-
-
-	/**
-	 * Sends the command to write a memory dump.
+	 * Writes a memory dump.
 	 * @param address The memory start address.
 	 * @param dataArray The data to write.
-	  */
-	public async sendDzrpCmdWriteMem(address: number, dataArray: Buffer | Uint8Array): Promise<void> {
+	 */
+	public async writeMemoryDump(address: number, dataArray: Uint8Array): Promise<void> {
+		// The command
+		const size = dataArray.length;
+		let cmd = 'M' + address.toString(16) + ',' + size.toString(16) + ':';
+		// Convert memory array into a string (cmd)
+		for (const val of dataArray) {
+			cmd += Utility.getHexString(val, 2);
+		}
+		// Sed to MAME
+		await this.sendPacketDataOk(cmd);
 	}
 
 }

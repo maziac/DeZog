@@ -158,7 +158,7 @@ CTRL-C
 $g#HH
 ~~~
 
-# Continue
+### Continue
 
 The c(continue) command is responded with a '+'.
 The program in MAMe is running afterwards until a breakpoint is hit or until CTRL-C is received.
@@ -169,11 +169,11 @@ If a c(continue) is sent while the program is already running (e.g. a c(ontinue)
 It is enough to send a CTRL-C once to stop execution.
 
 
-# Detach
+### Detach
 
 The D(etach) command in MAME gdbstub just sets a variable that stops acting in 'wait_for_debugger'.
 
-# Kill
+### Kill
 
 The k(ill) command terminates MAME.
 
@@ -182,6 +182,11 @@ The k(ill) command terminates MAME.
 
 The MAME gdbstub sets an internal variable to true but it does nto act on it in any way.
 
+
+### statesave / stateload
+
+The MAME debugger supports load and save of the state.
+Unfortunately this is not available through the gdbstub.
 
 ### DZRP vs GDB Remote Protocol
 
