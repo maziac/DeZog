@@ -66,12 +66,9 @@ export class MameRemote extends DzrpQeuedRemote {
 			this.receivedData = '';
 
 			// Check for unsupported settings
-			/*
-			TODO: What to do with this?
 			if (Settings.launch.history.codeCoverageEnabled) {
-				this.emit('warning', "launch.json: codeCoverageEnabled==true: CSpect does not support code coverage.");
+				this.emit('warning', "launch.json: codeCoverageEnabled==true: MAME gdb does not support code coverage.");
 			}
-			*/
 
 			this.onConnect();
 		});
@@ -154,7 +151,8 @@ export class MameRemote extends DzrpQeuedRemote {
 		// Send a k(ill) command
 		// TODO: Remove once MAME issue 9578 (https://github.com/mamedev/mame/issues/9578) 	is clarified:
 		//const resp =
-			await this.sendPacketData('k');
+		await this.sendPacketData('k');
+		this.stopCmdRespTimeout();	// REMOVE with kill command
 
 		return new Promise<void>(resolve => {
 			if (!this.socket)

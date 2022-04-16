@@ -72,7 +72,7 @@ n = not supported
 The Remote communicates with MAME via the gdb remote protocol via a socket.
 MAME needs to be like so:
 ~~~bash
-./mame -window pacman -debugger gdbstub -debug -debugger_port 11222
+./mame -window <rom> -debugger gdbstub -debug -debugger_port 12000
 ~~~
 
 I.e. MAME uses gdb syntax for communicaton with DeZog.
