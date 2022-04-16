@@ -216,30 +216,23 @@ suite('MameRemote', () => {
 		class MockMame extends MameRemote {
 			protected async sendPacketDataOk(packetData: string): Promise<void> {
 				//
-			};
+			}
 		}
-
 		// Init
-		const cfg: any = {
-			remoteType: 'mame'
-		};
-		Settings.launch = Settings.Init(cfg);
+		Settings.launch = Settings.Init({remoteType: 'mame'} as any);
 		const mockMame = new MockMame() as any;
 
 		// Set PC to 0xEC12
-		Z80RegistersClass.createRegisters();
-		Z80Registers.decoder = new Z80RegistersMameDecoder();
-		Z80Registers.setCache("0000000000000000000000000000000000000000000012EC");
-		assert.equal(mockMame.getPC(), 0xEC12);
+		const pc = 0xEC12;
 
 		// Check checkTmpBreakpoints
-		assert.ok(!await mockMame.checkTmpBreakpoints());
-		assert.ok(!await mockMame.checkTmpBreakpoints(0x1000));
-		assert.ok(!await mockMame.checkTmpBreakpoints(0x1000, 0x2000));
-		assert.ok(!await mockMame.checkTmpBreakpoints(undefined, 0x2000));
+		assert.ok(!await mockMame.checkTmpBreakpoints(pc));
+		assert.ok(!await mockMame.checkTmpBreakpoints(pc, 0x1000));
+		assert.ok(!await mockMame.checkTmpBreakpoints(pc, 0x1000, 0x2000));
+		assert.ok(!await mockMame.checkTmpBreakpoints(pc, undefined, 0x2000));
 
-		assert.ok(await mockMame.checkTmpBreakpoints(0xEC12));
-		assert.ok(await mockMame.checkTmpBreakpoints(0xFFFF, 0xEC12));
+		assert.ok(await mockMame.checkTmpBreakpoints(pc, 0xEC12));
+		assert.ok(await mockMame.checkTmpBreakpoints(pc, 0xFFFF, 0xEC12));
 	});
 
 });
