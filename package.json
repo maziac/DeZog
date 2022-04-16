@@ -767,6 +767,11 @@
 							"-assertion enable",
 							"-wpmem enable"
 						],
+						"history": {
+							"reverseDebugInstructionCount": 1000000,
+							"spotCount": 10,
+							"codeCoverageEnabled": true
+						},
 						"startAutomatically": false,
 						"rootFolder": "${workspaceFolder}",
 						"load": "Add your .nex or .sna file to load",
@@ -805,6 +810,11 @@
 								"-assertion enable",
 								"-wpmem enable"
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
@@ -833,6 +843,11 @@
 								"-assertion enable",
 								"-wpmem enable"
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"loadObj": "${2:The .obj file to load}",
@@ -860,6 +875,11 @@
 								"-logpoint enable",
 								"-assertion enable"
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": false
+							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
@@ -887,6 +907,11 @@
 								"-assertion enable",
 								"-wpmem enable"
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
@@ -916,6 +941,11 @@
 								"-logpoint enable",
 								"-assertion enable"
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": false
+							},
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${3:.nex or .sna file to load}",
@@ -944,6 +974,11 @@
 									"path": "${1:Assembler list or sld file}"
 								}
 							],
+							"history": {
+								"reverseDebugInstructionCount": 1000000,
+								"spotCount": 10,
+								"codeCoverageEnabled": true
+							},
 							"startAutomatically": true,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}"
