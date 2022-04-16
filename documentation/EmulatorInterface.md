@@ -147,7 +147,6 @@ T05watch:A000;0a:0000;0b:0100;
 ~~~
 
 
-
 ### Break (CTRL-C)
 
 To pause/break the server (DeZog) send a single 0x03 character.
@@ -158,6 +157,16 @@ To get a reply (also to know when to continue) DeZog will not send a sogle CTRL-
 CTRL-C
 $g#HH
 ~~~
+
+# Continue
+
+The c(continue) command is responded with a '+'.
+The program in MAMe is running afterwards until a breakpoint is hit or until CTRL-C is received.
+
+Meanwhile it is still possible to send other commands, e.g. to retrieve registers or memory contents.
+
+If a c(continue) is sent while the program is already running (e.g. a c(ontinue) was already set) is ACKed with a '+' and nothing happens.
+It is enough to senda CTRL-C once to stop execution.
 
 
 ### Extended mode

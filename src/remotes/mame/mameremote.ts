@@ -38,6 +38,9 @@ export class MameRemote extends DzrpQeuedRemote {
 	// Stores the received data.
 	protected receivedData: string;
 
+	// Receiving state, i.e. if waiting on an ACK (+)
+	protected waitingOnAck = false;	// TODO: REMOVE
+
 
 	/// Constructor.
 	constructor() {
@@ -183,16 +186,15 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Add data to existing buffer
 			this.receivedData += data;
 
-			let i = 0;
-			const c = this.receivedData[i++];
+			const c = this.receivedData[0];
 			switch (c) {
 				case '+':	// ACK
+					// Consume '+'
+					this.receivedData = this.receivedData.substring(1);
 					break;
 				case '-':	// NACK
 					// Only reason for this in MAME gdbstub is a wrong checksum
 					throw Error("Received NACK. Reason: checksum error.");
-				default:	// Unexpected
-					throw Error("No ACK received.");
 			}
 
 			// For some commands (c, s) the '+' is treated as response
@@ -211,23 +213,21 @@ export class MameRemote extends DzrpQeuedRemote {
 			const len = this.receivedData.length;
 			if (len < 4)	// Minimum length: '$#00'
 				return;
-			if (this.receivedData[i++] != '$')
+			if (this.receivedData[0] != '$')
 				throw Error("Wrong packet format. Expected '$'.");
-			// Find the '#' that ends the packet // TODO: Optimize
-			do {
-				i++;
-				if (i >= len)
-					return;	// End not yet found
-			} while (this.receivedData[i] != '#');
+			// Find the '#' that ends the packet
+			let i = this.receivedData.indexOf('#');
+			if (i < 0)
+				return;	// String end not yet found
 			// Now skip checksum: The transport is considered reliable.
 			// Checksum is not checked.
-			const packetLen = i + 3;	// E.g. '+$xxx#HH'
+			const packetLen = i + 3;	// E.g. '$xxx#HH'
 			if (len < packetLen)
 				return;	// Not everything received yet.
 
 			// Complete packet received:
 			// Get packet data
-			const packetData = this.receivedData.substring(2, i);
+			const packetData = this.receivedData.substring(1, i);
 
 			// Wait for next data
 			this.receivedData = this.receivedData.substring(packetLen);	// Normally this returns an empty string
@@ -271,6 +271,10 @@ export class MameRemote extends DzrpQeuedRemote {
 			this.stopCmdRespTimeout();
 			// Get latest sent message
 			const msg = this.messageQueue[0];
+
+			if (!msg)
+				console.log("No MESSAGE");	// TODO REMOVE
+
 			Utility.assert(msg, "MAME: Response received without request.");
 
 			// Queue next message
@@ -437,7 +441,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Get string
 			if (cmdArray.length == 0) {
 				// CTRL-C
-				cmd_name = 'CTRL-C, g';
+				cmd_name = 'CTRL-C, p0b';
 				response = await this.sendPacketData('p0b', true);	// Command is: read register 0b (PC)
 			}
 			else {

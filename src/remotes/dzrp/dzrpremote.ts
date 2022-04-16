@@ -947,12 +947,13 @@ export class DzrpRemote extends RemoteBase {
 				await this.getRegistersFromEmulator();
 
 				// Handle temporary breakpoints
-				await this.checkTmpBreakpoints(bp1, bp2);
+				const tmpBpHit = await this.checkTmpBreakpoints(bp1, bp2);
+				if (tmpBpHit) {
+					breakNumber = BREAK_REASON_NUMBER.NO_REASON;
+				}
 
 				// Check for break condition
 				let {condition, correctedBreakNumber} = await this.evalBpConditionAndLog(breakNumber, breakAddress);
-
-				condition = '??';	 // TODO: REMOVE
 
 				// Check for continue
 				if (condition == undefined) {
