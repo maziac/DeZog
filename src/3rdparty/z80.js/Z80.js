@@ -41,12 +41,7 @@ export function Z80(coreParameter)
    // If any of those functions is missing, this module cannot run.
    if (!core || (typeof core.mem_read !== "function") || (typeof core.mem_write !== "function") ||
                 (typeof core.io_read !== "function")  || (typeof core.io_write !== "function"))
-      throw("Z80: Core object is missing required functions.");
-
-   /*
-   if (this === window)
-      throw("Z80: This function is a constructor; call it using operator new.");
-   */
+      throw Error("Z80: Core object is missing required functions.");
 
    // All right, let's initialize the registers.
    // First, the standard 8080 registers.
@@ -198,7 +193,7 @@ export function Z80(coreParameter)
 ///////////////////////////////////////////////////////////////////////////////
 /// @public reset
 ///
-/// @brief Re-initialize the processor as if a reset or power on had occured
+/// @brief Re-initialize the processor as if a reset or power on had occurred
 ///////////////////////////////////////////////////////////////////////////////
 let reset = function()
 {
@@ -402,7 +397,7 @@ let decode_instruction = function(opcode)
    {
       // This entire range is all 8-bit register loads.
       // Get the operand and assign it to the correct destination.
-      var operand = get_operand(opcode);
+      const operand = get_operand(opcode);
 
       if (((opcode & 0x38) >>> 3) === 0)
          b = operand;
@@ -426,11 +421,11 @@ let decode_instruction = function(opcode)
       // These are the 8-bit register ALU instructions.
       // We'll get the operand and then use this "jump table"
       //  to call the correct utility function for the instruction.
-      var operand = get_operand(opcode),
+      const operand = get_operand(opcode),
           op_array = [do_add, do_adc, do_sub, do_sbc,
                       do_and, do_xor, do_or, do_cp];
 
-      op_array[(opcode & 0x38) >>> 3]( operand);
+      op_array[(opcode & 0x38) >>> 3](operand);
    }
    else
    {
@@ -3701,7 +3696,7 @@ let cycle_counts_dd = [
       // 0x2B: BSRF DE,B
       ed_instructions[0x2B] = () => {
          const shifts = b & 0x1F
-         const r_de = (0xFFFF0000 + ((e + (d << 8))) >>> shifts) & 0xFFFF;
+         const r_de = (0xFFFF0000 + (e + (d << 8)) >>> shifts) & 0xFFFF;
          e = r_de & 0xff;
          d = (r_de & 0xff00) >>> 8;
       };
