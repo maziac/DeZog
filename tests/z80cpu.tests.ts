@@ -5,7 +5,7 @@ import {Z80Ports} from '../src/remotes/zsimulator/z80ports';
 import {MemBuffer} from '../src/misc/membuffer';
 import {Settings} from '../src/settings';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
-import {Utility} from '../src/misc/utility';
+
 
 suite('Z80Cpu', () => {
 	let cpu;
@@ -110,76 +110,6 @@ suite('Z80Cpu', () => {
 		});
 	});
 
-
-	suite('Performance', () => {
-
-		setup(() => {
-			Settings.launch = Settings.Init({} as any);
-			cpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
-			z80 = cpu.z80;
-			mem = cpu.memory;
-			// Make sure whole memory is RAM
-			for (let i = 0; i < 8; i++)
-				mem.setSlot(i, i);
-		});
-
-
-		test('INI', () => {
-			setMem([
-				// INI
-				0x0000, 0xED,
-				0x0001, 0xA2
-			]);
-
-			// Measure
-			let l;
-			let h;
-			const count = 1000000;
-			let time = Utility.measure(() => {
-				//cpu.pc = 0x0000;
-				//z80.run_instruction();
-
-				l++;
-				if (l == 256) {
-					l = 0;
-					h++;
-					if (h == 256)
-						h = 0;
-				}
-			}, count);
-
-			console.log('\nPerformance: INI');
-			console.log('count=' + count + ', time=' + time);
-			time = Utility.measure(() => {
-				h = l + 256 * h;
-			}, count);
-			console.log('\nPerformance: INI');
-			console.log('count=' + count + ', time=' + time);
-
-
-			time = Utility.measure(() => {
-				//cpu.pc = 0x0000;
-				//z80.run_instruction();
-
-				l++;
-				if (l == 256) {
-					l = 0;
-					h++;
-					if (h == 256)
-						h = 0;
-				}
-			}, count);
-
-			console.log('\nPerformance: INI');
-			console.log('count=' + count + ', time=' + time);
-			time = Utility.measure(() => {
-				h = l | (h << 8);
-			}, count);
-			console.log('\nPerformance: INI');
-			console.log('count=' + count + ', time=' + time);
-
-		});
-	});
 
 	suite('instructions', () => {
 		let portAddress;

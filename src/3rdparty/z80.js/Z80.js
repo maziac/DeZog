@@ -948,26 +948,26 @@ let do_cpi = function()
 
 let do_ini = function()
 {
-   b = do_dec(b);
-
    core.mem_write(l | (h << 8), core.io_read((b << 8) | c));
 
    var result = (l | (h << 8)) + 1;
    l = result & 0xff;
    h = (result & 0xff00) >>> 8;
 
+   b = do_dec(b);
    flags.N = 1;
 };
 
 let do_outi = function()
 {
+   b = do_dec(b); // Zilog pseudo code is wrong, see: https://github.com/maziac/z80-instruction-set/pull/10
+
    core.io_write((b << 8) | c, core.mem_read(l | (h << 8)));
 
    var result = (l | (h << 8)) + 1;
    l = result & 0xff;
    h = (result & 0xff00) >>> 8;
 
-   b = do_dec(b);
    flags.N = 1;
 };
 
@@ -1015,26 +1015,26 @@ let do_cpd = function()
 
 let do_ind = function()
 {
-   b = do_dec(b);
-
    core.mem_write(l | (h << 8), core.io_read((b << 8) | c));
 
    var result = (l | (h << 8)) - 1;
    l = result & 0xff;
    h = (result & 0xff00) >>> 8;
 
+   b = do_dec(b);
    flags.N = 1;
 };
 
 let do_outd = function()
 {
+   b = do_dec(b); // Zilog pseudo code is wrong, see: https://github.com/maziac/z80-instruction-set/pull/10
+
    core.io_write((b << 8) | c, core.mem_read(l | (h << 8)));
 
    var result = (l | (h << 8)) - 1;
    l = result & 0xff;
    h = (result & 0xff00) >>> 8;
 
-   b = do_dec(b);
    flags.N = 1;
 };
 
