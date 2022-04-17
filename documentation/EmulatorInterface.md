@@ -169,6 +169,23 @@ If a c(continue) is sent while the program is already running (e.g. a c(ontinue)
 It is enough to send a CTRL-C once to stop execution.
 
 
+### Breakpoints
+
+Breakpoints are set with
+~~~
+Z0,2312,0
+~~~
+
+and removed with
+~~~
+z0,2312,0
+~~~
+
+If 2 breakpoints are set at the same address, these are still 2 breakpoints.
+spec
+I.e. if one of these breakpoints is removed the other still remains.
+
+
 ### Detach
 
 The D(etach) command in MAME gdbstub just sets a variable that stops acting in 'wait_for_debugger'.
@@ -187,6 +204,8 @@ The MAME gdbstub sets an internal variable to true but it does nto act on it in 
 
 The MAME debugger supports load and save of the state.
 Unfortunately this is not available through the gdbstub.
+
+
 
 ### DZRP vs GDB Remote Protocol
 

@@ -698,6 +698,10 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * ID.
 	 */
 	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
+		const address = bp.address & 0xFFFF;	// Long addresses not supported
+		const cmd = 'Z0,' + address.toString(16) + ',0';
+		await this.sendPacketDataOk(cmd);
+		bp.bpId = 1;	// Just need to set something not zero.
 	}
 
 
@@ -706,7 +710,9 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		//
+		const address = bp.address & 0xFFFF;	// Long addresses not supported
+		const cmd = 'z0,' + address.toString(16) + ',0';
+		await this.sendPacketDataOk(cmd);
 	}
 
 
