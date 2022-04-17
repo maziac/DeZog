@@ -698,8 +698,8 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * ID.
 	 */
 	public async sendDzrpCmdAddBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address = bp.address & 0xFFFF;	// Long addresses not supported
-		const cmd = 'Z0,' + address.toString(16) + ',0';
+		const address64k = bp.address & 0xFFFF;	// Long addresses not supported
+		const cmd = 'Z0,' + address64k.toString(16) + ',0';
 		await this.sendPacketDataOk(cmd);
 		bp.bpId = 1;	// Just need to set something not zero.
 	}
@@ -710,8 +710,8 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param bp The breakpoint to remove.
 	 */
 	public async sendDzrpCmdRemoveBreakpoint(bp: GenericBreakpoint): Promise<void> {
-		const address = bp.address & 0xFFFF;	// Long addresses not supported
-		const cmd = 'z0,' + address.toString(16) + ',0';
+		const address64k = bp.address & 0xFFFF;	// Long addresses not supported
+		const cmd = 'z0,' + address64k.toString(16) + ',0';
 		await this.sendPacketDataOk(cmd);
 	}
 
@@ -723,6 +723,14 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param access 'r', 'w' or 'rw'.
 	 */
 	public async sendDzrpCmdAddWatchpoint(address: number, size: number, access: string): Promise<void> {
+		const address64k = address & 0xFFFF;	// Long addresses not supported
+		let type = '4';	// rw
+		if (access == 'r')
+			type = '3';
+		else if (access == 'w')
+			type = '2';
+		const cmd = 'Z' + type + ',' + address64k.toString(16) + ',' + size.toString(size);
+		await this.sendPacketDataOk(cmd);
 	}
 
 
@@ -733,6 +741,14 @@ export class MameRemote extends DzrpQeuedRemote {
 	 * @param access 'r', 'w' or 'rw'.
 	 */
 	protected async sendDzrpCmdRemoveWatchpoint(address: number, size: number, access: string): Promise<void> {
+		const address64k = address & 0xFFFF;	// Long addresses not supported
+		let type = '4';	// rw
+		if (access == 'r')
+			type = '3';
+		else if (access == 'w')
+			type = '2';
+		const cmd = 'z' + type + ',' + address64k.toString(16) + ',' + size.toString(size);
+		await this.sendPacketDataOk(cmd);
 	}
 
 

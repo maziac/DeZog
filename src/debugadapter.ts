@@ -32,6 +32,7 @@ import {RefList} from './misc/reflist';
 import {PromiseCallbacks} from './misc/promisecallbacks';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DiagnosticsHandler} from './diagnosticshandler';
+import {GenericWatchpoint} from './genericwatchpoint';
 
 
 
@@ -1838,6 +1839,12 @@ export class DebugSessionClass extends DebugSession {
 		else if (cmd == '-WPMEM' || cmd == '-wpmem') {
 			output = await this.evalWPMEM(tokens);
 		}
+		else if (cmd == '-wpadd') {
+			output = await this.evalWpAdd(tokens);
+		}
+		else if (cmd == '-wprm') {
+			output = await this.evalWpRemove(tokens);
+		}
 		else if (cmd == '-sprites') {
 			output = await this.evalSprites(tokens);
 		}
@@ -2250,9 +2257,23 @@ the value correspondends to a label.
 	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
+"-wpadd type address [size]": Adds a watchpoint.
+	- type:
+	    - "r": Read watchpoint
+	    - "w": Write watchpoint
+	    - "rw": Read/write watchpoint
+	- address: The address to watch
+	- size: The size of the area to watch. Can be omitted. Defaults to 1.
 "-WPMEM enable|disable|status":
 	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
 	- status: Shows enable status of WPMEM watchpoints.
+"-wprm type address [size]": Removes a watchpoint.
+	- type:
+	    - "r": Read watchpoint
+	    - "w": Write watchpoint
+	    - "rw": Read/write watchpoint
+	- address: The address to watch
+	- size: The size of the area to watch. Can be omitted. Defaults to 1.
 
 Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -2905,6 +2926,47 @@ E.g. use "-help -view" to put the help text in an own view.
 				result += 'No WPMEM watchpoints.\n';
 		}
 		return result;
+	}
+
+
+	/**
+	 * Add a watchpoint.
+	 * Independent of WPMEM.
+	 * @param tokens The arguments. E.g. "-wpadd r 0x8000 1"
+	 * @returns A Promise<string> with a text to print.
+	 */
+	protected async evalWpAdd(tokens: Array<string>): Promise<string> {
+		// Get parameters
+		if (tokens.length < 2)
+			throw Error("Expecting at least 2 arguments.");
+		// Access
+		const access = tokens[0];
+		if (!['r', 'w', 'rw'].includes(access))
+			throw Error("'type' must be one of r, w or rw.");
+		// Address
+		const address = Utility.evalExpression(tokens[1]);
+		// Size
+		let size = 1;
+		if (tokens[2] != undefined)
+			size = Utility.evalExpression(tokens[2]);
+
+		// Add watchpoint
+		const wp: GenericWatchpoint = {
+			address,
+			size,
+			access,
+			condition: ''
+		};
+		await Remote.setWatchpoint(wp);
+
+		// Send response
+		return 'OK';
+	}
+
+	protected async evalWpRemove(tokens: Array<string>): Promise<string> {
+		// TODO
+		// Send response
+		return 'OK';
 	}
 
 
