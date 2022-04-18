@@ -62,12 +62,12 @@ e = is some effort to support but possible
 n = not supported
 
 
-## MAME
+# MAME
 
 (not implemented)
 
 
-### gdbstub
+## gdbstub
 
 The Remote communicates with MAME via the gdb remote protocol via a socket.
 MAME needs to be like so:
@@ -134,7 +134,7 @@ The MAME implementation [here](https://github.com/mamedev/mame/blob/master/src/o
 | ‘Z type,addr,kind’ | Insert (‘z’) a type breakpoint or watchpoint starting at address address of kind kind. type is 0=SW BP, 1=HW BP, 2=write watchpoint, 3=read watchpoint, 4=access (rw) watchpoint.| ‘OK’, ‘’ not supported or ‘E NN’ for an error |
 
 
-#### Stop Reply Packet
+### Stop Reply Packet
 
 The MAME gdb stub sends e.g:
 ~~~
@@ -207,7 +207,7 @@ Unfortunately this is not available through the gdbstub.
 
 
 
-### DZRP vs GDB Remote Protocol
+## DZRP vs GDB Remote Protocol
 
 The MAME gdbstub functionality is compared with the DZRP functionality to find any lacks.
 One major drawback we can see already: the MAME gdbstub does not support any information about the banking/paging.
@@ -243,7 +243,7 @@ Note: gdb itself might support banking/paging via [overlays](https://docs.adacor
 | CMD_WRITE_STATE       |      |      |
 
 
-### The gdb protocol in brief
+## The gdb protocol in brief
 
 The client (DeZog) sends packets in the form
 ~~~
@@ -270,7 +270,7 @@ The response/reply is sent after the ACK when the command has completed.
 For step and continue this means it is sent after the emulator has breaked.
 
 
-### XML
+## XML
 
 For 'g', 'G', 'p', and 'P to work the MAME gdbstub need to be set to XML mode.
 ~~~
@@ -313,7 +313,7 @@ Response received: l<?xml version="1.0"?>
 for the Z80.
 
 
-### Registers
+## Registers
 
 The MAME gdbstub returns the registers in the order given from the XML.
 Here is an example:
@@ -326,12 +326,12 @@ I.e. 12 words in hex.
 Note: The IM and IR registers are not transferred.
 
 
-### How to get the program into the emulator
+## How to get the program into the emulator
 
 a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
 b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.
 
-### Compiling MAME
+## Compiling MAME
 
 To compile MAME with al debugging support use:
 ~~~
@@ -344,6 +344,62 @@ Starting MAME on macos should be done with the vscode extension codelldb ('lldb'
 Has a better performance than gdb.
 Anyhow, starting of MAME is still slow and might take up to a minute.
 Stepping time is fine though.
+
+
+## MAME - Paging
+
+See https://docs.mamedev.org/techspecs/memory.html#shares-banks-and-regions,
+https://wiki.mamedev.org/index.php/CPUs_and_Address_Spaces.
+
+- Address space (class address_space): methods for read/write access.
+  - ADDRESS_SPACE_PROGRAM: Code and data (von Neumann)
+  - ADDRESS_SPACE_DATA: Separate space where data is stored (Harvard).
+  - ADDRESS_SPACE_IO: Address space for IO.
+- Address maps: Maps banks into address ranges.
+- Memory region: Most probably this is the 'natural' address space, e.g. 64k for a Z80.
+
+Special types of memory:
+- banks (SMH_BANK(banknum)): Max. 32 banks, SMH_BANK(1)...SMH_BANK(32).
+  - memory_configure_bank: configure the base pointer to a bank.
+  - memory_set_bank: select one of the pointers.
+  - A base pointer is e.g. memory_region(REGION_CPU2) + 0x2000.
+- RAM (SMH_RAM), ROM (SMH_ROM): Are implemented as banks, but cannot be changed.
+- no-ops (SMH_NOP), unmapped space (SMH_UNMAP): unused memory, writes go nowhere, reads return 0.
+
+
+### Address Map
+
+~~~c++
+ static ADDRESS_MAP_START( main_map, ADDRESS_SPACE_PROGRAM, 8 )
+     AM_RANGE(0x8000, 0x83ff) AM_RAM AM_SHARE(1)
+     AM_RANGE(0x8400, 0x87ff) AM_RAM
+     AM_RANGE(0x8800, 0x8bff) AM_READNOP   /* 6850 ACIA */
+     AM_RANGE(0x8c00, 0x8c00) AM_MIRROR(0x3fe) AM_READWRITE(qix_video_firq_r, qix_video_firq_w)
+     AM_RANGE(0x8c01, 0x8c01) AM_MIRROR(0x3fe) AM_READWRITE(qix_data_firq_ack_r, qix_data_firq_ack_w)
+     AM_RANGE(0x9000, 0x93ff) AM_READWRITE(pia_3_r, pia_3_w)
+     AM_RANGE(0x9400, 0x97ff) AM_READWRITE(pia_0_r, qix_pia_0_w)
+     AM_RANGE(0x9800, 0x9bff) AM_READWRITE(pia_1_r, pia_1_w)
+     AM_RANGE(0x9c00, 0x9fff) AM_READWRITE(pia_2_r, pia_2_w)
+     AM_RANGE(0xa000, 0xffff) AM_ROM
+ ADDRESS_MAP_END
+~~~
+
+- 'main_map': is the (compiled) name of the map (name of the variable).
+- AM_READ, AM_WRITE, AM_READWRITE: The read/write handlers get the offset from the start address in the AM_RANGE macro.
+- AM_REGION: Can override a RAM/ROM assignment (?)
+- AM_SHARE: Used to share the same RAM between 2 CPUs. For each CPU the shared memory can have different ranges (different start addresses).
+
+Runtime modifications:
+It is possible to change the memory configuration afterwards.
+E.g. it is possible to install different read/write handlers:
+~~~c++
+memory_install_read8_handler(machine, cpu, space, start, end, mask, mirror, rhandler)
+memory_install_write8_handler(machine, cpu, space, start, end, mask, mirror, rhandler)
+memory_install_readwrite8_handler(machine, cpu, space, start, end, mask, mirror, rhandler, whandler)
+~~~
+
+
+If executing ```map <address>``` in the debugger one can see the read/write handlers attached to the memory.
 
 
 
