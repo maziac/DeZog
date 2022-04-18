@@ -2937,18 +2937,21 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async evalWpAdd(tokens: Array<string>): Promise<string> {
 		// Get parameters
-		if (tokens.length < 2)
-			throw Error("Expecting at least 2 arguments.");
-		// Access
-		const access = tokens[0];
-		if (!['r', 'w', 'rw'].includes(access))
-			throw Error("'type' must be one of r, w or rw.");
+		if (tokens.length < 1)
+			throw Error("Expecting at least 1 argument.");
 		// Address
 		const address = Utility.evalExpression(tokens[1]);
 		// Size
 		let size = 1;
-		if (tokens[2] != undefined)
-			size = Utility.evalExpression(tokens[2]);
+		let access = 'rw';
+		if (tokens[1] != undefined)
+			size = Utility.evalExpression(tokens[1]);
+		// Access
+		if (tokens[2]) {
+			if (!['r', 'w', 'rw'].includes(tokens[2]))
+				throw Error("'type' must be one of r, w or rw.");
+			access = tokens[2];
+		}
 
 		// Add watchpoint
 		const wp: GenericWatchpoint = {
@@ -2963,8 +2966,40 @@ E.g. use "-help -view" to put the help text in an own view.
 		return 'OK';
 	}
 
+
+	/**
+	 * Removes a watchpoint.
+	 * Independent of WPMEM.
+	 * @param tokens The arguments. E.g. "-wpadd r 0x8000 1"
+	 * @returns A Promise<string> with a text to print.
+	 */
 	protected async evalWpRemove(tokens: Array<string>): Promise<string> {
-		// TODO
+		// Get parameters
+		if (tokens.length < 1)
+			throw Error("Expecting at least 1 argument.");
+		// Address
+		const address = Utility.evalExpression(tokens[1]);
+		// Size
+		let size = 1;
+		let access = 'rw';
+		if (tokens[1] != undefined)
+			size = Utility.evalExpression(tokens[1]);
+		// Access
+		if (tokens[2]) {
+			if (!['r', 'w', 'rw'].includes(tokens[2]))
+				throw Error("'type' must be one of r, w or rw.");
+			access = tokens[2];
+		}
+
+		// Add watchpoint
+		const wp: GenericWatchpoint = {
+			address,
+			size,
+			access,
+			condition: ''
+		};
+		await Remote.removeWatchpoint(wp);
+
 		// Send response
 		return 'OK';
 	}

@@ -331,6 +331,21 @@ Note: The IM and IR registers are not transferred.
 a) the program is already there: For MAME this is nothing special the ROM is loaded at startup.
 b) the program is transferred by DeZog: Not sure if it works to write a ROM via gdbstub. Since everything is ROM might also not be needed.
 
+### Compiling MAME
+
+To compile MAME with al debugging support use:
+~~~
+make REGENIE=1 SYMBOLS=1 SYMLEVEL=3 OPTIMIZE=0 -j5
+~~~
+
+This takes about 2 hrs (without debugging 1h).
+
+Starting MAME on macos should be done with the vscode extension codelldb ('lldb').
+Has a better performance than gdb.
+Anyhow, starting of MAME is still slow and might take up to a minute.
+Stepping time is fine though.
+
+
 
 ## ZEsarUX
 
