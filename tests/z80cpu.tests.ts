@@ -6,7 +6,27 @@ import {MemBuffer} from '../src/misc/membuffer';
 import {Settings} from '../src/settings';
 import {SimulatedMemory} from '../src/remotes/zsimulator/simmemory';
 
+
 suite('Z80Cpu', () => {
+	let cpu;
+	let z80;
+	let mem;
+
+	// Fills the memory with the given address/value pairs.
+	function setMem(memArray: number[]) {
+		mem.clear();
+		const count = memArray.length;
+		for (let i = 0; i < count; i += 2) {
+			const addr = memArray[i];
+			const val = memArray[i + 1];
+			mem.writeBlock(addr, [val]);
+		}
+	}
+
+	function getFlagZ(regs): boolean {
+		const flagZ = regs.af & 0b01000000;
+		return (flagZ != 0);
+	}
 
 	suite('Serialization', () => {
 
@@ -91,24 +111,168 @@ suite('Z80Cpu', () => {
 	});
 
 
-
 	suite('instructions', () => {
-		let cpu;
-		let z80;
-		let mem;
+		let portAddress;
+		let portValue;
+
+		suite('IN/OUT', () => {
+
+			setup(() => {
+				Settings.launch = Settings.Init({} as any);
+				cpu = new Z80Cpu(new SimulatedMemory(4, 4), new Z80Ports(0xFF)) as any;
+				z80 = cpu.z80;
+				mem = cpu.memory;
+				const ports = cpu.ports;
+				portAddress = 0;	// Stores the last accessed port address (IN and OUT)
+				portValue = 0;	// For IN: the value returned by IN, for OUT: the value written by OUT
+				// Register ports
+				ports.registerGenericInPortFunction((port: number) => {
+					portAddress = port;
+					return portValue;
+				});
+				ports.registerGenericOutPortFunction((port: number, value: number) => {
+					portAddress = port;
+					portValue = value;
+				});
+				// Make sure whole memory is RAM
+				for (let i = 0; i < 8; i++)
+					mem.setSlot(i, i);
+			});
 
 
-		// Fills the memory with the given address/value pairs.
-		function setMem(memArray: number[]) {
-			mem.clear();
-			const count = memArray.length;
-			for (let i = 0; i < count; i += 2) {
-				const addr = memArray[i];
-				const val = memArray[i + 1];
-				mem.writeBlock(addr, [val]);
-			}
-		}
+			test('INI', () => {
+				cpu.pc = 0x0000;
+				cpu.hl = 0x1000;
+				cpu.de = 0x2000;
+				cpu.bc = 0x02AA;
+				cpu.a = 0x20;
+				setMem([
+					0x0000, 0xED,
+					0x0001, 0xA2
+				]);
 
+				portValue = 0xC2;
+				portAddress = 0;
+				const tStates = z80.run_instruction();
+				let r = cpu.getAllRegisters();
+				assert.equal(16, tStates);
+				assert.equal(0x0002, r.pc);
+				assert.equal(0x1001, r.hl);
+				assert.equal(0x2000, r.de);	// unchanged
+				assert.equal(0x01AA, r.bc);
+				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.ok(!getFlagZ(r));	// Z not set
+				assert.equal(0xC2, mem.read8(0x1000));	// The value of port IN
+				assert.equal(0x02AA, portAddress);	// The used port address for IN
+
+				cpu.pc = 0x0000;
+				z80.run_instruction();	// Dec B
+				r = cpu.getAllRegisters();
+				assert.equal(0x00AA, r.bc);
+				assert.equal(0x01AA, portAddress);	// The used port address for IN
+				assert.ok(getFlagZ(r));	// Z set
+			});
+
+
+			test('IND', () => {
+				cpu.pc = 0x0000;
+				cpu.hl = 0x1000;
+				cpu.de = 0x2000;
+				cpu.bc = 0x02AA;
+				cpu.a = 0x20;
+				setMem([
+					0x0000, 0xED,
+					0x0001, 0xAA
+				]);
+
+				portValue = 0xC2;
+				portAddress = 0;
+				const tStates = z80.run_instruction();
+				let r = cpu.getAllRegisters();
+				assert.equal(16, tStates);
+				assert.equal(0x0002, r.pc);
+				assert.equal(0x0FFF, r.hl);
+				assert.equal(0x2000, r.de);	// unchanged
+				assert.equal(0x01AA, r.bc);
+				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.ok(!getFlagZ(r));	// Z not set
+				assert.equal(0xC2, mem.read8(0x1000));	// The value of port IN
+				assert.equal(0x02AA, portAddress);	// The used port address for IN
+
+				cpu.pc = 0x0000;
+				z80.run_instruction();	// Dec B
+				r = cpu.getAllRegisters();
+				assert.equal(0x00AA, r.bc);
+				assert.equal(0x01AA, portAddress);	// The used port address for IN
+				assert.ok(getFlagZ(r));	// Z set
+			});
+
+			test('OUTI', () => {
+				cpu.pc = 0x0000;
+				cpu.hl = 0x1000;
+				cpu.de = 0x2000;
+				cpu.bc = 0x02AA;
+				cpu.a = 0x20;
+				setMem([
+					0x0000, 0xED,
+					0x0001, 0xA3,
+					0x1000, 0xE1
+				]);
+
+				portAddress = 0;
+				portValue = 0;
+				const tStates = z80.run_instruction();
+				let r = cpu.getAllRegisters();
+				assert.equal(16, tStates);
+				assert.equal(0x0002, r.pc);
+				assert.equal(0x1001, r.hl);
+				assert.equal(0x2000, r.de);	// unchanged
+				assert.equal(0x01AA, r.bc);
+				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.ok(!getFlagZ(r));	// Z not set
+				assert.equal(0x01AA, portAddress);
+				assert.equal(0xE1, portValue);
+
+				cpu.pc = 0x0000;
+				z80.run_instruction();	// Dec B
+				r = cpu.getAllRegisters();
+				assert.equal(0x00AA, r.bc);
+				assert.ok(getFlagZ(r));	// Z set
+			});
+
+			test('OUTD', () => {
+				cpu.pc = 0x0000;
+				cpu.hl = 0x1000;
+				cpu.de = 0x2000;
+				cpu.bc = 0x02AA;
+				cpu.a = 0x20;
+				setMem([
+					0x0000, 0xED,
+					0x0001, 0xAB,
+					0x1000, 0xE1
+				]);
+
+				portAddress = 0;
+				portValue = 0;
+				const tStates = z80.run_instruction();
+				let r = cpu.getAllRegisters();
+				assert.equal(16, tStates);
+				assert.equal(0x0002, r.pc);
+				assert.equal(0x0FFF, r.hl);
+				assert.equal(0x2000, r.de);	// unchanged
+				assert.equal(0x01AA, r.bc);
+				assert.equal(0x20, r.af >>> 8);	// unchanged
+				assert.ok(!getFlagZ(r));	// Z not set
+				assert.equal(0x01AA, portAddress);
+				assert.equal(0xE1, portValue);
+
+				cpu.pc = 0x0000;
+				z80.run_instruction();	// Dec B
+				r = cpu.getAllRegisters();
+				assert.equal(0x00AA, r.bc);
+				assert.ok(getFlagZ(r));	// Z set
+			});
+		});
 
 
 		suite('Z80N instructions', () => {

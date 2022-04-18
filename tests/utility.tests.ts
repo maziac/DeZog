@@ -326,6 +326,40 @@ suite('Utility', () => {
 			assert.equal(res, '4096 512 64 9786 8 LABEL');
 		});
 
+
+		suite('no breaks', () => {
+
+			test('3a', () => {
+				let res = Utility.replaceVarsWithValues('3a');
+				assert.equal(res, '3a');	// No substitution
+			});
+
+			test('boolean', () => {
+				const res = Utility.replaceVarsWithValues('100bc');
+				assert.equal(res, '100bc');
+			});
+			test('0x Hex', () => {
+				const res = Utility.replaceVarsWithValues('0x100bgh');
+				assert.equal(res, '0x100bgh');
+			});
+			test('h Hex', () => {
+				const res = Utility.replaceVarsWithValues('100hb');
+				assert.equal(res, '100hb');
+			});
+			test("word wo '", () => {
+				const res = Utility.replaceVarsWithValues("AF", false);
+				assert.equal(res, 'AF');
+			});
+			test("word with '", () => {
+				const res = Utility.replaceVarsWithValues("AF'", false);
+				assert.equal(res, "AF'");
+			});
+			test('digit', () => {
+				const res = Utility.replaceVarsWithValues('100j');
+				assert.equal(res, '100j');
+			});
+		});
+
 		suite('Calculations', () => {
 
 			test('Addition', () => {
@@ -492,6 +526,12 @@ suite('Utility', () => {
 
 	suite('evalExpression', () => {
 
+		setup(() => {
+			Settings.launch = Settings.Init({remoteType: 'zrcp'} as any);
+			Z80RegistersClass.createRegisters();
+			Z80Registers.decoder = new DecodeZesaruxRegisters(0);
+		});
+
 		test('plus', () => {
 			let res = Utility.evalExpression('2+5');
 			assert.equal(7, res, "Wrong eval result");
@@ -544,9 +584,7 @@ suite('Utility', () => {
 
 		suite('breakpoints', () => {
 			setup(() => {
-				const cfg: any={
-					remoteType: 'zrcp'
-				};
+				const cfg = {remoteType: 'zrcp'} as any;
 				Settings.launch = Settings.Init(cfg);
 				Z80RegistersClass.createRegisters();
 				Z80Registers.decoder=new DecodeZesaruxRegisters(0);
