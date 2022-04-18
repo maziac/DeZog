@@ -508,7 +508,7 @@ export class DzrpRemote extends RemoteBase {
 	 * Returns the array of watchpoint for a given address.
 	 * Normally the array is empty or contains only 1 watchpoint.
 	 * But it could happen that several watchpoints are defined for the same address.
-	 * @param The address to check. Could be a long address.
+	 * @param address The address to check. Could be a long address.
 	 * @return An array with all corresponding watchpoints. Usually only 1 or an empty array.
 	 */
 	protected getWatchpointsByAddress(address: number): Array<GenericWatchpoint> {
@@ -778,7 +778,7 @@ export class DzrpRemote extends RemoteBase {
 			case BREAK_REASON_NUMBER.WATCHPOINT_READ:
 			case BREAK_REASON_NUMBER.WATCHPOINT_WRITE:
 				// Check if watchpoint really exists, i.e. it could be that a watchpoint for a wrong bank was hit.
-				// If no watchpointis found condition stays undefined.
+				// If no watchpoint is found condition stays undefined.
 				const wps = this.getWatchpointsByAddress(breakAddress);
 				for (const wp of wps) {
 					let found = false;
@@ -1111,8 +1111,7 @@ export class DzrpRemote extends RemoteBase {
 	/**
 	 * Sets one watchpoint in the remote.
 	 * Watchpoints result in a break in the program run if one of the addresses is written or read to.
-	 * Promises is execute when last watchpoint has been set.
-	 * @param wp The watchpoint to set. Will set 'bpId' in the 'watchPoint'.
+	 * @param wp The watchpoint to set.
 	 */
 	public async setWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		// Remember watchpoint
@@ -1125,8 +1124,7 @@ export class DzrpRemote extends RemoteBase {
 
 	/**
 	 * Removes one watchpoint from the remote.
-	 * Promises is execute when last watchpoint has been set.
-	 * @param wp The watchpoint to remove. Will set 'bpId' in the 'watchPoint' to undefined.
+	 * @param wp The watchpoint to remove.
 	 */
 	public async removeWatchpoint(wp: GenericWatchpoint): Promise<void> {
 		// Forget watchpoint

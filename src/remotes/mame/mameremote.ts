@@ -310,7 +310,7 @@ export class MameRemote extends DzrpQeuedRemote {
 				// Get break reason
 				const result = this.parseStopReplyPacket(packetData);
 				// Handle the break.
-				continueHandler({
+				continueHandler({	// Is async, but anyhow last function call
 					breakNumber: result.breakReason,
 					breakAddress: result.address,
 					breakReasonString: '',
@@ -367,7 +367,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Watchpoint hit
 			breakReason = param.startsWith('r') ? BREAK_REASON_NUMBER.WATCHPOINT_READ : BREAK_REASON_NUMBER.WATCHPOINT_WRITE;
 			k++;	// Skip ':'
-			address = Utility.parseHexWordLE(packetData, k);
+			address = parseInt(packetData.substring(k), 16);	// Note: not target byte order
 		}
 		else {
 			// Normal breakpoint
@@ -729,7 +729,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			type = '3';
 		else if (access == 'w')
 			type = '2';
-		const cmd = 'Z' + type + ',' + address64k.toString(16) + ',' + size.toString(size);
+		const cmd = 'Z' + type + ',' + address64k.toString(16) + ',' + size.toString(16);
 		await this.sendPacketDataOk(cmd);
 	}
 
@@ -747,7 +747,7 @@ export class MameRemote extends DzrpQeuedRemote {
 			type = '3';
 		else if (access == 'w')
 			type = '2';
-		const cmd = 'z' + type + ',' + address64k.toString(16) + ',' + size.toString(size);
+		const cmd = 'z' + type + ',' + address64k.toString(16) + ',' + size.toString(16);
 		await this.sendPacketDataOk(cmd);
 	}
 

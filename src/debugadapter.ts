@@ -2257,23 +2257,23 @@ the value correspondends to a label.
 	Example: "-sprite 10-15 20+3 33" will show sprite slots 10, 11, 12, 13, 14, 15, 20, 21, 22, 33.
 	Without any parameter it will show all visible sprites automatically.
 "-state save|restore|list|clear|clearall [statename]": Saves/restores the current state. I.e. the complete RAM + the registers.
-"-wpadd type address [size]": Adds a watchpoint.
+"-wpadd address [size] [type]": Adds a watchpoint.
+	- address: The address to watch
+	- size: The size of the area to watch. Can be omitted. Defaults to 1.
 	- type:
 	    - "r": Read watchpoint
 	    - "w": Write watchpoint
-	    - "rw": Read/write watchpoint
-	- address: The address to watch
-	- size: The size of the area to watch. Can be omitted. Defaults to 1.
+	    - "rw": Read/write watchpoint. Default.
 "-WPMEM enable|disable|status":
 	- enable|disable: Enables/disables all WPMEM set in the sources. All WPMEM are by default enabled after startup of the debugger.
 	- status: Shows enable status of WPMEM watchpoints.
-"-wprm type address [size]": Removes a watchpoint.
+"-wprm address [size] [type]": Removes a watchpoint.
+	- address: The address to watch
+	- size: The size of the area to watch. Can be omitted. Defaults to 1.
 	- type:
 	    - "r": Read watchpoint
 	    - "w": Write watchpoint
-	    - "rw": Read/write watchpoint
-	- address: The address to watch
-	- size: The size of the area to watch. Can be omitted. Defaults to 1.
+	    - "rw": Read/write watchpoint. Default.
 
 Some examples:
 "-exec h 0 100": Does a hexdump of 100 bytes at address 0.
@@ -2932,7 +2932,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	/**
 	 * Add a watchpoint.
 	 * Independent of WPMEM.
-	 * @param tokens The arguments. E.g. "-wpadd r 0x8000 1"
+	 * @param tokens The arguments. E.g. "-wpadd 0x8000 1 r"
 	 * @returns A Promise<string> with a text to print.
 	 */
 	protected async evalWpAdd(tokens: Array<string>): Promise<string> {
@@ -2940,7 +2940,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		if (tokens.length < 1)
 			throw Error("Expecting at least 1 argument.");
 		// Address
-		const address = Utility.evalExpression(tokens[1]);
+		const address = Utility.evalExpression(tokens[0]);
 		// Size
 		let size = 1;
 		let access = 'rw';
