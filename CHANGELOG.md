@@ -3,6 +3,7 @@
 # 2.6.3
 - Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
 - Fixed IND/I instruction #89 and OUTD/I.
+- Improved regex in evalExpression.
 
 # 2.6.2
 - Fix #85: Serial port is not locked anymore.
