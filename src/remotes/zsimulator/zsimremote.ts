@@ -807,7 +807,7 @@ export class ZSimRemote extends DzrpRemote {
 	public startProcessing() {
 		super.startProcessing();
 		// Clear code coverage
-		this.codeCoverage.clearAll();
+		this.codeCoverage?.clearAll();
 	}
 
 
