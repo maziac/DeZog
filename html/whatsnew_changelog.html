@@ -1,13 +1,16 @@
 <li>
 	<span class="changelog-badge changelog-badge-new">NEW</span>
-	<br>zxnext configuration: Now the ZXNext can be connected via serial interface directly from DeZog. There is no need anymore to
-	go through the extra program DeZogSerialInterface.
-	For this there are changes to the "zxnext" launch.json configuration.
-	See chapter <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#zx-next--serial-interface">ZX Next / Serial Interface</a> for more information.
+	<br>Experimental MAME support: You can connect DeZog now to MAME to debug arcade games with Z80 architecture. The connection is done via a socket to the gdbstub inside MAME.
+	See chapter <a href="https://github.com/maziac/DeZog/blob/master/documentation/Usage.md#mame---multiple-machine-arcade-emulator">MAME - Multiple Machine Arcade Emulator</a> for more information.
+</li>
+
+<li>
+	<span class="changelog-badge changelog-badge-changed">CHANGED</span>
+	<br>Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
 </li>
 
 <li>
 	<span class="changelog-badge changelog-badge-fixed">FIXED</span>
-	<br>Log in OUTPUT panel fixed. It was not possible to enable it.
+	<br>zsim: Fixed IND, INI, OUTD and OUTI instructions.
 </li>
 

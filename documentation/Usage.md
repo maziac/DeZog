@@ -1033,7 +1033,7 @@ Therefore MAME needs to be terminated after each debug session.
 DeZog sends MAME a kill command when the session is terminated.
 The best debug experience at the moment is to re-start MAME in a loop, e.g. use:
 ~~~bash
-while true; do ./mame.release -window pacman -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
+while true; do ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
 ~~~
 
 

@@ -3,7 +3,7 @@
 # 2.7.0
 - Experimental MAME support.
 - Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
-- Fixed IND/I instruction #89 and OUTD/I.
+- zsim: Fixed IND/I instruction #89 and OUTD/I.
 - Improved regex in evalExpression.
 - Fixed: Running zsim with code coverage disabled (codeCoverage: false).
 
