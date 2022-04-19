@@ -155,7 +155,7 @@ A typical configuration looks like this:
     - "zxnext": Use a (USB-) serial connection connected to the UART of the ZX Next. See [ZX Next / Serial Interface](#zx-next--serial-interface).
 - sjasmplus (or z80asm or z88dk): The assembled configuration. An array of list files. Typically it includes only one. But if you e.g. have a
 list file also for the ROM area you can add it here.
-Please have a look at the [Listfile](#listfile) section.
+Please have a look at the [Assembler Configuration](#assembler-configuration) section.
 - startAutomatically: If true the program is started directly after loading. If false the program stops after launch. (Default=true). Please note: If this is set to true and a .tap file is loaded it will stop at address 0x0000 as this is where ZEsarUX tape load emulation starts.
 - reverseDebugInstructionCount: The number of lines you can step back during reverse debug. Use 0 to disable.
 - codeCoverageEnabled: If enabled (default) code coverage information is displayed. I.e. all source codes lines that have been executed are highlighted in green. You can clear the code coverage display with the command palette "dezog: Clear current code coverage decoration".
@@ -322,15 +322,15 @@ Then for the launch.json file you simply have to set the path to the SLD file. E
 ~~~json
 "sjasmplus": [{
     "path": "z80-sample-program.sld"
-    }]
+}]
 ~~~
 
 Note: If for some reason you want to turn the banking information, i.e. the long addresses you can do so by setting ```disableBanking``` to true.
 ~~~json
 "sjasmplus": [{
     "path": "z80-sample-program.sld"
-    }],
-    "disableBanking": true
+}],
+"disableBanking": true
 ~~~
 
 **Savannah-z80asm configuration:**
@@ -341,13 +341,13 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
     "path": "z80-sample-program.list",
     "srcDirs": [""],
     "excludeFiles": [ "some_folder/*" ]
-    }]
+}]
 ~~~
 
 - path: The path to the list file.
 - srcDirs (default=[""]):
     - [] = Empty array. Use .list file directly for stepping and setting of breakpoints.
-    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in subfolders just use '[""]' here or omit the parameter to use the default.
+    - array of strings = Non-empty. Use the (original source) files mentioned in the .list file. I.e. this allows you to step through .asm source files. The sources are located in the directories given here. They are relative to the 'rootFolder'. Several sources directories can be given here. All are tried. If you don't arrange your files in sub-folders just use '[""]' here or omit the parameter to use the default.
     - If you build your .list files from .asm files then use 'srcDirs' parameter. If you just own the .list file and not the corresponding .asm files don't use it.
 - excludeFiles (default=[]): an array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not shown during stepping. You normally only need this if you have multiple source files that share the same addresses. In that case one of the source files is shown. If that is the wrong one you can exclude it here. In the example above all files from "some_folder" are excluded.
 
@@ -361,7 +361,7 @@ Same as sjasmplus but use: ```z80asm```, e.g.:
     "mapFile": "currah_uspeech_tests.map",
     "mainFile": "currah_uspeech_tests.asm",
     "excludeFiles": [ "some_folder/*" ]
-    }]
+}]
 ~~~
 
 For 'path', 'srcDirs' nad 'excludeFiles' see z80asm configuration.
@@ -456,6 +456,7 @@ They are distinguished via the "remoteType":
 - "zrcp": ZEsarUX emulator
 - "cspect": CSpect emulator
 - "zxnext": ZX Next connected via serial cable.
+- "mame": MAME emulator.
 
 
 ### What is a 'Remote'?
@@ -474,26 +475,26 @@ Via a USB-to-Serial Interface the serial data is available e.g. at /dev/tty.usbs
 The different Remotes have different capabilities in conjunction with DeZog.
 The following table gives an overview.
 
-|                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   |
-|:------------------------|:-------------------|:--------|:---------|:---------|
-| State                   | stable             | stable  | stable   | stable   |
-| Breakpoints             | yes                | yes     | yes      | yes      |
-| Break reason output     | yes                | no      | yes      | yes      |
-| Conditional Breakpoints | yes                | yes     | yes/slow | yes/slow |
-| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       |
-| ASSERTION support       | yes                | yes     | yes/slow | yes/slow |
-| LOGPOINT support        | yes                | no      | yes/slow | yes/slow |
-| Long addresses/breakpoints | yes             | yes     | yes      | yes      |
-| Extended callstack      | no                 | yes     | no       | no       |
-| Code coverage           | yes                | yes 1)  | no       | no       |
-| Reverse debugging       | true               | true    | lite     | lite     |
-| ZX Next capable         | no                 | yes     | yes      | yes      |
-| Save/restore the state  | yes                | yes     | no       | no       |
-| Output of T-States      | yes                | yes     | no       | no       |
-| Display of sprite attributes/patterns | yes  | yes     | no       | yes      |
-| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      |
-| Load .tap file through DeZog | no            | yes     | no       | no       |
-| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   |
+|                     | Internal Z80 Simulator | ZEsarUX | ZX Next  | CSpect   | MAME         |
+|:------------------------|:-------------------|:--------|:---------|:---------|:-------------|
+| State                   | stable             | stable  | stable   | stable   | experimental |
+| Breakpoints             | yes                | yes     | yes      | yes      | yes          |
+| Break reason output     | yes                | no      | yes      | yes      | yes          |
+| Conditional Breakpoints | yes                | yes     | yes/slow | yes/slow | yes/slow     |
+| WPMEM (Watchpoints) support | yes            | yes 2)  | no       | no       | no 5)        |
+| ASSERTION support       | yes                | yes     | yes/slow | yes/slow | no 5)        |
+| LOGPOINT support        | yes                | no      | yes/slow | yes/slow | no 5)        |
+| Long addresses/breakpoints | yes             | yes     | yes      | yes      | no           |
+| Extended callstack      | no                 | yes     | no       | no       | no           |
+| Code coverage           | yes                | yes 1)  | no       | no       | no           |
+| Reverse debugging       | true               | true    | lite     | lite     | lite         |
+| ZX Next capable         | no                 | yes     | yes      | yes      | no           |
+| Save/restore the state  | yes                | yes     | no       | no       | no           |
+| Output of T-States      | yes                | yes     | no       | no       | no           |
+| Display of sprite attributes/patterns | yes  | yes     | no       | yes      | no           |
+| Load .sna/.nex/.obj file through DeZog | yes | yes     | yes      | yes      | no           |
+| Load .tap file through DeZog | no            | yes     | no       | no       | no           |
+| Run Z80 Unit Tests      | yes                | yes     | no 4)    | yes 3)   | no 5)        |
 
 Notes:
 - State:
@@ -506,6 +507,7 @@ Notes:
 - 2 ) ZEsarUX memory breakpoints use 16bit only. I.e. no support for long addresses. You may experience that a memory breakpoint is hit in a wrong bank if banking is used.
 - 3 ) Z80 Unit tests do work but watchpoints (WPMEM) are not supported.
 - 4 ) Basically unit tests do work on the ZX Next. But they are not so convenient to use because you may need to manually stop the ZX Next between tests.
+- 5 ) In fact it is supported. But it cannot be used as it is not possible to load programs from DeZog into the MAME memory.
 
 
 ### The Internal Z80 Simulator
@@ -551,8 +553,8 @@ The interrupt (IM1 and IM2) is executed after about 20ms * 3.5 MHz T-states.
 
 One thing to mention that can be an advantage during development:
 
-Emulators (like ZEsarUX) normally try to accurately emulate the exact behaviour.
-The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the raybeam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
+Emulators (like ZEsarUX) normally try to accurately emulate the exact behavior.
+The included simulator does not. This means: if you step through your assembly code and e.g. write to the screen an emulator would normally show the result after the ray-beam has passed the position on the screen. I.e. you normally don't see directly what's happening on the screen.
 The simulator on the other hand immediately displays any change to the screen while stepping. This can also be an advantage during debugging.
 
 Example launch.json configuration:
@@ -985,6 +987,61 @@ You can solder it directly or use the socket that is already available on the bo
 ![](images/uart_socket.jpg)
 
 ![](images/uart_pin_header.jpg)
+
+
+### MAME - Multiple Machine Arcade Emulator
+
+Support for MAME is new and at the moment only experimental.
+MAME implements a gdbstub that can be accessed from DeZog via a socket.
+Therefore it is necesary to start MAME (v0.242) with e.g. these options:
+~~~bash
+./mame pacman -window -debugger gdbstub -debug -debugger_port 12000
+~~~
+
+MAME will start waiting on a connection.
+The launch.json for DeZog is:
+~~~json
+    "remoteType": "mame",
+    "mame": {
+        "port": 12000
+    }
+~~~
+
+~~~
+┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│    vscode     │              │      DeZog      │          │        MAME        │
+│               │◀─────────────│                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          └────────────────────┘
+└───────────────┘              └─────────────────┘                     ▲
+                                        ▲                              │
+                                        │                              │
+                               ┌────────▼──────────────────────────────▼─────────┐
+                               │  ┌──────────┐                   ┌──────────┐    │
+                               │  │  Socket  │◀─────────────────▶│  Socket  │    │
+                               │  └──────────┘                   └──────────┘    │
+                               │              macOS, Linux, Windows              │
+                               └─────────────────────────────────────────────────┘
+~~~
+
+MAME in version 0.242 does only support 1 connection. A 2nd connection attempt is refused.
+Therefore MAME needs to be terminated after each debug session.
+DeZog sends MAME a kill command when the session is terminated.
+The best debug experience at the moment is to re-start MAME in a loop, e.g. use:
+~~~bash
+while true; do ./mame.release -window pacman -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
+~~~
+
+
+There is a big difference in using MAME compared to the other emulators:
+Using MAME the program is loaded when starting MAME. I.e. it is not transmitted by DeZog into MAME.
+The primary use case here is not to develop new SW with an assembler but to reverse-engineer old SW.
+
+Please see [Reverse Engineering with DeZog](ReverseEngineeringusage.md).
 
 
 #### Caveats

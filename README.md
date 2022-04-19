@@ -30,6 +30,7 @@ It's primary intention is to support building new programs, i.e. programs with e
 The biggest help it offers is that you are able to step through your sources and that DeZog is aware of all labels and can give hints to what label a number resolves.
 
 DeZog needs a Remote to  execute the Z80 binaries. You can either use the built-in Z80/ZX simulator or connect to ZEsarUX or CSpect via a socket connection for more advanced projects.
+There is also experimental support for MAME.
 
 Note: DeZog itself does not include any support for building from assembler sources. For this you need a build task and an assembler. For an example look here: https://github.com/maziac/z80-sample-program
 
@@ -68,6 +69,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 - supports [ZEsarUX](https://github.com/chernandezba/zesarux) emulator
 - supports [CSpect](http://www.cspect.org) emulator
+- experimental support for [MAME](https://www.mamedev.org)
 - can be used with the internal simulator (does not require ZEsarUX or CSpect))
 - reads .list and .sld files
 	- supports stepping through source code
@@ -104,7 +106,7 @@ The default for Windows is 100 (ms). If you run into this problem you can try to
 
 ## Constraints
 
-- supports ZEsarUX, CSpect, ZX Next HW and the internal simulator
+- supports ZEsarUX, CSpect, ZX Next HW and the internal simulator (and MAME/experimental)
 - build output must
 	- create a .list or SLD file (support for sjasmplus, Savannah's z80asm, z88dk).
 	- create a .sna, .nex or object file containing the binary
@@ -133,6 +135,7 @@ These are the options:
 
 - the [CSpect](http://www.cspect.org) emulator (known to be interoperable with DeZog: version 2.15.2)
 - the [ZEsarUX](https://github.com/chernandezba/zesarux) emulator (known to be interoperable with DeZog: version 10.0)
+- [MAME](https://www.mamedev.org/release.html) (experimental)
 
 The different DeZog/emulator configurations have different advantages.
 But which one you choose mainly depends on your personal preference.

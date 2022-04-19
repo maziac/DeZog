@@ -75,7 +75,7 @@ MAME needs to be like so:
 ./mame -window <rom> -debugger gdbstub -debug -debugger_port 12000
 ~~~
 
-I.e. MAME uses gdb syntax for communicaton with DeZog.
+I.e. MAME uses gdb syntax for communication with DeZog.
 
 Here are the available commands in short:
 - CTRL-C: Break (stop debugger execution)
@@ -152,7 +152,7 @@ T05watch:A000;0a:0000;0b:0100;
 To pause/break the server (DeZog) send a single 0x03 character.
 The gdbstub does not send any reply.
 
-To get a reply (also to know when to continue) DeZog will not send a sogle CTRL-C but follow it always by a register read to get a reply from the gdbstub.
+To get a reply (also to know when to continue) DeZog will not send a single CTRL-C but follow it always by a register read to get a reply from the gdbstub.
 ~~~
 CTRL-C
 $g#HH
@@ -267,7 +267,7 @@ e.g. if the command has a bad checksum.
 The ACK/NACK is sent immediately and can be used to stop the timeout.
 
 The response/reply is sent after the ACK when the command has completed.
-For step and continue this means it is sent after the emulator has breaked.
+For step and continue this means it is sent after the emulator has stopped.
 
 
 ## XML
