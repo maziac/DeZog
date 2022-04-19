@@ -196,15 +196,15 @@ suite('MameRemote', () => {
 				result = mame.parseStopReplyPacket('T050a:0000;');
 			}, Error, "No break address found.");
 
-			result = mame.parseStopReplyPacket('T05watch:FE12;a:0000;0b:0100;');
+			result = mame.parseStopReplyPacket('T05watch:12FE;a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
 			assert.equal(result.address, 0x12FE);
 
-			result = mame.parseStopReplyPacket('T05awatch:FE12;0a:0000;0b:0100;');
+			result = mame.parseStopReplyPacket('T05awatch:12FE;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_WRITE);
 			assert.equal(result.address, 0x12FE);
 
-			result = mame.parseStopReplyPacket('T05rwatch:FE12;0a:0000;0b:0100;');
+			result = mame.parseStopReplyPacket('T05rwatch:12FE;0a:0000;0b:0100;');
 			assert.equal(result.breakReason, BREAK_REASON_NUMBER.WATCHPOINT_READ);
 			assert.equal(result.address, 0x12FE);
 		});
