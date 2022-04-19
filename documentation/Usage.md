@@ -989,61 +989,6 @@ You can solder it directly or use the socket that is already available on the bo
 ![](images/uart_pin_header.jpg)
 
 
-### MAME - Multiple Machine Arcade Emulator
-
-Support for MAME is new and at the moment only experimental.
-MAME implements a gdbstub that can be accessed from DeZog via a socket.
-Therefore it is necesary to start MAME (v0.242) with e.g. these options:
-~~~bash
-./mame pacman -window -debugger gdbstub -debug -debugger_port 12000
-~~~
-
-MAME will start waiting on a connection.
-The launch.json for DeZog is:
-~~~json
-    "remoteType": "mame",
-    "mame": {
-        "port": 12000
-    }
-~~~
-
-~~~
-┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
-│               │              │                 │          │                    │
-│               │              │                 │          │                    │
-│               │              │                 │          │                    │
-│    vscode     │              │      DeZog      │          │        MAME        │
-│               │◀─────────────│                 │          │                    │
-│               │              │                 │          │                    │
-│               │              │                 │          │                    │
-│               │              │                 │          └────────────────────┘
-└───────────────┘              └─────────────────┘                     ▲
-                                        ▲                              │
-                                        │                              │
-                               ┌────────▼──────────────────────────────▼─────────┐
-                               │  ┌──────────┐                   ┌──────────┐    │
-                               │  │  Socket  │◀─────────────────▶│  Socket  │    │
-                               │  └──────────┘                   └──────────┘    │
-                               │              macOS, Linux, Windows              │
-                               └─────────────────────────────────────────────────┘
-~~~
-
-MAME in version 0.242 does only support 1 connection. A 2nd connection attempt is refused.
-Therefore MAME needs to be terminated after each debug session.
-DeZog sends MAME a kill command when the session is terminated.
-The best debug experience at the moment is to re-start MAME in a loop, e.g. use:
-~~~bash
-while true; do ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
-~~~
-
-
-There is a big difference in using MAME compared to the other emulators:
-Using MAME the program is loaded when starting MAME. I.e. it is not transmitted by DeZog into MAME.
-The primary use case here is not to develop new SW with an assembler but to reverse-engineer old SW.
-
-Please see [Reverse Engineering with DeZog](ReverseEngineeringusage.md).
-
-
 #### Caveats
 
 ##### Joystick ports
@@ -1141,6 +1086,70 @@ For the debugged program this means
 - If your program heavily relies on SP manipulation (increasing SP **while values below SP are still required**) then take care to guard the code section with NMI disable/enable via disabling/enabling the M1 button in register 0x06. You could also re-write the code such that it loads the SP into another register (e.g. IX) and access the stack values through that register.
 - If you don't manipulate the SP in that way you don't have to bother with disabling the NMI M1 button.
 - If you only rarely use the SP in that way: the probability for the scenario above is certainly quite low. I.e. you can simply ignore it. But you should keep in mind that if something odd happens when you press the NMI M1 button that it could be the reason described above.
+
+
+
+### MAME - Multiple Machine Arcade Emulator
+
+Support for MAME is new and at the moment only experimental.
+MAME implements a gdbstub that can be accessed from DeZog via a socket.
+Therefore it is necesary to start MAME (v0.242) with e.g. these options:
+~~~bash
+./mame pacman -window -debugger gdbstub -debug -debugger_port 12000
+~~~
+
+MAME will start waiting on a connection.
+The launch.json for DeZog is:
+~~~json
+    "remoteType": "mame",
+    "mame": {
+        "port": 12000
+    }
+~~~
+
+~~~
+┌───────────────┐              ┌─────────────────┐          ┌────────────────────┐
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│    vscode     │              │      DeZog      │          │        MAME        │
+│               │◀─────────────│                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          │                    │
+│               │              │                 │          └────────────────────┘
+└───────────────┘              └─────────────────┘                     ▲
+                                        ▲                              │
+                                        │                              │
+                               ┌────────▼──────────────────────────────▼─────────┐
+                               │  ┌──────────┐                   ┌──────────┐    │
+                               │  │  Socket  │◀─────────────────▶│  Socket  │    │
+                               │  └──────────┘                   └──────────┘    │
+                               │              macOS, Linux, Windows              │
+                               └─────────────────────────────────────────────────┘
+~~~
+
+MAME in version 0.242 does only support 1 connection. A 2nd connection attempt is refused.
+Therefore MAME needs to be terminated after each debug session.
+DeZog sends MAME a kill command when the session is terminated.
+The best debug experience at the moment is to re-start MAME in a loop, e.g. use:
+~~~bash
+while true; do ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000 -verbose ; sleep 2 ; done
+~~~
+
+
+There is a big difference in using MAME compared to the other emulators:
+Using MAME the program is loaded when starting MAME. I.e. it is not transmitted by DeZog into MAME.
+The primary use case here is not to develop new SW with an assembler but to reverse-engineer old SW.
+
+Please see [Reverse Engineering with DeZog](ReverseEngineeringusage.md).
+
+#### Memory Banks / Paging
+
+At the moment the MAME gdbstub does not deliver any information about the used memory banks.
+I.e. as soon as there is a memory area that is shared between 2 or more banks DeZog cannot distinguish the addresses anymore.
+You would once the disaseembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
+
+So meaningful reverse engineering will work only for systems without memory banks / paging.
 
 
 ## Usage
