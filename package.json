@@ -818,7 +818,7 @@
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
-							"topOfStack": "${3: top of stack / label name}"
+							"topOfStack": "${3: Top of stack / label name}"
 						}
 					},
 					{
@@ -852,7 +852,7 @@
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"loadObj": "${2:The .obj file to load}",
 							"execAddress": "${3:The start address / label name}",
-							"topOfStack": "${4: top of stack / label name}"
+							"topOfStack": "${4: Top of stack / label name}"
 						}
 					},
 					{
@@ -883,7 +883,7 @@
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
-							"topOfStack": "${3: top of stack / label name}"
+							"topOfStack": "${3: Top of stack / label name}"
 						}
 					},
 					{
@@ -915,19 +915,40 @@
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${2:.nex or .sna file to load}",
-							"topOfStack": "${3: top of stack / label name}"
+							"topOfStack": "${3: Top of stack / label name}"
+						}
+					},
+					{
+						"label": "DeZog: MAME",
+						"description": "Configuration for DeZog to use the MAME emulator.",
+						"body": {
+							"type": "dezog",
+							"request": "launch",
+							"name": "MAME",
+							"remoteType": "mame",
+							"mame": {
+								"port": 12000
+							},
+							"startAutomatically": false,
+							"z80asm": [
+								{
+									"path": "${1:The list file (initially an empty file with extension *.list)}",
+									"srcDirs": []
+								}
+							],
+							"rootFolder": "^\"\\${workspaceFolder\\}\""
 						}
 					},
 					{
 						"label": "DeZog: ZX Next",
-						"description": "Configuration for DeZog to use the ZX Next as for remote debugging.",
+						"description": "Configuration for DeZog to use the ZX Next for remote debugging.",
 						"body": {
 							"type": "dezog",
 							"request": "launch",
 							"name": "ZX Next",
 							"remoteType": "zxnext",
 							"zxnext": {
-								"serial": "${1:the serial COM port}"
+								"serial": "${1:The serial COM port}"
 							},
 							"disassemblerArgs": {
 								"esxdosRst": true
@@ -949,7 +970,7 @@
 							"startAutomatically": false,
 							"rootFolder": "^\"\\${workspaceFolder\\}\"",
 							"load": "${3:.nex or .sna file to load}",
-							"topOfStack": "${4: top of stack / label name}"
+							"topOfStack": "${4: Top of stack / label name}"
 						}
 					},
 					{
