@@ -1093,7 +1093,7 @@ For the debugged program this means
 
 Support for MAME is new and at the moment only experimental.
 MAME implements a gdbstub that can be accessed from DeZog via a socket.
-Therefore it is necesary to start MAME (v0.242) with e.g. these options:
+Therefore it is necessary to start MAME (v0.242) with e.g. these options:
 ~~~bash
 ./mame pacman -window -debugger gdbstub -debug -debugger_port 12000
 ~~~
@@ -1143,11 +1143,12 @@ The primary use case here is not to develop new SW with an assembler but to reve
 
 Please see [Reverse Engineering with DeZog](ReverseEngineeringusage.md).
 
+
 #### Memory Banks / Paging
 
 At the moment the MAME gdbstub does not deliver any information about the used memory banks.
 I.e. as soon as there is a memory area that is shared between 2 or more banks DeZog cannot distinguish the addresses anymore.
-You would once the disaseembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
+You would once the disassembly of bank X and, when it is switched, the disassembly of bank Y for the same addresses.
 
 So meaningful reverse engineering will work only for systems without memory banks / paging.
 
