@@ -940,43 +940,8 @@ export class DebugSessionClass extends DebugSession {
 			// Read data
 			const text = Disassembly.getDisassemblyText();
 
-			// Get all source breakpoints of the disassembly file.
-			const bps = vscode.debug.breakpoints;
-			const disSrc = this.disasmTextDoc.uri.toString();
-			const sbps = bps.filter(bp => {
-				if (bp.hasOwnProperty('location')) {
-					const sbp = bp as vscode.SourceBreakpoint;
-					const sbpSrc = sbp.location.uri.toString();
-					if (sbpSrc == disSrc)
-						return true;
-				}
-				return false;
-			}) as vscode.SourceBreakpoint[];
-
-			// Check if any breakpoint
-			const changedBps = new Array<vscode.SourceBreakpoint>();
-			if (sbps.length > 0) {
-				// Previous text
-				const prevTextLines = this.disasmTextDoc.getText().split('\n');
-
-				// Loop all source breakpoints to compute changed BPs
-				for (const sbp of sbps) {
-					const lineNr = sbp.location.range.start.line;
-					const line = prevTextLines[lineNr];
-					const addr = parseInt(line, 16);
-					if (!isNaN(addr)) {
-						// Get line number
-						const nLineNr = Disassembly.getLineForAddress(addr) || -1;
-						// Create breakpoint
-						const nLoc = new vscode.Location(this.disasmTextDoc.uri, new vscode.Position(nLineNr, 0));
-						const cbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
-						// Store
-						changedBps.push(cbp);
-					}
-				}
-			}
-			// Remove all old breakpoints.
-			vscode.debug.removeBreakpoints(sbps);
+			// Get all source breakpoints of the disassembly file that need to be reapplied.
+			const changedBps = this.disassemblyRemoveBreakpoints();
 
 			// Create and apply one replace edit
 			const editReplace = new vscode.WorkspaceEdit();
@@ -986,30 +951,23 @@ export class DebugSessionClass extends DebugSession {
 			await this.disasmTextDoc.save();
 			// Add all new breakpoints.
 			vscode.debug.addBreakpoints(changedBps);
+			// TODO: Check if they are automatically set. Most probably not. They anyhow still exist.
 
 			// If disassembly text editor is open, then show decorations
 			const editors = vscode.window.visibleTextEditors;
 			for (const editor of editors) {
 				if (editor.document == this.disasmTextDoc) {
 					Decoration.setDisasmCoverageDecoration(editor);
+					// TODO: Check if coverage decorations still work.
 				}
 			}
-			/*
-			// Show document and get editor
-			const editor=await vscode.window.showTextDocument(this.disasmTextDoc);
-			// Update decorations
-			if (editor) {
-				Decoration.SetDisasmCoverageDecoration(editor);
-			}
-			*/
 		}
-
 
 		// Get lines for addresses and send response.
 		// Determine line numbers (binary search)
 		if (frameCount > 0) {
-			const absFilePath = DisassemblyClass.getAbsFilePath();
-			const src = this.createSource(absFilePath) as Source;
+			//const absFilePath = DisassemblyClass.getAbsFilePath();
+			//const src = this.createSource(absFilePath) as Source;
 			let indexDump = 0;
 			for (let i = 0; i < frameCount; i++) {
 				const sf = sfrs[i];
@@ -1017,12 +975,13 @@ export class DebugSessionClass extends DebugSession {
 					continue;
 				// Get line number for stack address
 				const addr = fetchAddresses[indexDump];
-				// Get line number
-				const foundLine = Disassembly.getLineForAddress(addr) || -1
-				const lineNr = this.convertDebuggerLineToClient(foundLine);
-				// Store
-				sf.source = src;
-				sf.line = lineNr;
+				// Get line number and location
+				const {uri, lineNr} = this.getLocationForAddress(addr);
+				if (uri) { 	// Safety check
+					// Store
+					sf.source = this.createSource(uri.fsPath);
+					sf.line = lineNr;
+				}
 				// Next
 				indexDump++;
 			}
@@ -1053,6 +1012,82 @@ export class DebugSessionClass extends DebugSession {
 		for (const func of this.delayedDecorations)
 			func();
 		this.delayedDecorations.length = 0;
+	}
+
+
+	/**
+	 * Searches for filename and line number first in Labels.
+	 * If not found it checks the disasm.list
+	 * @param addr The address (long address)
+	 * @returns uri and line number. If not found uri is undefined.
+	 */
+	protected getLocationForAddress(addr: number): {uri: vscode.Uri, lineNr: number} {
+		let uri;
+		let {fileName, lineNr} = Labels.getFileAndLineForAddress(addr);
+		if (fileName) {
+			// Found in other file
+			uri = vscode.Uri.file(fileName);
+		}
+		else {
+			// Now check in disasm.list
+			lineNr = Disassembly.getLineForAddress(addr) || -1;	// TODO: is this able to handle banking?
+			if (lineNr >= 0) {
+				// Found
+				uri = this.disasmTextDoc.uri;
+			}
+		}
+		return uri;
+	}
+
+
+	/**
+	 * Returns all vscode breakpoints associated with the disasm.list file.
+	 * @returns A list of vscode breakpoints.
+	 */
+	protected disassemblyRemoveBreakpoints(): vscode.SourceBreakpoint[] {
+		// Get all source breakpoints of the disassembly file.
+		const bps = vscode.debug.breakpoints as vscode.SourceBreakpoint[];
+		const disSrc = this.disasmTextDoc.uri.toString();
+		const sbps = bps.filter(bp => {
+			if (bp.location) {
+				const sbpSrc = bp.location.uri.toString();
+				if (sbpSrc == disSrc)
+					return true;
+			}
+			return false;
+		});
+
+		// Check for changed breakpoints
+		const changedBps: vscode.SourceBreakpoint[] = [];
+		if (sbps.length > 0) {
+			// Previous text
+			const prevTextLines = this.disasmTextDoc.getText().split('\n');
+			for (const sbp of sbps) {
+				// Get address from previous disassembly text
+				const oldLineNr = sbp.location.range.start.line;
+				const oldLine = prevTextLines[oldLineNr];
+				const addr = parseInt(oldLine, 16);	// TODO: parse banked address
+				if (isNaN(addr))
+					continue;	// Safety check
+
+				// Get the new file/line for the address
+				const {uri, lineNr} = this.getLocationForAddress(addr);
+				if (!uri)
+					continue;
+
+				// Either other file or disasm.list location found:
+				const nLoc = new vscode.Location(uri, new vscode.Position(lineNr, 0));
+				const cbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
+				// Store
+				changedBps.push(cbp);
+			}
+		}
+		// Remove all old breakpoints.
+		vscode.debug.removeBreakpoints(sbps);
+		// Also really remove the breakpoints
+		// TODO: Check. Maybe vscode does this already because of the 'removeBreakpoints()'
+
+		return changedBps;
 	}
 
 

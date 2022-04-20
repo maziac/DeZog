@@ -598,6 +598,7 @@ export class LabelsClass {
 	 * Long addresses.
 	 * @param address The (long) memory address to search for.
 	 * @returns The associated filename and line number (and for sjasmplus the modulePrefix and the lastLabel).
+	 * It not found returns .fileName==''.
 	 */
 	public getFileAndLineForAddress(address: number): SourceFileEntry {
 		// Address file conversion
