@@ -140,7 +140,7 @@ export class Utility {
 	 */
 	public static parseValue(valueString: string): number {
 
-		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?\d+)(\D*))?('([\S ]+)')?/i.exec(valueString);
+		const match = /^\s*((0x|\$)([0-9a-f]+)([^0-9a-f]*))?(([0-9a-f]+)h(.*))?(([01]+)b(.*))?(_([szhnpc]+)([^szhnpc])*)?((-?\d+)(\D*))?('([\S ]+)')?/i.exec(valueString);	// NOSONAR
 		if (!match)
 			return NaN;	// Error during parsing
 
@@ -241,7 +241,7 @@ export class Utility {
 	 * @returns The 'expr' with all labels and registers replaced by numbers.
 	 */
 	public static replaceVarsWithValues(expr: string, evalRegisters = true, modulePrefix?: string, lastLabel?: string): string {
-		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+\b|\b[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+\b|[a-fA-F0-9]+h\b|[01]+b\b|\d+\b|'[\S ]+')/g, (match, p1) => {
+		const exprLabelled = expr.replace(/(0x[a-fA-F0-9]+\b|\b[a-zA-Z_\.][a-zA-Z0-9_\.]*'?|[\$][0-9a-fA-F]+\b|[a-fA-F0-9]+h\b|[01]+b\b|\d+\b|'[\S ]+')/g, (match, p1) => {	// NOSONAR
 			let res;
 			if (evalRegisters) {
 				// Check if it might be a register name.

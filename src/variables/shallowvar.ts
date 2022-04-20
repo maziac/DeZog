@@ -6,8 +6,8 @@ import {Utility} from '../misc/utility';
 import {RefList} from '../misc/reflist';
 import {Remote} from '../remotes/remotebase';
 import {Format} from '../disassembler/format';
-import {DisassemblyClass} from '../misc/disassembly';
 import {StepHistory} from '../remotes/cpuhistory';
+import {SimpleDisassembly} from '../disassembly/simpledisassembly';
 
 
 /**
@@ -118,7 +118,7 @@ export class DisassemblyVar extends ShallowVarConst {
 		const data = await Remote.readMemoryDump(this.address, size);
 
 		// Disassemble
-		const dasmArray = DisassemblyClass.getLines(this.address, data, this.count);
+		const dasmArray = SimpleDisassembly.getLines(this.address, data, this.count);
 
 		// Add extra info
 		const list = new Array<DebugProtocol.Variable>();
@@ -841,7 +841,7 @@ export class MemDumpVar extends ShallowVar {
 	 */
 	public async setValue(name: string, value: number): Promise<string> {
 		// Get index (strip brackets)
-		const indexString = name.substr(1, name.length - 2);
+		const indexString = name.substring(1, name.length - 1);
 		const index = parseInt(indexString);
 
 		// Get address

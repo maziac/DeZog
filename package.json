@@ -195,6 +195,11 @@
 				"command": "dezog.serialport.list",
 				"title": "Get list of all available serial ports",
 				"category": "DeZog"
+			},
+			{
+				"command": "dezog.reload",
+				"title": "Reload the list file(s).",
+				"category": "DeZog"
 			}
 		],
 		"menus": {
@@ -218,6 +223,9 @@
 				},
 				{
 					"command": "dezog.serialport.list"
+				},
+				{
+					"command": "dezog.reload"
 				}
 			],
 			"editor/context": [

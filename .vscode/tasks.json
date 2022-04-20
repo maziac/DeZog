@@ -13,6 +13,20 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+
+		{
+			"label": "Clean SonarLint Problems",
+			"type": "shell",
+			"command": "echo Cleaning problems...",
+			"group": "none",
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "a^"
+				},
+				"owner": "sonarlint" // Right-click/copy to get the owner
+			}
 		}
+
 	]
 }

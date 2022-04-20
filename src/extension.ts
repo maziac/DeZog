@@ -114,15 +114,13 @@ export function activate(context: vscode.ExtensionContext) {
 		const session = DebugSessionClass.singleton();
 		if (!session.running)
 			return;
-		if (vscode.debug.activeDebugSession?.configuration.type != 'dezog')
-			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
 			return;
 		const position = editor.selection.anchor;
 		const filename = editor.document.fileName;
-		// Send to debug adapter
+		// Execute in debug adapter
 		await session.setPcToLine(filename, position.line);
 	}));
 
@@ -132,8 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
 		const session = DebugSessionClass.singleton();
 		if (!session.running)
 			return;
-//		if (vscode.debug.activeDebugSession?.configuration.type != 'dezog')
-//			return;
 		// Get focussed editor/file and line
 		const editor = vscode.window.activeTextEditor;
 		if (!editor)
@@ -156,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (to.character == 0)
 					toLine--;
 			}
-			// Send to debug adapter
+			// Execute in debug adapter
 			await session.disassemblyAtCursor(filename, fromLine, toLine);
 		}
 	}));
@@ -166,6 +162,16 @@ export function activate(context: vscode.ExtensionContext) {
 		Decoration?.clearAllDecorations();
 	}));
 
+
+	// Command to reload the list file(s).
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.reload', async () => {
+		// Only allowed in debug context
+		const session = DebugSessionClass.singleton();
+		if (!session.running)
+			return;
+		// Execute in debug adapter
+		await session.reloadLabels();
+	}));
 
 	// Register a configuration provider for 'dezog' debug type
 	const configProvider = new DeZogConfigurationProvider();

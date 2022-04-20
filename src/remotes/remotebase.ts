@@ -9,7 +9,7 @@ import {Settings/*, ListFile*/} from '../settings';
 import {Utility} from '../misc/utility';
 import {BaseMemory} from '../disassembler/basememory';
 import {Opcode, OpcodeFlag} from '../disassembler/opcode';
-import {Disassembly, DisassemblyClass} from '../misc/disassembly';
+import {Disassembly, DisassemblyClass} from '../disassembly/disassembly';
 import {MemoryBank, MemoryModel} from './Paging/memorymodel';
 import {Log} from '../log';
 

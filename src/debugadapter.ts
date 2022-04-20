@@ -23,7 +23,7 @@ import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
 import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
-import {DisassemblyClass, Disassembly} from './misc/disassembly';
+import {DisassemblyClass, Disassembly} from './disassembly/disassembly';
 import {TimeWait} from './misc/timewait';
 import {MemoryArray} from './misc/memoryarray';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
@@ -33,6 +33,7 @@ import {PromiseCallbacks} from './misc/promisecallbacks';
 import {Z80UnitTestRunner} from './z80unittests/z80unittestrunner';
 import {DiagnosticsHandler} from './diagnosticshandler';
 import {GenericWatchpoint} from './genericwatchpoint';
+import {SimpleDisassembly} from './disassembly/simpledisassembly';
 
 
 
@@ -1597,7 +1598,7 @@ export class DebugSessionClass extends DebugSession {
 		else {
 			// Normal mode: Disassemble instruction
 			const data = await Remote.readMemoryDump(pc, 4);
-			disInstr = DisassemblyClass.getInstruction(pc, data);
+			disInstr = SimpleDisassembly.getInstruction(pc, data);
 		}
 		// Construct result string
 		let result;
@@ -2787,7 +2788,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		const data = await Remote.readMemoryDump(address, 4 * count);
 
 		// Disassembly
-		const dasmArray = DisassemblyClass.getLines(address, data, count);
+		const dasmArray = SimpleDisassembly.getLines(address, data, count);
 
 		// Convert to text
 		let txt = '';
@@ -3281,7 +3282,7 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected async pcHasBeenChanged() {
 		await Remote.getCallStackFromEmulator();
-		this.sendEvent(new StoppedEvent("PC changed", DebugSessionClass.THREAD_ID));
+		this.sendEvent(new StoppedEvent("PC changed", DebugSessionClass.THREAD_ID));	// Thread ID is required to update.
 		await BaseView.staticCallUpdateRegisterChanged();
 	}
 
@@ -3408,7 +3409,7 @@ E.g. use "-help -view" to put the help text in an own view.
 		const data = await Remote.readMemoryDump(fromAddr, size + 3);
 
 		// Disassemble
-		const dasmArray = DisassemblyClass.getDasmMemory(fromAddr, data);
+		const dasmArray = SimpleDisassembly.getDasmMemory(fromAddr, data);
 
 		// Output
 		for (const addrInstr of dasmArray) {
@@ -3501,6 +3502,40 @@ E.g. use "-help -view" to put the help text in an own view.
 	 */
 	protected debugConsoleIndentedText(text: string) {
 		this.debugConsoleAppendLine(this.debugConsoleIndentation + text);
+	}
+
+
+	/**
+	 * Reloads all list/sld file(s).
+	 * Is targeted at reverse engineering, so mainly at list files.
+	 * Only the list files are reloaded, not the launch.json, nor the binary (loadObjs).
+	 */
+
+	public reloadLabels() {
+		try {
+			// Init labels
+			Labels.init(Settings.launch.smallValuesMaximum);
+			// Read list files
+			Remote.readListFiles(Settings.launch);
+
+			// Reset a few things
+			// TODO: E.g. code coverage, history ?
+
+			// Do disassembly anew
+			DisassemblyClass.createDisassemblyInstance();
+
+			// Both do work: ThreadEvent or invalidatedEvent or even without
+			// this.sendEvent(new ThreadEvent('started', DebugSessionClass.THREAD_ID));
+//			this.sendEvent(new InvalidatedEvent(undefined, DebugSessionClass.THREAD_ID, 0));
+
+			this.sendEvent(new StoppedEvent("Labels reloaded", DebugSessionClass.THREAD_ID));
+		}
+		catch (e) {
+			// Some error occurred
+			Remote.terminate('Labels: ' + e.message);
+			return "Error while initializing labels.";
+		}
+
 	}
 }
 

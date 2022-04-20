@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import {Labels, SourceFileEntry} from './labels/labels';
 //import {Log} from './log';
 //import { Settings } from './settings';
-import {Disassembly, DisassemblyClass} from './misc/disassembly';
+import {Disassembly, DisassemblyClass} from './disassembly/disassembly';
 import {UnifiedPath} from './misc/unifiedpath';
 import {Utility} from './misc/utility';
 

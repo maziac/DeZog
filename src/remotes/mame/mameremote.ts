@@ -193,12 +193,12 @@ export class MameRemote extends DzrpQeuedRemote {
 			// Timeout is required because socket.end() does not call the
 			// callback if it is already closed and the state cannot
 			// reliable be determined.
-			const timeout = setTimeout(() => {
+			const timeout = setTimeout(() => {	// NOSONAR
 				if (resolve) {
 					resolve();
 				}
 			}, 10000);	// 1 sec
-			socket.end(() => {
+			socket.end(() => {	// NOSONAR
 				if (resolve) {
 					resolve();
 					clearTimeout(timeout);
