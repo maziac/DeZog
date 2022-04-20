@@ -1,5 +1,6 @@
 
 import * as assert from 'assert';
+import {MemAttribute, Memory} from '../src/disassembler/memory';
 import { MemoryArray } from '../src/disassembly/memoryarray';
 
 suite('Disassembly', () => {
@@ -192,7 +193,6 @@ suite('Disassembly', () => {
 		});
 
 
-
 		suite('addRangesWithSize', () => {
 
 			test('1 range', () => {
@@ -222,6 +222,103 @@ suite('Disassembly', () => {
 			});
 		});
 
+
+		suite('memory compare', () => {
+			function addRangewithData(ma: MemoryArray, address: number, dataBuffer: number[]) {
+				ma.ranges.push({address, size: dataBuffer.length, data: new Uint8Array(dataBuffer)});
+			}
+
+			suite('isMemoryEqual', () => {
+
+				test('empty', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					assert.ok(!ma.isMemoryEqual(mem, 100, 1));
+				});
+
+				test('same', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [0xAB]);
+					mem.setMemory(100, new Uint8Array([0xAB]));
+					assert.ok(ma.isMemoryEqual(mem, 100, 1));
+				});
+
+				test('UNUSED', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [0xAB]);
+					mem.setMemory(100, new Uint8Array([0xAB]));
+					(mem as any).memoryAttr[100] = MemAttribute.UNUSED;
+					assert.ok(!ma.isMemoryEqual(mem, 100, 1));
+				});
+
+				test('Different areas', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20]);
+					mem.setMemory(90, new Uint8Array([10, 20]));
+					assert.ok(!ma.isMemoryEqual(mem, 100, 1));
+					assert.ok(!ma.isMemoryEqual(mem, 90, 1));
+				});
+
+				test('Different values', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10]);
+					mem.setMemory(90, new Uint8Array([0xAB]));
+					assert.ok(!ma.isMemoryEqual(mem, 100, 1));
+				});
+
+				test('2 equal ranges', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20, 30]);
+					mem.setMemory(100, new Uint8Array([10, 20, 30]));
+					assert.ok(ma.isMemoryEqual(mem, 100, 3));
+				});
+
+				test('Overlapping ranges', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20, 30]);
+					mem.setMemory(99, new Uint8Array([1, 10, 20, 30]));
+					assert.ok(!ma.isMemoryEqual(mem, 99, 3));
+					assert.ok(ma.isMemoryEqual(mem, 100, 3));
+				});
+			});
+
+			suite('isMemoryEqualForBlocks', () => {
+
+				test('2 equal ranges', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20, 30]);
+					mem.setMemory(100, new Uint8Array([10, 20, 30]));
+					assert.ok(ma.isMemoryEqualForBlocks(mem, [100], 3));
+				});
+
+				test('2x2 equal ranges', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20, 30]);
+					mem.setMemory(100, new Uint8Array([10, 20, 30]));
+					addRangewithData(ma, 2000, [1, 2, 3, 4]);
+					mem.setMemory(2000, new Uint8Array([1, 2, 3, 7]));
+					assert.ok(ma.isMemoryEqualForBlocks(mem, [100, 2000], 3));
+				});
+
+				test('1 wrong range', () => {
+					const ma = new MemoryArray();
+					const mem = new Memory();
+					addRangewithData(ma, 100, [10, 20, 30]);
+					mem.setMemory(100, new Uint8Array([10, 20, 30]));
+					addRangewithData(ma, 2000, [1, 2, 3, 4]);
+					mem.setMemory(2000, new Uint8Array([1, 2, 8, 7]));
+					assert.ok(!ma.isMemoryEqualForBlocks(mem, [100, 2000], 3));
+				});
+			});
+		});
 	});
 
 });

@@ -499,7 +499,7 @@ export class Disassembler extends EventEmitter {
 		do {
 			//const text = trace.substr(k,100);
 			//console.log('log: "' + text + '"');
-			const addressString = trace.substr(k, 5);
+			const addressString = trace.substring(k, k+5);
 			if (addressString.length == 5 && addressString[4] == ':') {
 				// Use address
 				const addr = parseInt(addressString, 16);
@@ -514,7 +514,7 @@ export class Disassembler extends EventEmitter {
 				}
 				// check if opcode is a "jp (hl)"
 				if (memAttr & MemAttribute.ASSIGNED) {
-					const opcodeString = trace.substr(k, 10);
+					const opcodeString = trace.substring(k, k+10);
 					if (opcodeString == ' jp   (hl)') {
 						// remember address
 						jpHlRef = addr;
@@ -1973,7 +1973,7 @@ export class Disassembler extends EventEmitter {
 	public setAddressComments(commentsFile: string) {
 		enum State {
 			LinesBefore, lineOn, LinesAfter,
-		};
+		}
 		const commentsLines = readFileSync(commentsFile).toString().split('\n');
 		commentsLines.push('');	// Add empty line to make sure the last comment is processed.
 		let state = State.LinesBefore;

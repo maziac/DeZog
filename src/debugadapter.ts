@@ -881,40 +881,25 @@ export class DebugSessionClass extends DebugSession {
 			if (addr == undefined)
 				break;
 			// Add address
-			memArray.addRange(addr, fetchHistorySize);	// assume at least 4 bytes, assume some more to cover small jumps
+			memArray.addRange(addr, fetchHistorySize);
 			historyAddresses.unshift(addr);
 		}
 
 		// Check if we need to fetch any dump.
+		//await memArray.fetchData((address, size) => {
+		//	return await Remote.readMemoryDump(range.address, range.size);
+		//});
 		for (const range of memArray.ranges) {
-			const data = await Remote.readMemoryDump(range.address, range.size);
-			range.data = data;
+			range.data = await Remote.readMemoryDump(range.address, range.size);
 		}
 
 		// Check if we need to fetch any dump.
 		const fetchAddressesCount = fetchAddresses.length;
 
 		if (!doDisassembly) {
-			const checkSize = 40;	// Needs to be smaller than fetch-size in order not to do a disassembly too often.
-			if (fetchAddressesCount > 0) {
-				// Now get hex-dumps for all non existing sources.
-				for (let index = 0; index < fetchAddressesCount; index++) {
-					// So fetch a memory dump
-					const fetchAddress = fetchAddresses[index];
-					// Note: because of self-modifying code it may have changed
-					// since it was fetched at the beginning.
-					// Check if memory changed.
-					for (let k = 0; k < checkSize; k++) {
-						const val = Disassembly.memory.getValueAt((fetchAddress + k) & 0xFFFF);
-						const memAttr = Disassembly.memory.getAttributeAt(fetchAddress + k);
-						const newVal = memArray.getValueAtAddress((fetchAddress + k) & 0xFFFF);
-						if ((val != newVal) || (memAttr == MemAttribute.UNUSED)) {
-							doDisassembly = true;
-							break;
-						}
-					}
-				}
-			}
+			const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
+			// Do disassembly if memory changed:
+			doDisassembly = !blocksEqual;
 		}
 
 		// Check if a new address was used.

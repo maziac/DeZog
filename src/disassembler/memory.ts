@@ -74,7 +74,7 @@ export class Memory extends BaseMemory {
 	 * @returns The memory attribute.
 	 */
 	public getAttributeAt(address: number): MemAttribute {
-		const attr = this.memoryAttr[address++];
+		const attr = this.memoryAttr[address];
 		return attr;
 	}
 
