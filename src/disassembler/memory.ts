@@ -118,4 +118,3 @@ export class Memory extends BaseMemory {
 		}
 	}
 }
-

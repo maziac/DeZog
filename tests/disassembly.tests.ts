@@ -1,6 +1,7 @@
 
 import * as assert from 'assert';
 import {MemAttribute, Memory} from '../src/disassembler/memory';
+import {DisassemblyClass} from '../src/disassembly/disassembly';
 import { MemoryArray } from '../src/disassembly/memoryarray';
 
 suite('Disassembly', () => {
@@ -249,7 +250,7 @@ suite('Disassembly', () => {
 					const mem = new Memory();
 					addRangewithData(ma, 100, [0xAB]);
 					mem.setMemory(100, new Uint8Array([0xAB]));
-					(mem as any).memoryAttr[100] = MemAttribute.UNUSED;
+					mem.setAttributesAt(100, 1, MemAttribute.UNUSED);
 					assert.ok(!ma.isMemoryEqual(mem, 100, 1));
 				});
 
@@ -317,6 +318,53 @@ suite('Disassembly', () => {
 					mem.setMemory(2000, new Uint8Array([1, 2, 8, 7]));
 					assert.ok(!ma.isMemoryEqualForBlocks(mem, [100, 2000], 3));
 				});
+			});
+		});
+	});
+
+
+	suite('DisassemblyClass', () => {
+
+		suite('checkCodeFirst', () => {
+
+			test('set', () => {
+				const dis = new DisassemblyClass();
+				dis.initWithCodeAdresses([1000], [
+					{
+						address: 1000, data: new Uint8Array([2])
+					}]);
+				(dis as any).collectLabels();	// Sets CODE_FIRST
+				assert.ok(dis.checkCodeFirst([1000]));
+			});
+
+			test('unset', () => {
+				const dis = new DisassemblyClass();
+				dis.initWithCodeAdresses([1001], [
+					{
+						address: 1000, data: new Uint8Array([2])
+					}]);
+				(dis as any).collectLabels();	// Sets CODE_FIRST
+				assert.ok(!dis.checkCodeFirst([1000]));
+			});
+
+			test('list', () => {
+				const dis = new DisassemblyClass();
+				dis.initWithCodeAdresses([1000, 1004, 1008], [
+					{
+						address: 1000, data: new Uint8Array([1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12])
+					}]);
+				(dis as any).collectLabels();	// Sets CODE_FIRST
+				assert.ok(dis.checkCodeFirst([1000, 1004, 1008]));
+			});
+
+			test('list, one not CODE_FIRST', () => {
+				const dis = new DisassemblyClass();
+				dis.initWithCodeAdresses([1000, 1008], [
+					{
+						address: 1000, data: new Uint8Array([0 /*NOP*/, 0xC9 /*RET*/, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+					}]);
+				(dis as any).collectLabels();	// Sets CODE_FIRST
+				assert.ok(!dis.checkCodeFirst([1000, 1004, 1008]));
 			});
 		});
 	});

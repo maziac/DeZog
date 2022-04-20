@@ -4,6 +4,7 @@ import {Utility} from '../misc/utility';
 import {Settings} from '../settings';
 import {Z80Registers} from "../remotes/z80registers";
 import {Labels} from "../labels/labels";
+import {MemAttribute} from "../disassembler/memory";
 
 
 
@@ -16,6 +17,7 @@ const TmpDasmFileName = 'disasm.list';
  * This class encapsulates a few disassembling functions.
  */
 export class DisassemblyClass extends Disassembler {
+
 	/**
 	 * Creates the singleton.
 	 */
@@ -52,6 +54,7 @@ export class DisassemblyClass extends Disassembler {
 	// Map with the address to line number relationship and vice versa.
 	protected addrLineMap = new Map<number, number>();
 	protected lineAddrArray = new Array<number | undefined>();
+
 
 	/**
 	 * Initializes the memory with the data at the given addresses.
@@ -153,6 +156,21 @@ export class DisassemblyClass extends Disassembler {
 		return line;
 	}
 
+
+	/**
+	 * Checks that all addresses have attribute CODE_FIRST.
+	 * @param addresses A list of addresses.
+	 * @returns true if all addresses are of attribute CODE_FIRST.
+	 */
+	public checkCodeFirst(addresses: number[]) {
+		for (const addr of addresses) {
+			const memAttr = this.memory.getAttributeAt(addr & 0xFFFF);
+			if (!(memAttr & MemAttribute.CODE_FIRST))
+				return false;
+		}
+		// All are addresses have attribute CODE_FIRST.
+		return true;
+	}
 }
 
 

@@ -149,4 +149,5 @@ export class MemoryArray {
 		// All blocks equal
 		return true;
 	}
+
 }

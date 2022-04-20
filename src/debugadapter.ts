@@ -17,7 +17,6 @@ import {ZxNextSpritesView} from './views/zxnextspritesview';
 import {TextView} from './views/textview';
 import {BaseView} from './views/baseview';
 import {ZxNextSpritePatternsView} from './views/zxnextspritepatternsview';
-import {MemAttribute} from './disassembler/memory';
 import {Decoration} from './decoration';
 import {ZSimulationView} from './remotes/zsimulator/zsimulationview';
 import {ZSimRemote} from './remotes/zsimulator/zsimremote';
@@ -56,9 +55,6 @@ export class DebugSessionClass extends DebugSession {
 	/// Functions set in 'unitTestsStart'. Will be called after debugger
 	/// is started and initialized.
 	protected unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
-
-	/// The address queue for the disassembler. This contains all stepped addresses.
-	protected dasmAddressQueue = new Array<number>();
 
 	/// The text document used for the temporary disassembly.
 	protected disasmTextDoc: vscode.TextDocument;
@@ -886,16 +882,11 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check if we need to fetch any dump.
-		//await memArray.fetchData((address, size) => {
-		//	return await Remote.readMemoryDump(range.address, range.size);
-		//});
 		for (const range of memArray.ranges) {
 			range.data = await Remote.readMemoryDump(range.address, range.size);
 		}
 
-		// Check if we need to fetch any dump.
-		const fetchAddressesCount = fetchAddresses.length;
-
+		// Check if memory changed
 		if (!doDisassembly) {
 			const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
 			// Do disassembly if memory changed:
@@ -903,16 +894,10 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check if a new address was used.
-		for (let i = 0; i < fetchAddressesCount; i++) {
-			// The current PC is for sure a code label.
-			const addr = fetchAddresses[i];
-			if (this.dasmAddressQueue.indexOf(addr) < 0)
-				this.dasmAddressQueue.unshift(addr);
-			// Check if this requires a disassembly
-			if (!doDisassembly) {
-				const memAttr = Disassembly.memory.getAttributeAt(addr & 0xFFFF);
-				if (!(memAttr & MemAttribute.CODE_FIRST))
-					doDisassembly = true;	// If memory was not the start of an opcode.
+		if (!doDisassembly) {
+			if (!Disassembly.checkCodeFirst(fetchAddresses)) {
+				// At least one address does not have attribute CODE_FIRST.
+				doDisassembly = true;
 			}
 		}
 
