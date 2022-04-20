@@ -113,4 +113,3 @@ export class SimpleDisassembly extends Disassembler {
 		return disArray[0].instruction;
 	}
 }
-

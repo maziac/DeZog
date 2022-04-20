@@ -25,7 +25,7 @@ import {CpuHistoryClass, CpuHistory, StepHistory} from './remotes/cpuhistory';
 import {StepHistoryClass} from './remotes/stephistory';
 import {DisassemblyClass, Disassembly} from './disassembly/disassembly';
 import {TimeWait} from './misc/timewait';
-import {MemoryArray} from './misc/memoryarray';
+import {MemoryArray} from './disassembly/memoryarray';
 import {MemoryDumpViewWord} from './views/memorydumpviewword';
 import {ExpressionVariable} from './misc/expressionvariable';
 import {RefList} from './misc/reflist';
@@ -870,11 +870,9 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Create memory array.
-		const fetchSize = 100;	// N bytes
 		const memArray = new MemoryArray();
-		for (const fetchAddress of fetchAddresses) {
-			memArray.addRange(fetchAddress, fetchSize);	// assume 100 bytes each
-		}
+		memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
+
 		// Add some more memory from the history
 		const fetchHistorySize = 20;
 		const historyAddresses = new Array<number>();
@@ -966,7 +964,7 @@ export class DebugSessionClass extends DebugSession {
 			this.disasmTextDoc = textDoc;
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges);
+			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}> );
 			// Disassemble
 			Disassembly.disassemble();
 			// Read data

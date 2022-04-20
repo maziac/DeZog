@@ -74,6 +74,19 @@ export class MemoryArray {
 
 
 	/**
+	 * Takes a list of address all with the same size, ceates ranges out of it
+	 * and adds the ranges.
+	 * @param addresses A list with start addresses (of ranges).
+	 * @param size The size of each range.
+	 */
+	public addRangesWithSize(addresses: number[], size: number) {
+		for (const address of addresses) {
+			this.addRange(address, size);	// assume 100 bytes each
+		}
+	}
+
+
+	/**
 	 * Get value at an address (or undefined).
 	 */
 	public getValueAtAddress(address: number): number|undefined {

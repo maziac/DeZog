@@ -144,13 +144,18 @@ export class DisassemblyClass extends Disassembler {
 	 * @param lineNr The line number starting at 0.
 	 * @returns The address or -1 if none exists for the line.
 	 */
-	public getAddressForLine(lineNr: number): number | undefined {
+	public getAddressForLine(lineNr: number): number {
 		if (lineNr >= this.lineAddrArray.length)
 			return -1;
-		return this.lineAddrArray[lineNr];
+		const line = this.lineAddrArray[lineNr];
+		if (line == undefined)
+			return -1;
+		return line;
 	}
+
+
 
 }
 
 
-export let Disassembly;
+export let Disassembly: DisassemblyClass;
