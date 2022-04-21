@@ -45,6 +45,17 @@ enum DbgAdapterState {
 
 
 /**
+ * Structure to hold the address together with teh source breakpoint.
+ * Used for the disassembly.
+ */
+interface SbpAddr {
+	sbp: vscode.SourceBreakpoint;
+	address: number;	// -1 if undefined
+	lineNr: number;	// The original line number is saved here because the lineNr of the SourceBreakpoint is changed by vscode when teh file changes.
+}
+
+
+/**
  * The Emulator Debug Adapter.
  * It receives the requests from vscode and sends events to it.
  */
@@ -108,6 +119,9 @@ export class DebugSessionClass extends DebugSession {
 
 	/// Is true if a dezog debug session is running.
 	public running = false;
+
+	/// Used to force a renew of the disassembly.
+	protected forceDisassembly = false;
 
 
 	/**
@@ -498,6 +512,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
+		this.forceDisassembly = true;
 
 		// Init
 		this.processingSteppingRequest = false;
@@ -825,14 +840,6 @@ export class DebugSessionClass extends DebugSession {
 		if (this.stackTraceResponses.length > 1)
 			return;
 
-		// Stack frames
-		const sfrs = new Array<StackFrame>();
-
-		// Need to check if disassembly is required.
-		let doDisassembly = false;
-		const fetchAddresses = new Array<number>();
-		let frameCount = 0;
-
 		// Get the call stack trace.
 		let callStack;
 		//let slots;
@@ -847,7 +854,9 @@ export class DebugSessionClass extends DebugSession {
 
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.
-		frameCount = callStack.length;
+		const frameCount = callStack.length;
+		const fetchAddresses = new Array<number>();
+		const sfrs = new Array<StackFrame>();
 		for (let index = frameCount - 1; index >= 0; index--) {
 			const frame = callStack[index];
 			// Get file for address
@@ -887,41 +896,39 @@ export class DebugSessionClass extends DebugSession {
 		}
 
 		// Check if memory changed
-		if (!doDisassembly) {
+		if (!this.forceDisassembly) {
 			const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
 			// Do disassembly if memory changed:
-			doDisassembly = !blocksEqual;
-		}
+			this.forceDisassembly = !blocksEqual;
 
-		// Check if a new address was used.
-		if (!doDisassembly) {
-			if (!Disassembly.checkCodeFirst(fetchAddresses)) {
-				// At least one address does not have attribute CODE_FIRST.
-				doDisassembly = true;
-			}
-		}
-
-		// Check if disassembly is required.
-		if (doDisassembly) {
-			// Do disassembly.
-			/*
-			const prevAddresses=new Array<number>();
-			const prevData=new Array<Uint8Array>();
-			// Check if history data is available.
-			//if (StepHistory.isInStepBackMode())
-			{
-				// Add a few more previous addresses if available
-				for (let i=1; i<=10; i++) {
-					const addr=StepHistory.getPreviousAddress(i);
-					if (addr==undefined)
-						break;
-					// Add address
-					prevAddresses.unshift(addr);
-					const data=await Remote.readMemoryDump(addr, 4);  	// An opcode is max 4 bytes long
-					prevData.unshift(data);
+			// Check if a new address was used.
+			if (!this.forceDisassembly) {
+				if (!Disassembly.checkCodeFirst(fetchAddresses)) {
+					// At least one address does not have attribute CODE_FIRST.
+					this.forceDisassembly = true;
 				}
 			}
-			*/
+		}
+
+/*
+		const sbps = vscode.debug.breakpoints as vscode.SourceBreakpoint[];
+		if (sbps.length) {
+			const sbp = sbps[0];
+			const nLoc = new vscode.Location(sbp.location.uri, new vscode.Position(5, 0));
+			const nbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
+			vscode.debug.addBreakpoints([nbp]);
+		}
+		*/
+	//	const line10 = this.convertDebuggerLineToClient(10);
+	//	const line20 = this.convertClientLineToDebugger(20);
+
+		// Check if disassembly is required.
+		if (this.forceDisassembly) {
+			// Do disassembly.
+			this.forceDisassembly = false;
+
+			// Get BPs located in previous disassembly and assign the addresses.
+			const prevBpAddresses = this.getDisassemblyBreakpoints();
 
 			// Create text document
 			const absFilePath = DisassemblyClass.getAbsFilePath();
@@ -934,14 +941,11 @@ export class DebugSessionClass extends DebugSession {
 			this.disasmTextDoc = textDoc;
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}> );
+			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}> ); // TODO: JUST ADD NEW ADDRESSES
 			// Disassemble
 			Disassembly.disassemble();
 			// Read data
 			const text = Disassembly.getDisassemblyText();
-
-			// Get all source breakpoints of the disassembly file that need to be reapplied.
-			const changedBps = this.disassemblyRemoveBreakpoints();
 
 			// Create and apply one replace edit
 			const editReplace = new vscode.WorkspaceEdit();
@@ -949,9 +953,9 @@ export class DebugSessionClass extends DebugSession {
 			await vscode.workspace.applyEdit(editReplace);
 			// Save after edit (to be able to set breakpoints)
 			await this.disasmTextDoc.save();
-			// Add all new breakpoints.
-			vscode.debug.addBreakpoints(changedBps);
-			// TODO: Check if they are automatically set. Most probably not. They anyhow still exist.
+
+			// Check all breakpoints
+			this.disassemblyChangeBreakpoints(prevBpAddresses);
 
 			// If disassembly text editor is open, then show decorations
 			const editors = vscode.window.visibleTextEditors;
@@ -980,7 +984,7 @@ export class DebugSessionClass extends DebugSession {
 				if (uri) { 	// Safety check
 					// Store
 					sf.source = this.createSource(uri.fsPath);
-					sf.line = lineNr;
+					sf.line = this.convertDebuggerLineToClient(lineNr);
 				}
 				// Next
 				indexDump++;
@@ -1036,15 +1040,18 @@ export class DebugSessionClass extends DebugSession {
 				uri = this.disasmTextDoc.uri;
 			}
 		}
-		return uri;
+		return {uri, lineNr};
 	}
 
 
 	/**
-	 * Returns all vscode breakpoints associated with the disasm.list file.
-	 * @returns A list of vscode breakpoints.
+	 * Returns all source breakpoints of teh disassembly together with
+	 * their addresses.
 	 */
-	protected disassemblyRemoveBreakpoints(): vscode.SourceBreakpoint[] {
+	protected getDisassemblyBreakpoints(): SbpAddr[] {
+		// Check if disassembly exists
+		if (!this.disasmTextDoc)
+			return [];
 		// Get all source breakpoints of the disassembly file.
 		const bps = vscode.debug.breakpoints as vscode.SourceBreakpoint[];
 		const disSrc = this.disasmTextDoc.uri.toString();
@@ -1057,37 +1064,70 @@ export class DebugSessionClass extends DebugSession {
 			return false;
 		});
 
-		// Check for changed breakpoints
-		const changedBps: vscode.SourceBreakpoint[] = [];
-		if (sbps.length > 0) {
-			// Previous text
-			const prevTextLines = this.disasmTextDoc.getText().split('\n');
-			for (const sbp of sbps) {
-				// Get address from previous disassembly text
-				const oldLineNr = sbp.location.range.start.line;
-				const oldLine = prevTextLines[oldLineNr];
-				const addr = parseInt(oldLine, 16);	// TODO: parse banked address
-				if (isNaN(addr))
-					continue;	// Safety check
+		// Create an array with breakpoints + addresses
+		const sbpAddrs = sbps.map(sbp => {
+			const lineNr = sbp.location.range.start.line;	// lineNr: 0-indexed
+			const bpAddr: SbpAddr = {
+				sbp,
+				// Get address from previous disassembly
+				address: Disassembly.getAddressForLine(lineNr),
+				// Save original line number
+				lineNr: sbp.location.range.start.line
+			}
+			return bpAddr;
+		});
 
+		return sbpAddrs;
+	}
+
+
+	/**
+	 * Takes the breakpoint list and adjusts it to the new disassembly file.
+	 * I.e. removes or changes source breakpoints.
+	 * @param sbpsAddrs A list with source breakpoints plus addresses.
+	 */
+	protected disassemblyChangeBreakpoints(sbpsAddrs: SbpAddr[]) {
+		// Check for breakpoints which:
+		// - stay at the same position
+		// - move position inside disasm.list / move position to some other file
+		// - have to be removed
+		const removeBps: vscode.SourceBreakpoint[] = [];
+		const changedBps: vscode.SourceBreakpoint[] = [];
+		for (const sbpAddr of sbpsAddrs) {
+			const sbp = sbpAddr.sbp;
+			const addr = sbpAddr.address;
+			// Check for address
+			if (addr >= 0) {
 				// Get the new file/line for the address
 				const {uri, lineNr} = this.getLocationForAddress(addr);
-				if (!uri)
-					continue;
+				if (uri) {
+					// Check if location has not changed
+					if (sbp.location.uri == uri && sbpAddr.lineNr == lineNr) {
+						// No change
+						continue;
+					}
 
-				// Either other file or disasm.list location found:
-				const nLoc = new vscode.Location(uri, new vscode.Position(lineNr, 0));
-				const cbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
-				// Store
-				changedBps.push(cbp);
+					// Either other file or line number has changed
+					const nLoc = new vscode.Location(uri, new vscode.Position(lineNr, 0));	// lineNr: 0-indexed
+					const nbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
+					// Store
+					changedBps.push(nbp);
+				}
 			}
+
+			// Remove breakpoint (no address or no uri)
+			removeBps.push(sbp);
 		}
-		// Remove all old breakpoints.
-		vscode.debug.removeBreakpoints(sbps);
+
+		// Remove unused breakpoints.
+		vscode.debug.removeBreakpoints(removeBps);
+		console.log('Removed BPs:', removeBps);
 		// Also really remove the breakpoints
 		// TODO: Check. Maybe vscode does this already because of the 'removeBreakpoints()'
 
-		return changedBps;
+		// Add new/changed bps.
+		vscode.debug.addBreakpoints(changedBps);	// Takes a 0-indexed lineNr and sets it at the 1-based vscode line
+		console.log('Changed BPs:', changedBps);
 	}
 
 
@@ -3525,7 +3565,8 @@ E.g. use "-help -view" to put the help text in an own view.
 			// TODO: E.g. code coverage, history ?
 
 			// Do disassembly anew
-			DisassemblyClass.createDisassemblyInstance();
+			this.forceDisassembly = true;
+		//	DisassemblyClass.createDisassemblyInstance();
 
 			// Both do work: ThreadEvent or invalidatedEvent or even without
 			// this.sendEvent(new ThreadEvent('started', DebugSessionClass.THREAD_ID));
