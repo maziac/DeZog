@@ -512,6 +512,7 @@ export class DebugSessionClass extends DebugSession {
 	protected async launch(response: DebugProtocol.Response) {
 		// Setup the disassembler
 		DisassemblyClass.createDisassemblyInstance();
+		Disassembly.initWithCodeAdresses([], []);	// TODO: Allow to input a MAME trace file
 		this.forceDisassembly = true;
 
 		// Init
@@ -936,7 +937,9 @@ export class DebugSessionClass extends DebugSession {
 			this.disasmTextDoc = textDoc;
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}> ); // TODO: JUST ADD NEW ADDRESSES
+			//Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}>); // TODO: JUST ADD NEW ADDRESSES
+			Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
+
 			// Disassemble
 			Disassembly.disassemble();
 			// Read data
