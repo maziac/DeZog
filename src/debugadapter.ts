@@ -730,6 +730,8 @@ export class DebugSessionClass extends DebugSession {
 
 		// convert breakpoints
 		const givenBps = args.breakpoints || [];
+		//console.log('setBreakPointsRequest:', givenBps);
+
 		const bps = new Array<RemoteBreakpoint>();
 		for (const bp of givenBps) {
 			try {
@@ -784,8 +786,10 @@ export class DebugSessionClass extends DebugSession {
 			if (!verified) {
 				const text = JSON.stringify(bp);
 				this.debugConsoleAppendLine('Unverified breakpoint: ' + text);
+				//console.log('Unverified breakpoint: ' + text);
 				if (foundCbp && foundCbp.error) {
 					this.debugConsoleAppendLine('  Additional info: ' + foundCbp.error);
+					//console.log('  Additional info: ' + foundCbp.error);
 				}
 			}
 
@@ -910,18 +914,6 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
-/*
-		const sbps = vscode.debug.breakpoints as vscode.SourceBreakpoint[];
-		if (sbps.length) {
-			const sbp = sbps[0];
-			const nLoc = new vscode.Location(sbp.location.uri, new vscode.Position(5, 0));
-			const nbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
-			vscode.debug.addBreakpoints([nbp]);
-		}
-		*/
-	//	const line10 = this.convertDebuggerLineToClient(10);
-	//	const line20 = this.convertClientLineToDebugger(20);
-
 		// Check if disassembly is required.
 		if (this.forceDisassembly) {
 			// Do disassembly.
@@ -929,6 +921,9 @@ export class DebugSessionClass extends DebugSession {
 
 			// Get BPs located in previous disassembly and assign the addresses.
 			const prevBpAddresses = this.getDisassemblyBreakpoints();
+			// Remove BPs temporary
+			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
+			vscode.debug.removeBreakpoints(removeBps);
 
 			// Create text document
 			const absFilePath = DisassemblyClass.getAbsFilePath();
@@ -955,7 +950,7 @@ export class DebugSessionClass extends DebugSession {
 			await this.disasmTextDoc.save();
 
 			// Check all breakpoints
-			this.disassemblyChangeBreakpoints(prevBpAddresses);
+			this.disassemblyReassignBreakpoints(prevBpAddresses);
 
 			// If disassembly text editor is open, then show decorations
 			const editors = vscode.window.visibleTextEditors;
@@ -1082,17 +1077,12 @@ export class DebugSessionClass extends DebugSession {
 
 
 	/**
-	 * Takes the breakpoint list and adjusts it to the new disassembly file.
-	 * I.e. removes or changes source breakpoints.
+	 * Reassigns the breakpoints to the disassembly.
 	 * @param sbpsAddrs A list with source breakpoints plus addresses.
 	 */
-	protected disassemblyChangeBreakpoints(sbpsAddrs: SbpAddr[]) {
-		// Check for breakpoints which:
-		// - stay at the same position
-		// - move position inside disasm.list / move position to some other file
-		// - have to be removed
-		const removeBps: vscode.SourceBreakpoint[] = [];
-		const changedBps: vscode.SourceBreakpoint[] = [];
+	protected disassemblyReassignBreakpoints(sbpsAddrs: SbpAddr[]) {
+		// Loop all old breakpoints
+		const reassignedBps: vscode.SourceBreakpoint[] = [];
 		for (const sbpAddr of sbpsAddrs) {
 			const sbp = sbpAddr.sbp;
 			const addr = sbpAddr.address;
@@ -1101,33 +1091,17 @@ export class DebugSessionClass extends DebugSession {
 				// Get the new file/line for the address
 				const {uri, lineNr} = this.getLocationForAddress(addr);
 				if (uri) {
-					// Check if location has not changed
-					if (sbp.location.uri == uri && sbpAddr.lineNr == lineNr) {
-						// No change
-						continue;
-					}
-
-					// Either other file or line number has changed
+					// Create bp with new location
 					const nLoc = new vscode.Location(uri, new vscode.Position(lineNr, 0));	// lineNr: 0-indexed
 					const nbp = new vscode.SourceBreakpoint(nLoc, sbp.enabled, sbp.condition, sbp.hitCondition, sbp.logMessage);
 					// Store
-					changedBps.push(nbp);
+					reassignedBps.push(nbp);
 				}
 			}
-
-			// Remove breakpoint (no address or no uri)
-			removeBps.push(sbp);
 		}
-
-		// Remove unused breakpoints.
-		vscode.debug.removeBreakpoints(removeBps);
-		console.log('Removed BPs:', removeBps);
-		// Also really remove the breakpoints
-		// TODO: Check. Maybe vscode does this already because of the 'removeBreakpoints()'
-
-		// Add new/changed bps.
-		vscode.debug.addBreakpoints(changedBps);	// Takes a 0-indexed lineNr and sets it at the 1-based vscode line
-		console.log('Changed BPs:', changedBps);
+		// Re-assign breakpoints
+		vscode.debug.addBreakpoints(reassignedBps);	// Takes a 0-indexed lineNr and sets it at the 1-based vscode line
+		console.log('Re-assigned BPs:', reassignedBps);
 	}
 
 
