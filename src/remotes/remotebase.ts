@@ -513,7 +513,7 @@ export class RemoteBase extends EventEmitter {
 		if (warnings)
 			this.emit('warning', warnings);
 
-		// Calculate top of stack, execAddress
+		// Calculate top of stack
 		this.topOfStack = Labels.getNumberFromString64k(Settings.launch.topOfStack);
 		if (isNaN(this.topOfStack))
 			throw Error("Cannot evaluate 'topOfStack' (" + Settings.launch.topOfStack + ").");

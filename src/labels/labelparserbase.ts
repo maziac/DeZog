@@ -154,7 +154,7 @@ export class LabelParserBase {
 		const fileName=Utility.getRelFilePath(this.config.path);
 		const listLinesFull = readFileSync(this.config.path).toString().split('\n');
 		// Strip away windows line endings
-		const listLines = listLinesFull.map(line => line.trimRight());
+		const listLines = listLinesFull.map(line => line.trimEnd());
 		let lineNr=0;
 		for (let line of listLines) {
 			// Prepare an entry
@@ -254,7 +254,7 @@ export class LabelParserBase {
 		const i=line.indexOf(";");
 		if (i<0)
 			return "";	// No comment
-		const comment=line.substr(i+1);
+		const comment=line.substring(i+1);
 		return comment;
 	}
 
