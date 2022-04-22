@@ -68,7 +68,7 @@ export class DebugSessionClass extends DebugSession {
 	protected unitTestsStartCallbacks: PromiseCallbacks<DebugSessionClass> | undefined;
 
 	/// The text document used for the temporary disassembly.
-	protected disasmTextDoc: vscode.TextDocument;
+	protected disasmTextDoc: vscode.TextDocument;	// TODO: It should be possible to get rid of this member variable.
 
 	/// A list for the VARIABLES (references)
 	protected listVariables = new RefList<ShallowVar>();
@@ -347,7 +347,7 @@ export class DebugSessionClass extends DebugSession {
 		// Clear Remote
 		RemoteFactory.removeRemote(); // Also disposes
 		// Remove disassembly text editor. vscode does not support closing directly, thus this hack:
-		if (this.disasmTextDoc) {
+		if (this.disasmTextDoc) {	// TODO: Maybe I should leave it open.
 			vscode.window.showTextDocument(this.disasmTextDoc.uri, {preview: true, preserveFocus: false})
 				.then(() => {
 					return vscode.commands.executeCommand('workbench.action.closeActiveEditor');
@@ -918,7 +918,7 @@ export class DebugSessionClass extends DebugSession {
 		// Check if disassembly is required.
 		if (this.forceDisassembly) {
 			// Do disassembly.
-			this.forceDisassembly = false;
+			//this.forceDisassembly = false;	// TODO: Enable
 
 			// Get BPs located in previous disassembly and assign the addresses.
 			const prevBpAddresses = this.getDisassemblyBreakpoints();
@@ -929,15 +929,18 @@ export class DebugSessionClass extends DebugSession {
 			// Create text document
 			const absFilePath = DisassemblyClass.getAbsFilePath();
 			const uri = vscode.Uri.file(absFilePath);
-			const editCreate = new vscode.WorkspaceEdit();
-			editCreate.createFile(uri, {overwrite: true});
-			await vscode.workspace.applyEdit(editCreate);
-			const textDoc = await vscode.workspace.openTextDocument(absFilePath);
-			// Store uri
-			this.disasmTextDoc = textDoc;
+			try {
+				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+			}
+			catch (e) {
+				// If file does not exist, create it
+				const editCreate = new vscode.WorkspaceEdit();
+				editCreate.createFile(uri);
+				await vscode.workspace.applyEdit(editCreate);
+				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+			}
 
 			// Initialize disassembly
-			//Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}>); // TODO: JUST ADD NEW ADDRESSES
 			Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
 
 			// Disassemble
@@ -1081,12 +1084,12 @@ export class DebugSessionClass extends DebugSession {
 
 	/**
 	 * Reassigns the breakpoints to the disassembly.
-	 * @param sbpsAddrs A list with source breakpoints plus addresses.
+	 * @param sbpAddrs A list with source breakpoints plus addresses.
 	 */
-	protected disassemblyReassignBreakpoints(sbpsAddrs: SbpAddr[]) {
+	protected disassemblyReassignBreakpoints(sbpAddrs: SbpAddr[]) {
 		// Loop all old breakpoints
 		const reassignedBps: vscode.SourceBreakpoint[] = [];
-		for (const sbpAddr of sbpsAddrs) {
+		for (const sbpAddr of sbpAddrs) {
 			const sbp = sbpAddr.sbp;
 			const addr = sbpAddr.address;
 			// Check for address
@@ -1104,7 +1107,7 @@ export class DebugSessionClass extends DebugSession {
 		}
 		// Re-assign breakpoints
 		vscode.debug.addBreakpoints(reassignedBps);	// Takes a 0-indexed lineNr and sets it at the 1-based vscode line
-		console.log('Re-assigned BPs:', reassignedBps);
+		//console.log('Re-assigned BPs:', reassignedBps);
 	}
 
 

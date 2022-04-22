@@ -417,7 +417,7 @@ export class Disassembler extends EventEmitter {
 
 	/**
 	 * Used to set a label as the user.
-	 * I.e. those labels should be fixed, i.e. not changable by the algorithm.
+	 * I.e. those labels should be fixed, i.e. not changeable by the algorithm.
 	 * Note: this affects only the change of the type. The name is anyhow not changed if it
 	 * has been set by the user.
 	 * @param address

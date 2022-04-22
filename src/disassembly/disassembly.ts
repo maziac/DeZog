@@ -25,6 +25,12 @@ export class DisassemblyClass extends Disassembler {
 		Disassembly = new DisassemblyClass();
 		// Configure disassembler.
 		Disassembly.funcAssignLabels = (addr: number) => {
+			// Check if label already known
+			const labels = Labels.getLabelsForNumber64k(addr);	// TODO: Check if this array also contains long addresses & 0xFFFF
+			if (labels && labels.length > 0) {
+				return labels.join(' or ');
+			}
+			// Otherwise simple hex string
 			return 'L' + Utility.getHexString(addr, 4);
 		};
 		// Restore 'rst 8' opcode
@@ -79,10 +85,6 @@ export class DisassemblyClass extends Disassembler {
 	 * @param addresses An array with code addresses. (Only the 64k part will be used)
 	 */
 	public addMemAndAddresses(mem: Array<{address: number, data: Uint8Array}>, addresses: number[]) {
-		// Init
-		this.initLabels();
-		this.addrLineMap = new Map<number, number>();
-		this.lineAddrArray = new Array<number | undefined>();
 		// Write new memory
 		//this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
 		for (const block of mem)
