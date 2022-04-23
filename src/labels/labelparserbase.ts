@@ -87,7 +87,7 @@ export class LabelParserBase {
 
 
 	// Constructor.
-	public constructor(
+	public constructor(	// NOSONAR
 		fileLineNrs: Map<number, SourceFileEntry>,
 		lineArrays: Map<string, Array<number>>,
 		labelsForNumber64k: Array<any>,

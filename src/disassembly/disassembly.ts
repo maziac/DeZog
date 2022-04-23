@@ -23,7 +23,8 @@ export class DisassemblyClass extends Disassembler {
 	 */
 	public static createDisassemblyInstance() {
 		Disassembly = new DisassemblyClass();
-		// Configure disassembler.
+
+		// Use internal labels.
 		Disassembly.funcAssignLabels = (addr: number) => {
 			// Check if label already known
 			const labels = Labels.getLabelsForNumber64k(addr);	// TODO: Check if this array also contains long addresses & 0xFFFF
@@ -33,8 +34,20 @@ export class DisassemblyClass extends Disassembler {
 			// Otherwise simple hex string
 			return 'L' + Utility.getHexString(addr, 4);
 		};
+
+		// Filter any address that is already present in the list file(s).
+		Disassembly.funcFilterAddresses = (addr: number) => {
+			return true;
+			// Check if label has a file associated
+			const entry = Labels.getSourceFileEntryForAddress(addr & 0xFFFF);	// TODO: The banking is not correct: Only the current bank should be used.
+			if (entry)
+				console.log('addr=', addr);
+			return (entry == undefined);	// Filter only non-existing addresses
+		};
+
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
+
 		// Setup configuration.
 		if (Settings.launch.disassemblerArgs.esxdosRst) {
 			// Extend 'rst 8' opcode for esxdos

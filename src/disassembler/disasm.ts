@@ -23,6 +23,12 @@ export class Disassembler extends EventEmitter {
 	/// label names.
 	public funcAssignLabels: (address: number) => string;
 
+
+	/// A function that can be set to filter out certain addresses from the output.
+	/// Note: the addresses are still used for analysis but are simply skipped in the output ('disassembleMemory').
+	// If false is returned the line for this address is not shown.
+	public funcFilterAddresses: (address: number) => boolean;
+
 	/// The memory area to disassemble.
 	public memory = new Memory();
 
@@ -2140,6 +2146,17 @@ export class Disassembler extends EventEmitter {
 				let attr = this.memory.getAttributeAt(address);
 				if (!(attr & MemAttribute.ASSIGNED)) {
 					break;	// E.g. an EQU label
+				}
+
+				// Check if any addresses need to be filtered from the output.
+				if (this.funcFilterAddresses) {
+					if (!this.funcFilterAddresses(address)) {
+						// Just calculate the next address
+						const opcode = Opcode.getOpcodeAt(this.memory, address);
+						address += opcode.length;
+						prevMemoryAttribute = attr;
+						continue;
+					}
 				}
 
 				// Get association of address

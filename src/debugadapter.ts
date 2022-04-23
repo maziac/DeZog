@@ -873,7 +873,7 @@ export class DebugSessionClass extends DebugSession {
 			const sf = new StackFrame(index + 1, frame.name, src, lineNr);
 			sfrs.push(sf);
 			// Create array with addresses that need to be fetched for disassembly
-			if (!sf.source) {
+			if (!src) {
 				const csFrame = callStack[index];
 				fetchAddresses.push(csFrame.addr);
 			}

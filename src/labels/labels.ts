@@ -616,6 +616,18 @@ export class LabelsClass {
 
 
 	/**
+	 * Returns the SourceFileEntry (file name and line number) associated with a certain memory address.
+	 * Uses long addresses.
+	 * Enables direct access to the map.
+	 * @param address The (long) memory address to search for.
+	 * @returns The associated SourceFileEntry or undefined.
+	 */
+	public getSourceFileEntryForAddress(address: number): SourceFileEntry | undefined {
+		return this.fileLineNrs.get(address);
+	}
+
+
+	/**
 	 * Returns the memory address associated with a certain file and line number.
 	 * Long addresses.
 	 * @param fileName The path to the file. Can be an absolute path.
