@@ -7,11 +7,16 @@ import * as hjoin from '@bartificer/human-join';
 
 
 
-/// Base for all assembler configurations.
-export interface AsmConfigBase {
+///  The absolute minimum base for all assembler configurations.
+export interface ListConfigBase {
 
 	/// The path to the list file.
 	path: string;
+}
+
+
+/// Base for all assembler configurations.
+export interface AsmConfigBase extends ListConfigBase {
 
 	/// If defined the files referenced in the list file will be used for stepping otherwise the list file itself will be used.
 	/// The path(s) here are relative to the 'rootFolder'.
@@ -21,6 +26,12 @@ export interface AsmConfigBase {
 	// An array of glob patterns with filenames to exclude. The filenames (from the 'include' statement) that do match will not be associated with executed addresses. I.e. those source files are not used shown during stepping.
 	excludeFiles: Array<string>;
 }
+
+
+/// Reverse Engineering
+export interface ReverseEngineeringConfig extends ListConfigBase {
+}
+
 
 
 /// sjasmplus
@@ -282,7 +293,7 @@ export interface SettingsParameters extends DebugProtocol.LaunchRequestArguments
 	sjasmplus: Array<SjasmplusConfig>;
 	z80asm: Array<Z80asmConfig>;
 	z88dk: Array<Z88dkConfig>;
-
+	revEng: Array<ReverseEngineeringConfig>;
 
 	/// The paths to the .labels files.
 	//labelsFiles: Array<string>;
@@ -385,6 +396,7 @@ export class Settings {
 				sjasmplus: <any>undefined,
 				z80asm: <any>undefined,
 				z88dk: <any>undefined,
+				revEng: <any>undefined,
 				smallValuesMaximum: <any>undefined,
 				disassemblerArgs: <any>undefined,
 				tmpDir: <any>undefined,
@@ -549,7 +561,7 @@ export class Settings {
 					excludeFiles: fpExclFiles || []
 				};
 				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				return file;
 			});
 		}
@@ -571,9 +583,23 @@ export class Settings {
 					mapFile: undefined as any
 				};
 				if (fpPath)
-					file.path = Utility.getAbsFilePath(fpPath, rootFolder)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				if (fpMapFile)
 					file.mapFile = Utility.getAbsFilePath(fpMapFile, rootFolder);
+				return file;
+			});
+		}
+
+		// revEng
+		if (launchCfg.revEng) {
+			launchCfg.revEng = launchCfg.revEng.map(fp => {
+				// ListFile structure
+				const fpPath = UnifiedPath.getUnifiedPath(fp.path);
+				const file = {
+					path: undefined as any
+				};
+				if (fpPath)
+					file.path = Utility.getAbsFilePath(fpPath, rootFolder);
 				return file;
 			});
 		}

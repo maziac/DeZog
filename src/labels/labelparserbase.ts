@@ -64,9 +64,9 @@ export class LabelParserBase {
 
 	/// Several prefixes might be stacked (a MODULE can happen inside a MODULE)
 	protected modulePrefixStack: Array<string>;	// Only used for sjasmplus
-	/// Used for found MODULEs
+	/// Used for found MODULEs (Not used anymore?)
 	protected modulePrefix: string;
-	protected lastLabel: string;		// Only used for sjasmplus for local labels (without modulePrefix)
+	protected lastLabel: string;		// Only used for local labels (without modulePrefix)
 
 	/// The separator used for local labels and modules.
 	/// Normally a dot, but could also be defined otherwise.

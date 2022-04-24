@@ -974,10 +974,9 @@
 								"port": 12000
 							},
 							"startAutomatically": false,
-							"z80asm": [
+							"revEng": [
 								{
-									"path": "${1:The list file (initially an empty file with extension *.list)}",
-									"srcDirs": []
+									"path": "${1:The list file (initially an empty file with extension *.list)}"
 								}
 							],
 							"rootFolder": "^\"\\${workspaceFolder\\}\""

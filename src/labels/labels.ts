@@ -6,6 +6,7 @@ import {SjasmplusSldLabelParser} from './sjasmplussldlabelparser';
 import {Z80asmLabelParser} from './z80asmlabelparser';
 import {Z88dkLabelParser} from './z88dklabelparser';
 import * as fs from 'fs';
+import {ReverseEngineeringParser} from './reverseengineeringparser';
 
 
 /**
@@ -17,7 +18,7 @@ export interface SourceFileEntry {
 	fileName: string;	/// The associated source filename
 	lineNr: number;		/// The line number of the associated source file
 	modulePrefix?: string;	/// For sjasmplus: module is an optional module prefix that is added to all labels (e.g. "sprites.sw.").
-	lastLabel?: string;	/// For sjasmplus: lastLabel is the last non-local label that is used as prefix for local labels. modulePrefix and lastLabel are used for hovering.
+	lastLabel?: string;	/// For local labels: lastLabel is the last non-local label that is used as prefix for local labels. modulePrefix and lastLabel are used for hovering.
 }
 
 
@@ -233,6 +234,16 @@ export class LabelsClass {
 		if (mainConfig.z88dk) {
 			const parser = new Z88dkLabelParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
 			for (const config of mainConfig.z88dk) {
+				parser.loadAsmListFile(config);
+				// Store path
+				this.filePaths.push(config.path);
+			}
+		}
+
+		// Reverse Engineering List File
+		if (mainConfig.revEng) {
+			const parser = new ReverseEngineeringParser(this.fileLineNrs, this.lineArrays, this.labelsForNumber64k, this.labelsForLongAddress, this.numberForLabel, this.labelLocations, this.watchPointLines, this.assertionLines, this.logPointLines);
+			for (const config of mainConfig.revEng) {
 				parser.loadAsmListFile(config);
 				// Store path
 				this.filePaths.push(config.path);
