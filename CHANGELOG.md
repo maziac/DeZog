@@ -1,5 +1,11 @@
 # Changelog
 
+# 2.8.0
+- Better reverse engineering support
+	- Improved disassembly
+	- Reload list file during debug session
+	- Disassembly into list file format also for data
+
 # 2.7.0
 - Experimental MAME support.
 - Changed name of disassembly from 'disasm.asm' to 'disasm.list'.

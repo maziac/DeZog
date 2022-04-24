@@ -125,36 +125,23 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	// Command to do a disassembly at the cursor's position.
-	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor', async () => {
-		// Only allowed in debug context
-		const session = DebugSessionClass.singleton();
-		if (!session.running)
-			return;
-		// Get focussed editor/file and line
-		const editor = vscode.window.activeTextEditor;
-		if (!editor)
-			return;
-		// Go through all selections in case of multiple selections
-		for (const selection of editor.selections) {
-			let from = selection.anchor;
-			let to = selection.active;
-			const filename = editor.document.fileName;
-			// Adjust
-			if (from.line > to.line) {
-				// exchange
-				const tmp = from;
-				from = to;
-				to = tmp;
-			}
-			const fromLine = from.line;
-			let toLine = to.line;
-			if (toLine > fromLine) {
-				if (to.character == 0)
-					toLine--;
-			}
-			// Execute in debug adapter
-			await session.disassemblyAtCursor(filename, fromLine, toLine);
-		}
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.code', async () => {
+		// Execute in debug adapter
+		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
+			await session.disassemblyAtCursor('code', filename, fromLine, toLine);
+		});
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.data', async () => {
+		// Execute in debug adapter
+		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
+			await session.disassemblyAtCursor('data', filename, fromLine, toLine);
+		});
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('dezog.disassemblyAtCursor.string', async () => {
+		// Execute in debug adapter
+		executeForSelectedLineBlocks(async (session, filename, fromLine, toLine) => {
+			await session.disassemblyAtCursor('string', filename, fromLine, toLine);
+		});
 	}));
 
 	// Command to disable code coverage display and analyzes.
@@ -226,6 +213,44 @@ export function deactivate() {
 	//console.log("Extension DEACTIVATED");
 }
 
+
+/**
+ * Executes the given method for each selected line block.
+ * In case of multi selection there might be more than 1 block.
+ * For each block the start and end lines are calculated and passed.
+ */
+async function executeForSelectedLineBlocks(func: (session: DebugSessionClass, filename: string, fromLine: number, toLine: number) => Promise<void>) {
+	// Only allowed in debug context
+	const session = DebugSessionClass.singleton();
+	if (!session.running)
+		return;
+	// Get focussed editor/file and line
+	const editor = vscode.window.activeTextEditor;
+	if (!editor)
+		return undefined;
+	// Go through all selections in case of multiple selections
+	for (const selection of editor.selections) {
+		let from = selection.anchor;
+		let to = selection.active;
+		const filename = editor.document.fileName;
+		// Adjust
+		if (from.line > to.line) {
+			// exchange
+			const tmp = from;
+			from = to;
+			to = tmp;
+		}
+		const fromLine = from.line;
+		let toLine = to.line;
+		if (toLine > fromLine) {
+			if (to.character == 0)
+				toLine--;
+		}
+
+		// Execute
+		await func(session, filename, fromLine, toLine);
+	}
+}
 
 
 /**

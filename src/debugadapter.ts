@@ -3483,11 +3483,12 @@ E.g. use "-help -view" to put the help text in an own view.
 
 	/**
 	 * Does a disassembly to the debug console for the address at the cursor position.
+	 * @param type The disassembly type: 'code', 'data' or 'string' (data).
 	 * @param filename The absolute file path.
 	 * @param fromLineNr The line. Starts at 0.
 	 * @param toLineNr The line. Starts at 0.
 	 */
-	public async disassemblyAtCursor(filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
+	public async disassemblyAtCursor(type: 'code'|'data'|'string', filename: string, fromLineNr: number, toLineNr: number): Promise<void> {
 		// Get address of file/line
 		let fromAddr;
 		while (fromLineNr <= toLineNr) {
@@ -3539,12 +3540,25 @@ E.g. use "-help -view" to put the help text in an own view.
 		const data = await Remote.readMemoryDump(fromAddr, size + 3);
 
 		// Disassemble
-		const dasmArray = SimpleDisassembly.getDasmMemory(fromAddr, data);
+		let text = '';
+		switch (type) {
+			case 'code':
+				text = SimpleDisassembly.getInstructionDisassembly(fromAddr, data);
+				break;
+			case 'data':
+				text = SimpleDisassembly.getDataDisassembly(fromAddr, data, false, 16);
+				break;
+			case 'string':
+				text = SimpleDisassembly.getDataDisassembly(fromAddr, data, true, 16);
+				break;
+		}
 
 		// Output
-		for (const addrInstr of dasmArray) {
-			this.debugConsoleAppendLine(Utility.getHexString(addrInstr.address, 4) + " " + addrInstr.instruction);
-		}
+		this.debugConsoleAppend(text + '\n');
+
+		// Copy to clipboard
+		vscode.env.clipboard.writeText(text);
+		vscode.window.showInformationMessage('Disassembly copied to clipboard.');
 	}
 
 

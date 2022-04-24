@@ -183,11 +183,6 @@
 				"category": "DeZog"
 			},
 			{
-				"command": "dezog.disassemblyAtCursor",
-				"title": "Disassembly at Cursor / of Selection",
-				"category": "DeZog"
-			},
-			{
 				"command": "dezog.clearAllDecorations",
 				"title": "Clear all decorations",
 				"category": "DeZog"
@@ -200,6 +195,21 @@
 			{
 				"command": "dezog.reload",
 				"title": "Reload the list file(s).",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.code",
+				"title": "Code",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.data",
+				"title": "Data",
+				"category": "DeZog"
+			},
+			{
+				"command": "dezog.disassemblyAtCursor.string",
+				"title": "String",
 				"category": "DeZog"
 			}
 		],
@@ -216,7 +226,15 @@
 					"when": "false"
 				},
 				{
-					"command": "dezog.disassemblyAtCursor",
+					"command": "dezog.disassemblyAtCursor.code",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.data",
+					"when": "false"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.string",
 					"when": "false"
 				},
 				{
@@ -237,11 +255,28 @@
 				},
 				{
 					"when": "resourceLangId == asm-collection && inDebugMode",
-					"command": "dezog.disassemblyAtCursor",
+					"submenu": "dezog.disassemblyAtCursor",
 					"group": "debug"
+				}
+			],
+            "dezog.disassemblyAtCursor": [
+				{
+					"command": "dezog.disassemblyAtCursor.code"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.data"
+				},
+				{
+					"command": "dezog.disassemblyAtCursor.string"
 				}
 			]
 		},
+		"submenus": [
+			{
+				"id": "dezog.disassemblyAtCursor",
+				"label": "Disassembly at Cursor / of Selection"
+			}
+		],
 		"debuggers": [
 			{
 				"type": "dezog",

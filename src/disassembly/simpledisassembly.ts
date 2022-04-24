@@ -2,6 +2,7 @@ import {BaseMemory} from "../disassembler/basememory";
 import {Opcode, } from "../disassembler/opcode";
 import {Format} from "../disassembler/format";
 import {Disassembler} from "../disassembler/disasm";
+import {Utility} from "../misc/utility";
 
 
 
@@ -63,7 +64,6 @@ export class SimpleDisassembly extends Disassembler {
 	 * it is required that 3 more bytes are present in the 'data' array.
 	 * @param addr The start address of the data.
 	 * @param data The data to disassemble. All data here is interpreted as code.
-	 * @param count Optional. The number of lines to decode.
 	 * @returns An array of address/instruction pairs with the disassembly.
 	 */
 	public static getDasmMemory(addr: number, data: Uint8Array): Array<{address: number, instruction: string}> {
@@ -111,5 +111,61 @@ export class SimpleDisassembly extends Disassembler {
 	public static getInstruction(addr: number, data: Uint8Array): string {
 		const disArray = this.getLines(addr, data, 1);
 		return disArray[0].instruction;
+	}
+
+
+	/**
+	 * Get the disassembly of a memory area.
+	 * Output is e.g. 'C000  3E 05 LD A,5'
+	 * @param addr The start address of the data.
+	 * @param data The data to disassemble. All data here is interpreted as code.
+	 */
+	public static getInstructionDisassembly(addr: number, data: Uint8Array): string {
+		let text = '';
+		const dasmArray = SimpleDisassembly.getDasmMemory(addr, data);
+		for (const addrInstr of dasmArray) {
+			text += Utility.getHexString(addrInstr.address, 4) + " " + addrInstr.instruction + '\n';
+		}
+		return text;
+	}
+
+
+	/**
+	 * Get the disassembly as data block.
+	 * Output is e.g. 'C000  56 78 FA'
+	 * @param addr The start address of the data.
+	 * @param data The data to disassemble. All data here is interpreted as code.
+	 * @param plusAscii true to add the data as comment in ascii.
+	 * @param blockLength How many data values are written per line.
+	 */
+	public static getDataDisassembly(addr: number, data: Uint8Array, plusAscii = false, blockLength = 16): string {
+		let text = '';
+		let precNewLine = '';
+		let ascii = '';
+		const len = data.length;
+		for (let i = 0; i < len; i++) {
+			// Print address
+			if (i % blockLength == 0) {
+				// Add to previous
+				if (ascii) {
+					text += " ; '" + ascii + "'";
+					ascii = '';
+				}
+				// Add address
+				text += precNewLine + Utility.getHexString((addr+i)&0xFFFF, 4);
+			}
+			// Print value
+			const value = data[i];
+			text += ' ' + Utility.getHexString(value, 2);
+			// Ascii?
+			if (plusAscii)
+				ascii += String.fromCharCode(value);
+			// Next
+			precNewLine = '\n';
+		}
+		if (ascii)
+			text += " ; '" + ascii + "'";
+		text += '\n';
+		return text;
 	}
 }
