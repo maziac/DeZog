@@ -115,9 +115,11 @@ export class DisassemblyClass extends Disassembler {
 	 * Additionally keeps the address/line locations.
 	 */
 	public disassemble() {
-		// No comments/statistics
+		// No comments/statistics etc.
 		this.disableCommentsInDisassembly = true;
 		this.disableStatistics = true;
+		this.disableEqusInDisassembly = true;
+		this.disableOrgInDisassembly = true;
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.

@@ -156,6 +156,12 @@ export class Disassembler extends EventEmitter {
 	// For DeZog. Used to turn off statistics.
 	public disableStatistics = false;
 
+	// For DeZog. Used to turn off EQUs in disassembly.
+	public disableEqusInDisassembly = false;
+
+	// For DeZog. Disable the ORG output in disassembly.
+	public disableOrgInDisassembly = false;
+
 
 	/**
 	 * Initializes the Opcode formatting.
@@ -294,7 +300,10 @@ export class Disassembler extends EventEmitter {
 		const disLines = this.disassembleMemory();
 
 		// Add all EQU labels to the beginning of the disassembly
-		this.disassembledLines = this.getEquLabelsDisassembly();
+		if (!this.disableEqusInDisassembly)
+			this.disassembledLines = this.getEquLabelsDisassembly();
+		else
+			this.disassembledLines = [];
 
 		// Add the real disassembly
 		this.disassembledLines.push(...disLines);
@@ -2124,11 +2133,13 @@ export class Disassembler extends EventEmitter {
 			if (address == -1) {
 				// First line
 				// Print "ORG"
-				this.addEmptyLines(lines);
-				let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
-				if (!this.disableCommentsInDisassembly)
-					orgLine += '; ' + Format.getConversionForAddress(addr);
-				lines.push(orgLine);
+				if (!this.disableOrgInDisassembly) {
+					this.addEmptyLines(lines);
+					let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
+					if (!this.disableCommentsInDisassembly)
+						orgLine += '; ' + Format.getConversionForAddress(addr);
+					lines.push(orgLine);
+				}
 			}
 			else {
 				// Normal case. All other lines but first line.
@@ -2137,11 +2148,13 @@ export class Disassembler extends EventEmitter {
 					continue;
 
 				// Print new "ORG"
-				this.addEmptyLines(lines);
-				let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
-				if (!this.disableCommentsInDisassembly)
-					orgLine += '; ' + Format.getConversionForAddress(addr);
-				lines.push(orgLine);
+				if (!this.disableOrgInDisassembly) {
+					this.addEmptyLines(lines);
+					let orgLine = ' '.repeat(this.clmnsBytes) + this.rightCase('ORG ') + Format.getHexString(addr) + 'h';
+					if (!this.disableCommentsInDisassembly)
+						orgLine += '; ' + Format.getConversionForAddress(addr);
+					lines.push(orgLine);
+				}
 			}
 
 			// Use address
