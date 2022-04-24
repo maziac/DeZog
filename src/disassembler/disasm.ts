@@ -2162,6 +2162,11 @@ export class Disassembler extends EventEmitter {
 				// Check if any addresses need to be filtered from the output.
 				if (this.funcFilterAddresses) {
 					if (!this.funcFilterAddresses(address)) {
+						// If previous line is not empty then enter an empty line
+						const len = lines.length;
+						if (len > 0 && lines[len - 1] != '') {
+							lines.push('');
+						}
 						// Just calculate the next address
 						const opcode = Opcode.getOpcodeAt(this.memory, address);
 						address += opcode.length;
