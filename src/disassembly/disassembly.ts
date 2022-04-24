@@ -37,7 +37,7 @@ export class DisassemblyClass extends Disassembler {
 
 		// Filter any address that is already present in the list file(s).
 		Disassembly.funcFilterAddresses = (addr: number) => {
-			return true;
+			//return true;
 			// Check if label has a file associated
 			const entry = Labels.getSourceFileEntryForAddress(addr & 0xFFFF);	// TODO: The banking is not correct: Only the current bank should be used.
 			if (entry)
@@ -97,6 +97,7 @@ export class DisassemblyClass extends Disassembler {
 	 * @param mem An array with memory data.
 	 * @param addresses An array with code addresses. (Only the 64k part will be used)
 	 */
+/*
 	public addMemAndAddresses(mem: Array<{address: number, data: Uint8Array}>, addresses: number[]) {
 		// Write new memory
 		//this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
@@ -107,15 +108,16 @@ export class DisassemblyClass extends Disassembler {
 		const addresses64k = addresses.map(addr => addr & 0xFFFF);
 		this.addressQueue.push(...addresses64k);
 	}
-
+*/
 
 	/**
 	 * Disassembles the memory.
 	 * Additionally keeps the address/line locations.
 	 */
 	public disassemble() {
-		// No comments
+		// No comments/statistics
 		this.disableCommentsInDisassembly = true;
+		this.disableStatistics = true;
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.

@@ -153,6 +153,9 @@ export class Disassembler extends EventEmitter {
 	// For DeZog. Used to turn off any comments in the disassembled text.
 	public disableCommentsInDisassembly = false;
 
+	// For DeZog. Used to turn off statistics.
+	public disableStatistics = false;
+
 
 	/**
 	 * Initializes the Opcode formatting.
@@ -276,7 +279,8 @@ export class Disassembler extends EventEmitter {
 		this.addCallsListToLabels();
 
 		// Count statistics (size of subroutines, cyclomatic complexity)
-		this.countStatistics();
+		if(!this.disableStatistics)
+			this.countStatistics();
 
 		// Assign label names
 		this.assignLabelNames();
