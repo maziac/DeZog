@@ -41,7 +41,7 @@ import {LabelParserBase} from './labelparserbase';
 export class ReverseEngineeringParser extends LabelParserBase {
 
 	// Regex to parse the address
-	protected regexEqu = /^\s*([\w_][\w_\d\.]*):\s*EQU\s+([^;]+)/;	// NOSONAR: sonar wrong
+	protected regexEqu = /^\s*([\w_][\w_\d\.]*):\s*EQU\s+([^;]+)/i;	// NOSONAR: sonar wrong
 
 	// Regex to parse the address
 	protected regexAddr = /^(([\da-f]+)(@\d+)?\s*)/i;
@@ -52,36 +52,6 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	// Regex to parse the label
 
 	protected regexLabel = /^\s*((\.?)[\w_][\w_\d\.]*):/;	// NOSONAR: sonar wrong
-
-
-	// Regex to find labels
-	// Allow labels without ":"
-	protected labelRegEx=/^.{18}(@?)([^;:\s0-9][^:;\s]*):?\s*(equ\s|macro\s)?\s*([^;\n]*)/i;
-
-	// Check if valid line (not "~")
-	// Search for "~". E.g. "8002 ~            Level   defw 4"
-	protected invalidLineRegEx=/^[0-9a-f]+\s+\~/i;
-
-	// RegEx to find a module
-	protected matchModuleStartRegEx=/^[0-9a-f]+\s+module\s+([^\s]+)/i;
-
-	// RegEx to find module end
-	protected matchModuleEndRegEx=/^[0-9a-f]+\s+endmodule\b/i;
-
-	// Find the bytes after the address
-	protected matchBytesRegEx=/^[0-9a-f]+((\s+[0-9a-f][0-9a-f])+)/i;
-
-	// Matches the line number (of the included file(s))
-	protected matchLineNumberRegEx=/^\s*(\d+)[\s\+]+(.*)/;
-
-	// Matches the include file text
-	protected matchIncludeFileRegEx=/^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
-
-	/// Will be set to true when the Lstlab section in the list file is reached.
-	protected sjasmplusLstlabSection=false;
-
-	/// Regex to skip a commented SLDOPT, i.e. "; SLDOPT"
-	protected regexSkipSldOptComment = /^[^;]*(;\s*sldopt)/i;
 
 
 	/**
@@ -125,7 +95,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 		let bank = 0;	// 0 = no bank
 		const bankStr = matchAddr[3];
 		if (bankStr)
-			bank = 1 + parseInt(bankStr);
+			bank = 1 + parseInt(bankStr.substring(1));
 		workLine = workLine.substring(matchAddr[1].length);
 
 		// Create long address
@@ -157,6 +127,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
+		// TODO: For reverseng: Maybe I should only set it ifcountBytes > 0.
 		this.addAddressLine(longAddress, countBytes);	// TODO: Most probably a long address here
 	}
 
@@ -168,24 +139,9 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	 * @param label The label to add.
 	 */
 	protected addLocalLabelForNumber(value: number, label: string,) {
-	// Remember last label (for local labels)
-	this.currentFileEntry.lastLabel = this.lastLabel;	// The last non-local label
-	this.currentFileEntry.modulePrefix = undefined;
-	this.addLabelForNumberRaw(value, label);
-}
-
-
-	/**
-	 * Calls super, but only if the line does not start with ";SLDOPT".
-	 * I.e. it filters any commented SLDOPT line.
-	 */
-	protected findWpmemAssertionLogpoint(address: number | undefined, line: string) {
-		// Skip line that starts with "; SLDOPT"
-		const match = this.regexSkipSldOptComment.exec(line);
-		if (match)
-			return;
-		// Otherwise call super normally
-		super.findWpmemAssertionLogpoint(address, line);
+		// Remember last label (for local labels)
+		this.currentFileEntry.lastLabel = this.lastLabel;	// The last non-local label
+		this.currentFileEntry.modulePrefix = undefined;
+		this.addLabelForNumberRaw(value, this.lastLabel + label);
 	}
-
 }

@@ -302,7 +302,7 @@ export class LabelParserBase {
 			}
 			*/
 
-			for (let i = 0; i < entry.size; i++) {
+			for (let i = 0; i < entry.size; i++) { // TODO: long addresses?
 				const addr = (entry.addr + i) & 0xFFFF;	// All list file parsing (z80asm and z88dk) is 16 bit only.
 				//const prevFileLine = this.fileLineNrs.get(addr);
 				//if (!prevFileLine)

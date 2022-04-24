@@ -1,0 +1,40 @@
+label_equ1:		equ 100
+ label_equ2:		equ 200
+
+0000              label1:
+0000 00          	nop
+
+0001 3E 05       label2:	ld a,5
+
+0003 06  08      .locala:	ld b,8
+0005             .localb:
+0005  00          	nop		; ASSERTION
+
+0006              label3:
+
+0006              label4:
+0006              nop ; LOGPOINT
+0006
+0006              label4_1:
+0006              ; LOGPOINT
+
+0006  00          label6:	nop
+0007
+0007              .locala: ; local label
+0007  00          	nop
+
+
+
+0008              data:
+0008  01 02 03 04 	; WPMEM
+
+
+0014              fa_label3:
+0014  00          	nop
+0015
+
+C1AA@3			long_label1:
+
+C1AB@44			long_label2:
+
+C1AC@3 FA

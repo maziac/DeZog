@@ -48,6 +48,5 @@ suite('Disassembly (DisassemblyClass)', () => {
 			});
 		});
 	});
-
 });
 
