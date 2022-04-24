@@ -13,7 +13,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 
 	// z88dk: The format is line-number address opcode.
 	// Used to remove the line number.
-	protected z88dkRegEx=/^[0-9]+\s+/;
+	protected z88dkRegEx=/^\d+\s+/;
 
 	// Regex to find labels
 	// Require a ":"" after the label
@@ -24,7 +24,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 	protected matchBytesRegEx=/[0-9a-f]{4}\s\s(([0-9a-f][0-9a-f]\s)+)/i;
 
 	// RegEx to extract the line number for Sources-mode.
-	protected matchLineNumberRegEx=/^\s*([0-9]+)[\s\+]+(.*)/;
+	protected matchLineNumberRegEx=/^\s*(\d+)[\s\+]+(.*)/;
 
 	// Checks for "include".
 	protected matchInclStartRegEx=/^[0-9a-f]+\s+include\s+\"([^\s]*)\"/i;
@@ -83,7 +83,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 		line=line.replace(this.z88dkRegEx, '');
 
 		// Extract address.
-		let address=parseInt(line.substr(0, 4), 16);
+		let address=parseInt(line.substring(0, 4), 16);
 		if (isNaN(address))
 			address=undefined!;	// Should not happen
 		if (address!=undefined) {
@@ -114,7 +114,7 @@ export class Z88dkLabelParser extends LabelParserBase {
 							// Add label
 							this.addLabelForNumber(value, label);
 						}
-						catch {};	// do nothing in case of an error
+						catch {}	// do nothing in case of an error
 					}
 				}
 				else {

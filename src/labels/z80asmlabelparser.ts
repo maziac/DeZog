@@ -45,7 +45,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 		let countBytes=0;
 
 		// Extract address.
-		const address=parseInt(line.substr(0, 4), 16);
+		const address=parseInt(line.substring(0, 4), 16);
 		if (!isNaN(address)) { // isNaN if e.g. the first line: "# File main.asm"
 
 			// Check for labels and "equ".
@@ -73,7 +73,7 @@ export class Z80asmLabelParser extends LabelParserBase {
 							// Add label
 							this.addLabelForNumber(value, label);
 						}
-						catch {};	// do nothing in case of an error
+						catch {}	// do nothing in case of an error
 					}
 				}
 				else {
