@@ -66,7 +66,7 @@ export class SimpleDisassembly extends Disassembler {
 	 * @param data The data to disassemble. All data here is interpreted as code.
 	 * @returns An array of address/instruction pairs with the disassembly.
 	 */
-	public static getDasmMemory(addr: number, data: Uint8Array): Array<{address: number, instruction: string}> {
+	public static getDasmMemory(addr: number, data: Uint8Array): Array<{address: number, size: number, instruction: string}> {
 		// Safety check
 		const size = data.length - 3;
 		if (size <= 0)
@@ -82,7 +82,7 @@ export class SimpleDisassembly extends Disassembler {
 		const prevLabelHandler = (Opcode as any).convertToLabelHandler;
 		Opcode.setConvertToLabelHandler(undefined as any);	// Without labels
 		const end = addr + size;
-		const list = new Array<{address: number, instruction: string}>();
+		const list = new Array<{address: number, size: number, instruction: string}>();
 		while (addr < end) {
 			const address = addr & 0xFFFF;
 			// Get opcode
@@ -91,7 +91,7 @@ export class SimpleDisassembly extends Disassembler {
 			const opCodeDescription = opcode.disassemble();
 			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic);
 			// Add to list
-			list.push({address, instruction})
+			list.push({address, size: opcode.length, instruction})
 			// Next address
 			addr += opcode.length;
 		}
@@ -122,9 +122,20 @@ export class SimpleDisassembly extends Disassembler {
 	 */
 	public static getInstructionDisassembly(addr: number, data: Uint8Array): string {
 		let text = '';
+		const instructionOffset = 16;
 		const dasmArray = SimpleDisassembly.getDasmMemory(addr, data);
 		for (const addrInstr of dasmArray) {
-			text += Utility.getHexString(addrInstr.address, 4) + " " + addrInstr.instruction + '\n';
+			text += Utility.getHexString(addrInstr.address, 4);
+			// The bytes representing the opcode
+			let bytes = '';
+			const offset = addrInstr.address - addr;
+			for (let i = 0; i < addrInstr.size; i++) {
+				bytes += ' ' + Utility.getHexString(data[offset + i], 2);
+			}
+			bytes += '  ';
+			bytes = bytes.padEnd(instructionOffset, ' ');
+			// Add instruction
+			text += bytes + addrInstr.instruction.trimEnd() + '\n';
 		}
 		return text;
 	}

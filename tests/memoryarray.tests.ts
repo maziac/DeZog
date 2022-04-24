@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import {MemAttribute, Memory} from '../src/disassembler/memory';
 import { MemoryArray } from '../src/disassembly/memoryarray';
 
-suite('Disassembly', () => {
+suite('Disassembly (MemoryArray)', () => {
 
 	suite('MemoryArray', () => {
 

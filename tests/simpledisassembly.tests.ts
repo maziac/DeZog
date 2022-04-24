@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {SimpleDisassembly} from '../src/disassembly/simpledisassembly';
 
-suite('Disassembly', () => {
+suite('Disassembly (SimpleDisassembly)', () => {
 
 	suite('SimpleDisassembly', () => {
 
@@ -44,8 +44,30 @@ suite('Disassembly', () => {
 				const data = new Uint8Array([0x41, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48]);
 				assert.equal(SimpleDisassembly.getDataDisassembly(0x1000, data, true, 4), "1000 41 41 42 43 ; 'AABC'\n1004 44 45 46 47 ; 'DEFG'\n1008 48 ; 'H'\n");
 			});
-
 		});
+
+		suite('getInstructionDisassembly', () => {
+
+			test('empty', () => {
+				const data = new Uint8Array();
+				assert.equal(SimpleDisassembly.getInstructionDisassembly(1000, data), '');
+			});
+
+			test('1 line', () => {
+				const data = new Uint8Array([0x3E, 5, 0, 0, 0]);
+				let result = SimpleDisassembly.getInstructionDisassembly(0x1000, data);
+				result = result.replace(/ +/g, ' ');	// Replace all multiple spaces with single spaces
+				assert.equal(result, "1000 3E 05 LD A,05h\n");
+			});
+
+			test('2 lines', () => {
+				const data = new Uint8Array([0x3E, 5, 0x21, 0x12, 0x34, 0, 0, 0]);
+				let result = SimpleDisassembly.getInstructionDisassembly(0x1000, data);
+				result = result.replace(/ +/g, ' ');	// Replace all multiple spaces with single spaces
+				assert.equal(result, "1000 3E 05 LD A,05h\n1002 21 12 34 LD HL,3412h\n");
+			});
+		});
+
 	});
 
 });

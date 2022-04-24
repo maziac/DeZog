@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {DisassemblyClass} from '../src/disassembly/disassembly';
 
-suite('Disassembly', () => {
+suite('Disassembly (DisassemblyClass)', () => {
 
 	suite('DisassemblyClass', () => {
 
