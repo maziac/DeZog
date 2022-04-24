@@ -130,18 +130,8 @@ export class LabelParserBase {
 		// Phase 1: Parse for labels and addresses
 		this.parseAllLabelsAndAddresses();
 
-		// Check if Listfile-Mode
-		if (config.srcDirs.length==0) {
-			// Listfile-Mode
-			this.listFileModeFinish();
-			return;
-		}
-
-		// Phase 2: Parse for source files
-		this.parseAllFilesAndLineNumbers();
-
-		// Finish: Create fileLineNrs, lineArrays and labelLocations
-		this.sourcesModeFinish();
+		// Listfile-Mode, of course
+		this.listFileModeFinish();
 	}
 
 

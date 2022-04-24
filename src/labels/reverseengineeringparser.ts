@@ -1,4 +1,3 @@
-import {match} from 'assert';
 import {Utility} from '../misc/utility';
 import {LabelParserBase} from './labelparserbase';
 
@@ -148,7 +147,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 		const matchLabel = this.regexLabel.exec(workLine);
 		if (matchLabel) {
 			// Label found
-			let label = match[1];
+			let label = matchLabel[1];
 			// Check for local label
 			if (label.startsWith('.'))
 				this.addLocalLabelForNumber(longAddress, label);
@@ -177,62 +176,6 @@ export class ReverseEngineeringParser extends LabelParserBase {
 
 
 	/**
-	 * Parses one line for current file name and line number in this file.
-	 * The function determines the line number from the list file.
-	 * The line number is the line number in the correspondent source file.
-	 * Note: this is not the line number of the list file.
-	 * The list file may include other files. It's the line number of those files we are after.
-	 * Call 'setLineNumber' with the line number to set it. Note that source file numbers start at 0.
-	 * Furthermore it also determines the beginning and ending of include files.
-	 * Call 'includeStart(fname)' and 'includeEnd()'.
-	 * @param line The current analyzed line of the listFile array.
-	 */
-	protected parseFileAndLineNumber(line: string) {
-		// sjasmplus:
-		// Starts with spaces and the line numbers (plus pluses) of the include file.
-		// Indicates start and end of include.
-		//   38  004B
-		//   39  004B                  include "zxnext/zxnext_regs.inc"
-		// # file opened: src//zxnext/zxnext_regs.inc
-		//    1+ 004B              ;=================
-		//  ...
-		//  331+ 004B              DMA_LOAD:       equ 11001111b
-		//  332+ 004B              ZXN_DMA_PORT:   equ 0x6b
-		//  333+ 004B
-		//  # file closed: src//zxnext/zxnext_regs.inc
-		//   40  004B
-		//
-		// Note:
-		// sjasmplus: the text '# file closed' is used as indication that the
-		// include file ended.
-
-		// Check for start of include file
-		if (line.startsWith('# file opened:')) {
-			// Get file name
-			const fname=line.substring(15).trim();
-			// Include file
-			this.includeStart(fname);
-			return;
-		}
-
-		// Check for end of include file
-		if (line.startsWith('# file closed:')) {
-			// Include ended.
-			this.includeEnd();
-			return;
-		}
-
-		// Get line number
-		const matchLineNumber=this.matchLineNumberRegEx.exec(line);
-		if (!matchLineNumber)
-			return;	// sjasmplus contains lines without line number.
-		const lineNumber=parseInt(matchLineNumber[1]);
-
-		// Associate with line number
-		this.setLineNumber(lineNumber-1);	// line numbers start at 0
-	}
-
-	/**
 	 * Calls super, but only if the line does not start with ";SLDOPT".
 	 * I.e. it filters any commented SLDOPT line.
 	 */
@@ -246,5 +189,3 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	}
 
 }
-
-
