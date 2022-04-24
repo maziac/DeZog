@@ -61,7 +61,8 @@
 		"showdown": "^2.0.0",
 		"ts-node": "^10.4.0",
 		"vscode-debugadapter": "^1.49.0",
-		"vscode-debugprotocol": "1.49.0"
+		"vscode-debugprotocol": "1.49.0",
+		"vscode-diff": "^2.0.2"
 	},
 	"devDependencies": {
 		"@types/mocha": "9.0.0",

@@ -295,12 +295,19 @@ export class Disassembler extends EventEmitter {
 		// Add the real disassembly
 		this.disassembledLines.push(...disLines);
 
-		// Remove any preceeding empty lines
+		// Remove any preceding empty lines
 		while (this.disassembledLines.length) {
 			if (this.disassembledLines[0].length > 0)
 				break;
 			this.disassembledLines.splice(0, 1);
 		}
+
+		// Add an empty line
+		this.disassembledLines.push('');
+
+		// Trim all lines
+		const trimmed = this.disassembledLines.map(line => line.trimEnd());
+		this.disassembledLines = trimmed;
 	}
 
 
