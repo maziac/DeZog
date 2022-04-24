@@ -4,7 +4,7 @@ import {readFileSync} from 'fs';
 import {AsmConfigBase, Z88dkConfig} from '../settings';
 
 /**
- * This class parses sjasmplus list files.
+ * This class parses z88dk asm list files.
  */
 export class Z88dkLabelParser extends LabelParserBase {
 

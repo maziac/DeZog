@@ -304,10 +304,21 @@ export class LabelParserBase {
 			if (entry.addr == undefined)
 				continue;
 
+			/*
 			const prevFileLine = this.fileLineNrs.get(entry.addr);
 			if (!prevFileLine || entry.size > 0) {
 				// write new value
 				this.fileLineNrs.set(entry.addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+			}
+			*/
+
+			for (let i = 0; i < entry.size; i++) {
+				const addr = (entry.addr + i) & 0xFFFF;	// All list file parsing (z80asm and z88dk) is 16 bit only.
+				//const prevFileLine = this.fileLineNrs.get(addr);
+				//if (!prevFileLine)
+				{
+					this.fileLineNrs.set(addr, {fileName: entry.fileName, lineNr: entry.lineNr, modulePrefix: entry.modulePrefix, lastLabel: entry.lastLabel});
+				}
 			}
 
 			// Set address
@@ -343,7 +354,7 @@ export class LabelParserBase {
 			}
 
 			// Check address
-			if (!entry.addr)
+			if (entry.addr == undefined)
 				continue;
 
 			// last address entry wins:

@@ -3,7 +3,7 @@ import {LabelParserBase} from './labelparserbase';
 
 
 /**
- * This class parses sjasmplus list files.
+ * This class parses z80asm list files.
  */
 export class Z80asmLabelParser extends LabelParserBase {
 
