@@ -247,6 +247,10 @@ export class LabelsClass {
 				parser.loadAsmListFile(config);
 				// Store path
 				this.filePaths.push(config.path);
+				// Warnings
+				const warnings = parser.getWarnings();
+				if (warnings)
+					this.warnings += 'revEng parser warnings (' + config.path + '):\n' + warnings;
 			}
 		}
 

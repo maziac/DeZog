@@ -3,6 +3,12 @@ import {LabelsClass} from '../src/labels/labels';
 
 suite('Labels (revEng)', () => {
 
+	let lbls;
+
+	setup(() => {
+		lbls = new LabelsClass();
+	});
+
 	suite('Labels', () => {
 
 		const config = {
@@ -12,7 +18,6 @@ suite('Labels (revEng)', () => {
 		};
 
 		test('labels equ', () => {
-			const lbls = new LabelsClass();
 			lbls.readListFiles(config);
 
 			// Check
@@ -24,7 +29,6 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('labels location', () => {
-			const lbls = new LabelsClass();
 			lbls.readListFiles(config);
 			const fname = config.revEng[0].path;
 
@@ -51,7 +55,6 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('local labels', () => {
-			const lbls = new LabelsClass();
 			lbls.readListFiles(config);
 
 			let addr = lbls.getNumberForLabel('label2')!;
@@ -68,7 +71,6 @@ suite('Labels (revEng)', () => {
 		});
 
 		test('address -> file/line', () => {
-			const lbls = new LabelsClass();
 			lbls.readListFiles(config);
 			const fname = config.revEng[0].path;
 
@@ -141,7 +143,6 @@ suite('Labels (revEng)', () => {
 
 
 		test('file/line -> address', () => {
-			const lbls = new LabelsClass();
 			lbls.readListFiles(config);
 			const fname = config.revEng[0].path;
 
@@ -173,6 +174,54 @@ suite('Labels (revEng)', () => {
 		});
 	});
 
+
+	suite('Warnings', () => {
+
+		test('expression wrong in equ', () => {
+			const config = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/wrong1.list'
+				}]
+			};
+			lbls.readListFiles(config);
+
+			// Check
+			const warnings = lbls.getWarnings();
+			assert.notEqual(undefined, warnings);
+			const warning = warnings.split('\n')[1];
+			assert.ok(warning.startsWith('Could not evaluate expression'));
+		});
+
+		test('line ignored', () => {
+			const config = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/wrong2.list'
+				}]
+			};
+			lbls.readListFiles(config);
+
+			// Check
+			const warnings = lbls.getWarnings();
+			assert.notEqual(undefined, warnings);
+			const warning = warnings.split('\n')[1];
+			assert.ok(warning.startsWith('Line ignored'));
+		});
+
+		test('no warning', () => {
+			const config = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/main.list'
+				}]
+			};
+			lbls.readListFiles(config);
+
+			// Check
+			const warnings = lbls.getWarnings();
+			assert.equal(undefined, warnings);
+		});
+	});
+
+
 	// TODO:
 	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
@@ -185,7 +234,6 @@ suite('Labels (revEng)', () => {
 				excludeFiles: []
 			}]
 		};
-		const lbls = new LabelsClass();
 		lbls.readListFiles(config);
 
 		// Test WPMEM

@@ -83,7 +83,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 			}
 			catch {
 				// Show a warning but go on
-				this.warnings += "Line ignored: '" + line + "'\n";
+				this.warnings += "Could not evaluate expression '" + valueString + "' in line: '" + line + "'\n";
 			}
 			return;
 		}
@@ -95,7 +95,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 			// Skip if no address found
 			// Check that max. contains a comment otherwise show a warning
 			const trimmed = workLine.trim();
-			if (!trimmed && !trimmed.startsWith(';')) {
+			if (trimmed && !trimmed.startsWith(';')) {
 				// Line contains something and it is not a comment:
 				// Add a warning
 				this.warnings += "Line ignored: '" + line + "'\n";

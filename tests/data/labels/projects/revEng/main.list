@@ -43,3 +43,7 @@ C1AC@3 FA
 
 0030 01 02  03  ; Byte separated with 2 spaces does not belong to bytes
 0040 01 02 03
+
+; Comment 1
+  ; Comment 2
+
