@@ -139,8 +139,9 @@ export class ReverseEngineeringParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		// TODO: For reverseng: Maybe I should only set it ifcountBytes > 0.
-		this.addAddressLine(longAddress, countBytes);	// TODO: Most probably a long address here
+		// TODO: For reverseng: Maybe I should only set it if countBytes > 0.
+	//	if(countBytes > 0)
+			this.addAddressLine(longAddress, countBytes);	// TODO: Most probably a long address here
 	}
 
 

@@ -141,7 +141,8 @@ export class LabelParserBase {
 		this.parseAllFilesAndLineNumbers();
 
 		// Finish: Create fileLineNrs, lineArrays and labelLocations
-		this.sourcesModeFinish();	}
+		this.sourcesModeFinish();
+	}
 
 
 	/**
@@ -322,7 +323,8 @@ export class LabelParserBase {
 
 			// Set address
 			if (!lineArray[entry.lineNr]) {	// without the check macros would lead to the last addr being stored.
-				lineArray[entry.lineNr]=entry.addr;
+				if(entry.size > 0)	// Only real code gets an address, e.g. not just a label without opcode
+					lineArray[entry.lineNr] = entry.addr;
 				//console.log('filename='+entry.fileName+', lineNr='+realLineNr+', addr='+Utility.getHexString(entry.addr, 4));
 			}
 		}

@@ -3,7 +3,7 @@ import {LabelsClass} from '../src/labels/labels';
 
 suite('Labels (revEng)', () => {
 
-	let lbls;
+	let lbls: LabelsClass;
 
 	setup(() => {
 		lbls = new LabelsClass();
@@ -158,7 +158,7 @@ suite('Labels (revEng)', () => {
 
 			// label2.localb
 			addr = lbls.getAddrForFileAndLine(fname, 9);
-			assert.equal(addr, 0x005);
+			assert.equal(addr, -1);
 
 			// label4
 			addr = lbls.getAddrForFileAndLine(fname, 14);
@@ -222,7 +222,6 @@ suite('Labels (revEng)', () => {
 	});
 
 
-	// TODO:
 	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
 		const config = {
 			revEng: [{
@@ -234,7 +233,7 @@ suite('Labels (revEng)', () => {
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 3);
-		assert.equal(wpLines[0].address, 0x0006);
+		assert.equal(wpLines[0].address, 6);
 		assert.equal(wpLines[0].line, "WPMEM");
 		assert.equal(wpLines[1].address, 0x0007);
 		assert.equal(wpLines[1].line, "WPMEM");
@@ -243,8 +242,10 @@ suite('Labels (revEng)', () => {
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();
-		assert.equal(assertionLines.length, 1);
+		assert.equal(assertionLines.length, 2);
 		assert.equal(assertionLines[0].address, 0x8005);
+		assert.equal(assertionLines[0].line, "ASSERTION");
+		assert.equal(assertionLines[1].address, 0x8006);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
