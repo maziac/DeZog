@@ -219,6 +219,36 @@ suite('Labels (revEng)', () => {
 			const warnings = lbls.getWarnings();
 			assert.equal(warnings, undefined);
 		});
+
+		test('same label used twice', () => {
+			const config = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/samelabel.list'
+				}]
+			};
+			lbls.readListFiles(config);
+
+			// Check
+			const warnings = lbls.getWarnings();
+			assert.notEqual(warnings, undefined);
+			const warning = warnings.split('\n')[1];
+			assert.ok(warning.endsWith('defined more than once.'));
+		});
+
+		test('same label used twice (local)', () => {
+			const config = {
+				revEng: [{
+					path: 'tests/data/labels/projects/revEng/samelabellocal.list'
+				}]
+			};
+			lbls.readListFiles(config);
+
+			// Check
+			const warnings = lbls.getWarnings();
+			assert.notEqual(warnings, undefined);
+			const warning = warnings.split('\n')[1];
+			assert.ok(warning.endsWith('defined more than once.'));
+		});
 	});
 
 

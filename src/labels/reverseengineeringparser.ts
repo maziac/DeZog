@@ -139,9 +139,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 
 		// Store address (or several addresses for one line).
 		// This needs to be called even if address is undefined.
-		// TODO: For reverseng: Maybe I should only set it if countBytes > 0.
-	//	if(countBytes > 0)
-			this.addAddressLine(longAddress, countBytes);	// TODO: Most probably a long address here
+		this.addAddressLine(longAddress, countBytes);	// TODO: Most probably a long address here
 	}
 
 
@@ -157,4 +155,26 @@ export class ReverseEngineeringParser extends LabelParserBase {
 		this.currentFileEntry.modulePrefix = undefined;
 		this.addLabelForNumberRaw(value, this.lastLabel + label);
 	}
+
+
+	/**
+	 * Overwritten to check for same labels.
+	 * @param value The value for which a new label is to be set. If a value > 64k it needs
+	 * to be a long address.
+	 * I.e. EQU values > 64k are not allowed here.
+	 * @param label The label to add.
+	 * @param labelType I.e. NORMAL, LOCAL or GLOBAL.
+	 */
+	protected addLabelForNumberRaw(value: number, label: string) {
+		// Check if label already exists
+		if (this.numberForLabel.get(label) != undefined) {
+			// Yes, warn
+			this.warnings += "Label '" + label + "' defined more than once.\n";
+			return;
+		}
+
+		// Otherwise the same
+		super.addLabelForNumberRaw(value, label);
+	}
+
 }
