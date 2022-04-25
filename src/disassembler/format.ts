@@ -17,20 +17,7 @@ export class Format {
 		let s = value.toString(16);
 		if (!Format.hexNumbersLowerCase)
 			s = s.toUpperCase();
-		return Format.fillDigits(s, '0', countDigits);
-	}
-
-
-	/**
-	 * If string is smaller than countDigits the string is filled with 'fillCharacter'.
-	 * Used to fill a number up with '0' or spaces.
-	 */
-	public static fillDigits(valueString: string, fillCharacter: string, countDigits: number): string {
-		const repeat = countDigits - valueString.length;
-		if (repeat <= 0)
-			return valueString;
-		const res = fillCharacter.repeat(repeat) + valueString;
-		return res;
+		return s.padStart(countDigits, '0');
 	}
 
 
@@ -67,7 +54,7 @@ export class Format {
 		let convValue = byteValue;
 		if (convValue >= 0x80) {
 			convValue -= 0x100;
-			result += ', ' + Format.fillDigits(convValue.toString(), ' ', 4);
+			result += ', ' + convValue.toString().padStart(4, ' ');
 		}
 		// Check for ASCII
 		if (byteValue >= 32 /*space*/ && byteValue <= 126 /*tilde*/)
@@ -104,7 +91,7 @@ export class Format {
 		let convValue = wordValue;
 		if (convValue >= 0x8000) {
 			convValue -= 0x10000;
-			result += ', ' + this.fillDigits(convValue.toString(), ' ', 6);
+			result += ', ' + convValue.toString().padStart(6, ' ');
 		}
 		// return
 		return result;
@@ -122,13 +109,16 @@ export class Format {
 	 * @param address The address of the opcode. Only used if 'memory' is available (to retrieve opcodes) or if 'clmsnAddress' is not 0.
 	 * @param size The size of the opcode. Only used to display the opcode byte values and only used if memory is defined.
 	 * @param mainString The opcode string, e.g. "LD HL,35152"
+	 * @param addrString If not undefined this string is printed instead of the 'address'. Used to add bank information.
 	 */
-	public static formatDisassembly(memory: BaseMemory | undefined, opcodesLowerCase: boolean, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string): string {
+	public static formatDisassembly(memory: BaseMemory | undefined, opcodesLowerCase: boolean, clmnsAddress: number, clmnsBytes: number, clmnsOpcodeFirstPart: number, clmsnOpcodeTotal: number, address: number, size: number, mainString: string, addrString: string|undefined): string {	// NOSONAR
 		let line = '';
 
 		// Add address field?
 		if (clmnsAddress > 0) {
-			line = Format.addSpaces(Format.getHexString(address) + ' ', clmnsAddress);
+			if (!addrString)
+				addrString = Format.getHexString(address);
+			line = Format.addSpaces(addrString + ' ', clmnsAddress);
 		}
 
 		// Add bytes of opcode?

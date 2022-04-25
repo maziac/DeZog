@@ -123,6 +123,10 @@ export class DebugSessionClass extends DebugSession {
 	/// Used to force a renew of the disassembly.
 	protected forceDisassembly = false;
 
+	/// An array of a limited amount of last PC addresses (long).
+	/// Used for disassembly.
+	protected longPcAddresses: number[] = [];
+
 
 	/**
 	 * Create and return the singleton object.
@@ -879,10 +883,28 @@ export class DebugSessionClass extends DebugSession {
 			}
 		}
 
+		// TODO: Use only PC for the new fetch addresses. Otherwise use what is stored in disassembly.
+		const pcLong = Remote.getPCLong();
+		this.longPcAddresses.push(pcLong);
+		// Filter and change to 64k addresses
+		const slots = Z80Registers.getSlots();
+		for (const longAddr of this.longPcAddresses) {
+			// Create 64k address
+			const addr64k = longAddr & 0xFFFF;
+			// Check if longAddr is currently paged in
+			const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
+			// Compare
+			if (longAddr == longCmpAddress) {
+				// Is paged in
+				fetchAddresses.push(addr64k);
+			}
+		}
+
 		// Create memory array.
 		const memArray = new MemoryArray();
 		memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
 
+		/*
 		// Add some more memory from the history
 		const fetchHistorySize = 20;
 		const historyAddresses = new Array<number>();
@@ -894,8 +916,9 @@ export class DebugSessionClass extends DebugSession {
 			memArray.addRange(addr, fetchHistorySize);
 			historyAddresses.unshift(addr);
 		}
+		*/
 
-		// Check if we need to fetch any dump.
+		// Fetch memory
 		for (const range of memArray.ranges) {
 			range.data = await Remote.readMemoryDump(range.address, range.size);
 		}
@@ -918,7 +941,7 @@ export class DebugSessionClass extends DebugSession {
 		*/
 
 		// Check if disassembly is required.
-		if (this.forceDisassembly) {
+		if (this.forceDisassembly) {	// TODO: REMOVE. Disassembel anyway each step.
 			// Do disassembly.
 			//this.forceDisassembly = false;	// TODO: Enable
 
@@ -952,7 +975,7 @@ export class DebugSessionClass extends DebugSession {
 		//	const prevText = Disassembly.getDisassemblyText();
 
 			// Initialize disassembly
-			Disassembly.initWithCodeAdresses([...historyAddresses, ...fetchAddresses], memArray.ranges as Array<{address: number, data: Uint8Array}>);
+			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
 			//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
 

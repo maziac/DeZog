@@ -23,11 +23,14 @@ export class Disassembler extends EventEmitter {
 	/// label names.
 	public funcAssignLabels: (address: number) => string;
 
-
 	/// A function that can be set to filter out certain addresses from the output.
 	/// Note: the addresses are still used for analysis but are simply skipped in the output ('disassembleMemory').
 	// If false is returned the line for this address is not shown.
 	public funcFilterAddresses: (address: number) => boolean;
+
+	/// A function that formats the address printed at first in the disassembly.
+	/// Used to add bank information after the address.
+	public funcFormatAddress: (address: number) => void;
 
 	/// The memory area to disassemble.
 	public memory = new Memory();
@@ -594,7 +597,7 @@ export class Disassembler extends EventEmitter {
 					firstLabel = false;
 				}
 				// "Disassemble"
-				const statement = Format.addSpaces(label.name + ':', this.clmnsBytes - 1) + ' ' + this.rightCase('EQU ') + Format.fillDigits(Format.getHexString(address, 4), ' ', 5) + 'h';
+				const statement = Format.addSpaces(label.name + ':', this.clmnsBytes - 1) + ' ' + this.rightCase('EQU ') + Format.getHexString(address, 4).padStart(5, ' ') + 'h';
 				// Comment
 				const comment = this.addressComments.get(address);
 				const commentLines = Comment.getLines(comment, statement, this.disableCommentsInDisassembly);
@@ -1934,7 +1937,7 @@ export class Disassembler extends EventEmitter {
 					if (!addrLabel.isEqu) {
 						// Line 3
 						line3 = 'Calls: ';
-						first = true;
+						//first = true;
 						const callees = new Set<DisLabel>();
 						for (const callee of addrLabel.calls) {
 							callees.add(callee);
@@ -2249,7 +2252,7 @@ export class Disassembler extends EventEmitter {
 					let memValue = this.memory.getValueAt(address);
 
 					// Disassemble the data line
-					let mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';
+					let mainString = this.rightCase('DEFB ') + Format.getHexString(memValue, 2) + 'h';	// TODO: Output better as ASCII
 					commentText = Format.getVariousConversionsForByte(memValue);
 					line = this.formatDisassembly(address, 1, mainString);
 
@@ -2306,8 +2309,11 @@ export class Disassembler extends EventEmitter {
 	 * @param mainString The opcode string, e.g. "LD HL,35152"
 	 */
 	protected formatDisassembly(address: number, size: number, mainString: string): string {
+		let addrString;
+		if (this.funcFormatAddress)
+			addrString = this.funcFormatAddress(address);
 		const memory = (this.addOpcodeBytes) ? this.memory : undefined;
-		return Format.formatDisassembly(memory, this.opcodesLowerCase, this.clmnsAddress, this.clmnsBytes, this.clmnsOpcodeFirstPart, this.clmsnOpcodeTotal, address, size, mainString);
+		return Format.formatDisassembly(memory, this.opcodesLowerCase, this.clmnsAddress, this.clmnsBytes, this.clmnsOpcodeFirstPart, this.clmsnOpcodeTotal, address, size, mainString, addrString);
 	}
 
 
@@ -2463,7 +2469,7 @@ export class Disassembler extends EventEmitter {
 				if (!colorString)
 					colorString = 'lightgray';
 				text += label.name + ' [fontsize="' + fontSizeMin + '"];\n';
-				const nodeName = this.nodeFormat(label.name, label.id, address, undefined, undefined, undefined);
+				const nodeName = this.nodeFormat(label.name, label.id, address);
 				text += label.name + ' [label="' + nodeName + '"];\n';
 			}
 			else {

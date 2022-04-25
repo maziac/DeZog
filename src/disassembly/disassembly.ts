@@ -12,11 +12,14 @@ import {MemAttribute} from "../disassembler/memory";
 const TmpDasmFileName = 'disasm.list';
 
 
-
 /**
  * This class encapsulates a few disassembling functions.
  */
 export class DisassemblyClass extends Disassembler {
+
+	// The current slots in use.
+	protected static slots: number[];
+
 
 	/**
 	 * Creates the singleton.
@@ -25,25 +28,44 @@ export class DisassemblyClass extends Disassembler {
 		Disassembly = new DisassemblyClass();
 
 		// Use internal labels.
-		Disassembly.funcAssignLabels = (addr: number) => {
+		Disassembly.funcAssignLabels = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 			// Check if label already known
-			const labels = Labels.getLabelsForNumber64k(addr);	// TODO: Check if this array also contains long addresses & 0xFFFF
+			const labels = Labels.getLabelsForLongAddress(longAddr);	// TODO: Test long addresses
 			if (labels && labels.length > 0) {
 				return labels.join(' or ');
 			}
 			// Otherwise simple hex string
-			return 'L' + Utility.getHexString(addr, 4);
+			return 'L' + Utility.getHexString(addr64k, 4);
 		};
 
 		// Filter any address that is already present in the list file(s).
-		Disassembly.funcFilterAddresses = (addr: number) => {
-			//return true;
+		Disassembly.funcFilterAddresses = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
 			// Check if label has a file associated
-			const entry = Labels.getSourceFileEntryForAddress(addr & 0xFFFF);	// TODO: The banking is not correct: Only the current bank should be used.
-			if (entry)
-				console.log('addr=', addr);
+			const entry = Labels.getSourceFileEntryForAddress(longAddr);	// TODO: test banking
 			return (entry == undefined);	// Filter only non-existing addresses
 		};
+
+
+		// Add bank info to the address.
+		Disassembly.funcFormatAddress = (addr64k: number) => {
+			// Convert to long address
+			const longAddr = Z80Registers.createLongAddress(addr64k, this.slots);
+			// Get bank
+			const bank = Z80Registers.getBankFromAddress(longAddr);
+			// Formatting
+			let addrString = Utility.getHexString(addr64k, 4);
+			if (bank >= 0)
+				addrString += ':' + bank;
+			//addrString += '[' + bank + ']';
+			return addrString;
+		};
+
+		// Characters reserved for the address field
+		Disassembly.clmnsAddress = 8;	// E.g. 0000:5
 
 		// Restore 'rst 8' opcode
 		Opcodes[0xCF] = new Opcode(0xCF, "RST %s");
@@ -53,6 +75,16 @@ export class DisassemblyClass extends Disassembler {
 			// Extend 'rst 8' opcode for esxdos
 			Opcodes[0xCF].appendToOpcode(",#n");
 		}
+	}
+
+
+	/**
+	 * Sets the slots array.
+	 * Used to set the slots that are active during disassembly.
+	 *
+	 */
+	public static setSlots(slots: number[]): void {
+		this.slots = slots;
 	}
 
 

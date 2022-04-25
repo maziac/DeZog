@@ -43,7 +43,7 @@ export class SimpleDisassembly extends Disassembler {
 			const opcode = Opcode.getOpcodeAt(buffer, address);
 			// disassemble
 			const opCodeDescription = opcode.disassemble();
-			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic);
+			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic, undefined);
 			// Add to list
 			list.push({address, instruction})
 			// Next address
@@ -89,7 +89,7 @@ export class SimpleDisassembly extends Disassembler {
 			const opcode = Opcode.getOpcodeAt(buffer, address);
 			// disassemble
 			const opCodeDescription = opcode.disassemble();
-			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic);
+			const instruction = Format.formatDisassembly(undefined /*buffer*/, false, 0, 0 /*12*/, 0 /*5*/, 0 /*8*/, address, opcode.length, opCodeDescription.mnemonic, undefined);
 			// Add to list
 			list.push({address, size: opcode.length, instruction})
 			// Next address
