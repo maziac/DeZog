@@ -34,40 +34,40 @@ suite('Labels (revEng)', () => {
 
 			// Test
 			let res = lbls.getLocationOfLabel('label1')!;
-			assert.equal(0, res.address);
-			assert.equal(fname, res.file);
-			assert.equal(3, res.lineNr);	// line number starts at 0
+			assert.equal(res.address, 0);
+			assert.equal(res.file, fname);
+			assert.equal(res.lineNr, 3);	// line number starts at 0
 
 			res = lbls.getLocationOfLabel('label2')!;
-			assert.equal(1, res.address);
-			assert.equal(fname, res.file);
-			assert.equal(6, res.lineNr);	// line number starts at 0
+			assert.equal(res.address, 1);
+			assert.equal(res.file, fname);
+			assert.equal(res.lineNr, 6);	// line number starts at 0
 
 			res = lbls.getLocationOfLabel('long_label1')!;
-			assert.equal(0xC1AA + (3 + 1) * 0x10000, res.address);
-			assert.equal(fname, res.file);
-			assert.equal(35, res.lineNr);	// line number starts at 0
+			assert.equal(res.address, 0xC1AA + (3 + 1) * 0x10000);
+			assert.equal(res.file, fname);
+			assert.equal(res.lineNr, 35);	// line number starts at 0
 
 			res = lbls.getLocationOfLabel('long_label2')!;
-			assert.equal(0xC1AB + (44 + 1) * 0x10000, res.address);
-			assert.equal(fname, res.file);
-			assert.equal(37, res.lineNr);	// line number starts at 0
+			assert.equal(res.address, 0xC1AB + (44 + 1) * 0x10000);
+			assert.equal(res.file, fname);
+			assert.equal(res.lineNr, 37);	// line number starts at 0
 		});
 
 		test('local labels', () => {
 			lbls.readListFiles(config);
 
 			let addr = lbls.getNumberForLabel('label2')!;
-			assert.equal(1, addr);
+			assert.equal(addr, 1);
 
 			addr = lbls.getNumberForLabel('label2.locala')!;
-			assert.equal(3, addr);
+			assert.equal(addr, 3);
 
 			addr = lbls.getNumberForLabel('label2.localb')!;
-			assert.equal(5, addr);
+			assert.equal(addr, 5);
 
 			addr = lbls.getNumberForLabel('label6.locala')!;
-			assert.equal(7, addr);
+			assert.equal(addr, 7);
 		});
 
 		test('address -> file/line', () => {
@@ -76,69 +76,69 @@ suite('Labels (revEng)', () => {
 
 			// label2
 			let res = lbls.getFileAndLineForAddress(0x0001);
-			assert.equal(fname, res.fileName);
-			assert.equal(6, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 6);
 			res = lbls.getFileAndLineForAddress(0x0002);
-			assert.equal(fname, res.fileName);
-			assert.equal(6, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 6);
 
 			// label2.locala
 			res = lbls.getFileAndLineForAddress(0x0003);
-			assert.equal(fname, res.fileName);
-			assert.equal(8, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 8);
 			res = lbls.getFileAndLineForAddress(0x0004);
-			assert.equal(fname, res.fileName);
-			assert.equal(8, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 8);
 
 			// label2.localb
 			res = lbls.getFileAndLineForAddress(0x0003);
-			assert.equal(fname, res.fileName);
-			assert.equal(8, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 8);
 			res = lbls.getFileAndLineForAddress(0x0004);
-			assert.equal(fname, res.fileName);
-			assert.equal(8, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 8);
 
 			// no bytes -> no file association
 			res = lbls.getFileAndLineForAddress(0x0015);
-			assert.equal('', res.fileName);
+			assert.equal(res.fileName, '');
 
 			// long label: C1AC@3 FA
 			res = lbls.getFileAndLineForAddress(0xC1AC + (3 + 1) * 0x10000);
-			assert.equal(fname, res.fileName);
-			assert.equal(39, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 39);
 
 			// IM 2: bytes stopped by 2 character instruction
 			res = lbls.getFileAndLineForAddress(0x0020);
-			assert.equal(fname, res.fileName);
-			assert.equal(41, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 41);
 			res = lbls.getFileAndLineForAddress(0x00021);
-			assert.equal(fname, res.fileName);
-			assert.equal(41, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 41);
 			res = lbls.getFileAndLineForAddress(0x00022);
-			assert.equal('', res.fileName);
+			assert.equal(res.fileName, '');
 
 			// 01 02  03  ; Byte separated with 2 spaces does not belong to bytes
 			res = lbls.getFileAndLineForAddress(0x0030);
-			assert.equal(fname, res.fileName);
-			assert.equal(43, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 43);
 			res = lbls.getFileAndLineForAddress(0x00031);
-			assert.equal(fname, res.fileName);
-			assert.equal(43, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 43);
 			res = lbls.getFileAndLineForAddress(0x00032);
-			assert.equal('', res.fileName);
+			assert.equal(res.fileName, '');
 
 			// 01 02 03  , empty line after bytes
 			res = lbls.getFileAndLineForAddress(0x0040);
-			assert.equal(fname, res.fileName);
-			assert.equal(44, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 44);
 			res = lbls.getFileAndLineForAddress(0x00041);
-			assert.equal(fname, res.fileName);
-			assert.equal(44, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 44);
 			res = lbls.getFileAndLineForAddress(0x00042);
-			assert.equal(fname, res.fileName);
-			assert.equal(44, res.lineNr);
+			assert.equal(res.fileName, fname);
+			assert.equal(res.lineNr, 44);
 			res = lbls.getFileAndLineForAddress(0x00043);
-			assert.equal('', res.fileName);
+			assert.equal(res.fileName, '');
 		});
 
 
@@ -148,29 +148,29 @@ suite('Labels (revEng)', () => {
 
 			// label2
 			let addr = lbls.getAddrForFileAndLine(fname, 6);
-			assert.equal(0x0001, addr);
+			assert.equal(addr, 0x0001);
 			addr = lbls.getAddrForFileAndLine(fname, 7);
-			assert.equal(-1, addr);
+			assert.equal(addr, -1);
 
 			// label2.locala
 			addr = lbls.getAddrForFileAndLine(fname, 8);
-			assert.equal(0x003, addr);
+			assert.equal(addr, 0x003);
 
 			// label2.localb
 			addr = lbls.getAddrForFileAndLine(fname, 9);
-			assert.equal(0x005, addr);
+			assert.equal(addr, 0x005);
 
 			// label4
 			addr = lbls.getAddrForFileAndLine(fname, 14);
-			assert.equal(0x006, addr);
+			assert.equal(addr, 0x006);
 			addr = lbls.getAddrForFileAndLine(fname, 15);
-			assert.equal(0x006, addr);
+			assert.equal(addr, 0x006);
 			addr = lbls.getAddrForFileAndLine(fname, 16);
-			assert.equal(0x006, addr);
+			assert.equal(addr, 0x006);
 
 			// long address
 			addr = lbls.getAddrForFileAndLine(fname, 39);
-			assert.equal(0xC1AC + (3 + 1) * 0x10000, addr);
+			assert.equal(addr, 0xC1AC + (3 + 1) * 0x10000);
 		});
 	});
 
@@ -187,7 +187,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			const warnings = lbls.getWarnings();
-			assert.notEqual(undefined, warnings);
+			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.startsWith('Could not evaluate expression'));
 		});
@@ -202,7 +202,7 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			const warnings = lbls.getWarnings();
-			assert.notEqual(undefined, warnings);
+			assert.notEqual(warnings, undefined);
 			const warning = warnings.split('\n')[1];
 			assert.ok(warning.startsWith('Line ignored'));
 		});
@@ -217,30 +217,29 @@ suite('Labels (revEng)', () => {
 
 			// Check
 			const warnings = lbls.getWarnings();
-			assert.equal(undefined, warnings);
+			assert.equal(warnings, undefined);
 		});
 	});
 
 
 	// TODO:
 	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
-		// Read the list file
 		const config = {
-			z88dk: [{
-				path: './tests/data/labels/projects/z88dk/general/main.lis',
-				mainFile: "main.asm",
-				mapFile: "./tests/data/labels/projects/z88dk/general/main.map",
-				srcDirs: [""],	// Sources mode
-				excludeFiles: []
+			revEng: [{
+				path: 'tests/data/labels/projects/revEng/wpmemetc.list'
 			}]
 		};
 		lbls.readListFiles(config);
 
 		// Test WPMEM
 		const wpLines = lbls.getWatchPointLines();
-		assert.equal(wpLines.length, 1);
-		assert.equal(wpLines[0].address, 0x8008);
+		assert.equal(wpLines.length, 3);
+		assert.equal(wpLines[0].address, 0x0006);
 		assert.equal(wpLines[0].line, "WPMEM");
+		assert.equal(wpLines[1].address, 0x0007);
+		assert.equal(wpLines[1].line, "WPMEM");
+		assert.equal(wpLines[2].address, 0x0008);
+		assert.equal(wpLines[2].line, "WPMEM");
 
 		// Test ASSERTION
 		const assertionLines = lbls.getAssertionLines();

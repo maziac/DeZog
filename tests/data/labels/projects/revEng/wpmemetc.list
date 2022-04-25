@@ -1,0 +1,13 @@
+
+0006              label4: ; WPMEM
+0007 12           label5: ; WPMEM
+0008              ; WPMEM
+
+WPMEM   ; ignored
+WPMEM:  ; ignored
+
+8005    ; ASSERTION
+
+8006              ; LOGPOINT
+
+
