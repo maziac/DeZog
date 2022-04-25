@@ -1,12 +1,13 @@
-
 import * as assert from 'assert';
-import {Labels} from '../src/labels/labels';
+import {LabelsClass} from '../src/labels/labels';
 
 
 suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 
+	let lbls;
+
 	setup(() => {
-		(Labels as any).init(250);
+		lbls = new LabelsClass();
 	});
 
 	test('WPMEM', () => {
@@ -18,9 +19,9 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 				excludeFiles: []
 			}]
 		};
-		Labels.readListFiles(config);
+		lbls.readListFiles(config);
 
-		const wpmemLines = Labels.getWatchPointLines();
+		const wpmemLines = lbls.getWatchPointLines();
 		assert.equal(wpmemLines.length, 7);
 		assert.equal(wpmemLines[0].address, 0x10000 + 0xA000);
 		assert.equal(wpmemLines[0].line, "WPMEM");
@@ -48,9 +49,9 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 				disableBanking: true
 			}]
 		};
-		Labels.readListFiles(config);
+		lbls.readListFiles(config);
 
-		const wpmemLines = Labels.getWatchPointLines();
+		const wpmemLines = lbls.getWatchPointLines();
 		assert.equal(wpmemLines.length, 7);
 		assert.equal(wpmemLines[0].address, 0xA000);
 		assert.equal(wpmemLines[0].line, "WPMEM");
@@ -65,9 +66,9 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 				excludeFiles: []
 			}]
 		};
-		Labels.readListFiles(config);
+		lbls.readListFiles(config);
 
-		const assertionLines=Labels.getAssertionLines();
+		const assertionLines=lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 2);
 		assert.equal(assertionLines[0].address, 0x10000 + 0xA100);
 		assert.equal(assertionLines[0].line, "ASSERTION");
@@ -84,9 +85,9 @@ suite('Labels (WPMEM, ASSERTION, LOGPOINT)', () => {
 				excludeFiles: []
 			}]
 		};
-		Labels.readListFiles(config);
+		lbls.readListFiles(config);
 
-		const logpointLines=Labels.getLogPointLines();
+		const logpointLines=lbls.getLogPointLines();
 		assert.equal(logpointLines.length, 4);
 		assert.equal(logpointLines[0].address, 0x10000 + 0xA200);
 		assert.equal(logpointLines[1].address, 0x10000 + 0xA201);

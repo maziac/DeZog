@@ -1,15 +1,7 @@
-
 import * as assert from 'assert';
-import {Labels, LabelsClass} from '../src/labels/labels';
-import {readFileSync} from 'fs';
-//import { Settings } from '../src/settings';
+import {LabelsClass} from '../src/labels/labels';
 
 suite('Labels (revEng)', () => {
-
-	setup(() => {
-		Labels.init(250);
-	});
-
 
 	suite('Labels', () => {
 
@@ -20,13 +12,14 @@ suite('Labels (revEng)', () => {
 		};
 
 		test('labels equ', () => {
-			Labels.readListFiles(config);
+			const lbls = new LabelsClass();
+			lbls.readListFiles(config);
 
 			// Check
-			let res = Labels.getNumberForLabel("label_equ1");
+			let res = lbls.getNumberForLabel("label_equ1");
 			assert.equal(res, 100);
 
-			res = Labels.getNumberForLabel("label_equ2");
+			res = lbls.getNumberForLabel("label_equ2");
 			assert.equal(res, 200);
 		});
 
@@ -108,9 +101,42 @@ suite('Labels (revEng)', () => {
 			assert.equal('', res.fileName);
 
 			// long label: C1AC@3 FA
-			res = lbls.getFileAndLineForAddress(0xC1AC + (3+1)*0x10000);
+			res = lbls.getFileAndLineForAddress(0xC1AC + (3 + 1) * 0x10000);
 			assert.equal(fname, res.fileName);
 			assert.equal(39, res.lineNr);
+
+			// IM 2: bytes stopped by 2 character instruction
+			res = lbls.getFileAndLineForAddress(0x0020);
+			assert.equal(fname, res.fileName);
+			assert.equal(41, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00021);
+			assert.equal(fname, res.fileName);
+			assert.equal(41, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00022);
+			assert.equal('', res.fileName);
+
+			// 01 02  03  ; Byte separated with 2 spaces does not belong to bytes
+			res = lbls.getFileAndLineForAddress(0x0030);
+			assert.equal(fname, res.fileName);
+			assert.equal(43, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00031);
+			assert.equal(fname, res.fileName);
+			assert.equal(43, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00032);
+			assert.equal('', res.fileName);
+
+			// 01 02 03  , empty line after bytes
+			res = lbls.getFileAndLineForAddress(0x0040);
+			assert.equal(fname, res.fileName);
+			assert.equal(44, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00041);
+			assert.equal(fname, res.fileName);
+			assert.equal(44, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00042);
+			assert.equal(fname, res.fileName);
+			assert.equal(44, res.lineNr);
+			res = lbls.getFileAndLineForAddress(0x00043);
+			assert.equal('', res.fileName);
 		});
 
 
@@ -147,10 +173,10 @@ suite('Labels (revEng)', () => {
 		});
 	});
 
-
-	test('Occurence of WPMEM, ASSERTION, LOGPOINT', () => {
+	// TODO:
+	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
-		const config={
+		const config = {
 			z88dk: [{
 				path: './tests/data/labels/projects/z88dk/general/main.lis',
 				mainFile: "main.asm",
@@ -159,26 +185,23 @@ suite('Labels (revEng)', () => {
 				excludeFiles: []
 			}]
 		};
-
-		//(Labels as any).labelsForNumber.length=0;
-		//Labels.init(256);
-		//console.log("labelsForNumber", (Labels as any).labelsForNumber);
-		Labels.readListFiles(config);
+		const lbls = new LabelsClass();
+		lbls.readListFiles(config);
 
 		// Test WPMEM
-		const wpLines=Labels.getWatchPointLines();
+		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
 		assert.equal(wpLines[0].address, 0x8008);
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
-		const assertionLines=Labels.getAssertionLines();
+		const assertionLines = lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 1);
 		assert.equal(assertionLines[0].address, 0x8005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
-		const lpLines=Labels.getLogPointLines();
+		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
 		assert.equal(lpLines[0].address, 0x8006);
 		assert.equal(lpLines[0].line, "LOGPOINT");

@@ -1,16 +1,11 @@
 
 import * as assert from 'assert';
-import {Labels} from '../src/labels/labels';
+import {LabelsClass} from '../src/labels/labels';
 import {readFileSync} from 'fs';
 import {SjasmplusSldLabelParser} from '../src/labels/sjasmplussldlabelparser';
 //import { Settings } from '../src/settings';
 
 suite('Labels (sjasmplus)', () => {
-
-	setup(() => {
-		Labels.init(250);
-	});
-
 
 	suite('Labels', () => {
 
@@ -26,8 +21,8 @@ suite('Labels (sjasmplus)', () => {
 					disableBanking: true
 				}]
 			};
-
-			Labels.readListFiles(config);
+			const lbls = new LabelsClass();
+			lbls.readListFiles(config);
 
 			// Compare all labels
 			for (const labelLine of labelsFile) {
@@ -39,7 +34,7 @@ suite('Labels (sjasmplus)', () => {
 				const label = match[1];
 				const value = parseInt(match[2], 16);
 				// Check
-				const res = Labels.getNumberForLabel(label);
+				const res = lbls.getNumberForLabel(label);
 				assert.equal(value, res!);
 			}
 		});
@@ -53,11 +48,11 @@ suite('Labels (sjasmplus)', () => {
 					excludeFiles: []
 				}]
 			};
-
-			Labels.readListFiles(config);
+			const lbls = new LabelsClass();
+			lbls.readListFiles(config);
 
 			// Test the a label under an IF 0/ENDIF is not defined
-			const res = Labels.getNumberForLabel('label5');
+			const res = lbls.getNumberForLabel('label5');
 			assert.equal(undefined, res);
 		});
 
@@ -73,50 +68,51 @@ suite('Labels (sjasmplus)', () => {
 						excludeFiles: []
 					}]
 				};
-				Labels.readListFiles(config);
+				const lbls = new LabelsClass();
+				lbls.readListFiles(config);
 
 				// Test
-				let res = Labels.getLocationOfLabel('label1')!;
+				let res = lbls.getLocationOfLabel('label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('main.asm', res.file);
 				assert.equal(18 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('fa_label1')!;
+				res = lbls.getLocationOfLabel('fa_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea.asm', res.file);
 				assert.equal(2 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('modfilea.fa_label2')!;
+				res = lbls.getLocationOfLabel('modfilea.fa_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea.asm', res.file);
 				assert.equal(6 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('modfilea.fa_label3.mid')!;
+				res = lbls.getLocationOfLabel('modfilea.fa_label3.mid')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea.asm', res.file);
 				assert.equal(9 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('modfilea.fab_label1')!;
+				res = lbls.getLocationOfLabel('modfilea.fab_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(3 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
+				res = lbls.getLocationOfLabel('modfilea.modfileb.fab_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(8 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('global_label1')!;
+				res = lbls.getLocationOfLabel('global_label1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(12 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('global_label2')!;
+				res = lbls.getLocationOfLabel('global_label2')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(14 - 1, res.lineNr);	// line number starts at 0
 
-				res = Labels.getLocationOfLabel('modfilea.fab_label_equ1')!;
+				res = lbls.getLocationOfLabel('modfilea.fab_label_equ1')!;
 				assert.notEqual(undefined, res);
 				assert.equal('filea_b.asm', res.file);
 				assert.equal(22 - 1, res.lineNr);	// line number starts at 0
@@ -132,22 +128,23 @@ suite('Labels (sjasmplus)', () => {
 						excludeFiles: []
 					}]
 				};
-				Labels.readListFiles(config);
+				const lbls = new LabelsClass();
+				lbls.readListFiles(config);
 
 				// Tests
-				let res = Labels.getFileAndLineForAddress(0x10000 + 0x8000);
+				let res = lbls.getFileAndLineForAddress(0x10000 + 0x8000);
 				assert.ok(res.fileName.endsWith('main.asm'));
 				assert.equal(19 - 1, res.lineNr);
 
-				res = Labels.getFileAndLineForAddress(0x10000 + 0x9001);
+				res = lbls.getFileAndLineForAddress(0x10000 + 0x9001);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(7 - 1, res.lineNr);
 
-				res = Labels.getFileAndLineForAddress(0x10000 + 0x9005);
+				res = lbls.getFileAndLineForAddress(0x10000 + 0x9005);
 				assert.ok(res.fileName.endsWith('filea_b.asm'));
 				assert.equal(4 - 1, res.lineNr);
 
-				res = Labels.getFileAndLineForAddress(0x10000 + 0x900B);
+				res = lbls.getFileAndLineForAddress(0x10000 + 0x900B);
 				assert.ok(res.fileName.endsWith('filea.asm'));
 				assert.equal(17 - 1, res.lineNr);
 			});
@@ -161,20 +158,20 @@ suite('Labels (sjasmplus)', () => {
 						excludeFiles: []
 					}]
 				};
-
-				Labels.readListFiles(config);
+				const lbls = new LabelsClass();
+				lbls.readListFiles(config);
 
 				// Tests
-				let address = Labels.getAddrForFileAndLine('main.asm', 19 - 1);
+				let address = lbls.getAddrForFileAndLine('main.asm', 19 - 1);
 				assert.equal(0x10000 + 0x8000, address);
 
-				address = Labels.getAddrForFileAndLine('filea.asm', 7 - 1);
+				address = lbls.getAddrForFileAndLine('filea.asm', 7 - 1);
 				assert.equal(0x10000 + 0x9001, address);
 
-				address = Labels.getAddrForFileAndLine('filea_b.asm', 4 - 1);
+				address = lbls.getAddrForFileAndLine('filea_b.asm', 4 - 1);
 				assert.equal(0x10000 + 0x9005, address);
 
-				address = Labels.getAddrForFileAndLine('filea.asm', 17 - 1);
+				address = lbls.getAddrForFileAndLine('filea.asm', 17 - 1);
 				assert.equal(0x10000 + 0x900B, address);
 			});
 
@@ -183,7 +180,7 @@ suite('Labels (sjasmplus)', () => {
 	});
 
 
-	test('Occurence of WPMEM, ASSERTION, LOGPOINT', () => {
+	test('Occurrence of WPMEM, ASSERTION, LOGPOINT', () => {
 		// Read the list file
 		const config = {
 			sjasmplus: [{
@@ -191,29 +188,31 @@ suite('Labels (sjasmplus)', () => {
 				excludeFiles: []
 			}]
 		};
-
-		Labels.readListFiles(config);
+		const lbls = new LabelsClass();
+		lbls.readListFiles(config);
 
 		// Test WPMEM
-		const wpLines = Labels.getWatchPointLines();
+		const wpLines = lbls.getWatchPointLines();
 		assert.equal(wpLines.length, 1);
 		assert.equal(wpLines[0].address, 0x10000 + 0x8200);
 		assert.equal(wpLines[0].line, "WPMEM");
 
 		// Test ASSERTION
-		const assertionLines = Labels.getAssertionLines();
+		const assertionLines = lbls.getAssertionLines();
 		assert.equal(assertionLines.length, 1);
 		assert.equal(assertionLines[0].address, 0x10000 + 0x8005);
 		assert.equal(assertionLines[0].line, "ASSERTION");
 
 		// Test LOGPOINT
-		const lpLines = Labels.getLogPointLines();
+		const lpLines = lbls.getLogPointLines();
 		assert.equal(lpLines.length, 1);
 		assert.equal(lpLines[0].address, 0x10000 + 0x800F);
 		assert.equal(lpLines[0].line, "LOGPOINT");
 	});
 
 	suite('Self modifying code', () => {
+
+		let lbls;
 
 		setup(() => {
 			// Read the list file
@@ -223,34 +222,36 @@ suite('Labels (sjasmplus)', () => {
 					excludeFiles: []
 				}]
 			};
-			Labels.readListFiles(config);
+			lbls = new LabelsClass();
+			lbls.readListFiles(config);
+			lbls.readListFiles(config);
 		});
 
 		test('Start addresses found', () => {
 			// Note 0x8000 is at bank 4. So: 0x05....
 
 			// 0x8000
-			let entry = Labels.getFileAndLineForAddress(0x058000);
+			let entry = lbls.getFileAndLineForAddress(0x058000);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8100
-			entry = Labels.getFileAndLineForAddress(0x058100);
+			entry = lbls.getFileAndLineForAddress(0x058100);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8200, 0x8201, 0x8203, 0x8206, 0x800A
-			entry = Labels.getFileAndLineForAddress(0x058200);
+			entry = lbls.getFileAndLineForAddress(0x058200);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058201);
+			entry = lbls.getFileAndLineForAddress(0x058201);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058203);
+			entry = lbls.getFileAndLineForAddress(0x058203);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058206);
+			entry = lbls.getFileAndLineForAddress(0x058206);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x05820A);
+			entry = lbls.getFileAndLineForAddress(0x05820A);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8300
-			entry = Labels.getFileAndLineForAddress(0x058300);
+			entry = lbls.getFileAndLineForAddress(0x058300);
 			assert.notEqual(entry.fileName, '');	// Known
 		});
 
@@ -258,33 +259,33 @@ suite('Labels (sjasmplus)', () => {
 			// Note 0x8000 is at bank 4. So: 0x05....
 
 			// 0x8001-0x8002
-			let entry = Labels.getFileAndLineForAddress(0x058001);
+			let entry = lbls.getFileAndLineForAddress(0x058001);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058002);
+			entry = lbls.getFileAndLineForAddress(0x058002);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8101-0x8102
-			entry = Labels.getFileAndLineForAddress(0x058101);
+			entry = lbls.getFileAndLineForAddress(0x058101);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058102);
+			entry = lbls.getFileAndLineForAddress(0x058102);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8202, 0x8004, 0x8005, 0x8007, 0x8008, 0x8009
-			entry = Labels.getFileAndLineForAddress(0x058202);
+			entry = lbls.getFileAndLineForAddress(0x058202);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058204);
+			entry = lbls.getFileAndLineForAddress(0x058204);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058205);
+			entry = lbls.getFileAndLineForAddress(0x058205);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058207);
+			entry = lbls.getFileAndLineForAddress(0x058207);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058208);
+			entry = lbls.getFileAndLineForAddress(0x058208);
 			assert.notEqual(entry.fileName, '');	// Known
-			entry = Labels.getFileAndLineForAddress(0x058209);
+			entry = lbls.getFileAndLineForAddress(0x058209);
 			assert.notEqual(entry.fileName, '');	// Known
 
 			// 0x8301
-			entry = Labels.getFileAndLineForAddress(0x058301);
+			entry = lbls.getFileAndLineForAddress(0x058301);
 			assert.notEqual(entry.fileName, '');	// Known
 		});
 

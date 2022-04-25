@@ -6,7 +6,7 @@ label_equ1:		equ 100
 
 0001 3E 05       label2:	ld a,5
 
-0003 06  08      .locala:	ld b,8
+0003 06 08       .locala:	ld b,8
 0005             .localb:
 0005  00          	nop		; ASSERTION
 
@@ -38,3 +38,8 @@ C1AA@3			long_label1:
 C1AB@44			long_label2:
 
 C1AC@3 FA
+
+0020 01 02 IM 2 ; Byte list ends with unrecognized number (IM)
+
+0030 01 02  03  ; Byte separated with 2 spaces does not belong to bytes
+0040 01 02 03

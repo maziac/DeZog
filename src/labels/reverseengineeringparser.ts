@@ -47,7 +47,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	protected regexAddr = /^(([\da-f]+)(@\d+)?\s*)/i;
 
 	// Regex to parse the bytes after the address
-	protected regexByte = /^([\da-f][\da-f]?\s+)/i;
+	protected regexByte = /^([\da-f][\da-f]\s)/i;
 
 	// Regex to parse the label
 
@@ -63,7 +63,7 @@ export class ReverseEngineeringParser extends LabelParserBase {
 	 * @param line The current analyzed line of the list file.
 	 */
 	protected parseLabelAndAddress(line: string) {
-		let workLine = line + '\n';	// For easier regex
+		let workLine = line + ' ';	// For easier regex
 
 		// Check first for EQU format:
 		// E.g. "MY_CONSTANT:  EQU 50"
@@ -81,15 +81,27 @@ export class ReverseEngineeringParser extends LabelParserBase {
 				// Add EQU
 				this.addLabelForNumber(value, label);
 			}
-			catch {}	// do nothing in case of an error
+			catch {
+				// Show a warning but go on
+				this.warnings += "Line ignored: '" + line + "'\n";
+			}
 			return;
 		}
 
 
 		// Get address
 		const matchAddr = this.regexAddr.exec(workLine);
-		if (!matchAddr)
-			return;	// Skip if no address found // TODO: Check that it only contains a comment
+		if (!matchAddr) {
+			// Skip if no address found
+			// Check that max. contains a comment otherwise show a warning
+			const trimmed = workLine.trim();
+			if (!trimmed && !trimmed.startsWith(';')) {
+				// Line contains something and it is not a comment:
+				// Add a warning
+				this.warnings += "Line ignored: '" + line + "'\n";
+			}
+			return;
+		}
 		const addr64kStr = matchAddr[2];
 		const addr64k = parseInt(addr64kStr, 16);
 		let bank = 0;	// 0 = no bank
