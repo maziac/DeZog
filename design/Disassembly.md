@@ -40,6 +40,35 @@ Instead some memory (at the entry addresses) is retrieved and compared to the ex
 If it is new or differs a new disassembly is done.
 
 
+# DisassemblyClass
+
+The DisassemblyClass is derived from the Disassembler (z80dismblr).
+It modifies the behavior to be more suited for DeZog and (interactive) reverse engineering.
+
+It hooks into the disassembler to change the output:
+- funcAssignLabels: to assign labels for addresses. These labels are taken from the Labels instance (which was built from the reverse engineering list file).
+- funcFilterAddresses: removes any line from the disassembly output that is already available in the  reverse engineering list file.
+- funcFormatAddress: Formats the addresses in the output. Used to add the bank information to the hex address.
+
+The DebugAdapter (DebugSessionClass) holds the last stepped PC addresses in 'longPcAddressesHistory'.
+About 20 addresses of last steps. As these are PC values it is assured that these are entry points for the disassembler.
+The history is independent of the StepHistory so that is is filled even if StepHistory is not available.
+Also the size can be adjusted independently.
+Size is about 20 entries.
+Before a disassembly is done the list is filtered by current banking, i.e. only addresses are used that ae currently reachable.
+
+This list of addresses is used for fetching the memory (+100 byte for each address) and past to the disassembly. (Note: the disassembly only works on 64k.)
+
+Breakpoints:
+As the disassembly text changes on each step it is also necessary to remove the breakpoints from the disassembly and to add the adjusted values after the new disassembly is available.
+
+The new disassembly is not simply added to the vscode disasm.list document as one change as this would result in flickering in vscode.
+To mitigate flickering a diff between old and new disassembly is created and the changes are applied to the vscode disasm.list.
+
+At the end it is also required to update the decorations for the code coverage info.
+
+
+
 # When to disassemble
 
 In general a disassembly needs to be done if the underlying memory changes.

@@ -125,7 +125,7 @@ export class DebugSessionClass extends DebugSession {
 
 	/// An array of a limited amount of last PC addresses (long).
 	/// Used for disassembly.
-	protected longPcAddresses: number[] = [];
+	protected longPcAddressesHistory: number[] = [];
 
 
 	/**
@@ -864,7 +864,6 @@ export class DebugSessionClass extends DebugSession {
 		// Go through complete call stack and get the sources.
 		// If no source exists than get a hexdump and disassembly later.
 		const frameCount = callStack.length;
-		const fetchAddresses = new Array<number>();
 		const sfrs = new Array<StackFrame>();
 		for (let index = frameCount - 1; index >= 0; index--) {
 			const frame = callStack[index];
@@ -877,222 +876,239 @@ export class DebugSessionClass extends DebugSession {
 			const sf = new StackFrame(index + 1, frame.name, src, lineNr);
 			sfrs.push(sf);
 			// Create array with addresses that need to be fetched for disassembly
-			if (!src) {
-				const csFrame = callStack[index];
-				fetchAddresses.push(csFrame.addr);
-			}
+			//if (!src) {
+			//	const csFrame = callStack[index];
+			//	fetchAddresses.push(csFrame.addr);
+			//}
 		}
 
-		// TODO: Use only PC for the new fetch addresses. Otherwise use what is stored in disassembly.
+		// Filter addresses by current banking
 		const pcLong = Remote.getPCLong();
-		this.longPcAddresses.push(pcLong);
-		// Filter and change to 64k addresses
-		const slots = Z80Registers.getSlots();
-		for (const longAddr of this.longPcAddresses) {
-			// Create 64k address
-			const addr64k = longAddr & 0xFFFF;
-			// Check if longAddr is currently paged in
-			const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
-			// Compare
-			if (longAddr == longCmpAddress) {
-				// Is paged in
-				fetchAddresses.push(addr64k);
+		const fetchAddresses = new Array<number>();
+		// Only do a disassembly if the PC address changed (stackTraceRequest might be called more than once)
+		const histLength = this.longPcAddressesHistory.length;
+		if (histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
+			//console.log('pcLong=', pcLong);
+			// If address is already in the list move it to the top.
+			const k = this.longPcAddressesHistory.indexOf(pcLong);
+			if (k >= 0) {
+				this.longPcAddressesHistory.splice(k, 1);
 			}
-		}
+			else {
+				// Otherwise add it and remove the last one
+				if (histLength >= 20)
+					this.longPcAddressesHistory.pop();
+			}
+			this.longPcAddressesHistory.unshift(pcLong);
 
-		// Create memory array.
-		const memArray = new MemoryArray();
-		memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
+			// Filter and change to 64k addresses
+			const slots = Z80Registers.getSlots();
+			for (const longAddr of this.longPcAddressesHistory) {
+				// Create 64k address
+				const addr64k = longAddr & 0xFFFF;
+				// Check if longAddr is currently paged in
+				const longCmpAddress = Z80Registers.createLongAddress(addr64k, slots);
+				// Compare
+				if (longAddr == longCmpAddress) {
+					// Is paged in
+					fetchAddresses.push(addr64k);
+				}
+			}
 
-		/*
-		// Add some more memory from the history
-		const fetchHistorySize = 20;
-		const historyAddresses = new Array<number>();
-		for (let i = 1; i <= 10; i++) {
-			const addr = StepHistory.getPreviousAddress(i);
-			if (addr == undefined)
-				break;
-			// Add address
-			memArray.addRange(addr, fetchHistorySize);
-			historyAddresses.unshift(addr);
-		}
-		*/
+			// Create memory array.
+			const memArray = new MemoryArray();
+			memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
 
-		// Fetch memory
-		for (const range of memArray.ranges) {
-			range.data = await Remote.readMemoryDump(range.address, range.size);
-		}
+			/*
+			// Add some more memory from the history
+			const fetchHistorySize = 20;
+			const historyAddresses = new Array<number>();
+			for (let i = 1; i <= 10; i++) {
+				const addr = StepHistory.getPreviousAddress(i);
+				if (addr == undefined)
+					break;
+				// Add address
+				memArray.addRange(addr, fetchHistorySize);
+				historyAddresses.unshift(addr);
+			}
+			*/
 
-		/*
-		// Check if memory changed
-		if (!this.forceDisassembly) {
-			const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
-			// Do disassembly if memory changed:
-			this.forceDisassembly = !blocksEqual;
+			// Fetch memory
+			for (const range of memArray.ranges) {
+				range.data = await Remote.readMemoryDump(range.address, range.size);
+			}
 
-			// Check if a new address was used.
+			/*
+			// Check if memory changed
 			if (!this.forceDisassembly) {
-				if (!Disassembly.checkCodeFirst(fetchAddresses)) {
-					// At least one address does not have attribute CODE_FIRST.
-					this.forceDisassembly = true;
+				const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
+				// Do disassembly if memory changed:
+				this.forceDisassembly = !blocksEqual;
+
+				// Check if a new address was used.
+				if (!this.forceDisassembly) {
+					if (!Disassembly.checkCodeFirst(fetchAddresses)) {
+						// At least one address does not have attribute CODE_FIRST.
+						this.forceDisassembly = true;
+					}
 				}
 			}
-		}
-		*/
+			*/
 
-		// Check if disassembly is required.
-		if (this.forceDisassembly) {	// TODO: REMOVE. Disassembel anyway each step.
-			// Do disassembly.
-			//this.forceDisassembly = false;	// TODO: Enable
+			// Check if disassembly is required.
+			if (this.forceDisassembly) {	// TODO: REMOVE. Disassembel anyway each step.
+				// Do disassembly.
+				//this.forceDisassembly = false;	// TODO: Enable
 
-			// Get BPs located in previous disassembly and assign the addresses.
-			const prevBpAddresses = this.getDisassemblyBreakpoints();
-			// Remove BPs temporary
-			const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
-			vscode.debug.removeBreakpoints(removeBps);
+				// Get BPs located in previous disassembly and assign the addresses.
+				const prevBpAddresses = this.getDisassemblyBreakpoints();
+				// Remove BPs temporary
+				const removeBps = prevBpAddresses.map(sbpAddr => sbpAddr.sbp);
+				vscode.debug.removeBreakpoints(removeBps);
 
-			// Create text document
-			const absFilePath = DisassemblyClass.getAbsFilePath();
-			const uri = vscode.Uri.file(absFilePath);
-			try {
-				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-				// Delete all lines
-//				const editDelete = new vscode.WorkspaceEdit();
-//				editDelete.delete(uri, new vscode.Range(0, 0, 10000000, 0));
-//				await vscode.workspace.applyEdit(editDelete);
-			}
-			catch (e) {
-				// If file does not exist, create it
-				const editCreate = new vscode.WorkspaceEdit();
-				editCreate.createFile(uri);
-				await vscode.workspace.applyEdit(editCreate);
-				this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
-			}
+				// Create text document
+				const absFilePath = DisassemblyClass.getAbsFilePath();
+				const uri = vscode.Uri.file(absFilePath);
+				try {
+					this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+					// Delete all lines
+					//				const editDelete = new vscode.WorkspaceEdit();
+					//				editDelete.delete(uri, new vscode.Range(0, 0, 10000000, 0));
+					//				await vscode.workspace.applyEdit(editDelete);
+				}
+				catch (e) {
+					// If file does not exist, create it
+					const editCreate = new vscode.WorkspaceEdit();
+					editCreate.createFile(uri);
+					await vscode.workspace.applyEdit(editCreate);
+					this.disasmTextDoc = await vscode.workspace.openTextDocument(uri);
+				}
 
-			// Get previous disassembly text
-			const prevLines = this.disasmTextDoc.getText().split('\n');
-			//const prevLines = Disassembly.getDisassemblyLines();
-		//	const prevText = Disassembly.getDisassemblyText();
+				// Get previous disassembly text
+				const prevLines = this.disasmTextDoc.getText().split('\n');
+				//const prevLines = Disassembly.getDisassemblyLines();
+				//	const prevText = Disassembly.getDisassemblyText();
 
-			// Initialize disassembly
-			Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
+				// Initialize disassembly
+				Disassembly.initWithCodeAdresses(fetchAddresses, memArray.ranges as Array<{address: number, data: Uint8Array}>);
 
-			//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
+				//Disassembly.addMemAndAddresses(memArray.ranges as Array<{address: number, data: Uint8Array}>, [...historyAddresses, ...fetchAddresses]);
 
-			// Disassemble
-			Disassembly.disassemble();
-			// Read data
-			const text = Disassembly.getDisassemblyText();
+				// Disassemble
+				Disassembly.disassemble();
+				// Read data
+				const text = Disassembly.getDisassemblyText();
 
-			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
-			const fname = Utility.getRelTmpFilePath('disasm_real.list');
-			fs.copyFileSync(fname, fnamep)
-			fs.writeFileSync(fname, text);
+				const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');
+				const fname = Utility.getRelTmpFilePath('disasm_real.list');
+				fs.copyFileSync(fname, fnamep)
+				fs.writeFileSync(fname, text);
 
-/*
-			let edit = new vscode.WorkspaceEdit();
-			edit.createFile(uri);
-			await vscode.workspace.applyEdit(edit);
-			let doc = await vscode.workspace.openTextDocument(uri);
-			await doc.save();
+				/*
+							let edit = new vscode.WorkspaceEdit();
+							edit.createFile(uri);
+							await vscode.workspace.applyEdit(edit);
+							let doc = await vscode.workspace.openTextDocument(uri);
+							await doc.save();
 
-			const t1 = doc.getText();
+							const t1 = doc.getText();
 
-			edit = new vscode.WorkspaceEdit();
-			edit.replace(uri, new vscode.Range(0, 0, 0, 0), 'replace1\n');
-			await vscode.workspace.applyEdit(edit);
-			await doc.save();
+							edit = new vscode.WorkspaceEdit();
+							edit.replace(uri, new vscode.Range(0, 0, 0, 0), 'replace1\n');
+							await vscode.workspace.applyEdit(edit);
+							await doc.save();
 
-			const t2 = doc.getText();
+							const t2 = doc.getText();
 
-			edit = new vscode.WorkspaceEdit();
-			edit.replace(uri, new vscode.Range(1, 0, 1, 0), 'replace2');
-			await vscode.workspace.applyEdit(edit);
-			await doc.save();
-*/
+							edit = new vscode.WorkspaceEdit();
+							edit.replace(uri, new vscode.Range(1, 0, 1, 0), 'replace2');
+							await vscode.workspace.applyEdit(edit);
+							await doc.save();
+				*/
 
 
-			// Check for change in the disassembly text
-			const lines = Disassembly.getDisassemblyLines();
-			let options: IDiffComputerOpts = {
-				shouldPostProcessCharChanges: true,
-				shouldIgnoreTrimWhitespace: true,
-				shouldMakePrettyDiff: true,
-				shouldComputeCharChanges: true,
-				maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
-			}
-//			lines.push('');
-			const diffComputer = new DiffComputer(prevLines, lines, options);
-			let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
-			if (lineChanges.length > 0) {
-				// Create and apply edits for the changes.
-				console.log("lineChanges:", lineChanges);
-				// Work from bottom to top
-				const uri = this.disasmTextDoc.uri;
-				//const edit = new vscode.WorkspaceEdit();
-				for (let i = lineChanges.length - 1; i >= 0; i--) {
-					// Get change
-					const change = lineChanges[i];
-					// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
-					const edit = new vscode.WorkspaceEdit();
+				// Check for change in the disassembly text
+				const lines = Disassembly.getDisassemblyLines();
+				let options: IDiffComputerOpts = {
+					shouldPostProcessCharChanges: true,
+					shouldIgnoreTrimWhitespace: true,
+					shouldMakePrettyDiff: true,
+					shouldComputeCharChanges: true,
+					maxComputationTime: 0 // time in milliseconds, 0 => no computation limit.
+				}
+				//			lines.push('');
+				const diffComputer = new DiffComputer(prevLines, lines, options);
+				let lineChanges: ILineChange[] = diffComputer.computeDiff().changes;
+				if (lineChanges.length > 0) {
+					// Create and apply edits for the changes.
+					console.log("lineChanges:", lineChanges);
+					// Work from bottom to top
+					const uri = this.disasmTextDoc.uri;
+					//const edit = new vscode.WorkspaceEdit();
+					for (let i = lineChanges.length - 1; i >= 0; i--) {
+						// Get change
+						const change = lineChanges[i];
+						// Check kind of  change (Note: change-line-numbers are 1-based, vscode positions are 0-based)
+						const edit = new vscode.WorkspaceEdit();
 
-					if (change.originalEndLineNumber == 0) {
-						// Get text to insert
-						const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-						let insertText = insertLines.join('\n') + '\n';
-						// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
-						if (change.originalStartLineNumber >= prevLines.length)
-							insertText = '\n' + insertText;
-						// Insert after originalStartLineNumber
-						edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
+						if (change.originalEndLineNumber == 0) {
+							// Get text to insert
+							const insertLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
+							let insertText = insertLines.join('\n') + '\n';
+							// Workaround: Some oddity in vscode: if appending ot last line it does not honor the new line, so we have to add one.
+							if (change.originalStartLineNumber >= prevLines.length)
+								insertText = '\n' + insertText;
+							// Insert after originalStartLineNumber
+							edit.insert(uri, new vscode.Position(change.originalStartLineNumber, 0), insertText);
 
-						//console.log("prevlines=", prevLines);
-						//console.log("lines=", lines);
-						//console.log("insertlines=", insertLines);
-					}
-					else if (change.modifiedEndLineNumber == 0) {
-						// Remove
-						//if (lines.length > change.originalStartLineNumber)
-						{
-							edit.delete(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0));
+							//console.log("prevlines=", prevLines);
+							//console.log("lines=", lines);
+							//console.log("insertlines=", insertLines);
 						}
-					}
-					else {
-						// Get text to replace
-						let replaceText = '';
-					//	if (change.modifiedEndLineNumber > 0) {
+						else if (change.modifiedEndLineNumber == 0) {
+							// Remove
+							//if (lines.length > change.originalStartLineNumber)
+							{
+								edit.delete(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0));
+							}
+						}
+						else {
+							// Get text to replace
+							let replaceText = '';
+							//	if (change.modifiedEndLineNumber > 0) {
 							const replaceLines = lines.slice(change.modifiedStartLineNumber - 1, change.modifiedEndLineNumber);
-						replaceText = replaceLines.join('\n') + '\n';
-					//	}
-						// Replace
-						edit.replace(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0), replaceText);
+							replaceText = replaceLines.join('\n') + '\n';
+							//	}
+							// Replace
+							edit.replace(uri, new vscode.Range(change.originalStartLineNumber - 1, 0, change.originalEndLineNumber, 0), replaceText);
+						}
+
+						await vscode.workspace.applyEdit(edit);	// TODO: change to overall applEdit
+					}
+					// Apply changes
+					//		await vscode.workspace.applyEdit(edit);
+					// Save after edit (to be able to set breakpoints)
+					await this.disasmTextDoc.save();
+
+					// Check for error
+					const currentText = this.disasmTextDoc.getText();
+					if (currentText != text) {
+						// Error
+						this.showWarning('Disassembly text wrong!!!');
 					}
 
-					await vscode.workspace.applyEdit(edit);	// TODO: change to overall applEdit
-				}
-				// Apply changes
-		//		await vscode.workspace.applyEdit(edit);
-				// Save after edit (to be able to set breakpoints)
-				await this.disasmTextDoc.save();
-
-				// Check for error
-				const currentText = this.disasmTextDoc.getText();
-				if (currentText != text) {
-					// Error
-					this.showWarning('Disassembly text wrong!!!');
-				}
 
 
+					// Check all breakpoints
+					this.disassemblyReassignBreakpoints(prevBpAddresses);
 
-				// Check all breakpoints
-				this.disassemblyReassignBreakpoints(prevBpAddresses);
-
-				// If disassembly text editor is open, then show decorations
-				const editors = vscode.window.visibleTextEditors;
-				for (const editor of editors) {
-					if (editor.document == this.disasmTextDoc) {
-						Decoration.setDisasmCoverageDecoration(editor);
-						// TODO: Check if coverage decorations still work.
+					// If disassembly text editor is open, then show decorations
+					const editors = vscode.window.visibleTextEditors;
+					for (const editor of editors) {
+						if (editor.document == this.disasmTextDoc) {
+							Decoration.setDisasmCoverageDecoration(editor);
+							// TODO: Check if coverage decorations still work.
+						}
 					}
 				}
 			}
