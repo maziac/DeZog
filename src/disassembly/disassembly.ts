@@ -148,6 +148,7 @@ export class DisassemblyClass extends Disassembler {
 	 */
 	public disassemble() {
 		// No comments/statistics etc.
+		this.automaticAddresses = false;
 		this.disableCommentsInDisassembly = true;
 		this.disableStatistics = true;
 		this.disableEqusInDisassembly = true;

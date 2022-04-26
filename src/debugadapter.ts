@@ -887,6 +887,7 @@ export class DebugSessionClass extends DebugSession {
 		// Only do a disassembly if the PC address changed (stackTraceRequest might be called more than once)
 		console.log('longPcAddressesHistory=', this.longPcAddressesHistory);
 		const histLength = this.longPcAddressesHistory.length;
+		this.forceDisassembly = true;	// TODO: REMOVE
 		if (this.forceDisassembly || histLength == 0 || pcLong != this.longPcAddressesHistory[0]) {
 			this.forceDisassembly = false;
 			//console.log('pcLong=', pcLong);
@@ -920,44 +921,10 @@ export class DebugSessionClass extends DebugSession {
 			const memArray = new MemoryArray();
 			memArray.addRangesWithSize(fetchAddresses, 100);	// Assume 100 bytes each
 
-			/*
-			// Add some more memory from the history
-			const fetchHistorySize = 20;
-			const historyAddresses = new Array<number>();
-			for (let i = 1; i <= 10; i++) {
-				const addr = StepHistory.getPreviousAddress(i);
-				if (addr == undefined)
-					break;
-				// Add address
-				memArray.addRange(addr, fetchHistorySize);
-				historyAddresses.unshift(addr);
-			}
-			*/
-
 			// Fetch memory
 			for (const range of memArray.ranges) {
 				range.data = await Remote.readMemoryDump(range.address, range.size);
 			}
-
-			/*
-			// Check if memory changed
-			if (!this.forceDisassembly) {
-				const blocksEqual = memArray.isMemoryEqualForBlocks(Disassembly.memory, fetchAddresses, 40);	// 40: Needs to be smaller than fetch-size (100) in order not to do a disassembly too often.
-				// Do disassembly if memory changed:
-				this.forceDisassembly = !blocksEqual;
-
-				// Check if a new address was used.
-				if (!this.forceDisassembly) {
-					if (!Disassembly.checkCodeFirst(fetchAddresses)) {
-						// At least one address does not have attribute CODE_FIRST.
-						this.forceDisassembly = true;
-					}
-				}
-			}
-			*/
-
-			// Do disassembly.
-			//this.forceDisassembly = false;	// TODO: remove
 
 			// Get BPs located in previous disassembly and assign the addresses.
 			const prevBpAddresses = this.getDisassemblyBreakpoints();
@@ -1000,8 +967,11 @@ export class DebugSessionClass extends DebugSession {
 
 			const fnamep = Utility.getRelTmpFilePath('disasm_real_p.list');	// TODO: remove these files
 			const fname = Utility.getRelTmpFilePath('disasm_real.list');
+			const fnamevp = Utility.getRelTmpFilePath('disasm_vscode_p.list');
 			fs.copyFileSync(fname, fnamep)
 			fs.writeFileSync(fname, text);
+			const prevLinesText = prevLines.join('\n');
+			fs.writeFileSync(fnamevp, prevLinesText);
 
 			/*
 						let edit = new vscode.WorkspaceEdit();
@@ -1106,7 +1076,6 @@ export class DebugSessionClass extends DebugSession {
 				for (const editor of editors) {
 					if (editor.document == this.disasmTextDoc) {
 						Decoration.setDisasmCoverageDecoration(editor);
-						// TODO: Check if coverage decorations still work.
 					}
 				}
 			}

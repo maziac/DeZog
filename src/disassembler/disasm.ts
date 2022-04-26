@@ -2187,14 +2187,14 @@ export class Disassembler extends EventEmitter {
 						const opcode = Opcode.getOpcodeAt(this.memory, address);
 						address += opcode.length;
 						prevMemoryAttribute = attr;
-						continue;
+						continue;	// TODO: prepare for empty lines on next change
 					}
 				}
 
 				// Get association of address
 				this.resetAddEmptyLine();
 				const parent = this.addressParents[address];
-				if (parent != prevParent) {
+				if (parent != prevParent || (prevMemoryAttribute ^ attr) & MemAttribute.CODE) {		// If parent changed or code block changed to data (or vice versa)
 					this.addEmptyLines(lines);
 					prevParent = parent;
 				}
