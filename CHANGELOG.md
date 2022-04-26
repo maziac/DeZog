@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.7.1
+- Fixed disassembly of instructions: INC (IX+n), DEC (IX+n), INC (IY+n) and DEC (IY+n).
+
 # 2.7.0
 - Experimental MAME support.
 - Changed name of disassembly from 'disasm.asm' to 'disasm.list'.
