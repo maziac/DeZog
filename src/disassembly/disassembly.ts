@@ -117,7 +117,7 @@ export class DisassemblyClass extends Disassembler {
 		this.addrLineMap = new Map<number, number>();
 		this.lineAddrArray = new Array<number | undefined>();
 		// Write new memory
-		this.memory.clrAssignedAttributesAt(0x0000, 0x10000);	// Clear all memory
+		this.memory.clearAttributes();	// Clear all memory
 		for (const block of mem)
 			this.setMemory(block.address & 0xFFFF, block.data);
 		this.setAddressQueue(addresses.map(addr => addr & 0xFFFF));

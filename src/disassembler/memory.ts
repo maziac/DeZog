@@ -36,13 +36,14 @@ export class Memory extends BaseMemory {
 		super(0, MAX_MEM_SIZE);
 		// Init memory
 		// this.memory.fill(0); // Not necessary is anyhow 0
+		//this.clearAttributes(); Not required, is anyhow 0 = MemAttribute.UNUSED
+	}
+
+	/**
+	 * Clears all attributes to 0.
+	 */
+	public clearAttributes() {
 		this.memoryAttr.fill(MemAttribute.UNUSED);
-		/*
-		for (let i = 0; i < MAX_MEM_SIZE; i++) {
-			this.memory[i] = 0;
-			this.memoryAttr[i] = MemAttribute.UNUSED;
-		}
-		*/
 	}
 
 
