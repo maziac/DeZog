@@ -118,13 +118,13 @@ export class Opcode {
 		// Retrieve valueType and opcode flags from name
 		let k;
 		if ((k = name.indexOf('#n')) > 0) {
-			if (name.substr(k + 2, 1) == 'n') { // i.e. '#nn'
+			if (name.substring(k + 2, k + 3) == 'n') { // i.e. '#nn'
 				// Word
 				this.length = 3;
 				// substitute formatting
-				name = name.substr(0, k) + '%s' + name.substr(k + 3);
+				name = name.substring(0, k) + '%s' + name.substring(k + 3);
 				// store type
-				const indirect = name.substr(k - 1, 1);
+				const indirect = name.substring(k - 1, k);
 				if (indirect == '(') {
 					// Enclosed in brackets ? E.g. "(20fe)" -> indirect (this is no call or jp)
 					this.valueType = NumberType.DATA_LBL;
@@ -161,7 +161,7 @@ export class Opcode {
 				// Byte
 				this.length = 2;
 				// substitute formatting
-				name = name.substr(0, k) + '%s' + name.substr(k + 2);
+				name = name.substring(0, k) + '%s' + name.substring(k + 2);
 				// store type
 				this.valueType = NumberType.NUMBER_BYTE;
 
@@ -335,7 +335,7 @@ export class Opcode {
 				this.value = memory.getValueAt(address + 1);
 				offs = 1;
 				break;
-			case NumberType.PORT_LBL:
+			case NumberType.PORT_LBL:	// NOSONAR
 				// TODO: need to be implemented differently
 				this.value = memory.getValueAt(address + 1);
 				offs = 1;
@@ -694,7 +694,7 @@ class OpcodeNextPush extends OpcodeNext {
 /**
  * Special opcode to decode the next register
  */
-class OpcodeNext_nextreg_n_a extends OpcodeNext {
+class OpcodeNext_nextreg_n_a extends OpcodeNext {	// NOSONAR
 	/// Disassemble the next register.
 	/// (1 byte value)
 	public disassemble(): {mnemonic: string, comment: string} {
@@ -710,7 +710,7 @@ class OpcodeNext_nextreg_n_a extends OpcodeNext {
 	 */
 	protected static getRegisterName(regId: number): string {
 		let regname;
-		switch (regId) {
+		switch (regId) {	// NOSONAR
 			case 0: regname = "REG_MACHINE_ID"; break;
 			case 1: regname = "REG_VERSION"; break;
 			case 2: regname = "REG_RESET"; break;
@@ -790,7 +790,7 @@ class OpcodeNext_nextreg_n_a extends OpcodeNext {
 /**
  * Special opcode to decode the 2 values.
  */
-class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
+class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {	// NOSONAR
 	// The 2nd value.
 	public value2: number;
 
@@ -829,7 +829,7 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
 	protected static getRegisterValueName(regId: number, regValue: number): string {
 		let valuename;
 		let arr;
-		switch (regId) {
+		switch (regId) {	// NOSONAR
 			case 0:	// REG_MACHINE_ID
 				switch (regValue) {
 					case 0: valuename = "REG_MACHINE_ID"; break;
@@ -937,11 +937,6 @@ class OpcodeNext_nextreg_n_n extends OpcodeNext_nextreg_n_a {
 				break;
 
 			case 18: // REG_LAYER_2_RAM_PAGE
-				switch (regValue) {
-					case 0x3f: valuename = "RL2RP_MASK"; break;
-				}
-				break;
-
 			case 19: // REG_LAYER_2_SHADOW_RAM_PAGE
 				switch (regValue) {
 					case 0x3f: valuename = "RL2RP_MASK"; break;

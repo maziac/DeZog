@@ -100,14 +100,15 @@ export class StepHistoryClass extends EventEmitter {
 	 * for StepHistory and an enhanced decoder for CpuHistory.
 	 */
 	private _decoder: HistoryInstructionInfo;
-	public get decoder(): HistoryInstructionInfo {return this._decoder};
-	public set decoder(value: HistoryInstructionInfo) {this._decoder = value;};
+	public get decoder(): HistoryInstructionInfo {return this._decoder}
+	public set decoder(value: HistoryInstructionInfo) {this._decoder = value;}
 
 
 	/**
 	 * Clears the history cache. Is called on each "normal (forward)" step.
 	 */
 	public clear() {
+		//
 	}
 
 
