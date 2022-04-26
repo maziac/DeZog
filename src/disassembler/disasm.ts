@@ -2128,6 +2128,7 @@ export class Disassembler extends EventEmitter {
 
 		// Loop over all labels
 		let address = -1;
+		let printEmptyLinesBeforeNext = false;
 		for (const [addr, label] of this.labels) {
 			if (label.isEqu)
 				continue;	// Skip EQUs
@@ -2187,16 +2188,18 @@ export class Disassembler extends EventEmitter {
 						const opcode = Opcode.getOpcodeAt(this.memory, address);
 						address += opcode.length;
 						prevMemoryAttribute = attr;
-						continue;	// TODO: prepare for empty lines on next change
+						printEmptyLinesBeforeNext = true;
+						continue;
 					}
 				}
 
 				// Get association of address
 				this.resetAddEmptyLine();
 				const parent = this.addressParents[address];
-				if (parent != prevParent || (prevMemoryAttribute ^ attr) & MemAttribute.CODE) {		// If parent changed or code block changed to data (or vice versa)
+				if (parent != prevParent || (prevMemoryAttribute ^ attr) & MemAttribute.CODE || printEmptyLinesBeforeNext) {		// If parent changed or code block changed to data (or vice versa)
 					this.addEmptyLines(lines);
 					prevParent = parent;
+					printEmptyLinesBeforeNext = false;
 				}
 
 				// Check if label needs to be added to line (print label on own line)

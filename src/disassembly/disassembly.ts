@@ -153,6 +153,7 @@ export class DisassemblyClass extends Disassembler {
 		this.enableStatistics = false;
 		this.equsInDisassembly = false;
 		this.orgInDisassembly = false;
+		this.numberOfLinesBetweenBlocks = 2;
 		// Disassemble
 		super.disassemble();
 		// Get address/line relationship.
